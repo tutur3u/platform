@@ -39,10 +39,15 @@ const getColorFromGoogleColorId = (colorId?: string): string => {
 };
 
 export const syncGoogleCalendarEvents = async () => {
+  console.log('=== Starting syncGoogleCalendarEvents function ===');
+
   try {
+    console.log('Creating admin client...');
     const supabase = await createAdminClient({ noCookie: true });
+    console.log('Admin client created successfully');
 
     // Fetch all wsId with auth tokens not null
+    console.log('Fetching auth tokens from database...');
     const { data: tokens, error } = await supabase
       .from('calendar_auth_tokens')
       .select('ws_id, access_token, refresh_token');
@@ -52,6 +57,9 @@ export const syncGoogleCalendarEvents = async () => {
       return [];
     }
 
+    console.log('Auth tokens fetched successfully');
+    console.log('Number of tokens found:', tokens?.length || 0);
+
     console.log(
       'Synchronizing Google Calendar events for',
       tokens.length,
@@ -59,105 +67,24 @@ export const syncGoogleCalendarEvents = async () => {
       tokens.map((token) => token.ws_id)
     );
 
-    const endSync = async (
-      ws_id: string,
-      googleAccountEmail: string | null,
-      syncStartedAt: string,
-      syncEndedAt: string,
-      status: string,
-      errorMessage: string,
-      eventSnapshotBefore: WorkspaceCalendarEvent[],
-      upsertedEvents: WorkspaceCalendarEvent[],
-      deletedEvents: WorkspaceCalendarEvent[]
-    ) => {
-      await supabase.from('workspace_calendar_sync_log').insert({
-        ws_id,
-        google_account_email: googleAccountEmail,
-        sync_started_at: syncStartedAt,
-        sync_ended_at: syncEndedAt,
-        status: status,
-        error_message: errorMessage,
-        event_snapshot_before: eventSnapshotBefore,
-        upserted_events: upsertedEvents,
-        deleted_events: deletedEvents,
-        triggered_by: 'trigger_dot_dev',
-      });
-    };
-
+    console.log('Starting to process tokens...');
     for (const token of tokens || []) {
-      const syncStartedAt = dayjs().toISOString();
-      let googleAccountEmail: string | null = null;
-
-      const auth = getGoogleAuthClient(token);
-
-      try {
-        // get google account email from google api
-        const googleAccount = await auth.getTokenInfo(
-          token.access_token as string
-        );
-        googleAccountEmail = googleAccount.email || null;
-        console.log('googleAccountEmail', googleAccountEmail);
-      } catch (error) {
-        console.error('Error fetching google account email:', error);
-        await endSync(
-          token.ws_id,
-          null,
-          syncStartedAt,
-          dayjs().toISOString(),
-          'failed',
-          'Error fetching google account email: ' + error,
-          [],
-          [],
-          []
-        );
-        continue;
-      }
-
-      // get events before sync
-      const { data: eventsBeforeSync, error: errorEventsBeforeSync } =
-        await supabase
-          .from('workspace_calendar_events')
-          .select('*')
-          .eq('ws_id', token.ws_id)
-          .not('google_event_id', 'is', null);
-      if (errorEventsBeforeSync) {
-        console.error(
-          'Error fetching events before sync:',
-          errorEventsBeforeSync
-        );
-        await endSync(
-          token.ws_id,
-          googleAccountEmail,
-          syncStartedAt,
-          dayjs().toISOString(),
-          'failed',
-          'Error fetching events before sync: ' + errorEventsBeforeSync.message,
-          eventsBeforeSync || [],
-          [],
-          []
-        );
-        continue;
-      }
       const { ws_id, access_token, refresh_token } = token;
+
+      console.log('ws_id', ws_id);
+
       if (!access_token) {
         console.error('No Google access token found for wsIds:', {
           ws_id,
           hasAccessToken: !!access_token,
           hasRefreshToken: !!refresh_token,
         });
-        await endSync(
-          token.ws_id,
-          googleAccountEmail,
-          syncStartedAt,
-          dayjs().toISOString(),
-          'failed',
-          'No Google access token found for wsIds',
-          eventsBeforeSync || [],
-          [],
-          []
-        );
         continue;
       }
+
+      console.log(`[${ws_id}] Starting sync process...`);
+
+      const auth = getGoogleAuthClient(token);
 
       try {
         const calendar = google.calendar({ version: 'v3', auth });
@@ -165,6 +92,8 @@ export const syncGoogleCalendarEvents = async () => {
         const now = dayjs();
         const timeMin = now.toDate();
         const timeMax = now.add(BACKGROUND_SYNC_RANGE, 'day');
+
+        console.log(`[${ws_id}] Fetching events from Google Calendar...`);
 
         const response = await calendar.events.list({
           calendarId: 'primary',
@@ -176,6 +105,9 @@ export const syncGoogleCalendarEvents = async () => {
         });
 
         const events = response.data.items || [];
+        console.log(
+          `[${ws_id}] Fetched ${events.length} events from Google Calendar`
+        );
 
         // format the events to match the expected structure
         const formattedEvents = events.map((event) => ({
@@ -189,39 +121,33 @@ export const syncGoogleCalendarEvents = async () => {
           ws_id: ws_id,
           locked: false,
         }));
-        console.log('ws_id', ws_id);
-        console.log('access_token', access_token);
-        console.log('refresh_token', refresh_token);
-        console.log('formattedEvents', formattedEvents);
+        console.log(`[${ws_id}] Formatted ${formattedEvents.length} events`);
+        console.log(`[${ws_id}] access_token`, access_token);
+        console.log(`[${ws_id}] refresh_token`, refresh_token);
+        console.log(`[${ws_id}] formattedEvents`, formattedEvents);
 
         // upsert the events in the database for this wsId
+        console.log(
+          `[${ws_id}] Upserting ${formattedEvents.length} events to database...`
+        );
         const { error } = await supabase
           .from('workspace_calendar_events')
           .upsert(formattedEvents, {
             onConflict: 'google_event_id',
           });
         if (error) {
-          console.error('Error upserting events:', error);
-          await endSync(
-            ws_id,
-            googleAccountEmail,
-            syncStartedAt,
-            dayjs().toISOString(),
-            'failed',
-            'Error upserting events: ' + error.message,
-            eventsBeforeSync || [],
-            formattedEvents as WorkspaceCalendarEvent[],
-            []
-          );
+          console.error(`[${ws_id}] Error upserting events:`, error);
           continue;
         }
         console.log(
-          'Upserted events for wsId:',
-          ws_id,
+          `[${ws_id}] Successfully upserted ${formattedEvents.length} events:`,
           formattedEvents.map((e) => e.title)
         );
 
         // Google calendar not null
+        console.log(
+          `[${ws_id}] Fetching existing events from database for cleanup...`
+        );
         const { data: dbEventsAfterUpsert, error: dbError } = await supabase
           .from('workspace_calendar_events')
           .select('*')
@@ -231,20 +157,16 @@ export const syncGoogleCalendarEvents = async () => {
           .lte('start_at', timeMax.toISOString());
 
         if (dbError) {
-          console.error('Error fetching events after upsert:', dbError);
-          await endSync(
-            ws_id,
-            googleAccountEmail,
-            syncStartedAt,
-            dayjs().toISOString(),
-            'failed',
-            'Error fetching events after upsert: ' + dbError.message,
-            eventsBeforeSync || [],
-            formattedEvents as WorkspaceCalendarEvent[],
-            []
+          console.error(
+            `[${ws_id}] Error fetching events after upsert:`,
+            dbError
           );
           continue;
         }
+
+        console.log(
+          `[${ws_id}] Found ${dbEventsAfterUpsert?.length || 0} existing events in database`
+        );
 
         const eventsToDelete: WorkspaceCalendarEvent[] = [];
         for (const event of dbEventsAfterUpsert) {
@@ -257,67 +179,50 @@ export const syncGoogleCalendarEvents = async () => {
           }
         }
 
-        const { error: deleteError } = await supabase
-          .from('workspace_calendar_events')
-          .delete()
-          .in(
-            'id',
-            eventsToDelete.map((e) => e.id)
-          );
+        console.log(
+          `[${ws_id}] Found ${eventsToDelete.length} events to delete`
+        );
 
-        if (deleteError) {
-          console.error('Error deleting events:', deleteError);
-          await endSync(
-            ws_id,
-            googleAccountEmail,
-            syncStartedAt,
-            dayjs().toISOString(),
-            'failed',
-            'Error deleting events: ' + deleteError.message,
-            eventsBeforeSync || [],
-            formattedEvents as WorkspaceCalendarEvent[],
-            eventsToDelete as WorkspaceCalendarEvent[]
+        if (eventsToDelete.length > 0) {
+          const { error: deleteError } = await supabase
+            .from('workspace_calendar_events')
+            .delete()
+            .in(
+              'id',
+              eventsToDelete.map((e) => e.id)
+            );
+
+          if (deleteError) {
+            console.error(`[${ws_id}] Error deleting events:`, deleteError);
+            continue;
+          }
+
+          console.log(
+            `[${ws_id}] Successfully deleted ${eventsToDelete.length} events:`,
+            eventsToDelete.map((e) => e.title)
           );
-          continue;
         }
 
-        console.log(
-          'Deleted events for wsId:',
-          ws_id,
-          eventsToDelete.map((e) => e.title)
-        );
-
-        await endSync(
-          ws_id,
-          googleAccountEmail,
-          syncStartedAt,
-          dayjs().toISOString(),
-          'success',
-          '',
-          eventsBeforeSync || [],
-          formattedEvents as WorkspaceCalendarEvent[],
-          eventsToDelete as WorkspaceCalendarEvent[]
-        );
-
         // Update lastUpsert timestamp after successful upsert
+        console.log(`[${ws_id}] Updating lastUpsert timestamp...`);
         await updateLastUpsert(ws_id, supabase);
+        console.log(`[${ws_id}] Sync completed successfully`);
       } catch (error) {
-        console.error('Error fetching Google Calendar events:', error);
-        await endSync(
-          ws_id,
-          googleAccountEmail,
-          syncStartedAt,
-          dayjs().toISOString(),
-          'failed',
-          'Error fetching Google Calendar events: ' + error,
-          eventsBeforeSync || [],
-          [],
-          []
+        console.error(
+          `[${ws_id}] Error fetching Google Calendar events:`,
+          error
         );
       }
     }
   } catch (error) {
     console.error('Error in fetchGoogleCalendarEvents:', error);
+    console.error('Error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : 'No stack trace',
+      name: error instanceof Error ? error.name : 'Unknown error type',
+    });
     return [];
+  } finally {
+    console.log('=== syncGoogleCalendarEvents function completed ===');
   }
 };
