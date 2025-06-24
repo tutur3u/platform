@@ -27,6 +27,7 @@ export function createPOST(
       const { model = DEFAULT_MODEL_NAME, message } = (await req.json()) as {
         model?: string;
         message?: string;
+        wsId?: string;
       };
 
       if (!message)

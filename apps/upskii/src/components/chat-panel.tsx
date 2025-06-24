@@ -1,5 +1,3 @@
-/* eslint-disable no-unused-vars */
-import { StorageObjectForm } from './ai-chat/file-upload';
 import { ChatModelSelector } from './chat-model-selector';
 import ApiKeyInput from './form-apikey';
 import { PromptForm } from './prompt-form';

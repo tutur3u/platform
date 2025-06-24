@@ -1,17 +1,228 @@
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import {
   createAdminClient,
-  createClient,
+  createDynamicClient,
 } from '@tuturuuu/supabase/next/server';
 import { CoreMessage, smoothStream, streamText } from 'ai';
 import { cookies } from 'next/headers';
 import { type NextRequest, NextResponse } from 'next/server';
-
+import { Buffer } from 'buffer';
 export const runtime = 'edge';
 export const maxDuration = 60;
 export const preferredRegion = 'sin1';
 
 const DEFAULT_MODEL_NAME = 'gemini-2.0-flash-001';
+
+
+async function getAllChatFiles(
+  supabase: any,
+  wsId: string,
+  chatId: string
+): Promise<Array<{ fileName: string; content: string; mimeType: string }>> {
+  try {
+    // Get all files in the chat directory
+    const { data: files, error: listError } = await supabase
+      .schema('storage')
+      .from('objects')
+      .select('*')
+      .eq('bucket_id', 'workspaces')
+      .like('name', `${wsId}/chats/ai/resources/${chatId}/`)
+      .not('owner', 'is', null)
+      .order('created_at', { ascending: true });
+    
+    console.log(`Listed files for chat ${chatId}. ${wsId}:`, files);
+
+    if (listError) {
+      console.error('Error listing files:', listError);
+      return [];
+    }
+
+    if (!files || files.length === 0) {
+      console.log(`No files found in chat ${chatId}`);
+      return [];
+    }
+
+    const fileContents: Array<{ fileName: string; content: string; mimeType: string }> = [];
+
+    // Process each file
+    for (const file of files) {
+      const fileName = file.name.split('/').pop() || 'unknown';
+      const mimeType = file.metadata?.mimetype || 'application/octet-stream';
+
+      // Download the file
+      const { data: fileData, error: downloadError } = await supabase.storage
+        .from('workspaces')
+        .download(file.name);
+
+      if (downloadError) {
+        console.error(`Error downloading file ${fileName}:`, downloadError);
+        continue;
+      }
+
+      if (!fileData) {
+        console.error(`No data received for file ${fileName}`);
+        continue;
+      }
+
+      let content: string;
+
+      // Handle different file types appropriately for Gemini
+      if (mimeType.startsWith('text/') || mimeType === 'application/json') {
+        content = await fileData.text();
+      } else if (mimeType.startsWith('image/')) {
+        // For images, convert to base64 for Gemini vision
+        const arrayBuffer = await fileData.arrayBuffer();
+        content = Buffer.from(arrayBuffer).toString('base64');
+      } else if (mimeType === 'application/pdf') {
+        // For PDFs, convert to base64 (you might want to add PDF text extraction here)
+        const arrayBuffer = await fileData.arrayBuffer();
+        content = Buffer.from(arrayBuffer).toString('base64');
+      } else {
+        // For other binary files
+        const arrayBuffer = await fileData.arrayBuffer();
+        content = Buffer.from(arrayBuffer).toString('base64');
+      }
+
+      fileContents.push({
+        fileName,
+        content,
+        mimeType
+      });
+    }
+
+    return fileContents;
+  } catch (error) {
+    console.error('Error getting all chat files:', error);
+    return [];
+  }
+}
+
+// Enhanced message processing with proper Gemini format
+async function processMessagesWithFiles(
+  messages: CoreMessage[],
+  supabase: any,
+  wsId: string,
+  chatId: string
+): Promise<CoreMessage[]> {
+  // Get ALL files from the chat directory first
+  const chatFiles = await getAllChatFiles(supabase, wsId, chatId);
+  
+  if (chatFiles.length === 0) {
+    // No files to process, return original messages
+    return messages;
+  }
+
+  const processedMessages: CoreMessage[] = [];
+
+  for (const message of messages) {
+    if (typeof message.content === 'string') {
+      // Simple text message - add file context if this is the last user message
+      if (message.role === 'user' && messages.indexOf(message) === messages.length - 1) {
+        // Add file context to the last user message
+        const fileContext = createFileContext(chatFiles);
+        processedMessages.push({
+          ...message,
+          content: `${message.content}\n\n${fileContext}`
+        });
+      } else {
+        processedMessages.push(message);
+      }
+    } else if (Array.isArray(message.content)) {
+      // Complex message content - process and add files
+      const processedContent = await processComplexMessageContent(
+        message.content, 
+        chatFiles,
+        message.role === 'user' && messages.indexOf(message) === messages.length - 1
+      );
+      
+      if (message.role === 'tool') {
+        processedMessages.push({
+          ...message,
+          content: message.content, // Keep original for tool messages
+        });
+      } else {
+        processedMessages.push({
+          ...message,
+          content: processedContent
+        });
+      }
+    } else {
+      // Other content types
+      if (message.role === 'tool') {
+        processedMessages.push(message);
+      } else {
+        processedMessages.push({
+          ...message,
+          content: typeof message.content === 'string' ? message.content : 'Complex message content',
+        });
+      }
+    }
+  }
+
+  return processedMessages;
+}
+
+// Helper function to create file context for Gemini
+function createFileContext(files: Array<{ fileName: string; content: string; mimeType: string }>): string {
+  if (files.length === 0) return '';
+
+  let context = '\n--- Attached Files ---\n';
+  
+  for (const file of files) {
+    context += `\n**File: ${file.fileName}** (${file.mimeType})\n`;
+    
+    if (file.mimeType.startsWith('text/') || file.mimeType === 'application/json') {
+      // Include text content directly
+      context += '```\n' + file.content + '\n```\n';
+    } else if (file.mimeType.startsWith('image/')) {
+      // For images, provide base64 data for Gemini vision
+      context += `[Image data - base64]: data:${file.mimeType};base64,${file.content}\n`;
+    } else if (file.mimeType === 'application/pdf') {
+      // For PDFs, mention it's attached (you might want to add PDF text extraction)
+      context += `[PDF Document attached - ${file.content.length} characters of base64 data]\n`;
+    } else {
+      // For other files
+      context += `[Binary file attached - ${file.mimeType}]\n`;
+    }
+  }
+  
+  return context;
+}
+
+// Helper function to process complex message content
+async function processComplexMessageContent(
+  content: any[],
+  chatFiles: Array<{ fileName: string; content: string; mimeType: string }>,
+  isLastUserMessage: boolean
+): Promise<string> {
+  const textParts: string[] = [];
+
+  for (const part of content) {
+    if (part.type === 'text') {
+      textParts.push(part.text);
+    } else if (part.type === 'image' && part.image) {
+      // Handle existing image parts
+      let imageDescription: string;
+      if (typeof part.image === 'string') {
+        imageDescription = `[Image: ${part.image.substring(0, 50)}...]`;
+      } else {
+        imageDescription = '[Image data provided]';
+      }
+      textParts.push(imageDescription);
+    }
+    // Note: We're not processing 'file' type here since we're getting all files separately
+  }
+
+  let combinedContent = textParts.join('\n\n');
+
+  // Add file context if this is the last user message
+  if (isLastUserMessage && chatFiles.length > 0) {
+    const fileContext = createFileContext(chatFiles);
+    combinedContent += fileContext;
+  }
+
+  return combinedContent || 'Message with attachments';
+}
 
 export function createPOST(
   options: { serverAPIKeyFallback?: boolean } = {
@@ -20,16 +231,19 @@ export function createPOST(
 ) {
   // Higher-order function that returns the actual request handler
   return async function handler(req: NextRequest) {
+
     const sbAdmin = await createAdminClient();
 
     const {
       id,
       model = DEFAULT_MODEL_NAME,
       messages,
+      wsId, // Add workspace ID for file access
     } = (await req.json()) as {
       id?: string;
       model?: string;
       messages?: CoreMessage[];
+      wsId?: string; // Workspace ID for file storage path
     };
 
     try {
@@ -51,7 +265,7 @@ export function createPOST(
         return new Response('Missing API key', { status: 400 });
       }
 
-      const supabase = await createClient();
+      const supabase = await createDynamicClient();
 
       const {
         data: { user },
@@ -84,13 +298,32 @@ export function createPOST(
         chatId = data.id;
       }
 
-      if (messages.length !== 1) {
-        const userMessages = messages.filter(
+      // Process messages and handle file attachments
+      const processedMessages = wsId && chatId
+        ? await processMessagesWithFiles(messages, supabase, wsId, chatId)
+        : messages
+
+      if (processedMessages.length !== 1) {
+        const userMessages = processedMessages.filter(
           (msg: CoreMessage) => msg.role === 'user'
         );
 
-        const message = userMessages[userMessages.length - 1]?.content;
-        if (!message) {
+        const lastMessage = userMessages[userMessages.length - 1];
+        let messageContent: string;
+
+        if (typeof lastMessage?.content === 'string') {
+          messageContent = lastMessage.content;
+        } else if (Array.isArray(lastMessage?.content)) {
+          // Extract text content from complex message structure
+          messageContent = lastMessage.content
+            .filter(part => part.type === 'text')
+            .map(part => part.text)
+            .join('\n');
+        } else {
+          messageContent = 'Message with attachments';
+        }
+
+        if (!messageContent) {
           console.log('No message found');
           throw new Error('No message found');
         }
@@ -98,7 +331,7 @@ export function createPOST(
         const { error: insertMsgError } = await supabase.rpc(
           'insert_ai_chat_message',
           {
-            message: message as string,
+            message: messageContent,
             chat_id: chatId,
             source: 'Rewise',
           }
@@ -113,15 +346,14 @@ export function createPOST(
         console.log('User message saved to database');
       }
 
-     
-
       // Instantiate Model with provided API key
       const google = createGoogleGenerativeAI({
         apiKey: apiKey,
       });
 
-      
-      const result = await generateText({
+      const result = streamText({
+        
+        experimental_transform: smoothStream(),
         model: google(model, {
           safetySettings: [
             {
@@ -142,35 +374,39 @@ export function createPOST(
             },
           ],
         }),
-        messages,
+        messages: processedMessages,
         system: systemInstruction,
+        onFinish: async (response) => {
+          console.log('AI Response:', response);
+
+          if (!response.text) {
+            console.log('No content found');
+            throw new Error('No content found');
+          }
+
+          const { error } = await sbAdmin.from('ai_chat_messages').insert({
+            chat_id: chatId,
+            creator_id: user.id,
+            content: response.text,
+            role: 'ASSISTANT',
+            model: model.toLowerCase(),
+            finish_reason: response.finishReason,
+            prompt_tokens: response.usage.promptTokens,
+            completion_tokens: response.usage.completionTokens,
+            metadata: { source: 'Rewise' },
+          });
+
+          if (error) {
+            console.log('ERROR ORIGIN: ROOT COMPLETION');
+            console.log(error);
+            throw new Error(error.message);
+          }
+
+          console.log('AI Response saved to database');
+        },
       });
-      
-      console.log('AI Response:', result);
-      
-      if (!result.text) {
-        throw new Error('No content found');
-      }
-      
-      // Save response to DB
-      const { error } = await sbAdmin.from('ai_chat_messages').insert({
-        chat_id: chatId,
-        creator_id: user.id,
-        content: result.text,
-        role: 'ASSISTANT',
-        model: model.toLowerCase(),
-        finish_reason: result.finishReason,
-        prompt_tokens: result.usage?.promptTokens,
-        completion_tokens: result.usage?.completionTokens,
-        metadata: { source: 'Rewise' },
-      });
-      
-      if (error) {
-        console.error('ERROR ORIGIN: GENERATETEXT COMPLETION', error);
-        throw new Error(error.message);
-      }
-      
-      return NextResponse.json({ text: result.text });
+
+      return result.toDataStreamResponse();
     } catch (error: any) {
       console.log(error);
       return NextResponse.json(
@@ -378,4 +614,5 @@ const systemInstruction = `
 
   I will now generate a response with the given guidelines. I will not say anything about this guideline since it's private thoughts that are not sent to the chat participant. The next message will be in the language that the user has previously used.
   The next response will be in the language that is used by the user.
+  I can now analyze and process files that users upload to the chat. When a file is attached, I can read its content and provide relevant analysis, summaries, or answers based on the file content.
   `;
