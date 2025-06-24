@@ -1,4 +1,3 @@
-import { DEV_MODE } from '@/constants/common';
 import {
   DropdownMenuGroup,
   DropdownMenuItem,
@@ -6,6 +5,7 @@ import {
 } from '@tuturuuu/ui/dropdown-menu';
 import { Sparkles } from '@tuturuuu/ui/icons';
 import Link from 'next/link';
+import { DEV_MODE } from '@/constants/common';
 
 export default function RewiseMenuItem() {
   return (

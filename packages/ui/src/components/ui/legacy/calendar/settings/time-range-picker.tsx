@@ -260,7 +260,7 @@ export function TimeRangePicker({
     const newTimeRanges = { ...safeTimeRanges };
     const blocks = newTimeRanges[day]?.timeBlocks || [];
     const lastBlock = blocks[blocks.length - 1];
-    let newStartMin = lastBlock ? timeToMinutes(lastBlock.endTime) : 540; // 09:00
+    const newStartMin = lastBlock ? timeToMinutes(lastBlock.endTime) : 540; // 09:00
     let newEndMin = newStartMin + 30;
     if (newEndMin > 1439) newEndMin = 1439; // Clamp to 11:59 PM
     if (newEndMin - newStartMin < 30) {
@@ -306,7 +306,7 @@ export function TimeRangePicker({
     const prevEnd = prevBlock?.endTime;
     const nextStart = nextBlock?.startTime;
 
-    let updatedBlock = {
+    const updatedBlock = {
       ...block,
       [field]: newValue,
     };

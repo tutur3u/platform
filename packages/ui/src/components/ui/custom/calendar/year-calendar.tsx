@@ -1,10 +1,10 @@
 'use client';
 
-import { Calendar } from './core';
-import { WorkspaceUserAttendance } from './utils';
 import { Button } from '@tuturuuu/ui/button';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useState } from 'react';
+import { Calendar } from './core';
+import type { WorkspaceUserAttendance } from './utils';
 
 interface YearCalendarProps {
   locale: string;

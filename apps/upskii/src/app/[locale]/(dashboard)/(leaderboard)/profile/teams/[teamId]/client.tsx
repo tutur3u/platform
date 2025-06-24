@@ -1,8 +1,7 @@
 'use client';
 
-import { TeamActionDialog } from './dialog-content';
 import { createClient } from '@tuturuuu/supabase/next/client';
-import { SupabaseUser } from '@tuturuuu/supabase/next/user';
+import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
@@ -26,9 +25,10 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { generateFunName, getInitials } from '@tuturuuu/utils/name-helper';
 import { motion } from 'framer-motion';
-import { useLocale } from 'next-intl';
 import Link from 'next/link';
+import { useLocale } from 'next-intl';
 import { useEffect, useState } from 'react';
+import { TeamActionDialog } from './dialog-content';
 
 export interface TeamData {
   id: string;

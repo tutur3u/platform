@@ -2,7 +2,7 @@
 
 import { Card } from '@tuturuuu/ui/card';
 import { motion } from 'framer-motion';
-import React from 'react';
+import type React from 'react';
 
 interface FamiFeatureProps {
   icon: React.ReactNode;

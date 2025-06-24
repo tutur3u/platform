@@ -1,7 +1,11 @@
 'use client';
 
-import { Row } from '@tanstack/react-table';
-import { PlatformUser, User, UserPrivateDetails } from '@tuturuuu/types/db';
+import type { Row } from '@tanstack/react-table';
+import type {
+  PlatformUser,
+  User,
+  UserPrivateDetails,
+} from '@tuturuuu/types/db';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -21,8 +25,8 @@ import {
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import { Ellipsis, ExternalLink } from '@tuturuuu/ui/icons';
-import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
 interface NovaUserRowActionsProps {

@@ -1,7 +1,7 @@
 'use server';
 
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import {
+import type {
   NovaChallengeCriteria,
   NovaSubmission,
   NovaSubmissionCriteria,

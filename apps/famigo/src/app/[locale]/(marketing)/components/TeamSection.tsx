@@ -1,9 +1,9 @@
 'use client';
 
-import TeamMember from './TeamMember';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Users } from '@tuturuuu/ui/icons';
 import { motion } from 'framer-motion';
+import TeamMember from './TeamMember';
 
 const TeamSection = () => {
   const teamMembers = [

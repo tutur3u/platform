@@ -1,4 +1,4 @@
-import { CookieOptions } from '@supabase/ssr';
+import type { CookieOptions } from '@supabase/ssr';
 
 export type SupabaseCookie = {
   name: string;

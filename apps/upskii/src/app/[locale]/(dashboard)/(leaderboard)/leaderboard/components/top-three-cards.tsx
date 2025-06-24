@@ -1,14 +1,14 @@
 'use client';
 
-import { LeaderboardEntry } from './leaderboard';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { ExternalLink, Medal, Sparkles, Trophy } from '@tuturuuu/ui/icons';
 import { cn } from '@tuturuuu/utils/format';
-import { type Variants, motion, useReducedMotion } from 'framer-motion';
-import { useTranslations } from 'next-intl';
+import { motion, useReducedMotion, type Variants } from 'framer-motion';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
+import type { LeaderboardEntry } from './leaderboard';
 
 interface RandomValues {
   width: number;

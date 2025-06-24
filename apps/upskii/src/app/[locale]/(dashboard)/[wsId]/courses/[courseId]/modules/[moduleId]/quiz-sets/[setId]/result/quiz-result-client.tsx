@@ -1,18 +1,18 @@
 'use client';
 
-import ShowAttemptDetailSection, {
-  AttemptDetailDTO,
-} from '@/app/[locale]/(dashboard)/[wsId]/courses/[courseId]/modules/[moduleId]/quiz-sets/[setId]/result/display-results/show-attempt-detail-section';
-import ShowResultSummarySection from '@/app/[locale]/(dashboard)/[wsId]/courses/[courseId]/modules/[moduleId]/quiz-sets/[setId]/result/display-results/show-result-summary-section';
-import AttemptSummaryView, {
-  AttemptSummaryDTO,
-} from '@/app/[locale]/(dashboard)/[wsId]/courses/[courseId]/modules/[moduleId]/quiz-sets/[setId]/result/display-summary-attempts/attempt-summary-view';
 import { Alert, AlertDescription } from '@tuturuuu/ui/alert';
 import { Button } from '@tuturuuu/ui/button';
 import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
-import { useTranslations } from 'next-intl';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
+import ShowAttemptDetailSection, {
+  type AttemptDetailDTO,
+} from '@/app/[locale]/(dashboard)/[wsId]/courses/[courseId]/modules/[moduleId]/quiz-sets/[setId]/result/display-results/show-attempt-detail-section';
+import ShowResultSummarySection from '@/app/[locale]/(dashboard)/[wsId]/courses/[courseId]/modules/[moduleId]/quiz-sets/[setId]/result/display-results/show-result-summary-section';
+import AttemptSummaryView, {
+  type AttemptSummaryDTO,
+} from '@/app/[locale]/(dashboard)/[wsId]/courses/[courseId]/modules/[moduleId]/quiz-sets/[setId]/result/display-summary-attempts/attempt-summary-view';
 
 // const dummyAttemptDetail: AttemptDetailDTO = {
 //   attemptId: "att_123456",

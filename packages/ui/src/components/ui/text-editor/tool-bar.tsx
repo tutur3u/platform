@@ -1,4 +1,4 @@
-import { Editor } from '@tiptap/react';
+import type { Editor } from '@tiptap/react';
 import { Button } from '@tuturuuu/ui/button';
 import {
   AlignCenter,

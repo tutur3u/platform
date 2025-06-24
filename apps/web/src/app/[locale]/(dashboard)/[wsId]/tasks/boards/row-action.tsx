@@ -1,8 +1,7 @@
 'use client';
 
-import { TaskBoardForm } from './form';
-import { Row } from '@tanstack/react-table';
-import { TaskBoard } from '@tuturuuu/types/primitives/TaskBoard';
+import type { Row } from '@tanstack/react-table';
+import type { TaskBoard } from '@tuturuuu/types/primitives/TaskBoard';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,10 +23,11 @@ import {
 } from '@tuturuuu/ui/dropdown-menu';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Ellipsis, Eye } from '@tuturuuu/ui/icons';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { TaskBoardForm } from './form';
 
 interface ProjectRowActionsProps {
   row: Row<TaskBoard>;

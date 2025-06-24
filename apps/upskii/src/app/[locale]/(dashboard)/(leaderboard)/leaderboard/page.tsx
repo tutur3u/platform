@@ -1,12 +1,12 @@
-import LeaderboardClient from './client';
-import { BasicInformation } from './components/basic-information-component';
-import LeaderboardFallback from './fallback';
 import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import { generateFunName } from '@tuturuuu/utils/name-helper';
 import { Suspense } from 'react';
+import LeaderboardClient from './client';
+import type { BasicInformation } from './components/basic-information-component';
+import LeaderboardFallback from './fallback';
 
 export const revalidate = 60;
 
@@ -90,9 +90,9 @@ async function fetchLeaderboard(locale: string, page: number = 1) {
   const sbAdmin = await createAdminClient();
 
   // Fetch user sessions data
-  const { data: sessionsData, error: sessionError } = await sbAdmin.from(
-    'nova_sessions'
-  ).select(`
+  const { data: sessionsData, error: sessionError } = await sbAdmin
+    .from('nova_sessions')
+    .select(`
     id,
     user_id,
     challenge_id,
@@ -112,9 +112,9 @@ async function fetchLeaderboard(locale: string, page: number = 1) {
   }
 
   // Fetch all scores from submissions with more detail
-  const { data: submissionsData, error: submissionsError } = await sbAdmin.from(
-    'nova_submissions_with_scores'
-  ).select(`
+  const { data: submissionsData, error: submissionsError } = await sbAdmin
+    .from('nova_submissions_with_scores')
+    .select(`
     user_id,
     problem_id,
     total_score,

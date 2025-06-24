@@ -196,7 +196,7 @@ export function RaceDetails({
                         </h4>
                         <div className="flex flex-wrap gap-1">
                           {history.map((race, idx) => {
-                            let badgeClass =
+                            const badgeClass =
                               race.raceType === 'preliminary'
                                 ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300'
                                 : race.raceType === 'championship'

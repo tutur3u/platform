@@ -1,10 +1,10 @@
-import useEmail from '@/hooks/useEmail';
-import { PostEmail } from '@tuturuuu/types/primitives/post-email';
+import type { PostEmail } from '@tuturuuu/types/primitives/post-email';
 import { Button } from '@tuturuuu/ui/button';
 import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
 import { CircleAlert, CircleSlash, MailCheck, Send } from '@tuturuuu/ui/icons';
 import dayjs from 'dayjs';
 import { useTranslations } from 'next-intl';
+import useEmail from '@/hooks/useEmail';
 
 export default function RowActions({ data }: { data: PostEmail }) {
   const t = useTranslations();

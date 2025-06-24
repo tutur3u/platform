@@ -1,7 +1,7 @@
-import { ExtendedNovaSubmission } from '../types';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
+import type { ExtendedNovaSubmission } from '../types';
 import CriteriaEvaluation from './CriteriaEvaluation';
 import TestCaseEvaluation from './TestCaseEvaluation';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 
 interface SubmissionDetailsProps {
   submission: ExtendedNovaSubmission;

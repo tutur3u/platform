@@ -15,8 +15,8 @@ import { ArrowLeft, ArrowRight, Building2, Loader2 } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { motion } from 'framer-motion';
-import { useTranslations } from 'next-intl';
 import Image from 'next/image';
+import { useTranslations } from 'next-intl';
 import { z } from 'zod';
 
 const FormSchema = z.object({

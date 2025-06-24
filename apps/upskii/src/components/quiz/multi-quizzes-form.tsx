@@ -1,7 +1,5 @@
 'use client';
 
-import PasteConfirmModal from '../../app/[locale]/(dashboard)/[wsId]/quiz-sets/[setId]/paste-confirm-modal';
-import QuizAddCard from '../../app/[locale]/(dashboard)/[wsId]/quiz-sets/[setId]/quiz-add-card';
 import type { WorkspaceQuiz } from '@tuturuuu/types/db';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
@@ -11,10 +9,12 @@ import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { Separator } from '@tuturuuu/ui/separator';
 import { Copy, Loader2, Plus, Save } from 'lucide-react';
-import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import * as z from 'zod';
+import PasteConfirmModal from '../../app/[locale]/(dashboard)/[wsId]/quiz-sets/[setId]/paste-confirm-modal';
+import QuizAddCard from '../../app/[locale]/(dashboard)/[wsId]/quiz-sets/[setId]/quiz-add-card';
 
 interface Props {
   wsId: string;

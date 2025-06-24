@@ -1,8 +1,5 @@
 'use client';
 
-import { LanguageWrapper } from '../../(dashboard)/_components/language-wrapper';
-import { SystemLanguageWrapper } from '../../(dashboard)/_components/system-language-wrapper';
-import { ThemeDropdownToggle } from '../../(dashboard)/_components/theme-dropdown-toggle';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
@@ -23,8 +20,11 @@ import {
 } from '@tuturuuu/ui/dropdown-menu';
 import { Globe, Settings, User } from '@tuturuuu/ui/icons';
 import { getInitials } from '@tuturuuu/utils/name-helper';
-import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
+import { LanguageWrapper } from '../../(dashboard)/_components/language-wrapper';
+import { SystemLanguageWrapper } from '../../(dashboard)/_components/system-language-wrapper';
+import { ThemeDropdownToggle } from '../../(dashboard)/_components/theme-dropdown-toggle';
 
 interface OnboardingSettingsProps {
   user: WorkspaceUser | null;

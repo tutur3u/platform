@@ -1,9 +1,9 @@
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import type { Timezone } from '@tuturuuu/types/primitives/Timezone';
+import { notFound } from 'next/navigation';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { timezoneColumns } from '@/data/columns/timezones';
 import timezones from '@/data/timezones.json';
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { Timezone } from '@tuturuuu/types/primitives/Timezone';
-import { notFound } from 'next/navigation';
 
 interface Props {
   searchParams: Promise<{
@@ -36,7 +36,12 @@ async function getData({
   q,
   page = '1',
   pageSize = '10',
-}: { q?: string; page?: string; pageSize?: string; retry?: boolean } = {}) {
+}: {
+  q?: string;
+  page?: string;
+  pageSize?: string;
+  retry?: boolean;
+} = {}) {
   const supabaseAdmin = await createAdminClient();
   if (!supabaseAdmin) notFound();
 

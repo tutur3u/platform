@@ -1,5 +1,5 @@
-import { getTaskCompletionDate } from '../utils/taskHelpers';
 import { useMemo } from 'react';
+import { getTaskCompletionDate } from '../utils/taskHelpers';
 
 interface Task {
   id: string;

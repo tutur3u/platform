@@ -1,9 +1,3 @@
-import {
-  MAIN_EVALUATION_PROMPT,
-  OUTPUT_COMPARISON_PROMPT,
-  PLAGIARISM_DETECTION_PROMPT,
-  TEST_CASE_EVALUATION_PROMPT,
-} from './prompts';
 import { google } from '@ai-sdk/google';
 import type { SafetySetting } from '@google/generative-ai';
 import type {
@@ -14,11 +8,17 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
-import { NovaProblem } from '@tuturuuu/types/db';
+import type { NovaProblem } from '@tuturuuu/types/db';
 import { checkPermission } from '@tuturuuu/utils/nova/submissions/check-permission';
 import { generateObject, streamObject } from 'ai';
-import { type NextRequest } from 'next/server';
+import type { NextRequest } from 'next/server';
 import { z } from 'zod';
+import {
+  MAIN_EVALUATION_PROMPT,
+  OUTPUT_COMPARISON_PROMPT,
+  PLAGIARISM_DETECTION_PROMPT,
+  TEST_CASE_EVALUATION_PROMPT,
+} from './prompts';
 
 export const runtime = 'edge';
 export const maxDuration = 60;

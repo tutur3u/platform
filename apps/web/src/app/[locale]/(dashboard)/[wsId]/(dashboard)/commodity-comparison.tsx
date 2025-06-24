@@ -133,7 +133,7 @@ const CommodityComparison = ({
 
     // Calculate volatility (standard deviation)
     const volatility = Math.sqrt(
-      values.reduce((a, b) => a + Math.pow(b - avg, 2), 0) / values.length
+      values.reduce((a, b) => a + (b - avg) ** 2, 0) / values.length
     );
 
     // Calculate trend
@@ -170,7 +170,7 @@ const CommodityComparison = ({
       const y = values[i];
       if (typeof y === 'number') {
         numerator += (x - xMean) * (y - yMean);
-        denominator += Math.pow(x - xMean, 2);
+        denominator += (x - xMean) ** 2;
       }
     }
 

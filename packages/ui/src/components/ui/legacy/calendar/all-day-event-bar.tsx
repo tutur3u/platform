@@ -1,6 +1,4 @@
-import { useCalendar } from '../../../../hooks/use-calendar';
-import { MIN_COLUMN_WIDTH } from './config';
-import { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
+import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import { useCalendarSync } from '@tuturuuu/ui/hooks/use-calendar-sync';
 import { getEventStyles } from '@tuturuuu/utils/color-helper';
 import { cn } from '@tuturuuu/utils/format';
@@ -9,6 +7,8 @@ import isBetween from 'dayjs/plugin/isBetween';
 import timezone from 'dayjs/plugin/timezone';
 import { Calendar, ChevronDown, ChevronUp } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import { useCalendar } from '../../../../hooks/use-calendar';
+import { MIN_COLUMN_WIDTH } from './config';
 
 dayjs.extend(isBetween);
 dayjs.extend(timezone);

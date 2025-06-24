@@ -1,6 +1,6 @@
 'use client';
 
-import { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
+import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
 

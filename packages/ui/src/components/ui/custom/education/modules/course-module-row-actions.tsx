@@ -1,7 +1,7 @@
 'use client';
 
-import { Row } from '@tanstack/react-table';
-import { WorkspaceCourseModule } from '@tuturuuu/types/db';
+import type { Row } from '@tanstack/react-table';
+import type { WorkspaceCourseModule } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
 import { CourseModuleForm } from '@tuturuuu/ui/custom/education/modules/course-module-form';
 import ModifiableDialogTrigger from '@tuturuuu/ui/custom/modifiable-dialog-trigger';
@@ -14,8 +14,8 @@ import {
 } from '@tuturuuu/ui/dropdown-menu';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Ellipsis } from '@tuturuuu/ui/icons';
-import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
 interface WorkspaceCourseModuleRowActionsProps {

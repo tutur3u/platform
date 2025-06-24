@@ -1,8 +1,8 @@
+import type { AuditLog } from '@tuturuuu/types/primitives/audit-log';
+import type { User } from '@tuturuuu/types/primitives/User';
+import useSWR from 'swr';
 import AuditDescription from '../audit/AuditDescription';
 import AuditLabel from '../audit/AuditLabel';
-import { User } from '@tuturuuu/types/primitives/User';
-import { AuditLog } from '@tuturuuu/types/primitives/audit-log';
-import useSWR from 'swr';
 
 interface Props {
   data: AuditLog;

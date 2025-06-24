@@ -1,11 +1,3 @@
-import { CalendarHeader } from './calendar-header';
-import { CalendarViewWithTrail } from './calendar-view-with-trail';
-import { CreateEventButton } from './create-event-button';
-import { EventModal } from './event-modal';
-import { MonthCalendar } from './month-calendar';
-import { SettingsButton } from './settings-button';
-import type { CalendarSettings } from './settings/settings-context';
-import { WeekdayBar } from './weekday-bar';
 import type {
   Workspace,
   WorkspaceCalendarGoogleToken,
@@ -16,6 +8,14 @@ import type { CalendarView } from '@tuturuuu/ui/hooks/use-view-transition';
 import { useViewTransition } from '@tuturuuu/ui/hooks/use-view-transition';
 import { cn } from '@tuturuuu/utils/format';
 import { useCallback, useEffect, useState } from 'react';
+import { CalendarHeader } from './calendar-header';
+import { CalendarViewWithTrail } from './calendar-view-with-trail';
+import { CreateEventButton } from './create-event-button';
+import { EventModal } from './event-modal';
+import { MonthCalendar } from './month-calendar';
+import type { CalendarSettings } from './settings/settings-context';
+import { SettingsButton } from './settings-button';
+import { WeekdayBar } from './weekday-bar';
 
 export const CalendarContent = ({
   t,

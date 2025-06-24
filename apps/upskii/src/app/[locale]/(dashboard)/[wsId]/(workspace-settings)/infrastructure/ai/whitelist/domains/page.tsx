@@ -1,13 +1,13 @@
-import WhitelistDomainClient from './domain-client-page';
-import { getAIWhitelistDomainColumns } from './domain-columns';
-import { CustomDataTable } from '@/components/custom-data-table';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
-import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
+import { CustomDataTable } from '@/components/custom-data-table';
+import WhitelistDomainClient from './domain-client-page';
+import { getAIWhitelistDomainColumns } from './domain-columns';
 
 interface SearchParams {
   q?: string;

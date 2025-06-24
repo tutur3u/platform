@@ -1,13 +1,6 @@
 'use client';
 
-import InviteMembersMenuItem from '../../../../components/invite-members-menu-item';
-import UserSettingsDialog from '../../../../components/settings-dialog';
-import { LanguageWrapper } from '@/app/[locale]/(dashboard)/_components/language-wrapper';
-import { LogoutDropdownItem } from '@/app/[locale]/(dashboard)/_components/logout-dropdown-item';
-import { SystemLanguageWrapper } from '@/app/[locale]/(dashboard)/_components/system-language-wrapper';
-import { ThemeDropdownItems } from '@/app/[locale]/(dashboard)/_components/theme-dropdown-items';
-import UserPresenceIndicator from '@/components/user-presence-indicator';
-import { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
+import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Dialog } from '@tuturuuu/ui/dialog';
 import {
@@ -27,9 +20,16 @@ import { useIsMobile } from '@tuturuuu/ui/hooks/use-mobile';
 import { Globe, Palette, Settings, User } from '@tuturuuu/ui/icons';
 import { cn } from '@tuturuuu/utils/format';
 import { getInitials } from '@tuturuuu/utils/name-helper';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { LanguageWrapper } from '@/app/[locale]/(dashboard)/_components/language-wrapper';
+import { LogoutDropdownItem } from '@/app/[locale]/(dashboard)/_components/logout-dropdown-item';
+import { SystemLanguageWrapper } from '@/app/[locale]/(dashboard)/_components/system-language-wrapper';
+import { ThemeDropdownItems } from '@/app/[locale]/(dashboard)/_components/theme-dropdown-items';
+import UserPresenceIndicator from '@/components/user-presence-indicator';
+import InviteMembersMenuItem from '../../../../components/invite-members-menu-item';
+import UserSettingsDialog from '../../../../components/settings-dialog';
 
 export default function UserNavClient({
   user,

@@ -1,5 +1,13 @@
 'use client';
 
+import type { Table } from '@tanstack/react-table';
+import { cn } from '@tuturuuu/utils/format';
+import {
+  ArrowLeftToLine,
+  ArrowRightToLine,
+  ChevronLeft,
+  ChevronRight,
+} from 'lucide-react';
 import { Button } from '../../button';
 import {
   Select,
@@ -9,14 +17,6 @@ import {
   SelectValue,
 } from '../../select';
 import { Separator } from '../../separator';
-import { Table } from '@tanstack/react-table';
-import { cn } from '@tuturuuu/utils/format';
-import {
-  ArrowLeftToLine,
-  ArrowRightToLine,
-  ChevronLeft,
-  ChevronRight,
-} from 'lucide-react';
 
 interface DataTablePaginationProps<TData> {
   table?: Table<TData>;

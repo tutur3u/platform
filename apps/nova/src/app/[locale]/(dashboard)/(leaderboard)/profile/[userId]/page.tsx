@@ -1,9 +1,9 @@
-import UserProfileClient, { ProfileData } from './client';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { generateFunName } from '@tuturuuu/utils/name-helper';
-import { Metadata } from 'next';
-import { getLocale } from 'next-intl/server';
+import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { getLocale } from 'next-intl/server';
+import UserProfileClient, { type ProfileData } from './client';
 
 // Dynamic metadata for profile pages
 export async function generateMetadata({

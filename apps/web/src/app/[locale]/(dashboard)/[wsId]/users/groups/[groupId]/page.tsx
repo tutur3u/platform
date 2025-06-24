@@ -1,14 +1,7 @@
-import { getUserColumns } from '../../database/columns';
-import { Filter } from '../../filters';
-import ExternalGroupMembers from './external-group-members';
-import GroupMemberForm from './form';
-import PostsClient from './posts-client';
-import GroupSchedule from './schedule';
-import { CustomDataTable } from '@/components/custom-data-table';
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
-import { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
-import { WorkspaceUserField } from '@tuturuuu/types/primitives/WorkspaceUserField';
+import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
+import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
+import type { WorkspaceUserField } from '@tuturuuu/types/primitives/WorkspaceUserField';
 import { Button } from '@tuturuuu/ui/button';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import {
@@ -21,9 +14,16 @@ import {
 } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import { cn } from '@tuturuuu/utils/format';
-import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
+import { CustomDataTable } from '@/components/custom-data-table';
+import { getUserColumns } from '../../database/columns';
+import { Filter } from '../../filters';
+import ExternalGroupMembers from './external-group-members';
+import GroupMemberForm from './form';
+import PostsClient from './posts-client';
+import GroupSchedule from './schedule';
 
 interface SearchParams {
   q?: string;

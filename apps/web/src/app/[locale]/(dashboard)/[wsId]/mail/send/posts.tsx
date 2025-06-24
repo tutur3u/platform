@@ -1,12 +1,12 @@
 'use client';
 
-import UserGroupPosts, {
-  UserGroupPost,
-} from '../../users/groups/[groupId]/posts';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { Separator } from '@tuturuuu/ui/separator';
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import UserGroupPosts, {
+  type UserGroupPost,
+} from '../../users/groups/[groupId]/posts';
 
 export default function MailPosts({
   wsId,

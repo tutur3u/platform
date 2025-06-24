@@ -1,5 +1,5 @@
-import { checkEnvVariables } from '../common';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { checkEnvVariables } from '../common';
 
 describe('common', () => {
   const originalEnv = process.env;

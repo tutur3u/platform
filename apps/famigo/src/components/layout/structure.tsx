@@ -1,12 +1,12 @@
 'use client';
 
-import { Nav } from './nav';
 import { LogoTitle } from '@tuturuuu/ui/custom/logo-title';
 import { Structure as BaseStructure } from '@tuturuuu/ui/custom/structure';
 import { cn } from '@tuturuuu/utils/format';
 import Image from 'next/image';
 import Link from 'next/link';
-import { ReactNode, useState } from 'react';
+import { type ReactNode, useState } from 'react';
+import { Nav } from './nav';
 
 interface NavItem {
   name: string;

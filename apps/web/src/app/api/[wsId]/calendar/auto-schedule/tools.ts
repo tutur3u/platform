@@ -315,9 +315,9 @@ function solveConflictsCompletely(
   console.log('[CONFLICT-SOLVER] Starting complete conflict resolution');
 
   // Deep clone events to avoid mutations during processing
-  let workingEvents = [...allEvents];
+  const workingEvents = [...allEvents];
   const resolutions: OptimizationResult[] = [];
-  let maxAttempts = 100; // Prevent infinite loops
+  const maxAttempts = 100; // Prevent infinite loops
   let attempts = 0;
 
   while (attempts < maxAttempts) {
@@ -508,7 +508,7 @@ function tryMoveToSameDay(
   const dayEnd = new Date(eventDate);
   dayEnd.setHours(businessHours.end, 0, 0, 0);
 
-  let currentSlot = new Date(dayStart);
+  const currentSlot = new Date(dayStart);
 
   while (currentSlot < dayEnd) {
     const slotEnd = new Date(currentSlot.getTime() + eventDuration);
@@ -647,7 +647,7 @@ function findNextAvailableSlot(
   searchStart.setDate(searchStart.getDate() + 1);
   searchStart.setHours(9, 0, 0, 0);
 
-  let currentTime = new Date(searchStart);
+  const currentTime = new Date(searchStart);
 
   // Search for up to 30 days
   for (let day = 0; day < 30; day++) {
@@ -854,7 +854,7 @@ function repackEventsSequentially(
   }
 
   // Lay out the events from the bins into the calendar timeline.
-  let cursorTime = new Date(repackStartTime);
+  const cursorTime = new Date(repackStartTime);
 
   // If starting outside active hours, move to the next day's start.
   if (

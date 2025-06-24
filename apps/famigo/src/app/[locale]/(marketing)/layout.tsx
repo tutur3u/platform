@@ -1,5 +1,5 @@
+import type React from 'react';
 import Navbar from './navbar';
-import React from 'react';
 
 interface LayoutProps {
   children: React.ReactNode;

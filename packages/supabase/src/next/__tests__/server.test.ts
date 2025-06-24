@@ -1,11 +1,11 @@
+import { createServerClient } from '@supabase/ssr';
+import { cookies } from 'next/headers';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   createAdminClient,
   createClient,
   createDynamicClient,
 } from '../server';
-import { createServerClient } from '@supabase/ssr';
-import { cookies } from 'next/headers';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock dependencies
 vi.mock('@supabase/ssr', () => ({

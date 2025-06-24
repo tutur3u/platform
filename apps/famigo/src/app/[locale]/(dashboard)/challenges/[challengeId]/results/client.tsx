@@ -1,8 +1,5 @@
 'use client';
 
-import { fetchAllProblems, fetchSessionDetails } from './actions';
-import ProblemCard from './components/ProblemCard';
-import SessionCard from './components/SessionCard';
 import {
   Accordion,
   AccordionContent,
@@ -38,6 +35,9 @@ import {
 import { formatDistanceToNow } from 'date-fns';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { fetchAllProblems, fetchSessionDetails } from './actions';
+import ProblemCard from './components/ProblemCard';
+import SessionCard from './components/SessionCard';
 
 // Maximum score constant - each problem is worth 10 points
 const MAX_SCORE_PER_PROBLEM = 10;

@@ -4,8 +4,8 @@ import type { WorkspaceCourse } from '@tuturuuu/types/db';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { BookOpen, Layers } from '@tuturuuu/ui/icons';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 
 interface CourseCardViewProps {
   courses: (WorkspaceCourse & {

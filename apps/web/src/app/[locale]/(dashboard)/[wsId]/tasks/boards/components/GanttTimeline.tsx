@@ -1,6 +1,5 @@
 'use client';
 
-import { getStatusColor } from '../utils/taskHelpers';
 import { Badge } from '@tuturuuu/ui/badge';
 import {
   Collapsible,
@@ -9,6 +8,7 @@ import {
 } from '@tuturuuu/ui/collapsible';
 import { ChevronDown } from '@tuturuuu/ui/icons';
 import { cn } from '@tuturuuu/utils/format';
+import { getStatusColor } from '../utils/taskHelpers';
 
 interface AnalyticsFilters {
   timeView: 'week' | 'month' | 'year';

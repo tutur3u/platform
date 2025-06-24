@@ -1,7 +1,7 @@
-import type { Horse } from './types';
 import { Card } from '@tuturuuu/ui/card';
 import { Progress } from '@tuturuuu/ui/progress';
 import { motion } from 'framer-motion';
+import type { Horse } from './types';
 
 interface CurrentStandingsProps {
   horses: Horse[];

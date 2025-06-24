@@ -1,7 +1,6 @@
 'use client';
 
-import { WorkspaceApprovalRequest } from './approvals-table';
-import { Row } from '@tanstack/react-table';
+import type { Row } from '@tanstack/react-table';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
@@ -38,6 +37,7 @@ import moment from 'moment';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import type { WorkspaceApprovalRequest } from './approvals-table';
 
 interface ApprovalRowActionsProps {
   row: Row<WorkspaceApprovalRequest>;

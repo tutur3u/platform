@@ -14,7 +14,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@tuturuuu/ui/form';
-import { UseFormReturn } from '@tuturuuu/ui/hooks/use-form';
+import type { UseFormReturn } from '@tuturuuu/ui/hooks/use-form';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import {
   Check,

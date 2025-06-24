@@ -1,7 +1,7 @@
-import { CustomTldraw } from './custom-tldraw';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { notFound } from 'next/navigation';
-import { TLStoreSnapshot } from 'tldraw';
+import type { TLStoreSnapshot } from 'tldraw';
+import { CustomTldraw } from './custom-tldraw';
 
 interface TLDrawPageProps {
   params: Promise<{ wsId: string; boardId: string }>;

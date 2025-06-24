@@ -1,8 +1,8 @@
-import { CrawlerContent } from './crawler-content';
 import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import { CrawlerContent } from './crawler-content';
 
 interface Props {
   params: Promise<{

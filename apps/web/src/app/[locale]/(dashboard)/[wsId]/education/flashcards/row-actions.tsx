@@ -1,8 +1,7 @@
 'use client';
 
-import WorkspaceFlashcardForm from './form';
-import { Row } from '@tanstack/react-table';
-import { WorkspaceFlashcard } from '@tuturuuu/types/db';
+import type { Row } from '@tanstack/react-table';
+import type { WorkspaceFlashcard } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
 import ModifiableDialogTrigger from '@tuturuuu/ui/custom/modifiable-dialog-trigger';
 import {
@@ -14,9 +13,10 @@ import {
 } from '@tuturuuu/ui/dropdown-menu';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Ellipsis } from '@tuturuuu/ui/icons';
-import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import WorkspaceFlashcardForm from './form';
 
 interface WorkspaceFlashcardRowActionsProps {
   row: Row<WorkspaceFlashcard>;

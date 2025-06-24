@@ -1,9 +1,9 @@
 'use client';
 
-import { MonthView } from './month-view';
-import { WorkspaceUserAttendance } from './utils';
-import { YearView } from './year-view';
 import { useEffect, useState } from 'react';
+import { MonthView } from './month-view';
+import type { WorkspaceUserAttendance } from './utils';
+import { YearView } from './year-view';
 
 interface CalendarProps {
   locale: string;

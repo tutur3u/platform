@@ -1,7 +1,5 @@
 'use client';
 
-import { CsvCrawler } from './crawlers/csv-crawler';
-import { ExcelCrawler } from './crawlers/excel-crawler';
 import { useQueryClient } from '@tanstack/react-query';
 import type { WorkspaceDataset } from '@tuturuuu/types/db';
 import { Alert, AlertDescription, AlertTitle } from '@tuturuuu/ui/alert';
@@ -30,6 +28,8 @@ import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { useEffect, useState } from 'react';
 import * as XLSX from 'xlsx';
 import { z } from 'zod';
+import { CsvCrawler } from './crawlers/csv-crawler';
+import { ExcelCrawler } from './crawlers/excel-crawler';
 
 const FormSchema = z.object({
   url: z
@@ -585,12 +585,15 @@ export function DatasetCrawler({
                   {processedData.length > 0 &&
                     `Showing ${processedData.length - 1} preview rows of ${
                       workbook && 'SheetNames' in workbook && workbook.Sheets
-                        ? (() => {
-                            const sheets = workbook.Sheets;
-                            const sheet = sheets[selectedSheet];
-                            if (!sheet || !sheet['!ref']) return sheetInfo.rows;
-                            return XLSX.utils.decode_range(sheet['!ref']).e.r;
-                          })()
+                        ? (
+                            () => {
+                              const sheets = workbook.Sheets;
+                              const sheet = sheets[selectedSheet];
+                              if (!sheet || !sheet['!ref'])
+                                return sheetInfo.rows;
+                              return XLSX.utils.decode_range(sheet['!ref']).e.r;
+                            }
+                          )()
                         : sheetInfo.rows
                     } total rows`}
                 </div>

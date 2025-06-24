@@ -1,7 +1,10 @@
 'use client';
 
-import ScoreBadge from '@/components/common/ScoreBadge';
-import { NovaChallenge, NovaProblem, NovaSubmission } from '@tuturuuu/types/db';
+import type {
+  NovaChallenge,
+  NovaProblem,
+  NovaSubmission,
+} from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
 import {
   DropdownMenu,
@@ -33,8 +36,9 @@ import {
   TableRow,
 } from '@tuturuuu/ui/table';
 import { cn } from '@tuturuuu/utils/format';
-import { useTranslations } from 'next-intl';
 import { usePathname, useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
+import ScoreBadge from '@/components/common/ScoreBadge';
 
 type SubmissionWithDetails = NovaSubmission & {
   problem: NovaProblem & {

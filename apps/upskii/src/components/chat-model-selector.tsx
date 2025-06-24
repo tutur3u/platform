@@ -1,4 +1,4 @@
-import { Model, models } from '@tuturuuu/ai/models';
+import { type Model, models } from '@tuturuuu/ai/models';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Command,

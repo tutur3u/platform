@@ -1,9 +1,9 @@
-import SessionClient from './client';
-import { SessionData, type SessionSubmission } from './types';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { getCurrentSupabaseUser } from '@tuturuuu/utils/user-helper';
-import { Metadata } from 'next';
+import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import SessionClient from './client';
+import type { SessionData, SessionSubmission } from './types';
 
 interface Props {
   params: Promise<{

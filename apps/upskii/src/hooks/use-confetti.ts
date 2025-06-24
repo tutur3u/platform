@@ -47,7 +47,7 @@ export function useConfetti() {
         fire();
         break;
 
-      case 'celebration':
+      case 'celebration': {
         // Fire multiple bursts of confetti
         const duration = 3 * 1000;
         const animationEnd = Date.now() + duration;
@@ -80,6 +80,7 @@ export function useConfetti() {
           });
         }, 250);
         break;
+      }
 
       case 'achievement':
         // Golden confetti from center

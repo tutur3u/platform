@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import React from 'react';
+import type React from 'react';
 
 interface FeatureCardProps {
   icon: React.ReactNode;

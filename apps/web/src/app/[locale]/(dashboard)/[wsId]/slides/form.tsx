@@ -1,6 +1,6 @@
 'use client';
 
-import { UserGroupTag } from '@tuturuuu/types/primitives/UserGroupTag';
+import type { UserGroupTag } from '@tuturuuu/types/primitives/UserGroupTag';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Form,
@@ -14,8 +14,8 @@ import { useForm } from '@tuturuuu/ui/hooks/use-form';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Input } from '@tuturuuu/ui/input';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
-import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import * as z from 'zod';
 
 interface Props {
@@ -99,7 +99,7 @@ export default function GroupTagForm({ wsId, data, onFinish }: Props) {
         />
 
         <Button type="submit" className="w-full" disabled={disabled}>
-          {!!data?.id ? t('edit') : t('create')}
+          {data?.id ? t('edit') : t('create')}
         </Button>
       </form>
     </Form>

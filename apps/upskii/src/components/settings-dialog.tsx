@@ -1,13 +1,13 @@
-import UserAvatar from './settings-avatar';
-import DisplayNameInput from './settings-display-name-input';
-import EmailInput from './settings-email-input';
-import FullNameInput from './settings-full-name-input';
-import { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
+import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
 import { DialogContent, DialogHeader, DialogTitle } from '@tuturuuu/ui/dialog';
 import { Separator } from '@tuturuuu/ui/separator';
 import { useTranslations } from 'next-intl';
 import { Suspense } from 'react';
+import UserAvatar from './settings-avatar';
+import DisplayNameInput from './settings-display-name-input';
+import EmailInput from './settings-email-input';
+import FullNameInput from './settings-full-name-input';
 
 interface UserSettingsDialogProps {
   user: WorkspaceUser;

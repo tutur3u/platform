@@ -13,7 +13,8 @@ import {
 } from '@tuturuuu/ui/icons';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { cn } from '@tuturuuu/utils/format';
-import React, { useEffect, useState } from 'react';
+import type React from 'react';
+import { useEffect, useState } from 'react';
 
 interface PromptInputProps {
   prompt: string;

@@ -1,4 +1,3 @@
-import { DEV_MODE } from '@/constants/common';
 import { useQuery } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import {
@@ -7,8 +6,9 @@ import {
   DropdownMenuSeparator,
 } from '@tuturuuu/ui/dropdown-menu';
 import { ActivitySquare, Database } from '@tuturuuu/ui/icons';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
+import { DEV_MODE } from '@/constants/common';
 
 export default function DashboardMenuItem() {
   const t = useTranslations('common');

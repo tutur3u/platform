@@ -1,5 +1,4 @@
-import timezones from '../../../../data/timezones.json';
-import { Timezone } from '@tuturuuu/types/primitives/Timezone';
+import type { Timezone } from '@tuturuuu/types/primitives/Timezone';
 import {
   Select,
   SelectContent,
@@ -8,6 +7,7 @@ import {
   SelectValue,
 } from '@tuturuuu/ui/select';
 import { useTranslations } from 'next-intl';
+import timezones from '../../../../data/timezones.json';
 
 interface Props {
   value: Timezone | undefined;

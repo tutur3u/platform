@@ -1,11 +1,8 @@
 'use client';
 
-import AvailabilityPlanner from './availability-planner';
-import { useTimeBlocking } from './time-blocking-provider';
-import { BASE_URL } from '@/constants/common';
-import { MeetTogetherPlan } from '@tuturuuu/types/primitives/MeetTogetherPlan';
-import { Timeblock } from '@tuturuuu/types/primitives/Timeblock';
-import { User } from '@tuturuuu/types/primitives/User';
+import type { MeetTogetherPlan } from '@tuturuuu/types/primitives/MeetTogetherPlan';
+import type { Timeblock } from '@tuturuuu/types/primitives/Timeblock';
+import type { User } from '@tuturuuu/types/primitives/User';
 import { Button } from '@tuturuuu/ui/button';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
 import {
@@ -30,10 +27,13 @@ import { useForm } from '@tuturuuu/ui/hooks/use-form';
 import { Input } from '@tuturuuu/ui/input';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { Separator } from '@tuturuuu/ui/separator';
-import { useTranslations } from 'next-intl';
 import { usePathname, useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import { z } from 'zod';
+import { BASE_URL } from '@/constants/common';
+import AvailabilityPlanner from './availability-planner';
+import { useTimeBlocking } from './time-blocking-provider';
 
 const formSchema = z.object({
   guestName: z.string().min(1).max(255),

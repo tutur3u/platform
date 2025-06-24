@@ -1,12 +1,12 @@
 'use client';
 
+import { Card } from '@tuturuuu/ui/card';
+import { useEffect, useMemo, useState } from 'react';
 import { getTaskCompletionDate } from '../utils/taskHelpers';
 import { GanttControls } from './GanttControls';
 import { GanttHeader } from './GanttHeader';
 import { GanttTimeline } from './GanttTimeline';
 import { TaskDetailCard } from './TaskDetailCard';
-import { Card } from '@tuturuuu/ui/card';
-import { useEffect, useMemo, useState } from 'react';
 
 interface AnalyticsFilters {
   timeView: 'week' | 'month' | 'year';

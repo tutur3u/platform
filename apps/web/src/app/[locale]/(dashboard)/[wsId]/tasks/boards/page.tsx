@@ -1,12 +1,12 @@
-import { EnhancedBoardsView } from './enhanced-boards-view';
-import { TaskBoardForm } from './form';
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { TaskBoard } from '@tuturuuu/types/primitives/TaskBoard';
+import type { TaskBoard } from '@tuturuuu/types/primitives/TaskBoard';
 import { Button } from '@tuturuuu/ui/button';
 import { Plus } from '@tuturuuu/ui/icons';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
-import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
+import { EnhancedBoardsView } from './enhanced-boards-view';
+import { TaskBoardForm } from './form';
 
 interface Props {
   params: Promise<{

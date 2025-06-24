@@ -1,4 +1,4 @@
-import { AIChat } from '@tuturuuu/types/db';
+import type { AIChat } from '@tuturuuu/types/db';
 
 export default function Types() {
   const aiChatInstance: AIChat = {

@@ -1,12 +1,12 @@
-import { ChatMessage } from '@/components/chat-message';
-import { OnlineUsers } from '@/components/online-users';
-import { type Message } from '@tuturuuu/ai/types';
-import { RealtimePresenceState } from '@tuturuuu/supabase/next/realtime';
+import type { Message } from '@tuturuuu/ai/types';
+import type { RealtimePresenceState } from '@tuturuuu/supabase/next/realtime';
 import { Box, Globe, Lock, Sparkle } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { Fragment } from 'react';
+import { ChatMessage } from '@/components/chat-message';
+import { OnlineUsers } from '@/components/online-users';
 
 interface PresenceUser {
   id: string;

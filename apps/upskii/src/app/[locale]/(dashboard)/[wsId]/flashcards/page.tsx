@@ -1,11 +1,11 @@
-import { getWorkspaceFlashcardColumns } from './columns';
-import FlashcardForm from './form';
-import { CustomDataTable } from '@/components/custom-data-table';
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { WorkspaceFlashcard } from '@tuturuuu/types/db';
+import type { WorkspaceFlashcard } from '@tuturuuu/types/db';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
 import { getTranslations } from 'next-intl/server';
+import { CustomDataTable } from '@/components/custom-data-table';
+import { getWorkspaceFlashcardColumns } from './columns';
+import FlashcardForm from './form';
 
 interface SearchParams {
   q?: string;

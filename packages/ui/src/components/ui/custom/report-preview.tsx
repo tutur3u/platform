@@ -1,5 +1,5 @@
+import type { ReactNode } from 'react';
 import { Separator } from '../separator';
-import { ReactNode } from 'react';
 
 export default function ReportPreview({
   t,

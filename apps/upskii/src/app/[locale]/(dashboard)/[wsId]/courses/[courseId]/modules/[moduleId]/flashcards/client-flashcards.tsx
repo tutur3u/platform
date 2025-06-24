@@ -1,6 +1,5 @@
 'use client';
 
-import FlashcardForm from '../../../../../flashcards/form';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import {
   AlertDialog,
@@ -16,10 +15,12 @@ import {
 import { Button } from '@tuturuuu/ui/button';
 import { Pencil, Trash, X } from '@tuturuuu/ui/icons';
 import { cn } from '@tuturuuu/utils/format';
-import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
-import React, { useState } from 'react';
+import { useTranslations } from 'next-intl';
+import type React from 'react';
+import { useState } from 'react';
 import { Flashcard } from 'react-quizlet-flashcard';
+import FlashcardForm from '../../../../../flashcards/form';
 
 export default function ClientFlashcards({
   wsId,

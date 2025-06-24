@@ -1,8 +1,7 @@
 'use client';
 
-import { InvoiceRowActions } from './row-actions';
-import { ColumnDef } from '@tanstack/react-table';
-import { Invoice } from '@tuturuuu/types/primitives/Invoice';
+import type { ColumnDef } from '@tanstack/react-table';
+import type { Invoice } from '@tuturuuu/types/primitives/Invoice';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import {
   Tooltip,
@@ -11,6 +10,7 @@ import {
   TooltipTrigger,
 } from '@tuturuuu/ui/tooltip';
 import moment from 'moment';
+import { InvoiceRowActions } from './row-actions';
 
 export const invoiceColumns = (
   t: any,

@@ -1,9 +1,9 @@
 'use client';
 
-import AuditLogCard from '@/components/cards/AuditLogCard';
-import { AuditLog } from '@tuturuuu/types/primitives/audit-log';
+import type { AuditLog } from '@tuturuuu/types/primitives/audit-log';
 import { Accordion } from '@tuturuuu/ui/accordion';
 import { useState } from 'react';
+import AuditLogCard from '@/components/cards/AuditLogCard';
 
 interface Props {
   logs: AuditLog[];

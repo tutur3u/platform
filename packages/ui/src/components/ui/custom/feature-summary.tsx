@@ -1,9 +1,9 @@
-import { Button } from '../button';
-import ModifiableDialogTrigger from './modifiable-dialog-trigger';
 import { cn } from '@tuturuuu/utils/format';
 import { Cog, Plus } from 'lucide-react';
 import Link from 'next/link';
-import { type ReactElement, ReactNode } from 'react';
+import type { ReactElement, ReactNode } from 'react';
+import { Button } from '../button';
+import ModifiableDialogTrigger from './modifiable-dialog-trigger';
 
 interface FormProps<T> {
   data?: T;

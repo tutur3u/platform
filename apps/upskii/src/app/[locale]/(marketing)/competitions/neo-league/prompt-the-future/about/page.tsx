@@ -1,5 +1,5 @@
-import { AboutUsPage } from './client';
 import type { Metadata } from 'next';
+import { AboutUsPage } from './client';
 
 export const metadata: Metadata = {
   title: 'Neo League - Prompt The Future',

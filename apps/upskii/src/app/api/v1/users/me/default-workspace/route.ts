@@ -3,7 +3,7 @@ import {
   getUserDefaultWorkspace,
   updateUserDefaultWorkspace,
 } from '@tuturuuu/utils/user-helper';
-import { NextRequest, NextResponse } from 'next/server';
+import { type NextRequest, NextResponse } from 'next/server';
 
 export async function GET() {
   try {

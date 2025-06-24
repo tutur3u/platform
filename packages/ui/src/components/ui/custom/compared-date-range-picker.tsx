@@ -1,5 +1,8 @@
 'use client';
 
+import { cn } from '@tuturuuu/utils/format';
+import { Check, ChevronDown, ChevronUp } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import { Button } from '../button';
 import { Calendar } from '../calendar';
 import { Label } from '../label';
@@ -13,9 +16,6 @@ import {
 } from '../select';
 import { Switch } from '../switch';
 import { DateInput } from './date-input';
-import { cn } from '@tuturuuu/utils/format';
-import { Check, ChevronDown, ChevronUp } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
 
 interface ComparedDateRangePickerProps {
   /** Click handler for applying the updates from DateRangePicker. */

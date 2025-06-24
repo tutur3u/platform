@@ -1,5 +1,5 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { NextRequest } from 'next/server';
+import type { NextRequest } from 'next/server';
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient();

@@ -1,9 +1,9 @@
 'use client';
 
-import { useTimeBlocking } from './time-blocking-provider';
 import { ShieldCheck } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import { useTranslations } from 'next-intl';
+import { useTimeBlocking } from './time-blocking-provider';
 
 export default function PlanUserFilter({ users }: { users: any[] }) {
   const t = useTranslations('meet-together-plan-details');

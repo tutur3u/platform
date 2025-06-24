@@ -1,7 +1,7 @@
-import { checkEnvVariables } from './common';
 import { createBrowserClient } from '@supabase/ssr';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { Database } from '@tuturuuu/types/supabase';
+import type { Database } from '@tuturuuu/types/supabase';
+import { checkEnvVariables } from './common';
 
 const { url, key } = checkEnvVariables({ useServiceKey: false });
 

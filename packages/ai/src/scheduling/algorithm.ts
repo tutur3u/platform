@@ -1,3 +1,5 @@
+import dayjs from 'dayjs';
+import minMax from 'dayjs/plugin/minMax';
 import { defaultActiveHours } from './default';
 import type {
   ActiveHours,
@@ -8,8 +10,6 @@ import type {
   Task,
   TaskPriority,
 } from './types';
-import dayjs from 'dayjs';
-import minMax from 'dayjs/plugin/minMax';
 
 dayjs.extend(minMax);
 
@@ -235,7 +235,7 @@ export const scheduleTasks = (
       let splitAttempts = 0;
       while (task.remaining > 0 && splitAttempts < 50 && !scheduledPart) {
         splitAttempts++;
-        let availableSlots = getAvailableSlots(
+        const availableSlots = getAvailableSlots(
           tryTime,
           categoryHours,
           scheduledEvents

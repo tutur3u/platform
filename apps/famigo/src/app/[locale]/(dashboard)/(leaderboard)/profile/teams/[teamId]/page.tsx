@@ -1,7 +1,7 @@
-import TeamClient, { TeamData } from './client';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
+import TeamClient, { type TeamData } from './client';
 
 export default async function TeamPage({
   params,

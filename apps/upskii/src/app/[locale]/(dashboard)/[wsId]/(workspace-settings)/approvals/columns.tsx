@@ -1,8 +1,6 @@
 'use client';
 
-import { WorkspaceApprovalRequest } from './approvals-table';
-import { ApprovalRowActions } from './row-actions';
-import { ColumnDef } from '@tanstack/react-table';
+import type { ColumnDef } from '@tanstack/react-table';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
@@ -14,6 +12,8 @@ import {
 import type { FeatureFlag } from '@tuturuuu/utils/feature-flags/types';
 import { cn } from '@tuturuuu/utils/format';
 import moment from 'moment';
+import type { WorkspaceApprovalRequest } from './approvals-table';
+import { ApprovalRowActions } from './row-actions';
 
 export const approvalsColumns = (
   t: any,

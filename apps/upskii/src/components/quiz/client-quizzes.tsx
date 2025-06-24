@@ -1,7 +1,5 @@
 'use client';
 
-import QuizForm from '../../app/[locale]/(dashboard)/[wsId]/quizzes/form';
-import { RenderedQuizzesSets } from '@/app/[locale]/(dashboard)/[wsId]/courses/[courseId]/modules/[moduleId]/quizzes/page';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import {
   AlertDialog,
@@ -18,9 +16,11 @@ import { Button } from '@tuturuuu/ui/button';
 import { LucideBubbles, Pencil, Trash, X } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import { cn } from '@tuturuuu/utils/format';
-import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import type { RenderedQuizzesSets } from '@/app/[locale]/(dashboard)/[wsId]/courses/[courseId]/modules/[moduleId]/quizzes/page';
+import QuizForm from '../../app/[locale]/(dashboard)/[wsId]/quizzes/form';
 
 interface QuizzesListProps {
   quizzes: RenderedQuizzesSets['quizzes'] | QuizzesListType;

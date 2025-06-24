@@ -1,12 +1,5 @@
 'use client';
 
-import Chat from '../../chat/chat';
-import { TaskBoardForm } from '../../tasks/boards/form';
-import type { ExtendedWorkspaceTask } from '../../time-tracker/types';
-import QuickTaskTimer from './quick-task-timer';
-import { TaskForm } from './task-form';
-import { TaskListForm } from './task-list-form';
-import TimeTracker from './time-tracker';
 import type {
   AIChat,
   WorkspaceTask,
@@ -55,6 +48,13 @@ import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
+import Chat from '../../chat/chat';
+import { TaskBoardForm } from '../../tasks/boards/form';
+import type { ExtendedWorkspaceTask } from '../../time-tracker/types';
+import QuickTaskTimer from './quick-task-timer';
+import { TaskForm } from './task-form';
+import { TaskListForm } from './task-list-form';
+import TimeTracker from './time-tracker';
 
 interface TasksSidebarContentProps {
   wsId: string;

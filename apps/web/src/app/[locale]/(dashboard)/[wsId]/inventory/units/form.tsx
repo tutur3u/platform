@@ -1,6 +1,6 @@
 'use client';
 
-import { ProductUnit } from '@tuturuuu/types/primitives/ProductUnit';
+import type { ProductUnit } from '@tuturuuu/types/primitives/ProductUnit';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Form,
@@ -14,8 +14,8 @@ import { useForm } from '@tuturuuu/ui/hooks/use-form';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Input } from '@tuturuuu/ui/input';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
-import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import * as z from 'zod';
 
@@ -95,7 +95,7 @@ export function ProductUnitForm({ wsId, data, onFinish }: Props) {
         <Button type="submit" className="w-full" disabled={loading}>
           {loading
             ? t('common.processing')
-            : !!data?.id
+            : data?.id
               ? t('common.edit')
               : t('common.create')}
         </Button>

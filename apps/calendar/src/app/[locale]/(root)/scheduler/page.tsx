@@ -1,10 +1,5 @@
 'use client';
 
-import { AlgorithmInsights } from './components/AlgorithmInsights';
-import { ScheduleDisplay } from './components/ScheduleDisplay';
-import { TaskList } from './components/TaskList';
-import { TaskModal } from './components/TaskModal';
-import { TemplateScenarios } from './components/TemplateScenarios';
 import { scheduleTasks } from '@tuturuuu/ai/scheduling/algorithm';
 import {
   defaultActiveHours,
@@ -49,6 +44,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { TooltipProvider } from '@tuturuuu/ui/tooltip';
 import dayjs from 'dayjs';
 import { useState } from 'react';
+import { AlgorithmInsights } from './components/AlgorithmInsights';
+import { ScheduleDisplay } from './components/ScheduleDisplay';
+import { TaskList } from './components/TaskList';
+import { TaskModal } from './components/TaskModal';
+import { TemplateScenarios } from './components/TemplateScenarios';
 
 function SchedulerPage() {
   const [tasks, setTasks] = useState<Task[]>(defaultTasks);

@@ -1,5 +1,5 @@
-import MultiQuizzesForm from '@/components/quiz/multi-quizzes-form';
 import { createClient } from '@tuturuuu/supabase/next/server';
+import MultiQuizzesForm from '@/components/quiz/multi-quizzes-form';
 
 interface Props {
   params: Promise<{

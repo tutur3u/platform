@@ -1,6 +1,5 @@
 'use client';
 
-import useSearchParams from '@/hooks/useSearchParams';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { Button } from '@tuturuuu/ui/button';
@@ -9,6 +8,7 @@ import { cn } from '@tuturuuu/utils/format';
 import { format, parse } from 'date-fns';
 import { useLocale } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';
+import useSearchParams from '@/hooks/useSearchParams';
 
 export default function GroupSchedule({
   wsId,
@@ -65,16 +65,20 @@ export default function GroupSchedule({
 
   // includes all days of the week, starting from monday to sunday
   const days = Array.from({ length: 7 }, (_, i) => {
-    let newDay = new Date(currentDate);
+    const newDay = new Date(currentDate);
     newDay.setDate(currentDate.getDate() - currentDate.getDay() + i + 1);
     return newDay.toLocaleString(locale, { weekday: 'narrow' });
   });
 
   // includes all days of the month, starting from monday (which could be from the previous month) to sunday (which could be from the next month)
   const daysInMonth = Array.from({ length: 42 }, (_, i) => {
-    let newDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
-    let dayOfWeek = newDay.getDay();
-    let adjustment = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // adjust for Monday start
+    const newDay = new Date(
+      currentDate.getFullYear(),
+      currentDate.getMonth(),
+      1
+    );
+    const dayOfWeek = newDay.getDay();
+    const adjustment = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // adjust for Monday start
     newDay.setDate(newDay.getDate() - adjustment + i);
     return newDay;
   });

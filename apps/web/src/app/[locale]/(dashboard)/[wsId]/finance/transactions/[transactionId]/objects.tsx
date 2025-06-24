@@ -1,15 +1,15 @@
 'use client';
 
-import { TransactionObjectRowActions } from './row-actions';
-import { joinPath } from '@/utils/path-helper';
-import { StorageObject } from '@tuturuuu/types/primitives/StorageObject';
+import type { StorageObject } from '@tuturuuu/types/primitives/StorageObject';
 import { Button } from '@tuturuuu/ui/button';
 import { FileText, LayoutGrid, LayoutList } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
-import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { joinPath } from '@/utils/path-helper';
+import { TransactionObjectRowActions } from './row-actions';
 
 export function DetailObjects({
   wsId,
