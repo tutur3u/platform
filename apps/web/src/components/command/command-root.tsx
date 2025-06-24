@@ -6,8 +6,10 @@ import { QuickActions } from './quick-actions';
 import type { Board } from './types';
 
 interface CommandRootProps {
-  boards: Board[];
+  boards: any[];
   inputValue: string;
+  isLoading?: boolean;
+  error?: Error | null;
   onAddTask: () => void;
   onTimeTracker: () => void;
   onQuickTimeTracker: () => void;
@@ -18,6 +20,8 @@ interface CommandRootProps {
 export function CommandRoot({
   boards,
   inputValue,
+  isLoading,
+  error,
   onAddTask,
   onTimeTracker,
   onQuickTimeTracker,
@@ -35,6 +39,8 @@ export function CommandRoot({
       <BoardNavigation
         boards={boards}
         inputValue={inputValue}
+        isLoading={isLoading}
+        error={error}
         onBoardSelect={onBoardSelect}
       />
       {!inputValue && <ComingSoonSection />}

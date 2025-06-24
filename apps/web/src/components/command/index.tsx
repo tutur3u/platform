@@ -8,6 +8,9 @@ import { EmptyState } from './empty-state';
 import { QuickTimeTracker } from './quick-time-tracker';
 import { useQuery } from '@tanstack/react-query';
 import { CommandDialog, CommandList } from '@tuturuuu/ui/command';
+import { AlertTriangle, RefreshCw } from '@tuturuuu/ui/icons';
+import { Button } from '@tuturuuu/ui/button';
+import { useToast } from '@tuturuuu/ui/hooks/use-toast';
 import { useParams, useRouter } from 'next/navigation';
 import * as React from 'react';
 
@@ -23,13 +26,24 @@ export function CommandPalette({
   const [inputValue, setInputValue] = React.useState('');
   const [isLoading, setIsLoading] = React.useState(false);
   const [isTransitioning, setIsTransitioning] = React.useState(false);
+  const [errorBoundaryKey, setErrorBoundaryKey] = React.useState(0);
 
   const params = useParams();
   const router = useRouter();
   const { wsId } = params;
+  const { toast } = useToast();
+
+  // Reset function for error boundary
+  const resetErrorBoundary = React.useCallback(() => {
+    setErrorBoundaryKey(prev => prev + 1);
+    setPage('root');
+    setInputValue('');
+    setIsLoading(false);
+    setIsTransitioning(false);
+  }, []);
 
   // Only fetch boards when on root page and command palette is open - optimized data fetching
-  const { data: boardsData } = useQuery({
+  const { data: boardsData, isLoading: boardsLoading, error: boardsError } = useQuery({
     queryKey: ['boards-navigation', wsId],
     queryFn: async () => {
       const response = await fetch(
@@ -39,6 +53,16 @@ export function CommandPalette({
       return response.json();
     },
     enabled: !!wsId && open && page === 'root', // Only fetch when needed
+    retry: 2, // Add retry logic
+    retryDelay: 1000, // 1 second delay between retries
+    onError: (error: Error) => {
+      // Show toast notification for boards loading errors
+      toast({
+        title: 'Failed to load boards',
+        description: error.message || 'Unable to fetch boards at the moment',
+        variant: 'destructive',
+      });
+    },
   });
 
   const boards = boardsData?.boards || [];
@@ -154,55 +178,130 @@ export function CommandPalette({
 
   return (
     <CommandDialog open={open} onOpenChange={setOpen} showXIcon={false}>
-      <CommandHeader
-        page={page}
-        inputValue={inputValue}
-        setInputValue={setInputValue}
-        isLoading={isLoading}
-        isTransitioning={isTransitioning}
-        onBack={handleBack}
-        shouldAutoFocus={page !== 'time-tracker'}
-      />
+      <CommandPaletteErrorBoundary key={errorBoundaryKey} onReset={resetErrorBoundary}>
+        <CommandHeader
+          page={page}
+          inputValue={inputValue}
+          setInputValue={setInputValue}
+          isLoading={isLoading}
+          isTransitioning={isTransitioning}
+          onBack={handleBack}
+          shouldAutoFocus={page !== 'time-tracker'}
+        />
 
-      <CommandList
-        className={`${isTransitioning ? 'opacity-50 transition-opacity' : ''} max-h-[400px]`}
-      >
-        {page === 'root' && <EmptyState />}
+        <CommandList
+          className={`${isTransitioning ? 'opacity-50 transition-opacity' : ''} max-h-[400px]`}
+        >
+          {page === 'root' && <EmptyState />}
 
-        {page === 'root' && !isTransitioning && (
-          <CommandRoot
-            boards={boards}
-            inputValue={inputValue}
-            onAddTask={() => handlePageChange('add-task')}
-            onTimeTracker={handleTimeTrackerNavigation}
-            onQuickTimeTracker={handleQuickTimeTrackerNavigation}
-            onCalendar={handleCalendarNavigation}
-            onBoardSelect={handleBoardNavigation}
-          />
-        )}
-
-        {page === 'add-task' && !isTransitioning && (
-          <div className="command-page-enter">
-            <AddTaskForm
-              wsId={wsId as string}
-              setOpen={setOpen}
-              setIsLoading={setIsLoading}
+          {page === 'root' && !isTransitioning && (
+            <CommandRoot
+              boards={boards}
               inputValue={inputValue}
-              setInputValue={setInputValue}
+              isLoading={boardsLoading}
+              error={boardsError}
+              onAddTask={() => handlePageChange('add-task')}
+              onTimeTracker={handleTimeTrackerNavigation}
+              onQuickTimeTracker={handleQuickTimeTrackerNavigation}
+              onCalendar={handleCalendarNavigation}
+              onBoardSelect={handleBoardNavigation}
             />
-          </div>
-        )}
+          )}
 
-        {page === 'time-tracker' && !isTransitioning && (
-          <div className="command-page-enter">
-            <QuickTimeTracker
-              wsId={wsId as string}
-              setOpen={setOpen}
-              setIsLoading={setIsLoading}
-            />
-          </div>
-        )}
-      </CommandList>
+          {page === 'add-task' && !isTransitioning && (
+            <div className="command-page-enter">
+              <AddTaskForm
+                wsId={wsId as string}
+                setOpen={setOpen}
+                setIsLoading={setIsLoading}
+                inputValue={inputValue}
+                setInputValue={setInputValue}
+              />
+            </div>
+          )}
+
+          {page === 'time-tracker' && !isTransitioning && (
+            <div className="command-page-enter">
+              <QuickTimeTracker
+                wsId={wsId as string}
+                setOpen={setOpen}
+                setIsLoading={setIsLoading}
+              />
+            </div>
+          )}
+        </CommandList>
+      </CommandPaletteErrorBoundary>
     </CommandDialog>
   );
+}
+
+// Error boundary component for command palette
+class CommandPaletteErrorBoundary extends React.Component<
+  { children: React.ReactNode; onReset: () => void },
+  { hasError: boolean; error?: Error }
+> {
+  constructor(props: { children: React.ReactNode; onReset: () => void }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error('Command Palette Error:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="flex flex-col items-center gap-4 p-8 text-center">
+          <div className="rounded-full bg-dynamic-red/10 p-4">
+            <AlertTriangle className="h-8 w-8 text-dynamic-red" />
+          </div>
+          <div className="space-y-2">
+            <h3 className="font-semibold text-foreground">
+              Something went wrong
+            </h3>
+            <p className="text-sm text-muted-foreground max-w-sm">
+              The command palette encountered an unexpected error. Please try again.
+            </p>
+            {process.env.NODE_ENV === 'development' && this.state.error && (
+              <details className="mt-4 text-left">
+                <summary className="cursor-pointer text-xs text-muted-foreground">
+                  Error details (development)
+                </summary>
+                <pre className="mt-2 text-xs text-dynamic-red bg-dynamic-red/5 p-2 rounded">
+                  {this.state.error.message}
+                </pre>
+              </details>
+            )}
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                this.setState({ hasError: false, error: undefined });
+                this.props.onReset();
+              }}
+            >
+              <RefreshCw className="h-3 w-3 mr-2" />
+              Try Again
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => window.location.reload()}
+            >
+              Reload Page
+            </Button>
+          </div>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
 }

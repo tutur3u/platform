@@ -2,18 +2,32 @@
 
 import type { Board } from './types';
 import { CommandGroup, CommandItem } from '@tuturuuu/ui/command';
-import { ExternalLink, LayoutDashboard, MapPin, Tag } from '@tuturuuu/ui/icons';
+import { 
+  ExternalLink, 
+  LayoutDashboard, 
+  MapPin, 
+  Tag, 
+  Loader, 
+  AlertTriangle, 
+  RefreshCw,
+  Plus
+} from '@tuturuuu/ui/icons';
+import { Button } from '@tuturuuu/ui/button';
 import * as React from 'react';
 
 interface BoardNavigationProps {
   boards: Board[];
   inputValue: string;
+  isLoading?: boolean;
+  error?: Error | null;
   onBoardSelect: (boardId: string) => void;
 }
 
 export function BoardNavigation({
   boards,
   inputValue,
+  isLoading,
+  error,
   onBoardSelect,
 }: BoardNavigationProps) {
   const getBoardColor = (boardId: string) => {
@@ -41,7 +55,103 @@ export function BoardNavigation({
       .slice(0, 8); // Show up to 8 filtered results
   }, [boards, inputValue]);
 
-  if (filteredBoards.length === 0) return null;
+  // Loading state
+  if (isLoading) {
+    return (
+      <CommandGroup heading="📋 Loading Boards...">
+        <div className="flex items-center justify-center p-6">
+          <div className="flex items-center gap-3">
+            <Loader className="h-5 w-5 animate-spin text-dynamic-blue" />
+            <span className="text-sm text-muted-foreground">
+              Fetching your boards...
+            </span>
+          </div>
+        </div>
+      </CommandGroup>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <CommandGroup heading="📋 Board Navigation">
+        <div className="flex flex-col items-center gap-3 p-6 text-center">
+          <div className="rounded-full bg-dynamic-red/10 p-3">
+            <AlertTriangle className="h-5 w-5 text-dynamic-red" />
+          </div>
+          <div className="space-y-1">
+            <p className="font-semibold text-foreground">Failed to load boards</p>
+            <p className="text-xs text-muted-foreground">
+              {error.message || 'Unable to fetch boards at the moment'}
+            </p>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => window.location.reload()}
+            className="gap-2"
+          >
+            <RefreshCw className="h-3 w-3" />
+            Retry
+          </Button>
+        </div>
+      </CommandGroup>
+    );
+  }
+
+  // No boards state
+  if (!boards || boards.length === 0) {
+    return (
+      <CommandGroup heading="📋 Board Navigation">
+        <div className="flex flex-col items-center gap-3 p-6 text-center">
+          <div className="rounded-full bg-dynamic-blue/10 p-3">
+            <LayoutDashboard className="h-5 w-5 text-dynamic-blue" />
+          </div>
+          <div className="space-y-1">
+            <p className="font-semibold text-foreground">No boards found</p>
+            <p className="text-xs text-muted-foreground">
+              Create your first board to get started with task management
+            </p>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              // Navigate to boards page to create new board
+              const wsId = window.location.pathname.split('/')[1];
+              window.location.href = `/${wsId}/tasks/boards`;
+            }}
+            className="gap-2"
+          >
+            <Plus className="h-3 w-3" />
+            Create Board
+          </Button>
+        </div>
+      </CommandGroup>
+    );
+  }
+
+  // No filtered results state
+  if (filteredBoards.length === 0) {
+    return (
+      <CommandGroup heading="📋 Board Navigation">
+        <div className="flex flex-col items-center gap-3 p-6 text-center">
+          <div className="rounded-full bg-dynamic-orange/10 p-3">
+            <LayoutDashboard className="h-5 w-5 text-dynamic-orange" />
+          </div>
+          <div className="space-y-1">
+            <p className="font-semibold text-foreground">No matching boards</p>
+            <p className="text-xs text-muted-foreground">
+              Try a different search term or browse all boards
+            </p>
+          </div>
+          <div className="text-xs text-muted-foreground">
+            Available boards: {boards.length}
+          </div>
+        </div>
+      </CommandGroup>
+    );
+  }
 
   return (
     <CommandGroup heading="📋 Quick Board Navigation">
