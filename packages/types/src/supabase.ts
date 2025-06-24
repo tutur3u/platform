@@ -7978,7 +7978,6 @@ export type Database = {
       get_user_session_stats: {
         Args: { user_id: string };
         Returns: {
-
           active_sessions: number;
           total_sessions: number;
           current_session_age: unknown;

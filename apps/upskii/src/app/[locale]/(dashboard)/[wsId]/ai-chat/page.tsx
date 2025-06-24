@@ -15,7 +15,7 @@ interface Props {
 }
 
 export default async function AIPage({ params, searchParams }: Props) {
-  const { wsId } =  await params;
+  const { wsId } = await params;
   const { lang: locale } = await searchParams;
   const { data: chats, count } = await getChats();
 

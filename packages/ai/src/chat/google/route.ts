@@ -113,14 +113,11 @@ export function createPOST(
         console.log('User message saved to database');
       }
 
-     
-
       // Instantiate Model with provided API key
       const google = createGoogleGenerativeAI({
         apiKey: apiKey,
       });
 
-      
       const result = await generateText({
         model: google(model, {
           safetySettings: [
@@ -145,13 +142,13 @@ export function createPOST(
         messages,
         system: systemInstruction,
       });
-      
+
       console.log('AI Response:', result);
-      
+
       if (!result.text) {
         throw new Error('No content found');
       }
-      
+
       // Save response to DB
       const { error } = await sbAdmin.from('ai_chat_messages').insert({
         chat_id: chatId,
@@ -164,12 +161,12 @@ export function createPOST(
         completion_tokens: result.usage?.completionTokens,
         metadata: { source: 'Rewise' },
       });
-      
+
       if (error) {
         console.error('ERROR ORIGIN: GENERATETEXT COMPLETION', error);
         throw new Error(error.message);
       }
-      
+
       return NextResponse.json({ text: result.text });
     } catch (error: any) {
       console.log(error);
