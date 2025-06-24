@@ -62,9 +62,7 @@ export function GanttTimeline({
           <div
             className={cn(
               'relative flex',
-              filters.timeView === 'year'
-                ? 'h-6 min-w-[1000px]'
-                : 'h-6 w-full'
+              filters.timeView === 'year' ? 'h-6 min-w-[1000px]' : 'h-6 w-full'
             )}
           >
             {timeMarkers.map((marker, index) => (
@@ -218,8 +216,7 @@ export function GanttTimeline({
                       </div>
 
                       <div className="flex h-full items-center justify-center text-xs font-medium text-white">
-                        {(task.status === 'done' ||
-                          task.status === 'closed') &&
+                        {(task.status === 'done' || task.status === 'closed') &&
                         filters.timeView !== 'year' &&
                         task.width > 15
                           ? '✓'
@@ -370,4 +367,4 @@ export function GanttTimeline({
       </Collapsible>
     </>
   );
-} 
+}

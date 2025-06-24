@@ -119,4 +119,4 @@ export function GanttControls({
       </div>
     </div>
   );
-} 
+}
