@@ -1,18 +1,18 @@
 'use client';
 
 import type { Board } from './types';
-import { CommandGroup, CommandItem } from '@tuturuuu/ui/command';
-import { 
-  ExternalLink, 
-  LayoutDashboard, 
-  MapPin, 
-  Tag, 
-  Loader, 
-  AlertTriangle, 
-  RefreshCw,
-  Plus
-} from '@tuturuuu/ui/icons';
 import { Button } from '@tuturuuu/ui/button';
+import { CommandGroup, CommandItem } from '@tuturuuu/ui/command';
+import {
+  AlertTriangle,
+  ExternalLink,
+  LayoutDashboard,
+  Loader,
+  MapPin,
+  Plus,
+  RefreshCw,
+  Tag,
+} from '@tuturuuu/ui/icons';
 import * as React from 'react';
 
 interface BoardNavigationProps {
@@ -80,7 +80,9 @@ export function BoardNavigation({
             <AlertTriangle className="h-5 w-5 text-dynamic-red" />
           </div>
           <div className="space-y-1">
-            <p className="font-semibold text-foreground">Failed to load boards</p>
+            <p className="font-semibold text-foreground">
+              Failed to load boards
+            </p>
             <p className="text-xs text-muted-foreground">
               {error.message || 'Unable to fetch boards at the moment'}
             </p>
