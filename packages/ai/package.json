@@ -6,7 +6,6 @@
     "access": "public"
   },
   "scripts": {
-    "lint": "eslint .",
     "test": "vitest run",
     "test:watch": "vitest"
   },
@@ -43,7 +42,6 @@
     "@tuturuuu/supabase": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
     "ai": "^4.3.16",
-    "eslint": "^9.29.0",
     "dayjs": "^1.11.13",
     "next": "15.3.4",
     "react": "^19.1.0",
@@ -51,15 +49,10 @@
     "zod": "^3.25.67"
   },
   "devDependencies": {
-    "@eslint/eslintrc": "^3.3.1",
-    "@eslint/js": "^9.29.0",
-    "@tuturuuu/eslint-config": "workspace:*",
     "@tuturuuu/types": "workspace:*",
     "@tuturuuu/typescript-config": "workspace:*",
     "@types/node": "^24.0.3",
     "@types/react": "^19.1.8",
-    "@typescript-eslint/eslint-plugin": "^8.34.1",
-    "@typescript-eslint/parser": "^8.34.1",
     "typescript": "^5.8.3",
     "vitest": "^3.2.4"
   },

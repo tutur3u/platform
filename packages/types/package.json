@@ -5,25 +5,17 @@
   "publishConfig": {
     "access": "public"
   },
-  "scripts": {
-    "lint": "eslint ."
-  },
+  "scripts": {},
   "packageManager": "bun@1.2.17",
   "dependencies": {
-    "eslint": "^9.29.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "zod": "^3.25.67"
   },
   "devDependencies": {
-    "@eslint/eslintrc": "^3.3.1",
-    "@eslint/js": "^9.29.0",
-    "@tuturuuu/eslint-config": "workspace:*",
     "@tuturuuu/typescript-config": "workspace:*",
     "@types/node": "^24.0.3",
     "@types/react": "^19.1.8",
-    "@typescript-eslint/eslint-plugin": "^8.34.1",
-    "@typescript-eslint/parser": "^8.34.1",
     "typescript": "^5.8.3"
   },
   "overrides": {
