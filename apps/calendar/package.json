@@ -13,7 +13,6 @@
     "@tanstack/react-query": "^5.81.2",
     "@tuturuuu/ai": "workspace:*",
     "@tuturuuu/auth": "workspace:*",
-
     "@tuturuuu/supabase": "workspace:*",
     "@tuturuuu/types": "workspace:*",
     "@tuturuuu/typescript-config": "workspace:*",
