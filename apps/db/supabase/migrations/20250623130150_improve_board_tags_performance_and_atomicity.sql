@@ -3,13 +3,13 @@
 
 -- Drop and recreate the index with jsonb_path_ops for better performance
 -- Using CONCURRENTLY to prevent write locks during index changes
-DROP INDEX CONCURRENTLY IF EXISTS idx_workspace_boards_tags;
+DROP INDEX IF EXISTS idx_workspace_boards_tags;
 
 -- Create two indexes:
 -- 1. jsonb_path_ops for containment (@>) queries
 -- 2. default jsonb_ops for existence (?&, ?|) operators
-CREATE INDEX CONCURRENTLY idx_workspace_boards_tags_path ON workspace_boards USING gin(tags jsonb_path_ops);
-CREATE INDEX CONCURRENTLY idx_workspace_boards_tags ON workspace_boards USING gin(tags);
+CREATE INDEX idx_workspace_boards_tags_path ON workspace_boards USING gin(tags jsonb_path_ops);
+CREATE INDEX idx_workspace_boards_tags ON workspace_boards USING gin(tags);
 
 -- Improve functions to be IMMUTABLE for better performance and caching
 -- Simplified tag normalization using set-based JSONB functions
@@ -77,6 +77,8 @@ END;
 $$ LANGUAGE plpgsql IMMUTABLE;
 
 -- Add constraint using the validation function
+ALTER TABLE workspace_boards 
+DROP CONSTRAINT IF EXISTS workspace_boards_valid_tags;
 ALTER TABLE workspace_boards 
 ADD CONSTRAINT workspace_boards_valid_tags 
 CHECK (validate_board_tags(tags));
