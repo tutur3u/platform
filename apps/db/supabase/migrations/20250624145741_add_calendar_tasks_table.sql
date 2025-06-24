@@ -1,6 +1,6 @@
-create type "public"."calendar_task_time" as enum ('working_time', 'personal_time');
+create type "public"."calendar_hours" as enum ('work_hours', 'personal_hours', 'meeting_hours');
 
-create type "public"."priority_status" as enum ('low', 'medium', 'high', 'critical');
+create type "public"."task_priority" as enum ('low', 'medium', 'high', 'urgent');
 
 create table "public"."workspace_calendar_tasks" (
     "id" uuid not null default gen_random_uuid(),
@@ -14,9 +14,9 @@ create table "public"."workspace_calendar_tasks" (
     "max_split_duration_minutes" smallint,
     "schedule_after" timestamp with time zone,
     "due_date" timestamp with time zone,
-    "time_reference" calendar_task_time default 'working_time'::calendar_task_time,
-    "user_defined_priority" priority_status default 'medium'::priority_status,
-    "evaluated_priority" priority_status default 'medium'::priority_status
+    "calendar_hours" calendar_hours default 'work_hours'::calendar_hours,
+    "user_defined_priority" task_priority default 'medium'::task_priority,
+    "evaluated_priority" task_priority default 'medium'::task_priority
 );
 
 
@@ -103,11 +103,11 @@ alter table "public"."tasks" add column "max_split_duration_minutes" real;
 
 alter table "public"."tasks" add column "min_split_duration_minutes" real;
 
-alter table "public"."tasks" add column "time_reference" calendar_task_time;
+alter table "public"."tasks" add column "calendar_hours" calendar_hours;
 
 alter table "public"."tasks" add column "total_duration" real;
 
-alter table "public"."tasks" add column "user_defined_priority" priority_status default 'medium'::priority_status;
+alter table "public"."tasks" add column "user_defined_priority" task_priority default 'medium'::task_priority;
 
 alter table "public"."tasks" alter column "list_id" drop not null;
 

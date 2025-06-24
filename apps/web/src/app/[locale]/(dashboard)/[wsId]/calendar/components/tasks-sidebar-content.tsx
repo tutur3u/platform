@@ -235,9 +235,9 @@ export default function TasksSidebarContent({
                   taskMeta.is_assigned_to_current_user || undefined,
                 assignees: taskMeta.assignees || undefined,
                 is_splittable: null,
-                max_split_duration_hours: null,
-                min_split_duration_hours: null,
-                time_reference: null,
+                max_split_duration_minutes: null,
+                min_split_duration_minutes: null,
+                calendar_hours: null,
                 total_duration: null,
                 user_defined_priority: null,
               };
