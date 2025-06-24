@@ -62,7 +62,7 @@ BEGIN
       normalized_tags := normalized_tags || to_jsonb(trimmed_tag);
     END IF;
   END LOOP;
-  
+
   RETURN normalized_tags;
 END;
 $$ LANGUAGE plpgsql;
@@ -99,25 +99,25 @@ BEGIN
   SELECT tags INTO current_tags 
   FROM workspace_boards 
   WHERE id = board_id;
-  
+
   IF current_tags IS NULL THEN
     RAISE EXCEPTION 'Board not found';
   END IF;
-  
+
   -- Convert text array to jsonb array
   combined_tags := current_tags;
   FOR i IN 1..array_length(new_tags, 1) LOOP
     combined_tags := combined_tags || to_jsonb(new_tags[i]);
   END LOOP;
-  
+
   -- Normalize and validate
   combined_tags := validate_and_normalize_board_tags(combined_tags);
-  
+
   -- Update the board
   UPDATE workspace_boards 
   SET tags = combined_tags 
   WHERE id = board_id;
-  
+
   RETURN combined_tags;
 END;
 $$ LANGUAGE plpgsql;
@@ -137,16 +137,16 @@ BEGIN
   SELECT tags INTO current_tags 
   FROM workspace_boards 
   WHERE id = board_id;
-  
+
   IF current_tags IS NULL THEN
     RAISE EXCEPTION 'Board not found';
   END IF;
-  
+
   -- Filter out tags to remove
   FOR i IN 0..jsonb_array_length(current_tags) - 1 LOOP
     tag_value := current_tags->>i;
     should_keep := true;
-    
+
     -- Check if this tag should be removed
     FOR j IN 1..array_length(tags_to_remove, 1) LOOP
       IF lower(trim(tags_to_remove[j])) = tag_value THEN
@@ -154,18 +154,18 @@ BEGIN
         EXIT;
       END IF;
     END LOOP;
-    
+
     -- Keep the tag if it's not in the removal list
     IF should_keep THEN
       updated_tags := updated_tags || to_jsonb(tag_value);
     END IF;
   END LOOP;
-  
+
   -- Update the board
   UPDATE workspace_boards 
   SET tags = updated_tags 
   WHERE id = board_id;
-  
+
   RETURN updated_tags;
 END;
 $$ LANGUAGE plpgsql;

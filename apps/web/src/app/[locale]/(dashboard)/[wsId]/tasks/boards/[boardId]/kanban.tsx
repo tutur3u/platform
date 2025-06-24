@@ -315,8 +315,10 @@ export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
               const { transform } = args;
 
               // Get viewport bounds - only access window in browser environment
+              // Use responsive fallback based on common breakpoints for better mobile handling
               const viewportWidth =
-                typeof window !== 'undefined' ? window.innerWidth : 1200;
+                typeof window !== 'undefined' ? window.innerWidth : 1024; // Default to tablet landscape width for SSR (better than desktop 1200px)
+
               const maxX = viewportWidth - 350; // Account for card width
 
               return {
