@@ -39,8 +39,16 @@ export function BoardNavigation({ wsId, setOpen }: BoardNavigationProps) {
   }>({
     queryKey: ['boards', wsId],
     queryFn: async () => {
-      const response = await fetch(`/api/v1/workspaces/${wsId}/boards`);
-      if (!response.ok) throw new Error('Failed to fetch boards');
+      const response = await fetch(`/api/v1/workspaces/${wsId}/boards-with-lists`);
+      if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error('Please sign in to view boards');
+        }
+        if (response.status === 403) {
+          throw new Error('You don\'t have access to this workspace');
+        }
+        throw new Error('Failed to fetch boards');
+      }
       return response.json();
     },
     retry: 2,
@@ -117,18 +125,32 @@ export function BoardNavigation({ wsId, setOpen }: BoardNavigationProps) {
               Failed to load boards
             </p>
             <p className="text-xs text-muted-foreground">
-              {boardsError.message || 'Unable to fetch boards at the moment'}
+              {boardsError instanceof Error ? boardsError.message : 'Unable to fetch boards at the moment'}
             </p>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => refetch()}
-            className="gap-2"
-          >
-            <RefreshCw className="h-3 w-3" />
-            Retry
-          </Button>
+          {boardsError instanceof Error && boardsError.message === 'Please sign in to view boards' ? (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                router.push('/auth/signin');
+                setOpen(false);
+              }}
+              className="gap-2"
+            >
+              Sign In
+            </Button>
+          ) : (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => refetch()}
+              className="gap-2"
+            >
+              <RefreshCw className="h-3 w-3" />
+              Retry
+            </Button>
+          )}
         </div>
       </div>
     );
