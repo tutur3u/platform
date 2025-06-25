@@ -12,23 +12,23 @@ interface CommandRootProps {
   setOpen: (open: boolean) => void;
 }
 
-export function CommandRoot({
-  wsId,
-  inputValue,
-  setOpen,
-}: CommandRootProps) {
+export function CommandRoot({ wsId, inputValue, setOpen }: CommandRootProps) {
   // Handle keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey)) {
+      if (e.metaKey || e.ctrlKey) {
         if (e.key === '1') {
           e.preventDefault();
-          const quickActions = document.querySelector('[data-section="quick-actions"]');
+          const quickActions = document.querySelector(
+            '[data-section="quick-actions"]'
+          );
           const button = quickActions?.querySelector('button[data-toggle]');
           (button as HTMLButtonElement)?.click();
         } else if (e.key === '2') {
           e.preventDefault();
-          const boardNav = document.querySelector('[data-section="board-navigation"]');
+          const boardNav = document.querySelector(
+            '[data-section="board-navigation"]'
+          );
           const button = boardNav?.querySelector('button[data-toggle]');
           (button as HTMLButtonElement)?.click();
         }
@@ -40,7 +40,9 @@ export function CommandRoot({
   }, []);
 
   // Show empty state only when there's a search with no results
-  const showEmptyState = inputValue.trim() && !document.querySelector('[data-section] .command-item');
+  const showEmptyState =
+    inputValue.trim() &&
+    !document.querySelector('[data-section] .command-item');
 
   if (showEmptyState) {
     return <EmptyState />;
@@ -58,10 +60,7 @@ export function CommandRoot({
       {/* Board Navigation */}
       {!inputValue && (
         <div data-section="board-navigation">
-          <BoardNavigation 
-            wsId={wsId} 
-            setOpen={setOpen}
-          />
+          <BoardNavigation wsId={wsId} setOpen={setOpen} />
         </div>
       )}
 
@@ -76,7 +75,15 @@ export function CommandRoot({
       {!inputValue && (
         <div className="px-3 py-2 text-center">
           <p className="text-xs text-muted-foreground">
-            Use <kbd className="pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground opacity-100">⌘1</kbd> and <kbd className="pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground opacity-100">⌘2</kbd> to toggle sections
+            Use{' '}
+            <kbd className="pointer-events-none inline-flex h-5 items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground opacity-100 select-none">
+              ⌘1
+            </kbd>{' '}
+            and{' '}
+            <kbd className="pointer-events-none inline-flex h-5 items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground opacity-100 select-none">
+              ⌘2
+            </kbd>{' '}
+            to toggle sections
           </p>
         </div>
       )}

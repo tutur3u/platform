@@ -4,7 +4,6 @@ import type { Board } from './types';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@tuturuuu/ui/button';
 import { CommandGroup, CommandItem } from '@tuturuuu/ui/command';
-import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import {
   AlertTriangle,
   ChevronDown,
@@ -17,6 +16,7 @@ import {
   RefreshCw,
   Tag,
 } from '@tuturuuu/ui/icons';
+import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import React from 'react';
 
 interface Board {
@@ -33,7 +33,12 @@ interface BoardNavigationProps {
 export function BoardNavigation({ wsId, setOpen }: BoardNavigationProps) {
   const [isExpanded, setIsExpanded] = React.useState(true);
 
-  const { data: boardsData, isLoading: boardsLoading, error: boardsError, refetch } = useQuery<{
+  const {
+    data: boardsData,
+    isLoading: boardsLoading,
+    error: boardsError,
+    refetch,
+  } = useQuery<{
     boards: Board[];
   }>({
     queryKey: ['boards', wsId],
@@ -75,14 +80,18 @@ export function BoardNavigation({ wsId, setOpen }: BoardNavigationProps) {
       <div className="border-b border-border/50 pb-2">
         <div className="flex items-center justify-between px-3 py-2">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-foreground">📋 Board Navigation</span>
+            <span className="text-sm font-medium text-foreground">
+              📋 Board Navigation
+            </span>
             <Loader className="h-3 w-3 animate-spin text-dynamic-blue" />
           </div>
         </div>
         <div className="flex items-center justify-center p-6">
           <div className="flex items-center gap-2">
             <Loader className="h-4 w-4 animate-spin text-dynamic-blue" />
-            <span className="text-sm text-muted-foreground">Loading boards...</span>
+            <span className="text-sm text-muted-foreground">
+              Loading boards...
+            </span>
           </div>
         </div>
       </div>
@@ -95,7 +104,9 @@ export function BoardNavigation({ wsId, setOpen }: BoardNavigationProps) {
       <div className="border-b border-border/50 pb-2">
         <div className="flex items-center justify-between px-3 py-2">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-foreground">📋 Board Navigation</span>
+            <span className="text-sm font-medium text-foreground">
+              📋 Board Navigation
+            </span>
             <div className="rounded-md bg-dynamic-red/10 px-2 py-0.5 text-xs font-medium text-dynamic-red">
               Error
             </div>
@@ -133,7 +144,9 @@ export function BoardNavigation({ wsId, setOpen }: BoardNavigationProps) {
       <div className="border-b border-border/50 pb-2">
         <div className="flex items-center justify-between px-3 py-2">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-foreground">📋 Board Navigation</span>
+            <span className="text-sm font-medium text-foreground">
+              📋 Board Navigation
+            </span>
             <div className="rounded-md bg-dynamic-orange/10 px-2 py-0.5 text-xs font-medium text-dynamic-orange">
               0 boards
             </div>
@@ -171,7 +184,9 @@ export function BoardNavigation({ wsId, setOpen }: BoardNavigationProps) {
       {/* Collapsible Header */}
       <div className="flex items-center justify-between px-3 py-2">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium text-foreground">📋 Board Navigation</span>
+          <span className="text-sm font-medium text-foreground">
+            📋 Board Navigation
+          </span>
           <div className="rounded-md bg-dynamic-blue/10 px-2 py-0.5 text-xs font-medium text-dynamic-blue">
             {boards.length} boards
           </div>
@@ -238,13 +253,16 @@ export function BoardNavigation({ wsId, setOpen }: BoardNavigationProps) {
               ))}
             </CommandGroup>
           </ScrollArea>
-          
+
           {/* Additional Info Footer */}
           {boards.length > 10 && (
             <div className="border-t border-border/30 px-4 py-2 text-center">
               <p className="text-xs text-muted-foreground">
-                Showing 10 of {boards.length} boards. 
-                <span className="font-medium text-foreground"> Visit boards page to see all.</span>
+                Showing 10 of {boards.length} boards.
+                <span className="font-medium text-foreground">
+                  {' '}
+                  Visit boards page to see all.
+                </span>
               </p>
             </div>
           )}
