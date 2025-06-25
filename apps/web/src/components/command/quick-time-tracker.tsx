@@ -25,55 +25,10 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
-// Focus score calculation constants
-const FOCUS_SCORE_CONSTANTS = {
-  MAX_DURATION_SECONDS: 7200, // 2 hours
-  DURATION_WEIGHT: 40,
-  CONSISTENCY_BONUS: 20,
-  TIME_BONUS: 20,
-  CATEGORY_BONUS: 10,
-  TASK_BONUS: 10,
-  PEAK_HOURS: { morning: [9, 11], afternoon: [14, 16] },
-} as const;
 
-// Session duration thresholds (in seconds)
-const SESSION_THRESHOLDS = {
-  DEEP_WORK: 7200, // 2 hours
-  FOCUSED: 3600, // 1 hour
-  STANDARD: 1800, // 30 minutes
-  QUICK_START: 900, // 15 minutes
-} as const;
 
-// Helper function to calculate focus score
-const calculateFocusScore = (
-  elapsedTime: number,
-  category: any,
-  taskId: string | undefined,
-  currentHour: number
-): number => {
-  const durationScore =
-    Math.min(elapsedTime / FOCUS_SCORE_CONSTANTS.MAX_DURATION_SECONDS, 1) *
-    FOCUS_SCORE_CONSTANTS.DURATION_WEIGHT;
-  const consistencyBonus = FOCUS_SCORE_CONSTANTS.CONSISTENCY_BONUS;
-  const timeBonus =
-    (currentHour >= FOCUS_SCORE_CONSTANTS.PEAK_HOURS.morning[0] &&
-      currentHour <= FOCUS_SCORE_CONSTANTS.PEAK_HOURS.morning[1]) ||
-    (currentHour >= FOCUS_SCORE_CONSTANTS.PEAK_HOURS.afternoon[0] &&
-      currentHour <= FOCUS_SCORE_CONSTANTS.PEAK_HOURS.afternoon[1])
-      ? FOCUS_SCORE_CONSTANTS.TIME_BONUS
-      : 0;
-  const categoryBonus = category?.name?.toLowerCase().includes('work')
-    ? FOCUS_SCORE_CONSTANTS.CATEGORY_BONUS
-    : 0;
-  const taskBonus = taskId ? FOCUS_SCORE_CONSTANTS.TASK_BONUS : 0;
 
-  return Math.min(
-    Math.round(
-      durationScore + consistencyBonus + timeBonus + categoryBonus + taskBonus
-    ),
-    100
-  );
-};
+
 
 interface QuickTimeTrackerProps {
   wsId: string;
@@ -88,7 +43,7 @@ export function QuickTimeTracker({
   setOpen,
   setIsLoading,
 }: QuickTimeTrackerProps) {
-  const [title, setTitle] = useState('');
+
   const [elapsedTime, setElapsedTime] = useState(0);
   const [isVisible, setIsVisible] = useState(true);
   
@@ -97,6 +52,7 @@ export function QuickTimeTracker({
   const [taskSearchQuery, setTaskSearchQuery] = useState('');
   const [selectedBoardId, setSelectedBoardId] = useState<string>('all');
   const [showTaskDropdown, setShowTaskDropdown] = useState(false);
+  const [showBoardDropdown, setShowBoardDropdown] = useState(false);
   
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -307,6 +263,9 @@ export function QuickTimeTracker({
       if (!target.closest('[data-task-dropdown]')) {
         setShowTaskDropdown(false);
       }
+      if (!target.closest('[data-board-dropdown]')) {
+        setShowBoardDropdown(false);
+      }
     };
 
     if (showTaskDropdown) {
@@ -445,7 +404,6 @@ export function QuickTimeTracker({
         }
       );
 
-      setTitle('');
       setOpen(false);
     },
     onError: (error) => {
@@ -619,12 +577,10 @@ export function QuickTimeTracker({
     setSelectedTask(task);
     setTaskSearchQuery(task.name);
     setShowTaskDropdown(false);
-    setTitle(`Working on: ${task.name}`);
   };
 
   const handleTaskSearchChange = (value: string) => {
     setTaskSearchQuery(value);
-    setTitle(value);
     
     // Clear selected task if search is cleared
     if (!value.trim()) {
@@ -640,7 +596,6 @@ export function QuickTimeTracker({
     // Reset search when changing boards
     setTaskSearchQuery('');
     setSelectedTask(null);
-    setTitle('');
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -701,15 +656,15 @@ export function QuickTimeTracker({
   };
 
   return (
-    <CommandGroup
+      <CommandGroup
       heading="Time Tracker"
       className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-muted-foreground"
       data-quick-timer
-    >
+      >
       <div className="px-2 pb-2">
         <div className="space-y-3">
           {/* Current Session Display */}
-                  {runningSession ? (
+        {runningSession ? (
             <div className="rounded-lg border border-green-200 bg-gradient-to-r from-green-50 to-emerald-50 p-4 dark:border-green-800 dark:from-green-950/50 dark:to-emerald-950/50">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -727,10 +682,10 @@ export function QuickTimeTracker({
                 </div>
                 <div className="text-right">
                   <p className="text-lg font-mono font-bold text-green-900 dark:text-green-100">
-                    {formatTime(elapsedTime)}
+                  {formatTime(elapsedTime)}
                   </p>
                 </div>
-              </div>
+                </div>
               <div className="mt-3 flex gap-2">
                 <Button
                   onClick={stopQuickTimer}
@@ -780,85 +735,116 @@ export function QuickTimeTracker({
                         <button
                           onClick={() => {
                             setSelectedTask(null);
-                            setTaskSearchQuery('');
-                            setTitle('');
+                                setTaskSearchQuery('');
                           }}
                           className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                         >
                           <X className="h-4 w-4" />
                         </button>
-                      )}
-                    </div>
-                    
+                )}
+              </div>
+
                     {/* Board Filter Dropdown */}
-                    <div className="relative ml-2">
-                      <select
-                        value={selectedBoardId}
-                        onChange={(e) => handleBoardChange(e.target.value)}
-                        className="h-9 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                    <div className="relative ml-2 w-32" data-board-dropdown>
+                      <button
+                        data-board-button
+                        onClick={() => setShowBoardDropdown(!showBoardDropdown)}
+                        className="flex h-9 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 hover:bg-accent"
                       >
-                        <option value="all">All Boards</option>
-                        {boardsData?.map((board: any) => (
-                          <option key={board.id} value={board.id}>
-                            {board.name}
-                          </option>
-                        ))}
-                      </select>
+                        <span className="truncate">
+                          {selectedBoardId === 'all' 
+                            ? 'All Boards'
+                            : boardsData?.find((board: any) => board.id === selectedBoardId)?.name || 'All Boards'
+                          }
+                        </span>
+                        <ChevronDown className="ml-2 h-3 w-3 text-muted-foreground flex-shrink-0" />
+                      </button>
+                      
+                      {/* Board Dropdown */}
+                      {showBoardDropdown && (
+                        <div className="absolute top-full z-50 mt-1 w-full rounded-md border bg-popover p-1 shadow-md right-0">
+                          <div className="max-h-32 overflow-y-auto">
+                            <button
+                              onClick={() => {
+                                handleBoardChange('all');
+                                setShowBoardDropdown(false);
+                              }}
+                              className={cn(
+                                "w-full p-2 text-left hover:bg-accent transition-colors rounded-sm text-sm",
+                                selectedBoardId === 'all' && "bg-accent"
+                              )}
+                            >
+                              All Boards
+                            </button>
+                            {boardsData?.map((board: any) => (
+                              <button
+                                key={board.id}
+                                onClick={() => {
+                                  handleBoardChange(board.id);
+                                  setShowBoardDropdown(false);
+                                }}
+                                className={cn(
+                                  "w-full p-2 text-left hover:bg-accent transition-colors rounded-sm text-sm",
+                                  selectedBoardId === board.id && "bg-accent"
+                                )}
+                                title={board.name}
+                              >
+                                <span className="line-clamp-1">{board.name}</span>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                   
-                  {/* Task Dropdown */}
+                                    {/* Task Dropdown */}
                   {showTaskDropdown && (
-                    <div className="absolute top-full z-50 mt-1 w-full rounded-md border bg-popover p-0 shadow-md">
-                      <div className="max-h-60 overflow-y-auto">
+                    <div className="absolute top-full z-50 mt-1 w-full rounded-md border bg-popover p-1 shadow-md max-w-full left-0 right-0">
+                      <div className="max-h-32 overflow-y-auto">
                         {filteredTasks.length > 0 ? (
-                          filteredTasks.slice(0, 10).map((task: any) => (
+                          filteredTasks.slice(0, 12).map((task: any) => (
                             <button
                               key={task.id}
                               onClick={() => handleTaskSelect(task)}
-                              className="w-full p-3 text-left hover:bg-accent transition-colors border-b border-border last:border-b-0"
+                              className="w-full p-2 text-left hover:bg-accent transition-colors rounded-sm"
                             >
-                              <div className="flex items-start gap-3">
-                                <div className="flex h-6 w-6 items-center justify-center rounded border border-dynamic-blue/30 bg-gradient-to-br from-dynamic-blue/20 to-dynamic-blue/10 flex-shrink-0">
-                                  <CheckCircle className="h-3 w-3 text-dynamic-blue" />
+                              <div className="flex items-center gap-2">
+                                <div className="flex h-4 w-4 items-center justify-center rounded border border-dynamic-blue/30 bg-gradient-to-br from-dynamic-blue/20 to-dynamic-blue/10 flex-shrink-0">
+                                  <CheckCircle className="h-2.5 w-2.5 text-dynamic-blue" />
                                 </div>
                                 <div className="min-w-0 flex-1">
-                                  <div className="flex items-center gap-2">
-                                    <span className="font-medium text-sm line-clamp-1">
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="font-medium text-xs line-clamp-1">
                                       {task.name}
                                     </span>
                                     {task.is_assigned_to_current_user && (
-                                      <span className="inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800 dark:bg-blue-900/50 dark:text-blue-200">
+                                      <span className="inline-flex items-center rounded-full bg-blue-100 px-1.5 py-0.5 text-[10px] font-medium text-blue-800 dark:bg-blue-900/50 dark:text-blue-200">
                                         Assigned
                                       </span>
                                     )}
-                                  </div>
-                                  {task.description && (
-                                    <p className="text-xs text-muted-foreground line-clamp-1 mt-1">
-                                      {task.description}
-                                    </p>
-                                  )}
-                                  <div className="flex items-center gap-2 mt-2">
                                     {task.priority && (
                                       <span className={cn(
-                                        'inline-flex items-center rounded px-1.5 py-0.5 text-xs font-medium',
+                                        'inline-flex items-center rounded px-1 py-0.5 text-[10px] font-medium',
                                         getPriorityColor(task.priority)
                                       )}>
                                         {getPriorityLabel(task.priority)}
                                       </span>
                                     )}
+                                  </div>
+                                  <div className="flex items-center gap-2 mt-1">
                                     {task.board_name && (
                                       <div className="flex items-center gap-1">
-                                        <MapPin className="h-3 w-3 text-muted-foreground" />
-                                        <span className="text-xs text-muted-foreground">
+                                        <MapPin className="h-2.5 w-2.5 text-muted-foreground" />
+                                        <span className="text-[10px] text-muted-foreground">
                                           {task.board_name}
                                         </span>
                                       </div>
                                     )}
                                     {task.list_name && (
                                       <div className="flex items-center gap-1">
-                                        <Tag className="h-3 w-3 text-muted-foreground" />
-                                        <span className="text-xs text-muted-foreground">
+                                        <Tag className="h-2.5 w-2.5 text-muted-foreground" />
+                                        <span className="text-[10px] text-muted-foreground">
                                           {task.list_name}
                                         </span>
                                       </div>
@@ -869,16 +855,16 @@ export function QuickTimeTracker({
                             </button>
                           ))
                         ) : (
-                          <div className="p-4 text-center text-sm text-muted-foreground">
+                          <div className="p-3 text-center text-xs text-muted-foreground">
                             {taskSearchQuery ? 'No tasks found matching your search' : 'No tasks available'}
                           </div>
                         )}
                       </div>
                     </div>
                   )}
-                </div>
-              </div>
-              
+                    </div>
+                  </div>
+
               {/* Selected Task Display */}
               {selectedTask && (
                 <div className="rounded-lg border border-dynamic-green/30 bg-gradient-to-r from-dynamic-green/5 to-dynamic-green/3 p-3">
@@ -890,7 +876,7 @@ export function QuickTimeTracker({
                       <div className="flex items-center gap-2">
                         <span className="text-sm font-semibold text-dynamic-green">
                           Selected Task
-                        </span>
+                      </span>
                       </div>
                       <p className="text-sm font-medium text-foreground mt-1">
                         {selectedTask.name}
@@ -907,7 +893,7 @@ export function QuickTimeTracker({
                             getPriorityColor(selectedTask.priority)
                           )}>
                             {getPriorityLabel(selectedTask.priority)}
-                          </span>
+                      </span>
                         )}
                         {selectedTask.board_name && selectedTask.list_name && (
                           <div className="flex items-center gap-2">
@@ -915,38 +901,38 @@ export function QuickTimeTracker({
                               <MapPin className="h-3 w-3 text-muted-foreground" />
                               <span className="text-xs text-muted-foreground">
                                 {selectedTask.board_name}
-                              </span>
+                      </span>
                             </div>
                             <div className="flex items-center gap-1">
                               <Tag className="h-3 w-3 text-dynamic-green" />
                               <span className="text-xs text-dynamic-green">
                                 {selectedTask.list_name}
-                              </span>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
+                      </span>
                   </div>
                 </div>
+                        )}
+                  </div>
+                </div>
+              </div>
+            </div>
               )}
-              
+
               <div className="flex gap-2">
-                <Button
+            <Button
                   onClick={startQuickTimer}
                   className="flex-1"
-                  size="sm"
+              size="sm"
                   disabled={!selectedTask || startMutation.isPending}
                 >
                   <Play className="mr-2 h-3 w-3" />
                   Start Timer
-                </Button>
+            </Button>
                 <Link href={`/${wsId}/time-tracker`}>
                   <Button size="sm" variant="outline">
                     <ExternalLink className="h-3 w-3" />
                   </Button>
                 </Link>
-              </div>
+          </div>
 
               {/* Quick Actions */}
               <div className="grid grid-cols-2 gap-2">
@@ -974,7 +960,7 @@ export function QuickTimeTracker({
                           ? 'text-blue-600 dark:text-blue-400'
                           : 'text-muted-foreground'
                       )} />
-                    </div>
+                </div>
                     <div className="min-w-0 flex-1">
                       <p className={cn(
                         'text-xs font-medium',
@@ -1000,7 +986,7 @@ export function QuickTimeTracker({
                               <span className="truncate text-xs text-blue-700/80 dark:text-blue-300/80">
                                 {recentSessions[0].category.name}
                               </span>
-                            </div>
+              </div>
                           )}
                         </>
                       ) : (
@@ -1008,7 +994,7 @@ export function QuickTimeTracker({
                           No recent session
                         </p>
                       )}
-                    </div>
+              </div>
                   </div>
                 </button>
 
@@ -1036,7 +1022,7 @@ export function QuickTimeTracker({
                           ? 'text-purple-600 dark:text-purple-400'
                           : 'text-muted-foreground'
                       )} />
-                    </div>
+                  </div>
                     <div className="min-w-0 flex-1">
                       <p className={cn(
                         'text-xs font-medium',
@@ -1067,7 +1053,7 @@ export function QuickTimeTracker({
                                 • Auto-assign
                               </span>
                             )}
-                          </div>
+                  </div>
                         </>
                       ) : (
                         <>
@@ -1079,13 +1065,13 @@ export function QuickTimeTracker({
                           </p>
                         </>
                       )}
-                    </div>
-                  </div>
-                </button>
+                </div>
               </div>
+                </button>
             </div>
-          )}
-        </div>
+          </div>
+        )}
+    </div>
       </div>
     </CommandGroup>
   );
