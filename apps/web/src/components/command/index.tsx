@@ -10,7 +10,6 @@ import { CommandDialog, CommandList } from '@tuturuuu/ui/command';
 import { AlertTriangle, RefreshCw } from '@tuturuuu/ui/icons';
 import { useParams } from 'next/navigation';
 import * as React from 'react';
-import { useQuery } from '@tanstack/react-query';
 
 // Main Command Palette Component
 export function CommandPalette({
@@ -27,23 +26,7 @@ export function CommandPalette({
   const [errorBoundaryKey, setErrorBoundaryKey] = React.useState(0);
 
   const params = useParams();
-  const { wsId: urlWsId } = params;
-
-  // Fetch default workspace if no workspace ID in URL
-  const { data: defaultWorkspace, isLoading: isLoadingWorkspace } = useQuery({
-    queryKey: ['default-workspace'],
-    queryFn: async () => {
-      if (urlWsId) return null;
-      const response = await fetch('/api/v1/users/me/default-workspace');
-      if (!response.ok) {
-        throw new Error('Failed to fetch default workspace');
-      }
-      return response.json();
-    },
-    enabled: !urlWsId && open, // Only fetch when no workspace ID in URL and command palette is open
-  });
-
-  const wsId = urlWsId || defaultWorkspace?.id;
+  const { wsId } = params;
 
   // Reset function for error boundary
   const resetErrorBoundary = React.useCallback(() => {
@@ -53,6 +36,9 @@ export function CommandPalette({
     setIsLoading(false);
     setIsTransitioning(false);
   }, []);
+
+  // Command palette no longer needs to fetch boards centrally
+  // Each component fetches its own data as needed
 
   // Reset state when modal closes
   React.useEffect(() => {
@@ -132,48 +118,7 @@ export function CommandPalette({
     }, 150);
   }, []);
 
-  // Show loading state while fetching default workspace
-  if (isLoadingWorkspace) {
-    return (
-      <CommandDialog open={open} onOpenChange={setOpen} showXIcon={false}>
-        <div className="flex items-center justify-center p-8">
-          <div className="flex items-center gap-2">
-            <div className="h-4 w-4 animate-spin rounded-full border-2 border-dynamic-blue border-t-transparent" />
-            <span className="text-sm text-muted-foreground">Loading workspace...</span>
-          </div>
-        </div>
-      </CommandDialog>
-    );
-  }
-
-  // Show error if no workspace ID available
-  if (!wsId) {
-    return (
-      <CommandDialog open={open} onOpenChange={setOpen} showXIcon={false}>
-        <div className="flex flex-col items-center gap-4 p-8 text-center">
-          <div className="rounded-full bg-dynamic-red/10 p-4">
-            <AlertTriangle className="h-8 w-8 text-dynamic-red" />
-          </div>
-          <div className="space-y-2">
-            <h3 className="font-semibold text-foreground">No workspace available</h3>
-            <p className="max-w-sm text-sm text-muted-foreground">
-              Please select or create a workspace to use the command palette.
-            </p>
-          </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              setOpen(false);
-              window.location.href = '/workspaces';
-            }}
-          >
-            Go to Workspaces
-          </Button>
-        </div>
-      </CommandDialog>
-    );
-  }
+  // Navigation is now handled by individual components
 
   return (
     <CommandDialog open={open} onOpenChange={setOpen} showXIcon={false}>
@@ -196,7 +141,7 @@ export function CommandPalette({
         >
           {page === 'root' && !isTransitioning && (
             <CommandRoot
-              wsId={wsId}
+              wsId={wsId as string}
               inputValue={inputValue}
               setOpen={setOpen}
               setPage={setPage}
@@ -206,7 +151,7 @@ export function CommandPalette({
           {page === 'add-task' && !isTransitioning && (
             <div className="command-page-enter">
               <AddTaskForm
-                wsId={wsId}
+                wsId={wsId as string}
                 setOpen={setOpen}
                 setIsLoading={setIsLoading}
                 inputValue={inputValue}
@@ -218,7 +163,7 @@ export function CommandPalette({
           {page === 'time-tracker' && !isTransitioning && (
             <div className="command-page-enter">
               <QuickTimeTracker
-                wsId={wsId}
+                wsId={wsId as string}
                 setOpen={setOpen}
                 setIsLoading={setIsLoading}
               />
