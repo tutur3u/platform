@@ -36,6 +36,7 @@ import {
   TableRow,
 } from '@tuturuuu/ui/table';
 import { cn } from '@tuturuuu/utils/format';
+import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import ScoreBadge from '@/components/common/ScoreBadge';
@@ -197,9 +198,10 @@ export function SubmissionTable({
               <TableRow>
                 <TableHead className="w-[100px]">ID</TableHead>
                 <TableHead>
-                  <div
+                  <button
+                    type="button"
                     className={cn(
-                      'flex items-center',
+                      'flex items-center border-none bg-transparent p-0',
                       !serverSide && handleSort ? 'cursor-pointer' : ''
                     )}
                     onClick={() =>
@@ -218,13 +220,14 @@ export function SubmissionTable({
                     {sortField !== 'user_id' && (
                       <ArrowDownUp className="ml-1 h-4 w-4 opacity-50" />
                     )}
-                  </div>
+                  </button>
                 </TableHead>
                 {showEmail && <TableHead>Email</TableHead>}
                 <TableHead>
-                  <div
+                  <button
+                    type="button"
                     className={cn(
-                      'flex items-center',
+                      'flex items-center border-none bg-transparent p-0',
                       !serverSide && handleSort ? 'cursor-pointer' : ''
                     )}
                     onClick={() =>
@@ -243,12 +246,13 @@ export function SubmissionTable({
                     {sortField !== 'problem_id' && (
                       <ArrowDownUp className="ml-1 h-4 w-4 opacity-50" />
                     )}
-                  </div>
+                  </button>
                 </TableHead>
                 <TableHead>
-                  <div
+                  <button
+                    type="button"
                     className={cn(
-                      'flex items-center',
+                      'flex items-center border-none bg-transparent p-0',
                       !serverSide && handleSort ? 'cursor-pointer' : ''
                     )}
                     onClick={() =>
@@ -267,12 +271,13 @@ export function SubmissionTable({
                     {sortField !== 'score' && (
                       <ArrowDownUp className="ml-1 h-4 w-4 opacity-50" />
                     )}
-                  </div>
+                  </button>
                 </TableHead>
                 <TableHead>
-                  <div
+                  <button
+                    type="button"
                     className={cn(
-                      'flex items-center',
+                      'flex items-center border-none bg-transparent p-0',
                       !serverSide && handleSort ? 'cursor-pointer' : ''
                     )}
                     onClick={() =>
@@ -291,7 +296,7 @@ export function SubmissionTable({
                     {sortField !== 'created_at' && (
                       <ArrowDownUp className="ml-1 h-4 w-4 opacity-50" />
                     )}
-                  </div>
+                  </button>
                 </TableHead>
                 <TableHead className="text-right">
                   {t('headers.actions')}
@@ -302,7 +307,7 @@ export function SubmissionTable({
               {loading ? (
                 // Loading state
                 Array.from({ length: 5 }).map((_, index) => (
-                  <TableRow key={index}>
+                  <TableRow key={`submission-skeleton-${index}`}>
                     <TableCell>
                       <Skeleton className="h-6 w-16" />
                     </TableCell>
@@ -378,9 +383,11 @@ export function SubmissionTable({
                     >
                       <div className="flex items-center gap-2">
                         {submission.user?.avatar_url ? (
-                          <img
+                          <Image
                             src={submission.user.avatar_url}
                             alt={submission.user.display_name || 'User'}
+                            width={32}
+                            height={32}
                             className="h-8 w-8 rounded-full"
                           />
                         ) : (
@@ -492,7 +499,9 @@ export function SubmissionTable({
               )}
 
               {getVisiblePageNumbers().map((item, i) => (
-                <PaginationItem key={i}>
+                <PaginationItem
+                  key={typeof item === 'number' ? item : `ellipsis-${i}`}
+                >
                   {item === '...' ? (
                     <span className="flex h-9 w-9 items-center justify-center">
                       ...

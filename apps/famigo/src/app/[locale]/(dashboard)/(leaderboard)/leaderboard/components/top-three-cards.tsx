@@ -194,7 +194,7 @@ export function TopThreeCards({
               {!prefersReducedMotion &&
                 randomValues.map((value, i) => (
                   <motion.div
-                    key={i}
+                    key={`particle-${value.left}-${value.top}-${i}`}
                     className="absolute rounded-full opacity-0 transition-opacity duration-300 group-hover:opacity-70"
                     style={{
                       width: value.width,

@@ -54,7 +54,7 @@ export function ChallengeCriteriaDialog({
                     </TableHeader>
                     <TableBody>
                       {criteria.map((criterion, idx) => (
-                        <TableRow key={idx}>
+                        <TableRow key={criterion.name || `criterion-${idx}`}>
                           <TableCell className="font-medium">
                             {criterion.name}
                           </TableCell>

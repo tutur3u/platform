@@ -139,7 +139,17 @@ export default function ChallengesList({ isAdmin, challenges }: Props) {
             <Tabs
               defaultValue="all"
               value={filter}
-              onValueChange={(v) => setFilter(v as any)}
+              onValueChange={(v) =>
+                setFilter(
+                  v as
+                    | 'disabled'
+                    | 'upcoming'
+                    | 'preview'
+                    | 'active'
+                    | 'closed'
+                    | 'all'
+                )
+              }
             >
               <TabsList>
                 <TabsTrigger value="all">{t('filters.all')}</TabsTrigger>

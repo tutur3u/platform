@@ -23,7 +23,7 @@ export default function AnimatedTimeline({ events }: AnimatedTimelineProps) {
       <div className="space-y-12">
         {events.map((event, index) => (
           <motion.div
-            key={index}
+            key={event.title || `event-${index}`}
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}

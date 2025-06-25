@@ -18,6 +18,7 @@ import { Separator } from '@tuturuuu/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { motion } from 'framer-motion';
+import NextImage from 'next/image';
 import { useState } from 'react';
 
 export default function ChatPage() {
@@ -208,9 +209,11 @@ export default function ChatPage() {
                                   <Image className="h-8 w-8 text-muted-foreground" />
                                 </div>
                               ) : (
-                                <img
+                                <NextImage
                                   src={message.attachment.url}
                                   alt="Attachment"
+                                  width={160}
+                                  height={160}
                                   className="h-40 w-auto rounded-lg object-cover"
                                 />
                               )}
@@ -257,12 +260,13 @@ export default function ChatPage() {
                   {['happy', 'excited', 'neutral', 'tired', 'questioning'].map(
                     (mood) => (
                       <button
+                        type="button"
                         key={mood}
                         onClick={() => setSelectedMood(mood)}
-                        className={`text-lg transition-transform ${
+                        className={`flex h-10 w-10 items-center justify-center rounded-full text-lg transition-all duration-200 ${
                           selectedMood === mood
-                            ? 'scale-125'
-                            : 'opacity-70 hover:opacity-100'
+                            ? 'bg-primary text-primary-foreground'
+                            : 'bg-muted hover:bg-muted/80'
                         }`}
                       >
                         {getMoodEmoji(mood)}

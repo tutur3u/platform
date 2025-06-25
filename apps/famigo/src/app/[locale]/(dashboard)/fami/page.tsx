@@ -59,11 +59,12 @@ export default function FamiPage() {
       ];
 
       const randomResponse =
-        famiResponses[Math.floor(Math.random() * famiResponses.length)]!;
+        famiResponses[Math.floor(Math.random() * famiResponses.length)] ||
+        famiResponses[0];
 
       const famiMessage = {
         role: 'fami' as const,
-        content: randomResponse,
+        content: randomResponse || 'I understand. How can I help?',
         timestamp: new Date().toISOString(),
       };
 
@@ -110,7 +111,7 @@ export default function FamiPage() {
           <div className="flex flex-col gap-4">
             {messages.map((message, index) => (
               <motion.div
-                key={index}
+                key={`message-${index}`}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3 }}

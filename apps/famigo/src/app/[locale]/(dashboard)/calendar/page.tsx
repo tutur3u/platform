@@ -264,9 +264,9 @@ export default function CalendarPage() {
 
                 <div className="relative grid grid-cols-7 border-b border-foreground/10 dark:border-foreground/5">
                   {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(
-                    (day, i) => (
+                    (day) => (
                       <div
-                        key={i}
+                        key={day}
                         className="py-2 text-center text-sm font-medium text-muted-foreground"
                       >
                         {day}
@@ -277,7 +277,7 @@ export default function CalendarPage() {
                 <div className="grid grid-cols-7">
                   {weeks.flat().map((day, i) => (
                     <motion.div
-                      key={i}
+                      key={`calendar-cell-${i}`}
                       whileHover={day ? { scale: 1.02 } : {}}
                       whileTap={day ? { scale: 0.98 } : {}}
                       onClick={() =>

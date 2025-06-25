@@ -85,7 +85,7 @@ export function SubmissionCard({
               <Badge
                 variant="outline"
                 className="cursor-pointer text-xs hover:bg-secondary"
-                onClick={() => onRequestFetch?.(submission.id!)}
+                onClick={() => onRequestFetch?.(submission.id || '')}
               >
                 <RefreshCw className="mr-1 h-3 w-3" />
                 Load details

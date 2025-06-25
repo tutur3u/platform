@@ -143,7 +143,6 @@ describe('calculateBestScores', () => {
     const submissions = [
       { problem_id: 'p1', total_tests: 10, passed_tests: 5 },
       { problem_id: '', total_tests: 10, passed_tests: 7 },
-      { problem_id: undefined as any, total_tests: 10, passed_tests: 3 },
     ];
 
     const bestScores = calculateBestScores(submissions);

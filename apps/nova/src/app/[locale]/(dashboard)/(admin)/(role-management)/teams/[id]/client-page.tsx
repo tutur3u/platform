@@ -51,9 +51,15 @@ import { z } from 'zod';
 
 interface TeamDetailsClientProps {
   teamId: string;
-  teamData: any;
-  initialMembers: any[];
-  initialInvitations: any[];
+  teamData: {
+    id: string;
+    name: string;
+    description?: string;
+    created_at: string;
+    updated_at: string;
+  };
+  initialMembers: PlatformUser[];
+  initialInvitations: PlatformUser[];
 }
 
 export default function TeamDetailsClient({

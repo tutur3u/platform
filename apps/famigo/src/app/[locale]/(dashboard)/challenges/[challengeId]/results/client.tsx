@@ -57,9 +57,41 @@ interface Stats {
   totalProblems: number;
 }
 
+interface Problem {
+  id: string;
+  title: string;
+  description?: string;
+  submissions: Array<{
+    id: string;
+    score: number;
+    created_at: string;
+    status: string;
+  }>;
+}
+
+interface SessionDetails {
+  session: {
+    id: string;
+    created_at: string;
+    updated_at?: string;
+    end_time: string | null;
+  };
+  problems: Array<Problem>;
+}
+
+type ExtendedNovaSubmission = {};
+
 interface Props {
   challengeId: string;
-  challenge: any;
+  challenge: {
+    id: string;
+    title: string;
+    description?: string;
+    enabled: boolean;
+    previewable_at?: string;
+    open_at?: string;
+    close_at?: string;
+  };
   sessionSummaries: SessionSummary[];
   stats: Stats;
   userId: string;
@@ -103,13 +135,20 @@ export default function ResultClient({
 }: Props) {
   const router = useRouter();
   const [expandedSessions, setExpandedSessions] = useState<string[]>([]);
-  const [loadedSessions, setLoadedSessions] = useState<Record<string, any>>({});
+  const [loadedSessions, setLoadedSessions] = useState<
+    Record<string, SessionDetails>
+  >({});
   const [loadingSessions, setLoadingSessions] = useState<
     Record<string, boolean>
   >({});
   const [activeTab, setActiveTab] = useState('sessions');
   const [loadingAllProblems, setLoadingAllProblems] = useState(false);
-  const [allProblems, setAllProblems] = useState<any[] | null>(null);
+  const [allProblems, setAllProblems] = useState<Array<{
+    id: string;
+    title: string;
+    description?: string;
+    difficulty?: string;
+  }> | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showScoreBreakdown, setShowScoreBreakdown] = useState(false);
 
@@ -317,15 +356,22 @@ export default function ResultClient({
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <div
+                              <button
+                                type="button"
                                 className="flex cursor-pointer items-center rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary"
                                 onClick={() =>
                                   setShowScoreBreakdown(!showScoreBreakdown)
                                 }
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter' || e.key === ' ') {
+                                    e.preventDefault();
+                                    setShowScoreBreakdown(!showScoreBreakdown);
+                                  }
+                                }}
                               >
                                 <Trophy className="mr-1 h-4 w-4" />
                                 {stats.score.toFixed(1)}/{stats.maxScore}
-                              </div>
+                              </button>
                             </TooltipTrigger>
                             <TooltipContent className="w-[250px] p-3">
                               <p className="mb-1 text-xs font-medium">
@@ -548,7 +594,10 @@ export default function ResultClient({
 
                                 <div className="grid grid-cols-1 gap-4 px-6 md:grid-cols-2">
                                   {loadedSessions[session.id].problems.map(
-                                    (problem: any, problemIndex: number) => (
+                                    (
+                                      problem: Problem,
+                                      problemIndex: number
+                                    ) => (
                                       <ProblemCard
                                         key={problem.id}
                                         problem={problem}

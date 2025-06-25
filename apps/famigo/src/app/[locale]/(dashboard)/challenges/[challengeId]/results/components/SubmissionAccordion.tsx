@@ -44,7 +44,7 @@ export default function SubmissionAccordion({
 
         return (
           <AccordionItem
-            key={subIndex}
+            key={submission.id || `submission-${subIndex}`}
             value={`submission-${sessionIndex}-${problemIndex}-${subIndex}`}
             className="overflow-hidden rounded-lg border border-b px-0 data-[state=open]:bg-muted/30"
           >

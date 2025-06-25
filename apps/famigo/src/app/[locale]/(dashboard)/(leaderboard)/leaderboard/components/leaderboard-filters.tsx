@@ -143,11 +143,17 @@ export function LeaderboardFilters({
 
               <CardContent className="flex gap-4 p-4">
                 <div className="w-full space-y-2">
-                  <label className="text-xs font-medium text-blue-600 dark:text-blue-400">
+                  <label
+                    htmlFor="score-range"
+                    className="text-xs font-medium text-blue-600 dark:text-blue-400"
+                  >
                     {t('score-range.name')}
                   </label>
                   <Select defaultValue="all">
-                    <SelectTrigger className="h-8 bg-white text-xs text-gray-700 ring-offset-white transition-all duration-200 dark:border-slate-700 dark:bg-slate-800/80 dark:text-slate-300 dark:ring-offset-slate-900">
+                    <SelectTrigger
+                      id="score-range"
+                      className="h-8 bg-white text-xs text-gray-700 ring-offset-white transition-all duration-200 dark:border-slate-700 dark:bg-slate-800/80 dark:text-slate-300 dark:ring-offset-slate-900"
+                    >
                       <SelectValue placeholder="All scores" />
                     </SelectTrigger>
                     <SelectContent className="bg-white text-gray-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
@@ -168,14 +174,20 @@ export function LeaderboardFilters({
                 </div>
 
                 <div className="w-full space-y-2">
-                  <label className="text-xs font-medium text-blue-600 dark:text-blue-400">
+                  <label
+                    htmlFor="challenge-select"
+                    className="text-xs font-medium text-blue-600 dark:text-blue-400"
+                  >
                     Challenge
                   </label>
                   <Select
                     value={selectedChallenge}
                     onValueChange={setSelectedChallenge}
                   >
-                    <SelectTrigger className="h-8 bg-white text-xs text-gray-700 ring-offset-white transition-all duration-200 dark:border-slate-700 dark:bg-slate-800/80 dark:text-slate-300 dark:ring-offset-slate-900">
+                    <SelectTrigger
+                      id="challenge-select"
+                      className="h-8 bg-white text-xs text-gray-700 ring-offset-white transition-all duration-200 dark:border-slate-700 dark:bg-slate-800/80 dark:text-slate-300 dark:ring-offset-slate-900"
+                    >
                       <SelectValue placeholder="All challenges" />
                     </SelectTrigger>
                     <SelectContent className="bg-white text-gray-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">

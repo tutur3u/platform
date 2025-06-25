@@ -7,7 +7,7 @@ export default function LeaderboardFallback() {
       {/* Basic Information Skeleton */}
       <div className="mb-8 grid grid-cols-1 gap-4 md:grid-cols-4">
         {Array.from({ length: 4 }).map((_, i) => (
-          <Card key={i} className="overflow-hidden">
+          <Card key={`leaderboard-stat-${i}`} className="overflow-hidden">
             <CardContent className="p-4">
               <Skeleton className="mb-2 h-4 w-1/3" />
               <Skeleton className="h-8 w-2/3" />
@@ -21,7 +21,7 @@ export default function LeaderboardFallback() {
         <Skeleton className="mb-4 h-6 w-56" />
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           {Array.from({ length: 3 }).map((_, i) => (
-            <Card key={i} className="overflow-hidden">
+            <Card key={`leaderboard-top-card-${i}`} className="overflow-hidden">
               <CardContent className="p-6">
                 <div className="flex flex-col items-center">
                   <Skeleton className="mb-3 h-16 w-16 rounded-full" />
@@ -44,7 +44,7 @@ export default function LeaderboardFallback() {
         <CardContent className="p-4">
           {Array.from({ length: 10 }).map((_, i) => (
             <div
-              key={i}
+              key={`leaderboard-entry-${i}`}
               className="flex items-center justify-between border-b py-4"
             >
               <div className="flex items-center gap-3">

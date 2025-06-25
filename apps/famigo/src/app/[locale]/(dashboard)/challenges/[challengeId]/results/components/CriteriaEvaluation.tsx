@@ -17,7 +17,10 @@ export default function CriteriaEvaluation({
 
       <div className="space-y-3">
         {submission.criteria.map((criterion, index) => (
-          <div key={index} className="space-y-1">
+          <div
+            key={criterion.name || `criterion-${index}`}
+            className="space-y-1"
+          >
             <div className="flex items-center justify-between">
               <span className="font-medium">{criterion.name}</span>
               <Badge variant="outline">

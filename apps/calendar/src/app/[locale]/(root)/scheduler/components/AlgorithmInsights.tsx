@@ -230,7 +230,7 @@ export function AlgorithmInsights({
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {algorithmConsiderations.map((consideration, index) => {
+          {algorithmConsiderations.map((consideration, _index) => {
             const IconComponent = consideration.icon;
             const impactColor =
               consideration.impact === 'high'
