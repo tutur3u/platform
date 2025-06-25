@@ -32,7 +32,6 @@ import {
 } from '@tuturuuu/ui/icons';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import type { ReactNode } from 'react';
-import { PROD_MODE } from '@/constants/common';
 
 export type RolePermission = {
   id: PermissionId;
@@ -55,7 +54,7 @@ export const permissionGroups = ({
   wsId,
   user,
 }: {
-  t?: any;
+  t?: (key: string) => string;
   wsId: string;
   user: SupabaseUser | null;
 }) => {
@@ -328,7 +327,9 @@ export const permissionGroups = ({
         group?.permissions?.filter((p) => p.title && p.description) || []
       ).map((p) => ({
         ...p,
-        disabled: p.disableOnProduction ? PROD_MODE : p.disabled,
+        disabled: p.disableOnProduction
+          ? process.env.NODE_ENV === 'production'
+          : p.disabled,
       })),
     }))
     .filter(
@@ -338,7 +339,7 @@ export const permissionGroups = ({
 };
 
 export const permissions = (args: {
-  t?: any;
+  t?: (key: string) => string;
   wsId: string;
   user: SupabaseUser | null;
 }) => {

@@ -15,11 +15,14 @@ import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { cn } from '@tuturuuu/utils/format';
+import {
+  permissionGroups,
+  totalPermissions,
+} from '@tuturuuu/utils/permissions';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import * as z from 'zod';
-import { permissionGroups, totalPermissions } from '@/lib/permissions';
 import RoleFormDisplaySection from './role-display';
 import RoleFormMembersSection from './role-members';
 import RoleFormPermissionsSection from './role-permissions';
@@ -75,7 +78,11 @@ export function RoleForm({ wsId, user, data, forceDefault, onFinish }: Props) {
 
   const roleId = data?.id;
 
-  const rootGroups = permissionGroups({ t, wsId: ROOT_WORKSPACE_ID, user });
+  const rootGroups = permissionGroups({
+    t: t as (key: string) => string,
+    wsId: ROOT_WORKSPACE_ID,
+    user,
+  });
   const groups = permissionGroups({ t, wsId, user });
 
   const workspaceMembersQuery = useQuery({
