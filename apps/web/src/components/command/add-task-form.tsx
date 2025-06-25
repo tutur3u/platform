@@ -5,6 +5,7 @@ import type { Task } from '@tuturuuu/types/primitives/TaskBoard';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
+import { Input } from '@tuturuuu/ui/input';
 import { useToast } from '@tuturuuu/ui/hooks/use-toast';
 import {
   AlertTriangle,
@@ -13,6 +14,7 @@ import {
   List,
   Loader,
   Plus,
+  Type,
 } from '@tuturuuu/ui/icons';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import {
@@ -25,7 +27,7 @@ import {
 import { Separator } from '@tuturuuu/ui/separator';
 import { cn } from '@tuturuuu/utils/format';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 
 interface BoardWithLists {
@@ -54,27 +56,31 @@ export function AddTaskForm({
   const [selectedBoardId, setSelectedBoardId] = useState<string>('');
   const [selectedListId, setSelectedListId] = useState<string>('');
   const [showTasks, setShowTasks] = useState(false);
+  const [taskName, setTaskName] = useState('');
+  const taskInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
+  // Focus task input when board and list are selected
+  useEffect(() => {
+    if (selectedBoardId && selectedListId && taskInputRef.current) {
+      setTimeout(() => {
+        taskInputRef.current?.focus();
+      }, 100);
+    }
+  }, [selectedBoardId, selectedListId]);
+
   // Early return if no valid workspace ID
-  if (!wsId || wsId === 'undefined' || wsId === ROOT_WORKSPACE_ID) {
-    const isRootWorkspace = wsId === ROOT_WORKSPACE_ID;
-    
+  if (!wsId || wsId === 'undefined') {
     return (
       <div className="flex flex-col items-center gap-4 p-8 text-center">
         <div className="rounded-full bg-dynamic-orange/10 p-3">
           <AlertTriangle className="h-6 w-6 text-dynamic-orange" />
         </div>
         <div>
-          <p className="font-semibold text-foreground">
-            {isRootWorkspace ? 'System workspace' : 'No workspace selected'}
-          </p>
+          <p className="font-semibold text-foreground">No workspace selected</p>
           <p className="text-sm text-muted-foreground">
-            {isRootWorkspace 
-              ? 'The system workspace doesn\'t support task creation'
-              : 'Navigate to a workspace to create tasks'
-            }
+            Navigate to a workspace to create tasks
           </p>
         </div>
         <Button
@@ -85,7 +91,7 @@ export function AddTaskForm({
             window.location.href = '/';
           }}
         >
-          {isRootWorkspace ? 'Go to Workspaces' : 'Go to Dashboard'}
+          Go to Dashboard
         </Button>
       </div>
     );
@@ -173,7 +179,7 @@ export function AddTaskForm({
       queryClient.invalidateQueries({
         queryKey: ['tasks', wsId],
       });
-      setInputValue('');
+      setTaskName('');
       setOpen(false);
     },
     onError: (error) => {
@@ -186,9 +192,9 @@ export function AddTaskForm({
   });
 
   const handleCreateTask = () => {
-    const taskName = inputValue.trim();
+    const taskNameValue = taskName.trim();
 
-    if (!taskName) {
+    if (!taskNameValue) {
       toast({
         title: 'Task name is required',
         description: 'Please enter a name for your task.',
@@ -208,7 +214,7 @@ export function AddTaskForm({
 
     setIsLoading(true);
     createTaskMutation.mutate({
-      name: taskName,
+      name: taskNameValue,
       listId: selectedListId,
     });
   };
@@ -378,6 +384,28 @@ export function AddTaskForm({
         </div>
       )}
 
+      {/* Task Name Input */}
+      {selectedBoardId && selectedListId && (
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-foreground">Task Name</label>
+          <div className="relative">
+            <Type className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              ref={taskInputRef}
+              value={taskName}
+              onChange={(e) => setTaskName(e.target.value)}
+              placeholder="Enter task name..."
+              className="pl-10"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && taskName.trim() && selectedListId) {
+                  handleCreateTask();
+                }
+              }}
+            />
+          </div>
+        </div>
+      )}
+
       {/* Current Tasks Preview */}
       {showTasks && selectedListId && (
         <Card className="border-dynamic-gray/20">
@@ -472,7 +500,7 @@ export function AddTaskForm({
         <Button
           onClick={handleCreateTask}
           disabled={
-            !inputValue.trim() ||
+            !taskName.trim() ||
             !selectedListId ||
             createTaskMutation.isPending ||
             (Boolean(selectedBoardId) && availableLists.length === 0)
@@ -495,29 +523,33 @@ export function AddTaskForm({
 
       {/* Validation messages */}
       <div className="space-y-1">
-        {!inputValue.trim() && (
+        {!selectedBoardId && (
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <AlertTriangle className="h-3 w-3" />
-            <span>Enter a task name to continue</span>
+            <div className="h-1.5 w-1.5 rounded-full bg-dynamic-blue" />
+            <span>Step 1: Select a board</span>
           </div>
         )}
-        {inputValue.trim() && !selectedBoardId && (
+        {selectedBoardId && !selectedListId && availableLists.length > 0 && (
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <AlertTriangle className="h-3 w-3" />
-            <span>Please select a board</span>
+            <div className="h-1.5 w-1.5 rounded-full bg-dynamic-blue" />
+            <span>Step 2: Select a list</span>
           </div>
         )}
-        {inputValue.trim() &&
-          selectedBoardId &&
-          !selectedListId &&
-          availableLists.length > 0 && (
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <AlertTriangle className="h-3 w-3" />
-              <span>Please select a list</span>
+        {selectedBoardId && selectedListId && !taskName.trim() && (
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <div className="h-1.5 w-1.5 rounded-full bg-dynamic-blue" />
+            <span>Step 3: Enter a task name</span>
+          </div>
+        )}
+        {selectedBoardId &&
+          selectedListId &&
+          taskName.trim() && (
+            <div className="flex items-center gap-2 text-xs text-dynamic-green">
+              <Check className="h-3 w-3" />
+              <span>Ready to create task!</span>
             </div>
           )}
-        {inputValue.trim() &&
-          selectedBoardId &&
+        {selectedBoardId &&
           availableLists.length === 0 && (
             <div className="flex items-center gap-2 text-xs text-dynamic-orange">
               <AlertTriangle className="h-3 w-3" />
