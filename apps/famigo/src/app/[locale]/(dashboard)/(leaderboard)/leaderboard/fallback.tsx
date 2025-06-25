@@ -7,7 +7,6 @@ export default function LeaderboardFallback() {
       {/* Basic Information Skeleton */}
       <div className="mb-8 grid grid-cols-1 gap-4 md:grid-cols-4">
         {Array.from({ length: 4 }).map((_, i) => (
-          // biome-ignore lint/suspicious/noArrayIndexKey: Skeleton components for static loading state
           <Card key={`leaderboard-stat-${i}`} className="overflow-hidden">
             <CardContent className="p-4">
               <Skeleton className="mb-2 h-4 w-1/3" />
@@ -22,7 +21,6 @@ export default function LeaderboardFallback() {
         <Skeleton className="mb-4 h-6 w-56" />
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           {Array.from({ length: 3 }).map((_, i) => (
-            // biome-ignore lint/suspicious/noArrayIndexKey: Skeleton components for static loading state
             <Card key={`leaderboard-top-card-${i}`} className="overflow-hidden">
               <CardContent className="p-6">
                 <div className="flex flex-col items-center">

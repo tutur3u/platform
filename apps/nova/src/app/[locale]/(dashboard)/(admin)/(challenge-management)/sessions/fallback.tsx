@@ -24,6 +24,7 @@ export default function SessionsListFallback() {
     <>
       {/* Statistics Cards */}
       <div className="mb-6 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        {/* Using index as key is acceptable for static statistics cards */}
         {Array.from({ length: 4 }).map((_, index) => (
           <Card key={index}>
             <CardHeader className="pb-2">
@@ -73,6 +74,7 @@ export default function SessionsListFallback() {
             </TableRow>
           </TableHeader>
           <TableBody>
+            {/* Using index as key is acceptable for static table skeleton rows */}
             {Array.from({ length: 10 }).map((_, index) => (
               <TableRow key={index}>
                 <TableCell>

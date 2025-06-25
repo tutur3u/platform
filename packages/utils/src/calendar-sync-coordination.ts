@@ -1,3 +1,4 @@
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import dayjs from 'dayjs';
 
@@ -13,7 +14,7 @@ export const BACKGROUND_SYNC_RANGE = 4 * 7;
  */
 export const canProceedWithSync = async (
   wsId: string,
-  supabase?: any,
+  supabase?: SupabaseClient,
   dates?: Date[]
 ): Promise<boolean> => {
   try {
@@ -113,7 +114,7 @@ export const isWithinBackgroundSyncRange = (
  */
 export const updateLastUpsert = async (
   wsId: string,
-  supabase?: any
+  supabase?: SupabaseClient
 ): Promise<void> => {
   try {
     const client = supabase || createClient();

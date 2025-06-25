@@ -659,7 +659,7 @@ export function AboutUsPage() {
                   }}
                 />
 
-                {/* Floating particles */}
+                {/* Using index as key is acceptable for static animated particles */}
                 {[...Array(15)].map((_, i) => (
                   <motion.div
                     key={i}
@@ -724,6 +724,7 @@ export function AboutUsPage() {
         <div className="absolute inset-0 bg-[radial-gradient(circle_800px_at_50%_-30%,rgba(var(--primary-rgb),0.1),transparent)]" />
 
         {/* Animated code snippets background */}
+        {/* Using index as key is acceptable for static animated code snippets */}
         <div className="absolute inset-0 overflow-hidden opacity-5">
           {[...Array(10)].map((_, i) => (
             <motion.div

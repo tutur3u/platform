@@ -307,7 +307,6 @@ export function SubmissionTable({
               {loading ? (
                 // Loading state
                 Array.from({ length: 5 }).map((_, index) => (
-                  // biome-ignore lint/suspicious/noArrayIndexKey: Skeleton components for static loading state
                   <TableRow key={`submission-skeleton-${index}`}>
                     <TableCell>
                       <Skeleton className="h-6 w-16" />

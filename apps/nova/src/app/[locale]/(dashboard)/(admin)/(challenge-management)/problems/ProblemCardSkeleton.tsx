@@ -3,6 +3,7 @@ import { Skeleton } from '@tuturuuu/ui/skeleton';
 export default function ProblemCardSkeleton() {
   return (
     <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+      {/* Using index as key is acceptable for static skeletons that do not change order */}
       {Array.from({ length: 6 }).map((_, index) => (
         <div key={index} className="rounded-lg border p-4 shadow-sm">
           <Skeleton className="mb-4 h-40 w-full rounded-md" />

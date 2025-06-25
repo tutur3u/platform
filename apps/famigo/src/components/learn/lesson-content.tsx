@@ -76,13 +76,15 @@ export function LessonContent({ lesson }: LessonProps) {
       <div className="w-64 py-4">
         <h2 className="p-2 text-sm font-semibold">Table of Contents</h2>
         <nav className="space-y-1">
+          {/* Using index as key is acceptable for static table of contents */}
           {lesson.sections.map((section, index) => (
             <button
+              type="button"
               key={index}
               onClick={() => {
                 setActiveSection(index);
                 document
-                  .querySelector(`[data-index="${index}"]`)
+                  .querySelector(`[data-index=\"${index}\"]`)
                   ?.scrollIntoView({ behavior: 'smooth' });
               }}
               className={cn(
@@ -107,6 +109,7 @@ export function LessonContent({ lesson }: LessonProps) {
                 {lesson.title}
               </h1>
             </div>
+            {/* Using index as key is acceptable for static section rendering */}
             {lesson.sections.map((section, index) => (
               <motion.div
                 key={index}
@@ -122,6 +125,7 @@ export function LessonContent({ lesson }: LessonProps) {
                 </h2>
                 {Array.isArray(section.content) ? (
                   <div className="space-y-4">
+                    {/* Using index as key is acceptable for static markdown content */}
                     {section.content.map((item, idx) => (
                       <MemoizedReactMarkdown key={idx}>
                         {item}

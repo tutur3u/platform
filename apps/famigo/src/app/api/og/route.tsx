@@ -124,6 +124,7 @@ export async function GET() {
                 left: '50%',
               }}
             />
+            {/* biome-ignore lint/performance/noImgElement: Next.js OG Image API does not support next/image, so <img> is required here */}
             <img
               width="320"
               height="320"

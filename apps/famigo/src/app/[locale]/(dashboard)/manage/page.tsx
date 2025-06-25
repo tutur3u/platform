@@ -429,7 +429,6 @@ export default function ManagePage() {
                   <ul className="space-y-2">
                     {subscriptionDetails.features.map((feature, index) => (
                       <motion.li
-                        // biome-ignore lint/suspicious/noArrayIndexKey: Static feature list with stable order
                         key={index}
                         initial={{ opacity: 0, x: -10 }}
                         animate={{ opacity: 1, x: 0 }}

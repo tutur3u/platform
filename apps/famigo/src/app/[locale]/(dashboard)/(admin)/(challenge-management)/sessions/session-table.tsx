@@ -93,7 +93,6 @@ export function SessionTable({
   // Render loading skeletons for the table
   const renderSkeletons = () => {
     return Array.from({ length: 5 }).map((_, index) => (
-      // biome-ignore lint/suspicious/noArrayIndexKey: Skeleton components for static loading state
       <TableRow key={`skeleton-${index}`}>
         <TableCell>
           <Skeleton className="h-4 w-24" />

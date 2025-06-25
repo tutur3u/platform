@@ -30,10 +30,10 @@ import { useState } from 'react';
 import EditProblemDialog from './editProblemDialog';
 
 export function getProblemColumns(
-  t: any,
+  t: (key: string) => string,
   _: string | undefined,
-  __: any[] | undefined,
-  _extraData?: any
+  __: unknown[] | undefined,
+  _extraData?: Record<string, unknown>
 ): ColumnDef<ExtendedNovaProblem>[] {
   return [
     {
