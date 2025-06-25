@@ -15,10 +15,10 @@ import {
   RefreshCw,
   Tag,
 } from '@tuturuuu/ui/icons';
-import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { useRouter } from 'next/navigation';
 import React from 'react';
 import type { Board } from './types';
+import { cn } from '@tuturuuu/utils/format';
 
 interface BoardNavigationProps {
   wsId: string;
@@ -278,9 +278,12 @@ export function BoardNavigation({ wsId, setOpen }: BoardNavigationProps) {
       {/* Collapsible Content with Scrollable Area */}
       {isExpanded && (
         <div className="px-2">
-          <ScrollArea className="max-h-[300px]">
+          <div className={cn(
+            "space-y-1",
+            boards.length > 4 && "max-h-[280px] overflow-y-auto pr-1"
+          )}>
             <CommandGroup>
-              {boards.slice(0, 10).map((board: Board) => (
+              {boards.map((board: Board) => (
                 <CommandItem
                   key={board.id}
                   onSelect={() => handleBoardSelect(board.id)}
@@ -321,17 +324,13 @@ export function BoardNavigation({ wsId, setOpen }: BoardNavigationProps) {
                 </CommandItem>
               ))}
             </CommandGroup>
-          </ScrollArea>
+          </div>
 
           {/* Additional Info Footer */}
           {boards.length > 10 && (
             <div className="border-t border-border/30 px-4 py-2 text-center">
               <p className="text-xs text-muted-foreground">
-                Showing 10 of {boards.length} boards.
-                <span className="font-medium text-foreground">
-                  {' '}
-                  Visit boards page to see all.
-                </span>
+                Showing all {boards.length} boards.
               </p>
             </div>
           )}
