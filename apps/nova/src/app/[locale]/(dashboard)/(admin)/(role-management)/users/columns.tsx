@@ -38,9 +38,9 @@ import { useRouter } from 'next/navigation';
 import { NovaUsersRowActions } from './row-actions';
 
 export const getUserColumns = (
-  t: any,
+  t: (key: string) => string,
   _: string | undefined,
-  __: any[] | undefined,
+  __: unknown[] | undefined,
   extraData: { locale: string }
 ): ColumnDef<
   User & PlatformUser & Partial<UserPrivateDetails> & { team_name: string[] }

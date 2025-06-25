@@ -1,3 +1,4 @@
+import { CustomDataTable } from '@/components/custom-data-table';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type {
   PlatformUser,
@@ -8,10 +9,9 @@ import { Button } from '@tuturuuu/ui/button';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Mail } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
+import { getLocale } from 'next-intl/server';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { getLocale } from 'next-intl/server';
-import { CustomDataTable } from '@/components/custom-data-table';
 import { getUserColumns } from './columns';
 import EnabledFilter from './enabled-filter';
 import RoleFilter from './role-filter';
@@ -25,6 +25,20 @@ interface props {
     role?: string;
     enabled?: string;
   }>;
+}
+
+interface SearchUsersParams {
+  search_query: string;
+  page_number: number;
+  page_size: number;
+  role_filter: string | undefined;
+  enabled_filter: boolean | undefined;
+}
+
+interface CountSearchUsersParams {
+  search_query: string;
+  role_filter: string | undefined;
+  enabled_filter: boolean | undefined;
 }
 
 export default async function UserManagement({ searchParams }: props) {
@@ -109,14 +123,14 @@ async function getUserData({
 
     // If there's a search query, use the RPC function
     if (q) {
-      // Use type assertion to overcome TypeScript issues
+      // Use proper typing for RPC function parameters
       const { data, error } = await sbAdmin.rpc('search_users', {
         search_query: q,
         page_number: parseInt(page),
         page_size: parseInt(pageSize),
-        role_filter: role && role !== 'all' ? role : null,
-        enabled_filter: enabled ? enabled === 'true' : null,
-      } as any);
+        role_filter: role && role !== 'all' ? role : undefined,
+        enabled_filter: enabled ? enabled === 'true' : undefined,
+      } satisfies SearchUsersParams);
 
       if (error) {
         console.error('Error searching users:', error);
@@ -128,33 +142,41 @@ async function getUserData({
         'count_search_users',
         {
           search_query: q,
-          role_filter: role && role !== 'all' ? role : null,
-          enabled_filter: enabled ? enabled === 'true' : null,
-        } as any
+          role_filter: role && role !== 'all' ? role : undefined,
+          enabled_filter: enabled ? enabled === 'true' : undefined,
+        } satisfies CountSearchUsersParams
       );
 
       if (countError) {
         console.error('Error getting count:', countError);
         return {
           userData: (data || [])
-            .map((user: any) => ({
-              ...user,
-              services: user.services || [],
+            .map((user: unknown) => ({
+              ...(user as Record<string, unknown>),
+              services:
+                ((user as Record<string, unknown>)?.services as string[]) || [],
             }))
-            .filter((user: any) => user.services?.includes('NOVA')),
-          userCount: (data || []).filter((user: any) =>
-            user.services?.includes('NOVA')
+            .filter((user: { services?: string[] }) =>
+              user.services?.includes('NOVA')
+            ) as any,
+          userCount: (data || []).filter((user: unknown) =>
+            (
+              ((user as Record<string, unknown>)?.services as string[]) || []
+            ).includes('NOVA')
           ).length,
         };
       }
 
       return {
         userData: (data || [])
-          .map((user: any) => ({
-            ...user,
-            services: user.services || [],
+          .map((user: unknown) => ({
+            ...(user as Record<string, unknown>),
+            services:
+              ((user as Record<string, unknown>)?.services as string[]) || [],
           }))
-          .filter((user: any) => user.services?.includes('NOVA')),
+          .filter((user: { services?: string[] }) =>
+            user.services?.includes('NOVA')
+          ) as any,
         userCount: countData || 0,
       };
     }

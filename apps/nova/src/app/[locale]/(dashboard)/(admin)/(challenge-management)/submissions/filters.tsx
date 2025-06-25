@@ -205,18 +205,33 @@ export function SubmissionFilters({
           {userDropdownOpen && (
             <div
               className="absolute z-20 mt-1 max-h-[200px] w-full overflow-y-auto rounded-md border bg-background shadow-lg"
-              tabIndex={-1}
+              role="menu"
+              aria-label="User selection dropdown"
               onBlur={() => setTimeout(() => setUserDropdownOpen(false), 150)}
             >
               {filteredUsers.map((user) => (
                 <div
                   key={user.id}
                   className={`cursor-pointer px-4 py-2 hover:bg-accent ${selectedUser === user.id ? 'font-semibold' : ''}`}
+                  role="menuitem"
+                  tabIndex={0}
                   onMouseDown={() => {
                     onUserChange(user.id);
                     setUserDropdownOpen(false);
                     setUserSearch(user.email);
                     if (userInputRef.current) userInputRef.current.blur();
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      onUserChange(user.id);
+                      setUserDropdownOpen(false);
+                      setUserSearch(user.email);
+                      if (userInputRef.current) userInputRef.current.blur();
+                    } else if (e.key === 'Escape') {
+                      setUserDropdownOpen(false);
+                      if (userInputRef.current) userInputRef.current.focus();
+                    }
                   }}
                 >
                   {user.email}

@@ -277,7 +277,6 @@ export default function CalendarPage() {
                 <div className="grid grid-cols-7">
                   {weeks.flat().map((day, i) => (
                     <motion.div
-                      // biome-ignore lint/suspicious/noArrayIndexKey: Calendar grid cells with fixed positions
                       key={`calendar-cell-${i}`}
                       whileHover={day ? { scale: 1.02 } : {}}
                       whileTap={day ? { scale: 0.98 } : {}}

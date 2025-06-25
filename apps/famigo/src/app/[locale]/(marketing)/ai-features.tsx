@@ -80,7 +80,6 @@ export default function AiFeatures() {
             <div className="grid gap-4 sm:grid-cols-2">
               {features.map((feature, index) => (
                 <motion.div
-                  // biome-ignore lint/suspicious/noArrayIndexKey: Static feature list with stable order
                   key={index}
                   initial={{ opacity: 0, y: 20 }}
                   whileInView={{ opacity: 1, y: 0 }}
@@ -165,7 +164,6 @@ export default function AiFeatures() {
               'commands.improve' as const,
             ].map((command, index) => (
               <motion.div
-                // biome-ignore lint/suspicious/noArrayIndexKey: Static command list with stable order
                 key={index}
                 initial={{ opacity: 0, y: 10 }}
                 whileInView={{ opacity: 1, y: 0 }}

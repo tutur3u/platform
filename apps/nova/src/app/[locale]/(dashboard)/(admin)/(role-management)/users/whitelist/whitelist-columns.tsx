@@ -12,12 +12,16 @@ import { Loader2 } from '@tuturuuu/ui/icons';
 import { Switch } from '@tuturuuu/ui/switch';
 import moment from 'moment';
 import { useRouter } from 'next/navigation';
+import { useId } from 'react';
 import { NovaRoleRowActions } from './row-actions';
 
-export const getNovaRoleColumns = (t: any): ColumnDef<NovaRoleBasic>[] => {
+export const getNovaRoleColumns = (
+  t: (key: string) => string
+): ColumnDef<NovaRoleBasic>[] => {
   const router = useRouter();
   const queryClient = useQueryClient();
   const isFetching = useIsFetching({ queryKey: ['ai-whitelist'] });
+  const switchId = useId();
 
   const toggleMutation = useMutation({
     mutationFn: async ({
@@ -104,7 +108,7 @@ export const getNovaRoleColumns = (t: any): ColumnDef<NovaRoleBasic>[] => {
         return (
           <div className="flex items-center gap-2">
             <Switch
-              id="enabled"
+              id={switchId}
               checked={enabled}
               onCheckedChange={(checked) =>
                 toggleMutation.mutate({

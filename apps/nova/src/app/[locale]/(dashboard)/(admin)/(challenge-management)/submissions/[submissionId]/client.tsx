@@ -26,7 +26,7 @@ interface ReEvaluationProgress {
   step: string;
   progress: number;
   message: string;
-  data?: any;
+  data?: unknown;
 }
 
 export default function SubmissionClient({

@@ -642,7 +642,6 @@ export default function ResultClient({
                           .fill(0)
                           .map((_, i) => (
                             <div
-                              // biome-ignore lint/suspicious/noArrayIndexKey: Skeleton components for static loading state
                               key={`problem-skeleton-${i}`}
                               className="h-40 animate-pulse rounded-lg border p-4"
                             >

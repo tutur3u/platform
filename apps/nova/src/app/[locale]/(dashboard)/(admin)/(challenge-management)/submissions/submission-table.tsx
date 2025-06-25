@@ -1,5 +1,6 @@
 'use client';
 
+import ScoreBadge from '@/components/common/ScoreBadge';
 import type {
   NovaChallenge,
   NovaProblem,
@@ -36,9 +37,9 @@ import {
   TableRow,
 } from '@tuturuuu/ui/table';
 import { cn } from '@tuturuuu/utils/format';
-import { usePathname, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import ScoreBadge from '@/components/common/ScoreBadge';
+import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 
 type SubmissionWithDetails = NovaSubmission & {
   problem: NovaProblem & {
@@ -85,7 +86,6 @@ export function SubmissionTable({
 }: SubmissionTableProps) {
   const router = useRouter();
   const t = useTranslations('nova.submission-page.submission-table');
-  const pathname = usePathname();
 
   // Format date function for display
   function formatDate(dateString: string) {
@@ -153,7 +153,9 @@ export function SubmissionTable({
       params.set('page', page.toString());
       // Preserve other parameters
       const queryString = params.toString();
-      router.push(`${pathname}${queryString ? `?${queryString}` : ''}`);
+      router.push(
+        `${window.location.pathname}${queryString ? `?${queryString}` : ''}`
+      );
     } else if (setCurrentPage) {
       // Use client-side state update
       setCurrentPage(page);
@@ -168,7 +170,7 @@ export function SubmissionTable({
         sortField === field && sortDirection === 'asc' ? 'desc' : 'asc';
       // Use server-side navigation with query params
       router.push(
-        `/submissions?sortField=${field}&sortDirection=${newDirection}`
+        `${window.location.pathname}?sortField=${field}&sortDirection=${newDirection}`
       );
     } else if (handleSort) {
       // Use client-side handler
@@ -180,7 +182,7 @@ export function SubmissionTable({
   const handleClearSearch = () => {
     if (serverSide) {
       // Use server-side navigation without search param
-      router.push('/submissions');
+      router.push(window.location.pathname);
     } else if (setSearchQuery) {
       // Use client-side state update
       setSearchQuery('');
@@ -196,16 +198,29 @@ export function SubmissionTable({
               <TableRow>
                 <TableHead className="w-[100px]">ID</TableHead>
                 <TableHead>
-                  <div
+                  <button
+                    type="button"
                     className={cn(
                       'flex items-center',
-                      !serverSide && handleSort ? 'cursor-pointer' : ''
+                      !serverSide && handleSort
+                        ? 'cursor-pointer hover:bg-muted/50 rounded p-1'
+                        : ''
                     )}
                     onClick={() =>
                       !serverSide && handleSort
                         ? handleSort('user_id')
                         : handleSortChange('user_id')
                     }
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        !serverSide && handleSort
+                          ? handleSort('user_id')
+                          : handleSortChange('user_id');
+                      }
+                    }}
+                    aria-label="Sort by User"
+                    disabled={!(!serverSide && handleSort) && !handleSortChange}
                   >
                     User
                     {sortField === 'user_id' &&
@@ -217,20 +232,33 @@ export function SubmissionTable({
                     {sortField !== 'user_id' && (
                       <ArrowDownUp className="ml-1 h-4 w-4 opacity-50" />
                     )}
-                  </div>
+                  </button>
                 </TableHead>
                 {showEmail && <TableHead>Email</TableHead>}
                 <TableHead>
-                  <div
+                  <button
+                    type="button"
                     className={cn(
                       'flex items-center',
-                      !serverSide && handleSort ? 'cursor-pointer' : ''
+                      !serverSide && handleSort
+                        ? 'cursor-pointer hover:bg-muted/50 rounded p-1'
+                        : ''
                     )}
                     onClick={() =>
                       !serverSide && handleSort
                         ? handleSort('problem_id')
                         : handleSortChange('problem_id')
                     }
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        !serverSide && handleSort
+                          ? handleSort('problem_id')
+                          : handleSortChange('problem_id');
+                      }
+                    }}
+                    aria-label={`Sort by ${t('headers.problem')}`}
+                    disabled={!(!serverSide && handleSort) && !handleSortChange}
                   >
                     {t('headers.problem')}
                     {sortField === 'problem_id' &&
@@ -242,19 +270,32 @@ export function SubmissionTable({
                     {sortField !== 'problem_id' && (
                       <ArrowDownUp className="ml-1 h-4 w-4 opacity-50" />
                     )}
-                  </div>
+                  </button>
                 </TableHead>
                 <TableHead>
-                  <div
+                  <button
+                    type="button"
                     className={cn(
                       'flex items-center',
-                      !serverSide && handleSort ? 'cursor-pointer' : ''
+                      !serverSide && handleSort
+                        ? 'cursor-pointer hover:bg-muted/50 rounded p-1'
+                        : ''
                     )}
                     onClick={() =>
                       !serverSide && handleSort
                         ? handleSort('score')
                         : handleSortChange('score')
                     }
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        !serverSide && handleSort
+                          ? handleSort('score')
+                          : handleSortChange('score');
+                      }
+                    }}
+                    aria-label={`Sort by ${t('headers.score')}`}
+                    disabled={!(!serverSide && handleSort) && !handleSortChange}
                   >
                     {t('headers.score')}
                     {sortField === 'score' &&
@@ -266,19 +307,32 @@ export function SubmissionTable({
                     {sortField !== 'score' && (
                       <ArrowDownUp className="ml-1 h-4 w-4 opacity-50" />
                     )}
-                  </div>
+                  </button>
                 </TableHead>
                 <TableHead>
-                  <div
+                  <button
+                    type="button"
                     className={cn(
                       'flex items-center',
-                      !serverSide && handleSort ? 'cursor-pointer' : ''
+                      !serverSide && handleSort
+                        ? 'cursor-pointer hover:bg-muted/50 rounded p-1'
+                        : ''
                     )}
                     onClick={() =>
                       !serverSide && handleSort
                         ? handleSort('created_at')
                         : handleSortChange('created_at')
                     }
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        !serverSide && handleSort
+                          ? handleSort('created_at')
+                          : handleSortChange('created_at');
+                      }
+                    }}
+                    aria-label="Sort by Date"
+                    disabled={!(!serverSide && handleSort) && !handleSortChange}
                   >
                     Date
                     {sortField === 'created_at' &&
@@ -290,7 +344,7 @@ export function SubmissionTable({
                     {sortField !== 'created_at' && (
                       <ArrowDownUp className="ml-1 h-4 w-4 opacity-50" />
                     )}
-                  </div>
+                  </button>
                 </TableHead>
                 <TableHead className="text-right">
                   {t('headers.actions')}
@@ -379,9 +433,11 @@ export function SubmissionTable({
                     >
                       <div className="flex items-center gap-2">
                         {submission.user?.avatar_url ? (
-                          <img
+                          <Image
                             src={submission.user.avatar_url}
                             alt={submission.user.display_name || 'User'}
+                            width={32}
+                            height={32}
                             className="h-8 w-8 rounded-full"
                           />
                         ) : (

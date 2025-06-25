@@ -33,6 +33,7 @@ import {
 } from '@tuturuuu/ui/table';
 import { cn } from '@tuturuuu/utils/format';
 import { generateFunName } from '@tuturuuu/utils/name-helper';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 
@@ -208,16 +209,29 @@ export function SessionTable({
               <TableRow>
                 <TableHead className="w-[100px]">ID</TableHead>
                 <TableHead>
-                  <div
+                  <button
+                    type="button"
                     className={cn(
                       'flex items-center',
-                      !serverSide && handleSort ? 'cursor-pointer' : ''
+                      !serverSide && handleSort
+                        ? 'cursor-pointer hover:bg-muted/50 rounded p-1'
+                        : ''
                     )}
                     onClick={() =>
                       !serverSide && handleSort
                         ? handleSort('user_id')
                         : handleSortChange('user_id')
                     }
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        !serverSide && handleSort
+                          ? handleSort('user_id')
+                          : handleSortChange('user_id');
+                      }
+                    }}
+                    aria-label={`Sort by ${t('headers.user')}`}
+                    disabled={!(!serverSide && handleSort) && !handleSortChange}
                   >
                     {t('headers.user')}
                     {sortField === 'user_id' &&
@@ -229,20 +243,33 @@ export function SessionTable({
                     {sortField !== 'user_id' && (
                       <ArrowDownUp className="ml-1 h-4 w-4 opacity-50" />
                     )}
-                  </div>
+                  </button>
                 </TableHead>
                 {showEmail && <TableHead>Email</TableHead>}
                 <TableHead>
-                  <div
+                  <button
+                    type="button"
                     className={cn(
                       'flex items-center',
-                      !serverSide && handleSort ? 'cursor-pointer' : ''
+                      !serverSide && handleSort
+                        ? 'cursor-pointer hover:bg-muted/50 rounded p-1'
+                        : ''
                     )}
                     onClick={() =>
                       !serverSide && handleSort
                         ? handleSort('challenge_id')
                         : handleSortChange('challenge_id')
                     }
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        !serverSide && handleSort
+                          ? handleSort('challenge_id')
+                          : handleSortChange('challenge_id');
+                      }
+                    }}
+                    aria-label="Sort by Challenge"
+                    disabled={!(!serverSide && handleSort) && !handleSortChange}
                   >
                     Challenge
                     {sortField === 'challenge_id' &&
@@ -254,19 +281,32 @@ export function SessionTable({
                     {sortField !== 'challenge_id' && (
                       <ArrowDownUp className="ml-1 h-4 w-4 opacity-50" />
                     )}
-                  </div>
+                  </button>
                 </TableHead>
                 <TableHead>
-                  <div
+                  <button
+                    type="button"
                     className={cn(
                       'flex items-center',
-                      !serverSide && handleSort ? 'cursor-pointer' : ''
+                      !serverSide && handleSort
+                        ? 'cursor-pointer hover:bg-muted/50 rounded p-1'
+                        : ''
                     )}
                     onClick={() =>
                       !serverSide && handleSort
                         ? handleSort('status')
                         : handleSortChange('status')
                     }
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        !serverSide && handleSort
+                          ? handleSort('status')
+                          : handleSortChange('status');
+                      }
+                    }}
+                    aria-label="Sort by Status"
+                    disabled={!(!serverSide && handleSort) && !handleSortChange}
                   >
                     Status
                     {sortField === 'status' &&
@@ -278,19 +318,32 @@ export function SessionTable({
                     {sortField !== 'status' && (
                       <ArrowDownUp className="ml-1 h-4 w-4 opacity-50" />
                     )}
-                  </div>
+                  </button>
                 </TableHead>
                 <TableHead>
-                  <div
+                  <button
+                    type="button"
                     className={cn(
                       'flex items-center',
-                      !serverSide && handleSort ? 'cursor-pointer' : ''
+                      !serverSide && handleSort
+                        ? 'cursor-pointer hover:bg-muted/50 rounded p-1'
+                        : ''
                     )}
                     onClick={() =>
                       !serverSide && handleSort
                         ? handleSort('start_time')
                         : handleSortChange('start_time')
                     }
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        !serverSide && handleSort
+                          ? handleSort('start_time')
+                          : handleSortChange('start_time');
+                      }
+                    }}
+                    aria-label="Sort by Start Time"
+                    disabled={!(!serverSide && handleSort) && !handleSortChange}
                   >
                     Start Time
                     {sortField === 'start_time' &&
@@ -302,19 +355,32 @@ export function SessionTable({
                     {sortField !== 'start_time' && (
                       <ArrowDownUp className="ml-1 h-4 w-4 opacity-50" />
                     )}
-                  </div>
+                  </button>
                 </TableHead>
                 <TableHead>
-                  <div
+                  <button
+                    type="button"
                     className={cn(
                       'flex items-center',
-                      !serverSide && handleSort ? 'cursor-pointer' : ''
+                      !serverSide && handleSort
+                        ? 'cursor-pointer hover:bg-muted/50 rounded p-1'
+                        : ''
                     )}
                     onClick={() =>
                       !serverSide && handleSort
                         ? handleSort('end_time')
                         : handleSortChange('end_time')
                     }
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        !serverSide && handleSort
+                          ? handleSort('end_time')
+                          : handleSortChange('end_time');
+                      }
+                    }}
+                    aria-label="Sort by End Time"
+                    disabled={!(!serverSide && handleSort) && !handleSortChange}
                   >
                     End Time
                     {sortField === 'end_time' &&
@@ -326,7 +392,7 @@ export function SessionTable({
                     {sortField !== 'end_time' && (
                       <ArrowDownUp className="ml-1 h-4 w-4 opacity-50" />
                     )}
-                  </div>
+                  </button>
                 </TableHead>
                 <TableHead className="text-right">
                   {t('headers.actions')}
@@ -384,9 +450,11 @@ export function SessionTable({
                     >
                       <div className="flex items-center gap-2">
                         {session.user?.avatar_url ? (
-                          <img
+                          <Image
                             src={session.user.avatar_url}
                             alt={session.user.display_name || 'User'}
+                            width={32}
+                            height={32}
                             className="h-8 w-8 rounded-full"
                           />
                         ) : (
