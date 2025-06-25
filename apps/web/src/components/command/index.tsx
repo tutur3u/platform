@@ -12,10 +12,12 @@ import { useParams, usePathname } from 'next/navigation';
 import * as React from 'react';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 
+const UUID_REGEX = /[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/;
+
 // Function to extract workspace ID from pathname
 function getWorkspaceFromPath(pathname: string): string | null {
   // Match pattern like /locale/wsId/... or /wsId/...
-  const matches = pathname.match(/\/([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})/);
+  const matches = pathname.match(new RegExp(`\\/(${UUID_REGEX.source})`));
   return matches?.[1] || null;
 }
 
@@ -43,7 +45,7 @@ export function CommandPalette({
     if (urlWsId && 
         typeof urlWsId === 'string' && 
         urlWsId !== 'undefined' &&
-        (urlWsId === ROOT_WORKSPACE_ID || urlWsId.match(/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/))) {
+        (urlWsId === ROOT_WORKSPACE_ID || urlWsId.match(new RegExp(`^${UUID_REGEX.source}$`)))) {
       return urlWsId;
     }
 

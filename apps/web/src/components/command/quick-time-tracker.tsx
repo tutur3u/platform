@@ -97,7 +97,11 @@ export function QuickTimeTracker({
         isVisible &&
         document.visibilityState === 'visible'
       ) {
-        return 10000; // 10 seconds
+        // Progressive polling: increase interval based on session duration
+        const sessionDuration = elapsedTime;
+        if (sessionDuration < 300) return 10000; // First 5 minutes: 10s
+        if (sessionDuration < 1800) return 30000; // 5-30 minutes: 30s
+        return 60000; // After 30 minutes: 60s
       }
       return false; // No polling
     },
