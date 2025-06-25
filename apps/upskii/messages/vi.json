@@ -467,6 +467,7 @@
     "years_old": "tuổi",
     "year_old": "tuổi",
     "average": "Trung bình",
+    "logo": "Logo {name}",
     "no_content_yet": "Chưa có nội dung",
     "words": "từ",
     "word": "từ",
@@ -1744,7 +1745,31 @@
     "continue_with_google": "Tiếp tục với Google",
     "continue_with_github": "Tiếp tục với GitHub",
     "continue_with_apple": "Tiếp tục với Apple",
-    "continue_with_discord": "Tiếp tục với Discord"
+    "continue_with_discord": "Tiếp tục với Discord",
+    "powered-by": "Được hỗ trợ bởi {domain}",
+    "welcome": "Chào mừng",
+    "sign_in_to_your_account": "Đăng nhập vào tài khoản của bạn",
+    "invalid_credentials": "Email hoặc mật khẩu không hợp lệ",
+    "password_min_length": "Mật khẩu phải có ít nhất 8 ký tự",
+    "passwordless": "Không mật khẩu",
+    "with_password": "Với mật khẩu",
+    "two_factor_authentication": "Xác thực hai yếu tố",
+    "enter_authenticator_code": "Nhập mã 6 chữ số từ ứng dụng xác thực của bạn",
+    "verification_code_label": "Mã xác thực",
+    "verify_button": "Xác thực",
+    "choose_sign_in_method": "Chọn phương thức đăng nhập ưa thích của bạn",
+    "email": "Email",
+    "email_username_placeholder": "Nhập email hoặc tên người dùng",
+    "will_send_to": "Chúng tôi sẽ gửi mã xác thực đến",
+    "verification_code": "Mã xác thực",
+    "check_email": "Kiểm tra email của bạn để lấy mã xác thực",
+    "verify": "Xác thực",
+    "password": "Mật khẩu",
+    "password_placeholder": "Nhập mật khẩu của bạn",
+    "sign_in": "Đăng nhập",
+    "forgot_password": "Quên mật khẩu? Sử dụng đăng nhập không mật khẩu",
+    "will_sign_in_as": "Bạn sẽ đăng nhập bằng",
+    "or": "hoặc"
   },
   "logout": {
     "logout": "Đăng xuất",
@@ -3563,7 +3588,8 @@
     "image_preview_not_available": "Chưa có mẫu xem trước",
     "image_preview_not_available_description": "Ảnh xem trước của mẫu chứng chỉ không có sẵn.",
     "hide_certificate_preview": "Ẩn xem mẫu chứng chỉ",
-    "show_certificate_preview": "Hiển thị xem mẫu chứng chỉ"
+    "show_certificate_preview": "Hiển thị xem mẫu chứng chỉ",
+    "self_paced": "Học tự chủ"
   },
   "ws-crawlers": {
     "plural": "Công cụ cào dữ liệu",
@@ -4549,5 +4575,6 @@
   },
   "request-feature": "Yêu cầu tính năng",
   "unlock-education-features": "Mở khóa các tính năng giáo dục",
-  "transform-your-workspace": "Biến đổi không gian làm việc của bạn với các công cụ học tập toàn diện: Tạo Các khóa học, các câu đố tương tác thiết kế, theo dõi tiến trình của sinh viên, ủy quyền giấy chứng nhận, và tận dụng các trợ lý giảng dạy hỗ trợ AI."
+  "transform-your-workspace": "Biến đổi không gian làm việc của bạn với các công cụ học tập toàn diện: Tạo Các khóa học, các câu đố tương tác thiết kế, theo dõi tiến trình của sinh viên, ủy quyền giấy chứng nhận, và tận dụng các trợ lý giảng dạy hỗ trợ AI.",
+  "courses-marketplace-description": "Khám phá các khóa học của nền tảng"
 }
