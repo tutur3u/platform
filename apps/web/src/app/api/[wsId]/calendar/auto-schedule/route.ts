@@ -164,29 +164,27 @@ export async function POST(
     const streamMode = searchParams.get('stream') !== 'false';
 
     const body = await request.json().catch(() => ({}));
-    const gapMinutes = (body.gapMinutes as number | undefined) || 0;
+    // const gapMinutes = (body.gapMinutes as number | undefined) || 0;
 
     const { data: { user } } = await (await supabase).auth.getUser();
     if (!user) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
 
-    // =======================================================
-    // 2. DATA FETCHING & MAPPING (Your code integrated here)
-    // =======================================================
+
     console.log(`[AUTO-SCHEDULE-${requestId}] Fetching tasks and events...`);
     
     // Fetch tasks for the current user
     const { data: currentTasks, error: tasksError } = await (await supabase)
       .from('tasks')
       .select('*')
-      .eq('creator_id', user.id) // And belong to the user
-      .eq('archived', false) // And are not archived
-      .eq('completed', false); // And are not completed
+      .eq('creator_id', user.id) 
+      .eq('archived', false) 
+      .eq('completed', false); 
 
     if (tasksError) throw new Error(`Failed to fetch tasks: ${tasksError.message}`);
     
-    // Fetch all events for the workspace
+   
     const { data: flexibleEventsData, error: flexibleEventsError } = await (await supabase)
       .from('workspace_calendar_events')
       .select('*')
@@ -239,7 +237,7 @@ export async function POST(
     ) => {
       // 3. PREPARE DATA FOR THE SCHEDULER
       streamUpdate?.({ status: 'running', message: 'Analyzing schedule...' });
-      const lockedEvents: Event[] = [];
+      // const lockedEvents: Event[] = [];
       const tasksToProcess = [];
 
       // for (const event of newFlexibleEvents) {
@@ -278,7 +276,9 @@ export async function POST(
           .eq('id', optimization.id)
           .eq('ws_id', wsId);
 
-  
+          if(error) {
+            throw new Error(`Failed to update event ${optimization.id}: ${error.message}`);
+          }
       } catch (err) {
         console.error(
           `Failed to apply optimization for event ${optimization.id}:`,
@@ -319,9 +319,7 @@ export async function POST(
       return { message: 'Optimization complete!' };
     };
 
-    // =======================================================
-    // 6. RESPOND (STREAM OR JSON)
-    // =======================================================
+
     if (streamMode) {
       const stream = new ReadableStream({
         async start(controller) {
@@ -329,7 +327,8 @@ export async function POST(
             try {
               controller.enqueue(`data: ${JSON.stringify(data)}\n\n`);
             } catch (e) {
-              // Handle cases where the client might disconnect early
+              console.error(`[AUTO-SCHEDULE-${requestId}] Error writing to stream:`, e);
+              controller.error(e);
             }
           };
 
