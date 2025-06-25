@@ -9,8 +9,8 @@ import type {
 } from '@tuturuuu/types/db';
 import type { WorkspaceSecret } from '@tuturuuu/types/primitives/WorkspaceSecret';
 import { notFound, redirect } from 'next/navigation';
-import { permissions as rolePermissions } from '../../../apps/web/src/lib/permissions';
 import { ROOT_WORKSPACE_ID } from './constants';
+import { permissions as rolePermissions } from './permissions';
 
 export async function getWorkspace(id: string, requireUserRole = false) {
   const supabase = await createClient();
@@ -217,10 +217,12 @@ export async function getPermissions({
   wsId,
   redirectTo,
   enableNotFound,
+  prodMode = process.env.NODE_ENV === 'production',
 }: {
   wsId: string;
   redirectTo?: string;
   enableNotFound?: boolean;
+  prodMode?: boolean;
 }) {
   const supabase = await createClient();
 
@@ -295,7 +297,7 @@ export async function getPermissions({
   }
 
   const permissions = isCreator
-    ? rolePermissions({ wsId, user }).map(({ id }) => id)
+    ? rolePermissions({ wsId, user, prodMode }).map(({ id }) => id)
     : [...permissionsData, ...defaultData]
         .map(({ permission }) => permission)
         .filter((value, index, self) => self.indexOf(value) === index);

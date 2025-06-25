@@ -32,7 +32,6 @@ import {
 } from '@tuturuuu/ui/icons';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import type { ReactNode } from 'react';
-import { PROD_MODE } from '@/constants/common';
 
 export type RolePermission = {
   id: PermissionId;
@@ -54,10 +53,12 @@ export const permissionGroups = ({
   t = (key: string) => key,
   wsId,
   user,
+  prodMode,
 }: {
-  t?: any;
+  t?: (key: string) => string;
   wsId: string;
   user: SupabaseUser | null;
+  prodMode: boolean;
 }) => {
   return (
     [
@@ -328,7 +329,7 @@ export const permissionGroups = ({
         group?.permissions?.filter((p) => p.title && p.description) || []
       ).map((p) => ({
         ...p,
-        disabled: p.disableOnProduction ? PROD_MODE : p.disabled,
+        disabled: p.disableOnProduction ? prodMode : p.disabled,
       })),
     }))
     .filter(
@@ -338,9 +339,10 @@ export const permissionGroups = ({
 };
 
 export const permissions = (args: {
-  t?: any;
+  t?: (key: string) => string;
   wsId: string;
   user: SupabaseUser | null;
+  prodMode: boolean;
 }) => {
   return permissionGroups(args).reduce(
     (acc, group) => acc.concat(group?.permissions || []),
@@ -351,7 +353,9 @@ export const permissions = (args: {
 export const totalPermissions = ({
   wsId,
   user,
+  prodMode,
 }: {
   wsId: string;
   user: SupabaseUser | null;
-}) => permissions({ wsId, user }).length;
+  prodMode: boolean;
+}) => permissions({ wsId, user, prodMode }).length;
