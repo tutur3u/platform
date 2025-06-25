@@ -208,7 +208,7 @@ export default function Page() {
 
         <div className="mt-4 flex justify-center gap-4">
           <Button
-            className={`rounded-lg bg-red-600 px-4 py-2 text-white ${students.length === 0 && 'opacity-50'
+            className={`rounded-lg bg-red-500 px-4 py-2 text-white hover:bg-red-600 ${students.length === 0 && 'opacity-50'
               }`}
             disabled={students.length === 0}
             onClick={() => setShowClearDialog(true)}
@@ -216,7 +216,7 @@ export default function Page() {
             Clear History
           </Button>
           <Button
-            className={`rounded-lg bg-green-600 px-4 py-2 text-white ${students.length === 0 && 'opacity-50'
+            className={`rounded-lg bg-green-500 px-4 py-2 text-white hover:bg-green-600 ${students.length === 0 && 'opacity-50'
               }`}
             disabled={students.length === 0}
             onClick={handleUpload}
