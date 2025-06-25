@@ -424,7 +424,7 @@ export function AddTaskForm({
             !inputValue.trim() ||
             !selectedListId ||
             createTaskMutation.isPending ||
-            (selectedBoardId && availableLists.length === 0)
+            (Boolean(selectedBoardId) && availableLists.length === 0)
           }
           className="w-full"
         >

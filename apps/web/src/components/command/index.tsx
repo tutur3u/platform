@@ -4,14 +4,11 @@ import { AddTaskForm } from './add-task-form';
 import { CommandHeader } from './command-header';
 import './command-palette.css';
 import { CommandRoot } from './command-root';
-import { EmptyState } from './empty-state';
 import { QuickTimeTracker } from './quick-time-tracker';
-import { useQuery } from '@tanstack/react-query';
 import { CommandDialog, CommandList } from '@tuturuuu/ui/command';
 import { AlertTriangle, RefreshCw } from '@tuturuuu/ui/icons';
 import { Button } from '@tuturuuu/ui/button';
-import { useToast } from '@tuturuuu/ui/hooks/use-toast';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import * as React from 'react';
 
 // Main Command Palette Component
@@ -29,9 +26,7 @@ export function CommandPalette({
   const [errorBoundaryKey, setErrorBoundaryKey] = React.useState(0);
 
   const params = useParams();
-  const router = useRouter();
   const { wsId } = params;
-  const { toast } = useToast();
 
   // Reset function for error boundary
   const resetErrorBoundary = React.useCallback(() => {
@@ -42,30 +37,8 @@ export function CommandPalette({
     setIsTransitioning(false);
   }, []);
 
-  // Only fetch boards when on root page and command palette is open - optimized data fetching
-  const { data: boardsData, isLoading: boardsLoading, error: boardsError } = useQuery({
-    queryKey: ['boards-navigation', wsId],
-    queryFn: async () => {
-      const response = await fetch(
-        `/api/v1/workspaces/${wsId}/boards-with-lists`
-      );
-      if (!response.ok) throw new Error('Failed to fetch boards');
-      return response.json();
-    },
-    enabled: !!wsId && open && page === 'root', // Only fetch when needed
-    retry: 2, // Add retry logic
-    retryDelay: 1000, // 1 second delay between retries
-    onError: (error: Error) => {
-      // Show toast notification for boards loading errors
-      toast({
-        title: 'Failed to load boards',
-        description: error.message || 'Unable to fetch boards at the moment',
-        variant: 'destructive',
-      });
-    },
-  });
-
-  const boards = boardsData?.boards || [];
+  // Command palette no longer needs to fetch boards centrally
+  // Each component fetches its own data as needed
 
   // Reset state when modal closes
   React.useEffect(() => {
@@ -145,36 +118,7 @@ export function CommandPalette({
     }, 150);
   }, []);
 
-  const handlePageChange = React.useCallback((newPage: string) => {
-    setIsTransitioning(true);
-    setTimeout(() => {
-      setPage(newPage);
-      setInputValue('');
-      setIsTransitioning(false);
-    }, 150);
-  }, []);
-
-  const handleBoardNavigation = React.useCallback(
-    (boardId: string) => {
-      router.push(`/${wsId}/tasks/boards/${boardId}`);
-      setOpen(false);
-    },
-    [router, wsId, setOpen]
-  );
-
-  const handleCalendarNavigation = React.useCallback(() => {
-    router.push(`/${wsId}/calendar`);
-    setOpen(false);
-  }, [router, wsId, setOpen]);
-
-  const handleTimeTrackerNavigation = React.useCallback(() => {
-    router.push(`/${wsId}/time-tracker`);
-    setOpen(false);
-  }, [router, wsId, setOpen]);
-
-  const handleQuickTimeTrackerNavigation = React.useCallback(() => {
-    handlePageChange('time-tracker');
-  }, [handlePageChange]);
+  // Navigation is now handled by individual components
 
   return (
     <CommandDialog open={open} onOpenChange={setOpen} showXIcon={false}>
@@ -192,19 +136,11 @@ export function CommandPalette({
         <CommandList
           className={`${isTransitioning ? 'opacity-50 transition-opacity' : ''} max-h-[400px]`}
         >
-          {page === 'root' && <EmptyState />}
-
           {page === 'root' && !isTransitioning && (
             <CommandRoot
-              boards={boards}
+              wsId={wsId as string}
               inputValue={inputValue}
-              isLoading={boardsLoading}
-              error={boardsError}
-              onAddTask={() => handlePageChange('add-task')}
-              onTimeTracker={handleTimeTrackerNavigation}
-              onQuickTimeTracker={handleQuickTimeTrackerNavigation}
-              onCalendar={handleCalendarNavigation}
-              onBoardSelect={handleBoardNavigation}
+              setOpen={setOpen}
             />
           )}
 
