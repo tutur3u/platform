@@ -111,6 +111,7 @@ export default function FamiPage() {
           <div className="flex flex-col gap-4">
             {messages.map((message, index) => (
               <motion.div
+                // biome-ignore lint/suspicious/noArrayIndexKey: Chat messages with stable order
                 key={`message-${index}`}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}

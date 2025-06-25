@@ -57,6 +57,7 @@ const TeamSection = () => {
         </motion.div>
 
         <div className="grid gap-8 md:grid-cols-3">
+          {/* biome-ignore lint/suspicious/noArrayIndexKey: Static team member list with stable order */}
           {teamMembers.map((member, index) => (
             <TeamMember
               key={index}
@@ -99,6 +100,7 @@ const TeamSection = () => {
               },
             ].map((value, index) => (
               <motion.div
+                // biome-ignore lint/suspicious/noArrayIndexKey: Static value list with stable order
                 key={index}
                 initial={{ opacity: 0, y: 10 }}
                 whileInView={{ opacity: 1, y: 0 }}

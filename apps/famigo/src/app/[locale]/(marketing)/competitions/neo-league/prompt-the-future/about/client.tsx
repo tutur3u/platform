@@ -23,9 +23,9 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { cn } from '@tuturuuu/utils/format';
 import { motion, useScroll, useTransform, type Variants } from 'framer-motion';
+import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useTranslations } from 'next-intl';
 import React, { useRef } from 'react';
 import GradientHeadline from '../../../../../gradient-headline';
 import {

@@ -33,9 +33,9 @@ import {
 } from '@tuturuuu/ui/table';
 import { cn } from '@tuturuuu/utils/format';
 import { generateFunName } from '@tuturuuu/utils/name-helper';
+import { useLocale, useTranslations } from 'next-intl';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { useLocale, useTranslations } from 'next-intl';
 
 type SessionWithDetails = {
   id: string;
@@ -93,6 +93,7 @@ export function SessionTable({
   // Render loading skeletons for the table
   const renderSkeletons = () => {
     return Array.from({ length: 5 }).map((_, index) => (
+      // biome-ignore lint/suspicious/noArrayIndexKey: Skeleton components for static loading state
       <TableRow key={`skeleton-${index}`}>
         <TableCell>
           <Skeleton className="h-4 w-24" />

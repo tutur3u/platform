@@ -54,6 +54,7 @@ const CTASection = () => {
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
           {[...Array(5)].map((_, i) => (
             <motion.div
+              // biome-ignore lint/suspicious/noArrayIndexKey: Decorative floating elements with fixed count
               key={i}
               initial={{
                 y: 0,

@@ -682,6 +682,7 @@ export default function ChallengeForm({
 
                             {field.value?.length > 0 && (
                               <div className="mt-2 flex flex-wrap gap-2">
+                                {/* biome-ignore lint/suspicious/noArrayIndexKey: Static email list with stable order */}
                                 {field.value.map((adminEmail, index) => (
                                   <Badge
                                     key={index}
@@ -770,6 +771,7 @@ export default function ChallengeForm({
                               </FormDescription>
                               <div className="space-y-2">
                                 <div className="flex flex-wrap gap-2">
+                                  {/* biome-ignore lint/suspicious/noArrayIndexKey: Static email list with stable order */}
                                   {field.value.map((email, index) => (
                                     <Badge
                                       key={index}

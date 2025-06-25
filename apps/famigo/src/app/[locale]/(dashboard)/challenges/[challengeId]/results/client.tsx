@@ -79,8 +79,6 @@ interface SessionDetails {
   problems: Array<Problem>;
 }
 
-type ExtendedNovaSubmission = {};
-
 interface Props {
   challengeId: string;
   challenge: {
@@ -109,7 +107,10 @@ const SessionDetailsSkeleton = () => (
       {Array(2)
         .fill(0)
         .map((_, i) => (
-          <div key={i} className="h-40 rounded-lg border p-4">
+          <div
+            key={getSessionSkeletonId(i)}
+            className="h-40 rounded-lg border p-4"
+          >
             <div className="mb-2 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <div className="h-6 w-6 rounded-full bg-muted-foreground/20"></div>
@@ -125,6 +126,10 @@ const SessionDetailsSkeleton = () => (
     </div>
   </div>
 );
+
+function getSessionSkeletonId(index: number) {
+  return `session-skeleton-${index}-${Math.random().toString(36).substr(2, 9)}`;
+}
 
 export default function ResultClient({
   challengeId,
@@ -637,7 +642,8 @@ export default function ResultClient({
                           .fill(0)
                           .map((_, i) => (
                             <div
-                              key={i}
+                              // biome-ignore lint/suspicious/noArrayIndexKey: Skeleton components for static loading state
+                              key={`problem-skeleton-${i}`}
                               className="h-40 animate-pulse rounded-lg border p-4"
                             >
                               <div className="mb-2 flex items-center justify-between">
