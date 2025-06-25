@@ -167,7 +167,7 @@ export default function AddEventModal({
           | 'personal_time',
         start_date: formData.start_date || null,
         end_date: formData.end_date || null,
-        ws_id: wsId,
+        // ws_id: wsId,
         creator_id: user.id,
         archived: false,
         completed: false,
@@ -227,13 +227,13 @@ export default function AddEventModal({
 
   const workingHoursOptions = [
     {
-      value: 'working_hours',
+      value: 'working_time',
       label: 'Working Hours',
       icon: '💼',
       description: 'Schedule during standard work hours',
     },
     {
-      value: 'personal_hours',
+      value: 'personal_time',
       label: 'Personal Time',
       icon: '⚙️',
       description: 'Schedule at any time of day',
