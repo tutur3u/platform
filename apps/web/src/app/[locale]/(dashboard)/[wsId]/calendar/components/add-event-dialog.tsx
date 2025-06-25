@@ -30,6 +30,18 @@ interface AddEventModalProps {
   wsId?: string;
 }
 
+
+const minutesToHours = (minutes: number) => {
+  if (typeof minutes !== 'number' || isNaN(minutes)) return '';
+  const hours = minutes / 60;
+  return hours.toFixed(1); 
+};
+
+
+const hoursToMinutes = (hours: number) => {
+  if (typeof hours !== 'number' || isNaN(hours)) return 0;
+  return Math.round(hours * 60);
+};
 export default function AddEventModal({
   isOpen,
   onClose,
@@ -40,9 +52,9 @@ export default function AddEventModal({
     description: '',
     total_duration: 1,
     is_splittable: true,
-    min_split_duration_minutes: 30,
-    max_split_duration_minutes: 60,
-    calendar_hours: 'work_hours',
+    min_split_duration_minutes: 60,
+    max_split_duration_minutes: 120,
+    time_reference: 'working_time',
     start_date: '',
     end_date: '',
   });
@@ -150,10 +162,9 @@ export default function AddEventModal({
         max_split_duration_minutes: formData.is_splittable
           ? formData.max_split_duration_minutes
           : null,
-        calendar_hours: formData.calendar_hours as
-          | 'work_hours'
-          | 'personal_hours'
-          | 'meeting_hours',
+          time_reference: formData.time_reference as
+          | 'working_time'
+          | 'personal_time',
         start_date: formData.start_date || null,
         end_date: formData.end_date || null,
         ws_id: wsId,
@@ -206,7 +217,7 @@ export default function AddEventModal({
       is_splittable: true,
       min_split_duration_minutes: 30,
       max_split_duration_minutes: 60,
-      calendar_hours: 'work_hours',
+      time_reference: 'working_time',
       start_date: '',
       end_date: '',
     });
@@ -318,25 +329,26 @@ export default function AddEventModal({
                 </Label>
               </div>
 
+
               {formData.is_splittable && (
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-2">
                     <Label htmlFor="min-duration" className="text-sm">
-                      Min Duration (h){' '}
-                      <span className="text-destructive">*</span>
+                      Min Duration (h) <span className="text-destructive">*</span>
                     </Label>
                     <Input
                       id="min-duration"
                       type="number"
                       step="0.25"
                       min="0.25"
-                      value={formData.min_split_duration_minutes}
-                      onChange={(e) =>
+                      value={minutesToHours(formData.min_split_duration_minutes)}
+                      onChange={(e) => {
+                        const hours = parseFloat(e.target.value);
                         updateFormData(
                           'min_split_duration_minutes',
-                          parseFloat(e.target.value)
-                        )
-                      }
+                          hoursToMinutes(hours)
+                        );
+                      }}
                       className={
                         errors.min_split_duration_minutes
                           ? 'border-destructive'
@@ -352,21 +364,21 @@ export default function AddEventModal({
 
                   <div className="space-y-2">
                     <Label htmlFor="max-duration" className="text-sm">
-                      Max Duration (h){' '}
-                      <span className="text-destructive">*</span>
+                      Max Duration (h) <span className="text-destructive">*</span>
                     </Label>
                     <Input
                       id="max-duration"
                       type="number"
                       step="0.25"
                       min="0.25"
-                      value={formData.max_split_duration_minutes}
-                      onChange={(e) =>
+                      value={minutesToHours(formData.max_split_duration_minutes)}
+                      onChange={(e) => {
+                        const hours = parseFloat(e.target.value);
                         updateFormData(
                           'max_split_duration_minutes',
-                          parseFloat(e.target.value)
-                        )
-                      }
+                          hoursToMinutes(hours)
+                        );
+                      }}
                       className={
                         errors.max_split_duration_minutes
                           ? 'border-destructive'
@@ -416,9 +428,9 @@ export default function AddEventModal({
                 <Label className="text-sm font-medium">Working Hours</Label>
               </div>
               <Select
-                value={formData.calendar_hours}
+                value={formData.time_reference}
                 onValueChange={(value) =>
-                  updateFormData('calendar_hours', value)
+                  updateFormData('time_reference', value)
                 }
               >
                 <SelectTrigger>
