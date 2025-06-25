@@ -61,6 +61,7 @@ export function AddTaskForm({
     data: boardsData,
     isLoading: boardsLoading,
     error: boardsError,
+    refetch: refetchBoards,
   } = useQuery<{
     boards: BoardWithLists[];
   }>({
@@ -219,7 +220,7 @@ export function AddTaskForm({
           <Button
             variant="outline"
             size="sm"
-            onClick={() => window.location.reload()}
+            onClick={() => refetchBoards()}
           >
             Retry
           </Button>
