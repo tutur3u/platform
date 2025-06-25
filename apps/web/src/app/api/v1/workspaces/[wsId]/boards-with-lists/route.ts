@@ -8,8 +8,8 @@ export async function GET(
   try {
     const { wsId } = await params;
 
-    // Validate workspace ID
-    if (!wsId || wsId === '00000000-0000-0000-0000-000000000000') {
+    // Validate workspace ID format
+    if (!wsId || wsId === 'undefined') {
       return NextResponse.json(
         { error: 'Invalid workspace ID' },
         { status: 400 }

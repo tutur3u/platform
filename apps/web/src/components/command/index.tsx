@@ -43,27 +43,20 @@ export function CommandPalette({
     console.log('CommandPalette: urlWsId from params:', urlWsId);
     console.log('CommandPalette: pathname:', pathname);
     
-    // Method 1: From URL params (if it's a real workspace ID, not the root one)
+    // Method 1: From URL params (if it's a valid workspace ID)
     if (urlWsId && 
         typeof urlWsId === 'string' && 
-        urlWsId !== ROOT_WORKSPACE_ID && 
         urlWsId !== 'undefined' &&
-        urlWsId.match(/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/)) {
+        (urlWsId === ROOT_WORKSPACE_ID || urlWsId.match(/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/))) {
       console.log('CommandPalette: Using workspace ID from params:', urlWsId);
       return urlWsId;
     }
 
     // Method 2: Extract from pathname
     const pathWorkspaceId = getWorkspaceFromPath(pathname);
-    if (pathWorkspaceId && pathWorkspaceId !== ROOT_WORKSPACE_ID) {
+    if (pathWorkspaceId) {
       console.log('CommandPalette: Using workspace ID from path:', pathWorkspaceId);
       return pathWorkspaceId;
-    }
-
-    // Method 3: Check if we're intentionally on the root workspace
-    if (urlWsId === ROOT_WORKSPACE_ID) {
-      console.log('CommandPalette: Using root workspace ID');
-      return ROOT_WORKSPACE_ID;
     }
 
     console.log('CommandPalette: No valid workspace ID found');
