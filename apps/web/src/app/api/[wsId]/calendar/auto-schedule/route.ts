@@ -195,36 +195,45 @@ export async function POST(
     if (flexibleEventsError) throw new Error(`Failed to fetch events: ${flexibleEventsError.message}`);
 
     // Map DB tasks to the format our scheduler understands
-    const newTasks: Task[] = (currentTasks || []).map(task => ({
-      id: task.id,
-      name: task.name,
-      duration: task.total_duration,
-      minDuration: task.min_split_duration_minutes ? task.min_split_duration_minutes / 60 : 0.5,
-      maxDuration: task.max_split_duration_minutes ? task.max_split_duration_minutes / 60 : 2,
-      category: task.calendar_hours,
-      deadline: task.end_date ? new Date(task.end_date) : undefined,
-      priority: task.priority,
-      allowSplit: task.is_splittable,
-    }));
+    const newTasks: Task[] = await Promise.all(
+      (currentTasks || []).map(async task => ({
+        id: task.id,
+        name: task.name,
+        duration: task.total_duration ?? 0,
+        minDuration: task.min_split_duration_minutes ? task.min_split_duration_minutes / 60 : 0.5,
+        maxDuration: task.max_split_duration_minutes ? task.max_split_duration_minutes / 60 : 2,
+        category: 
+          task.calendar_hours === 'work_hours' ? 'work' :
+          task.calendar_hours === 'personal_hours' ? 'personal' :
+          task.calendar_hours === 'meeting_hours' ? 'meeting' :
+          'work',
+        events: [],
+        deadline: task.end_date ? (await import('dayjs')).default(task.end_date) : undefined,
+        priority: 
+          task.priority === 1 ? 'critical' :
+          task.priority === 2 ? 'high' :
+          task.priority === 3 ? 'normal' :
+          task.priority === 4 ? 'low' :
+          'normal',
+        allowSplit: !!task.is_splittable,
+      }))
+    );
 
-    // console.log(newTasks.length, 'taskss fetched:', newTasks);
-    // Map DB events to the format our scheduler understands
+  
+    const dayjs = (await import('dayjs')).default;
     const newFlexibleEvents: Event[] = (flexibleEventsData || []).map(event => ({
       id: event.id,
       name: event.title,
       range: {
-        start: new Date(event.start_at),
-        end: new Date(event.end_at),
+        start: dayjs(event.start_at),
+        end: dayjs(event.end_at),
       },
       locked: event.locked,
-    
-      // taskId: event.task_id,
-      category: 'work', // You may need a category field on your events table
+      taskId: event.id ?? '',
+      category: 'work', 
     }));
 
-    // =======================================================
-    // THE CORE SCHEDULING LOGIC WRAPPED FOR STREAMING
-    // =======================================================
+ 
     const runSchedulingLogic = async (
       streamUpdate?: (message: object) => void
     ) => {
