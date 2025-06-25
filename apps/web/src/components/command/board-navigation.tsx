@@ -21,6 +21,55 @@ import { useRouter } from 'next/navigation';
 import React from 'react';
 import type { Board } from './types';
 
+interface BoardItemProps {
+  board: Board;
+  onSelect: (boardId: string) => void;
+  getBoardColor: (boardId: string) => string;
+}
+
+function BoardItem({ board, onSelect, getBoardColor }: BoardItemProps) {
+  return (
+    <CommandItem
+      key={board.id}
+      onSelect={() => onSelect(board.id)}
+      className="command-item group cursor-pointer border-l-2 border-transparent transition-all duration-200 hover:border-dynamic-blue/30 hover:bg-gradient-to-r hover:from-dynamic-blue/5 hover:to-dynamic-purple/5"
+    >
+      <div className="flex w-full items-center gap-4">
+        <div className="relative">
+          <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-dynamic-blue/20 to-dynamic-purple/20 blur-sm transition-all group-hover:blur-md" />
+          <div
+            className={`relative rounded-lg border border-dynamic-blue/20 p-2.5 ${getBoardColor(board.id)}`}
+          >
+            <LayoutDashboard className="h-5 w-5" />
+          </div>
+        </div>
+        <div className="flex flex-1 flex-col">
+          <div className="flex items-center gap-2">
+            <span className="font-semibold text-foreground transition-colors group-hover:text-dynamic-blue">
+              {board.name}
+            </span>
+            <ExternalLink className="h-3 w-3 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
+          </div>
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <div className="flex items-center gap-1">
+              <Tag className="h-3 w-3" />
+              <span>{board.task_lists?.length || 0} lists</span>
+            </div>
+            <span>•</span>
+            <div className="flex items-center gap-1">
+              <MapPin className="h-3 w-3" />
+              <span>View tasks and manage board</span>
+            </div>
+          </div>
+        </div>
+        <div className="text-xs text-dynamic-blue/60 opacity-0 transition-opacity group-hover:opacity-100">
+          Navigate
+        </div>
+      </div>
+    </CommandItem>
+  );
+}
+
 interface BoardNavigationProps {
   wsId: string;
   setOpen: (open: boolean) => void;
@@ -63,7 +112,7 @@ export function BoardNavigation({ wsId, setOpen }: BoardNavigationProps) {
             onClick={() => {
               setOpen(false);
               // Try to navigate to dashboard or workspaces
-              window.location.href = '/';
+              router.push('/');
             }}
             className="gap-2"
           >
@@ -85,12 +134,8 @@ export function BoardNavigation({ wsId, setOpen }: BoardNavigationProps) {
   }>({
     queryKey: ['boards', wsId],
     queryFn: async () => {
-      console.log('BoardNavigation: Fetching boards for wsId:', wsId);
       const response = await fetch(`/api/v1/workspaces/${wsId}/boards-with-lists`);
-      console.log('BoardNavigation: Response status:', response.status);
       if (!response.ok) {
-        const errorText = await response.text();
-        console.log('BoardNavigation: Error response:', errorText);
         if (response.status === 401) {
           throw new Error('Please sign in to view boards');
         }
@@ -103,7 +148,6 @@ export function BoardNavigation({ wsId, setOpen }: BoardNavigationProps) {
         throw new Error('Failed to fetch boards');
       }
       const data = await response.json();
-      console.log('BoardNavigation: Success response:', data);
       return data;
     },
     retry: 2,
@@ -139,7 +183,7 @@ export function BoardNavigation({ wsId, setOpen }: BoardNavigationProps) {
     }
   }, [boards.length, isExpanded, checkScrollPosition]);
 
-  const getBoardColor = (boardId: string) => {
+  const getBoardColor = (boardId: string): string => {
     const colors = [
       'bg-dynamic-blue/10 border-dynamic-blue/20 text-dynamic-blue',
       'bg-dynamic-green/10 border-dynamic-green/20 text-dynamic-green',
@@ -151,7 +195,8 @@ export function BoardNavigation({ wsId, setOpen }: BoardNavigationProps) {
       a = (a << 5) - a + b.charCodeAt(0);
       return a & a;
     }, 0);
-    return colors[Math.abs(hash) % colors.length];
+    const colorIndex = Math.abs(hash) % colors.length;
+    return colors[colorIndex] as string;
   };
 
   const handleBoardSelect = (boardId: string) => {
@@ -223,15 +268,15 @@ export function BoardNavigation({ wsId, setOpen }: BoardNavigationProps) {
               Sign In
             </Button>
           ) : (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => refetch()}
-              className="gap-2"
-            >
-              <RefreshCw className="h-3 w-3" />
-              Retry
-            </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => refetch()}
+            className="gap-2"
+          >
+            <RefreshCw className="h-3 w-3" />
+            Retry
+          </Button>
           )}
         </div>
       </div>
@@ -325,88 +370,24 @@ export function BoardNavigation({ wsId, setOpen }: BoardNavigationProps) {
               >
                 <CommandGroup className="py-2">
                   {boards.map((board: Board) => (
-                    <CommandItem
+                    <BoardItem
                       key={board.id}
-                      onSelect={() => handleBoardSelect(board.id)}
-                      className="command-item group cursor-pointer border-l-2 border-transparent transition-all duration-200 hover:border-dynamic-blue/30 hover:bg-gradient-to-r hover:from-dynamic-blue/5 hover:to-dynamic-purple/5"
-                    >
-                      <div className="flex w-full items-center gap-4">
-                        <div className="relative">
-                          <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-dynamic-blue/20 to-dynamic-purple/20 blur-sm transition-all group-hover:blur-md" />
-                          <div
-                            className={`relative rounded-lg border border-dynamic-blue/20 p-2.5 ${getBoardColor(board.id)}`}
-                          >
-                            <LayoutDashboard className="h-5 w-5" />
-                          </div>
-                        </div>
-                        <div className="flex flex-1 flex-col">
-                          <div className="flex items-center gap-2">
-                            <span className="font-semibold text-foreground transition-colors group-hover:text-dynamic-blue">
-                              {board.name}
-                            </span>
-                            <ExternalLink className="h-3 w-3 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
-                          </div>
-                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                            <div className="flex items-center gap-1">
-                              <Tag className="h-3 w-3" />
-                              <span>{board.task_lists?.length || 0} lists</span>
-                            </div>
-                            <span>•</span>
-                            <div className="flex items-center gap-1">
-                              <MapPin className="h-3 w-3" />
-                              <span>View tasks and manage board</span>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="text-xs text-dynamic-blue/60 opacity-0 transition-opacity group-hover:opacity-100">
-                          Navigate
-                        </div>
-                      </div>
-                    </CommandItem>
+                      board={board}
+                      onSelect={handleBoardSelect}
+                      getBoardColor={getBoardColor}
+                    />
                   ))}
                 </CommandGroup>
-              </ScrollArea>
+          </ScrollArea>
             ) : (
               <CommandGroup className="space-y-1">
                 {boards.map((board: Board) => (
-                  <CommandItem
+                  <BoardItem
                     key={board.id}
-                    onSelect={() => handleBoardSelect(board.id)}
-                    className="command-item group cursor-pointer border-l-2 border-transparent transition-all duration-200 hover:border-dynamic-blue/30 hover:bg-gradient-to-r hover:from-dynamic-blue/5 hover:to-dynamic-purple/5"
-                  >
-                    <div className="flex w-full items-center gap-4">
-                      <div className="relative">
-                        <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-dynamic-blue/20 to-dynamic-purple/20 blur-sm transition-all group-hover:blur-md" />
-                        <div
-                          className={`relative rounded-lg border border-dynamic-blue/20 p-2.5 ${getBoardColor(board.id)}`}
-                        >
-                          <LayoutDashboard className="h-5 w-5" />
-                        </div>
-                      </div>
-                      <div className="flex flex-1 flex-col">
-                        <div className="flex items-center gap-2">
-                          <span className="font-semibold text-foreground transition-colors group-hover:text-dynamic-blue">
-                            {board.name}
-                          </span>
-                          <ExternalLink className="h-3 w-3 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
-                        </div>
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                          <div className="flex items-center gap-1">
-                            <Tag className="h-3 w-3" />
-                            <span>{board.task_lists?.length || 0} lists</span>
-                          </div>
-                          <span>•</span>
-                          <div className="flex items-center gap-1">
-                            <MapPin className="h-3 w-3" />
-                            <span>View tasks and manage board</span>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="text-xs text-dynamic-blue/60 opacity-0 transition-opacity group-hover:opacity-100">
-                        Navigate
-                      </div>
-                    </div>
-                  </CommandItem>
+                    board={board}
+                    onSelect={handleBoardSelect}
+                    getBoardColor={getBoardColor}
+                  />
                 ))}
               </CommandGroup>
             )}

@@ -24,6 +24,7 @@ import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Task, prioritizeTasks } from '../../utils/task-prioritization';
 
 
 
@@ -48,7 +49,7 @@ export function QuickTimeTracker({
   const [isVisible, setIsVisible] = useState(true);
   
   // Task selection state
-  const [selectedTask, setSelectedTask] = useState<any>(null);
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [taskSearchQuery, setTaskSearchQuery] = useState('');
   const [selectedBoardId, setSelectedBoardId] = useState<string>('all');
   const [showTaskDropdown, setShowTaskDropdown] = useState(false);
@@ -127,45 +128,9 @@ export function QuickTimeTracker({
       if (!response.ok) throw new Error('Failed to fetch tasks');
       const data = await response.json();
       
-      // Apply same prioritization logic as main time tracker
+      // Use the extracted prioritization utility
       const tasks = data.tasks || [];
-      let prioritizedTasks = [];
-
-      // 1. Urgent tasks assigned to current user
-      const myUrgentTasks = tasks.filter((task: any) => {
-        const isUrgent = task.priority === 1;
-        const isNotCompleted = !task.completed;
-        const isAssignedToMe = task.is_assigned_to_current_user;
-        return isUrgent && isNotCompleted && isAssignedToMe;
-      });
-
-      // 2. Urgent unassigned tasks
-      const urgentUnassigned = tasks.filter((task: any) => {
-        const isUrgent = task.priority === 1;
-        const isNotCompleted = !task.completed;
-        const isUnassigned = !task.assignees || task.assignees.length === 0;
-        return isUrgent && isNotCompleted && isUnassigned;
-      });
-
-      // 3. Other tasks assigned to current user
-      const myOtherTasks = tasks.filter((task: any) => {
-        const isNotUrgent = !task.priority || task.priority > 1;
-        const isNotCompleted = !task.completed;
-        const isAssignedToMe = task.is_assigned_to_current_user;
-        return isNotUrgent && isNotCompleted && isAssignedToMe;
-      });
-
-      // Combine and sort by priority
-      prioritizedTasks = [
-        ...myUrgentTasks.sort((a: any, b: any) => (a.priority || 99) - (b.priority || 99)),
-        ...urgentUnassigned.sort((a: any, b: any) => (a.priority || 99) - (b.priority || 99)),
-        ...myOtherTasks.sort((a: any, b: any) => (a.priority || 99) - (b.priority || 99)),
-      ];
-
-      return {
-        nextTask: prioritizedTasks[0] || null,
-        availableTasks: prioritizedTasks,
-      };
+      return prioritizeTasks(tasks);
     },
     staleTime: 30000, // Cache for 30 seconds
     refetchOnWindowFocus: false,
@@ -201,17 +166,17 @@ export function QuickTimeTracker({
   const filteredTasks = useMemo(() => {
     if (!allTasksData) return [];
     
-    let tasks = allTasksData.filter((task: any) => !task.completed);
+    let tasks = allTasksData.filter((task: Task) => !task.completed);
     
     // Filter by board if not "all"
     if (selectedBoardId !== 'all') {
-      tasks = tasks.filter((task: any) => task.board_id === selectedBoardId);
+      tasks = tasks.filter((task: Task) => task.board_id === selectedBoardId);
     }
     
     // Filter by search query
     if (taskSearchQuery.trim()) {
       const query = taskSearchQuery.toLowerCase();
-      tasks = tasks.filter((task: any) => 
+      tasks = tasks.filter((task: Task) => 
         task.name?.toLowerCase().includes(query) ||
         task.description?.toLowerCase().includes(query) ||
         task.board_name?.toLowerCase().includes(query) ||
@@ -220,7 +185,7 @@ export function QuickTimeTracker({
     }
     
     // Sort by priority and assignment
-    return tasks.sort((a: any, b: any) => {
+    return tasks.sort((a: Task, b: Task) => {
       // Assigned tasks first
       if (a.is_assigned_to_current_user && !b.is_assigned_to_current_user) return -1;
       if (!a.is_assigned_to_current_user && b.is_assigned_to_current_user) return 1;
@@ -270,8 +235,12 @@ export function QuickTimeTracker({
 
     if (showTaskDropdown) {
       document.addEventListener('mousedown', handleClickOutside);
-      return () => document.removeEventListener('mousedown', handleClickOutside);
     }
+
+    // Always return cleanup function to prevent memory leaks
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
   }, [showTaskDropdown]);
 
   // Comprehensive cache invalidation function
@@ -502,9 +471,10 @@ export function QuickTimeTracker({
         taskId: selectedTask.id,
       });
     } catch (error) {
-      console.error('Start task session error:', error);
       toast.error('Failed to start task session');
-      setIsLoading(false);
+    } finally {
+      // Note: setIsLoading(false) is handled in the mutation's onSettled callback
+      // to ensure it's called after the mutation completes regardless of success/failure
     }
   };
 
@@ -560,9 +530,10 @@ export function QuickTimeTracker({
         taskId: nextTask.id,
       });
     } catch (error) {
-      console.error('Start next task error:', error);
       toast.error('Failed to start task session');
-      setIsLoading(false);
+    } finally {
+      // Note: setIsLoading(false) is handled in the mutation's onSettled callback
+      // to ensure it's called after the mutation completes regardless of success/failure
     }
   };
 
@@ -573,7 +544,7 @@ export function QuickTimeTracker({
     }
   };
 
-  const handleTaskSelect = (task: any) => {
+  const handleTaskSelect = (task: Task) => {
     setSelectedTask(task);
     setTaskSearchQuery(task.name);
     setShowTaskDropdown(false);

@@ -39,31 +39,22 @@ export function CommandPalette({
 
   // Try multiple methods to get workspace ID
   const workspaceId = React.useMemo(() => {
-    console.log('CommandPalette: Detecting workspace...');
-    console.log('CommandPalette: urlWsId from params:', urlWsId);
-    console.log('CommandPalette: pathname:', pathname);
-    
     // Method 1: From URL params (if it's a valid workspace ID)
     if (urlWsId && 
         typeof urlWsId === 'string' && 
         urlWsId !== 'undefined' &&
         (urlWsId === ROOT_WORKSPACE_ID || urlWsId.match(/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/))) {
-      console.log('CommandPalette: Using workspace ID from params:', urlWsId);
       return urlWsId;
     }
 
     // Method 2: Extract from pathname
     const pathWorkspaceId = getWorkspaceFromPath(pathname);
     if (pathWorkspaceId) {
-      console.log('CommandPalette: Using workspace ID from path:', pathWorkspaceId);
       return pathWorkspaceId;
     }
 
-    console.log('CommandPalette: No valid workspace ID found');
     return null;
   }, [urlWsId, pathname]);
-
-  console.log('CommandPalette: Final workspaceId:', workspaceId, 'type:', typeof workspaceId);
 
   // Reset function for error boundary
   const resetErrorBoundary = React.useCallback(() => {
@@ -176,32 +167,46 @@ export function CommandPalette({
         <CommandList
           className={`${isTransitioning ? 'opacity-50 transition-opacity' : ''} max-h-[400px]`}
         >
-          {page === 'root' && !isTransitioning && (
+          {page === 'root' && !isTransitioning && workspaceId && (
             <CommandRoot
-              wsId={workspaceId as string}
+              wsId={workspaceId}
               inputValue={inputValue}
               setOpen={setOpen}
               setPage={setPage}
             />
           )}
 
-          {page === 'add-task' && !isTransitioning && (
+          {page === 'add-task' && !isTransitioning && workspaceId && (
             <div className="command-page-enter">
               <AddTaskForm
-                wsId={workspaceId as string}
+                wsId={workspaceId}
                 setOpen={setOpen}
                 setIsLoading={setIsLoading}
               />
             </div>
           )}
 
-          {page === 'time-tracker' && !isTransitioning && (
+          {page === 'time-tracker' && !isTransitioning && workspaceId && (
             <div className="command-page-enter">
               <QuickTimeTracker
-                wsId={workspaceId as string}
+                wsId={workspaceId}
                 setOpen={setOpen}
                 setIsLoading={setIsLoading}
               />
+            </div>
+          )}
+          
+          {!workspaceId && !isTransitioning && (
+            <div className="flex flex-col items-center gap-4 p-8 text-center">
+              <div className="rounded-full bg-dynamic-orange/10 p-3">
+                <AlertTriangle className="h-6 w-6 text-dynamic-orange" />
+              </div>
+              <div className="space-y-1">
+                <p className="font-semibold text-foreground">No workspace found</p>
+                <p className="text-sm text-muted-foreground">
+                  Please navigate to a workspace to use the command palette
+                </p>
+              </div>
             </div>
           )}
         </CommandList>

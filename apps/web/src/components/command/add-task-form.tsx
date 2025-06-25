@@ -102,18 +102,13 @@ export function AddTaskForm({
   }>({
     queryKey: ['boards-with-lists', wsId],
     queryFn: async () => {
-      console.log('AddTaskForm: Fetching boards for wsId:', wsId);
       const response = await fetch(
         `/api/v1/workspaces/${wsId}/boards-with-lists`
       );
-      console.log('AddTaskForm: Response status:', response.status);
       if (!response.ok) {
-        const errorText = await response.text();
-        console.log('AddTaskForm: Error response:', errorText);
         throw new Error('Failed to fetch boards');
       }
       const data = await response.json();
-      console.log('AddTaskForm: Success response:', data);
       return data;
     },
     retry: 2,
@@ -157,16 +152,16 @@ export function AddTaskForm({
       const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
 
       try {
-        const response = await fetch(`/api/v1/workspaces/${wsId}/tasks`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data),
+      const response = await fetch(`/api/v1/workspaces/${wsId}/tasks`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
           signal: controller.signal,
-        });
+      });
 
         clearTimeout(timeoutId);
 
-        if (!response.ok) {
+      if (!response.ok) {
           let errorMessage = 'Failed to create task';
           try {
             const errorData = await response.json();
@@ -176,9 +171,9 @@ export function AddTaskForm({
             errorMessage = response.statusText || errorMessage;
           }
           throw new Error(errorMessage);
-        }
+      }
 
-        return response.json();
+      return response.json();
       } catch (error: any) {
         clearTimeout(timeoutId);
         if (error.name === 'AbortError') {
@@ -465,34 +460,34 @@ export function AddTaskForm({
                 tasks.length > 3 && "max-h-[120px] overflow-y-auto pr-2"
               )}>
                 {tasks.map((task: any) => (
-                  <div
-                    key={task.id}
-                    className="flex items-center gap-2 rounded-lg border border-dynamic-gray/10 bg-dynamic-gray/5 p-2"
-                  >
                     <div
-                      className={cn(
-                        'h-2 w-2 flex-shrink-0 rounded-full',
-                        task.completed
-                          ? 'bg-dynamic-green'
-                          : task.priority === 'urgent'
-                            ? 'bg-dynamic-red'
-                            : 'bg-dynamic-blue'
-                      )}
-                    />
-                    <span
-                      className={cn(
-                        'flex-1 truncate text-xs',
-                        task.completed && 'text-muted-foreground line-through'
-                      )}
+                      key={task.id}
+                      className="flex items-center gap-2 rounded-lg border border-dynamic-gray/10 bg-dynamic-gray/5 p-2"
                     >
-                      {task.name}
-                    </span>
-                    {task.completed && (
-                      <Check className="h-3 w-3 text-dynamic-green" />
-                    )}
-                  </div>
-                ))}
-              </div>
+                      <div
+                        className={cn(
+                          'h-2 w-2 flex-shrink-0 rounded-full',
+                          task.completed
+                            ? 'bg-dynamic-green'
+                            : task.priority === 'urgent'
+                              ? 'bg-dynamic-red'
+                              : 'bg-dynamic-blue'
+                        )}
+                      />
+                      <span
+                        className={cn(
+                          'flex-1 truncate text-xs',
+                          task.completed && 'text-muted-foreground line-through'
+                        )}
+                      >
+                        {task.name}
+                      </span>
+                      {task.completed && (
+                        <Check className="h-3 w-3 text-dynamic-green" />
+                      )}
+                    </div>
+                  ))}
+                </div>
             ) : (
               <div className="py-4 text-center">
                 <div className="text-xs text-muted-foreground">
@@ -602,47 +597,47 @@ export function AddTaskForm({
 
       {/* Create Task Button */}
       {!showSuccessOptions && !createTaskMutation.isError && (
-        <div className="flex items-center gap-2">
-          <Button
-            onClick={handleCreateTask}
-            disabled={
+      <div className="flex items-center gap-2">
+        <Button
+          onClick={handleCreateTask}
+          disabled={
               !taskName.trim() ||
-              !selectedListId ||
-              createTaskMutation.isPending ||
-              (Boolean(selectedBoardId) && availableLists.length === 0)
-            }
-            className="w-full"
-          >
-            {createTaskMutation.isPending ? (
-              <div className="flex items-center gap-2">
-                <Loader className="h-4 w-4 animate-spin" />
-                <span>Creating...</span>
-              </div>
-            ) : (
-              <div className="flex items-center gap-2">
-                <Plus className="h-4 w-4" />
-                <span>Create Task</span>
-              </div>
-            )}
-          </Button>
-        </div>
+            !selectedListId ||
+            createTaskMutation.isPending ||
+            (Boolean(selectedBoardId) && availableLists.length === 0)
+          }
+          className="w-full"
+        >
+          {createTaskMutation.isPending ? (
+            <div className="flex items-center gap-2">
+              <Loader className="h-4 w-4 animate-spin" />
+              <span>Creating...</span>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <Plus className="h-4 w-4" />
+              <span>Create Task</span>
+            </div>
+          )}
+        </Button>
+      </div>
       )}
 
       {/* Validation messages */}
       {!showSuccessOptions && !createTaskMutation.isError && (
-        <div className="space-y-1">
+      <div className="space-y-1">
           {!selectedBoardId && (
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <div className="h-1.5 w-1.5 rounded-full bg-dynamic-blue" />
               <span>Step 1: Select a board</span>
-            </div>
-          )}
+          </div>
+        )}
           {selectedBoardId && !selectedListId && availableLists.length > 0 && (
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <div className="h-1.5 w-1.5 rounded-full bg-dynamic-blue" />
               <span>Step 2: Select a list</span>
-            </div>
-          )}
+          </div>
+        )}
           {selectedBoardId && selectedListId && !taskName.trim() && (
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <div className="h-1.5 w-1.5 rounded-full bg-dynamic-blue" />
@@ -658,13 +653,13 @@ export function AddTaskForm({
               </div>
             )}
           {selectedBoardId &&
-            availableLists.length === 0 && (
-              <div className="flex items-center gap-2 text-xs text-dynamic-orange">
-                <AlertTriangle className="h-3 w-3" />
-                <span>The selected board has no lists. Create a list first.</span>
-              </div>
-            )}
-        </div>
+          availableLists.length === 0 && (
+            <div className="flex items-center gap-2 text-xs text-dynamic-orange">
+              <AlertTriangle className="h-3 w-3" />
+              <span>The selected board has no lists. Create a list first.</span>
+            </div>
+          )}
+      </div>
       )}
     </div>
   );
