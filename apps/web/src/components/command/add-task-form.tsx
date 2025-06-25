@@ -49,14 +49,40 @@ export function AddTaskForm({
   // eslint-disable-next-line no-unused-vars
   setInputValue: (value: string) => void;
 }) {
-  const [selectedBoardId, setSelectedBoardId] = useState<string>();
-  const [selectedListId, setSelectedListId] = useState<string>();
-  const [showTasks, setShowTasks] = useState(false);
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
   const router = useRouter();
+  const [selectedBoardId, setSelectedBoardId] = useState<string>('');
+  const [selectedListId, setSelectedListId] = useState<string>('');
+  const [showTasks, setShowTasks] = useState(false);
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
 
-  // Get boards with lists
+  // Early return if no valid workspace ID
+  if (!wsId || wsId === 'undefined' || wsId === '00000000-0000-0000-0000-000000000000') {
+    return (
+      <div className="flex flex-col items-center gap-4 p-8 text-center">
+        <div className="rounded-full bg-dynamic-orange/10 p-3">
+          <AlertTriangle className="h-6 w-6 text-dynamic-orange" />
+        </div>
+        <div>
+          <p className="font-semibold text-foreground">No workspace selected</p>
+          <p className="text-sm text-muted-foreground">
+            Navigate to a workspace to create tasks
+          </p>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => {
+            setOpen(false);
+            window.location.href = '/';
+          }}
+        >
+          Go to Dashboard
+        </Button>
+      </div>
+    );
+  }
+
   const {
     data: boardsData,
     isLoading: boardsLoading,
@@ -67,11 +93,19 @@ export function AddTaskForm({
   }>({
     queryKey: ['boards-with-lists', wsId],
     queryFn: async () => {
+      console.log('AddTaskForm: Fetching boards for wsId:', wsId);
       const response = await fetch(
         `/api/v1/workspaces/${wsId}/boards-with-lists`
       );
-      if (!response.ok) throw new Error('Failed to fetch boards');
-      return response.json();
+      console.log('AddTaskForm: Response status:', response.status);
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.log('AddTaskForm: Error response:', errorText);
+        throw new Error('Failed to fetch boards');
+      }
+      const data = await response.json();
+      console.log('AddTaskForm: Success response:', data);
+      return data;
     },
     retry: 2,
     retryDelay: 1000,
