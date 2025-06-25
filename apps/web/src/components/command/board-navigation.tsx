@@ -280,7 +280,7 @@ export function BoardNavigation({ wsId, setOpen }: BoardNavigationProps) {
         <div className="px-2">
           <div className={cn(
             "space-y-1",
-            boards.length > 4 && "max-h-[280px] overflow-y-auto pr-1"
+            boards.length > 4 && "max-h-[280px] overflow-y-auto pr-2"
           )}>
             <CommandGroup>
               {boards.map((board: Board) => (
