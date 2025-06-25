@@ -1,5 +1,6 @@
 'use client';
 
+import { Button } from '@tuturuuu/ui/button';
 import { CommandGroup, CommandItem } from '@tuturuuu/ui/command';
 import {
   Brain,
@@ -11,7 +12,7 @@ import {
   Timer,
   TrendingUp,
 } from '@tuturuuu/ui/icons';
-import { Button } from '@tuturuuu/ui/button';
+import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
 
 // Peak productivity hours configuration
@@ -25,11 +26,9 @@ interface QuickActionsProps {
   setOpen: (open: boolean) => void;
 }
 
-export function QuickActions({
-  wsId,
-  setOpen,
-}: QuickActionsProps) {
+export function QuickActions({ wsId, setOpen }: QuickActionsProps) {
   const [isExpanded, setIsExpanded] = useState(true); // Default to expanded
+  const router = useRouter();
 
   // Calculate current hour for productivity suggestions with memoization
   const isPeakHour = useMemo(() => {
@@ -44,7 +43,7 @@ export function QuickActions({
 
   const handleAddTask = () => {
     // Navigate to add task page or open add task modal
-    window.location.href = `/${wsId}/tasks/boards`;
+    router.push(`/${wsId}/tasks/boards`);
     setOpen(false);
   };
 
@@ -55,12 +54,12 @@ export function QuickActions({
   };
 
   const handleTimeTracker = () => {
-    window.location.href = `/${wsId}/time-tracker`;
+    router.push(`/${wsId}/time-tracker`);
     setOpen(false);
   };
 
   const handleCalendar = () => {
-    window.location.href = `/${wsId}/calendar`;
+    router.push(`/${wsId}/calendar`);
     setOpen(false);
   };
 
@@ -69,7 +68,9 @@ export function QuickActions({
       {/* Collapsible Header */}
       <div className="flex items-center justify-between px-3 py-2">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium text-foreground">⚡ Quick Actions</span>
+          <span className="text-sm font-medium text-foreground">
+            ⚡ Quick Actions
+          </span>
           <div className="rounded-md bg-dynamic-blue/10 px-2 py-0.5 text-xs font-medium text-dynamic-blue">
             4 actions
           </div>

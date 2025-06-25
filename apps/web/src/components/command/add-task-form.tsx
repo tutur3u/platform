@@ -24,6 +24,7 @@ import {
 } from '@tuturuuu/ui/select';
 import { Separator } from '@tuturuuu/ui/separator';
 import { cn } from '@tuturuuu/utils/format';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 interface BoardWithLists {
@@ -53,6 +54,7 @@ export function AddTaskForm({
   const [showTasks, setShowTasks] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const router = useRouter();
 
   // Get boards with lists
   const {
@@ -245,8 +247,8 @@ export function AddTaskForm({
           variant="outline"
           size="sm"
           onClick={() => {
-            const wsId = window.location.pathname.split('/')[1];
-            window.location.href = `/${wsId}/tasks/boards`;
+            router.push(`/${wsId}/tasks/boards`);
+            setOpen(false);
           }}
         >
           <Plus className="mr-2 h-4 w-4" />
