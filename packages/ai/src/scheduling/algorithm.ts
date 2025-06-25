@@ -432,7 +432,7 @@ let taskPool: any[]= [];
     console.error('Error sorting task pool:', error);
   }
   // Initialize available times for each category - start from now
-  
+  return { events: [], logs: [{ type: 'error', message: 'Scheduling failed due to an unexpected error.' }] };
 };
 
 function getNextAvailableTime(
