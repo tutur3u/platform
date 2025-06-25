@@ -53,12 +53,10 @@ export const permissionGroups = ({
   t = (key: string) => key,
   wsId,
   user,
-  prodMode,
 }: {
   t?: (key: string) => string;
   wsId: string;
   user: SupabaseUser | null;
-  prodMode: boolean;
 }) => {
   return (
     [
@@ -329,7 +327,9 @@ export const permissionGroups = ({
         group?.permissions?.filter((p) => p.title && p.description) || []
       ).map((p) => ({
         ...p,
-        disabled: p.disableOnProduction ? prodMode : p.disabled,
+        disabled: p.disableOnProduction
+          ? process.env.NODE_ENV === 'production'
+          : p.disabled,
       })),
     }))
     .filter(
@@ -342,7 +342,6 @@ export const permissions = (args: {
   t?: (key: string) => string;
   wsId: string;
   user: SupabaseUser | null;
-  prodMode: boolean;
 }) => {
   return permissionGroups(args).reduce(
     (acc, group) => acc.concat(group?.permissions || []),
@@ -353,9 +352,7 @@ export const permissions = (args: {
 export const totalPermissions = ({
   wsId,
   user,
-  prodMode,
 }: {
   wsId: string;
   user: SupabaseUser | null;
-  prodMode: boolean;
-}) => permissions({ wsId, user, prodMode }).length;
+}) => permissions({ wsId, user }).length;

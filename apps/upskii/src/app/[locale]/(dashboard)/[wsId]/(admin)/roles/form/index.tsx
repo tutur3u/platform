@@ -15,11 +15,14 @@ import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { cn } from '@tuturuuu/utils/format';
+import {
+  permissionGroups,
+  totalPermissions,
+} from '@tuturuuu/utils/permissions';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import * as z from 'zod';
-import { permissionGroups, totalPermissions } from '@/lib/permissions';
 import RoleFormDisplaySection from './role-display';
 import RoleFormMembersSection from './role-members';
 import RoleFormPermissionsSection from './role-permissions';

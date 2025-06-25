@@ -7,9 +7,9 @@ import {
 import { FormField, FormItem } from '@tuturuuu/ui/form';
 import { ShieldCheck } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
+import { permissionGroups } from '@tuturuuu/utils/permissions';
 import { useTranslations } from 'next-intl';
 import { Fragment } from 'react';
-import { permissionGroups } from '@/lib/permissions';
 import type { SectionProps } from './index';
 import RolePermission from './role-permission';
 

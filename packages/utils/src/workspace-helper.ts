@@ -217,12 +217,10 @@ export async function getPermissions({
   wsId,
   redirectTo,
   enableNotFound,
-  prodMode = process.env.NODE_ENV === 'production',
 }: {
   wsId: string;
   redirectTo?: string;
   enableNotFound?: boolean;
-  prodMode?: boolean;
 }) {
   const supabase = await createClient();
 
@@ -297,7 +295,7 @@ export async function getPermissions({
   }
 
   const permissions = isCreator
-    ? rolePermissions({ wsId, user, prodMode }).map(({ id }) => id)
+    ? rolePermissions({ wsId, user }).map(({ id }) => id)
     : [...permissionsData, ...defaultData]
         .map(({ permission }) => permission)
         .filter((value, index, self) => self.indexOf(value) === index);
