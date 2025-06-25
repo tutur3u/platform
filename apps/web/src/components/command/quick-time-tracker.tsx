@@ -429,7 +429,7 @@ export function QuickTimeTracker({
                 </div>
 
                 {/* Live Focus Score */}
-                <div className="rounded-md bg-muted/30 p-2">
+                <div className="space-y-1">
                   <div className="flex items-center justify-between">
                     <span className="text-xs text-muted-foreground">
                       Live Focus Score
@@ -466,7 +466,7 @@ export function QuickTimeTracker({
                   </div>
 
                   {/* Productivity Tips */}
-                  <div className="mt-2 text-xs text-muted-foreground">
+                  <div className="text-xs">
                     {elapsedTime >= SESSION_THRESHOLDS.DEEP_WORK ? (
                       <span className="text-green-700 dark:text-green-300">
                         🧠 Deep work mode! Excellent focus.
@@ -492,7 +492,7 @@ export function QuickTimeTracker({
                 </div>
 
                 {/* Session Type Indicator */}
-                <div className="flex items-center gap-2 text-xs">
+                <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">Session Type:</span>
                   <div
                     className={cn(
@@ -544,12 +544,12 @@ export function QuickTimeTracker({
             </Button>
           </div>
         ) : (
-          <div className="px-4 py-3">
-            <div className="space-y-4">
-              {/* Status */}
-              <div className="py-3 text-center">
-                <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-muted/50">
-                  <Timer className="h-6 w-6 text-muted-foreground" />
+          <div className="px-4 py-6">
+            <div className="space-y-6">
+              {/* Timer Icon and Status */}
+              <div className="text-center">
+                <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-muted/50">
+                  <Timer className="h-8 w-8 text-muted-foreground" />
                 </div>
                 <p className="text-sm text-muted-foreground">
                   Ready to start tracking
@@ -557,7 +557,7 @@ export function QuickTimeTracker({
               </div>
 
               {/* Input */}
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <Label
                   htmlFor="quick-timer-input"
                   className="text-sm font-medium"
@@ -579,15 +579,15 @@ export function QuickTimeTracker({
               <Button
                 onClick={startQuickTimer}
                 disabled={!title.trim() || startMutation.isPending}
-                className="h-9 w-full gap-2"
+                className="h-10 w-full gap-2"
                 size="sm"
               >
                 <Play className="h-4 w-4" />
                 {startMutation.isPending ? 'Starting...' : 'Start Timer'}
               </Button>
 
-              {/* Tips */}
-              <div className="rounded-md bg-muted/30 p-3 text-center">
+              {/* Instructions */}
+              <div className="text-center">
                 <div className="space-y-1 text-xs text-muted-foreground">
                   <div className="flex items-center justify-center gap-2">
                     <span>💡 Press</span>
