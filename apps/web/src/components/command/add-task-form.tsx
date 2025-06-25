@@ -424,28 +424,6 @@ export function AddTaskForm({
         </div>
       )}
 
-      {/* Task Name Input */}
-      {selectedBoardId && selectedListId && (
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-foreground">Task Name</label>
-          <div className="relative">
-            <Type className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              ref={taskInputRef}
-              value={taskName}
-              onChange={(e) => setTaskName(e.target.value)}
-              placeholder="Enter task name..."
-              className="pl-10"
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && taskName.trim() && selectedListId) {
-                  handleCreateTask();
-                }
-              }}
-            />
-          </div>
-        </div>
-      )}
-
       {/* Current Tasks Preview */}
       {showTasks && selectedListId && (
         <Card className="border-dynamic-gray/20">
@@ -527,6 +505,28 @@ export function AddTaskForm({
             )}
           </CardContent>
         </Card>
+      )}
+
+      {/* Task Name Input */}
+      {selectedBoardId && selectedListId && (
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-foreground">Task Name</label>
+          <div className="relative">
+            <Type className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              ref={taskInputRef}
+              value={taskName}
+              onChange={(e) => setTaskName(e.target.value)}
+              placeholder="Enter task name..."
+              className="pl-10"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && taskName.trim() && selectedListId) {
+                  handleCreateTask();
+                }
+              }}
+            />
+          </div>
+        </div>
       )}
 
       <Separator />
