@@ -15,7 +15,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@tuturuuu/ui/form';
-import { useForm } from '@tuturuuu/ui/hooks/use-form';
+import { type FieldValues, useForm } from '@tuturuuu/ui/hooks/use-form';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Eye, EyeOff, Github, Lock, Mail } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
@@ -41,14 +41,57 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
+  // Helper function to process email input
+  const processEmailInput = (value: string): string => {
+    const trimmedValue = value.trim();
+    // If the input contains @ symbol, return as is
+    if (trimmedValue.includes('@')) {
+      return trimmedValue;
+    }
+    // If it's just a username, append @tuturuuu.com
+    if (trimmedValue.length > 0) {
+      return `${trimmedValue}@tuturuuu.com`;
+    }
+    return trimmedValue;
+  };
+
+  // Enhanced email input change handler
+  const handleEmailChange = (
+    value: string,
+    formType: 'otp' | 'password',
+    field: FieldValues
+  ) => {
+    setEmailDisplay((prev) => ({ ...prev, [formType]: value }));
+
+    // Reset domain preview when user is typing
+    setShowDomainPreview((prev) => ({ ...prev, [formType]: false }));
+
+    // Always use the raw input value while typing
+    field.onChange(value);
+  };
+
+  // Handle blur event to show domain completion
+  const handleEmailBlur = (
+    value: string,
+    formType: 'otp' | 'password',
+    field: FieldValues
+  ) => {
+    // If value doesn't contain @ and is not empty, show domain preview
+    if (value.trim() && !value.includes('@')) {
+      setShowDomainPreview((prev) => ({ ...prev, [formType]: true }));
+    }
+
+    field.onBlur();
+  };
+
   // Schema Definitions
   const passwordFormSchema = z.object({
-    email: z.string().email(),
+    email: z.string().transform(processEmailInput).pipe(z.string().email()),
     password: z.string().min(8, t('login.password_min_length')),
   });
 
   const OTPFormSchema = z.object({
-    email: z.string().email(),
+    email: z.string().transform(processEmailInput).pipe(z.string().email()),
     otp: z.string(),
   });
 
@@ -93,6 +136,14 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
   const [otpSent, setOtpSent] = useState(false);
   const [loading, setLoading] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
+  const [emailDisplay, setEmailDisplay] = useState({
+    otp: DEV_MODE ? 'local@tuturuuu.com' : '',
+    password: DEV_MODE ? 'local@tuturuuu.com' : '',
+  });
+  const [showDomainPreview, setShowDomainPreview] = useState({
+    otp: false,
+    password: false,
+  });
 
   // URL Processing Helper
   const processNextUrl = useCallback(async () => {
@@ -139,7 +190,7 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
     }
 
     router.refresh();
-  }, [searchParams, router]);
+  }, [searchParams, router, locale, supabase]);
 
   const loginWithPassword = async (data: {
     email: string;
@@ -244,7 +295,7 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
     }
   };
 
-  const needsMFA = async () => {
+  const needsMFA = useCallback(async () => {
     const { data: assuranceLevel } =
       await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
 
@@ -255,7 +306,7 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
       return true;
 
     return false;
-  };
+  }, [supabase.auth.mfa.getAuthenticatorAssuranceLevel]);
 
   const verifyTOtp = async (data: { totp: string }) => {
     if (!data.totp) return;
@@ -275,7 +326,7 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
       }
 
       let verificationSuccess = false;
-      let lastError: any = null;
+      let lastError: Error | null = null;
 
       for (const factor of verifiedFactors) {
         try {
@@ -299,7 +350,7 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
 
           lastError = verifyError;
         } catch (error) {
-          lastError = error;
+          lastError = error as Error;
         }
       }
 
@@ -465,7 +516,7 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
     }
 
     checkUser();
-  }, [searchParams]);
+  }, [supabase.auth.getUser, needsMFA]);
 
   useEffect(() => {
     const processUrl = async () => {
@@ -479,7 +530,7 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
     if (initialized) {
       processUrl();
     }
-  }, [user, initialized, requiresMFA]);
+  }, [user, initialized, requiresMFA, processNextUrl]);
 
   useEffect(() => {
     if (DEV_MODE) {
@@ -489,7 +540,7 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
         passwordForm.setFocus('email');
       }
     }
-  }, [DEV_MODE, loginMethod]);
+  }, [loginMethod, otpForm.setFocus, passwordForm.setFocus]);
 
   useEffect(() => {
     if (resendCooldown > 0) {
@@ -517,10 +568,10 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
         <CardContent className="space-y-6 p-8">
           <div className="space-y-2 text-center">
             <h2 className="bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-2xl font-bold text-transparent dark:from-white dark:to-gray-300">
-              Two-Factor Authentication
+              {t('login.two_factor_authentication')}
             </h2>
             <p className="text-sm text-balance text-muted-foreground">
-              Enter your 6-digit verification code from your authenticator app
+              {t('login.enter_authenticator_code')}
             </p>
           </div>
 
@@ -535,7 +586,7 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                      Verification Code
+                      {t('login.verification_code_label')}
                     </FormLabel>
                     <FormControl>
                       <InputOTP
@@ -545,10 +596,10 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
                         className="justify-center"
                       >
                         <InputOTPGroup className="w-full gap-2">
-                          {Array.from({ length: 6 }).map((_, i) => (
+                          {Array.from({ length: 6 }).map((_, index) => (
                             <InputOTPSlot
-                              key={i}
-                              index={i}
+                              key={`totp-${index + 1}`}
+                              index={index}
                               className="h-12 w-full rounded-lg border bg-white/50 text-lg font-semibold transition-all duration-200 focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-gray-700/50 dark:bg-gray-800/50"
                             />
                           ))}
@@ -572,7 +623,7 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
                     <span>{t('common.loading')}...</span>
                   </div>
                 ) : (
-                  'Verify'
+                  t('login.verify_button')
                 )}
               </Button>
             </form>
@@ -639,14 +690,45 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
                         <div className="group relative">
                           <Mail className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground transition-colors group-focus-within:text-primary" />
                           <Input
-                            className="h-12 bg-white/50 pl-10 transition-all duration-200 focus:border-primary/50 focus:ring-2 focus:ring-primary/20 dark:border-gray-700/50 dark:bg-gray-800/50"
-                            placeholder={t('login.email_placeholder')}
-                            {...field}
+                            className={`h-12 bg-white/50 pl-10 transition-all duration-200 focus:border-primary/50 focus:ring-2 focus:ring-primary/20 dark:border-gray-700/50 dark:bg-gray-800/50 ${
+                              showDomainPreview.otp &&
+                              emailDisplay.otp &&
+                              !emailDisplay.otp.includes('@')
+                                ? 'pr-32'
+                                : ''
+                            }`}
+                            placeholder={t('login.email_username_placeholder')}
+                            value={emailDisplay.otp}
+                            onChange={(e) =>
+                              handleEmailChange(e.target.value, 'otp', field)
+                            }
+                            onBlur={() =>
+                              handleEmailBlur(emailDisplay.otp, 'otp', field)
+                            }
                             disabled={otpSent || loading}
                           />
+                          {showDomainPreview.otp &&
+                            emailDisplay.otp &&
+                            !emailDisplay.otp.includes('@') && (
+                              <div className="absolute inset-y-0 right-3 flex items-center">
+                                <span className="text-xs text-dynamic-blue bg-dynamic-blue/10 px-2 py-1 rounded border border-dynamic-blue/30">
+                                  @tuturuuu.com
+                                </span>
+                              </div>
+                            )}
                         </div>
                       </FormControl>
                       <FormMessage />
+                      {showDomainPreview.otp &&
+                        emailDisplay.otp &&
+                        !emailDisplay.otp.includes('@') && (
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {t('login.will_send_to')}:{' '}
+                            <span className="font-medium text-dynamic-blue">
+                              {emailDisplay.otp}@tuturuuu.com
+                            </span>
+                          </p>
+                        )}
                     </FormItem>
                   )}
                 />
@@ -669,10 +751,10 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
                           >
                             <InputOTPGroup className="w-full gap-2">
                               {Array.from({ length: MAX_OTP_LENGTH }).map(
-                                (_, i) => (
+                                (_, index) => (
                                   <InputOTPSlot
-                                    key={i}
-                                    index={i}
+                                    key={`otp-${index + 1}`}
+                                    index={index}
                                     className="h-12 w-full rounded-lg border bg-white/50 text-lg font-semibold transition-all duration-200 focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-gray-700/50 dark:bg-gray-800/50"
                                   />
                                 )
@@ -748,14 +830,53 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
                         <div className="group relative">
                           <Mail className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground transition-colors group-focus-within:text-primary" />
                           <Input
-                            className="h-12 bg-white/50 pl-10 transition-all duration-200 focus:border-primary/50 focus:ring-2 focus:ring-primary/20 dark:border-gray-700/50 dark:bg-gray-800/50"
-                            placeholder={t('login.email_placeholder')}
-                            {...field}
+                            className={`h-12 bg-white/50 pl-10 transition-all duration-200 focus:border-primary/50 focus:ring-2 focus:ring-primary/20 dark:border-gray-700/50 dark:bg-gray-800/50 ${
+                              showDomainPreview.password &&
+                              emailDisplay.password &&
+                              !emailDisplay.password.includes('@')
+                                ? 'pr-32'
+                                : ''
+                            }`}
+                            placeholder={t('login.email_username_placeholder')}
+                            value={emailDisplay.password}
+                            onChange={(e) =>
+                              handleEmailChange(
+                                e.target.value,
+                                'password',
+                                field
+                              )
+                            }
+                            onBlur={() =>
+                              handleEmailBlur(
+                                emailDisplay.password,
+                                'password',
+                                field
+                              )
+                            }
                             disabled={loading}
                           />
+                          {showDomainPreview.password &&
+                            emailDisplay.password &&
+                            !emailDisplay.password.includes('@') && (
+                              <div className="absolute inset-y-0 right-3 flex items-center">
+                                <span className="text-xs text-dynamic-blue bg-dynamic-blue/10 px-2 py-1 rounded border border-dynamic-blue/30">
+                                  @tuturuuu.com
+                                </span>
+                              </div>
+                            )}
                         </div>
                       </FormControl>
                       <FormMessage />
+                      {showDomainPreview.password &&
+                        emailDisplay.password &&
+                        !emailDisplay.password.includes('@') && (
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {t('login.will_sign_in_as')}:{' '}
+                            <span className="font-medium text-dynamic-blue">
+                              {emailDisplay.password}@tuturuuu.com
+                            </span>
+                          </p>
+                        )}
                     </FormItem>
                   )}
                 />
