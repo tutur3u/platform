@@ -16,7 +16,7 @@ import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 function getWorkspaceFromPath(pathname: string): string | null {
   // Match pattern like /locale/wsId/... or /wsId/...
   const matches = pathname.match(/\/([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})/);
-  return matches ? matches[1] : null;
+  return matches?.[1] || null;
 }
 
 // Main Command Palette Component
@@ -191,8 +191,6 @@ export function CommandPalette({
                 wsId={workspaceId as string}
                 setOpen={setOpen}
                 setIsLoading={setIsLoading}
-                inputValue={inputValue}
-                setInputValue={setInputValue}
               />
             </div>
           )}

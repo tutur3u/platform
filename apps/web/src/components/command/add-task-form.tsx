@@ -28,7 +28,6 @@ import { Separator } from '@tuturuuu/ui/separator';
 import { cn } from '@tuturuuu/utils/format';
 import { useRouter } from 'next/navigation';
 import { useState, useRef, useEffect } from 'react';
-import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 
 interface BoardWithLists {
   id: string;
@@ -40,17 +39,12 @@ export function AddTaskForm({
   wsId,
   setOpen,
   setIsLoading,
-  inputValue,
-  setInputValue,
 }: {
   wsId: string;
   // eslint-disable-next-line no-unused-vars
   setOpen: (open: boolean) => void;
   // eslint-disable-next-line no-unused-vars
   setIsLoading: (loading: boolean) => void;
-  inputValue: string;
-  // eslint-disable-next-line no-unused-vars
-  setInputValue: (value: string) => void;
 }) {
   const router = useRouter();
   const [selectedBoardId, setSelectedBoardId] = useState<string>('');
@@ -316,7 +310,7 @@ export function AddTaskForm({
           value={selectedBoardId}
           onValueChange={(value) => {
             setSelectedBoardId(value);
-            setSelectedListId(undefined);
+            setSelectedListId('');
             setShowTasks(false);
           }}
         >
