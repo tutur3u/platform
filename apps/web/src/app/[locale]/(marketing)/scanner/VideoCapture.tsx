@@ -1,6 +1,7 @@
 'use client';
 
 import { Button } from '@ncthub/ui/button';
+import { useToast } from '@ncthub/ui/hooks/use-toast';
 import { LoadingIndicator } from '@ncthub/ui/custom/loading-indicator';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
@@ -11,11 +12,12 @@ interface VideoCaptureProps {
 export default function VideoCapture({ handleNewStudent }: VideoCaptureProps) {
   const [cameraOn, setCameraOn] = useState<boolean>(false);
   const [capturing, setCapturing] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
+
+  const { toast } = useToast();
 
   const toggleCamera = async () => {
     if (!cameraOn) {
@@ -37,7 +39,11 @@ export default function VideoCapture({ handleNewStudent }: VideoCaptureProps) {
       } catch (error) {
         console.error(error);
 
-        setError('Can not access the webcam.');
+        toast({
+          title: 'Could not access the webcam',
+          description: 'Could not access the webcam.',
+          variant: 'destructive',
+        });
         setCameraOn(false);
       }
     } else {
@@ -90,12 +96,23 @@ export default function VideoCapture({ handleNewStudent }: VideoCaptureProps) {
 
           if (data.name && data.studentNumber) {
             handleNewStudent(data.name, data.studentNumber);
-            setError(null);
+            toast({
+              title: 'Student information detected',
+              description: 'Detected student information successfully',
+            });
           } else {
-            setError('Could not detect student information from the ID card.');
+            toast({
+              title: 'Could not detect student information',
+              description: 'Could not detect student information from the ID card.',
+              variant: 'destructive',
+            });
           }
         } catch {
-          setError('Could not detect student information from the ID card.');
+          toast({
+            title: 'Could not detect student information',
+            description: 'Could not detect student information from the ID card.',
+            variant: 'destructive',
+          });
         } finally {
           setCapturing(false);
           // Resume the video
@@ -105,7 +122,7 @@ export default function VideoCapture({ handleNewStudent }: VideoCaptureProps) {
         }
       }
     }
-  }, [handleNewStudent, setError]);
+  }, [handleNewStudent]);
 
   useEffect(() => {
     if (!cameraOn) {
@@ -162,10 +179,6 @@ export default function VideoCapture({ handleNewStudent }: VideoCaptureProps) {
           {capturing ? 'Capturing...' : 'Capture'}
         </Button>
       </div>
-
-      {error && (
-        <div className="text-center font-medium text-red-500">{error}</div>
-      )}
     </div>
   );
 }

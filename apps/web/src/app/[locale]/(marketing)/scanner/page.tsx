@@ -14,15 +14,18 @@ import {
   AlertDialogTitle,
 } from '@ncthub/ui/alert-dialog';
 import { Button } from '@ncthub/ui/button';
-import { toast } from '@ncthub/ui/hooks/use-toast';
+import { useToast } from '@ncthub/ui/hooks/use-toast';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
+import StudentForm from './StudentForm';
 
 export default function Page() {
+  const [newStudent, setNewStudent] = useState<Student | null>(null);
   const [students, setStudents] = useState<Student[]>([]);
   const [filteredStudents, setFilteredStudents] = useState<Student[]>([]);
   const [showClearDialog, setShowClearDialog] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     const storedStudents = localStorage.getItem('students');
@@ -90,29 +93,13 @@ export default function Page() {
   };
 
   const handleNewStudent = (name: string, studentNumber: string) => {
-    const oldStudent = students.find(
-      (item) => item.studentNumber.trim() === studentNumber.trim()
-    );
+    const newStudent = createStudentRecord({
+      name,
+      studentNumber,
+      program: null,
+    });
 
-    if (oldStudent) {
-      const updatedStudent = {
-        ...oldStudent,
-        name: name,
-        studentNumber: studentNumber,
-      };
-      setStudents(
-        students.map((student) =>
-          student.id === oldStudent.id ? updatedStudent : student
-        )
-      );
-    } else {
-      const newStudent = createStudentRecord({
-        name,
-        studentNumber,
-        program: null,
-      });
-      setStudents([...students, newStudent]);
-    }
+    setNewStudent(newStudent);
   };
 
   const handleAddStudent = (
@@ -196,6 +183,17 @@ export default function Page() {
       <div className="flex flex-col gap-8 md:flex-row mt-4">
         <div className="flex-1 p-2 md:w-1/2 space-y-4">
           <VideoCapture handleNewStudent={handleNewStudent} />
+          <StudentForm
+            defaultValues={newStudent ? {
+              name: newStudent.name,
+              studentNumber: newStudent.studentNumber,
+              program: newStudent.program ?? undefined,
+            } : undefined}
+            onSubmit={(data) => {
+              handleAddStudent(data.name, data.studentNumber, data.program ?? null);
+              setNewStudent(null);
+            }}
+          />
         </div>
 
         <div className="flex-1 p-2 md:w-1/2 space-y-4">

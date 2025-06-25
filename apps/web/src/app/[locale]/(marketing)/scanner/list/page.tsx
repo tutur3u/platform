@@ -3,7 +3,7 @@
 import StudentList from '../StudentList';
 import { Student } from '@ncthub/types/primitives/Student';
 import { Button } from '@ncthub/ui/button';
-import { toast } from '@ncthub/ui/hooks/use-toast';
+import { useToast } from '@ncthub/ui/hooks/use-toast';
 import Link from 'next/link';
 import React, { useCallback, useEffect, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
@@ -12,6 +12,7 @@ export default function Page() {
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
 
   const fetchStudents = useCallback(
     async (startDate?: Date | null, endDate?: Date | null) => {

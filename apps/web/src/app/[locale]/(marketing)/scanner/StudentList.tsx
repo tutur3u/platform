@@ -12,7 +12,7 @@ import {
   AlertDialogTitle,
 } from '@ncthub/ui/alert-dialog';
 import { Button } from '@ncthub/ui/button';
-import { toast } from '@ncthub/ui/hooks/use-toast';
+import { useToast } from '@ncthub/ui/hooks/use-toast';
 import { Pencil, Save, Trash2 } from '@ncthub/ui/icons';
 import {
   Table,
@@ -52,6 +52,7 @@ export default function StudentList({
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const { toast } = useToast();
 
   const handleEdit = (id: string) => {
     const student = students.find((s) => s.id === id);
