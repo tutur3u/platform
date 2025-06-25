@@ -19,9 +19,18 @@ export default async function PublicCoursesPage({ searchParams }: Props) {
   const searchParamsResolved = await searchParams;
   const { page = '1', pageSize = '12', q } = searchParamsResolved;
 
-  const { data, count } = await getData({ q, page, pageSize });
-  const currentPage = parseInt(page);
-  const currentPageSize = parseInt(pageSize);
+  const validatedPage = Math.max(1, parseInt(page) || 1);
+  const validatedPageSize = Math.min(
+    100,
+    Math.max(1, parseInt(pageSize) || 12)
+  );
+  const { data, count } = await getData({
+    q,
+    page: validatedPage.toString(),
+    pageSize: validatedPageSize.toString(),
+  });
+  const currentPage = validatedPage;
+  const currentPageSize = validatedPageSize;
   const totalPages = Math.ceil(count / currentPageSize);
 
   const courses = data.map((c) => ({

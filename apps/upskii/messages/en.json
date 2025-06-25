@@ -3557,7 +3557,8 @@
     "image_preview_not_available": "Image Preview Not Available",
     "image_preview_not_available_description": "A preview of the certificate template is not available.",
     "hide_certificate_preview": "Hide Certificate Preview",
-    "show_certificate_preview": "Show Certificate Preview"
+    "show_certificate_preview": "Show Certificate Preview",
+    "self_paced": "Self-paced"
   },
   "ws-crawlers": {
     "plural": "Crawlers",

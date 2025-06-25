@@ -165,7 +165,7 @@ export function CourseCardView({ courses }: CourseCardViewProps) {
                   </div>
                   <div className="flex items-center">
                     <Clock className="h-4 w-4 mr-1" />
-                    <span>Self-paced</span>{' '}
+                    <span>{t('ws-courses.self_paced')}</span>{' '}
                     {/* TODO: Add duration if the schema supports later on*/}
                   </div>
                 </div>
