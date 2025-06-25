@@ -168,8 +168,8 @@ export default function StudentList({
   };
 
   return (
-    <>
-      <div className="mb-4 flex items-center justify-between">
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
         <h2 className="text-xl font-semibold text-primary">Student List</h2>
         <div className="flex gap-2">
           <AddStudentDialog
@@ -192,7 +192,7 @@ export default function StudentList({
         </div>
       </div>
 
-      <div className="mb-4 flex flex-wrap gap-4 p-4">
+      <div className="flex flex-wrap gap-4 p-4">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium">Start Date:</span>
           <DatePicker
@@ -236,7 +236,7 @@ export default function StudentList({
         placeholder="Search by name, ID, or program..."
         value={searchTerm}
         onChange={(e) => setSearchTerm(e.target.value)}
-        className="mb-4 w-full rounded-lg border p-2 focus:ring-2 focus:ring-[#4896ac] focus:outline-hidden"
+        className="w-full rounded-lg border p-2 focus:ring-2 focus:ring-[#4896ac] focus:outline-hidden"
       />
 
       <div className="overflow-x-auto">
@@ -381,6 +381,6 @@ export default function StudentList({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </>
+    </div>
   );
 }

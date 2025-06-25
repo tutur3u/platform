@@ -114,7 +114,7 @@ export default function VideoCapture({ handleNewStudent }: VideoCaptureProps) {
   }, [cameraOn]);
 
   return (
-    <>
+    <div className="space-y-4">
       <div className="relative aspect-video">
         <video
           ref={videoRef}
@@ -141,24 +141,22 @@ export default function VideoCapture({ handleNewStudent }: VideoCaptureProps) {
 
       <canvas ref={canvasRef} className="hidden"></canvas>
 
-      <div className="my-4 flex justify-center gap-2">
+      <div className="flex justify-center gap-2">
         <Button
           onClick={toggleCamera}
-          className={`rounded-lg px-4 py-2 font-medium ${
-            cameraOn
-              ? 'bg-red-500 text-white hover:bg-red-600'
-              : 'bg-green-500 text-white hover:bg-green-600'
-          }`}
+          className={`rounded-lg px-4 py-2 font-medium ${cameraOn
+            ? 'bg-red-500 text-white hover:bg-red-600'
+            : 'bg-green-500 text-white hover:bg-green-600'
+            }`}
         >
           {cameraOn ? 'Turn Off' : 'Turn On'}
         </Button>
         <Button
           onClick={startCapture}
-          className={`rounded-lg px-4 py-2 font-medium ${
-            !cameraOn || capturing
-              ? 'opacity-50'
-              : 'bg-blue-500 text-white hover:bg-blue-600'
-          }`}
+          className={`rounded-lg px-4 py-2 font-medium ${!cameraOn || capturing
+            ? 'opacity-50'
+            : 'bg-blue-500 text-white hover:bg-blue-600'
+            }`}
           disabled={!cameraOn || capturing}
         >
           {capturing ? 'Capturing...' : 'Capture'}
@@ -168,6 +166,6 @@ export default function VideoCapture({ handleNewStudent }: VideoCaptureProps) {
       {error && (
         <div className="text-center font-medium text-red-500">{error}</div>
       )}
-    </>
+    </div>
   );
 }

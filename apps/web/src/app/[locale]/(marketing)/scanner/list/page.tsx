@@ -185,7 +185,7 @@ export default function Page() {
   }
 
   return (
-    <div className="container mx-auto">
+    <div className="container min-h-screen mx-auto">
       <StudentList
         students={students}
         onAdd={handleAddStudent}
