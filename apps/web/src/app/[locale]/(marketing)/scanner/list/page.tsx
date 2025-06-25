@@ -35,17 +35,15 @@ export default function Page() {
         const data = await response.json();
         const students: Student[] = data.students.map(
           (student: {
-            _id: string;
+            id: string;
             name: string;
-            studentNumber: string;
+            student_number: string;
             program: string;
-            createdAt: Date;
+            created_at: Date;
           }) => ({
-            id: student._id,
-            name: student.name,
-            studentNumber: student.studentNumber,
-            program: student.program,
-            timestamp: new Date(student.createdAt),
+            ...student,
+            studentNumber: student.student_number,
+            timestamp: new Date(student.created_at),
           })
         );
 
