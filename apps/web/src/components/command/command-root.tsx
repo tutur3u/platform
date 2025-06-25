@@ -10,12 +10,14 @@ interface CommandRootProps {
   wsId: string;
   inputValue: string;
   setOpen: (open: boolean) => void;
+  setPage?: (page: string) => void;
 }
 
 export function CommandRoot({
   wsId,
   inputValue,
   setOpen,
+  setPage,
 }: CommandRootProps) {
   // Handle keyboard shortcuts
   useEffect(() => {
@@ -51,7 +53,7 @@ export function CommandRoot({
       {/* Quick Actions */}
       {!inputValue && (
         <div data-section="quick-actions">
-          <QuickActions wsId={wsId} setOpen={setOpen} />
+          <QuickActions wsId={wsId} setOpen={setOpen} setPage={setPage} />
         </div>
       )}
 

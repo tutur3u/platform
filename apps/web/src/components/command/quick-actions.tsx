@@ -24,9 +24,10 @@ const PEAK_HOURS = {
 interface QuickActionsProps {
   wsId: string;
   setOpen: (open: boolean) => void;
+  setPage?: (page: string) => void;
 }
 
-export function QuickActions({ wsId, setOpen }: QuickActionsProps) {
+export function QuickActions({ wsId, setOpen, setPage }: QuickActionsProps) {
   const [isExpanded, setIsExpanded] = useState(true); // Default to expanded
   const router = useRouter();
 
@@ -42,9 +43,14 @@ export function QuickActions({ wsId, setOpen }: QuickActionsProps) {
   }, []);
 
   const handleAddTask = () => {
-    // Navigate to add task page or open add task modal
-    router.push(`/${wsId}/tasks/boards`);
-    setOpen(false);
+    // Navigate to add task form within command palette
+    if (setPage) {
+      setPage('add-task');
+    } else {
+      // Fallback to external navigation if setPage is not available
+      router.push(`/${wsId}/tasks/boards`);
+      setOpen(false);
+    }
   };
 
   const handleQuickTimeTracker = () => {

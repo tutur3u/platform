@@ -144,6 +144,7 @@ export function CommandPalette({
               wsId={wsId as string}
               inputValue={inputValue}
               setOpen={setOpen}
+              setPage={setPage}
             />
           )}
 
