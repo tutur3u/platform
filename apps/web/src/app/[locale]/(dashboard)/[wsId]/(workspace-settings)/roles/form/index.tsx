@@ -78,8 +78,17 @@ export function RoleForm({ wsId, user, data, forceDefault, onFinish }: Props) {
 
   const roleId = data?.id;
 
-  const rootGroups = permissionGroups({ t, wsId: ROOT_WORKSPACE_ID, user });
-  const groups = permissionGroups({ t, wsId, user });
+  const rootGroups = permissionGroups({
+    t: t as (key: string) => string,
+    wsId: ROOT_WORKSPACE_ID,
+    user,
+  });
+
+  const groups = permissionGroups({
+    t: t as (key: string) => string,
+    wsId,
+    user,
+  });
 
   const workspaceMembersQuery = useQuery({
     queryKey: ['workspaces', wsId, 'members'],
