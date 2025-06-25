@@ -25,7 +25,7 @@ export default function SessionsListFallback() {
       {/* Statistics Cards */}
       <div className="mb-6 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {Array.from({ length: 4 }).map((_, index) => (
-          <Card key={index}>
+          <Card key={`stat-card-${index}`}>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium">
                 <Skeleton className="h-4 w-24" />
@@ -74,7 +74,7 @@ export default function SessionsListFallback() {
           </TableHeader>
           <TableBody>
             {Array.from({ length: 10 }).map((_, index) => (
-              <TableRow key={index}>
+              <TableRow key={`table-row-${index}`}>
                 <TableCell>
                   <Skeleton className="h-6 w-16" />
                 </TableCell>

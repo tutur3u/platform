@@ -56,6 +56,7 @@ export default function UserNavClient({
       <DropdownMenu modal={false}>
         <DropdownMenuTrigger asChild>
           <button
+            type="button"
             className={cn(
               'flex h-10 w-full gap-3 rounded-lg p-2 text-start transition-all duration-200',
               hideMetadata

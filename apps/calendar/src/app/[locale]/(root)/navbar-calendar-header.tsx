@@ -4,7 +4,7 @@ import { Button } from '@tuturuuu/ui/button';
 import { ChevronLeft, ChevronRight } from '@tuturuuu/ui/icons';
 import { useTranslations } from 'next-intl';
 
-export default function NavbarCalendarHeader({}: { locale: string }) {
+export default function NavbarCalendarHeader() {
   const t = useTranslations('calendar');
   // const { date, setDate, view, setView, availableViews } = useCalendarContext();
 

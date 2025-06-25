@@ -16,7 +16,9 @@ interface Team {
   invitation_count?: number;
 }
 
-export const getTeamColumns = (t: any): ColumnDef<Team>[] => {
+export const getTeamColumns = (
+  t: (key: string) => string
+): ColumnDef<Team>[] => {
   return [
     {
       accessorKey: 'id',

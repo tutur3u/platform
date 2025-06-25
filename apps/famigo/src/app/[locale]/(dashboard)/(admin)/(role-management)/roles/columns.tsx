@@ -14,7 +14,9 @@ import moment from 'moment';
 import { useRouter } from 'next/navigation';
 import { NovaRoleRowActions } from './row-actions';
 
-export const getNovaRoleColumns = (t: any): ColumnDef<NovaRole>[] => {
+export const getNovaRoleColumns = (
+  t: (key: string) => string
+): ColumnDef<NovaRole>[] => {
   const router = useRouter();
   const queryClient = useQueryClient();
   const isFetching = useIsFetching({ queryKey: ['ai-whitelist'] });

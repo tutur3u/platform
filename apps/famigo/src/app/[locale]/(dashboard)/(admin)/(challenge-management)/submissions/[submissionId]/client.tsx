@@ -24,6 +24,7 @@ import {
 } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import ScoreBadge from '@/components/common/ScoreBadge';
@@ -111,10 +112,12 @@ export default function SubmissionClient({ submission }: Props) {
             <CardContent className="space-y-4">
               <div className="flex items-center gap-3">
                 {submission.user?.avatar_url ? (
-                  <img
+                  <Image
                     src={submission.user.avatar_url}
                     alt={submission.user.display_name || 'User'}
-                    className="h-12 w-12 rounded-full"
+                    width={48}
+                    height={48}
+                    className="rounded-full"
                   />
                 ) : (
                   <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-lg font-semibold">

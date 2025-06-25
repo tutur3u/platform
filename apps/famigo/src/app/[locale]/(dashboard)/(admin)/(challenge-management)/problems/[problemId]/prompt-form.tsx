@@ -331,7 +331,10 @@ export default function PromptForm({ problem }: Props) {
                 </div>
 
                 {allTestResults.map((result, index) => (
-                  <div key={index} className="space-y-2">
+                  <div
+                    key={`test-result-${result.input.slice(0, 20)}-${index}`}
+                    className="space-y-2"
+                  >
                     <h3 className="text-sm font-medium">
                       Test Case {index + 1}:
                     </h3>

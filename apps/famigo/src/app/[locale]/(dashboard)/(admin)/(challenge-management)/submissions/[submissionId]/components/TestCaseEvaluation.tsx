@@ -179,6 +179,7 @@ export default function TestCaseEvaluation({
                     </TableCell>
                     <TableCell>
                       <button
+                        type="button"
                         onClick={() => toggleRow(rowKey)}
                         className="rounded p-1 transition-colors hover:bg-muted"
                         aria-label={
