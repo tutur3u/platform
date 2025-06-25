@@ -12,7 +12,7 @@ import type {
 } from '@tuturuuu/types/db';
 
 // Helper interfaces for return types
-interface SessionDetails {
+export interface SessionDetails {
   session: NovaSession;
   problems: NovaProblem[];
 }

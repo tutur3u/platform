@@ -38,8 +38,8 @@ import {
 } from '@/lib/streaming';
 
 interface EvaluationPreview {
-  criteriaEvaluation?: any[];
-  testCaseResults?: any[];
+  criteriaEvaluation?: Array<{ score?: number; [key: string]: unknown }>;
+  testCaseResults?: Array<{ [key: string]: unknown }>;
   submissionId?: string;
   overallAssessment?: string;
   testCaseScores?: {

@@ -14,10 +14,11 @@ import { useState } from 'react';
 import { PUBLIC_PATHS } from '@/constants/common';
 import { AuthButton } from './auth-button';
 
+type TranslationFunction = ReturnType<typeof useTranslations>;
+
 interface MenuProps {
   sbUser: SupabaseUser | null;
   user: WorkspaceUser | null;
-  t?: any;
 }
 
 interface NavLinkProps {
@@ -33,7 +34,7 @@ interface NavItem {
 }
 
 // eslint-disable-next-line no-unused-vars
-const navItems = (_: any) => {
+const navItems = (_: TranslationFunction) => {
   return [
     // { href: '/', label: t('common.home') },
   ] as NavItem[];
@@ -57,7 +58,7 @@ const NavLink: React.FC<NavLinkProps> = ({ item, onClick, className }) => {
   return <Link {...linkProps}>{item.label}</Link>;
 };
 
-const DesktopMenu: React.FC<{ t: any }> = ({ t }) => {
+const DesktopMenu: React.FC<{ t: TranslationFunction }> = ({ t }) => {
   const pathname = usePathname();
 
   if (
@@ -83,7 +84,11 @@ const MobileNavLink: React.FC<NavLinkProps> = ({ item, onClick }) => (
   />
 );
 
-const MobileMenu: React.FC<MenuProps> = ({ sbUser, user, t }) => {
+const MobileMenu: React.FC<MenuProps & { t: TranslationFunction }> = ({
+  sbUser,
+  user,
+  t,
+}) => {
   const [isOpened, setIsOpened] = useState(false);
   const closeMenu = () => setIsOpened(false);
 

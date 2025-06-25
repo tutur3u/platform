@@ -279,23 +279,30 @@ export function LiveResultsPreview({
                       evaluationPreview.testCaseResults.length > 0 && (
                         <div className="mt-2 flex flex-wrap gap-1">
                           {evaluationPreview.testCaseResults.map(
-                            (testCase: any, index: number) => {
+                            (
+                              testCase: { [key: string]: unknown },
+                              index: number
+                            ) => {
                               // Check if this test case has match data
                               const hasMatchData =
                                 testCase &&
                                 typeof testCase.matched === 'boolean';
                               const isPassed = hasMatchData
-                                ? testCase.matched
+                                ? (testCase.matched as boolean)
                                 : false;
                               const isProcessing =
                                 !hasMatchData &&
-                                index < evaluationPreview.testCaseScores?.total;
+                                index <
+                                  (evaluationPreview.testCaseScores?.total ??
+                                    0);
                               const isGenerating =
                                 evaluationPreview.generationPhase;
 
                               return (
                                 <div
-                                  key={testCase?.id || index}
+                                  key={
+                                    (testCase?.id as string) || `test-${index}`
+                                  }
                                   className={cn(
                                     'h-2 w-2 rounded-full transition-all duration-300',
                                     isGenerating

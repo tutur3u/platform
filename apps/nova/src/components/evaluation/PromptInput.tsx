@@ -15,6 +15,7 @@ import { Textarea } from '@tuturuuu/ui/textarea';
 import { cn } from '@tuturuuu/utils/format';
 import type React from 'react';
 import { useEffect, useState } from 'react';
+import type { ProgressUpdate } from '@/lib/streaming';
 
 interface PromptInputProps {
   prompt: string;
@@ -24,7 +25,7 @@ interface PromptInputProps {
   error: string;
   maxLength: number;
   remainingAttempts: number | null;
-  currentProgress: any;
+  currentProgress: ProgressUpdate | null;
 }
 
 export function PromptInput({

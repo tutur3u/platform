@@ -10,7 +10,7 @@ import { cn } from '@tuturuuu/utils/format';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import type React from 'react';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ChatList } from '@/components/chat-list';
 import { ChatPanel } from '@/components/chat-panel';
 import { ChatScrollAnchor } from '@/components/chat-scroll-anchor';
@@ -48,39 +48,63 @@ const Chat = ({
   const [model, setModel] = useState<Model | undefined>(inputModel);
   const [currentUserId, setCurrentUserId] = useState<string>();
 
-  const { messages, append, reload, stop, isLoading, input, setInput } =
-    useChat({
+  const refresh = !!searchParams.get('refresh');
+  const input = searchParams.get('input');
+  const initialScroll = !!searchParams.get('initialScroll');
+
+  const [summarizing, setSummarizing] = useState(false);
+  const [summary, setSummary] = useState<string | undefined>(
+    chat?.summary || ''
+  );
+
+  // Define clearChat using useCallback to fix hook dependency issues
+  const clearChat = useCallback(() => {
+    if (defaultChat?.id) return;
+    setSummary(undefined);
+    setChat(undefined);
+    setCollapsed(true);
+  }, [defaultChat?.id]);
+
+  const {
+    messages,
+    append,
+    reload,
+    stop,
+    isLoading,
+    input: chatInput,
+    setInput,
+  } = useChat({
+    id: chat?.id,
+    initialMessages,
+    credentials: 'include',
+    api:
+      chat?.model || model?.value
+        ? `/api/ai/chat/${(
+            chat?.model
+              ? models
+                  .find((m) => m.value === chat.model)
+                  ?.provider.toLowerCase() || model?.provider.toLowerCase()
+              : model?.provider.toLowerCase()
+          )?.replace(' ', '-')}`
+        : undefined,
+    body: {
       id: chat?.id,
-      initialMessages,
-      credentials: 'include',
-      api:
-        chat?.model || model?.value
-          ? `/api/ai/chat/${(
-              chat?.model
-                ? models
-                    .find((m) => m.value === chat.model)
-                    ?.provider.toLowerCase() || model?.provider.toLowerCase()
-                : model?.provider.toLowerCase()
-            )?.replace(' ', '-')}`
-          : undefined,
-      body: {
-        id: chat?.id,
-        model: chat?.model || model?.value,
-      },
-      onResponse(response) {
-        if (!response.ok)
-          toast({
-            title: t('ai_chat.something_went_wrong'),
-            description: t('ai_chat.try_again_later'),
-          });
-      },
-      onError() {
+      model: chat?.model || model?.value,
+    },
+    onResponse(response) {
+      if (!response.ok)
         toast({
           title: t('ai_chat.something_went_wrong'),
           description: t('ai_chat.try_again_later'),
         });
-      },
-    });
+    },
+    onError() {
+      toast({
+        title: t('ai_chat.something_went_wrong'),
+        description: t('ai_chat.try_again_later'),
+      });
+    },
+  });
 
   useEffect(() => {
     const getCurrentUser = async () => {
@@ -93,11 +117,6 @@ const Chat = ({
 
     getCurrentUser();
   }, []);
-
-  const [summarizing, setSummarizing] = useState(false);
-  const [summary, setSummary] = useState<string | undefined>(
-    chat?.summary || ''
-  );
 
   useEffect(() => {
     setSummary(chat?.summary || '');
@@ -172,22 +191,13 @@ const Chat = ({
     };
   }, [summary, chat, isLoading, messages, reload, model, summarizing, t]);
 
-  const [initialScroll, setInitialScroll] = useState(true);
-
   useEffect(() => {
-    // if there is "input" in the query string, we will
-    // use that as the input for the chat, then remove
-    // it from the query string
-    const input = searchParams.get('ai_chat.input');
-    const refresh = searchParams.get('ai_chat.refresh');
-
     if (
       (initialScroll || refresh) &&
       !input &&
       !!chats &&
       count !== undefined
     ) {
-      setInitialScroll(false);
       const mainChatContent = document.getElementById('main-chat-content');
 
       if (mainChatContent) {
@@ -210,13 +220,14 @@ const Chat = ({
     }
   }, [
     chat?.id,
-    searchParams,
     router,
     setInput,
     chats,
     count,
     initialScroll,
     clearChat,
+    input,
+    refresh,
   ]);
 
   const [collapsed, setCollapsed] = useState(true);
@@ -286,13 +297,6 @@ const Chat = ({
     });
   };
 
-  const clearChat = () => {
-    if (defaultChat?.id) return;
-    setSummary(undefined);
-    setChat(undefined);
-    setCollapsed(true);
-  };
-
   useEffect(() => {
     if (!pendingPrompt || !chat?.id) return;
     append({
@@ -357,7 +361,7 @@ const Chat = ({
         stop={stop}
         append={append}
         reload={reload}
-        input={input}
+        input={chatInput}
         inputRef={inputRef}
         setInput={setInput}
         model={

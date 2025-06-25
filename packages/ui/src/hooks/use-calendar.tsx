@@ -1,9 +1,13 @@
+import type {
+  QueryClient,
+  UseQueryOptions,
+  UseQueryResult,
+} from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type {
   Workspace,
   WorkspaceCalendarGoogleToken,
 } from '@tuturuuu/types/db';
-import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import {
   type CalendarSettings,
@@ -18,10 +22,10 @@ import {
   useCallback,
   useContext,
   useEffect,
-  useMemo,
   useRef,
   useState,
 } from 'react';
+import type { CalendarEvent } from '../custom/calendar';
 import { useCalendarSync } from './use-calendar-sync';
 
 // Utility function to round time to nearest 15-minute interval
@@ -125,6 +129,17 @@ interface PendingEventUpdate extends Partial<CalendarEvent> {
   _reject?: (reason: unknown) => void;
 }
 
+// Define proper TanStack Query hook types
+type UseQueryHook = <
+  TQueryFnData = unknown,
+  TError = Error,
+  TData = TQueryFnData,
+>(
+  options: UseQueryOptions<TQueryFnData, TError, TData>
+) => UseQueryResult<TData, TError>;
+
+type UseQueryClientHook = () => QueryClient;
+
 export const CalendarProvider = ({
   ws,
   useQuery,
@@ -134,8 +149,8 @@ export const CalendarProvider = ({
   experimentalGoogleToken,
 }: {
   ws?: Workspace;
-  useQuery: any;
-  useQueryClient: any;
+  useQuery: UseQueryHook;
+  useQueryClient: UseQueryClientHook;
   children: ReactNode;
   initialSettings?: Partial<CalendarSettings>;
   experimentalGoogleToken?: WorkspaceCalendarGoogleToken | null;
@@ -802,8 +817,13 @@ export const CalendarProvider = ({
       );
 
       // Initialize batch operations - we'll perform these in a more optimized way
-      const eventsToUpdate: Array<{ id: string; data: any }> = [];
-      const eventsToInsert: Array<any> = [];
+      const eventsToUpdate: Array<{
+        id: string;
+        data: Partial<CalendarEvent>;
+      }> = [];
+      const eventsToInsert: Array<
+        Omit<CalendarEvent, 'id'> & { created_at: string }
+      > = [];
       let changesMade = false;
 
       // Report initial progress

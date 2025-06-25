@@ -1,5 +1,11 @@
 'use client';
 
+import type {
+  QueryClient,
+  QueryKey,
+  UseQueryOptions,
+  UseQueryResult,
+} from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type {
   Workspace,
@@ -104,6 +110,11 @@ type CacheUpdate = {
   isForced?: boolean;
 };
 
+// Define type for calendar event with optional created_at field
+type CalendarEventWithCreatedAt = CalendarEvent & {
+  created_at?: string;
+};
+
 export const CalendarSyncProvider = ({
   children,
   wsId,
@@ -114,8 +125,15 @@ export const CalendarSyncProvider = ({
   children: React.ReactNode;
   wsId: Workspace['id'];
   experimentalGoogleToken?: WorkspaceCalendarGoogleToken | null;
-  useQuery: any;
-  useQueryClient: any;
+  useQuery: <
+    TQueryFnData = unknown,
+    TError = Error,
+    TData = TQueryFnData,
+    TQueryKey extends QueryKey = QueryKey,
+  >(
+    options: UseQueryOptions<TQueryFnData, TError, TData, TQueryKey>
+  ) => UseQueryResult<TData, TError>;
+  useQueryClient: () => QueryClient;
 }) => {
   const [data, setData] = useState<WorkspaceCalendarEvent[] | null>(null);
   const [googleData, setGoogleData] = useState<WorkspaceCalendarEvent[] | null>(
@@ -134,15 +152,15 @@ export const CalendarSyncProvider = ({
   const queryClient = useQueryClient();
 
   // Helper to generate cache key from dates
-  const getCacheKey = (dateRange: Date[]) => {
+  const getCacheKey = useCallback((dateRange: Date[]) => {
     if (!dateRange || dateRange.length === 0) {
       return '';
     }
     return `${dateRange[0]?.toISOString()}-${dateRange[dateRange.length - 1]?.toISOString()}`;
-  };
+  }, []);
 
   // Helper to check if a date range includes today (current week issue)
-  const includesCurrentWeek = (dateRange: Date[]) => {
+  const includesCurrentWeek = useCallback((dateRange: Date[]) => {
     if (!dateRange || dateRange.length === 0) return false;
     const today = new Date();
     const startOfToday = new Date(
@@ -167,24 +185,27 @@ export const CalendarSyncProvider = ({
     const rangeEnd = new Date(lastDate);
 
     return rangeStart <= endOfToday && rangeEnd >= startOfToday;
-  };
+  }, []);
 
   // Enhanced cache staleness check - shorter staleness for current week
-  const isCacheStaleEnhanced = (lastUpdated: number, dateRange: Date[]) => {
-    const isCurrentWeek = includesCurrentWeek(dateRange);
-    // 30 seconds for current week, 5 minutes for other weeks
-    const staleTime = isCurrentWeek ? 30 * 1000 : 5 * 60 * 1000; // 30 seconds
-    const isStale = Date.now() - lastUpdated >= staleTime;
+  const isCacheStaleEnhanced = useCallback(
+    (lastUpdated: number, dateRange: Date[]) => {
+      const isCurrentWeek = includesCurrentWeek(dateRange);
+      // 30 seconds for current week, 5 minutes for other weeks
+      const staleTime = isCurrentWeek ? 30 * 1000 : 5 * 60 * 1000; // 30 seconds
+      const isStale = Date.now() - lastUpdated >= staleTime;
 
-    if (isCurrentWeek && isStale) {
-      console.log('Current week cache is stale, forcing fresh fetch');
-    }
+      if (isCurrentWeek && isStale) {
+        console.log('Current week cache is stale, forcing fresh fetch');
+      }
 
-    return isStale;
-  };
+      return isStale;
+    },
+    [includesCurrentWeek]
+  );
 
   // Helper to update cache safely
-  const updateCache = (cacheKey: string, update: CacheUpdate) => {
+  const updateCache = useCallback((cacheKey: string, update: CacheUpdate) => {
     setCalendarCache((prev) => {
       const existing = prev[cacheKey] || {
         dbEvents: [],
@@ -206,7 +227,18 @@ export const CalendarSyncProvider = ({
         },
       };
     });
-  };
+  }, []);
+
+  // Helper to check if dates have actually changed
+  const areDatesEqual = useCallback((newDates: Date[]) => {
+    const newDatesStr = JSON.stringify(newDates.map((d) => d.toISOString()));
+    const prevDatesStr = prevDatesRef.current;
+    const areEqual = newDatesStr === prevDatesStr;
+    if (!areEqual) {
+      prevDatesRef.current = newDatesStr;
+    }
+    return areEqual;
+  }, []);
 
   // Fetch database events with caching
   const { data: fetchedData, isLoading: isDatabaseLoading } = useQuery({
@@ -319,16 +351,37 @@ export const CalendarSyncProvider = ({
     refetchInterval: 30000,
   });
 
-  // Helper to check if dates have actually changed
-  const areDatesEqual = (newDates: Date[]) => {
-    const newDatesStr = JSON.stringify(newDates.map((d) => d.toISOString()));
-    const prevDatesStr = prevDatesRef.current;
-    const areEqual = newDatesStr === prevDatesStr;
-    if (!areEqual) {
-      prevDatesRef.current = newDatesStr;
-    }
-    return areEqual;
-  };
+  // Invalidate and refetch events
+  const refresh = useCallback(() => {
+    console.log('Refreshing events');
+    const cacheKey = getCacheKey(dates);
+    if (!cacheKey) return null;
+
+    const cacheData = calendarCache[cacheKey];
+    console.log('Before refresh - cacheData:', {
+      isForced: cacheData?.isForced,
+      dbLastUpdated: cacheData?.dbLastUpdated,
+      googleLastUpdated: cacheData?.googleLastUpdated,
+      dbEventsLength: cacheData?.dbEvents?.length,
+    });
+
+    // Use updateCache instead of direct mutation
+    updateCache(cacheKey, {
+      isForced: true,
+      dbLastUpdated: 0,
+    });
+
+    console.log('After refresh - cacheData:', {
+      isForced: cacheData?.isForced,
+      dbLastUpdated: cacheData?.dbLastUpdated,
+      googleLastUpdated: cacheData?.googleLastUpdated,
+      dbEventsLength: cacheData?.dbEvents?.length,
+    });
+
+    queryClient.invalidateQueries({
+      queryKey: ['databaseCalendarEvents', wsId, getCacheKey(dates)],
+    });
+  }, [queryClient, wsId, calendarCache, dates, updateCache, getCacheKey]);
 
   // Sync Google events of current view to Tuturuuu database
   const syncToTuturuuu = useCallback(
@@ -702,9 +755,9 @@ export const CalendarSyncProvider = ({
   */
 
   // Create a unique signature for an event based on its content
-  const createEventSignature = (event: CalendarEvent): string => {
+  const createEventSignature = useCallback((event: CalendarEvent): string => {
     return `${event.title}|${event.description || ''}|${event.start_at}|${event.end_at}`;
-  };
+  }, []);
 
   // Detect and remove duplicate events
   const _removeDuplicateEvents = useCallback(
@@ -736,8 +789,8 @@ export const CalendarSyncProvider = ({
           // Keep the first/oldest event, delete the rest
           const sortedEvents = [...eventGroup].sort((a, b) => {
             // If we have created_at field, use it (check with optional chaining)
-            const aCreatedAt = (a as any)?.created_at;
-            const bCreatedAt = (b as any)?.created_at;
+            const aCreatedAt = (a as CalendarEventWithCreatedAt).created_at;
+            const bCreatedAt = (b as CalendarEventWithCreatedAt).created_at;
             if (aCreatedAt && bCreatedAt) {
               return (
                 new Date(aCreatedAt).getTime() - new Date(bCreatedAt).getTime()
@@ -804,38 +857,6 @@ export const CalendarSyncProvider = ({
     // If we're still loading, return empty array
     return [];
   }, [fetchedData]);
-
-  // Invalidate and refetch events
-  const refresh = useCallback(() => {
-    console.log('Refreshing events');
-    const cacheKey = getCacheKey(dates);
-    if (!cacheKey) return null;
-
-    const cacheData = calendarCache[cacheKey];
-    console.log('Before refresh - cacheData:', {
-      isForced: cacheData?.isForced,
-      dbLastUpdated: cacheData?.dbLastUpdated,
-      googleLastUpdated: cacheData?.googleLastUpdated,
-      dbEventsLength: cacheData?.dbEvents?.length,
-    });
-
-    // Use updateCache instead of direct mutation
-    updateCache(cacheKey, {
-      isForced: true,
-      dbLastUpdated: 0,
-    });
-
-    console.log('After refresh - cacheData:', {
-      isForced: cacheData?.isForced,
-      dbLastUpdated: cacheData?.dbLastUpdated,
-      googleLastUpdated: cacheData?.googleLastUpdated,
-      dbEventsLength: cacheData?.dbEvents?.length,
-    });
-
-    queryClient.invalidateQueries({
-      queryKey: ['databaseCalendarEvents', wsId, getCacheKey(dates)],
-    });
-  }, [queryClient, wsId, calendarCache, dates, updateCache, getCacheKey]);
 
   const eventsWithoutAllDays = useMemo(() => {
     // Process events immediately when they change

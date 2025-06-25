@@ -1,5 +1,6 @@
 /* eslint-disable no-unused-vars */
 
+import type { StorageError } from '@supabase/storage-js';
 import type { Model } from '@tuturuuu/ai/models';
 import type { Message, UseChatHelpers } from '@tuturuuu/ai/types';
 import { createDynamicClient } from '@tuturuuu/supabase/next/client';
@@ -218,7 +219,10 @@ export function ChatPanel({
 export async function uploadFile(
   file: StatedFile,
   id?: string
-): Promise<{ data: any; error: any }> {
+): Promise<{
+  data: { path: string } | null;
+  error: StorageError | string | null;
+}> {
   if (!id) return { data: null, error: 'No chat id provided' };
 
   const fileName = file.rawFile.name;

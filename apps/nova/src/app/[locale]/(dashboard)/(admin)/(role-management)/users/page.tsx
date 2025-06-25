@@ -158,7 +158,9 @@ async function getUserData({
             }))
             .filter((user: { services?: string[] }) =>
               user.services?.includes('NOVA')
-            ) as any,
+            ) as (User &
+            PlatformUser &
+            Partial<UserPrivateDetails> & { team_name: string[] })[],
           userCount: (data || []).filter((user: unknown) =>
             (
               ((user as Record<string, unknown>)?.services as string[]) || []
@@ -176,7 +178,9 @@ async function getUserData({
           }))
           .filter((user: { services?: string[] }) =>
             user.services?.includes('NOVA')
-          ) as any,
+          ) as (User &
+          PlatformUser &
+          Partial<UserPrivateDetails> & { team_name: string[] })[],
         userCount: countData || 0,
       };
     }

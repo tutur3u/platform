@@ -5,8 +5,8 @@ import {
   calculateScore,
 } from '@tuturuuu/utils/nova/scores/calculate';
 import type { Metadata } from 'next';
-import { notFound } from 'next/navigation';
 import { getLocale } from 'next-intl/server';
+import { notFound } from 'next/navigation';
 import UserProfileClient from './client';
 
 // Dynamic metadata for profile pages
@@ -55,6 +55,19 @@ export async function generateMetadata({
       images: [ogImageUrl],
     },
   };
+}
+
+// Define submission interface based on the fields being used
+interface Submission {
+  id?: string;
+  problem_id?: string;
+  challenge_id?: string;
+  total_tests?: number;
+  passed_tests?: number;
+  total_criteria?: number;
+  sum_criterion_score?: number;
+  created_at?: string;
+  [key: string]: unknown;
 }
 
 export default async function UserProfilePage({
@@ -153,12 +166,8 @@ export default async function UserProfilePage({
     throw activityError;
   }
 
-  // Process submissions to get best scores per problem
-  const bestProblemScores = new Map<string, number>();
-  const challengeScores: Record<string, number> = {};
-
   // Collect all submissions from all sessions
-  const allSubmissions: any[] = [];
+  const allSubmissions: Submission[] = [];
 
   sessionsData?.forEach((session) => {
     if (session.nova_submissions_with_scores) {
@@ -170,6 +179,10 @@ export default async function UserProfilePage({
       });
     }
   });
+
+  // Process submissions to get best scores per problem
+  const bestProblemScores = new Map<string, number>();
+  const challengeScores: Record<string, number> = {};
 
   // Calculate best scores for each problem using the same formula as other parts of the app
   allSubmissions.forEach((submission) => {

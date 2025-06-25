@@ -13,7 +13,9 @@ export async function LanguageWrapper({ label, locale }: Props) {
   const currentLocale = cookies.get(LOCALE_COOKIE_NAME)?.value;
 
   const isLocaleSupported = currentLocale
-    ? supportedLocales.includes(currentLocale as any)
+    ? supportedLocales.includes(
+        currentLocale as (typeof supportedLocales)[number]
+      )
     : true; // user is using system locale
 
   const isCurrentLocale = isLocaleSupported

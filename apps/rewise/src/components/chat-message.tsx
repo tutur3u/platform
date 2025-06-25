@@ -321,13 +321,16 @@ export function ChatMessage({
 
                 const optionsElements = options.map((option, index) => (
                   <button
+                    type="button"
                     key={index}
-                    className={`w-full rounded border px-3 py-1 text-left font-semibold transition md:text-center ${
-                      revealCorrect && option.isCorrect
-                        ? 'border-dynamic-green bg-dynamic-green/10 text-dynamic-green'
-                        : revealCorrect
-                          ? 'bg-foreground/5 text-foreground opacity-50'
-                          : 'bg-foreground/5 text-foreground hover:bg-foreground/10'
+                    className={`mb-2 w-full rounded border px-3 py-1 text-center font-semibold transition last:mb-0 ${
+                      selectedOption.text === option.text
+                        ? option.isCorrect
+                          ? 'border-green-600 bg-green-100 text-green-700 dark:border-green-400 dark:bg-green-900/50 dark:text-green-300'
+                          : 'border-red-600 bg-red-100 text-red-700 dark:border-red-400 dark:bg-red-900/50 dark:text-red-300'
+                        : revealCorrect && option.isCorrect
+                          ? 'border-green-600 bg-green-100 text-green-700 dark:border-green-400 dark:bg-green-900/50 dark:text-green-300'
+                          : 'border-foreground/20 bg-foreground/5 text-foreground hover:bg-foreground/10'
                     }`}
                     onClick={() => handleOptionClick(option)}
                   >
@@ -413,9 +416,10 @@ export function ChatMessage({
                     </div>
                     <Separator className="mt-2 mb-4" />
                     <button
+                      type="button"
                       className={`w-full rounded border px-3 py-1 text-center font-semibold text-foreground transition duration-300 ${
                         revealAnswer
-                          ? 'cursor-default border-transparent'
+                          ? 'bg-dynamic-green/20 text-dynamic-green hover:bg-dynamic-green/30'
                           : 'bg-foreground/5 hover:bg-foreground/10'
                       }`}
                       onClick={() => setRevealAnswer(true)}
@@ -464,6 +468,7 @@ export function ChatMessage({
                 if (setInput)
                   return (
                     <button
+                      type="button"
                       className="mb-2 rounded-full border bg-foreground/5 text-left font-semibold text-foreground transition last:mb-0 hover:bg-foreground/10"
                       onClick={() => setInput(content || '')}
                     >
@@ -566,13 +571,16 @@ export function ChatMessage({
 
                 const optionsElements = options.map((option, index) => (
                   <button
+                    type="button"
                     key={index}
-                    className={`w-full rounded border px-3 py-1 text-left font-semibold transition md:text-center ${
-                      revealCorrect && option.isCorrect
-                        ? 'border-dynamic-green bg-dynamic-green/10 text-dynamic-green'
-                        : revealCorrect
-                          ? 'bg-foreground/5 text-foreground opacity-50'
-                          : 'bg-foreground/5 text-foreground hover:bg-foreground/10'
+                    className={`mb-2 w-full rounded border px-3 py-1 text-center font-semibold transition last:mb-0 ${
+                      selectedOption.text === option.text
+                        ? option.isCorrect
+                          ? 'border-green-600 bg-green-100 text-green-700 dark:border-green-400 dark:bg-green-900/50 dark:text-green-300'
+                          : 'border-red-600 bg-red-100 text-red-700 dark:border-red-400 dark:bg-red-900/50 dark:text-red-300'
+                        : revealCorrect && option.isCorrect
+                          ? 'border-green-600 bg-green-100 text-green-700 dark:border-green-400 dark:bg-green-900/50 dark:text-green-300'
+                          : 'border-foreground/20 bg-foreground/5 text-foreground hover:bg-foreground/10'
                     }`}
                     onClick={() => handleOptionClick(option)}
                   >
@@ -658,9 +666,10 @@ export function ChatMessage({
                     </div>
                     <Separator className="mt-2 mb-4" />
                     <button
+                      type="button"
                       className={`w-full rounded border px-3 py-1 text-center font-semibold text-foreground transition duration-300 ${
                         revealAnswer
-                          ? 'cursor-default border-transparent'
+                          ? 'bg-dynamic-green/20 text-dynamic-green hover:bg-dynamic-green/30'
                           : 'bg-foreground/5 hover:bg-foreground/10'
                       }`}
                       onClick={() => setRevealAnswer(true)}
@@ -709,6 +718,7 @@ export function ChatMessage({
                 if (setInput)
                   return (
                     <button
+                      type="button"
                       className="mb-2 rounded-full border bg-foreground/5 text-left font-semibold text-foreground transition last:mb-0 hover:bg-foreground/10"
                       onClick={() => setInput(content || '')}
                     >

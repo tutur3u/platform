@@ -3,11 +3,20 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
-import type { AIChat } from '@tuturuuu/types/db';
+import type { AIChat, Tables } from '@tuturuuu/types/db';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { notFound, redirect } from 'next/navigation';
 import Chat from '../../chat';
 import { getChats } from '../../helper';
+
+// Define proper types for AI chat messages and user data
+type AIChatMessage = Tables<'ai_chat_messages'>;
+type MessageUser = {
+  id: string;
+  email?: string | null;
+  display_name: string | null;
+  avatar_url: string | null;
+};
 
 interface Props {
   params: Promise<{
@@ -136,7 +145,7 @@ const getMessages = async (chatId: string) => {
 };
 
 // Helper function to get user data for messages
-const getMessageUsers = async (messages: any[]) => {
+const getMessageUsers = async (messages: AIChatMessage[]) => {
   const sbAdmin = await createAdminClient();
 
   // Get user data for all unique creator_ids
@@ -150,11 +159,11 @@ const getMessageUsers = async (messages: any[]) => {
 
   if (usersError) {
     console.error(usersError);
-    return new Map();
+    return new Map<string, MessageUser>();
   }
 
   // Create a map of user data
-  return new Map(
+  return new Map<string, MessageUser>(
     users?.map((user) => [
       user.id,
       {
@@ -168,7 +177,10 @@ const getMessageUsers = async (messages: any[]) => {
 };
 
 // Helper function to format messages with user data
-const formatMessages = (messages: any[], userMap: Map<string, any>) => {
+const formatMessages = (
+  messages: AIChatMessage[],
+  userMap: Map<string, MessageUser>
+) => {
   return messages.map(({ role, creator_id, ...rest }) => ({
     ...rest,
     role: role.toLowerCase(),

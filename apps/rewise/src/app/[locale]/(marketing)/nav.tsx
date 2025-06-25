@@ -9,13 +9,16 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import type { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import type { NavLink } from '@/components/navigation';
 import { PROD_MODE } from '@/constants/common';
 import ChatLink from './chat-link';
 
+type TranslationFunction = ReturnType<typeof useTranslations>;
+
 interface NavProps {
-  t: any;
+  t: TranslationFunction;
   locale: string;
   currentUser: WorkspaceUser | null;
   isCollapsed: boolean;
@@ -29,7 +32,11 @@ interface GroupedLinks {
   [key: string]: NavLink[];
 }
 
-function getDateTag(locale: string, t: any, date: Date): string {
+function getDateTag(
+  locale: string,
+  t: TranslationFunction,
+  date: Date
+): string {
   const now = new Date();
   const diffTime = Math.abs(now.getTime() - date.getTime());
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
@@ -43,7 +50,7 @@ function getDateTag(locale: string, t: any, date: Date): string {
 
 function groupLinksByDate(
   locale: string,
-  t: any,
+  t: TranslationFunction,
   links: NavLink[],
   configs: {
     showChatName: boolean;

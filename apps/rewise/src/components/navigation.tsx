@@ -1,10 +1,10 @@
 'use client';
 
+import { DEV_MODE, PROD_MODE } from '@/constants/common';
 import type { User } from '@tuturuuu/types/primitives/User';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { type ReactNode, useEffect, useState } from 'react';
-import { DEV_MODE, PROD_MODE } from '@/constants/common';
+import { type ReactNode, useCallback, useEffect, useState } from 'react';
 
 export interface NavLink {
   title: string;
@@ -40,7 +40,7 @@ export function Navigation({
 }: Props) {
   const pathname = usePathname();
 
-  const scrollActiveLinksIntoView = () => {
+  const scrollActiveLinksIntoView = useCallback(() => {
     const activeWorkspaceLink = document.getElementById('active-ws-navlink');
     const activeLink = document.getElementById('active-navlink');
 
@@ -61,7 +61,7 @@ export function Navigation({
         })
       );
     }
-  };
+  }, []);
 
   const [urlToLoad, setUrlToLoad] = useState<string>();
 

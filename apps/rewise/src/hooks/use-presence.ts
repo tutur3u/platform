@@ -1,3 +1,4 @@
+import type { RealtimeChannel } from '@supabase/supabase-js';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { RealtimePresenceState } from '@tuturuuu/supabase/next/realtime';
 import { useEffect, useRef, useState } from 'react';
@@ -20,7 +21,7 @@ export function usePresence(chatId?: string) {
     RealtimePresenceState<PresenceState>
   >({});
   const [currentUserId, setCurrentUserId] = useState<string>();
-  const channelRef = useRef<any>(null);
+  const channelRef = useRef<RealtimeChannel | null>(null);
 
   useEffect(() => {
     if (!chatId) return;

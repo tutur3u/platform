@@ -1,5 +1,5 @@
 import { cn } from '@tuturuuu/utils/format';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 interface SideBySideDiffProps {
   left?: string;
@@ -37,6 +37,99 @@ export default function SideBySideDiff({
     leftLines: [],
     rightLines: [],
   });
+
+  // Function to find the longest common subsequence of two strings
+  const longestCommonSubsequence = useCallback(
+    (str1: string, str2: string): string => {
+      const m = str1.length;
+      const n = str2.length;
+
+      // Create a table to store lengths of LCS
+      const dp: number[][] = Array(m + 1)
+        .fill(0)
+        .map(() => Array(n + 1).fill(0));
+
+      // Fill the dp table
+      for (let i = 1; i <= m; i++) {
+        for (let j = 1; j <= n; j++) {
+          if (str1[i - 1] === str2[j - 1]) {
+            dp[i][j] = (dp[i - 1]?.[j - 1] || 0) + 1;
+          } else {
+            dp[i][j] = Math.max(dp[i - 1]?.[j] || 0, dp[i]?.[j - 1] || 0);
+          }
+        }
+      }
+
+      // Reconstruct the LCS
+      let lcs = '';
+      let i = m,
+        j = n;
+
+      while (i > 0 && j > 0) {
+        if (str1[i - 1] === str2[j - 1]) {
+          lcs = str1[i - 1] + lcs;
+          i--;
+          j--;
+        } else if ((dp[i - 1]?.[j] || 0) > (dp[i]?.[j - 1] || 0)) {
+          i--;
+        } else {
+          j--;
+        }
+      }
+
+      return lcs;
+    },
+    []
+  );
+
+  // Function to find inline character differences between two strings
+  const findInlineDiff = useCallback(
+    (str1: string = '', str2: string = '') => {
+      const segments: { text: string; highlight: boolean }[] = [];
+
+      // Use dynamic programming to find longest common subsequence
+      const lcs = longestCommonSubsequence(str1, str2);
+
+      let lcsIndex = 0;
+      let currentSegment = { text: '', highlight: false };
+
+      for (let i = 0; i < str1.length; i++) {
+        const char = str1[i];
+
+        // If character is part of LCS, it's not changed
+        if (lcsIndex < lcs.length && char === lcs[lcsIndex]) {
+          // If we were highlighting, end the segment and start a new one
+          if (currentSegment.highlight) {
+            if (currentSegment.text) {
+              segments.push({ ...currentSegment });
+            }
+            currentSegment = { text: char || '', highlight: false };
+          } else {
+            currentSegment.text += char;
+          }
+          lcsIndex++;
+        } else {
+          // Character is different
+          if (!currentSegment.highlight) {
+            if (currentSegment.text) {
+              segments.push({ ...currentSegment });
+            }
+            currentSegment = { text: char || '', highlight: true };
+          } else {
+            currentSegment.text += char;
+          }
+        }
+      }
+
+      // Add the last segment if it has content
+      if (currentSegment.text) {
+        segments.push(currentSegment);
+      }
+
+      return { segments };
+    },
+    [longestCommonSubsequence]
+  );
 
   useEffect(() => {
     // Split the content into lines
@@ -110,93 +203,6 @@ export default function SideBySideDiff({
 
     setDiffData({ leftLines, rightLines });
   }, [left, right, findInlineDiff]);
-
-  // Function to find inline character differences between two strings
-  function findInlineDiff(str1: string = '', str2: string = '') {
-    const segments: { text: string; highlight: boolean }[] = [];
-
-    // Use dynamic programming to find longest common subsequence
-    const lcs = longestCommonSubsequence(str1, str2);
-
-    let lcsIndex = 0;
-    let currentSegment = { text: '', highlight: false };
-
-    for (let i = 0; i < str1.length; i++) {
-      const char = str1[i];
-
-      // If character is part of LCS, it's not changed
-      if (lcsIndex < lcs.length && char === lcs[lcsIndex]) {
-        // If we were highlighting, end the segment and start a new one
-        if (currentSegment.highlight) {
-          if (currentSegment.text) {
-            segments.push({ ...currentSegment });
-          }
-          currentSegment = { text: char || '', highlight: false };
-        } else {
-          currentSegment.text += char;
-        }
-        lcsIndex++;
-      } else {
-        // Character is different
-        if (!currentSegment.highlight) {
-          if (currentSegment.text) {
-            segments.push({ ...currentSegment });
-          }
-          currentSegment = { text: char || '', highlight: true };
-        } else {
-          currentSegment.text += char;
-        }
-      }
-    }
-
-    // Add the last segment if it has content
-    if (currentSegment.text) {
-      segments.push(currentSegment);
-    }
-
-    return { segments };
-  }
-
-  // Function to find the longest common subsequence of two strings
-  function longestCommonSubsequence(str1: string, str2: string): string {
-    const m = str1.length;
-    const n = str2.length;
-
-    // Create a table to store lengths of LCS
-    const dp: number[][] = Array(m + 1)
-      .fill(0)
-      .map(() => Array(n + 1).fill(0));
-
-    // Fill the dp table
-    for (let i = 1; i <= m; i++) {
-      for (let j = 1; j <= n; j++) {
-        if (str1[i - 1] === str2[j - 1]) {
-          dp[i][j] = (dp[i - 1]?.[j - 1] || 0) + 1;
-        } else {
-          dp[i][j] = Math.max(dp[i - 1]?.[j] || 0, dp[i]?.[j - 1] || 0);
-        }
-      }
-    }
-
-    // Reconstruct the LCS
-    let lcs = '';
-    let i = m,
-      j = n;
-
-    while (i > 0 && j > 0) {
-      if (str1[i - 1] === str2[j - 1]) {
-        lcs = str1[i - 1] + lcs;
-        i--;
-        j--;
-      } else if ((dp[i - 1]?.[j] || 0) > (dp[i]?.[j - 1] || 0)) {
-        i--;
-      } else {
-        j--;
-      }
-    }
-
-    return lcs;
-  }
 
   // Render an individual line with inline diff highlighting if applicable
   const renderLineContent = (line: DiffLine, side: 'left' | 'right') => {

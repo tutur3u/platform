@@ -372,27 +372,30 @@ export const updateBulkEvents = tool({
     // Process updates in parallel for better performance
     const updatePromises = updates.map(async (update) => {
       const updateData: {
-        color: string | null;
-        created_at: string | null;
-        description: string;
-        end_at: string;
-        google_event_id: string | null;
-        id: string;
-        location: string | null;
-        locked: boolean;
-        priority: string | null;
-        start_at: string;
-        title: string;
+        id?: string;
+        title?: string;
+        description?: string;
+        start_at?: string;
+        end_at?: string;
         ws_id: string;
-      } | null = null;
+      } = {
+        ws_id: '', // Will be filled from existing event
+      };
 
-      if (update?.title !== undefined) updateData!.title = update.title;
+      if (update?.title !== undefined) updateData.title = update.title;
       if (update?.description !== undefined)
-        updateData!.description = update.description;
-      if (update?.startAt !== undefined) updateData!.start_at = update.startAt;
-      if (update?.endAt !== undefined) updateData!.end_at = update.endAt;
+        updateData.description = update.description;
+      if (update?.startAt !== undefined) updateData.start_at = update.startAt;
+      if (update?.endAt !== undefined) updateData.end_at = update.endAt;
 
-      if (!updateData) {
+      // Check if any actual updates were provided
+      const hasUpdates =
+        update?.title !== undefined ||
+        update?.description !== undefined ||
+        update?.startAt !== undefined ||
+        update?.endAt !== undefined;
+
+      if (!hasUpdates) {
         return {
           eventId: update.eventId,
           data: null,

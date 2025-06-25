@@ -1,7 +1,10 @@
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import type { PermissionId } from '@tuturuuu/types/db';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
+import type { useTranslations } from 'next-intl';
 import { PROD_MODE } from '@/constants/common';
+
+type TranslationFunction = ReturnType<typeof useTranslations>;
 
 export type RolePermission = {
   id: PermissionId;
@@ -22,7 +25,7 @@ export const permissionGroups = ({
   wsId,
   user,
 }: {
-  t?: any;
+  t?: TranslationFunction;
   wsId: string;
   user: SupabaseUser | null;
 }) => {
@@ -254,7 +257,7 @@ export const permissionGroups = ({
 };
 
 export const permissions = (args: {
-  t?: any;
+  t?: TranslationFunction;
   wsId: string;
   user: SupabaseUser | null;
 }) => {
@@ -271,3 +274,16 @@ export const totalPermissions = ({
   wsId: string;
   user: SupabaseUser | null;
 }) => permissions({ wsId, user }).length;
+
+export const redirectToDashboard = ({
+  t: _t,
+  wsId: _wsId,
+  user: _user,
+}: {
+  t?: TranslationFunction;
+  wsId: string;
+  user: SupabaseUser | null;
+}) => {
+  // TODO: Implementation of redirectToDashboard function
+  return undefined;
+};

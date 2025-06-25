@@ -107,16 +107,16 @@ export const getDateRange = (
 };
 
 export const getDateRangeUnits = (
-  t: any
+  t: (key: string) => string
 ): {
   label: string;
   value: DateRangeUnit;
 }[] => {
   return [
-    { label: t('date_helper.day'), value: 'day' },
-    { label: t('date_helper.week'), value: 'week' },
-    { label: t('date_helper.month'), value: 'month' },
-    { label: t('date_helper.year'), value: 'year' },
+    { label: t('date-range-units.day'), value: 'day' },
+    { label: t('date-range-units.week'), value: 'week' },
+    { label: t('date-range-units.month'), value: 'month' },
+    { label: t('date-range-units.year'), value: 'year' },
     { label: t('date_helper.all'), value: 'all' },
     { label: t('date_helper.custom'), value: 'custom' },
   ];
@@ -124,7 +124,7 @@ export const getDateRangeUnits = (
 
 export const getDateRangeOptions = (
   unit: DateRangeUnit,
-  t: any
+  t: (key: string) => string
 ): {
   label: string;
   value: DateRangeOption;

@@ -510,11 +510,9 @@ export function AboutUsClient() {
 
   // Render contributor card with enhanced design
   const renderContributor = (contributor: Contributor) => {
-    const name = t(
-      `special-thanks.contributors.${contributor.tKey}.name` as unknown as any
-    );
+    const name = t(`special-thanks.contributors.${contributor.tKey}.name`);
     const contribution = t(
-      `special-thanks.contributors.${contributor.tKey}.contribution` as unknown as any
+      `special-thanks.contributors.${contributor.tKey}.contribution`
     );
 
     return (

@@ -2,70 +2,70 @@ const defaultColor = 'blue';
 
 export const getTextColor = (color = defaultColor): string => {
   const colors: Record<string, string> = {
-    red: 'text-red-200',
-    blue: 'text-blue-200',
-    green: 'text-green-200',
-    yellow: 'text-yellow-200',
-    orange: 'text-orange-200',
-    purple: 'text-purple-200',
-    pink: 'text-pink-200',
-    indigo: 'text-indigo-200',
-    cyan: 'text-cyan-200',
-    gray: 'text-gray-200',
+    red: 'text-dynamic-red',
+    blue: 'text-dynamic-blue',
+    green: 'text-dynamic-green',
+    yellow: 'text-dynamic-yellow',
+    orange: 'text-dynamic-orange',
+    purple: 'text-dynamic-purple',
+    pink: 'text-dynamic-pink',
+    indigo: 'text-dynamic-indigo',
+    cyan: 'text-dynamic-cyan',
+    gray: 'text-dynamic-gray',
   };
 
-  return colors?.[color] || colors[defaultColor] || 'text-gray-500';
+  return colors?.[color] || colors[defaultColor] || 'text-dynamic-gray';
 };
 
 export const getBackgroundColor = (color = defaultColor): string => {
   const colors: Record<string, string> = {
-    red: 'bg-red-300/20',
-    blue: 'bg-blue-300/20',
-    green: 'bg-green-300/20',
-    yellow: 'bg-yellow-300/20',
-    orange: 'bg-orange-300/20',
-    purple: 'bg-purple-300/20',
-    pink: 'bg-pink-300/20',
-    indigo: 'bg-indigo-300/20',
-    cyan: 'bg-cyan-300/20',
-    gray: 'bg-gray-300/20',
+    red: 'bg-dynamic-red/20',
+    blue: 'bg-dynamic-blue/20',
+    green: 'bg-dynamic-green/20',
+    yellow: 'bg-dynamic-yellow/20',
+    orange: 'bg-dynamic-orange/20',
+    purple: 'bg-dynamic-purple/20',
+    pink: 'bg-dynamic-pink/20',
+    indigo: 'bg-dynamic-indigo/20',
+    cyan: 'bg-dynamic-cyan/20',
+    gray: 'bg-dynamic-gray/20',
   };
 
-  return colors?.[color] || colors[defaultColor] || 'bg-gray-500';
+  return colors?.[color] || colors[defaultColor] || 'bg-dynamic-gray';
 };
 
 export const getShadowColor = (color = defaultColor): string => {
   const colors: Record<string, string> = {
-    red: 'shadow-red-300/20',
-    blue: 'shadow-blue-300/20',
-    green: 'shadow-green-300/20',
-    yellow: 'shadow-yellow-300/20',
-    orange: 'shadow-orange-300/20',
-    purple: 'shadow-purple-300/20',
-    pink: 'shadow-pink-300/20',
-    indigo: 'shadow-indigo-300/20',
-    cyan: 'shadow-cyan-300/20',
-    gray: 'shadow-gray-300/20',
+    red: 'shadow-dynamic-red/20',
+    blue: 'shadow-dynamic-blue/20',
+    green: 'shadow-dynamic-green/20',
+    yellow: 'shadow-dynamic-yellow/20',
+    orange: 'shadow-dynamic-orange/20',
+    purple: 'shadow-dynamic-purple/20',
+    pink: 'shadow-dynamic-pink/20',
+    indigo: 'shadow-dynamic-indigo/20',
+    cyan: 'shadow-dynamic-cyan/20',
+    gray: 'shadow-dynamic-gray/20',
   };
 
-  return colors?.[color] || colors[defaultColor]!;
+  return colors?.[color] || colors[defaultColor] || 'ring-dynamic-gray';
 };
 
 export const getBorderColor = (color = defaultColor): string => {
   const colors: Record<string, string> = {
-    red: 'border-red-300',
-    blue: 'border-blue-300',
-    green: 'border-green-300',
-    yellow: 'border-yellow-300',
-    orange: 'border-orange-300',
-    purple: 'border-purple-300',
-    pink: 'border-pink-300',
-    indigo: 'border-indigo-300',
-    cyan: 'border-cyan-300',
-    gray: 'border-gray-300',
+    red: 'border-dynamic-red',
+    blue: 'border-dynamic-blue',
+    green: 'border-dynamic-green',
+    yellow: 'border-dynamic-yellow',
+    orange: 'border-dynamic-orange',
+    purple: 'border-dynamic-purple',
+    pink: 'border-dynamic-pink',
+    indigo: 'border-dynamic-indigo',
+    cyan: 'border-dynamic-cyan',
+    gray: 'border-dynamic-gray',
   };
 
-  return colors?.[color] || colors[defaultColor]!;
+  return colors?.[color] || colors[defaultColor] || 'border-dynamic-gray';
 };
 
 export const getCardColor = (color = defaultColor): string => {
@@ -80,18 +80,35 @@ export const getCardColor = (color = defaultColor): string => {
 export const getRoleColor = (role: string): string => {
   switch (role) {
     case 'you':
-      return 'border-green-500/20 bg-green-500/10 dark:border-green-300/10 dark:bg-green-300/10 text-green-600 dark:text-green-300';
+      return 'border-dynamic-green/20 bg-dynamic-green/10 text-dynamic-green';
 
     case 'member':
-      return 'border-blue-500/20 bg-blue-500/10 dark:border-blue-300/10 dark:bg-blue-300/10 text-blue-600 dark:text-blue-300';
+      return 'border-dynamic-blue/20 bg-dynamic-blue/10 text-dynamic-blue';
 
     case 'admin':
-      return 'border-orange-500/20 bg-orange-500/10 dark:border-orange-300/10 dark:bg-orange-300/10 text-orange-600 dark:text-orange-300';
+      return 'border-dynamic-orange/20 bg-dynamic-orange/10 text-dynamic-orange';
 
     case 'owner':
-      return 'border-purple-500/20 bg-purple-500/10 dark:border-purple-300/10 dark:bg-purple-300/10 text-purple-600 dark:text-purple-300';
+      return 'border-dynamic-purple/20 bg-dynamic-purple/10 text-dynamic-purple';
 
     default:
-      return 'border-zinc-500/80 bg-zinc-500/10 dark:border-zinc-800/80 dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400';
+      return 'border-dynamic-gray/80 bg-dynamic-gray/10 text-dynamic-gray';
   }
+};
+
+export const getRingColor = (color = defaultColor): string => {
+  const colors: Record<string, string> = {
+    red: 'ring-dynamic-red',
+    blue: 'ring-dynamic-blue',
+    green: 'ring-dynamic-green',
+    yellow: 'ring-dynamic-yellow',
+    orange: 'ring-dynamic-orange',
+    purple: 'ring-dynamic-purple',
+    pink: 'ring-dynamic-pink',
+    indigo: 'ring-dynamic-indigo',
+    cyan: 'ring-dynamic-cyan',
+    gray: 'ring-dynamic-gray',
+  };
+
+  return colors?.[color] || colors[defaultColor] || 'ring-dynamic-gray';
 };

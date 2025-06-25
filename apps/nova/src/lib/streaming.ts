@@ -6,7 +6,7 @@ export interface ProgressUpdate {
   step: string;
   progress: number;
   message: string;
-  data?: any;
+  data?: Record<string, unknown>;
 }
 
 export type ProgressHandler = (update: ProgressUpdate) => void;
@@ -537,7 +537,7 @@ export function getCurrentStepInfo(steps: ProgressUpdate[]) {
  */
 export function shouldShowStep(
   stepName: string,
-  evaluationContext?: any
+  evaluationContext?: Record<string, unknown>
 ): boolean {
   // Always show these core steps
   const alwaysShow = [
