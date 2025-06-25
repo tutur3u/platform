@@ -193,7 +193,7 @@ export default function Page() {
         onAdd={handleAddStudent}
         onUpdate={handleUpdateStudent}
         onDelete={handleDeleteStudent}
-        handleDateRangeApply={handleDateRangeApply}
+        onDateRangeApply={handleDateRangeApply}
       />
 
       <div className="mt-4 flex justify-center">

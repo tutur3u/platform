@@ -203,23 +203,21 @@ export default function Page() {
           onAdd={handleAddStudent}
           onUpdate={handleUpdateStudent}
           onDelete={handleDeleteStudent}
-          handleDateRangeApply={handleDateRangeApply}
+          onDateRangeApply={handleDateRangeApply}
         />
 
         <div className="mt-4 flex justify-center gap-4">
           <Button
-            className={`rounded-lg bg-red-600 px-4 py-2 text-white ${
-              students.length === 0 && 'opacity-50'
-            }`}
+            className={`rounded-lg bg-red-600 px-4 py-2 text-white ${students.length === 0 && 'opacity-50'
+              }`}
             disabled={students.length === 0}
             onClick={() => setShowClearDialog(true)}
           >
             Clear History
           </Button>
           <Button
-            className={`rounded-lg bg-green-600 px-4 py-2 text-white ${
-              students.length === 0 && 'opacity-50'
-            }`}
+            className={`rounded-lg bg-green-600 px-4 py-2 text-white ${students.length === 0 && 'opacity-50'
+              }`}
             disabled={students.length === 0}
             onClick={handleUpload}
           >

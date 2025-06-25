@@ -29,7 +29,7 @@ interface StudentListProps {
   onAdd: (name: string, studentNumber: string, program: string) => void;
   onUpdate: (updatedStudent: Student) => void;
   onDelete: (id: string) => void;
-  handleDateRangeApply?: (startDate: Date | null, endDate: Date | null) => void;
+  onDateRangeApply: (startDate: Date | null, endDate: Date | null) => void;
 }
 
 export default function StudentList({
@@ -37,7 +37,7 @@ export default function StudentList({
   onAdd,
   onUpdate,
   onDelete,
-  handleDateRangeApply,
+  onDateRangeApply,
 }: StudentListProps) {
   const [editID, setEditID] = useState<string | null>(null);
   const [deleteID, setDeleteID] = useState<string | null>(null);
@@ -137,8 +137,7 @@ export default function StudentList({
       headers.join(','),
       ...students.map(
         (item) =>
-          `${item.name},${item.studentNumber},${
-            item.program
+          `${item.name},${item.studentNumber},${item.program
           },"${item.timestamp.toLocaleString()}"`
       ),
     ];
@@ -184,9 +183,8 @@ export default function StudentList({
 
           <Button
             onClick={exportToCSV}
-            className={`rounded-lg px-4 py-2 ${
-              currentItems.length === 0 && 'opacity-50'
-            }`}
+            className={`rounded-lg px-4 py-2 ${currentItems.length === 0 && 'opacity-50'
+              }`}
             disabled={currentItems.length === 0}
           >
             Export to CSV
@@ -217,18 +215,14 @@ export default function StudentList({
             onClick={() => {
               setStartDate(null);
               setEndDate(null);
-              if (handleDateRangeApply) {
-                handleDateRangeApply(null, null);
-              }
+              onDateRangeApply(null, null);
             }}
           >
             Clear
           </Button>
           <Button
             onClick={() => {
-              if (handleDateRangeApply) {
-                handleDateRangeApply(startDate, endDate);
-              }
+              onDateRangeApply(startDate, endDate);
             }}
             disabled={!startDate && !endDate}
           >
@@ -270,10 +264,7 @@ export default function StudentList({
               </TableRow>
             ) : (
               currentItems.map((item) => (
-                <TableRow
-                  key={item.id}
-                  className="border-b transition hover:bg-gray-50"
-                >
+                <TableRow key={item.id}>
                   <TableCell className="px-4 py-2">
                     {editID === item.id ? (
                       <input
@@ -313,28 +304,31 @@ export default function StudentList({
                   <TableCell className="px-4 py-2">
                     {item.timestamp.toLocaleString()}
                   </TableCell>
-                  <TableCell className="px-4 py-2 text-center">
+                  <TableCell className="px-4 py-2 flex gap-2">
                     {editID === item.id ? (
                       <Button
+                        variant="ghost"
                         onClick={handleSave}
-                        className="mr-2 text-green-500 hover:text-green-700"
+                        className="text-green-500"
                       >
                         <Save className="h-5 w-5" />
                       </Button>
                     ) : (
                       <Button
+                        variant="ghost"
                         onClick={() => handleEdit(item.id)}
-                        className="mr-2 text-blue-500 hover:text-blue-700"
+                        className="text-blue-500"
                       >
                         <Pencil className="h-5 w-5" />
                       </Button>
                     )}
                     <Button
+                      variant="ghost"
                       onClick={() => {
                         setShowDeleteDialog(true);
                         setDeleteID(item.id);
                       }}
-                      className="text-red-500 hover:text-red-700"
+                      className="text-red-500"
                     >
                       <Trash2 className="h-5 w-5" />
                     </Button>
@@ -351,9 +345,8 @@ export default function StudentList({
           <Button
             onClick={prevPage}
             disabled={currentPage === 1}
-            className={`rounded-lg px-4 py-2 ${
-              currentPage === 1 ? 'bg-gray-300' : 'text-white'
-            }`}
+            className={`rounded-lg px-4 py-2 ${currentPage === 1 ? 'bg-gray-300' : 'text-white'
+              }`}
           >
             Previous
           </Button>
@@ -363,9 +356,8 @@ export default function StudentList({
           <Button
             onClick={nextPage}
             disabled={currentPage === totalPages}
-            className={`rounded-lg px-4 py-2 ${
-              currentPage === totalPages ? 'bg-gray-300' : 'text-white'
-            }`}
+            className={`rounded-lg px-4 py-2 ${currentPage === totalPages ? 'bg-gray-300' : 'text-white'
+              }`}
           >
             Next
           </Button>
