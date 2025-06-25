@@ -1,3 +1,3 @@
 export const getNovaRoleColumns = (
-  t: (key: string) => string
+  _t: (key: string) => string
 ): ColumnDef<NovaRoleBasic>[] => {};

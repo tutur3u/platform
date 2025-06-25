@@ -89,6 +89,28 @@ export default async function UserManagement({ params, searchParams }: props) {
   );
 }
 
+// Define interfaces for RPC parameters
+interface SearchUsersParams {
+  search_query: string;
+  page_number: number;
+  page_size: number;
+  role_filter: string | null;
+  enabled_filter: boolean | null;
+}
+
+interface CountSearchUsersParams {
+  search_query: string;
+  role_filter: string | null;
+  enabled_filter: boolean | null;
+}
+
+// Define interface for user data from RPC
+interface RPCUser {
+  id: string;
+  services?: string[];
+  [key: string]: unknown;
+}
+
 async function getUserData({
   q,
   page = '1',

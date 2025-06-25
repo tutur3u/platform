@@ -344,7 +344,7 @@ export default function TeamDetailsClient({
                                     member.display_name ||
                                     member.email ||
                                     generateFunName({
-                                      id: member.id!,
+                                      id: member.id || '',
                                       locale: 'en',
                                     }),
                                 })}
@@ -355,7 +355,7 @@ export default function TeamDetailsClient({
                                 {t('common.cancel')}
                               </AlertDialogCancel>
                               <AlertDialogAction
-                                onClick={() => removeMember(member.id!)}
+                                onClick={() => removeMember(member.id || '')}
                               >
                                 {t('common.remove')}
                               </AlertDialogAction>
@@ -429,7 +429,7 @@ export default function TeamDetailsClient({
                               </AlertDialogCancel>
                               <AlertDialogAction
                                 onClick={() =>
-                                  removeInvitation(invitation.email!)
+                                  removeInvitation(invitation.email || '')
                                 }
                               >
                                 {t('common.remove')}
