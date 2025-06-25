@@ -54,9 +54,14 @@ export function QuickActions({ wsId, setOpen, setPage }: QuickActionsProps) {
   };
 
   const handleQuickTimeTracker = () => {
-    // Open quick time tracker
-    setOpen(false);
-    // This would open a quick timer modal or similar
+    // Navigate to quick time tracker within command palette
+    if (setPage) {
+      setPage('time-tracker');
+    } else {
+      // Fallback to external navigation if setPage is not available
+      router.push(`/${wsId}/time-tracker`);
+      setOpen(false);
+    }
   };
 
   const handleTimeTracker = () => {

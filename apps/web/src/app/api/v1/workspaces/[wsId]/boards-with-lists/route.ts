@@ -7,6 +7,15 @@ export async function GET(
 ) {
   try {
     const { wsId } = await params;
+
+    // Validate workspace ID format
+    if (!wsId || wsId === 'undefined') {
+      return NextResponse.json(
+        { error: 'Invalid workspace ID' },
+        { status: 400 }
+      );
+    }
+
     const supabase = await createClient();
 
     // Get authenticated user
@@ -15,20 +24,23 @@ export async function GET(
       error: authError,
     } = await supabase.auth.getUser();
     if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json(
+        { error: 'Please sign in to view boards' },
+        { status: 401 }
+      );
     }
 
     // Verify workspace access
     const { data: memberCheck } = await supabase
       .from('workspace_members')
-      .select('id:user_id')
+      .select('user_id')
       .eq('ws_id', wsId)
       .eq('user_id', user.id)
       .single();
 
     if (!memberCheck) {
       return NextResponse.json(
-        { error: 'Workspace access denied' },
+        { error: 'You don\'t have access to this workspace' },
         { status: 403 }
       );
     }

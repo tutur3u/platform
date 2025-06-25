@@ -65,7 +65,7 @@ export async function GET(
     // Verify workspace access
     const { data: memberCheck } = await supabase
       .from('workspace_members')
-      .select('id:user_id')
+      .select('user_id')
       .eq('ws_id', wsId)
       .eq('user_id', user.id)
       .single();
@@ -236,7 +236,7 @@ export async function POST(
     // Verify workspace access
     const { data: memberCheck } = await supabase
       .from('workspace_members')
-      .select('id:user_id')
+      .select('user_id')
       .eq('ws_id', wsId)
       .eq('user_id', user.id)
       .single();

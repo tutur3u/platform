@@ -8,8 +8,18 @@ import { QuickTimeTracker } from './quick-time-tracker';
 import { Button } from '@tuturuuu/ui/button';
 import { CommandDialog, CommandList } from '@tuturuuu/ui/command';
 import { AlertTriangle, RefreshCw } from '@tuturuuu/ui/icons';
-import { useParams } from 'next/navigation';
+import { useParams, usePathname } from 'next/navigation';
 import * as React from 'react';
+import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
+
+const UUID_REGEX = /[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/;
+
+// Function to extract workspace ID from pathname
+function getWorkspaceFromPath(pathname: string): string | null {
+  // Match pattern like /locale/wsId/... or /wsId/...
+  const matches = pathname.match(new RegExp(`\\/(${UUID_REGEX.source})`));
+  return matches?.[1] || null;
+}
 
 // Main Command Palette Component
 export function CommandPalette({
@@ -26,7 +36,27 @@ export function CommandPalette({
   const [errorBoundaryKey, setErrorBoundaryKey] = React.useState(0);
 
   const params = useParams();
-  const { wsId } = params;
+  const pathname = usePathname();
+  const { wsId: urlWsId } = params;
+
+  // Try multiple methods to get workspace ID
+  const workspaceId = React.useMemo(() => {
+    // Method 1: From URL params (if it's a valid workspace ID)
+    if (urlWsId && 
+        typeof urlWsId === 'string' && 
+        urlWsId !== 'undefined' &&
+        (urlWsId === ROOT_WORKSPACE_ID || urlWsId.match(new RegExp(`^${UUID_REGEX.source}$`)))) {
+      return urlWsId;
+    }
+
+    // Method 2: Extract from pathname
+    const pathWorkspaceId = getWorkspaceFromPath(pathname);
+    if (pathWorkspaceId) {
+      return pathWorkspaceId;
+    }
+
+    return null;
+  }, [urlWsId, pathname]);
 
   // Reset function for error boundary
   const resetErrorBoundary = React.useCallback(() => {
@@ -139,34 +169,46 @@ export function CommandPalette({
         <CommandList
           className={`${isTransitioning ? 'opacity-50 transition-opacity' : ''} max-h-[400px]`}
         >
-          {page === 'root' && !isTransitioning && (
+          {page === 'root' && !isTransitioning && workspaceId && (
             <CommandRoot
-              wsId={wsId as string}
+              wsId={workspaceId}
               inputValue={inputValue}
               setOpen={setOpen}
               setPage={setPage}
             />
           )}
 
-          {page === 'add-task' && !isTransitioning && (
+          {page === 'add-task' && !isTransitioning && workspaceId && (
             <div className="command-page-enter">
               <AddTaskForm
-                wsId={wsId as string}
+                wsId={workspaceId}
                 setOpen={setOpen}
                 setIsLoading={setIsLoading}
-                inputValue={inputValue}
-                setInputValue={setInputValue}
               />
             </div>
           )}
 
-          {page === 'time-tracker' && !isTransitioning && (
+          {page === 'time-tracker' && !isTransitioning && workspaceId && (
             <div className="command-page-enter">
               <QuickTimeTracker
-                wsId={wsId as string}
+                wsId={workspaceId}
                 setOpen={setOpen}
                 setIsLoading={setIsLoading}
               />
+            </div>
+          )}
+          
+          {!workspaceId && !isTransitioning && (
+            <div className="flex flex-col items-center gap-4 p-8 text-center">
+              <div className="rounded-full bg-dynamic-orange/10 p-3">
+                <AlertTriangle className="h-6 w-6 text-dynamic-orange" />
+              </div>
+              <div className="space-y-1">
+                <p className="font-semibold text-foreground">No workspace found</p>
+                <p className="text-sm text-muted-foreground">
+                  Please navigate to a workspace to use the command palette
+                </p>
+              </div>
             </div>
           )}
         </CommandList>

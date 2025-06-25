@@ -5,6 +5,7 @@ import type { Task } from '@tuturuuu/types/primitives/TaskBoard';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
+import { Input } from '@tuturuuu/ui/input';
 import { useToast } from '@tuturuuu/ui/hooks/use-toast';
 import {
   AlertTriangle,
@@ -13,8 +14,8 @@ import {
   List,
   Loader,
   Plus,
+  Type,
 } from '@tuturuuu/ui/icons';
-import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import {
   Select,
   SelectContent,
@@ -25,7 +26,7 @@ import {
 import { Separator } from '@tuturuuu/ui/separator';
 import { cn } from '@tuturuuu/utils/format';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 
 interface BoardWithLists {
   id: string;
@@ -37,26 +38,60 @@ export function AddTaskForm({
   wsId,
   setOpen,
   setIsLoading,
-  inputValue,
-  setInputValue,
 }: {
   wsId: string;
   // eslint-disable-next-line no-unused-vars
   setOpen: (open: boolean) => void;
   // eslint-disable-next-line no-unused-vars
   setIsLoading: (loading: boolean) => void;
-  inputValue: string;
-  // eslint-disable-next-line no-unused-vars
-  setInputValue: (value: string) => void;
 }) {
-  const [selectedBoardId, setSelectedBoardId] = useState<string>();
-  const [selectedListId, setSelectedListId] = useState<string>();
-  const [showTasks, setShowTasks] = useState(false);
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
   const router = useRouter();
+  const [selectedBoardId, setSelectedBoardId] = useState<string>('');
+  const [selectedListId, setSelectedListId] = useState<string>('');
+  const [showTasks, setShowTasks] = useState(false);
+  const [taskName, setTaskName] = useState('');
+  const [showSuccessOptions, setShowSuccessOptions] = useState(false);
+  const [lastCreatedTask, setLastCreatedTask] = useState<string>('');
+  const taskInputRef = useRef<HTMLInputElement>(null);
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
 
-  // Get boards with lists
+  // Focus task input when board and list are selected
+  useEffect(() => {
+    if (selectedBoardId && selectedListId && taskInputRef.current) {
+      setTimeout(() => {
+        taskInputRef.current?.focus();
+      }, 100);
+    }
+  }, [selectedBoardId, selectedListId]);
+
+  // Early return if no valid workspace ID
+  if (!wsId || wsId === 'undefined') {
+    return (
+      <div className="flex flex-col items-center gap-4 p-8 text-center">
+        <div className="rounded-full bg-dynamic-orange/10 p-3">
+          <AlertTriangle className="h-6 w-6 text-dynamic-orange" />
+        </div>
+        <div>
+          <p className="font-semibold text-foreground">No workspace selected</p>
+          <p className="text-sm text-muted-foreground">
+            Navigate to a workspace to create tasks
+          </p>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => {
+            setOpen(false);
+            window.location.href = '/';
+          }}
+        >
+          Go to Dashboard
+        </Button>
+      </div>
+    );
+  }
+
   const {
     data: boardsData,
     isLoading: boardsLoading,
@@ -70,8 +105,11 @@ export function AddTaskForm({
       const response = await fetch(
         `/api/v1/workspaces/${wsId}/boards-with-lists`
       );
-      if (!response.ok) throw new Error('Failed to fetch boards');
-      return response.json();
+      if (!response.ok) {
+        throw new Error('Failed to fetch boards');
+      }
+      const data = await response.json();
+      return data;
     },
     retry: 2,
     retryDelay: 1000,
@@ -110,20 +148,44 @@ export function AddTaskForm({
 
   const createTaskMutation = useMutation({
     mutationFn: async (data: { name: string; listId: string }) => {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+
+      try {
       const response = await fetch(`/api/v1/workspaces/${wsId}/tasks`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
+          signal: controller.signal,
       });
 
+        clearTimeout(timeoutId);
+
       if (!response.ok) {
-        const error = await response.text();
-        throw new Error(error || 'Failed to create task');
+          let errorMessage = 'Failed to create task';
+          try {
+            const errorData = await response.json();
+            errorMessage = errorData.message || errorData.error || errorMessage;
+          } catch {
+            // If parsing JSON fails, use status text
+            errorMessage = response.statusText || errorMessage;
+          }
+          throw new Error(errorMessage);
       }
 
       return response.json();
+      } catch (error: any) {
+        clearTimeout(timeoutId);
+        if (error.name === 'AbortError') {
+          throw new Error('Request timed out. Please check your connection and try again.');
+        }
+        if (!navigator.onLine) {
+          throw new Error('No internet connection. Please check your network and try again.');
+        }
+        throw error;
+      }
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       toast({
         title: 'Task created successfully',
         description: 'Your new task has been added to the board.',
@@ -131,8 +193,10 @@ export function AddTaskForm({
       queryClient.invalidateQueries({
         queryKey: ['tasks', wsId],
       });
-      setInputValue('');
-      setOpen(false);
+      setTaskName('');
+      setShowSuccessOptions(true);
+      setLastCreatedTask(data.name || taskName);
+      setIsLoading(false);
     },
     onError: (error) => {
       toast({
@@ -140,13 +204,14 @@ export function AddTaskForm({
         description: error.message,
         variant: 'destructive',
       });
+      setIsLoading(false);
     },
   });
 
   const handleCreateTask = () => {
-    const taskName = inputValue.trim();
+    const taskNameValue = taskName.trim();
 
-    if (!taskName) {
+    if (!taskNameValue) {
       toast({
         title: 'Task name is required',
         description: 'Please enter a name for your task.',
@@ -166,9 +231,27 @@ export function AddTaskForm({
 
     setIsLoading(true);
     createTaskMutation.mutate({
-      name: taskName,
+      name: taskNameValue,
       listId: selectedListId,
     });
+  };
+
+  const handleContinueAdding = () => {
+    setShowSuccessOptions(false);
+    setTaskName('');
+    // Focus the task input for the next task
+    setTimeout(() => {
+      taskInputRef.current?.focus();
+    }, 100);
+  };
+
+  const handleExitModal = () => {
+    setOpen(false);
+  };
+
+  const handleRetryCreation = () => {
+    setIsLoading(false);
+    createTaskMutation.reset();
   };
 
   const selectedBoard = boards?.find((board) => board.id === selectedBoardId);
@@ -268,14 +351,14 @@ export function AddTaskForm({
           value={selectedBoardId}
           onValueChange={(value) => {
             setSelectedBoardId(value);
-            setSelectedListId(undefined);
+            setSelectedListId('');
             setShowTasks(false);
           }}
         >
           <SelectTrigger className="w-full">
             <SelectValue placeholder="Select a board..." />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className={cn(boards.length > 5 && "max-h-[200px]")}>
             {boards.map((board: any) => (
               <SelectItem key={board.id} value={board.id}>
                 <div className="flex items-center gap-2">
@@ -372,9 +455,11 @@ export function AddTaskForm({
                 </div>
               </div>
             ) : tasks && tasks.length > 0 ? (
-              <ScrollArea className="max-h-32">
-                <div className="space-y-2">
-                  {tasks.slice(0, 5).map((task: any) => (
+              <div className={cn(
+                "space-y-2",
+                tasks.length > 3 && "max-h-[120px] overflow-y-auto pr-2"
+              )}>
+                {tasks.map((task: any) => (
                     <div
                       key={task.id}
                       className="flex items-center gap-2 rounded-lg border border-dynamic-gray/10 bg-dynamic-gray/5 p-2"
@@ -402,13 +487,7 @@ export function AddTaskForm({
                       )}
                     </div>
                   ))}
-                  {tasks.length > 5 && (
-                    <div className="py-1 text-center text-xs text-muted-foreground">
-                      +{tasks.length - 5} more tasks
-                    </div>
-                  )}
                 </div>
-              </ScrollArea>
             ) : (
               <div className="py-4 text-center">
                 <div className="text-xs text-muted-foreground">
@@ -423,14 +502,106 @@ export function AddTaskForm({
         </Card>
       )}
 
+      {/* Task Name Input */}
+      {selectedBoardId && selectedListId && (
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-foreground">Task Name</label>
+          <div className="relative">
+            <Type className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              ref={taskInputRef}
+              value={taskName}
+              onChange={(e) => setTaskName(e.target.value)}
+              placeholder="Enter task name..."
+              className="pl-10"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && taskName.trim() && selectedListId) {
+                  handleCreateTask();
+                }
+              }}
+            />
+          </div>
+        </div>
+      )}
+
       <Separator />
 
+      {/* Success Options */}
+      {showSuccessOptions && (
+        <div className="rounded-lg border border-dynamic-green/20 bg-dynamic-green/5 p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <div className="rounded-full bg-dynamic-green/10 p-1">
+              <Check className="h-4 w-4 text-dynamic-green" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-dynamic-green">Task created successfully!</p>
+              <p className="text-xs text-muted-foreground">"{lastCreatedTask}" has been added to your board.</p>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              onClick={handleContinueAdding}
+              variant="outline"
+              size="sm"
+              className="flex-1"
+            >
+              <Plus className="mr-2 h-3 w-3" />
+              Add Another Task
+            </Button>
+            <Button
+              onClick={handleExitModal}
+              variant="default"
+              size="sm"
+              className="flex-1"
+            >
+              Done
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Error State */}
+      {createTaskMutation.isError && !showSuccessOptions && (
+        <div className="rounded-lg border border-dynamic-red/20 bg-dynamic-red/5 p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <div className="rounded-full bg-dynamic-red/10 p-1">
+              <AlertTriangle className="h-4 w-4 text-dynamic-red" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-dynamic-red">Failed to create task</p>
+              <p className="text-xs text-muted-foreground">
+                {createTaskMutation.error?.message || 'An unexpected error occurred. Please try again.'}
+              </p>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              onClick={handleRetryCreation}
+              variant="outline"
+              size="sm"
+              className="flex-1"
+            >
+              Try Again
+            </Button>
+            <Button
+              onClick={handleExitModal}
+              variant="ghost"
+              size="sm"
+              className="flex-1"
+            >
+              Cancel
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Create Task Button */}
+      {!showSuccessOptions && !createTaskMutation.isError && (
       <div className="flex items-center gap-2">
         <Button
           onClick={handleCreateTask}
           disabled={
-            !inputValue.trim() ||
+              !taskName.trim() ||
             !selectedListId ||
             createTaskMutation.isPending ||
             (Boolean(selectedBoardId) && availableLists.length === 0)
@@ -450,32 +621,38 @@ export function AddTaskForm({
           )}
         </Button>
       </div>
+      )}
 
       {/* Validation messages */}
+      {!showSuccessOptions && !createTaskMutation.isError && (
       <div className="space-y-1">
-        {!inputValue.trim() && (
+          {!selectedBoardId && (
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <AlertTriangle className="h-3 w-3" />
-            <span>Enter a task name to continue</span>
+              <div className="h-1.5 w-1.5 rounded-full bg-dynamic-blue" />
+              <span>Step 1: Select a board</span>
           </div>
         )}
-        {inputValue.trim() && !selectedBoardId && (
+          {selectedBoardId && !selectedListId && availableLists.length > 0 && (
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <AlertTriangle className="h-3 w-3" />
-            <span>Please select a board</span>
+              <div className="h-1.5 w-1.5 rounded-full bg-dynamic-blue" />
+              <span>Step 2: Select a list</span>
           </div>
         )}
-        {inputValue.trim() &&
-          selectedBoardId &&
-          !selectedListId &&
-          availableLists.length > 0 && (
+          {selectedBoardId && selectedListId && !taskName.trim() && (
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <AlertTriangle className="h-3 w-3" />
-              <span>Please select a list</span>
+              <div className="h-1.5 w-1.5 rounded-full bg-dynamic-blue" />
+              <span>Step 3: Enter a task name</span>
             </div>
           )}
-        {inputValue.trim() &&
-          selectedBoardId &&
+          {selectedBoardId &&
+            selectedListId &&
+            taskName.trim() && (
+              <div className="flex items-center gap-2 text-xs text-dynamic-green">
+                <Check className="h-3 w-3" />
+                <span>Ready to create task!</span>
+              </div>
+            )}
+          {selectedBoardId &&
           availableLists.length === 0 && (
             <div className="flex items-center gap-2 text-xs text-dynamic-orange">
               <AlertTriangle className="h-3 w-3" />
@@ -483,6 +660,7 @@ export function AddTaskForm({
             </div>
           )}
       </div>
+      )}
     </div>
   );
 }
