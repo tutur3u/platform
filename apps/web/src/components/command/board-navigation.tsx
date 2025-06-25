@@ -19,12 +19,6 @@ import {
 } from '@tuturuuu/ui/icons';
 import React from 'react';
 
-interface Board {
-  id: string;
-  name: string;
-  task_lists?: { id: string; name: string }[];
-}
-
 interface BoardNavigationProps {
   wsId: string;
   setOpen: (open: boolean) => void;

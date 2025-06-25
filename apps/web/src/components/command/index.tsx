@@ -5,15 +5,11 @@ import { CommandHeader } from './command-header';
 import './command-palette.css';
 import { CommandRoot } from './command-root';
 import { QuickTimeTracker } from './quick-time-tracker';
-import { useQuery } from '@tanstack/react-query';
 import { Button } from '@tuturuuu/ui/button';
 import { CommandDialog, CommandList } from '@tuturuuu/ui/command';
-import { useToast } from '@tuturuuu/ui/hooks/use-toast';
 import { AlertTriangle, RefreshCw } from '@tuturuuu/ui/icons';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import * as React from 'react';
-import { CommandRoot } from './command-root';
-import { QuickTimeTracker } from './quick-time-tracker';
 
 // Main Command Palette Component
 export function CommandPalette({
@@ -31,7 +27,6 @@ export function CommandPalette({
 
   const params = useParams();
   const { wsId } = params;
-  const { toast } = useToast();
 
   // Reset function for error boundary
   const resetErrorBoundary = React.useCallback(() => {
