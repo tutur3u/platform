@@ -11,24 +11,24 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@ncthub/ui/alert-dialog';
+import { Badge } from '@ncthub/ui/badge';
 import { Button } from '@ncthub/ui/button';
 import { Card, CardContent } from '@ncthub/ui/card';
-import { Input } from '@ncthub/ui/input';
-import { Badge } from '@ncthub/ui/badge';
 import { useToast } from '@ncthub/ui/hooks/use-toast';
 import {
-  Pencil,
-  Save,
-  Trash2,
-  Search,
   Calendar,
-  Filter,
-  X,
   ChevronLeft,
   ChevronRight,
+  Download,
+  Filter,
+  Pencil,
+  Save,
+  Search,
+  Trash2,
   UserPlus,
-  Download
+  X,
 } from '@ncthub/ui/icons';
+import { Input } from '@ncthub/ui/input';
 import {
   Table,
   TableBody,
@@ -37,8 +37,8 @@ import {
   TableHeader,
   TableRow,
 } from '@ncthub/ui/table';
-import React, { useState } from 'react';
 import { cn } from '@ncthub/utils/format';
+import React, { useState } from 'react';
 
 interface StudentListProps {
   students: Student[];
@@ -155,7 +155,8 @@ export default function StudentList({
       headers.join(','),
       ...students.map(
         (item) =>
-          `${item.name},${item.studentNumber},${item.program
+          `${item.name},${item.studentNumber},${
+            item.program
           },"${item.timestamp.toLocaleString()}"`
       ),
     ];
@@ -199,8 +200,8 @@ export default function StudentList({
         <div className="flex items-center gap-4">
           <AddStudentDialog
             trigger={
-              <Button className="bg-blue-500 hover:bg-blue-600 shadow-lg">
-                <UserPlus className="h-4 w-4 mr-2" />
+              <Button className="bg-blue-500 shadow-lg hover:bg-blue-600">
+                <UserPlus className="mr-2 h-4 w-4" />
                 Add Manually
               </Button>
             }
@@ -212,31 +213,31 @@ export default function StudentList({
             disabled={currentItems.length === 0}
             className="shadow-lg"
           >
-            <Download className="h-4 w-4 mr-2" />
+            <Download className="mr-2 h-4 w-4" />
             Export CSV
           </Button>
         </div>
       </div>
 
       {/* Search and Filters */}
-      <Card className="border-0 shadow-lg bg-background/80">
+      <Card className="border-0 bg-background/80 shadow-lg">
         <CardContent className="p-6">
           <div className="space-y-4">
             {/* Search Bar */}
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+              <Search className="absolute top-1/2 left-3 h-5 w-5 -translate-y-1/2 transform text-gray-400" />
               <Input
                 placeholder="Search by name, student number, or program..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 h-12 text-base border-2 focus:border-blue-500 focus:ring-blue-500/20 focus:ring-4"
+                className="h-12 border-2 pl-10 text-base focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20"
               />
               {searchTerm && (
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => setSearchTerm('')}
-                  className="absolute right-2 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0"
+                  className="absolute top-1/2 right-2 h-8 w-8 -translate-y-1/2 transform p-0"
                 >
                   <X className="h-4 w-4" />
                 </Button>
@@ -272,9 +273,9 @@ export default function StudentList({
 
             {/* Date Filters */}
             {showFilters && (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4">
+              <div className="grid grid-cols-1 gap-4 p-4 md:grid-cols-3">
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                  <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
                     <Calendar className="h-4 w-4" />
                     Start Date
                   </label>
@@ -285,7 +286,7 @@ export default function StudentList({
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                  <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
                     <Calendar className="h-4 w-4" />
                     End Date
                   </label>
@@ -392,7 +393,7 @@ export default function StudentList({
                   <TableCell className="px-4 py-2">
                     {item.timestamp.toLocaleString()}
                   </TableCell>
-                  <TableCell className="px-4 py-2 flex gap-2">
+                  <TableCell className="flex gap-2 px-4 py-2">
                     {editID === item.id ? (
                       <Button
                         variant="ghost"
@@ -444,23 +445,25 @@ export default function StudentList({
           <div className="flex items-center gap-2">
             {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
               const pageNum = i + 1;
-              const actualPage = currentPage <= 3
-                ? pageNum
-                : currentPage >= totalPages - 2
-                  ? totalPages - 4 + pageNum
-                  : currentPage - 2 + pageNum;
+              const actualPage =
+                currentPage <= 3
+                  ? pageNum
+                  : currentPage >= totalPages - 2
+                    ? totalPages - 4 + pageNum
+                    : currentPage - 2 + pageNum;
 
               if (actualPage < 1 || actualPage > totalPages) return null;
 
               return (
                 <Button
                   key={actualPage}
-                  variant={currentPage === actualPage ? "default" : "outline"}
+                  variant={currentPage === actualPage ? 'default' : 'outline'}
                   size="sm"
                   onClick={() => setCurrentPage(actualPage)}
                   className={cn(
-                    "w-10 h-10",
-                    currentPage === actualPage && "bg-blue-500 hover:bg-blue-600"
+                    'h-10 w-10',
+                    currentPage === actualPage &&
+                      'bg-blue-500 hover:bg-blue-600'
                   )}
                 >
                   {actualPage}
@@ -490,14 +493,16 @@ export default function StudentList({
               Delete Student Record
             </AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete this student record? This action cannot be undone and will permanently remove all associated information.
+              Are you sure you want to delete this student record? This action
+              cannot be undone and will permanently remove all associated
+              information.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => handleDelete(deleteID)}
-              className="bg-red-500 hover:bg-red-600 text-white"
+              className="bg-red-500 text-white hover:bg-red-600"
             >
               Delete Record
             </AlertDialogAction>

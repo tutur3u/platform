@@ -4,10 +4,10 @@ import StudentList from '../StudentList';
 import { Student } from '@ncthub/types/primitives/Student';
 import { Button } from '@ncthub/ui/button';
 import { useToast } from '@ncthub/ui/hooks/use-toast';
+import { ArrowLeft } from '@ncthub/ui/icons';
 import Link from 'next/link';
 import React, { useCallback, useEffect, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
-import { ArrowLeft } from '@ncthub/ui/icons';
 
 export default function Page() {
   const [students, setStudents] = useState<Student[]>([]);
@@ -187,26 +187,26 @@ export default function Page() {
   }
 
   return (
-    <div className="container min-h-screen mx-auto">
+    <div className="container mx-auto min-h-screen">
       <div className="mt-4">
         <Link href="/scanner">
           <Button
             variant="outline"
             size="lg"
-            className="h-12 text-base font-medium bg-primary/10 hover:bg-primary/20"
+            className="h-12 bg-primary/10 text-base font-medium hover:bg-primary/20"
           >
-            <ArrowLeft className="h-5 w-5 mr-2" />
+            <ArrowLeft className="mr-2 h-5 w-5" />
             Back to Capture Page
           </Button>
         </Link>
       </div>
 
       <div className="px-4 py-16">
-        <div className="text-center space-y-4">
-          <h1 className="text-4xl md:text-6xl font-bold bg-gradient-to-r from-dynamic-light-blue to-dynamic-blue bg-clip-text text-transparent">
+        <div className="space-y-4 text-center">
+          <h1 className="bg-gradient-to-r from-dynamic-light-blue to-dynamic-blue bg-clip-text text-4xl font-bold text-transparent md:text-6xl">
             Student Records
           </h1>
-          <p className="text-xl text-dynamic-light-sky max-w-2xl mx-auto">
+          <p className="mx-auto max-w-2xl text-xl text-dynamic-light-sky">
             Manage and track student information
           </p>
         </div>

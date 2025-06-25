@@ -1,5 +1,6 @@
 'use client';
 
+import StudentForm from './StudentForm';
 import StudentList from './StudentList';
 import VideoCapture from './VideoCapture';
 import { Student } from '@ncthub/types/primitives/Student';
@@ -13,26 +14,31 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@ncthub/ui/alert-dialog';
-import { Button } from '@ncthub/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@ncthub/ui/card';
 import { Badge } from '@ncthub/ui/badge';
+import { Button } from '@ncthub/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@ncthub/ui/card';
 import { useToast } from '@ncthub/ui/hooks/use-toast';
-import { Separator } from '@ncthub/ui/separator';
 import {
   Camera,
-  Users,
-  Upload,
+  Clock,
+  Database,
+  FileText,
+  Scan,
   Trash2,
   TrendingUp,
-  Clock,
-  Scan,
-  Database,
-  FileText
+  Upload,
+  Users,
 } from '@ncthub/ui/icons';
+import { Separator } from '@ncthub/ui/separator';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
-import StudentForm from './StudentForm';
 
 export default function Page() {
   const [newStudent, setNewStudent] = useState<Student | null>(null);
@@ -194,10 +200,10 @@ export default function Page() {
 
   // Stats calculations
   const todayCount = students.filter(
-    s => new Date(s.timestamp).toDateString() === new Date().toDateString()
+    (s) => new Date(s.timestamp).toDateString() === new Date().toDateString()
   ).length;
 
-  const thisWeekCount = students.filter(s => {
+  const thisWeekCount = students.filter((s) => {
     const studentDate = new Date(s.timestamp);
     const weekAgo = new Date();
     weekAgo.setDate(weekAgo.getDate() - 7);
@@ -205,27 +211,30 @@ export default function Page() {
   }).length;
 
   return (
-    <div className="container min-h-screen mx-auto">
+    <div className="container mx-auto min-h-screen">
       {/* Hero Section */}
       <div className="px-4 py-16">
-        <div className="text-center space-y-4">
-          <h1 className="text-4xl md:text-6xl font-bold bg-gradient-to-r from-dynamic-light-blue to-dynamic-blue bg-clip-text text-transparent">
+        <div className="space-y-4 text-center">
+          <h1 className="bg-gradient-to-r from-dynamic-light-blue to-dynamic-blue bg-clip-text text-4xl font-bold text-transparent md:text-6xl">
             Student ID Scanner
           </h1>
-          <p className="text-xl text-dynamic-light-sky max-w-2xl mx-auto">
-            Effortlessly capture and manage student information with our AI-powered scanning technology
+          <p className="mx-auto max-w-2xl text-xl text-dynamic-light-sky">
+            Effortlessly capture and manage student information with our
+            AI-powered scanning technology
           </p>
         </div>
       </div>
 
       <div className="px-4 py-8">
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white border-0 shadow-lg">
+        <div className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-4">
+          <Card className="border-0 bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-lg">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-blue-100 text-sm font-medium">Total Students</p>
+                  <p className="text-sm font-medium text-blue-100">
+                    Total Students
+                  </p>
                   <p className="text-3xl font-bold">{students.length}</p>
                 </div>
                 <Users className="h-8 w-8 text-blue-200" />
@@ -233,11 +242,11 @@ export default function Page() {
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-green-500 to-green-600 text-white border-0 shadow-lg">
+          <Card className="border-0 bg-gradient-to-br from-green-500 to-green-600 text-white shadow-lg">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-green-100 text-sm font-medium">Today</p>
+                  <p className="text-sm font-medium text-green-100">Today</p>
                   <p className="text-3xl font-bold">{todayCount}</p>
                 </div>
                 <Clock className="h-8 w-8 text-green-200" />
@@ -245,11 +254,13 @@ export default function Page() {
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-purple-500 to-purple-600 text-white border-0 shadow-lg">
+          <Card className="border-0 bg-gradient-to-br from-purple-500 to-purple-600 text-white shadow-lg">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-purple-100 text-sm font-medium">This Week</p>
+                  <p className="text-sm font-medium text-purple-100">
+                    This Week
+                  </p>
                   <p className="text-3xl font-bold">{thisWeekCount}</p>
                 </div>
                 <TrendingUp className="h-8 w-8 text-purple-200" />
@@ -257,11 +268,13 @@ export default function Page() {
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-orange-500 to-orange-600 text-white border-0 shadow-lg">
+          <Card className="border-0 bg-gradient-to-br from-orange-500 to-orange-600 text-white shadow-lg">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-orange-100 text-sm font-medium">Pending Upload</p>
+                  <p className="text-sm font-medium text-orange-100">
+                    Pending Upload
+                  </p>
                   <p className="text-3xl font-bold">{students.length}</p>
                 </div>
                 <Upload className="h-8 w-8 text-orange-200" />
@@ -271,18 +284,20 @@ export default function Page() {
         </div>
 
         {/* Main Content */}
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 gap-8 xl:grid-cols-2">
           {/* Scanner Section */}
           <div className="space-y-6">
             <Card className="border-0 shadow-xl">
               <CardHeader className="pb-4">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg">
+                  <div className="rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 p-2">
                     <Camera className="h-5 w-5 text-white" />
                   </div>
                   <div>
                     <CardTitle className="text-xl">ID Scanner</CardTitle>
-                    <CardDescription>Point camera at student ID to capture information</CardDescription>
+                    <CardDescription>
+                      Point camera at student ID to capture information
+                    </CardDescription>
                   </div>
                 </div>
               </CardHeader>
@@ -294,24 +309,36 @@ export default function Page() {
             <Card className="border-0 shadow-xl">
               <CardHeader className="pb-4">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg">
+                  <div className="rounded-lg bg-gradient-to-br from-green-500 to-emerald-600 p-2">
                     <FileText className="h-5 w-5 text-white" />
                   </div>
                   <div>
-                    <CardTitle className="text-xl">Student Information</CardTitle>
-                    <CardDescription>Review and complete student details</CardDescription>
+                    <CardTitle className="text-xl">
+                      Student Information
+                    </CardTitle>
+                    <CardDescription>
+                      Review and complete student details
+                    </CardDescription>
                   </div>
                 </div>
               </CardHeader>
               <CardContent>
                 <StudentForm
-                  defaultValues={newStudent ? {
-                    name: newStudent.name,
-                    studentNumber: newStudent.studentNumber,
-                    program: newStudent.program ?? undefined,
-                  } : undefined}
+                  defaultValues={
+                    newStudent
+                      ? {
+                          name: newStudent.name,
+                          studentNumber: newStudent.studentNumber,
+                          program: newStudent.program ?? undefined,
+                        }
+                      : undefined
+                  }
                   onSubmit={(data) => {
-                    handleAddStudent(data.name, data.studentNumber, data.program ?? null);
+                    handleAddStudent(
+                      data.name,
+                      data.studentNumber,
+                      data.program ?? null
+                    );
                     setNewStudent(null);
                   }}
                 />
@@ -325,12 +352,14 @@ export default function Page() {
               <CardHeader className="pb-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg">
+                    <div className="rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 p-2">
                       <Users className="h-5 w-5 text-white" />
                     </div>
                     <div>
                       <CardTitle className="text-xl">Student Records</CardTitle>
-                      <CardDescription>Manage captured student information</CardDescription>
+                      <CardDescription>
+                        Manage captured student information
+                      </CardDescription>
                     </div>
                   </div>
                   <Badge variant="secondary" className="px-3 py-1">
@@ -350,7 +379,7 @@ export default function Page() {
             </Card>
 
             {/* Action Buttons */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Button
                 size="lg"
                 variant="destructive"
@@ -358,17 +387,17 @@ export default function Page() {
                 disabled={students.length === 0}
                 onClick={() => setShowClearDialog(true)}
               >
-                <Trash2 className="h-5 w-5 mr-2" />
+                <Trash2 className="mr-2 h-5 w-5" />
                 Clear History
               </Button>
 
               <Button
                 size="lg"
-                className="h-14 text-base font-medium bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 shadow-lg"
+                className="h-14 bg-gradient-to-r from-green-500 to-emerald-600 text-base font-medium shadow-lg hover:from-green-600 hover:to-emerald-700"
                 disabled={students.length === 0}
                 onClick={handleUpload}
               >
-                <Database className="h-5 w-5 mr-2" />
+                <Database className="mr-2 h-5 w-5" />
                 Upload to Database
               </Button>
             </div>
@@ -380,9 +409,9 @@ export default function Page() {
               <Button
                 variant="outline"
                 size="lg"
-                className="w-full h-14 text-base font-medium bg-primary/10 hover:bg-primary/20"
+                className="h-14 w-full bg-primary/10 text-base font-medium hover:bg-primary/20"
               >
-                <Scan className="h-5 w-5 mr-2" />
+                <Scan className="mr-2 h-5 w-5" />
                 View All Students
               </Button>
             </Link>
@@ -397,14 +426,16 @@ export default function Page() {
                 Clear History
               </AlertDialogTitle>
               <AlertDialogDescription>
-                Are you sure you want to clear all student records? This action cannot be undone and will permanently delete all captured student information.
+                Are you sure you want to clear all student records? This action
+                cannot be undone and will permanently delete all captured
+                student information.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
               <AlertDialogAction
                 onClick={handleClear}
-                className="bg-red-500 hover:bg-red-600 text-white"
+                className="bg-red-500 text-white hover:bg-red-600"
               >
                 Clear All Records
               </AlertDialogAction>
