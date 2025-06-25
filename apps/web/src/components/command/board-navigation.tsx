@@ -81,8 +81,12 @@ export function BoardNavigation({ wsId, setOpen }: BoardNavigationProps) {
   }>({
     queryKey: ['boards', wsId],
     queryFn: async () => {
+      console.log('BoardNavigation: Fetching boards for wsId:', wsId);
       const response = await fetch(`/api/v1/workspaces/${wsId}/boards-with-lists`);
+      console.log('BoardNavigation: Response status:', response.status);
       if (!response.ok) {
+        const errorText = await response.text();
+        console.log('BoardNavigation: Error response:', errorText);
         if (response.status === 401) {
           throw new Error('Please sign in to view boards');
         }
@@ -94,7 +98,9 @@ export function BoardNavigation({ wsId, setOpen }: BoardNavigationProps) {
         }
         throw new Error('Failed to fetch boards');
       }
-      return response.json();
+      const data = await response.json();
+      console.log('BoardNavigation: Success response:', data);
+      return data;
     },
     retry: 2,
     retryDelay: 1000,

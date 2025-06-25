@@ -28,6 +28,8 @@ export function CommandPalette({
   const params = useParams();
   const { wsId } = params;
 
+  console.log('CommandPalette: wsId from params:', wsId, 'type:', typeof wsId);
+
   // Reset function for error boundary
   const resetErrorBoundary = React.useCallback(() => {
     setErrorBoundaryKey((prev) => prev + 1);
