@@ -55,7 +55,11 @@ export function AddTaskForm({
   const queryClient = useQueryClient();
 
   // Get boards with lists
-  const { data: boardsData, isLoading: boardsLoading, error: boardsError } = useQuery<{
+  const {
+    data: boardsData,
+    isLoading: boardsLoading,
+    error: boardsError,
+  } = useQuery<{
     boards: BoardWithLists[];
   }>({
     queryKey: ['boards-with-lists', wsId],
@@ -73,7 +77,11 @@ export function AddTaskForm({
   const boards = boardsData?.boards;
 
   // Get tasks for selected board/list
-  const { data: tasksData, isLoading: tasksLoading, error: tasksError } = useQuery<{
+  const {
+    data: tasksData,
+    isLoading: tasksLoading,
+    error: tasksError,
+  } = useQuery<{
     tasks: Task[];
   }>({
     queryKey: ['tasks', wsId, selectedBoardId, selectedListId],
@@ -213,11 +221,7 @@ export function AddTaskForm({
           >
             Retry
           </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setOpen(false)}
-          >
+          <Button variant="ghost" size="sm" onClick={() => setOpen(false)}>
             Close
           </Button>
         </div>
@@ -245,7 +249,7 @@ export function AddTaskForm({
             window.location.href = `/${wsId}/tasks/boards`;
           }}
         >
-          <Plus className="h-4 w-4 mr-2" />
+          <Plus className="mr-2 h-4 w-4" />
           Create Board
         </Button>
       </div>
@@ -299,7 +303,7 @@ export function AddTaskForm({
                 <AlertTriangle className="h-4 w-4" />
                 <span>This board has no lists</span>
               </div>
-              <p className="text-xs text-muted-foreground mt-1">
+              <p className="mt-1 text-xs text-muted-foreground">
                 Create a list in the board first to add tasks
               </p>
             </div>
@@ -349,7 +353,9 @@ export function AddTaskForm({
               <div className="flex items-center justify-center py-4">
                 <div className="flex items-center gap-2">
                   <Loader className="h-4 w-4 animate-spin text-dynamic-blue" />
-                  <span className="text-xs text-muted-foreground">Loading tasks...</span>
+                  <span className="text-xs text-muted-foreground">
+                    Loading tasks...
+                  </span>
                 </div>
               </div>
             ) : tasksError ? (
@@ -405,7 +411,7 @@ export function AddTaskForm({
                 <div className="text-xs text-muted-foreground">
                   No tasks in this list yet
                 </div>
-                <div className="text-xs text-muted-foreground/70 mt-1">
+                <div className="mt-1 text-xs text-muted-foreground/70">
                   Perfect time to add the first one!
                 </div>
               </div>
@@ -456,18 +462,23 @@ export function AddTaskForm({
             <span>Please select a board</span>
           </div>
         )}
-        {inputValue.trim() && selectedBoardId && !selectedListId && availableLists.length > 0 && (
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <AlertTriangle className="h-3 w-3" />
-            <span>Please select a list</span>
-          </div>
-        )}
-        {inputValue.trim() && selectedBoardId && availableLists.length === 0 && (
-          <div className="flex items-center gap-2 text-xs text-dynamic-orange">
-            <AlertTriangle className="h-3 w-3" />
-            <span>The selected board has no lists. Create a list first.</span>
-          </div>
-        )}
+        {inputValue.trim() &&
+          selectedBoardId &&
+          !selectedListId &&
+          availableLists.length > 0 && (
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <AlertTriangle className="h-3 w-3" />
+              <span>Please select a list</span>
+            </div>
+          )}
+        {inputValue.trim() &&
+          selectedBoardId &&
+          availableLists.length === 0 && (
+            <div className="flex items-center gap-2 text-xs text-dynamic-orange">
+              <AlertTriangle className="h-3 w-3" />
+              <span>The selected board has no lists. Create a list first.</span>
+            </div>
+          )}
       </div>
     </div>
   );

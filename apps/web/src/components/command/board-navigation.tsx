@@ -1,21 +1,22 @@
 'use client';
 
+import type { Board } from './types';
+import { useQuery } from '@tanstack/react-query';
+import { Button } from '@tuturuuu/ui/button';
 import { CommandGroup, CommandItem } from '@tuturuuu/ui/command';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
-import { Button } from '@tuturuuu/ui/button';
-import { 
-  LayoutDashboard, 
-  ChevronDown, 
-  ChevronRight, 
-  ExternalLink, 
-  Tag, 
-  MapPin,
-  Loader,
+import {
   AlertTriangle,
+  ChevronDown,
+  ChevronRight,
+  ExternalLink,
+  LayoutDashboard,
+  Loader,
+  MapPin,
+  Plus,
   RefreshCw,
-  Plus
+  Tag,
 } from '@tuturuuu/ui/icons';
-import { useQuery } from '@tanstack/react-query';
 import React from 'react';
 
 interface Board {
@@ -105,7 +106,9 @@ export function BoardNavigation({ wsId, setOpen }: BoardNavigationProps) {
             <AlertTriangle className="h-5 w-5 text-dynamic-red" />
           </div>
           <div className="space-y-1">
-            <p className="font-semibold text-foreground">Failed to load boards</p>
+            <p className="font-semibold text-foreground">
+              Failed to load boards
+            </p>
             <p className="text-xs text-muted-foreground">
               {boardsError.message || 'Unable to fetch boards at the moment'}
             </p>

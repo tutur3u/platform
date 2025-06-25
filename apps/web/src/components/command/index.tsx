@@ -5,10 +5,12 @@ import { CommandHeader } from './command-header';
 import './command-palette.css';
 import { CommandRoot } from './command-root';
 import { QuickTimeTracker } from './quick-time-tracker';
-import { CommandDialog, CommandList } from '@tuturuuu/ui/command';
-import { AlertTriangle, RefreshCw } from '@tuturuuu/ui/icons';
+import { useQuery } from '@tanstack/react-query';
 import { Button } from '@tuturuuu/ui/button';
-import { useParams } from 'next/navigation';
+import { CommandDialog, CommandList } from '@tuturuuu/ui/command';
+import { useToast } from '@tuturuuu/ui/hooks/use-toast';
+import { AlertTriangle, RefreshCw } from '@tuturuuu/ui/icons';
+import { useParams, useRouter } from 'next/navigation';
 import * as React from 'react';
 
 // Main Command Palette Component
@@ -27,10 +29,11 @@ export function CommandPalette({
 
   const params = useParams();
   const { wsId } = params;
+  const { toast } = useToast();
 
   // Reset function for error boundary
   const resetErrorBoundary = React.useCallback(() => {
-    setErrorBoundaryKey(prev => prev + 1);
+    setErrorBoundaryKey((prev) => prev + 1);
     setPage('root');
     setInputValue('');
     setIsLoading(false);
@@ -122,7 +125,10 @@ export function CommandPalette({
 
   return (
     <CommandDialog open={open} onOpenChange={setOpen} showXIcon={false}>
-      <CommandPaletteErrorBoundary key={errorBoundaryKey} onReset={resetErrorBoundary}>
+      <CommandPaletteErrorBoundary
+        key={errorBoundaryKey}
+        onReset={resetErrorBoundary}
+      >
         <CommandHeader
           page={page}
           inputValue={inputValue}
@@ -200,15 +206,16 @@ class CommandPaletteErrorBoundary extends React.Component<
             <h3 className="font-semibold text-foreground">
               Something went wrong
             </h3>
-            <p className="text-sm text-muted-foreground max-w-sm">
-              The command palette encountered an unexpected error. Please try again.
+            <p className="max-w-sm text-sm text-muted-foreground">
+              The command palette encountered an unexpected error. Please try
+              again.
             </p>
             {process.env.NODE_ENV === 'development' && this.state.error && (
               <details className="mt-4 text-left">
                 <summary className="cursor-pointer text-xs text-muted-foreground">
                   Error details (development)
                 </summary>
-                <pre className="mt-2 text-xs text-dynamic-red bg-dynamic-red/5 p-2 rounded">
+                <pre className="mt-2 rounded bg-dynamic-red/5 p-2 text-xs text-dynamic-red">
                   {this.state.error.message}
                 </pre>
               </details>
@@ -223,7 +230,7 @@ class CommandPaletteErrorBoundary extends React.Component<
                 this.props.onReset();
               }}
             >
-              <RefreshCw className="h-3 w-3 mr-2" />
+              <RefreshCw className="mr-2 h-3 w-3" />
               Try Again
             </Button>
             <Button
