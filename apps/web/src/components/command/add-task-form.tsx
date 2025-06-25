@@ -16,7 +16,6 @@ import {
   Plus,
   Type,
 } from '@tuturuuu/ui/icons';
-import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import {
   Select,
   SelectContent,
@@ -317,7 +316,7 @@ export function AddTaskForm({
           <SelectTrigger className="w-full">
             <SelectValue placeholder="Select a board..." />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className={cn(boards.length > 5 && "max-h-[200px]")}>
             {boards.map((board: any) => (
               <SelectItem key={board.id} value={board.id}>
                 <div className="flex items-center gap-2">
@@ -436,43 +435,39 @@ export function AddTaskForm({
                 </div>
               </div>
             ) : tasks && tasks.length > 0 ? (
-              <ScrollArea className="max-h-32">
-                <div className="space-y-2">
-                  {tasks.slice(0, 5).map((task: any) => (
+              <div className={cn(
+                "space-y-2",
+                tasks.length > 3 && "max-h-[120px] overflow-y-auto pr-2"
+              )}>
+                {tasks.map((task: any) => (
+                  <div
+                    key={task.id}
+                    className="flex items-center gap-2 rounded-lg border border-dynamic-gray/10 bg-dynamic-gray/5 p-2"
+                  >
                     <div
-                      key={task.id}
-                      className="flex items-center gap-2 rounded-lg border border-dynamic-gray/10 bg-dynamic-gray/5 p-2"
-                    >
-                      <div
-                        className={cn(
-                          'h-2 w-2 flex-shrink-0 rounded-full',
-                          task.completed
-                            ? 'bg-dynamic-green'
-                            : task.priority === 'urgent'
-                              ? 'bg-dynamic-red'
-                              : 'bg-dynamic-blue'
-                        )}
-                      />
-                      <span
-                        className={cn(
-                          'flex-1 truncate text-xs',
-                          task.completed && 'text-muted-foreground line-through'
-                        )}
-                      >
-                        {task.name}
-                      </span>
-                      {task.completed && (
-                        <Check className="h-3 w-3 text-dynamic-green" />
+                      className={cn(
+                        'h-2 w-2 flex-shrink-0 rounded-full',
+                        task.completed
+                          ? 'bg-dynamic-green'
+                          : task.priority === 'urgent'
+                            ? 'bg-dynamic-red'
+                            : 'bg-dynamic-blue'
                       )}
-                    </div>
-                  ))}
-                  {tasks.length > 5 && (
-                    <div className="py-1 text-center text-xs text-muted-foreground">
-                      +{tasks.length - 5} more tasks
-                    </div>
-                  )}
-                </div>
-              </ScrollArea>
+                    />
+                    <span
+                      className={cn(
+                        'flex-1 truncate text-xs',
+                        task.completed && 'text-muted-foreground line-through'
+                      )}
+                    >
+                      {task.name}
+                    </span>
+                    {task.completed && (
+                      <Check className="h-3 w-3 text-dynamic-green" />
+                    )}
+                  </div>
+                ))}
+              </div>
             ) : (
               <div className="py-4 text-center">
                 <div className="text-xs text-muted-foreground">
