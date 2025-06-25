@@ -219,21 +219,27 @@ async function fetchTeamData(id: string): Promise<TeamData | null> {
         userChallengeScores.set(userId, new Map());
       }
 
-      const userProblems = userProblemBestScores.get(userId)!;
+      const userProblems = userProblemBestScores.get(userId);
+      if (!userProblems) return;
 
       // Keep only the best score for each problem
       if (
         !userProblems.has(problemId) ||
-        userProblems.get(problemId)! < correctScore
+        (userProblems.get(problemId) ?? 0) < correctScore
       ) {
         userProblems.set(problemId, correctScore);
 
-        // Also update the challenge score
+        // Update challenge score
         const challengeId = problemChallengeMap.get(problemId);
         if (challengeId) {
-          const userChallenges = userChallengeScores.get(userId)!;
-          const currentChallengeScore = userChallenges.get(challengeId) || 0;
-          userChallenges.set(challengeId, currentChallengeScore + correctScore);
+          const userChallenges = userChallengeScores.get(userId);
+          if (userChallenges) {
+            const currentChallengeScore = userChallenges.get(challengeId) || 0;
+            userChallenges.set(
+              challengeId,
+              currentChallengeScore + correctScore
+            );
+          }
         }
       }
     });
@@ -269,19 +275,19 @@ async function fetchTeamData(id: string): Promise<TeamData | null> {
       const userScore = userScores.get(userId) || 0;
 
       // Add the user's score to the team's total score
-      teamScoresMap.set(
-        member.team_id,
-        teamScoresMap.get(member.team_id)! + userScore
-      );
+      const currentTeamScore = teamScoresMap.get(member.team_id) || 0;
+      teamScoresMap.set(member.team_id, currentTeamScore + userScore);
 
       // Add user's challenge scores to team's challenge scores
       const userChallScores = userChallengeScores.get(userId);
       if (userChallScores) {
-        const teamChallScores = teamChallengeScores.get(member.team_id)!;
-        userChallScores.forEach((score, challengeId) => {
-          const currentScore = teamChallScores.get(challengeId) || 0;
-          teamChallScores.set(challengeId, currentScore + score);
-        });
+        const teamChallScores = teamChallengeScores.get(member.team_id);
+        if (teamChallScores) {
+          userChallScores.forEach((score, challengeId) => {
+            const currentScore = teamChallScores.get(challengeId) || 0;
+            teamChallScores.set(challengeId, currentScore + score);
+          });
+        }
       }
     });
 

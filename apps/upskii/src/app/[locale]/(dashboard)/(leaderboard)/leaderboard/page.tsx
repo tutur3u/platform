@@ -162,21 +162,20 @@ async function fetchLeaderboard(locale: string, page: number = 1) {
   }
 
   // Group sessions by user
-  const userSessions: Record<string, any> = sessionsData.reduce(
-    (acc: Record<string, any>, session: any) => {
-      if (!acc[session.user_id]) {
-        acc[session.user_id] = {
-          id: session.id,
-          user_id: session.user_id,
-          users: session.users,
-          nova_challenges: session.nova_challenges,
-          sessions: [],
-        };
+  const userSessions: Record<
+    string,
+    Record<string, unknown>
+  > = sessionsData.reduce(
+    (
+      acc: Record<string, Record<string, unknown>>,
+      session: Record<string, unknown>
+    ) => {
+      const userId = session.user_id as string;
+      if (!acc[userId]) {
+        acc[userId] = {};
       }
-      acc[session.user_id].sessions.push({
-        id: session.id,
-        challenge_id: session.challenge_id,
-      });
+      const sessionId = session.id as string;
+      acc[userId][sessionId] = session;
       return acc;
     },
     {}

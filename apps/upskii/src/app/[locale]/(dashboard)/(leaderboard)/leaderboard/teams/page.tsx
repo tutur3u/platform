@@ -198,7 +198,7 @@ async function fetchLeaderboard(page: number = 1) {
       // Update the score for this session if it's higher
       if (
         !problemSessions.has(sessionId) ||
-        problemSessions.get(sessionId)! < score
+        (problemSessions.get(sessionId) ?? 0) < score
       ) {
         problemSessions.set(sessionId, score);
       }

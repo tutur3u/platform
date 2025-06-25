@@ -5,8 +5,8 @@ import {
   calculateScore,
 } from '@tuturuuu/utils/nova/scores/calculate';
 import type { Metadata } from 'next';
-import { getLocale } from 'next-intl/server';
 import { notFound } from 'next/navigation';
+import { getLocale } from 'next-intl/server';
 import UserProfileClient from './client';
 
 // Dynamic metadata for profile pages
@@ -59,13 +59,13 @@ export async function generateMetadata({
 
 // Define submission interface based on the fields being used
 interface Submission {
-  id?: string;
-  problem_id?: string;
+  id?: string | null;
+  problem_id?: string | null;
   challenge_id?: string;
-  total_tests?: number;
-  passed_tests?: number;
-  total_criteria?: number;
-  sum_criterion_score?: number;
+  total_tests?: number | null;
+  passed_tests?: number | null;
+  total_criteria?: number | null;
+  sum_criterion_score?: number | null;
   created_at?: string;
   [key: string]: unknown;
 }
@@ -171,7 +171,7 @@ export default async function UserProfilePage({
 
   sessionsData?.forEach((session) => {
     if (session.nova_submissions_with_scores) {
-      session.nova_submissions_with_scores.forEach((submission: any) => {
+      session.nova_submissions_with_scores.forEach((submission: Submission) => {
         allSubmissions.push({
           ...submission,
           challenge_id: session.challenge_id,
@@ -257,7 +257,7 @@ export default async function UserProfilePage({
 
     // Process submissions using the same formula
     if (session.nova_submissions_with_scores) {
-      session.nova_submissions_with_scores.forEach((sub: any) => {
+      session.nova_submissions_with_scores.forEach((sub: Submission) => {
         const problemId = sub.problem_id;
         if (!problemId) return;
 

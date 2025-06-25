@@ -25,8 +25,8 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { generateFunName, getInitials } from '@tuturuuu/utils/name-helper';
 import { motion } from 'framer-motion';
-import Link from 'next/link';
 import { useLocale } from 'next-intl';
+import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { TeamActionDialog } from './dialog-content';
 
@@ -68,6 +68,30 @@ export function TeamProfile({
 }) {
   const locale = useLocale();
 
+  // Move all hooks to the top level before any conditional returns
+  const [copied, setCopied] = useState(false);
+  const [user, setUser] = useState<SupabaseUser | null>(null);
+  const supabase = createClient();
+  const [dialogState, setDialogState] = useState<{
+    isOpen: boolean;
+    type: 'goals' | 'reports' | 'des';
+    isEditing: boolean;
+  }>({
+    isOpen: false,
+    type: 'goals',
+    isEditing: false,
+  });
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      setUser(user);
+    };
+    fetchUser();
+  }, [supabase.auth]);
+
   if (!teamData) {
     return (
       <div className="container max-w-6xl py-16 text-center">
@@ -81,6 +105,7 @@ export function TeamProfile({
       </div>
     );
   }
+
   const teamInfo = {
     ...teamData,
     name: teamData.name,
@@ -90,19 +115,6 @@ export function TeamProfile({
     description: teamData.description,
     goals: teamData.goals,
   };
-
-  const [copied, setCopied] = useState(false);
-  const [user, setUser] = useState<SupabaseUser | null>(null);
-  const supabase = createClient();
-  const [dialogState, setDialogState] = useState<{
-    isOpen: boolean;
-    type: 'goals' | 'reports' | 'des';
-    isEditing: boolean;
-  }>({
-    isOpen: false,
-    type: 'goals',
-    isEditing: false,
-  });
 
   // Use either stats.active_since or the root active_since property
   const activeSinceDate = teamData.stats?.active_since || teamData.active_since;
@@ -139,15 +151,6 @@ export function TeamProfile({
     setDialogState((prev) => ({ ...prev, isOpen: false }));
   };
 
-  useEffect(() => {
-    const fetchUser = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      setUser(user);
-    };
-    fetchUser();
-  }, [supabase.auth]);
   // Share functionality
   const handleShare = () => {
     if (navigator.share) {

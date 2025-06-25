@@ -17,9 +17,9 @@ interface Team {
 }
 
 export const getTeamColumns = (
-  t: any,
-  _: any,
-  __: any,
+  t: (key: string) => string,
+  _: unknown,
+  __: unknown,
   extraData: {
     wsId: string;
   }
