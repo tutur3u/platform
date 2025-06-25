@@ -9,8 +9,8 @@ import type {
 } from '@tuturuuu/types/db';
 import type { WorkspaceSecret } from '@tuturuuu/types/primitives/WorkspaceSecret';
 import { notFound, redirect } from 'next/navigation';
-import { permissions as rolePermissions } from '../../../apps/web/src/lib/permissions';
 import { ROOT_WORKSPACE_ID } from './constants';
+import { permissions as rolePermissions } from './permissions';
 
 export async function getWorkspace(id: string, requireUserRole = false) {
   const supabase = await createClient();
