@@ -7,6 +7,7 @@ import {
   AlertTriangle,
   ChevronDown,
   ChevronRight,
+  ChevronUp,
   ExternalLink,
   LayoutDashboard,
   Loader,
@@ -15,10 +16,10 @@ import {
   RefreshCw,
   Tag,
 } from '@tuturuuu/ui/icons';
+import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { useRouter } from 'next/navigation';
 import React from 'react';
 import type { Board } from './types';
-import { cn } from '@tuturuuu/utils/format';
 
 interface BoardNavigationProps {
   wsId: string;
@@ -27,6 +28,9 @@ interface BoardNavigationProps {
 
 export function BoardNavigation({ wsId, setOpen }: BoardNavigationProps) {
   const [isExpanded, setIsExpanded] = React.useState(true);
+  const [canScrollUp, setCanScrollUp] = React.useState(false);
+  const [canScrollDown, setCanScrollDown] = React.useState(false);
+  const scrollAreaRef = React.useRef<HTMLDivElement>(null);
   const router = useRouter();
 
   // Early return if no workspace ID
@@ -107,6 +111,33 @@ export function BoardNavigation({ wsId, setOpen }: BoardNavigationProps) {
   });
 
   const boards = boardsData?.boards || [];
+
+  // Check scroll position to show/hide arrows
+  const checkScrollPosition = React.useCallback(() => {
+    const scrollElement = scrollAreaRef.current?.querySelector('[data-radix-scroll-area-viewport]');
+    if (scrollElement) {
+      const { scrollTop, scrollHeight, clientHeight } = scrollElement;
+      setCanScrollUp(scrollTop > 0);
+      setCanScrollDown(scrollTop < scrollHeight - clientHeight - 1);
+    }
+  }, []);
+
+  // Update scroll indicators when boards change or component mounts
+  React.useEffect(() => {
+    if (boards.length > 4 && isExpanded) {
+      setTimeout(checkScrollPosition, 100); // Allow time for rendering
+      
+      // Add scroll event listener
+      const scrollElement = scrollAreaRef.current?.querySelector('[data-radix-scroll-area-viewport]');
+      if (scrollElement) {
+        scrollElement.addEventListener('scroll', checkScrollPosition);
+        return () => scrollElement.removeEventListener('scroll', checkScrollPosition);
+      }
+    } else {
+      setCanScrollUp(false);
+      setCanScrollDown(false);
+    }
+  }, [boards.length, isExpanded, checkScrollPosition]);
 
   const getBoardColor = (boardId: string) => {
     const colors = [
@@ -275,55 +306,117 @@ export function BoardNavigation({ wsId, setOpen }: BoardNavigationProps) {
         </Button>
       </div>
 
-      {/* Collapsible Content with Scrollable Area */}
+      {/* Collapsible Content with Custom Scrollable Area */}
       {isExpanded && (
         <div className="px-2">
-          <div className={cn(
-            "space-y-1",
-            boards.length > 4 && "max-h-[280px] overflow-y-auto pr-2"
-          )}>
-            <CommandGroup>
-              {boards.map((board: Board) => (
-                <CommandItem
-                  key={board.id}
-                  onSelect={() => handleBoardSelect(board.id)}
-                  className="command-item group cursor-pointer border-l-2 border-transparent transition-all duration-200 hover:border-dynamic-blue/30 hover:bg-gradient-to-r hover:from-dynamic-blue/5 hover:to-dynamic-purple/5"
-                >
-                  <div className="flex w-full items-center gap-4">
-                    <div className="relative">
-                      <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-dynamic-blue/20 to-dynamic-purple/20 blur-sm transition-all group-hover:blur-md" />
-                      <div
-                        className={`relative rounded-lg border border-dynamic-blue/20 p-2.5 ${getBoardColor(board.id)}`}
-                      >
-                        <LayoutDashboard className="h-5 w-5" />
-                      </div>
-                    </div>
-                    <div className="flex flex-1 flex-col">
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold text-foreground transition-colors group-hover:text-dynamic-blue">
-                          {board.name}
-                        </span>
-                        <ExternalLink className="h-3 w-3 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
-                      </div>
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <div className="flex items-center gap-1">
-                          <Tag className="h-3 w-3" />
-                          <span>{board.task_lists?.length || 0} lists</span>
+          <div className="relative">
+            {/* Top scroll indicator */}
+            {boards.length > 4 && canScrollUp && (
+              <div className="absolute top-0 left-0 right-0 z-10 flex justify-center bg-gradient-to-b from-background to-transparent pb-2">
+                <ChevronUp className="h-4 w-4 text-muted-foreground animate-bounce" />
+              </div>
+            )}
+
+            {/* Scrollable content */}
+            {boards.length > 4 ? (
+              <ScrollArea
+                ref={scrollAreaRef}
+                className="h-[280px]"
+              >
+                <CommandGroup className="py-2">
+                  {boards.map((board: Board) => (
+                    <CommandItem
+                      key={board.id}
+                      onSelect={() => handleBoardSelect(board.id)}
+                      className="command-item group cursor-pointer border-l-2 border-transparent transition-all duration-200 hover:border-dynamic-blue/30 hover:bg-gradient-to-r hover:from-dynamic-blue/5 hover:to-dynamic-purple/5"
+                    >
+                      <div className="flex w-full items-center gap-4">
+                        <div className="relative">
+                          <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-dynamic-blue/20 to-dynamic-purple/20 blur-sm transition-all group-hover:blur-md" />
+                          <div
+                            className={`relative rounded-lg border border-dynamic-blue/20 p-2.5 ${getBoardColor(board.id)}`}
+                          >
+                            <LayoutDashboard className="h-5 w-5" />
+                          </div>
                         </div>
-                        <span>•</span>
-                        <div className="flex items-center gap-1">
-                          <MapPin className="h-3 w-3" />
-                          <span>View tasks and manage board</span>
+                        <div className="flex flex-1 flex-col">
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold text-foreground transition-colors group-hover:text-dynamic-blue">
+                              {board.name}
+                            </span>
+                            <ExternalLink className="h-3 w-3 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
+                          </div>
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <div className="flex items-center gap-1">
+                              <Tag className="h-3 w-3" />
+                              <span>{board.task_lists?.length || 0} lists</span>
+                            </div>
+                            <span>•</span>
+                            <div className="flex items-center gap-1">
+                              <MapPin className="h-3 w-3" />
+                              <span>View tasks and manage board</span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="text-xs text-dynamic-blue/60 opacity-0 transition-opacity group-hover:opacity-100">
+                          Navigate
                         </div>
                       </div>
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              </ScrollArea>
+            ) : (
+              <CommandGroup className="space-y-1">
+                {boards.map((board: Board) => (
+                  <CommandItem
+                    key={board.id}
+                    onSelect={() => handleBoardSelect(board.id)}
+                    className="command-item group cursor-pointer border-l-2 border-transparent transition-all duration-200 hover:border-dynamic-blue/30 hover:bg-gradient-to-r hover:from-dynamic-blue/5 hover:to-dynamic-purple/5"
+                  >
+                    <div className="flex w-full items-center gap-4">
+                      <div className="relative">
+                        <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-dynamic-blue/20 to-dynamic-purple/20 blur-sm transition-all group-hover:blur-md" />
+                        <div
+                          className={`relative rounded-lg border border-dynamic-blue/20 p-2.5 ${getBoardColor(board.id)}`}
+                        >
+                          <LayoutDashboard className="h-5 w-5" />
+                        </div>
+                      </div>
+                      <div className="flex flex-1 flex-col">
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold text-foreground transition-colors group-hover:text-dynamic-blue">
+                            {board.name}
+                          </span>
+                          <ExternalLink className="h-3 w-3 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
+                        </div>
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <div className="flex items-center gap-1">
+                            <Tag className="h-3 w-3" />
+                            <span>{board.task_lists?.length || 0} lists</span>
+                          </div>
+                          <span>•</span>
+                          <div className="flex items-center gap-1">
+                            <MapPin className="h-3 w-3" />
+                            <span>View tasks and manage board</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-xs text-dynamic-blue/60 opacity-0 transition-opacity group-hover:opacity-100">
+                        Navigate
+                      </div>
                     </div>
-                    <div className="text-xs text-dynamic-blue/60 opacity-0 transition-opacity group-hover:opacity-100">
-                      Navigate
-                    </div>
-                  </div>
-                </CommandItem>
-              ))}
-            </CommandGroup>
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            )}
+
+            {/* Bottom scroll indicator */}
+            {boards.length > 4 && canScrollDown && (
+              <div className="absolute bottom-0 left-0 right-0 z-10 flex justify-center bg-gradient-to-t from-background to-transparent pt-2">
+                <ChevronDown className="h-4 w-4 text-muted-foreground animate-bounce" />
+              </div>
+            )}
           </div>
 
           {/* Additional Info Footer */}
