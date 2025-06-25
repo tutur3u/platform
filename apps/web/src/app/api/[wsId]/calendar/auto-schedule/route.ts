@@ -9,6 +9,7 @@ import {
   defaultActiveHours,
   defaultTasks,
 } from '@tuturuuu/ai/scheduling/default';
+
 import type dayjs from 'dayjs';
 export interface DateRange {
   start: dayjs.Dayjs;
@@ -252,18 +253,38 @@ export async function POST(
       const scheduleResult = scheduleWithFlexibleEvents(newTasks, newFlexibleEvents, [],activeHours);
       const { events: newScheduledEvents, logs } = scheduleResult;
       
-      console.log(scheduleResult.logs.length, 'logs generated:', scheduleResult.logs);
+      // console.log(scheduleResult.logs.length, 'logs generated:', scheduleResult.logs);
+      console.log(newScheduledEvents.length, 'new scheduled events:', newScheduledEvents);
       // 5. SAVE THE NEW SCHEDULE TO SUPABASE
       streamUpdate?.({ status: 'running', message: 'Saving new schedule...' });
       
+      for (const optimization of newScheduledEvents) {
+      try {
+        const { error } = await (await supabase)
+          .from('workspace_calendar_events')
+          .update({
+            start_at: optimization.range.start.toISOString(),
+            end_at: optimization.range.end.toISOString(),
+          })
+          .eq('id', optimization.id)
+          .eq('ws_id', wsId);
+
+  
+      } catch (err) {
+        console.error(
+          `Failed to apply optimization for event ${optimization.id}:`,
+          err
+        );
+      }
+    }
       // Delete all old flexible (non-locked) events
-      const { error: deleteError } = await (await supabase)
-        .from('workspace_calendar_events')
-        .delete()
-        .eq('ws_id', wsId)
-        .eq('locked', false);
+      // const { error: deleteError } = await (await supabase)
+      //   .from('workspace_calendar_events')
+      //   .delete()
+      //   .eq('ws_id', wsId)
+      //   .eq('locked', false);
       
-      if (deleteError) throw new Error(`Failed to clear old schedule: ${deleteError.message}`);
+      // if (deleteError) throw new Error(`Failed to clear old schedule: ${deleteError.message}`);
 
       // Prepare new events for insertion
       if (newScheduledEvents.length > 0) {
@@ -274,7 +295,7 @@ export async function POST(
           title: event.name,
           start_at: event.range.start.toISOString(),
           end_at: event.range.end.toISOString(),
-          locked: false, // All newly scheduled events are flexible
+          locked: false, 
           is_past_deadline: event.isPastDeadline,
         }));
 

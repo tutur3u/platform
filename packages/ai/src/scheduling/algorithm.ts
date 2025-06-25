@@ -272,7 +272,7 @@ let taskPool: any[]= [];
             const partStart = roundToQuarterHour(slot.start, false);
             const partEnd = partStart.add(task.duration, 'hour');
             const newEvent: Event = {
-              id: `event-${task.id}`,
+              id: `${task.id}`,
               name: task.name,
               range: { start: partStart, end: partEnd },
               isPastDeadline: false,
@@ -374,7 +374,7 @@ let taskPool: any[]= [];
         const partEnd = partStart.add(partDuration, 'hour');
         const totalParts = Math.ceil(task.duration / task.maxDuration);
         const newEvent: Event = {
-          id: `event-${task.id}-part-${task.nextPart}`,
+          id: `${task.id}-part-${task.nextPart}`,
           name:
             totalParts > 1
               ? `${task.name} (Part ${task.nextPart}/${totalParts})`
@@ -426,7 +426,7 @@ let taskPool: any[]= [];
     }
   }
 
-console.log('Scheduled Events:', scheduledEvents);
+// console.log('Scheduled Events:', scheduledEvents);
   return { events: scheduledEvents, logs };
   }catch (error) {
     console.error('Error sorting task pool:', error);
