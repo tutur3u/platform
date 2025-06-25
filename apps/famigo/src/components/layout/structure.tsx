@@ -80,7 +80,8 @@ export default function Structure({
       sidebarContent={sidebarContent}
       actions={actions}
       userPopover={userPopover}
-      children={children}
-    />
+    >
+      {children}
+    </BaseStructure>
   );
 }

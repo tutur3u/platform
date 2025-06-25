@@ -18,7 +18,7 @@ import { AuthButton } from './auth-button';
 interface MenuProps {
   sbUser: SupabaseUser | null;
   user: WorkspaceUser | null;
-  t?: any;
+  t?: ReturnType<typeof useTranslations>;
 }
 
 // interface NavLinkProps {

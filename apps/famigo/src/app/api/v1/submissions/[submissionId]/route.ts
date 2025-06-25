@@ -85,7 +85,15 @@ export async function PUT(request: Request, { params }: Params) {
       );
     }
 
-    const updateData: any = {};
+    const updateData: {
+      prompt?: string;
+      problem_id?: string;
+      session_id?: string;
+      user_id?: string;
+      status?: string;
+      score?: number;
+      feedback?: string;
+    } = {};
     if (body.prompt !== undefined) updateData.prompt = body.prompt;
     if (body.problemId !== undefined) updateData.problem_id = body.problemId;
     if (body.sessionId !== undefined) updateData.session_id = body.sessionId;

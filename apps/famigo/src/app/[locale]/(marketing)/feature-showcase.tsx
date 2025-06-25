@@ -87,7 +87,7 @@ export default function FeatureShowcase() {
     <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
       {features.map((feature, index) => (
         <motion.div
-          key={index}
+          key={feature.title}
           custom={index}
           initial={{ opacity: 0, y: 20 }}
           animate={controls}

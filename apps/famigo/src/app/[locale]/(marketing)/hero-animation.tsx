@@ -107,7 +107,7 @@ export default function HeroAnimation() {
       <div className="absolute inset-0">
         {particles.map((particle, i) => (
           <motion.div
-            key={i}
+            key={`particle-${i}-${particle.left}-${particle.top}`}
             className="absolute h-1 w-1 rounded-full bg-indigo-300/20 will-change-transform md:h-1.5 md:w-1.5 dark:bg-white/30"
             style={{
               left: particle.left,

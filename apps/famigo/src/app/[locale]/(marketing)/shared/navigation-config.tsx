@@ -16,7 +16,7 @@ export interface NavCategory {
   items: NavItem[];
 }
 
-export const useNavigation = (_: any): { categories: NavCategory[] } => {
+export const useNavigation = (_: unknown): { categories: NavCategory[] } => {
   // const resources: NavItem[] = [
   // {
   //   href: DEV_MODE

@@ -93,7 +93,7 @@ const TechnologySection = () => {
             <div className="space-y-4">
               {technologies.map((item, index) => (
                 <motion.div
-                  key={index}
+                  key={item.title}
                   initial={{ opacity: 0, y: 10 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}

@@ -44,10 +44,9 @@ export default function LeaderboardFallback() {
       {/* Leaderboard Table Skeleton */}
       <Card>
         <CardContent className="p-4">
-          {/* biome-ignore lint/suspicious/noArrayIndexKey: Skeleton components for static loading state */}
-          {Array.from({ length: 10 }).map((_, i) => (
+          {Array.from({ length: 10 }, (_, i) => (
             <div
-              key={`leaderboard-entry-${i}`}
+              key={`leaderboard-skeleton-${i}-${Date.now()}`}
               className="flex items-center justify-between border-b py-4"
             >
               <div className="flex items-center gap-3">

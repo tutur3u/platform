@@ -57,7 +57,7 @@ export default function LearnPage() {
           isCompleted: false,
         },
         {
-          title: 'Further Learning (Google’s Machine Learning Crash Course)',
+          title: "Further Learning (Google's Machine Learning Crash Course)",
           content: 'Overview of how to continue learning.',
           duration: '5 min',
           isCompleted: false,
@@ -233,9 +233,9 @@ export default function LearnPage() {
             </div>
 
             <div className="grid gap-4">
-              {module.sections.map((section, index) => (
+              {module.sections.map((section, _index) => (
                 <motion.div
-                  key={index}
+                  key={section.title}
                   className="group relative overflow-hidden rounded-lg border bg-card/50 p-4 transition-colors hover:bg-card"
                   whileHover={{ scale: 1.01 }}
                 >

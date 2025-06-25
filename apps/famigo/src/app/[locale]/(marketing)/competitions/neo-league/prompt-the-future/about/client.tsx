@@ -23,9 +23,9 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { cn } from '@tuturuuu/utils/format';
 import { motion, useScroll, useTransform, type Variants } from 'framer-motion';
-import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import React, { useRef } from 'react';
 import GradientHeadline from '../../../../../gradient-headline';
 import {
@@ -87,11 +87,15 @@ export function AboutUsPage() {
   const opacity = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
   const scale = useTransform(scrollYProgress, [0, 0.5], [1, 0.8]);
 
-  const getOrganizerInfo = (t: any, tKey: string, type = 'organizers') => ({
-    name: t(`${type}.members.${tKey}.name` as unknown as any),
-    role: t(`${type}.members.${tKey}.role` as unknown as any),
-    organization: t(`${type}.members.${tKey}.organization` as unknown as any),
-    bio: t(`${type}.members.${tKey}.bio` as unknown as any),
+  const getOrganizerInfo = (
+    t: ReturnType<typeof useTranslations>,
+    tKey: string,
+    type = 'organizers'
+  ) => ({
+    name: t(`${type}.members.${tKey}.name`),
+    role: t(`${type}.members.${tKey}.role`),
+    organization: t(`${type}.members.${tKey}.organization`),
+    bio: t(`${type}.members.${tKey}.bio`),
   });
 
   // Render team member card with enhanced design
@@ -246,10 +250,8 @@ export function AboutUsPage() {
 
   // Render sponsor card with enhanced design
   const renderSponsor = (sponsor: Sponsor) => {
-    const name = t(`sponsors.${sponsor.tKey}.name` as unknown as any);
-    const description = t(
-      `sponsors.${sponsor.tKey}.description` as unknown as any
-    );
+    const name = t(`sponsors.${sponsor.tKey}.name`);
+    const description = t(`sponsors.${sponsor.tKey}.description`);
 
     const tierColors = {
       host: 'from-black to-black border-black/50 border dark:from-[#E5E4E2] dark:to-[#B9B8B5] dark:border-white/50',
@@ -376,11 +378,9 @@ export function AboutUsPage() {
 
   // Render contributor card with enhanced design
   const renderContributor = (contributor: Contributor) => {
-    const name = t(
-      `special-thanks.contributors.${contributor.tKey}.name` as unknown as any
-    );
+    const name = t(`special-thanks.contributors.${contributor.tKey}.name`);
     const contribution = t(
-      `special-thanks.contributors.${contributor.tKey}.contribution` as unknown as any
+      `special-thanks.contributors.${contributor.tKey}.contribution`
     );
 
     return (
@@ -436,7 +436,7 @@ export function AboutUsPage() {
         {/* Animated particles */}
         {[...Array(30)].map((_, i) => (
           <motion.div
-            key={i}
+            key={`particle-${i}-${Math.random().toString(36).substr(2, 9)}`}
             className="absolute h-1 w-1 rounded-full bg-primary/40"
             style={{
               top: `${Math.random() * 100}%`,
@@ -458,29 +458,40 @@ export function AboutUsPage() {
         ))}
 
         {/* Animated code snippets */}
-        {[...Array(5)].map((_, i) => (
-          <motion.div
-            key={`code-${i}`}
-            className="absolute font-mono text-xs text-primary/20"
-            style={{
-              top: `${20 + Math.random() * 60}%`,
-              left: `${Math.random() * 80}%`,
-              transform: `rotate(${Math.random() * 20 - 10}deg)`,
-            }}
-            initial={{ opacity: 0 }}
-            animate={{
-              opacity: [0, 0.3, 0],
-              y: [0, -30],
-            }}
-            transition={{
-              duration: 8 + Math.random() * 5,
-              repeat: Infinity,
-              delay: Math.random() * 5,
-            }}
-          >
-            {`prompt = "${['Generate creative solution', 'Optimize for clarity', 'Enhance user experience', 'Design innovative UI', 'Create engaging content'][i % 5]}"`}
-          </motion.div>
-        ))}
+        {[...Array(5)].map((_, i) => {
+          const codeSnippets = [
+            'Generate creative solution',
+            'Optimize for clarity',
+            'Enhance user experience',
+            'Design innovative UI',
+            'Create engaging content',
+          ];
+          const snippet =
+            codeSnippets[i % codeSnippets.length] || 'Default snippet';
+          return (
+            <motion.div
+              key={`code-snippet-${i}-${snippet.replace(/\s+/g, '-').toLowerCase()}`}
+              className="absolute font-mono text-xs text-primary/20"
+              style={{
+                top: `${20 + Math.random() * 60}%`,
+                left: `${Math.random() * 80}%`,
+                transform: `rotate(${Math.random() * 20 - 10}deg)`,
+              }}
+              initial={{ opacity: 0 }}
+              animate={{
+                opacity: [0, 0.3, 0],
+                y: [0, -30],
+              }}
+              transition={{
+                duration: 8 + Math.random() * 5,
+                repeat: Infinity,
+                delay: Math.random() * 5,
+              }}
+            >
+              {`prompt = "${snippet}"`}
+            </motion.div>
+          );
+        })}
 
         <motion.div
           style={{ opacity, scale }}

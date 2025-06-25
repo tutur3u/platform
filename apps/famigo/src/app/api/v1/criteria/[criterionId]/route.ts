@@ -85,7 +85,12 @@ export async function PUT(request: Request, { params }: Params) {
   }
 
   try {
-    const updateData: any = {};
+    const updateData: {
+      name?: string;
+      description?: string;
+      weight?: number;
+      challenge_id?: string;
+    } = {};
     if (body.name !== undefined) updateData.name = body.name;
     if (body.description !== undefined)
       updateData.description = body.description;

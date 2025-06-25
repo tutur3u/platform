@@ -582,7 +582,6 @@ export default function ChallengeForm({
                                 <FormControl>
                                   <Button
                                     variant="outline"
-                                    role="combobox"
                                     className={cn(
                                       'w-full justify-between',
                                       !field.value?.length &&
@@ -682,10 +681,9 @@ export default function ChallengeForm({
 
                             {field.value?.length > 0 && (
                               <div className="mt-2 flex flex-wrap gap-2">
-                                {/* biome-ignore lint/suspicious/noArrayIndexKey: Static email list with stable order */}
                                 {field.value.map((adminEmail, index) => (
                                   <Badge
-                                    key={index}
+                                    key={adminEmail}
                                     variant="secondary"
                                     className="flex items-center gap-1 py-1"
                                   >
@@ -771,10 +769,9 @@ export default function ChallengeForm({
                               </FormDescription>
                               <div className="space-y-2">
                                 <div className="flex flex-wrap gap-2">
-                                  {/* biome-ignore lint/suspicious/noArrayIndexKey: Static email list with stable order */}
                                   {field.value.map((email, index) => (
                                     <Badge
-                                      key={index}
+                                      key={email}
                                       variant="secondary"
                                       className="flex items-center gap-1 py-1"
                                     >

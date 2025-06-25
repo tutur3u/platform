@@ -285,7 +285,7 @@ export default function LoginForm() {
                         {Array.from({ length: maxOTPLength }).map(
                           (_, index) => (
                             <InputOTPSlot
-                              key={index}
+                              key={`otp-slot-${index}-${maxOTPLength}`}
                               index={index}
                               className="max-md:w-full"
                             />

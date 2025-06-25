@@ -102,7 +102,20 @@ export async function PUT(request: Request, { params }: Params) {
   }
 
   try {
-    const updateData: any = {};
+    const updateData: {
+      title?: string;
+      description?: string;
+      duration?: number;
+      enabled?: boolean;
+      whitelisted_only?: boolean;
+      max_attempts?: number;
+      max_daily_attempts?: number;
+      password_hash?: string | null;
+      password_salt?: string | null;
+      previewable_at?: string;
+      open_at?: string;
+      close_at?: string;
+    } = {};
 
     if (body.title !== undefined) updateData.title = body.title;
     if (body.description !== undefined)
