@@ -23,7 +23,7 @@ export type ComboboxOptions = {
 type Mode = 'single' | 'multiple';
 
 interface ComboboxProps {
-  t: any;
+  t: (key: string) => string;
   mode?: Mode;
   options: ComboboxOptions[];
   selected: string | string[]; // Updated to handle multiple selections
@@ -86,7 +86,6 @@ export function Combobox({
           <Button
             type="button"
             variant="outline"
-            role="combobox"
             aria-expanded={open}
             className={cn(
               'w-full justify-between',

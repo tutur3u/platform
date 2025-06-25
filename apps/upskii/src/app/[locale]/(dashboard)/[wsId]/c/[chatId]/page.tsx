@@ -18,6 +18,19 @@ interface Props {
   }>;
 }
 
+interface ChatMessage {
+  creator_id: string;
+  role: string;
+  [key: string]: unknown;
+}
+
+interface UserData {
+  id: string;
+  email?: string;
+  display_name?: string;
+  avatar_url?: string;
+}
+
 export default async function AIPage({ params, searchParams }: Props) {
   const chatId = (await params).chatId;
   if (!chatId) notFound();
@@ -71,7 +84,10 @@ const getMessages = async (chatId: string) => {
     .single();
 
   if (!userError && userMessages && chat?.creator_id === user?.id) {
-    return formatMessages(userMessages, await getMessageUsers(userMessages));
+    return formatMessages(
+      userMessages as ChatMessage[],
+      await getMessageUsers(userMessages as ChatMessage[])
+    );
   }
 
   // Check if user's email is in ai_chat_members
@@ -128,7 +144,7 @@ const getMessages = async (chatId: string) => {
 };
 
 // Helper function to get user data for messages
-const getMessageUsers = async (messages: any[]) => {
+const getMessageUsers = async (messages: ChatMessage[]) => {
   const sbAdmin = await createAdminClient();
 
   // Get user data for all unique creator_ids
@@ -160,7 +176,10 @@ const getMessageUsers = async (messages: any[]) => {
 };
 
 // Helper function to format messages with user data
-const formatMessages = (messages: any[], userMap: Map<string, any>) => {
+const formatMessages = (
+  messages: ChatMessage[],
+  userMap: Map<string, UserData>
+) => {
   return messages.map(({ role, creator_id, ...rest }) => ({
     ...rest,
     role: role.toLowerCase(),

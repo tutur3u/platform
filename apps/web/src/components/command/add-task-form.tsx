@@ -222,7 +222,7 @@ export function AddTaskForm({
             <SelectValue placeholder="Select a board..." />
           </SelectTrigger>
           <SelectContent>
-            {boards.map((board: any) => (
+            {boards.map((board: BoardWithLists) => (
               <SelectItem key={board.id} value={board.id}>
                 <div className="flex items-center gap-2">
                   <div
@@ -257,7 +257,7 @@ export function AddTaskForm({
               <SelectValue placeholder="Select a list..." />
             </SelectTrigger>
             <SelectContent>
-              {availableLists.map((list: any) => (
+              {availableLists.map((list: { id: string; name: string }) => (
                 <SelectItem key={list.id} value={list.id}>
                   <div className="flex items-center gap-2">
                     <List className="h-4 w-4 text-muted-foreground" />
@@ -290,34 +290,44 @@ export function AddTaskForm({
             ) : tasks && tasks.length > 0 ? (
               <ScrollArea className="max-h-32">
                 <div className="space-y-2">
-                  {tasks.slice(0, 5).map((task: any) => (
-                    <div
-                      key={task.id}
-                      className="flex items-center gap-2 rounded-lg border border-dynamic-gray/10 bg-dynamic-gray/5 p-2"
-                    >
-                      <div
-                        className={cn(
-                          'h-2 w-2 flex-shrink-0 rounded-full',
-                          task.completed
-                            ? 'bg-dynamic-green'
-                            : task.priority === 'urgent'
-                              ? 'bg-dynamic-red'
-                              : 'bg-dynamic-blue'
-                        )}
-                      />
-                      <span
-                        className={cn(
-                          'flex-1 truncate text-xs',
-                          task.completed && 'text-muted-foreground line-through'
-                        )}
-                      >
-                        {task.name}
-                      </span>
-                      {task.completed && (
-                        <Check className="h-3 w-3 text-dynamic-green" />
-                      )}
-                    </div>
-                  ))}
+                  {tasks
+                    .slice(0, 5)
+                    .map(
+                      (task: {
+                        id: string;
+                        name: string;
+                        completed: boolean;
+                        priority?: string;
+                      }) => (
+                        <div
+                          key={task.id}
+                          className="flex items-center gap-2 rounded-lg border border-dynamic-gray/10 bg-dynamic-gray/5 p-2"
+                        >
+                          <div
+                            className={cn(
+                              'h-2 w-2 flex-shrink-0 rounded-full',
+                              task.completed
+                                ? 'bg-dynamic-green'
+                                : task.priority === 'urgent'
+                                  ? 'bg-dynamic-red'
+                                  : 'bg-dynamic-blue'
+                            )}
+                          />
+                          <span
+                            className={cn(
+                              'flex-1 truncate text-xs',
+                              task.completed &&
+                                'text-muted-foreground line-through'
+                            )}
+                          >
+                            {task.name}
+                          </span>
+                          {task.completed && (
+                            <Check className="h-3 w-3 text-dynamic-green" />
+                          )}
+                        </div>
+                      )
+                    )}
                   {tasks.length > 5 && (
                     <div className="py-1 text-center text-xs text-muted-foreground">
                       +{tasks.length - 5} more tasks

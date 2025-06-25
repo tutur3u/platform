@@ -5,7 +5,14 @@ import { Separator } from '@tuturuuu/ui/separator';
 import { useTranslations } from 'next-intl';
 import { useTimeBlocking } from './time-blocking-provider';
 
-export default function PlanUserFilter({ users }: { users: any[] }) {
+interface PlanUser {
+  id: string;
+  display_name: string;
+  is_guest: boolean;
+  timeblock_count: number;
+}
+
+export default function PlanUserFilter({ users }: { users: PlanUser[] }) {
   const t = useTranslations('meet-together-plan-details');
   const { filteredUserIds, setFilteredUserIds } = useTimeBlocking();
 
@@ -22,6 +29,7 @@ export default function PlanUserFilter({ users }: { users: any[] }) {
         {users.length > 0 ? (
           users.map((user) => (
             <button
+              type="button"
               key={user.id}
               className={`rounded-lg border p-4 ${
                 filteredUserIds.includes(user.id)

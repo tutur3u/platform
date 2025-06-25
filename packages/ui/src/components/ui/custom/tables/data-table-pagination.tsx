@@ -26,7 +26,7 @@ interface DataTablePaginationProps<TData> {
   pageCount?: number;
   pageSize?: number;
   additionalSizes?: number[];
-  t?: any;
+  t?: (key: string) => string;
   // eslint-disable-next-line no-unused-vars
   setParams?: (params: { page?: number; pageSize?: string }) => void;
 }
@@ -71,7 +71,7 @@ export function DataTablePagination<TData>({
         className
       )}
     >
-      {count !== undefined && count > 0 ? (
+      {count !== undefined && count !== null && count > 0 ? (
         <div className="flex-none text-sm text-muted-foreground">
           {/* {locale === 'vi' || locale === 'vi-VN' ? t('common.selected') : null}{' '} */}
           {/* <span className="text-primary font-semibold">

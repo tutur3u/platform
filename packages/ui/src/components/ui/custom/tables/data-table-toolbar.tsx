@@ -17,11 +17,11 @@ interface DataTableToolbarProps<TData> {
   namespace: string | undefined;
   table: Table<TData>;
   filters?: ReactNode[] | ReactNode;
-  extraColumns?: any[];
+  extraColumns?: unknown[];
   defaultQuery?: string;
   disableSearch?: boolean;
   isEmpty: boolean;
-  t?: any;
+  t?: (key: string) => string;
   importContent?: ReactNode;
   exportContent?: ReactNode;
   onRefresh: () => void;

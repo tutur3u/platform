@@ -11,7 +11,7 @@ import { cn } from '@tuturuuu/utils/format';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import type React from 'react';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ChatList } from '@/components/chat-list';
 import { ChatPanel } from '@/components/chat-panel';
 import { ChatScrollAnchor } from '@/components/chat-scroll-anchor';
@@ -201,7 +201,10 @@ const Chat = ({
     }
 
     if (refresh) {
-      clearChat();
+      if (defaultChat?.id) return;
+      setSummary(undefined);
+      setChat(undefined);
+      setCollapsed(true);
       router.replace('/');
       router.refresh();
     }
@@ -213,11 +216,18 @@ const Chat = ({
     chats,
     count,
     initialScroll,
-    clearChat,
+    defaultChat?.id,
   ]);
 
   const [collapsed, setCollapsed] = useState(true);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  const clearChat = useCallback(() => {
+    if (defaultChat?.id) return;
+    setSummary(undefined);
+    setChat(undefined);
+    setCollapsed(true);
+  }, [defaultChat?.id]);
 
   useEffect(() => {
     if (inputRef.current) inputRef.current.focus();
@@ -281,13 +291,6 @@ const Chat = ({
       title: t('ai_chat.chat_updated'),
       description: t('ai_chat.visibility_updated_desc'),
     });
-  };
-
-  const clearChat = () => {
-    if (defaultChat?.id) return;
-    setSummary(undefined);
-    setChat(undefined);
-    setCollapsed(true);
   };
 
   useEffect(() => {

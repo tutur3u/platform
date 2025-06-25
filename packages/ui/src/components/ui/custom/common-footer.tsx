@@ -2,7 +2,13 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Separator } from '../separator';
 
-export function CommonFooter({ t, devMode }: { t: any; devMode: boolean }) {
+export function CommonFooter({
+  t,
+  devMode,
+}: {
+  t: (key: string) => string;
+  devMode: boolean;
+}) {
   const TUTURUUU_URL = devMode
     ? 'http://localhost:7803'
     : 'https://tuturuuu.com';

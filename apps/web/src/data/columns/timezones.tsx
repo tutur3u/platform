@@ -11,7 +11,7 @@ import moment from 'moment';
 import { TimezoneRowActions } from '@/components/row-actions/timezones';
 
 export const timezoneColumns = (
-  t: any,
+  t: (key: string) => string,
   namespace: string | undefined
 ): ColumnDef<Timezone>[] => [
   // {

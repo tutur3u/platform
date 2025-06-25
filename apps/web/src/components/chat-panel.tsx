@@ -478,7 +478,7 @@ export async function uploadFile(
   wsId: string,
   file: StatedFile,
   id?: string
-): Promise<{ data: any; error: any }> {
+): Promise<{ data: unknown; error: unknown }> {
   if (!id) return { data: null, error: 'No chat id provided' };
 
   const fileName = file.rawFile.name;

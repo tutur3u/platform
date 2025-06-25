@@ -15,7 +15,7 @@ export default function ReportPreview({
     score: string;
     feedback: string;
   };
-  t: any;
+  t: (key: string) => string;
   // eslint-disable-next-line no-unused-vars
   parseDynamicText: (text?: string | null) => ReactNode;
   // eslint-disable-next-line no-unused-vars

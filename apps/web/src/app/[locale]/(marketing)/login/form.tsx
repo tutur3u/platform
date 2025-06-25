@@ -244,7 +244,7 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
     }
   };
 
-  const needsMFA = async () => {
+  const needsMFA = useCallback(async () => {
     const { data: assuranceLevel } =
       await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
 
@@ -255,7 +255,7 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
       return true;
 
     return false;
-  };
+  }, [supabase.auth.mfa]);
 
   const verifyTOtp = async (data: { totp: string }) => {
     if (!data.totp) return;
@@ -275,7 +275,7 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
       }
 
       let verificationSuccess = false;
-      let lastError: any = null;
+      let lastError: unknown = null;
 
       for (const factor of verifiedFactors) {
         try {

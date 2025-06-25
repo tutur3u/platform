@@ -6,7 +6,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Input } from '../input';
 
 interface Props {
-  t: any;
+  t?: (key: string) => string;
   defaultValue?: string;
   className?: string;
   // eslint-disable-next-line no-unused-vars
@@ -15,7 +15,12 @@ interface Props {
 
 // Assuming the rest of your imports and Props interface are unchanged
 
-const SearchBar = ({ t, defaultValue = '', className, onSearch }: Props) => {
+const SearchBar = ({
+  t = () => '',
+  defaultValue = '',
+  className,
+  onSearch,
+}: Props) => {
   // Memoize the updateQuery function to ensure debounce works correctly
   const updateQuery = useCallback(
     debounce((query: string) => {

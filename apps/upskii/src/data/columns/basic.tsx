@@ -6,7 +6,7 @@ import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-col
 import moment from 'moment';
 
 export const basicColumns = (
-  t: any,
+  t: (key: string) => string,
   namespace: string | undefined
 ): ColumnDef<Entity>[] => [
   // {

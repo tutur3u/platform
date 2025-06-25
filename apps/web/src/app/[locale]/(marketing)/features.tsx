@@ -16,7 +16,7 @@ interface Feature {
   icon: ReactNode;
 }
 
-export function getFeatures(t: any): Feature[] {
+export function getFeatures(t: (key: string) => string): Feature[] {
   return [
     {
       title: t('home.features-1-title'),

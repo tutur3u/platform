@@ -63,7 +63,10 @@ const TimeBlockContext = createContext({
   setFilteredUserIds: (_: string[] | ((prev: string[]) => string[])) => {},
   setPreviewDate: (_: Date | null) => {},
   setSelectedTimeBlocks: (_: { planId?: string; data: Timeblock[] }) => {},
-  edit: (_: { mode: 'add' | 'remove'; date: Date }, __?: any) => {},
+  edit: (
+    _: { mode: 'add' | 'remove'; date: Date },
+    __?: React.MouseEvent | React.TouchEvent
+  ) => {},
   endEditing: () => {},
   setDisplayMode: (
     _?:
@@ -188,8 +191,14 @@ const TimeBlockingProvider = ({
   >();
 
   const edit = useCallback(
-    ({ mode, date }: { mode: 'add' | 'remove'; date: Date }, event?: any) => {
-      const touch = event?.touches?.[0] as Touch | undefined;
+    (
+      { mode, date }: { mode: 'add' | 'remove'; date: Date },
+      event?: React.MouseEvent | React.TouchEvent
+    ) => {
+      const touch =
+        event && 'touches' in event
+          ? (event.touches?.[0] as Touch | undefined)
+          : undefined;
 
       setEditing((prevData) => {
         const nextMode = prevData?.mode === undefined ? mode : prevData.mode;

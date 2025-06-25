@@ -13,7 +13,7 @@ import {
 
 interface DataTableColumnHeaderProps<TData, TValue>
   extends React.HTMLAttributes<HTMLDivElement> {
-  t: any;
+  t: (key: string) => string;
   column: Column<TData, TValue>;
   title?: string;
 }

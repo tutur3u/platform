@@ -361,7 +361,7 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
 
     // Sort
     filtered.sort((a, b) => {
-      let aValue: any, bValue: any;
+      let aValue: string | number, bValue: string | number;
 
       switch (sortBy) {
         case 'name':

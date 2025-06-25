@@ -38,7 +38,9 @@ export interface NavCategory {
   items: NavItem[];
 }
 
-export const useNavigation = (t: any): { categories: NavCategory[] } => {
+export const useNavigation = (
+  t: (key: string) => string
+): { categories: NavCategory[] } => {
   const products: NavItem[] = [
     {
       href: '/meet-together',

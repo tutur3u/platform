@@ -55,7 +55,7 @@ export const permissionGroups = ({
   wsId,
   user,
 }: {
-  t?: any;
+  t?: (key: string) => string;
   wsId: string;
   user: SupabaseUser | null;
 }) => {
@@ -338,7 +338,7 @@ export const permissionGroups = ({
 };
 
 export const permissions = (args: {
-  t?: any;
+  t?: (key: string) => string;
   wsId: string;
   user: SupabaseUser | null;
 }) => {

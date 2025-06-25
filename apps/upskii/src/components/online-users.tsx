@@ -27,8 +27,15 @@ interface OnlineUsersProps {
   currentUserId?: string;
 }
 
-function isValidPresence(presence: any): presence is PresenceState {
-  return !!presence?.user?.id;
+function isValidPresence(presence: unknown): presence is PresenceState {
+  return (
+    !!presence &&
+    typeof presence === 'object' &&
+    'user' in presence &&
+    !!presence.user &&
+    typeof presence.user === 'object' &&
+    'id' in presence.user
+  );
 }
 
 export function OnlineUsers({

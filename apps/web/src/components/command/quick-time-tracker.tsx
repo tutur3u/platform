@@ -40,7 +40,7 @@ const SESSION_THRESHOLDS = {
 // Helper function to calculate focus score
 const calculateFocusScore = (
   elapsedTime: number,
-  category: any,
+  category: { name?: string } | null,
   taskId: string | undefined,
   currentHour: number
 ): number => {

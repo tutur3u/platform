@@ -20,7 +20,7 @@ export default function DayPlanners({
 }) {
   const { editing } = useTimeBlocking();
 
-  function preventScroll(e: any) {
+  function preventScroll(e: Event) {
     e.preventDefault();
     return false;
   }

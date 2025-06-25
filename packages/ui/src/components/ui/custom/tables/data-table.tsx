@@ -31,8 +31,8 @@ export interface DataTableProps<TData, TValue> {
   hidePagination?: boolean;
   columns?: ColumnDef<TData, TValue>[];
   filters?: ReactNode[] | ReactNode;
-  extraColumns?: any[];
-  extraData?: any;
+  extraColumns?: Array<{ id: string; name?: string }>;
+  extraData?: Record<string, unknown>;
   newObjectTitle?: string;
   editContent?: ReactNode;
   namespace?: string | undefined;
@@ -54,16 +54,16 @@ export interface DataTableProps<TData, TValue> {
   // eslint-disable-next-line no-unused-vars
   setParams?: (params: { page?: number; pageSize?: string }) => void;
   resetParams?: () => void;
-  t?: any;
+  t?: (key: string) => string;
   columnGenerator?: (
     // eslint-disable-next-line no-unused-vars
-    t: any,
+    t: (key: string) => string,
     // eslint-disable-next-line no-unused-vars
     namespace: string | undefined,
     // eslint-disable-next-line no-unused-vars
-    extraColumns?: any[],
+    extraColumns?: Array<{ id: string; name?: string }>,
     // eslint-disable-next-line no-unused-vars
-    extraData?: any
+    extraData?: Record<string, unknown>
   ) => ColumnDef<TData, TValue>[];
 }
 
@@ -118,7 +118,7 @@ export function DataTable<TData, TValue>({
       },
     },
     pageCount:
-      count !== undefined
+      count !== undefined && count !== null
         ? Math.max(Math.ceil(count / pageSize), 1)
         : undefined,
     enableRowSelection: true,
@@ -214,10 +214,10 @@ export function DataTable<TData, TValue>({
       </div>
 
       {hidePagination ||
-        (count !== undefined && (
+        (count !== undefined && count !== null && (
           <>
             <DataTablePagination
-              t={t}
+              t={t || (() => '')}
               table={table}
               count={count}
               className="rounded-lg border bg-foreground/[0.025] px-4 py-2 backdrop-blur-xl dark:bg-foreground/5"

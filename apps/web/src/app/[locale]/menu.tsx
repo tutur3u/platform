@@ -27,7 +27,7 @@ import { type NavItem, useNavigation } from './shared/navigation-config';
 interface MenuProps {
   sbUser: SupabaseUser | null;
   user: WorkspaceUser | null;
-  t?: any;
+  t?: (key: string) => string;
 }
 
 interface NavLinkProps {

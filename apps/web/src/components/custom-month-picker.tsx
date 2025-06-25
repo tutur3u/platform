@@ -3,7 +3,12 @@
 import MonthPicker from '@tuturuuu/ui/custom/month-picker';
 import useSearchParams from '@/hooks/useSearchParams';
 
-export const CustomMonthPicker = ({ ...props }: any) => {
+interface CustomMonthPickerProps {
+  className?: string;
+  [key: string]: unknown;
+}
+
+export const CustomMonthPicker = ({ ...props }: CustomMonthPickerProps) => {
   const searchParams = useSearchParams();
 
   return (

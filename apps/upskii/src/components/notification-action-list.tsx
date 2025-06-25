@@ -18,7 +18,7 @@ export type NotificationAction = {
   label: ReactNode;
   variant?: buttonVariant;
   type?: 'WORKSPACE_INVITE_ACCEPT' | 'WORKSPACE_INVITE_DECLINE';
-  payload?: any;
+  payload?: Record<string, unknown>;
 };
 
 interface Props {

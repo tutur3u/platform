@@ -49,7 +49,7 @@ export default function Toolbar({
     };
   }, [editor]);
 
-  const generateThumbnail = async () => {
+  const generateThumbnail = useCallback(async () => {
     const shapeIds = editor.getCurrentPageShapeIds();
     if (shapeIds.size === 0) {
       throw new Error('No shapes on canvas');
@@ -63,9 +63,9 @@ export default function Toolbar({
     });
 
     return blob;
-  };
+  }, [editor]);
 
-  const generateFileName = (name: string) => {
+  const generateFileName = useCallback((name: string) => {
     const now = new Date();
     const year = now.getFullYear();
     const month = String(now.getMonth() + 1).padStart(2, '0');
@@ -75,7 +75,7 @@ export default function Toolbar({
     const seconds = String(now.getSeconds()).padStart(2, '0');
 
     return `${year}${month}${day}-${hours}-${minutes}-${seconds}-${name}`;
-  };
+  }, []);
 
   const save = useCallback(async () => {
     try {
@@ -124,7 +124,7 @@ export default function Toolbar({
         description: 'Your whiteboard has been saved.',
         variant: 'default',
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error(error);
       toast({
         title: 'Error saving',

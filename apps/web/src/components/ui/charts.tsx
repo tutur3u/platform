@@ -16,7 +16,7 @@ import {
 
 // LineChart Component
 interface LineChartProps {
-  data: any[];
+  data: Record<string, unknown>[];
   xKey: string;
   series: { key: string; name: string }[];
   colors?: string[];
@@ -70,7 +70,7 @@ export const LineChart = ({
 
 // BarChart Component
 interface BarChartProps {
-  data: any[];
+  data: Record<string, unknown>[];
   xKey: string;
   series?: { key: string; name: string }[];
   colors?: string[];

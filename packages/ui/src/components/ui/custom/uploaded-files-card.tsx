@@ -8,8 +8,14 @@ import {
 import { ScrollArea, ScrollBar } from '../scroll-area';
 import { EmptyCard } from './empty-card';
 
+interface UploadedFile {
+  key: string;
+  url: string;
+  name: string;
+}
+
 interface UploadedFilesCardProps {
-  uploadedFiles: any[];
+  uploadedFiles: UploadedFile[];
 }
 
 export function UploadedFilesCard({ uploadedFiles }: UploadedFilesCardProps) {

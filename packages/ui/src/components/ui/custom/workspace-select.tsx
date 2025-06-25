@@ -60,8 +60,12 @@ export function WorkspaceSelect({
   hideLeading,
   customRedirectSuffix,
 }: {
-  t: any;
-  localUseQuery: any;
+  t: (key: string) => string;
+  localUseQuery: <T>(options: {
+    queryKey: string[];
+    queryFn: () => Promise<T>;
+    enabled?: boolean;
+  }) => { data: T | undefined; isLoading: boolean; error: unknown };
   hideLeading?: boolean;
   customRedirectSuffix?: string;
 }) {
@@ -226,40 +230,44 @@ export function WorkspaceSelect({
               <CommandList className="max-h-64">
                 {groups.map((group) => (
                   <CommandGroup key={group.label} heading={group.label}>
-                    {group.teams.map((team: any) => (
-                      <CommandItem
-                        key={team.value}
-                        onSelect={() => {
-                          if (!team?.value || team?.value === wsId) return;
-                          onValueChange(team.value);
-                          setOpen(false);
-                        }}
-                        className={`text-sm ${
-                          group.id === 'personal' ? 'opacity-50' : ''
-                        }`}
-                        disabled={!team || group.id === 'personal'}
-                      >
-                        <Avatar className="mr-2 h-5 w-5">
-                          <AvatarImage
-                            src={`https://avatar.vercel.sh/${team.label}.png`}
-                            alt={team.label}
-                            className="grayscale"
-                          />
-                          <AvatarFallback>
-                            {getInitials(team.label)}
-                          </AvatarFallback>
-                        </Avatar>
-                        <span className="line-clamp-1">{team.label}</span>
-                        {group.id !== 'personal' && (
-                          <CheckIcon
-                            className={cn(
-                              'ml-auto h-4 w-4',
-                              wsId === team.value ? 'opacity-100' : 'opacity-0'
-                            )}
-                          />
-                        )}
-                      </CommandItem>
-                    ))}
+                    {group.teams.map(
+                      (team: { label: string; value: string }) => (
+                        <CommandItem
+                          key={team.value}
+                          onSelect={() => {
+                            if (!team?.value || team?.value === wsId) return;
+                            onValueChange(team.value);
+                            setOpen(false);
+                          }}
+                          className={`text-sm ${
+                            group.id === 'personal' ? 'opacity-50' : ''
+                          }`}
+                          disabled={!team || group.id === 'personal'}
+                        >
+                          <Avatar className="mr-2 h-5 w-5">
+                            <AvatarImage
+                              src={`https://avatar.vercel.sh/${team.label}.png`}
+                              alt={team.label}
+                              className="grayscale"
+                            />
+                            <AvatarFallback>
+                              {getInitials(team.label)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <span className="line-clamp-1">{team.label}</span>
+                          {group.id !== 'personal' && (
+                            <CheckIcon
+                              className={cn(
+                                'ml-auto h-4 w-4',
+                                wsId === team.value
+                                  ? 'opacity-100'
+                                  : 'opacity-0'
+                              )}
+                            />
+                          )}
+                        </CommandItem>
+                      )
+                    )}
                   </CommandGroup>
                 ))}
               </CommandList>

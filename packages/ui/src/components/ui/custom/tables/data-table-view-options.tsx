@@ -16,9 +16,9 @@ import { ScrollArea } from '../../scroll-area';
 
 interface DataTableViewOptionsProps<TData> {
   table: Table<TData>;
-  extraColumns?: any[];
+  extraColumns?: Array<{ id: string; name?: string }>;
   namespace: string | undefined;
-  t?: any;
+  t?: (key: string) => string;
 }
 
 export function DataTableViewOptions<TData>({
@@ -82,9 +82,10 @@ export function DataTableViewOptions<TData>({
                         (extraColumn: { id: string; name?: string }) =>
                           extraColumn.id === column.id
                       )
-                      .pop()?.name || namespace
-                      ? t?.(`${namespace}.${column.id}`)
-                      : column.id}
+                      .pop()?.name ||
+                      (namespace
+                        ? t?.(`${namespace}.${column.id}`)
+                        : column.id)}
                   </DropdownMenuCheckboxItem>
                 </Fragment>
               );
