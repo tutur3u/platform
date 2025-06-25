@@ -3563,7 +3563,8 @@
     "image_preview_not_available": "Chưa có mẫu xem trước",
     "image_preview_not_available_description": "Ảnh xem trước của mẫu chứng chỉ không có sẵn.",
     "hide_certificate_preview": "Ẩn xem mẫu chứng chỉ",
-    "show_certificate_preview": "Hiển thị xem mẫu chứng chỉ"
+    "show_certificate_preview": "Hiển thị xem mẫu chứng chỉ",
+    "self_paced": "Học tự chủ"
   },
   "ws-crawlers": {
     "plural": "Công cụ cào dữ liệu",
@@ -4549,5 +4550,6 @@
   },
   "request-feature": "Yêu cầu tính năng",
   "unlock-education-features": "Mở khóa các tính năng giáo dục",
-  "transform-your-workspace": "Biến đổi không gian làm việc của bạn với các công cụ học tập toàn diện: Tạo Các khóa học, các câu đố tương tác thiết kế, theo dõi tiến trình của sinh viên, ủy quyền giấy chứng nhận, và tận dụng các trợ lý giảng dạy hỗ trợ AI."
+  "transform-your-workspace": "Biến đổi không gian làm việc của bạn với các công cụ học tập toàn diện: Tạo Các khóa học, các câu đố tương tác thiết kế, theo dõi tiến trình của sinh viên, ủy quyền giấy chứng nhận, và tận dụng các trợ lý giảng dạy hỗ trợ AI.",
+  "courses-marketplace-description": "Khám phá các khóa học của nền tảng"
 }
