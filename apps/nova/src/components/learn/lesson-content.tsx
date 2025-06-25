@@ -78,6 +78,7 @@ export function LessonContent({ lesson }: LessonProps) {
         <nav className="space-y-1">
           {lesson.sections.map((section, index) => (
             <button
+              type="button"
               key={index}
               onClick={() => {
                 setActiveSection(index);

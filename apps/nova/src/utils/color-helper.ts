@@ -14,7 +14,7 @@ export const getTextColor = (color = defaultColor): string => {
     gray: 'text-gray-200',
   };
 
-  return colors?.[color] || colors[defaultColor]!;
+  return colors?.[color] || colors[defaultColor] || 'text-gray-500';
 };
 
 export const getBackgroundColor = (color = defaultColor): string => {
@@ -31,7 +31,7 @@ export const getBackgroundColor = (color = defaultColor): string => {
     gray: 'bg-gray-300/20',
   };
 
-  return colors?.[color] || colors[defaultColor]!;
+  return colors?.[color] || colors[defaultColor] || 'bg-gray-500';
 };
 
 export const getShadowColor = (color = defaultColor): string => {

@@ -11,7 +11,6 @@ import {
 } from '@tuturuuu/ui/legacy/calendar/settings/settings-context';
 import dayjs from 'dayjs';
 import moment from 'moment';
-import { useCalendarSync } from './use-calendar-sync';
 import 'moment/locale/vi';
 import {
   createContext,
@@ -23,6 +22,7 @@ import {
   useRef,
   useState,
 } from 'react';
+import { useCalendarSync } from './use-calendar-sync';
 
 // Utility function to round time to nearest 15-minute interval
 const roundToNearest15Minutes = (date: Date): Date => {
@@ -122,7 +122,7 @@ interface PendingEventUpdate extends Partial<CalendarEvent> {
   _timestamp: number;
   _eventId: string;
   _resolve?: (value: CalendarEvent) => void;
-  _reject?: (reason: any) => void;
+  _reject?: (reason: unknown) => void;
 }
 
 export const CalendarProvider = ({

@@ -13,8 +13,8 @@ import { cn } from '@tuturuuu/utils/format';
 import { useEffect, useState } from 'react';
 
 interface EvaluationPreview {
-  criteriaEvaluation?: any[];
-  testCaseResults?: any[];
+  criteriaEvaluation?: Array<{ score?: number; [key: string]: unknown }>;
+  testCaseResults?: Array<{ [key: string]: unknown }>;
   submissionId?: string;
   overallAssessment?: string;
   testCaseScores?: {
@@ -93,6 +93,7 @@ export function LiveScoresDisplay({
                     className="h-20 w-20 -rotate-90 transform"
                     viewBox="0 0 100 100"
                   >
+                    <title>Score progress indicator</title>
                     <circle
                       cx="50"
                       cy="50"

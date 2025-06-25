@@ -1,13 +1,13 @@
 'use client';
 
-import Error from 'next/error';
+import NextErrorComponent from 'next/error';
 
 export default function GlobalError() {
   return (
-    <html>
+    <html lang="en">
       <body>
         {/* This is the default Next.js error component, but it doesn't allow omitting the statusCode property yet. */}
-        <Error statusCode={undefined as any} />
+        <NextErrorComponent statusCode={500} />
       </body>
     </html>
   );

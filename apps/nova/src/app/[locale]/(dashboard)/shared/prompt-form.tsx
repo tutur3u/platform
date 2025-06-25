@@ -12,7 +12,6 @@ import {
   type ProgressUpdate,
   STEP_CONFIG,
 } from '@/lib/streaming';
-import { getFullSubmission } from './actions';
 import '@/styles/evaluation-animations.css';
 import type {
   NovaProblem,
@@ -28,6 +27,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { cn } from '@tuturuuu/utils/format';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { getFullSubmission } from './actions';
 
 interface Props {
   problem: NovaProblem & {
@@ -41,8 +41,8 @@ type EnrichedSubmission = NovaSubmissionWithScores &
   Partial<NovaSubmissionData>;
 
 interface EvaluationPreview {
-  criteriaEvaluation?: any[];
-  testCaseResults?: any[];
+  criteriaEvaluation?: Array<{ score?: number; [key: string]: unknown }>;
+  testCaseResults?: Array<{ [key: string]: unknown }>;
   submissionId?: string;
   overallAssessment?: string;
   testCaseScores?: {
@@ -257,22 +257,27 @@ export default function PromptForm({ problem, session, submissions }: Props) {
         criteriaScores: evaluation.criteriaEvaluation
           ? {
               totalScore: evaluation.criteriaEvaluation.reduce(
-                (sum: number, criteria: any) => sum + (criteria.score || 0),
+                (
+                  sum: number,
+                  criteria: { score?: number; [key: string]: unknown }
+                ) => sum + (criteria.score || 0),
                 0
               ),
-              maxScore: evaluation.criteriaEvaluation.length * 10,
-              percentage:
-                evaluation.criteriaEvaluation.length > 0
+              maxScore:
+                evaluation.criteriaEvaluation.length * 10 ||
+                (evaluation.criteriaEvaluation?.length
                   ? Math.round(
                       (evaluation.criteriaEvaluation.reduce(
-                        (sum: number, criteria: any) =>
-                          sum + (criteria.score || 0),
+                        (
+                          sum: number,
+                          criteria: { score?: number; [key: string]: unknown }
+                        ) => sum + (criteria.score || 0),
                         0
                       ) /
                         (evaluation.criteriaEvaluation.length * 10)) *
                         100
                     )
-                  : 0,
+                  : 0),
             }
           : undefined,
       }));

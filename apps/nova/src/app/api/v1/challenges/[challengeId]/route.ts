@@ -102,7 +102,7 @@ export async function PUT(request: Request, { params }: Params) {
   }
 
   try {
-    const updateData: any = {};
+    const updateData: Record<string, unknown> = {};
 
     if (body.title !== undefined) updateData.title = body.title;
     if (body.description !== undefined)

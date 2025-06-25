@@ -87,7 +87,7 @@ export function SubmissionCard({
                 variant="outline"
                 size="sm"
                 className="h-7 gap-1 text-xs"
-                onClick={() => onRequestFetch?.(submission.id!)}
+                onClick={() => submission.id && onRequestFetch?.(submission.id)}
               >
                 <RefreshCw className="h-3 w-3" />
                 Load details

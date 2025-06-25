@@ -8,7 +8,7 @@ export default function ScoreBadge({
   className,
   children,
 }: {
-  variant?: any;
+  variant?: 'default' | 'secondary' | 'destructive' | 'outline' | null;
   score: number;
   maxScore: number;
   className?: string;

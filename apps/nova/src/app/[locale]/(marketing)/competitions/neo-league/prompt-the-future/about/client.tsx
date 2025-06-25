@@ -219,11 +219,15 @@ export function AboutUsClient() {
     );
   }, []);
 
-  const getOrganizerInfo = (t: any, tKey: string, type = 'organizers') => ({
-    name: t(`${type}.members.${tKey}.name` as unknown as any),
-    role: t(`${type}.members.${tKey}.role` as unknown as any),
-    organization: t(`${type}.members.${tKey}.organization` as unknown as any),
-    bio: t(`${type}.members.${tKey}.bio` as unknown as any),
+  const getOrganizerInfo = (
+    t: (key: string) => string,
+    tKey: string,
+    type = 'organizers'
+  ) => ({
+    name: t(`${type}.members.${tKey}.name`),
+    role: t(`${type}.members.${tKey}.role`),
+    organization: t(`${type}.members.${tKey}.organization`),
+    bio: t(`${type}.members.${tKey}.bio`),
   });
 
   // Render team member card with enhanced design
@@ -378,10 +382,8 @@ export function AboutUsClient() {
 
   // Render sponsor card with enhanced design
   const renderSponsor = (sponsor: Sponsor) => {
-    const name = t(`sponsors.${sponsor.tKey}.name` as unknown as any);
-    const description = t(
-      `sponsors.${sponsor.tKey}.description` as unknown as any
-    );
+    const name = t(`sponsors.${sponsor.tKey}.name`);
+    const description = t(`sponsors.${sponsor.tKey}.description`);
 
     const tierColors = {
       host: 'from-black to-black border-black/50 border dark:from-[#E5E4E2] dark:to-[#B9B8B5] dark:border-white/50',

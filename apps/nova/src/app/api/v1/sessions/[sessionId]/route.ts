@@ -86,7 +86,7 @@ export async function PUT(request: Request, { params }: Params) {
       );
     }
 
-    const updateData: any = {};
+    const updateData: Record<string, unknown> = {};
     if (body.startTime !== undefined) updateData.start_time = body.startTime;
     if (body.endTime !== undefined) updateData.end_time = body.endTime;
     if (body.status !== undefined) updateData.status = body.status;

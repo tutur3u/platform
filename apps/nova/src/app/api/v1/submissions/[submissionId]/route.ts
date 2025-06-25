@@ -85,7 +85,7 @@ export async function PUT(request: Request, { params }: Params) {
       );
     }
 
-    const updateData: any = {};
+    const updateData: Record<string, unknown> = {};
     if (body.prompt !== undefined) updateData.prompt = body.prompt;
     if (body.problemId !== undefined) updateData.problem_id = body.problemId;
     if (body.sessionId !== undefined) updateData.session_id = body.sessionId;
