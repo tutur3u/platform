@@ -12,8 +12,23 @@ import {
   AlertDialogTitle,
 } from '@ncthub/ui/alert-dialog';
 import { Button } from '@ncthub/ui/button';
+import { Card, CardContent } from '@ncthub/ui/card';
+import { Input } from '@ncthub/ui/input';
+import { Badge } from '@ncthub/ui/badge';
 import { useToast } from '@ncthub/ui/hooks/use-toast';
-import { Pencil, Save, Trash2 } from '@ncthub/ui/icons';
+import {
+  Pencil,
+  Save,
+  Trash2,
+  Search,
+  Calendar,
+  Filter,
+  X,
+  ChevronLeft,
+  ChevronRight,
+  UserPlus,
+  Download
+} from '@ncthub/ui/icons';
 import {
   Table,
   TableBody,
@@ -23,6 +38,7 @@ import {
   TableRow,
 } from '@ncthub/ui/table';
 import React, { useState } from 'react';
+import { cn } from '@ncthub/utils/format';
 
 interface StudentListProps {
   students: Student[];
@@ -52,6 +68,7 @@ export default function StudentList({
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
   const { toast } = useToast();
 
   const handleEdit = (id: string) => {
@@ -106,7 +123,7 @@ export default function StudentList({
     return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
   });
 
-  const itemsPerPage = 10;
+  const itemsPerPage = 8;
   const totalPages = Math.ceil(sortedItems.length / itemsPerPage);
   const currentItems = sortedItems.slice(
     (currentPage - 1) * itemsPerPage,
@@ -154,7 +171,7 @@ export default function StudentList({
       minute: '2-digit',
       second: '2-digit',
     });
-    const filename = `${timestamp}.csv`;
+    const filename = `students_${timestamp}.csv`;
     const a = document.createElement('a');
 
     a.setAttribute('href', url);
@@ -163,82 +180,152 @@ export default function StudentList({
     URL.revokeObjectURL(url);
 
     toast({
-      title: 'CSV Exported',
-      description: 'CSV file has been downloaded successfully',
+      title: 'Export Successful',
+      description: 'Student data has been exported to CSV file',
     });
   };
 
+  const clearFilters = () => {
+    setStartDate(null);
+    setEndDate(null);
+    setSearchTerm('');
+    onDateRangeApply(null, null);
+  };
+
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold text-primary">Student List</h2>
-        <div className="flex gap-2">
+    <div className="space-y-6">
+      {/* Actions */}
+      <div className="flex justify-end">
+        <div className="flex items-center gap-4">
           <AddStudentDialog
             trigger={
-              <Button className="rounded-lg px-4 py-2 transition">
+              <Button className="bg-blue-500 hover:bg-blue-600 shadow-lg">
+                <UserPlus className="h-4 w-4 mr-2" />
                 Add Manually
               </Button>
             }
             onAdd={onAdd}
           />
-
           <Button
             onClick={exportToCSV}
-            className={`rounded-lg px-4 py-2 ${currentItems.length === 0 && 'opacity-50'
-              }`}
-            disabled={currentItems.length === 0}
-          >
-            Export to CSV
-          </Button>
-        </div>
-      </div>
-
-      <div className="flex flex-wrap gap-4 p-4">
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-medium">Start Date:</span>
-          <DatePicker
-            date={startDate}
-            setDate={setStartDate}
-            placeholder="Select start date"
-          />
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-medium">End Date:</span>
-          <DatePicker
-            date={endDate}
-            setDate={setEndDate}
-            placeholder="Select end date"
-          />
-        </div>
-        <div className="flex gap-2">
-          <Button
             variant="outline"
-            onClick={() => {
-              setStartDate(null);
-              setEndDate(null);
-              onDateRangeApply(null, null);
-            }}
+            disabled={currentItems.length === 0}
+            className="shadow-lg"
           >
-            Clear
-          </Button>
-          <Button
-            onClick={() => {
-              onDateRangeApply(startDate, endDate);
-            }}
-            disabled={!startDate && !endDate}
-          >
-            Apply
+            <Download className="h-4 w-4 mr-2" />
+            Export CSV
           </Button>
         </div>
       </div>
 
-      <input
-        type="text"
-        placeholder="Search by name, ID, or program..."
-        value={searchTerm}
-        onChange={(e) => setSearchTerm(e.target.value)}
-        className="w-full rounded-lg border p-2 focus:ring-2 focus:ring-[#4896ac] focus:outline-hidden"
-      />
+      {/* Search and Filters */}
+      <Card className="border-0 shadow-lg bg-background/80">
+        <CardContent className="p-6">
+          <div className="space-y-4">
+            {/* Search Bar */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+              <Input
+                placeholder="Search by name, student number, or program..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 h-12 text-base border-2 focus:border-blue-500 focus:ring-blue-500/20 focus:ring-4"
+              />
+              {searchTerm && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSearchTerm('')}
+                  className="absolute right-2 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+
+            {/* Filter Toggle */}
+            <div className="flex items-center justify-between">
+              <Button
+                variant="outline"
+                onClick={() => setShowFilters(!showFilters)}
+                className="flex items-center gap-2"
+              >
+                <Filter className="h-4 w-4" />
+                Date Filters
+                {(startDate || endDate) && (
+                  <Badge variant="secondary" className="ml-1">
+                    Active
+                  </Badge>
+                )}
+              </Button>
+
+              {(startDate || endDate || searchTerm) && (
+                <Button
+                  variant="ghost"
+                  onClick={clearFilters}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  Clear All Filters
+                </Button>
+              )}
+            </div>
+
+            {/* Date Filters */}
+            {showFilters && (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                    <Calendar className="h-4 w-4" />
+                    Start Date
+                  </label>
+                  <DatePicker
+                    date={startDate}
+                    setDate={setStartDate}
+                    placeholder="Select start date"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                    <Calendar className="h-4 w-4" />
+                    End Date
+                  </label>
+                  <DatePicker
+                    date={endDate}
+                    setDate={setEndDate}
+                    placeholder="Select end date"
+                  />
+                </div>
+                <div className="flex items-end">
+                  <Button
+                    onClick={() => onDateRangeApply(startDate, endDate)}
+                    disabled={!startDate && !endDate}
+                    className="w-full bg-green-500 hover:bg-green-600"
+                  >
+                    Apply Filters
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Results Summary */}
+      <div className="flex items-center justify-between text-sm text-gray-600">
+        <span>
+          Showing {currentItems.length} of {sortedItems.length} students
+          {searchTerm && (
+            <span className="ml-1">
+              matching "<strong>{searchTerm}</strong>"
+            </span>
+          )}
+        </span>
+        {sortedItems.length > itemsPerPage && (
+          <span>
+            Page {currentPage} of {totalPages}
+          </span>
+        )}
+      </div>
 
       <div className="overflow-x-auto">
         <Table className="min-w-full overflow-hidden rounded-lg bg-primary-foreground">
@@ -341,43 +428,78 @@ export default function StudentList({
         </Table>
       </div>
 
+      {/* Pagination */}
       {totalPages > 1 && (
-        <div className="mt-4 flex justify-center space-x-2">
+        <div className="flex items-center justify-center gap-4">
           <Button
+            variant="outline"
             onClick={prevPage}
             disabled={currentPage === 1}
-            className={`rounded-lg px-4 py-2 ${currentPage === 1 ? 'bg-gray-300' : 'text-white'
-              }`}
+            className="flex items-center gap-2"
           >
+            <ChevronLeft className="h-4 w-4" />
             Previous
           </Button>
-          <span className="px-4 py-2">
-            Page {currentPage} of {totalPages}
-          </span>
+
+          <div className="flex items-center gap-2">
+            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+              const pageNum = i + 1;
+              const actualPage = currentPage <= 3
+                ? pageNum
+                : currentPage >= totalPages - 2
+                  ? totalPages - 4 + pageNum
+                  : currentPage - 2 + pageNum;
+
+              if (actualPage < 1 || actualPage > totalPages) return null;
+
+              return (
+                <Button
+                  key={actualPage}
+                  variant={currentPage === actualPage ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setCurrentPage(actualPage)}
+                  className={cn(
+                    "w-10 h-10",
+                    currentPage === actualPage && "bg-blue-500 hover:bg-blue-600"
+                  )}
+                >
+                  {actualPage}
+                </Button>
+              );
+            })}
+          </div>
+
           <Button
+            variant="outline"
             onClick={nextPage}
             disabled={currentPage === totalPages}
-            className={`rounded-lg px-4 py-2 ${currentPage === totalPages ? 'bg-gray-300' : 'text-white'
-              }`}
+            className="flex items-center gap-2"
           >
             Next
+            <ChevronRight className="h-4 w-4" />
           </Button>
         </div>
       )}
 
+      {/* Delete Confirmation Dialog */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Record</AlertDialogTitle>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <Trash2 className="h-5 w-5 text-red-500" />
+              Delete Student Record
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete this record? This action cannot be
-              undone.
+              Are you sure you want to delete this student record? This action cannot be undone and will permanently remove all associated information.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={() => handleDelete(deleteID)}>
-              Delete
+            <AlertDialogAction
+              onClick={() => handleDelete(deleteID)}
+              className="bg-red-500 hover:bg-red-600 text-white"
+            >
+              Delete Record
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

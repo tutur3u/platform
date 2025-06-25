@@ -7,6 +7,7 @@ import { useToast } from '@ncthub/ui/hooks/use-toast';
 import Link from 'next/link';
 import React, { useCallback, useEffect, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
+import { ArrowLeft } from '@ncthub/ui/icons';
 
 export default function Page() {
   const [students, setStudents] = useState<Student[]>([]);
@@ -187,6 +188,30 @@ export default function Page() {
 
   return (
     <div className="container min-h-screen mx-auto">
+      <div className="mt-4">
+        <Link href="/scanner">
+          <Button
+            variant="outline"
+            size="lg"
+            className="h-12 text-base font-medium bg-primary/10 hover:bg-primary/20"
+          >
+            <ArrowLeft className="h-5 w-5 mr-2" />
+            Back to Capture Page
+          </Button>
+        </Link>
+      </div>
+
+      <div className="px-4 py-16">
+        <div className="text-center space-y-4">
+          <h1 className="text-4xl md:text-6xl font-bold bg-gradient-to-r from-dynamic-light-blue to-dynamic-blue bg-clip-text text-transparent">
+            Student Records
+          </h1>
+          <p className="text-xl text-dynamic-light-sky max-w-2xl mx-auto">
+            Manage and track student information
+          </p>
+        </div>
+      </div>
+
       <StudentList
         students={students}
         onAdd={handleAddStudent}
@@ -194,12 +219,6 @@ export default function Page() {
         onDelete={handleDeleteStudent}
         onDateRangeApply={handleDateRangeApply}
       />
-
-      <div className="mt-4 flex justify-center">
-        <Link href="/scanner">
-          <Button className="rounded-lg px-4 py-2">Back to Capture Page</Button>
-        </Link>
-      </div>
     </div>
   );
 }

@@ -14,7 +14,21 @@ import {
   AlertDialogTitle,
 } from '@ncthub/ui/alert-dialog';
 import { Button } from '@ncthub/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@ncthub/ui/card';
+import { Badge } from '@ncthub/ui/badge';
 import { useToast } from '@ncthub/ui/hooks/use-toast';
+import { Separator } from '@ncthub/ui/separator';
+import {
+  Camera,
+  Users,
+  Upload,
+  Trash2,
+  TrendingUp,
+  Clock,
+  Scan,
+  Database,
+  FileText
+} from '@ncthub/ui/icons';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
@@ -178,55 +192,199 @@ export default function Page() {
     }
   };
 
+  // Stats calculations
+  const todayCount = students.filter(
+    s => new Date(s.timestamp).toDateString() === new Date().toDateString()
+  ).length;
+
+  const thisWeekCount = students.filter(s => {
+    const studentDate = new Date(s.timestamp);
+    const weekAgo = new Date();
+    weekAgo.setDate(weekAgo.getDate() - 7);
+    return studentDate >= weekAgo;
+  }).length;
+
   return (
     <div className="container min-h-screen mx-auto">
-      <div className="flex flex-col gap-8 md:flex-row mt-4">
-        <div className="flex-1 p-2 md:w-1/2 space-y-4">
-          <VideoCapture handleNewStudent={handleNewStudent} />
-          <StudentForm
-            defaultValues={newStudent ? {
-              name: newStudent.name,
-              studentNumber: newStudent.studentNumber,
-              program: newStudent.program ?? undefined,
-            } : undefined}
-            onSubmit={(data) => {
-              handleAddStudent(data.name, data.studentNumber, data.program ?? null);
-              setNewStudent(null);
-            }}
-          />
+      {/* Hero Section */}
+      <div className="px-4 py-16">
+        <div className="text-center space-y-4">
+          <h1 className="text-4xl md:text-6xl font-bold bg-gradient-to-r from-dynamic-light-blue to-dynamic-blue bg-clip-text text-transparent">
+            Student ID Scanner
+          </h1>
+          <p className="text-xl text-dynamic-light-sky max-w-2xl mx-auto">
+            Effortlessly capture and manage student information with our AI-powered scanning technology
+          </p>
+        </div>
+      </div>
+
+      <div className="px-4 py-8">
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white border-0 shadow-lg">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-blue-100 text-sm font-medium">Total Students</p>
+                  <p className="text-3xl font-bold">{students.length}</p>
+                </div>
+                <Users className="h-8 w-8 text-blue-200" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-br from-green-500 to-green-600 text-white border-0 shadow-lg">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-green-100 text-sm font-medium">Today</p>
+                  <p className="text-3xl font-bold">{todayCount}</p>
+                </div>
+                <Clock className="h-8 w-8 text-green-200" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-br from-purple-500 to-purple-600 text-white border-0 shadow-lg">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-purple-100 text-sm font-medium">This Week</p>
+                  <p className="text-3xl font-bold">{thisWeekCount}</p>
+                </div>
+                <TrendingUp className="h-8 w-8 text-purple-200" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-br from-orange-500 to-orange-600 text-white border-0 shadow-lg">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-orange-100 text-sm font-medium">Pending Upload</p>
+                  <p className="text-3xl font-bold">{students.length}</p>
+                </div>
+                <Upload className="h-8 w-8 text-orange-200" />
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
-        <div className="flex-1 p-2 md:w-1/2 space-y-4">
-          <StudentList
-            students={filteredStudents}
-            onAdd={handleAddStudent}
-            onUpdate={handleUpdateStudent}
-            onDelete={handleDeleteStudent}
-            onDateRangeApply={handleDateRangeApply}
-          />
+        {/* Main Content */}
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+          {/* Scanner Section */}
+          <div className="space-y-6">
+            <Card className="border-0 shadow-xl">
+              <CardHeader className="pb-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg">
+                    <Camera className="h-5 w-5 text-white" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-xl">ID Scanner</CardTitle>
+                    <CardDescription>Point camera at student ID to capture information</CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <VideoCapture handleNewStudent={handleNewStudent} />
+              </CardContent>
+            </Card>
 
-          <div className="flex justify-center gap-4">
-            <Button
-              className={`rounded-lg bg-red-500 px-4 py-2 text-white hover:bg-red-600 ${students.length === 0 && 'opacity-50'
-                }`}
-              disabled={students.length === 0}
-              onClick={() => setShowClearDialog(true)}
-            >
-              Clear History
-            </Button>
-            <Button
-              className={`rounded-lg bg-green-500 px-4 py-2 text-white hover:bg-green-600 ${students.length === 0 && 'opacity-50'
-                }`}
-              disabled={students.length === 0}
-              onClick={handleUpload}
-            >
-              Upload to Database
-            </Button>
+            <Card className="border-0 shadow-xl">
+              <CardHeader className="pb-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg">
+                    <FileText className="h-5 w-5 text-white" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-xl">Student Information</CardTitle>
+                    <CardDescription>Review and complete student details</CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <StudentForm
+                  defaultValues={newStudent ? {
+                    name: newStudent.name,
+                    studentNumber: newStudent.studentNumber,
+                    program: newStudent.program ?? undefined,
+                  } : undefined}
+                  onSubmit={(data) => {
+                    handleAddStudent(data.name, data.studentNumber, data.program ?? null);
+                    setNewStudent(null);
+                  }}
+                />
+              </CardContent>
+            </Card>
           </div>
 
-          <div className="flex justify-center">
+          {/* Student List Section */}
+          <div className="space-y-6">
+            <Card className="border-0 shadow-xl">
+              <CardHeader className="pb-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg">
+                      <Users className="h-5 w-5 text-white" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-xl">Student Records</CardTitle>
+                      <CardDescription>Manage captured student information</CardDescription>
+                    </div>
+                  </div>
+                  <Badge variant="secondary" className="px-3 py-1">
+                    {filteredStudents.length} students
+                  </Badge>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <StudentList
+                  students={filteredStudents}
+                  onAdd={handleAddStudent}
+                  onUpdate={handleUpdateStudent}
+                  onDelete={handleDeleteStudent}
+                  onDateRangeApply={handleDateRangeApply}
+                />
+              </CardContent>
+            </Card>
+
+            {/* Action Buttons */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Button
+                size="lg"
+                variant="destructive"
+                className="h-14 text-base font-medium shadow-lg"
+                disabled={students.length === 0}
+                onClick={() => setShowClearDialog(true)}
+              >
+                <Trash2 className="h-5 w-5 mr-2" />
+                Clear History
+              </Button>
+
+              <Button
+                size="lg"
+                className="h-14 text-base font-medium bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 shadow-lg"
+                disabled={students.length === 0}
+                onClick={handleUpload}
+              >
+                <Database className="h-5 w-5 mr-2" />
+                Upload to Database
+              </Button>
+            </div>
+
+            <Separator />
+
+            {/* View All Button */}
             <Link href="/scanner/list">
-              <Button className="rounded-lg px-4 py-2">View all students</Button>
+              <Button
+                variant="outline"
+                size="lg"
+                className="w-full h-14 text-base font-medium bg-primary/10 hover:bg-primary/20"
+              >
+                <Scan className="h-5 w-5 mr-2" />
+                View All Students
+              </Button>
             </Link>
           </div>
         </div>
@@ -234,15 +392,22 @@ export default function Page() {
         <AlertDialog open={showClearDialog} onOpenChange={setShowClearDialog}>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>Clear History</AlertDialogTitle>
+              <AlertDialogTitle className="flex items-center gap-2">
+                <Trash2 className="h-5 w-5 text-red-500" />
+                Clear History
+              </AlertDialogTitle>
               <AlertDialogDescription>
-                Are you sure you want to clear the history? This action cannot be
-                undone.
+                Are you sure you want to clear all student records? This action cannot be undone and will permanently delete all captured student information.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={handleClear}>Clear</AlertDialogAction>
+              <AlertDialogAction
+                onClick={handleClear}
+                className="bg-red-500 hover:bg-red-600 text-white"
+              >
+                Clear All Records
+              </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>

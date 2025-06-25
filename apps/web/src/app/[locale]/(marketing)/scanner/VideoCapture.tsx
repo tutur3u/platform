@@ -3,7 +3,15 @@
 import { Button } from '@ncthub/ui/button';
 import { useToast } from '@ncthub/ui/hooks/use-toast';
 import { LoadingIndicator } from '@ncthub/ui/custom/loading-indicator';
+import {
+  Camera,
+  CameraOff,
+  Scan,
+  Zap,
+  AlertCircle
+} from '@ncthub/ui/icons';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { cn } from '@ncthub/utils/format';
 
 interface VideoCaptureProps {
   handleNewStudent: (name: string, studentNumber: string) => void;
@@ -12,6 +20,7 @@ interface VideoCaptureProps {
 export default function VideoCapture({ handleNewStudent }: VideoCaptureProps) {
   const [cameraOn, setCameraOn] = useState<boolean>(false);
   const [capturing, setCapturing] = useState<boolean>(false);
+  const [isReady, setIsReady] = useState<boolean>(false);
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -28,11 +37,20 @@ export default function VideoCapture({ handleNewStudent }: VideoCaptureProps) {
         }
 
         const stream = await devices.getUserMedia({
-          video: { facingMode: 'environment' },
+          video: {
+            facingMode: 'environment',
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          },
         });
+
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
           streamRef.current = stream;
+
+          videoRef.current.onloadedmetadata = () => {
+            setIsReady(true);
+          };
         }
 
         setCameraOn(true);
@@ -56,11 +74,12 @@ export default function VideoCapture({ handleNewStudent }: VideoCaptureProps) {
       }
 
       setCameraOn(false);
+      setIsReady(false);
     }
   };
 
   const startCapture = () => {
-    if (cameraOn && !capturing) {
+    if (cameraOn && !capturing && isReady) {
       setCapturing(true);
       // Pause the video to freeze the frame
       if (videoRef.current) {
@@ -78,7 +97,7 @@ export default function VideoCapture({ handleNewStudent }: VideoCaptureProps) {
         canvasRef.current.height = videoRef.current.videoHeight;
         context.drawImage(videoRef.current, 0, 0);
 
-        const imageData = canvasRef.current.toDataURL('image/webp');
+        const imageData = canvasRef.current.toDataURL('image/webp', 0.8);
         try {
           const response = await fetch(`/api/capture`, {
             method: 'POST',
@@ -97,20 +116,22 @@ export default function VideoCapture({ handleNewStudent }: VideoCaptureProps) {
           if (data.name && data.studentNumber) {
             handleNewStudent(data.name, data.studentNumber);
             toast({
-              title: 'Student information detected',
-              description: 'Detected student information successfully',
+              title: 'Student Information Detected',
+              description: `Found: ${data.name} (${data.studentNumber})`
             });
           } else {
             toast({
-              title: 'Could not detect student information',
-              description: 'Could not detect student information from the ID card.',
+              title: 'No Student Information Found',
+              description: 'Please ensure the ID card is clearly visible and try again.',
               variant: 'destructive',
             });
           }
-        } catch {
+        } catch (error) {
+          console.error('Capture error:', error);
+
           toast({
-            title: 'Could not detect student information',
-            description: 'Could not detect student information from the ID card.',
+            title: 'Processing Failed',
+            description: 'Unable to process the image. Please check your connection and try again.',
             variant: 'destructive',
           });
         } finally {
@@ -122,63 +143,150 @@ export default function VideoCapture({ handleNewStudent }: VideoCaptureProps) {
         }
       }
     }
-  }, [handleNewStudent]);
+  }, [handleNewStudent, toast]);
 
   useEffect(() => {
     if (!cameraOn) {
       setCapturing(false);
+      setIsReady(false);
     }
   }, [cameraOn]);
 
   return (
-    <div className="space-y-4">
-      <div className="relative aspect-video">
+    <div className="space-y-6">
+      {/* Video Container */}
+      <div className={cn(
+        "relative aspect-video rounded-2xl overflow-hidden border-4 transition-all duration-300",
+        cameraOn
+          ? "border-blue-500 shadow-lg shadow-blue-500/25"
+          : "border-gray-200"
+      )}>
         <video
           ref={videoRef}
           autoPlay
           playsInline
           muted
-          className="h-full w-full rounded-lg border border-gray-300 object-cover shadow-md"
-        ></video>
+          className="h-full w-full object-cover"
+        />
 
-        {cameraOn && (
-          <div className="absolute top-1/2 left-1/2 h-3/5 w-3/5 -translate-x-1/2 -translate-y-1/2 border-4 border-red-500"></div>
+        {/* Camera Off Placeholder */}
+        {!cameraOn && (
+          <div className="absolute inset-0 flex items-center justify-center bg-background/75">
+            <div className="text-center space-y-4">
+              <div className="mx-auto w-16 h-16 bg-dynamic-light-gray rounded-full flex items-center justify-center">
+                <CameraOff className="h-8 w-8 text-dynamic-gray" />
+              </div>
+              <div className="space-y-2">
+                <p className="text-lg font-medium text-gray-700">Camera is Off</p>
+                <p className="text-sm text-gray-500">Click "Turn On Camera" to start scanning</p>
+              </div>
+            </div>
+          </div>
         )}
 
-        {/* Dark overlay and loading indicator when capturing */}
+        {/* Scanning Overlay */}
+        {cameraOn && isReady && (
+          <>
+            {/* Scanning Grid */}
+            <div className="absolute inset-0 pointer-events-none">
+              <div className="absolute top-1/2 left-1/2 w-80 h-48 -translate-x-1/2 -translate-y-1/2">
+                {/* Corner Brackets */}
+                <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-white rounded-tl-lg shadow-lg"></div>
+                <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-white rounded-tr-lg shadow-lg"></div>
+                <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-white rounded-bl-lg shadow-lg"></div>
+                <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-white rounded-br-lg shadow-lg"></div>
+
+                {/* Center Crosshair */}
+                <div className="absolute top-1/2 left-1/2 w-6 h-6 -translate-x-1/2 -translate-y-1/2">
+                  <div className="w-full h-0.5 bg-white shadow-lg"></div>
+                  <div className="w-0.5 h-full bg-white shadow-lg absolute top-0 left-1/2 -translate-x-1/2"></div>
+                </div>
+              </div>
+            </div>
+
+            {/* Instructions */}
+            <div className="absolute top-4 left-4 right-4">
+              <div className="bg-black/60 backdrop-blur-sm rounded-lg px-4 py-2 text-white text-sm text-center">
+                <Scan className="inline h-4 w-4 mr-2" />
+                Position student ID card within the frame
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* Processing Overlay */}
         {capturing && (
-          <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-black/50">
-            <div className="flex flex-col items-center gap-4">
-              <LoadingIndicator className="h-8 w-8 text-white" />
-              <span className="font-medium text-white">Processing...</span>
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm gap-2 flex flex-col items-center justify-center">
+            <div className="relative">
+              <LoadingIndicator className="h-12 w-12 text-white mx-auto" />
+            </div>
+            <div className="space-y-2 text-center">
+              <p className="text-lg font-semibold text-white">Processing Image...</p>
+              <p className="text-sm text-white/80">Extracting student information</p>
             </div>
           </div>
         )}
       </div>
 
-      <canvas ref={canvasRef} className="hidden"></canvas>
+      <canvas ref={canvasRef} className="hidden" />
 
-      <div className="flex justify-center gap-2">
+      {/* Control Buttons */}
+      <div className="flex gap-4">
         <Button
           onClick={toggleCamera}
-          className={`rounded-lg px-4 py-2 font-medium ${cameraOn
-            ? 'bg-red-500 text-white hover:bg-red-600'
-            : 'bg-green-500 text-white hover:bg-green-600'
-            }`}
+          size="lg"
+          variant={cameraOn ? "destructive" : "default"}
+          className={cn(
+            "flex-1 h-14 text-base font-medium transition-all duration-200",
+            cameraOn
+              ? "bg-red-500 hover:bg-red-600 shadow-lg shadow-red-500/25"
+              : "bg-blue-500 hover:bg-blue-600 text-white shadow-lg shadow-blue-500/25"
+          )}
         >
-          {cameraOn ? 'Turn Off' : 'Turn On'}
+          {cameraOn ? (
+            <>
+              <CameraOff className="h-5 w-5 mr-2" />
+              Turn Off Camera
+            </>
+          ) : (
+            <>
+              <Camera className="h-5 w-5 mr-2" />
+              Turn On Camera
+            </>
+          )}
         </Button>
+
         <Button
           onClick={startCapture}
-          className={`rounded-lg px-4 py-2 font-medium ${!cameraOn || capturing
-            ? 'opacity-50'
-            : 'bg-blue-500 text-white hover:bg-blue-600'
-            }`}
-          disabled={!cameraOn || capturing}
+          size="lg"
+          disabled={!cameraOn || capturing || !isReady}
+          className={cn(
+            "flex-1 h-14 text-base font-medium transition-all duration-200",
+            "bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 text-white shadow-lg",
+            (!cameraOn || capturing || !isReady) && "opacity-50 cursor-not-allowed"
+          )}
         >
-          {capturing ? 'Capturing...' : 'Capture'}
+          {capturing ? (
+            <>
+              <LoadingIndicator className="h-5 w-5 mr-2" />
+              Processing...
+            </>
+          ) : (
+            <>
+              <Zap className="h-5 w-5 mr-2" />
+              Capture ID
+            </>
+          )}
         </Button>
       </div>
+
+      {/* Status Messages */}
+      {cameraOn && !isReady && (
+        <div className="flex items-center justify-center gap-2 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+          <AlertCircle className="h-5 w-5 text-amber-600" />
+          <span className="text-amber-800 font-medium">Camera is starting up...</span>
+        </div>
+      )}
     </div>
   );
 }

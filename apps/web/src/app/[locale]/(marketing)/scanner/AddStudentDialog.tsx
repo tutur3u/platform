@@ -3,10 +3,12 @@
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
 } from '@ncthub/ui/dialog';
+import { UserPlus } from '@ncthub/ui/icons';
 import { useState } from 'react';
 import StudentForm, { type StudentFormData } from './StudentForm';
 
@@ -29,15 +31,25 @@ export default function AddStudentDialog({
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
-      <DialogContent className="p-6">
-        <DialogHeader className="relative flex items-center justify-between">
-          <DialogTitle className="text-xl font-semibold">
-            Add New Student
-          </DialogTitle>
+      <DialogContent>
+        <DialogHeader className="space-y-4">
+          <div className="flex items-center gap-2">
+            <div className="p-2 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg">
+              <UserPlus className="h-5 w-5 text-white" />
+            </div>
+            <div className="space-y-1">
+              <DialogTitle className="text-xl font-semibold">
+                Add New Student
+              </DialogTitle>
+              <DialogDescription className="text-gray-600">
+                Manually add a student record to the database
+              </DialogDescription>
+            </div>
+          </div>
         </DialogHeader>
-        <StudentForm
-          onSubmit={handleSubmit}
-        />
+        <div className="mt-6">
+          <StudentForm onSubmit={handleSubmit} />
+        </div>
       </DialogContent>
     </Dialog>
   );
