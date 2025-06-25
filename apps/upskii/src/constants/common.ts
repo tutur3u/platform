@@ -52,6 +52,7 @@ export const PUBLIC_PATHS = [
   '/documents',
   '/meet-together',
   '/competitions/neo-league/prompt-the-future/about',
+  '/courses', // TODO: Verify that this is the intended behavior
 ].reduce((acc: string[], path) => {
   // Add the original path
   acc.push(path);
