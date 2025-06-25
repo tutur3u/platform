@@ -24,6 +24,7 @@ import {
 } from '@tuturuuu/ui/select';
 import { Separator } from '@tuturuuu/ui/separator';
 import { cn } from '@tuturuuu/utils/format';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 interface BoardWithLists {
@@ -53,9 +54,15 @@ export function AddTaskForm({
   const [showTasks, setShowTasks] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const router = useRouter();
 
   // Get boards with lists
-  const { data: boardsData, isLoading: boardsLoading } = useQuery<{
+  const {
+    data: boardsData,
+    isLoading: boardsLoading,
+    error: boardsError,
+    refetch: refetchBoards,
+  } = useQuery<{
     boards: BoardWithLists[];
   }>({
     queryKey: ['boards-with-lists', wsId],
@@ -66,17 +73,23 @@ export function AddTaskForm({
       if (!response.ok) throw new Error('Failed to fetch boards');
       return response.json();
     },
+    retry: 2,
+    retryDelay: 1000,
   });
 
   const boards = boardsData?.boards;
 
   // Get tasks for selected board/list
-  const { data: tasksData, isLoading: tasksLoading } = useQuery<{
+  const {
+    data: tasksData,
+    isLoading: tasksLoading,
+    error: tasksError,
+  } = useQuery<{
     tasks: Task[];
   }>({
     queryKey: ['tasks', wsId, selectedBoardId, selectedListId],
     queryFn: async () => {
-      if (!selectedBoardId && !selectedListId) return [];
+      if (!selectedBoardId && !selectedListId) return { tasks: [] };
 
       const params = new URLSearchParams();
       if (selectedListId) params.append('listId', selectedListId);
@@ -89,6 +102,8 @@ export function AddTaskForm({
       return response.json();
     },
     enabled: !!(selectedBoardId || selectedListId),
+    retry: 2,
+    retryDelay: 1000,
   });
 
   const tasks = tasksData?.tasks;
@@ -189,6 +204,34 @@ export function AddTaskForm({
     );
   }
 
+  if (boardsError) {
+    return (
+      <div className="flex flex-col items-center gap-4 p-8 text-center">
+        <div className="rounded-full bg-dynamic-red/10 p-3">
+          <AlertTriangle className="h-6 w-6 text-dynamic-red" />
+        </div>
+        <div>
+          <p className="font-semibold text-foreground">Failed to load boards</p>
+          <p className="text-sm text-muted-foreground">
+            {boardsError.message || 'Unable to fetch boards at the moment'}
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => refetchBoards()}
+          >
+            Retry
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => setOpen(false)}>
+            Close
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   if (!boards || boards.length === 0) {
     return (
       <div className="flex flex-col items-center gap-4 p-8 text-center">
@@ -201,6 +244,17 @@ export function AddTaskForm({
             Create a board first to add tasks
           </p>
         </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => {
+            router.push(`/${wsId}/tasks/boards`);
+            setOpen(false);
+          }}
+        >
+          <Plus className="mr-2 h-4 w-4" />
+          Create Board
+        </Button>
       </div>
     );
   }
@@ -246,27 +300,39 @@ export function AddTaskForm({
       {selectedBoardId && (
         <div className="space-y-2">
           <label className="text-sm font-medium text-foreground">List</label>
-          <Select
-            value={selectedListId}
-            onValueChange={(value) => {
-              setSelectedListId(value);
-              setShowTasks(true);
-            }}
-          >
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Select a list..." />
-            </SelectTrigger>
-            <SelectContent>
-              {availableLists.map((list: any) => (
-                <SelectItem key={list.id} value={list.id}>
-                  <div className="flex items-center gap-2">
-                    <List className="h-4 w-4 text-muted-foreground" />
-                    <span className="truncate">{list.name}</span>
-                  </div>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {availableLists.length === 0 ? (
+            <div className="rounded-md border border-dynamic-orange/20 bg-dynamic-orange/5 p-3 text-center">
+              <div className="flex items-center justify-center gap-2 text-sm text-dynamic-orange">
+                <AlertTriangle className="h-4 w-4" />
+                <span>This board has no lists</span>
+              </div>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Create a list in the board first to add tasks
+              </p>
+            </div>
+          ) : (
+            <Select
+              value={selectedListId}
+              onValueChange={(value) => {
+                setSelectedListId(value);
+                setShowTasks(true);
+              }}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select a list..." />
+              </SelectTrigger>
+              <SelectContent>
+                {availableLists.map((list: any) => (
+                  <SelectItem key={list.id} value={list.id}>
+                    <div className="flex items-center gap-2">
+                      <List className="h-4 w-4 text-muted-foreground" />
+                      <span className="truncate">{list.name}</span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
         </div>
       )}
 
@@ -280,12 +346,30 @@ export function AddTaskForm({
               {tasksLoading && (
                 <Loader className="h-3 w-3 animate-spin text-dynamic-blue" />
               )}
+              {tasksError && (
+                <AlertTriangle className="h-3 w-3 text-dynamic-red" />
+              )}
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-0">
             {tasksLoading ? (
               <div className="flex items-center justify-center py-4">
-                <Loader className="h-4 w-4 animate-spin text-dynamic-blue" />
+                <div className="flex items-center gap-2">
+                  <Loader className="h-4 w-4 animate-spin text-dynamic-blue" />
+                  <span className="text-xs text-muted-foreground">
+                    Loading tasks...
+                  </span>
+                </div>
+              </div>
+            ) : tasksError ? (
+              <div className="flex flex-col items-center gap-2 py-4 text-center">
+                <AlertTriangle className="h-4 w-4 text-dynamic-red" />
+                <div className="text-xs text-dynamic-red">
+                  Failed to load tasks
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  {tasksError.message || 'Unable to fetch tasks'}
+                </div>
               </div>
             ) : tasks && tasks.length > 0 ? (
               <ScrollArea className="max-h-32">
@@ -330,6 +414,9 @@ export function AddTaskForm({
                 <div className="text-xs text-muted-foreground">
                   No tasks in this list yet
                 </div>
+                <div className="mt-1 text-xs text-muted-foreground/70">
+                  Perfect time to add the first one!
+                </div>
               </div>
             )}
           </CardContent>
@@ -345,7 +432,8 @@ export function AddTaskForm({
           disabled={
             !inputValue.trim() ||
             !selectedListId ||
-            createTaskMutation.isPending
+            createTaskMutation.isPending ||
+            (Boolean(selectedBoardId) && availableLists.length === 0)
           }
           className="w-full"
         >
@@ -363,13 +451,38 @@ export function AddTaskForm({
         </Button>
       </div>
 
-      {/* Task name validation message */}
-      {!inputValue.trim() && (
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <AlertTriangle className="h-3 w-3" />
-          <span>Enter a task name to continue</span>
-        </div>
-      )}
+      {/* Validation messages */}
+      <div className="space-y-1">
+        {!inputValue.trim() && (
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <AlertTriangle className="h-3 w-3" />
+            <span>Enter a task name to continue</span>
+          </div>
+        )}
+        {inputValue.trim() && !selectedBoardId && (
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <AlertTriangle className="h-3 w-3" />
+            <span>Please select a board</span>
+          </div>
+        )}
+        {inputValue.trim() &&
+          selectedBoardId &&
+          !selectedListId &&
+          availableLists.length > 0 && (
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <AlertTriangle className="h-3 w-3" />
+              <span>Please select a list</span>
+            </div>
+          )}
+        {inputValue.trim() &&
+          selectedBoardId &&
+          availableLists.length === 0 && (
+            <div className="flex items-center gap-2 text-xs text-dynamic-orange">
+              <AlertTriangle className="h-3 w-3" />
+              <span>The selected board has no lists. Create a list first.</span>
+            </div>
+          )}
+      </div>
     </div>
   );
 }
