@@ -1,4 +1,4 @@
-import { Entity } from './Entity';
+import type { Entity } from './Entity';
 
 export interface ProductBatch extends Entity {
   price?: number;

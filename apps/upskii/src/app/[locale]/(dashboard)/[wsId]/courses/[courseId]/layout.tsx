@@ -1,9 +1,9 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
+import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
 import { CourseHeader } from '@tuturuuu/ui/custom/education/courses/course-header';
 import { Separator } from '@tuturuuu/ui/separator';
 import { notFound } from 'next/navigation';
-import { ReactNode } from 'react';
+import type { ReactNode } from 'react';
 
 interface Props {
   children: ReactNode;

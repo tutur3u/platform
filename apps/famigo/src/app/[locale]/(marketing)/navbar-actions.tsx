@@ -1,8 +1,8 @@
-import { UserNavWrapper } from './user-nav-wrapper';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { GetStartedButton } from '@tuturuuu/ui/custom/get-started-button';
 import { ThemeToggle } from '@tuturuuu/ui/custom/theme-toggle';
 import { getTranslations } from 'next-intl/server';
+import { UserNavWrapper } from './user-nav-wrapper';
 
 export default async function NavbarActions({
   hideMetadata = false,

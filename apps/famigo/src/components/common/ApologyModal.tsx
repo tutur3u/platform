@@ -20,7 +20,7 @@ import {
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { Separator } from '@tuturuuu/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
-import { type Variants, motion } from 'framer-motion';
+import { motion, type Variants } from 'framer-motion';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 
@@ -164,6 +164,7 @@ export function ApologyModal() {
                                 href="https://github.com/tutur3u/platform/issues/2429"
                                 className="inline-flex items-center gap-1 transition-colors hover:text-primary"
                                 target="_blank"
+                                rel="noopener"
                               >
                                 <span className="font-semibold line-through decoration-1">
                                   {t('issue')} #2429
@@ -214,6 +215,7 @@ export function ApologyModal() {
                                 href="https://github.com/tutur3u/platform/issues/2416"
                                 className="inline-flex items-center gap-1 transition-colors hover:text-primary"
                                 target="_blank"
+                                rel="noopener"
                               >
                                 <span className="font-semibold line-through decoration-1">
                                   {t('issue')} #2416
@@ -324,6 +326,7 @@ export function ApologyModal() {
                   target="_blank"
                   className="inline-flex items-center gap-1 text-primary transition-colors hover:underline"
                   onClick={handleOpenIssue}
+                  rel="noopener"
                 >
                   {t('github_issues')} <ExternalLink className="h-3 w-3" />
                 </a>

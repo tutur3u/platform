@@ -1,13 +1,11 @@
 'use client';
 
-import { fetchFullSubmission } from './actions';
-import { SubmissionCard } from './submission-card';
-import {
+import type {
   NovaProblem,
   NovaProblemTestCase,
   NovaSession,
   NovaSubmissionData,
-  type NovaSubmissionWithScores,
+  NovaSubmissionWithScores,
 } from '@tuturuuu/types/db';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
@@ -18,7 +16,10 @@ import { Progress } from '@tuturuuu/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { useRouter } from 'next/navigation';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import type React from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { fetchFullSubmission } from './actions';
+import { SubmissionCard } from './submission-card';
 
 interface Props {
   problem: NovaProblem & {

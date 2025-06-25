@@ -1,5 +1,5 @@
-import { findHorseRanking } from '../../utils/horseRacing';
 import { describe, expect, it } from 'vitest';
+import { findHorseRanking } from '../../utils/horseRacing';
 
 describe('Horse Racing Ranking Algorithm', () => {
   it('should return an empty array when there are no horses', () => {

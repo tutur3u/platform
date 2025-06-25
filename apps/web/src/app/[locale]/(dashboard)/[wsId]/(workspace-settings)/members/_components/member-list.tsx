@@ -1,7 +1,5 @@
-import InviteMemberButton from './invite-member-button';
-import { MemberSettingsButton } from './member-settings-button';
-import { Workspace, type WorkspaceUserRole } from '@tuturuuu/types/db';
-import { User } from '@tuturuuu/types/primitives/User';
+import type { Workspace, WorkspaceUserRole } from '@tuturuuu/types/db';
+import type { User } from '@tuturuuu/types/primitives/User';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { User as UserIcon } from '@tuturuuu/ui/icons';
 import { cn } from '@tuturuuu/utils/format';
@@ -9,6 +7,8 @@ import { getInitials } from '@tuturuuu/utils/name-helper';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import moment from 'moment';
 import { getLocale, getTranslations } from 'next-intl/server';
+import InviteMemberButton from './invite-member-button';
+import { MemberSettingsButton } from './member-settings-button';
 
 interface Props {
   workspace?: (Workspace & { role: WorkspaceUserRole }) | null;

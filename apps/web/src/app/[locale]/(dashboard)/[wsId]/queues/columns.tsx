@@ -1,12 +1,12 @@
 'use client';
 
-import { RowActions } from './row-actions';
-import { ColumnDef } from '@tanstack/react-table';
+import type { ColumnDef } from '@tanstack/react-table';
 import type { CrawledUrl } from '@tuturuuu/types/db';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import { Check, X } from '@tuturuuu/ui/icons';
 import moment from 'moment';
 import Link from 'next/link';
+import { RowActions } from './row-actions';
 
 export const getColumns = (
   t: any,

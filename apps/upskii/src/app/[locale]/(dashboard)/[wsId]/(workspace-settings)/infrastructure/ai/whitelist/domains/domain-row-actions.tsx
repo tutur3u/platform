@@ -1,4 +1,4 @@
-import { Row } from '@tanstack/react-table';
+import type { Row } from '@tanstack/react-table';
 import type { AIWhitelistDomain } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -8,8 +8,8 @@ import {
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import { Ellipsis } from '@tuturuuu/ui/icons';
-import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 
 interface AIWhitelistDomainRowActionsProps {
   row: Row<AIWhitelistDomain>;

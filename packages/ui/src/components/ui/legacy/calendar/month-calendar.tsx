@@ -1,7 +1,6 @@
 'use client';
 
-import { useCalendar } from '../../../../hooks/use-calendar';
-import { Workspace } from '@tuturuuu/types/db';
+import type { Workspace } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
 import {
   HoverCard,
@@ -23,6 +22,7 @@ import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import { Clock, Plus } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
+import { useCalendar } from '../../../../hooks/use-calendar';
 
 dayjs.extend(timezone);
 

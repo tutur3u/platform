@@ -1,19 +1,21 @@
-import { useCalendarSync } from './use-calendar-sync';
 import { createClient } from '@tuturuuu/supabase/next/client';
-import type { WorkspaceCalendarGoogleToken } from '@tuturuuu/types/db';
-import { Workspace } from '@tuturuuu/types/db';
-import { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
-import { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
+import type {
+  Workspace,
+  WorkspaceCalendarGoogleToken,
+} from '@tuturuuu/types/db';
+import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
+import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import {
-  CalendarSettings,
+  type CalendarSettings,
   defaultCalendarSettings,
 } from '@tuturuuu/ui/legacy/calendar/settings/settings-context';
 import dayjs from 'dayjs';
 import moment from 'moment';
+import { useCalendarSync } from './use-calendar-sync';
 import 'moment/locale/vi';
 import {
-  ReactNode,
   createContext,
+  type ReactNode,
   useCallback,
   useContext,
   useEffect,
@@ -336,7 +338,7 @@ export const CalendarProvider = ({
         const startDate = roundToNearest15Minutes(new Date(event.start_at));
         const endDate = roundToNearest15Minutes(new Date(event.end_at));
 
-        let eventColor = event.color || 'BLUE';
+        const eventColor = event.color || 'BLUE';
 
         // Create an event signature to check for duplicates
         const newEventSignature = `${event.title || ''}|${event.description || ''}|${startDate.toISOString()}|${endDate.toISOString()}`;

@@ -1,14 +1,5 @@
 'use client';
 
-import BasicInformationComponent, {
-  BasicInformation,
-} from '../components/basic-information-component';
-import Guider from '../components/guider';
-import { Leaderboard, LeaderboardEntry } from '../components/leaderboard';
-import { LeaderboardFilters } from '../components/leaderboard-filters';
-import { NeoLeagueCard } from '../components/neo-league-card';
-import Rewards from '../components/rewards';
-import { TopThreeCards } from '../components/top-three-cards';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
@@ -22,10 +13,19 @@ import {
   Sparkles,
 } from '@tuturuuu/ui/icons';
 import { motion } from 'framer-motion';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
+import BasicInformationComponent, {
+  type BasicInformation,
+} from '../components/basic-information-component';
+import Guider from '../components/guider';
+import { Leaderboard, type LeaderboardEntry } from '../components/leaderboard';
+import { LeaderboardFilters } from '../components/leaderboard-filters';
+import { NeoLeagueCard } from '../components/neo-league-card';
+import Rewards from '../components/rewards';
+import { TopThreeCards } from '../components/top-three-cards';
 
 export default function TeamsLeaderboardClient({
   locale,

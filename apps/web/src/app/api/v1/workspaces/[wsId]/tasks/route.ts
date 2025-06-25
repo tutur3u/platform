@@ -1,5 +1,5 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { NextRequest, NextResponse } from 'next/server';
+import { type NextRequest, NextResponse } from 'next/server';
 
 // Type interfaces for better type safety
 interface ProcessedAssignee {
@@ -39,7 +39,7 @@ interface TaskData {
   start_date: string | null;
   end_date: string | null;
   created_at: string | null;
-  list_id: string;
+  list_id: string | null;
   archived: boolean | null;
   task_lists: TaskListData | null;
   assignees?: TaskAssigneeData[];

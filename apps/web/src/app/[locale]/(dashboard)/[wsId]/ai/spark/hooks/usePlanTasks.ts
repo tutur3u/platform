@@ -1,7 +1,7 @@
 'use client';
 
-import { YearPlan } from '../types';
 import { useMemo } from 'react';
+import type { YearPlan } from '../types';
 
 export function usePlanTasks(yearPlan: YearPlan | undefined) {
   const allTasks = useMemo(() => {

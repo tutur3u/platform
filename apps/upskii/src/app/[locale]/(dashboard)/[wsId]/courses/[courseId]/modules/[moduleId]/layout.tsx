@@ -2,7 +2,7 @@ import {
   createClient,
   createDynamicClient,
 } from '@tuturuuu/supabase/next/server';
-import { WorkspaceCourseModule } from '@tuturuuu/types/db';
+import type { WorkspaceCourseModule } from '@tuturuuu/types/db';
 import LinkButton from '@tuturuuu/ui/custom/education/modules/link-button';
 import { ModuleToggles } from '@tuturuuu/ui/custom/education/modules/module-toggle';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
@@ -21,9 +21,9 @@ import {
 } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import { requireFeatureFlags } from '@tuturuuu/utils/feature-flags/core';
-import { getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
-import { ReactNode } from 'react';
+import { getTranslations } from 'next-intl/server';
+import type { ReactNode } from 'react';
 
 interface Props {
   children: ReactNode;
@@ -235,7 +235,7 @@ const getCompletionStatus = async (moduleId: string) => {
   }
 
   // 1. Check if the row exists
-  let { data, error } = await supabase
+  const { data, error } = await supabase
     .from('course_module_completion_status')
     .select('completion_status')
     .eq('module_id', moduleId)

@@ -1,6 +1,5 @@
 'use client';
 
-import type { TimeTrackingGoal, TimerStats } from '../types';
 import type { TimeTrackingCategory } from '@tuturuuu/types/db';
 import {
   AlertDialog,
@@ -55,6 +54,7 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { Switch } from '@tuturuuu/ui/switch';
 import { cn } from '@tuturuuu/utils/format';
 import { useState } from 'react';
+import type { TimerStats, TimeTrackingGoal } from '../types';
 
 interface GoalManagerProps {
   wsId: string;

@@ -11,7 +11,7 @@ import {
 } from '@tuturuuu/ui/icons';
 import { motion, useAnimation } from 'framer-motion';
 import { useTranslations } from 'next-intl';
-import { ReactNode, useEffect } from 'react';
+import { type ReactNode, useEffect } from 'react';
 
 interface Feature {
   icon: ReactNode;

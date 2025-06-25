@@ -2,7 +2,7 @@ import {
   createClient,
   createDynamicClient,
 } from '@tuturuuu/supabase/next/server';
-import { WorkspaceCourseModule } from '@tuturuuu/types/db';
+import type { WorkspaceCourseModule } from '@tuturuuu/types/db';
 import LinkButton from '@tuturuuu/ui/custom/education/modules/link-button';
 import { ModuleToggles } from '@tuturuuu/ui/custom/education/modules/module-toggle';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
@@ -18,9 +18,9 @@ import {
   Youtube,
 } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
-import { getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
-import { ReactNode } from 'react';
+import { getTranslations } from 'next-intl/server';
+import type { ReactNode } from 'react';
 
 interface Props {
   children: ReactNode;

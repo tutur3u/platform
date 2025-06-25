@@ -1,7 +1,7 @@
-import { TeamProfile } from './client';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
+import { TeamProfile } from './client';
 
 interface TeamData {
   id: string;
@@ -107,8 +107,9 @@ async function fetchTeamData(id: string): Promise<TeamData | null> {
     }
 
     // Fetch submission data with detailed scoring info
-    const { data: submissionsData, error: submissionsError } =
-      await sbAdmin.from('nova_submissions_with_scores').select(`
+    const { data: submissionsData, error: submissionsError } = await sbAdmin
+      .from('nova_submissions_with_scores')
+      .select(`
       id,
       user_id,
       problem_id,

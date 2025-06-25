@@ -1,4 +1,3 @@
-import { GITHUB_OWNER, GITHUB_REPO } from '@/constants/common';
 import {
   Banknote,
   Code,
@@ -7,7 +6,8 @@ import {
   PencilRuler,
   Sparkles,
 } from '@tuturuuu/ui/icons';
-import { ReactNode } from 'react';
+import type { ReactNode } from 'react';
+import { GITHUB_OWNER, GITHUB_REPO } from '@/constants/common';
 
 interface Feature {
   title: string;

@@ -1,8 +1,6 @@
 'use client';
 
-import { Nav } from './nav';
-import { NavLink } from '@/components/navigation';
-import { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
+import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import {
   Accordion,
   AccordionContent,
@@ -21,10 +19,12 @@ import {
 } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import { cn } from '@tuturuuu/utils/format';
-import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import Link from 'next/link';
-import { ReactNode, useState } from 'react';
+import { useTranslations } from 'next-intl';
+import { type ReactNode, useState } from 'react';
+import type { NavLink } from '@/components/navigation';
+import { Nav } from './nav';
 
 interface MailProps {
   locale: string;

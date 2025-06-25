@@ -1,7 +1,3 @@
-import LeaderboardClient from './client';
-import { BasicInformation } from './components/basic-information-component';
-import { LeaderboardEntry } from './components/leaderboard';
-import LeaderboardFallback from './fallback';
 import {
   createAdminClient,
   createClient,
@@ -9,6 +5,10 @@ import {
 import { generateFunName } from '@tuturuuu/utils/name-helper';
 import { getLocale } from 'next-intl/server';
 import { Suspense } from 'react';
+import LeaderboardClient from './client';
+import type { BasicInformation } from './components/basic-information-component';
+import type { LeaderboardEntry } from './components/leaderboard';
+import LeaderboardFallback from './fallback';
 
 export const revalidate = 60;
 

@@ -1,4 +1,4 @@
-import { NovaProblem, NovaProblemTestCase } from '@tuturuuu/types/db';
+import type { NovaProblem, NovaProblemTestCase } from '@tuturuuu/types/db';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { BookOpen, Code, FileText, Info } from '@tuturuuu/ui/icons';

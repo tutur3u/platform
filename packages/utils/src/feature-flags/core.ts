@@ -1,7 +1,7 @@
+import { redirect } from 'next/navigation';
 import { verifySecret } from '../workspace-helper';
 import { FEATURE_FLAGS } from './data';
 import type { FeatureFlag, FeatureFlagMap } from './types';
-import { redirect } from 'next/navigation';
 
 export async function requireFeatureFlags(
   wsId: string,

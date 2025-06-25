@@ -1,10 +1,10 @@
 'use client';
 
 import {
-  type Identity,
   canUnlinkIdentity,
   getProviderDisplayName,
   getUserIdentities,
+  type Identity,
   linkIdentity,
   unlinkIdentity,
 } from '@tuturuuu/auth/identity-linking';
@@ -42,8 +42,8 @@ import {
   Zap,
 } from '@tuturuuu/ui/icons';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
-import { useTranslations } from 'next-intl';
 import Image from 'next/image';
+import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 
 interface LinkedIdentitiesCardProps {

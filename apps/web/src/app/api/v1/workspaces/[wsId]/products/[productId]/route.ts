@@ -1,6 +1,6 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { Product2 } from '@tuturuuu/types/primitives/Product';
-import { ProductInventory } from '@tuturuuu/types/primitives/ProductInventory';
+import type { Product2 } from '@tuturuuu/types/primitives/Product';
+import type { ProductInventory } from '@tuturuuu/types/primitives/ProductInventory';
 import { NextResponse } from 'next/server';
 
 interface Params {
@@ -17,7 +17,7 @@ export async function PUT(req: Request, { params }: Params) {
   };
   const { productId } = await params;
 
-  let product = await supabase
+  const product = await supabase
     .from('workspace_products')
     .update({
       ...data,
@@ -34,7 +34,7 @@ export async function PUT(req: Request, { params }: Params) {
     );
   }
 
-  let inventory = await supabase.from('inventory_products').upsert(
+  const inventory = await supabase.from('inventory_products').upsert(
     data.inventory.map((inventory) => ({
       ...inventory,
       product_id: productId,

@@ -1,18 +1,5 @@
 'use client';
 
-import { AppearanceSettings } from './settings/appearance-settings';
-import { CategoryColorsSettings } from './settings/category-color-settings';
-import { GoogleCalendarSettings } from './settings/google-calendar-settings';
-import { HoursSettings } from './settings/hour-settings';
-import { NotificationSettings } from './settings/notification-settings';
-import {
-  CalendarSettings,
-  CalendarSettingsProvider,
-  useCalendarSettings,
-} from './settings/settings-context';
-import { SmartSchedulingSettings } from './settings/smart-scheduling-settings';
-import { TaskSettings } from './settings/task-settings';
-import { TimezoneSettings } from './settings/timezone-settings';
 import type { WorkspaceCalendarGoogleToken } from '@tuturuuu/types/db';
 import {
   Breadcrumb,
@@ -55,6 +42,19 @@ import {
   Palette,
 } from 'lucide-react';
 import * as React from 'react';
+import { AppearanceSettings } from './settings/appearance-settings';
+import { CategoryColorsSettings } from './settings/category-color-settings';
+import { GoogleCalendarSettings } from './settings/google-calendar-settings';
+import { HoursSettings } from './settings/hour-settings';
+import { NotificationSettings } from './settings/notification-settings';
+import {
+  type CalendarSettings,
+  CalendarSettingsProvider,
+  useCalendarSettings,
+} from './settings/settings-context';
+import { SmartSchedulingSettings } from './settings/smart-scheduling-settings';
+import { TaskSettings } from './settings/task-settings';
+import { TimezoneSettings } from './settings/timezone-settings';
 
 type SettingsSection = {
   id: keyof CalendarSettings | 'hours' | 'advanced' | 'googleCalendar';

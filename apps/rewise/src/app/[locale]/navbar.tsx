@@ -1,11 +1,11 @@
-import NavbarActions from './navbar-actions';
-import NavbarSeparator from './navbar-separator';
-import ServerMenu from './server-menu';
 import { LogoTitle } from '@tuturuuu/ui/custom/logo-title';
 import { cn } from '@tuturuuu/utils/format';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Suspense } from 'react';
+import NavbarActions from './navbar-actions';
+import NavbarSeparator from './navbar-separator';
+import ServerMenu from './server-menu';
 
 export default function Navbar({
   hideMetadata = false,

@@ -1,11 +1,8 @@
-import ClientFlashcards from './flashcards/client-flashcards';
-import ClientQuizzes from './quizzes/client-quizzes';
-import { extractYoutubeId } from '@/utils/url-helper';
 import {
   createClient,
   createDynamicClient,
 } from '@tuturuuu/supabase/next/server';
-import { WorkspaceCourseModule } from '@tuturuuu/types/db';
+import type { WorkspaceCourseModule } from '@tuturuuu/types/db';
 import { Accordion } from '@tuturuuu/ui/accordion';
 import { CourseSection } from '@tuturuuu/ui/custom/education/modules/content-section';
 import { FileDisplay } from '@tuturuuu/ui/custom/education/modules/resources/file-display';
@@ -20,8 +17,11 @@ import {
 } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import { RichTextEditor } from '@tuturuuu/ui/text-editor/editor';
-import { JSONContent } from '@tuturuuu/ui/tiptap';
+import type { JSONContent } from '@tuturuuu/ui/tiptap';
 import { getTranslations } from 'next-intl/server';
+import { extractYoutubeId } from '@/utils/url-helper';
+import ClientFlashcards from './flashcards/client-flashcards';
+import ClientQuizzes from './quizzes/client-quizzes';
 
 interface Props {
   params: Promise<{

@@ -1,6 +1,5 @@
 'use client';
 
-import { MigrationModule, ModulePackage, generateModules } from './modules';
 import { useLocalStorage } from '@mantine/hooks';
 import { Button } from '@tuturuuu/ui/button';
 import { Card } from '@tuturuuu/ui/card';
@@ -10,6 +9,11 @@ import { Label } from '@tuturuuu/ui/label';
 import { Progress } from '@tuturuuu/ui/progress';
 import { Separator } from '@tuturuuu/ui/separator';
 import { useState } from 'react';
+import {
+  generateModules,
+  type MigrationModule,
+  type ModulePackage,
+} from './modules';
 
 export default function MigrationDashboard() {
   const [apiEndpoint, setApiEndpoint] = useLocalStorage({
@@ -27,16 +31,17 @@ export default function MigrationDashboard() {
     defaultValue: '',
   });
 
-  const [migrationData, setMigrationData] = useState<{
-    [key in MigrationModule]?: {
-      externalData?: any[] | null;
-      internalData?: any[] | null;
-      externalTotal?: number | null;
-      internalTotal?: number | null;
-      loading?: boolean | null;
-      error?: any | null;
-    } | null;
-  }>();
+  const [migrationData, setMigrationData] =
+    useState<{
+      [key in MigrationModule]?: {
+        externalData?: any[] | null;
+        internalData?: any[] | null;
+        externalTotal?: number | null;
+        internalTotal?: number | null;
+        loading?: boolean | null;
+        error?: any | null;
+      } | null;
+    }>();
 
   const loading = migrationData
     ? Object.values(migrationData).some((v) => v?.loading)
@@ -182,7 +187,7 @@ export default function MigrationDashboard() {
     }
 
     // Initialize internal variables
-    let internalData: any[] = [];
+    const internalData: any[] = [];
     let internalError: any = null;
 
     // Fetch internal data

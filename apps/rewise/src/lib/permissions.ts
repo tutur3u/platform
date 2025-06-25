@@ -1,7 +1,7 @@
-import { PROD_MODE } from '@/constants/common';
-import { type SupabaseUser } from '@tuturuuu/supabase/next/user';
-import { PermissionId } from '@tuturuuu/types/db';
+import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
+import type { PermissionId } from '@tuturuuu/types/db';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
+import { PROD_MODE } from '@/constants/common';
 
 export type RolePermission = {
   id: PermissionId;

@@ -1,6 +1,5 @@
 'use client';
 
-import { Tool } from '../data';
 import type { AIChat } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
@@ -8,9 +7,10 @@ import { Album, RotateCcw } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { Textarea } from '@tuturuuu/ui/textarea';
-import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import type { Tool } from '../data';
 
 export function ToolForm({ wsId, tool }: { wsId: string; tool: Tool }) {
   const t = useTranslations();

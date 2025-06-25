@@ -1,6 +1,5 @@
 'use client';
 
-import type { SessionWithRelations } from '../types';
 import type { TimeTrackingCategory, WorkspaceTask } from '@tuturuuu/types/db';
 import {
   AlertDialog,
@@ -74,6 +73,7 @@ import isoWeek from 'dayjs/plugin/isoWeek';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
 import { type FC, useMemo, useState } from 'react';
+import type { SessionWithRelations } from '../types';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -2300,8 +2300,7 @@ export function SessionHistory({
                   <div className="mb-6 rounded-lg border p-4">
                     <h3 className="mb-3 flex items-center gap-2 text-sm font-medium text-muted-foreground">
                       <BarChart2 className="h-4 w-4" />
-                      {viewMode.charAt(0).toUpperCase() +
-                        viewMode.slice(1)}{' '}
+                      {viewMode.charAt(0).toUpperCase() + viewMode.slice(1)}{' '}
                       Summary
                     </h3>
                     <div className="space-y-4">

@@ -1,6 +1,6 @@
+import { cn } from '@tuturuuu/utils/format';
 import { CalendarCell } from './calendar-cell';
 import { DAY_HEIGHT, HOUR_HEIGHT, MIN_COLUMN_WIDTH } from './config';
-import { cn } from '@tuturuuu/utils/format';
 
 interface CalendarColumnProps {
   date: string;

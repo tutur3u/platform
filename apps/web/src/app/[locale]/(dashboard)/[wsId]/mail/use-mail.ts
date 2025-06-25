@@ -1,5 +1,5 @@
-import { Mail, mails } from './data';
 import { atom, useAtom } from 'jotai';
+import { type Mail, mails } from './data';
 
 type Config = {
   selected: Mail['id'] | null;

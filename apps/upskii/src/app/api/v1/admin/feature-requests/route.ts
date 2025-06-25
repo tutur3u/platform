@@ -4,10 +4,10 @@ import {
 } from '@tuturuuu/supabase/next/server';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import {
-  REQUESTABLE_KEY_TO_FEATURE_FLAG,
   isRequestableFeature,
+  REQUESTABLE_KEY_TO_FEATURE_FLAG,
 } from '@tuturuuu/utils/feature-flags/requestable-features';
-import { NextRequest, NextResponse } from 'next/server';
+import { type NextRequest, NextResponse } from 'next/server';
 
 export async function GET(req: NextRequest) {
   try {

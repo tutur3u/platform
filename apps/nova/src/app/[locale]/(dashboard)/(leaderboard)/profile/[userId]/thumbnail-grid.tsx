@@ -2,7 +2,7 @@
 
 import { cn } from '@tuturuuu/utils/format';
 import { motion } from 'framer-motion';
-import React from 'react';
+import type React from 'react';
 
 interface ThumbnailItem {
   id: string;

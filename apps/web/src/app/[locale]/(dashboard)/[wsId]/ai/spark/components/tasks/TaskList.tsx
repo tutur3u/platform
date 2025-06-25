@@ -1,6 +1,5 @@
 'use client';
 
-import { Priority, Task, TaskStatus } from '../../types';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -20,6 +19,7 @@ import {
   Timer,
 } from '@tuturuuu/ui/icons';
 import { format, parseISO } from 'date-fns';
+import type { Priority, Task, TaskStatus } from '../../types';
 
 interface TaskListProps {
   tasks: Task[];

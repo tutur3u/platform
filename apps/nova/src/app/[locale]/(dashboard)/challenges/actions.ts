@@ -1,10 +1,10 @@
 'use server';
 
-import { AdminsResponse } from './challengeForm';
 import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import type { AdminsResponse } from './challengeForm';
 
 export async function fetchAdmins(): Promise<AdminsResponse> {
   try {

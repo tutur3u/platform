@@ -1,4 +1,4 @@
-import { NovaProblemTestCase } from '@tuturuuu/types/db';
+import type { NovaProblemTestCase } from '@tuturuuu/types/db';
 import {
   Card,
   CardContent,

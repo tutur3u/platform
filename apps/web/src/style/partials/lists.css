@@ -27,7 +27,7 @@
     @apply my-8 first:mt-0 last:mb-0;
   }
 
-  ul[data-type='taskList'] {
+  ul[data-type="taskList"] {
     @apply list-none p-0;
 
     p {
@@ -45,7 +45,7 @@
         @apply flex-auto;
       }
 
-      &[data-checked='true'] {
+      &[data-checked="true"] {
         @apply line-through;
       }
     }

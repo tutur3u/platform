@@ -1,11 +1,11 @@
-import WhiteboardsList, { type Whiteboard } from './client';
-import CreateWhiteboardDialog from './createWhiteboardDialog';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { Button } from '@tuturuuu/ui/button';
 import { IconPlus } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
-import { getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
+import WhiteboardsList, { type Whiteboard } from './client';
+import CreateWhiteboardDialog from './createWhiteboardDialog';
 
 interface WhiteboardsPageProps {
   params: Promise<{ wsId: string }>;

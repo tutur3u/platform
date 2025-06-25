@@ -1,8 +1,7 @@
 'use client';
 
-import { AuthButton } from './auth-button';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
-import { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
+import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { ThemeToggle } from '@tuturuuu/ui/custom/theme-toggle';
 import { MenuIcon } from '@tuturuuu/ui/icons';
 import {
@@ -14,6 +13,7 @@ import {
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { AuthButton } from './auth-button';
 
 interface MenuProps {
   sbUser: SupabaseUser | null;

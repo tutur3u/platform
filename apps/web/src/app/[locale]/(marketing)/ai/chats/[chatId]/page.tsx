@@ -1,8 +1,8 @@
-import Chat from '@/app/[locale]/(dashboard)/[wsId]/chat/chat';
-import { type Message } from '@tuturuuu/ai/types';
+import type { Message } from '@tuturuuu/ai/types';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { AIChat } from '@tuturuuu/types/db';
+import type { AIChat } from '@tuturuuu/types/db';
 import { notFound } from 'next/navigation';
+import Chat from '@/app/[locale]/(dashboard)/[wsId]/chat/chat';
 
 interface Props {
   params: Promise<{

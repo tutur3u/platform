@@ -1,11 +1,11 @@
 'use client';
 
-import { ApiKeyRowActions } from './row-actions';
-import { ColumnDef } from '@tanstack/react-table';
-import { WorkspaceApiKey } from '@tuturuuu/types/primitives/WorkspaceApiKey';
+import type { ColumnDef } from '@tanstack/react-table';
+import type { WorkspaceApiKey } from '@tuturuuu/types/primitives/WorkspaceApiKey';
 import { ColorPicker } from '@tuturuuu/ui/color-picker';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import moment from 'moment';
+import { ApiKeyRowActions } from './row-actions';
 
 export const groupTagColumns = (
   t: any,

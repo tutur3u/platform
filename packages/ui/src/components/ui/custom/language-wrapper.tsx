@@ -1,5 +1,5 @@
-import { LanguageToggle } from './language-toggle';
 import { cookies as c } from 'next/headers';
+import { LanguageToggle } from './language-toggle';
 
 export async function LanguageWrapper({
   cookieName,

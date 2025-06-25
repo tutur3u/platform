@@ -1,7 +1,7 @@
-import CriteriaEvaluation from './CriteriaEvaluation';
-import TestCaseEvaluation from './TestCaseEvaluation';
 import type { NovaSubmissionData } from '@tuturuuu/types/db';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
+import CriteriaEvaluation from './CriteriaEvaluation';
+import TestCaseEvaluation from './TestCaseEvaluation';
 
 interface SubmissionDetailsProps {
   submission: NovaSubmissionData;

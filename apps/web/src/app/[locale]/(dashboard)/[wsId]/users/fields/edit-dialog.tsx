@@ -1,7 +1,6 @@
 'use client';
 
-import UserFieldForm, { ApiConfigFormSchema } from './form';
-import { WorkspaceUserField } from '@tuturuuu/types/primitives/WorkspaceUserField';
+import type { WorkspaceUserField } from '@tuturuuu/types/primitives/WorkspaceUserField';
 import {
   Dialog,
   DialogContent,
@@ -11,10 +10,12 @@ import {
   DialogTrigger,
 } from '@tuturuuu/ui/dialog';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
-import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
-import React, { useState } from 'react';
-import * as z from 'zod';
+import { useTranslations } from 'next-intl';
+import type React from 'react';
+import { useState } from 'react';
+import type * as z from 'zod';
+import UserFieldForm, { type ApiConfigFormSchema } from './form';
 
 interface Props {
   data: WorkspaceUserField;

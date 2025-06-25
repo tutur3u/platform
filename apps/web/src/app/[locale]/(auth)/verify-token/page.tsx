@@ -1,5 +1,5 @@
-import { BasicTokenVerifier } from './client';
 import { Suspense } from 'react';
+import { BasicTokenVerifier } from './client';
 
 export default function VerifyTokenPage() {
   return (

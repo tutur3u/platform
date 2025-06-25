@@ -1,16 +1,16 @@
 'use client';
 
-import UserMonthAttendance from '../../attendance/user-month-attendance';
-import UserReportForm from './form';
-import { WorkspaceUserReport } from '@tuturuuu/types/db';
-import { WorkspaceConfig } from '@tuturuuu/types/primitives/WorkspaceConfig';
+import type { WorkspaceUserReport } from '@tuturuuu/types/db';
+import type { WorkspaceConfig } from '@tuturuuu/types/primitives/WorkspaceConfig';
 import ReportPreview from '@tuturuuu/ui/custom/report-preview';
 import { useForm } from '@tuturuuu/ui/hooks/use-form';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { Separator } from '@tuturuuu/ui/separator';
 import { useLocale, useTranslations } from 'next-intl';
-import { ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import * as z from 'zod';
+import UserMonthAttendance from '../../attendance/user-month-attendance';
+import UserReportForm from './form';
 
 export const UserReportFormSchema = z.object({
   title: z.string(),

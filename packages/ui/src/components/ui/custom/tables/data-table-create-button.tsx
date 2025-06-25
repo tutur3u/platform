@@ -1,9 +1,9 @@
 'use client';
 
+import { Plus } from 'lucide-react';
+import type { ReactNode } from 'react';
 import { Button } from '../../button';
 import { DialogContent, DialogTrigger } from '../../dialog';
-import { Plus } from 'lucide-react';
-import { ReactNode } from 'react';
 
 export interface DataTableCreateButtonProps {
   newObjectTitle?: string;

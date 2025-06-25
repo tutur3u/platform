@@ -1,13 +1,13 @@
-import UserProfileClient from './client';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { generateFunName } from '@tuturuuu/utils/name-helper';
 import {
   calculatePercentage,
   calculateScore,
 } from '@tuturuuu/utils/nova/scores/calculate';
-import { Metadata } from 'next';
-import { getLocale } from 'next-intl/server';
+import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { getLocale } from 'next-intl/server';
+import UserProfileClient from './client';
 
 // Dynamic metadata for profile pages
 export async function generateMetadata({
@@ -212,7 +212,8 @@ export default async function UserProfilePage({
   );
 
   // Get user's rank from leaderboard
-  const { data: leaderboardData = [] } = await sbAdmin.from('nova_sessions')
+  const { data: leaderboardData = [] } = await sbAdmin
+    .from('nova_sessions')
     .select(`
       user_id,
       nova_submissions_with_scores(

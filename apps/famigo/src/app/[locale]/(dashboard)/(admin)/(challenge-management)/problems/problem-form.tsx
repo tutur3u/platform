@@ -1,4 +1,4 @@
-import { NovaChallenge } from '@tuturuuu/types/db';
+import type { NovaChallenge } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Card,

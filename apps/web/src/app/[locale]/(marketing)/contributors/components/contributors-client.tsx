@@ -1,6 +1,5 @@
 'use client';
 
-import { GITHUB_OWNER, GITHUB_REPO } from '@/constants/common';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card } from '@tuturuuu/ui/card';
@@ -10,8 +9,8 @@ import {
   FileText,
   GitCommit,
   GitFork,
-  GitPullRequest,
   GithubIcon,
+  GitPullRequest,
   Heart,
   Mail,
   MessageSquare,
@@ -19,7 +18,7 @@ import {
   Users,
 } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
-import { Variants, motion } from 'framer-motion';
+import { motion, type Variants } from 'framer-motion';
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
@@ -38,6 +37,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
+import { GITHUB_OWNER, GITHUB_REPO } from '@/constants/common';
 
 // Types imported from server component
 interface GithubUser {
@@ -161,7 +161,7 @@ function generateActivityTrend(contributors: GithubContributor[]) {
   );
 
   // Create a realistic-looking trend with some peaks and valleys
-  let baseValue = totalContributions / 20;
+  const baseValue = totalContributions / 20;
 
   // Add a realistic trend with some randomness
   weeks.forEach((week, i) => {

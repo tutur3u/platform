@@ -1,9 +1,5 @@
 'use client';
 
-import CriteriaEvaluation from './components/CriteriaEvaluation';
-import TestCaseEvaluation from './components/TestCaseEvaluation';
-import { SubmissionData } from './types';
-import ScoreBadge from '@/components/common/ScoreBadge';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -29,6 +25,10 @@ import { Separator } from '@tuturuuu/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import ScoreBadge from '@/components/common/ScoreBadge';
+import CriteriaEvaluation from './components/CriteriaEvaluation';
+import TestCaseEvaluation from './components/TestCaseEvaluation';
+import type { SubmissionData } from './types';
 
 interface Props {
   submission: SubmissionData;

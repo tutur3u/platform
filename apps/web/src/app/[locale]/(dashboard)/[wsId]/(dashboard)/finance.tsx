@@ -1,3 +1,5 @@
+import { Suspense } from 'react';
+import LoadingStatisticCard from '@/components/loading-statistic-card';
 import type { FinanceDashboardSearchParams } from '../finance/(dashboard)/page';
 import { FinanceCategoryStatistics } from './categories/finance';
 import FinanceToggle from './finance-toggle';
@@ -10,8 +12,6 @@ import {
   TransactionsStatistics,
   WalletsStatistics,
 } from './statistics';
-import LoadingStatisticCard from '@/components/loading-statistic-card';
-import { Suspense } from 'react';
 
 export default async function FinanceStatistics({
   wsId,

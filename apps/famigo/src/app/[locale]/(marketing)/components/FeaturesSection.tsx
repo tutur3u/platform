@@ -1,9 +1,9 @@
 'use client';
 
-import FamiFeature from './FamiFeature';
 import { Badge } from '@tuturuuu/ui/badge';
 import { BrainCircuit, Calendar, SmilePlus } from '@tuturuuu/ui/icons';
 import { motion } from 'framer-motion';
+import FamiFeature from './FamiFeature';
 
 const FeaturesSection = () => {
   return (

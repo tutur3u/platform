@@ -1,4 +1,3 @@
-import { API_URL } from '@/constants/common';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
@@ -16,6 +15,7 @@ import { Switch } from '@tuturuuu/ui/switch';
 import { useTranslations } from 'next-intl';
 import { QRCodeCanvas } from 'qrcode.react';
 import { useEffect, useState } from 'react';
+import { API_URL } from '@/constants/common';
 
 interface ChatMember {
   email: string;

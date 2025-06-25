@@ -1,7 +1,7 @@
-import LogList from './log-list';
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { AuditLog } from '@tuturuuu/types/primitives/audit-log';
+import type { AuditLog } from '@tuturuuu/types/primitives/audit-log';
 import { notFound } from 'next/navigation';
+import LogList from './log-list';
 
 interface Props {
   params: Promise<{

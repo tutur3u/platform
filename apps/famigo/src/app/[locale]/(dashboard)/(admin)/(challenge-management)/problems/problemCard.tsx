@@ -1,7 +1,6 @@
 'use client';
 
-import EditProblemDialog from './editProblemDialog';
-import { NovaProblem, NovaProblemTestCase } from '@tuturuuu/types/db';
+import type { NovaProblem, NovaProblemTestCase } from '@tuturuuu/types/db';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -26,6 +25,7 @@ import { Pencil, Trash } from '@tuturuuu/ui/icons';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import EditProblemDialog from './editProblemDialog';
 
 type ExtendedNovaProblem = NovaProblem & {
   challenge: {

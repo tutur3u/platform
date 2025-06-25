@@ -1,5 +1,5 @@
-import { syncGoogleCalendarEvents } from './google-calendar-sync.js';
 import { schedules } from '@trigger.dev/sdk/v3';
+import { syncGoogleCalendarEvents } from './google-calendar-sync.js';
 import 'dotenv/config';
 
 export const googleCalendarBackgroundSync = schedules.task({

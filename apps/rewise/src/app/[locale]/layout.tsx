@@ -7,11 +7,11 @@ import { Toaster } from '@tuturuuu/ui/toaster';
 import { cn } from '@tuturuuu/utils/format';
 import { Analytics as VercelAnalytics } from '@vercel/analytics/react';
 import { SpeedInsights as VercelInsights } from '@vercel/speed-insights/next';
-import { Metadata, Viewport } from 'next';
+import type { Metadata, Viewport } from 'next';
+import { Inter } from 'next/font/google';
 import { NextIntlClientProvider } from 'next-intl';
 import { setRequestLocale } from 'next-intl/server';
-import { Inter } from 'next/font/google';
-import { ReactNode } from 'react';
+import type { ReactNode } from 'react';
 
 const font = Inter({ subsets: ['latin', 'vietnamese'], display: 'block' });
 

@@ -2,7 +2,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
-import { NextRequest, NextResponse } from 'next/server';
+import { type NextRequest, NextResponse } from 'next/server';
 
 export async function GET(
   request: NextRequest,
@@ -231,7 +231,7 @@ export async function GET(
           activityDays.add(sessionDate.toDateString());
         });
 
-        let currentDate = new Date(startOfToday);
+        const currentDate = new Date(startOfToday);
 
         // If today has activity, start counting from today
         if (activityDays.has(currentDate.toDateString())) {

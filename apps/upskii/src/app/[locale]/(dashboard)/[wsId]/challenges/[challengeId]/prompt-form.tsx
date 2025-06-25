@@ -1,8 +1,6 @@
 'use client';
 
-import { ExtendedNovaSubmission, fetchSubmissions } from './actions';
-import ScoreBadge from '@/components/common/ScoreBadge';
-import {
+import type {
   NovaProblem,
   NovaProblemTestCase,
   NovaSession,
@@ -27,7 +25,10 @@ import {
 import { Progress } from '@tuturuuu/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { Textarea } from '@tuturuuu/ui/textarea';
-import React, { useCallback, useEffect, useState } from 'react';
+import type React from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import ScoreBadge from '@/components/common/ScoreBadge';
+import { type ExtendedNovaSubmission, fetchSubmissions } from './actions';
 
 interface Props {
   problem: NovaProblem & {

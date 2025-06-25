@@ -1,5 +1,5 @@
-import { extractYoutubeId, isValidURL } from '@/utils/url-helper';
 import { expect, it } from 'vitest';
+import { extractYoutubeId, isValidURL } from '@/utils/url-helper';
 
 it('should return true for URLs with different protocols', () => {
   expect(isValidURL('ftp://ftp.example.com')).toBe(true);

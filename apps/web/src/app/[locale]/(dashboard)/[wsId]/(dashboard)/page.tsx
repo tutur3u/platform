@@ -1,3 +1,12 @@
+import { createClient } from '@tuturuuu/supabase/next/server';
+import type { AuroraForecast } from '@tuturuuu/types/db';
+import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
+import { Separator } from '@tuturuuu/ui/separator';
+import { getWorkspace, verifySecret } from '@tuturuuu/utils/workspace-helper';
+import { notFound } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
+import { Suspense } from 'react';
+import LoadingStatisticCard from '@/components/loading-statistic-card';
 import type { FinanceDashboardSearchParams } from '../finance/(dashboard)/page';
 import { InventoryCategoryStatistics } from './categories/inventory';
 import { UsersCategoryStatistics } from './categories/users';
@@ -10,21 +19,12 @@ import {
   PromotionsStatistics,
   SuppliersStatistics,
   UnitsStatistics,
-  UserGroupTagsStatistics,
   UserGroupsStatistics,
+  UserGroupTagsStatistics,
   UserReportsStatistics,
   UsersStatistics,
   WarehousesStatistics,
 } from './statistics';
-import LoadingStatisticCard from '@/components/loading-statistic-card';
-import { createClient } from '@tuturuuu/supabase/next/server';
-import type { AuroraForecast } from '@tuturuuu/types/db';
-import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
-import { Separator } from '@tuturuuu/ui/separator';
-import { getWorkspace, verifySecret } from '@tuturuuu/utils/workspace-helper';
-import { getTranslations } from 'next-intl/server';
-import { notFound } from 'next/navigation';
-import { Suspense } from 'react';
 
 interface Props {
   params: Promise<{

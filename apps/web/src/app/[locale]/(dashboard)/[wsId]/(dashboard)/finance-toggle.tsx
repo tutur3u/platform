@@ -1,9 +1,9 @@
 'use client';
 
-import useSearchParams from '@/hooks/useSearchParams';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
+import useSearchParams from '@/hooks/useSearchParams';
 
 export default function FinanceToggle() {
   const t = useTranslations();

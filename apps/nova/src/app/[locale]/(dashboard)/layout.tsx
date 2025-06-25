@@ -1,7 +1,3 @@
-import NavbarActions from '../(marketing)/navbar-actions';
-import { UserNav } from '../(marketing)/user-nav';
-import Structure from '@/components/layout/structure';
-import { SIDEBAR_COLLAPSED_COOKIE_NAME } from '@/constants/common';
 import {
   createAdminClient,
   createClient,
@@ -17,10 +13,14 @@ import {
   User,
   Users,
 } from '@tuturuuu/ui/icons';
-import { getTranslations } from 'next-intl/server';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { ReactNode, Suspense } from 'react';
+import { getTranslations } from 'next-intl/server';
+import { type ReactNode, Suspense } from 'react';
+import Structure from '@/components/layout/structure';
+import { SIDEBAR_COLLAPSED_COOKIE_NAME } from '@/constants/common';
+import NavbarActions from '../(marketing)/navbar-actions';
+import { UserNav } from '../(marketing)/user-nav';
 
 export default async function RootLayout({
   children,

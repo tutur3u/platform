@@ -1,8 +1,6 @@
 'use client';
 
-import GradientHeadline from '../gradient-headline';
-import AiFeatures from './ai-features';
-import { Workspace } from '@tuturuuu/types/db';
+import type { Workspace } from '@tuturuuu/types/db';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card } from '@tuturuuu/ui/card';
@@ -21,11 +19,13 @@ import {
   Video,
 } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
-import { type Variants, motion } from 'framer-motion';
-import { useTranslations } from 'next-intl';
+import { motion, type Variants } from 'framer-motion';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
+import GradientHeadline from '../gradient-headline';
+import AiFeatures from './ai-features';
 
 export default function MarketingPage() {
   const t = useTranslations('boarding-pages.home');

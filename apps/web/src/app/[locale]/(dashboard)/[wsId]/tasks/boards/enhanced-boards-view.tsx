@@ -1,22 +1,6 @@
 'use client';
 
-import { projectColumns } from './columns';
-// Import new components
-import { GanttChart } from './components/GanttChart';
-import { StatusDistribution } from './components/StatusDistribution';
-import { TaskCreationAnalytics } from './components/TaskCreationAnalytics';
-import { TaskGroup } from './components/TaskGroup';
-import { TaskWorkflowAnalytics } from './components/TaskWorkflowAnalytics';
-// Import analytics hooks
-import {
-  useAvgDuration,
-  useOnTimeRate,
-  useTaskVelocity,
-} from './hooks/useTaskAnalytics';
-// Import helper functions
-import { getFilteredMetrics } from './utils/taskHelpers';
-import { CustomDataTable } from '@/components/custom-data-table';
-import {
+import type {
   Task,
   TaskBoard,
   TaskList,
@@ -62,6 +46,22 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { cn } from '@tuturuuu/utils/format';
 import { useMemo, useState } from 'react';
+import { CustomDataTable } from '@/components/custom-data-table';
+import { projectColumns } from './columns';
+// Import new components
+import { GanttChart } from './components/GanttChart';
+import { StatusDistribution } from './components/StatusDistribution';
+import { TaskCreationAnalytics } from './components/TaskCreationAnalytics';
+import { TaskGroup } from './components/TaskGroup';
+import { TaskWorkflowAnalytics } from './components/TaskWorkflowAnalytics';
+// Import analytics hooks
+import {
+  useAvgDuration,
+  useOnTimeRate,
+  useTaskVelocity,
+} from './hooks/useTaskAnalytics';
+// Import helper functions
+import { getFilteredMetrics } from './utils/taskHelpers';
 
 interface AnalyticsFilters {
   timeView: 'week' | 'month' | 'year';

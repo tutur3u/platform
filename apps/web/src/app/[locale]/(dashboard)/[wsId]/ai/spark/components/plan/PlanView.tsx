@@ -1,9 +1,5 @@
 'use client';
 
-import { Task, YearPlan } from '../../types';
-import { MonthPicker } from '../MonthPicker';
-import { MonthlyOverview } from '../overview/MonthlyOverview';
-import { TaskList } from '../tasks/TaskList';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -31,6 +27,10 @@ import { Separator } from '@tuturuuu/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { format, isValid, isWithinInterval, parseISO } from 'date-fns';
 import { useCallback, useMemo, useState } from 'react';
+import type { Task, YearPlan } from '../../types';
+import { MonthPicker } from '../MonthPicker';
+import { MonthlyOverview } from '../overview/MonthlyOverview';
+import { TaskList } from '../tasks/TaskList';
 
 interface PlanViewProps {
   yearPlan: Partial<YearPlan>;

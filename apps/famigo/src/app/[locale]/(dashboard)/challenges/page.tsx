@@ -1,5 +1,3 @@
-import ChallengesList from './ChallengesList';
-import CreateChallengeDialog from './createChallengeDialog';
 import {
   createAdminClient,
   createClient,
@@ -7,8 +5,10 @@ import {
 import type { NovaExtendedChallenge } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
 import { Plus } from '@tuturuuu/ui/icons';
-import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
+import ChallengesList from './ChallengesList';
+import CreateChallengeDialog from './createChallengeDialog';
 
 export default async function Page() {
   const sbAdmin = await createAdminClient();

@@ -1,6 +1,6 @@
 'use client';
 
-import { User } from '@tuturuuu/types/primitives/User';
+import type { User } from '@tuturuuu/types/primitives/User';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,

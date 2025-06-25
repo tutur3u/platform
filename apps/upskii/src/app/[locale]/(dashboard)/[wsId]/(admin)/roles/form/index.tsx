@@ -1,14 +1,10 @@
 'use client';
 
-import RoleFormDisplaySection from './role-display';
-import RoleFormMembersSection from './role-members';
-import RoleFormPermissionsSection from './role-permissions';
-import { permissionGroups, totalPermissions } from '@/lib/permissions';
 import { useQuery } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
-import { SupabaseUser } from '@tuturuuu/supabase/next/user';
-import { PermissionId, WorkspaceRole } from '@tuturuuu/types/db';
-import { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
+import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
+import type { PermissionId, WorkspaceRole } from '@tuturuuu/types/db';
+import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Button } from '@tuturuuu/ui/button';
 import { Form } from '@tuturuuu/ui/form';
 import { useForm } from '@tuturuuu/ui/hooks/use-form';
@@ -19,10 +15,14 @@ import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { cn } from '@tuturuuu/utils/format';
-import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import * as z from 'zod';
+import { permissionGroups, totalPermissions } from '@/lib/permissions';
+import RoleFormDisplaySection from './role-display';
+import RoleFormMembersSection from './role-members';
+import RoleFormPermissionsSection from './role-permissions';
 
 const FormSchema = z.object({
   id: z.string().optional(),

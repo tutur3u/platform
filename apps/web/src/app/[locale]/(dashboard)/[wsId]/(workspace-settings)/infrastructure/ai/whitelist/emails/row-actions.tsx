@@ -1,7 +1,7 @@
 'use client';
 
-import { Row } from '@tanstack/react-table';
-import { AIWhitelistEmail } from '@tuturuuu/types/db';
+import type { Row } from '@tanstack/react-table';
+import type { AIWhitelistEmail } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
 import {
   DropdownMenu,
@@ -10,8 +10,8 @@ import {
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import { Ellipsis } from '@tuturuuu/ui/icons';
-import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 
 interface AIWhitelistEmailRowActionsProps {
   row: Row<AIWhitelistEmail>;

@@ -1,7 +1,7 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { getUserDefaultWorkspace } from '@tuturuuu/utils/user-helper';
 import { redirect } from 'next/navigation';
-import React from 'react';
+import type React from 'react';
 
 interface LayoutProps {
   children: React.ReactNode;

@@ -12,6 +12,8 @@ import { useToast } from '@tuturuuu/ui/hooks/use-toast';
 import { AlertTriangle, RefreshCw } from '@tuturuuu/ui/icons';
 import { useParams, useRouter } from 'next/navigation';
 import * as React from 'react';
+import { CommandRoot } from './command-root';
+import { QuickTimeTracker } from './quick-time-tracker';
 
 // Main Command Palette Component
 export function CommandPalette({

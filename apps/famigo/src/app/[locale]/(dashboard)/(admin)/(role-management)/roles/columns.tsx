@@ -1,18 +1,18 @@
 'use client';
 
-import { NovaRoleRowActions } from './row-actions';
 import {
   useIsFetching,
   useMutation,
   useQueryClient,
 } from '@tanstack/react-query';
-import { ColumnDef } from '@tanstack/react-table';
-import { NovaRole } from '@tuturuuu/types/db';
+import type { ColumnDef } from '@tanstack/react-table';
+import type { NovaRole } from '@tuturuuu/types/db';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import { Loader2 } from '@tuturuuu/ui/icons';
 import { Switch } from '@tuturuuu/ui/switch';
 import moment from 'moment';
 import { useRouter } from 'next/navigation';
+import { NovaRoleRowActions } from './row-actions';
 
 export const getNovaRoleColumns = (t: any): ColumnDef<NovaRole>[] => {
   const router = useRouter();

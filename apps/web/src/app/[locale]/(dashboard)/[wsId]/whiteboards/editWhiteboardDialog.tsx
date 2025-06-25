@@ -1,7 +1,5 @@
 'use client';
 
-import { type Whiteboard } from './client';
-import WhiteboardForm, { type WhiteboardFormValues } from './whiteboardForm';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import {
   Dialog,
@@ -13,6 +11,8 @@ import {
 import { toast } from '@tuturuuu/ui/sonner';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import type { Whiteboard } from './client';
+import WhiteboardForm, { type WhiteboardFormValues } from './whiteboardForm';
 
 interface EditWhiteboardDialogProps {
   whiteboard: Whiteboard;

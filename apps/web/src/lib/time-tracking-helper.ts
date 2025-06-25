@@ -1,10 +1,10 @@
 'use server';
 
-import { transformAssignees } from '@/lib/task-helper';
 import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import { transformAssignees } from '@/lib/task-helper';
 import 'server-only';
 
 export const getTimeTrackingData = async (wsId: string, userId: string) => {
@@ -164,7 +164,7 @@ export const getTimeTrackingData = async (wsId: string, userId: string) => {
   // Calculate streak - count consecutive days with activity
   let streak = 0;
   if (activityDays.size > 0) {
-    let currentDate = new Date(today);
+    const currentDate = new Date(today);
 
     // If today has activity, start counting from today
     if (activityDays.has(currentDate.toDateString())) {

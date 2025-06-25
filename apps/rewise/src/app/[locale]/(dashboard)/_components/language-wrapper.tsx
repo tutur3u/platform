@@ -1,7 +1,7 @@
-import { LanguageDropdownItem } from './language-dropdown-item';
+import { cookies as c } from 'next/headers';
 import { LOCALE_COOKIE_NAME } from '@/constants/common';
 import { supportedLocales } from '@/i18n/routing';
-import { cookies as c } from 'next/headers';
+import { LanguageDropdownItem } from './language-dropdown-item';
 
 interface Props {
   label: string;

@@ -1,13 +1,13 @@
 'use client';
 
-import { DEV_MODE } from '@/constants/common';
 import {
   Calendar,
   Sparkles,
   UsersRound,
   WandSparkles,
 } from '@tuturuuu/ui/icons';
-import { ReactNode } from 'react';
+import type { ReactNode } from 'react';
+import { DEV_MODE } from '@/constants/common';
 
 export interface NavItem {
   href: string;

@@ -1,9 +1,9 @@
-import SubmissionClient from './client';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { NovaSubmissionData } from '@tuturuuu/types/db';
 import { getCurrentSupabaseUser } from '@tuturuuu/utils/user-helper';
-import { Metadata } from 'next';
+import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import SubmissionClient from './client';
 
 interface Props {
   params: Promise<{

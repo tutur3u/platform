@@ -1,9 +1,3 @@
-import WorkspaceAvatarSettings from './avatar';
-import BasicInfo from './basic-info';
-import WorkspaceLogoSettings from './logo';
-import Security from './security';
-import { FeatureCard } from '@/components/feature-card';
-import { RequestFeatureAccessDialog } from '@/components/request-feature-access-dialog';
 import { Button } from '@tuturuuu/ui/button';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Plus, UserPlus } from '@tuturuuu/ui/icons';
@@ -20,8 +14,14 @@ import {
   getWorkspace,
   verifyHasSecrets,
 } from '@tuturuuu/utils/workspace-helper';
-import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
+import { getTranslations } from 'next-intl/server';
+import { FeatureCard } from '@/components/feature-card';
+import { RequestFeatureAccessDialog } from '@/components/request-feature-access-dialog';
+import WorkspaceAvatarSettings from './avatar';
+import BasicInfo from './basic-info';
+import WorkspaceLogoSettings from './logo';
+import Security from './security';
 
 interface Props {
   params: Promise<{

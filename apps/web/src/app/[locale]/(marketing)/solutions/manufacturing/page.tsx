@@ -1,6 +1,5 @@
 'use client';
 
-import GradientHeadline from '../../gradient-headline';
 import {
   Accordion,
   AccordionContent,
@@ -27,8 +26,9 @@ import {
   Warehouse,
   Wrench,
 } from '@tuturuuu/ui/icons';
-import { type Variants, motion } from 'framer-motion';
+import { motion, type Variants } from 'framer-motion';
 import Link from 'next/link';
+import GradientHeadline from '../../gradient-headline';
 
 export default function ManufacturingPage() {
   const features = [

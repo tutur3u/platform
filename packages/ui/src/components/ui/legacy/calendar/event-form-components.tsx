@@ -1,8 +1,7 @@
 'use client';
 
-import { ColorPicker, colorMap } from './settings/color-picker';
-import { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
-import { EventPriority } from '@tuturuuu/types/primitives/calendar-event';
+import type { EventPriority } from '@tuturuuu/types/primitives/calendar-event';
+import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import { Alert, AlertDescription, AlertTitle } from '@tuturuuu/ui/alert';
 import { Button } from '@tuturuuu/ui/button';
 import { DateTimePicker } from '@tuturuuu/ui/date-time-picker';
@@ -14,7 +13,8 @@ import { Textarea } from '@tuturuuu/ui/textarea';
 import { getEventStyles } from '@tuturuuu/utils/color-helper';
 import { cn } from '@tuturuuu/utils/format';
 import { AlertCircle, Clock, MapPin, MessageSquare } from 'lucide-react';
-import React, { ReactNode } from 'react';
+import React, { type ReactNode } from 'react';
+import { ColorPicker, colorMap } from './settings/color-picker';
 
 // Color options aligned with SupportedColor type
 export const COLOR_OPTIONS: {

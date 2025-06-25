@@ -1,6 +1,5 @@
 'use client';
 
-import { GITHUB_OWNER } from '@/constants/common';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { Button } from '@tuturuuu/ui/button';
 import { Card } from '@tuturuuu/ui/card';
@@ -28,6 +27,7 @@ import { Textarea } from '@tuturuuu/ui/textarea';
 import { motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
 import * as z from 'zod';
+import { GITHUB_OWNER } from '@/constants/common';
 
 const formSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),

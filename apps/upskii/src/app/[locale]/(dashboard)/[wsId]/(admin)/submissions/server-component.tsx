@@ -1,8 +1,12 @@
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import type {
+  NovaChallenge,
+  NovaProblem,
+  NovaSubmission,
+} from '@tuturuuu/types/db';
 import { SubmissionFilters } from './filters';
 import { SubmissionOverview } from './overview';
 import { SubmissionTable } from './submission-table';
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { NovaChallenge, NovaProblem, NovaSubmission } from '@tuturuuu/types/db';
 
 type SubmissionWithDetails = NovaSubmission & {
   problem: NovaProblem & {

@@ -1,14 +1,14 @@
 'use client';
 
-import ClientQuizzes from './client-quizzes';
-import { GenerateDialog } from '@/components/generate-dialog';
 import { useObject } from '@tuturuuu/ai/object/core';
 import { quizSchema } from '@tuturuuu/ai/object/types';
 import { Button } from '@tuturuuu/ui/button';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
-import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { GenerateDialog } from '@/components/generate-dialog';
+import ClientQuizzes from './client-quizzes';
 
 export default function AIQuizzes({
   wsId,

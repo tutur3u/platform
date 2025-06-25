@@ -1,9 +1,9 @@
-import StatisticCard from '../../../../../../components/cards/StatisticCard';
-import tzs from '@/data/timezones.json';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { enforceRootWorkspaceAdmin } from '@tuturuuu/utils/workspace-helper';
-import { getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
+import tzs from '@/data/timezones.json';
+import StatisticCard from '../../../../../../components/cards/StatisticCard';
 
 interface Props {
   params: Promise<{

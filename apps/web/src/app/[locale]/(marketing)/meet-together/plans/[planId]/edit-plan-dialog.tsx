@@ -1,6 +1,6 @@
 'use client';
 
-import { MeetTogetherPlan } from '@tuturuuu/types/primitives/MeetTogetherPlan';
+import type { MeetTogetherPlan } from '@tuturuuu/types/primitives/MeetTogetherPlan';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -36,8 +36,8 @@ import { Pencil } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { Separator } from '@tuturuuu/ui/separator';
-import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import * as z from 'zod';
 
@@ -76,7 +76,7 @@ export default function EditPlanDialog({ plan }: Props) {
     setUpdating(true);
 
     const data = form.getValues();
-    let hasError = false;
+    const hasError = false;
 
     if (hasError) {
       setUpdating(false);

@@ -1,6 +1,6 @@
-import UncrawledUrlsList from './uncrawled-urls';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { getTranslations } from 'next-intl/server';
+import UncrawledUrlsList from './uncrawled-urls';
 
 interface Props {
   params: Promise<{
