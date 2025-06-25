@@ -8,8 +8,16 @@ import { QuickTimeTracker } from './quick-time-tracker';
 import { Button } from '@tuturuuu/ui/button';
 import { CommandDialog, CommandList } from '@tuturuuu/ui/command';
 import { AlertTriangle, RefreshCw } from '@tuturuuu/ui/icons';
-import { useParams } from 'next/navigation';
+import { useParams, usePathname } from 'next/navigation';
 import * as React from 'react';
+import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
+
+// Function to extract workspace ID from pathname
+function getWorkspaceFromPath(pathname: string): string | null {
+  // Match pattern like /locale/wsId/... or /wsId/...
+  const matches = pathname.match(/\/([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})/);
+  return matches ? matches[1] : null;
+}
 
 // Main Command Palette Component
 export function CommandPalette({
@@ -26,9 +34,43 @@ export function CommandPalette({
   const [errorBoundaryKey, setErrorBoundaryKey] = React.useState(0);
 
   const params = useParams();
-  const { wsId } = params;
+  const pathname = usePathname();
+  const { wsId: urlWsId } = params;
 
-  console.log('CommandPalette: wsId from params:', wsId, 'type:', typeof wsId);
+  // Try multiple methods to get workspace ID
+  const workspaceId = React.useMemo(() => {
+    console.log('CommandPalette: Detecting workspace...');
+    console.log('CommandPalette: urlWsId from params:', urlWsId);
+    console.log('CommandPalette: pathname:', pathname);
+    
+    // Method 1: From URL params (if it's a real workspace ID, not the root one)
+    if (urlWsId && 
+        typeof urlWsId === 'string' && 
+        urlWsId !== ROOT_WORKSPACE_ID && 
+        urlWsId !== 'undefined' &&
+        urlWsId.match(/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/)) {
+      console.log('CommandPalette: Using workspace ID from params:', urlWsId);
+      return urlWsId;
+    }
+
+    // Method 2: Extract from pathname
+    const pathWorkspaceId = getWorkspaceFromPath(pathname);
+    if (pathWorkspaceId && pathWorkspaceId !== ROOT_WORKSPACE_ID) {
+      console.log('CommandPalette: Using workspace ID from path:', pathWorkspaceId);
+      return pathWorkspaceId;
+    }
+
+    // Method 3: Check if we're intentionally on the root workspace
+    if (urlWsId === ROOT_WORKSPACE_ID) {
+      console.log('CommandPalette: Using root workspace ID');
+      return ROOT_WORKSPACE_ID;
+    }
+
+    console.log('CommandPalette: No valid workspace ID found');
+    return null;
+  }, [urlWsId, pathname]);
+
+  console.log('CommandPalette: Final workspaceId:', workspaceId, 'type:', typeof workspaceId);
 
   // Reset function for error boundary
   const resetErrorBoundary = React.useCallback(() => {
@@ -143,7 +185,7 @@ export function CommandPalette({
         >
           {page === 'root' && !isTransitioning && (
             <CommandRoot
-              wsId={wsId as string}
+              wsId={workspaceId as string}
               inputValue={inputValue}
               setOpen={setOpen}
               setPage={setPage}
@@ -153,7 +195,7 @@ export function CommandPalette({
           {page === 'add-task' && !isTransitioning && (
             <div className="command-page-enter">
               <AddTaskForm
-                wsId={wsId as string}
+                wsId={workspaceId as string}
                 setOpen={setOpen}
                 setIsLoading={setIsLoading}
                 inputValue={inputValue}
@@ -165,7 +207,7 @@ export function CommandPalette({
           {page === 'time-tracker' && !isTransitioning && (
             <div className="command-page-enter">
               <QuickTimeTracker
-                wsId={wsId as string}
+                wsId={workspaceId as string}
                 setOpen={setOpen}
                 setIsLoading={setIsLoading}
               />

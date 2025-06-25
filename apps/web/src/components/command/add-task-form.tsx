@@ -26,6 +26,7 @@ import { Separator } from '@tuturuuu/ui/separator';
 import { cn } from '@tuturuuu/utils/format';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 
 interface BoardWithLists {
   id: string;
@@ -57,16 +58,23 @@ export function AddTaskForm({
   const { toast } = useToast();
 
   // Early return if no valid workspace ID
-  if (!wsId || wsId === 'undefined' || wsId === '00000000-0000-0000-0000-000000000000') {
+  if (!wsId || wsId === 'undefined' || wsId === ROOT_WORKSPACE_ID) {
+    const isRootWorkspace = wsId === ROOT_WORKSPACE_ID;
+    
     return (
       <div className="flex flex-col items-center gap-4 p-8 text-center">
         <div className="rounded-full bg-dynamic-orange/10 p-3">
           <AlertTriangle className="h-6 w-6 text-dynamic-orange" />
         </div>
         <div>
-          <p className="font-semibold text-foreground">No workspace selected</p>
+          <p className="font-semibold text-foreground">
+            {isRootWorkspace ? 'System workspace' : 'No workspace selected'}
+          </p>
           <p className="text-sm text-muted-foreground">
-            Navigate to a workspace to create tasks
+            {isRootWorkspace 
+              ? 'The system workspace doesn\'t support task creation'
+              : 'Navigate to a workspace to create tasks'
+            }
           </p>
         </div>
         <Button
@@ -77,7 +85,7 @@ export function AddTaskForm({
             window.location.href = '/';
           }}
         >
-          Go to Dashboard
+          {isRootWorkspace ? 'Go to Workspaces' : 'Go to Dashboard'}
         </Button>
       </div>
     );

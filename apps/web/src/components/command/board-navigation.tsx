@@ -19,6 +19,7 @@ import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { useRouter } from 'next/navigation';
 import React from 'react';
 import type { Board } from './types';
+import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 
 interface BoardNavigationProps {
   wsId: string;
@@ -30,7 +31,9 @@ export function BoardNavigation({ wsId, setOpen }: BoardNavigationProps) {
   const router = useRouter();
 
   // Early return if no workspace ID
-  if (!wsId || wsId === 'undefined' || wsId === '00000000-0000-0000-0000-000000000000') {
+  if (!wsId || wsId === 'undefined' || wsId === ROOT_WORKSPACE_ID) {
+    const isRootWorkspace = wsId === ROOT_WORKSPACE_ID;
+    
     return (
       <div className="border-b border-border/50 pb-2">
         <div className="flex items-center justify-between px-3 py-2">
@@ -39,7 +42,7 @@ export function BoardNavigation({ wsId, setOpen }: BoardNavigationProps) {
               📋 Board Navigation
             </span>
             <div className="rounded-md bg-dynamic-orange/10 px-2 py-0.5 text-xs font-medium text-dynamic-orange">
-              No workspace
+              {isRootWorkspace ? 'System workspace' : 'No workspace'}
             </div>
           </div>
         </div>
@@ -48,9 +51,14 @@ export function BoardNavigation({ wsId, setOpen }: BoardNavigationProps) {
             <LayoutDashboard className="h-5 w-5 text-dynamic-blue" />
           </div>
           <div className="space-y-1">
-            <p className="font-semibold text-foreground">No workspace selected</p>
+            <p className="font-semibold text-foreground">
+              {isRootWorkspace ? 'System workspace' : 'No workspace selected'}
+            </p>
             <p className="text-xs text-muted-foreground">
-              Navigate to a workspace to view and manage boards
+              {isRootWorkspace 
+                ? 'The system workspace doesn\'t have task boards'
+                : 'Navigate to a workspace to view and manage boards'
+              }
             </p>
           </div>
           <Button
@@ -64,7 +72,7 @@ export function BoardNavigation({ wsId, setOpen }: BoardNavigationProps) {
             className="gap-2"
           >
             <LayoutDashboard className="h-3 w-3" />
-            Go to Dashboard
+            {isRootWorkspace ? 'Go to Workspaces' : 'Go to Dashboard'}
           </Button>
         </div>
       </div>
