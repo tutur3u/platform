@@ -34,11 +34,11 @@ export default async function MemberList({
           {invited ? t('no_invited_members_found') : t('no_members_match')}.
         </p>
 
-        {!!workspace?.id && (
+        {!!workspace?.id && user && (
           <InviteMemberButton
             wsId={workspace?.id}
             currentUser={{
-              ...user!,
+              ...user,
               role: workspace?.role,
             }}
             label={t('invite_member')}
@@ -94,12 +94,12 @@ export default async function MemberList({
         </div>
       </div>
 
-      {workspace && (
+      {workspace && user && (
         <div className="absolute top-4 right-4 flex gap-2">
           <MemberSettingsButton
             workspace={workspace}
             user={member}
-            currentUser={{ ...user!, role: workspace.role }}
+            currentUser={{ ...user, role: workspace.role }}
           />
         </div>
       )}

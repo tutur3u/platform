@@ -238,6 +238,7 @@ export async function GET(
                 left: '50%',
               }}
             />
+            {/* biome-ignore lint/performance/noImgElement: OG image generation requires img element */}
             <img
               width="320"
               height="320"

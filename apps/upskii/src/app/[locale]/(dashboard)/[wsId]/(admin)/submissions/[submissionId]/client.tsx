@@ -105,6 +105,7 @@ export default function SubmissionClient({ submission, wsId }: Props) {
             <CardContent className="space-y-4">
               <div className="flex items-center gap-3">
                 {submission.user?.avatar_url ? (
+                  // biome-ignore lint/performance/noImgElement: User avatar display
                   <img
                     src={submission.user.avatar_url}
                     alt={submission.user.display_name || 'User'}

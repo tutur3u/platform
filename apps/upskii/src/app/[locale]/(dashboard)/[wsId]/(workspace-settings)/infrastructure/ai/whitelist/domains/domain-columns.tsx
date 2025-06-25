@@ -15,7 +15,7 @@ import { useRouter } from 'next/navigation';
 import { AIWhitelistDomainRowActions } from './domain-row-actions';
 
 export const getAIWhitelistDomainColumns = (
-  t: any
+  t: (key: string) => string
 ): ColumnDef<AIWhitelistDomain>[] => {
   const router = useRouter();
   const queryClient = useQueryClient();

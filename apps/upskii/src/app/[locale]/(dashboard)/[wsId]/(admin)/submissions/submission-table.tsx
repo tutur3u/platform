@@ -193,9 +193,10 @@ export function SubmissionTable({
               <TableRow>
                 <TableHead className="w-[100px]">ID</TableHead>
                 <TableHead>
-                  <div
+                  <button
+                    type="button"
                     className={cn(
-                      'flex items-center',
+                      'flex items-center border-none bg-transparent p-0',
                       !serverSide && handleSort ? 'cursor-pointer' : ''
                     )}
                     onClick={() =>
@@ -214,11 +215,13 @@ export function SubmissionTable({
                     {sortField !== 'user_id' && (
                       <ArrowDownUp className="ml-1 h-4 w-4 opacity-50" />
                     )}
-                  </div>
+                  </button>
                 </TableHead>
                 {showEmail && <TableHead>Email</TableHead>}
                 <TableHead>
                   <div
+                    role="button"
+                    tabIndex={0}
                     className={cn(
                       'flex items-center',
                       !serverSide && handleSort ? 'cursor-pointer' : ''
@@ -228,6 +231,14 @@ export function SubmissionTable({
                         ? handleSort('problem_id')
                         : handleSortChange('problem_id')
                     }
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        !serverSide && handleSort
+                          ? handleSort('problem_id')
+                          : handleSortChange('problem_id');
+                      }
+                    }}
                   >
                     {t('headers.problem')}
                     {sortField === 'problem_id' &&
@@ -243,6 +254,8 @@ export function SubmissionTable({
                 </TableHead>
                 <TableHead>
                   <div
+                    role="button"
+                    tabIndex={0}
                     className={cn(
                       'flex items-center',
                       !serverSide && handleSort ? 'cursor-pointer' : ''
@@ -252,6 +265,14 @@ export function SubmissionTable({
                         ? handleSort('score')
                         : handleSortChange('score')
                     }
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        !serverSide && handleSort
+                          ? handleSort('score')
+                          : handleSortChange('score');
+                      }
+                    }}
                   >
                     {t('headers.score')}
                     {sortField === 'score' &&
@@ -267,6 +288,8 @@ export function SubmissionTable({
                 </TableHead>
                 <TableHead>
                   <div
+                    role="button"
+                    tabIndex={0}
                     className={cn(
                       'flex items-center',
                       !serverSide && handleSort ? 'cursor-pointer' : ''
@@ -276,6 +299,14 @@ export function SubmissionTable({
                         ? handleSort('created_at')
                         : handleSortChange('created_at')
                     }
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        !serverSide && handleSort
+                          ? handleSort('created_at')
+                          : handleSortChange('created_at');
+                      }
+                    }}
                   >
                     Date
                     {sortField === 'created_at' &&

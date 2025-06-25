@@ -4,7 +4,7 @@ import { Button } from '@tuturuuu/ui/button';
 import { AlertCircle, RefreshCw } from '@tuturuuu/ui/icons';
 import { useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { approvalsColumns } from './columns';
@@ -61,53 +61,56 @@ export function ApprovalsTable() {
   const pageSize = searchParams.get('pageSize') || '10';
 
   // Fetch feature access requests
-  const fetchApprovals = async (showRefreshLoader = false) => {
-    try {
-      if (showRefreshLoader) {
-        setIsRefreshing(true);
-      } else {
-        setIsLoading(true);
-      }
-      setError(null);
-
-      // Build query parameters
-      const queryParams = new URLSearchParams();
-      if (q) queryParams.set('q', q);
-      if (page) queryParams.set('page', page);
-      if (pageSize) queryParams.set('pageSize', pageSize);
-      if (status && status !== 'all') queryParams.set('status', status);
-      if (feature && feature !== 'all') queryParams.set('feature', feature);
-
-      const response = await fetch(
-        `/api/v1/admin/feature-requests?${queryParams.toString()}`,
-        {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+  const fetchApprovals = useCallback(
+    async (showRefreshLoader = false) => {
+      try {
+        if (showRefreshLoader) {
+          setIsRefreshing(true);
+        } else {
+          setIsLoading(true);
         }
-      );
+        setError(null);
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(
-          errorData.error || `HTTP ${response.status}: ${response.statusText}`
+        // Build query parameters
+        const queryParams = new URLSearchParams();
+        if (q) queryParams.set('q', q);
+        if (page) queryParams.set('page', page);
+        if (pageSize) queryParams.set('pageSize', pageSize);
+        if (status && status !== 'all') queryParams.set('status', status);
+        if (feature && feature !== 'all') queryParams.set('feature', feature);
+
+        const response = await fetch(
+          `/api/v1/admin/feature-requests?${queryParams.toString()}`,
+          {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          }
         );
-      }
 
-      const data = await response.json();
-      setApprovals(data);
-    } catch (error) {
-      console.error('Error fetching feature access requests:', error);
-      const errorMessage =
-        error instanceof Error ? error.message : 'Failed to fetch requests';
-      setError(errorMessage);
-      toast.error(errorMessage);
-    } finally {
-      setIsLoading(false);
-      setIsRefreshing(false);
-    }
-  };
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(
+            errorData.error || `HTTP ${response.status}: ${response.statusText}`
+          );
+        }
+
+        const data = await response.json();
+        setApprovals(data);
+      } catch (error) {
+        console.error('Error fetching feature access requests:', error);
+        const errorMessage =
+          error instanceof Error ? error.message : 'Failed to fetch requests';
+        setError(errorMessage);
+        toast.error(errorMessage);
+      } finally {
+        setIsLoading(false);
+        setIsRefreshing(false);
+      }
+    },
+    [q, page, pageSize, status, feature]
+  );
 
   // Fetch data when dependencies change
   useEffect(() => {

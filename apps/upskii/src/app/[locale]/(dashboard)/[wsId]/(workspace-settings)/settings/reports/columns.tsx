@@ -7,7 +7,7 @@ import moment from 'moment';
 import { ConfigRowActions } from './row-actions';
 
 export const configColumns = (
-  t: any,
+  t: (key: string) => string,
   namespace: string | undefined
 ): ColumnDef<WorkspaceConfig>[] => [
   // {

@@ -48,11 +48,18 @@ import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { z } from 'zod';
 
+interface TeamData {
+  id: string;
+  name: string;
+  created_at: string;
+  [key: string]: unknown;
+}
+
 interface TeamDetailsClientProps {
   teamId: string;
-  teamData: any;
-  initialMembers: any[];
-  initialInvitations: any[];
+  teamData: TeamData;
+  initialMembers: PlatformUser[];
+  initialInvitations: PlatformUser[];
 }
 
 export default function TeamDetailsClient({

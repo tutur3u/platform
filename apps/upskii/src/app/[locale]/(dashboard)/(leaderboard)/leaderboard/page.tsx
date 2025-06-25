@@ -66,6 +66,18 @@ async function LeaderboardContent({
   );
 }
 
+interface UserSession {
+  user_id: string;
+  [key: string]: unknown;
+}
+
+interface Submission {
+  user_id: string;
+  problem_id: string;
+  score: number;
+  [key: string]: unknown;
+}
+
 // The problem's score for each session is the maximum score of user's submissions for that problem in that session
 // The challenge's score for each session is the sum of the problem's scores for that challenge in that session
 // Then the official challenge score for each user is the maximum challenge score from any session
@@ -182,13 +194,13 @@ async function fetchLeaderboard(locale: string, page: number = 1) {
   );
 
   // Calculate scores from submissions and associate with sessions
-  const groupedData = Object.values(userSessions).map((user: any) => {
+  const groupedData = Object.values(userSessions).map((user: UserSession) => {
     const userSubmissions = submissionsData.filter(
       (s) => s.user_id === user.user_id
     );
 
     // First, group submissions by problem_id to find the best submission for each problem
-    const bestProblemSubmissions = new Map<string, any>();
+    const bestProblemSubmissions = new Map<string, Submission>();
 
     userSubmissions.forEach((submission) => {
       const problemId = submission.problem_id;

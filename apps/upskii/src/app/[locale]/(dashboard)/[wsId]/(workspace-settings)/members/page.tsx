@@ -58,19 +58,21 @@ export default async function WorkspaceMembersPage({
 
         <div className="flex flex-col items-center justify-center gap-2 md:flex-row">
           <MemberTabs value={status || 'all'} />
-          <InviteMemberButton
-            wsId={wsId}
-            currentUser={{
-              ...user!,
-              role: ws?.role,
-            }}
-            label={
-              disableInvite
-                ? t('ws-members.invite_member_disabled')
-                : t('ws-members.invite_member')
-            }
-            disabled={disableInvite}
-          />
+          {user && (
+            <InviteMemberButton
+              wsId={wsId}
+              currentUser={{
+                ...user,
+                role: ws?.role,
+              }}
+              label={
+                disableInvite
+                  ? t('ws-members.invite_member_disabled')
+                  : t('ws-members.invite_member')
+              }
+              disabled={disableInvite}
+            />
+          )}
         </div>
       </div>
       <Separator className="my-4" />

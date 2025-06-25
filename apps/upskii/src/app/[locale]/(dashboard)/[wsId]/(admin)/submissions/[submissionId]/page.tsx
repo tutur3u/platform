@@ -12,6 +12,22 @@ interface Props {
   }>;
 }
 
+interface CriterionData {
+  id: string;
+  results: Array<{
+    submission_id: string;
+    [key: string]: unknown;
+  }>;
+  [key: string]: unknown;
+}
+
+interface TestCaseData {
+  test_case: {
+    [key: string]: unknown;
+  };
+  [key: string]: unknown;
+}
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { submissionId } = await params;
 
@@ -79,19 +95,23 @@ export default async function Page({ params }: Props) {
     }
 
     // Prepare properly formatted criteria
-    const formattedCriteria = submission.criteria.map((criterion: any) => ({
-      ...criterion,
-      results: undefined,
-      result: criterion.results.find(
-        (result: any) => result.submission_id === submission.id
-      ),
-    }));
+    const formattedCriteria = submission.criteria.map(
+      (criterion: CriterionData) => ({
+        ...criterion,
+        results: undefined,
+        result: criterion.results.find(
+          (result) => result.submission_id === submission.id
+        ),
+      })
+    ) as unknown as SubmissionData['criteria'];
 
     // Prepare formatted test cases
-    const formattedTestCases = submission.test_cases.map((testCase: any) => ({
-      ...testCase,
-      test_case: testCase.test_case,
-    }));
+    const formattedTestCases = submission.test_cases.map(
+      (testCase: TestCaseData) => ({
+        ...testCase,
+        test_case: testCase.test_case,
+      })
+    ) as unknown as SubmissionData['test_cases'];
 
     // Define default problem structure to match expected type
     const formattedProblem = {

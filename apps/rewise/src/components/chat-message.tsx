@@ -13,8 +13,8 @@ import dayjs from 'dayjs';
 import 'dayjs/locale/vi';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import mermaid from 'mermaid';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
 import rehypeKatex from 'rehype-katex';
 import remarkGfm from 'remark-gfm';
@@ -87,6 +87,7 @@ function MermaidRenderer({ content }: { content: string }) {
     <div
       ref={elementRef}
       className="overflow-x-auto"
+      // biome-ignore lint/security/noDangerouslySetInnerHtml: Mermaid diagram rendering requires dangerouslySetInnerHTML
       dangerouslySetInnerHTML={{ __html: svgContent }}
     />
   );

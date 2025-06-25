@@ -89,7 +89,7 @@ export default async function UserManagement({ params, searchParams }: props) {
   );
 }
 
-// Define interfaces for RPC parameters
+// Define types for RPC function parameters
 interface SearchUsersParams {
   search_query: string;
   page_number: number;
@@ -104,12 +104,7 @@ interface CountSearchUsersParams {
   enabled_filter: boolean | null;
 }
 
-// Define interface for user data from RPC
-interface RPCUser {
-  id: string;
-  services?: string[];
-  [key: string]: unknown;
-}
+// UserSearchResult interface removed due to type conflicts
 
 async function getUserData({
   q,
@@ -135,14 +130,15 @@ async function getUserData({
 
     // If there's a search query, use the RPC function
     if (q) {
-      // Use type assertion to overcome TypeScript issues
-      const { data, error } = await sbAdmin.rpc('search_users', {
+      const searchParams: SearchUsersParams = {
         search_query: q,
         page_number: parseInt(page),
         page_size: parseInt(pageSize),
         role_filter: role && role !== 'all' ? role : null,
         enabled_filter: enabled ? enabled === 'true' : null,
-      } as any);
+      };
+
+      const { data, error } = await sbAdmin.rpc('search_users', searchParams);
 
       if (error) {
         console.error('Error searching users:', error);
@@ -150,37 +146,69 @@ async function getUserData({
       }
 
       // Get count for pagination
+      const countParams: CountSearchUsersParams = {
+        search_query: q,
+        role_filter: role && role !== 'all' ? role : null,
+        enabled_filter: enabled ? enabled === 'true' : null,
+      };
+
       const { data: countData, error: countError } = await sbAdmin.rpc(
         'count_search_users',
-        {
-          search_query: q,
-          role_filter: role && role !== 'all' ? role : null,
-          enabled_filter: enabled ? enabled === 'true' : null,
-        } as any
+        countParams
       );
 
       if (countError) {
         console.error('Error getting count:', countError);
         return {
           userData: (data || [])
-            .map((user: any) => ({
-              ...user,
-              services: user.services || [],
-            }))
-            .filter((user: any) => user.services?.includes('UPSKII')),
-          userCount: (data || []).filter((user: any) =>
-            user.services?.includes('UPSKII')
-          ).length,
+            .map((user: unknown) => {
+              const userRecord = user as Record<string, unknown>;
+              return {
+                ...userRecord,
+                services: Array.isArray(userRecord.services)
+                  ? userRecord.services
+                  : [],
+              };
+            })
+            .filter((user: unknown) => {
+              const userRecord = user as Record<string, unknown>;
+              return (
+                Array.isArray(userRecord.services) &&
+                userRecord.services.includes('UPSKII')
+              );
+            }) as (User &
+            PlatformUser &
+            Partial<UserPrivateDetails> & { team_name: string[] })[],
+          userCount: (data || []).filter((user: unknown) => {
+            const userRecord = user as Record<string, unknown>;
+            return (
+              Array.isArray(userRecord.services) &&
+              userRecord.services.includes('UPSKII')
+            );
+          }).length,
         };
       }
 
       return {
         userData: (data || [])
-          .map((user: any) => ({
-            ...user,
-            services: user.services || [],
-          }))
-          .filter((user: any) => user.services?.includes('UPSKII')),
+          .map((user: unknown) => {
+            const userRecord = user as Record<string, unknown>;
+            return {
+              ...userRecord,
+              services: Array.isArray(userRecord.services)
+                ? userRecord.services
+                : [],
+            };
+          })
+          .filter((user: unknown) => {
+            const userRecord = user as Record<string, unknown>;
+            return (
+              Array.isArray(userRecord.services) &&
+              userRecord.services.includes('UPSKII')
+            );
+          }) as (User &
+          PlatformUser &
+          Partial<UserPrivateDetails> & { team_name: string[] })[],
         userCount: countData || 0,
       };
     }

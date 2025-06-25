@@ -69,6 +69,7 @@ export function TagInput({
               {tag}
               {!disabled && (
                 <button
+                  type="button"
                   className="ml-1 rounded-full ring-offset-background outline-hidden focus:ring-2 focus:ring-ring focus:ring-offset-2"
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') {

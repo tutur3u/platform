@@ -8,10 +8,15 @@ import { UserCircle } from '@tuturuuu/ui/icons';
 import moment from 'moment';
 import { RoleRowActions } from './row-actions';
 
+interface Permission {
+  enabled: boolean;
+  [key: string]: unknown;
+}
+
 export const roleColumns = (
-  t: any,
+  t: (key: string) => string,
   namespace: string | undefined,
-  _?: any[],
+  _?: unknown[],
   extraData?: {
     permissionsCount: number;
     user: SupabaseUser;
@@ -81,8 +86,9 @@ export const roleColumns = (
       <div className="flex items-center gap-1 font-semibold">
         <span className="flex items-center gap-1 rounded border px-1 text-sm font-bold">
           <span className="text-dynamic-orange">
-            {(row.getValue('permissions') as any[]).filter((x) => x.enabled)
-              .length ?? '-'}
+            {(row.getValue('permissions') as Permission[]).filter(
+              (x) => x.enabled
+            ).length ?? '-'}
           </span>
           <span className="opacity-50">/</span>
           <span className="text-dynamic-blue">

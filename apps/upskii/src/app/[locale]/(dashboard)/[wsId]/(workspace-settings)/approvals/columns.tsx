@@ -16,7 +16,7 @@ import type { WorkspaceApprovalRequest } from './approvals-table';
 import { ApprovalRowActions } from './row-actions';
 
 export const approvalsColumns = (
-  t: any,
+  t: (key: string, values?: Record<string, unknown>) => string,
   namespace: string | undefined,
   onRefresh?: () => void
 ): ColumnDef<WorkspaceApprovalRequest>[] => [

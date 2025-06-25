@@ -143,9 +143,7 @@ export default async function WorkspaceSettingsPage({ params }: Props) {
             })}
           </div>
         </div>
-      ) : (
-        <></>
-      )}
+      ) : null}
     </>
   );
 }
