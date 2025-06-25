@@ -140,7 +140,17 @@ export default function ChallengesList({ isAdmin, challenges }: Props) {
               defaultValue="all"
               value={filter}
               className="overflow-x-auto"
-              onValueChange={(v) => setFilter(v as any)}
+              onValueChange={(v) =>
+                setFilter(
+                  v as
+                    | 'disabled'
+                    | 'upcoming'
+                    | 'preview'
+                    | 'active'
+                    | 'closed'
+                    | 'all'
+                )
+              }
             >
               <TabsList>
                 <TabsTrigger value="all">{t('filters.all')}</TabsTrigger>

@@ -128,6 +128,7 @@ export async function GET() {
               width="320"
               height="320"
               src="https://tuturuuu.com/media/logos/light.png"
+              alt="Tuturuuu Logo"
               style={{
                 borderRadius: '32px',
                 position: 'relative',
@@ -143,7 +144,7 @@ export async function GET() {
         height: 630,
       }
     );
-  } catch (e: any) {
+  } catch (e: unknown) {
     console.error(e);
     return new Response('Failed to generate OG image', { status: 500 });
   }

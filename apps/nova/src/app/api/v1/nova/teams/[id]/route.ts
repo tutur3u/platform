@@ -27,12 +27,10 @@ export async function GET(
     };
 
     return NextResponse.json({ data: transformedData });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error fetching team:', error);
     return NextResponse.json(
-      {
-        error: error.message || 'Failed to fetch team',
-      },
+      { error: 'Failed to fetch team data' },
       { status: 500 }
     );
   }
@@ -65,12 +63,10 @@ export async function PATCH(
       throw error;
     }
     return NextResponse.json({ data });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error updating team:', error);
     return NextResponse.json(
-      {
-        error: error.message || 'Unknown error occurred',
-      },
+      { error: 'Failed to update team' },
       { status: 500 }
     );
   }
@@ -92,12 +88,10 @@ export async function DELETE(
     }
 
     return NextResponse.json({ success: true });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error deleting team:', error);
     return NextResponse.json(
-      {
-        error: error.message || 'Failed to delete team',
-      },
+      { error: 'Failed to delete team' },
       { status: 500 }
     );
   }

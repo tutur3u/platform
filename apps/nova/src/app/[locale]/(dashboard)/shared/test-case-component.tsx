@@ -30,6 +30,7 @@ export default function TestCaseComponent({
       className={className}
       style={copyProtectionStyles}
       onContextMenu={(e) => e.preventDefault()}
+      role="document"
     >
       <Card>
         <CardHeader className="pb-3">

@@ -65,6 +65,29 @@ export default function TeamClient({
 }) {
   const locale = useLocale();
   const t = useTranslations('nova.profile-team-page');
+  const [copied, setCopied] = useState(false);
+  const [user, setUser] = useState<SupabaseUser | null>(null);
+  const supabase = createClient();
+  const [dialogState, setDialogState] = useState<{
+    isOpen: boolean;
+    type: 'goals' | 'reports' | 'des';
+    isEditing: boolean;
+  }>({
+    isOpen: false,
+    type: 'goals',
+    isEditing: false,
+  });
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      setUser(user);
+    };
+    fetchUser();
+  }, [supabase.auth]);
+
   console.log('team', teamData);
   if (!teamData) {
     return (
@@ -79,6 +102,7 @@ export default function TeamClient({
       </div>
     );
   }
+
   const teamInfo = {
     ...teamData,
     name: teamData.name,
@@ -88,19 +112,6 @@ export default function TeamClient({
     description: teamData.description,
     goals: teamData.goals,
   };
-
-  const [copied, setCopied] = useState(false);
-  const [user, setUser] = useState<SupabaseUser | null>(null);
-  const supabase = createClient();
-  const [dialogState, setDialogState] = useState<{
-    isOpen: boolean;
-    type: 'goals' | 'reports' | 'des';
-    isEditing: boolean;
-  }>({
-    isOpen: false,
-    type: 'goals',
-    isEditing: false,
-  });
 
   // Use either stats.active_since or the root active_since property
   const activeSinceDate = teamData.stats?.active_since || '';
@@ -137,15 +148,6 @@ export default function TeamClient({
     setDialogState((prev) => ({ ...prev, isOpen: false }));
   };
 
-  useEffect(() => {
-    const fetchUser = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      setUser(user);
-    };
-    fetchUser();
-  }, [supabase.auth]);
   // Share functionality
   const handleShare = () => {
     if (navigator.share) {

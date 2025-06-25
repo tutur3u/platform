@@ -26,6 +26,7 @@ export default async function Login() {
           strokeLinejoin="round"
           className="mr-2 h-4 w-4 transition-transform group-hover:-translate-x-1"
         >
+          <title>Back arrow</title>
           <polyline points="15 18 9 12 15 6" />
         </svg>{' '}
         {t('common.back')}
