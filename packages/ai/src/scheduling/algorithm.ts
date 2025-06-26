@@ -145,7 +145,6 @@ export const scheduleWithFlexibleEvents = (
 
   const allTasksToProcess = [...newTasks, ...promotedTasks];
 
-  // Call the core scheduler with the clean, future-only lists.
   const result = scheduleTasks(allTasksToProcess, activeHours, futureLockedEvents)
 
   return result;
@@ -157,15 +156,12 @@ export const scheduleTasks = (
   lockedEvents: Event[] = []
 ): ScheduleResult => {
 
-  // console.log(activeHours, 'activeHours');  
-  // console.log(lockedEvents, 'lockedEvents');
-  // Start with locked events in the schedule
+
   const scheduledEvents: Event[] = lockedEvents.map((e) => ({
     ...e,
     locked: true,
   }));
   const logs: Log[] = [];
-// console.log(tasks, 'Tasks to Schedule');
 let taskPool: any[]= [];
   // Prepare a working pool of tasks with remaining duration
   try{
@@ -179,11 +175,11 @@ let taskPool: any[]= [];
       scheduledParts: 0,
       priorityScore: calculatePriorityScore(task),
     }));
-  
-    // console.log(taskPool, 'Task Pool Before Sorting');
-  }catch (error) {
-    console.error('Error preparing task pool:', error);
-  }
+
+  }catch (error) {  
+    console.error('Error preparing task pool:', error);  
+    return { events: [], logs: [{ type: 'error', message: 'Failed to prepare task pool.' }] };  
+  }  
   // Sort by priority score (highest first) and then by deadline
   taskPool.sort((a, b) => {
     // First sort by priority score (highest first)
@@ -222,7 +218,7 @@ let taskPool: any[]= [];
 
     for (const task of taskPool) {
       if (task.remaining <= 0) continue;
-      const categoryHours = activeHours[task.category as keyof ActiveHours];
+      const categoryHours = activeHours[task.category as keyof ActiveHours] ?? activeHours.work;
       if (!categoryHours || categoryHours.length === 0) {
         logs.push({
           type: 'error',
@@ -236,7 +232,7 @@ let taskPool: any[]= [];
       if (task.allowSplit === false) {
         if (task.scheduledParts > 0) continue; // Already tried
         let scheduled = false;
-        let tryTime = availableTimes[task.category as keyof ActiveHours];
+        let tryTime = availableTimes[task.category as keyof ActiveHours] ?? availableTimes.work;
         let blockAttempts = 0;
         let scheduledAfterDeadline = false;
         while (!scheduled && blockAttempts < 50) {
