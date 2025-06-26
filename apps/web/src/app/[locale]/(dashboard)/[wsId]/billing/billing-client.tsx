@@ -1,9 +1,10 @@
-'use client';
+"use client";
 
-import { Button } from '@tuturuuu/ui/button';
-import { ArrowUpCircle, CheckCircle } from 'lucide-react';
-import { useState } from 'react';
-import PurchaseLink from './data-polar-checkout';
+import { Button } from "@tuturuuu/ui/button";
+import { ArrowUpCircle, CheckCircle } from "lucide-react";
+import { useState } from "react";
+import { createClient } from "@tuturuuu/supabase/next/client";
+import PurchaseLink from "./data-polar-checkout";
 
 // Define types for the props we're passing from the server component
 interface Plan {
@@ -26,18 +27,85 @@ interface UpgradePlan {
   isEnterprise?: boolean;
 }
 
+interface Product {
+  id: string;
+  name: string;
+  price: string;
+  recurringInterval: string;
+  description?: string;
+}
 interface BillingClientProps {
   currentPlan: Plan;
   upgradePlans: UpgradePlan[];
   wsId: string;
+  products: Product[];
   product_id: string;
   isCreator: boolean;
+  isAdmin?: boolean;
   activeSubscriptionId?: string;
 }
 
+// const syncToProduct = async (upgradePlans: UpgradePlan[]) => {
+//   const supabase = createClient();
+
+//   const insertedProducts = await Promise.all(
+//     upgradePlans.map(async (plan) => {
+//       const { data, error } = await supabase
+//         .from("workspace_subscription_products")
+//         .insert({
+//           product_id: plan.id,
+//           name: plan.name,
+//           price: plan.price,
+//           billing_cycle: plan.billingCycle,
+//           features: plan.features,
+//           popular: plan.popular,
+//           is_enterprise: plan.isEnterprise || false,
+//         })
+//         .select()
+//         .single();
+
+//       if (error) {
+//         console.error("Error inserting product:", error);
+//         return null;
+//       }
+//       return data;
+//     }
+//   );
+
+//   return insertedProducts;
+// };
+
+const syncToProduct = async (products: Product[]) => {
+  const supabase = createClient();
+
+  const insertedProducts = await Promise.all(
+    products.map(async (product) => {
+      const { data, error } = await supabase
+        .from("workspace_subscription_products")
+        .insert({
+          id: product.id,
+          name: product.name,
+          price: Number(product.price),
+          recurring_interval: product.recurringInterval,
+          description: product.description || "",
+        })
+        .select();
+
+      if (error) {
+        console.error("Error inserting product:", error);
+        return null;
+      }
+      return data;
+    }),
+  );
+
+  return insertedProducts;
+};
 export function BillingClient({
   currentPlan,
   upgradePlans,
+  isAdmin = false,
+  products,
   wsId,
   isCreator,
   // _product_id,
@@ -45,7 +113,7 @@ export function BillingClient({
 }: BillingClientProps) {
   const [showUpgradeOptions, setShowUpgradeOptions] = useState(false);
   const [_isLoading, _setIsLoading] = useState(false);
-  const [message, _setMessage] = useState('');
+  const [message, _setMessage] = useState("");
 
   // const handleCancelSubscription = async () => {
   //   setIsLoading(true);
@@ -90,12 +158,12 @@ export function BillingClient({
           <div className="flex items-center">
             <span
               className={`rounded-full px-3 py-1 text-sm font-medium ${
-                currentPlan.status === 'active'
-                  ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
-                  : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'
+                currentPlan.status === "active"
+                  ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
+                  : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400"
               }`}
             >
-              {currentPlan.status === 'active' ? 'Active' : 'Pending'}
+              {currentPlan.status === "active" ? "Active" : "Pending"}
             </span>
           </div>
         </div>
@@ -151,9 +219,9 @@ export function BillingClient({
             {message && (
               <div
                 className={`mb-4 rounded-lg p-3 text-sm ${
-                  message.includes('Error')
-                    ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
-                    : 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
+                  message.includes("Error")
+                    ? "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
+                    : "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
                 }`}
               >
                 {message}
@@ -168,7 +236,7 @@ export function BillingClient({
                 size="lg"
               >
                 <ArrowUpCircle className="mr-2 h-5 w-5" />
-                {showUpgradeOptions ? 'Hide Upgrade Options' : 'Upgrade Plan'}
+                {showUpgradeOptions ? "Hide Upgrade Options" : "Upgrade Plan"}
               </Button>
               {/* <Button
                 variant="outline"
@@ -190,12 +258,22 @@ export function BillingClient({
           <h2 className="mb-6 text-2xl font-semibold text-card-foreground">
             Upgrade Options
           </h2>
+          {isAdmin && (
+            <Button
+              onClick={async () => {
+                await syncToProduct(products);
+              }}
+              className="mb-6"
+            >
+              Sync to product to database
+            </Button>
+          )}
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             {upgradePlans.map((plan) => (
               <div
                 key={plan.id}
                 className={`rounded-lg border transition-shadow hover:shadow-md ${
-                  plan.popular ? 'relative border-primary' : 'border-border'
+                  plan.popular ? "relative border-primary" : "border-border"
                 }`}
               >
                 {plan.popular && (
@@ -227,11 +305,11 @@ export function BillingClient({
                     </Button>
                   ) : (
                     <Button
-                      variant={plan.popular ? 'default' : 'outline'}
+                      variant={plan.popular ? "default" : "outline"}
                       className={`w-full ${
                         plan.popular
-                          ? ''
-                          : 'border-primary bg-transparent text-primary hover:bg-primary/10'
+                          ? ""
+                          : "border-primary bg-transparent text-primary hover:bg-primary/10"
                       }`}
                       asChild
                     >
