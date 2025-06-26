@@ -8,6 +8,10 @@ dist/
 build/
 *.egg-info/
 
+# OS
+~*/
+.DS_Store
+
 # Virtual environment
 venv/
 env/

@@ -30,6 +30,6 @@ app = modal.App("ocr-service", image=image)
 )
 @modal.asgi_app()
 def fastapi_app():
-    from main import create_app
-
-    return create_app()
+    from main import app
+    
+    return app

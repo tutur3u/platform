@@ -3,18 +3,12 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "ocr:install:bash": "python -m venv venv && ./venv/bin/pip install -r requirements.txt",
-    "ocr:install:shell": "python -m venv venv && ./venv/Scripts/pip install -r requirements.txt",
-    "ocr:dev:bash": "./venv/bin/uvicorn main:app --host 127.0.0.1 --port 5500 --reload",
-    "ocr:dev:shell": "./venv/Scripts/uvicorn main:app --host 127.0.0.1 --port 5500 --reload",
-    "ocr:start:bash": "./venv/bin/uvicorn main:app --host 127.0.0.1 --port 5500",
-    "ocr:start:shell": "./venv/Scripts/uvicorn main:app --host 127.0.0.1 --port 5500",
-    "ocr:run:bash": "./venv/bin/modal run modal_deployment.py",
-    "ocr:run:shell": "./venv/Scripts/modal run modal_deployment.py",
-    "ocr:serve:bash": "./venv/bin/modal serve modal_deployment.py",
-    "ocr:serve:shell": "./venv/Scripts/modal serve modal_deployment.py",
-    "ocr:deploy:bash": "./venv/bin/modal deploy modal_deployment.py",
-    "ocr:deploy:shell": "./venv/Scripts/modal deploy modal_deployment.py"
+    "install": "node script.js install",
+    "dev": "node script.js dev",
+    "start": "node script.js start",
+    "run": "node script.js run",
+    "serve": "node script.js serve",
+    "deploy": "node script.js deploy"
   },
   "packageManager": "bun@1.2.16"
 }
