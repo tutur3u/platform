@@ -9,10 +9,10 @@ import Link from 'next/link';
 import { RowActions } from './row-actions';
 
 export const getColumns = (
-  t: any,
+  t: (key: string) => string,
   namespace: string | undefined,
-  _?: any,
-  extraData?: any
+  _?: unknown,
+  extraData?: Record<string, unknown>
 ): ColumnDef<CrawledUrl>[] => [
   {
     accessorKey: 'id',
@@ -38,7 +38,7 @@ export const getColumns = (
     ),
     cell: ({ row }) => (
       <Link
-        href={`/${extraData.wsId}/crawlers/${row.getValue('id')}`}
+        href={`/${extraData?.wsId ?? ''}/crawlers/${row.getValue('id')}`}
         className="min-w-16"
         rel="noreferrer"
       >

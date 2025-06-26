@@ -55,8 +55,8 @@ export default function MigrationDashboard() {
       onSuccess,
       onError,
     }: {
-      onSuccess?: (data: any) => void;
-      onError?: (error: any) => void;
+      onSuccess?: (data: unknown) => void;
+      onError?: (error: Error) => void;
     }
   ) => {
     const res = await fetch(url, {
@@ -152,7 +152,7 @@ export default function MigrationDashboard() {
     // Initialize external variables
     let externalCount = -1;
     let externalData: unknown[] = [];
-    let externalError: Error | null = null;
+    const externalError: Error | null = null;
 
     // Fetch external data
     while (
@@ -164,22 +164,34 @@ export default function MigrationDashboard() {
           // if there are 2 or more '?' in url, replace the second and next ones with '&'
           .replace(/\?([^?]*)(\?)/g, '?$1&'),
         {
-          onSuccess: (newData) => {
-            if (externalCount === -1) externalCount = newData.count;
+          onSuccess: (newData: unknown) => {
+            const typedData = newData as {
+              count: number;
+              [key: string]: unknown;
+            };
+            if (externalCount === -1) externalCount = typedData.count;
+            const dataKey = externalAlias ?? internalAlias ?? 'data';
+            const newDataTyped = newData as Record<string, unknown>;
             externalData = [
               ...externalData,
-              ...newData?.[externalAlias ?? internalAlias ?? 'data'],
+              ...((newDataTyped?.[dataKey] as unknown[]) || []),
             ];
-            setData('external', module, externalData, newData.count);
+            setData(
+              'external',
+              module,
+              externalData,
+              (newDataTyped?.count as number) || 0
+            );
 
             // If count does not match, stop fetching
-            if (externalData.length !== externalCount) return;
+            if (externalData.length >= typedData.count) {
+              setLoading(module, false);
+              setError(module, null);
+            }
           },
-          onError: async (error) => {
+          onError: (error: unknown) => {
             setLoading(module, false);
-            setError(module, error);
-            externalError = error;
-            return;
+            setError(module, error as Error);
           },
         }
       );

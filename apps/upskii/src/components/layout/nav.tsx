@@ -16,11 +16,11 @@ import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 import type { NavLink } from '@/components/navigation';
-import { ENABLE_KEYBOARD_SHORTCUTS, PROD_MODE } from '@/constants/common';
+import { ENABLE_KEYBOARD_SHORTCUTS } from '@/constants/common';
 
 interface NavProps {
   wsId: string;
-  currentUser: WorkspaceUser | null;
+  _currentUser: WorkspaceUser | null;
   isCollapsed: boolean;
   links: (NavLink | null)[];
   onClick?: () => void;
@@ -28,7 +28,7 @@ interface NavProps {
 
 export function Nav({
   wsId,
-  currentUser,
+  _currentUser,
   links,
   isCollapsed,
   onClick,
@@ -37,7 +37,7 @@ export function Nav({
   const pathname = usePathname();
   const _searchParams = useSearchParams();
 
-  const isRootWorkspace = wsId === ROOT_WORKSPACE_ID;
+  const _isRootWorkspace = wsId === ROOT_WORKSPACE_ID;
   const [urlToLoad, setUrlToLoad] = useState<string>();
   const [openGroups, setOpenGroups] = useState<Set<string>>(new Set());
 
@@ -61,67 +61,42 @@ export function Nav({
     if (urlToLoad && urlToLoad === pathname) setUrlToLoad(undefined);
   }, [pathname, urlToLoad]);
 
-  function shouldShowLink(link: NavLink) {
-    // If the link is disabled, don't render it
-    if (link?.disabled) return false;
-
-    // If the link is disabled on production, don't render it
-    if (link?.disableOnProduction && PROD_MODE) return false;
-
-    // If the link requires root membership, check if user email ends with @tuturuuu.com
-    if (
-      link?.requireRootMember &&
-      !currentUser?.email?.endsWith('@tuturuuu.com')
-    )
+  const shouldShowLink = useCallback(
+    (link: NavLink) => {
+      if (!link.href && !link.children) return false;
+      if (link.href && !link.children) {
+        const links = [...(link.aliases || []), link.href].filter(Boolean);
+        return links.some((href) => pathname === href);
+      }
+      if (link.children) {
+        return link.children.some((child) => {
+          const childLinks = [...(child.aliases || []), child.href].filter(
+            Boolean
+          );
+          return childLinks.some((href) => pathname === href);
+        });
+      }
       return false;
-
-    // If the link requires the root workspace, check if the current workspace is the root workspace
-    if (link?.requireRootWorkspace && !isRootWorkspace) return false;
-
-    // If the link is only allowed for certain roles, check if the current role is allowed
-    if (link?.allowedRoles && link.allowedRoles.length > 0) return false;
-
-    return true;
-  }
+    },
+    [pathname]
+  );
 
   const isLinkActive = useCallback(
     (link: NavLink) => {
       if (!link.href && !link.children) return false;
-
-      const links = [...(link.aliases || []), link.href].filter(Boolean);
-      const matchExact = link.matchExact ?? false;
-
-      if (link.href) {
-        return (
-          links
-            .map(
-              (href) =>
-                typeof href === 'string' &&
-                (matchExact
-                  ? pathname === href
-                  : (pathname?.startsWith(href) ?? false))
-            )
-            .filter(Boolean).length > 0
-        );
+      if (link.href && !link.children) {
+        const links = [...(link.aliases || []), link.href].filter(Boolean);
+        return links.some((href) => pathname === href);
       }
-
-      // For grouped links, check if any child is active
       if (link.children) {
         return link.children.some((child) => {
           if (!shouldShowLink(child)) return false;
           const childLinks = [...(child.aliases || []), child.href].filter(
             Boolean
           );
-          return childLinks.some(
-            (href) =>
-              typeof href === 'string' &&
-              (child.matchExact
-                ? pathname === href
-                : (pathname?.startsWith(href) ?? false))
-          );
+          return childLinks.some((href) => pathname === href);
         });
       }
-
       return false;
     },
     [pathname, shouldShowLink]

@@ -25,8 +25,7 @@ import { useForm } from '@tuturuuu/ui/hooks/use-form';
 import { Info, RefreshCw } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
-import { toast } from '@tuturuuu/ui/use-toast';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import * as XLSX from 'xlsx';
 import { z } from 'zod';
 import { CsvCrawler } from './crawlers/csv-crawler';
@@ -105,62 +104,42 @@ export function DatasetCrawler({
     },
   });
 
-  const loadExcelFile = async (
-    e?: React.ChangeEvent<HTMLInputElement> | React.DragEvent<HTMLDivElement>
-  ) => {
-    const file =
-      e?.target?.files?.[0] || (e as React.DragEvent)?.dataTransfer?.files?.[0];
-    if (!file) return;
+  const loadExcelFile = useCallback(
+    async (
+      e?: React.ChangeEvent<HTMLInputElement> | React.DragEvent<HTMLDivElement>
+    ) => {
+      const file =
+        e?.target?.files?.[0] ||
+        (e as React.DragEvent)?.dataTransfer?.files?.[0];
+      if (!file) return;
 
-    setLoading(true);
-    try {
-      const arrayBuffer = await file.arrayBuffer();
-      let data: ProcessedDataRow[][] | XLSX.WorkBook;
+      setLoading(true);
+      try {
+        const arrayBuffer = await file.arrayBuffer();
+        let data: ProcessedDataRow[][] | XLSX.WorkBook;
 
-      if (file.name.toLowerCase().endsWith('.csv')) {
-        const csvCrawler = new CsvCrawler();
-        data = csvCrawler.parseCsvData(arrayBuffer);
+        if (file.name.toLowerCase().endsWith('.csv')) {
+          const csvCrawler = new CsvCrawler();
+          data = csvCrawler.parse(await file.text());
+        } else {
+          data = XLSX.read(arrayBuffer, { type: 'array' });
+        }
         setWorkbook(data);
-        setSheetInfo({
-          rows: data.length,
-          columns: data[0]?.length || 0,
-          name: file.name,
-        });
-        updatePreview(data, file.name, 1, 2);
-      } else {
-        const excelCrawler = new ExcelCrawler();
-        data = excelCrawler.parseExcelData(arrayBuffer);
-        setWorkbook(data);
-        const sheetNames = Object.keys(data.Sheets);
-        const firstSheet = sheetNames[0];
-        const sheetData = data.Sheets[firstSheet];
-        const range = XLSX.utils.decode_range(sheetData['!ref'] || 'A1');
-        setSheetInfo({
-          rows: range.e.r + 1,
-          columns: range.e.c + 1,
-          name: firstSheet,
-        });
-        form.setValue('sheetName', firstSheet);
-        updatePreview(data, firstSheet, 1, 2);
+        setIsFileLoaded(true);
+      } catch (_error) {
+        setExcelError('Failed to load file');
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      console.error('Error loading file:', error);
-      toast.error('Error loading file');
-    } finally {
-      setLoading(false);
-    }
-  };
+    },
+    []
+  );
 
   useEffect(() => {
     if (isOpen && dataset.url && !localFile && !workbook) {
       loadExcelFile();
     }
-  }, [
-    isOpen,
-    dataset.url, // Prefetch from URL if available
-    form.setValue,
-    loadExcelFile,
-  ]);
+  }, [isOpen, dataset.url, localFile, workbook, loadExcelFile]);
 
   useEffect(() => {
     const fetchColumnsAndRows = async () => {

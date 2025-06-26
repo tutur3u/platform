@@ -90,18 +90,22 @@ const SidebarProvider = React.forwardRef<
 
         // This sets the cookie to keep the sidebar state.
         try {
-          if (
-            typeof document !== 'undefined' &&
-            document.cookie !== undefined
-          ) {
-            // Use a more explicit approach to set cookies
-            const cookieString = `${SIDEBAR_COOKIE_NAME}=${openState}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`;
-            if (typeof window !== 'undefined' && window.document) {
-              window.document.cookie = cookieString;
+          if (typeof window !== 'undefined') {
+            if ('cookieStore' in window) {
+              // Use the Cookie Store API if available
+              // @ts-ignore
+              window.cookieStore.set({
+                name: SIDEBAR_COOKIE_NAME,
+                value: String(openState),
+                path: '/',
+                maxAge: SIDEBAR_COOKIE_MAX_AGE,
+              });
+            } else if (document.cookie !== undefined) {
+              // Fallback to direct assignment
+              document.cookie = `${SIDEBAR_COOKIE_NAME}=${openState}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`;
             }
           }
         } catch (error) {
-          // Silently fail if cookies are not available (e.g., in SSR or private browsing)
           console.warn('Failed to set sidebar cookie:', error);
         }
       },

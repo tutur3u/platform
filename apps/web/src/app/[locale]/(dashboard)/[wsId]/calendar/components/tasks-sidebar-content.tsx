@@ -178,7 +178,8 @@ export default function TasksSidebarContent({
         return (
           total +
           (list.tasks?.filter(
-            (task) => (task as any).status?.toLowerCase() === 'done'
+            (task) =>
+              (task as { status?: string }).status?.toLowerCase() === 'done'
           ).length ?? 0)
         );
       }, 0) ?? 0

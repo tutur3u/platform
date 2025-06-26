@@ -35,7 +35,7 @@ import {
 } from '@tuturuuu/ui/select';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { useTranslations } from 'next-intl';
-import { useId, useState } from 'react';
+import { useState } from 'react';
 import { DatasetCrawler } from './dataset-crawler';
 
 interface Props {
@@ -59,8 +59,6 @@ interface QueryData {
 export function DataExplorer({ wsId, dataset }: Props) {
   const t = useTranslations('ws-datasets');
   const queryClient = useQueryClient();
-  const columnNameId = useId();
-  const columnTypeId = useId();
 
   const [pageSize, setPageSize] = useState('10');
   const [currentPage, setCurrentPage] = useState(1);

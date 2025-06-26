@@ -1,8 +1,24 @@
 //* EXTERNAL MAPPING
 
+interface MappingItem {
+  id?: string;
+  name?: string;
+  email?: string;
+  user_id?: string;
+  bill_id?: string;
+  class_id?: string;
+  package_id?: string;
+  score_id?: string;
+  coupon_id?: string;
+  report_id?: string;
+  pkg_id?: string;
+  method?: string;
+  [key: string]: unknown;
+}
+
 // STATUS: ✅
-export const billCouponsMapping = (_: string, data: any[]) =>
-  data.map((i) => ({
+export const billCouponsMapping = (_: string, data: unknown[]) =>
+  data.map((i: MappingItem) => ({
     _id: i?.id,
     invoice_id: i?.bill_id,
     promo_id: i?.coupon_id,
@@ -14,8 +30,8 @@ export const billCouponsMapping = (_: string, data: any[]) =>
   }));
 
 // STATUS: ✅
-export const billPackagesMapping = (_: string, data: any[]) =>
-  data.map((i) => ({
+export const billPackagesMapping = (_: string, data: unknown[]) =>
+  data.map((i: MappingItem) => ({
     _id: i?.id,
     invoice_id: i?.bill_id,
     product_id: i?.pkg_id,
@@ -30,7 +46,7 @@ export const billPackagesMapping = (_: string, data: any[]) =>
 
 // STATUS: ✅
 export const billsMapping = (wsId: string, data: unknown[]) =>
-  data.map((i: any) => {
+  data.map((i: MappingItem) => {
     const walletId =
       i?.method === 'CASH'
         ? '354f92e4-8e7c-404a-b461-cfe6a8b67ba8'
@@ -74,7 +90,7 @@ export const billsMapping = (wsId: string, data: unknown[]) =>
 
 // STATUS: ✅
 export const classAttendanceMapping = (_: string, data: unknown[]) =>
-  data.map((i: any) => ({
+  data.map((i: MappingItem) => ({
     group_id: i?.class_id,
     user_id: i?.user_id,
     date: i?.date,
@@ -85,7 +101,7 @@ export const classAttendanceMapping = (_: string, data: unknown[]) =>
 
 // STATUS: ✅
 export const classMembersMapping = (_: string, data: unknown[]) =>
-  data.map((i: any) => ({
+  data.map((i: MappingItem) => ({
     user_id: i?.user_id,
     group_id: i?.class_id,
     role: i?.role,
@@ -94,7 +110,7 @@ export const classMembersMapping = (_: string, data: unknown[]) =>
 
 // STATUS: ✅
 export const classPackagesMapping = (_: string, data: unknown[]) =>
-  data.map((i: any) => ({
+  data.map((i: MappingItem) => ({
     group_id: i?.class_id,
     product_id: i?.package_id,
     unit_id: 'dbd4d6a0-6c59-4383-8512-8e649413f4ff',
@@ -103,7 +119,7 @@ export const classPackagesMapping = (_: string, data: unknown[]) =>
 
 // STATUS: ✅
 export const classScoresMapping = (_: string, data: unknown[]) =>
-  data.map((i: any) => ({
+  data.map((i: MappingItem) => ({
     user_id: i?.user_id,
     indicator_id: i?.score_id,
     group_id: i?.class_id,
@@ -114,7 +130,7 @@ export const classScoresMapping = (_: string, data: unknown[]) =>
 
 // STATUS: ✅
 export const classesMapping = (wsId: string, data: unknown[]) =>
-  data.map((i: any) => ({
+  data.map((i: MappingItem) => ({
     id: i?.id,
     name: i?.code,
     ws_id: wsId,
@@ -128,7 +144,7 @@ export const classesMapping = (wsId: string, data: unknown[]) =>
 
 // STATUS: ✅
 export const couponsMapping = (wsId: string, data: unknown[]) =>
-  data.map((i: any) => ({
+  data.map((i: MappingItem) => ({
     id: i?.id,
     name: i?.name,
     description: i?.content,
@@ -141,8 +157,8 @@ export const couponsMapping = (wsId: string, data: unknown[]) =>
   }));
 
 // STATUS: ✅
-export const lessonsMapping = (_: string, data: any[]) =>
-  data.map((i) => ({
+export const lessonsMapping = (_: string, data: unknown[]) =>
+  data.map((i: MappingItem) => ({
     id: i?.id,
     group_id: i?.class_id,
     title: i?.title || '',
@@ -152,9 +168,9 @@ export const lessonsMapping = (_: string, data: any[]) =>
   }));
 
 // STATUS: ✅
-export const packageStockChangesMapping = (_: string, data: any[]) => {
+export const packageStockChangesMapping = (_: string, data: unknown[]) => {
   console.log('packageStockChangesMapping', data);
-  return data.map((i) => ({
+  return data.map((i: MappingItem) => ({
     id: i?.id,
     product_id: i?.pkg_id,
     unit_id: 'dbd4d6a0-6c59-4383-8512-8e649413f4ff',
@@ -167,8 +183,8 @@ export const packageStockChangesMapping = (_: string, data: any[]) => {
 };
 
 // STATUS: ✅
-export const packagesMapping = (wsId: string, data: any[]) =>
-  data.map((i) => ({
+export const packagesMapping = (wsId: string, data: unknown[]) =>
+  data.map((i: MappingItem) => ({
     id: i?.id,
     name: i?.name,
     description: i?.content,
@@ -192,16 +208,16 @@ export const packagesMapping = (wsId: string, data: any[]) =>
   }));
 
 // STATUS: ✅
-export const paymentMethodsMapping = (wsId: string, data: any[]) =>
-  data.map((i) => ({
+export const paymentMethodsMapping = (wsId: string, data: unknown[]) =>
+  data.map((i: MappingItem) => ({
     id: i?.id,
     name: i?.name,
     ws_id: wsId,
   }));
 
 // STATUS: ✅
-export const rolesMapping = (wsId: string, data: any[]) =>
-  data.map((i) => ({
+export const rolesMapping = (wsId: string, data: unknown[]) =>
+  data.map((i: MappingItem) => ({
     id: i?.id,
     name: i?.name,
     ws_id: wsId,
@@ -209,8 +225,8 @@ export const rolesMapping = (wsId: string, data: any[]) =>
   }));
 
 // STATUS: ✅
-export const scoreNamesMapping = (wsId: string, data: any[]) =>
-  data.map((i) => ({
+export const scoreNamesMapping = (wsId: string, data: unknown[]) =>
+  data.map((i: MappingItem) => ({
     id: i?.id,
     name: i?.name,
     group_id: i?.class_id,
@@ -221,16 +237,16 @@ export const scoreNamesMapping = (wsId: string, data: any[]) =>
   }));
 
 // STATUS: ✅
-export const groupedScoreNamesMapping = (_: string, data: any[]) =>
-  data.map((i) => ({
+export const groupedScoreNamesMapping = (_: string, data: unknown[]) =>
+  data.map((i: MappingItem) => ({
     indicator_id: i?.id,
     group_id: i?.class_id,
     created_at: i?.created_at,
   }));
 
 // STATUS: ✅
-export const studentFeedbacksMapping = (_: string, data: any[]) =>
-  data.map((i) => ({
+export const studentFeedbacksMapping = (_: string, data: unknown[]) =>
+  data.map((i: MappingItem) => ({
     id: i?.id,
     user_id: i?.user_id,
     group_id: i?.class_id,
@@ -241,8 +257,8 @@ export const studentFeedbacksMapping = (_: string, data: any[]) =>
   }));
 
 // STATUS: ✅
-export const transactionCategoriesMapping = (wsId: string, data: any[]) =>
-  data.map((i) => ({
+export const transactionCategoriesMapping = (wsId: string, data: unknown[]) =>
+  data.map((i: MappingItem) => ({
     id: i?.id,
     name: i?.name,
     is_expense: i?.is_expense,
@@ -250,16 +266,16 @@ export const transactionCategoriesMapping = (wsId: string, data: any[]) =>
   }));
 
 // STATUS: ✅
-export const userCouponsMapping = (_: string, data: any[]) =>
-  data.map((i) => ({
+export const userCouponsMapping = (_: string, data: unknown[]) =>
+  data.map((i: MappingItem) => ({
     user_id: i?.user_id,
     promo_id: i?.coupon_id,
     created_at: i?.created_at,
   }));
 
 // STATUS: ✅
-export const userMonthlyReportLogsMapping = (_: string, data: any[]) =>
-  data.map((i) => ({
+export const userMonthlyReportLogsMapping = (_: string, data: unknown[]) =>
+  data.map((i: MappingItem) => ({
     id: i?.id,
     report_id: i?.report_id,
     user_id: i?.user_id,
@@ -274,8 +290,8 @@ export const userMonthlyReportLogsMapping = (_: string, data: any[]) =>
   }));
 
 // STATUS: ✅
-export const userMonthlyReportsMapping = (_: string, data: any[]) =>
-  data.map((i) => ({
+export const userMonthlyReportsMapping = (_: string, data: unknown[]) =>
+  data.map((i: MappingItem) => ({
     id: i?.id,
     user_id: i?.user_id,
     group_id: i?.class_id,
@@ -290,20 +306,18 @@ export const userMonthlyReportsMapping = (_: string, data: any[]) =>
   }));
 
 // STATUS: ✅
-export const userStatusChangesMapping = (wsId: string, data: any[]) =>
-  data.map((i) => ({
+export const userStatusChangesMapping = (wsId: string, data: unknown[]) =>
+  data.map((i: MappingItem) => ({
     id: i?.id,
     user_id: i?.user_id,
+    status: i?.status,
+    reason: i?.reason,
     ws_id: wsId,
-    archived: i?.status === 'PERM_OFF' || i?.status === 'TEMP_OFF',
-    archived_until: i?.off_until,
-    creator_id: i?.creator_id,
-    created_at: i?.created_at,
   }));
 
 // STATUS: ✅
-export const usersMapping = (wsId: string, data: any[]) =>
-  data.map((i) => ({
+export const usersMapping = (wsId: string, data: unknown[]) =>
+  data.map((i: Record<string, unknown>) => ({
     id: i?.id,
     email: i?.email || null,
     display_name: i?.nickname,
@@ -331,7 +345,8 @@ export const usersMapping = (wsId: string, data: any[]) =>
   }));
 
 //! IGNORED, since it's handled by bills
-export const walletTransactionsMapping = (__: string, _: any[]) => [] as any[];
+export const walletTransactionsMapping = (__: string, _: unknown[]) =>
+  [] as unknown[];
 // data.map((i) => {
 //   // There is a "valid_until" field on item, which is type of date
 //   // convert it to timestamptz (+7) and use it as "taken_at" field
@@ -350,37 +365,37 @@ export const walletTransactionsMapping = (__: string, _: any[]) => [] as any[];
 // });
 
 //! IGNORED, since it's handled by payment methods
-export const walletsMapping = (_: string, __: any[]) => [];
+export const walletsMapping = (_: string, __: unknown[]) => [];
 
 //* TUTURUUU INFRASTRUCTURE MAPPING
 
 // STATUS: ✅
-export const warehousesMapping = (wsId: string, data: any[]) =>
-  data.map((i) => ({
+export const warehousesMapping = (wsId: string, data: unknown[]) =>
+  data.map((i: Record<string, unknown>) => ({
     id: i?.id,
     name: i?.name,
     ws_id: wsId,
   }));
 
 // STATUS: ✅
-export const productCategoriesMapping = (wsId: string, data: any[]) =>
-  data.map((i) => ({
+export const productCategoriesMapping = (wsId: string, data: unknown[]) =>
+  data.map((i: Record<string, unknown>) => ({
     id: i?.id,
     name: i?.name,
     ws_id: wsId,
   }));
 
 // STATUS: ✅
-export const productUnitsMapping = (wsId: string, data: any[]) =>
-  data.map((i) => ({
+export const productUnitsMapping = (wsId: string, data: unknown[]) =>
+  data.map((i: Record<string, unknown>) => ({
     id: i?.id,
     name: i?.name,
     ws_id: wsId,
   }));
 
 // STATUS: ✅
-export const productPricesMapping = (_: string, data: any[]) =>
-  data.map((i) => ({
+export const productPricesMapping = (_: string, data: unknown[]) =>
+  data.map((i: Record<string, unknown>) => ({
     product_id: i?.id,
     unit_id: 'dbd4d6a0-6c59-4383-8512-8e649413f4ff',
     warehouse_id: '9ed8a0ed-a192-456d-9382-88258300fb27',

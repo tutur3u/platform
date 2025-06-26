@@ -49,7 +49,11 @@ export default function AddEventModal({
 
   const [errors, setErrors] = React.useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = React.useState(false);
-  const [user, setUser] = React.useState<any>(null);
+  const [user, setUser] = React.useState<{
+    id: string;
+    email: string;
+    [key: string]: unknown;
+  } | null>(null);
   const supabase = createClient();
 
   React.useEffect(() => {

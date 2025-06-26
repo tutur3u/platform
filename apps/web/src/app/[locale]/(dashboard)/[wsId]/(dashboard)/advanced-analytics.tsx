@@ -73,14 +73,6 @@ interface MetricData {
   [key: string]: number | undefined;
 }
 
-interface ScoreCardProps {
-  title: string;
-  score: number;
-  color: string;
-  previousScore?: number;
-  t: (key: string) => string;
-}
-
 interface ChartCardProps {
   t: (key: string) => string;
   tag: string;
@@ -292,14 +284,6 @@ const AdvancedAnalytics = ({
   );
 };
 
-interface ScoreCardProps {
-  title: string;
-  score: number;
-  color: string;
-  previousScore?: number;
-  t: (key: string) => string;
-}
-
 const ModelScoreCard = ({
   title,
   model,
@@ -318,7 +302,7 @@ const ModelScoreCard = ({
   score?: number;
   color: string;
   previousScore?: number;
-  t: any;
+  t: (key: string) => string;
 }) => {
   const { resolvedTheme } = useTheme();
   const colors = resolvedTheme === 'dark' ? COLORS.dark : COLORS.light;

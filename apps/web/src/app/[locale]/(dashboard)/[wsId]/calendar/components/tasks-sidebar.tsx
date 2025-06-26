@@ -98,7 +98,17 @@ export default async function TasksSidebar({
   // Check permissions and secrets for AI chat
   const { withoutPermission } = await getPermissions({ wsId });
   let hasAiChatAccess = false;
-  let chats: any[] = [];
+  let chats: {
+    id: string;
+    created_at: string;
+    creator_id: string | null;
+    is_public: boolean;
+    latest_summarized_message_id: string | null;
+    model: string | null;
+    pinned: boolean;
+    summary: string | null;
+    title: string | null;
+  }[] = [];
   let count = 0;
 
   try {

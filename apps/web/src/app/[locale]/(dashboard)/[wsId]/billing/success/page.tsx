@@ -12,7 +12,13 @@ import Link from 'next/link';
 
 const fetchWorkspaceSubscription = async (
   wsId: string
-): Promise<any | null> => {
+): Promise<{
+  id: string;
+  created_at: string;
+  plan_name: string;
+  workspace_subscription_products: unknown[];
+  [key: string]: unknown;
+} | null> => {
   try {
     const supabase = await createClient();
 

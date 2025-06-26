@@ -58,11 +58,14 @@ export function TaskListForm({ boardId, onSuccess }: TaskListFormProps) {
       });
       onSuccess?.();
       router.refresh();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error creating task list:', error);
       toast({
         title: 'Failed to create task list',
-        description: error.message || 'An unexpected error occurred.',
+        description:
+          error instanceof Error
+            ? error.message
+            : 'An unexpected error occurred.',
         variant: 'destructive',
       });
     }

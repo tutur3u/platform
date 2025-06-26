@@ -41,7 +41,9 @@ export default async function WorkspaceReportsSettingsPage({
   const configs = data.map((config) => ({
     ...config,
     ws_id: wsId,
-    name: config?.id ? t(`ws-reports.${config.id.toLowerCase()}` as any) : '',
+    name: config?.id
+      ? t(`ws-reports.${config.id.toLowerCase()}` as string)
+      : '',
   }));
 
   const getConfig = (id: string) => configs.find((c) => c.id === id)?.value;

@@ -71,11 +71,14 @@ export function TaskForm({ listId, onSuccess }: TaskFormProps) {
       });
       onSuccess?.();
       router.refresh();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error creating task:', error);
       toast({
         title: 'Failed to create task',
-        description: error.message || 'An unexpected error occurred.',
+        description:
+          error instanceof Error
+            ? error.message
+            : 'An unexpected error occurred.',
         variant: 'destructive',
       });
     }

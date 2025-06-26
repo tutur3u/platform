@@ -9,7 +9,7 @@ import Link from 'next/link';
 import { GroupTagRowActions } from './row-actions';
 
 export const groupTagColumns = (
-  t: any,
+  t: (key: string) => string,
   namespace: string | undefined
 ): ColumnDef<UserGroupTag>[] => [
   // {

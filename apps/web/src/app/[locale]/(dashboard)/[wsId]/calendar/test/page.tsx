@@ -55,7 +55,15 @@ const FormSchema = z.object({
 export default function Page() {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<'ai' | 'preview' | 'manual'>('ai');
-  const [generatedEvent, setGeneratedEvent] = useState<any>(null);
+  const [generatedEvent, setGeneratedEvent] = useState<{
+    title: string;
+    description?: string;
+    start_at: string;
+    end_at: string;
+    color?: string;
+    location?: string;
+    [key: string]: unknown;
+  } | null>(null);
   const [generating, setGenerating] = useState(false);
   const [userTimezone] = useState(
     Intl.DateTimeFormat().resolvedOptions().timeZone
