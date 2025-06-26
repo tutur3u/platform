@@ -42,6 +42,7 @@ const StatisticCard = ({ title, value, href, className, onClick }: Props) => {
 
   return (
     <button
+      type="button"
       onClick={onClick}
       className={`group rounded-lg border transition duration-300 ${
         onClick || href ? 'hover:rounded-xl' : 'cursor-default'

@@ -22,10 +22,10 @@ export const SmartCalendar = ({
   externalState,
   extras,
 }: {
-  t: any;
+  t: (key: string) => string;
   locale: string;
-  useQuery: any;
-  useQueryClient: any;
+  useQuery: unknown;
+  useQueryClient: unknown;
   workspace?: Workspace;
   disabled?: boolean;
   initialSettings?: Partial<CalendarSettings>;

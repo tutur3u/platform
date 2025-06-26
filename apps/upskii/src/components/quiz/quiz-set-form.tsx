@@ -479,7 +479,7 @@ export default function QuizSetForm({ wsId, moduleId, data, onFinish }: Props) {
                       name="allowViewResults"
                       render={({ field }) => (
                         <FormItem className="flex flex-col space-y-3 rounded-lg border border-dynamic-purple/20 bg-dynamic-light-purple/5 p-4">
-                          <label>
+                          <label htmlFor={`allowViewResults`}>
                             <div className="flex items-center space-x-3">
                               <FormControl>
                                 <Checkbox
@@ -512,7 +512,7 @@ export default function QuizSetForm({ wsId, moduleId, data, onFinish }: Props) {
                       name="resultsReleased"
                       render={({ field }) => (
                         <FormItem className="flex flex-col space-y-3 rounded-lg border border-dynamic-purple/20 bg-dynamic-light-purple/5 p-4">
-                          <label>
+                          <label htmlFor={`resultsReleased`}>
                             <div className="flex items-center space-x-3">
                               <FormControl>
                                 <Checkbox
@@ -545,7 +545,7 @@ export default function QuizSetForm({ wsId, moduleId, data, onFinish }: Props) {
                       name="allowViewOldAttempts"
                       render={({ field }) => (
                         <FormItem className="flex flex-col space-y-3 rounded-lg border border-dynamic-purple/20 bg-dynamic-light-purple/5 p-4 md:col-span-2">
-                          <label>
+                          <label htmlFor={`allowViewOldAttempts`}>
                             <div className="flex items-center space-x-3">
                               <FormControl>
                                 <Checkbox

@@ -50,7 +50,7 @@ describe('isIncompleteEmail', () => {
   });
 
   it('should handle null and undefined', () => {
-    expect(isIncompleteEmail(null as any)).toBe(false);
-    expect(isIncompleteEmail(undefined as any)).toBe(false);
+    expect(isIncompleteEmail(null as unknown as string)).toBe(false);
+    expect(isIncompleteEmail(undefined as unknown as string)).toBe(false);
   });
 });

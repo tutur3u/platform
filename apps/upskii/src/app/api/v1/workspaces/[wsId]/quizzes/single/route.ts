@@ -45,9 +45,12 @@ export async function POST(req: Request, { params }: Params) {
   }
 
   if (quiz_options) {
-    await supabase
-      .from('quiz_options')
-      .insert(quiz_options.map((o: any) => ({ ...o, quiz_id: data.id })));
+    await supabase.from('quiz_options').insert(
+      quiz_options.map((o: { id: string; [key: string]: unknown }) => ({
+        ...o,
+        quiz_id: data.id,
+      }))
+    );
   }
 
   return NextResponse.json({ message: 'success' });

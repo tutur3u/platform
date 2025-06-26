@@ -1,3 +1,4 @@
+import { fetcher } from '@/utils/fetcher';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Command,
@@ -12,7 +13,6 @@ import { CheckIcon, ChevronsUpDown } from '@tuturuuu/ui/icons';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { cn } from '@tuturuuu/utils/format';
 import useSWR from 'swr';
-import { fetcher } from '@/utils/fetcher';
 
 export default function AIModelSelector({
   open,
@@ -39,9 +39,9 @@ export default function AIModelSelector({
   onOpenChange: (open: boolean) => void;
   onValueChange: (value: string) => void;
   beforeFetch?: () => void;
-  afterFetch?: (data: any) => void;
+  afterFetch?: (data: unknown) => void;
 }) {
-  const { data, error } = useSWR<any[]>(fetchUrl, async (url: string) => {
+  const { data, error } = useSWR<unknown[]>(fetchUrl, async (url: string) => {
     if (beforeFetch) beforeFetch();
     const data = await fetcher(url);
     if (afterFetch) afterFetch(data);

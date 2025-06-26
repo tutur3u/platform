@@ -58,7 +58,7 @@ export async function getCertificateDetails(
     .eq('id', certificateId)
     .eq('user_id', userId)
     .eq('workspace_courses.ws_id', ws_id)
-    .single()) as { data: CertificateWithDetails | null; error: any };
+    .single()) as { data: CertificateWithDetails | null; error: unknown };
 
   if (error) {
     console.log(error);
@@ -128,7 +128,7 @@ export async function getAllCertificatesForUser(
           };
         })[]
       | null;
-    error: any;
+    error: unknown;
     count: number | null;
   };
 

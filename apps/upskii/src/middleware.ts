@@ -109,7 +109,7 @@ const getDefaultLocale = (
   const detectedLocale = match(languages, supportedLocales, defaultLocale);
 
   return {
-    locale: supportedLocales.includes(detectedLocale as any)
+    locale: supportedLocales.includes(detectedLocale as Locale)
       ? (detectedLocale as Locale)
       : defaultLocale,
   };

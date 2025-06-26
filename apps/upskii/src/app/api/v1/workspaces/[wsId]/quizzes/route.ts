@@ -108,10 +108,10 @@ export async function POST(request: Request, { params }: Params) {
       message: `Created ${created.length} new quiz${created.length === 1 ? '' : 'zes'}`,
       created,
     });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Bulk-create error:', err);
     return NextResponse.json(
-      { error: err.message || 'Unknown error creating quizzes' },
+      { error: 'Failed to create quizzes' },
       { status: 500 }
     );
   }
@@ -173,7 +173,7 @@ export async function PUT(request: Request, { params }: Params) {
       // ── 3) Sync quiz_options ────────────────────────────────
       const incomingIds = quiz.quiz_options
         .filter((o) => o.id)
-        .map((o) => o.id!);
+        .map((o) => o.id || '');
 
       // delete any missing
       await sb
@@ -207,10 +207,10 @@ export async function PUT(request: Request, { params }: Params) {
     }
 
     return NextResponse.json({ message: 'All quizzes upserted successfully' });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Bulk-upsert error:', err);
     return NextResponse.json(
-      { error: err.message || 'Unknown error updating quizzes' },
+      { error: 'Failed to update quizzes' },
       { status: 500 }
     );
   }

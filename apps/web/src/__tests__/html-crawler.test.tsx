@@ -16,9 +16,9 @@ describe('HtmlCrawler', () => {
       text: () => Promise.resolve(''),
     };
 
-    global.fetch = vi
-      .fn()
-      .mockImplementation(() => Promise.resolve(mockResponse));
+    (global.fetch as ReturnType<typeof vi.fn>).mockImplementation(() =>
+      Promise.resolve(mockResponse)
+    );
   });
 
   afterEach(() => {
@@ -35,7 +35,7 @@ describe('HtmlCrawler', () => {
       </div>
     `;
 
-    (global.fetch as any).mockImplementation(() =>
+    (global.fetch as ReturnType<typeof vi.fn>).mockImplementation(() =>
       Promise.resolve({
         ok: true,
         headers: new Headers({ 'content-type': 'text/html' }),
@@ -75,7 +75,7 @@ describe('HtmlCrawler', () => {
     `;
 
     let callCount = 0;
-    (global.fetch as any).mockImplementation(() => {
+    (global.fetch as ReturnType<typeof vi.fn>).mockImplementation(() => {
       callCount++;
       return Promise.resolve({
         ok: true,
@@ -98,7 +98,9 @@ describe('HtmlCrawler', () => {
   });
 
   test('handles fetch errors gracefully', async () => {
-    (global.fetch as any).mockRejectedValue(new Error('Network error'));
+    (global.fetch as ReturnType<typeof vi.fn>).mockRejectedValue(
+      new Error('Network error')
+    );
 
     await expect(
       crawler.crawl({
@@ -124,7 +126,7 @@ describe('HtmlCrawler', () => {
       </div>
     `;
 
-    (global.fetch as any).mockImplementation(() =>
+    (global.fetch as ReturnType<typeof vi.fn>).mockImplementation(() =>
       Promise.resolve({
         ok: true,
         headers: new Headers({ 'content-type': 'text/html' }),
@@ -154,8 +156,7 @@ describe('HtmlCrawler', () => {
     `;
 
     // Mock fetch to fail once then succeed
-    global.fetch = vi
-      .fn()
+    (global.fetch as ReturnType<typeof vi.fn>)
       .mockImplementationOnce(() => Promise.reject(new Error('Network error')))
       .mockImplementationOnce(() =>
         Promise.resolve({
@@ -188,7 +189,7 @@ describe('HtmlCrawler', () => {
       </div>
     `;
 
-    (global.fetch as any).mockImplementation(() => {
+    (global.fetch as ReturnType<typeof vi.fn>).mockImplementation(() => {
       return new Promise((resolve) => {
         setTimeout(() => {
           resolve({
@@ -234,7 +235,7 @@ describe('HtmlCrawler', () => {
     `;
 
     let pageCount = 0;
-    (global.fetch as any).mockImplementation(() => {
+    (global.fetch as ReturnType<typeof vi.fn>).mockImplementation(() => {
       pageCount++;
       return Promise.resolve({
         ok: true,
@@ -268,7 +269,7 @@ describe('HtmlCrawler', () => {
       </div>
     `;
 
-    global.fetch = vi.fn().mockImplementation(() =>
+    (global.fetch as ReturnType<typeof vi.fn>).mockImplementation(() =>
       Promise.resolve({
         ok: true,
         headers: new Headers({ 'content-type': 'text/html' }),

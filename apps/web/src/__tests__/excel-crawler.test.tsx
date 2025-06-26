@@ -14,7 +14,9 @@ describe('ExcelCrawler', () => {
   });
 
   // Helper function to create a mock Excel file
-  const createMockExcelFile = (data: any[][]): ArrayBuffer => {
+  const createMockExcelFile = (
+    data: (string | number | null | undefined)[][]
+  ): ArrayBuffer => {
     const wb = XLSX.utils.book_new();
     const ws = XLSX.utils.aoa_to_sheet(data);
     XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
@@ -30,7 +32,7 @@ describe('ExcelCrawler', () => {
 
     const mockExcelFile = createMockExcelFile(mockData);
 
-    (global.fetch as any).mockImplementation(() =>
+    (global.fetch as ReturnType<typeof vi.fn>).mockImplementation(() =>
       Promise.resolve({
         ok: true,
         arrayBuffer: () => Promise.resolve(mockExcelFile),
@@ -71,7 +73,7 @@ describe('ExcelCrawler', () => {
       0x0d, // Invalid data
     ]);
 
-    (global.fetch as any).mockImplementation(() =>
+    (global.fetch as ReturnType<typeof vi.fn>).mockImplementation(() =>
       Promise.resolve({
         ok: true,
         arrayBuffer: () => Promise.resolve(mockInvalidData.buffer),
@@ -89,7 +91,7 @@ describe('ExcelCrawler', () => {
   });
 
   test('handles fetch errors gracefully', async () => {
-    (global.fetch as any).mockImplementation(() =>
+    (global.fetch as ReturnType<typeof vi.fn>).mockImplementation(() =>
       Promise.resolve({
         ok: false,
         statusText: 'Not Found',
@@ -109,7 +111,7 @@ describe('ExcelCrawler', () => {
   test('handles empty Excel files', async () => {
     const mockEmptyData = createMockExcelFile([[]]);
 
-    (global.fetch as any).mockImplementation(() =>
+    (global.fetch as ReturnType<typeof vi.fn>).mockImplementation(() =>
       Promise.resolve({
         ok: true,
         arrayBuffer: () => Promise.resolve(mockEmptyData),
@@ -134,7 +136,7 @@ describe('ExcelCrawler', () => {
 
     const mockExcelFile = createMockExcelFile(mockData);
 
-    (global.fetch as any).mockImplementation(() =>
+    (global.fetch as ReturnType<typeof vi.fn>).mockImplementation(() =>
       Promise.resolve({
         ok: true,
         arrayBuffer: () => Promise.resolve(mockExcelFile),
@@ -160,7 +162,7 @@ describe('ExcelCrawler', () => {
     const mockExcelFile = createMockExcelFile(mockData);
     const onProgress = vi.fn();
 
-    (global.fetch as any).mockImplementation(() =>
+    (global.fetch as ReturnType<typeof vi.fn>).mockImplementation(() =>
       Promise.resolve({
         ok: true,
         arrayBuffer: () => Promise.resolve(mockExcelFile),
@@ -182,7 +184,7 @@ describe('ExcelCrawler', () => {
   });
 
   test('handles network errors', async () => {
-    (global.fetch as any).mockImplementation(() =>
+    (global.fetch as ReturnType<typeof vi.fn>).mockImplementation(() =>
       Promise.reject(new Error('Network error'))
     );
 
@@ -206,7 +208,7 @@ describe('ExcelCrawler', () => {
 
     const mockExcelFile = createMockExcelFile(mockData);
 
-    (global.fetch as any).mockImplementation(() =>
+    (global.fetch as ReturnType<typeof vi.fn>).mockImplementation(() =>
       Promise.resolve({
         ok: true,
         arrayBuffer: () => Promise.resolve(mockExcelFile),

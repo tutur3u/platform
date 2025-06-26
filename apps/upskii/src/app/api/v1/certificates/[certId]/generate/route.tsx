@@ -49,7 +49,7 @@ export async function POST(
 
     const certTemplate: CertificateTemplate = certData.certTemplate;
 
-    let stream;
+    let stream: ReadableStream<Uint8Array> | null = null;
 
     switch (certTemplate) {
       case 'elegant':

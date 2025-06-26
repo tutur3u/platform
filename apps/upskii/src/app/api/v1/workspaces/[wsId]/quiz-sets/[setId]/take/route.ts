@@ -21,7 +21,7 @@ export interface TakeResponse {
   dueDate: string | null;
   resultsReleased: boolean;
   explanationMode: 0 | 1 | 2;
-  instruction: any;
+  instruction: unknown;
   attempts: AttemptSummary[];
   maxScore: number;
   questions: Array<{

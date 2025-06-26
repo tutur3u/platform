@@ -53,13 +53,13 @@ describe('suggestEmails', () => {
   });
 
   it('should handle null and undefined', () => {
-    expect(suggestEmails(null as any)).toEqual([
+    expect(suggestEmails(null as unknown as string)).toEqual([
       '@gmail.com',
       '@yahoo.com',
       '@outlook.com',
       '@tuturuuu.com',
     ]);
-    expect(suggestEmails(undefined as any)).toEqual([
+    expect(suggestEmails(undefined as unknown as string)).toEqual([
       '@gmail.com',
       '@yahoo.com',
       '@outlook.com',

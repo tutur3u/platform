@@ -27,14 +27,14 @@ import {
 } from '@tuturuuu/ui/icons';
 import { cn } from '@tuturuuu/utils/format';
 import { getInitials } from '@tuturuuu/utils/name-helper';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import UserPresenceIndicator from '../../../components/user-presence-indicator';
 import { LanguageWrapper } from '../(dashboard)/_components/language-wrapper';
 import { LogoutDropdownItem } from '../(dashboard)/_components/logout-dropdown-item';
 import { SystemLanguageWrapper } from '../(dashboard)/_components/system-language-wrapper';
 import { ThemeDropdownItems } from '../(dashboard)/_components/theme-dropdown-items';
-import UserPresenceIndicator from '../../../components/user-presence-indicator';
 import UserSettingsDialog from './settings-dialog';
 
 export default function UserNavClient({

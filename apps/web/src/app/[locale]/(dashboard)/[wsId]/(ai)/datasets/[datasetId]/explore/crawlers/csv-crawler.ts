@@ -31,7 +31,9 @@ export class CsvCrawler extends BaseCrawler {
     return response.text();
   }
 
-  private cleanupData(data: any[][]): any[][] {
+  private cleanupData(
+    data: (string | number | null | undefined)[][]
+  ): (string | number | null | undefined)[][] {
     // Remove empty rows (all cells are null, undefined, or empty string)
     const nonEmptyRows = data.filter((row) =>
       row.some(
@@ -47,10 +49,11 @@ export class CsvCrawler extends BaseCrawler {
       ...nonEmptyRows.map((row) => {
         let lastNonEmptyIndex = -1;
         for (let i = row.length - 1; i >= 0; i--) {
+          const cell = row[i];
           if (
-            row[i] !== null &&
-            row[i] !== undefined &&
-            row[i].toString().trim() !== ''
+            cell !== null &&
+            cell !== undefined &&
+            cell.toString().trim() !== ''
           ) {
             lastNonEmptyIndex = i;
             break;
@@ -80,7 +83,9 @@ export class CsvCrawler extends BaseCrawler {
     );
   }
 
-  private cleanupHeaders(headers: any[]): string[] {
+  private cleanupHeaders(
+    headers: (string | number | null | undefined)[]
+  ): string[] {
     if (!headers || headers.length === 0) return [];
 
     return headers.map((header, index) => {

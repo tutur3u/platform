@@ -238,7 +238,9 @@ const QuizzesList = ({
                   <Button
                     variant="outline"
                     onClick={
-                      quiz?.id ? () => setEditingQuizId(quiz.id!) : undefined
+                      quiz?.id
+                        ? () => setEditingQuizId(quiz.id || '')
+                        : undefined
                     }
                   >
                     <Pencil className="h-5 w-5" />
@@ -266,7 +268,7 @@ const QuizzesList = ({
                         </AlertDialogCancel>
                         <AlertDialogAction
                           onClick={
-                            quiz?.id ? () => onDelete(quiz.id!) : undefined
+                            quiz?.id ? () => onDelete(quiz.id || '') : undefined
                           }
                         >
                           {t('common.continue')}

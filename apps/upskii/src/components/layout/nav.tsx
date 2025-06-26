@@ -323,6 +323,7 @@ export function Nav({
       >
         <CollapsibleTrigger asChild>
           <button
+            type="button"
             className={cn(
               buttonVariants({
                 variant: isActive ? 'secondary' : 'ghost',

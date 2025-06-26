@@ -9,7 +9,7 @@ import {
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
 import { Input } from '@tuturuuu/ui/input';
-import { useEffect, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 
 interface Props {
   open: boolean;
@@ -26,6 +26,7 @@ export function EditColumnDialog({
   column,
   onSave,
 }: Props) {
+  const columnNameId = useId();
   const [name, setName] = useState(column.name);
   const [loading, setLoading] = useState(false);
 
@@ -60,8 +61,11 @@ export function EditColumnDialog({
         </DialogHeader>
         <div className="space-y-4">
           <div className="space-y-2">
-            <label className="text-sm font-medium">Column Name</label>
+            <label htmlFor={columnNameId} className="text-sm font-medium">
+              Column Name
+            </label>
             <Input
+              id={columnNameId}
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Enter column name"

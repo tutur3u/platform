@@ -94,7 +94,7 @@ export async function POST(req: NextRequest, { params }: Params) {
       .from('workspace_education_access_requests')
       .select('id, status')
       .eq('ws_id', wsId)
-      .eq('feature', featureConfig.flag as any)
+      .eq('feature', featureConfig.flag as string)
       .eq('status', 'pending')
       .single();
 
@@ -115,7 +115,7 @@ export async function POST(req: NextRequest, { params }: Params) {
         workspace_name: workspaceName.trim(),
         creator_id: user.id,
         message: message.trim(),
-        feature: featureConfig.flag as any,
+        feature: featureConfig.flag as string,
         status: 'pending',
       })
       .select('*')

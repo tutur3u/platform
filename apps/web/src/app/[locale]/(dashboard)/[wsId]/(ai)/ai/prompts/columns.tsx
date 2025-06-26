@@ -7,7 +7,7 @@ import moment from 'moment';
 import { AIPromptRowActions } from './row-actions';
 
 export const aiPromptsColumns = (
-  t: any,
+  t: (key: string) => string,
   namespace: string | undefined,
   setAIPrompt: (value: AIPrompt | undefined) => void
 ): ColumnDef<AIPrompt>[] => [

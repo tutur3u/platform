@@ -20,7 +20,7 @@ import remarkMath from 'remark-math';
 import { ChatMessageActions } from './chat-message-actions';
 import { MemoizedReactMarkdown } from './memoized-react-markdown';
 
-function MermaidRenderer({ content }: { content: string }) {
+function _MermaidRenderer({ content }: { content: string }) {
   const elementRef = useRef<HTMLDivElement>(null);
   const [svgContent, setSvgContent] = useState<string>('');
   const [error, setError] = useState<string>('');
@@ -150,7 +150,7 @@ export function ChatMessage({
   >({});
 
   // Helper functions for quiz interactions
-  const handleQuizOptionClick = (
+  const _handleOptionClick = (
     quizId: string,
     option: { isCorrect: boolean; text: string }
   ) => {
@@ -346,12 +346,12 @@ export function ChatMessage({
                   selectedOption: { isCorrect: false, text: '' },
                   revealCorrect: false,
                 };
-                const handleOptionClick = (option: {
+                const handleQuizOptionClick = (option: {
                   isCorrect: boolean;
                   text: string;
                 }) => {
                   if (quizState.revealCorrect) return;
-                  handleQuizOptionClick(quizId, option);
+                  _handleOptionClick(quizId, option);
                 };
 
                 const questionElement = (
@@ -373,7 +373,7 @@ export function ChatMessage({
                           ? 'border-green-600 bg-green-100 text-green-700 dark:border-green-400 dark:bg-green-900/50 dark:text-green-300'
                           : 'border-foreground/20 bg-foreground/5 text-foreground hover:bg-foreground/10'
                     }`}
-                    onClick={() => handleQuizOptionClick(quizId, option)}
+                    onClick={() => handleQuizOptionClick(option)}
                     disabled={quizState.revealCorrect}
                   >
                     {option.text}
@@ -621,7 +621,7 @@ export function ChatMessage({
                           ? 'border-green-600 bg-green-100 text-green-700 dark:border-green-400 dark:bg-green-900/50 dark:text-green-300'
                           : 'border-foreground/20 bg-foreground/5 text-foreground hover:bg-foreground/10'
                     }`}
-                    onClick={() => handleQuizOptionClick(quizId, option)}
+                    onClick={() => handleQuizOptionClick(option)}
                     disabled={quizState.revealCorrect}
                   >
                     {option.text}
@@ -791,14 +791,15 @@ export function ChatMessage({
               );
             },
             code({
-              node,
+              _node,
               className,
               children,
-              ...props
+              _props,
             }: {
-              node: any;
+              _node: unknown;
               className?: string;
-              children: React.ReactNode;
+              children?: React.ReactNode;
+              _props?: Record<string, unknown>;
             }) {
               return <code className={className}>{children}</code>;
             },

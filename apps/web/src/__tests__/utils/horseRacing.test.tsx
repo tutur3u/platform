@@ -105,7 +105,9 @@ describe('Horse Racing Ranking Algorithm', () => {
     // Fisher-Yates shuffle algorithm to randomize horse speeds
     for (let i = speeds.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
-      [speeds[i]!, speeds[j]!] = [speeds[j]!, speeds[i]!];
+      const temp = speeds[i];
+      speeds[i] = speeds[j];
+      speeds[j] = temp;
     }
 
     // For testing, we'll fix the seed by setting specific values
@@ -192,10 +194,9 @@ describe('Horse Racing Ranking Algorithm', () => {
     for (let i = shuffledSpeeds.length - 1; i > 0; i--) {
       seed = pseudoRandom(seed);
       const j = seed % (i + 1);
-      [shuffledSpeeds[i]!, shuffledSpeeds[j]!] = [
-        shuffledSpeeds[j]!,
-        shuffledSpeeds[i]!,
-      ];
+      const temp = shuffledSpeeds[i];
+      shuffledSpeeds[i] = shuffledSpeeds[j];
+      shuffledSpeeds[j] = temp;
     }
 
     let raceCount = 0;

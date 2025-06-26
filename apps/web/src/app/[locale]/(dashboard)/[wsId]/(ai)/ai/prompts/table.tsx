@@ -1,10 +1,10 @@
 'use client';
 
+import { CustomDataTable } from '@/components/custom-data-table';
 import type { AIPrompt } from '@tuturuuu/types/db';
 import { Dialog } from '@tuturuuu/ui/dialog';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
-import { CustomDataTable } from '@/components/custom-data-table';
 import { aiPromptsColumns } from './columns';
 import { AIPromptForm } from './form';
 
@@ -30,9 +30,10 @@ export default function AIPromptsTable({ wsId, data, count }: Props) {
     >
       <CustomDataTable
         data={data}
-        columnGenerator={(t: any, namespace: string | undefined) =>
-          aiPromptsColumns(t, namespace, setPrompt)
-        }
+        columnGenerator={(
+          t: (key: string) => string,
+          namespace: string | undefined
+        ) => aiPromptsColumns(t, namespace, setPrompt)}
         namespace="ai-prompts-data-table"
         count={count}
         defaultVisibility={{

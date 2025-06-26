@@ -16,7 +16,7 @@ describe('CsvCrawler', () => {
   test('preloadFile processes CSV data correctly', async () => {
     const mockCsvData = 'Header1\tHeader2\nValue1\tValue2\nValue3\tValue4';
 
-    (global.fetch as any).mockResolvedValue({
+    (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
       ok: true,
       text: () => Promise.resolve(mockCsvData),
     });
@@ -45,7 +45,7 @@ describe('CsvCrawler', () => {
   test('crawl processes full dataset correctly', async () => {
     const mockCsvData = 'Header1\tHeader2\nValue1\tValue2\nValue3\tValue4';
 
-    (global.fetch as any).mockResolvedValue({
+    (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
       ok: true,
       text: () => Promise.resolve(mockCsvData),
     });
@@ -65,7 +65,7 @@ describe('CsvCrawler', () => {
   test('handles empty or invalid CSV data', async () => {
     const mockEmptyCsv = '\n\n';
 
-    (global.fetch as any).mockResolvedValue({
+    (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
       ok: true,
       text: () => Promise.resolve(mockEmptyCsv),
     });
@@ -83,7 +83,7 @@ describe('CsvCrawler', () => {
   test('converts numeric strings to numbers', async () => {
     const mockCsvData = 'Header1\tHeader2\n123\t456.78\nabc\t789';
 
-    (global.fetch as any).mockResolvedValue({
+    (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
       ok: true,
       text: () => Promise.resolve(mockCsvData),
     });

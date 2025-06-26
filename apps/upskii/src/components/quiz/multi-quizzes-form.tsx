@@ -69,7 +69,7 @@ export default function MultiQuizzesForm({
   const router = useRouter();
 
   const [showPasteConfirm, setShowPasteConfirm] = useState(false);
-  const [pastedQuizzes, setPastedQuizzes] = useState<any[]>([]);
+  const [pastedQuizzes, setPastedQuizzes] = useState<unknown[]>([]);
 
   const form = useForm({
     resolver: zodResolver(FormSchema),

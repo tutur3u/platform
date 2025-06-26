@@ -3,7 +3,6 @@
 import { MemoizedReactMarkdown } from '@tuturuuu/ui/markdown';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { Separator } from '@tuturuuu/ui/separator';
-import { cn } from '@tuturuuu/utils/format';
 import { motion } from 'framer-motion';
 import { useEffect, useRef, useState } from 'react';
 
@@ -78,6 +77,7 @@ export function LessonContent({ lesson }: LessonProps) {
         <nav className="space-y-1">
           {lesson.sections.map((section, index) => (
             <button
+              type="button"
               key={index}
               onClick={() => {
                 setActiveSection(index);
@@ -85,12 +85,11 @@ export function LessonContent({ lesson }: LessonProps) {
                   .querySelector(`[data-index="${index}"]`)
                   ?.scrollIntoView({ behavior: 'smooth' });
               }}
-              className={cn(
-                'w-full rounded px-2 py-1 text-left text-sm transition-colors hover:bg-accent',
+              className={`w-full rounded-lg px-3 py-2 text-left text-sm transition-colors ${
                 activeSection === index
-                  ? 'bg-accent font-medium text-primary'
-                  : 'text-muted-foreground'
-              )}
+                  ? 'bg-accent text-accent-foreground'
+                  : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+              }`}
             >
               {section.title}
             </button>
