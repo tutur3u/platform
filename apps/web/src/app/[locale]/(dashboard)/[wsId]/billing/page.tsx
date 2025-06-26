@@ -156,6 +156,7 @@ export default async function BillingPage({
       fetchWorkspaceSubscriptions(wsId),
     ]);
 
+  console.log("Products:", products);
   // console.log("Products:", products);
   const currentPlan = subscription?.product
     ? {
@@ -209,32 +210,7 @@ export default async function BillingPage({
       : null,
   }));
 
-  const upgradePlans = products.map((product, index) => ({
-    id: product.id,
-    name: product.name,
-    price:
-      product.prices && product.prices.length > 0
-        ? product.prices[0] && "priceAmount" in product.prices[0]
-          ? `$${((product.prices[0] as any).priceAmount / 100).toFixed(2)}`
-          : "Free"
-        : "Custom",
-    billingCycle:
-      product.prices && product.prices.length > 0
-        ? product.prices[0]?.type === "recurring"
-          ? product.prices[0]?.recurringInterval || "month"
-          : "one-time"
-        : "month",
-    popular: index === 1,
-    features: product.description
-      ? [product.description, "Customer support", "Access to platform features"]
-      : [
-          "Standard features",
-          "Customer support",
-          "Access to platform features",
-        ],
-    isEnterprise: product.name.toLowerCase().includes("enterprise"),
-  }));
-
+  
   return (
     <div className="container mx-auto max-w-6xl px-4 py-8">
       <h1 className="mb-2 text-3xl font-bold tracking-tight">Billing</h1>
@@ -247,7 +223,6 @@ export default async function BillingPage({
         isAdmin={isTuturuuuAdmin}
         products={products}
         product_id={subscription?.product.id || ""}
-        upgradePlans={upgradePlans}
         wsId={wsId}
         activeSubscriptionId={subscription?.polar_subscription_id || ""}
         isCreator={isCreator}

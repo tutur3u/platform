@@ -17,28 +17,10 @@ interface Plan {
   features?: string[];
 }
 
-interface UpgradePlan {
-  id: string;
-  name: string;
-  price: string;
-  billingCycle: string;
-  popular: boolean;
-  features: string[];
-  isEnterprise?: boolean;
-}
-
-interface Product {
-  id: string;
-  name: string;
-  price: string;
-  recurringInterval: string;
-  description?: string;
-}
 interface BillingClientProps {
   currentPlan: Plan;
-  upgradePlans: UpgradePlan[];
   wsId: string;
-  products: Product[];
+  products: any[];
   product_id: string;
   isCreator: boolean;
   isAdmin?: boolean;
@@ -75,7 +57,7 @@ interface BillingClientProps {
 //   return insertedProducts;
 // };
 
-const syncToProduct = async (products: Product[]) => {
+const syncToProduct = async (products: any[]) => {
   const supabase = createClient();
 
   const insertedProducts = await Promise.all(
@@ -103,7 +85,6 @@ const syncToProduct = async (products: Product[]) => {
 };
 export function BillingClient({
   currentPlan,
-  upgradePlans,
   isAdmin = false,
   products,
   wsId,
@@ -143,6 +124,31 @@ export function BillingClient({
   //     );
   //   }
   // };
+  const upgradePlans = products.map((product, index) => ({
+    id: product.id,
+    name: product.name,
+    price:
+      product.prices && product.prices.length > 0
+        ? product.prices[0] && "priceAmount" in product.prices[0]
+          ? `$${((product.prices[0] as any).priceAmount / 100).toFixed(2)}`
+          : "Free"
+        : "Custom",
+    billingCycle:
+      product.prices && product.prices.length > 0
+        ? product.prices[0]?.type === "recurring"
+          ? product.prices[0]?.recurringInterval || "month"
+          : "one-time"
+        : "month",
+    popular: index === 1,
+    features: product.description
+      ? [product.description, "Customer support", "Access to platform features"]
+      : [
+          "Standard features",
+          "Customer support",
+          "Access to platform features",
+        ],
+    isEnterprise: product.name.toLowerCase().includes("enterprise"),
+  }));
 
   return (
     <>
