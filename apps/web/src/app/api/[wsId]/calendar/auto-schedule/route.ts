@@ -255,6 +255,9 @@ export async function POST(
       // 5. SAVE THE NEW SCHEDULE TO SUPABASE
       streamUpdate?.({ status: 'running', message: 'Saving new schedule...' });
       
+      const eventsToInsert = newScheduledEvents.filter(event =>
+        !newFlexibleEvents.some(existing => existing.id === event.id)
+      );
       for (const optimization of newScheduledEvents) {
       try {
         const { error } = await (await supabase)
@@ -266,9 +269,9 @@ export async function POST(
           .eq('id', optimization.id)
           .eq('ws_id', wsId);
 
-          if(error) {
-            (`Failed to apply optimization for event ${optimization.id}: ${error.message}`)
-          }
+          if(error) {  
+            console.error(`Failed to apply optimization for event ${optimization.id}: ${error.message}`);  
+          }  
       } catch (err) {
         console.error(
           `Failed to apply optimization for event ${optimization.id}:`,
@@ -280,7 +283,7 @@ export async function POST(
 
       // Prepare new events for insertion
       if (newScheduledEvents.length > 0) {
-        const eventsToInsert = newScheduledEvents.map(event => ({
+        const insertData = eventsToInsert.map(event => ({
           ws_id: wsId,
           creator_id: user.id,
           task_id: event.taskId,
@@ -293,7 +296,7 @@ export async function POST(
 
         const { error: insertError } = await (await supabase)
           .from('workspace_calendar_events')
-          .insert(eventsToInsert);
+          .insert(insertData);
 
         if (insertError) throw new Error(`Failed to save new schedule: ${insertError.message}`);
       }
