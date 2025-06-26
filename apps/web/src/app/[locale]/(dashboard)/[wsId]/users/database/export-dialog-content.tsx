@@ -50,7 +50,7 @@ export default function ExportDialogContent({
 
   const defaultFilename = `${exportType}_export.${getFileExtension(exportFileType)}`;
 
-  const downloadCSV = (data: any[], filename: string) => {
+  const downloadCSV = (data: WorkspaceUser[], filename: string) => {
     const csv = jsonToCSV(data);
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
@@ -61,7 +61,7 @@ export default function ExportDialogContent({
     document.body.removeChild(link);
   };
 
-  const downloadExcel = (data: any[], filename: string) => {
+  const downloadExcel = (data: WorkspaceUser[], filename: string) => {
     const worksheet = XLSX.utils.json_to_sheet(data);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Sheet1');

@@ -619,8 +619,17 @@ export function BoardColumn({
                   </div>
 
                   {/* Priority Filter */}
-                  <div className="space-y-2">
-                    <label className="text-xs font-medium">Priority</label>
+                  <div
+                    role="group"
+                    aria-labelledby="priority-filter-label"
+                    className="space-y-2"
+                  >
+                    <label
+                      id="priority-filter-label"
+                      className="text-xs font-medium"
+                    >
+                      Priority
+                    </label>
                     <div className="flex flex-wrap gap-1">
                       {[1, 2, 3, 4].map((priority) => {
                         const isSelected = filters.priorities.has(priority);
@@ -670,8 +679,17 @@ export function BoardColumn({
 
                   {/* Assignees Filter */}
                   {allAssignees.length > 0 && (
-                    <div className="space-y-2">
-                      <label className="text-xs font-medium">Assignees</label>
+                    <div
+                      role="group"
+                      aria-labelledby="assignees-filter-label"
+                      className="space-y-2"
+                    >
+                      <label
+                        id="assignees-filter-label"
+                        className="text-xs font-medium"
+                      >
+                        Assignees
+                      </label>
                       <Popover
                         open={assigneesOpen}
                         onOpenChange={setAssigneesOpen}
@@ -754,8 +772,17 @@ export function BoardColumn({
                   )}
 
                   {/* Quick Filters */}
-                  <div className="space-y-2">
-                    <label className="text-xs font-medium">Quick Filters</label>
+                  <div
+                    role="group"
+                    aria-labelledby="quick-filters-label"
+                    className="space-y-2"
+                  >
+                    <label
+                      id="quick-filters-label"
+                      className="text-xs font-medium"
+                    >
+                      Quick Filters
+                    </label>
                     <div className="flex flex-wrap gap-1">
                       <Button
                         variant={filters.overdue ? 'default' : 'outline'}

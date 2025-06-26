@@ -30,7 +30,7 @@ interface UserSelectorProps {
   onUserChange: (userId: string | null) => void;
   currentUserId: string;
   // eslint-disable-next-line no-unused-vars
-  apiCall: (url: string, options?: RequestInit) => Promise<any>;
+  apiCall: (url: string, options?: RequestInit) => Promise<unknown>;
 }
 
 export function UserSelector({
@@ -45,20 +45,25 @@ export function UserSelector({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchUsers = async ({ wsId }: { wsId: string }) => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const response = await apiCall(`/api/v1/workspaces/${wsId}/members`);
-      console.log('response', response);
-      setUsers(Array.isArray(response) ? response : response.data || []);
-    } catch (error) {
-      console.error('Error fetching workspace users:', error);
-      setError(error instanceof Error ? error.message : 'Failed to load users');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const fetchUsers = useCallback(
+    async ({ wsId }: { wsId: string }) => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const response = await apiCall(`/api/v1/workspaces/${wsId}/members`);
+        console.log('response', response);
+        setUsers(Array.isArray(response) ? response : response.data || []);
+      } catch (error) {
+        console.error('Error fetching workspace users:', error);
+        setError(
+          error instanceof Error ? error.message : 'Failed to load users'
+        );
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [apiCall]
+  );
 
   useEffect(() => {
     fetchUsers({ wsId });
@@ -93,6 +98,7 @@ export function UserSelector({
       <PopoverTrigger asChild>
         <Button
           variant="outline"
+          // biome-ignore lint/a11y/useSemanticElements: This is a custom combobox component built with shadcn/ui, role="combobox" is correct for accessibility.
           role="combobox"
           aria-expanded={open}
           className={cn(

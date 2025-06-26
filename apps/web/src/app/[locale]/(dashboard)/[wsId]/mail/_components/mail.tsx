@@ -34,10 +34,6 @@ interface CookieStore {
   }) => Promise<void>;
 }
 
-function setCookie(name: string, value: string, path = '/') {
-  document.cookie = `${name}=${value}; path=${path}`;
-}
-
 export function MailComponent({
   mails,
   defaultLayout = [20, 32, 48],
@@ -64,9 +60,8 @@ export function MailComponent({
                 path: '/',
               });
             } else {
-              setCookie(
-                'react-resizable-panels:layout:mail',
-                JSON.stringify(sizes)
+              console.warn(
+                'window.cookieStore is not available. Layout will not be persisted.'
               );
             }
           } catch (e) {

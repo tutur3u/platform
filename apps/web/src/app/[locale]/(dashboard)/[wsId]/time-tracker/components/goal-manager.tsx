@@ -66,7 +66,7 @@ interface GoalManagerProps {
   // eslint-disable-next-line no-unused-vars
   formatDuration: (seconds: number) => string;
   // eslint-disable-next-line no-unused-vars
-  apiCall: (url: string, options?: RequestInit) => Promise<any>;
+  apiCall: (url: string, options?: RequestInit) => Promise<unknown>;
 }
 
 export function GoalManager({
@@ -343,7 +343,7 @@ export function GoalManager({
                         const goalWeekTime = getTimeForGoal(goal, 'week');
                         const progress = calculateProgress(
                           goalWeekTime,
-                          goal.weekly_goal_minutes!
+                          goal.weekly_goal_minutes || 0
                         );
                         return (
                           <div key={goal.id} className="space-y-1">
@@ -369,7 +369,7 @@ export function GoalManager({
                             <div className="flex justify-between text-xs text-muted-foreground">
                               <span>{formatDuration(goalWeekTime)}</span>
                               <span>
-                                {formatMinutes(goal.weekly_goal_minutes!)}
+                                {formatMinutes(goal.weekly_goal_minutes || 0)}
                               </span>
                             </div>
                           </div>

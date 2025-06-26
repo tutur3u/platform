@@ -70,9 +70,9 @@ export default function ImportDialogContent({ wsId }: { wsId: string }) {
       if (sheet) {
         const jsonData = XLSX.utils.sheet_to_json(sheet, {
           header: 1,
-        }) as any[][];
+        }) as string[][];
         const formattedData = jsonData
-          .map((row: any[]) => ({
+          .map((row: string[]) => ({
             fullName: sentenceCase(row[1]) || '',
             email: row[0]?.toLowerCase(),
           }))
@@ -117,8 +117,8 @@ export default function ImportDialogContent({ wsId }: { wsId: string }) {
     setPage((prevPage) => Math.max(prevPage - 1, 0));
   };
 
-  const fetchExistingUsers = async (supabase: any, wsId: string) => {
-    let existingUsers: any[] = [];
+  const fetchExistingUsers = async (supabase: SupabaseClient, wsId: string) => {
+    let existingUsers: WorkspaceUser[] = [];
     let from = 0;
     const batchSize = 100;
 
@@ -184,7 +184,7 @@ export default function ImportDialogContent({ wsId }: { wsId: string }) {
       setUploading(false);
       setUploaded(true);
       router.refresh();
-    } catch (error: any) {
+    } catch (error: unknown) {
       setError(error.message);
       setUploading(false);
     }

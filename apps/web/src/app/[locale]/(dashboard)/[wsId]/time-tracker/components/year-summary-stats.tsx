@@ -19,48 +19,54 @@ export function YearSummaryStats({
   formatDuration,
 }: YearSummaryStatsProps) {
   // Helper function to calculate longest streak
-  const calculateLongestStreak = (
-    dailyActivity: Array<{ date: string; duration: number; sessions: number }>
-  ) => {
-    if (!dailyActivity.length) return 0;
+  const calculateLongestStreak = useCallback(
+    (
+      dailyActivity: Array<{ date: string; duration: number; sessions: number }>
+    ) => {
+      if (!dailyActivity.length) return 0;
 
-    const sortedDays = dailyActivity
-      .filter((day) => day.duration > 0)
-      .map((day) => new Date(day.date))
-      .sort((a, b) => a.getTime() - b.getTime());
+      const sortedDays = dailyActivity
+        .filter((day) => day.duration > 0)
+        .map((day) => new Date(day.date))
+        .sort((a, b) => a.getTime() - b.getTime());
 
-    let maxStreak = 0;
-    let currentStreak = 1;
+      let maxStreak = 0;
+      let currentStreak = 1;
 
-    for (let i = 1; i < sortedDays.length; i++) {
-      const prevDay = sortedDays[i - 1];
-      const currentDay = sortedDays[i];
-      if (!prevDay || !currentDay) continue;
+      for (let i = 1; i < sortedDays.length; i++) {
+        const prevDay = sortedDays[i - 1];
+        const currentDay = sortedDays[i];
+        if (!prevDay || !currentDay) continue;
 
-      const diffInDays =
-        (currentDay.getTime() - prevDay.getTime()) / (1000 * 60 * 60 * 24);
+        const diffInDays =
+          (currentDay.getTime() - prevDay.getTime()) / (1000 * 60 * 60 * 24);
 
-      if (diffInDays === 1) {
-        currentStreak++;
-      } else {
-        maxStreak = Math.max(maxStreak, currentStreak);
-        currentStreak = 1;
+        if (diffInDays === 1) {
+          currentStreak++;
+        } else {
+          maxStreak = Math.max(maxStreak, currentStreak);
+          currentStreak = 1;
+        }
       }
-    }
 
-    return Math.max(maxStreak, currentStreak);
-  };
+      return Math.max(maxStreak, currentStreak);
+    },
+    []
+  );
 
   // Helper function to find most productive day
-  const findMostProductiveDay = (
-    dailyActivity: Array<{ date: string; duration: number; sessions: number }>
-  ) => {
-    if (!dailyActivity.length) return null;
+  const findMostProductiveDay = useCallback(
+    (
+      dailyActivity: Array<{ date: string; duration: number; sessions: number }>
+    ) => {
+      if (!dailyActivity.length) return null;
 
-    return dailyActivity.reduce((max, day) =>
-      day.duration > max.duration ? day : max
-    );
-  };
+      return dailyActivity.reduce((max, day) =>
+        day.duration > max.duration ? day : max
+      );
+    },
+    []
+  );
 
   // Calculate additional stats for enhanced UX
   const additionalStats = useMemo(() => {

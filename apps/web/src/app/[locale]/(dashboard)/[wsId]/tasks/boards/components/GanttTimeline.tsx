@@ -102,8 +102,8 @@ export function GanttTimeline({
         className="relative rounded-lg border bg-background"
         style={{ height: '320px' }} // Fixed height instead of expanding
       >
-        {/* biome-ignore lint/security/noDangerouslySetInnerHtml: required for custom scrollbar styling */}
         <style
+          // biome-ignore lint/security/noDangerouslySetInnerHtml: required for custom scrollbar styling
           dangerouslySetInnerHTML={{
             __html: `
               .custom-scrollbar::-webkit-scrollbar {

@@ -85,12 +85,14 @@ type SortField =
   | 'status';
 type SortOrder = 'asc' | 'desc';
 
+type DateFilterOption = 'all' | 'overdue' | 'today' | 'this_week' | 'no_date';
+
 interface TableFilters {
   search: string;
   priorities: Set<number>;
   statuses: Set<string>;
   assignees: Set<string>;
-  dateFilter: 'all' | 'overdue' | 'today' | 'this_week' | 'no_date';
+  dateFilter: DateFilterOption;
 }
 
 interface ColumnVisibility {
@@ -744,7 +746,7 @@ export function ListView({ board }: Props) {
             {/* Date Filter */}
             <Select
               value={filters.dateFilter}
-              onValueChange={(value: any) =>
+              onValueChange={(value: DateFilterOption) =>
                 setFilters({ ...filters, dateFilter: value })
               }
             >

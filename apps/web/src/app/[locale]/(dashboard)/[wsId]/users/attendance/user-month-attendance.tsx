@@ -341,6 +341,7 @@ export default function UserMonthAttendance({
                     if (!isDateAttended(data, day) && !isDateAbsent(data, day))
                       return (
                         <button
+                          type="button"
                           onClick={() => handleDateClick(day)}
                           key={`${initialUser.id}-${currentDate.toDateString()}-day-${idx}`}
                           className={cn(
@@ -363,6 +364,7 @@ export default function UserMonthAttendance({
                             asChild
                           >
                             <button
+                              type="button"
                               onClick={() => handleDateClick(day)}
                               className={`flex flex-none cursor-pointer justify-center rounded border p-2 font-semibold transition duration-300 md:rounded-lg ${
                                 isDateAttended(data, day)

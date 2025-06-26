@@ -19,7 +19,7 @@ interface Task {
   closed_at?: string;
   finished_at?: string;
   done_at?: string;
-  [key: string]: any;
+  [key: string]: string | number | boolean | null | undefined;
 }
 
 interface BoardMetrics {

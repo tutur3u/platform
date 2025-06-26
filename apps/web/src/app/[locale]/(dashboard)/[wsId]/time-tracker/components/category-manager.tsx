@@ -56,7 +56,7 @@ interface CategoryManagerProps {
   onCategoriesUpdate: () => void;
   readOnly?: boolean;
   // eslint-disable-next-line no-unused-vars
-  apiCall: (url: string, options?: RequestInit) => Promise<any>;
+  apiCall: (url: string, options?: RequestInit) => Promise<unknown>;
 }
 
 const CATEGORY_COLORS = [

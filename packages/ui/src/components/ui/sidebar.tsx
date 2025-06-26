@@ -98,16 +98,7 @@ const SidebarProvider = React.forwardRef<
         }
 
         // This sets the cookie to keep the sidebar state.
-        function setCookie(
-          name: string,
-          value: string,
-          path = '/',
-          maxAge?: number
-        ) {
-          let cookie = `${name}=${value}; path=${path}`;
-          if (maxAge) cookie += `; max-age=${maxAge}`;
-          document.cookie = cookie;
-        }
+
         if (typeof window !== 'undefined' && window.document) {
           try {
             if (
@@ -122,11 +113,8 @@ const SidebarProvider = React.forwardRef<
                 maxAge: SIDEBAR_COOKIE_MAX_AGE,
               });
             } else {
-              setCookie(
-                SIDEBAR_COOKIE_NAME,
-                String(openState),
-                '/',
-                SIDEBAR_COOKIE_MAX_AGE
+              console.warn(
+                'window.cookieStore is not available. Sidebar state will not be persisted.'
               );
             }
           } catch (error) {

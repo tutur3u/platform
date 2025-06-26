@@ -334,16 +334,8 @@ async function getReportData({
   const { data: rawData, count, error } = await queryBuilder;
   if (error) throw error;
 
-  const data = rawData.map((rowData) => {
-    const preprocessedData: {
-      user?: any;
-      [key: string]: any;
-    } = {
-      ...rowData,
-    };
-
-    delete preprocessedData.user;
-    return preprocessedData as WorkspaceUserReport;
+  const data = rawData.map(({ user, ...rest }) => {
+    return rest as WorkspaceUserReport;
   });
 
   return { data, count } as { data: WorkspaceUserReport[]; count: number };

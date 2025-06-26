@@ -7,7 +7,7 @@ import moment from 'moment';
 import { UserFieldRowActions } from './row-actions';
 
 export const userFieldColumns = (
-  t: any,
+  t: (key: string) => string,
   namespace: string | undefined
 ): ColumnDef<WorkspaceUserField>[] => [
   // {

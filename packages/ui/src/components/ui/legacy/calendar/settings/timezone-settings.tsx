@@ -456,6 +456,7 @@ export function TimezoneSettings({ value, onChange }: TimezoneSettingsProps) {
               )}
             </div>
             <div
+              role="listbox"
               className="pointer-events-auto max-h-[320px] overflow-y-auto rounded-b-lg"
               onKeyDown={handleKeyDown}
               style={{ touchAction: 'pan-y' }}

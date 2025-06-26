@@ -1139,7 +1139,8 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                       onValueChange={(value) =>
                         setAnalyticsFilters((prev) => ({
                           ...prev,
-                          statusFilter: value as any,
+                          statusFilter:
+                            value as AnalyticsFilters['statusFilter'],
                         }))
                       }
                     >
@@ -1336,8 +1337,15 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
         <div className="fixed inset-0 z-50 flex">
           {/* Backdrop */}
           <div
+            role="button"
+            tabIndex={0}
             className="absolute inset-0 bg-black/20 backdrop-blur-sm"
             onClick={closeSidebar}
+            onKeyDown={(e) => {
+              if (e.key === 'Escape' || e.key === 'Enter' || e.key === ' ') {
+                closeSidebar();
+              }
+            }}
           />
 
           {/* Sidebar */}

@@ -19,10 +19,9 @@ import Link from 'next/link';
 import { Fragment } from 'react';
 
 export const getUserColumns = (
-  t: any,
+  t: (key: string) => string,
   namespace: string | undefined,
-  extraFields?: WorkspaceUserField[],
-  extraData?: any
+  extraFields?: WorkspaceUserField[]
 ): ColumnDef<WorkspaceUser>[] => [
   // {
   //   id: 'select',
@@ -463,12 +462,6 @@ export const getUserColumns = (
   })) || []) as ColumnDef<WorkspaceUser>[]),
   {
     id: 'actions',
-    cell: ({ row }) => (
-      <UserRowActions
-        row={row}
-        href={row.original.href}
-        extraData={extraData}
-      />
-    ),
+    cell: ({ row }) => <UserRowActions row={row} href={row.original.href} />,
   },
 ];
