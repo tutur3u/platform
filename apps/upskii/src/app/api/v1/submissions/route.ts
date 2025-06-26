@@ -66,7 +66,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
-  let body;
+  let body: {
+    prompt: string;
+    problemId: string;
+    challengeId: string;
+  };
 
   try {
     body = await request.json();

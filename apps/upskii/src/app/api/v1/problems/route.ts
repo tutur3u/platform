@@ -71,7 +71,14 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   const supabase = await createClient();
-  let body;
+  let body: {
+    title: string;
+    description?: string;
+    challengeId: string;
+    exampleInput?: string;
+    exampleOutput?: string;
+    maxPromptLength?: number;
+  };
 
   try {
     body = await request.json();

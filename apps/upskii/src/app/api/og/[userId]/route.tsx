@@ -245,6 +245,7 @@ export async function GET(
                 userData.avatar_url ||
                 'https://tuturuuu.com/media/logos/light.png'
               }
+              alt={`${userName}'s avatar`}
               style={{
                 borderRadius: '160px',
                 position: 'relative',
@@ -261,7 +262,7 @@ export async function GET(
         height: 630,
       }
     );
-  } catch (e: any) {
+  } catch (e: unknown) {
     console.error(e);
     return new Response('Failed to generate profile OG image', { status: 500 });
   }

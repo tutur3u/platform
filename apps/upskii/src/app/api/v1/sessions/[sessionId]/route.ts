@@ -86,7 +86,13 @@ export async function PUT(request: Request, { params }: Params) {
       );
     }
 
-    const updateData: any = {};
+    const updateData: Partial<{
+      start_time: string;
+      end_time: string | null;
+      status: string;
+      challenge_id: string;
+      user_id: string;
+    }> = {};
     if (body.startTime !== undefined) updateData.start_time = body.startTime;
     if (body.endTime !== undefined) updateData.end_time = body.endTime;
     if (body.status !== undefined) updateData.status = body.status;

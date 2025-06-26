@@ -85,7 +85,11 @@ export async function PUT(request: Request, { params }: Params) {
   }
 
   try {
-    const updateData: any = {};
+    const updateData: Partial<{
+      name: string;
+      description: string;
+      challenge_id: string;
+    }> = {};
     if (body.name !== undefined) updateData.name = body.name;
     if (body.description !== undefined)
       updateData.description = body.description;

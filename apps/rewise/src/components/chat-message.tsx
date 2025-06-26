@@ -2,9 +2,7 @@
 
 import type { Message } from '@tuturuuu/ai/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
-import { CodeBlock } from '@tuturuuu/ui/codeblock';
-import { Bot, Send, Sparkle } from '@tuturuuu/ui/icons';
-import { IconUser } from '@tuturuuu/ui/icons/IconUser';
+import { Bot, IconUser, Send, Sparkle } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import { capitalize, cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
@@ -13,8 +11,8 @@ import dayjs from 'dayjs';
 import 'dayjs/locale/vi';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import mermaid from 'mermaid';
-import Link from 'next/link';
 import { useTranslations } from 'next-intl';
+import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import rehypeKatex from 'rehype-katex';
 import remarkGfm from 'remark-gfm';
@@ -313,10 +311,10 @@ export function ChatMessage({
           remarkPlugins={[remarkGfm, remarkMath]}
           rehypePlugins={[rehypeKatex]}
           components={{
-            h1({ children }) {
+            h1({ children }: { children: React.ReactNode }) {
               return <h1 className="mt-6 mb-2 text-foreground">{children}</h1>;
             },
-            h2({ children }) {
+            h2({ children }: { children: React.ReactNode }) {
               // Quiz component
               if (
                 Array.isArray(children) &&
@@ -324,33 +322,37 @@ export function ChatMessage({
                 children[0] === '@' &&
                 children.some(
                   (child) =>
-                    typeof child === 'string' && child.startsWith('<QUIZ>')
+                    typeof child === 'string' && child.startsWith('<QUESTION>')
                 )
               ) {
                 const quizContent = children.join('');
-                const quizId = generateQuizId(quizContent);
-                const quizState = quizStates[quizId] || {
-                  selectedOption: { isCorrect: false, text: '' },
-                  revealCorrect: false,
-                };
-
                 const questionMatch = quizContent.match(
                   /<QUESTION>(.*?)<\/QUESTION>/
                 );
                 const question = questionMatch
                   ? questionMatch[1]
                   : 'No question found';
-
                 const optionsMatches = Array.from(
                   quizContent.matchAll(
                     /<OPTION(?: isCorrect)?>(.*?)<\/OPTION>/g
                   )
                 );
-
                 const options = optionsMatches.map((match) => ({
                   isCorrect: match[0].includes('isCorrect'),
                   text: match?.[1]?.trim() || '',
                 }));
+                const quizId = generateQuizId(quizContent);
+                const quizState = quizStates[quizId] || {
+                  selectedOption: { isCorrect: false, text: '' },
+                  revealCorrect: false,
+                };
+                const handleOptionClick = (option: {
+                  isCorrect: boolean;
+                  text: string;
+                }) => {
+                  if (quizState.revealCorrect) return;
+                  handleQuizOptionClick(quizId, option);
+                };
 
                 const questionElement = (
                   <div className="text-lg font-bold text-foreground">
@@ -372,6 +374,7 @@ export function ChatMessage({
                           : 'border-foreground/20 bg-foreground/5 text-foreground hover:bg-foreground/10'
                     }`}
                     onClick={() => handleQuizOptionClick(quizId, option)}
+                    disabled={quizState.revealCorrect}
                   >
                     {option.text}
                   </button>
@@ -463,6 +466,7 @@ export function ChatMessage({
                           : 'bg-foreground/5 hover:bg-foreground/10'
                       }`}
                       onClick={() => handleFlashcardReveal(flashcardId)}
+                      disabled={isRevealed}
                     >
                       {isRevealed ? (
                         <>
@@ -529,35 +533,40 @@ export function ChatMessage({
 
               return <h2 className="mt-4 mb-2 text-foreground">{children}</h2>;
             },
-            h3({ children }) {
+            h3({ children }: { children: React.ReactNode }) {
               return <h3 className="mt-6 mb-2 text-foreground">{children}</h3>;
             },
-            h4({ children }) {
+            h4({ children }: { children: React.ReactNode }) {
               return <h4 className="mt-6 mb-2 text-foreground">{children}</h4>;
             },
-            h5({ children }) {
+            h5({ children }: { children: React.ReactNode }) {
               return <h5 className="mt-6 mb-2 text-foreground">{children}</h5>;
             },
-            h6({ children }) {
+            h6({ children }: { children: React.ReactNode }) {
               return <h6 className="mt-6 mb-2 text-foreground">{children}</h6>;
             },
-            strong({ children }) {
+            strong({ children }: { children: React.ReactNode }) {
               return (
                 <strong className="font-semibold text-foreground">
                   {children}
                 </strong>
               );
             },
-            a({ children, href }) {
+            a({
+              children,
+              href,
+            }: {
+              children: React.ReactNode;
+              href?: string;
+            }) {
               if (!href) return <>{children}</>;
-
               return (
                 <Link href={href} className="text-foreground hover:underline">
                   {children}
                 </Link>
               );
             },
-            p({ children }) {
+            p({ children }: { children: React.ReactNode }) {
               // Quiz component
               if (
                 Array.isArray(children) &&
@@ -565,7 +574,7 @@ export function ChatMessage({
                 children[0] === '@' &&
                 children.some(
                   (child) =>
-                    typeof child === 'string' && child.startsWith('<QUIZ>')
+                    typeof child === 'string' && child.startsWith('<QUESTION>')
                 )
               ) {
                 const quizContent = children.join('');
@@ -587,20 +596,10 @@ export function ChatMessage({
                   text: match?.[1]?.trim() || '',
                 }));
 
-                const [selectedOption, setSelectedOption] = useState<{
-                  isCorrect: boolean;
-                  text: string;
-                }>({ isCorrect: false, text: '' });
-                const [revealCorrect, setRevealCorrect] = useState(false);
-
-                const handleOptionClick = (option: {
-                  isCorrect: boolean;
-                  text: string;
-                }) => {
-                  if (revealCorrect) return;
-
-                  setSelectedOption(option);
-                  setRevealCorrect(true);
+                const quizId = generateQuizId(quizContent);
+                const quizState = quizStates[quizId] || {
+                  selectedOption: { isCorrect: false, text: '' },
+                  revealCorrect: false,
                 };
 
                 const questionElement = (
@@ -614,15 +613,16 @@ export function ChatMessage({
                     type="button"
                     key={index}
                     className={`mb-2 w-full rounded border px-3 py-1 text-center font-semibold transition last:mb-0 ${
-                      selectedOption.text === option.text
+                      quizState.selectedOption.text === option.text
                         ? option.isCorrect
                           ? 'border-green-600 bg-green-100 text-green-700 dark:border-green-400 dark:bg-green-900/50 dark:text-green-300'
                           : 'border-red-600 bg-red-100 text-red-700 dark:border-red-400 dark:bg-red-900/50 dark:text-red-300'
-                        : revealCorrect && option.isCorrect
+                        : quizState.revealCorrect && option.isCorrect
                           ? 'border-green-600 bg-green-100 text-green-700 dark:border-green-400 dark:bg-green-900/50 dark:text-green-300'
                           : 'border-foreground/20 bg-foreground/5 text-foreground hover:bg-foreground/10'
                     }`}
-                    onClick={() => handleOptionClick(option)}
+                    onClick={() => handleQuizOptionClick(quizId, option)}
+                    disabled={quizState.revealCorrect}
                   >
                     {option.text}
                   </button>
@@ -641,7 +641,7 @@ export function ChatMessage({
                     >
                       {optionsElements}
                     </div>
-                    {revealCorrect && (
+                    {quizState.revealCorrect && (
                       <>
                         <div className="mt-4">
                           <span className="opacity-70">
@@ -649,10 +649,10 @@ export function ChatMessage({
                             {t('you_selected')}{' '}
                           </span>
                           <span className="font-semibold">
-                            {selectedOption.text}
+                            {quizState.selectedOption.text}
                           </span>
                           <span className="opacity-70">, {t('which_is')} </span>
-                          {selectedOption.isCorrect ? (
+                          {quizState.selectedOption.isCorrect ? (
                             <span className="font-semibold text-dynamic-green underline">
                               {t('correct')}
                             </span>
@@ -697,7 +697,8 @@ export function ChatMessage({
                 );
                 const answer = answerMatch ? answerMatch[1] : 'No answer found';
 
-                const [revealAnswer, setRevealAnswer] = useState(false);
+                const flashcardId = generateFlashcardId(flashcardContent);
+                const revealAnswer = flashcardStates[flashcardId] || false;
 
                 return (
                   <div className="mt-4 flex w-full flex-col items-center justify-center rounded-lg border bg-foreground/5 p-4">
@@ -712,7 +713,8 @@ export function ChatMessage({
                           ? 'bg-dynamic-green/20 text-dynamic-green hover:bg-dynamic-green/30'
                           : 'bg-foreground/5 hover:bg-foreground/10'
                       }`}
-                      onClick={() => setRevealAnswer(true)}
+                      onClick={() => handleFlashcardReveal(flashcardId)}
+                      disabled={revealAnswer}
                     >
                       {revealAnswer ? (
                         <>
@@ -781,79 +783,48 @@ export function ChatMessage({
                 <p className="mb-2 text-foreground last:mb-0">{children}</p>
               );
             },
-            blockquote({ children }) {
+            blockquote({ children }: { children: React.ReactNode }) {
               return (
-                <blockquote className="border-l-4 border-foreground/30 pl-2 text-foreground/80">
+                <blockquote className="border-l-4 border-foreground/20 pl-4 italic text-foreground/80">
                   {children}
                 </blockquote>
               );
             },
-            // eslint-disable-next-line no-unused-vars
-            code({ node, className, children, ...props }) {
-              if (children && Array.isArray(children) && children.length) {
-                if (children[0] === '▍') {
-                  return (
-                    <span
-                      className={cn(
-                        'mt-1 animate-pulse cursor-default',
-                        className
-                      )}
-                    >
-                      ▍
-                    </span>
-                  );
-                }
-
-                children[0] = (children[0] as string).replace('`▍`', '▍');
-              }
-
-              const match = /language-(\w+)/.exec(className || '');
-
-              if (match && match[1] === 'mermaid') {
-                return (
-                  <div className="my-4">
-                    <MermaidRenderer
-                      content={String(children).replace(/\n$/, '')}
-                    />
-                  </div>
-                );
-              }
-
-              return match ? (
-                <CodeBlock
-                  key={Math.random()}
-                  language={match?.[1] || ''}
-                  value={String(children).replace(/\n$/, '')}
-                  {...props}
-                />
-              ) : (
-                <code
-                  className={cn('font-semibold text-foreground', className)}
-                  {...props}
-                >
-                  {children}
-                </code>
-              );
+            code({
+              node,
+              className,
+              children,
+              ...props
+            }: {
+              node: any;
+              className?: string;
+              children: React.ReactNode;
+            }) {
+              return <code className={className}>{children}</code>;
             },
-            table({ children }) {
+            table({ children }: { children: React.ReactNode }) {
               return (
-                <table className="w-full table-fixed overflow-x-scroll">
+                <table className="w-full border-collapse border border-foreground/20">
                   {children}
                 </table>
               );
             },
-            th({ children }) {
-              return <th className="text-foreground">{children}</th>;
-            },
-            pre({ children }) {
+            th({ children }: { children: React.ReactNode }) {
               return (
-                <pre className="rounded-lg border bg-foreground/5">
+                <th className="border border-foreground/20 p-2 text-center text-lg">
+                  {children}
+                </th>
+              );
+            },
+            pre({ children }: { children: React.ReactNode }) {
+              return (
+                <pre className="p-2 bg-foreground/5 rounded-md overflow-x-auto">
                   {children}
                 </pre>
               );
             },
             hr() {
-              return <hr className="border-border" />;
+              return <hr className="my-4 border-foreground/20" />;
             },
           }}
         >

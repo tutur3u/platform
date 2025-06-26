@@ -6,8 +6,11 @@ import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-col
 import moment from 'moment';
 import { WorkspaceQuizRowActions } from './row-actions';
 
+// Type for translation function
+type TranslationFunction = (key: string) => string;
+
 export const getWorkspaceQuizColumns = (
-  t: any,
+  t: TranslationFunction,
   namespace: string | undefined
 ): ColumnDef<WorkspaceQuiz>[] => [
   // {

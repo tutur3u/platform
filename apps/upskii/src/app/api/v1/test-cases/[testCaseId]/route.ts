@@ -86,7 +86,12 @@ export async function PUT(request: Request, { params }: Params) {
       );
     }
 
-    const updateData: any = {};
+    const updateData: Partial<{
+      problem_id: string;
+      input: string;
+      output: string;
+      hidden: boolean;
+    }> = {};
 
     if (body.problemId !== undefined) updateData.problem_id = body.problemId;
     if (body.input !== undefined) updateData.input = body.input;

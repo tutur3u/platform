@@ -7,11 +7,20 @@ import moment from 'moment';
 import Link from 'next/link';
 import { QuizSetRowActions } from './row-actions';
 
+// Type for translation function
+type TranslationFunction = (key: string) => string;
+
+// Type for extra data
+interface ExtraData {
+  wsId: string;
+  moduleId?: string;
+}
+
 export const getQuizSetColumns = (
-  t: any,
+  t: TranslationFunction,
   namespace: string | undefined,
-  _: any,
-  extraData?: any
+  _: unknown,
+  extraData?: ExtraData
 ): ColumnDef<WorkspaceQuizSet>[] => [
   // {
   //   id: 'select',
@@ -91,7 +100,7 @@ export const getQuizSetColumns = (
               }[]
             ).map((module) => (
               <Link
-                href={`/${extraData.wsId}/courses/${module.course_id}/modules/${module.module_id}`}
+                href={`/${extraData?.wsId || ''}/courses/${module.course_id}/modules/${module.module_id}`}
                 key={`${module.course_name}-${module.module_name}`}
                 className="w-fit rounded border bg-foreground/5 px-2 py-0.5 hover:underline"
               >
@@ -121,12 +130,15 @@ export const getQuizSetColumns = (
   },
   {
     id: 'actions',
-    cell: ({ row }) => (
-      <QuizSetRowActions
-        row={row}
-        wsId={extraData.wsId}
-        moduleId={extraData.moduleId}
-      />
-    ),
+    cell: ({ row }) => {
+      if (!extraData?.wsId) return null;
+      return (
+        <QuizSetRowActions
+          row={row}
+          wsId={extraData.wsId}
+          moduleId={extraData.moduleId || ''}
+        />
+      );
+    },
   },
 ];

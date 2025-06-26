@@ -10,35 +10,11 @@ import { RadioGroup, RadioGroupItem } from '@tuturuuu/ui/radio-group';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import BeforeTakingQuizWhole from '@/app/[locale]/(dashboard)/[wsId]/courses/[courseId]/modules/[moduleId]/quiz-sets/[setId]/take/before-taking-quiz-whole';
 import QuizStatusSidebar from '@/app/[locale]/(dashboard)/[wsId]/courses/[courseId]/modules/[moduleId]/quiz-sets/[setId]/take/quiz-status-sidebar';
 import TimeElapsedStatus from '@/app/[locale]/(dashboard)/[wsId]/courses/[courseId]/modules/[moduleId]/quiz-sets/[setId]/take/time-elapsed-status';
-
-
-
-
-
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+import type { TakeResponse } from '@/app/api/v1/workspaces/[wsId]/quiz-sets/[setId]/take/route';
 
 type ErrorResponse = { error: string };
 
@@ -48,39 +24,6 @@ type SubmitResult = {
   totalScore: number;
   maxPossibleScore: number;
 };
-
-
-
-type ErrorResponse = { error: string };
-
-type SubmitResult = {
-  attemptId: string;
-  attemptNumber: number;
-  totalScore: number;
-  maxPossibleScore: number;
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 export default function TakingQuizClient({
   wsId,
@@ -94,18 +37,18 @@ export default function TakingQuizClient({
   setId: string;
 }) {
   const t = useTranslations('ws-quizzes');
-  const _router = useRouter();
+  const router = useRouter();
 
   // ─── STATE ────────────────────────────────────────────────────────────────
-  const [_sidebarVisible, _setSidebarVisible] = useState(false);
+  const [sidebarVisible, setSidebarVisible] = useState(false);
 
-  const [_loadingMeta, setLoadingMeta] = useState(true);
-  const [_metaError, setMetaError] = useState<string | null>(null);
+  const [loadingMeta, setLoadingMeta] = useState(true);
+  const [metaError, setMetaError] = useState<string | null>(null);
   const [quizMeta, setQuizMeta] = useState<TakeResponse | null>(null);
 
   const [hasStarted, setHasStarted] = useState(false);
-  const [_isPastDue, setIsPastDue] = useState(false);
-  const [_isAvailable, setIsAvailable] = useState(true);
+  const [isPastDue, setIsPastDue] = useState(false);
+  const [isAvailable, setIsAvailable] = useState(true);
 
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
   // eslint-disable-next-line no-undef
@@ -116,8 +59,8 @@ export default function TakingQuizClient({
     Record<string, string | string[]>
   >({});
 
-  const [_submitting, _setSubmitting] = useState(false);
-  const [_submitError, _setSubmitError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   // ─── HELPERS ────────────────────────────────────────────────────────────────
   const STORAGE_KEY = `quiz_start_${setId}`;
@@ -126,35 +69,84 @@ export default function TakingQuizClient({
     ? quizMeta.timeLimitMinutes * 60
     : null;
 
-  const _clearStartTimestamp = () => {
+  const clearStartTimestamp = useCallback(() => {
     try {
       localStorage.removeItem(STORAGE_KEY);
     } catch {
       // Ignore
     }
-  };
+  }, [STORAGE_KEY]);
 
-  const computeElapsedSeconds = (startTs: number) =>
-    Math.floor((Date.now() - startTs) / 1000);
+  const computeElapsedSeconds = useCallback(
+    (startTs: number) => Math.floor((Date.now() - startTs) / 1000),
+    []
+  );
 
-  const _buildSubmissionPayload = () => ({
-    answers: Object.entries(selectedAnswers).flatMap(([quizId, val]) => {
-      if (Array.isArray(val)) {
-        return val.map((v) => ({ quizId, selectedOptionId: v }));
-      }
-      return { quizId, selectedOptionId: val };
+  const buildSubmissionPayload = useCallback(
+    () => ({
+      answers: Object.entries(selectedAnswers).flatMap(([quizId, val]) => {
+        if (Array.isArray(val)) {
+          return val.map((v) => ({ quizId, selectedOptionId: v }));
+        }
+        return { quizId, selectedOptionId: val };
+      }),
+      durationSeconds: computeElapsedSeconds(
+        Number(localStorage.getItem(STORAGE_KEY))
+      ),
     }),
-    durationSeconds: computeElapsedSeconds(
-      Number(localStorage.getItem(STORAGE_KEY))
-    ),
-  });
+    [selectedAnswers, computeElapsedSeconds, STORAGE_KEY]
+  );
 
-  // Only for debugging purposes
-  // useEffect(() => {
-  //   localStorage.removeItem(ANSWERS_KEY);
-  //   localStorage.removeItem(STORAGE_KEY);
-  //   clearStartTimestamp();
-  // }, [setId]);
+  const handleSubmit = useCallback(async () => {
+    if (!quizMeta) return;
+    setSubmitting(true);
+    setSubmitError(null);
+
+    try {
+      const res = await fetch(
+        `/api/v1/workspaces/${wsId}/quiz-sets/${setId}/submit`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(buildSubmissionPayload()),
+        }
+      );
+      const json: SubmitResult | { error: string } = await res.json();
+
+      if (!res.ok) {
+        setSubmitError(
+          (json as ErrorResponse).error || t('errors.submission-failed')
+        );
+        return setSubmitting(false);
+      }
+
+      localStorage.removeItem(ANSWERS_KEY);
+      localStorage.removeItem(STORAGE_KEY);
+      clearStartTimestamp();
+      if ('attemptId' in json) {
+        router.push(
+          `/${wsId}/courses/${courseId}/modules/${moduleId}/quiz-sets/${setId}/result?attemptId=${json.attemptId}`
+        );
+      }
+      // setSubmitResult(json as SubmitResult);
+    } catch {
+      setSubmitError(t('errors.network-error-submitting'));
+    } finally {
+      setSubmitting(false);
+    }
+  }, [
+    quizMeta,
+    wsId,
+    setId,
+    buildSubmissionPayload,
+    ANSWERS_KEY,
+    STORAGE_KEY,
+    clearStartTimestamp,
+    router,
+    courseId,
+    moduleId,
+    t,
+  ]);
 
   // ─── FETCH METADATA ─────────────────────────────────────────────────────────
   useEffect(() => {
@@ -167,7 +159,9 @@ export default function TakingQuizClient({
         const json: TakeResponse | { error: string } = await res.json();
 
         if (!res.ok) {
-          setMetaError((json as ErrorResponse).error || t('errors.unknown-error'));
+          setMetaError(
+            (json as ErrorResponse).error || t('errors.unknown-error')
+          );
           return setLoadingMeta(false);
         }
 
@@ -216,7 +210,9 @@ export default function TakingQuizClient({
     }
     fetchMeta();
     return () => {
-      timerRef.current && clearInterval(timerRef.current);
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
     };
   }, [
     setId,
@@ -242,14 +238,12 @@ export default function TakingQuizClient({
           prev === null
             ? null
             : prev <= 1
-              ? {
-{
-if (timerRef._current) {
-clearInterval(timerRef.current);
-}
-return 0;
-}
-}
+              ? (() => {
+                  if (timerRef.current) {
+                    clearInterval(timerRef.current);
+                  }
+                  return 0;
+                })()
               : prev - 1
         );
       }, 1000);
@@ -258,7 +252,11 @@ return 0;
         setTimeLeft((prev) => (prev === null ? 1 : prev + 1));
       }, 1000);
     }
-    return () => void clearInterval(timerRef.current!);
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
+    };
   }, [hasStarted, quizMeta, handleSubmit, timeLeft, totalSeconds]);
 
   useEffect(() => {
@@ -292,42 +290,12 @@ return 0;
     setTimeLeft(totalSeconds ?? 0);
   };
 
-  async function handleSubmit() {
-    if (!quizMeta) return;
-    setSubmitting(true);
-    setSubmitError(null);
-
-    try {
-      const res = await fetch(
-        `/api/v1/workspaces/${wsId}/quiz-sets/${setId}/submit`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(buildSubmissionPayload()),
-        }
-      );
-      const json: SubmitResult | { error: string } = await res.json();
-
-      if (!res.ok) {
-        setSubmitError((json as ErrorResponse).error || t('errors.submission-failed'));
-        return setSubmitting(false);
-      }
-
-      localStorage.removeItem(ANSWERS_KEY);
-      localStorage.removeItem(STORAGE_KEY);
-      clearStartTimestamp();
-      if ('attemptId' in json) {
-        router.push(
-          `/${wsId}/courses/${courseId}/modules/${moduleId}/quiz-sets/${setId}/result?attemptId=${json.attemptId}`
-        );
-      }
-      // setSubmitResult(json as SubmitResult);
-    } catch {
-      setSubmitError(t('errors.network-error-submitting'));
-    } finally {
-      setSubmitting(false);
-    }
-  }
+  // Only for debugging purposes
+  // useEffect(() => {
+  //   localStorage.removeItem(ANSWERS_KEY);
+  //   localStorage.removeItem(STORAGE_KEY);
+  //   clearStartTimestamp();
+  // }, [setId]);
 
   // ─── RENDER ─────────────────────────────────────────────────────────────────
   if (loadingMeta) return <LoadingIndicator className="mx-auto mt-8" />;
@@ -364,7 +332,10 @@ return 0;
       {/* Mobile header */}
       <div className="sticky top-0 mb-2 space-y-2 rounded-md bg-card/90 shadow lg:hidden">
         <div className="flex gap-2 p-2">
-          <button onClick={() => setSidebarVisible(!sidebarVisible)}>
+          <button
+            type="button"
+            onClick={() => setSidebarVisible(!sidebarVisible)}
+          >
             <ListCheck size={32} className="text-dynamic-purple" />
           </button>
           <TimeElapsedStatus timeLeft={timeLeft} isCountdown={isCountdown} />

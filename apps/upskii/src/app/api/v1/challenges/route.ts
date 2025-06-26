@@ -76,7 +76,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
-  let body;
+  let body: {
+    title: string;
+    description?: string;
+    password?: string;
+    duration?: number;
+    managingAdmins?: string[];
+    whitelistedOnly?: boolean;
+    whitelistedEmails?: string[];
+    enabled?: boolean;
+  };
 
   try {
     body = await request.json();

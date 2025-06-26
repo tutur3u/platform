@@ -343,15 +343,22 @@ export default function ResultClient({
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <div
+                              <button
+                                type="button"
                                 className="flex cursor-pointer items-center rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary"
                                 onClick={() =>
                                   setShowScoreBreakdown(!showScoreBreakdown)
                                 }
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter' || e.key === ' ') {
+                                    e.preventDefault();
+                                    setShowScoreBreakdown(!showScoreBreakdown);
+                                  }
+                                }}
                               >
                                 <Trophy className="mr-1 h-4 w-4" />
                                 {stats.score.toFixed(1)}/{stats.maxScore}
-                              </div>
+                              </button>
                             </TooltipTrigger>
                             <TooltipContent className="w-[250px] p-3">
                               <p className="mb-1 text-xs font-medium">

@@ -47,6 +47,7 @@ export default function TimeElapsedStatus({
               : t('hidden_elapsed') || 'Time Hidden'}
         </p>
         <button
+          type="button"
           onClick={toggleVisibility}
           className="ml-4 text-sm text-muted-foreground underline hover:text-foreground"
         >

@@ -102,7 +102,23 @@ export async function PUT(request: Request, { params }: Params) {
   }
 
   try {
-    const updateData: any = {};
+    const updateData: Partial<{
+      title: string;
+      description: string;
+      password: string;
+      duration: number;
+      managing_admins: string[];
+      whitelisted_only: boolean;
+      whitelisted_emails: string[];
+      enabled: boolean;
+      max_attempts: number;
+      max_daily_attempts: number;
+      password_hash: string | null;
+      password_salt: string | null;
+      previewable_at: string | null;
+      open_at: string | null;
+      close_at: string | null;
+    }> = {};
 
     if (body.title !== undefined) updateData.title = body.title;
     if (body.description !== undefined)

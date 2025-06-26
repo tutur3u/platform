@@ -16,7 +16,9 @@ export interface NavCategory {
   items: NavItem[];
 }
 
-export const useNavigation = (t: any): { categories: NavCategory[] } => {
+export const useNavigation = (
+  t?: (key: string) => string
+): { categories: NavCategory[] } => {
   // const resources: NavItem[] = [
   //   {
   //     href: DEV_MODE
@@ -55,23 +57,23 @@ export const useNavigation = (t: any): { categories: NavCategory[] } => {
   const company: NavItem[] = [
     {
       href: '/',
-      label: t('common.home'),
+      label: t?.('common.home') || 'Home',
     },
     {
       href: '/about',
-      label: t('common.about'),
+      label: t?.('common.about') || 'About',
     },
     {
       href: '/faq',
-      label: t('common.faq'),
+      label: t?.('common.faq') || 'FAQ',
     },
     {
       href: '/guide',
-      label: t('common.guide'),
+      label: t?.('common.guide') || 'Guide',
     },
     {
       href: '/contact',
-      label: t('common.contact'),
+      label: t?.('common.contact') || 'Contact',
     },
   ];
 

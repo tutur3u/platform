@@ -23,7 +23,7 @@ export async function PATCH(req: Request) {
           obj[key] = payload[key];
           return obj;
         },
-        {} as Record<string, any>
+        {} as Record<string, unknown>
       );
 
     if (Object.keys(sanitizedPayload).length === 0) {

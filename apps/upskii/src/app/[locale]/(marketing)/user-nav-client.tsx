@@ -27,14 +27,14 @@ import {
 } from '@tuturuuu/ui/icons';
 import { cn } from '@tuturuuu/utils/format';
 import { getInitials } from '@tuturuuu/utils/name-helper';
-import Link from 'next/link';
 import { useTranslations } from 'next-intl';
+import Link from 'next/link';
 import { useState } from 'react';
-import UserPresenceIndicator from '../../../components/user-presence-indicator';
 import { LanguageWrapper } from '../(dashboard)/_components/language-wrapper';
 import { LogoutDropdownItem } from '../(dashboard)/_components/logout-dropdown-item';
 import { SystemLanguageWrapper } from '../(dashboard)/_components/system-language-wrapper';
 import { ThemeDropdownItems } from '../(dashboard)/_components/theme-dropdown-items';
+import UserPresenceIndicator from '../../../components/user-presence-indicator';
 import UserSettingsDialog from './settings-dialog';
 
 export default function UserNavClient({
@@ -62,11 +62,10 @@ export default function UserNavClient({
       <DropdownMenu modal={false}>
         <DropdownMenuTrigger asChild>
           <button
+            type="button"
             className={cn(
-              'flex h-10 w-full gap-2 rounded-md p-1 text-start transition',
-              hideMetadata
-                ? 'items-center justify-center'
-                : 'items-center justify-start hover:bg-foreground/5'
+              'relative flex h-8 w-8 items-center justify-center rounded-full',
+              'focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2'
             )}
           >
             <Avatar className="relative cursor-pointer overflow-visible font-semibold">

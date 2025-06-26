@@ -94,13 +94,6 @@ export default function ShowAttemptDetailSection({
                   <div
                     key={opt.id}
                     className="flex items-center space-x-2 rounded-md border border-dynamic-purple/40 p-2 transition-colors hover:bg-secondary/10 md:space-x-4 md:p-4"
-                    aria-label={`${opt.value} ${
-                      opt.isCorrect
-                        ? t('results.correct_option') || '(Correct)'
-                        : chosen
-                          ? t('results.your_answer') || '(Your answer)'
-                          : ''
-                    }`}
                   >
                     {opt.isCorrect ? (
                       <CheckCircle className="h-5 w-5 text-green-500" />

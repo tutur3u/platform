@@ -1,5 +1,10 @@
 'use client';
 
+import { LanguageWrapper } from '@/app/[locale]/(dashboard)/_components/language-wrapper';
+import { LogoutDropdownItem } from '@/app/[locale]/(dashboard)/_components/logout-dropdown-item';
+import { SystemLanguageWrapper } from '@/app/[locale]/(dashboard)/_components/system-language-wrapper';
+import { ThemeDropdownItems } from '@/app/[locale]/(dashboard)/_components/theme-dropdown-items';
+import UserPresenceIndicator from '@/components/user-presence-indicator';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Dialog } from '@tuturuuu/ui/dialog';
@@ -20,14 +25,9 @@ import { useIsMobile } from '@tuturuuu/ui/hooks/use-mobile';
 import { Globe, Palette, Settings, User } from '@tuturuuu/ui/icons';
 import { cn } from '@tuturuuu/utils/format';
 import { getInitials } from '@tuturuuu/utils/name-helper';
-import Link from 'next/link';
 import { useTranslations } from 'next-intl';
+import Link from 'next/link';
 import { useState } from 'react';
-import { LanguageWrapper } from '@/app/[locale]/(dashboard)/_components/language-wrapper';
-import { LogoutDropdownItem } from '@/app/[locale]/(dashboard)/_components/logout-dropdown-item';
-import { SystemLanguageWrapper } from '@/app/[locale]/(dashboard)/_components/system-language-wrapper';
-import { ThemeDropdownItems } from '@/app/[locale]/(dashboard)/_components/theme-dropdown-items';
-import UserPresenceIndicator from '@/components/user-presence-indicator';
 import InviteMembersMenuItem from '../../../../components/invite-members-menu-item';
 import UserSettingsDialog from '../../../../components/settings-dialog';
 
@@ -55,11 +55,10 @@ export default function UserNavClient({
       <DropdownMenu modal={isMobile}>
         <DropdownMenuTrigger asChild>
           <button
+            type="button"
             className={cn(
-              'flex h-10 w-full gap-2 rounded-md p-1 text-start transition',
-              hideMetadata
-                ? 'items-center justify-center'
-                : 'items-center justify-start hover:bg-foreground/5'
+              'relative flex h-8 w-8 items-center justify-center rounded-full',
+              'focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2'
             )}
           >
             <Avatar className="relative cursor-pointer overflow-visible font-semibold">

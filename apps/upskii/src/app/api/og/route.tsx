@@ -134,6 +134,7 @@ export async function GET() {
                 boxShadow:
                   '0 0 60px rgba(0, 0, 0, 0.6), 0 0 30px rgba(37, 99, 235, 0.3)',
               }}
+              alt="Tuturuuu Logo"
             />
           </div>
         </div>
@@ -143,7 +144,7 @@ export async function GET() {
         height: 630,
       }
     );
-  } catch (e: any) {
+  } catch (e: unknown) {
     console.error(e);
     return new Response('Failed to generate OG image', { status: 500 });
   }

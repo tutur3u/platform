@@ -96,7 +96,7 @@ export async function GET(req: NextRequest) {
       // Only apply filter for valid requestable features
       if (isRequestableFeature(feature)) {
         const featureFlag = REQUESTABLE_KEY_TO_FEATURE_FLAG[feature];
-        query = query.eq('feature', featureFlag as any);
+        query = query.eq('feature', featureFlag);
       }
     }
 

@@ -17,17 +17,17 @@ import {
   SheetTrigger,
 } from '@tuturuuu/ui/sheet';
 import { cn } from '@tuturuuu/utils/format';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { AuthButton } from './auth-button';
 import { type NavItem, useNavigation } from './shared/navigation-config';
 
-interface MenuProps {
+interface Props {
   sbUser: SupabaseUser | null;
   user: WorkspaceUser | null;
-  t?: any;
+  t?: (key: string) => string;
 }
 
 interface NavLinkProps {
@@ -72,7 +72,7 @@ const MobileNavLink: React.FC<NavLinkProps> = ({
   onClick,
 }) => <NavLink item={item} className={className} onClick={onClick} />;
 
-const MobileMenu: React.FC<MenuProps> = ({ sbUser, user, t }) => {
+const MobileMenu: React.FC<Props> = ({ sbUser, user, t }) => {
   const [isOpened, setIsOpened] = useState(false);
   const closeMenu = () => setIsOpened(false);
 
@@ -129,7 +129,7 @@ const MobileMenu: React.FC<MenuProps> = ({ sbUser, user, t }) => {
                 <AccordionItem value="resources" className="border-none px-4">
                   <AccordionTrigger className="rounded-lg px-4 py-3 transition-all hover:bg-accent active:bg-accent/80 data-[state=open]:bg-accent/50">
                     <span className="text-sm font-semibold">
-                      {t('common.resources')}
+                      {t?.('common.resources') || 'Resources'}
                     </span>
                   </AccordionTrigger>
                   <AccordionContent className="pt-3 pb-2">
@@ -150,7 +150,7 @@ const MobileMenu: React.FC<MenuProps> = ({ sbUser, user, t }) => {
                 <AccordionItem value="company" className="border-none px-4">
                   <AccordionTrigger className="rounded-lg px-4 py-3 transition-all hover:bg-accent active:bg-accent/80 data-[state=open]:bg-accent/50">
                     <span className="text-sm font-semibold">
-                      {t('common.company')}
+                      {t?.('common.company') || 'Company'}
                     </span>
                   </AccordionTrigger>
                   <AccordionContent className="pt-3 pb-2">
@@ -175,7 +175,7 @@ const MobileMenu: React.FC<MenuProps> = ({ sbUser, user, t }) => {
   );
 };
 
-const Menu: React.FC<MenuProps> = ({ sbUser, user }) => {
+const Menu: React.FC<Props> = ({ sbUser, user }) => {
   const t = useTranslations();
 
   return (

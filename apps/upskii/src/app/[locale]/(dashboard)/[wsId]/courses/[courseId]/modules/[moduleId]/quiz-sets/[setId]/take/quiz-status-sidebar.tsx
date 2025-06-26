@@ -85,6 +85,7 @@ export default function QuizStatusSidebar({
 
           return (
             <button
+              type="button"
               key={q.quizId}
               onClick={() => onQuestionJump(idx)}
               aria-label={`${t('jump_to_question')} ${idx + 1}, ${labelText}`}

@@ -94,7 +94,14 @@ export async function PUT(request: Request, { params }: Params) {
       );
     }
 
-    const updateData: any = {};
+    const updateData: Partial<{
+      title: string;
+      description: string;
+      challenge_id: string;
+      example_input: string;
+      example_output: string;
+      max_prompt_length: number;
+    }> = {};
     if (body.title !== undefined) updateData.title = body.title;
     if (body.description !== undefined)
       updateData.description = body.description;
