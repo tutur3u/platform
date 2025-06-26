@@ -237,7 +237,15 @@ export function PricingSection() {
                           ? `bg-gradient-to-r ${plan.bgGradient} text-white hover:shadow-lg hover:shadow-blue-500/20`
                           : 'hover:shadow-lg hover:shadow-gray-200/50'
                     }`}
-                    variant={plan.buttonVariant as "default" | "outline" | "secondary" | "ghost" | "link" | undefined}
+                    variant={
+                      plan.buttonVariant as
+                        | 'default'
+                        | 'outline'
+                        | 'secondary'
+                        | 'ghost'
+                        | 'link'
+                        | undefined
+                    }
                     size="lg"
                     disabled={plan.cta === t('coming_soon')}
                   >

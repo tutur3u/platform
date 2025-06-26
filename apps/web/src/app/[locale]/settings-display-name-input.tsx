@@ -19,6 +19,7 @@ import { useState } from 'react';
 import * as z from 'zod';
 
 interface Props {
+  id?: string;
   defaultValue?: string | null;
   disabled?: boolean;
 }
@@ -28,6 +29,7 @@ const FormSchema = z.object({
 });
 
 export default function DisplayNameInput({
+  id,
   defaultValue = '',
   disabled,
 }: Props) {
@@ -85,7 +87,7 @@ export default function DisplayNameInput({
               <FormItem className="w-full">
                 <FormControl>
                   <Input
-                    id="display-name"
+                    id={id}
                     placeholder={t('display-name')}
                     disabled={disabled}
                     {...field}

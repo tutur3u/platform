@@ -285,7 +285,7 @@ Response Time: 48 hours
   }));
 
   // Track active section for better navigation
-  const handleScroll = () => {
+  const _handleScroll = () => {
     const sectionElements = sections.map((section) => {
       const id = section.title.toLowerCase().replace(/\s+/g, '-');
       return {

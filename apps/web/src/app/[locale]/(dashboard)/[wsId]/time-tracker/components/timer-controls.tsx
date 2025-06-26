@@ -771,7 +771,8 @@ export function TimerControls({
         // Lazily create a singleton AudioContext to prevent resource leaks
         if (!audioContextRef.current) {
           audioContextRef.current = new (
-            window.AudioContext || (window as unknown as Window).webkitAudioContext
+            window.AudioContext ||
+            (window as unknown as Window).webkitAudioContext
           )();
         }
 
@@ -1566,9 +1567,8 @@ export function TimerControls({
     startPomodoroSession,
     customTimerSettings,
     updateCurrentBreakState,
-    setHasReachedTarget,
-    setCountdownState,
     onSessionUpdate,
+    startTimerWithTask,
   ]);
 
   // Stop timer - handle both active and paused sessions
@@ -1623,16 +1623,11 @@ export function TimerControls({
   }, [
     currentSession,
     pausedSession,
-    setIsLoading,
     apiCall,
     wsId,
-    setJustCompleted,
     setCurrentSession,
     setIsRunning,
     setElapsedTime,
-    setPausedSession,
-    setPausedElapsedTime,
-    setPauseStartTime,
     updateSessionProtection,
     timerMode,
     clearPausedSessionFromStorage,
@@ -1683,12 +1678,8 @@ export function TimerControls({
     }
   }, [
     currentSession,
-    setIsLoading,
     apiCall,
     wsId,
-    setPausedSession,
-    setPausedElapsedTime,
-    setPauseStartTime,
     savePausedSessionToStorage,
     setCurrentSession,
     setIsRunning,
@@ -1748,7 +1739,6 @@ export function TimerControls({
     }
   }, [
     pausedSession,
-    setIsLoading,
     apiCall,
     wsId,
     setCurrentSession,
@@ -1756,9 +1746,6 @@ export function TimerControls({
     setIsRunning,
     updateSessionProtection,
     timerMode,
-    setPausedSession,
-    setPausedElapsedTime,
-    setPauseStartTime,
     clearPausedSessionFromStorage,
     pauseStartTime,
     onSessionUpdate,
@@ -3489,7 +3476,9 @@ export function TimerControls({
               {/* Session Mode Toggle */}
               <Tabs
                 value={sessionMode}
-                onValueChange={(v: "task" | "manual") => handleSessionModeChange(v)}
+                onValueChange={(v: 'task' | 'manual') =>
+                  handleSessionModeChange(v)
+                }
               >
                 <TabsList className="grid h-full w-full grid-cols-2 bg-muted/50">
                   <TabsTrigger
@@ -4085,8 +4074,14 @@ export function TimerControls({
                                                       >
                                                         {assignee.avatar_url ? (
                                                           <Image
-                                                            src={assignee.avatar_url}
-                                                            alt={assignee.display_name || assignee.email || ''}
+                                                            src={
+                                                              assignee.avatar_url
+                                                            }
+                                                            alt={
+                                                              assignee.display_name ||
+                                                              assignee.email ||
+                                                              ''
+                                                            }
                                                             className="h-full w-full rounded-full object-cover"
                                                             width={16}
                                                             height={16}

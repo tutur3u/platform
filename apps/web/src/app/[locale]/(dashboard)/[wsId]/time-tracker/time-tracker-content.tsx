@@ -6,7 +6,6 @@ import { Alert, AlertDescription } from '@tuturuuu/ui/alert';
 import { Button } from '@tuturuuu/ui/button';
 import {
   AlertCircle,
-  BarChart2,
   Calendar,
   CheckCircle,
   CheckSquare,
@@ -213,6 +212,50 @@ export default function TimeTrackerContent({
   // Get user timezone
   const userTimezone = dayjs.tz.guess();
 
+  // API call helper with enhanced error handling and retry logic
+  const apiCall = useCallback(
+    async (url: string, options: RequestInit = {}) => {
+      const controller = new AbortController();
+
+      try {
+        const response = await fetch(url, {
+          headers: {
+            'Content-Type': 'application/json',
+            ...options.headers,
+          },
+          signal: controller.signal,
+          ...options,
+        });
+
+        if (!response.ok) {
+          const error = await response
+            .json()
+            .catch(() => ({ error: 'Unknown error' }));
+          throw new Error(error.error || `HTTP ${response.status}`);
+        }
+
+        setIsOffline(false);
+        setRetryCount(0);
+        return response.json();
+      } catch (err) {
+        if (err instanceof Error && err.name === 'AbortError') {
+          throw err;
+        }
+
+        const isNetworkError =
+          err instanceof TypeError && err.message.includes('fetch');
+        if (isNetworkError) {
+          setIsOffline(true);
+        }
+
+        const message = err instanceof Error ? err.message : 'Network error';
+        console.error('API call failed:', message);
+        throw new Error(message);
+      }
+    },
+    []
+  );
+
   // Calculate focus score for sessions
   const calculateFocusScore = useCallback(
     (session: SessionWithRelations): number => {
@@ -381,50 +424,6 @@ export default function TimeTrackerContent({
     }
     return `${minutes}m`;
   }, []);
-
-  // API call helper with enhanced error handling and retry logic
-  const apiCall = useCallback(
-    async (url: string, options: RequestInit = {}) => {
-      const controller = new AbortController();
-
-      try {
-        const response = await fetch(url, {
-          headers: {
-            'Content-Type': 'application/json',
-            ...options.headers,
-          },
-          signal: controller.signal,
-          ...options,
-        });
-
-        if (!response.ok) {
-          const error = await response
-            .json()
-            .catch(() => ({ error: 'Unknown error' }));
-          throw new Error(error.error || `HTTP ${response.status}`);
-        }
-
-        setIsOffline(false);
-        setRetryCount(0);
-        return response.json();
-      } catch (err) {
-        if (err instanceof Error && err.name === 'AbortError') {
-          throw err;
-        }
-
-        const isNetworkError =
-          err instanceof TypeError && err.message.includes('fetch');
-        if (isNetworkError) {
-          setIsOffline(true);
-        }
-
-        const message = err instanceof Error ? err.message : 'Network error';
-        console.error('API call failed:', message);
-        throw new Error(message);
-      }
-    },
-    []
-  );
 
   // Fetch all data with enhanced error handling and exponential backoff
   const fetchData = useCallback(
@@ -874,9 +873,12 @@ export default function TimeTrackerContent({
             <div className="grid grid-cols-2 gap-3 p-1 sm:grid-cols-4 lg:gap-4">
               {/* Continue Last Session */}
               <button
+                type="button"
                 onClick={() => {
-                  if (!recentSessions[0]) {
-                    toast.info('No recent session to continue');
+                  if (isViewingOtherUser) {
+                    toast.info(
+                      'You are currently viewing another user's data. You cannot continue their session.'
+                    );
                     return;
                   }
                   if (isRunning) {
@@ -983,9 +985,18 @@ export default function TimeTrackerContent({
 
               {/* Next Task */}
               <button
+                type="button"
                 onClick={async () => {
-                  await fetchNextTasks();
-
+                  if (isViewingOtherUser) {
+                    toast.info(
+                      'You are currently viewing another user's data. You cannot assign tasks to them.'
+                    );
+                    return;
+                  }
+                  if (isRunning) {
+                    toast.info('Timer is already running');
+                    return;
+                  }
                   if (availableTasks.length === 0) {
                     // No tasks available - show overlay to create tasks or view boards
                     setShowTaskSelector(true);
@@ -1050,8 +1061,9 @@ export default function TimeTrackerContent({
                       await fetchData();
 
                       toast.success(`Started: ${task.name}`);
+                      setShowTaskSelector(false);
                     } catch (error) {
-                      console.error('Error starting task:', error);
+                      console.error('Error starting task session:', error);
                       toast.error('Failed to start task session');
                     }
                   } else {
@@ -1070,7 +1082,7 @@ export default function TimeTrackerContent({
               >
                 <div className="flex items-start gap-2">
                   <div className="flex-shrink-0 rounded-full bg-purple-500/20 p-1.5 transition-colors group-hover:bg-purple-500/30">
-                    <CheckSquare className="h-3 w-3 text-purple-600 transition-transform group-hover:scale-110 dark:text-purple-400" />
+                    <Zap className="h-5 w-5 text-purple-600 dark:text-purple-400" />
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="text-xs font-medium text-purple-700 dark:text-purple-300">
@@ -1136,7 +1148,18 @@ export default function TimeTrackerContent({
 
               {/* Break Timer */}
               <button
+                type="button"
                 onClick={() => {
+                  if (isViewingOtherUser) {
+                    toast.info(
+                      'You are currently viewing another user's data. You cannot take breaks for them.'
+                    );
+                    return;
+                  }
+                  if (isRunning) {
+                    toast.info('Timer is already running');
+                    return;
+                  }
                   // Scroll to timer controls and pre-fill with break session
                   document
                     .querySelector('[data-timer-controls]')
@@ -1170,7 +1193,7 @@ export default function TimeTrackerContent({
               >
                 <div className="flex items-start gap-2">
                   <div className="flex-shrink-0 rounded-full bg-green-500/20 p-1.5 transition-colors group-hover:bg-green-500/30">
-                    <Pause className="h-3 w-3 text-green-600 transition-transform group-hover:scale-110 dark:text-green-400" />
+                    <Pause className="h-5 w-5 text-green-600 dark:text-green-400" />
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="text-xs font-medium text-green-700 dark:text-green-300">
@@ -1191,6 +1214,7 @@ export default function TimeTrackerContent({
 
               {/* Analytics Dashboard */}
               <button
+                type="button"
                 onClick={() => {
                   setActiveTab('history');
                 }}
@@ -1198,7 +1222,7 @@ export default function TimeTrackerContent({
               >
                 <div className="flex items-start gap-2">
                   <div className="flex-shrink-0 rounded-full bg-amber-500/20 p-1.5 transition-colors group-hover:bg-amber-500/30">
-                    <BarChart2 className="h-3 w-3 text-amber-600 transition-transform group-hover:scale-110 dark:text-amber-400" />
+                    <LayoutDashboard className="h-5 w-5 text-amber-600 dark:text-amber-400" />
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="text-xs font-medium text-amber-700 dark:text-amber-300">
@@ -1292,12 +1316,13 @@ export default function TimeTrackerContent({
                 <div className="flex items-center gap-1 rounded-lg bg-muted/50 p-1">
                   {!isViewingOtherUser && (
                     <button
+                      type="button"
                       onClick={() => setActiveTab('timer')}
                       className={cn(
-                        'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-all',
+                        'flex flex-1 items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-sm transition-all',
                         activeTab === 'timer'
-                          ? 'bg-background text-foreground shadow-sm'
-                          : 'text-muted-foreground hover:text-foreground'
+                          ? 'bg-background shadow-sm'
+                          : 'text-muted-foreground hover:bg-background/50'
                       )}
                     >
                       <Timer className="h-3 w-3" />
@@ -1305,12 +1330,13 @@ export default function TimeTrackerContent({
                     </button>
                   )}
                   <button
+                    type="button"
                     onClick={() => setActiveTab('history')}
                     className={cn(
-                      'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-all',
+                      'flex flex-1 items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-sm transition-all',
                       activeTab === 'history'
-                        ? 'bg-background text-foreground shadow-sm'
-                        : 'text-muted-foreground hover:text-foreground'
+                        ? 'bg-background shadow-sm'
+                        : 'text-muted-foreground hover:bg-background/50'
                     )}
                   >
                     <Clock className="h-3 w-3" />
@@ -1318,12 +1344,13 @@ export default function TimeTrackerContent({
                   </button>
                   {!isViewingOtherUser && (
                     <button
+                      type="button"
                       onClick={() => setActiveTab('categories')}
                       className={cn(
-                        'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-all',
+                        'flex flex-1 items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-sm transition-all',
                         activeTab === 'categories'
-                          ? 'bg-background text-foreground shadow-sm'
-                          : 'text-muted-foreground hover:text-foreground'
+                          ? 'bg-background shadow-sm'
+                          : 'text-muted-foreground hover:bg-background/50'
                       )}
                     >
                       <Settings className="h-3 w-3" />
@@ -1331,12 +1358,13 @@ export default function TimeTrackerContent({
                     </button>
                   )}
                   <button
+                    type="button"
                     onClick={() => setActiveTab('goals')}
                     className={cn(
-                      'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-all',
+                      'flex flex-1 items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-sm transition-all',
                       activeTab === 'goals'
-                        ? 'bg-background text-foreground shadow-sm'
-                        : 'text-muted-foreground hover:text-foreground'
+                        ? 'bg-background shadow-sm'
+                        : 'text-muted-foreground hover:bg-background/50'
                     )}
                   >
                     <TrendingUp className="h-3 w-3" />
@@ -1456,12 +1484,13 @@ export default function TimeTrackerContent({
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1 rounded-lg bg-muted/50 p-1">
                   <button
+                    type="button"
                     onClick={() => setSidebarView('analytics')}
                     className={cn(
-                      'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-all',
+                      'flex flex-1 items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-xs transition-all',
                       sidebarView === 'analytics'
-                        ? 'bg-background text-foreground shadow-sm'
-                        : 'text-muted-foreground hover:text-foreground'
+                        ? 'bg-background shadow-sm'
+                        : 'text-muted-foreground hover:bg-background/50'
                     )}
                   >
                     <TrendingUp className="h-3 w-3" />
@@ -1469,12 +1498,13 @@ export default function TimeTrackerContent({
                   </button>
                   {!isViewingOtherUser && (
                     <button
+                      type="button"
                       onClick={() => setSidebarView('tasks')}
                       className={cn(
-                        'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-all',
+                        'flex flex-1 items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-xs transition-all',
                         sidebarView === 'tasks'
-                          ? 'bg-background text-foreground shadow-sm'
-                          : 'text-muted-foreground hover:text-foreground'
+                          ? 'bg-background shadow-sm'
+                          : 'text-muted-foreground hover:bg-background/50'
                       )}
                     >
                       <CheckCircle className="h-3 w-3" />
@@ -1482,30 +1512,40 @@ export default function TimeTrackerContent({
                     </button>
                   )}
                   <button
+                    type="button"
                     onClick={() => setSidebarView('reports')}
                     className={cn(
-                      'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-all',
+                      'flex flex-1 items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-xs transition-all',
                       sidebarView === 'reports'
-                        ? 'bg-background text-foreground shadow-sm'
-                        : 'text-muted-foreground hover:text-foreground'
+                        ? 'bg-background shadow-sm'
+                        : 'text-muted-foreground hover:bg-background/50'
                     )}
                   >
                     <History className="h-3 w-3" />
                     Reports
                   </button>
                   <button
+                    type="button"
                     onClick={() => setSidebarView('settings')}
                     className={cn(
-                      'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-all',
+                      'flex flex-1 items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-xs transition-all',
                       sidebarView === 'settings'
-                        ? 'bg-background text-foreground shadow-sm'
-                        : 'text-muted-foreground hover:text-foreground'
+                        ? 'bg-background shadow-sm'
+                        : 'text-muted-foreground hover:bg-background/50'
                     )}
                   >
                     <Settings className="h-3 w-3" />
                     Settings
                   </button>
                 </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSidebarView('tasks')}
+                  className="ml-auto"
+                >
+                  <CheckCircle className="h-4 w-4" />
+                </Button>
               </div>
 
               {/* Sidebar Content */}
@@ -1717,6 +1757,7 @@ export default function TimeTrackerContent({
                       {/* Quick Filter Buttons */}
                       <div className="flex flex-wrap gap-2">
                         <button
+                          type="button"
                           onClick={() =>
                             setTasksSidebarFilters((prev) => ({
                               ...prev,
@@ -1740,6 +1781,7 @@ export default function TimeTrackerContent({
                           )}
                         </button>
                         <button
+                          type="button"
                           onClick={() =>
                             setTasksSidebarFilters((prev) => ({
                               ...prev,
@@ -1863,6 +1905,7 @@ export default function TimeTrackerContent({
                             <span className="inline-flex items-center gap-1 rounded-md bg-blue-100 px-2 py-1 text-xs text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
                               Search: "{tasksSidebarSearch}"
                               <button
+                                type="button"
                                 onClick={() => setTasksSidebarSearch('')}
                                 className="hover:text-blue-900 dark:hover:text-blue-100"
                               >
@@ -1874,6 +1917,7 @@ export default function TimeTrackerContent({
                             <span className="inline-flex items-center gap-1 rounded-md bg-green-100 px-2 py-1 text-xs text-green-700 dark:bg-green-900/30 dark:text-green-300">
                               Board: {tasksSidebarFilters.board}
                               <button
+                                type="button"
                                 onClick={() =>
                                   setTasksSidebarFilters((prev) => ({
                                     ...prev,
@@ -1890,6 +1934,7 @@ export default function TimeTrackerContent({
                             <span className="inline-flex items-center gap-1 rounded-md bg-purple-100 px-2 py-1 text-xs text-purple-700 dark:bg-purple-900/30 dark:text-purple-300">
                               List: {tasksSidebarFilters.list}
                               <button
+                                type="button"
                                 onClick={() =>
                                   setTasksSidebarFilters((prev) => ({
                                     ...prev,
@@ -1910,6 +1955,7 @@ export default function TimeTrackerContent({
                                   ? 'Unassigned'
                                   : 'Assignee Filter'}
                               <button
+                                type="button"
                                 onClick={() =>
                                   setTasksSidebarFilters((prev) => ({
                                     ...prev,
@@ -1923,6 +1969,7 @@ export default function TimeTrackerContent({
                             </span>
                           )}
                           <button
+                            type="button"
                             onClick={() => {
                               setTasksSidebarSearch('');
                               setTasksSidebarFilters({

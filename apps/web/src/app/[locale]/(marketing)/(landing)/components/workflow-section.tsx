@@ -276,7 +276,8 @@ export function WorkflowSection() {
     };
   }, []); // Re-run when activeStep changes
 
-  const currentStep = workflowSteps.find((step) => step.id === activeStep) || workflowSteps[0];
+  const currentStep =
+    workflowSteps.find((step) => step.id === activeStep) || workflowSteps[0];
 
   return (
     <section

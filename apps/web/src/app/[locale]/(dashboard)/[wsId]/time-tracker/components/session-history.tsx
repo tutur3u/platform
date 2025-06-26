@@ -2281,7 +2281,7 @@ export function SessionHistory({
                                       resumeSession(
                                         session.sessions[
                                           session.sessions.length - 1
-                                         ]
+                                        ]
                                       )
                                     }
                                   >

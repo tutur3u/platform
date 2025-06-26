@@ -10,7 +10,7 @@ import { UserIcon } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { getTranslations } from 'next-intl/server';
-import { Suspense } from 'react';
+import { Suspense, useId } from 'react';
 import UserAvatar from '../../../settings-avatar';
 import DisplayNameInput from '../../../settings-display-name-input';
 import FullNameInput from '../../../settings-full-name-input';
@@ -24,6 +24,7 @@ export default async function ProfileInformationCard({
   user,
 }: ProfileInformationCardProps) {
   const t = await getTranslations('settings-account');
+  const displayNameId = useId();
 
   return (
     <Card className="overflow-hidden">
@@ -62,9 +63,14 @@ export default async function ProfileInformationCard({
         {/* Name Fields */}
         <div className="grid gap-6 sm:grid-cols-2">
           <div className="space-y-3">
-            <label className="text-sm font-medium">{t('display-name')}</label>
+            <label htmlFor={displayNameId} className="text-sm font-medium">
+              {t('display-name')}
+            </label>
             <Suspense fallback={<Skeleton className="h-10 w-full" />}>
-              <DisplayNameInput defaultValue={user?.display_name} />
+              <DisplayNameInput
+                id={displayNameId}
+                defaultValue={user?.display_name}
+              />
             </Suspense>
             <p className="text-xs text-muted-foreground">
               {t('display-name-description')}

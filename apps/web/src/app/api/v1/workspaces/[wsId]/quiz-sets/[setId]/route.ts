@@ -50,15 +50,21 @@ export async function PUT(req: Request, { params }: Params) {
     );
 
     if (optionsToUpdate.length > 0) {
-      await supabase
-        .from('quiz_options')
-        .upsert(optionsToUpdate.map((o: { id: string; quiz_id: string }) => ({ ...o, quiz_id: id })));
+      await supabase.from('quiz_options').upsert(
+        optionsToUpdate.map((o: { id: string; quiz_id: string }) => ({
+          ...o,
+          quiz_id: id,
+        }))
+      );
     }
 
     if (optionsToInsert.length > 0) {
-      await supabase
-        .from('quiz_options')
-        .insert(optionsToInsert.map((o: { id?: string; quiz_id: string }) => ({ ...o, quiz_id: id })));
+      await supabase.from('quiz_options').insert(
+        optionsToInsert.map((o: { id?: string; quiz_id: string }) => ({
+          ...o,
+          quiz_id: id,
+        }))
+      );
     }
 
     if (optionsToDelete.length > 0) {
