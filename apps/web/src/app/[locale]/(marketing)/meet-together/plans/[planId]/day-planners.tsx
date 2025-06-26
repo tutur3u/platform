@@ -1,5 +1,5 @@
 import type { Timeblock } from '@tuturuuu/types/primitives/Timeblock';
-import { useEffect } from 'react';
+import { useCallback, useEffect, useId } from 'react';
 import DayPlanner from './day-planner';
 import { useTimeBlocking } from './time-blocking-provider';
 
@@ -19,14 +19,15 @@ export default function DayPlanners({
   disabled: boolean;
 }) {
   const { editing } = useTimeBlocking();
+  const id = useId();
 
-  function preventScroll(e: Event) {
+  const preventScroll = useCallback((e: Event) => {
     e.preventDefault();
     return false;
-  }
+  }, []);
 
   useEffect(() => {
-    const scrollableDiv = document?.querySelector('#scrollable');
+    const scrollableDiv = document?.querySelector(`#${id}`);
 
     if (!editing.enabled) {
       scrollableDiv?.removeEventListener('wheel', preventScroll);
@@ -43,11 +44,11 @@ export default function DayPlanners({
       scrollableDiv?.removeEventListener('wheel', preventScroll);
       scrollableDiv?.removeEventListener('touchmove', preventScroll);
     };
-  }, [editing.enabled, preventScroll]);
+  }, [editing.enabled, preventScroll, id]);
 
   return (
     <div
-      id="scrollable"
+      id={id}
       className="relative flex flex-1 items-start justify-center gap-2 overflow-x-auto"
     >
       {dates.map((d) => (

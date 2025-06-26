@@ -139,6 +139,7 @@ export function PricingSection() {
         <div className="pricing-toggle mt-10 flex items-center justify-center">
           <div className="inline-flex rounded-full bg-white/90 p-1.5 shadow-md backdrop-blur-sm dark:bg-foreground/5">
             <button
+              type="button"
               className={`relative rounded-full px-6 py-2.5 text-sm font-medium transition-all duration-300 ${
                 !isAnnual
                   ? 'bg-gradient-to-r from-dynamic-light-purple to-dynamic-light-blue text-white'
@@ -152,6 +153,7 @@ export function PricingSection() {
               )}
             </button>
             <button
+              type="button"
               className={`relative rounded-full px-6 py-2.5 text-sm font-medium transition-all duration-300 ${
                 isAnnual
                   ? 'bg-gradient-to-r from-dynamic-light-purple to-dynamic-light-blue text-white'
@@ -257,9 +259,10 @@ export function PricingSection() {
                     {t('features_include')}:
                   </div>
                   {plan.features.map((feature, i) => (
-                    <div
+                    <button
+                      type="button"
                       key={i}
-                      className="group/feature relative flex items-start gap-3"
+                      className="flex items-center gap-4 py-2 transition-all duration-300"
                       onMouseEnter={() =>
                         setHoveredFeature({
                           planName: plan.name,
@@ -267,10 +270,19 @@ export function PricingSection() {
                         })
                       }
                       onMouseLeave={() => setHoveredFeature(null)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          setHoveredFeature({
+                            planName: plan.name,
+                            featureName: feature.feature,
+                          });
+                        }
+                      }}
                     >
                       {feature.included ? (
                         <div
-                          className={`mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full ${
+                          className={`flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full ${
                             plan.name === 'Pro'
                               ? 'bg-purple-100 text-dynamic-light-purple dark:bg-purple-900/30 dark:text-purple-400'
                               : plan.name === 'Enterprise'
@@ -281,7 +293,7 @@ export function PricingSection() {
                           <Check className="h-3 w-3" />
                         </div>
                       ) : (
-                        <div className="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-gray-100 text-gray-400 dark:bg-gray-800">
+                        <div className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-gray-100 text-gray-400 dark:bg-gray-800">
                           <X className="h-3 w-3" />
                         </div>
                       )}
@@ -303,7 +315,7 @@ export function PricingSection() {
                             )}
                         </div>
                       )}
-                    </div>
+                    </button>
                   ))}
                 </div>
               </div>

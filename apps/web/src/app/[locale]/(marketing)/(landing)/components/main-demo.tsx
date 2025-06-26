@@ -42,6 +42,7 @@ export const MainDemo = ({
 
             <div className="grid grid-cols-6 gap-2 rounded-lg bg-white/10 p-1 text-center font-semibold md:grid-cols-5">
               <button
+                type="button"
                 className={`col-span-3 flex w-full flex-none items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors md:col-span-1 ${
                   activeTab === 'calendar'
                     ? 'bg-white text-black'
@@ -53,6 +54,7 @@ export const MainDemo = ({
                 <div>{t('calendar')}</div>
               </button>
               <button
+                type="button"
                 className={`col-span-3 flex w-full flex-none items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors md:col-span-1 ${
                   activeTab === 'tasks'
                     ? 'bg-white text-black'
@@ -64,6 +66,7 @@ export const MainDemo = ({
                 <div>{t('tasks')}</div>
               </button>
               <button
+                type="button"
                 className={`col-span-2 flex w-full flex-none items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors md:col-span-1 ${
                   activeTab === 'meetings'
                     ? 'bg-white text-black'
@@ -75,6 +78,7 @@ export const MainDemo = ({
                 <div>{t('meetings')}</div>
               </button>
               <button
+                type="button"
                 className={`col-span-2 flex w-full flex-none items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors md:col-span-1 ${
                   activeTab === 'chat'
                     ? 'bg-white text-black'
@@ -86,6 +90,7 @@ export const MainDemo = ({
                 <div>{t('chat')}</div>
               </button>
               <button
+                type="button"
                 className={`col-span-2 flex w-full flex-none items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors md:col-span-1 ${
                   activeTab === 'mail'
                     ? 'bg-white text-black'
@@ -104,7 +109,10 @@ export const MainDemo = ({
               <div>
                 <div className="mb-4 flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <button className="flex h-8 w-8 items-center justify-center rounded-full border border-dynamic-light-purple/30 bg-calendar-bg-purple text-dynamic-purple">
+                    <button
+                      type="button"
+                      className="flex h-8 w-8 items-center justify-center rounded-full border border-dynamic-light-purple/30 bg-calendar-bg-purple text-dynamic-purple"
+                    >
                       <ArrowRight className="h-4 w-4 rotate-180" />
                     </button>
                     <h3 className="font-medium">
@@ -113,15 +121,24 @@ export const MainDemo = ({
                         year: 'numeric',
                       })}
                     </h3>
-                    <button className="flex h-8 w-8 items-center justify-center rounded-full border border-dynamic-light-purple/30 bg-calendar-bg-purple text-dynamic-purple">
+                    <button
+                      type="button"
+                      className="flex h-8 w-8 items-center justify-center rounded-full border border-dynamic-light-purple/30 bg-calendar-bg-purple text-dynamic-purple"
+                    >
                       <ArrowRight className="h-4 w-4" />
                     </button>
                   </div>
                   <div className="flex items-center gap-2">
-                    <button className="rounded-md border border-dynamic-light-yellow/30 bg-calendar-bg-yellow px-3 py-1 text-xs font-medium text-dynamic-yellow">
+                    <button
+                      type="button"
+                      className="rounded-md border border-dynamic-light-yellow/30 bg-calendar-bg-yellow px-3 py-1 text-xs font-medium text-dynamic-yellow"
+                    >
                       {t('today')}
                     </button>
-                    <button className="rounded-md border border-dynamic-light-blue/30 bg-calendar-bg-blue px-3 py-1 text-xs font-medium text-dynamic-blue">
+                    <button
+                      type="button"
+                      className="rounded-md border border-dynamic-light-blue/30 bg-calendar-bg-blue px-3 py-1 text-xs font-medium text-dynamic-blue"
+                    >
                       {t('month')}
                     </button>
                   </div>
@@ -232,10 +249,16 @@ export const MainDemo = ({
                 <div className="mb-4 flex items-center justify-between">
                   <h3 className="font-medium">{t('my_tasks')}</h3>
                   <div className="flex items-center gap-2">
-                    <button className="rounded-md border border-dynamic-light-yellow/30 bg-calendar-bg-yellow px-3 py-1 text-xs font-medium text-dynamic-yellow">
+                    <button
+                      type="button"
+                      className="rounded-md border border-dynamic-light-yellow/30 bg-calendar-bg-yellow px-3 py-1 text-xs font-medium text-dynamic-yellow"
+                    >
                       {t('add_task')}
                     </button>
-                    <button className="rounded-md border border-dynamic-light-blue/30 bg-calendar-bg-blue px-3 py-1 text-xs font-medium text-dynamic-blue">
+                    <button
+                      type="button"
+                      className="rounded-md border border-dynamic-light-blue/30 bg-calendar-bg-blue px-3 py-1 text-xs font-medium text-dynamic-blue"
+                    >
                       {t('filter')}
                     </button>
                   </div>
@@ -349,99 +372,58 @@ export const MainDemo = ({
             )}
 
             {activeTab === 'meetings' && (
-              <div>
-                <div className="mb-4 flex items-center justify-between">
-                  <h3 className="font-medium">{t('upcoming_meetings')}</h3>
-                  <button className="flex items-center gap-1 rounded-md border border-dynamic-light-blue/30 bg-calendar-bg-blue px-3 py-1 text-xs font-medium text-dynamic-blue">
-                    <Video className="h-3 w-3" />
-                    <span>{t('new_meeting')}</span>
+              <div className="space-y-4">
+                <div className="flex items-center justify-end gap-2">
+                  <button
+                    type="button"
+                    className="rounded-md border border-dynamic-light-purple/30 bg-calendar-bg-purple px-3 py-1 text-xs font-medium text-dynamic-purple"
+                  >
+                    {t('schedule_meeting')}
+                  </button>
+                  <button
+                    type="button"
+                    className="rounded-md border border-dynamic-light-blue/30 bg-calendar-bg-blue px-3 py-1 text-xs font-medium text-dynamic-blue"
+                  >
+                    {t('instant_meeting')}
                   </button>
                 </div>
-
-                <div className="space-y-3">
-                  <div className="rounded-lg border border-dynamic-light-green/30 bg-calendar-bg-green p-3">
-                    <div className="mb-2 flex items-center justify-between">
-                      <h4 className="font-medium text-dynamic-green">
-                        {t('team_sync')}
-                      </h4>
-                      <span className="rounded bg-calendar-bg-green px-2 py-0.5 text-xs text-dynamic-green">
-                        {t('today_at_10_am')}
-                      </span>
+                <div className="rounded-lg border border-dynamic-light-blue/30 bg-calendar-bg-blue p-3">
+                  <div className="flex items-start gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-dynamic-blue text-white">
+                      <Video className="h-5 w-5" />
                     </div>
-                    <div className="mb-2 flex items-center gap-2">
-                      <div className="flex -space-x-2 font-semibold">
-                        <div className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-dynamic-light-green/30 bg-calendar-bg-green text-xs font-medium text-dynamic-light-green">
-                          A
-                        </div>
-                        <div className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-dynamic-light-blue/30 bg-calendar-bg-blue text-xs font-medium text-dynamic-light-blue">
-                          B
-                        </div>
-                        <div className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-dynamic-light-yellow/30 bg-calendar-bg-yellow text-xs font-medium text-dynamic-light-yellow">
-                          C
-                        </div>
-                        <div className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-dynamic-light-red/30 bg-calendar-bg-red text-xs font-medium text-dynamic-light-red">
-                          D
+                    <div className="flex-1">
+                      <div className="flex justify-between">
+                        <h4 className="font-medium text-dynamic-blue">
+                          {t('weekly_planning')}
+                        </h4>
+                        <div className="text-xs text-dynamic-blue">
+                          {t('in_25_minutes')}
                         </div>
                       </div>
-                      <span className="text-xs text-dynamic-blue">
-                        {t('4-participants')}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <button className="flex items-center gap-1 rounded-md border border-dynamic-light-blue/30 bg-calendar-bg-blue px-3 py-1 text-xs font-medium text-dynamic-blue">
-                        <Video className="h-3 w-3" />
-                        <span>{t('join_tuturuuu')}</span>
-                      </button>
-                      <button className="rounded-md border border-dynamic-light-blue/30 bg-calendar-bg-blue px-3 py-1 text-xs font-medium text-dynamic-blue">
-                        {t('view_details')}
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="rounded-lg border border-dynamic-light-red/30 bg-calendar-bg-red p-3">
-                    <div className="mb-2 flex items-center justify-between">
-                      <h4 className="font-medium text-dynamic-red">
-                        {t('client_presentation')}
-                      </h4>
-                      <span className="rounded bg-calendar-bg-red px-2 py-0.5 text-xs text-dynamic-red">
-                        {t('tomorrow_at_2_pm')}
-                      </span>
-                    </div>
-                    <div className="mb-2 flex items-center gap-2">
-                      <div className="flex -space-x-2 font-semibold">
-                        <div className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-dynamic-light-red/30 bg-calendar-bg-red text-xs font-medium text-dynamic-light-red">
-                          Y
-                        </div>
-                        <div className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-dynamic-light-indigo/30 bg-calendar-bg-indigo text-xs font-medium text-dynamic-light-indigo">
-                          Z
-                        </div>
-                      </div>
-                      <span className="text-xs text-muted-foreground">
-                        {t('2-participants')}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <button className="rounded-md border border-dynamic-light-blue/30 bg-calendar-bg-blue px-3 py-1 text-xs font-medium text-dynamic-blue">
-                        {t('prepare')}
-                      </button>
-                      <button className="rounded-md border border-dynamic-light-blue/30 bg-calendar-bg-blue px-3 py-1 text-xs font-medium text-dynamic-blue">
-                        {t('view_details')}
-                      </button>
+                      <p className="text-sm text-dynamic-blue">
+                        {t('weekly_planning_attendees')}
+                      </p>
                     </div>
                   </div>
                 </div>
 
-                <div className="mt-4 rounded-lg border border-dynamic-light-yellow/30 bg-calendar-bg-yellow p-3">
-                  <div className="flex items-center gap-2">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-calendar-bg-yellow">
-                      <Sparkles className="h-4 w-4 text-dynamic-yellow" />
+                <div className="rounded-lg border p-3">
+                  <div className="flex items-start gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted">
+                      <Video className="h-5 w-5 text-muted-foreground" />
                     </div>
-                    <div>
-                      <h4 className="font-medium text-dynamic-yellow">
-                        {t('tuturuuu_features')}
-                      </h4>
-                      <p className="text-xs text-dynamic-yellow">
-                        {t('tuturuuu_features_description')}
+                    <div className="flex-1">
+                      <div className="flex justify-between">
+                        <h4 className="font-medium text-muted-foreground">
+                          {t('design_review')}
+                        </h4>
+                        <div className="text-xs text-muted-foreground">
+                          {t('yesterday')}
+                        </div>
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        {t('design_review_attendees')}
                       </p>
                     </div>
                   </div>
@@ -450,235 +432,129 @@ export const MainDemo = ({
             )}
 
             {activeTab === 'chat' && (
-              <div>
-                <div className="mb-4 flex items-center justify-between">
-                  <h3 className="font-medium">{t('team_chat')}</h3>
-                  <button className="flex items-center gap-1 rounded-md border border-dynamic-light-blue/30 bg-calendar-bg-blue px-3 py-1 text-xs font-medium text-dynamic-blue">
-                    <MessageSquare className="h-3 w-3" />
-                    <span>{t('new_chat')}</span>
-                  </button>
+              <div className="space-y-4">
+                <div className="rounded-lg border border-dynamic-light-green/30 bg-calendar-bg-green p-3">
+                  <div className="flex items-start gap-3">
+                    <div className="h-10 w-10 rounded-full bg-dynamic-green"></div>
+                    <div className="flex-1">
+                      <div className="flex justify-between">
+                        <h4 className="font-medium text-dynamic-green">
+                          {t('product_team')}
+                        </h4>
+                        <div className="text-xs text-dynamic-green">
+                          {dayjs().format('h:mm A')}
+                        </div>
+                      </div>
+                      <p className="text-sm text-dynamic-green">
+                        {t('product_team_message')}
+                      </p>
+                    </div>
+                  </div>
                 </div>
 
-                <div className="flex h-1/2 flex-col rounded-lg border border-dynamic-light-orange/30 bg-calendar-bg-orange">
-                  <div className="border-b border-dynamic-light-orange/30 p-3">
-                    <div className="flex items-center gap-2">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-calendar-bg-orange">
-                        <span className="text-sm font-medium text-dynamic-orange">
-                          {t('mp')}
-                        </span>
-                      </div>
-                      <div>
-                        <h4 className="font-medium text-dynamic-orange">
-                          {t('marketing_project')}
+                <div className="rounded-lg border border-dynamic-light-purple/30 bg-calendar-bg-purple p-3">
+                  <div className="flex items-start gap-3">
+                    <div className="h-10 w-10 rounded-full bg-dynamic-purple"></div>
+                    <div className="flex-1">
+                      <div className="flex justify-between">
+                        <h4 className="font-medium text-dynamic-purple">
+                          Alex
                         </h4>
-                        <p className="text-xs text-muted-foreground">
-                          {t('5-members')} • {t('3-online')}
-                        </p>
+                        <div className="text-xs text-dynamic-purple">
+                          {dayjs().subtract(5, 'minute').format('h:mm A')}
+                        </div>
                       </div>
+                      <p className="text-sm text-dynamic-purple">
+                        {t('alex_message')}
+                      </p>
                     </div>
                   </div>
+                </div>
 
-                  <div className="flex-1 space-y-3 overflow-y-auto p-3">
-                    <div className="flex items-start gap-2">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-full border border-dynamic-light-green/30 bg-calendar-bg-green">
-                        <span className="text-xs font-medium">
-                          {t('alex-initials')}
-                        </span>
-                      </div>
-                      <div className="max-w-[80%] rounded-lg border border-dynamic-light-green/30 bg-calendar-bg-green p-2 text-sm">
-                        <p className="text-xs font-medium text-dynamic-green">
-                          {t('alex')}
-                        </p>
-                        <p>
-                          {t(
-                            'has_everyone_reviewed_the_latest_campaign_mockups'
-                          )}
-                        </p>
-                        <p className="mt-1 text-xs text-muted-foreground">
-                          {t('10_15_am')}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-start justify-end gap-2">
-                      <div className="max-w-[80%] rounded-lg border border-dynamic-light-red/30 bg-calendar-bg-red p-2 text-sm">
-                        <p className="text-xs font-medium text-dynamic-red">
-                          {t('you')}
-                        </p>
-                        <p>
-                          {t(
-                            'yes_ive_added_my_comments_in_the_shared_document'
-                          )}
-                        </p>
-                        <p className="mt-1 text-xs text-dynamic-red">
-                          {t('10_17_am')}
-                        </p>
-                      </div>
-                      <div className="flex h-8 w-8 items-center justify-center rounded-full border border-dynamic-light-red/30 bg-calendar-bg-red">
-                        <span className="text-xs font-medium">
-                          {t('you-initials')}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="flex items-start gap-2">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-full border border-dynamic-light-blue/30 bg-calendar-bg-blue">
-                        <span className="text-xs font-medium">
-                          {t('ben-initials')}
-                        </span>
-                      </div>
-                      <div className="max-w-[80%] rounded-lg border border-dynamic-light-blue/30 bg-calendar-bg-blue p-2 text-sm">
-                        <p className="text-xs font-medium text-dynamic-blue">
-                          {t('ben')}
-                        </p>
-                        <p>
-                          {t(
-                            'ill_finish_my_review_by_eod_need_to_coordinate_with_the_design_team_first'
-                          )}
-                        </p>
-                        <p className="mt-1 text-xs text-muted-foreground">
-                          {t('10_20_am')}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="border-t border-dynamic-light-orange/30 p-3">
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="text"
-                        placeholder={t('type_a_message')}
-                        className="flex-1 rounded-lg border border-dynamic-light-orange/30 bg-calendar-bg-orange px-3 py-2 text-sm focus:border-transparent focus:ring-2 focus:ring-dynamic-orange focus:outline-none"
-                      />
-                      <button className="flex h-8 w-8 items-center justify-center rounded-full bg-calendar-bg-orange text-dynamic-orange">
-                        <ArrowRight className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </div>
+                <div className="flex items-center gap-2 rounded-full border bg-background p-1.5 pl-4">
+                  <input
+                    placeholder={t('type_message')}
+                    className="flex-1 bg-transparent text-sm placeholder:text-muted-foreground focus:outline-none"
+                  />
+                  <button
+                    type="button"
+                    className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-dynamic-light-indigo to-dynamic-light-red text-white"
+                  >
+                    <ArrowRight className="h-4 w-4" />
+                  </button>
                 </div>
               </div>
             )}
 
             {activeTab === 'mail' && (
-              <div>
-                <div className="mb-4 flex items-center justify-between">
-                  <h3 className="font-medium">{t('smart_mail')}</h3>
-                  <button className="flex items-center gap-1 rounded-md border border-dynamic-light-red/30 bg-calendar-bg-red px-3 py-1 text-xs font-medium text-dynamic-red">
-                    <Mail className="h-3 w-3" />
-                    <span>{t('compose')}</span>
+              <div className="space-y-4">
+                <div className="flex items-center justify-end gap-2">
+                  <button
+                    type="button"
+                    className="rounded-md border border-dynamic-light-red/30 bg-calendar-bg-red px-3 py-1 text-xs font-medium text-dynamic-red"
+                  >
+                    <Sparkles className="mr-1.5 h-3 w-3" />
+                    {t('ai_draft')}
+                  </button>
+                  <button
+                    type="button"
+                    className="rounded-md border border-dynamic-light-blue/30 bg-calendar-bg-blue px-3 py-1 text-xs font-medium text-dynamic-blue"
+                  >
+                    {t('compose')}
                   </button>
                 </div>
-
-                <div className="rounded-lg border border-dynamic-light-red/30 bg-calendar-bg-red">
-                  <div className="flex items-center gap-2 border-b border-dynamic-light-red/30 p-3">
-                    <input
-                      type="text"
-                      placeholder={t('search_emails')}
-                      className="flex-1 rounded-lg border border-dynamic-light-red/30 bg-calendar-bg-red px-3 py-1.5 text-sm focus:border-transparent focus:ring-2 focus:ring-dynamic-red focus:outline-none"
-                    />
-                    <button className="rounded-md border border-dynamic-light-red/30 bg-calendar-bg-red px-3 py-1.5 text-xs font-medium text-dynamic-red">
-                      {t('filter')}
-                    </button>
-                  </div>
-
-                  <div className="divide-y divide-dynamic-light-red/30">
-                    <div className="cursor-pointer bg-calendar-bg-blue p-3 transition-colors hover:bg-dynamic-light-blue/30">
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-full border border-dynamic-light-blue/30 bg-calendar-bg-blue">
-                          <span className="text-xs font-medium text-dynamic-blue">
-                            {t('ac-initials')}
-                          </span>
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center justify-between">
-                            <h4 className="line-clamp-1 font-medium text-dynamic-blue">
-                              {t('alex_chen')}
-                            </h4>
-                            <span className="text-xs text-muted-foreground">
-                              {t('10_30_am')}
-                            </span>
-                          </div>
-                          <p className="line-clamp-1 text-sm font-medium">
-                            {t('project_update_q2_marketing_campaign')}
-                          </p>
-                          <p className="line-clamp-1 text-xs text-muted-foreground">
-                            {t(
-                              'hi_team_i_wanted_to_share_the_latest_updates_on_our_q2_marketing_campaign_weve_made_significant_progress'
-                            )}
-                          </p>
+                <div className="rounded-lg border border-dynamic-light-blue/30 bg-calendar-bg-blue p-3">
+                  <div className="flex items-start gap-3">
+                    <div className="h-10 w-10 rounded-full bg-dynamic-blue"></div>
+                    <div className="flex-1">
+                      <div className="flex justify-between">
+                        <h4 className="font-medium text-dynamic-blue">
+                          {t('marketing_team')}
+                        </h4>
+                        <div className="text-xs text-dynamic-blue">
+                          {dayjs().format('h:mm A')}
                         </div>
                       </div>
-                    </div>
-
-                    <div className="cursor-pointer bg-calendar-bg-yellow p-3 transition-colors hover:bg-dynamic-light-yellow/30">
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-full border border-dynamic-light-yellow/30 bg-calendar-bg-yellow">
-                          <span className="text-xs font-medium text-dynamic-yellow">
-                            {t('st-initials')}
-                          </span>
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center justify-between">
-                            <h4 className="line-clamp-1 font-medium text-dynamic-yellow">
-                              {t('sarah_thompson')}
-                            </h4>
-                            <span className="text-xs text-muted-foreground">
-                              {t('yesterday')}
-                            </span>
-                          </div>
-                          <p className="line-clamp-1 text-sm">
-                            {t('client_feedback_on_proposal')}
-                          </p>
-                          <p className="line-clamp-1 text-xs text-muted-foreground">
-                            {t(
-                              'the_client_has_reviewed_our_proposal_and_has_some_feedback_overall_theyre_impressed_with_our_approach'
-                            )}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="cursor-pointer rounded-b-lg bg-calendar-bg-green p-3 transition-colors hover:bg-dynamic-light-green/30">
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-full border border-dynamic-light-green/30 bg-calendar-bg-green">
-                          <span className="text-xs font-medium text-dynamic-green">
-                            {t('jd-initials')}
-                          </span>
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center justify-between">
-                            <h4 className="line-clamp-1 font-medium text-dynamic-green">
-                              {t('john_doe')}
-                            </h4>
-                            <span className="text-xs text-muted-foreground">
-                              {t('may_12')}
-                            </span>
-                          </div>
-                          <p className="line-clamp-1 text-sm">
-                            {t('meeting_follow_up_action_items')}
-                          </p>
-                          <p className="line-clamp-1 text-xs text-muted-foreground">
-                            {t(
-                              'following_our_meeting_yesterday_ive_compiled_a_list_of_action_items_for_each_team_member'
-                            )}
-                          </p>
-                        </div>
-                      </div>
+                      <p className="text-sm text-dynamic-blue">
+                        {t('marketing_team_subject')}
+                      </p>
                     </div>
                   </div>
                 </div>
 
-                <div className="mt-4 rounded-lg border border-dynamic-light-blue/30 bg-calendar-bg-blue p-3">
-                  <div className="flex items-center gap-2">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-calendar-bg-blue">
-                      <Sparkles className="h-4 w-4 text-dynamic-blue" />
+                <div className="rounded-lg border p-3">
+                  <div className="flex items-start gap-3">
+                    <div className="h-10 w-10 rounded-full bg-muted"></div>
+                    <div className="flex-1">
+                      <div className="flex justify-between">
+                        <h4 className="font-medium text-muted-foreground">
+                          {t('john_doe')}
+                        </h4>
+                        <div className="text-xs text-muted-foreground">
+                          {dayjs().subtract(1, 'hour').format('h:mm A')}
+                        </div>
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        {t('john_doe_subject')}
+                      </p>
                     </div>
-                    <div>
-                      <h4 className="font-medium text-dynamic-blue">
-                        {t('smart_mail_features')}
-                      </h4>
-                      <p className="text-xs text-dynamic-blue">
-                        {t('smart_mail_features_description')}
+                  </div>
+                </div>
+
+                <div className="rounded-lg border p-3">
+                  <div className="flex items-start gap-3">
+                    <div className="h-10 w-10 rounded-full bg-muted"></div>
+                    <div className="flex-1">
+                      <div className="flex justify-between">
+                        <h4 className="font-medium text-muted-foreground">
+                          {t('newsletter')}
+                        </h4>
+                        <div className="text-xs text-muted-foreground">
+                          {t('yesterday')}
+                        </div>
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        {t('newsletter_subject')}
                       </p>
                     </div>
                   </div>

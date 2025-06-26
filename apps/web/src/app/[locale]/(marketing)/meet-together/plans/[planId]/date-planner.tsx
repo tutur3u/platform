@@ -29,12 +29,23 @@ export default function DatePlanner({
   if (!startHour || !endHour) return null;
 
   return (
-    <div
+    <button
+      type="button"
       onMouseUp={
         editable
           ? (e) => {
               e.preventDefault();
               endEditing();
+            }
+          : undefined
+      }
+      onKeyDown={
+        editable
+          ? (e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                endEditing();
+              }
             }
           : undefined
       }
@@ -64,7 +75,8 @@ export default function DatePlanner({
       />
 
       {dates && (
-        <div
+        <button
+          type="button"
           className="flex flex-col items-start justify-start gap-4 overflow-x-auto"
           onMouseLeave={
             editable
@@ -72,6 +84,16 @@ export default function DatePlanner({
               : (e) => {
                   e.preventDefault();
                   setPreviewDate(null);
+                }
+          }
+          onKeyDown={
+            editable
+              ? undefined
+              : (e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    setPreviewDate(null);
+                  }
                 }
           }
         >
@@ -83,8 +105,8 @@ export default function DatePlanner({
             editable={editable}
             disabled={editable ? (user ? disabled : true) : disabled}
           />
-        </div>
+        </button>
       )}
-    </div>
+    </button>
   );
 }

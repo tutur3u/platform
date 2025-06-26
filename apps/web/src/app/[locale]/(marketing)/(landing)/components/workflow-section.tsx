@@ -299,6 +299,7 @@ export function WorkflowSection() {
       <div className="mb-12 flex flex-wrap justify-center gap-4">
         {workflowSteps.map((step) => (
           <button
+            type="button"
             key={step.id}
             className={`workflow-step-button flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors ${
               activeStep === step.id
@@ -341,6 +342,7 @@ export function WorkflowSection() {
           <div className="mb-8 flex items-center gap-2">
             {workflowSteps.map((step) => (
               <button
+                type="button"
                 key={step.id}
                 className={`h-3 w-3 rounded-full transition-colors ${
                   activeStep === step.id
@@ -354,6 +356,7 @@ export function WorkflowSection() {
           </div>
 
           <button
+            type="button"
             className={`${currentStep.color} flex items-center gap-2 rounded-md px-4 py-2 text-white hover:opacity-90`}
             onClick={() => setActiveStep(activeStep < 4 ? activeStep + 1 : 1)}
           >

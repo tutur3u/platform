@@ -42,6 +42,7 @@ import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
 import Image from 'next/image';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityHeatmap } from './components/activity-heatmap';
 import { CategoryManager } from './components/category-manager';
 import { GoalManager } from './components/goal-manager';
@@ -876,7 +877,9 @@ export default function TimeTrackerContent({
                 type="button"
                 onClick={() => {
                   if (isViewingOtherUser) {
-                    toast.info("You are currently viewing another user's data. You cannot continue their session.");
+                    toast.info(
+                      "You are currently viewing another user's data. You cannot continue their session."
+                    );
                     return;
                   }
                   if (isRunning) {
@@ -987,7 +990,7 @@ export default function TimeTrackerContent({
                 onClick={async () => {
                   if (isViewingOtherUser) {
                     toast.info(
-                      'You are currently viewing another user's data. You cannot assign tasks to them.'
+                      "You are currently viewing another user's data. You cannot assign tasks to them."
                     );
                     return;
                   }
@@ -1150,7 +1153,7 @@ export default function TimeTrackerContent({
                 onClick={() => {
                   if (isViewingOtherUser) {
                     toast.info(
-                      'You are currently viewing another user's data. You cannot take breaks for them.'
+                      "You are currently viewing another user's data. You cannot take breaks for them."
                     );
                     return;
                   }
@@ -2201,6 +2204,7 @@ export default function TimeTrackerContent({
                                       stroke="currentColor"
                                       viewBox="0 0 24 24"
                                     >
+                                      <title>Scroll down</title>
                                       <path
                                         strokeLinecap="round"
                                         strokeLinejoin="round"

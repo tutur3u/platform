@@ -16,7 +16,7 @@ import { Textarea } from '@tuturuuu/ui/textarea';
 import { getEventStyles } from '@tuturuuu/utils/color-helper';
 import { cn } from '@tuturuuu/utils/format';
 import { AlertCircle, Clock, MapPin, MessageSquare } from 'lucide-react';
-import React, { type ReactNode } from 'react';
+import React, { type ReactNode, useId } from 'react';
 import { ColorPicker, colorMap } from './settings/color-picker';
 
 // Color options aligned with SupportedColor type
@@ -169,7 +169,7 @@ export const EventDescriptionInput = ({
   };
 
   // Throttle function
-  const throttle = <T extends (...args: any[]) => void>(
+  const throttle = <T extends (...args: number[]) => void>(
     func: T,
     limit: number
   ) => {
@@ -500,37 +500,50 @@ export const EventPriorityPicker = ({
   onChange: (value: EventPriority) => void;
   disabled?: boolean;
 }) => {
-  const priorityOptions = [
-    { value: 'low', label: 'Low Priority', color: 'text-blue-500' },
-    { value: 'medium', label: 'Medium Priority', color: 'text-green-500' },
-    { value: 'high', label: 'High Priority', color: 'text-red-500' },
-  ];
+  const priorityOptions = PRIORITY_OPTIONS;
+  const _selectedPriority =
+    priorityOptions.find((p) => p.value === value) || priorityOptions[1];
 
-  const priorityToValue = {
-    low: 0,
-    medium: 1,
-    high: 2,
+  const priorityToValue = (priority: EventPriority): number => {
+    switch (priority) {
+      case 'low':
+        return 0;
+      case 'medium':
+        return 1;
+      case 'high':
+        return 2;
+      default:
+        return 1;
+    }
   };
 
   const valueToPriority = (val: number): EventPriority => {
-    if (val === 0) return 'low';
-    if (val === 1) return 'medium';
-    return 'high';
+    switch (val) {
+      case 0:
+        return 'low';
+      case 1:
+        return 'medium';
+      case 2:
+        return 'high';
+      default:
+        return 'medium';
+    }
   };
+
+  const id = useId();
 
   return (
     <div className="space-y-4">
-      <Label htmlFor="priority" className="text-sm font-medium">
+      <Label htmlFor={id} className="text-sm font-medium">
         Priority
       </Label>
       <div className={cn('space-y-3', disabled ? 'opacity-50' : '')}>
         <Slider
-          id="priority"
-          min={0}
+          id={id}
+          value={[priorityToValue(value)]}
+          onValueChange={(val) => onChange(valueToPriority(val[0] ?? 1))}
           max={2}
           step={1}
-          value={[priorityToValue[value]]}
-          onValueChange={(vals) => onChange(valueToPriority(vals[0] ?? 0))}
           disabled={disabled}
           className="w-full"
         />
@@ -540,11 +553,11 @@ export const EventPriorityPicker = ({
               key={option.value}
               className={cn(
                 'font-medium',
-                option.color,
+                option.className,
                 value === option.value ? 'opacity-100' : 'opacity-50'
               )}
             >
-              {option.label}
+              {option.name}
             </div>
           ))}
         </div>

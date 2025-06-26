@@ -148,6 +148,7 @@ export default function CreatePlanDialog({ plan }: Props) {
     >
       <DialogTrigger asChild>
         <button
+          type="button"
           className={cn(
             'group relative col-span-full mt-4 inline-flex w-full',
             missingFields || creating

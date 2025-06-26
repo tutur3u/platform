@@ -127,7 +127,10 @@ export default function BlogPage() {
                   placeholder="Enter your email"
                   className="flex-1 rounded-lg bg-foreground/10 px-4 py-2 outline-hidden placeholder:text-foreground/40"
                 />
-                <button className="flex items-center gap-2 rounded-lg bg-foreground px-6 py-2 font-medium text-background transition-colors hover:bg-foreground/90">
+                <button
+                  type="button"
+                  className="flex items-center gap-2 rounded-lg bg-foreground px-6 py-2 font-medium text-background transition-colors hover:bg-foreground/90"
+                >
                   Notify Me
                   <ArrowRight className="h-4 w-4" />
                 </button>

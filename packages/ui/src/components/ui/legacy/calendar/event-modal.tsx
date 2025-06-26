@@ -195,8 +195,7 @@ export function EventModal() {
 
         // Don't check against the original event if it's a split multi-day event
         if (
-          eventToCheck.id &&
-          eventToCheck.id.includes('-') &&
+          eventToCheck.id?.includes('-') &&
           e.id === eventToCheck.id.split('-')[0]
         ) {
           return false;

@@ -17,7 +17,7 @@ import { Separator } from '@tuturuuu/ui/separator';
 import { cn } from '@tuturuuu/utils/format';
 import { useLocale, useTranslations } from 'next-intl';
 // Corrected import path for cn
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 
 interface Feature {
   id: string;
@@ -32,6 +32,7 @@ interface Feature {
 export function FeaturesSection() {
   const locale = useLocale();
   const t = useTranslations('landing');
+  const _id = useId();
 
   const features: Feature[] = [
     {
@@ -349,7 +350,10 @@ export function FeaturesSection() {
               placeholder={t('type_a_message')}
               className="flex-1 rounded-md border border-dynamic-light-orange/30 px-2 py-1 text-xs focus:outline-none"
             />
-            <button className="flex h-6 w-6 items-center justify-center rounded-full bg-dynamic-light-orange/30">
+            <button
+              type="button"
+              className="flex h-6 w-6 items-center justify-center rounded-full bg-dynamic-light-orange/30"
+            >
               <ArrowRight className="h-3 w-3 text-dynamic-orange" />
             </button>
           </div>
@@ -516,16 +520,17 @@ export function FeaturesSection() {
         {/* Corrected class name */}
         {features.map((feature) => (
           <button
+            type="button"
             key={feature.id}
-            className={`feature-tab-button flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition-colors ${
+            className={`flex items-center gap-2 rounded-lg p-3 text-left transition-colors ${
               activeFeature.id === feature.id
-                ? `bg-gradient-to-br ${feature.color} text-white shadow-md`
-                : 'bg-transparent text-muted-foreground hover:bg-white dark:bg-foreground/5'
+                ? 'bg-muted/50'
+                : 'hover:bg-muted/50'
             }`}
             onClick={() => setActiveFeature(feature)}
           >
             <div
-              className={`${activeFeature.id !== feature.id ? 'text-muted-foreground' : 'text-white'}`}
+              className={`flex h-12 w-12 items-center justify-center rounded-lg bg-gradient-to-br p-2 text-white ${feature.color}`}
             >
               {feature.icon}
             </div>
