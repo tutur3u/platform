@@ -5,7 +5,7 @@ import { ArrowUpCircle, CheckCircle } from "lucide-react";
 import { useState } from "react";
 import { createClient } from "@tuturuuu/supabase/next/client";
 import PurchaseLink from "./data-polar-checkout";
-
+import { useTranslations } from "next-intl";
 // Define types for the props we're passing from the server component
 interface Plan {
   name: string;
@@ -26,7 +26,6 @@ interface BillingClientProps {
   isAdmin?: boolean;
   activeSubscriptionId?: string;
 }
-
 
 const syncToProduct = async (products: any[]) => {
   const supabase = createClient();
@@ -64,7 +63,7 @@ export function BillingClient({
   const [showUpgradeOptions, setShowUpgradeOptions] = useState(false);
   const [_isLoading, _setIsLoading] = useState(false);
   const [message, _setMessage] = useState("");
-
+  const t = useTranslations("billing");
   // const handleCancelSubscription = async () => {
   //   setIsLoading(true);
   //   setMessage('');
@@ -121,14 +120,17 @@ export function BillingClient({
 
   return (
     <>
+      <h1 className="mb-2 text-3xl font-bold tracking-tight">{t("billing")}</h1>
+      <p className="mb-8 text-muted-foreground">{t("billing-info")}</p>
+
       {/* Current Plan Card */}
       <div className="mb-8 rounded-lg border border-border bg-card p-8 shadow-sm dark:bg-card/80">
         <div className="mb-6 flex items-center justify-between">
           <div>
             <h2 className="text-2xl font-semibold tracking-tight text-card-foreground">
-              Current Plan
+              {t("current-plan")}
             </h2>
-            <p className="text-muted-foreground">Your subscription details</p>
+            <p className="text-muted-foreground">{t("current-plan-details")}</p>
           </div>
           <div className="flex items-center">
             <span
@@ -159,14 +161,16 @@ export function BillingClient({
 
             <div className="mb-6 grid grid-cols-2 gap-6 md:grid-cols-4">
               <div>
-                <p className="text-sm text-muted-foreground">Start Date</p>
+                <p className="text-sm text-muted-foreground">
+                  {t("start-date")}
+                </p>
                 <p className="font-medium text-card-foreground">
                   {currentPlan.startDate}
                 </p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">
-                  Next Billing Date
+                  {t("next-billing")}
                 </p>
                 <p className="font-medium text-card-foreground">
                   {currentPlan.nextBillingDate}
@@ -211,7 +215,7 @@ export function BillingClient({
                 size="lg"
               >
                 <ArrowUpCircle className="mr-2 h-5 w-5" />
-                {showUpgradeOptions ? "Hide Upgrade Options" : "Upgrade Plan"}
+                {showUpgradeOptions ? t("hide-upgrade") : t("upgrade-plan")}
               </Button>
               {/* <Button
                 variant="outline"
@@ -231,7 +235,7 @@ export function BillingClient({
       {showUpgradeOptions && (
         <div className="mb-8 rounded-lg border-2 border-primary/20 bg-card p-8 shadow-sm dark:bg-card/80">
           <h2 className="mb-6 text-2xl font-semibold text-card-foreground">
-            Upgrade Options
+            {t("upgrade-plan")}
           </h2>
           {isAdmin && (
             <Button
@@ -253,7 +257,7 @@ export function BillingClient({
               >
                 {plan.popular && (
                   <div className="absolute top-0 right-0 rounded-tr-md rounded-bl-lg bg-primary px-3 py-1 text-xs text-primary-foreground">
-                    RECOMMENDED
+                    {t("recommend")}
                   </div>
                 )}
                 <div className="p-6">
@@ -276,7 +280,7 @@ export function BillingClient({
                   </ul>
                   {plan.isEnterprise ? (
                     <Button className="w-full" variant="outline" disabled>
-                      Contact Sales
+                      {t("contact-sales")}
                     </Button>
                   ) : (
                     <Button
@@ -301,18 +305,14 @@ export function BillingClient({
                   )}
                   {plan.isEnterprise && (
                     <p className="mt-2 text-center text-xs text-muted-foreground">
-                      Please contact our sales team for Enterprise pricing
+                      {t("contact-salses-desc")}
                     </p>
                   )}
                 </div>
               </div>
             ))}
           </div>
-          <p className="mt-6 text-sm text-muted-foreground">
-            * Upgrading your plan will take effect immediately. You'll be
-            charged the prorated amount for the remainder of your current
-            billing cycle.
-          </p>
+          <p className="mt-6 text-sm text-muted-foreground">{t("plan-desc")}</p>
         </div>
       )}
     </>

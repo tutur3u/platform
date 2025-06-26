@@ -3,6 +3,7 @@ import { ROOT_WORKSPACE_ID } from "@tuturuuu/utils/constants";
 import { createPolarClient } from "@/lib/polar";
 import { BillingClient } from "./billing-client";
 import BillingHistory from "./billing-history";
+import { useTranslations } from "next-intl";
 import { checkTuturuuuAdmin } from "@tuturuuu/utils/workspace-helper";
 const fetchProducts = async ({
   wsId,
@@ -146,6 +147,7 @@ export default async function BillingPage({
   const { wsId } = await params;
   const { sandbox } = await searchParams;
 
+  
   const enableSandbox = sandbox === "true";
   const isTuturuuuAdmin = await checkTuturuuuAdmin();
   const [products, subscription, isCreator, subscriptionHistory] =
@@ -210,11 +212,7 @@ export default async function BillingPage({
 
   return (
     <div className="container mx-auto max-w-6xl px-4 py-8">
-      <h1 className="mb-2 text-3xl font-bold tracking-tight">Billing</h1>
-      <p className="mb-8 text-muted-foreground">
-        Manage your billing information and subscriptions here.
-      </p>
-
+      
       <BillingClient
         currentPlan={currentPlan}
         isAdmin={isTuturuuuAdmin}
