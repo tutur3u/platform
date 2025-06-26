@@ -11,6 +11,7 @@ import {
 } from '@tuturuuu/ui/select';
 import { Switch } from '@tuturuuu/ui/switch';
 import { PlusIcon, Trash2 } from 'lucide-react';
+import { useId } from 'react';
 
 export type ReminderTime =
   | '0' // At time of event
@@ -55,6 +56,11 @@ export function NotificationSettings({
   value,
   onChange,
 }: NotificationSettingsProps) {
+  const eventRemindersId = useId();
+  const defaultReminderId = useId();
+  const dailySummaryId = useId();
+  const invitationNotificationsId = useId();
+
   const handleToggleChange = (
     field: keyof NotificationData,
     checked: boolean
@@ -127,9 +133,9 @@ export function NotificationSettings({
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <Label htmlFor="event-reminders">Event reminders</Label>
+        <Label htmlFor={eventRemindersId}>Event reminders</Label>
         <Switch
-          id="event-reminders"
+          id={eventRemindersId}
           checked={value.enableEventReminders}
           onCheckedChange={(checked) =>
             handleToggleChange('enableEventReminders', checked)
@@ -138,13 +144,13 @@ export function NotificationSettings({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="default-reminder">Default reminder time</Label>
+        <Label htmlFor={defaultReminderId}>Default reminder time</Label>
         <Select
           value={value.defaultReminderTime}
           onValueChange={handleDefaultReminderChange}
           disabled={!value.enableEventReminders}
         >
-          <SelectTrigger id="default-reminder" className="w-full">
+          <SelectTrigger id={defaultReminderId} className="w-full">
             <SelectValue placeholder="Select reminder time" />
           </SelectTrigger>
           <SelectContent>
@@ -229,9 +235,9 @@ export function NotificationSettings({
       )}
 
       <div className="flex items-center justify-between">
-        <Label htmlFor="daily-summary">Daily agenda summary</Label>
+        <Label htmlFor={dailySummaryId}>Daily agenda summary</Label>
         <Switch
-          id="daily-summary"
+          id={dailySummaryId}
           checked={value.enableDailySummary}
           onCheckedChange={(checked) =>
             handleToggleChange('enableDailySummary', checked)
@@ -240,9 +246,9 @@ export function NotificationSettings({
       </div>
 
       <div className="flex items-center justify-between">
-        <Label htmlFor="invitation-notifications">Calendar invitations</Label>
+        <Label htmlFor={invitationNotificationsId}>Calendar invitations</Label>
         <Switch
-          id="invitation-notifications"
+          id={invitationNotificationsId}
           checked={value.enableInvitationNotifications}
           onCheckedChange={(checked) =>
             handleToggleChange('enableInvitationNotifications', checked)

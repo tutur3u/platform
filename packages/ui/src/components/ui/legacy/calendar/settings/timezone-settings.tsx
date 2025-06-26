@@ -325,8 +325,6 @@ export function TimezoneSettings({ value, onChange }: TimezoneSettingsProps) {
                       <button
                         type="button"
                         key={tz.value}
-                        role="option"
-                        aria-selected={isSelected}
                         className={`flex w-full items-center rounded-md px-2 py-2 text-left text-sm transition-colors ${isSelected ? 'bg-accent font-semibold text-accent-foreground' : ''} ${isActive ? 'bg-muted text-foreground' : 'hover:bg-accent hover:text-accent-foreground'} ${isDisabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
                         onClick={() =>
                           !isDisabled && onSelect && onSelect(tz.value)
@@ -388,7 +386,6 @@ export function TimezoneSettings({ value, onChange }: TimezoneSettingsProps) {
           <PopoverContent
             className="pointer-events-auto min-w-(--radix-popover-trigger-width) rounded-lg border bg-popover p-0 shadow-lg"
             align="start"
-            role="listbox"
             tabIndex={0}
             style={{ touchAction: 'pan-y' }}
           >
@@ -419,7 +416,7 @@ export function TimezoneSettings({ value, onChange }: TimezoneSettingsProps) {
             <div
               className="pointer-events-auto max-h-[320px] overflow-y-auto rounded-b-lg"
               onKeyDown={handleKeyDown}
-              role="presentation"
+              role="listbox"
               style={{ touchAction: 'pan-y' }}
               ref={(el) => {
                 scrollToDetectedRef.current = el;
@@ -440,8 +437,6 @@ export function TimezoneSettings({ value, onChange }: TimezoneSettingsProps) {
                       <button
                         type="button"
                         key={tz}
-                        role="option"
-                        aria-selected={isSelected}
                         className={`flex w-full items-center rounded-md px-2 py-2 text-left text-sm transition-colors ${isSelected ? 'bg-accent font-semibold text-accent-foreground' : ''} ${isActive ? 'bg-muted text-foreground' : 'hover:bg-accent hover:text-accent-foreground'} ${tz === value.secondaryTimezone ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
                         onClick={() =>
                           tz !== value.secondaryTimezone &&
@@ -486,8 +481,6 @@ export function TimezoneSettings({ value, onChange }: TimezoneSettingsProps) {
                           <button
                             type="button"
                             key={tz.value}
-                            role="option"
-                            aria-selected={isSelected}
                             className={`flex w-full items-center rounded-md px-2 py-2 text-left text-sm transition-colors ${isSelected ? 'bg-accent font-semibold text-accent-foreground' : ''} ${isActive ? 'bg-muted text-foreground' : 'hover:bg-accent hover:text-accent-foreground'} ${isDisabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
                             onClick={() =>
                               !isDisabled && handleTimezoneChange(tz.value)
@@ -543,7 +536,6 @@ export function TimezoneSettings({ value, onChange }: TimezoneSettingsProps) {
             <PopoverContent
               className="pointer-events-auto min-w-(--radix-popover-trigger-width) rounded-lg border bg-popover p-0 shadow-lg"
               align="start"
-              role="listbox"
               tabIndex={0}
               style={{ touchAction: 'pan-y' }}
             >
@@ -560,7 +552,7 @@ export function TimezoneSettings({ value, onChange }: TimezoneSettingsProps) {
               <div
                 className="pointer-events-auto max-h-[320px] overflow-y-auto rounded-b-lg"
                 onKeyDown={handleSecondaryKeyDown}
-                role="presentation"
+                role="listbox"
                 style={{ touchAction: 'pan-y' }}
               >
                 {renderTimezoneGroups(

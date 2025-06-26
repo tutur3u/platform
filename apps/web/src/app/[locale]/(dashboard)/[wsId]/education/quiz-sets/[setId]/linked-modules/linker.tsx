@@ -2,8 +2,8 @@
 
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { WorkspaceCourseModule } from '@tuturuuu/types/db';
-import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
 import { Filter } from '../../../../users/filters';
 
 export function QuizsetModuleLinker({
@@ -33,8 +33,8 @@ export function QuizsetModuleLinker({
     <Filter
       title={t('ws-quiz-sets.link-modules')}
       options={data.map((module) => ({
-        label: module.name!,
-        value: module.id!,
+        label: module.name || '',
+        value: module.id || '',
         checked: module.selected,
         disabled: module.selected,
       }))}

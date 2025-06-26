@@ -10,6 +10,7 @@ import {
 } from '@tuturuuu/ui/select';
 import { Slider } from '@tuturuuu/ui/slider';
 import { Switch } from '@tuturuuu/ui/switch';
+import { useId } from 'react';
 
 export type SmartSchedulingData = {
   enableSmartScheduling: boolean;
@@ -50,6 +51,17 @@ export function SmartSchedulingSettings({
   value,
   onChange,
 }: SmartSchedulingSettingsProps) {
+  const enableSmartSchedulingId = useId();
+  const meetingBufferId = useId();
+  const preferredTimesId = useId();
+  const avoidBackToBackId = useId();
+  const maxMeetingsId = useId();
+  const enableFocusTimeId = useId();
+  const focusDurationId = useId();
+  const focusFrequencyId = useId();
+  const focusTimeId = useId();
+  const productivityScoreId = useId();
+
   const handleToggleChange = (
     field: keyof SmartSchedulingData,
     checked: boolean
@@ -113,9 +125,9 @@ export function SmartSchedulingSettings({
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <Label htmlFor="enable-smart-scheduling">Enable smart scheduling</Label>
+        <Label htmlFor={enableSmartSchedulingId}>Enable smart scheduling</Label>
         <Switch
-          id="enable-smart-scheduling"
+          id={enableSmartSchedulingId}
           checked={value.enableSmartScheduling}
           onCheckedChange={(checked) =>
             handleToggleChange('enableSmartScheduling', checked)
@@ -127,7 +139,7 @@ export function SmartSchedulingSettings({
         <h3 className="text-lg font-medium">Meeting Preferences</h3>
 
         <div className="space-y-2">
-          <Label htmlFor="meeting-buffer">
+          <Label htmlFor={meetingBufferId}>
             Minimum buffer between meetings
           </Label>
           <Select
@@ -135,7 +147,7 @@ export function SmartSchedulingSettings({
             onValueChange={handleBufferChange}
             disabled={!value.enableSmartScheduling}
           >
-            <SelectTrigger id="meeting-buffer" className="w-full">
+            <SelectTrigger id={meetingBufferId} className="w-full">
               <SelectValue placeholder="Select buffer time" />
             </SelectTrigger>
             <SelectContent>
@@ -149,7 +161,7 @@ export function SmartSchedulingSettings({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="preferred-times">Preferred meeting times</Label>
+          <Label htmlFor={preferredTimesId}>Preferred meeting times</Label>
           <Select
             value={value.preferredMeetingTimes}
             onValueChange={(val) =>
@@ -161,7 +173,7 @@ export function SmartSchedulingSettings({
             }
             disabled={!value.enableSmartScheduling}
           >
-            <SelectTrigger id="preferred-times" className="w-full">
+            <SelectTrigger id={preferredTimesId} className="w-full">
               <SelectValue placeholder="Select preferred times" />
             </SelectTrigger>
             <SelectContent>
@@ -175,11 +187,9 @@ export function SmartSchedulingSettings({
         </div>
 
         <div className="flex items-center justify-between">
-          <Label htmlFor="avoid-back-to-back">
-            Avoid back-to-back meetings
-          </Label>
+          <Label htmlFor={avoidBackToBackId}>Avoid back-to-back meetings</Label>
           <Switch
-            id="avoid-back-to-back"
+            id={avoidBackToBackId}
             checked={value.avoidBackToBackMeetings}
             onCheckedChange={(checked) =>
               handleToggleChange('avoidBackToBackMeetings', checked)
@@ -189,13 +199,13 @@ export function SmartSchedulingSettings({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="max-meetings">Maximum meetings per day</Label>
+          <Label htmlFor={maxMeetingsId}>Maximum meetings per day</Label>
           <Select
             value={value.maximumMeetingsPerDay.toString()}
             onValueChange={handleMaxMeetingsChange}
             disabled={!value.enableSmartScheduling}
           >
-            <SelectTrigger id="max-meetings" className="w-full">
+            <SelectTrigger id={maxMeetingsId} className="w-full">
               <SelectValue placeholder="Select maximum meetings" />
             </SelectTrigger>
             <SelectContent>
@@ -216,9 +226,9 @@ export function SmartSchedulingSettings({
         <h3 className="text-lg font-medium">Focus Time</h3>
 
         <div className="flex items-center justify-between">
-          <Label htmlFor="enable-focus-time">Schedule focus time blocks</Label>
+          <Label htmlFor={enableFocusTimeId}>Schedule focus time blocks</Label>
           <Switch
-            id="enable-focus-time"
+            id={enableFocusTimeId}
             checked={value.focusTimeBlocks.enabled}
             onCheckedChange={handleFocusTimeToggle}
             disabled={!value.enableSmartScheduling}
@@ -226,7 +236,7 @@ export function SmartSchedulingSettings({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="focus-duration">Focus time duration</Label>
+          <Label htmlFor={focusDurationId}>Focus time duration</Label>
           <Select
             value={value.focusTimeBlocks.duration.toString()}
             onValueChange={(val) =>
@@ -236,7 +246,7 @@ export function SmartSchedulingSettings({
               !value.enableSmartScheduling || !value.focusTimeBlocks.enabled
             }
           >
-            <SelectTrigger id="focus-duration" className="w-full">
+            <SelectTrigger id={focusDurationId} className="w-full">
               <SelectValue placeholder="Select duration" />
             </SelectTrigger>
             <SelectContent>
@@ -250,7 +260,7 @@ export function SmartSchedulingSettings({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="focus-frequency">Focus time frequency</Label>
+          <Label htmlFor={focusFrequencyId}>Focus time frequency</Label>
           <Select
             value={value.focusTimeBlocks.frequency}
             onValueChange={(val) =>
@@ -260,7 +270,7 @@ export function SmartSchedulingSettings({
               !value.enableSmartScheduling || !value.focusTimeBlocks.enabled
             }
           >
-            <SelectTrigger id="focus-frequency" className="w-full">
+            <SelectTrigger id={focusFrequencyId} className="w-full">
               <SelectValue placeholder="Select frequency" />
             </SelectTrigger>
             <SelectContent>
@@ -271,7 +281,7 @@ export function SmartSchedulingSettings({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="focus-time">Preferred focus time</Label>
+          <Label htmlFor={focusTimeId}>Preferred focus time</Label>
           <Select
             value={value.focusTimeBlocks.preferredTime}
             onValueChange={(val) =>
@@ -284,7 +294,7 @@ export function SmartSchedulingSettings({
               !value.enableSmartScheduling || !value.focusTimeBlocks.enabled
             }
           >
-            <SelectTrigger id="focus-time" className="w-full">
+            <SelectTrigger id={focusTimeId} className="w-full">
               <SelectValue placeholder="Select preferred time" />
             </SelectTrigger>
             <SelectContent>
@@ -299,13 +309,13 @@ export function SmartSchedulingSettings({
         <h3 className="text-lg font-medium">Productivity Balance</h3>
         <div className="space-y-2">
           <div className="flex justify-between">
-            <Label htmlFor="productivity-score">
+            <Label htmlFor={productivityScoreId}>
               Meeting vs. Focus Time Balance
             </Label>
             <span className="text-sm">{value.productivityScore}%</span>
           </div>
           <Slider
-            id="productivity-score"
+            id={productivityScoreId}
             min={0}
             max={100}
             step={5}

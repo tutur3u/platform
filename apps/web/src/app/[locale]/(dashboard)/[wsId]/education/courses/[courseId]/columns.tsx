@@ -9,10 +9,10 @@ import moment from 'moment';
 import Link from 'next/link';
 
 export const getWorkspaceCourseModuleColumns = (
-  t: any,
+  t: (key: string) => string,
   namespace: string | undefined,
-  _: any,
-  extraData?: any
+  _: unknown,
+  extraData?: Record<string, unknown>
 ): ColumnDef<WorkspaceCourseModule>[] => [
   // {
   //   id: 'select',
@@ -113,12 +113,17 @@ export const getWorkspaceCourseModuleColumns = (
   },
   {
     id: 'actions',
-    cell: ({ row }) => (
-      <WorkspaceCourseModuleRowActions
-        row={row}
-        wsId={extraData.wsId}
-        courseId={extraData.courseId}
-      />
-    ),
+    cell: ({ row }) => {
+      const wsId = typeof extraData?.wsId === 'string' ? extraData.wsId : '';
+      const courseId =
+        typeof extraData?.courseId === 'string' ? extraData.courseId : '';
+      return (
+        <WorkspaceCourseModuleRowActions
+          row={row}
+          wsId={wsId}
+          courseId={courseId}
+        />
+      );
+    },
   },
 ];

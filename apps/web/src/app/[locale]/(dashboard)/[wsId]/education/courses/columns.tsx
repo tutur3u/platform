@@ -8,7 +8,7 @@ import moment from 'moment';
 import Link from 'next/link';
 
 export const getWorkspaceCourseColumns = (
-  t: any,
+  t: (key: string) => string,
   namespace: string | undefined
 ): ColumnDef<WorkspaceCourse>[] => [
   // {

@@ -9,10 +9,10 @@ import Link from 'next/link';
 import { WorkspaceCourseModuleRowActions } from './row-actions';
 
 export const getWorkspaceCourseModuleColumns = (
-  t: any,
+  t: (key: string) => string,
   namespace: string | undefined,
-  _: any,
-  extraData?: any
+  _: unknown,
+  extraData?: Record<string, unknown>
 ): ColumnDef<Partial<WorkspaceCourseModule>>[] => [
   // {
   //   id: 'select',

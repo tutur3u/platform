@@ -7,7 +7,7 @@ import moment from 'moment';
 import { WorkspaceQuizRowActions } from './row-actions';
 
 export const getWorkspaceQuizColumns = (
-  t: any,
+  t: (key: string) => string,
   namespace: string | undefined
 ): ColumnDef<WorkspaceQuiz>[] => [
   // {

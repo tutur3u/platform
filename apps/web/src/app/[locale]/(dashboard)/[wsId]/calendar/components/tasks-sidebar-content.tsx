@@ -208,9 +208,9 @@ export default function TasksSidebarContent({
               // Convert undefined values to null to match the expected type constraints
               const extendedTask: ExtendedWorkspaceTask = {
                 // Required fields (these should always be present)
-                id: task.id!,
-                name: task.name!,
-                list_id: task.list_id!,
+                id: task.id || '',
+                name: task.name || '',
+                list_id: task.list_id || '',
 
                 // Optional fields with proper null conversion
                 description: task.description ?? null,

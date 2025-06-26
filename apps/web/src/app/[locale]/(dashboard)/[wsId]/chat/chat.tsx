@@ -10,7 +10,7 @@ import { cn } from '@tuturuuu/utils/format';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import type React from 'react';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ChatList } from '@/components/chat-list';
 import { ChatPanel } from '@/components/chat-panel';
 import { ChatScrollAnchor } from '@/components/chat-scroll-anchor';
@@ -175,8 +175,23 @@ const Chat = ({
 
   const [initialScroll, setInitialScroll] = useState(true);
 
+  const [collapsed, setCollapsed] = useState(true);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+
   useEffect(() => {
-    // if there is "input" in the query string, we will
+    if (inputRef.current) inputRef.current.focus();
+  }, []);
+
+  const [pendingPrompt, setPendingPrompt] = useState<string | null>(null);
+
+  const clearChat = useCallback(() => {
+    if (defaultChat?.id) return;
+    setSummary(undefined);
+    setChat(undefined);
+    setCollapsed(true);
+  }, [defaultChat?.id]);
+
+  useEffect(() => {
     // use that as the input for the chat, then remove
     // it from the query string
     const input = searchParams.get('input');
@@ -224,15 +239,6 @@ const Chat = ({
     disableScrollToBottom,
     disableScrollToTop,
   ]);
-
-  const [collapsed, setCollapsed] = useState(true);
-  const inputRef = useRef<HTMLTextAreaElement>(null);
-
-  useEffect(() => {
-    if (inputRef.current) inputRef.current.focus();
-  }, []);
-
-  const [pendingPrompt, setPendingPrompt] = useState<string | null>(null);
 
   const createChat = async (input: string) => {
     if (!model) return;
@@ -291,13 +297,6 @@ const Chat = ({
       title: t('chat_updated'),
       description: t('visibility_updated_desc'),
     });
-  };
-
-  const clearChat = () => {
-    if (defaultChat?.id) return;
-    setSummary(undefined);
-    setChat(undefined);
-    setCollapsed(true);
   };
 
   useEffect(() => {

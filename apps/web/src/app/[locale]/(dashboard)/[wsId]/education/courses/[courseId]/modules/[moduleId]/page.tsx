@@ -75,7 +75,7 @@ export default async function UserGroupDetailsPage({ params }: Props) {
         href={`/${wsId}/education/courses/${courseId}/modules/${moduleId}/content`}
         title={t('course-details-tabs.module_content')}
         icon={<Goal className="h-5 w-5" />}
-        rawContent={data.content as any | undefined}
+        rawContent={data.content as Record<string, unknown> | undefined}
         content={
           data.content ? (
             <div className="h-full max-h-[500px] overflow-y-auto">
@@ -184,7 +184,7 @@ export default async function UserGroupDetailsPage({ params }: Props) {
         href={`/${wsId}/education/courses/${courseId}/modules/${moduleId}/extra-content`}
         title={t('course-details-tabs.extra_reading')}
         icon={<BookText className="h-5 w-5" />}
-        rawContent={data.extra_content as any | undefined}
+        rawContent={data.extra_content as Record<string, unknown> | undefined}
         content={
           data.extra_content
             ? // <BlockEditor document={data.extra_content as any} />

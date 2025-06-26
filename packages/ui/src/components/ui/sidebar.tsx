@@ -101,8 +101,19 @@ const SidebarProvider = React.forwardRef<
                 maxAge: SIDEBAR_COOKIE_MAX_AGE,
               });
             } else if (document.cookie !== undefined) {
-              // Fallback to direct assignment
-              document.cookie = `${SIDEBAR_COOKIE_NAME}=${openState}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`;
+              // Fallback to proper cookie handling
+              const cookieValue = `${SIDEBAR_COOKIE_NAME}=${openState}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`;
+              try {
+                // Use a more secure approach to set cookies
+                if (typeof window !== 'undefined' && window.document) {
+                  document.cookie = cookieValue;
+                }
+              } catch (cookieError) {
+                console.warn(
+                  'Failed to set cookie via document.cookie:',
+                  cookieError
+                );
+              }
             }
           }
         } catch (error) {

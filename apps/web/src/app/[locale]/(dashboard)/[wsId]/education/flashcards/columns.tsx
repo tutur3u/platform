@@ -7,7 +7,7 @@ import moment from 'moment';
 import { WorkspaceFlashcardRowActions } from './row-actions';
 
 export const getWorkspaceFlashcardColumns = (
-  t: any,
+  t: (key: string) => string,
   namespace: string | undefined
 ): ColumnDef<WorkspaceFlashcard>[] => [
   // {

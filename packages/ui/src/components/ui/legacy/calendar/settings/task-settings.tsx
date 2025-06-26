@@ -12,7 +12,7 @@ import {
 } from '@tuturuuu/ui/select';
 import { Switch } from '@tuturuuu/ui/switch';
 import { PlusIcon, Trash2 } from 'lucide-react';
-import { useState } from 'react';
+import { useId, useState } from 'react';
 
 export type TaskPriority = 'low' | 'medium' | 'high';
 
@@ -69,6 +69,10 @@ type TaskSettingsProps = {
 
 export function TaskSettings({ value, onChange }: TaskSettingsProps) {
   const [, setEditingTaskType] = useState<string | null>(null);
+  const autoScheduleId = useId();
+  const priorityFirstId = useId();
+  const respectHoursId = useId();
+  const defaultDurationId = useId();
 
   const handleToggleChange = (
     field: keyof TaskSettingsData,
@@ -144,9 +148,9 @@ export function TaskSettings({ value, onChange }: TaskSettingsProps) {
         <h3 className="text-lg font-medium">Task Scheduling</h3>
 
         <div className="flex items-center justify-between">
-          <Label htmlFor="auto-schedule">Auto-schedule tasks</Label>
+          <Label htmlFor={autoScheduleId}>Auto-schedule tasks</Label>
           <Switch
-            id="auto-schedule"
+            id={autoScheduleId}
             checked={value.autoScheduleTasks}
             onCheckedChange={(checked) =>
               handleToggleChange('autoScheduleTasks', checked)
@@ -155,11 +159,11 @@ export function TaskSettings({ value, onChange }: TaskSettingsProps) {
         </div>
 
         <div className="flex items-center justify-between">
-          <Label htmlFor="priority-first">
+          <Label htmlFor={priorityFirstId}>
             Schedule high priority tasks first
           </Label>
           <Switch
-            id="priority-first"
+            id={priorityFirstId}
             checked={value.scheduleHighPriorityFirst}
             onCheckedChange={(checked) =>
               handleToggleChange('scheduleHighPriorityFirst', checked)
@@ -169,11 +173,11 @@ export function TaskSettings({ value, onChange }: TaskSettingsProps) {
         </div>
 
         <div className="flex items-center justify-between">
-          <Label htmlFor="respect-hours">
+          <Label htmlFor={respectHoursId}>
             Respect work hours when scheduling
           </Label>
           <Switch
-            id="respect-hours"
+            id={respectHoursId}
             checked={value.respectWorkHours}
             onCheckedChange={(checked) =>
               handleToggleChange('respectWorkHours', checked)
@@ -183,12 +187,12 @@ export function TaskSettings({ value, onChange }: TaskSettingsProps) {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="default-duration">Default task duration</Label>
+          <Label htmlFor={defaultDurationId}>Default task duration</Label>
           <Select
             value={value.defaultTaskDuration.toString()}
             onValueChange={handleDefaultDurationChange}
           >
-            <SelectTrigger id="default-duration" className="w-full">
+            <SelectTrigger id={defaultDurationId} className="w-full">
               <SelectValue placeholder="Select duration" />
             </SelectTrigger>
             <SelectContent>

@@ -36,9 +36,10 @@ export default function StorageObjectsTable({
     >
       <CustomDataTable
         data={!path || path === '/' ? data : [{ name: '...' }, ...data]}
-        columnGenerator={(t: any, namespace: string | undefined) =>
-          storageObjectsColumns(t, namespace, setStorageObject, wsId, path)
-        }
+        columnGenerator={(
+          t: (key: string) => string,
+          namespace: string | undefined
+        ) => storageObjectsColumns(t, namespace, setStorageObject, wsId, path)}
         namespace="storage-object-data-table"
         count={count}
         defaultVisibility={{

@@ -342,7 +342,7 @@ export default function TimeTracker({ wsId, tasks = [] }: TimeTrackerProps) {
       // In task mode, start timer automatically
       // In manual mode, just link the task and let user start manually
       if (sessionMode === 'task') {
-        await startTimerWithTask(newTask.id, newTask.name);
+        await startTimerWithTask(newTask.id, newTask.name || 'Untitled Task');
       }
     } catch (error) {
       console.error('Error creating task:', error);
@@ -393,7 +393,10 @@ export default function TimeTracker({ wsId, tasks = [] }: TimeTrackerProps) {
     if (sessionMode === 'task' && selectedTaskId) {
       const selectedTask = tasks.find((t) => t.id === selectedTaskId);
       if (selectedTask) {
-        await startTimerWithTask(selectedTaskId, selectedTask.name!);
+        await startTimerWithTask(
+          selectedTaskId,
+          selectedTask.name || 'Untitled Task'
+        );
         return;
       }
     }
@@ -549,11 +552,11 @@ export default function TimeTracker({ wsId, tasks = [] }: TimeTrackerProps) {
   };
 
   // Duplicate session
-  const duplicateSession = async (session: SessionWithRelations) => {
-    setNewSessionTitle(session.title);
-    setNewSessionDescription(session.description || '');
-    setSelectedCategoryId(session.category_id || '');
-    setSelectedTaskId(session.task_id || '');
+  const duplicateSession = async (session: SessionWithRelations | null) => {
+    setNewSessionTitle(session?.title || '');
+    setNewSessionDescription(session?.description || '');
+    setSelectedCategoryId(session?.category_id || '');
+    setSelectedTaskId(session?.task_id || '');
     setActiveTab('current');
     toast.success('Session settings copied');
   };
@@ -668,7 +671,9 @@ export default function TimeTracker({ wsId, tasks = [] }: TimeTrackerProps) {
     if (taskId) {
       const selectedTask = tasks.find((t) => t.id === taskId);
       if (selectedTask) {
-        setNewSessionTitle(`Working on: ${selectedTask.name}`);
+        setNewSessionTitle(
+          `Working on: ${selectedTask.name || 'Untitled Task'}`
+        );
       }
     } else {
       setNewSessionTitle('');
@@ -718,7 +723,7 @@ export default function TimeTracker({ wsId, tasks = [] }: TimeTrackerProps) {
     );
 
     if (matchingTask && title.length > 2) {
-      setSelectedTaskId(matchingTask.id!);
+      setSelectedTaskId(matchingTask.id || '');
       setShowTaskSuggestion(false);
     } else if (title.length > 2 && !selectedTaskId) {
       // Suggest creating a new task if title doesn't match any existing task
@@ -831,7 +836,12 @@ export default function TimeTracker({ wsId, tasks = [] }: TimeTrackerProps) {
             </DialogDescription>
           </DialogHeader>
 
-          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
+          <Tabs
+            value={activeTab}
+            onValueChange={(v: string) =>
+              setActiveTab(v as 'current' | 'recent' | 'history')
+            }
+          >
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="current" className="flex items-center gap-2">
                 <Play className="h-4 w-4" />
@@ -965,7 +975,7 @@ export default function TimeTracker({ wsId, tasks = [] }: TimeTrackerProps) {
                         <Tabs
                           value={sessionMode}
                           onValueChange={(v) =>
-                            handleSessionModeChange(v as any)
+                            handleSessionModeChange(v as 'task' | 'manual')
                           }
                         >
                           <TabsList className="grid h-full w-full grid-cols-2 bg-muted/50">
@@ -1018,7 +1028,7 @@ export default function TimeTracker({ wsId, tasks = [] }: TimeTrackerProps) {
                                   {tasks.map((task) => (
                                     <SelectItem
                                       key={task.id}
-                                      value={task.id!}
+                                      value={task.id || ''}
                                       className="p-0"
                                     >
                                       <div className="flex w-full items-start gap-3 p-3">
@@ -1326,7 +1336,7 @@ export default function TimeTracker({ wsId, tasks = [] }: TimeTrackerProps) {
                                   variant="outline"
                                   size="sm"
                                   onClick={() =>
-                                    duplicateSession(recentSessions[0]!)
+                                    duplicateSession(recentSessions[0] || null)
                                   }
                                   className="w-full justify-start text-xs"
                                 >
@@ -1504,7 +1514,10 @@ export default function TimeTracker({ wsId, tasks = [] }: TimeTrackerProps) {
                                 <SelectContent>
                                   <SelectItem value="">All tasks</SelectItem>
                                   {tasks.map((task) => (
-                                    <SelectItem key={task.id} value={task.id!}>
+                                    <SelectItem
+                                      key={task.id}
+                                      value={task.id || ''}
+                                    >
                                       {task.name}
                                     </SelectItem>
                                   ))}
@@ -1777,7 +1790,7 @@ export default function TimeTracker({ wsId, tasks = [] }: TimeTrackerProps) {
                   <SelectContent>
                     <SelectItem value="">No task</SelectItem>
                     {tasks.map((task) => (
-                      <SelectItem key={task.id} value={task.id!}>
+                      <SelectItem key={task.id} value={task.id || ''}>
                         {task.name}
                       </SelectItem>
                     ))}

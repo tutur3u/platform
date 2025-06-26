@@ -30,7 +30,7 @@ function getNextRunTime(schedule: string, lastRun?: string | null) {
 }
 
 function renderStatus(
-  t: any,
+  t: (key: string) => string,
   jobStatus: 'inactive' | 'active' | 'running' | 'failed'
 ) {
   const status = jobStatus;
@@ -74,10 +74,10 @@ function renderStatus(
 }
 
 export const getColumns = (
-  t: any,
+  t: (key: string) => string,
   namespace: string | undefined,
-  _?: any,
-  extraData?: any
+  _?: unknown,
+  extraData?: Record<string, unknown>
 ): ColumnDef<WorkspaceCronJob>[] => [
   {
     accessorKey: 'id',

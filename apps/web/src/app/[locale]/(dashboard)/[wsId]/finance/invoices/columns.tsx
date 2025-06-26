@@ -13,7 +13,7 @@ import moment from 'moment';
 import { InvoiceRowActions } from './row-actions';
 
 export const invoiceColumns = (
-  t: any,
+  t: (key: string) => string,
   namespace: string | undefined
 ): ColumnDef<Invoice>[] => [
   // {
