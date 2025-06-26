@@ -1,4 +1,13 @@
 {
+  "billing": {
+    "billing": "Billing",
+    "billing-info": "Manage your billing information and subscriptions here.",
+    "current-plan": "Current Plan",
+    "current-plan-details": "Current plan details",
+    "upgrade-plan": "Upgrade Plan",
+    "subscription-history": "Subscription History",
+    "subscription-history-desc": "No subscription history available."
+  },
   "common": {
     "success": "Success",
     "alpha": "Alpha",

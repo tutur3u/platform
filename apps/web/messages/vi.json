@@ -1,4 +1,13 @@
 {
+  "billing": {
+    "billing": "Thanh toán",
+    "billing-info": "Quản lý thông tin thanh toán của bạn",
+    "current-plan": "Gói đăng kí hiện tại",
+    "current-plan-details": "Chi tiết gói hiện tại của bạn",
+    "upgrade-plan": "Nâng cấp gói",
+    "subscription-history": "Lịch sử đăng ký",
+    "subscription-history-desc": "Không có lịch sử đăng ký nào."
+  },
   "common": {
     "success": "Thành công",
     "alpha": "Alpha",
