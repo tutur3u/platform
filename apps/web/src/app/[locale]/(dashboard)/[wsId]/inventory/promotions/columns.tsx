@@ -7,7 +7,7 @@ import moment from 'moment';
 import { PromotionRowActions } from './row-actions';
 
 export const getPromotionColumns = (
-  t: any,
+  t: (key: string, values?: Record<string, unknown>) => string,
   namespace: string | undefined
 ): ColumnDef<ProductPromotion>[] => [
   // {

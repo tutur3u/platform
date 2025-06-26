@@ -265,7 +265,6 @@ export function ProductForm({
                                 <FormControl>
                                   <Button
                                     variant="outline"
-                                    role="combobox"
                                     className="w-full justify-between"
                                   >
                                     {field.value
@@ -491,7 +490,6 @@ export function ProductForm({
                             <FormControl>
                               <Button
                                 variant="outline"
-                                role="combobox"
                                 className="w-full justify-between"
                               >
                                 {field.value

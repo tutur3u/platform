@@ -4,13 +4,13 @@ import type { ColumnDef } from '@tanstack/react-table';
 import type { PostEmail } from '@tuturuuu/types/primitives/post-email';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import { Check, X } from '@tuturuuu/ui/icons';
-import RowActions from './row-actions';
 import 'dayjs/locale/vi';
 import moment from 'moment';
 import Link from 'next/link';
+import RowActions from './row-actions';
 
 export const getPostEmailColumns = (
-  t: any,
+  t: (key: string, values?: Record<string, unknown>) => string,
   namespace: string | undefined
   // extraData?: any
 ): ColumnDef<PostEmail>[] => [

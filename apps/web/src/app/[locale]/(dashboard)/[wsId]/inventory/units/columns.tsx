@@ -7,7 +7,7 @@ import moment from 'moment';
 import { ProductUnitRowActions } from './row-actions';
 
 export const productUnitColumns = (
-  t: any,
+  t: (key: string, values?: Record<string, unknown>) => string,
   namespace: string | undefined
 ): ColumnDef<ProductUnit>[] => [
   // {

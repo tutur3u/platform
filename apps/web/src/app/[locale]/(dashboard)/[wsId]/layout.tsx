@@ -481,7 +481,7 @@ export default async function Layout({ children, params }: LayoutProps) {
 
   const rawBehavior = behaviorCookie?.value;
   const isValidBehavior = (
-    value: any
+    value: 'expanded' | 'collapsed' | 'hover'
   ): value is 'expanded' | 'collapsed' | 'hover' => {
     return ['expanded', 'collapsed', 'hover'].includes(value);
   };
@@ -492,11 +492,11 @@ export default async function Layout({ children, params }: LayoutProps) {
     ? rawBehavior
     : 'expanded';
 
-  let defaultCollapsed;
+  let defaultCollapsed: boolean | undefined;
   if (sidebarBehavior === 'collapsed') {
     defaultCollapsed = true;
-  } else if (sidebarBehavior === 'hover') {
-    defaultCollapsed = true;
+  } else if (sidebarBehavior === 'expanded') {
+    defaultCollapsed = false;
   } else {
     defaultCollapsed = collapsed ? JSON.parse(collapsed.value) : false;
   }

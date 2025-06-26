@@ -8,7 +8,7 @@ import 'dayjs/locale/vi';
 import moment from 'moment';
 
 export const getEmailColumns = (
-  t: any,
+  t: (key: string, values?: Record<string, unknown>) => string,
   namespace: string | undefined
   // extraData?: any
 ): ColumnDef<EmailHistoryEntry>[] => [

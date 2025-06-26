@@ -39,9 +39,11 @@ export function Mail({
       <ResizablePanelGroup
         direction="horizontal"
         onLayout={(sizes: number[]) => {
-          document.cookie = `react-resizable-panels:layout:mail=${JSON.stringify(
-            sizes
-          )}`;
+          try {
+            document.cookie = `react-resizable-panels:layout:mail=${JSON.stringify(sizes)}`;
+          } catch (e) {
+            console.warn('Failed to set cookie:', e);
+          }
         }}
         className="h-full max-h-[800px] items-stretch"
       >
