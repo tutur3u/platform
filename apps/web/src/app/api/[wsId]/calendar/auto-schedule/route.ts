@@ -2,7 +2,7 @@ import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 import { createCalendarOptimizer } from './tools';
 import {  promoteEventToTask, scheduleWithFlexibleEvents } from '@tuturuuu/ai/scheduling/algorithm';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createClient, createAdminClient } from '@tuturuuu/supabase/next/server';
 import {
   defaultActiveHours,
 } from '@tuturuuu/ai/scheduling/default';
@@ -149,9 +149,6 @@ export async function POST(
   try {
     const { wsId } = await params;
 
-    // =======================================================
-    // 1. PERMISSIONS & REQUEST PARSING
-    // =======================================================
     const { withoutPermission } = await getPermissions({ wsId });
     if (withoutPermission('manage_calendar')) {
       return NextResponse.json({ error: 'Permission denied' }, { status: 403 });
@@ -181,6 +178,7 @@ export async function POST(
 
     if (tasksError) throw new Error(`Failed to fetch tasks: ${tasksError.message}`);
     
+    console.log(currentTasks, 'tasks fetched for user:', user.id);
    
     const { data: flexibleEventsData, error: flexibleEventsError } = await (await supabase)
       .from('workspace_calendar_events')
@@ -253,7 +251,7 @@ export async function POST(
       const { events: newScheduledEvents, logs } = scheduleResult;
       
       // console.log(scheduleResult.logs.length, 'logs generated:', scheduleResult.logs);
-      console.log(newScheduledEvents.length, 'new scheduled events:', newScheduledEvents);
+      // console.log(newScheduledEvents.length, 'new scheduled events:', newScheduledEvents);
       // 5. SAVE THE NEW SCHEDULE TO SUPABASE
       streamUpdate?.({ status: 'running', message: 'Saving new schedule...' });
       
@@ -269,7 +267,7 @@ export async function POST(
           .eq('ws_id', wsId);
 
           if(error) {
-            throw new Error(`Failed to update event ${optimization.id}: ${error.message}`);
+            throw new Error(`Failed to apply optimization for event ${optimization.id}:`, error);
           }
       } catch (err) {
         console.error(
@@ -290,7 +288,7 @@ export async function POST(
           start_at: event.range.start.toISOString(),
           end_at: event.range.end.toISOString(),
           locked: false, 
-          is_past_deadline: event.isPastDeadline,
+          is_past_deadline: event.isPastDeadline ?? false,
         }));
 
         const { error: insertError } = await (await supabase)
