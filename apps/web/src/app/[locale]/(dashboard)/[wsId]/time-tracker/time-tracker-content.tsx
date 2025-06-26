@@ -42,7 +42,7 @@ import { cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import Image from 'next/image';
 import { ActivityHeatmap } from './components/activity-heatmap';
 import { CategoryManager } from './components/category-manager';
 import { GoalManager } from './components/goal-manager';
@@ -508,7 +508,9 @@ export default function TimeTrackerContent({
           if (result.status === 'fulfilled') {
             return result.value;
           } else {
-            const { name, fallback } = apiCalls[index]!;
+            const apiCallInfo = apiCalls[index];
+            const name = apiCallInfo?.name || 'unknown';
+            const fallback = apiCallInfo?.fallback;
             console.warn(`API call for ${name} failed:`, result.reason);
             // Only show error toast for critical failures, not for tasks
             if (name !== 'tasks') {
@@ -2079,7 +2081,7 @@ export default function TimeTrackerContent({
                                                       }
                                                     >
                                                       {assignee.avatar_url ? (
-                                                        <img
+                                                        <Image
                                                           src={
                                                             assignee.avatar_url
                                                           }
@@ -2088,6 +2090,8 @@ export default function TimeTrackerContent({
                                                             assignee.email ||
                                                             ''
                                                           }
+                                                          width={24}
+                                                          height={24}
                                                           className="h-full w-full rounded-full object-cover"
                                                         />
                                                       ) : (
@@ -2138,6 +2142,7 @@ export default function TimeTrackerContent({
                                           stroke="currentColor"
                                           viewBox="0 0 24 24"
                                         >
+                                          <title>Drag handle</title>
                                           <path
                                             strokeLinecap="round"
                                             strokeLinejoin="round"

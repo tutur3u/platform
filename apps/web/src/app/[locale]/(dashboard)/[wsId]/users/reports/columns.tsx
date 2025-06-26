@@ -8,7 +8,7 @@ import Link from 'next/link';
 import { UserReportRowActions } from './row-actions';
 
 export const getUserReportColumns = (
-  t: any,
+  t: (key: string) => string,
   namespace: string | undefined
 ): ColumnDef<WorkspaceUserReport>[] => [
   // {

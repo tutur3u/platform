@@ -257,8 +257,9 @@ export default function UserGroupPosts({
 
         {posts.length > 0 ? (
           posts.map((post) => (
-            <div
+            <button
               key={post.id}
+              type="button"
               className={cn(
                 'flex flex-col gap-2 rounded border p-2 transition duration-300 hover:border-foreground hover:bg-foreground/5',
                 selectedPostId === post.id &&
@@ -266,6 +267,11 @@ export default function UserGroupPosts({
                 groupId || 'cursor-pointer'
               )}
               onClick={() => post.id && onClick && onClick(post.id)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  post.id && onClick && onClick(post.id);
+                }
+              }}
             >
               <div className="flex items-start justify-between">
                 <div>
@@ -342,7 +348,7 @@ export default function UserGroupPosts({
               {configs.showStatus && groupId && post.id && (
                 <PostEmailStatus groupId={groupId} postId={post.id} />
               )}
-            </div>
+            </button>
           ))
         ) : (
           <div className="text-center text-sm opacity-50">

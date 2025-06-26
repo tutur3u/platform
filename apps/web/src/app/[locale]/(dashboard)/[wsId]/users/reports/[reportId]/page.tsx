@@ -47,7 +47,7 @@ export default async function WorkspaceUserDetailsPage({
 
   const { data: users } =
     groupId || report.group_id
-      ? await getUsers(wsId, groupId || report.group_id!)
+      ? await getUsers(wsId, groupId || (report.group_id ?? ''))
       : { data: [] };
 
   const { data: reports } =
@@ -55,8 +55,8 @@ export default async function WorkspaceUserDetailsPage({
     (userId && users.map((user) => user.id).includes(userId))
       ? await getReports(
           wsId,
-          groupId || report.group_id!,
-          userId || report.user_id!,
+          groupId || (report.group_id ?? ''),
+          userId || (report.user_id ?? ''),
           reportId !== 'new' && !!userId && report.user_id !== userId
         )
       : { data: [] };
@@ -71,7 +71,7 @@ export default async function WorkspaceUserDetailsPage({
           tag="groupId"
           title={t('group')}
           icon={<PlusCircle className="mr-2 h-4 w-4" />}
-          defaultValues={[groupId || report.group_id!]}
+          defaultValues={[groupId || (report.group_id ?? '')]}
           extraQueryOnSet={{ userId: undefined }}
           options={userGroups.map((group) => ({
             label: group.name || 'No name',
@@ -168,9 +168,9 @@ async function getData({ wsId, reportId }: { wsId: string; reportId: string }) {
   const data: {
     user_name?: string;
     creator_name?: string;
-    user?: any;
-    creator?: any;
-    [key: string]: any;
+    user?: unknown;
+    creator?: unknown;
+    [key: string]: unknown;
   } = {
     user_name: Array.isArray(rawData.user)
       ? rawData.user?.[0]?.full_name

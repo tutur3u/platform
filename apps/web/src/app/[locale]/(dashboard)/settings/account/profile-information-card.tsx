@@ -72,9 +72,11 @@ export default async function ProfileInformationCard({
           </div>
 
           <div className="space-y-3">
-            <label className="text-sm font-medium">{t('full-name')}</label>
+            <label htmlFor="full-name" className="text-sm font-medium">
+              {t('full-name')}
+            </label>
             <Suspense fallback={<Skeleton className="h-10 w-full" />}>
-              <FullNameInput defaultValue={user?.full_name} />
+              <FullNameInput id="full-name" defaultValue={user?.full_name} />
             </Suspense>
             <p className="text-xs text-muted-foreground">
               {t('full-name-description')}

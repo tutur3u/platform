@@ -271,42 +271,44 @@ export function EventModal() {
     // Clear any error messages
     setDateError(null);
   }, [
-    activeEvent, // Reset AI form
+    activeEvent,
     aiForm.reset, // Check for overlapping events
     checkForOverlaps,
   ]);
 
-  // Function to check for overlapping events
-  const checkForOverlaps = (eventToCheck: Partial<CalendarEvent>) => {
-    if (!eventToCheck.start_at || !eventToCheck.end_at) return;
+  const checkForOverlaps = useCallback(
+    (eventToCheck: Partial<CalendarEvent>) => {
+      if (!eventToCheck.start_at || !eventToCheck.end_at) return;
 
-    const allEvents = getEvents();
-    const eventStart = new Date(eventToCheck.start_at);
-    const eventEnd = new Date(eventToCheck.end_at);
+      const allEvents = getEvents();
+      const eventStart = new Date(eventToCheck.start_at);
+      const eventEnd = new Date(eventToCheck.end_at);
 
-    // Find events that overlap with this event
-    const overlaps = allEvents.filter((existingEvent) => {
-      // Skip comparing with the current event being edited
-      if (existingEvent.id === activeEvent?.id) return false;
+      // Find events that overlap with this event
+      const overlaps = allEvents.filter((existingEvent) => {
+        // Skip comparing with the current event being edited
+        if (existingEvent.id === activeEvent?.id) return false;
 
-      const existingStart = new Date(existingEvent.start_at);
-      const existingEnd = new Date(existingEvent.end_at);
+        const existingStart = new Date(existingEvent.start_at);
+        const existingEnd = new Date(existingEvent.end_at);
 
-      // Check if the events are on the same day
-      const isSameDay =
-        existingStart.getDate() === eventStart.getDate() &&
-        existingStart.getMonth() === eventStart.getMonth() &&
-        existingStart.getFullYear() === eventStart.getFullYear();
+        // Check if the events are on the same day
+        const isSameDay =
+          existingStart.getDate() === eventStart.getDate() &&
+          existingStart.getMonth() === eventStart.getMonth() &&
+          existingStart.getFullYear() === eventStart.getFullYear();
 
-      if (!isSameDay) return false;
+        if (!isSameDay) return false;
 
-      // Check for time overlap
-      return !(existingEnd <= eventStart || existingStart >= eventEnd);
-    });
+        // Check for time overlap
+        return !(existingEnd <= eventStart || existingStart >= eventEnd);
+      });
 
-    setOverlappingEvents(overlaps);
-    setShowOverlapWarning(overlaps.length > 0);
-  };
+      setOverlappingEvents(overlaps);
+      setShowOverlapWarning(overlaps.length > 0);
+    },
+    [activeEvent?.id, getEvents]
+  );
 
   // Handle manual event save
   const handleManualSave = async () => {
@@ -903,10 +905,12 @@ export function EventModal() {
               typeof event.google_event_id === 'string' &&
               event.google_event_id.trim() !== '' && (
                 <div className="ml-3 flex items-center gap-2 rounded-md border bg-blue-50 px-3 py-1 text-sm dark:bg-blue-950/30">
-                  <img
+                  <Image
                     src="/media/google-calendar-icon.png"
                     alt="Google Calendar"
-                    className="inline-block h-[18px] w-[18px] align-middle"
+                    width={18}
+                    height={18}
+                    className="inline-block align-middle"
                     title="Synced from Google Calendar"
                     data-testid="google-calendar-logo"
                   />
@@ -923,7 +927,9 @@ export function EventModal() {
 
         <Tabs
           value={activeTab}
-          onValueChange={(value) => setActiveTab(value as any)}
+          onValueChange={(value) =>
+            setActiveTab(value as 'manual' | 'ai' | 'preview')
+          }
           className="flex h-[calc(90vh-140px)] flex-col"
         >
           <TabsList className="justify-start gap-2 bg-transparent px-6 pt-4 pb-0">
@@ -1102,7 +1108,10 @@ export function EventModal() {
                                 disabled={event.locked}
                               />
                               <div className="flex flex-col space-y-3">
-                                <label className="text-sm font-medium">
+                                <label
+                                  htmlFor="locked"
+                                  className="text-sm font-medium"
+                                >
                                   Event Protection
                                 </label>
                                 <EventToggleSwitch

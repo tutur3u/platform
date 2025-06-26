@@ -264,9 +264,9 @@ async function getReport({
   const data: {
     user_name?: string;
     creator_name?: string;
-    user?: any;
-    creator?: any;
-    [key: string]: any;
+    user?: { full_name: string };
+    creator?: { full_name: string };
+    [key: string]: unknown;
   } = {
     user_name: Array.isArray(rawData.user)
       ? rawData.user?.[0]?.full_name

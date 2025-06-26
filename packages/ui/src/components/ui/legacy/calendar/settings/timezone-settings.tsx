@@ -455,7 +455,8 @@ export function TimezoneSettings({ value, onChange }: TimezoneSettingsProps) {
                 </div>
               )}
             </div>
-            <div
+            <select
+              aria-label="Timezones"
               className="pointer-events-auto max-h-[320px] overflow-y-auto rounded-b-lg"
               onKeyDown={handleKeyDown}
               style={{ touchAction: 'pan-y' }}
@@ -501,7 +502,7 @@ export function TimezoneSettings({ value, onChange }: TimezoneSettingsProps) {
                     </div>
                   )
               )}
-            </div>
+            </select>
           </PopoverContent>
         </Popover>
       </div>

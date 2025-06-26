@@ -8,9 +8,10 @@ interface Props {
 }
 
 export function LanguageWrapper({ label, locale, currentLocale }: Props) {
-  const isLocaleSupported = currentLocale
-    ? supportedLocales.includes(currentLocale as any)
-    : true; // user is using system locale
+  const isLocaleSupported =
+    typeof currentLocale === 'string'
+      ? supportedLocales.includes(currentLocale)
+      : true; // user is using system locale
 
   const isCurrentLocale = isLocaleSupported
     ? locale === currentLocale

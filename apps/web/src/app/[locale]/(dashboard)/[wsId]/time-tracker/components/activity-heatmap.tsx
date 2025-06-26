@@ -629,6 +629,7 @@ export function ActivityHeatmap({
             <Tooltip key={index}>
               <TooltipTrigger asChild>
                 <button
+                  type="button"
                   className={cn(
                     'h-12 rounded-md transition-all hover:scale-105 focus:ring-2 focus:ring-emerald-400/50 focus:outline-none',
                     getColorClass(month.intensity),
@@ -753,6 +754,7 @@ export function ActivityHeatmap({
                 <Tooltip key={index}>
                   <TooltipTrigger asChild>
                     <button
+                      type="button"
                       className={cn(
                         'relative h-8 w-full rounded-md text-xs font-medium transition-all focus:outline-none',
                         'hover:z-10 hover:scale-105 focus:z-10 focus:scale-105',
@@ -1314,6 +1316,7 @@ export function ActivityHeatmap({
         {totalCards > maxVisibleCards && (
           <>
             <button
+              type="button"
               onClick={scrollLeft}
               disabled={!canScrollLeft}
               className={cn(
@@ -1328,6 +1331,7 @@ export function ActivityHeatmap({
             </button>
 
             <button
+              type="button"
               onClick={scrollRight}
               disabled={!canScrollRight}
               className={cn(

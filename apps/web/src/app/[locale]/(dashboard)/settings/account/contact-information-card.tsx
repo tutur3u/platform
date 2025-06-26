@@ -39,9 +39,15 @@ export default async function ContactInformationCard({
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="space-y-3">
-          <label className="text-sm font-medium">{t('email-address')}</label>
+          <label htmlFor="email-input" className="text-sm font-medium">
+            {t('email-address')}
+          </label>
           <Suspense fallback={<Skeleton className="h-10 w-full" />}>
-            <EmailInput oldEmail={user?.email} newEmail={user?.new_email} />
+            <EmailInput
+              id="email-input"
+              oldEmail={user?.email}
+              newEmail={user?.new_email}
+            />
           </Suspense>
           <p className="text-xs text-muted-foreground">
             {t('email-description')}

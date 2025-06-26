@@ -177,7 +177,7 @@ export default function EditableReportPreview({
               full_name: report.user_name,
               href: `/${wsId}/users/database/${report.user_id}`,
             }}
-            defaultIncludedGroups={[report.group_id!]}
+            defaultIncludedGroups={report.group_id ? [report.group_id] : []}
           />
         )}
       </div>

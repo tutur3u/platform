@@ -92,7 +92,7 @@ interface SessionHistoryProps {
   // eslint-disable-next-line no-unused-vars
   formatDuration: (seconds: number) => string;
   // eslint-disable-next-line no-unused-vars
-  apiCall: (url: string, options?: RequestInit) => Promise<any>;
+  apiCall: (url: string, options?: RequestInit) => Promise<Response>;
 }
 
 type ViewMode = 'day' | 'week' | 'month';
@@ -175,8 +175,8 @@ const createStackedSession = (
   const sortedSessions = sessions.sort((a, b) =>
     dayjs(a.start_time).diff(dayjs(b.start_time))
   );
-  const firstSession = sortedSessions[0]!;
-  const lastSession = sortedSessions[sortedSessions.length - 1]!;
+  const firstSession = sortedSessions[0];
+  const lastSession = sortedSessions[sortedSessions.length - 1];
 
   return {
     id: firstSession.id,
@@ -253,7 +253,7 @@ const StackedSessionItem: FC<{
     : null;
 
   const latestSession =
-    stackedSession.sessions[stackedSession.sessions.length - 1]!;
+    stackedSession.sessions[stackedSession.sessions.length - 1];
 
   // Calculate average focus score for stacked sessions
   const avgFocusScore = stackedSession.isStacked
@@ -870,41 +870,46 @@ export function SessionHistory({
   const today = dayjs().tz(userTimezone);
 
   // Advanced analytics functions
-  const calculateFocusScore = (session: SessionWithRelations): number => {
-    if (!session.duration_seconds) return 0;
+  const calculateFocusScore = useCallback(
+    (session: SessionWithRelations): number => {
+      if (!session.duration_seconds) return 0;
 
-    // Base score from duration (longer sessions = higher focus)
-    const durationScore = Math.min(session.duration_seconds / 7200, 1) * 40; // Max 40 points for 2+ hours
+      // Base score from duration (longer sessions = higher focus)
+      const durationScore = Math.min(session.duration_seconds / 7200, 1) * 40; // Max 40 points for 2+ hours
 
-    // Bonus for consistency (sessions without interruptions)
-    // was_resumed can be null in database, so check explicitly for true
-    const consistencyBonus = session.was_resumed === true ? 0 : 20;
+      // Bonus for consistency (sessions without interruptions)
+      // was_resumed can be null in database, so check explicitly for true
+      const consistencyBonus = session.was_resumed === true ? 0 : 20;
 
-    // Time of day bonus (peak hours get bonus)
-    const sessionHour = dayjs.utc(session.start_time).tz(userTimezone).hour();
-    const peakHoursBonus =
-      (sessionHour >= 9 && sessionHour <= 11) ||
-      (sessionHour >= 14 && sessionHour <= 16)
-        ? 20
+      // Time of day bonus (peak hours get bonus)
+      const sessionHour = dayjs.utc(session.start_time).tz(userTimezone).hour();
+      const peakHoursBonus =
+        (sessionHour >= 9 && sessionHour <= 11) ||
+        (sessionHour >= 14 && sessionHour <= 16)
+          ? 20
+          : 0;
+
+      // Category bonus (work categories get slight bonus)
+      const categoryBonus = session.category?.name
+        ?.toLowerCase()
+        .includes('work')
+        ? 10
         : 0;
 
-    // Category bonus (work categories get slight bonus)
-    const categoryBonus = session.category?.name?.toLowerCase().includes('work')
-      ? 10
-      : 0;
+      // Task completion bonus
+      const taskBonus = session.task_id ? 10 : 0;
 
-    // Task completion bonus
-    const taskBonus = session.task_id ? 10 : 0;
-
-    return Math.min(
-      durationScore +
-        consistencyBonus +
-        peakHoursBonus +
-        categoryBonus +
-        taskBonus,
-      100
-    );
-  };
+      return Math.min(
+        durationScore +
+          consistencyBonus +
+          peakHoursBonus +
+          categoryBonus +
+          taskBonus,
+        100
+      );
+    },
+    [userTimezone]
+  );
 
   const getSessionProductivityType = (
     session: SessionWithRelations
@@ -1163,7 +1168,7 @@ export function SessionHistory({
       if (!categoryDurations[id]) {
         categoryDurations[id] = { name, duration: 0, color };
       }
-      categoryDurations[id]!.duration += s.duration_seconds || 0;
+      categoryDurations[id].duration += s.duration_seconds || 0;
     });
 
     const breakdown = Object.values(categoryDurations)
@@ -1333,14 +1338,14 @@ export function SessionHistory({
       'Description',
     ];
 
-    const escape = (v: string) => (/^[=+\-@]/.test(v) ? `'${v}` : v);
-
     const csvData = sessionsForPeriod.map((session) => {
       const userTz = dayjs.tz.guess();
       const startTime = dayjs.utc(session.start_time).tz(userTz);
       const endTime = session.end_time
         ? dayjs.utc(session.end_time).tz(userTz)
         : null;
+
+      const escape = (v: string) => (/^[=+\-@]/.test(v) ? `'${v}` : v);
 
       return [
         startTime.format('YYYY-MM-DD'),
@@ -2468,7 +2473,7 @@ export function SessionHistory({
                   <SelectContent>
                     <SelectItem value="none">No task</SelectItem>
                     {tasks.map((task) => (
-                      <SelectItem key={task.id} value={task.id!}>
+                      <SelectItem key={task.id} value={task.id ?? ''}>
                         {task.name}
                       </SelectItem>
                     ))}

@@ -69,11 +69,9 @@ export default async function NotificationsCard() {
               className="flex items-center justify-between rounded-lg border p-4 transition-colors hover:bg-muted/50"
             >
               <div className="space-y-0.5">
-                <p className="text-sm font-medium">
-                  {t(option.titleKey as any)}
-                </p>
+                <p className="text-sm font-medium">{t(option.titleKey)}</p>
                 <p className="text-xs text-muted-foreground">
-                  {t(option.descriptionKey as any)}
+                  {t(option.descriptionKey)}
                 </p>
               </div>
               <Switch disabled />
