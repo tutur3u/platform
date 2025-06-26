@@ -19,6 +19,34 @@ interface Props {
   }>;
 }
 
+interface Task {
+  id: string;
+  list_id: string;
+  archived?: boolean;
+  end_date?: string;
+  priority?: number;
+  // Add other relevant fields as needed
+}
+
+interface TaskList {
+  id: string;
+  status: string;
+  tasks?: Task[];
+}
+
+interface Board {
+  id: string;
+  name: string;
+  archived?: boolean;
+  deleted?: boolean;
+  tags?: string[];
+  task_lists?: TaskList[];
+  created_at?: string;
+  creator_id?: string;
+  ws_id?: string;
+  // Add other relevant fields as needed
+}
+
 export default async function WorkspaceProjectsPage({
   params,
   searchParams,
@@ -33,34 +61,34 @@ export default async function WorkspaceProjectsPage({
   const { data: rawData, count } = await getData(wsId, await searchParams);
   const t = await getTranslations();
 
-  const data = rawData.map((board: any) => {
+  const data = rawData.map((board: Board) => {
     // Calculate task metrics using the same logic as BoardHeader
     const allTasks =
-      board.task_lists?.flatMap((list: any) => list.tasks || []) || [];
+      board.task_lists?.flatMap((list: TaskList) => list.tasks || []) || [];
     const totalTasks = allTasks.length;
 
     // Use same logic as BoardHeader: completed = tasks that are archived OR in 'done'/'closed' lists
-    const completedTasks = allTasks.filter((task: any) => {
+    const completedTasks = allTasks.filter((task: Task) => {
       const taskList = board.task_lists?.find(
-        (list: any) => list.id === task.list_id
+        (list: TaskList) => list.id === task.list_id
       );
       return (
         task.archived ||
-        taskList?.status === 'done' ||
-        taskList?.status === 'closed'
+        (taskList &&
+          (taskList.status === 'done' || taskList.status === 'closed'))
       );
     }).length;
 
-    const activeTasks = allTasks.filter((task: any) => {
+    const activeTasks = allTasks.filter((task: Task) => {
       const taskList = board.task_lists?.find(
-        (list: any) => list.id === task.list_id
+        (list: TaskList) => list.id === task.list_id
       );
       return !task.archived && taskList?.status === 'active';
     }).length;
 
-    const overdueTasks = allTasks.filter((task: any) => {
+    const overdueTasks = allTasks.filter((task: Task) => {
       const taskList = board.task_lists?.find(
-        (list: any) => list.id === task.list_id
+        (list: TaskList) => list.id === task.list_id
       );
       return (
         !task.archived &&
@@ -75,9 +103,9 @@ export default async function WorkspaceProjectsPage({
       totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
     // Priority breakdown for non-completed tasks
-    const highPriorityTasks = allTasks.filter((task: any) => {
+    const highPriorityTasks = allTasks.filter((task: Task) => {
       const taskList = board.task_lists?.find(
-        (list: any) => list.id === task.list_id
+        (list: TaskList) => list.id === task.list_id
       );
       return (
         task.priority === 1 &&
@@ -87,9 +115,9 @@ export default async function WorkspaceProjectsPage({
       );
     }).length;
 
-    const mediumPriorityTasks = allTasks.filter((task: any) => {
+    const mediumPriorityTasks = allTasks.filter((task: Task) => {
       const taskList = board.task_lists?.find(
-        (list: any) => list.id === task.list_id
+        (list: TaskList) => list.id === task.list_id
       );
       return (
         task.priority === 2 &&
@@ -99,9 +127,9 @@ export default async function WorkspaceProjectsPage({
       );
     }).length;
 
-    const lowPriorityTasks = allTasks.filter((task: any) => {
+    const lowPriorityTasks = allTasks.filter((task: Task) => {
       const taskList = board.task_lists?.find(
-        (list: any) => list.id === task.list_id
+        (list: TaskList) => list.id === task.list_id
       );
       return (
         task.priority === 3 &&

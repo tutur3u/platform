@@ -1,7 +1,7 @@
 'use client';
 
 import { Card } from '@tuturuuu/ui/card';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { getTaskCompletionDate } from '../utils/taskHelpers';
 import { GanttControls } from './GanttControls';
 import { GanttHeader } from './GanttHeader';
@@ -18,15 +18,25 @@ interface Task {
   id: string;
   name: string;
   status?: string;
-  boardId?: string;
+  boardId: string;
   listStatus?: string;
   archived?: boolean;
-  created_at?: string;
+  created_at: string;
   updated_at?: string;
   end_date?: string;
-  priority?: string | number;
+  priority?: number | null | undefined;
   assignee_name?: string;
+  description?: string;
+  boardName: string;
+  listName: string;
   // Add other relevant fields as needed
+}
+
+interface TimelineTask extends Task {
+  startOffset: number;
+  width: number;
+  endDate: string;
+  createdDate: string;
 }
 
 interface GanttChartProps {
@@ -157,10 +167,18 @@ export function GanttChart({ allTasks, filters }: GanttChartProps) {
           (endDate.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24)
         );
 
-        return {
+        const timelineTask: TimelineTask = {
           ...task,
-          createdDate,
-          endDate,
+          createdDate:
+            typeof task.created_at === 'string'
+              ? task.created_at
+              : new Date(task.created_at).toISOString(),
+          endDate:
+            typeof task.end_date === 'string'
+              ? task.end_date
+              : task.end_date
+                ? new Date(task.end_date).toISOString()
+                : '',
           startOffset: (startOffset / totalDays) * 100,
           width: Math.min(
             (duration / totalDays) * 100,
@@ -168,6 +186,8 @@ export function GanttChart({ allTasks, filters }: GanttChartProps) {
           ),
           status: task.listStatus || 'not_started',
         };
+
+        return timelineTask;
       })
       .filter((task) => task.startOffset < 100) // Only show tasks within time range
       .sort((a, b) => a.createdDate.getTime() - b.createdDate.getTime());
@@ -287,7 +307,7 @@ export function GanttChart({ allTasks, filters }: GanttChartProps) {
   }, []);
 
   // Add the click handlers to the GanttChart component
-  const handleTaskClick = (e: React.MouseEvent, task: Task) => {
+  const handleTaskClick = (e: React.MouseEvent, task: TimelineTask) => {
     e.stopPropagation();
 
     const mouseX = e.clientX;
@@ -311,10 +331,10 @@ export function GanttChart({ allTasks, filters }: GanttChartProps) {
     setClickCardPosition({ x: newX, y: newY });
   };
 
-  const handleCloseClick = () => {
-    setClickCardVisible(false);
+  const handleCloseClick = useCallback(() => {
     setClickedTask(null);
-  };
+    setClickCardVisible(false);
+  }, []);
 
   // Add click outside to close
   useEffect(() => {

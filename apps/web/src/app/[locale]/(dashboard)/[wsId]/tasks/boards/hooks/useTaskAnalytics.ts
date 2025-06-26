@@ -63,10 +63,12 @@ export function useAvgDuration(
         task.archived;
 
       // Check for creation and completion dates using safe accessors
-      const hasCreatedAt = task.created_at;
+      const createdDate = task.created_at
+        ? new Date(task.created_at)
+        : undefined;
       const completionDate = getTaskCompletionDate(task);
 
-      return isCompleted && hasCreatedAt && completionDate;
+      return isCompleted && createdDate && completionDate;
     });
 
     if (completedTasks.length === 0) {
@@ -81,13 +83,15 @@ export function useAvgDuration(
 
     let validDurations = 0;
     const totalDurationMs = completedTasks.reduce((sum, task) => {
-      const createdDate = new Date(task.created_at!);
+      const createdDate = task.created_at
+        ? new Date(task.created_at)
+        : undefined;
       const completionDate = getTaskCompletionDate(task);
 
       // Validate dates
       if (
         !completionDate ||
-        Number.isNaN(createdDate.getTime()) ||
+        (createdDate && Number.isNaN(createdDate.getTime())) ||
         Number.isNaN(completionDate.getTime())
       ) {
         return sum;
@@ -296,11 +300,12 @@ export function useOnTimeRate(
     // Count tasks completed on or before their due date
     const onTimeCompleted = completedWithDueDate.filter((task) => {
       const completionDate = getTaskCompletionDate(task);
-      const dueDate = new Date(task.end_date!);
+      const dueDate = task.end_date ? new Date(task.end_date) : undefined;
 
       // Validate both dates
       if (
         !completionDate ||
+        !dueDate ||
         Number.isNaN(completionDate.getTime()) ||
         Number.isNaN(dueDate.getTime())
       ) {

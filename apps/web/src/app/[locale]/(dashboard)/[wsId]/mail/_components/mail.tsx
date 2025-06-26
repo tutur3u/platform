@@ -34,6 +34,10 @@ interface CookieStore {
   }) => Promise<void>;
 }
 
+function setCookie(name: string, value: string, path = '/') {
+  document.cookie = `${name}=${value}; path=${path}`;
+}
+
 export function MailComponent({
   mails,
   defaultLayout = [20, 32, 48],
@@ -60,7 +64,10 @@ export function MailComponent({
                 path: '/',
               });
             } else {
-              document.cookie = `react-resizable-panels:layout:mail=${JSON.stringify(sizes)}; path=/`;
+              setCookie(
+                'react-resizable-panels:layout:mail',
+                JSON.stringify(sizes)
+              );
             }
           } catch (e) {
             console.warn('Failed to set cookie:', e);

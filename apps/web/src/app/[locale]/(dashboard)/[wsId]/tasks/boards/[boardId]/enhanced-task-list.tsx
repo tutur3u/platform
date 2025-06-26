@@ -287,17 +287,25 @@ export function EnhancedTaskList({
               />
             </div>
           ) : (
-            <div
+            <button
+              type="button"
               className={cn(
-                'truncate text-sm font-medium text-foreground',
-                !isClosed && 'cursor-pointer hover:text-primary',
-                isClosed && 'text-muted-foreground'
+                'w-full rounded-md px-2 py-1 text-left transition hover:bg-dynamic-blue/10',
+                isClosed
+                  ? 'cursor-not-allowed text-muted-foreground'
+                  : 'cursor-pointer'
               )}
               onClick={() => !isClosed && setIsEditing(true)}
+              onKeyDown={(e) => {
+                if ((e.key === 'Enter' || e.key === ' ') && !isClosed)
+                  setIsEditing(true);
+              }}
+              disabled={isClosed}
+              aria-label={isClosed ? 'List is closed' : 'Edit list name'}
             >
               {list.name}
               {isClosed && <Lock className="ml-1 inline h-3 w-3" />}
-            </div>
+            </button>
           )}
         </div>
 
@@ -331,6 +339,7 @@ export function EnhancedTaskList({
               {colorOptions.map((color) => (
                 <button
                   key={color.value}
+                  type="button"
                   onClick={() => updateColorMutation.mutate(color.value)}
                   className={cn(
                     'h-6 w-6 rounded border-2 transition-all',
@@ -376,6 +385,7 @@ export function EnhancedTaskList({
                 stroke="currentColor"
                 viewBox="0 0 24 24"
               >
+                <title>Empty List</title>
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"

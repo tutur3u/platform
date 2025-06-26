@@ -413,15 +413,7 @@ export function TimezoneSettings({ value, onChange }: TimezoneSettingsProps) {
                 ))}
               </div>
             </div>
-            <div
-              className="pointer-events-auto max-h-[320px] overflow-y-auto rounded-b-lg"
-              onKeyDown={handleKeyDown}
-              style={{ touchAction: 'pan-y' }}
-              ref={(el) => {
-                scrollToDetectedRef.current = el;
-                scrollToRegionRef.current = el;
-              }}
-            >
+            <div className="pointer-events-auto max-h-[320px] overflow-y-auto rounded-b-lg">
               {recentTimezones.length > 0 && !searchQuery && (
                 <div className="py-1">
                   <div className="rounded-t-md bg-muted px-2 py-1.5 text-xs font-semibold text-muted-foreground">
@@ -462,6 +454,16 @@ export function TimezoneSettings({ value, onChange }: TimezoneSettingsProps) {
                   <div className="mx-2 my-2 h-px bg-border" />
                 </div>
               )}
+            </div>
+            <div
+              className="pointer-events-auto max-h-[320px] overflow-y-auto rounded-b-lg"
+              onKeyDown={handleKeyDown}
+              style={{ touchAction: 'pan-y' }}
+              ref={(el) => {
+                scrollToDetectedRef.current = el;
+                scrollToRegionRef.current = el;
+              }}
+            >
               {Object.entries(filteredTimezones).map(
                 ([group, tzList]) =>
                   tzList.length > 0 &&
@@ -550,7 +552,6 @@ export function TimezoneSettings({ value, onChange }: TimezoneSettingsProps) {
               </div>
               <div
                 className="pointer-events-auto max-h-[320px] overflow-y-auto rounded-b-lg"
-                onKeyDown={handleSecondaryKeyDown}
                 style={{ touchAction: 'pan-y' }}
               >
                 {renderTimezoneGroups(

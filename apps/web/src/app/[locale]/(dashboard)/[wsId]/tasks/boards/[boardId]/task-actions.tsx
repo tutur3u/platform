@@ -110,6 +110,7 @@ export function TaskActions({ taskId, boardId, onUpdate }: Props) {
   const [newPriority, setNewPriority] = useState<string>('0');
   const [isLoading, setIsLoading] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
+  const [_isEndDateChanged, setEndDateChanged] = useState(false);
 
   const updateTaskMutation = useUpdateTask(boardId);
   const deleteTaskMutation = useDeleteTask(boardId);
@@ -475,15 +476,23 @@ export function TaskActions({ taskId, boardId, onUpdate }: Props) {
                     <CalendarIcon className="mr-2 h-4 w-4" />
                     {newEndDate ? format(newEndDate, 'PPP') : 'Pick a date'}
                     {newEndDate && (
-                      <span
+                      <button
+                        type="button"
                         className="ml-auto flex h-4 w-4 cursor-pointer items-center justify-center rounded-sm p-0 opacity-50 hover:opacity-100"
-                        onClick={(e) => {
-                          e.stopPropagation();
+                        onClick={() => {
                           setNewEndDate(undefined);
+                          setEndDateChanged(true);
                         }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            setNewEndDate(undefined);
+                            setEndDateChanged(true);
+                          }
+                        }}
+                        aria-label="Undo end date"
                       >
                         <Undo2 className="h-3 w-3" />
-                      </span>
+                      </button>
                     )}
                   </Button>
                 </PopoverTrigger>

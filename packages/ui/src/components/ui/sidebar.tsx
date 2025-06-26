@@ -31,6 +31,15 @@ const SIDEBAR_WIDTH_MOBILE = '18rem';
 const SIDEBAR_WIDTH_ICON = '3rem';
 const SIDEBAR_KEYBOARD_SHORTCUT = 'b';
 
+interface CookieStore {
+  set: (options: {
+    name: string;
+    value: string;
+    path?: string;
+    maxAge?: number;
+  }) => Promise<void>;
+}
+
 type SidebarContext = {
   state: 'expanded' | 'collapsed';
   open: boolean;
@@ -89,16 +98,18 @@ const SidebarProvider = React.forwardRef<
         }
 
         // This sets the cookie to keep the sidebar state.
-        try {
-          if (typeof window !== 'undefined' && window.document) {
-            interface CookieStore {
-              set: (options: {
-                name: string;
-                value: string;
-                path?: string;
-                maxAge?: number;
-              }) => Promise<void>;
-            }
+        function setCookie(
+          name: string,
+          value: string,
+          path = '/',
+          maxAge?: number
+        ) {
+          let cookie = `${name}=${value}; path=${path}`;
+          if (maxAge) cookie += `; max-age=${maxAge}`;
+          document.cookie = cookie;
+        }
+        if (typeof window !== 'undefined' && window.document) {
+          try {
             if (
               'cookieStore' in window &&
               typeof window.cookieStore === 'object' &&
@@ -106,17 +117,21 @@ const SidebarProvider = React.forwardRef<
             ) {
               (window.cookieStore as CookieStore).set({
                 name: SIDEBAR_COOKIE_NAME,
-                value: openState,
+                value: String(openState),
                 path: '/',
                 maxAge: SIDEBAR_COOKIE_MAX_AGE,
               });
             } else {
-              const cookieValue = `${SIDEBAR_COOKIE_NAME}=${openState}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`;
-              document.cookie = cookieValue;
+              setCookie(
+                SIDEBAR_COOKIE_NAME,
+                String(openState),
+                '/',
+                SIDEBAR_COOKIE_MAX_AGE
+              );
             }
+          } catch (error) {
+            console.warn('Failed to set sidebar cookie:', error);
           }
-        } catch (error) {
-          console.warn('Failed to set sidebar cookie:', error);
         }
       },
       [setOpenProp, open]

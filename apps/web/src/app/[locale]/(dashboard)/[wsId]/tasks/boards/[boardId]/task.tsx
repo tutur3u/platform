@@ -455,7 +455,8 @@ export function TaskCard({
             ) : (
               <>
                 <div className="flex items-start justify-between gap-1">
-                  <h3
+                  <button
+                    type="button"
                     className={cn(
                       'mb-2 cursor-pointer text-left text-xs leading-tight font-semibold transition-colors',
                       task.archived
@@ -465,7 +466,7 @@ export function TaskCard({
                     onClick={() => setIsEditing(true)}
                   >
                     {task.name}
-                  </h3>
+                  </button>
 
                   <div className="flex items-center justify-end gap-1">
                     {/* Custom Date Picker - Separate from Dropdown */}
@@ -716,12 +717,13 @@ export function TaskCard({
                 </div>
 
                 {task.description && (
-                  <p
+                  <button
+                    type="button"
                     className="mb-2 line-clamp-2 cursor-pointer text-xs leading-relaxed text-muted-foreground transition-colors hover:text-foreground/80"
                     onClick={() => setIsEditing(true)}
                   >
                     {task.description}
-                  </p>
+                  </button>
                 )}
               </>
             )}

@@ -349,6 +349,7 @@ export function StatusGroupedBoard({
                   stroke="currentColor"
                   viewBox="0 0 24 24"
                 >
+                  <title>Status Icon</title>
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"

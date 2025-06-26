@@ -58,12 +58,14 @@ export function TaskWorkflowAnalytics({
     const cycleTimeData = completedTasks
       .filter((task) => task.created_at && task.updated_at)
       .map((task) => {
-        const created = new Date(task.created_at!);
-        const completed = new Date(task.updated_at!);
+        if (!task.created_at || !task.updated_at) return null;
+        const created = new Date(task.created_at);
+        const completed = new Date(task.updated_at);
         return (
           (completed.getTime() - created.getTime()) / (1000 * 60 * 60 * 24)
         );
-      });
+      })
+      .filter((v) => v !== null);
 
     const avgCycleTime =
       cycleTimeData.length > 0
@@ -75,9 +77,11 @@ export function TaskWorkflowAnalytics({
     const taskAges = filteredTasks
       .filter((task) => task.created_at)
       .map((task) => {
-        const created = new Date(task.created_at!);
+        if (!task.created_at) return null;
+        const created = new Date(task.created_at);
         return (now.getTime() - created.getTime()) / (1000 * 60 * 60 * 24);
-      });
+      })
+      .filter((v) => v !== null);
 
     const newTasks = taskAges.filter((age) => age <= 3).length; // 0-3 days
     const recentTasks = taskAges.filter((age) => age > 3 && age <= 7).length; // 4-7 days

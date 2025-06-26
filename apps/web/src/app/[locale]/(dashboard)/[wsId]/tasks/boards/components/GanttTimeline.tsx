@@ -24,10 +24,21 @@ interface TimeMarker {
 interface TimelineTask {
   id: string;
   name: string;
+  status: string;
+  startOffset: number;
+  width: number;
+  createdDate: string;
+  endDate: string;
+  boardId: string;
+  listStatus?: string;
+  archived?: boolean;
   created_at: string;
-  end_date?: string;
-  // Add other relevant fields as needed
-  [key: string]: string | number | boolean | undefined;
+  updated_at?: string;
+  priority?: number | null | undefined;
+  assignee_name?: string;
+  description?: string;
+  boardName: string;
+  listName: string;
 }
 
 interface GanttTimelineProps {
@@ -91,52 +102,54 @@ export function GanttTimeline({
         className="relative rounded-lg border bg-background"
         style={{ height: '320px' }} // Fixed height instead of expanding
       >
+        {/* biome-ignore lint/security/noDangerouslySetInnerHtml: required for custom scrollbar styling */}
         <style
           dangerouslySetInnerHTML={{
             __html: `
-            .custom-scrollbar::-webkit-scrollbar {
-              width: 8px;
-            }
-            .custom-scrollbar::-webkit-scrollbar-track {
-              background: transparent;
-            }
-            .custom-scrollbar::-webkit-scrollbar-thumb {
-              background: #3b82f6;
-              border-radius: 4px;
-            }
-            .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-              background: #2563eb;
-            }
-            .hover-card {
-              position: fixed;
-              z-index: 9999;
-              pointer-events: none;
-              opacity: 0;
-              transform: scale(0.95);
-              transition: all 0.2s ease-out;
-              will-change: transform, opacity, left, top;
-            }
-            .group:hover .hover-card {
-              opacity: 1;
-              transform: scale(1);
-              pointer-events: auto;
-            }
-            .hover-card::before {
-              content: '';
-              position: absolute;
-              width: 0;
-              height: 0;
-              border-style: solid;
-              border-width: 5px 5px 5px 0;
-              border-color: transparent #ffffff transparent transparent;
-              left: -5px;
-              top: 12px;
-              filter: drop-shadow(-1px 0 1px rgba(0,0,0,0.1));
-            }
-            .dark .hover-card::before {
-              border-color: transparent #111827 transparent transparent;
-            }
-          `,
+              .custom-scrollbar::-webkit-scrollbar {
+                width: 8px;
+                height: 8px;
+              }
+              .custom-scrollbar::-webkit-scrollbar-track {
+                background: transparent;
+              }
+              .custom-scrollbar::-webkit-scrollbar-thumb {
+                background: #e5e7eb;
+                border-radius: 4px;
+              }
+              .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+                background: #2563eb;
+              }
+              .hover-card {
+                position: fixed;
+                z-index: 9999;
+                pointer-events: none;
+                opacity: 0;
+                transform: scale(0.95);
+                transition: all 0.2s ease-out;
+                will-change: transform, opacity, left, top;
+              }
+              .group:hover .hover-card {
+                opacity: 1;
+                transform: scale(1);
+                pointer-events: auto;
+              }
+              .hover-card::before {
+                content: '';
+                position: absolute;
+                width: 0;
+                height: 0;
+                border-style: solid;
+                border-width: 5px 5px 5px 0;
+                border-color: transparent #ffffff transparent transparent;
+                left: -5px;
+                top: 12px;
+                filter: drop-shadow(-1px 0 1px rgba(0,0,0,0.1));
+              }
+              .dark .hover-card::before {
+                border-color: transparent #111827 transparent transparent;
+              }
+            `,
           }}
         />
 
@@ -154,167 +167,201 @@ export function GanttTimeline({
                 No tasks found for the selected time period
               </div>
             ) : (
-              ganttTasks.map((task) => (
-                <div
-                  key={task.id}
-                  className="group relative flex items-center gap-3 rounded-lg px-2 py-2 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/50"
-                >
-                  {/* Task Info */}
-                  <div className="w-52 min-w-0">
-                    {/* Task Name with line clamp */}
-                    <div
-                      className="line-clamp-1 text-sm font-medium text-gray-900 transition-all duration-200 group-hover:line-clamp-none dark:text-gray-100"
-                      title={task.name}
-                    >
-                      {task.name}
+              ganttTasks.map((task) => {
+                const createdAt =
+                  typeof task.created_at === 'string' ? task.created_at : '';
+                const dateObj = createdAt ? new Date(createdAt) : undefined;
+
+                const _createdDateObj = new Date(task.createdDate);
+                const endDateObj = new Date(task.endDate);
+
+                const statusLabel =
+                  typeof task.status === 'string'
+                    ? task.status === 'done'
+                      ? 'Completed'
+                      : task.status === 'closed'
+                        ? 'Closed'
+                        : 'Unknown'
+                    : 'Unknown';
+
+                return (
+                  <div
+                    key={task.id}
+                    className="group relative flex items-center gap-3 rounded-lg px-2 py-2 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                  >
+                    {/* Task Info */}
+                    <div className="w-52 min-w-0">
+                      {/* Task Name with line clamp */}
+                      <div
+                        className="line-clamp-1 text-sm font-medium text-gray-900 transition-all duration-200 group-hover:line-clamp-none dark:text-gray-100"
+                        title={task.name}
+                      >
+                        {task.name}
+                      </div>
                     </div>
-                  </div>
 
-                  {/* Timeline Bar */}
-                  <div className="relative h-6 flex-1 rounded bg-gray-100 dark:bg-gray-800">
-                    <div
-                      className={cn(
-                        'absolute h-full cursor-pointer rounded transition-all hover:opacity-90',
-                        getStatusColor(task.status)
-                      )}
-                      style={{
-                        left: `${task.startOffset}%`,
-                        width: `${task.width}%`,
-                      }}
-                    >
-                      {/* Status Indicators */}
-                      <div className="pointer-events-none absolute inset-y-0 flex w-full items-center justify-between">
-                        {/* Not Started (Gray) */}
-                        <div
-                          className="h-2 w-2 rounded-full bg-gray-400 opacity-70"
-                          style={{ left: '0%' }}
-                        />
-
-                        {/* In Progress (Blue) */}
-                        {task.status === 'active' && (
-                          <div
-                            className="h-2 w-2 rounded-full bg-blue-500 opacity-70"
-                            style={{
-                              left: '50%',
-                              transform: 'translateX(-50%)',
-                            }}
-                          />
+                    {/* Timeline Bar */}
+                    <div className="relative h-6 flex-1 rounded bg-gray-100 dark:bg-gray-800">
+                      <div
+                        className={cn(
+                          'absolute h-full cursor-pointer rounded transition-all hover:opacity-90',
+                          getStatusColor(task.status)
                         )}
-
-                        {/* Completed (Green) */}
-                        {(task.status === 'done' ||
-                          task.status === 'closed') && (
+                        style={{
+                          left: `${task.startOffset}%`,
+                          width: `${task.width && task.width > 0 ? task.width : 0}%`,
+                        }}
+                      >
+                        {/* Status Indicators */}
+                        <div className="pointer-events-none absolute inset-y-0 flex w-full items-center justify-between">
+                          {/* Not Started (Gray) */}
                           <div
-                            className="h-2 w-2 rounded-full bg-green-500 opacity-70"
-                            style={{ right: '0%' }}
+                            className="h-2 w-2 rounded-full bg-gray-400 opacity-70"
+                            style={{ left: '0%' }}
                           />
-                        )}
-                      </div>
 
-                      <div className="flex h-full items-center justify-center text-xs font-medium text-white">
-                        {(task.status === 'done' || task.status === 'closed') &&
-                        filters.timeView !== 'year' &&
-                        task.width > 15
-                          ? '✓'
-                          : ''}
-                      </div>
-
-                      {/* Status transition markers and timeline */}
-                      {task.updated_at &&
-                        task.updated_at !== task.created_at && (
-                          <>
-                            {/* Status change marker */}
+                          {/* In Progress (Blue) */}
+                          {task.status === 'active' && (
                             <div
-                              className="absolute top-0 h-full w-0.5 bg-yellow-400 opacity-60"
-                              style={{ left: '50%' }}
-                              title={`Status changed: ${new Date(task.updated_at).toLocaleDateString()}`}
+                              className="h-2 w-2 rounded-full bg-blue-500 opacity-70"
+                              style={{
+                                left: '50%',
+                                transform: 'translateX(-50%)',
+                              }}
                             />
+                          )}
 
-                            {/* Progress indicator for active tasks */}
-                            {task.status === 'active' && (
-                              <div className="absolute inset-0 animate-pulse bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+                          {/* Completed (Green) */}
+                          {typeof task.status === 'string' &&
+                            (task.status === 'done' ||
+                              task.status === 'closed') && (
+                              <div
+                                className="h-2 w-2 rounded-full bg-green-500 opacity-70"
+                                style={{ right: '0%' }}
+                              />
                             )}
-                          </>
-                        )}
+                        </div>
 
-                      {/* Task lifecycle phases - Individual phase hover targets */}
-                      <div className="absolute inset-0 flex">
-                        {/* Creation phase (first 25% of timeline) */}
-                        <div
-                          className="cursor-help bg-gray-300 opacity-30 transition-opacity hover:opacity-50 dark:bg-gray-600"
-                          style={{ width: '25%' }}
-                          title={`📅 Created: ${task.createdDate.toLocaleDateString()} at ${task.createdDate.toLocaleTimeString()}`}
-                        />
+                        <div className="flex h-full items-center justify-center text-xs font-medium text-white">
+                          {typeof task.status === 'string' &&
+                          (task.status === 'done' ||
+                            task.status === 'closed') &&
+                          filters.timeView !== 'year' &&
+                          task.width &&
+                          task.width > 15
+                            ? '✓'
+                            : ''}
+                        </div>
 
-                        {/* Active development phase (middle 50%) */}
-                        {task.status === 'active' && (
+                        {/* Status transition markers and timeline */}
+                        {task.updated_at &&
+                          task.updated_at !== task.created_at && (
+                            <>
+                              {/* Status change marker */}
+                              <div
+                                className="absolute top-0 h-full w-0.5 bg-yellow-400 opacity-60"
+                                style={{ left: '50%' }}
+                                title={`Status changed: ${dateObj ? dateObj.toLocaleDateString() : 'N/A'}`}
+                              />
+
+                              {/* Progress indicator for active tasks */}
+                              {task.status === 'active' && (
+                                <div className="absolute inset-0 animate-pulse bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+                              )}
+                            </>
+                          )}
+
+                        {/* Task lifecycle phases - Individual phase hover targets */}
+                        <div className="absolute inset-0 flex">
+                          {/* Creation phase (first 25% of timeline) */}
                           <div
-                            className="cursor-help bg-blue-400 opacity-40 transition-opacity hover:opacity-60"
-                            style={{ width: '50%' }}
-                            title={`🔄 In Progress: Started ${task.createdDate.toLocaleDateString()}${task.updated_at ? ` • Last updated: ${new Date(task.updated_at).toLocaleDateString()}` : ''}`}
-                          />
-                        )}
-
-                        {/* Completion phase (last 25% if completed) */}
-                        {(task.status === 'done' ||
-                          task.status === 'closed') && (
-                          <div
-                            className="ml-auto cursor-help bg-green-400 opacity-40 transition-opacity hover:opacity-60"
+                            className="cursor-help bg-gray-300 opacity-30 transition-opacity hover:opacity-50 dark:bg-gray-600"
                             style={{ width: '25%' }}
-                            title={`✅ ${task.status === 'done' ? 'Completed' : 'Closed'}: ${task.updated_at ? `${new Date(task.updated_at).toLocaleDateString()} at ${new Date(task.updated_at).toLocaleTimeString()}` : 'Date unknown'}${task.end_date ? ` • Due was: ${new Date(task.end_date).toLocaleDateString()}` : ''}`}
+                            title={`📅 Created: ${task.createdDate !== undefined && (typeof task.createdDate === 'string' || typeof task.createdDate === 'number') ? (dateObj ? dateObj.toLocaleDateString() : 'N/A') : 'N/A'} at ${task.createdDate !== undefined && (typeof task.createdDate === 'string' || typeof task.createdDate === 'number') ? (dateObj ? dateObj.toLocaleTimeString() : 'N/A') : 'N/A'}`}
                           />
-                        )}
 
-                        {/* Main timeline click area */}
-                        <div
-                          className="absolute inset-0 cursor-pointer"
-                          onClick={(e) => handleTaskClick(e, task)}
-                        />
+                          {/* Active development phase (middle 50%) */}
+                          {task.status === 'active' && (
+                            <div
+                              className="cursor-help bg-blue-400 opacity-40 transition-opacity hover:opacity-60"
+                              style={{ width: '50%' }}
+                              title={`🔄 In Progress: Started ${task.createdDate !== undefined && (typeof task.createdDate === 'string' || typeof task.createdDate === 'number') ? (dateObj ? dateObj.toLocaleDateString() : 'N/A') : 'N/A'}${task.updated_at ? ` • Last updated: ${dateObj ? dateObj.toLocaleDateString() : 'N/A'}` : ''}`}
+                            />
+                          )}
+
+                          {/* Completion phase (last 25% if completed) */}
+                          {typeof task.status === 'string' &&
+                            (task.status === 'done' ||
+                              task.status === 'closed') && (
+                              <div
+                                className="ml-auto cursor-help bg-green-400 opacity-40 transition-opacity hover:opacity-60"
+                                style={{ width: '25%' }}
+                                title={`✅ ${statusLabel}: ${task.updated_at ? `${dateObj ? dateObj.toLocaleDateString() : 'N/A'} at ${dateObj ? dateObj.toLocaleTimeString() : 'N/A'}` : 'Date unknown'}${task.endDate ? ` • Due was: ${endDateObj ? endDateObj.toLocaleDateString() : 'N/A'}` : ''}`}
+                              />
+                            )}
+
+                          {/* Main timeline click area */}
+                          <button
+                            type="button"
+                            className="absolute inset-0 cursor-pointer"
+                            onClick={(e) => handleTaskClick(e, task)}
+                            aria-label="Select task"
+                          />
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  {/* Status Badge */}
-                  <div className="w-24 text-xs">
-                    <Badge
-                      variant="outline"
-                      className={cn(
-                        'border text-xs font-medium',
-                        task.status === 'done' &&
-                          'border-green-200 bg-green-50 text-green-700 dark:border-green-800 dark:bg-green-900/20 dark:text-green-400',
-                        task.status === 'closed' &&
-                          'border-purple-200 bg-purple-50 text-purple-700 dark:border-purple-800 dark:bg-purple-900/20 dark:text-purple-400',
-                        task.status === 'active' &&
-                          'border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-800 dark:bg-blue-900/20 dark:text-blue-400',
-                        task.status === 'not_started' &&
-                          'border-gray-200 bg-gray-50 text-gray-700 dark:border-gray-800 dark:bg-gray-900/20 dark:text-gray-400'
-                      )}
-                    >
-                      {task.status === 'done' ? (
-                        <span className="flex items-center gap-1">
-                          <span className="h-1.5 w-1.5 rounded-full bg-green-500"></span>
-                          Done
-                        </span>
-                      ) : task.status === 'closed' ? (
-                        <span className="flex items-center gap-1">
-                          <span className="h-1.5 w-1.5 rounded-full bg-purple-500"></span>
-                          Closed
-                        </span>
-                      ) : task.status === 'active' ? (
-                        <span className="flex items-center gap-1">
-                          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-blue-500"></span>
-                          Active
-                        </span>
-                      ) : (
-                        <span className="flex items-center gap-1">
-                          <span className="h-1.5 w-1.5 rounded-full bg-gray-400"></span>
-                          Pending
-                        </span>
-                      )}
-                    </Badge>
+                    {/* Status Badge */}
+                    <div className="w-24 text-xs">
+                      <Badge
+                        variant="outline"
+                        className={cn(
+                          'border text-xs font-medium',
+                          (typeof task.status === 'string' &&
+                            task.status === 'done' &&
+                            'border-green-200 bg-green-50 text-green-700 dark:border-green-800 dark:bg-green-900/20 dark:text-green-400') ||
+                            (typeof task.status === 'string' &&
+                              task.status === 'closed' &&
+                              'border-purple-200 bg-purple-50 text-purple-700 dark:border-purple-800 dark:bg-purple-900/20 dark:text-purple-400') ||
+                            (typeof task.status === 'string' &&
+                              task.status === 'active' &&
+                              'border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-800 dark:bg-blue-900/20 dark:text-blue-400') ||
+                            (typeof task.status === 'string' &&
+                              task.status === 'not_started' &&
+                              'border-gray-200 bg-gray-50 text-gray-700 dark:border-gray-800 dark:bg-gray-900/20 dark:text-gray-400')
+                        )}
+                      >
+                        {typeof task.status === 'string' ? (
+                          <span className="flex items-center gap-1">
+                            {typeof task.status === 'string' &&
+                              task.status === 'done' && (
+                                <span className="h-1.5 w-1.5 rounded-full bg-green-500"></span>
+                              )}
+                            {typeof task.status === 'string' &&
+                              task.status === 'closed' && (
+                                <span className="h-1.5 w-1.5 rounded-full bg-purple-500"></span>
+                              )}
+                            {typeof task.status === 'string' &&
+                              task.status === 'active' && (
+                                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-blue-500"></span>
+                              )}
+                            {typeof task.status === 'string' &&
+                              task.status === 'not_started' && (
+                                <span className="h-1.5 w-1.5 rounded-full bg-gray-400"></span>
+                              )}
+                            {statusLabel}
+                          </span>
+                        ) : (
+                          <span className="flex items-center gap-1">
+                            <span className="h-1.5 w-1.5 rounded-full bg-gray-400"></span>
+                            Pending
+                          </span>
+                        )}
+                      </Badge>
+                    </div>
                   </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         </div>
