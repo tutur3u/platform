@@ -112,7 +112,6 @@ export default function UserFieldForm({ data, submitLabel, onSubmit }: Props) {
                       <FormControl>
                         <Button
                           variant="outline"
-                          role="combobox"
                           className={cn(
                             'justify-between',
                             !field.value && 'text-muted-foreground'

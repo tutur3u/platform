@@ -48,7 +48,7 @@ import { DatePicker } from '../../../../../../components/row-actions/users/date-
 interface UserRowActionsProps {
   row: Row<WorkspaceUser>;
   href?: string;
-  extraData?: any;
+  extraData?: { wsId?: string; groupId?: string };
 }
 
 const FormSchema = z.object({

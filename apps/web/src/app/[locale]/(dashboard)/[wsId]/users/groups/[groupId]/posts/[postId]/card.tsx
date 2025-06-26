@@ -165,27 +165,34 @@ function UserCard({
   }
 
   const handleSendEmail = async () => {
-    if (post && user.email && check?.is_completed != null) {
-      await sendEmail({
-        wsId,
-        postId: post.id!,
-        groupId: post.group_id!,
-        post,
-        users: [
-          {
-            id: user.id,
-            email: user.email,
-            username:
-              user.full_name ||
-              user.display_name ||
-              user.email ||
-              '<Chưa có tên>',
-            notes: check?.notes || '',
-            is_completed: check?.is_completed,
-          },
-        ],
-      });
+    if (
+      !post ||
+      !post.id ||
+      !post.group_id ||
+      !user.email ||
+      check?.is_completed == null
+    ) {
+      return;
     }
+    await sendEmail({
+      wsId,
+      postId: post.id,
+      groupId: post.group_id,
+      post,
+      users: [
+        {
+          id: user.id,
+          email: user.email,
+          username:
+            user.full_name ||
+            user.display_name ||
+            user.email ||
+            '<Chưa có tên>',
+          notes: check?.notes || '',
+          is_completed: check?.is_completed,
+        },
+      ],
+    });
   };
 
   return (

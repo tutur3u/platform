@@ -1553,9 +1553,12 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                 <div className="flex gap-2">
                   <Button
                     className="flex-1"
-                    onClick={() =>
-                      (window.location.href = selectedBoardData?.href || '')
-                    }
+                    onClick={() => {
+                      const href = selectedBoardData?.href || '';
+                      if (href) {
+                        window.location.href = href;
+                      }
+                    }}
                   >
                     <Eye className="mr-2 h-4 w-4" />
                     Open Board

@@ -32,7 +32,6 @@ import { cn } from '@tuturuuu/utils/format';
 import { debounce } from 'lodash';
 import Image from 'next/image';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ListActions } from './list-actions';
 import { statusIcons } from './status-section';
 import { type Task, TaskCard } from './task';
 import { TaskForm } from './task-form';
@@ -400,11 +399,6 @@ export function BoardColumn({
               className={cn('h-3 w-3', hasActiveFilters && 'text-primary')}
             />
           </Button>
-          <ListActions
-            listId={column.id}
-            listName={column.name}
-            onUpdate={handleUpdate}
-          />
         </div>
       </div>
 
@@ -619,17 +613,16 @@ export function BoardColumn({
                   </div>
 
                   {/* Priority Filter */}
-                  <div
-                    role="group"
+                  <fieldset
                     aria-labelledby="priority-filter-label"
                     className="space-y-2"
                   >
-                    <label
+                    <legend
                       id="priority-filter-label"
                       className="text-xs font-medium"
                     >
                       Priority
-                    </label>
+                    </legend>
                     <div className="flex flex-wrap gap-1">
                       {[1, 2, 3, 4].map((priority) => {
                         const isSelected = filters.priorities.has(priority);
@@ -675,21 +668,20 @@ export function BoardColumn({
                         );
                       })}
                     </div>
-                  </div>
+                  </fieldset>
 
                   {/* Assignees Filter */}
                   {allAssignees.length > 0 && (
-                    <div
-                      role="group"
+                    <fieldset
                       aria-labelledby="assignees-filter-label"
                       className="space-y-2"
                     >
-                      <label
+                      <legend
                         id="assignees-filter-label"
                         className="text-xs font-medium"
                       >
                         Assignees
-                      </label>
+                      </legend>
                       <Popover
                         open={assigneesOpen}
                         onOpenChange={setAssigneesOpen}
@@ -768,21 +760,20 @@ export function BoardColumn({
                           </Command>
                         </PopoverContent>
                       </Popover>
-                    </div>
+                    </fieldset>
                   )}
 
                   {/* Quick Filters */}
-                  <div
-                    role="group"
+                  <fieldset
                     aria-labelledby="quick-filters-label"
                     className="space-y-2"
                   >
-                    <label
+                    <legend
                       id="quick-filters-label"
                       className="text-xs font-medium"
                     >
                       Quick Filters
-                    </label>
+                    </legend>
                     <div className="flex flex-wrap gap-1">
                       <Button
                         variant={filters.overdue ? 'default' : 'outline'}
@@ -831,7 +822,7 @@ export function BoardColumn({
                         )
                       </Button>
                     </div>
-                  </div>
+                  </fieldset>
                 </div>
               </PopoverContent>
             </Popover>

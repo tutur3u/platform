@@ -17,7 +17,7 @@ import { useTranslations } from 'next-intl';
 
 interface UserGroupRowActionsProps {
   row: Row<UserGroup>;
-  extraData?: any;
+  extraData?: { wsId: string; tagId: string };
 }
 
 export function UserGroupRowActions({

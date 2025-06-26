@@ -65,7 +65,7 @@ export default async function UserGroupDetailsPage({
   const { data: reports } =
     (report?.user_id && !groupId && !userId) ||
     (userId && users.map((user) => user.id).includes(userId))
-      ? await getReports(wsId, groupId, userId || report?.user_id!)
+      ? await getReports(wsId, groupId, userId || (report?.user_id ?? ''))
       : { data: [] };
 
   const { data: configs } = await getConfigs(wsId);

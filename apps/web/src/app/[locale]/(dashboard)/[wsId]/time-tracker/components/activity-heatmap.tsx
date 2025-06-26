@@ -304,7 +304,7 @@ export function ActivityHeatmap({
       'bg-emerald-600 dark:bg-emerald-600/80', // Medium-high activity
       'bg-emerald-800 dark:bg-emerald-400/90', // High activity
     ];
-    return colors[Math.max(0, Math.min(4, intensity))]!;
+    return colors[Math.max(0, Math.min(4, intensity))];
   };
 
   const monthNames = [
@@ -336,7 +336,7 @@ export function ActivityHeatmap({
       // Show month label if we're in the first week of the month and it's a different month
       if (month !== lastMonth && dayOfMonth <= 7) {
         monthLabels.push({
-          label: monthNames[month]!,
+          label: monthNames[month],
           weekIndex,
         });
         lastMonth = month;
@@ -370,7 +370,7 @@ export function ActivityHeatmap({
 
         if (month !== lastMonth && dayOfMonth <= 7) {
           labels.push({
-            label: monthNames[month]!,
+            label: monthNames[month],
             weekIndex: weekIndex,
           });
           lastMonth = month;
@@ -462,6 +462,7 @@ export function ActivityHeatmap({
               <Tooltip key={globalIndex}>
                 <TooltipTrigger asChild>
                   <button
+                    type="button"
                     className={cn(
                       'relative aspect-square rounded-[2px] transition-all duration-200 ease-out focus:outline-none',
                       isMobile
@@ -963,8 +964,34 @@ export function ActivityHeatmap({
     []
   );
 
+  interface SummaryCardData {
+    monthCount: number;
+    totalDuration: number;
+    avgDaily: number;
+    totalSessions: number;
+    activeDays: number;
+    avgSession: number;
+    focusScore: number;
+  }
+
+  interface MonthlyCardData {
+    name: string;
+    totalDuration: number;
+    activeDays: number;
+    totalSessions: number;
+    dates: Array<{
+      date: dayjs.Dayjs;
+      activity: { duration: number; sessions: number };
+    }>;
+    weekdays: number;
+    weekends: number;
+    bestDay: { duration: number; date: string };
+    longestStreak: number;
+    currentStreak: number;
+  }
+
   // Card components
-  const SummaryCard = ({ data }: { data: any }) => (
+  const SummaryCard = ({ data }: { data: SummaryCardData }) => (
     <div className="group relative overflow-hidden rounded-lg border bg-gradient-to-br from-blue-50 to-indigo-50 p-3 shadow-sm transition-all hover:shadow-md dark:border-blue-800/30 dark:from-blue-950/20 dark:to-indigo-950/20">
       <div className="mb-2 flex items-center justify-between">
         <div>
@@ -1024,7 +1051,7 @@ export function ActivityHeatmap({
     trendValue,
   }: {
     monthKey: string;
-    data: any;
+    data: MonthlyCardData;
     trend: 'up' | 'down' | 'neutral';
     trendValue: number;
   }) => {
@@ -1104,7 +1131,7 @@ export function ActivityHeatmap({
               const currentDay = monthStart.add(dayOffset, 'day');
 
               const dayActivity = data.dates.find(
-                (d: any) =>
+                (d) =>
                   d?.date?.format('YYYY-MM-DD') ===
                   currentDay.format('YYYY-MM-DD')
               );
@@ -1246,7 +1273,14 @@ export function ActivityHeatmap({
     setCurrentIndex,
     maxVisibleCards,
   }: {
-    cards: any[];
+    cards: Array<{
+      type: string;
+      data?: SummaryCardData | MonthlyCardData;
+      monthKey?: string;
+      name?: string;
+      trend?: 'up' | 'down' | 'neutral';
+      trendValue?: number;
+    }>;
     currentIndex: number;
     setCurrentIndex: (index: number) => void;
     maxVisibleCards: number;
@@ -1360,6 +1394,7 @@ export function ActivityHeatmap({
               { length: Math.ceil(totalCards / maxVisibleCards) },
               (_, i) => (
                 <button
+                  type="button"
                   key={i}
                   onClick={() => setCurrentIndex(i * maxVisibleCards)}
                   className={cn(

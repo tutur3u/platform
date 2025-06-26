@@ -10,7 +10,7 @@ import GroupAttendanceStats from './attendance-stats';
 import { UserGroupRowActions } from './row-actions';
 
 export const getUserGroupColumns = (
-  t: any,
+  t: (key: string) => string,
   namespace: string | undefined
 ): ColumnDef<UserGroup>[] => [
   // {

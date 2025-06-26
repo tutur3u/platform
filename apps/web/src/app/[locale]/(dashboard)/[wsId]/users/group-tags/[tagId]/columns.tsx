@@ -9,10 +9,9 @@ import Link from 'next/link';
 import { UserGroupRowActions } from './row-actions';
 
 export const getUserGroupColumns = (
-  t: any,
+  t: (key: string) => string,
   namespace: string | undefined,
-  _?: any[],
-  extraData?: any
+  extraData?: { wsId: string; groupId: string }
 ): ColumnDef<UserGroup>[] => [
   // {
   //   id: 'select',
