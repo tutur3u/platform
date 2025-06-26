@@ -86,7 +86,7 @@
     "@tailwindcss/typography": "^0.5.16",
     "@tuturuuu/types": "workspace:*",
     "@tuturuuu/typescript-config": "workspace:*",
-    "@types/lodash": "^4.17.18",
+    "@types/lodash": "^4.17.19",
     "@types/node": "^24.0.4",
     "@types/react": "^19.1.8",
     "@types/react-resizable": "^3.0.8",
