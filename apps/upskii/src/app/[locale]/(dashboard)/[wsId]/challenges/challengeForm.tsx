@@ -581,12 +581,11 @@ export default function ChallengeForm({
                               <PopoverTrigger asChild>
                                 <FormControl>
                                   <Button
+                                    type="button"
                                     variant="outline"
-                                    role="combobox"
                                     className={cn(
                                       'w-full justify-between',
-                                      !field.value?.length &&
-                                        'text-muted-foreground'
+                                      !field.value && 'text-muted-foreground'
                                     )}
                                   >
                                     {isLoadingAdmins

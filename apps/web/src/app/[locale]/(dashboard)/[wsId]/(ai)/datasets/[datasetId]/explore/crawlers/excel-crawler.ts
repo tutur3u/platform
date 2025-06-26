@@ -41,13 +41,12 @@ export class ExcelCrawler extends BaseCrawler {
     );
   }
 
-  private cleanupData(data: any[][]): any[][] {
+  private cleanupData(
+    data: (string | number | null | undefined)[][]
+  ): (string | number | null | undefined)[][] {
     // Remove empty rows (all cells are null, undefined, or empty string)
     const nonEmptyRows = data.filter((row) =>
-      row.some(
-        (cell) =>
-          cell !== null && cell !== undefined && cell.toString().trim() !== ''
-      )
+      row.some((cell) => cell !== null && cell !== undefined && cell !== '')
     );
 
     if (nonEmptyRows.length === 0) return [];
@@ -57,10 +56,11 @@ export class ExcelCrawler extends BaseCrawler {
       ...nonEmptyRows.map((row) => {
         let lastNonEmptyIndex = -1;
         for (let i = row.length - 1; i >= 0; i--) {
+          const cell = row[i];
           if (
-            row[i] !== null &&
-            row[i] !== undefined &&
-            row[i].toString().trim() !== ''
+            cell !== null &&
+            cell !== undefined &&
+            cell.toString().trim() !== ''
           ) {
             lastNonEmptyIndex = i;
             break;
@@ -80,7 +80,9 @@ export class ExcelCrawler extends BaseCrawler {
     );
   }
 
-  private cleanupHeaders(headers: any[]): string[] {
+  private cleanupHeaders(
+    headers: (string | number | null | undefined)[]
+  ): string[] {
     if (!headers || headers.length === 0) return [];
 
     return headers.map((header, index) => {
@@ -90,7 +92,7 @@ export class ExcelCrawler extends BaseCrawler {
   }
 
   async preloadFile(url: string): Promise<{
-    data: any[][];
+    data: (string | number | null | undefined)[][];
     sheetInfo: SheetInfo;
   }> {
     const arrayBuffer = await this.fetchExcelFile(url);
@@ -117,7 +119,7 @@ export class ExcelCrawler extends BaseCrawler {
       header: 1,
       raw: false,
       defval: '',
-    }) as any[][];
+    }) as (string | number | null | undefined)[][];
 
     // Clean up the data
     const cleanData = this.cleanupData(rawData);
@@ -137,13 +139,17 @@ export class ExcelCrawler extends BaseCrawler {
   }
 
   getPreviewFromWorkbook(
-    data: XLSX.WorkBook | any[][],
+    data: XLSX.WorkBook | (string | number | null | undefined)[][],
     sheetName: string,
     headerRow: number,
     dataStartRow: number
-  ): { headers: string[]; preview: any[][]; error?: string } {
+  ): {
+    headers: string[];
+    preview: (string | number | null | undefined)[][];
+    error?: string;
+  } {
     try {
-      let allData: any[][];
+      let allData: (string | number | null | undefined)[][];
       if (Array.isArray(data)) {
         allData = data;
       } else {
@@ -159,7 +165,7 @@ export class ExcelCrawler extends BaseCrawler {
           header: 1,
           raw: false,
           defval: '',
-        }) as any[][];
+        }) as (string | number | null | undefined)[][];
       }
 
       if (!allData || allData.length === 0) {
@@ -192,7 +198,9 @@ export class ExcelCrawler extends BaseCrawler {
       // Get and clean headers
       const headers =
         headerRow > 0 && cleanData[headerRow - 1]
-          ? this.cleanupHeaders(cleanData[headerRow - 1] as any[])
+          ? this.cleanupHeaders(
+              cleanData[headerRow - 1] as (string | number | null | undefined)[]
+            )
           : Array.from(
               { length: cleanData[0]?.length || 0 },
               (_, i) => `Column ${i + 1}`
@@ -226,7 +234,7 @@ export class ExcelCrawler extends BaseCrawler {
     onProgress,
   }: ExcelCrawlerProps): Promise<{
     headers: string[];
-    data: any[][];
+    data: (string | number | null | undefined)[][];
     sheetInfo: SheetInfo;
   }> {
     try {
@@ -275,7 +283,7 @@ export class ExcelCrawler extends BaseCrawler {
       // Get and clean headers
       const headers = this.cleanupHeaders(
         headerRow > 0 && cleanData[headerRow - 1]
-          ? (cleanData[headerRow - 1] as any[])
+          ? (cleanData[headerRow - 1] as (string | number | null | undefined)[])
           : Array.from(
               { length: cleanData[0]?.length || 0 },
               (_, i) => `Column ${i + 1}`
@@ -303,30 +311,14 @@ export class ExcelCrawler extends BaseCrawler {
 
   public async getPreview(props: ExcelCrawlerProps): Promise<{
     headers: string[];
-    sampleData: any[][];
+    sampleData: (string | number | null | undefined)[][];
     sheetInfo: SheetInfo;
   }> {
-    try {
-      const { url, headerRow = 1, dataStartRow } = props;
-      const { data, sheetInfo } = await this.preloadFile(url);
-
-      const { headers, preview } = this.getPreviewFromWorkbook(
-        data,
-        sheetInfo.name,
-        headerRow,
-        dataStartRow
-      );
-
-      return {
-        headers,
-        sampleData: preview,
-        sheetInfo,
-      };
-    } catch (error) {
-      if (error instanceof Error) {
-        throw error;
-      }
-      throw new Error('Failed to get preview');
-    }
+    const { headers, data, sheetInfo } = await this.crawl(props);
+    const sampleData: (string | number | null | undefined)[][] = data.slice(
+      0,
+      5
+    );
+    return { headers, sampleData, sheetInfo };
   }
 }

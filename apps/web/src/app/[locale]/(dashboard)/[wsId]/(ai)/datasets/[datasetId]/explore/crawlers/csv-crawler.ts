@@ -95,7 +95,7 @@ export class CsvCrawler extends BaseCrawler {
   }
 
   async preloadFile(url: string): Promise<{
-    data: any[][];
+    data: (string | number | null | undefined)[][];
     sheetInfo: SheetInfo;
   }> {
     const csvText = await this.fetchCsvFile(url);
@@ -127,7 +127,7 @@ export class CsvCrawler extends BaseCrawler {
       );
     }
 
-    const data = parsedData.data as any[][];
+    const data = parsedData.data as (string | number | null | undefined)[][];
 
     return {
       data,
@@ -140,10 +140,14 @@ export class CsvCrawler extends BaseCrawler {
   }
 
   getPreviewFromData(
-    data: any[][],
+    data: (string | number | null | undefined)[][],
     headerRow: number,
     dataStartRow: number
-  ): { headers: string[]; preview: any[][]; error?: string } {
+  ): {
+    headers: string[];
+    preview: (string | number | null | undefined)[][];
+    error?: string;
+  } {
     try {
       if (!data || data.length === 0) {
         return {
@@ -209,7 +213,7 @@ export class CsvCrawler extends BaseCrawler {
     onProgress,
   }: CsvCrawlerProps): Promise<{
     headers: string[];
-    data: any[][];
+    data: (string | number | null | undefined)[][];
     sheetInfo: SheetInfo;
   }> {
     try {
@@ -292,11 +296,14 @@ export class CsvCrawler extends BaseCrawler {
 
   async getPreview(props: CsvCrawlerProps): Promise<{
     headers: string[];
-    sampleData: any[][];
+    sampleData: (string | number | null | undefined)[][];
     sheetInfo: SheetInfo;
   }> {
     const { headers, data, sheetInfo } = await this.crawl(props);
-    const sampleData = data.slice(0, 5); // Get first 5 rows for preview
+    const sampleData: (string | number | null | undefined)[][] = data.slice(
+      0,
+      5
+    );
     return { headers, sampleData, sheetInfo };
   }
 }

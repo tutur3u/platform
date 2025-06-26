@@ -8,11 +8,12 @@ import {
   CommandItem,
   CommandList,
 } from '@tuturuuu/ui/command';
-import { Check } from '@tuturuuu/ui/icons';
+import { Check, ChevronsUpDown } from '@tuturuuu/ui/icons';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { Separator } from '@tuturuuu/ui/separator';
 import { cn } from '@tuturuuu/utils/format';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 export function ChatModelSelector({
   open,
@@ -30,8 +31,9 @@ export function ChatModelSelector({
   onChange: (value: Model) => void;
 }) {
   const [previewModel, setPreviewModel] = useState<Model | undefined>(model);
+  const { t } = useTranslation();
 
-  const currentModel = model
+  const _currentModel = model
     ? models.find((m) => m.value === model.value)
     : undefined;
 
@@ -45,16 +47,11 @@ export function ChatModelSelector({
       <PopoverTrigger asChild>
         <Button
           variant="outline"
-          role="combobox"
           aria-expanded={open}
           className={cn('flex w-full', className)}
-          disabled={open}
         >
-          <div className="line-clamp-1 text-start">
-            {model
-              ? `${currentModel?.provider.toLowerCase()}/${currentModel?.label}`
-              : 'Select model'}
-          </div>
+          {previewModel ? previewModel.label : t('select_model')}
+          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
       <PopoverContent

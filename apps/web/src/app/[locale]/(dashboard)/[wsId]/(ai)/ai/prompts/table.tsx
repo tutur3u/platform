@@ -1,10 +1,10 @@
 'use client';
 
-import { CustomDataTable } from '@/components/custom-data-table';
 import type { AIPrompt } from '@tuturuuu/types/db';
 import { Dialog } from '@tuturuuu/ui/dialog';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { CustomDataTable } from '@/components/custom-data-table';
 import { aiPromptsColumns } from './columns';
 import { AIPromptForm } from './form';
 

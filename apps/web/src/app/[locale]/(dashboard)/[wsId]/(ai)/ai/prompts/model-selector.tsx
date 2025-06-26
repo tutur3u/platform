@@ -57,8 +57,8 @@ export default function AIModelSelector({
         <PopoverTrigger asChild>
           <FormControl>
             <Button
+              type="button"
               variant="outline"
-              role="combobox"
               className={cn(
                 'justify-between',
                 !value && 'text-muted-foreground'

@@ -322,6 +322,7 @@ export function TimezoneSettings({ value, onChange }: TimezoneSettingsProps) {
                     const isActive = activeIdx === itemIdx;
                     return (
                       <button
+                        type="button"
                         key={tz.value}
                         role="option"
                         aria-selected={isSelected}
@@ -374,8 +375,8 @@ export function TimezoneSettings({ value, onChange }: TimezoneSettingsProps) {
         <Popover open={primaryOpen} onOpenChange={setPrimaryOpen}>
           <PopoverTrigger asChild>
             <Button
+              type="button"
               variant="outline"
-              role="combobox"
               aria-expanded={primaryOpen}
               className="w-full justify-between"
             >
@@ -436,6 +437,7 @@ export function TimezoneSettings({ value, onChange }: TimezoneSettingsProps) {
                     const isActive = activeIndex === idx;
                     return (
                       <button
+                        type="button"
                         key={tz}
                         role="option"
                         aria-selected={isSelected}
@@ -481,6 +483,7 @@ export function TimezoneSettings({ value, onChange }: TimezoneSettingsProps) {
                         const isActive = activeIndex === idx; // This may need to be adjusted for flat index
                         return (
                           <button
+                            type="button"
                             key={tz.value}
                             role="option"
                             aria-selected={isSelected}
@@ -523,8 +526,8 @@ export function TimezoneSettings({ value, onChange }: TimezoneSettingsProps) {
           <Popover open={secondaryOpen} onOpenChange={setSecondaryOpen}>
             <PopoverTrigger asChild>
               <Button
+                type="button"
                 variant="outline"
-                role="combobox"
                 aria-expanded={secondaryOpen}
                 className="w-full justify-between"
               >
