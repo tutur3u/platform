@@ -1,5 +1,6 @@
 'use client';
 
+import type { ColumnDef } from '@tanstack/react-table';
 import { Archive, Inbox, Search, Send } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import {
@@ -25,7 +26,7 @@ interface MailProps {
   navCollapsedSize: number;
 }
 
-export function Mail({
+export function MailComponent({
   mails,
   defaultLayout = [20, 32, 48],
   defaultCollapsed = false,
@@ -207,3 +208,12 @@ export function Mail({
     </TooltipProvider>
   );
 }
+
+export const getColumns = (
+  _t: (key: string, values?: Record<string, unknown>) => string,
+  _namespace: string | undefined,
+  _?: unknown,
+  _extraData?: unknown
+): ColumnDef<Mail>[] => [
+  // ... existing code ...
+];

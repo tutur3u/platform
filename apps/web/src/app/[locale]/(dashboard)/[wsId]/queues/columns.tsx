@@ -9,10 +9,10 @@ import Link from 'next/link';
 import { RowActions } from './row-actions';
 
 export const getColumns = (
-  t: any,
+  t: (key: string, values?: Record<string, unknown>) => string,
   namespace: string | undefined,
-  _?: any,
-  extraData?: any
+  _?: unknown,
+  extraData?: unknown
 ): ColumnDef<CrawledUrl>[] => [
   {
     accessorKey: 'id',

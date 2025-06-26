@@ -269,7 +269,7 @@ export function BoardHeader({ board, currentView, onViewChange }: Props) {
                     'gap-2 transition-all duration-200',
                     isActive && 'bg-primary/10 text-primary shadow-sm'
                   )}
-                  onClick={() => onViewChange(view as any)}
+                  onClick={() => onViewChange(view as string)}
                   title={config.description}
                 >
                   <Icon className="h-4 w-4" />

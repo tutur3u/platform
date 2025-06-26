@@ -22,26 +22,25 @@ export default function RowActions({ data }: { data: PostEmail }) {
   const handleSendEmail = async () => {
     if (sendable) {
       await sendEmail({
-        wsId: data.ws_id!,
-        postId: data.post_id!,
-        groupId: data.group_id!,
+        wsId: data.ws_id || '',
+        postId: data.post_id || '',
+        groupId: data.group_id || '',
         post: {
-          id: data.post_id!,
-          title: data.post_title!,
-          content: data.post_content!,
+          id: data.post_id || '',
+          title: data.post_title || '',
+          content: data.post_content || '',
           notes: data.notes || '',
-          group_name: data.group_name!,
+          group_name: data.group_name || '',
           created_at:
-            dayjs(data.post_created_at || data.created_at)?.toISOString() ||
-            undefined,
+            dayjs(data.post_created_at || data.created_at)?.toISOString() || '',
         },
         users: [
           {
-            id: data.user_id!,
-            email: data.email!,
+            id: data.user_id || '',
+            email: data.email || '',
             username: data.recipient || data.email || '<Chưa có tên>',
             notes: data?.notes || '',
-            is_completed: data?.is_completed!,
+            is_completed: data?.is_completed || false,
           },
         ],
       });

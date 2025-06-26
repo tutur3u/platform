@@ -2,7 +2,7 @@
 
 import { cn } from '@tuturuuu/utils/format';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import type { NavLink as NavLinkType } from '@/components/navigation';
 import { ENABLE_KEYBOARD_SHORTCUTS } from '@/constants/common';
 import { NavLink } from './nav-link';
@@ -35,20 +35,20 @@ export function Nav({
     if (urlToLoad && urlToLoad === pathname) setUrlToLoad(undefined);
   }, [pathname, urlToLoad]);
 
-  function hasFocus(selector: string) {
-    return Array.from(document.querySelectorAll(selector)).some(
-      (el) => el === document.activeElement
-    );
-  }
+  const hasFocus = useCallback(() => {
+    return Array.from(
+      document.querySelectorAll('input, select, textarea')
+    ).some((el) => el === document.activeElement);
+  }, []);
 
-  function parseShortcut(shortcut: string) {
+  const parseShortcut = useCallback(() => {
     const parts = shortcut.split('+');
     return {
       ctrl: parts.includes('CTRL'),
       shift: parts.includes('SHIFT'),
       key: parts.find((part) => part.length === 1),
     };
-  }
+  }, []);
 
   useEffect(() => {
     function down(e: KeyboardEvent) {
@@ -56,7 +56,7 @@ export function Nav({
         if (!link || !link.shortcut || !link.href) return;
         const { ctrl, shift, key } = parseShortcut(link.shortcut);
         if (
-          !hasFocus('input, select, textarea') &&
+          !hasFocus() &&
           e.key.toUpperCase() === key?.toUpperCase() &&
           ctrl === e.ctrlKey &&
           shift === e.shiftKey

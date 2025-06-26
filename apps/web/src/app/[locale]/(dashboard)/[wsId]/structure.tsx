@@ -345,19 +345,21 @@ export function Structure({
   );
 
   return (
-    <BaseStructure
-      isCollapsed={isCollapsed}
-      setIsCollapsed={handleToggle}
-      header={header}
-      mobileHeader={mobileHeader}
-      sidebarHeader={sidebarHeader}
-      sidebarContent={sidebarContent}
-      actions={actions}
-      userPopover={userPopover}
-      children={children}
-      onMouseEnter={onMouseEnter}
-      onMouseLeave={onMouseLeave}
-      hideSizeToggle={behavior === 'hover'}
-    />
+    <div>
+      <BaseStructure
+        isCollapsed={isCollapsed}
+        setIsCollapsed={handleToggle}
+        header={header}
+        mobileHeader={mobileHeader}
+        sidebarHeader={sidebarHeader}
+        sidebarContent={sidebarContent}
+        actions={actions}
+        userPopover={userPopover}
+        onMouseEnter={onMouseEnter}
+        onMouseLeave={onMouseLeave}
+        hideSizeToggle={behavior === 'hover'}
+      />
+      {children}
+    </div>
   );
 }

@@ -2,8 +2,8 @@ import type { Active, Over } from '@dnd-kit/core';
 
 interface DraggableData {
   type: 'Task' | 'Column';
-  task?: any;
-  column?: any;
+  task?: unknown;
+  column?: unknown;
 }
 
 export function hasDraggableData(

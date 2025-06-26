@@ -16,6 +16,7 @@ export function MailList({ items }: MailListProps) {
       <div className="flex flex-col gap-2 p-4 pt-0">
         {items.map((item) => (
           <button
+            type="button"
             key={item.id}
             className={cn(
               'flex flex-col items-start gap-2 rounded-lg border p-3 text-left text-sm transition-all hover:bg-accent',

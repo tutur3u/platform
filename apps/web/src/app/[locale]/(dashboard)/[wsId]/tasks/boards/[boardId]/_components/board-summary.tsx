@@ -125,7 +125,8 @@ export function BoardSummary({ board }: Props) {
     )
     .sort(
       (a, b) =>
-        new Date(a.end_date!).getTime() - new Date(b.end_date!).getTime()
+        new Date(a.end_date || '').getTime() -
+        new Date(b.end_date || '').getTime()
     )[0];
 
   if (isLoading) {
@@ -275,7 +276,7 @@ export function BoardSummary({ board }: Props) {
               </p>
               <div className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-400">
                 <Calendar className="h-3 w-3" />
-                {format(new Date(nextDueTask.end_date!), 'MMM d, yyyy')}
+                {format(new Date(nextDueTask.end_date || ''), 'MMM d, yyyy')}
               </div>
             </div>
           ) : (

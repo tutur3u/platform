@@ -59,7 +59,8 @@ export const MonthCalendar = ({ date }: MonthCalendarProps) => {
 
     // Reorder days based on first day of week
     for (let i = 0; i < firstDayOfWeek; i++) {
-      reorderedDays.push(reorderedDays.shift()!);
+      const shifted = reorderedDays.shift();
+      if (shifted) reorderedDays.push(shifted);
     }
 
     console.log('Reordered days:', reorderedDays);
@@ -221,16 +222,19 @@ export const MonthCalendar = ({ date }: MonthCalendarProps) => {
             hoveredDay.getFullYear() === day.getFullYear();
 
           return (
-            <div
+            <button
               key={day.toString()}
+              type="button"
               className={cn(
                 'group relative min-h-[120px] p-1.5 transition-colors',
-                !isCurrentMonth && 'bg-muted/50',
-                isTodayDate && 'bg-primary/5',
-                isHovered && 'bg-muted/30',
+                isTodayDate && 'border border-dynamic-blue',
+                isHovered && 'bg-dynamic-blue/10',
                 isHidden && 'bg-muted/10'
               )}
-              onMouseEnter={() => setHoveredDay(day)}
+              onClick={() => setHoveredDay(day)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') setHoveredDay(day);
+              }}
               onMouseLeave={() => setHoveredDay(null)}
             >
               <div className="flex items-center justify-between">
@@ -271,16 +275,21 @@ export const MonthCalendar = ({ date }: MonthCalendarProps) => {
                   return (
                     <HoverCard key={event.id} openDelay={200} closeDelay={100}>
                       <HoverCardTrigger asChild>
-                        <div
+                        <button
+                          type="button"
                           className={cn(
-                            'cursor-pointer items-center gap-1 truncate rounded px-1.5 py-1 text-xs font-medium',
-                            bg,
-                            text
+                            'event',
+                            event.color,
+                            event.id === selectedEventId && 'selected'
                           )}
                           onClick={() => openModal(event.id)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ')
+                              openModal(event.id);
+                          }}
                         >
                           {event.title || 'Untitled event'}
-                        </div>
+                        </button>
                       </HoverCardTrigger>
                       <HoverCardContent
                         side="right"
@@ -307,12 +316,15 @@ export const MonthCalendar = ({ date }: MonthCalendarProps) => {
                 })}
 
                 {events.length > 3 && (
-                  <button className="w-full rounded-sm bg-muted px-1 py-0.5 text-xs font-medium text-muted-foreground hover:bg-muted/80">
+                  <button
+                    type="button"
+                    className="w-full rounded-sm bg-muted px-1 py-0.5 text-xs font-medium text-muted-foreground hover:bg-muted/80"
+                  >
                     +{events.length - 3} more
                   </button>
                 )}
               </div>
-            </div>
+            </button>
           );
         })}
       </div>

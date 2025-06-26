@@ -8,7 +8,7 @@ import moment from 'moment';
 import { ApiKeyRowActions } from './row-actions';
 
 export const groupTagColumns = (
-  t: any,
+  t: (key: string, values?: Record<string, unknown>) => string,
   namespace: string | undefined
 ): ColumnDef<WorkspaceApiKey>[] => [
   // {

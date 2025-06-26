@@ -122,20 +122,19 @@ export function AssigneeSelect({ taskId, assignees = [], onUpdate }: Props) {
       const previousTasks = queryClient.getQueryData(['tasks', boardId]);
 
       // Optimistically update the cache
-      queryClient.setQueryData(['tasks', boardId], (old: any) => {
+      queryClient.setQueryData<Task[]>(['tasks', boardId], (old) => {
         if (!old) return old;
-
-        return old.map((task: any) => {
+        return old.map((task) => {
           if (task.id !== taskId) return task;
 
           const currentAssignees = task.assignees || [];
-          let newAssignees;
+          let newAssignees: typeof currentAssignees;
 
           if (action === 'add') {
             const member = members.find((m) => m.id === memberId);
             if (
               member &&
-              !currentAssignees.some((a: any) => a.id === memberId)
+              !currentAssignees.some((a: { id: string }) => a.id === memberId)
             ) {
               newAssignees = [...currentAssignees, member];
             } else {
@@ -143,7 +142,7 @@ export function AssigneeSelect({ taskId, assignees = [], onUpdate }: Props) {
             }
           } else {
             newAssignees = currentAssignees.filter(
-              (a: any) => a.id !== memberId
+              (a: { id: string }) => a.id !== memberId
             );
           }
 
@@ -237,18 +236,7 @@ export function AssigneeSelect({ taskId, assignees = [], onUpdate }: Props) {
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button
-          variant="ghost"
-          role="combobox"
-          aria-expanded={open}
-          disabled={isLoading}
-          className={cn(
-            'h-auto justify-start px-2 py-1 text-xs transition-all duration-200',
-            'hover:bg-gray-100 dark:hover:bg-gray-800',
-            'border border-transparent hover:border-gray-300 dark:hover:border-gray-600',
-            'min-w-0 rounded-lg'
-          )}
-        >
+        <Button variant="outline" className="w-full justify-between">
           {uniqueAssignees.length > 0 ? (
             <div className="flex min-w-0 items-center gap-2">
               <div className="flex -space-x-1.5">

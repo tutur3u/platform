@@ -223,7 +223,7 @@ export function CategoryColorsSettings({
         </div>
       </div>
 
-      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as string)}>
         <div className="mb-4 flex items-center justify-between">
           <TabsList>
             <TabsTrigger value="categories" className="px-4">
@@ -302,11 +302,20 @@ export function CategoryColorsSettings({
                       <div className="flex flex-1 items-center gap-3">
                         <div
                           className={cn(
-                            'h-6 w-6 flex-none cursor-move rounded-full border',
-                            colorMap[category.color].cbg
+                            'h-6 w-6 rounded-full border-2 transition-colors',
+                            editingCategory === index
+                              ? 'border-dynamic-blue'
+                              : 'border-muted-foreground/20',
+                            'cursor-pointer'
                           )}
-                          key={`color-circle-${category.color}`}
+                          role="button"
+                          tabIndex={0}
                           onClick={() => setEditingCategory(index)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              setEditingCategory(index);
+                            }
+                          }}
                         />
 
                         {editingCategory === index ? (
