@@ -30,7 +30,7 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from '@tuturuuu/ui/input-otp';
 import { Label } from '@tuturuuu/ui/label';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
 import Image from 'next/image';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useId, useState } from 'react';
 import { toast } from 'sonner';
 
 interface TOTPFactor {
@@ -64,9 +64,10 @@ export default function TOTPDialog() {
   const [friendlyName, setFriendlyName] = useState('');
   const [verificationCode, setVerificationCode] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
+  const friendlyNameId = useId();
 
   // Fetch existing factors
-  const fetchFactors = async () => {
+  const fetchFactors = useCallback(async () => {
     try {
       setLoading(true);
       const response = await fetch('/api/auth/mfa/totp/factors');
@@ -80,7 +81,7 @@ export default function TOTPDialog() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   // Create new TOTP factor
   const createFactor = async () => {
@@ -298,9 +299,9 @@ export default function TOTPDialog() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <Label htmlFor="friendlyName">Friendly Name</Label>
+              <Label htmlFor={friendlyNameId}>Friendly Name</Label>
               <Input
-                id="friendlyName"
+                id={friendlyNameId}
                 placeholder="e.g., iPhone Authenticator, Work Phone"
                 value={friendlyName}
                 onChange={(e) => setFriendlyName(e.target.value)}

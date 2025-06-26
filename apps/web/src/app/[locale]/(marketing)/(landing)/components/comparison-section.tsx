@@ -185,6 +185,7 @@ export function ComparisonSection() {
       <div className="comparison-tabs mb-12 flex flex-wrap justify-center gap-4">
         {competitors.map((competitor) => (
           <button
+            type="button"
             key={competitor.id}
             className={`competitor-button flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-medium transition-all duration-300 ${
               activeCompetitor === competitor.id

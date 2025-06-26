@@ -25,6 +25,7 @@ export default async function ProfileInformationCard({
 }: ProfileInformationCardProps) {
   const t = await getTranslations('settings-account');
   const displayNameId = useId();
+  const fullNameId = useId();
 
   return (
     <Card className="overflow-hidden">
@@ -78,11 +79,11 @@ export default async function ProfileInformationCard({
           </div>
 
           <div className="space-y-3">
-            <label htmlFor="full-name" className="text-sm font-medium">
+            <label htmlFor={fullNameId} className="text-sm font-medium">
               {t('full-name')}
             </label>
             <Suspense fallback={<Skeleton className="h-10 w-full" />}>
-              <FullNameInput id="full-name" defaultValue={user?.full_name} />
+              <FullNameInput id={fullNameId} defaultValue={user?.full_name} />
             </Suspense>
             <p className="text-xs text-muted-foreground">
               {t('full-name-description')}

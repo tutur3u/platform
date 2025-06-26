@@ -9,7 +9,7 @@ import {
 import { Building } from '@tuturuuu/ui/icons';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { getTranslations } from 'next-intl/server';
-import { Suspense } from 'react';
+import { Suspense, useId } from 'react';
 import DefaultWorkspaceSetting from './default-workspace-setting';
 
 interface WorkspaceSettingsCardProps {
@@ -20,6 +20,7 @@ export default async function WorkspaceSettingsCard({
   user,
 }: WorkspaceSettingsCardProps) {
   const t = await getTranslations('settings-account');
+  const defaultWorkspaceId = useId();
 
   return (
     <Card>
@@ -38,11 +39,12 @@ export default async function WorkspaceSettingsCard({
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="space-y-3">
-          <label className="text-sm font-medium">
+          <label htmlFor={defaultWorkspaceId} className="text-sm font-medium">
             {t('default-workspace')}
           </label>
           <Suspense fallback={<Skeleton className="h-10 w-full" />}>
             <DefaultWorkspaceSetting
+              id={defaultWorkspaceId}
               defaultWorkspaceId={user?.default_workspace_id}
             />
           </Suspense>

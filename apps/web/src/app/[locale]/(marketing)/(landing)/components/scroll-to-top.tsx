@@ -1,18 +1,18 @@
 'use client';
 
 import { ChevronUp } from '@tuturuuu/ui/icons';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 export function ScrollToTop() {
   const [isVisible, setIsVisible] = useState(false);
 
-  const toggleVisibility = () => {
+  const toggleVisibility = useCallback(() => {
     if (window.scrollY > 300) {
       setIsVisible(true);
     } else {
       setIsVisible(false);
     }
-  };
+  }, []);
 
   const scrollToTop = () => {
     window.scrollTo({
@@ -28,6 +28,7 @@ export function ScrollToTop() {
 
   return (
     <button
+      type="button"
       onClick={scrollToTop}
       className={`fixed right-6 bottom-6 z-30 rounded-full bg-foreground p-3 text-background shadow-lg transition-opacity duration-300 hover:bg-foreground/80 ${
         isVisible ? 'opacity-100' : 'pointer-events-none opacity-0'

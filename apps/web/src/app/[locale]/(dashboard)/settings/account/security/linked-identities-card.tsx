@@ -44,7 +44,7 @@ import {
 import { Skeleton } from '@tuturuuu/ui/skeleton';
 import Image from 'next/image';
 import { useTranslations } from 'next-intl';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 interface LinkedIdentitiesCardProps {
   className?: string;
@@ -77,7 +77,7 @@ export default function LinkedIdentitiesCard({
   const [error, setError] = useState<string | null>(null);
   const supabase = createClient();
 
-  const loadIdentities = async () => {
+  const loadIdentities = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -109,14 +109,18 @@ export default function LinkedIdentitiesCard({
     } finally {
       setLoading(false);
     }
-  };
+  }, [supabase, t]);
 
   const handleLinkIdentity = async (provider: string) => {
     try {
       setLinkLoading(provider);
-      const { error } = await linkIdentity(supabase, provider as any, {
-        redirectTo: `${window.location.origin}/settings/account/security?linked=${provider}`,
-      });
+      const { error } = await linkIdentity(
+        supabase,
+        provider as 'google' | 'github',
+        {
+          redirectTo: `${window.location.origin}/settings/account/security?linked=${provider}`,
+        }
+      );
 
       if (error) {
         console.error('Error linking identity:', error);
@@ -257,6 +261,17 @@ export default function LinkedIdentitiesCard({
 
       // Reload identities after linking
       setTimeout(() => loadIdentities(), 1000);
+    }
+
+    // Check for unlink success (or other messages)
+    const message = urlParams.get('message');
+    if (message) {
+      toast({
+        title: t('info'),
+        description: message,
+      });
+      // Clean up the URL
+      window.history.replaceState(null, '', '/settings/account/security');
     }
   }, [loadIdentities, t]);
 

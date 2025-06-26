@@ -193,6 +193,7 @@ export function BeforeAfterSection() {
       <div className="comparison-tabs mb-10 flex justify-center">
         <div className="inline-flex rounded-full bg-white/90 p-1.5 shadow-md backdrop-blur-sm dark:bg-foreground/5">
           <button
+            type="button"
             className={`relative rounded-full px-6 py-2.5 text-sm font-medium transition-all duration-300 ${
               activeView === 'split'
                 ? 'bg-gradient-to-r from-dynamic-light-red to-dynamic-light-green text-white'
@@ -206,6 +207,7 @@ export function BeforeAfterSection() {
             )}
           </button>
           <button
+            type="button"
             className={`relative rounded-full px-6 py-2.5 text-sm font-medium transition-all duration-300 ${
               activeView === 'before'
                 ? 'bg-gradient-to-r from-dynamic-light-red to-dynamic-red text-white'
@@ -219,6 +221,7 @@ export function BeforeAfterSection() {
             )}
           </button>
           <button
+            type="button"
             className={`relative rounded-full px-6 py-2.5 text-sm font-medium transition-all duration-300 ${
               activeView === 'after'
                 ? 'bg-gradient-to-r from-dynamic-light-green to-dynamic-green text-white'

@@ -1,7 +1,10 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { calendarEventsSchema } from '@tuturuuu/ai/calendar/events';
+import {
+  type CalendarEvent as AICalendarEvent,
+  calendarEventsSchema,
+} from '@tuturuuu/ai/calendar/events';
 import { useObject } from '@tuturuuu/ai/object/core';
 import type {
   CalendarEvent,
@@ -103,6 +106,8 @@ export function EventModal() {
   const { toast } = useToast();
   const startPickerRef = useRef<HTMLButtonElement>(null);
   const endPickerRef = useRef<HTMLButtonElement>(null);
+  const allDayId = React.useId();
+  const lockedId = React.useId();
 
   const {
     activeEvent,
@@ -130,7 +135,7 @@ export function EventModal() {
   });
 
   // State for AI event generation
-  const [generatedEvents, setGeneratedEvents] = useState<any[]>([]);
+  const [generatedEvents, setGeneratedEvents] = useState<AICalendarEvent[]>([]);
   const [currentEventIndex, setCurrentEventIndex] = useState(0);
   const [userTimezone] = useState(
     Intl.DateTimeFormat().resolvedOptions().timeZone
@@ -178,6 +183,39 @@ export function EventModal() {
     api: '/api/v1/calendar/events/generate',
     schema: calendarEventsSchema,
   });
+
+  const checkForOverlaps = React.useCallback(
+    (eventToCheck: Partial<CalendarEvent>) => {
+      if (!eventToCheck.start_at || !eventToCheck.end_at) return;
+
+      const allEvents = getEvents();
+      const overlapping = allEvents.filter((e) => {
+        // Don't check against self
+        if (eventToCheck.id && e.id === eventToCheck.id) return false;
+
+        // Don't check against the original event if it's a split multi-day event
+        if (
+          eventToCheck.id &&
+          eventToCheck.id.includes('-') &&
+          e.id === eventToCheck.id.split('-')[0]
+        ) {
+          return false;
+        }
+
+        const eStart = dayjs(e.start_at);
+        const eEnd = dayjs(e.end_at);
+        const checkStart = dayjs(eventToCheck.start_at);
+        const checkEnd = dayjs(eventToCheck.end_at);
+
+        // Check for overlap
+        return checkStart.isBefore(eEnd) && checkEnd.isAfter(eStart);
+      });
+
+      setOverlappingEvents(overlapping);
+      setShowOverlapWarning(overlapping.length > 0);
+    },
+    [getEvents]
+  );
 
   // Add this near the top of the component, after tz is defined
   const _categoriesKey = JSON.stringify(
@@ -262,53 +300,15 @@ export function EventModal() {
 
       setEvent(newEvent);
       setIsAllDay(false);
-
-      // Reset AI form
+      setDateError(null);
+      setOverlappingEvents([]);
+      setShowOverlapWarning(false);
       aiForm.reset();
       setGeneratedEvents([]);
+      setCurrentEventIndex(0);
+      setActiveTab('ai'); // Default to AI for new events
     }
-
-    // Clear any error messages
-    setDateError(null);
-  }, [
-    activeEvent,
-    aiForm.reset, // Check for overlapping events
-    checkForOverlaps,
-  ]);
-
-  const checkForOverlaps = useCallback(
-    (eventToCheck: Partial<CalendarEvent>) => {
-      if (!eventToCheck.start_at || !eventToCheck.end_at) return;
-
-      const allEvents = getEvents();
-      const eventStart = new Date(eventToCheck.start_at);
-      const eventEnd = new Date(eventToCheck.end_at);
-
-      // Find events that overlap with this event
-      const overlaps = allEvents.filter((existingEvent) => {
-        // Skip comparing with the current event being edited
-        if (existingEvent.id === activeEvent?.id) return false;
-
-        const existingStart = new Date(existingEvent.start_at);
-        const existingEnd = new Date(existingEvent.end_at);
-
-        // Check if the events are on the same day
-        const isSameDay =
-          existingStart.getDate() === eventStart.getDate() &&
-          existingStart.getMonth() === eventStart.getMonth() &&
-          existingStart.getFullYear() === eventStart.getFullYear();
-
-        if (!isSameDay) return false;
-
-        // Check for time overlap
-        return !(existingEnd <= eventStart || existingStart >= eventEnd);
-      });
-
-      setOverlappingEvents(overlaps);
-      setShowOverlapWarning(overlaps.length > 0);
-    },
-    [activeEvent?.id, getEvents]
-  );
+  }, [activeEvent, aiForm.reset, checkForOverlaps]);
 
   // Handle manual event save
   const handleManualSave = async () => {
@@ -420,7 +420,8 @@ export function EventModal() {
     try {
       const eventsToSave = generatedEvents;
       const savedEvents: CalendarEvent[] = [];
-      const failedEvents: Array<{ event: any; error: any }> = [];
+      const failedEvents: Array<{ event: AICalendarEvent; error: unknown }> =
+        [];
 
       // Save each event individually
       for (const eventData of eventsToSave) {
@@ -988,8 +989,8 @@ export function EventModal() {
                         <h3 className="text-sm font-medium">Date & Time</h3>
                         <div className="flex items-center gap-4">
                           <EventToggleSwitch
-                            id="all-day"
-                            label="All Day"
+                            id={allDayId}
+                            label="All-day"
                             checked={isAllDay}
                             onChange={handleAllDayChange}
                             disabled={event.locked}
@@ -1115,19 +1116,14 @@ export function EventModal() {
                                   Event Protection
                                 </label>
                                 <EventToggleSwitch
-                                  id="locked"
-                                  label="Lock Event"
-                                  description="Locked events cannot be modified accidentally"
-                                  checked={event.locked || false}
+                                  id={lockedId}
+                                  checked={!!event.locked}
                                   onChange={(checked) => {
-                                    if (isEditing) {
-                                      handleLockToggle(checked);
-                                    } else {
-                                      setEvent((prev) => ({
-                                        ...prev,
-                                        locked: checked,
-                                      }));
-                                    }
+                                    handleLockToggle(checked);
+                                    setEvent((prev) => ({
+                                      ...prev,
+                                      locked: checked,
+                                    }));
                                   }}
                                 />
                                 <div className="mt-1 flex items-center gap-2">
@@ -1469,10 +1465,11 @@ export function EventModal() {
                                   <div className="flex items-center gap-1">
                                     <MapPin className="h-3.5 w-3.5" />
                                     <button
+                                      type="button"
                                       onClick={() =>
                                         openGoogleMaps(generatedEvent.location)
                                       }
-                                      className="text-sm text-muted-foreground hover:text-primary hover:underline"
+                                      className="truncate text-left underline-offset-2 hover:underline"
                                       title="Open in Google Maps"
                                     >
                                       {generatedEvent.location}

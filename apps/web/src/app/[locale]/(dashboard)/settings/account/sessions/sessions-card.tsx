@@ -32,7 +32,7 @@ import {
 import { Progress } from '@tuturuuu/ui/progress';
 import { Separator } from '@tuturuuu/ui/separator';
 import { useTranslations } from 'next-intl';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 interface Session {
@@ -130,7 +130,7 @@ export default function SessionsCard() {
 
   const formatTimeAgo = getTimeAgoFormatter(t);
 
-  const fetchSessions = async () => {
+  const fetchSessions = useCallback(async () => {
     try {
       setLoading(true);
       const response = await fetch('/api/v1/users/sessions');
@@ -149,7 +149,7 @@ export default function SessionsCard() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchSessions();

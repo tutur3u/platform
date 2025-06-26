@@ -1,6 +1,9 @@
 'use client';
 
-import type { EventPriority } from '@tuturuuu/types/primitives/calendar-event';
+import type {
+  CalendarEvent,
+  EventPriority,
+} from '@tuturuuu/types/primitives/calendar-event';
 import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import { Alert, AlertDescription, AlertTitle } from '@tuturuuu/ui/alert';
 import { Button } from '@tuturuuu/ui/button';
@@ -85,41 +88,42 @@ export const EventTitleInput = ({
   onChange: (value: string) => void;
   onEnter?: () => void;
   disabled?: boolean;
-}) => (
-  <div className="space-y-2">
-    <Label htmlFor="title" className="text-sm font-medium">
-      Event Title
-    </Label>
-    <Input
-      id="title"
-      placeholder="Add title"
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      className="border-none bg-muted/50 focus-visible:ring-0 focus-visible:ring-offset-0"
-      disabled={disabled}
-      onFocus={(e) => e.target.select()}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter') {
-          e.preventDefault();
-          onEnter?.();
-        }
-      }}
-      autoFocus
-    />
-  </div>
-);
+}) => {
+  const id = React.useId();
+  return (
+    <div className="space-y-2">
+      <Label htmlFor={id} className="text-sm font-medium">
+        Event Title
+      </Label>
+      <Input
+        id={id}
+        placeholder="Add title"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="border-none bg-muted/50 focus-visible:ring-0 focus-visible:ring-offset-0"
+        disabled={disabled}
+        onFocus={(e) => e.target.select()}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            onEnter?.();
+          }
+        }}
+        autoFocus
+      />
+    </div>
+  );
+};
 
 // Event description textarea component
 export const EventDescriptionInput = ({
   value,
   onChange,
   disabled = false,
-  mode = 'create', // 'create' | 'edit'
 }: {
   value: string;
   onChange: (value: string) => void;
   disabled?: boolean;
-  mode?: 'create' | 'edit';
 }) => {
   const [height, setHeight] = React.useState(100);
   const textareaRef = React.useRef<HTMLTextAreaElement>(null);
@@ -165,13 +169,18 @@ export const EventDescriptionInput = ({
   };
 
   // Throttle function
-  const throttle = (func: Function, limit: number) => {
+  const throttle = <T extends (...args: any[]) => void>(
+    func: T,
+    limit: number
+  ) => {
     let inThrottle: boolean;
-    return function (this: any, ...args: any[]) {
+    return function (this: unknown, ...args: Parameters<T>) {
       if (!inThrottle) {
         func.apply(this, args);
         inThrottle = true;
-        setTimeout(() => (inThrottle = false), limit);
+        setTimeout(() => {
+          inThrottle = false;
+        }, limit);
       }
     };
   };
@@ -249,28 +258,25 @@ export const EventDescriptionInput = ({
         return;
       }
       if (!isDraggingRef.current) return;
-      // Calculate new height so the handle stays under the cursor
-      if (textareaRef.current) {
-        const rect = textareaRef.current.getBoundingClientRect();
-        let newHeight = moveClientY + offsetYRef.current - rect.top;
-        newHeight = Math.max(100, newHeight);
-        setHeight(newHeight);
-        // Call auto-scroll with handle Y position
-        handleAutoScroll(rect.bottom);
+      if (isDraggingRef.current) {
+        const deltaY = moveClientY - startYRef.current;
+        const newHeight = startHeightRef.current + deltaY;
+        setHeight(Math.max(50, newHeight)); // Set a minimum height
+        handleAutoScroll(moveClientY);
       }
     };
 
     const handleUp = () => {
       isDraggingRef.current = false;
-      document.removeEventListener('mousemove', handleMove as any);
+      document.removeEventListener('mousemove', handleMove as EventListener);
       document.removeEventListener('mouseup', handleUp);
-      document.removeEventListener('touchmove', handleMove as any);
+      document.removeEventListener('touchmove', handleMove as EventListener);
       document.removeEventListener('touchend', handleUp);
     };
 
-    document.addEventListener('mousemove', handleMove as any);
+    document.addEventListener('mousemove', handleMove as EventListener);
     document.addEventListener('mouseup', handleUp);
-    document.addEventListener('touchmove', handleMove as any);
+    document.addEventListener('touchmove', handleMove as EventListener);
     document.addEventListener('touchend', handleUp);
   };
 
@@ -356,23 +362,22 @@ export const EventLocationInput = ({
   onChange: (value: string) => void;
   disabled?: boolean;
 }) => {
+  const id = React.useId();
+
   // function to open Google Maps with the entered address
   const openGoogleMaps = () => {
     if (value) {
-      // encode the address to be used in the URL
-      const encodedAddress = encodeURIComponent(value);
-      // open Google Maps in a new tab
-      window.open(
-        `https://www.google.com/maps/search/?api=1&query=${encodedAddress}`,
-        '_blank'
-      );
+      const url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+        value
+      )}`;
+      window.open(url, '_blank');
     }
   };
 
   return (
     <div className="space-y-2">
       <Label
-        htmlFor="location"
+        htmlFor={id}
         className="flex items-center gap-2 text-sm font-medium"
       >
         <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
@@ -380,7 +385,7 @@ export const EventLocationInput = ({
       </Label>
       <div className="relative">
         <Input
-          id="location"
+          id={id}
           placeholder="Add location"
           value={value}
           onChange={(e) => onChange(e.target.value)}
@@ -586,7 +591,7 @@ export const EventToggleSwitch = ({
 export const OverlapWarning = ({
   overlappingEvents,
 }: {
-  overlappingEvents: any[];
+  overlappingEvents: CalendarEvent[];
 }) => {
   if (overlappingEvents.length === 0) return null;
 

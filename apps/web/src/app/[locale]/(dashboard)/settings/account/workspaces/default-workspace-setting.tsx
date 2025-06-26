@@ -22,10 +22,12 @@ interface Workspace {
 }
 
 interface DefaultWorkspaceSettingProps {
+  id?: string;
   defaultWorkspaceId?: string | null;
 }
 
 export default function DefaultWorkspaceSetting({
+  id,
   defaultWorkspaceId,
 }: DefaultWorkspaceSettingProps) {
   const [selectedWorkspace, setSelectedWorkspace] = useState<string>(
@@ -136,7 +138,7 @@ export default function DefaultWorkspaceSetting({
         onValueChange={setSelectedWorkspace}
         disabled={isUpdating}
       >
-        <SelectTrigger className={isUpdating ? 'opacity-50' : ''}>
+        <SelectTrigger id={id} className={isUpdating ? 'opacity-50' : ''}>
           <SelectValue placeholder="Select a default workspace" />
         </SelectTrigger>
         <SelectContent>

@@ -19,11 +19,16 @@ import { useState } from 'react';
 import * as z from 'zod';
 
 interface Props {
+  id?: string;
   defaultValue?: string | null;
   disabled?: boolean;
 }
 
-export default function FullNameInput({ defaultValue = '', disabled }: Props) {
+export default function FullNameInput({
+  id,
+  defaultValue = '',
+  disabled,
+}: Props) {
   const t = useTranslations('settings-account');
   const router = useRouter();
 
@@ -99,7 +104,7 @@ export default function FullNameInput({ defaultValue = '', disabled }: Props) {
               <FormItem className="w-full">
                 <FormControl>
                   <Input
-                    id="full-name"
+                    id={id}
                     placeholder={t('full-name')}
                     disabled={disabled}
                     {...field}

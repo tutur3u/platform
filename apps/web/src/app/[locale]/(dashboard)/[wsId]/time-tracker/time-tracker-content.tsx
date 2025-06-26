@@ -691,7 +691,7 @@ export default function TimeTrackerContent({
   >('analytics');
 
   // Drag and drop state for highlighting drop zones
-  const [isDraggingTask, setIsDraggingTask] = useState(false);
+  const [isDraggingTask, _setIsDraggingTask] = useState(false);
 
   // Tasks sidebar search and filter state with persistence
   const [tasksSidebarSearch, setTasksSidebarSearch] = useState('');
@@ -876,9 +876,7 @@ export default function TimeTrackerContent({
                 type="button"
                 onClick={() => {
                   if (isViewingOtherUser) {
-                    toast.info(
-                      'You are currently viewing another user's data. You cannot continue their session.'
-                    );
+                    toast.info("You are currently viewing another user's data. You cannot continue their session.");
                     return;
                   }
                   if (isRunning) {
@@ -1804,6 +1802,7 @@ export default function TimeTrackerContent({
                             stroke="currentColor"
                             viewBox="0 0 24 24"
                           >
+                            <title>Unassigned tasks icon</title>
                             <path
                               strokeLinecap="round"
                               strokeLinejoin="round"
@@ -2043,31 +2042,19 @@ export default function TimeTrackerContent({
                             <div className="/40 max-h-[400px] overflow-y-auto rounded-lg border bg-gray-50/30 p-4 dark:border-gray-700/40 dark:bg-gray-800/20">
                               <div className="space-y-4">
                                 {filteredSidebarTasks.map((task) => (
-                                  <div
+                                  <button
+                                    type="button"
                                     key={task.id}
-                                    className={cn(
-                                      'group cursor-grab rounded-lg border p-4 shadow-sm transition-all duration-200 hover:scale-[1.01] hover:shadow-md active:cursor-grabbing',
-                                      // Enhanced styling for assigned tasks
-                                      task.is_assigned_to_current_user
-                                        ? 'border-blue-300 bg-gradient-to-br from-blue-50 to-blue-100 ring-1 ring-blue-200 dark:border-blue-700 dark:from-blue-950/30 dark:to-blue-900/30 dark:ring-blue-800'
-                                        : '/60 bg-white dark:border-gray-700/60 dark:bg-gray-800/80',
-                                      isDraggingTask &&
-                                        'shadow-md ring-1 shadow-blue-500/10 ring-blue-400/30'
-                                    )}
-                                    draggable
-                                    onDragStart={(e) => {
-                                      e.dataTransfer.setData(
-                                        'application/json',
-                                        JSON.stringify({
-                                          type: 'task',
-                                          task: task,
-                                        })
-                                      );
-                                      setIsDraggingTask(true);
+                                    onClick={() => {
+                                      if (!currentSession) {
+                                        startTimer({ task_id: task.id });
+                                      } else {
+                                        toast.info(
+                                          'A session is already running. Stop it before starting a new one.'
+                                        );
+                                      }
                                     }}
-                                    onDragEnd={() => {
-                                      setIsDraggingTask(false);
-                                    }}
+                                    className="group w-full rounded-lg border bg-card p-3 text-left transition-all hover:border-primary/50 hover:bg-muted/50"
                                   >
                                     <div className="flex items-start gap-4">
                                       <div
@@ -2199,7 +2186,7 @@ export default function TimeTrackerContent({
                                         </svg>
                                       </div>
                                     </div>
-                                  </div>
+                                  </button>
                                 ))}
                               </div>
 
