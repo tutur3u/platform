@@ -267,7 +267,7 @@ export async function POST(
           .eq('ws_id', wsId);
 
           if(error) {
-            throw new Error(`Failed to apply optimization for event ${optimization.id}:`, error);
+            (`Failed to apply optimization for event ${optimization.id}: ${error.message}`)
           }
       } catch (err) {
         console.error(
