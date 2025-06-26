@@ -26,7 +26,7 @@ import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
 import { useRef, useState } from 'react';
-
+import { useRouter } from 'next/navigation';
 // Extend dayjs with timezone and UTC plugins
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -48,7 +48,7 @@ export default function AutoScheduleComprehensiveDialog({
   const refreshIntervalRef = useRef<ReturnType<typeof setInterval> | null>(
     null
   );
-
+  const router = useRouter();
   const stopRefreshing = () => {
     if (refreshIntervalRef.current) {
       clearInterval(refreshIntervalRef.current);
@@ -73,9 +73,7 @@ export default function AutoScheduleComprehensiveDialog({
     }
 
     try {
-      // Get user's timezone
       const userTimezone = dayjs.tz.guess();
-
       const apiUrl = `/api/${wsId}/calendar/auto-schedule?stream=${isRealtime}`;
       const response = await fetch(apiUrl, {
         method: 'POST',
@@ -101,12 +99,13 @@ export default function AutoScheduleComprehensiveDialog({
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
 
-        while (true) {
+        // Add a label to the while loop
+        streamLoop: while (true) {
           const { value, done } = await reader.read();
           if (done) break;
 
           const chunk = decoder.decode(value);
-          const lines = chunk.split('\\n\\n');
+          const lines = chunk.split('\n\n');
 
           for (const line of lines) {
             if (line.startsWith('data: ')) {
@@ -123,7 +122,7 @@ export default function AutoScheduleComprehensiveDialog({
                     duration: 5000,
                   });
                   setIsOpen(false);
-                  break;
+                  break streamLoop; // Use the label to break the correct loop
                 }
                 if (json.status === 'error') {
                   throw new Error(json.message || 'An unknown error occurred');
@@ -152,6 +151,7 @@ export default function AutoScheduleComprehensiveDialog({
             : 'An unexpected error occurred',
       });
     } finally {
+      router.refresh();
       setIsLoading(false);
       stopRefreshing();
       await queryClient.invalidateQueries({
