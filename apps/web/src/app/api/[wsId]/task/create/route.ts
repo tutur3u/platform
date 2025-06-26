@@ -1,6 +1,6 @@
 import { createAdminClient } from "@tuturuuu/supabase/next/server";
 import { getCurrentSupabaseUser } from "@tuturuuu/utils/user-helper";
-import { NextResponse, NextRequest } from "next/server";
+import { NextResponse } from "next/server";
 
 
 export async function POST(req: Request, {params} : {params: Promise<{wsId: string}>}) {
@@ -92,10 +92,9 @@ export async function POST(req: Request, {params} : {params: Promise<{wsId: stri
         }
     
         // 5. Return a success response
-        return NextResponse.json(data, { status: 201 }); // 201 Created
+        return NextResponse.json(data, { status: 201 }); 
       } catch (e: any) {
         console.error('Error in task creation route:', e);
-        // Handle errors like invalid JSON in the request
         if (e instanceof SyntaxError) {
           return NextResponse.json(
             { error: 'Invalid JSON in request body' },

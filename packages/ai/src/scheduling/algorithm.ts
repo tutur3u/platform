@@ -124,9 +124,7 @@ export const scheduleWithFlexibleEvents = (
     dayjs(event.range.end).isAfter(now)
   );
 
-  // =======================================================
-  // FIX 2: Filter out locked events that have also ended
-  // =======================================================
+
   const futureLockedEvents = lockedEvents.filter(event =>
     dayjs(event.range.end).isAfter(now)
   );
@@ -216,7 +214,7 @@ let taskPool: any[]= [];
   };
 
   let attempts = 0;
-  const maxAttempts = 2000; // Prevent infinite loops
+  const maxAttempts = 2000; 
 
   while (taskPool.some((t) => t.remaining > 0) && attempts < maxAttempts) {
     attempts++;

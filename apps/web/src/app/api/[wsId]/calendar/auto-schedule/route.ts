@@ -1,7 +1,7 @@
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 import { createCalendarOptimizer } from './tools';
-import {  scheduleWithFlexibleEvents } from '@tuturuuu/ai/scheduling/algorithm';
+import {  promoteEventToTask, scheduleWithFlexibleEvents } from '@tuturuuu/ai/scheduling/algorithm';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import {
   defaultActiveHours,
@@ -204,12 +204,7 @@ export async function POST(
           'work',
         events: [],
         deadline: task.end_date ? (await import('dayjs')).default(task.end_date) : undefined,
-        priority: 
-          task.priority === 1 ? 'critical' :
-          task.priority === 2 ? 'high' :
-          task.priority === 3 ? 'normal' :
-          task.priority === 4 ? 'low' :
-          'normal',
+        priority: mapPriorityToTaskPriority(task.priority),
         allowSplit: !!task.is_splittable,
       }))
     );
@@ -234,21 +229,21 @@ export async function POST(
     ) => {
       // 3. PREPARE DATA FOR THE SCHEDULER
       streamUpdate?.({ status: 'running', message: 'Analyzing schedule...' });
-      // const lockedEvents: Event[] = [];
+      const lockedEvents: Event[] = [];
       const tasksToProcess = [];
 
-      // for (const event of newFlexibleEvents) {
-      //   if (event.locked) {
-      //     lockedEvents.push(event);
-      //   } else {
-      //     // If a flexible event has no task or its task is not in our list,
-      //     // promote it to a low-priority task to be re-scheduled.
-      //     const taskExists = newTasks.some(t => t.id === event.taskId);
-      //     if (!event.taskId || !taskExists) {
-      //       tasksToProcess.push(promoteEventToTask(event));
-      //     }
-      //   }
-      // }
+      for (const event of newFlexibleEvents) {
+        if (event.locked) {
+          lockedEvents.push(event);
+        } else {
+          // If a flexible event has no task or its task is not in our list,
+          // promote it to a low-priority task to be re-scheduled.
+          const taskExists = newTasks.some(t => t.id === event.taskId);
+          if (!event.taskId || !taskExists) {
+            tasksToProcess.push(promoteEventToTask(event));
+          }
+        }
+      }
 
       const activeHours=defaultActiveHours;
 
@@ -283,14 +278,7 @@ export async function POST(
         );
       }
     }
-      // Delete all old flexible (non-locked) events
-      // const { error: deleteError } = await (await supabase)
-      //   .from('workspace_calendar_events')
-      //   .delete()
-      //   .eq('ws_id', wsId)
-      //   .eq('locked', false);
-      
-      // if (deleteError) throw new Error(`Failed to clear old schedule: ${deleteError.message}`);
+    
 
       // Prepare new events for insertion
       if (newScheduledEvents.length > 0) {
@@ -426,3 +414,18 @@ export async function GET(
     );
   }
 }
+function mapPriorityToTaskPriority(priority: number | null): TaskPriority {
+  switch (priority) {
+    case 1:
+      return 'critical';
+    case 2:
+      return 'high';
+    case 3:
+      return 'normal';
+    case 4:
+      return 'low';
+    default:
+      return 'normal'; 
+  }
+}
+
