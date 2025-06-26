@@ -2,7 +2,7 @@ import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 import { createCalendarOptimizer } from './tools';
 import {  promoteEventToTask, scheduleWithFlexibleEvents } from '@tuturuuu/ai/scheduling/algorithm';
-import { createClient, createAdminClient } from '@tuturuuu/supabase/next/server';
+import { createClient } from '@tuturuuu/supabase/next/server';
 import {
   defaultActiveHours,
 } from '@tuturuuu/ai/scheduling/default';
