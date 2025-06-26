@@ -63,6 +63,8 @@ export function BillingClient({
   const [showUpgradeOptions, setShowUpgradeOptions] = useState(false);
   const [_isLoading, _setIsLoading] = useState(false);
   const [message, _setMessage] = useState("");
+  const [syncCompleted, setSyncCompleted] = useState(false);
+  const [syncLoading, setSyncLoading] = useState(false);
   const t = useTranslations("billing");
   // const handleCancelSubscription = async () => {
   //   setIsLoading(true);
@@ -117,6 +119,19 @@ export function BillingClient({
         ],
     isEnterprise: product.name.toLowerCase().includes("enterprise"),
   }));
+
+  const handleSyncToProduct = async () => {
+    setSyncLoading(true);
+    setSyncCompleted(false);
+    try {
+      await syncToProduct(products);
+      setSyncCompleted(true);
+    } catch (error) {
+      console.error("Sync failed:", error);
+    } finally {
+      setSyncLoading(false);
+    }
+  };
 
   return (
     <>
@@ -238,14 +253,25 @@ export function BillingClient({
             {t("upgrade-plan")}
           </h2>
           {isAdmin && (
-            <Button
-              onClick={async () => {
-                await syncToProduct(products);
-              }}
-              className="mb-6"
-            >
-              Sync to product to database
-            </Button>
+            <div className="mb-6 flex items-center gap-3">
+              {!syncCompleted ? (
+                <Button
+                  onClick={handleSyncToProduct}
+                  disabled={syncLoading}
+                  className="flex items-center"
+                >
+                  {syncLoading ? "Syncing..." : "Sync to product to database"}
+                </Button>
+              ) : (
+                <Button
+                  disabled
+                  className="flex items-center bg-green-600 hover:bg-green-600"
+                >
+                  <CheckCircle className="mr-2 h-4 w-4" />
+                  Sync Completed
+                </Button>
+              )}
+            </div>
           )}
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             {upgradePlans.map((plan) => (
