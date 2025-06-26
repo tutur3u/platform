@@ -58,6 +58,10 @@ export const useNavigation = (t: any): { categories: NavCategory[] } => {
       label: t('common.home'),
     },
     {
+      href: '/courses',
+      label: t('ws-courses.plural'),
+    },
+    {
       href: '/about',
       label: t('common.about'),
     },

@@ -67,7 +67,7 @@ BEGIN
     RETURN true;
   EXCEPTION
     -- Only catch the specific exceptions we raise in validate_and_normalize_board_tags
-    WHEN SQLSTATE '22000' THEN  -- our custom validation errors
+    WHEN raise_exception THEN  -- Catches default RAISE EXCEPTION errors
       RETURN false;
     WHEN OTHERS THEN
       -- Re-raise unexpected errors to avoid masking bugs

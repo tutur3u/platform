@@ -61,7 +61,9 @@ export function CommandHeader({
           }
           className="flex h-12 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
           value={inputValue}
-          onValueChange={setInputValue}
+          onValueChange={(newValue) => {
+            setInputValue(newValue);
+          }}
           disabled={isLoading || isTransitioning}
         />
         {page === 'root' && (

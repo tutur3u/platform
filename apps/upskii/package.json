@@ -79,7 +79,7 @@
     "@tuturuuu/typescript-config": "workspace:*",
     "@types/canvas-confetti": "^1.9.0",
     "@types/js-cookie": "^3.0.6",
-    "@types/lodash": "^4.17.18",
+    "@types/lodash": "^4.17.19",
     "@types/negotiator": "^0.6.4",
     "@types/node": "^24.0.4",
     "@types/react": "^19.1.8",

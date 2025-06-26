@@ -631,7 +631,14 @@
     "password_min_length": "Mật khẩu phải có ít nhất 8 ký tự",
     "powered-by": "Tuturuuu cung cấp hệ thống xác thực phía sau {domain}.",
     "choose_sign_in_method": "Chọn phương thức đăng nhập ưa thích của bạn",
-    "sign_in_to_your_account": "Đăng nhập vào tài khoản của bạn để tiếp tục"
+    "sign_in_to_your_account": "Đăng nhập vào tài khoản của bạn để tiếp tục",
+    "will_send_to": "Sẽ gửi mã xác thực đến",
+    "will_sign_in_as": "Sẽ đăng nhập với tên người dùng",
+    "email_username_placeholder": "Nhập email hoặc tên người dùng của bạn",
+    "two_factor_authentication": "Xác thực hai yếu tố",
+    "enter_authenticator_code": "Nhập mã xác thực 6 chữ số từ ứng dụng xác thực của bạn",
+    "verification_code_label": "Mã xác thực",
+    "verify_button": "Xác minh"
   },
   "signup": {
     "get-started": "Bắt đầu ngay",
@@ -2225,7 +2232,8 @@
     "image_preview_not_available": "Chưa có mẫu xem trước",
     "image_preview_not_available_description": "Ảnh xem trước của mẫu chứng chỉ không có sẵn.",
     "hide_certificate_preview": "Ẩn xem mẫu chứng chỉ",
-    "show_certificate_preview": "Hiển thị xem mẫu chứng chỉ"
+    "show_certificate_preview": "Hiển thị xem mẫu chứng chỉ",
+    "self_paced": "Học tự chủ"
   },
   "ws-course-modules": {
     "plural": "Mô-đun khóa học",

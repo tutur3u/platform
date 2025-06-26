@@ -103,6 +103,13 @@ interface ColumnVisibility {
   actions: boolean;
 }
 
+// Priority labels constant - defined once outside component for performance
+const priorityLabels = {
+  1: 'High',
+  2: 'Medium',
+  3: 'Low',
+};
+
 export function ListView({ board }: Props) {
   const [tasks, setTasks] = useState<Task[]>(board.tasks);
   const [isLoading, setIsLoading] = useState(false);
@@ -645,11 +652,6 @@ export function ListView({ board }: Props) {
                     <CommandGroup>
                       {filterOptions.priorities.map((priority) => {
                         const isSelected = filters.priorities.has(priority);
-                        const priorityLabels = {
-                          1: 'High',
-                          2: 'Medium',
-                          3: 'Low',
-                        };
                         return (
                           <CommandItem
                             key={priority}
