@@ -283,11 +283,11 @@ let taskPool: any[]= [];
               newEvent.isPastDeadline = true;
               logs.push({
                 type: 'warning',
-                message: `Task "${task.name}" is scheduled past its deadline of ${task.deadline  + 'N/A'}.`,
+                message: `Task "${task.name}" is scheduled past its deadline of ${task.deadline}.`,
               });
             }
             scheduledEvents.push(newEvent);
-            availableTimes[task.category as keyof ActiveHours] = roundToQuarterHour(partEnd, true);
+            availableTimes[task.category as keyof ActiveHours] = roundToQuarterHour(partEnd, true) ?? availableTimes.work;
             scheduled = true;
             task.remaining = 0;
             task.scheduledParts = 1;
@@ -313,7 +313,7 @@ let taskPool: any[]= [];
 
       // Splittable: try to schedule the next part
       let scheduledPart = false;
-      let tryTime = availableTimes[task.category as keyof ActiveHours];
+      let tryTime = availableTimes[task.category as keyof ActiveHours] ?? availableTimes.work;
       let splitAttempts = 0;
       while (task.remaining > 0 && splitAttempts < 50 && !scheduledPart) {
         splitAttempts++;
@@ -390,7 +390,7 @@ let taskPool: any[]= [];
           newEvent.isPastDeadline = true;
           logs.push({
             type: 'warning',
-            message: `Part ${task.nextPart} of task "${task.name}" is scheduled past its deadline of ${task.deadline +('YYYY-MM-DD HH:mm') + 'N/A'}.`,
+            message: `Part ${task.nextPart} of task "${task.name}" is scheduled past its deadline of ${task.deadline}.`,
           });
         }
         scheduledEvents.push(newEvent);
@@ -546,7 +546,7 @@ function getAvailableSlots(
             }
           }
 
-          // Add slots between conflicts and after last conflict
+
           for (let i = 0; i < conflictingEvents.length; i++) {
             const currentEvent = conflictingEvents[i];
             const nextEvent = conflictingEvents[i + 1];
