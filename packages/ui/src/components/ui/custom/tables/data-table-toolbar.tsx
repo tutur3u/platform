@@ -96,6 +96,7 @@ export function DataTableToolbar<TData>({
         <Dialog>
           <DialogTrigger asChild>
             <Button
+              type="button"
               variant="outline"
               size="sm"
               className="ml-auto h-8 w-full md:w-fit"

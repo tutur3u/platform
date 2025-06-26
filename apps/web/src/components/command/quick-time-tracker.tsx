@@ -266,7 +266,7 @@ export function QuickTimeTracker({
             href={`/${wsId}/time-tracker`}
             onClick={() => toast.dismiss(toastId)}
           >
-            <Button variant="outline" size="sm" className="ml-3">
+            <Button type="button" variant="outline" size="sm" className="ml-3">
               <ExternalLink className="mr-1 h-3 w-3" />
               View
             </Button>

@@ -60,7 +60,7 @@ export function GenerateDialog({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline">
+        <Button type="button" variant="outline">
           <Sparkles className="h-4 w-4" />
           {t('common.generate_with_ai')}
         </Button>

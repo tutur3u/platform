@@ -1,11 +1,11 @@
 'use client';
 
+import { useCopyToClipboard } from '@/lib/hooks/use-copy-to-clipboard';
 import type { Message } from '@tuturuuu/ai/types';
 import { Button } from '@tuturuuu/ui/button';
 import { IconCheck, IconCopy } from '@tuturuuu/ui/icons';
 import { cn } from '@tuturuuu/utils/format';
 import type React from 'react';
-import { useCopyToClipboard } from '@/lib/hooks/use-copy-to-clipboard';
 
 interface ChatMessageActionsProps extends React.ComponentProps<'div'> {
   message: Message;
@@ -31,7 +31,7 @@ export function ChatMessageActions({
 
   return (
     <div className={cn('flex items-center justify-end', className)} {...props}>
-      <Button variant="outline" size="icon" onClick={onCopy}>
+      <Button type="button" variant="outline" size="icon" onClick={onCopy}>
         {isCopied ? <IconCheck /> : <IconCopy />}
         <span className="sr-only">Copy message</span>
       </Button>

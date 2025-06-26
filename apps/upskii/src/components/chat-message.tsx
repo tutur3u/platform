@@ -13,78 +13,39 @@ import dayjs from 'dayjs';
 import { ChatMessageActions } from '@/components/chat-message-actions';
 import 'dayjs/locale/vi';
 import relativeTime from 'dayjs/plugin/relativeTime';
-import mermaid from 'mermaid';
-import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
+import { useCallback, useEffect, useState } from 'react';
 import rehypeKatex from 'rehype-katex';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 
 function MermaidRenderer({ content }: { content: string }) {
-  const elementRef = useRef<HTMLDivElement>(null);
   const [svgContent, setSvgContent] = useState<string>('');
-  const [error, setError] = useState<string>('');
 
-  useEffect(() => {
-    mermaid.initialize({
-      theme: 'default',
-      startOnLoad: false,
-      securityLevel: 'strict',
-      themeVariables: {
-        fontSize: '14px',
-      },
-      flowchart: {
-        htmlLabels: true,
-        curve: 'linear',
-      },
-    });
+  const renderDiagram = useCallback(async () => {
+    try {
+      const mermaid = await import('mermaid');
+      mermaid.default.initialize({
+        startOnLoad: false,
+        theme: 'default',
+        securityLevel: 'loose',
+      });
 
-    const renderDiagram = async () => {
-      try {
-        // Clean and preprocess the content
-        const cleanContent = content
-          .replace(/\\n/g, '\n')
-          .replace(/\\t/g, '  ')
-          .trim();
-
-        // First try to parse the diagram
-        await mermaid.parse(cleanContent);
-
-        // If parsing succeeds, render it
-        const { svg } = await mermaid.render('mermaid-diagram', cleanContent);
-        setSvgContent(svg);
-        setError('');
-      } catch (error) {
-        console.error('Mermaid rendering error:', error);
-        setError(
-          error instanceof Error ? error.message : 'Failed to render diagram'
-        );
-        setSvgContent('');
-      }
-    };
-
-    renderDiagram();
+      const { svg } = await mermaid.default.render('mermaid-diagram', content);
+      setSvgContent(svg);
+    } catch (error) {
+      console.error('Failed to render mermaid diagram:', error);
+      setSvgContent('<div class="text-red-500">Failed to render diagram</div>');
+    }
   }, [content]);
 
-  if (error) {
-    return (
-      <div className="rounded-lg border border-dynamic-red/20 bg-dynamic-red/10 p-4 text-sm text-dynamic-red">
-        <p className="font-semibold">Failed to render diagram:</p>
-        <pre className="mt-2 font-mono text-xs whitespace-pre-wrap">
-          {error}
-        </pre>
-      </div>
-    );
-  }
-
-  if (!svgContent) {
-    return <div className="animate-pulse">Loading diagram...</div>;
-  }
+  useEffect(() => {
+    renderDiagram();
+  }, [renderDiagram]);
 
   return (
     <div
-      ref={elementRef}
       className="overflow-x-auto"
       dangerouslySetInnerHTML={{ __html: svgContent }}
     />
@@ -129,10 +90,33 @@ export function ChatMessage({
   setInput,
   ...props
 }: ChatMessageProps) {
+  const t = useTranslations('ai_chat');
+  const [selectedOptions, setSelectedOptions] = useState<
+    Record<string, { isCorrect: boolean; text: string }>
+  >({});
+  const [revealCorrect, setRevealCorrect] = useState<Record<string, boolean>>(
+    {}
+  );
+  const [revealAnswers, setRevealAnswers] = useState<Record<string, boolean>>(
+    {}
+  );
+
+  const handleOptionClick = useCallback(
+    (questionId: string, option: { isCorrect: boolean; text: string }) => {
+      if (revealCorrect[questionId]) return;
+
+      setSelectedOptions((prev) => ({ ...prev, [questionId]: option }));
+      setRevealCorrect((prev) => ({ ...prev, [questionId]: true }));
+    },
+    [revealCorrect]
+  );
+
+  const handleRevealAnswer = useCallback((questionId: string) => {
+    setRevealAnswers((prev) => ({ ...prev, [questionId]: true }));
+  }, []);
+
   dayjs.extend(relativeTime);
   dayjs.locale(locale);
-
-  const t = useTranslations('ai_chat');
 
   return (
     <div
@@ -286,6 +270,8 @@ export function ChatMessage({
                   ? questionMatch[1]
                   : 'No question found';
 
+                const questionId = `quiz_${question}`;
+
                 const optionsMatches = Array.from(
                   quizContent.matchAll(
                     /<OPTION(?: isCorrect)?>(.*?)<\/OPTION>/g
@@ -296,22 +282,6 @@ export function ChatMessage({
                   isCorrect: match[0].includes('isCorrect'),
                   text: match?.[1]?.trim() || '',
                 }));
-
-                const [selectedOption, setSelectedOption] = useState<{
-                  isCorrect: boolean;
-                  text: string;
-                }>({ isCorrect: false, text: '' });
-                const [revealCorrect, setRevealCorrect] = useState(false);
-
-                const handleOptionClick = (option: {
-                  isCorrect: boolean;
-                  text: string;
-                }) => {
-                  if (revealCorrect) return;
-
-                  setSelectedOption(option);
-                  setRevealCorrect(true);
-                };
 
                 const questionElement = (
                   <div className="text-lg font-bold text-foreground">
@@ -324,16 +294,16 @@ export function ChatMessage({
                     type="button"
                     key={index}
                     className={`mb-2 w-full rounded border px-3 py-1 text-center font-semibold transition last:mb-0 ${
-                      selectedOption.text === option.text
-                        ? option.isCorrect
+                      selectedOptions[questionId]?.text === option.text
+                        ? selectedOptions[questionId]?.isCorrect
                           ? 'border-green-600 bg-green-100 text-green-700 dark:border-green-400 dark:bg-green-900/50 dark:text-green-300'
                           : 'border-red-600 bg-red-100 text-red-700 dark:border-red-400 dark:bg-red-900/50 dark:text-red-300'
-                        : revealCorrect && option.isCorrect
+                        : revealCorrect[questionId] && option.isCorrect
                           ? 'border-green-600 bg-green-100 text-green-700 dark:border-green-400 dark:bg-green-900/50 dark:text-green-300'
                           : 'border-foreground/20 bg-foreground/5 text-foreground hover:bg-foreground/10'
                     }`}
-                    onClick={() => handleOptionClick(option)}
-                    disabled={revealCorrect}
+                    onClick={() => handleOptionClick(questionId, option)}
+                    disabled={revealCorrect[questionId]}
                   >
                     {option.text}
                   </button>
@@ -352,7 +322,7 @@ export function ChatMessage({
                     >
                       {optionsElements}
                     </div>
-                    {revealCorrect && (
+                    {revealCorrect[questionId] && (
                       <>
                         <div className="mt-4">
                           <span className="opacity-70">
@@ -360,10 +330,10 @@ export function ChatMessage({
                             {t('you_selected')}{' '}
                           </span>
                           <span className="font-semibold">
-                            {selectedOption.text}
+                            {selectedOptions[questionId]?.text}
                           </span>
                           <span className="opacity-70">, {t('which_is')} </span>
-                          {selectedOption.isCorrect ? (
+                          {selectedOptions[questionId]?.isCorrect ? (
                             <span className="font-semibold text-dynamic-green underline">
                               {t('correct')}
                             </span>
@@ -403,12 +373,12 @@ export function ChatMessage({
                   ? questionMatch[1]
                   : 'No question found';
 
+                const questionId = `flashcard_${question}`;
+
                 const answerMatch = flashcardContent.match(
                   /<ANSWER>(.*?)<\/ANSWER>/
                 );
                 const answer = answerMatch ? answerMatch[1] : 'No answer found';
-
-                const [revealAnswer, setRevealAnswer] = useState(false);
 
                 return (
                   <div className="mt-4 flex w-full flex-col items-center justify-center rounded-lg border bg-foreground/5 p-4">
@@ -419,14 +389,14 @@ export function ChatMessage({
                     <button
                       type="button"
                       className={`w-full rounded border px-3 py-1 text-center font-semibold text-foreground transition duration-300 ${
-                        revealAnswer
+                        revealAnswers[questionId]
                           ? 'bg-dynamic-green/20 text-dynamic-green hover:bg-dynamic-green/30'
                           : 'bg-foreground/5 hover:bg-foreground/10'
                       }`}
-                      onClick={() => setRevealAnswer(true)}
-                      disabled={revealAnswer}
+                      onClick={() => handleRevealAnswer(questionId)}
+                      disabled={revealAnswers[questionId]}
                     >
-                      {revealAnswer ? (
+                      {revealAnswers[questionId] ? (
                         <>
                           <div className="text-dynamic-yellow">{answer}</div>
                           <Separator className="my-4" />
@@ -538,6 +508,8 @@ export function ChatMessage({
                   ? questionMatch[1]
                   : 'No question found';
 
+                const questionId = `quiz_${question}`;
+
                 const optionsMatches = Array.from(
                   quizContent.matchAll(
                     /<OPTION(?: isCorrect)?>(.*?)<\/OPTION>/g
@@ -548,22 +520,6 @@ export function ChatMessage({
                   isCorrect: match[0].includes('isCorrect'),
                   text: match?.[1]?.trim() || '',
                 }));
-
-                const [selectedOption, setSelectedOption] = useState<{
-                  isCorrect: boolean;
-                  text: string;
-                }>({ isCorrect: false, text: '' });
-                const [revealCorrect, setRevealCorrect] = useState(false);
-
-                const handleOptionClick = (option: {
-                  isCorrect: boolean;
-                  text: string;
-                }) => {
-                  if (revealCorrect) return;
-
-                  setSelectedOption(option);
-                  setRevealCorrect(true);
-                };
 
                 const questionElement = (
                   <div className="text-lg font-bold text-foreground">
@@ -576,16 +532,16 @@ export function ChatMessage({
                     type="button"
                     key={index}
                     className={`mb-2 w-full rounded border px-3 py-1 text-center font-semibold transition last:mb-0 ${
-                      selectedOption.text === option.text
-                        ? option.isCorrect
+                      selectedOptions[questionId]?.text === option.text
+                        ? selectedOptions[questionId]?.isCorrect
                           ? 'border-green-600 bg-green-100 text-green-700 dark:border-green-400 dark:bg-green-900/50 dark:text-green-300'
                           : 'border-red-600 bg-red-100 text-red-700 dark:border-red-400 dark:bg-red-900/50 dark:text-red-300'
-                        : revealCorrect && option.isCorrect
+                        : revealCorrect[questionId] && option.isCorrect
                           ? 'border-green-600 bg-green-100 text-green-700 dark:border-green-400 dark:bg-green-900/50 dark:text-green-300'
                           : 'border-foreground/20 bg-foreground/5 text-foreground hover:bg-foreground/10'
                     }`}
-                    onClick={() => handleOptionClick(option)}
-                    disabled={revealCorrect}
+                    onClick={() => handleOptionClick(questionId, option)}
+                    disabled={revealCorrect[questionId]}
                   >
                     {option.text}
                   </button>
@@ -604,7 +560,7 @@ export function ChatMessage({
                     >
                       {optionsElements}
                     </div>
-                    {revealCorrect && (
+                    {revealCorrect[questionId] && (
                       <>
                         <div className="mt-4">
                           <span className="opacity-70">
@@ -612,10 +568,10 @@ export function ChatMessage({
                             {t('you_selected')}{' '}
                           </span>
                           <span className="font-semibold">
-                            {selectedOption.text}
+                            {selectedOptions[questionId]?.text}
                           </span>
                           <span className="opacity-70">, {t('which_is')} </span>
-                          {selectedOption.isCorrect ? (
+                          {selectedOptions[questionId]?.isCorrect ? (
                             <span className="font-semibold text-dynamic-green underline">
                               {t('correct')}
                             </span>
@@ -655,12 +611,12 @@ export function ChatMessage({
                   ? questionMatch[1]
                   : 'No question found';
 
+                const questionId = `flashcard_${question}`;
+
                 const answerMatch = flashcardContent.match(
                   /<ANSWER>(.*?)<\/ANSWER>/
                 );
                 const answer = answerMatch ? answerMatch[1] : 'No answer found';
-
-                const [revealAnswer, setRevealAnswer] = useState(false);
 
                 return (
                   <div className="mt-4 flex w-full flex-col items-center justify-center rounded-lg border bg-foreground/5 p-4">
@@ -671,14 +627,14 @@ export function ChatMessage({
                     <button
                       type="button"
                       className={`w-full rounded border px-3 py-1 text-center font-semibold text-foreground transition duration-300 ${
-                        revealAnswer
+                        revealAnswers[questionId]
                           ? 'bg-dynamic-green/20 text-dynamic-green hover:bg-dynamic-green/30'
                           : 'bg-foreground/5 hover:bg-foreground/10'
                       }`}
-                      onClick={() => setRevealAnswer(true)}
-                      disabled={revealAnswer}
+                      onClick={() => handleRevealAnswer(questionId)}
+                      disabled={revealAnswers[questionId]}
                     >
-                      {revealAnswer ? (
+                      {revealAnswers[questionId] ? (
                         <>
                           <div className="text-dynamic-yellow">{answer}</div>
                           <Separator className="my-4" />

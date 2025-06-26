@@ -50,8 +50,13 @@ export function DataExplorer({ wsId, dataset }: Props) {
   const [pageSize, setPageSize] = useState('10');
   const [currentPage, setCurrentPage] = useState(1);
   const [isAddingRow, setIsAddingRow] = useState(false);
-  const [newRow, setNewRow] = useState<any>({});
-  const [editingRow, setEditingRow] = useState<any>(null);
+  const [newRow, setNewRow] = useState<Record<string, string | number | null>>(
+    {}
+  );
+  const [editingRow, setEditingRow] = useState<{
+    row_id: string;
+    cells: Record<string, string | number | null>;
+  } | null>(null);
   const [isClearingRows, setIsClearingRows] = useState(false);
 
   // Query for columns
@@ -138,10 +143,13 @@ export function DataExplorer({ wsId, dataset }: Props) {
 
   // Similar updates for handleEditRow and handleDeleteRow
   const handleEditRow = async () => {
+    if (!editingRow) return;
+
     try {
       const updates = Object.keys(editingRow.cells).map((header) => ({
         rowId: editingRow.row_id,
-        columnId: columnsQuery.data.find((col: any) => col.name === header).id,
+        columnId:
+          columnsQuery.data.find((col: any) => col.name === header)?.id || '',
         data: editingRow.cells[header],
       }));
 

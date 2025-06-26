@@ -115,12 +115,24 @@ export function ToolBar({
         ))}
       </div>
       {hasChanges ? (
-        <Button variant="ghost" size="sm" onClick={onSave} className="ml-2">
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={onSave}
+          className="ml-2"
+        >
           <Save className="mr-2 size-4" />
           {saveButtonLabel}
         </Button>
       ) : (
-        <Button variant="ghost" size="sm" disabled className="ml-2">
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          disabled
+          className="ml-2"
+        >
           <Check className="mr-2 size-4" />
           {savedButtonLabel}
         </Button>

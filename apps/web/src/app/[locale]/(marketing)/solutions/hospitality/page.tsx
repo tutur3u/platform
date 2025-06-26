@@ -367,10 +367,10 @@ export default function HospitalityPage() {
             experiences and streamline operations.
           </p>
           <div className="flex justify-center gap-4">
-            <Button size="lg" asChild>
+            <Button type="button" size="lg" asChild>
               <Link href="/contact">Get Started</Link>
             </Button>
-            <Button size="lg" variant="outline" asChild>
+            <Button type="button" size="lg" variant="outline" asChild>
               <Link href="/pricing">View Pricing</Link>
             </Button>
           </div>

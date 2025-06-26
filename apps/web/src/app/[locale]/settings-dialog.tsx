@@ -4,8 +4,8 @@ import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
 import { DialogContent, DialogHeader, DialogTitle } from '@tuturuuu/ui/dialog';
 import { ArrowRight } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
-import Link from 'next/link';
 import { useTranslations } from 'next-intl';
+import Link from 'next/link';
 import { Suspense } from 'react';
 import UserAvatar from './settings-avatar';
 import DisplayNameInput from './settings-display-name-input';
@@ -74,7 +74,7 @@ export default function UserSettingsDialog({ user }: UserSettingsDialogProps) {
         <Separator className="my-4" />
 
         <Link href="/settings/account" className="w-full">
-          <Button variant="outline" className="w-full">
+          <Button type="button" variant="outline" className="w-full">
             {t('settings-account.view-full-settings')}
             <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
