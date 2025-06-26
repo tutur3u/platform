@@ -7783,12 +7783,12 @@ export type Database = {
       };
       count_search_users: {
         Args:
+          | { search_query: string }
           | {
-              enabled_filter?: boolean;
               search_query: string;
               role_filter?: string;
-            }
-          | { search_query: string };
+              enabled_filter?: boolean;
+            };
         Returns: number;
       };
       create_ai_chat: {
@@ -8020,15 +8020,15 @@ export type Database = {
       get_user_tasks: {
         Args: { _board_id: string };
         Returns: {
-          priority: number;
-          list_id: string;
-          board_id: string;
-          start_date: string;
-          completed: boolean;
           id: string;
           name: string;
           description: string;
+          priority: number;
+          completed: boolean;
+          start_date: string;
           end_date: string;
+          list_id: string;
+          board_id: string;
         }[];
       };
       get_user_whitelist_status: {
@@ -8086,26 +8086,26 @@ export type Database = {
           excluded_groups: string[];
         };
         Returns: {
+          id: string;
+          avatar_url: string;
+          full_name: string;
+          display_name: string;
+          email: string;
+          phone: string;
+          gender: string;
+          birthday: string;
+          ethnicity: string;
+          guardian: string;
+          address: string;
+          national_id: string;
+          note: string;
+          balance: number;
+          ws_id: string;
+          groups: string[];
+          group_count: number;
+          linked_users: Json;
           created_at: string;
           updated_at: string;
-          linked_users: Json;
-          group_count: number;
-          groups: string[];
-          ws_id: string;
-          balance: number;
-          note: string;
-          national_id: string;
-          address: string;
-          guardian: string;
-          ethnicity: string;
-          birthday: string;
-          gender: string;
-          phone: string;
-          email: string;
-          display_name: string;
-          full_name: string;
-          avatar_url: string;
-          id: string;
         }[];
       };
       get_workspace_users_count: {
@@ -8157,7 +8157,7 @@ export type Database = {
         Returns: boolean;
       };
       is_org_member: {
-        Args: { _org_id: string; _user_id: string };
+        Args: { _user_id: string; _org_id: string };
         Returns: boolean;
       };
       is_project_member: {
@@ -8185,15 +8185,15 @@ export type Database = {
         Returns: Json;
       };
       nova_get_challenge_with_user_stats: {
-        Args: { user_id: string; challenge_id: string };
+        Args: { challenge_id: string; user_id: string };
         Returns: Json;
       };
       nova_get_user_daily_sessions: {
-        Args: { user_id: string; challenge_id: string };
+        Args: { challenge_id: string; user_id: string };
         Returns: number;
       };
       nova_get_user_total_sessions: {
-        Args: { user_id: string; challenge_id: string };
+        Args: { challenge_id: string; user_id: string };
         Returns: number;
       };
       remove_board_tags: {
@@ -8274,7 +8274,7 @@ export type Database = {
         }[];
       };
       transactions_have_same_abs_amount: {
-        Args: { transaction_id_2: string; transaction_id_1: string };
+        Args: { transaction_id_1: string; transaction_id_2: string };
         Returns: boolean;
       };
       transactions_have_same_amount: {
@@ -8298,14 +8298,14 @@ export type Database = {
         Returns: boolean;
       };
       validate_cross_app_token: {
-        Args: { p_target_app: string; p_token: string };
+        Args: { p_token: string; p_target_app: string };
         Returns: string;
       };
       validate_cross_app_token_with_session: {
         Args: { p_token: string; p_target_app: string };
         Returns: {
-          session_data: Json;
           user_id: string;
+          session_data: Json;
         }[];
       };
     };
