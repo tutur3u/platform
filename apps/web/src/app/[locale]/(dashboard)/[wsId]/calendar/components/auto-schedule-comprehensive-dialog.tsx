@@ -122,7 +122,7 @@ export default function AutoScheduleComprehensiveDialog({
                     duration: 5000,
                   });
                   setIsOpen(false);
-                  break streamLoop; // Use the label to break the correct loop
+                  break streamLoop; 
                 }
                 if (json.status === 'error') {
                   throw new Error(json.message || 'An unknown error occurred');

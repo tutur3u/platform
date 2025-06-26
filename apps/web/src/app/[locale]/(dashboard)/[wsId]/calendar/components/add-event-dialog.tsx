@@ -54,7 +54,7 @@ export default function AddEventModal({
     is_splittable: true,
     min_split_duration_minutes: 60,
     max_split_duration_minutes: 120,
-    time_reference: 'working_time',
+    calendar_hours: 'working_time',
     start_date: '',
     end_date: '',
   });
@@ -162,9 +162,9 @@ export default function AddEventModal({
         max_split_duration_minutes: formData.is_splittable
           ? formData.max_split_duration_minutes
           : null,
-          time_reference: formData.time_reference as
-          | 'working_time'
-          | 'personal_time',
+          calendar_hours: formData.calendar_hours as
+          | 'work_hours'
+          | 'personal_hours'| 'meeting_hours',
         start_date: formData.start_date || null,
         end_date: formData.end_date || null,
         // ws_id: wsId,
@@ -217,7 +217,7 @@ export default function AddEventModal({
       is_splittable: true,
       min_split_duration_minutes: 30,
       max_split_duration_minutes: 60,
-      time_reference: 'working_time',
+      calendar_hours: 'work_hours',
       start_date: '',
       end_date: '',
     });
@@ -227,17 +227,23 @@ export default function AddEventModal({
 
   const workingHoursOptions = [
     {
-      value: 'working_time',
+      value: 'work_hours',
       label: 'Working Hours',
       icon: '💼',
       description: 'Schedule during standard work hours',
     },
     {
-      value: 'personal_time',
+      value: 'personal_hours',
       label: 'Personal Time',
       icon: '⚙️',
       description: 'Schedule at any time of day',
     },
+    {
+      value: 'meeting_hours',
+      label: 'Meeting Hours',
+      icon: '📅',
+      description: 'Schedule during typical meeting times',
+    }
   ];
 
   return (
@@ -428,9 +434,9 @@ export default function AddEventModal({
                 <Label className="text-sm font-medium">Working Hours</Label>
               </div>
               <Select
-                value={formData.time_reference}
+                value={formData.calendar_hours}
                 onValueChange={(value) =>
-                  updateFormData('time_reference', value)
+                  updateFormData('calendar_hours', value)
                 }
               >
                 <SelectTrigger>

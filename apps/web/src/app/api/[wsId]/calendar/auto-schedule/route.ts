@@ -1,13 +1,10 @@
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 import { createCalendarOptimizer } from './tools';
-import { scheduleTasks, promoteEventToTask, scheduleWithFlexibleEvents } from '@tuturuuu/ai/scheduling/algorithm';
-import { getCurrentUser } from '@tuturuuu/utils/user-helper';
+import {  scheduleWithFlexibleEvents } from '@tuturuuu/ai/scheduling/algorithm';
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { isPast } from 'date-fns';
 import {
   defaultActiveHours,
-  defaultTasks,
 } from '@tuturuuu/ai/scheduling/default';
 
 import type dayjs from 'dayjs';
@@ -163,7 +160,7 @@ export async function POST(
     const { searchParams } = new URL(request.url);
     const streamMode = searchParams.get('stream') !== 'false';
 
-    const body = await request.json().catch(() => ({}));
+    // const body = await request.json().catch(() => ({}));
     // const gapMinutes = (body.gapMinutes as number | undefined) || 0;
 
     const { data: { user } } = await (await supabase).auth.getUser();
