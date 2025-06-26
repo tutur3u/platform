@@ -57,7 +57,7 @@ export async function POST() {
 
   const { error } = await supabase.from('aurora_ml_metrics').insert(
     Object.entries(data).map(([model, prediction]) => ({
-      ws_id: process.env.AURORA_EXTERNAL_WSID!,
+      ws_id: process.env.AURORA_EXTERNAL_WSID as string,
       model,
       rmse: prediction.RMSE,
       directional_accuracy: prediction.Directional_Accuracy,

@@ -137,12 +137,12 @@ function generateContributionTimeline(
     const allocation = Math.floor(
       remainingContributions * (0.1 + Math.random() * 0.2)
     );
-    monthlyContributions[i]!.contributions = allocation;
+    monthlyContributions[i].contributions = allocation;
     remainingContributions -= allocation;
   }
 
   // Allocate remaining contributions to the last month
-  monthlyContributions[months.length - 1]!.contributions =
+  monthlyContributions[months.length - 1].contributions =
     remainingContributions;
 
   return monthlyContributions;

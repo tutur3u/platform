@@ -26,7 +26,7 @@ const FloatingElements = () => {
           y: Math.random() * 100,
           rotation: Math.random() * 360,
           scale: 0.5 + Math.random() * 0.5,
-          color: colors[Math.floor(Math.random() * colors.length)]!,
+          color: colors[Math.floor(Math.random() * colors.length)],
         });
       }
 

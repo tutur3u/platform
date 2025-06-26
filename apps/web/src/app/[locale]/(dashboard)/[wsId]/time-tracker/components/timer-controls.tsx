@@ -95,7 +95,7 @@ interface TimerControlsProps {
   // eslint-disable-next-line no-unused-vars
   formatDuration: (seconds: number) => string;
   // eslint-disable-next-line no-unused-vars
-  apiCall: (url: string, options?: RequestInit) => Promise<any>;
+  apiCall: <T>(url: string, options?: RequestInit) => Promise<T>;
   isDraggingTask?: boolean;
   onGoToTasksTab?: () => void;
   currentUserId?: string;
@@ -771,7 +771,7 @@ export function TimerControls({
         // Lazily create a singleton AudioContext to prevent resource leaks
         if (!audioContextRef.current) {
           audioContextRef.current = new (
-            window.AudioContext || (window as any).webkitAudioContext
+            window.AudioContext || (window as unknown as Window).webkitAudioContext
           )();
         }
 
@@ -1342,7 +1342,7 @@ export function TimerControls({
     );
 
     if (matchingTask && title.length > 2) {
-      setSelectedTaskId(matchingTask.id!);
+      setSelectedTaskId(matchingTask.id);
       setShowTaskSuggestion(false);
     } else if (
       title.length > 2 &&
@@ -1455,11 +1455,11 @@ export function TimerControls({
   };
 
   // Start timer
-  const startTimer = async () => {
+  const startTimer = useCallback(async () => {
     if (sessionMode === 'task' && selectedTaskId && selectedTaskId !== 'none') {
       const selectedTask = tasks.find((t) => t.id === selectedTaskId);
       if (selectedTask) {
-        await startTimerWithTask(selectedTaskId, selectedTask.name!);
+        await startTimerWithTask(selectedTaskId, selectedTask.name);
         return;
       }
     }
@@ -1549,10 +1549,30 @@ export function TimerControls({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [
+    sessionMode,
+    selectedTaskId,
+    tasks,
+    newSessionTitle,
+    newSessionDescription,
+    selectedCategoryId,
+    wsId,
+    apiCall,
+    setCurrentSession,
+    setIsRunning,
+    setElapsedTime,
+    updateSessionProtection,
+    timerMode,
+    startPomodoroSession,
+    customTimerSettings,
+    updateCurrentBreakState,
+    setHasReachedTarget,
+    setCountdownState,
+    onSessionUpdate,
+  ]);
 
   // Stop timer - handle both active and paused sessions
-  const stopTimer = async () => {
+  const stopTimer = useCallback(async () => {
     const sessionToStop = currentSession || pausedSession;
     if (!sessionToStop) return;
 
@@ -1600,10 +1620,28 @@ export function TimerControls({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [
+    currentSession,
+    pausedSession,
+    setIsLoading,
+    apiCall,
+    wsId,
+    setJustCompleted,
+    setCurrentSession,
+    setIsRunning,
+    setElapsedTime,
+    setPausedSession,
+    setPausedElapsedTime,
+    setPauseStartTime,
+    updateSessionProtection,
+    timerMode,
+    clearPausedSessionFromStorage,
+    onSessionUpdate,
+    formatDuration,
+  ]);
 
   // Pause timer - properly maintain session state
-  const pauseTimer = async () => {
+  const pauseTimer = useCallback(async () => {
     if (!currentSession) return;
 
     setIsLoading(true);
@@ -1643,10 +1681,24 @@ export function TimerControls({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [
+    currentSession,
+    setIsLoading,
+    apiCall,
+    wsId,
+    setPausedSession,
+    setPausedElapsedTime,
+    setPauseStartTime,
+    savePausedSessionToStorage,
+    setCurrentSession,
+    setIsRunning,
+    setElapsedTime,
+    onSessionUpdate,
+    elapsedTime,
+  ]);
 
   // Resume paused timer
-  const resumeTimer = async () => {
+  const resumeTimer = useCallback(async () => {
     if (!pausedSession) return;
 
     setIsLoading(true);
@@ -1694,7 +1746,25 @@ export function TimerControls({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [
+    pausedSession,
+    setIsLoading,
+    apiCall,
+    wsId,
+    setCurrentSession,
+    setElapsedTime,
+    setIsRunning,
+    updateSessionProtection,
+    timerMode,
+    setPausedSession,
+    setPausedElapsedTime,
+    setPauseStartTime,
+    clearPausedSessionFromStorage,
+    pauseStartTime,
+    onSessionUpdate,
+    formatDuration,
+    pausedElapsedTime,
+  ]);
 
   // Start from template
   const startFromTemplate = async (template: SessionTemplate) => {
@@ -1998,7 +2068,7 @@ export function TimerControls({
         const currentIndex = filteredTasks.findIndex(
           (task) => task.id === selectedTaskId
         );
-        let nextIndex;
+        let nextIndex: number | undefined;
 
         if (event.key === 'ArrowDown') {
           nextIndex =
@@ -3419,7 +3489,7 @@ export function TimerControls({
               {/* Session Mode Toggle */}
               <Tabs
                 value={sessionMode}
-                onValueChange={(v) => handleSessionModeChange(v as any)}
+                onValueChange={(v: "task" | "manual") => handleSessionModeChange(v)}
               >
                 <TabsList className="grid h-full w-full grid-cols-2 bg-muted/50">
                   <TabsTrigger
@@ -3506,6 +3576,8 @@ export function TimerControls({
                               );
                               return selectedTask ? (
                                 <div
+                                  role="button"
+                                  tabIndex={0}
                                   className={cn(
                                     'flex min-h-[2.5rem] cursor-text items-center gap-2 rounded-md border px-3 py-2 transition-all duration-200',
                                     isDragOver
@@ -3518,6 +3590,13 @@ export function TimerControls({
                                     setIsSearchMode(true);
                                     setTaskSearchQuery('');
                                     openDropdown();
+                                  }}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                      setIsSearchMode(true);
+                                      setTaskSearchQuery('');
+                                      openDropdown();
+                                    }
                                   }}
                                 >
                                   <div className="flex h-6 w-6 items-center justify-center rounded border border-dynamic-blue/30 bg-gradient-to-br from-dynamic-blue/20 to-dynamic-blue/10">
@@ -3562,6 +3641,7 @@ export function TimerControls({
                                         stroke="currentColor"
                                         viewBox="0 0 24 24"
                                       >
+                                        <title>Remove selected task</title>
                                         <path
                                           strokeLinecap="round"
                                           strokeLinejoin="round"
@@ -3596,6 +3676,7 @@ export function TimerControls({
                                         stroke="currentColor"
                                         viewBox="0 0 24 24"
                                       >
+                                        <title>Toggle task dropdown</title>
                                         <path
                                           strokeLinecap="round"
                                           strokeLinejoin="round"
@@ -4003,16 +4084,12 @@ export function TimerControls({
                                                         }
                                                       >
                                                         {assignee.avatar_url ? (
-                                                          <img
-                                                            src={
-                                                              assignee.avatar_url
-                                                            }
-                                                            alt={
-                                                              assignee.display_name ||
-                                                              assignee.email ||
-                                                              ''
-                                                            }
+                                                          <Image
+                                                            src={assignee.avatar_url}
+                                                            alt={assignee.display_name || assignee.email || ''}
                                                             className="h-full w-full rounded-full object-cover"
+                                                            width={16}
+                                                            height={16}
                                                           />
                                                         ) : (
                                                           <div className="flex h-full w-full items-center justify-center text-[8px] font-medium text-gray-600 dark:text-gray-300">

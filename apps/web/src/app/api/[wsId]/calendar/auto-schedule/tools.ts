@@ -832,7 +832,7 @@ function repackEventsSequentially(
   // This respects the remaining time on the first day.
   for (const event of shuffledEvents) {
     let placed = false;
-    const spaceNeeded = (bin: { events: any[] }) =>
+    const spaceNeeded = (bin: { events: CalendarEvent[] }) =>
       event.duration + (bin.events.length > 0 ? gapInMinutes * 60000 : 0);
 
     for (const bin of dayBins) {

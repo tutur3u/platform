@@ -34,31 +34,31 @@ export async function PUT(req: Request, { params }: Params) {
       .eq('quiz_id', id);
 
     const existingOptionIds =
-      existingOptions?.map((option: any) => option.id) || [];
+      existingOptions?.map((option: { id: string }) => option.id) || [];
 
-    const optionsToUpdate = quiz_options.filter((option: any) =>
+    const optionsToUpdate = quiz_options.filter((option: { id: string }) =>
       existingOptionIds.includes(option.id)
     );
 
     const optionsToInsert = quiz_options.filter(
-      (option: any) => !existingOptionIds.includes(option.id)
+      (option: { id?: string }) => !existingOptionIds.includes(option.id || '')
     );
 
     const optionsToDelete = existingOptionIds.filter(
       (optionId: string) =>
-        !quiz_options.some((option: any) => option.id === optionId)
+        !quiz_options.some((option: { id: string }) => option.id === optionId)
     );
 
     if (optionsToUpdate.length > 0) {
       await supabase
         .from('quiz_options')
-        .upsert(optionsToUpdate.map((o: any) => ({ ...o, quiz_id: id })));
+        .upsert(optionsToUpdate.map((o: { id: string; quiz_id: string }) => ({ ...o, quiz_id: id })));
     }
 
     if (optionsToInsert.length > 0) {
       await supabase
         .from('quiz_options')
-        .insert(optionsToInsert.map((o: any) => ({ ...o, quiz_id: id })));
+        .insert(optionsToInsert.map((o: { id?: string; quiz_id: string }) => ({ ...o, quiz_id: id })));
     }
 
     if (optionsToDelete.length > 0) {

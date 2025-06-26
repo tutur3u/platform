@@ -221,7 +221,7 @@ export function PricingSection() {
                   )}
                   {plan.name === 'Pro' && isAnnual && (
                     <div className="mt-2 inline-block rounded-full bg-green-100 px-3 py-1 text-sm font-medium text-green-600 dark:bg-green-900/30 dark:text-green-400">
-                      ${plan.monthlyPrice! * 12 - price!}{' '}
+                      ${(plan.monthlyPrice ?? 0) * 12 - (price ?? 0)}{' '}
                       {t('savings_annually')}
                     </div>
                   )}
@@ -237,7 +237,7 @@ export function PricingSection() {
                           ? `bg-gradient-to-r ${plan.bgGradient} text-white hover:shadow-lg hover:shadow-blue-500/20`
                           : 'hover:shadow-lg hover:shadow-gray-200/50'
                     }`}
-                    variant={plan.buttonVariant as any}
+                    variant={plan.buttonVariant as "default" | "outline" | "secondary" | "ghost" | "link" | undefined}
                     size="lg"
                     disabled={plan.cta === t('coming_soon')}
                   >

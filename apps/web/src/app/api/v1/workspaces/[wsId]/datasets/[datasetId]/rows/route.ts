@@ -87,8 +87,8 @@ export async function POST(req: Request, { params }: Params) {
     );
   }
 
-  const insertData = rows.flatMap((row: any) =>
-    columns.map((column: any) => ({
+  const insertData = rows.flatMap((row: Record<string, any>) =>
+    columns.map((column: { id: string; name: string }) => ({
       dataset_id: datasetId,
       column_id: column.id,
       row_id: newRow.id,
@@ -128,7 +128,7 @@ export async function PUT(req: Request, { params }: Params) {
 
   const columns = columnsResponse.data;
 
-  const updateData = columns.map((column: any) => ({
+  const updateData = columns.map((column: { id: string; name: string }) => ({
     dataset_id: datasetId,
     column_id: column.id,
     row_id: rowId,

@@ -45,7 +45,7 @@ export async function PUT(req: Request) {
   // Update all users in a single operation
   const { error: updateError } = await supabase
     .from('workspace_users')
-    .upsert(usersToUpdate as any);
+    .upsert(usersToUpdate as WorkspaceUser[]);
 
   if (updateError) {
     console.log(updateError);

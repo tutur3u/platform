@@ -128,7 +128,7 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json({ googleEventId: googleEventId }, { status: 200 });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Failed to sync with Google Calendar (POST):', error);
     if (error.response?.data?.error === 'invalid_grant') {
       return NextResponse.json(
@@ -200,7 +200,7 @@ export async function PUT(request: Request) {
     const calendar = google.calendar({ version: 'v3', auth });
 
     // Prepare the updated Google Event data
-    const googleEventUpdate: any = {}; // Use 'any' for flexibility or define a specific type
+    const googleEventUpdate: Partial<CalendarEvent> = {};
     if (eventUpdates.title !== undefined)
       googleEventUpdate.summary = eventUpdates.title || 'Untitled Event';
     if (eventUpdates.description !== undefined)
@@ -237,7 +237,7 @@ export async function PUT(request: Request) {
       { googleEventId: response.data.id },
       { status: 200 }
     );
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error(
       `Failed to update Google Calendar event ${googleCalendarEventId}:`,
       error
@@ -322,7 +322,7 @@ export async function DELETE(request: Request) {
       { message: 'Event deleted successfully from Google Calendar' },
       { status: 200 }
     );
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error(
       `Failed to delete Google Calendar event ${googleCalendarEventId}:`,
       error

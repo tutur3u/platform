@@ -84,7 +84,7 @@ export async function POST() {
       .from('aurora_statistical_forecast')
       .insert(
         data.statistical_forecast.map((prediction) => ({
-          ws_id: process.env.AURORA_EXTERNAL_WSID!,
+          ws_id: process.env.AURORA_EXTERNAL_WSID as string,
           auto_arima: prediction.AutoARIMA,
           auto_arima_lo_90: prediction['AutoARIMA-lo-90'],
           auto_arima_hi_90: prediction['AutoARIMA-hi-90'],
@@ -108,7 +108,7 @@ export async function POST() {
       .from('aurora_ml_forecast')
       .insert(
         data.ml_forecast.map((prediction) => ({
-          ws_id: process.env.AURORA_EXTERNAL_WSID!,
+          ws_id: process.env.AURORA_EXTERNAL_WSID as string,
           elasticnet: prediction.elasticnet,
           lightgbm: prediction.lightgbm,
           xgboost: prediction.xgboost,

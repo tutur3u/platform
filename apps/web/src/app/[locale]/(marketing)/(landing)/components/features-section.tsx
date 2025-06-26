@@ -426,7 +426,7 @@ export function FeaturesSection() {
   ];
 
   const sectionRef = useRef<HTMLDivElement>(null);
-  const [activeFeature, setActiveFeature] = useState<Feature>(features[0]!); // Initialize with the first feature
+  const [activeFeature, setActiveFeature] = useState<Feature>(features[0]); // Initialize with the first feature
   const contentRef = useRef<HTMLDivElement>(null); // Ref for the content area that changes
   const imageRef = useRef<HTMLDivElement>(null); // Ref for the image area that changes
 

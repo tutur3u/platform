@@ -236,7 +236,7 @@ export function WorkflowSection() {
       // Initial animation for the first active step's image/content
       // This assumes the first step is active on load and its content is present.
       if (workflowItems.length > 0) {
-        gsap.from(workflowItems[0]!, {
+        gsap.from(workflowItems[0], {
           y: 50,
           opacity: 0,
           duration: 0.8,
@@ -276,8 +276,7 @@ export function WorkflowSection() {
     };
   }, []); // Re-run when activeStep changes
 
-  const currentStep = (workflowSteps.find((step) => step.id === activeStep) ||
-    workflowSteps[0]) as WorkflowStep;
+  const currentStep = workflowSteps.find((step) => step.id === activeStep) || workflowSteps[0];
 
   return (
     <section

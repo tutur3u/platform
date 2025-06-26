@@ -41,7 +41,7 @@ export async function GET(
   }
 }
 
-function generateInvoiceHtml(subscription: any): string {
+function generateInvoiceHtml(subscription: { plan_name?: string; id: string; workspace_subscription_products?: { price: number } | null; created_at?: string | null; }): string {
   const price = subscription.workspace_subscription_products?.price;
   const amount = price ? `$${price.toFixed(2)}` : '--';
   const date = subscription.created_at

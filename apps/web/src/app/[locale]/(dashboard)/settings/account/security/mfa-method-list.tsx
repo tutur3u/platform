@@ -13,7 +13,7 @@ interface MFAMethod {
   id: string;
   titleKey: string;
   descriptionKey: string;
-  icon: React.ComponentType<any>;
+  icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
   status: MFAStatus;
   dialog: React.ReactNode;
 }

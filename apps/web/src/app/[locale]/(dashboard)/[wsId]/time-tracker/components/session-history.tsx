@@ -911,55 +911,68 @@ export function SessionHistory({
     [userTimezone]
   );
 
-  const getSessionProductivityType = (
-    session: SessionWithRelations
-  ): string => {
-    const duration = session.duration_seconds || 0;
-    const focusScore = calculateFocusScore(session);
+  const getSessionProductivityType = useCallback(
+    (session: SessionWithRelations): string => {
+      const duration = session.duration_seconds || 0;
+      const focusScore = calculateFocusScore(session);
 
-    if (focusScore >= 80 && duration >= 3600) return 'deep-work';
-    if (focusScore >= 60 && duration >= 1800) return 'focused';
-    if (duration < 900 && focusScore < 40) return 'interrupted';
-    if (duration >= 1800 && focusScore < 50) return 'scattered';
-    return 'standard';
-  };
+      if (focusScore >= 80 && duration >= 3600) return 'deep-work';
+      if (focusScore >= 60 && duration >= 1800) return 'focused';
+      if (duration < 900 && focusScore < 40) return 'interrupted';
+      if (duration >= 1800 && focusScore < 50) return 'scattered';
+      return 'standard';
+    },
+    [calculateFocusScore]
+  );
 
-  const getTimeOfDayCategory = (session: SessionWithRelations): string => {
-    const hour = dayjs.utc(session.start_time).tz(userTimezone).hour();
-    if (hour >= 6 && hour < 12) return 'morning';
-    if (hour >= 12 && hour < 18) return 'afternoon';
-    if (hour >= 18 && hour < 24) return 'evening';
-    return 'night';
-  };
+  const getTimeOfDayCategory = useCallback(
+    (session: SessionWithRelations): string => {
+      const hour = dayjs.utc(session.start_time).tz(userTimezone).hour();
+      if (hour >= 6 && hour < 12) return 'morning';
+      if (hour >= 12 && hour < 18) return 'afternoon';
+      if (hour >= 18 && hour < 24) return 'evening';
+      return 'night';
+    },
+    [userTimezone]
+  );
 
-  const getProjectContext = (session: SessionWithRelations): string => {
-    if (session.task_id) {
-      const task = tasks.find((t) => t.id === session.task_id);
-      return task?.board_name || 'project-work';
-    }
-    if (session.category?.name?.toLowerCase().includes('meeting'))
-      return 'meetings';
-    if (session.category?.name?.toLowerCase().includes('learn'))
-      return 'learning';
-    if (session.category?.name?.toLowerCase().includes('admin'))
-      return 'administrative';
-    return 'general';
-  };
+  const getProjectContext = useCallback(
+    (session: SessionWithRelations): string => {
+      if (session.task_id) {
+        const task = tasks.find((t) => t.id === session.task_id);
+        return task?.board_name || 'project-work';
+      }
+      if (session.category?.name?.toLowerCase().includes('meeting'))
+        return 'meetings';
+      if (session.category?.name?.toLowerCase().includes('learn'))
+        return 'learning';
+      if (session.category?.name?.toLowerCase().includes('admin'))
+        return 'administrative';
+      return 'general';
+    },
+    [tasks]
+  );
 
-  const getDurationCategory = (session: SessionWithRelations): string => {
-    const duration = session.duration_seconds || 0;
-    if (duration < 1800) return 'short'; // < 30 min
-    if (duration < 7200) return 'medium'; // 30 min - 2 hours
-    return 'long'; // 2+ hours
-  };
+  const getDurationCategory = useCallback(
+    (session: SessionWithRelations): string => {
+      const duration = session.duration_seconds || 0;
+      if (duration < 1800) return 'short'; // < 30 min
+      if (duration < 7200) return 'medium'; // 30 min - 2 hours
+      return 'long'; // 2+ hours
+    },
+    []
+  );
 
-  const getSessionQuality = (session: SessionWithRelations): string => {
-    const focusScore = calculateFocusScore(session);
-    if (focusScore >= 80) return 'excellent';
-    if (focusScore >= 60) return 'good';
-    if (focusScore >= 40) return 'average';
-    return 'needs-improvement';
-  };
+  const getSessionQuality = useCallback(
+    (session: SessionWithRelations): string => {
+      const focusScore = calculateFocusScore(session);
+      if (focusScore >= 80) return 'excellent';
+      if (focusScore >= 60) return 'good';
+      if (focusScore >= 40) return 'average';
+      return 'needs-improvement';
+    },
+    [calculateFocusScore]
+  );
 
   const goToPrevious = () => {
     setCurrentDate(currentDate.subtract(1, viewMode));
@@ -1345,7 +1358,7 @@ export function SessionHistory({
         ? dayjs.utc(session.end_time).tz(userTz)
         : null;
 
-      const escape = (v: string) => (/^[=+\-@]/.test(v) ? `'${v}` : v);
+      const escapeCsvField = (v: string) => (/^[=+\-@]/.test(v) ? `'${v}` : v);
 
       return [
         startTime.format('YYYY-MM-DD'),
@@ -1357,7 +1370,7 @@ export function SessionHistory({
         session.duration_seconds
           ? (session.duration_seconds / 3600).toFixed(2)
           : '0',
-        escape(session.description || ''),
+        escapeCsvField(session.description || ''),
       ];
     });
 
@@ -2268,7 +2281,7 @@ export function SessionHistory({
                                       resumeSession(
                                         session.sessions[
                                           session.sessions.length - 1
-                                        ]!
+                                         ]
                                       )
                                     }
                                   >
@@ -2279,13 +2292,15 @@ export function SessionHistory({
                                     variant="ghost"
                                     size="sm"
                                     className="h-7 px-2"
-                                    onClick={() =>
-                                      openEditDialog(
+                                    onClick={() => {
+                                      const lastSession =
                                         session.sessions[
                                           session.sessions.length - 1
-                                        ]!
-                                      )
-                                    }
+                                        ];
+                                      if (lastSession) {
+                                        openEditDialog(lastSession);
+                                      }
+                                    }}
                                   >
                                     <Edit className="h-3 w-3" />
                                   </Button>

@@ -194,7 +194,7 @@ Response Time: Within 2 business days
 
     for (let i = sectionElements.length - 1; i >= 0; i--) {
       if (!sectionElements[i]?.element) continue;
-      const { id, element } = sectionElements[i]!;
+      const { id, element } = sectionElements[i];
       if (element) {
         const rect = element.getBoundingClientRect();
         if (rect.top <= 200) {
@@ -207,6 +207,28 @@ Response Time: Within 2 business days
 
   // Add scroll event listener when component mounts
   useEffect(() => {
+    const handleScroll = () => {
+      const sectionElements = sections.map((section) => {
+        const id = section.title.toLowerCase().replace(/\s+/g, '-');
+        return {
+          id,
+          element: document.getElementById(id),
+        };
+      });
+
+      for (let i = sectionElements.length - 1; i >= 0; i--) {
+        if (!sectionElements[i]?.element) continue;
+        const { id, element } = sectionElements[i];
+        if (element) {
+          const rect = element.getBoundingClientRect();
+          if (rect.top <= 200) {
+            setActiveSection(id);
+            break;
+          }
+        }
+      }
+    };
+
     if (typeof window !== 'undefined')
       window.addEventListener('scroll', handleScroll);
 
@@ -214,7 +236,7 @@ Response Time: Within 2 business days
       if (typeof window !== 'undefined')
         window.removeEventListener('scroll', handleScroll);
     };
-  }, [handleScroll]);
+  }, []);
 
   return (
     <main className="relative container space-y-16 py-24">

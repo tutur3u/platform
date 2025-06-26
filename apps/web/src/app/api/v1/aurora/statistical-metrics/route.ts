@@ -59,7 +59,7 @@ export async function POST() {
 
   const { error } = await supabase.from('aurora_statistical_metrics').insert([
     ...data.no_scaling.map((prediction) => ({
-      ws_id: process.env.AURORA_EXTERNAL_WSID!,
+      ws_id: process.env.AURORA_EXTERNAL_WSID as string,
       model: prediction.Model,
       rmse: prediction.RMSE,
       directional_accuracy: prediction.Directional_Accuracy,
@@ -68,7 +68,7 @@ export async function POST() {
       no_scaling: true,
     })),
     ...data.with_scaling.map((prediction) => ({
-      ws_id: process.env.AURORA_EXTERNAL_WSID!,
+      ws_id: process.env.AURORA_EXTERNAL_WSID as string,
       model: prediction.Model,
       rmse: prediction.RMSE,
       directional_accuracy: prediction.Directional_Accuracy,

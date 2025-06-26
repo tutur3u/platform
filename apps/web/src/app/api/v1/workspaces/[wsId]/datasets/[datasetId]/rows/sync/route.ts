@@ -58,7 +58,7 @@ export async function POST(
         .map(([colName, value]) => ({
           dataset_id: datasetId,
           row_id: row.id,
-          column_id: columnMap.get(colName)!,
+          column_id: columnMap.get(colName) as string,,
           data: value?.toString() ?? null,
         }))
     );

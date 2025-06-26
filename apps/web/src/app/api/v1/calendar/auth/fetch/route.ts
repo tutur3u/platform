@@ -32,8 +32,8 @@ export async function GET(request: Request) {
   }
 
   // Get the user's tokens with more defensive query
-  let googleTokens;
-  let googleTokensError;
+  let googleTokens: { access_token: string; refresh_token?: string } | null;
+  let googleTokensError: Error | null;
 
   let timeMin: Date | null = null;
   let timeMax: Date | null = null;
@@ -191,7 +191,7 @@ export async function GET(request: Request) {
       }));
 
       return NextResponse.json({ events: formattedEvents }, { status: 200 });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error fetching Google Calendar events:', error);
 
       // Extract detailed error information
@@ -231,7 +231,7 @@ export async function GET(request: Request) {
         status: errorDetails.statusCode,
       });
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error fetching Google Calendar events:', error);
 
     // Extract detailed error information

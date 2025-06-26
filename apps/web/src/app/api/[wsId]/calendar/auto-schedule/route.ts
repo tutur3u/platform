@@ -72,7 +72,7 @@ export async function POST(
       });
     } else {
       // Non-streaming mode: wait for completion and return a single JSON response
-      let finalResult: any = {};
+      let finalResult: Record<string, unknown> = {};
       const writer = (chunk: string) => {
         const data = JSON.parse(chunk);
         // The last message is the one we want
