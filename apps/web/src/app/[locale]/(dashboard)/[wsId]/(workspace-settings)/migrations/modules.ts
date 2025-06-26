@@ -76,7 +76,7 @@ export interface ModulePackage {
   externalPath: string;
   internalAlias?: string;
   internalPath?: string;
-  mapping?: (wsId: string, data: any[]) => any[];
+  mapping?: (wsId: string, data: unknown[]) => unknown[];
   skip?: boolean;
   disabled?: boolean;
 }

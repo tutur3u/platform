@@ -7,7 +7,7 @@ import moment from 'moment';
 import { ApiKeyRowActions } from './row-actions';
 
 export const apiKeyColumns = (
-  t: any,
+  t: (key: string) => string,
   namespace: string | undefined
 ): ColumnDef<WorkspaceApiKey>[] => [
   // {

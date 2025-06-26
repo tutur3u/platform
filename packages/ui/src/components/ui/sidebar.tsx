@@ -94,7 +94,11 @@ const SidebarProvider = React.forwardRef<
             typeof document !== 'undefined' &&
             document.cookie !== undefined
           ) {
-            document.cookie = `${SIDEBAR_COOKIE_NAME}=${openState}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`;
+            // Use a more explicit approach to set cookies
+            const cookieString = `${SIDEBAR_COOKIE_NAME}=${openState}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`;
+            if (typeof window !== 'undefined' && window.document) {
+              window.document.cookie = cookieString;
+            }
           }
         } catch (error) {
           // Silently fail if cookies are not available (e.g., in SSR or private browsing)

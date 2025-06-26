@@ -1,5 +1,6 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { generateFunName } from '@tuturuuu/utils/name-helper';
+import Image from 'next/image';
 import { ImageResponse } from 'next/og';
 
 export const dynamic = 'force-dynamic';
@@ -238,19 +239,13 @@ export async function GET(
                 left: '50%',
               }}
             />
-            <img
-              width="320"
-              height="320"
-              src={
-                userData.avatar_url ||
-                'https://tuturuuu.com/media/logos/light.png'
-              }
-              alt={`${userName}'s avatar`}
+            <Image
+              width={320}
+              height={320}
+              src={userData.avatar_url || '/media/github-mark.png'}
+              alt="User Avatar"
+              className="rounded-full"
               style={{
-                borderRadius: '160px',
-                position: 'relative',
-                boxShadow:
-                  '0 0 60px rgba(0, 0, 0, 0.6), 0 0 30px rgba(37, 99, 235, 0.3)',
                 objectFit: 'cover',
               }}
             />

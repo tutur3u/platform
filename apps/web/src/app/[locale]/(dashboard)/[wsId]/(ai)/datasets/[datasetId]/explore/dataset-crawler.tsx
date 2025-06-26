@@ -25,6 +25,7 @@ import { useForm } from '@tuturuuu/ui/hooks/use-form';
 import { Info, RefreshCw } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
+import { toast } from '@tuturuuu/ui/use-toast';
 import { useEffect, useState } from 'react';
 import * as XLSX from 'xlsx';
 import { z } from 'zod';
@@ -46,7 +47,21 @@ const FormSchema = z.object({
   dataRow: z.string().min(1, {
     message: 'Data row must be at least 1',
   }),
+  sheetName: z.string().min(1, {
+    message: 'Sheet name must be at least 1',
+  }),
+  columnMapping: z.record(z.string(), z.string()),
 });
+
+interface ProcessedDataRow {
+  [key: string]: string | number | null;
+}
+
+interface SheetInfo {
+  rows: number;
+  columns: number;
+  name: string;
+}
 
 export function DatasetCrawler({
   wsId,
@@ -61,20 +76,91 @@ export function DatasetCrawler({
 
   const [loading, setLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
-  const [processedData, setProcessedData] = useState<any[][]>([]);
-  const [sheetInfo, setSheetInfo] = useState({ rows: 0, columns: 0, name: '' });
-  const [, setColumns] = useState<any[]>([]);
-  const [, setRows] = useState<any[]>([]);
+  const [processedData, setProcessedData] = useState<ProcessedDataRow[][]>([]);
+  const [sheetInfo, setSheetInfo] = useState<SheetInfo>({
+    rows: 0,
+    columns: 0,
+    name: '',
+  });
+  const [, setColumns] = useState<ProcessedDataRow[]>([]);
+  const [, setRows] = useState<ProcessedDataRow[]>([]);
   const [syncProgress, setSyncProgress] = useState(0);
   const [syncStatus, setSyncStatus] = useState('');
-  const [workbook, setWorkbook] = useState<XLSX.WorkBook | any[][] | null>(
-    null
-  );
+  const [workbook, setWorkbook] = useState<
+    XLSX.WorkBook | ProcessedDataRow[][] | null
+  >(null);
   const [excelError, setExcelError] = useState<string | null>(null);
   const [isFileLoaded, setIsFileLoaded] = useState(false);
-  const [localFile, setLocalFile] = useState<File | null>(null);
-  const [availableSheets, setAvailableSheets] = useState<string[]>([]);
+  const [localFile, _setLocalFile] = useState<File | null>(null);
+  const [availableSheets, _setAvailableSheets] = useState<string[]>([]);
   const [selectedSheet, setSelectedSheet] = useState<string>('');
+
+  const form = useForm({
+    resolver: zodResolver(FormSchema),
+    defaultValues: {
+      headerRow: 1,
+      dataRow: 2,
+      sheetName: '',
+      columnMapping: {},
+    },
+  });
+
+  const loadExcelFile = async (
+    e?: React.ChangeEvent<HTMLInputElement> | React.DragEvent<HTMLDivElement>
+  ) => {
+    const file =
+      e?.target?.files?.[0] || (e as React.DragEvent)?.dataTransfer?.files?.[0];
+    if (!file) return;
+
+    setLoading(true);
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      let data: ProcessedDataRow[][] | XLSX.WorkBook;
+
+      if (file.name.toLowerCase().endsWith('.csv')) {
+        const csvCrawler = new CsvCrawler();
+        data = csvCrawler.parseCsvData(arrayBuffer);
+        setWorkbook(data);
+        setSheetInfo({
+          rows: data.length,
+          columns: data[0]?.length || 0,
+          name: file.name,
+        });
+        updatePreview(data, file.name, 1, 2);
+      } else {
+        const excelCrawler = new ExcelCrawler();
+        data = excelCrawler.parseExcelData(arrayBuffer);
+        setWorkbook(data);
+        const sheetNames = Object.keys(data.Sheets);
+        const firstSheet = sheetNames[0];
+        const sheetData = data.Sheets[firstSheet];
+        const range = XLSX.utils.decode_range(sheetData['!ref'] || 'A1');
+        setSheetInfo({
+          rows: range.e.r + 1,
+          columns: range.e.c + 1,
+          name: firstSheet,
+        });
+        form.setValue('sheetName', firstSheet);
+        updatePreview(data, firstSheet, 1, 2);
+      }
+    } catch (error) {
+      console.error('Error loading file:', error);
+      toast.error('Error loading file');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (isOpen && dataset.url && !localFile && !workbook) {
+      loadExcelFile();
+    }
+  }, [
+    isOpen,
+    dataset.url, // Prefetch from URL if available
+    form.setValue,
+    loadExcelFile,
+  ]);
 
   useEffect(() => {
     const fetchColumnsAndRows = async () => {
@@ -104,137 +190,6 @@ export function DatasetCrawler({
     }
   }, [isOpen]);
 
-  useEffect(() => {
-    if (isOpen && dataset.url) {
-      // Prefetch from URL if available
-      form.setValue('url', dataset.url);
-      loadExcelFile();
-    }
-  }, [
-    isOpen,
-    dataset.url, // Prefetch from URL if available
-    form.setValue,
-    loadExcelFile,
-  ]);
-
-  const form = useForm({
-    resolver: zodResolver(FormSchema),
-    defaultValues: {
-      url: dataset.url || '',
-      headerRow: '1',
-      dataRow: '2',
-    },
-  });
-
-  const loadExcelFile = async (
-    e?:
-      | React.ChangeEvent<HTMLInputElement>
-      | React.MouseEvent<HTMLButtonElement>
-  ) => {
-    let file: File | undefined;
-
-    if (e?.target instanceof HTMLInputElement) {
-      file = e?.target?.files?.[0];
-      e.preventDefault();
-    }
-
-    if (!file) return;
-
-    // Validate file type
-    const validTypes = [
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      'application/vnd.ms-excel',
-      'text/csv',
-    ];
-    if (!validTypes.includes(file.type)) {
-      setExcelError('Invalid file type. Please upload a CSV or Excel file.');
-      return;
-    }
-
-    setLocalFile(file);
-    setExcelError(null);
-
-    try {
-      setLoading(true);
-      setSyncStatus('Reading file...');
-
-      const arrayBuffer = await file.arrayBuffer();
-      let data: any[][] | XLSX.WorkBook;
-
-      if (file.name.toLowerCase().endsWith('.csv')) {
-        const csvCrawler = new CsvCrawler({ useProductionProxy: false });
-        const result = await csvCrawler.crawl({
-          url: '', // Not used for local files
-          headerRow: 1,
-          dataStartRow: 2,
-          onProgress: (progress, status) => {
-            setSyncProgress(progress);
-            setSyncStatus(status);
-          },
-        });
-        data = result.data;
-        setAvailableSheets(['CSV Data']);
-        setSelectedSheet('CSV Data');
-      } else {
-        data = XLSX.read(arrayBuffer);
-        if (
-          typeof data === 'object' &&
-          'SheetNames' in data &&
-          Array.isArray(data.SheetNames)
-        ) {
-          const sheets = data.SheetNames;
-          if (sheets.length > 0) {
-            const defaultSheet = sheets[0] || 'Sheet1';
-            setAvailableSheets(sheets);
-            setSelectedSheet(defaultSheet);
-          } else {
-            setAvailableSheets(['Sheet1']);
-            setSelectedSheet('Sheet1');
-          }
-        } else {
-          setAvailableSheets(['Sheet1']);
-          setSelectedSheet('Sheet1');
-        }
-      }
-
-      const defaultSheetName = 'Sheet1';
-      let sheetName = defaultSheetName;
-
-      if (file.name.toLowerCase().endsWith('.csv')) {
-        sheetName = 'CSV Data';
-      } else if (
-        typeof data === 'object' &&
-        'SheetNames' in data &&
-        Array.isArray(data.SheetNames) &&
-        data.SheetNames.length > 0
-      ) {
-        const firstSheet = data.SheetNames[0];
-        sheetName = firstSheet || defaultSheetName;
-      }
-
-      setWorkbook(data);
-      setSheetInfo({
-        ...sheetInfo,
-        name: sheetName,
-      });
-
-      setIsFileLoaded(true);
-      setSyncStatus('File loaded. Configure import settings below.');
-
-      // Set default values for form
-      form.setValue('headerRow', '1');
-      form.setValue('dataRow', '2');
-      updatePreview(data, sheetName, 1, 2);
-    } catch (error) {
-      setExcelError(
-        error instanceof Error ? error.message : 'Failed to load file'
-      );
-      setSyncStatus('Failed to load file');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const url = e.target.value;
     form.setValue('url', url, { shouldValidate: true });
@@ -253,31 +208,30 @@ export function DatasetCrawler({
   };
 
   const updatePreview = (
-    data: any[][] | XLSX.WorkBook,
+    data: ProcessedDataRow[][] | XLSX.WorkBook,
     sheetName: string,
     headerRow: number,
     dataRow: number
   ) => {
-    let preview;
+    let preview: ProcessedDataRow[][];
     try {
-      if (
-        dataset.url?.toLowerCase().endsWith('.csv') ||
-        localFile?.name.toLowerCase().endsWith('.csv')
-      ) {
+      if (Array.isArray(data) && data.length > 0 && data[0].length > 0) {
         const csvCrawler = new CsvCrawler();
         preview = csvCrawler.getPreviewFromData(
-          data as any[][],
+          data as ProcessedDataRow[][],
           headerRow,
           dataRow
         );
-      } else {
+      } else if (data && typeof data === 'object' && 'Sheets' in data) {
         const excelCrawler = new ExcelCrawler();
-        preview = excelCrawler.getPreviewFromWorkbook(
-          data,
+        preview = excelCrawler.getPreviewFromData(
+          data as XLSX.WorkBook,
           sheetName,
           headerRow,
           dataRow
         );
+      } else {
+        preview = [];
       }
 
       if (preview.error) {
@@ -421,10 +375,10 @@ export function DatasetCrawler({
 
       // Convert and sync data with unique column names
       const rows = data.map((row) => {
-        const rowData: Record<string, any> = {};
+        const rowData: Record<string, string | number | null> = {};
         uniqueHeaders.forEach((header, index) => {
           // Preserve the original value type (number, string, etc.)
-          rowData[header] = row[index] !== undefined ? row[index] : '';
+          rowData[header] = row[index] || null;
         });
         return rowData;
       });
@@ -902,22 +856,28 @@ export function DatasetCrawler({
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {processedData.slice(1).map((row: any[], rowIndex: number) => (
-                  <tr
-                    key={rowIndex}
-                    className="transition-colors hover:bg-muted/50"
-                  >
-                    {row.map((cell: any, cellIndex: number) => (
-                      <td
-                        key={cellIndex}
-                        className="p-2 text-sm"
-                        style={{ minWidth: '150px', maxWidth: '200px' }}
-                      >
-                        <div className="truncate">{cell}</div>
-                      </td>
-                    ))}
-                  </tr>
-                ))}
+                {processedData
+                  .slice(1)
+                  .map((row: ProcessedDataRow[], rowIndex: number) => (
+                    <tr
+                      key={rowIndex}
+                      className="transition-colors hover:bg-muted/50"
+                    >
+                      {row.map(
+                        (cell: string | number | null, cellIndex: number) => (
+                          <td
+                            key={cellIndex}
+                            className="p-2 text-sm"
+                            title={String(cell || '')}
+                          >
+                            <div className="line-clamp-1">
+                              {String(cell || '')}
+                            </div>
+                          </td>
+                        )
+                      )}
+                    </tr>
+                  ))}
               </tbody>
             </table>
           </div>

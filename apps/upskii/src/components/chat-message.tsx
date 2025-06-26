@@ -15,13 +15,14 @@ import 'dayjs/locale/vi';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import rehypeKatex from 'rehype-katex';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 
 function MermaidRenderer({ content }: { content: string }) {
   const [svgContent, setSvgContent] = useState<string>('');
+  const svgRef = useRef<HTMLDivElement>(null);
 
   const renderDiagram = useCallback(async () => {
     try {
@@ -44,12 +45,13 @@ function MermaidRenderer({ content }: { content: string }) {
     renderDiagram();
   }, [renderDiagram]);
 
-  return (
-    <div
-      className="overflow-x-auto"
-      dangerouslySetInnerHTML={{ __html: svgContent }}
-    />
-  );
+  useEffect(() => {
+    if (svgRef.current && svgContent) {
+      svgRef.current.innerHTML = svgContent;
+    }
+  }, [svgContent]);
+
+  return <div ref={svgRef} className="overflow-x-auto" />;
 }
 
 export interface ChatMessageProps {

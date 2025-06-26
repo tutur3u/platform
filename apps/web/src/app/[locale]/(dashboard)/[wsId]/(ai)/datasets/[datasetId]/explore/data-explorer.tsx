@@ -14,7 +14,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@tuturuuu/ui/dialog';
-import { Plus, RotateCw, Trash, Upload } from '@tuturuuu/ui/icons';
+import { Plus, Upload } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import {
   Pagination,
@@ -41,6 +41,19 @@ import { DatasetCrawler } from './dataset-crawler';
 interface Props {
   wsId: string;
   dataset: WorkspaceDataset;
+}
+
+interface RowData {
+  id: string;
+  cells: Record<string, string | number | null>;
+  row_id: string;
+}
+
+interface QueryData {
+  data: RowData[];
+  total: number;
+  page: number;
+  pageSize: number;
 }
 
 export function DataExplorer({ wsId, dataset }: Props) {
@@ -112,7 +125,7 @@ export function DataExplorer({ wsId, dataset }: Props) {
       // Optimistic update
       queryClient.setQueryData(
         [wsId, dataset.id, 'rows', { currentPage, pageSize }],
-        (old: any) => ({
+        (old: QueryData | undefined) => ({
           ...old,
           data: [...(old?.data || []), { cells: newRow, id: 'temp' }],
         })
@@ -182,9 +195,9 @@ export function DataExplorer({ wsId, dataset }: Props) {
       // Optimistic delete
       queryClient.setQueryData(
         [wsId, dataset.id, 'rows', { currentPage, pageSize }],
-        (old: any) => ({
+        (old: QueryData | undefined) => ({
           ...old,
-          data: old?.data?.filter((row: any) => row.id !== rowId) || [],
+          data: old?.data?.filter((row: RowData) => row.id !== rowId) || [],
         })
       );
 
@@ -253,12 +266,12 @@ export function DataExplorer({ wsId, dataset }: Props) {
           <table className="w-full">
             <thead>
               <tr className="border-b bg-muted/50">
-                {headers.map((header: any, index: number) => (
+                {headers.map((header: string, index: number) => (
                   <th key={index} className="p-2 text-left text-sm">
                     <div className="line-clamp-1">{header}</div>
                   </th>
                 ))}
-                <th className="p-2 text-left text-sm">{t('common.actions')}</th>
+                <th className="p-2 text-left text-sm">{t('actions')}</th>
               </tr>
             </thead>
             <tbody>
@@ -267,7 +280,7 @@ export function DataExplorer({ wsId, dataset }: Props) {
                   Array.from({ length: parseInt(pageSize) }).map(
                     (_, rowIndex) => (
                       <tr key={`skeleton-${rowIndex}`} className="border-b">
-                        {headers.map((_: any, colIndex: number) => (
+                        {headers.map((_: string, colIndex: number) => (
                           <td key={colIndex} className="p-2">
                             <Skeleton className="h-9 w-full" />
                           </td>
@@ -279,9 +292,9 @@ export function DataExplorer({ wsId, dataset }: Props) {
                       </tr>
                     )
                   )
-                : data.map((row: any, rowIndex: number) => (
+                : data.map((row: RowData, rowIndex: number) => (
                     <tr key={rowIndex} className="border-b">
-                      {headers.map((header: any, colIndex: number) => (
+                      {headers.map((header: string, colIndex: number) => (
                         <td
                           key={colIndex}
                           className="min-w-32 p-2 text-sm whitespace-pre-line"
@@ -296,7 +309,10 @@ export function DataExplorer({ wsId, dataset }: Props) {
                           variant="outline"
                           size="sm"
                           onClick={() =>
-                            setEditingRow({ ...row, cells: { ...row.cells } })
+                            setEditingRow({
+                              row_id: row.row_id || row.id,
+                              cells: { ...row.cells },
+                            })
                           }
                         >
                           {t('common.edit')}
@@ -349,7 +365,6 @@ export function DataExplorer({ wsId, dataset }: Props) {
 
         <div className="flex items-center gap-2">
           <Button variant="outline" onClick={handleRefresh}>
-            <RotateCw className="h-4 w-4" />
             {t('common.refresh')}
           </Button>
           <Button
@@ -357,14 +372,7 @@ export function DataExplorer({ wsId, dataset }: Props) {
             onClick={handleClearAllRows}
             disabled={isClearingRows}
           >
-            {isClearingRows ? (
-              <>{t('common.clearing')}...</>
-            ) : (
-              <>
-                <Trash className="h-4 w-4" />
-                {t('common.clear_all')}
-              </>
-            )}
+            {isClearingRows ? t('clearing') : t('clear_all')}
           </Button>
           <Dialog open={isAddingRow} onOpenChange={setIsAddingRow}>
             <DialogTrigger asChild>
@@ -378,21 +386,21 @@ export function DataExplorer({ wsId, dataset }: Props) {
                 <DialogTitle>{t('add_row')}</DialogTitle>
               </DialogHeader>
               <ScrollArea className="max-h-96 space-y-4">
-                {headers.map((header: any) => (
+                {headers.map((header: string) => (
                   <div key={header} className="space-y-2">
                     <label
-                      className="text-sm font-medium"
-                      htmlFor={`${columnNameId}-${header}`}
+                      htmlFor={header}
+                      className="text-sm font-medium text-foreground"
                     >
                       {header}
                     </label>
                     <Input
+                      id={header}
                       value={newRow[header] || ''}
                       onChange={(e) =>
                         setNewRow({ ...newRow, [header]: e.target.value })
                       }
-                      placeholder={`Enter ${header}`}
-                      id={`${columnNameId}-${header}`}
+                      placeholder={`Enter ${header.toLowerCase()}`}
                     />
                   </div>
                 ))}
@@ -414,7 +422,7 @@ export function DataExplorer({ wsId, dataset }: Props) {
       {rowsQuery.isFetching && !data?.length ? (
         <div className="flex h-64 items-center justify-center">
           <span className="text-sm text-muted-foreground">
-            {t('common.loading')}...
+            {rowsQuery.isLoading ? t('common.loading') : t('no_data')}
           </span>
         </div>
       ) : (
@@ -520,15 +528,16 @@ export function DataExplorer({ wsId, dataset }: Props) {
               <DialogTitle>{t('edit_row')}</DialogTitle>
             </DialogHeader>
             <ScrollArea className="max-h-96 space-y-4">
-              {headers.map((header: any) => (
+              {headers.map((header: string) => (
                 <div key={header} className="space-y-2">
                   <label
-                    className="text-sm font-medium"
-                    htmlFor={`${columnTypeId}-${header}`}
+                    htmlFor={header}
+                    className="text-sm font-medium text-foreground"
                   >
                     {header}
                   </label>
                   <Input
+                    id={header}
                     value={editingRow.cells[header] || ''}
                     onChange={(e) =>
                       setEditingRow({
@@ -539,8 +548,7 @@ export function DataExplorer({ wsId, dataset }: Props) {
                         },
                       })
                     }
-                    placeholder={`Enter ${header}`}
-                    id={`${columnTypeId}-${header}`}
+                    placeholder={`Enter ${header.toLowerCase()}`}
                   />
                 </div>
               ))}

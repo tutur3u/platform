@@ -15,7 +15,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { SecretRowActions } from './row-actions';
 
 export const secretColumns = (
-  t: any,
+  t: (key: string) => string,
   namespace: string | undefined
 ): ColumnDef<WorkspaceSecret>[] => {
   const params = useParams();

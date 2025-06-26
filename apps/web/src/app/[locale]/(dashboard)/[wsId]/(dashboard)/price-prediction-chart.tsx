@@ -77,6 +77,24 @@ const formatPercentage = (value: number) => {
   }).format(value / 100);
 };
 
+interface ModelDataPoint {
+  date: string;
+  actual?: number;
+  predicted?: number;
+  confidence_lower?: number;
+  confidence_upper?: number;
+  [key: string]: string | number | undefined;
+}
+
+interface ModelInsights {
+  accuracy: number;
+  trend: string;
+  confidence: number;
+  trendSlope: number;
+  high: number;
+  low: number;
+}
+
 const PricePredictionChart = ({ data }: { data: AuroraForecast }) => {
   const locale = useLocale();
   const t = useTranslations();
@@ -92,54 +110,61 @@ const PricePredictionChart = ({ data }: { data: AuroraForecast }) => {
     })) || [];
 
   // Calculate insights
-  const getModelInsights = (modelData: any[], model: string) => {
+  const getModelInsights = (
+    modelData: ModelDataPoint[],
+    _model: string
+  ): ModelInsights | null => {
     if (!modelData.length) return null;
 
-    const values = modelData.map((d) => d[model] || 0);
-    const sortedValues = [...values].sort((a, b) => a - b);
-    const high = sortedValues[sortedValues.length - 1];
-    const low = sortedValues[0];
-    const avg = values.reduce((a, b) => a + b, 0) / values.length;
+    const actualValues = modelData
+      .map((point) => point.actual)
+      .filter((value): value is number => typeof value === 'number');
+    const predictedValues = modelData
+      .map((point) => point.predicted)
+      .filter((value): value is number => typeof value === 'number');
 
-    // Calculate volatility (standard deviation)
-    const volatility = Math.sqrt(
-      values.reduce((a, b) => a + (b - avg) ** 2, 0) / values.length
-    );
+    if (actualValues.length === 0 || predictedValues.length === 0) return null;
+
+    // Calculate accuracy (RMSE)
+    const mse =
+      actualValues.reduce((sum, actual, i) => {
+        const predicted = predictedValues[i];
+        return sum + (actual - predicted) ** 2;
+      }, 0) / actualValues.length;
+    const accuracy = Math.sqrt(mse);
 
     // Calculate trend
-    const trendWindow = Math.min(30, values.length);
-    const recentValues = values.slice(-trendWindow);
-    const trendSlope = calculateTrendSlope(recentValues);
+    const firstValue = actualValues[0];
+    const lastValue = actualValues[actualValues.length - 1];
+    const trendSlope = (lastValue - firstValue) / actualValues.length;
+    const trend =
+      trendSlope > 0 ? 'upward' : trendSlope < 0 ? 'downward' : 'stable';
+
+    // Calculate confidence
+    const confidenceValues = modelData
+      .map((point) => {
+        const lower = point.confidence_lower;
+        const upper = point.confidence_upper;
+        return typeof lower === 'number' && typeof upper === 'number'
+          ? (upper - lower) / 2
+          : null;
+      })
+      .filter((value): value is number => value !== null);
+
+    const confidence =
+      confidenceValues.length > 0
+        ? confidenceValues.reduce((sum, val) => sum + val, 0) /
+          confidenceValues.length
+        : 0;
 
     return {
-      high,
-      low,
-      average: avg,
-      volatility,
+      accuracy,
+      trend,
+      confidence,
       trendSlope,
+      high: Math.max(...actualValues),
+      low: Math.min(...actualValues),
     };
-  };
-
-  const calculateTrendSlope = (values: number[]) => {
-    const n = values.length;
-    if (n < 2) return 0;
-
-    const xMean = (n - 1) / 2;
-    const yMean = values.reduce((a, b) => a + b, 0) / n;
-
-    let numerator = 0;
-    let denominator = 0;
-
-    for (let i = 0; i < n; i++) {
-      const x = i;
-      const y = values[i];
-      if (typeof y === 'number') {
-        numerator += (x - xMean) * (y - yMean);
-        denominator += (x - xMean) ** 2;
-      }
-    }
-
-    return denominator === 0 ? 0 : numerator / denominator;
   };
 
   const insights = chartData.length

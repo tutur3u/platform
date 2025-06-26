@@ -85,7 +85,7 @@ const loadSettingsFromStorage = (): Partial<CalendarSettings> | null => {
 
 // Type guard for Partial<CalendarSettings>
 function isValidPartialCalendarSettings(
-  obj: any
+  obj: unknown
 ): obj is Partial<CalendarSettings> {
   if (!obj || typeof obj !== 'object') return false;
   // Only check a few critical keys for safety

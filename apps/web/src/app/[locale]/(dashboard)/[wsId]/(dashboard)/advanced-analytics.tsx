@@ -66,6 +66,33 @@ const formatPercentage = (value: number) => {
   }).format(value / 100);
 };
 
+interface MetricData {
+  rmse?: number;
+  da?: number;
+  weighted_score?: number;
+  [key: string]: number | undefined;
+}
+
+interface ScoreCardProps {
+  title: string;
+  score: number;
+  color: string;
+  previousScore?: number;
+  t: (key: string) => string;
+}
+
+interface ChartCardProps {
+  t: (key: string) => string;
+  tag: string;
+  data: MetricData[];
+  scores?: {
+    model: string;
+    accuracyScore: number;
+    consistencyScore: number;
+    overallScore: number;
+  }[];
+}
+
 const AdvancedAnalytics = ({
   mlMetrics,
   statisticalMetrics,
@@ -78,7 +105,7 @@ const AdvancedAnalytics = ({
   const { resolvedTheme } = useTheme();
   const colors = resolvedTheme === 'dark' ? COLORS.dark : COLORS.light;
 
-  const calculateModelScores = (metrics: any[]) => {
+  const calculateModelScores = (metrics: MetricData[]) => {
     if (!metrics.length) return null;
 
     const scores = metrics.map((metric) => ({
@@ -104,7 +131,7 @@ const AdvancedAnalytics = ({
     };
   };
 
-  const calculateAccuracyScore = (metric: any) => {
+  const calculateAccuracyScore = (metric: MetricData) => {
     const rmseWeight = 0.4;
     const daWeight = 0.3;
     const tpaWeight = 0.3;
@@ -115,18 +142,18 @@ const AdvancedAnalytics = ({
     // Directional accuracy and turning point accuracy are already percentages
     return (
       (normalizedRMSE * rmseWeight +
-        (metric.directional_accuracy / 100) * daWeight +
+        (metric.da / 100) * daWeight +
         (metric.turning_point_accuracy / 100) * tpaWeight) *
       100
     );
   };
 
-  const calculateConsistencyScore = (metric: any) => {
+  const calculateConsistencyScore = (metric: MetricData) => {
     // Assuming weighted_score represents consistency
     return metric.weighted_score;
   };
 
-  const calculateOverallScore = (metric: any) => {
+  const calculateOverallScore = (metric: MetricData) => {
     const accuracyWeight = 0.6;
     const consistencyWeight = 0.4;
 
@@ -148,9 +175,9 @@ const AdvancedAnalytics = ({
     .map((metric) => ({
       model: metric.model,
       rmse: metric.rmse,
-      directionalAccuracy: metric.directional_accuracy,
-      turningPointAccuracy: metric.turning_point_accuracy,
-      weightedScore: metric.weighted_score,
+      da: metric.directional_accuracy,
+      turning_point_accuracy: metric.turning_point_accuracy,
+      weighted_score: metric.weighted_score,
     }));
 
   const statisticalScaledData = statisticalMetrics
@@ -158,17 +185,17 @@ const AdvancedAnalytics = ({
     .map((metric) => ({
       model: metric.model,
       rmse: metric.rmse,
-      directionalAccuracy: metric.directional_accuracy,
-      turningPointAccuracy: metric.turning_point_accuracy,
-      weightedScore: metric.weighted_score,
+      da: metric.directional_accuracy,
+      turning_point_accuracy: metric.turning_point_accuracy,
+      weighted_score: metric.weighted_score,
     }));
 
   const mlData = mlMetrics.map((metric) => ({
     model: metric.model,
     rmse: metric.rmse,
-    directionalAccuracy: metric.directional_accuracy,
-    turningPointAccuracy: metric.turning_point_accuracy,
-    weightedScore: metric.weighted_score,
+    da: metric.directional_accuracy,
+    turning_point_accuracy: metric.turning_point_accuracy,
+    weighted_score: metric.weighted_score,
   }));
 
   return (
@@ -264,6 +291,14 @@ const AdvancedAnalytics = ({
     </Card>
   );
 };
+
+interface ScoreCardProps {
+  title: string;
+  score: number;
+  color: string;
+  previousScore?: number;
+  t: (key: string) => string;
+}
 
 const ModelScoreCard = ({
   title,
@@ -409,22 +444,7 @@ const ModelScoreCard = ({
   );
 };
 
-const MetricsChart = ({
-  t,
-  tag,
-  data,
-  scores,
-}: {
-  t: any;
-  tag: string;
-  data: any[];
-  scores?: {
-    model: string;
-    accuracyScore: number;
-    consistencyScore: number;
-    overallScore: number;
-  }[];
-}) => {
+const MetricsChart = ({ t, tag, data, scores }: ChartCardProps) => {
   const { resolvedTheme } = useTheme();
   const colors = resolvedTheme === 'dark' ? COLORS.dark : COLORS.light;
 

@@ -61,6 +61,10 @@ interface HtmlPreviewData {
   sampleData?: string[];
 }
 
+interface CrawlResult {
+  [key: string]: string;
+}
+
 export class HtmlCrawler extends BaseCrawler {
   constructor(
     options: { useProductionProxy: boolean } = { useProductionProxy: true }
@@ -502,16 +506,17 @@ export class HtmlCrawler extends BaseCrawler {
     return Array.from(uniqueUrls);
   }
 
-  async crawl(props: HtmlCrawlerProps): Promise<any[]> {
+  async crawl(props: HtmlCrawlerProps): Promise<CrawlResult[]> {
     this.currentCallback = props;
     try {
-      return await this._crawl(props);
-    } finally {
-      this.currentCallback = undefined;
+      return await this.crawlPages(props);
+    } catch (error) {
+      console.error('Error during crawl:', error);
+      throw error;
     }
   }
 
-  private async _crawl({
+  private async crawlPages({
     url,
     htmlIds,
     maxPages,
@@ -519,9 +524,9 @@ export class HtmlCrawler extends BaseCrawler {
     onProgress,
     onPageProgress,
     onTotalPages,
-  }: HtmlCrawlerProps): Promise<any[]> {
+  }: HtmlCrawlerProps): Promise<CrawlResult[]> {
     this.baseUrl = url;
-    const results: any[] = [];
+    const results: CrawlResult[] = [];
     const parsedIds = htmlIds.map((id) => this.parseHtmlId(id));
     const needsPageContent = parsedIds.some((p) => p.pageId);
 

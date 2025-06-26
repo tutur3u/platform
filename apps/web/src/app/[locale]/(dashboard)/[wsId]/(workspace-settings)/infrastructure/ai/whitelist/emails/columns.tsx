@@ -15,7 +15,7 @@ import { useRouter } from 'next/navigation';
 import { AIWhitelistEmailRowActions } from './row-actions';
 
 export const getAIWhitelistEmailColumns = (
-  t: any
+  t: (key: string) => string
 ): ColumnDef<AIWhitelistEmail>[] => {
   const router = useRouter();
   const queryClient = useQueryClient();

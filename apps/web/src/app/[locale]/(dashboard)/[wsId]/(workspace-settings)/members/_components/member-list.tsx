@@ -38,7 +38,7 @@ export default async function MemberList({
           <InviteMemberButton
             wsId={workspace?.id}
             currentUser={{
-              ...user!,
+              ...(user || {}),
               role: workspace?.role,
             }}
             label={t('invite_member')}
@@ -99,7 +99,7 @@ export default async function MemberList({
           <MemberSettingsButton
             workspace={workspace}
             user={member}
-            currentUser={{ ...user!, role: workspace.role }}
+            currentUser={{ ...(user || {}), role: workspace.role }}
           />
         </div>
       )}

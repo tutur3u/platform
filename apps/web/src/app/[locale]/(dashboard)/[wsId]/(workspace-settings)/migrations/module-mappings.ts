@@ -29,8 +29,8 @@ export const billPackagesMapping = (_: string, data: any[]) =>
   }));
 
 // STATUS: ✅
-export const billsMapping = (wsId: string, data: any[]) =>
-  data.map((i) => {
+export const billsMapping = (wsId: string, data: unknown[]) =>
+  data.map((i: any) => {
     const walletId =
       i?.method === 'CASH'
         ? '354f92e4-8e7c-404a-b461-cfe6a8b67ba8'
@@ -73,8 +73,8 @@ export const billsMapping = (wsId: string, data: any[]) =>
   });
 
 // STATUS: ✅
-export const classAttendanceMapping = (_: string, data: any[]) =>
-  data.map((i) => ({
+export const classAttendanceMapping = (_: string, data: unknown[]) =>
+  data.map((i: any) => ({
     group_id: i?.class_id,
     user_id: i?.user_id,
     date: i?.date,
@@ -84,8 +84,8 @@ export const classAttendanceMapping = (_: string, data: any[]) =>
   }));
 
 // STATUS: ✅
-export const classMembersMapping = (_: string, data: any[]) =>
-  data.map((i) => ({
+export const classMembersMapping = (_: string, data: unknown[]) =>
+  data.map((i: any) => ({
     user_id: i?.user_id,
     group_id: i?.class_id,
     role: i?.role,
@@ -93,8 +93,8 @@ export const classMembersMapping = (_: string, data: any[]) =>
   }));
 
 // STATUS: ✅
-export const classPackagesMapping = (_: string, data: any[]) =>
-  data.map((i) => ({
+export const classPackagesMapping = (_: string, data: unknown[]) =>
+  data.map((i: any) => ({
     group_id: i?.class_id,
     product_id: i?.package_id,
     unit_id: 'dbd4d6a0-6c59-4383-8512-8e649413f4ff',
@@ -102,8 +102,8 @@ export const classPackagesMapping = (_: string, data: any[]) =>
   }));
 
 // STATUS: ✅
-export const classScoresMapping = (_: string, data: any[]) =>
-  data.map((i) => ({
+export const classScoresMapping = (_: string, data: unknown[]) =>
+  data.map((i: any) => ({
     user_id: i?.user_id,
     indicator_id: i?.score_id,
     group_id: i?.class_id,
@@ -113,8 +113,8 @@ export const classScoresMapping = (_: string, data: any[]) =>
   }));
 
 // STATUS: ✅
-export const classesMapping = (wsId: string, data: any[]) =>
-  data.map((i) => ({
+export const classesMapping = (wsId: string, data: unknown[]) =>
+  data.map((i: any) => ({
     id: i?.id,
     name: i?.code,
     ws_id: wsId,
@@ -127,8 +127,8 @@ export const classesMapping = (wsId: string, data: any[]) =>
   }));
 
 // STATUS: ✅
-export const couponsMapping = (wsId: string, data: any[]) =>
-  data.map((i) => ({
+export const couponsMapping = (wsId: string, data: unknown[]) =>
+  data.map((i: any) => ({
     id: i?.id,
     name: i?.name,
     description: i?.content,

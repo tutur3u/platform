@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import { ImageResponse } from 'next/og';
 
 export const dynamic = 'force-static';
@@ -124,17 +125,15 @@ export async function GET() {
                 left: '50%',
               }}
             />
-            <img
-              width="320"
-              height="320"
-              src="https://tuturuuu.com/media/logos/light.png"
-              style={{
-                borderRadius: '32px',
-                position: 'relative',
-                boxShadow:
-                  '0 0 60px rgba(0, 0, 0, 0.6), 0 0 30px rgba(37, 99, 235, 0.3)',
-              }}
+            <Image
+              width={320}
+              height={320}
+              src="/media/github-mark.png"
               alt="Tuturuuu Logo"
+              className="rounded-full"
+              style={{
+                objectFit: 'cover',
+              }}
             />
           </div>
         </div>

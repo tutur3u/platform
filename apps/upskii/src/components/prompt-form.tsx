@@ -1,5 +1,3 @@
-import { DEV_MODE } from '@/constants/common';
-import { useEnterSubmit } from '@/lib/hooks/use-enter-submit';
 import type { UseChatHelpers } from '@tuturuuu/ai/types';
 import type { AIChat } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
@@ -28,12 +26,14 @@ import {
   TooltipTrigger,
 } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
-import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import type React from 'react';
 import { useEffect, useState } from 'react';
 import Textarea from 'react-textarea-autosize';
+import { DEV_MODE } from '@/constants/common';
+import { useEnterSubmit } from '@/lib/hooks/use-enter-submit';
 
 export interface PromptProps
   extends Pick<UseChatHelpers, 'input' | 'setInput'> {

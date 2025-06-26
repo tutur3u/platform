@@ -1,7 +1,5 @@
 'use client';
 
-import type { NavLink } from '@/components/navigation';
-import { ENABLE_KEYBOARD_SHORTCUTS, PROD_MODE } from '@/constants/common';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { buttonVariants } from '@tuturuuu/ui/button';
 import {
@@ -17,6 +15,8 @@ import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
+import type { NavLink } from '@/components/navigation';
+import { ENABLE_KEYBOARD_SHORTCUTS, PROD_MODE } from '@/constants/common';
 
 interface NavProps {
   wsId: string;
@@ -124,7 +124,7 @@ export function Nav({
 
       return false;
     },
-    [pathname]
+    [pathname, shouldShowLink]
   );
 
   // Collect all links for keyboard shortcuts

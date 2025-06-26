@@ -8,10 +8,10 @@ import moment from 'moment';
 import { RoleRowActions } from './row-actions';
 
 export const roleColumns = (
-  t: any,
+  t: (key: string) => string,
   namespace: string | undefined,
-  _?: any[],
-  extraData?: any
+  _?: unknown[],
+  extraData?: unknown
 ): ColumnDef<WorkspaceRole>[] => [
   // {
   //   id: 'select',
@@ -77,8 +77,9 @@ export const roleColumns = (
       <div className="flex items-center gap-1 font-semibold">
         <span className="flex items-center gap-1 rounded border px-1 text-sm font-bold">
           <span className="text-dynamic-orange">
-            {(row.getValue('permissions') as any[]).filter((x) => x.enabled)
-              .length ?? '-'}
+            {(
+              row.getValue('permissions') as Array<{ enabled: boolean }>
+            ).filter((x) => x.enabled).length ?? '-'}
           </span>
           <span className="opacity-50">/</span>
           <span className="text-dynamic-blue">{extraData}</span>

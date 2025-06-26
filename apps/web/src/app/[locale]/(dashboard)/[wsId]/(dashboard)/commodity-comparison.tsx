@@ -73,6 +73,18 @@ const formatCurrency = (value: number) => {
   }).format(value);
 };
 
+interface CommodityData {
+  date: string;
+  displayDate: string;
+  [key: string]: string | number;
+}
+
+interface ModelInsights {
+  accuracy: number;
+  trend: string;
+  confidence: number;
+}
+
 const CommodityComparison = ({
   data: initialData,
 }: {
@@ -84,14 +96,14 @@ const CommodityComparison = ({
   const { resolvedTheme } = useTheme();
   const colors = resolvedTheme === 'dark' ? COLORS.dark : COLORS.light;
   const [selectedDate, setSelectedDate] = useState('');
-  const [data, setData] = useState<any[]>([]);
+  const [data, setData] = useState<CommodityData[]>([]);
   const { toast } = useToast();
 
   useEffect(() => {
     const loadData = async () => {
       try {
         const transformedData = initialData.statistical_forecast.map(
-          (item: any) => ({
+          (item: { date: string; [key: string]: string | number }) => ({
             date: item.date,
             displayDate: formatDate(locale, item.date),
             auto_arima: parseFloat(item.auto_arima || '0'),
@@ -122,7 +134,10 @@ const CommodityComparison = ({
   }, [toast, initialData.statistical_forecast.map, locale]);
 
   // Calculate insights
-  const getModelInsights = (modelData: any[], model: string) => {
+  const getModelInsights = (
+    modelData: CommodityData[],
+    model: string
+  ): ModelInsights | null => {
     if (!modelData.length) return null;
 
     const values = modelData.map((d) => d[model] || 0);
@@ -556,19 +571,15 @@ const CommodityComparison = ({
   );
 };
 
-const PriceCard = ({
-  t,
-  title,
-  value,
-  color,
-  insights,
-}: {
-  t: any;
+interface InsightCardProps {
+  t: (key: string) => string;
   title: string;
   value: number;
   color: string;
-  insights: any;
-}) => {
+  insights: ModelInsights;
+}
+
+const PriceCard = ({ t, title, value, color, insights }: InsightCardProps) => {
   const { resolvedTheme } = useTheme();
   const colors = resolvedTheme === 'dark' ? COLORS.dark : COLORS.light;
 

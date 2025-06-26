@@ -15,6 +15,15 @@ import {
   type ModulePackage,
 } from './modules';
 
+interface MigrationData {
+  externalData?: unknown[] | null;
+  internalData?: unknown[] | null;
+  externalTotal?: number | null;
+  internalTotal?: number | null;
+  loading?: boolean | null;
+  error?: Error | null;
+}
+
 export default function MigrationDashboard() {
   const [apiEndpoint, setApiEndpoint] = useLocalStorage({
     key: 'migration-api-endpoint',
@@ -33,14 +42,7 @@ export default function MigrationDashboard() {
 
   const [migrationData, setMigrationData] =
     useState<{
-      [key in MigrationModule]?: {
-        externalData?: any[] | null;
-        internalData?: any[] | null;
-        externalTotal?: number | null;
-        internalTotal?: number | null;
-        loading?: boolean | null;
-        error?: any | null;
-      } | null;
+      [key in MigrationModule]?: MigrationData;
     }>();
 
   const loading = migrationData
@@ -97,14 +99,14 @@ export default function MigrationDashboard() {
   const getData = (
     source: DataSource,
     module: MigrationModule
-  ): any[] | null => {
+  ): unknown[] | null => {
     return migrationData?.[module]?.[`${source}Data`] ?? null;
   };
 
   const setData = (
     source: DataSource,
     module: MigrationModule,
-    data: any[] | null,
+    data: unknown[] | null,
     count: number
   ) => {
     setMigrationData((prev) => ({
@@ -117,7 +119,7 @@ export default function MigrationDashboard() {
     }));
   };
 
-  const setError = (module: MigrationModule, error: any) => {
+  const setError = (module: MigrationModule, error: Error) => {
     setMigrationData((prev) => ({
       ...prev,
       [module]: {
@@ -149,8 +151,8 @@ export default function MigrationDashboard() {
 
     // Initialize external variables
     let externalCount = -1;
-    let externalData: any[] = [];
-    let externalError: any = null;
+    let externalData: unknown[] = [];
+    let externalError: Error | null = null;
 
     // Fetch external data
     while (
@@ -187,8 +189,8 @@ export default function MigrationDashboard() {
     }
 
     // Initialize internal variables
-    const internalData: any[] = [];
-    let internalError: any = null;
+    const internalData: unknown[] = [];
+    let internalError: Error | null = null;
 
     // Fetch internal data
     if (skip) {

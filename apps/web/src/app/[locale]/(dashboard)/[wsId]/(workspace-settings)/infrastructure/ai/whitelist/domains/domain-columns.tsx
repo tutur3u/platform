@@ -9,17 +9,20 @@ import type { ColumnDef } from '@tanstack/react-table';
 import type { AIWhitelistDomain } from '@tuturuuu/types/db';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import { Loader2 } from '@tuturuuu/ui/icons';
+import { Input } from '@tuturuuu/ui/input';
 import { Switch } from '@tuturuuu/ui/switch';
 import moment from 'moment';
 import { useRouter } from 'next/navigation';
+import { useId } from 'react';
 import { AIWhitelistDomainRowActions } from './domain-row-actions';
 
 export const getAIWhitelistDomainColumns = (
-  t: any
+  t: (key: string) => string
 ): ColumnDef<AIWhitelistDomain>[] => {
   const router = useRouter();
   const queryClient = useQueryClient();
   const isFetching = useIsFetching({ queryKey: ['ai-whitelist-domains'] });
+  const domainId = useId();
 
   const toggleMutation = useMutation({
     mutationFn: async ({
@@ -82,7 +85,25 @@ export const getAIWhitelistDomainColumns = (
         <DataTableColumnHeader t={t} column={column} title="Domain" />
       ),
       cell: ({ row }) => (
-        <div className="line-clamp-1">{row.getValue('domain')}</div>
+        <div className="line-clamp-1">
+          <label
+            htmlFor={`${domainId}-${row.original.id}`}
+            className="text-sm font-medium"
+          >
+            {row.getValue('domain')}
+          </label>
+          <Input
+            id={`${domainId}-${row.original.id}`}
+            value={row.getValue('domain')}
+            onChange={(e) =>
+              toggleMutation.mutate({
+                domain: e.target.value,
+                enabled: row.getValue('enabled') as boolean,
+              })
+            }
+            placeholder={t('enter_domain')}
+          />
+        </div>
       ),
     },
     {

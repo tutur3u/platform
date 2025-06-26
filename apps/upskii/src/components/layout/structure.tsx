@@ -1,8 +1,5 @@
 'use client';
 
-import { Layout } from '@/components/layout/layout';
-import type { NavLink } from '@/components/navigation';
-import { PROD_MODE } from '@/constants/common';
 import { useQuery } from '@tanstack/react-query';
 import type { Workspace } from '@tuturuuu/types/db';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
@@ -10,11 +7,14 @@ import { LogoTitle } from '@tuturuuu/ui/custom/logo-title';
 import { Structure as BaseStructure } from '@tuturuuu/ui/custom/structure';
 import { WorkspaceSelect } from '@tuturuuu/ui/custom/workspace-select';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
-import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { type ReactNode, Suspense, useState } from 'react';
+import { Layout } from '@/components/layout/layout';
+import type { NavLink } from '@/components/navigation';
+import { PROD_MODE } from '@/constants/common';
 import { Nav } from './nav';
 
 interface MailProps {

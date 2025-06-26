@@ -110,6 +110,12 @@ const calculateTrend = (current: number, previous: number) => {
   };
 };
 
+interface DashboardData {
+  date: string;
+  displayDate: string;
+  [key: string]: string | number;
+}
+
 const Dashboard = ({ data }: { data: AuroraForecast }) => {
   const locale = useLocale();
   const t = useTranslations();
@@ -132,7 +138,7 @@ const Dashboard = ({ data }: { data: AuroraForecast }) => {
     })) || [];
 
   // Calculate insights
-  const getModelInsights = (modelData: any[], model: string) => {
+  const getModelInsights = (modelData: DashboardData[], model: string) => {
     if (!modelData.length) return null;
 
     const values = modelData.map((d) => d[model] || 0);
@@ -552,7 +558,7 @@ const MetricCard = ({
   );
 };
 
-const getCurrentPrice = (data: any[], model: string) => {
+const getCurrentPrice = (data: DashboardData[], model: string) => {
   return data.length > 0 ? data[data.length - 1][model] || 0 : 0;
 };
 
