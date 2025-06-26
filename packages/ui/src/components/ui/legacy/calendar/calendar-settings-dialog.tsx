@@ -221,12 +221,12 @@ function SettingsDialogContent({
                       isActive={item.id === activeSection}
                       onClick={() => setActiveSection(item.id)}
                     >
-                      <a href="#" className="group">
+                      <button type="button" className="group">
                         <item.icon className="h-5 w-5" />
                         <div className="flex flex-col">
                           <span>{item.name}</span>
                         </div>
-                      </a>
+                      </button>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 ))}
@@ -288,7 +288,7 @@ function SettingsDialogContent({
         </div>
 
         <div className="flex justify-end gap-2 border-t p-4">
-          <Button variant="outline" onClick={handleCancel}>
+          <Button type="button" variant="outline" onClick={handleCancel}>
             Cancel
           </Button>
           <Button

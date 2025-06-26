@@ -33,7 +33,7 @@ export function ViewToggle({ currentView }: ViewToggleProps) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="sm">
+        <Button type="button" variant="outline" size="sm">
           {currentView === 'card' ? (
             <>
               <Grid3X3 className="mr-2 h-4 w-4" />

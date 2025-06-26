@@ -5,7 +5,7 @@ import { Label } from '@tuturuuu/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { Switch } from '@tuturuuu/ui/switch';
 import { Check, ChevronDown } from 'lucide-react';
-import React from 'react';
+import React, { useId } from 'react';
 
 export type TimezoneData = {
   timezone: string;
@@ -127,6 +127,7 @@ type TimezoneSettingsProps = {
 };
 
 export function TimezoneSettings({ value, onChange }: TimezoneSettingsProps) {
+  const switchId = useId();
   const [searchQuery, setSearchQuery] = React.useState('');
   const [secondarySearchQuery, setSecondarySearchQuery] = React.useState('');
   const [primaryOpen, setPrimaryOpen] = React.useState(false);
@@ -513,11 +514,13 @@ export function TimezoneSettings({ value, onChange }: TimezoneSettingsProps) {
 
       <div className="flex items-center space-x-2">
         <Switch
-          id="show-secondary"
+          id={`${switchId}-show-secondary`}
           checked={value.showSecondaryTimezone}
           onCheckedChange={handleShowSecondaryChange}
         />
-        <Label htmlFor="show-secondary">Show secondary timezone</Label>
+        <Label htmlFor={`${switchId}-show-secondary`}>
+          Show secondary timezone
+        </Label>
       </div>
 
       {value.showSecondaryTimezone && (
