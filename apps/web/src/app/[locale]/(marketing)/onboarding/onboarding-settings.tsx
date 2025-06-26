@@ -105,7 +105,7 @@ export function OnboardingSettings({
           <div className="grid gap-4">
             {/* Theme Toggle */}
             <div className="grid gap-2">
-              <label className="text-sm font-medium">{t('common.theme')}</label>
+              <span className="text-sm font-medium">{t('common.theme')}</span>
               <div className="flex items-center justify-between rounded-lg border border-foreground/20 bg-dynamic-red/5 p-3">
                 <span className="text-sm text-foreground/80">
                   {t('onboarding.change-theme')}
@@ -116,9 +116,9 @@ export function OnboardingSettings({
 
             {/* Language Selector */}
             <div className="grid gap-2">
-              <label className="text-sm font-medium">
+              <span className="text-sm font-medium">
                 {t('common.language')}
-              </label>
+              </span>
               <div className="flex items-center justify-between rounded-lg border border-foreground/20 bg-dynamic-blue/5 p-3">
                 <span className="text-sm text-foreground/80">
                   {t('onboarding.change-language')}

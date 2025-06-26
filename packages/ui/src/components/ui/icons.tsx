@@ -14,6 +14,7 @@ function IconNextChat({
 
   return (
     <svg
+      aria-hidden="true"
       viewBox="0 0 17 17"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
@@ -61,7 +62,7 @@ function IconNextChat({
         strokeLinejoin="round"
       />
       <mask
-        id="mask0_91_2047"
+        id={`mask-${id}`}
         style={{ maskType: 'alpha' }}
         maskUnits="userSpaceOnUse"
         x={1}
@@ -71,7 +72,7 @@ function IconNextChat({
       >
         <circle cx={9} cy={8} r={8} fill={inverted ? 'black' : 'white'} />
       </mask>
-      <g mask="url(#mask0_91_2047)">
+      <g mask={`url(#mask-${id})`}>
         <circle cx={9} cy={8} r={8} fill={inverted ? 'black' : 'white'} />
         <path
           d="M14.2896 14.0018L7.146 4.8H5.80005V11.1973H6.87681V6.16743L13.4444 14.6529C13.7407 14.4545 14.0231 14.2369 14.2896 14.0018Z"
@@ -92,6 +93,7 @@ function IconNextChat({
 function IconOpenAI({ className, ...props }: React.ComponentProps<'svg'>) {
   return (
     <svg
+      aria-hidden="true"
       fill="currentColor"
       viewBox="0 0 24 24"
       role="img"
@@ -108,6 +110,7 @@ function IconOpenAI({ className, ...props }: React.ComponentProps<'svg'>) {
 function IconVercel({ className, ...props }: React.ComponentProps<'svg'>) {
   return (
     <svg
+      aria-hidden="true"
       aria-label="Vercel logomark"
       role="img"
       viewBox="0 0 74 64"
@@ -125,6 +128,7 @@ function IconVercel({ className, ...props }: React.ComponentProps<'svg'>) {
 function IconGitHub({ className, ...props }: React.ComponentProps<'svg'>) {
   return (
     <svg
+      aria-hidden="true"
       role="img"
       viewBox="0 0 24 24"
       xmlns="http://www.w3.org/2000/svg"
@@ -141,6 +145,7 @@ function IconGitHub({ className, ...props }: React.ComponentProps<'svg'>) {
 function IconSeparator({ className, ...props }: React.ComponentProps<'svg'>) {
   return (
     <svg
+      aria-hidden="true"
       fill="none"
       shapeRendering="geometricPrecision"
       stroke="currentColor"
@@ -148,7 +153,6 @@ function IconSeparator({ className, ...props }: React.ComponentProps<'svg'>) {
       strokeLinejoin="round"
       strokeWidth="1"
       viewBox="0 0 24 24"
-      aria-hidden="true"
       className={cn('h-4 w-4', className)}
       {...props}
     >
@@ -160,6 +164,7 @@ function IconSeparator({ className, ...props }: React.ComponentProps<'svg'>) {
 function IconArrowDown({ className, ...props }: React.ComponentProps<'svg'>) {
   return (
     <svg
+      aria-hidden="true"
       xmlns="http://www.w3.org/2000/svg"
       viewBox="0 0 256 256"
       fill="currentColor"
@@ -174,6 +179,7 @@ function IconArrowDown({ className, ...props }: React.ComponentProps<'svg'>) {
 function IconArrowRight({ className, ...props }: React.ComponentProps<'svg'>) {
   return (
     <svg
+      aria-hidden="true"
       xmlns="http://www.w3.org/2000/svg"
       viewBox="0 0 256 256"
       fill="currentColor"
@@ -188,6 +194,7 @@ function IconArrowRight({ className, ...props }: React.ComponentProps<'svg'>) {
 function IconUser({ className, ...props }: React.ComponentProps<'svg'>) {
   return (
     <svg
+      aria-hidden="true"
       xmlns="http://www.w3.org/2000/svg"
       viewBox="0 0 256 256"
       fill="currentColor"
@@ -202,6 +209,7 @@ function IconUser({ className, ...props }: React.ComponentProps<'svg'>) {
 function IconPlus({ className, ...props }: React.ComponentProps<'svg'>) {
   return (
     <svg
+      aria-hidden="true"
       xmlns="http://www.w3.org/2000/svg"
       viewBox="0 0 256 256"
       fill="currentColor"
@@ -216,6 +224,7 @@ function IconPlus({ className, ...props }: React.ComponentProps<'svg'>) {
 function IconArrowElbow({ className, ...props }: React.ComponentProps<'svg'>) {
   return (
     <svg
+      aria-hidden="true"
       xmlns="http://www.w3.org/2000/svg"
       viewBox="0 0 256 256"
       fill="currentColor"
@@ -230,6 +239,7 @@ function IconArrowElbow({ className, ...props }: React.ComponentProps<'svg'>) {
 function IconSpinner({ className, ...props }: React.ComponentProps<'svg'>) {
   return (
     <svg
+      aria-hidden="true"
       xmlns="http://www.w3.org/2000/svg"
       viewBox="0 0 256 256"
       fill="currentColor"
@@ -244,6 +254,7 @@ function IconSpinner({ className, ...props }: React.ComponentProps<'svg'>) {
 function IconMessage({ className, ...props }: React.ComponentProps<'svg'>) {
   return (
     <svg
+      aria-hidden="true"
       xmlns="http://www.w3.org/2000/svg"
       viewBox="0 0 256 256"
       fill="currentColor"
@@ -258,6 +269,7 @@ function IconMessage({ className, ...props }: React.ComponentProps<'svg'>) {
 function IconTrash({ className, ...props }: React.ComponentProps<'svg'>) {
   return (
     <svg
+      aria-hidden="true"
       xmlns="http://www.w3.org/2000/svg"
       viewBox="0 0 256 256"
       fill="currentColor"
@@ -272,6 +284,7 @@ function IconTrash({ className, ...props }: React.ComponentProps<'svg'>) {
 function IconRefresh({ className, ...props }: React.ComponentProps<'svg'>) {
   return (
     <svg
+      aria-hidden="true"
       xmlns="http://www.w3.org/2000/svg"
       viewBox="0 0 256 256"
       fill="currentColor"
@@ -286,6 +299,7 @@ function IconRefresh({ className, ...props }: React.ComponentProps<'svg'>) {
 function IconStop({ className, ...props }: React.ComponentProps<'svg'>) {
   return (
     <svg
+      aria-hidden="true"
       xmlns="http://www.w3.org/2000/svg"
       viewBox="0 0 256 256"
       fill="currentColor"
@@ -300,6 +314,7 @@ function IconStop({ className, ...props }: React.ComponentProps<'svg'>) {
 function IconSidebar({ className, ...props }: React.ComponentProps<'svg'>) {
   return (
     <svg
+      aria-hidden="true"
       xmlns="http://www.w3.org/2000/svg"
       viewBox="0 0 256 256"
       fill="currentColor"
@@ -314,6 +329,7 @@ function IconSidebar({ className, ...props }: React.ComponentProps<'svg'>) {
 function IconMoon({ className, ...props }: React.ComponentProps<'svg'>) {
   return (
     <svg
+      aria-hidden="true"
       xmlns="http://www.w3.org/2000/svg"
       viewBox="0 0 256 256"
       fill="currentColor"
@@ -328,6 +344,7 @@ function IconMoon({ className, ...props }: React.ComponentProps<'svg'>) {
 function IconSun({ className, ...props }: React.ComponentProps<'svg'>) {
   return (
     <svg
+      aria-hidden="true"
       xmlns="http://www.w3.org/2000/svg"
       viewBox="0 0 256 256"
       fill="currentColor"
@@ -342,6 +359,7 @@ function IconSun({ className, ...props }: React.ComponentProps<'svg'>) {
 function IconCopy({ className, ...props }: React.ComponentProps<'svg'>) {
   return (
     <svg
+      aria-hidden="true"
       xmlns="http://www.w3.org/2000/svg"
       viewBox="0 0 256 256"
       fill="currentColor"
@@ -356,6 +374,7 @@ function IconCopy({ className, ...props }: React.ComponentProps<'svg'>) {
 function IconCheck({ className, ...props }: React.ComponentProps<'svg'>) {
   return (
     <svg
+      aria-hidden="true"
       xmlns="http://www.w3.org/2000/svg"
       viewBox="0 0 256 256"
       fill="currentColor"
@@ -370,6 +389,7 @@ function IconCheck({ className, ...props }: React.ComponentProps<'svg'>) {
 function IconDownload({ className, ...props }: React.ComponentProps<'svg'>) {
   return (
     <svg
+      aria-hidden="true"
       xmlns="http://www.w3.org/2000/svg"
       viewBox="0 0 256 256"
       fill="currentColor"
@@ -384,6 +404,7 @@ function IconDownload({ className, ...props }: React.ComponentProps<'svg'>) {
 function IconClose({ className, ...props }: React.ComponentProps<'svg'>) {
   return (
     <svg
+      aria-hidden="true"
       xmlns="http://www.w3.org/2000/svg"
       viewBox="0 0 256 256"
       fill="currentColor"
@@ -398,6 +419,7 @@ function IconClose({ className, ...props }: React.ComponentProps<'svg'>) {
 function IconEdit({ className, ...props }: React.ComponentProps<'svg'>) {
   return (
     <svg
+      aria-hidden="true"
       xmlns="http://www.w3.org/2000/svg"
       fill="none"
       viewBox="0 0 24 24"
@@ -418,6 +440,7 @@ function IconEdit({ className, ...props }: React.ComponentProps<'svg'>) {
 function IconShare({ className, ...props }: React.ComponentProps<'svg'>) {
   return (
     <svg
+      aria-hidden="true"
       xmlns="http://www.w3.org/2000/svg"
       fill="currentColor"
       className={cn('h-4 w-4', className)}
@@ -432,6 +455,7 @@ function IconShare({ className, ...props }: React.ComponentProps<'svg'>) {
 function IconUsers({ className, ...props }: React.ComponentProps<'svg'>) {
   return (
     <svg
+      aria-hidden="true"
       xmlns="http://www.w3.org/2000/svg"
       fill="currentColor"
       className={cn('h-4 w-4', className)}
@@ -449,6 +473,7 @@ function IconExternalLink({
 }: React.ComponentProps<'svg'>) {
   return (
     <svg
+      aria-hidden="true"
       xmlns="http://www.w3.org/2000/svg"
       fill="currentColor"
       className={cn('h-4 w-4', className)}
@@ -466,6 +491,7 @@ function IconChevronUpDown({
 }: React.ComponentProps<'svg'>) {
   return (
     <svg
+      aria-hidden="true"
       xmlns="http://www.w3.org/2000/svg"
       fill="currentColor"
       className={cn('h-4 w-4', className)}

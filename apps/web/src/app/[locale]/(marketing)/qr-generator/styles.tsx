@@ -18,6 +18,7 @@ function QRStyles({
       <div className="mt-4 mb-2 font-semibold">{t('common.styles')}</div>
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-2 2xl:grid-cols-3">
         <button
+          type="button"
           className={cn(
             'flex items-center justify-center rounded-lg border-2 p-4 text-center transition hover:border-foreground',
             style === 'default' && 'border-foreground bg-foreground/5'
@@ -27,6 +28,7 @@ function QRStyles({
           <X className="h-8 w-8" />
         </button>
         <button
+          type="button"
           className={cn(
             'flex items-center justify-center rounded-lg border-2 p-4 text-center transition hover:border-foreground',
             style === 'brand' && 'border-foreground bg-foreground/5'
@@ -48,6 +50,7 @@ function QRStyles({
           </div>
         </button>
         <button
+          type="button"
           className={cn(
             'flex items-center justify-center rounded-lg border-2 p-4 text-center transition hover:border-foreground',
             style === 'scan-me' && 'border-foreground bg-foreground/5'

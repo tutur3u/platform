@@ -1,14 +1,7 @@
-import type { Timeblock } from '@tuturuuu/types/primitives/Timeblock';
-import { ShieldCheck, ShieldMinus } from '@tuturuuu/ui/icons';
-import { Separator } from '@tuturuuu/ui/separator';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@tuturuuu/ui/tooltip';
-import dayjs from 'dayjs';
 import { timetzToTime } from '@/utils/date-helper';
+import type { Timeblock } from '@tuturuuu/types/primitives/Timeblock';
+import { Tooltip, TooltipProvider, TooltipTrigger } from '@tuturuuu/ui/tooltip';
+import dayjs from 'dayjs';
 import { useTimeBlocking } from './time-blocking-provider';
 
 export default function PreviewDayTime({
@@ -80,7 +73,7 @@ export default function PreviewDayTime({
         .map((_, i, array) => {
           const result = isTimeBlockSelected(i);
 
-          const isDraft = result.includes('draft');
+          const _isDraft = result.includes('draft');
           const isSaved = result.includes('server');
           const isLocal = result.includes('local');
 
@@ -90,8 +83,8 @@ export default function PreviewDayTime({
             .toDate();
 
           const isSelected = isSaved || isLocal || result.includes('add');
-          const isSelectable = i + hourSplits < array.length;
-          const hideBorder = i === 0 || i + hourSplits > array.length - 1;
+          const _isSelectable = i + hourSplits < array.length;
+          const _hideBorder = i === 0 || i + hourSplits > array.length - 1;
           const opacity = getOpacityForDate(currentDate, timeblocks);
 
           const editData = {
@@ -103,7 +96,9 @@ export default function PreviewDayTime({
             <TooltipProvider key={`${date}-${i}`} delayDuration={0}>
               <Tooltip disableHoverableContent>
                 <TooltipTrigger asChild>
-                  <div
+                  <button
+                    type="button"
+                    tabIndex={disabled ? -1 : 0}
                     onMouseOver={
                       disabled
                         ? undefined
@@ -112,79 +107,41 @@ export default function PreviewDayTime({
                             setPreviewDate(editData.date);
                           }
                     }
-                    onTouchStart={
+                    onFocus={
+                      disabled ? undefined : () => setPreviewDate(editData.date)
+                    }
+                    onKeyDown={
                       disabled
                         ? undefined
                         : (e) => {
-                            e.preventDefault();
-                            setPreviewDate(editData.date);
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault();
+                              setPreviewDate(editData.date);
+                            }
                           }
                     }
                     style={{
                       opacity: isSelected ? opacity : 1,
                     }}
-                    className={`${
+                    className={[
+                      'relative h-3 w-full',
                       i + hourSplits < array.length
                         ? isSelected
-                          ? isDraft
-                            ? 'bg-green-500/50'
-                            : isSaved
-                              ? 'bg-green-500/70'
-                              : // : 'animate-pulse bg-green-500/70'
-                                'bg-green-500/70'
+                          ? isSaved
+                            ? 'bg-green-500/70'
+                            : 'bg-green-500/70'
                           : 'bg-foreground/10'
-                        : ''
-                    } relative h-3 w-full ${
-                      hideBorder
-                        ? ''
-                        : (i + 1) % hourSplits === 0
+                        : '',
+                      !_hideBorder
+                        ? (i + 1) % hourSplits === 0
                           ? 'border-b border-foreground/50'
                           : (i + 1) % (hourSplits / 2) === 0
                             ? 'border-b border-dashed border-foreground/50'
                             : ''
-                    }`}
+                        : '',
+                    ].join(' ')}
                   />
                 </TooltipTrigger>
-                {isSelectable && previewDate && (
-                  <TooltipContent className="pointer-events-none border bg-background text-foreground">
-                    <div className="font-bold">
-                      {dayjs(previewDate).format('HH:mm')} -{' '}
-                      {dayjs(previewDate).add(15, 'minutes').format('HH:mm')} (
-                      {dayjs(previewDate).format('DD/MM/YYYY')})
-                    </div>
-                    <Separator className="my-1" />
-                    <div className={`font-semibold text-dynamic-green`}>
-                      {getPreviewUsers(timeblocks).available.map((user) => (
-                        <div
-                          key={user.id}
-                          className="flex items-center justify-center gap-1"
-                        >
-                          <div>{user.display_name}</div>
-                          {user.is_guest ? (
-                            <ShieldMinus size={16} />
-                          ) : (
-                            <ShieldCheck size={16} />
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                    <div className={`font-semibold text-dynamic-red`}>
-                      {getPreviewUsers(timeblocks).unavailable.map((user) => (
-                        <div
-                          key={user.id}
-                          className="flex items-center justify-center gap-1"
-                        >
-                          <div>{user.display_name}</div>
-                          {user.is_guest ? (
-                            <ShieldMinus size={16} />
-                          ) : (
-                            <ShieldCheck size={16} />
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </TooltipContent>
-                )}
               </Tooltip>
             </TooltipProvider>
           );

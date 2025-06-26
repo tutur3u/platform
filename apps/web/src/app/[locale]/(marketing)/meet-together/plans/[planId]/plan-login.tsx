@@ -23,13 +23,11 @@ import {
   FormLabel,
   FormMessage,
 } from '@tuturuuu/ui/form';
-import { useForm } from '@tuturuuu/ui/hooks/use-form';
 import { Input } from '@tuturuuu/ui/input';
-import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { Separator } from '@tuturuuu/ui/separator';
 import { usePathname, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { z } from 'zod';
 import { BASE_URL } from '@/constants/common';
 import AvailabilityPlanner from './availability-planner';
@@ -61,6 +59,64 @@ export default function PlanLogin({
 
   const [loading, setLoading] = useState(false);
 
+  // Memoize submit handler so it can appear in dependency arrays safely
+  const onSubmit = useCallback(
+    async (values: z.infer<typeof formSchema>) => {
+      if (!plan.id) return;
+
+      setLoading(true);
+
+      const res = await fetch(`/api/meet-together/plans/${plan.id}/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: values.guestName,
+          password: values.guestPassword,
+        }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+
+        // Save credentials to localStorage if checkbox is checked
+        if (values.saveCredentials) {
+          try {
+            localStorage.setItem(
+              `${GUEST_CREDENTIALS_KEY_PREFIX}${plan.id}`,
+              JSON.stringify({
+                name: values.guestName,
+                password: values.guestPassword,
+              })
+            );
+          } catch (error) {
+            console.error('Failed to save credentials', error);
+          }
+        } else {
+          // If checkbox is unchecked, clear any previously saved credentials
+          try {
+            localStorage.removeItem(
+              `${GUEST_CREDENTIALS_KEY_PREFIX}${plan.id}`
+            );
+          } catch (error) {
+            console.error('Failed to remove credentials', error);
+          }
+        }
+
+        setUser(plan.id, data.user);
+        setLoading(false);
+        setDisplayMode();
+      } else {
+        const data = await res.json();
+        form.setValue('guestPassword', '');
+        form.setError('guestPassword', { message: data.message });
+        setLoading(false);
+      }
+    },
+    [plan.id, setUser, setDisplayMode]
+  );
+
   // Try to load saved credentials from localStorage on component mount
   useEffect(() => {
     if (!plan.id || user) return;
@@ -86,68 +142,7 @@ export default function PlanLogin({
     } catch (error) {
       console.error('Failed to load saved credentials', error);
     }
-  }, [plan.id, form.setValue, onSubmit, user]);
-
-  const form = useForm({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      guestName: user?.display_name ?? '',
-      guestPassword: '',
-      saveCredentials: true,
-    },
-  });
-
-  async function onSubmit(values: z.infer<typeof formSchema>) {
-    if (!plan.id) return;
-
-    setLoading(true);
-
-    const res = await fetch(`/api/meet-together/plans/${plan.id}/login`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        name: values.guestName,
-        password: values.guestPassword,
-      }),
-    });
-
-    if (res.ok) {
-      const data = await res.json();
-
-      // Save credentials to localStorage if checkbox is checked
-      if (values.saveCredentials) {
-        try {
-          localStorage.setItem(
-            `${GUEST_CREDENTIALS_KEY_PREFIX}${plan.id}`,
-            JSON.stringify({
-              name: values.guestName,
-              password: values.guestPassword,
-            })
-          );
-        } catch (error) {
-          console.error('Failed to save credentials', error);
-        }
-      } else {
-        // If checkbox is unchecked, clear any previously saved credentials
-        try {
-          localStorage.removeItem(`${GUEST_CREDENTIALS_KEY_PREFIX}${plan.id}`);
-        } catch (error) {
-          console.error('Failed to remove credentials', error);
-        }
-      }
-
-      setUser(plan.id, data.user);
-      setLoading(false);
-      setDisplayMode();
-    } else {
-      const data = await res.json();
-      form.setValue('guestPassword', '');
-      form.setError('guestPassword', { message: data.message });
-      setLoading(false);
-    }
-  }
+  }, [plan.id, onSubmit, user]);
 
   const handleLogout = () => {
     if (!plan.id) return;

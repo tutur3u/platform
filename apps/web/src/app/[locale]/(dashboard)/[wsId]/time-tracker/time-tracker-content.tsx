@@ -2609,6 +2609,7 @@ export default function TimeTrackerContent({
 
                   return (
                     <button
+                      type="button"
                       key={task.id}
                       onClick={async () => {
                         try {
