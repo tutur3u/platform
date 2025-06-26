@@ -3,12 +3,18 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "ocr:install": "python -m venv venv && ./venv/Scripts/pip install -r requirements.txt",
-    "ocr:dev": "./venv/Scripts/uvicorn main:app --host 127.0.0.1 --port 5500 --reload",
-    "ocr:start": "./venv/Scripts/uvicorn main:app --host 127.0.0.1 --port 5500",
-    "ocr:run": "./venv/Scripts/modal run modal_deployment.py",
-    "ocr:serve": "./venv/Scripts/modal serve modal_deployment.py",
-    "ocr:deploy": "./venv/Scripts/modal deploy modal_deployment.py"
+    "ocr:install": "python -m venv venv && ./venv/bin/pip install -r requirements.txt",
+    "ocr:install:win": "python -m venv venv && .\\venv\\Scripts\\pip install -r requirements.txt",
+    "ocr:dev": "./venv/bin/uvicorn main:app --host 127.0.0.1 --port 5500 --reload",
+    "ocr:dev:win": ".\\venv\\Scripts\\uvicorn main:app --host 127.0.0.1 --port 5500 --reload",
+    "ocr:start": "./venv/bin/uvicorn main:app --host 127.0.0.1 --port 5500",
+    "ocr:start:win": ".\\venv\\Scripts\\uvicorn main:app --host 127.0.0.1 --port 5500",
+    "ocr:run": "./venv/bin/modal run modal_deployment.py",
+    "ocr:run:win": ".\\venv\\Scripts\\modal run modal_deployment.py",
+    "ocr:serve": "./venv/bin/modal serve modal_deployment.py",
+    "ocr:serve:win": ".\\venv\\Scripts\\modal serve modal_deployment.py",
+    "ocr:deploy": "./venv/bin/modal deploy modal_deployment.py",
+    "ocr:deploy:win": ".\\venv\\Scripts\\modal deploy modal_deployment.py"
   },
   "packageManager": "bun@1.2.16"
 }
