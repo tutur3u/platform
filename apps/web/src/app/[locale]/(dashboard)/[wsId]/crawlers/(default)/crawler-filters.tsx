@@ -13,7 +13,7 @@ import {
 import { Input } from '@tuturuuu/ui/input';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useDebouncedCallback } from 'use-debounce';
 
 export default function CrawlerFilters({ wsId }: { wsId: string }) {
@@ -30,7 +30,8 @@ export default function CrawlerFilters({ wsId }: { wsId: string }) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  const fetchDomains = async () => {
+  const fetchDomains = useCallback(async () => {
+    setLoading(true);
     try {
       const res = await fetch(`/api/${wsId}/crawlers/domains`);
       if (!res.ok) throw new Error('Failed to fetch domains');
@@ -46,7 +47,7 @@ export default function CrawlerFilters({ wsId }: { wsId: string }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [wsId, toast]);
 
   useEffect(() => {
     fetchDomains();

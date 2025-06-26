@@ -135,11 +135,7 @@ export function YearPicker({
           </Button>
         </div>
 
-        <div
-          className="grid w-full grid-cols-3 gap-2"
-          role="grid"
-          aria-labelledby="year-picker"
-        >
+        <div className="grid w-full grid-cols-3 gap-2">
           {years.map((year) => (
             <div
               key={year.toString()}

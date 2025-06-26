@@ -1,5 +1,6 @@
 'use client';
 
+import { fetcher } from '@/utils/fetcher';
 import type { Transaction } from '@tuturuuu/types/primitives/Transaction';
 import type { TransactionCategory } from '@tuturuuu/types/primitives/TransactionCategory';
 import type { Wallet } from '@tuturuuu/types/primitives/Wallet';
@@ -28,12 +29,11 @@ import { Textarea } from '@tuturuuu/ui/textarea';
 import { cn } from '@tuturuuu/utils/format';
 import { format } from 'date-fns';
 import { enUS, vi } from 'date-fns/locale';
-import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import useSWR from 'swr';
 import * as z from 'zod';
-import { fetcher } from '@/utils/fetcher';
 import { WalletForm } from '../wallets/form';
 import { TransactionCategoryForm } from './categories/form';
 
@@ -188,7 +188,7 @@ export function TransactionForm({ wsId, data, onFinish }: Props) {
                     options={
                       wallets
                         ? wallets.map((wallet) => ({
-                            value: wallet.id!,
+                            value: wallet.id || '',
                             label: wallet.name || '',
                           }))
                         : []
@@ -224,7 +224,7 @@ export function TransactionForm({ wsId, data, onFinish }: Props) {
                     options={
                       categories
                         ? categories.map((category) => ({
-                            value: category.id!,
+                            value: category.id || '',
                             label: category.name || '',
                           }))
                         : []

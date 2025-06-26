@@ -5,12 +5,12 @@ import type { Transaction } from '@tuturuuu/types/primitives/Transaction';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import { Check, X } from '@tuturuuu/ui/icons';
 import moment from 'moment';
-import { TransactionRowActions } from './row-actions';
 import 'moment/locale/vi';
 import { useLocale } from 'next-intl';
+import { TransactionRowActions } from './row-actions';
 
 export const transactionColumns = (
-  t: any,
+  t: (key: string, values?: Record<string, unknown>) => string,
   namespace: string | undefined
 ): ColumnDef<Transaction>[] => {
   const locale = useLocale();

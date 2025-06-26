@@ -416,7 +416,6 @@ export function TimezoneSettings({ value, onChange }: TimezoneSettingsProps) {
             <div
               className="pointer-events-auto max-h-[320px] overflow-y-auto rounded-b-lg"
               onKeyDown={handleKeyDown}
-              role="listbox"
               style={{ touchAction: 'pan-y' }}
               ref={(el) => {
                 scrollToDetectedRef.current = el;
@@ -552,7 +551,6 @@ export function TimezoneSettings({ value, onChange }: TimezoneSettingsProps) {
               <div
                 className="pointer-events-auto max-h-[320px] overflow-y-auto rounded-b-lg"
                 onKeyDown={handleSecondaryKeyDown}
-                role="listbox"
                 style={{ touchAction: 'pan-y' }}
               >
                 {renderTimezoneGroups(

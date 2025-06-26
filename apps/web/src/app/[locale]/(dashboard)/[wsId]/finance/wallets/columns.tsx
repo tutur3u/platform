@@ -8,7 +8,7 @@ import moment from 'moment';
 import { WalletRowActions } from './row-actions';
 
 export const walletColumns = (
-  t: any,
+  t: (key: string, values?: Record<string, unknown>) => string,
   namespace: string | undefined
 ): ColumnDef<Wallet>[] => {
   return [

@@ -242,7 +242,7 @@ export function HoursSettings({ wsId }: HoursSettingsProps) {
         </div>
       </div>
 
-      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as string)}>
         <div className="mb-4 flex items-center justify-between">
           <TabsList className="grid w-full max-w-md grid-cols-3">
             <TabsTrigger value="work" className="flex items-center gap-1">
@@ -343,7 +343,7 @@ export function HoursSettings({ wsId }: HoursSettingsProps) {
 }
 
 // Type guard for WeekTimeRanges
-function isValidWeekTimeRanges(obj: any): obj is WeekTimeRanges {
+function isValidWeekTimeRanges(obj: unknown): obj is WeekTimeRanges {
   if (!obj || typeof obj !== 'object') return false;
   const days = [
     'monday',
@@ -363,7 +363,7 @@ function isValidWeekTimeRanges(obj: any): obj is WeekTimeRanges {
 }
 
 // Safe JSON parse helper
-function safeParse(data: any): any {
+function safeParse(data: unknown): unknown {
   if (typeof data === 'string') {
     try {
       return JSON.parse(data);

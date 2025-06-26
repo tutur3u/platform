@@ -27,8 +27,8 @@ import { Input } from '@tuturuuu/ui/input';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
 import debounce from 'lodash/debounce';
-import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { use, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import DocumentShareDialog from '../document-share-dialog';
 
@@ -297,16 +297,11 @@ export default function DocumentDetailsPage({ params }: Props) {
                 <TooltipTrigger asChild>
                   <div
                     className={cn(
-                      'flex h-7 w-7 items-center justify-center rounded-md transition-colors',
-                      'cursor-default select-none hover:bg-muted/50',
-                      syncStatus.type === 'saving' &&
-                        'bg-muted/30 text-muted-foreground',
-                      syncStatus.type === 'saved' && 'text-emerald-500',
-                      syncStatus.type === 'error' &&
-                        'text-destructive hover:bg-destructive/10'
+                      'text-sm transition-all duration-200',
+                      syncStatus.type === 'saving'
+                        ? 'text-muted-foreground'
+                        : 'text-destructive hover:bg-destructive/10'
                     )}
-                    role="status"
-                    aria-label={t('common.save_status')}
                   >
                     {syncStatus.type === 'saving' && (
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />

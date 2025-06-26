@@ -7,7 +7,7 @@ import moment from 'moment';
 import { TransactionCategoryRowActions } from './row-actions';
 
 export const transactionCategoryColumns = (
-  t: any,
+  t: (key: string, values?: Record<string, unknown>) => string,
   namespace: string | undefined
 ): ColumnDef<TransactionCategory>[] => [
   // {

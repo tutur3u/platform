@@ -357,10 +357,10 @@ export default function TasksSidebarContent({
               <PopoverTrigger asChild>
                 <Button
                   variant="outline"
-                  role="combobox"
                   aria-expanded={boardSelectorOpen}
                   aria-label="Select a task board"
-                  className="w-full justify-start truncate hover:bg-accent/50"
+                  onClick={() => setBoardSelectorOpen(!boardSelectorOpen)}
+                  className="w-full justify-between"
                 >
                   <LayoutDashboard className="mr-2 h-4 w-4 flex-none" />
                   <span className="truncate">

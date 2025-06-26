@@ -26,7 +26,7 @@ import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { cn } from '@tuturuuu/utils/format';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useDebouncedCallback } from 'use-debounce';
 import CrawlButton from './[crawlerId]/crawl-button';
 
@@ -83,17 +83,17 @@ export default function UncrawledUrls({ wsId }: { wsId: string }) {
     );
   }, 300);
 
-  const groupUrlsByOrigin = (urls: UncrawledUrl[]) => {
-    return urls.reduce(
-      (acc, url) => {
-        const key = url.origin_url || 'unknown';
-        if (!acc[key]) acc[key] = [];
-        acc[key].push(url);
-        return acc;
-      },
-      {} as Record<string, UncrawledUrl[]>
-    );
-  };
+  const groupUrlsByOrigin = useCallback((urls: UncrawledUrl[]) => {
+    const grouped: Record<string, UncrawledUrl[]> = {};
+    urls.forEach((url) => {
+      const origin = new URL(url.url).origin;
+      if (!grouped[origin]) {
+        grouped[origin] = [];
+      }
+      grouped[origin].push(url);
+    });
+    return grouped;
+  }, []);
 
   useEffect(() => {
     const fetchUncrawledUrls = async () => {

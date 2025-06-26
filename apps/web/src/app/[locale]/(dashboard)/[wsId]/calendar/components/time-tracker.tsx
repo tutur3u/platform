@@ -353,43 +353,43 @@ export default function TimeTracker({ wsId, tasks = [] }: TimeTrackerProps) {
   };
 
   // Start timer with task
-  const startTimerWithTask = async (taskId: string, taskName: string) => {
-    setIsLoading(true);
+  const startTimerWithTask = useCallback(
+    async (taskId: string, taskName: string) => {
+      setIsLoading(true);
 
-    try {
-      const response = await apiCall(
-        `/api/v1/workspaces/${wsId}/time-tracking/sessions`,
-        {
-          method: 'POST',
-          body: JSON.stringify({
-            title: `Working on: ${taskName}`,
-            description: newSessionDescription || null,
-            categoryId: selectedCategoryId || null,
-            taskId: taskId,
-          }),
-        }
-      );
+      try {
+        const response = await apiCall(
+          `/api/v1/workspaces/${wsId}/time-tracking/sessions`,
+          {
+            method: 'POST',
+            body: JSON.stringify({
+              title: taskName,
+              description: null,
+              categoryId: null,
+              taskId: taskId,
+            }),
+          }
+        );
 
-      setCurrentSession(response.session);
-      setIsRunning(true);
-      setElapsedTime(0);
-      setNewSessionTitle('');
-      setNewSessionDescription('');
-      setSelectedCategoryId('');
-      setSelectedTaskId('');
+        setCurrentSession(response.session);
+        setIsRunning(true);
+        setElapsedTime(0);
+        setSelectedTaskId('');
 
-      fetchData();
-      toast.success('Timer started!');
-    } catch (error) {
-      console.error('Error starting timer:', error);
-      toast.error('Failed to start timer');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+        fetchData();
+        toast.success('Timer started for task!');
+      } catch (error) {
+        console.error('Error starting timer with task:', error);
+        toast.error('Failed to start timer');
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [wsId, apiCall, fetchData]
+  );
 
   // Start timer
-  const startTimer = async () => {
+  const startTimer = useCallback(async () => {
     if (sessionMode === 'task' && selectedTaskId) {
       const selectedTask = tasks.find((t) => t.id === selectedTaskId);
       if (selectedTask) {
@@ -443,10 +443,21 @@ export default function TimeTracker({ wsId, tasks = [] }: TimeTrackerProps) {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [
+    sessionMode,
+    selectedTaskId,
+    tasks,
+    newSessionTitle,
+    newSessionDescription,
+    selectedCategoryId,
+    wsId,
+    startTimerWithTask,
+    fetchData,
+    apiCall,
+  ]);
 
   // Stop timer
-  const stopTimer = async () => {
+  const stopTimer = useCallback(async () => {
     if (!currentSession) return;
 
     setIsLoading(true);
@@ -483,10 +494,10 @@ export default function TimeTracker({ wsId, tasks = [] }: TimeTrackerProps) {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [currentSession, wsId, fetchData, apiCall, formatDuration]);
 
   // Pause timer
-  const pauseTimer = async () => {
+  const pauseTimer = useCallback(async () => {
     if (!currentSession) return;
 
     setIsLoading(true);
@@ -512,7 +523,7 @@ export default function TimeTracker({ wsId, tasks = [] }: TimeTrackerProps) {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [currentSession, wsId, fetchData, apiCall]);
 
   // Resume session (creates new session with same details)
   const resumeSession = async (session: SessionWithRelations) => {

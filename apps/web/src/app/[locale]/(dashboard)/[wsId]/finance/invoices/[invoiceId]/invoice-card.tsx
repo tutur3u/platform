@@ -11,6 +11,7 @@ import { ImageIcon, PrinterIcon } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import dayjs from 'dayjs';
 import html2canvas from 'html2canvas';
+import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 import { useCallback, useRef } from 'react';
 
@@ -153,9 +154,11 @@ export default function InvoiceCard({
           <div className="mb-8 flex flex-wrap items-center justify-between gap-8">
             <div className="flex-1">
               {getConfig('BRAND_LOGO_URL') && (
-                <img
-                  src={getConfig('BRAND_LOGO_URL')!}
+                <Image
+                  src={getConfig('BRAND_LOGO_URL') || ''}
                   alt="logo"
+                  width={80}
+                  height={80}
                   className="max-h-20 object-contain"
                 />
               )}

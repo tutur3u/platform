@@ -130,11 +130,7 @@ export function MonthPicker({
           </Button>
         </div>
 
-        <div
-          className="grid w-full grid-cols-3 gap-2"
-          role="grid"
-          aria-labelledby="month-picker"
-        >
+        <div className="grid w-full grid-cols-3 gap-2">
           {months.map((month) => (
             <div
               key={month.toString()}

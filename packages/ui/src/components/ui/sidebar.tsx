@@ -106,13 +106,14 @@ const SidebarProvider = React.forwardRef<
               try {
                 // Use a more secure approach to set cookies
                 if (typeof window !== 'undefined' && window.document) {
-                  document.cookie = cookieValue;
+                  try {
+                    document.cookie = cookieValue;
+                  } catch (cookieError) {
+                    console.warn('Failed to set cookie:', cookieError);
+                  }
                 }
-              } catch (cookieError) {
-                console.warn(
-                  'Failed to set cookie via document.cookie:',
-                  cookieError
-                );
+              } catch (error) {
+                console.warn('Failed to set sidebar cookie:', error);
               }
             }
           }
