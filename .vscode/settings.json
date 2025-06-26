@@ -1,7 +1,11 @@
 {
+  "biome.enabled": true,
+  "eslint.enable": true,
   "editor.codeActionsOnSave": {
-    "source.fixAll.biome": "explicit"
+    "quickfix.biome": "always",
+    "source.organizeImports.biome": "always"
   },
+  "editor.formatOnPaste": false,
   "editor.formatOnSave": true,
   "editor.defaultFormatter": "biomejs.biome",
   "typescript.tsdk": "node_modules/typescript/lib",
@@ -23,6 +27,9 @@
   "i18n-ally.autoDetection": true,
   "i18n-ally.keystyle": "nested",
   "[xml]": {
+    "editor.defaultFormatter": "biomejs.biome"
+  },
+  "[css]": {
     "editor.defaultFormatter": "biomejs.biome"
   },
   "[json]": {
@@ -49,5 +56,5 @@
   "IDX.aI.enableCodebaseIndexing": true,
   "i18n-ally.sourceLanguage": "en",
   "typescript.experimental.useTsgo": false,
-  "cSpell.words": ["tuturuuu"]
+  "cSpell.words": ["Tuturuuu", "tuturuuu"]
 }
