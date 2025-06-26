@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
+import type { User } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
 import { Calendar } from '@tuturuuu/ui/calendar';
 import {
@@ -52,6 +53,8 @@ interface Props {
   onUpdate: () => void;
 }
 
+type TaskUser = Pick<User, 'id' | 'display_name' | 'avatar_url' | 'handle'>;
+
 export function TaskActions({ taskId, boardId, onUpdate }: Props) {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
@@ -84,10 +87,11 @@ export function TaskActions({ taskId, boardId, onUpdate }: Props) {
       const transformedTask = {
         ...data,
         assignees: data.assignees
-          ?.map((a: any) => a.user)
+          ?.map((a: { user: TaskUser }) => a.user)
           .filter(
-            (user: any, index: number, self: any[]) =>
-              user?.id && self.findIndex((u: any) => u.id === user.id) === index
+            (user: TaskUser, index: number, self: TaskUser[]) =>
+              user?.id &&
+              self.findIndex((u: TaskUser) => u.id === user.id) === index
           ),
       };
 
@@ -216,7 +220,22 @@ export function TaskActions({ taskId, boardId, onUpdate }: Props) {
   }
 
   return (
-    <div onClick={(e) => e.stopPropagation()}>
+    <button
+      type="button"
+      onClick={(e) => e.stopPropagation()}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.stopPropagation();
+        }
+      }}
+      style={{
+        background: 'none',
+        border: 'none',
+        padding: 0,
+        margin: 0,
+        width: '100%',
+      }}
+    >
       <DropdownMenu modal={false}>
         <DropdownMenuTrigger asChild>
           <Button
@@ -390,15 +409,22 @@ export function TaskActions({ taskId, boardId, onUpdate }: Props) {
                     <CalendarIcon className="mr-2 h-4 w-4" />
                     {newStartDate ? format(newStartDate, 'PPP') : 'Pick a date'}
                     {newStartDate && (
-                      <span
+                      <button
+                        type="button"
                         className="ml-auto flex h-4 w-4 cursor-pointer items-center justify-center rounded-sm p-0 opacity-50 hover:opacity-100"
                         onClick={(e) => {
                           e.stopPropagation();
                           setNewStartDate(undefined);
                         }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.stopPropagation();
+                            setNewStartDate(undefined);
+                          }
+                        }}
                       >
                         <Undo2 className="h-3 w-3" />
-                      </span>
+                      </button>
                     )}
                   </Button>
                 </PopoverTrigger>
@@ -561,6 +587,6 @@ export function TaskActions({ taskId, boardId, onUpdate }: Props) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </button>
   );
 }

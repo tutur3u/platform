@@ -21,23 +21,25 @@ import { cn } from '@tuturuuu/utils/format';
 import { useState } from 'react';
 import { calculateOverdueDays } from '../utils/taskHelpers';
 
+interface Task {
+  id: string;
+  name: string;
+  description?: string;
+  priority?: number | null;
+  end_date?: string | null;
+  boardName?: string;
+  listName?: string;
+  boardHref?: string;
+  archived?: boolean;
+  listStatus?: string;
+}
+
 interface TaskGroupProps {
   title: string;
   icon: React.ReactNode;
-  tasks: Array<{
-    id: string;
-    name: string;
-    description?: string;
-    priority?: number | null;
-    end_date?: string | null;
-    boardName: string;
-    listName: string;
-    boardHref?: string;
-    archived?: boolean;
-    listStatus?: string;
-  }>;
+  tasks: Task[];
   count: number;
-  onTaskClick: (task: any) => void;
+  onTaskClick: (task: Task) => void;
 }
 
 export function TaskGroup({

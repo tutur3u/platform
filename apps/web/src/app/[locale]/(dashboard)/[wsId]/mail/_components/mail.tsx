@@ -26,6 +26,14 @@ interface MailProps {
   navCollapsedSize: number;
 }
 
+interface CookieStore {
+  set: (options: {
+    name: string;
+    value: string;
+    path?: string;
+  }) => Promise<void>;
+}
+
 export function MailComponent({
   mails,
   defaultLayout = [20, 32, 48],
@@ -41,7 +49,19 @@ export function MailComponent({
         direction="horizontal"
         onLayout={(sizes: number[]) => {
           try {
-            document.cookie = `react-resizable-panels:layout:mail=${JSON.stringify(sizes)}`;
+            if (
+              'cookieStore' in window &&
+              typeof window.cookieStore === 'object' &&
+              typeof (window.cookieStore as CookieStore).set === 'function'
+            ) {
+              (window.cookieStore as CookieStore).set({
+                name: 'react-resizable-panels:layout:mail',
+                value: JSON.stringify(sizes),
+                path: '/',
+              });
+            } else {
+              document.cookie = `react-resizable-panels:layout:mail=${JSON.stringify(sizes)}; path=/`;
+            }
           } catch (e) {
             console.warn('Failed to set cookie:', e);
           }

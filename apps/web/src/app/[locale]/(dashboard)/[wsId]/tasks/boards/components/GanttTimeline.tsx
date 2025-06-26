@@ -21,24 +21,20 @@ interface TimeMarker {
   label: string;
 }
 
-interface GanttTask {
+interface TimelineTask {
   id: string;
   name: string;
-  status: string;
-  startOffset: number;
-  width: number;
-  createdDate: Date;
-  updated_at?: string;
   created_at: string;
   end_date?: string;
-  [key: string]: any;
+  // Add other relevant fields as needed
+  [key: string]: string | number | boolean | undefined;
 }
 
 interface GanttTimelineProps {
   filters: AnalyticsFilters;
   timeMarkers: TimeMarker[];
-  ganttTasks: GanttTask[];
-  handleTaskClick: (e: React.MouseEvent, task: GanttTask) => void;
+  ganttTasks: TimelineTask[];
+  handleTaskClick: (e: React.MouseEvent, task: TimelineTask) => void;
 }
 
 export function GanttTimeline({

@@ -90,31 +90,29 @@ const SidebarProvider = React.forwardRef<
 
         // This sets the cookie to keep the sidebar state.
         try {
-          if (typeof window !== 'undefined') {
-            if ('cookieStore' in window) {
-              // Use the Cookie Store API if available
-              // @ts-ignore
-              window.cookieStore.set({
+          if (typeof window !== 'undefined' && window.document) {
+            interface CookieStore {
+              set: (options: {
+                name: string;
+                value: string;
+                path?: string;
+                maxAge?: number;
+              }) => Promise<void>;
+            }
+            if (
+              'cookieStore' in window &&
+              typeof window.cookieStore === 'object' &&
+              typeof (window.cookieStore as CookieStore).set === 'function'
+            ) {
+              (window.cookieStore as CookieStore).set({
                 name: SIDEBAR_COOKIE_NAME,
-                value: String(openState),
+                value: openState,
                 path: '/',
                 maxAge: SIDEBAR_COOKIE_MAX_AGE,
               });
-            } else if (document.cookie !== undefined) {
-              // Fallback to proper cookie handling
+            } else {
               const cookieValue = `${SIDEBAR_COOKIE_NAME}=${openState}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`;
-              try {
-                // Use a more secure approach to set cookies
-                if (typeof window !== 'undefined' && window.document) {
-                  try {
-                    document.cookie = cookieValue;
-                  } catch (cookieError) {
-                    console.warn('Failed to set cookie:', cookieError);
-                  }
-                }
-              } catch (error) {
-                console.warn('Failed to set sidebar cookie:', error);
-              }
+              document.cookie = cookieValue;
             }
           }
         } catch (error) {

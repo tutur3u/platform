@@ -9,7 +9,7 @@ import Link from 'next/link';
 import { ProjectRowActions } from './row-action';
 
 export const projectColumns = (
-  t: any,
+  t: (key: string) => string,
   namespace: string | undefined
 ): ColumnDef<TaskBoard>[] => [
   // {

@@ -4,8 +4,17 @@ import { Card } from '@tuturuuu/ui/card';
 import { cn } from '@tuturuuu/utils/format';
 import { useMemo } from 'react';
 
+interface Task {
+  id: string;
+  status: string;
+  boardId?: string;
+  listStatus?: string;
+  archived?: boolean;
+  // Add other relevant fields as needed
+}
+
 interface StatusDistributionProps {
-  allTasks: any[];
+  allTasks: Task[];
   selectedBoard: string | null;
 }
 

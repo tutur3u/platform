@@ -86,10 +86,12 @@ export function TaskCreationAnalytics({
             new Date(task.created_at).getTime()
       )
       .map((task) => {
-        const created = new Date(task.created_at!);
-        const updated = new Date(task.updated_at!);
+        if (!task.created_at || !task.updated_at) return null;
+        const created = new Date(task.created_at);
+        const updated = new Date(task.updated_at);
         return (updated.getTime() - created.getTime()) / (1000 * 60 * 60 * 24); // days
-      });
+      })
+      .filter((v) => v !== null);
 
     const avgTimeToStart =
       timeToStartData.length > 0

@@ -33,6 +33,14 @@ interface Props {
   onTaskCreated: () => void;
 }
 
+type TaskUser = {
+  id: string;
+  display_name?: string | null;
+  avatar_url?: string | null;
+  handle?: string | null;
+  email?: string | null;
+};
+
 export function TaskForm({ listId, onTaskCreated }: Props) {
   const [isAdding, setIsAdding] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
@@ -223,7 +231,7 @@ export function TaskForm({ listId, onTaskCreated }: Props) {
             <div className="space-y-2">
               <Label className="text-xs font-medium">Quick Assign</Label>
               <div className="flex flex-wrap gap-2">
-                {members.map((member: any) => (
+                {members.map((member: TaskUser) => (
                   <Button
                     key={member.id}
                     type="button"

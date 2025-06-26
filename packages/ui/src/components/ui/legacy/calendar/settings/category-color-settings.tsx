@@ -312,9 +312,8 @@ export function CategoryColorsSettings({
                           tabIndex={0}
                           onClick={() => setEditingCategory(index)}
                           onKeyDown={(e) => {
-                            if (e.key === 'Enter' || e.key === ' ') {
+                            if (e.key === 'Enter' || e.key === ' ')
                               setEditingCategory(index);
-                            }
                           }}
                         />
 
@@ -348,12 +347,17 @@ export function CategoryColorsSettings({
                           </div>
                         ) : (
                           <div className="flex flex-1 items-center justify-between">
-                            <div
+                            <button
+                              type="button"
                               className="cursor-pointer truncate font-medium"
                               onClick={() => setEditingCategory(index)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' || e.key === ' ')
+                                  setEditingCategory(index);
+                              }}
                             >
                               {category.name}
-                            </div>
+                            </button>
                             <Button
                               variant="ghost"
                               size="sm"

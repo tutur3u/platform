@@ -34,6 +34,7 @@ export function AuthButton({
       </div>
       <form action={signOut}>
         <Button
+          type="button"
           onClick={onClick}
           variant="destructive"
           className={cn('w-full', className)}
@@ -44,7 +45,9 @@ export function AuthButton({
     </div>
   ) : (
     <Link href="/login" onClick={onClick} className="w-full">
-      <Button className="w-full">Login</Button>
+      <Button type="button" className="w-full">
+        Login
+      </Button>
     </Link>
   );
 }

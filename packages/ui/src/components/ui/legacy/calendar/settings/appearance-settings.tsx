@@ -10,6 +10,7 @@ import {
 } from '@tuturuuu/ui/select';
 import { Tabs, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { useTheme } from 'next-themes';
+import { useId } from 'react';
 
 export type CalendarTheme = 'light' | 'dark' | 'system';
 export type FirstDayOfWeek = 'sunday' | 'monday' | 'saturday';
@@ -48,6 +49,8 @@ export function AppearanceSettings({
   onChange,
 }: AppearanceSettingsProps) {
   const { theme, setTheme } = useTheme();
+  const firstDayId = useId();
+  const timeFormatId = useId();
 
   const handleThemeChange = (theme: CalendarTheme) => {
     onChange({
@@ -111,7 +114,7 @@ export function AppearanceSettings({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="first-day">First day of week</Label>
+        <Label htmlFor={firstDayId}>First day of week</Label>
         <Select
           value={value.firstDayOfWeek}
           onValueChange={(val) =>
@@ -119,7 +122,7 @@ export function AppearanceSettings({
           }
           disabled
         >
-          <SelectTrigger id="first-day" className="w-full">
+          <SelectTrigger id={firstDayId} className="w-full">
             <SelectValue placeholder="Select first day" />
           </SelectTrigger>
           <SelectContent>
@@ -135,14 +138,14 @@ export function AppearanceSettings({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="time-format">Time format</Label>
+        <Label htmlFor={timeFormatId}>Time format</Label>
         <Select
           value={value.timeFormat}
           onValueChange={(val) =>
             handleSelectChange('timeFormat', val as TimeFormat)
           }
         >
-          <SelectTrigger id="time-format" className="w-full">
+          <SelectTrigger id={timeFormatId} className="w-full">
             <SelectValue placeholder="Select time format" />
           </SelectTrigger>
           <SelectContent>

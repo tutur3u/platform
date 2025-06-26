@@ -58,13 +58,31 @@ export default function NotificationAction({
   const handleClick = () => {
     switch (type) {
       case 'WORKSPACE_INVITE_ACCEPT':
-        handleWorkspaceInvite({ data: payload, accept: true });
+        if (
+          payload &&
+          typeof payload === 'object' &&
+          'wsId' in payload &&
+          typeof payload.wsId === 'string'
+        ) {
+          handleWorkspaceInvite({
+            data: payload as { wsId: string },
+            accept: true,
+          });
+        }
         break;
-
       case 'WORKSPACE_INVITE_DECLINE':
-        handleWorkspaceInvite({ data: payload, accept: false });
+        if (
+          payload &&
+          typeof payload === 'object' &&
+          'wsId' in payload &&
+          typeof payload.wsId === 'string'
+        ) {
+          handleWorkspaceInvite({
+            data: payload as { wsId: string },
+            accept: false,
+          });
+        }
         break;
-
       default:
         break;
     }
@@ -72,6 +90,7 @@ export default function NotificationAction({
 
   return (
     <Button
+      type="button"
       variant={variant}
       size="sm"
       onClick={handleClick}

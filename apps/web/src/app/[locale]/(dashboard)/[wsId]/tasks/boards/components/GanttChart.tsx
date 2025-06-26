@@ -14,8 +14,23 @@ interface AnalyticsFilters {
   statusFilter: 'all' | 'not_started' | 'active' | 'done' | 'closed';
 }
 
+interface Task {
+  id: string;
+  name: string;
+  status?: string;
+  boardId?: string;
+  listStatus?: string;
+  archived?: boolean;
+  created_at?: string;
+  updated_at?: string;
+  end_date?: string;
+  priority?: string | number;
+  assignee_name?: string;
+  // Add other relevant fields as needed
+}
+
 interface GanttChartProps {
-  allTasks: any[];
+  allTasks: Task[];
   filters: AnalyticsFilters;
 }
 
@@ -25,7 +40,7 @@ export function GanttChart({ allTasks, filters }: GanttChartProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [clickCardVisible, setClickCardVisible] = useState(false);
   const [clickCardPosition, setClickCardPosition] = useState({ x: 0, y: 0 });
-  const [clickedTask, setClickedTask] = useState<any | null>(null);
+  const [clickedTask, setClickedTask] = useState<Task | null>(null);
 
   // Filter tasks based on selected board, status, and search
   const filteredTasks = useMemo(() => {
@@ -272,7 +287,7 @@ export function GanttChart({ allTasks, filters }: GanttChartProps) {
   }, []);
 
   // Add the click handlers to the GanttChart component
-  const handleTaskClick = (e: React.MouseEvent, task: any) => {
+  const handleTaskClick = (e: React.MouseEvent, task: Task) => {
     e.stopPropagation();
 
     const mouseX = e.clientX;

@@ -127,7 +127,7 @@ export const MonthCalendar = ({ date }: MonthCalendarProps) => {
     addEmptyEvent(eventDate);
   };
 
-  const formatEventTime = (event: any) => {
+  const formatEventTime = (event: { start_at: string; end_at: string }) => {
     try {
       const start = new Date(event.start_at);
       const end = new Date(event.end_at);
@@ -138,7 +138,9 @@ export const MonthCalendar = ({ date }: MonthCalendarProps) => {
   };
 
   // Get color styles for an event
-  const getEventStyles = (event: any): { bg: string; text: string } => {
+  const getEventStyles = (event: {
+    color: string;
+  }): { bg: string; text: string } => {
     const colorMap: Record<string, { bg: string; text: string }> = {
       blue: {
         bg: 'bg-blue-100/60 dark:bg-blue-900/30',
@@ -270,7 +272,7 @@ export const MonthCalendar = ({ date }: MonthCalendarProps) => {
 
               <div className="mt-1 space-y-1">
                 {events.slice(0, 3).map((event) => {
-                  const { bg, text } = getEventStyles(event);
+                  getEventStyles(event);
 
                   return (
                     <HoverCard key={event.id} openDelay={200} closeDelay={100}>

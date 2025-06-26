@@ -11,9 +11,26 @@ import {
 import { cn } from '@tuturuuu/utils/format';
 import { useRef } from 'react';
 
+interface Task {
+  id: string;
+  name: string;
+  boardId?: string;
+  boardName?: string;
+  listStatus?: string;
+  listName?: string;
+  archived?: boolean;
+  status?: string;
+  description?: string;
+  createdDate?: string | Date;
+  end_date?: string;
+  priority?: string | number;
+  assignee_name?: string;
+  // Add other relevant fields as needed
+}
+
 interface TaskDetailCardProps {
   clickCardVisible: boolean;
-  clickedTask: any | null;
+  clickedTask: Task | null;
   clickCardPosition: { x: number; y: number };
   clickedTaskDuration: string;
   handleCloseClick: () => void;
@@ -35,9 +52,11 @@ export function TaskDetailCard({
   return (
     <>
       {/* Subtle backdrop */}
-      <div
+      <button
+        type="button"
         className="fixed inset-0 z-[9998] bg-black/5 backdrop-blur-[1px]"
         onClick={handleCloseClick}
+        aria-label="Close detail card"
       />
 
       <div
@@ -109,6 +128,7 @@ export function TaskDetailCard({
                 )}
               </Badge>
               <button
+                type="button"
                 onClick={handleCloseClick}
                 className="text-gray-400 transition-colors hover:text-gray-600 dark:hover:text-gray-300"
               >
@@ -134,9 +154,9 @@ export function TaskDetailCard({
                 <span className="text-muted-foreground">Created:</span>
               </div>
               <div className="pl-4 font-medium">
-                {clickedTask.createdDate
-                  ? clickedTask.createdDate.toLocaleDateString()
-                  : 'N/A'}
+                {typeof clickedTask.createdDate === 'string'
+                  ? new Date(clickedTask.createdDate).toLocaleDateString()
+                  : clickedTask.createdDate?.toLocaleDateString()}
               </div>
 
               {clickedTask.end_date && (

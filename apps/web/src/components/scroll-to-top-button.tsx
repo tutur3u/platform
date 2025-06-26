@@ -21,6 +21,7 @@ export function ScrollToTopButton({ className, ...props }: ButtonProps) {
 
   return (
     <Button
+      type="button"
       className={cn(
         'flex-none bg-background/20 backdrop-blur-lg transition-opacity duration-300',
         className

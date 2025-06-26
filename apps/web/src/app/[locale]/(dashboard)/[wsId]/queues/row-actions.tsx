@@ -10,7 +10,7 @@ import { useTranslations } from 'next-intl';
 interface RowActionsProps {
   row: Row<CrawledUrl>;
   href?: string;
-  extraData?: any;
+  extraData?: unknown;
 }
 
 export function RowActions({ href }: RowActionsProps) {
