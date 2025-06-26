@@ -1,7 +1,7 @@
 import { cn } from '@tuturuuu/utils/format';
 import Image from 'next/image';
 import Link from 'next/link';
-import { type ReactNode, Suspense } from 'react';
+import { type ReactNode, Suspense, useId } from 'react';
 
 export interface NavbarProps {
   /**
@@ -73,9 +73,12 @@ export function Navbar({
   contentClassName,
   logoClassName,
 }: NavbarProps) {
+  const navbarId = useId();
+  const navbarContentId = useId();
+
   return (
     <nav
-      id="navbar"
+      id={`${navbarId}-navbar`}
       className={cn(
         'fixed inset-x-0 top-0 z-50',
         onlyOnMobile && 'md:hidden',
@@ -83,7 +86,7 @@ export function Navbar({
       )}
     >
       <div
-        id="navbar-content"
+        id={`${navbarContentId}-navbar-content`}
         className={cn(
           'bg-transparent px-4 py-2 font-semibold md:px-8 lg:px-16 xl:px-32',
           contentClassName

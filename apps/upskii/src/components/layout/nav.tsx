@@ -1,5 +1,7 @@
 'use client';
 
+import type { NavLink } from '@/components/navigation';
+import { ENABLE_KEYBOARD_SHORTCUTS, PROD_MODE } from '@/constants/common';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { buttonVariants } from '@tuturuuu/ui/button';
 import {
@@ -14,9 +16,7 @@ import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
-import type { NavLink } from '@/components/navigation';
-import { ENABLE_KEYBOARD_SHORTCUTS, PROD_MODE } from '@/constants/common';
+import { useCallback, useEffect, useState } from 'react';
 
 interface NavProps {
   wsId: string;
@@ -41,24 +41,25 @@ export function Nav({
   const [urlToLoad, setUrlToLoad] = useState<string>();
   const [openGroups, setOpenGroups] = useState<Set<string>>(new Set());
 
-  useEffect(() => {
-    if (urlToLoad && urlToLoad === pathname) setUrlToLoad(undefined);
-  }, [pathname, urlToLoad]);
-
-  function hasFocus(selector: string) {
-    return Array.from(document.querySelectorAll(selector)).some(
-      (el) => el === document.activeElement
+  const hasFocus = useCallback(() => {
+    return (
+      document.activeElement?.tagName === 'INPUT' ||
+      document.activeElement?.tagName === 'TEXTAREA'
     );
-  }
+  }, []);
 
-  function parseShortcut(shortcut: string) {
+  const parseShortcut = useCallback((shortcut: string) => {
     const parts = shortcut.split('+');
     return {
       ctrl: parts.includes('CTRL'),
       shift: parts.includes('SHIFT'),
       key: parts.find((part) => part.length === 1),
     };
-  }
+  }, []);
+
+  useEffect(() => {
+    if (urlToLoad && urlToLoad === pathname) setUrlToLoad(undefined);
+  }, [pathname, urlToLoad]);
 
   function shouldShowLink(link: NavLink) {
     // If the link is disabled, don't render it
@@ -83,45 +84,48 @@ export function Nav({
     return true;
   }
 
-  function isLinkActive(link: NavLink) {
-    if (!link.href && !link.children) return false;
+  const isLinkActive = useCallback(
+    (link: NavLink) => {
+      if (!link.href && !link.children) return false;
 
-    const links = [...(link.aliases || []), link.href].filter(Boolean);
-    const matchExact = link.matchExact ?? false;
+      const links = [...(link.aliases || []), link.href].filter(Boolean);
+      const matchExact = link.matchExact ?? false;
 
-    if (link.href) {
-      return (
-        links
-          .map(
+      if (link.href) {
+        return (
+          links
+            .map(
+              (href) =>
+                typeof href === 'string' &&
+                (matchExact
+                  ? pathname === href
+                  : (pathname?.startsWith(href) ?? false))
+            )
+            .filter(Boolean).length > 0
+        );
+      }
+
+      // For grouped links, check if any child is active
+      if (link.children) {
+        return link.children.some((child) => {
+          if (!shouldShowLink(child)) return false;
+          const childLinks = [...(child.aliases || []), child.href].filter(
+            Boolean
+          );
+          return childLinks.some(
             (href) =>
               typeof href === 'string' &&
-              (matchExact
+              (child.matchExact
                 ? pathname === href
                 : (pathname?.startsWith(href) ?? false))
-          )
-          .filter(Boolean).length > 0
-      );
-    }
+          );
+        });
+      }
 
-    // For grouped links, check if any child is active
-    if (link.children) {
-      return link.children.some((child) => {
-        if (!shouldShowLink(child)) return false;
-        const childLinks = [...(child.aliases || []), child.href].filter(
-          Boolean
-        );
-        return childLinks.some(
-          (href) =>
-            typeof href === 'string' &&
-            (child.matchExact
-              ? pathname === href
-              : (pathname?.startsWith(href) ?? false))
-        );
-      });
-    }
-
-    return false;
-  }
+      return false;
+    },
+    [pathname]
+  );
 
   // Collect all links for keyboard shortcuts
   const allLinks = links.reduce((acc: NavLink[], link) => {
@@ -144,7 +148,7 @@ export function Nav({
         if (!link || !link.shortcut || !link.href) return;
         const { ctrl, shift, key } = parseShortcut(link.shortcut);
         if (
-          !hasFocus('input, select, textarea') &&
+          !hasFocus() &&
           e.key.toUpperCase() === key?.toUpperCase() &&
           ctrl === e.ctrlKey &&
           shift === e.shiftKey

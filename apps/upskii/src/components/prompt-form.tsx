@@ -1,3 +1,5 @@
+import { DEV_MODE } from '@/constants/common';
+import { useEnterSubmit } from '@/lib/hooks/use-enter-submit';
 import type { UseChatHelpers } from '@tuturuuu/ai/types';
 import type { AIChat } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
@@ -26,13 +28,12 @@ import {
   TooltipTrigger,
 } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
-import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import type React from 'react';
 import { useEffect, useState } from 'react';
 import Textarea from 'react-textarea-autosize';
-import { DEV_MODE } from '@/constants/common';
-import { useEnterSubmit } from '@/lib/hooks/use-enter-submit';
 
 export interface PromptProps
   extends Pick<UseChatHelpers, 'input' | 'setInput'> {
@@ -650,10 +651,11 @@ export function PromptForm({
                           className="group flex items-center gap-2 rounded"
                         >
                           <div className="size-8">
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img
+                            <Image
                               src={URL.createObjectURL(f.rawFile)}
                               alt={f.rawFile.name}
+                              width={32}
+                              height={32}
                               className="h-8 w-8 rounded object-cover"
                             />
                           </div>

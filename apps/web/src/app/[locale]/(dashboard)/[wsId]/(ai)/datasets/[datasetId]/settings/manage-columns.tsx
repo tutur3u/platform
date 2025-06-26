@@ -13,7 +13,7 @@ import { Loader2, Pencil, Plus, X } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { cn } from '@tuturuuu/utils/format';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { EditColumnDialog } from './edit-column-dialog';
 
 interface Column {
@@ -29,6 +29,7 @@ interface Props {
 export function ManageColumns({ wsId, datasetId }: Props) {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const columnNameId = useId();
 
   const [isAddingColumn, setIsAddingColumn] = useState(false);
   const [newColumnName, setNewColumnName] = useState('');
@@ -280,8 +281,14 @@ export function ManageColumns({ wsId, datasetId }: Props) {
         </DialogHeader>
         <div className="space-y-4">
           <div className="space-y-2">
-            <label className="text-sm font-medium">Column Name</label>
+            <label
+              htmlFor={`${columnNameId}-column-name`}
+              className="text-sm font-medium"
+            >
+              Column Name
+            </label>
             <Input
+              id={`${columnNameId}-column-name`}
               value={newColumnName}
               onChange={(e) => setNewColumnName(e.target.value)}
               placeholder="Enter column name"

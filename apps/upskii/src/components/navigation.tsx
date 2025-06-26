@@ -1,11 +1,11 @@
 'use client';
 
+import { DEV_MODE, PROD_MODE } from '@/constants/common';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { type ReactNode, useEffect, useState } from 'react';
-import { DEV_MODE, PROD_MODE } from '@/constants/common';
+import { type ReactNode, useCallback, useEffect, useState } from 'react';
 
 export interface NavLink {
   title: string;
@@ -41,28 +41,12 @@ export function Navigation({
   const pathname = usePathname();
   const isRootWorkspace = currentWsId === ROOT_WORKSPACE_ID;
 
-  const scrollActiveLinksIntoView = () => {
-    const activeWorkspaceLink = document.getElementById('active-ws-navlink');
-    const activeLink = document.getElementById('active-navlink');
-
-    if (activeWorkspaceLink) {
-      activeWorkspaceLink.scrollIntoView({
-        behavior: 'smooth',
-        block: 'nearest',
-        inline: 'nearest',
-      });
-    }
-
+  const scrollActiveLinksIntoView = useCallback(() => {
+    const activeLink = document.querySelector('[data-active="true"]');
     if (activeLink) {
-      new Promise((resolve) => setTimeout(resolve, 500)).then(() =>
-        activeLink.scrollIntoView({
-          behavior: 'smooth',
-          block: 'nearest',
-          inline: 'nearest',
-        })
-      );
+      activeLink.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
-  };
+  }, []);
 
   const [urlToLoad, setUrlToLoad] = useState<string>();
 

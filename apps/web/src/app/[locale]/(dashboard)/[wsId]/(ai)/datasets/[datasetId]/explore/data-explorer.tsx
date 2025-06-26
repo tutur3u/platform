@@ -35,7 +35,7 @@ import {
 } from '@tuturuuu/ui/select';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { DatasetCrawler } from './dataset-crawler';
 
 interface Props {
@@ -44,8 +44,10 @@ interface Props {
 }
 
 export function DataExplorer({ wsId, dataset }: Props) {
-  const t = useTranslations();
+  const t = useTranslations('ws-datasets');
   const queryClient = useQueryClient();
+  const columnNameId = useId();
+  const columnTypeId = useId();
 
   const [pageSize, setPageSize] = useState('10');
   const [currentPage, setCurrentPage] = useState(1);
@@ -90,7 +92,8 @@ export function DataExplorer({ wsId, dataset }: Props) {
     placeholderData: keepPreviousData,
   });
 
-  const headers = columnsQuery.data?.map((col: any) => col.name) || [];
+  const headers =
+    columnsQuery.data?.map((col: { name: string }) => col.name) || [];
   const { data, totalRows = 0 } = rowsQuery.data || {};
   const totalPages = Math.ceil(totalRows / parseInt(pageSize));
 
@@ -149,7 +152,9 @@ export function DataExplorer({ wsId, dataset }: Props) {
       const updates = Object.keys(editingRow.cells).map((header) => ({
         rowId: editingRow.row_id,
         columnId:
-          columnsQuery.data.find((col: any) => col.name === header)?.id || '',
+          columnsQuery.data.find(
+            (col: { name: string; id: string }) => col.name === header
+          )?.id || '',
         data: editingRow.cells[header],
       }));
 
@@ -234,9 +239,7 @@ export function DataExplorer({ wsId, dataset }: Props) {
     if (!headers.length) {
       return (
         <div className="flex h-64 flex-col items-center justify-center">
-          <p className="text-sm text-muted-foreground">
-            {t('ws-datasets.no_data')}
-          </p>
+          <p className="text-sm text-muted-foreground">{t('no_data')}</p>
           <Button variant="outline" onClick={handleRefresh} className="mt-4">
             {t('common.refresh')}
           </Button>
@@ -367,23 +370,29 @@ export function DataExplorer({ wsId, dataset }: Props) {
             <DialogTrigger asChild>
               <Button variant="outline">
                 <Plus className="h-4 w-4" />
-                {t('ws-datasets.add_row')}
+                {t('add_row')}
               </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>{t('ws-datasets.add_row')}</DialogTitle>
+                <DialogTitle>{t('add_row')}</DialogTitle>
               </DialogHeader>
               <ScrollArea className="max-h-96 space-y-4">
                 {headers.map((header: any) => (
                   <div key={header} className="space-y-2">
-                    <label className="text-sm font-medium">{header}</label>
+                    <label
+                      className="text-sm font-medium"
+                      htmlFor={`${columnNameId}-${header}`}
+                    >
+                      {header}
+                    </label>
                     <Input
                       value={newRow[header] || ''}
                       onChange={(e) =>
                         setNewRow({ ...newRow, [header]: e.target.value })
                       }
                       placeholder={`Enter ${header}`}
+                      id={`${columnNameId}-${header}`}
                     />
                   </div>
                 ))}
@@ -504,16 +513,21 @@ export function DataExplorer({ wsId, dataset }: Props) {
       {editingRow && (
         <Dialog open={!!editingRow} onOpenChange={() => setEditingRow(null)}>
           <DialogTrigger asChild>
-            <Button variant="outline">{t('ws-datasets.edit_row')}</Button>
+            <Button variant="outline">{t('edit_row')}</Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>{t('ws-datasets.edit_row')}</DialogTitle>
+              <DialogTitle>{t('edit_row')}</DialogTitle>
             </DialogHeader>
             <ScrollArea className="max-h-96 space-y-4">
               {headers.map((header: any) => (
                 <div key={header} className="space-y-2">
-                  <label className="text-sm font-medium">{header}</label>
+                  <label
+                    className="text-sm font-medium"
+                    htmlFor={`${columnTypeId}-${header}`}
+                  >
+                    {header}
+                  </label>
                   <Input
                     value={editingRow.cells[header] || ''}
                     onChange={(e) =>
@@ -526,6 +540,7 @@ export function DataExplorer({ wsId, dataset }: Props) {
                       })
                     }
                     placeholder={`Enter ${header}`}
+                    id={`${columnTypeId}-${header}`}
                   />
                 </div>
               ))}

@@ -267,7 +267,7 @@ export class ExcelCrawler extends BaseCrawler {
         header: 1,
         raw: false,
         defval: '',
-      }) as any[][];
+      }) as (string | number | null)[][];
 
       // Clean up the data
       const cleanData = this.cleanupData(rawData);

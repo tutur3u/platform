@@ -150,7 +150,9 @@ export async function detectDuplicates(datasetId: string) {
       const signature = JSON.stringify(normalizedData);
 
       if (uniqueRows.has(signature)) {
-        const original = uniqueRows.get(signature)!;
+        const original = uniqueRows.get(signature);
+        if (!original) continue;
+
         // Keep the older row as original
         if (new Date(row.created_at) < new Date(original.created_at)) {
           duplicates.push({

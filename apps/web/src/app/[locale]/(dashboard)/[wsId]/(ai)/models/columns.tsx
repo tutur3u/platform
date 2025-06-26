@@ -8,10 +8,10 @@ import Link from 'next/link';
 import { RowActions } from './row-actions';
 
 export const getColumns = (
-  t: any,
+  t: (key: string) => string,
   namespace: string | undefined,
-  _?: any,
-  extraData?: any
+  _?: unknown,
+  extraData?: Record<string, unknown>
 ): ColumnDef<WorkspaceAIModel>[] => [
   {
     accessorKey: 'id',

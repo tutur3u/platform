@@ -179,7 +179,9 @@ export class CsvCrawler extends BaseCrawler {
       // Get and clean headers
       const headers =
         headerRow > 0 && cleanData[headerRow - 1]
-          ? this.cleanupHeaders(cleanData[headerRow - 1] as any[])
+          ? this.cleanupHeaders(
+              cleanData[headerRow - 1] as (string | number | null)[]
+            )
           : Array.from(
               { length: cleanData[0]?.length || 0 },
               (_, i) => `Column ${i + 1}`
@@ -249,7 +251,7 @@ export class CsvCrawler extends BaseCrawler {
         );
       }
 
-      const rawData = parsedData.data as any[][];
+      const rawData = parsedData.data as (string | number | null)[][];
 
       onProgress(50, 'Processing data...');
       onProgress(70, 'Extracting data...');
@@ -268,7 +270,7 @@ export class CsvCrawler extends BaseCrawler {
       // Get and clean headers
       const headers = this.cleanupHeaders(
         headerRow > 0 && cleanData[headerRow - 1]
-          ? (cleanData[headerRow - 1] as any[])
+          ? (cleanData[headerRow - 1] as (string | number | null)[])
           : Array.from(
               { length: cleanData[0]?.length || 0 },
               (_, i) => `Column ${i + 1}`

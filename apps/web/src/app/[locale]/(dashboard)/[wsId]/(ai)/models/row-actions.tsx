@@ -20,7 +20,7 @@ import { useState } from 'react';
 interface RowActionsProps {
   row: Row<WorkspaceAIModel>;
   href?: string;
-  extraData?: any;
+  extraData?: Record<string, unknown>;
 }
 
 export function RowActions({ row, href }: RowActionsProps) {
