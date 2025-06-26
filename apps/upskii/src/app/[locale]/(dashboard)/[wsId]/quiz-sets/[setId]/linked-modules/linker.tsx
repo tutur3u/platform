@@ -33,8 +33,8 @@ export function QuizsetModuleLinker({
     <Filter
       title={t('ws-quiz-sets.link-modules')}
       options={data.map((module) => ({
-        label: module.name!,
-        value: module.id!,
+        label: module.name || '',
+        value: module.id || '',
         checked: module.selected,
         disabled: module.selected,
       }))}

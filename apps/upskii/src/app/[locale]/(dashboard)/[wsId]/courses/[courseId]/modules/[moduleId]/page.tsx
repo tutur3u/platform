@@ -2,7 +2,7 @@ import {
   createClient,
   createDynamicClient,
 } from '@tuturuuu/supabase/next/server';
-import type { WorkspaceCourseModule } from '@tuturuuu/types/db';
+import type { WorkspaceCourseModule, WorkspaceQuiz } from '@tuturuuu/types/db';
 import { Accordion } from '@tuturuuu/ui/accordion';
 import { CourseSection } from '@tuturuuu/ui/custom/education/modules/content-section';
 import { FileDisplay } from '@tuturuuu/ui/custom/education/modules/resources/file-display';
@@ -81,7 +81,7 @@ export default async function UserGroupDetailsPage({ params }: Props) {
         href={`/${wsId}/courses/${courseId}/modules/${moduleId}/content`}
         title={t('course-details-tabs.module_content')}
         icon={<Goal className="h-5 w-5" />}
-        rawContent={data.content as any | undefined}
+        rawContent={data.content as JSONContent | undefined}
         content={
           data.content ? (
             <div className="h-full max-h-[500px] overflow-y-auto">
@@ -193,7 +193,7 @@ export default async function UserGroupDetailsPage({ params }: Props) {
         href={`/${wsId}/courses/${courseId}/modules/${moduleId}/extra-content`}
         title={t('course-details-tabs.extra_reading')}
         icon={<BookText className="h-5 w-5" />}
-        rawContent={data.extra_content as any | undefined}
+        rawContent={data.extra_content as JSONContent | undefined}
         content={
           data.extra_content
             ? // <BlockEditor document={data.extra_content as any} />
@@ -275,7 +275,7 @@ const getQuizzes = async (moduleId: string) => {
     {
       setId: string;
       setName: string;
-      quizzes: any[];
+      quizzes: WorkspaceQuiz[];
     }
   >();
 

@@ -45,7 +45,7 @@ import {
 } from '@tuturuuu/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { cn } from '@tuturuuu/utils/format';
-import { useMemo, useState } from 'react';
+import { useId, useMemo, useState } from 'react';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { projectColumns } from './columns';
 // Import new components
@@ -402,13 +402,30 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
     taskModal,
   ]);
 
+  const searchInputId = useId();
+  const statusSelectId = useId();
+  const sortBySelectId = useId();
+  const columnIds = {
+    boardName: useId(),
+    totalTasks: useId(),
+    progress: useId(),
+    completedTasks: useId(),
+    activeTasks: useId(),
+    overdueTasks: useId(),
+    createdDate: useId(),
+    lastUpdated: useId(),
+    priorityDistribution: useId(),
+  };
+
   return (
     <>
       {/* Enhanced Quick Stats - Now Clickable */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
-        <div
-          className="cursor-pointer rounded-xl border bg-gradient-to-br from-blue-50 to-blue-100/50 p-4 transition-all hover:scale-105 hover:shadow-md dark:from-blue-950/20 dark:to-blue-900/10"
+        <button
+          type="button"
+          className="cursor-pointer rounded-xl border bg-gradient-to-br from-blue-50 to-blue-100/50 p-4 transition-all hover:scale-105 hover:shadow-md dark:from-blue-950/20 dark:to-blue-900/10 text-left"
           onClick={() => openTaskModal('all')}
+          aria-label="Show all tasks"
         >
           <div className="flex items-center gap-3">
             <div className="rounded-lg bg-blue-500/10 p-2">
@@ -423,11 +440,13 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
               </p>
             </div>
           </div>
-        </div>
+        </button>
 
-        <div
-          className="cursor-pointer rounded-xl border bg-gradient-to-br from-green-50 to-green-100/50 p-4 transition-all hover:scale-105 hover:shadow-md dark:from-green-950/20 dark:to-green-900/10"
+        <button
+          type="button"
+          className="cursor-pointer rounded-xl border bg-gradient-to-br from-green-50 to-green-100/50 p-4 transition-all hover:scale-105 hover:shadow-md dark:from-green-950/20 dark:to-green-900/10 text-left"
           onClick={() => openTaskModal('completed')}
+          aria-label="Show completed tasks"
         >
           <div className="flex items-center gap-3">
             <div className="rounded-lg bg-green-500/10 p-2">
@@ -442,7 +461,7 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
               </p>
             </div>
           </div>
-        </div>
+        </button>
 
         <div className="rounded-xl border bg-gradient-to-br from-purple-50 to-purple-100/50 p-4 transition-all hover:shadow-md dark:from-purple-950/20 dark:to-purple-900/10">
           <div className="flex items-center gap-3">
@@ -460,9 +479,11 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
           </div>
         </div>
 
-        <div
-          className="cursor-pointer rounded-xl border bg-gradient-to-br from-red-50 to-red-100/50 p-4 transition-all hover:scale-105 hover:shadow-md dark:from-red-950/20 dark:to-red-900/10"
+        <button
+          type="button"
+          className="cursor-pointer rounded-xl border bg-gradient-to-br from-red-50 to-red-100/50 p-4 transition-all hover:scale-105 hover:shadow-md dark:from-red-950/20 dark:to-red-900/10 text-left"
           onClick={() => openTaskModal('overdue')}
+          aria-label="Show overdue tasks"
         >
           <div className="flex items-center gap-3">
             <div className="rounded-lg bg-red-500/10 p-2">
@@ -477,11 +498,13 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
               </p>
             </div>
           </div>
-        </div>
+        </button>
 
-        <div
-          className="cursor-pointer rounded-xl border bg-gradient-to-br from-orange-50 to-orange-100/50 p-4 transition-all hover:scale-105 hover:shadow-md dark:from-orange-950/20 dark:to-orange-900/10"
+        <button
+          type="button"
+          className="cursor-pointer rounded-xl border bg-gradient-to-br from-orange-50 to-orange-100/50 p-4 transition-all hover:scale-105 hover:shadow-md dark:from-orange-950/20 dark:to-orange-900/10 text-left"
           onClick={() => openTaskModal('urgent')}
+          aria-label="Show urgent priority tasks"
         >
           <div className="flex items-center gap-3">
             <div className="rounded-lg bg-orange-500/10 p-2">
@@ -496,7 +519,7 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
               </p>
             </div>
           </div>
-        </div>
+        </button>
       </div>
 
       {/* Main Content with Tabs */}
@@ -645,18 +668,30 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
             <div className="mt-4 rounded-lg border bg-muted/30 p-4">
               <div className="flex items-center gap-4">
                 <div className="flex-1">
-                  <label className="text-sm font-medium">Search</label>
+                  <label
+                    htmlFor={searchInputId}
+                    className="text-sm font-medium"
+                  >
+                    Search
+                  </label>
                   <input
+                    id={searchInputId}
                     type="text"
                     placeholder="Search boards..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="mt-1 w-full rounded-md border bg-background px-3 py-2 text-sm"
+                    className="mt-1 w-full rounded border px-2 py-1 text-sm"
                   />
                 </div>
                 <div className="w-40">
-                  <label className="text-sm font-medium">Status</label>
+                  <label
+                    htmlFor={statusSelectId}
+                    className="text-sm font-medium"
+                  >
+                    Status
+                  </label>
                   <select
+                    id={statusSelectId}
                     value={taskModal.filterType || 'all'}
                     onChange={(e) =>
                       setTaskModal({
@@ -672,8 +707,14 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                   </select>
                 </div>
                 <div className="w-32">
-                  <label className="text-sm font-medium">Sort By</label>
+                  <label
+                    htmlFor={sortBySelectId}
+                    className="text-sm font-medium"
+                  >
+                    Sort By
+                  </label>
                   <select
+                    id={sortBySelectId}
                     value={sortBy}
                     onChange={(e) => setSortBy(e.target.value)}
                     className="mt-1 w-full rounded-md border bg-background px-3 py-2 text-sm"
@@ -717,8 +758,12 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
               </div>
               <div className="space-y-3">
                 <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
-                  <label className="flex items-center space-x-2 text-sm">
+                  <label
+                    htmlFor={columnIds.boardName}
+                    className="flex items-center space-x-2 text-sm"
+                  >
                     <input
+                      id={columnIds.boardName}
                       type="checkbox"
                       checked={columnVisibility.boardName}
                       onChange={(e) =>
@@ -731,8 +776,12 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                     />
                     <span>Board Name</span>
                   </label>
-                  <label className="flex items-center space-x-2 text-sm">
+                  <label
+                    htmlFor={columnIds.totalTasks}
+                    className="flex items-center space-x-2 text-sm"
+                  >
                     <input
+                      id={columnIds.totalTasks}
                       type="checkbox"
                       checked={columnVisibility.totalTasks}
                       onChange={(e) =>
@@ -745,8 +794,12 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                     />
                     <span>Total Tasks</span>
                   </label>
-                  <label className="flex items-center space-x-2 text-sm">
+                  <label
+                    htmlFor={columnIds.progress}
+                    className="flex items-center space-x-2 text-sm"
+                  >
                     <input
+                      id={columnIds.progress}
                       type="checkbox"
                       checked={columnVisibility.progress}
                       onChange={(e) =>
@@ -759,8 +812,12 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                     />
                     <span>Progress</span>
                   </label>
-                  <label className="flex items-center space-x-2 text-sm">
+                  <label
+                    htmlFor={columnIds.completedTasks}
+                    className="flex items-center space-x-2 text-sm"
+                  >
                     <input
+                      id={columnIds.completedTasks}
                       type="checkbox"
                       checked={columnVisibility.completedTasks}
                       onChange={(e) =>
@@ -773,8 +830,12 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                     />
                     <span>Completed Tasks</span>
                   </label>
-                  <label className="flex items-center space-x-2 text-sm">
+                  <label
+                    htmlFor={columnIds.activeTasks}
+                    className="flex items-center space-x-2 text-sm"
+                  >
                     <input
+                      id={columnIds.activeTasks}
                       type="checkbox"
                       checked={columnVisibility.activeTasks}
                       onChange={(e) =>
@@ -787,8 +848,12 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                     />
                     <span>Active Tasks</span>
                   </label>
-                  <label className="flex items-center space-x-2 text-sm">
+                  <label
+                    htmlFor={columnIds.overdueTasks}
+                    className="flex items-center space-x-2 text-sm"
+                  >
                     <input
+                      id={columnIds.overdueTasks}
                       type="checkbox"
                       checked={columnVisibility.overdueTasks}
                       onChange={(e) =>
@@ -801,8 +866,12 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                     />
                     <span>Overdue Tasks</span>
                   </label>
-                  <label className="flex items-center space-x-2 text-sm">
+                  <label
+                    htmlFor={columnIds.createdDate}
+                    className="flex items-center space-x-2 text-sm"
+                  >
                     <input
+                      id={columnIds.createdDate}
                       type="checkbox"
                       checked={columnVisibility.createdDate}
                       onChange={(e) =>
@@ -815,8 +884,12 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                     />
                     <span>Created Date</span>
                   </label>
-                  <label className="flex items-center space-x-2 text-sm">
+                  <label
+                    htmlFor={columnIds.lastUpdated}
+                    className="flex items-center space-x-2 text-sm"
+                  >
                     <input
+                      id={columnIds.lastUpdated}
                       type="checkbox"
                       checked={columnVisibility.lastUpdated}
                       onChange={(e) =>
@@ -829,8 +902,12 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                     />
                     <span>Last Updated</span>
                   </label>
-                  <label className="flex items-center space-x-2 text-sm">
+                  <label
+                    htmlFor={columnIds.priorityDistribution}
+                    className="flex items-center space-x-2 text-sm"
+                  >
                     <input
+                      id={columnIds.priorityDistribution}
                       type="checkbox"
                       checked={columnVisibility.priorityDistribution}
                       onChange={(e) =>
@@ -886,10 +963,12 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                 className={`grid grid-cols-1 gap-6 sm:${cardLayout} lg:${cardLayout}`}
               >
                 {filteredData.map((board) => (
-                  <div
+                  <button
                     key={board.id}
-                    className="group relative cursor-pointer rounded-xl border bg-card p-6 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:border-primary/20 hover:shadow-lg"
+                    type="button"
+                    className="group relative cursor-pointer rounded-xl border bg-card p-6 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:border-primary/20 hover:shadow-lg text-left"
                     onClick={(e) => handleBoardClick(board, e)}
+                    aria-label={`Open board ${board.name}`}
                   >
                     {/* Board Header */}
                     <div className="mb-4">
@@ -1021,7 +1100,7 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                         <ArrowRight className="h-3 w-3 text-primary" />
                       </div>
                     </div>
-                  </div>
+                  </button>
                 ))}
               </div>
 

@@ -1,3 +1,4 @@
+import type { QuizOption, WorkspaceQuiz } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Card,
@@ -17,10 +18,10 @@ export default function PasteConfirmModal({
   setShowPasteConfirm,
   setPastedQuizzes,
 }: {
-  pastedQuizzes: any[];
-  appendQuiz: (quiz: any) => void;
+  pastedQuizzes: WorkspaceQuiz[];
+  appendQuiz: (quiz: WorkspaceQuiz) => void;
   setShowPasteConfirm: (show: boolean) => void;
-  setPastedQuizzes: (quizzes: any[]) => void;
+  setPastedQuizzes: (quizzes: WorkspaceQuiz[]) => void;
 }) {
   const t = useTranslations('ws-quizzes.form');
   const confirmPaste = () => {
@@ -28,7 +29,7 @@ export default function PasteConfirmModal({
       const cleanQuiz = {
         ...quiz,
         id: undefined, // Remove ID to create new quiz
-        quiz_options: quiz.quiz_options.map((option: any) => ({
+        quiz_options: quiz.quiz_options.map((option: QuizOption) => ({
           ...option,
           id: undefined, // Remove ID to create new options
         })),
@@ -84,21 +85,23 @@ export default function PasteConfirmModal({
                     : {quiz.question || t('untitled-question')}
                   </h4>
                   <div className="space-y-1.5 px-1 text-sm text-muted-foreground">
-                    {quiz.quiz_options?.map((option: any, optIndex: number) => (
-                      <div key={optIndex} className="flex items-center gap-2">
-                        {option.is_correct ? (
-                          <CheckCircle className="h-4 w-4 text-green-500" />
-                        ) : (
-                          <XCircle className="h-4 w-4 text-muted-foreground" />
-                        )}
-                        <span>
-                          {option.value ||
-                            t('option-no', {
-                              no: optIndex + 1,
-                            })}
-                        </span>
-                      </div>
-                    ))}
+                    {quiz.quiz_options?.map(
+                      (option: QuizOption, optIndex: number) => (
+                        <div key={optIndex} className="flex items-center gap-2">
+                          {option.is_correct ? (
+                            <CheckCircle className="h-4 w-4 text-green-500" />
+                          ) : (
+                            <XCircle className="h-4 w-4 text-muted-foreground" />
+                          )}
+                          <span>
+                            {option.value ||
+                              t('option-no', {
+                                no: optIndex + 1,
+                              })}
+                          </span>
+                        </div>
+                      )
+                    )}
                   </div>
                 </div>
               ))}

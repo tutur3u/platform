@@ -3,15 +3,21 @@
 import type { ColumnDef } from '@tanstack/react-table';
 import type { WorkspaceQuizSet } from '@tuturuuu/types/db';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
+import type { TFunction } from 'i18next';
 import moment from 'moment';
 import Link from 'next/link';
-import { QuizSetRowActions } from './row-actions';
+
+interface ExtraData {
+  wsId: string;
+  courseId: string;
+  moduleId: string;
+}
 
 export const getQuizSetColumns = (
-  t: any,
+  t: TFunction,
   namespace: string | undefined,
-  _: any,
-  extraData?: any
+  _: unknown,
+  extraData?: ExtraData
 ): ColumnDef<WorkspaceQuizSet>[] => [
   // {
   //   id: 'select',

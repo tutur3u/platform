@@ -3,11 +3,11 @@
 import type { ColumnDef } from '@tanstack/react-table';
 import type { WorkspaceFlashcard } from '@tuturuuu/types/db';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
+import type { TFunction } from 'i18next';
 import moment from 'moment';
-import { WorkspaceFlashcardRowActions } from './row-actions';
 
 export const getWorkspaceFlashcardColumns = (
-  t: any,
+  t: TFunction,
   namespace: string | undefined
 ): ColumnDef<WorkspaceFlashcard>[] => [
   // {

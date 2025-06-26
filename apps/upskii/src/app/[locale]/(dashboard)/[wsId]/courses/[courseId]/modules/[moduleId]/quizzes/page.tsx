@@ -1,4 +1,5 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
+import type { WorkspaceQuiz } from '@tuturuuu/types/db';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { ListTodo } from '@tuturuuu/ui/icons';
 import { requireFeatureFlags } from '@tuturuuu/utils/feature-flags/core';
@@ -145,7 +146,7 @@ const getQuizzes = async (moduleId: string) => {
     {
       setId: string;
       setName: string;
-      quizzes: any[];
+      quizzes: WorkspaceQuiz[];
     }
   >();
 

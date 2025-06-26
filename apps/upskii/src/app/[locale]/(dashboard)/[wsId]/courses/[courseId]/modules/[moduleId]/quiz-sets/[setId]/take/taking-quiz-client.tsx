@@ -1,6 +1,5 @@
 'use client';
 
-import type { Json } from '@tuturuuu/types/supabase';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
@@ -12,35 +11,36 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
-import BeforeTakingQuizWhole, {
-  type AttemptSummary,
-} from '@/app/[locale]/(dashboard)/[wsId]/courses/[courseId]/modules/[moduleId]/quiz-sets/[setId]/take/before-taking-quiz-whole';
+import BeforeTakingQuizWhole from '@/app/[locale]/(dashboard)/[wsId]/courses/[courseId]/modules/[moduleId]/quiz-sets/[setId]/take/before-taking-quiz-whole';
 import QuizStatusSidebar from '@/app/[locale]/(dashboard)/[wsId]/courses/[courseId]/modules/[moduleId]/quiz-sets/[setId]/take/quiz-status-sidebar';
 import TimeElapsedStatus from '@/app/[locale]/(dashboard)/[wsId]/courses/[courseId]/modules/[moduleId]/quiz-sets/[setId]/take/time-elapsed-status';
 
-type TakeResponse = {
-  setId: string;
-  setName: string;
-  timeLimitMinutes: number | null;
-  attemptLimit: number | null;
-  attemptsSoFar: number;
-  allowViewOldAttempts: boolean;
-  availableDate: string | null;
-  dueDate: string | null;
-  resultsReleased: boolean;
-  explanationMode: 0 | 1 | 2;
-  instruction: any;
-  attempts: AttemptSummary[];
-  maxScore: number;
-  questions: Array<{
-    quizId: string;
-    question: string;
-    instruction: Json;
-    score: number;
-    multiple: boolean;
-    options: { id: string; value: string }[];
-  }>;
-};
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+type ErrorResponse = { error: string };
 
 type SubmitResult = {
   attemptId: string;
@@ -48,6 +48,39 @@ type SubmitResult = {
   totalScore: number;
   maxPossibleScore: number;
 };
+
+
+
+type ErrorResponse = { error: string };
+
+type SubmitResult = {
+  attemptId: string;
+  attemptNumber: number;
+  totalScore: number;
+  maxPossibleScore: number;
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 export default function TakingQuizClient({
   wsId,
@@ -61,18 +94,18 @@ export default function TakingQuizClient({
   setId: string;
 }) {
   const t = useTranslations('ws-quizzes');
-  const router = useRouter();
+  const _router = useRouter();
 
   // ─── STATE ────────────────────────────────────────────────────────────────
-  const [sidebarVisible, setSidebarVisible] = useState(false);
+  const [_sidebarVisible, _setSidebarVisible] = useState(false);
 
-  const [loadingMeta, setLoadingMeta] = useState(true);
-  const [metaError, setMetaError] = useState<string | null>(null);
+  const [_loadingMeta, setLoadingMeta] = useState(true);
+  const [_metaError, setMetaError] = useState<string | null>(null);
   const [quizMeta, setQuizMeta] = useState<TakeResponse | null>(null);
 
   const [hasStarted, setHasStarted] = useState(false);
-  const [isPastDue, setIsPastDue] = useState(false);
-  const [isAvailable, setIsAvailable] = useState(true);
+  const [_isPastDue, setIsPastDue] = useState(false);
+  const [_isAvailable, setIsAvailable] = useState(true);
 
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
   // eslint-disable-next-line no-undef
@@ -83,8 +116,8 @@ export default function TakingQuizClient({
     Record<string, string | string[]>
   >({});
 
-  const [submitting, setSubmitting] = useState(false);
-  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [_submitting, _setSubmitting] = useState(false);
+  const [_submitError, _setSubmitError] = useState<string | null>(null);
 
   // ─── HELPERS ────────────────────────────────────────────────────────────────
   const STORAGE_KEY = `quiz_start_${setId}`;
@@ -93,7 +126,7 @@ export default function TakingQuizClient({
     ? quizMeta.timeLimitMinutes * 60
     : null;
 
-  const clearStartTimestamp = () => {
+  const _clearStartTimestamp = () => {
     try {
       localStorage.removeItem(STORAGE_KEY);
     } catch {
@@ -104,7 +137,7 @@ export default function TakingQuizClient({
   const computeElapsedSeconds = (startTs: number) =>
     Math.floor((Date.now() - startTs) / 1000);
 
-  const buildSubmissionPayload = () => ({
+  const _buildSubmissionPayload = () => ({
     answers: Object.entries(selectedAnswers).flatMap(([quizId, val]) => {
       if (Array.isArray(val)) {
         return val.map((v) => ({ quizId, selectedOptionId: v }));
@@ -134,7 +167,7 @@ export default function TakingQuizClient({
         const json: TakeResponse | { error: string } = await res.json();
 
         if (!res.ok) {
-          setMetaError((json as any).error || t('errors.unknown-error'));
+          setMetaError((json as ErrorResponse).error || t('errors.unknown-error'));
           return setLoadingMeta(false);
         }
 
@@ -209,7 +242,14 @@ export default function TakingQuizClient({
           prev === null
             ? null
             : prev <= 1
-              ? (clearInterval(timerRef.current!), 0)
+              ? {
+{
+if (timerRef._current) {
+clearInterval(timerRef.current);
+}
+return 0;
+}
+}
               : prev - 1
         );
       }, 1000);
@@ -269,7 +309,7 @@ export default function TakingQuizClient({
       const json: SubmitResult | { error: string } = await res.json();
 
       if (!res.ok) {
-        setSubmitError((json as any).error || t('errors.submission-failed'));
+        setSubmitError((json as ErrorResponse).error || t('errors.submission-failed'));
         return setSubmitting(false);
       }
 

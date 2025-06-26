@@ -4,15 +4,15 @@ import type { ColumnDef } from '@tanstack/react-table';
 import type { WorkspaceCourseModule } from '@tuturuuu/types/db';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import { Check, X } from '@tuturuuu/ui/icons';
+import type { TFunction } from 'i18next';
 import moment from 'moment';
 import Link from 'next/link';
-import { WorkspaceCourseModuleRowActions } from './row-actions';
 
 export const getWorkspaceCourseModuleColumns = (
-  t: any,
+  t: TFunction,
   namespace: string | undefined,
-  _: any,
-  extraData?: any
+  _: unknown,
+  extraData?: ExtraData
 ): ColumnDef<Partial<WorkspaceCourseModule>>[] => [
   // {
   //   id: 'select',

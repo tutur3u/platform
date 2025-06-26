@@ -35,7 +35,11 @@ import {
 import { formatDistanceToNow } from 'date-fns';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { fetchAllProblems, fetchSessionDetails } from './actions';
+import {
+  fetchAllProblems,
+  fetchSessionDetails,
+  type SessionDetails,
+} from './actions';
 import ProblemCard from './components/ProblemCard';
 import SessionCard from './components/SessionCard';
 
@@ -57,9 +61,27 @@ interface Stats {
   totalProblems: number;
 }
 
+interface Problem {
+  id: string;
+  title: string;
+  description?: string;
+  submissions: Array<{
+    id: string;
+    score: number;
+    created_at: string;
+    status: string;
+  }>;
+}
+
+interface Challenge {
+  id: string;
+  title: string;
+  description?: string;
+}
+
 interface Props {
   challengeId: string;
-  challenge: any;
+  challenge: Challenge;
   sessionSummaries: SessionSummary[];
   stats: Stats;
   userId: string;
@@ -105,13 +127,15 @@ export default function ResultClient({
 }: Props) {
   const router = useRouter();
   const [expandedSessions, setExpandedSessions] = useState<string[]>([]);
-  const [loadedSessions, setLoadedSessions] = useState<Record<string, any>>({});
+  const [loadedSessions, setLoadedSessions] = useState<
+    Record<string, SessionDetails>
+  >({});
   const [loadingSessions, setLoadingSessions] = useState<
     Record<string, boolean>
   >({});
   const [activeTab, setActiveTab] = useState('sessions');
   const [loadingAllProblems, setLoadingAllProblems] = useState(false);
-  const [allProblems, setAllProblems] = useState<any[] | null>(null);
+  const [allProblems, setAllProblems] = useState<Problem[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showScoreBreakdown, setShowScoreBreakdown] = useState(false);
 
@@ -550,7 +574,10 @@ export default function ResultClient({
 
                                 <div className="grid grid-cols-1 gap-4 px-6 md:grid-cols-2">
                                   {loadedSessions[session.id].problems.map(
-                                    (problem: any, problemIndex: number) => (
+                                    (
+                                      problem: Problem,
+                                      problemIndex: number
+                                    ) => (
                                       <ProblemCard
                                         key={problem.id}
                                         problem={problem}

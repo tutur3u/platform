@@ -127,9 +127,7 @@ export default async function WorkspaceCoursesPage({
             {t('certificates.download_button')}
           </Button>
         </div>
-      ) : (
-        <></>
-      )}
+      ) : null}
       <CustomDataTable
         data={modules}
         columnGenerator={getWorkspaceCourseModuleColumns}

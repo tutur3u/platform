@@ -3,11 +3,11 @@
 import type { ColumnDef } from '@tanstack/react-table';
 import type { WorkspaceQuiz } from '@tuturuuu/types/db';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
+import type { TFunction } from 'i18next';
 import moment from 'moment';
-import { WorkspaceQuizRowActions } from './row-actions';
 
 export const getWorkspaceQuizColumns = (
-  t: any,
+  t: TFunction,
   namespace: string | undefined
 ): ColumnDef<WorkspaceQuiz>[] => [
   // {

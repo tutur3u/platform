@@ -4,11 +4,11 @@ import type { ColumnDef } from '@tanstack/react-table';
 import type { WorkspaceCourse } from '@tuturuuu/types/db';
 import { WorkspaceCourseRowActions } from '@tuturuuu/ui/custom/education/courses/course-row-actions';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
+import type { TFunction } from 'i18next';
 import moment from 'moment';
-import Link from 'next/link';
 
 export const getWorkspaceCourseColumns = (
-  t: any,
+  t: TFunction,
   namespace: string | undefined
 ): ColumnDef<WorkspaceCourse>[] => [
   // {
