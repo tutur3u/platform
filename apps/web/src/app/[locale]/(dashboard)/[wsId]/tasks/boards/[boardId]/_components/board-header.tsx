@@ -35,11 +35,13 @@ import {
 } from '@tuturuuu/ui/dropdown-menu';
 import {
   BarChart3,
+  Calendar,
   Layers,
   LayoutGrid,
   List,
   MoreHorizontal,
   Pencil,
+  PieChart,
   Trash2,
 } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
@@ -50,9 +52,9 @@ import { useMemo, useState } from 'react';
 
 interface Props {
   board: TaskBoard & { tasks: Task[]; lists: TaskList[] };
-  currentView: 'kanban' | 'status-grouped' | 'list';
+  currentView: 'kanban' | 'status-grouped' | 'list' | 'modern-list' | 'calendar' | 'analytics';
   // eslint-disable-next-line no-unused-vars
-  onViewChange: (view: 'kanban' | 'status-grouped' | 'list') => void;
+  onViewChange: (view: 'kanban' | 'status-grouped' | 'list' | 'modern-list' | 'calendar' | 'analytics') => void;
 }
 
 export function BoardHeader({ board, currentView, onViewChange }: Props) {
@@ -128,6 +130,11 @@ export function BoardHeader({ board, currentView, onViewChange }: Props) {
   }
 
   const viewConfig = {
+    'modern-list': {
+      icon: List,
+      label: 'Smart List',
+      description: 'Modern list with advanced filters',
+    },
     'status-grouped': {
       icon: Layers,
       label: 'Status',
@@ -140,8 +147,18 @@ export function BoardHeader({ board, currentView, onViewChange }: Props) {
     },
     list: {
       icon: List,
-      label: 'List',
-      description: 'Simple list view',
+      label: 'Table',
+      description: 'Simple table view',
+    },
+    calendar: {
+      icon: Calendar,
+      label: 'Calendar',
+      description: 'Timeline and calendar view',
+    },
+    analytics: {
+      icon: PieChart,
+      label: 'Analytics',
+      description: 'Task insights and reports',
     },
   };
 
