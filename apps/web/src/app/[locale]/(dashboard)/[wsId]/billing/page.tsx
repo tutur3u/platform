@@ -156,8 +156,6 @@ export default async function BillingPage({
       fetchWorkspaceSubscriptions(wsId),
     ]);
 
-  console.log("Products:", products);
-  // console.log("Products:", products);
   const currentPlan = subscription?.product
     ? {
         name: subscription.product.name || "No Plan",
@@ -210,7 +208,6 @@ export default async function BillingPage({
       : null,
   }));
 
-  
   return (
     <div className="container mx-auto max-w-6xl px-4 py-8">
       <h1 className="mb-2 text-3xl font-bold tracking-tight">Billing</h1>

@@ -27,35 +27,6 @@ interface BillingClientProps {
   activeSubscriptionId?: string;
 }
 
-// const syncToProduct = async (upgradePlans: UpgradePlan[]) => {
-//   const supabase = createClient();
-
-//   const insertedProducts = await Promise.all(
-//     upgradePlans.map(async (plan) => {
-//       const { data, error } = await supabase
-//         .from("workspace_subscription_products")
-//         .insert({
-//           product_id: plan.id,
-//           name: plan.name,
-//           price: plan.price,
-//           billing_cycle: plan.billingCycle,
-//           features: plan.features,
-//           popular: plan.popular,
-//           is_enterprise: plan.isEnterprise || false,
-//         })
-//         .select()
-//         .single();
-
-//       if (error) {
-//         console.error("Error inserting product:", error);
-//         return null;
-//       }
-//       return data;
-//     }
-//   );
-
-//   return insertedProducts;
-// };
 
 const syncToProduct = async (products: any[]) => {
   const supabase = createClient();
@@ -89,8 +60,6 @@ export function BillingClient({
   products,
   wsId,
   isCreator,
-  // _product_id,
-  // activeSubscriptionId,
 }: BillingClientProps) {
   const [showUpgradeOptions, setShowUpgradeOptions] = useState(false);
   const [_isLoading, _setIsLoading] = useState(false);
