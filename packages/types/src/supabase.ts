@@ -8080,10 +8080,10 @@ export type Database = {
       };
       get_workspace_users: {
         Args: {
-          _ws_id: string;
-          included_groups: string[];
-          excluded_groups: string[];
-          search_query: string;
+          _ws_id: string;  
+          included_groups: string[];  
+          excluded_groups: string[];  
+          search_query: string;  
         };
         Returns: {
           id: string;
@@ -8214,9 +8214,9 @@ export type Database = {
       };
       search_boards_by_tags: {
         Args: {
-          workspace_id: string;
-          search_tags: string[];
-          match_all?: boolean;
+          workspace_id: string;  
+          search_tags: string[];  
+          match_all?: boolean;  
         };
         Returns: {
           board_id: string;
@@ -8228,11 +8228,11 @@ export type Database = {
         Args:
           | { search_query: string; page_number: number; page_size: number }
           | {
-              search_query: string;
-              page_number: number;
-              page_size: number;
-              role_filter?: string;
-              enabled_filter?: boolean;
+              search_query: string;  
+              page_number: number;  
+              page_size: number;  
+              role_filter?: string;  
+              enabled_filter?: boolean;  
             };
         Returns: {
           id: string;
