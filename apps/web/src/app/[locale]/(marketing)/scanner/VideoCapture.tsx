@@ -8,10 +8,10 @@ import { cn } from '@ncthub/utils/format';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 interface VideoCaptureProps {
-  handleNewStudent: (name: string, studentNumber: string) => void;
+  onNewStudent: (name: string, studentNumber: string) => void;
 }
 
-export default function VideoCapture({ handleNewStudent }: VideoCaptureProps) {
+export default function VideoCapture({ onNewStudent }: VideoCaptureProps) {
   const [cameraOn, setCameraOn] = useState<boolean>(false);
   const [capturing, setCapturing] = useState<boolean>(false);
   const [isReady, setIsReady] = useState<boolean>(false);
@@ -108,7 +108,7 @@ export default function VideoCapture({ handleNewStudent }: VideoCaptureProps) {
           const data = await response.json();
 
           if (data.name && data.studentNumber) {
-            handleNewStudent(data.name, data.studentNumber);
+            onNewStudent(data.name, data.studentNumber);
             toast({
               title: 'Student Information Detected',
               description: `Found: ${data.name} (${data.studentNumber})`,
@@ -139,7 +139,7 @@ export default function VideoCapture({ handleNewStudent }: VideoCaptureProps) {
         }
       }
     }
-  }, [handleNewStudent, toast]);
+  }, [onNewStudent, toast]);
 
   useEffect(() => {
     if (!cameraOn) {

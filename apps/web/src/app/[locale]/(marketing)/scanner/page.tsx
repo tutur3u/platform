@@ -302,7 +302,7 @@ export default function Page() {
                 </div>
               </CardHeader>
               <CardContent className="space-y-6">
-                <VideoCapture handleNewStudent={handleNewStudent} />
+                <VideoCapture onNewStudent={handleNewStudent} />
               </CardContent>
             </Card>
 
@@ -324,7 +324,7 @@ export default function Page() {
               </CardHeader>
               <CardContent>
                 <StudentForm
-                  defaultValues={
+                  values={
                     newStudent
                       ? {
                           name: newStudent.name,

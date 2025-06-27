@@ -10,7 +10,6 @@ import {
   FormMessage,
 } from '@ncthub/ui/form';
 import {
-  AlertCircle,
   GraduationCap,
   Hash,
   Plus,
@@ -30,21 +29,21 @@ const studentFormSchema = z.object({
 export type StudentFormData = z.infer<typeof studentFormSchema>;
 
 interface StudentFormProps {
-  defaultValues?: StudentFormData;
+  values?: StudentFormData;
   onSubmit: (data: StudentFormData) => void;
 }
 
 export default function StudentForm({
-  defaultValues,
+  values,
   onSubmit,
 }: StudentFormProps) {
   const form = useForm<StudentFormData>({
     resolver: zodResolver(studentFormSchema),
-    defaultValues: {
+    values: {
       name: '',
       studentNumber: '',
-      program: '',
-      ...defaultValues,
+      program: undefined,
+      ...values,
     },
   });
 
@@ -75,11 +74,7 @@ export default function StudentForm({
                     {...field}
                   />
                 </FormControl>
-                <FormMessage className="flex items-center gap-1">
-                  {form.formState.errors.name && (
-                    <AlertCircle className="h-3 w-3" />
-                  )}
-                </FormMessage>
+                <FormMessage />
               </FormItem>
             )}
           />
@@ -105,11 +100,7 @@ export default function StudentForm({
                     {...field}
                   />
                 </FormControl>
-                <FormMessage className="flex items-center gap-1">
-                  {form.formState.errors.studentNumber && (
-                    <AlertCircle className="h-3 w-3" />
-                  )}
-                </FormMessage>
+                <FormMessage />
               </FormItem>
             )}
           />
