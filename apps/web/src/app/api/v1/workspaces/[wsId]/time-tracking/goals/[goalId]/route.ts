@@ -81,7 +81,12 @@ export async function PATCH(
     }
 
     // Prepare update data
-    const updateData: { updated_at: string; category_id?: string | null; daily_goal_minutes?: number; weekly_goal_minutes?: number | null; } = {
+    const updateData: {
+      updated_at: string;
+      category_id?: string | null;
+      daily_goal_minutes?: number;
+      weekly_goal_minutes?: number | null;
+    } = {
       updated_at: new Date().toISOString(),
     };
 

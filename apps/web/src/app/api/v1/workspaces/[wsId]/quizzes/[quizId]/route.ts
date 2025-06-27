@@ -11,7 +11,14 @@ export async function PUT(req: Request, { params }: Params) {
   const supabase = await createClient();
 
   // eslint-disable-next-line no-unused-vars
-  const { moduleId: _, quiz_options, ...rest } = await req.json() as { moduleId: string; quiz_options: { id: string }[]; };
+  const {
+    moduleId: _,
+    quiz_options,
+    ...rest
+  } = (await req.json()) as {
+    moduleId: string;
+    quiz_options: { id: string }[];
+  };
   const { quizId: id } = await params;
 
   const { error } = await supabase
@@ -36,7 +43,7 @@ export async function PUT(req: Request, { params }: Params) {
     const existingOptionIds =
       existingOptions?.map((option: { id: string }) => option.id) || [];
 
-    const optionsToUpdate = quiz_options.filter((option: { id: string; }) =>
+    const optionsToUpdate = quiz_options.filter((option: { id: string }) =>
       existingOptionIds.includes(option.id)
     );
 
@@ -52,13 +59,23 @@ export async function PUT(req: Request, { params }: Params) {
     if (optionsToUpdate.length > 0) {
       await supabase
         .from('quiz_options')
-        .upsert(optionsToUpdate.map((o: { id: string, quiz_id?: string }) => ({ ...o, quiz_id: id })));
+        .upsert(
+          optionsToUpdate.map((o: { id: string; quiz_id?: string }) => ({
+            ...o,
+            quiz_id: id,
+          }))
+        );
     }
 
     if (optionsToInsert.length > 0) {
       await supabase
         .from('quiz_options')
-        .insert(optionsToInsert.map((o: { id: string, quiz_id?: string }) => ({ ...o, quiz_id: id })));
+        .insert(
+          optionsToInsert.map((o: { id: string; quiz_id?: string }) => ({
+            ...o,
+            quiz_id: id,
+          }))
+        );
     }
 
     if (optionsToDelete.length > 0) {

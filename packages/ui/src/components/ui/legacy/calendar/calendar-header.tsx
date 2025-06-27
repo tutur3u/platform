@@ -21,7 +21,7 @@ export function CalendarHeader({
   onViewChange,
   extras,
 }: {
-  t: any;
+  t: (key: string) => string;
   locale: string;
   date: Date;
   setDate: React.Dispatch<React.SetStateAction<Date>>;

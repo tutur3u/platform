@@ -3560,7 +3560,7 @@ export function TimerControls({
                     ) : (
                       <>
                         {/* Searchable Task Selection */}
-                        <div
+                        <fieldset
                           ref={dropdownContainerRef}
                           onDragEnter={handleDragEnter}
                           onDragLeave={handleDragLeave}

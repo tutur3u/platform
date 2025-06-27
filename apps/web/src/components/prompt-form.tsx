@@ -1,7 +1,6 @@
 import type { UseChatHelpers } from '@tuturuuu/ai/types';
 import type { AIChat } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
-import Image from 'next/image';
 import type { StatedFile } from '@tuturuuu/ui/custom/file-uploader';
 import { Dialog } from '@tuturuuu/ui/dialog';
 import {
@@ -24,6 +23,7 @@ import {
   TooltipTrigger,
 } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import type React from 'react';

@@ -75,32 +75,47 @@ export async function GET(
       totalSessions > 0 ? Math.round(totalTime / totalSessions) : 0;
 
     // Category breakdown
-    const categoryBreakdown = sessions?.reduce((acc: Record<string, { name: string; color: string; time: number; sessions: number; }>, session) => {
-      const categoryName = session.category?.name || 'Uncategorized';
-      if (!acc[categoryName]) {
-        acc[categoryName] = {
-          name: categoryName,
-          color: session.category?.color || 'GRAY',
-          time: 0,
-          sessions: 0,
-        };
-      }
-      acc[categoryName].time += session.duration_seconds || 0;
-      acc[categoryName].sessions += 1;
-      return acc;
-    }, {});
+    const categoryBreakdown = sessions?.reduce(
+      (
+        acc: Record<
+          string,
+          { name: string; color: string; time: number; sessions: number }
+        >,
+        session
+      ) => {
+        const categoryName = session.category?.name || 'Uncategorized';
+        if (!acc[categoryName]) {
+          acc[categoryName] = {
+            name: categoryName,
+            color: session.category?.color || 'GRAY',
+            time: 0,
+            sessions: 0,
+          };
+        }
+        acc[categoryName].time += session.duration_seconds || 0;
+        acc[categoryName].sessions += 1;
+        return acc;
+      },
+      {}
+    );
 
     // Daily breakdown
-    const dailyBreakdown = sessions?.reduce((acc: Record<string, { date: string; time: number; sessions: number; }>, session) => {
-      const date = new Date(session.start_time).toISOString().split('T')[0];
-      if (!date) return acc;
-      if (!acc[date]) {
-        acc[date] = { date, time: 0, sessions: 0 };
-      }
-      acc[date].time += session.duration_seconds || 0;
-      acc[date].sessions += 1;
-      return acc;
-    }, {});
+    const dailyBreakdown = sessions?.reduce(
+      (
+        acc: Record<string, { date: string; time: number; sessions: number }>,
+        session
+      ) => {
+        const date = new Date(session.start_time).toISOString().split('T')[0];
+        if (!date) return acc;
+        if (!acc[date]) {
+          acc[date] = { date, time: 0, sessions: 0 };
+        }
+        acc[date].time += session.duration_seconds || 0;
+        acc[date].sessions += 1;
+        return acc;
+      },
+      {}
+    );
 
     return NextResponse.json({
       analytics: {
