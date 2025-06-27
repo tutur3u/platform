@@ -12,6 +12,39 @@ import { notFound, redirect } from 'next/navigation';
 import { ROOT_WORKSPACE_ID } from './constants';
 import { permissions as rolePermissions } from './permissions';
 
+const isValidTuturuuuEmail = (email: string): boolean => {
+    if (!email) return false;
+    const emailRegex = /^[^\s@]+@tuturuuu\.com$/;
+    return emailRegex.test(email);
+};
+
+export async function checkTuturuuuAdmin() {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) redirect('/login');
+
+   const { data,error } = await supabase
+    .from('workspace_members')
+    .select('role')
+    .eq('ws_id', ROOT_WORKSPACE_ID)
+    .eq('user_id', user.id)
+    .in('role', ['OWNER', 'ADMIN'])
+    .single();
+
+    if (error || !data) {
+    console.error('Error checking Tuturuuu admin status:', error);
+    throw error;
+    }
+
+    if (user.email && isValidTuturuuuEmail(user.email)) {
+      return true;
+    }
+    return false;
+}
 export async function getWorkspace(id: string, requireUserRole = false) {
   const supabase = await createClient();
 
