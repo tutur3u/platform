@@ -1,8 +1,8 @@
 'use client';
 
-import { CommandGroup, CommandItem } from '@tuturuuu/ui/command';
-import { Search, Zap, ChevronDown, ChevronRight } from '@tuturuuu/ui/icons';
 import { Button } from '@tuturuuu/ui/button';
+import { CommandGroup, CommandItem } from '@tuturuuu/ui/command';
+import { ChevronDown, ChevronRight, Search, Zap } from '@tuturuuu/ui/icons';
 import { useState } from 'react';
 
 export function ComingSoonSection() {
@@ -13,7 +13,9 @@ export function ComingSoonSection() {
       {/* Collapsible Header */}
       <div className="flex items-center justify-between px-3 py-2">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium text-foreground">🔮 Coming Soon</span>
+          <span className="text-sm font-medium text-foreground">
+            🔮 Coming Soon
+          </span>
           <div className="rounded-md bg-dynamic-purple/10 px-2 py-0.5 text-xs font-medium text-dynamic-purple">
             2 features
           </div>

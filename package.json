@@ -29,7 +29,7 @@
     "trigger:deploy": "bun run --filter @tuturuuu/trigger trigger:deploy",
     "test": "turbo run test",
     "test:watch": "turbo run test:watch",
-    "biome": "biome check",
+    "biome:check": "biome check",
     "biome:fix": "biome check --write",
     "biome:ci": "biome ci",
     "stop": "cd apps/db && bun sb:stop",

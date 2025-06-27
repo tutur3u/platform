@@ -31,13 +31,13 @@ interface AddEventModalProps {
 }
 
 const minutesToHours = (minutes: number) => {
-  if (typeof minutes !== 'number' || isNaN(minutes)) return '';
+  if (typeof minutes !== 'number' || Number.isNaN(minutes)) return '';
   const hours = minutes / 60;
   return hours.toFixed(1);
 };
 
 const hoursToMinutes = (hours: number) => {
-  if (typeof hours !== 'number' || isNaN(hours)) return 0;
+  if (typeof hours !== 'number' || Number.isNaN(hours)) return 0;
   return Math.round(hours * 60);
 };
 export default function AddEventModal({
@@ -344,7 +344,8 @@ export default function AddEventModal({
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-2">
                     <Label htmlFor="min-duration" className="text-sm">
-                      Min Duration (h) <span className="text-destructive">*</span>
+                      Min Duration (h){' '}
+                      <span className="text-destructive">*</span>
                     </Label>
                     <Input
                       id="min-duration"
@@ -376,7 +377,8 @@ export default function AddEventModal({
 
                   <div className="space-y-2">
                     <Label htmlFor="max-duration" className="text-sm">
-                      Max Duration (h) <span className="text-destructive">*</span>
+                      Max Duration (h){' '}
+                      <span className="text-destructive">*</span>
                     </Label>
                     <Input
                       id="max-duration"

@@ -1,13 +1,13 @@
+import {
+  promoteEventToTask,
+  scheduleWithFlexibleEvents,
+} from '@tuturuuu/ai/scheduling/algorithm';
+import { defaultActiveHours } from '@tuturuuu/ai/scheduling/default';
+import { createClient } from '@tuturuuu/supabase/next/server';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
+import type dayjs from 'dayjs';
 import { type NextRequest, NextResponse } from 'next/server';
 import { createCalendarOptimizer } from './tools';
-import {  promoteEventToTask, scheduleWithFlexibleEvents } from '@tuturuuu/ai/scheduling/algorithm';
-import { createClient } from '@tuturuuu/supabase/next/server';
-import {
-  defaultActiveHours,
-} from '@tuturuuu/ai/scheduling/default';
-
-import type dayjs from 'dayjs';
 export interface DateRange {
   start: dayjs.Dayjs;
   end: dayjs.Dayjs;
@@ -140,11 +140,10 @@ export interface ActiveHours {
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ wsId: string }>}
+  { params }: { params: Promise<{ wsId: string }> }
 ) {
   const supabase = createClient();
   const requestId = Math.random().toString(36).substring(7);
-
 
   try {
     const { wsId } = await params;
@@ -160,68 +159,85 @@ export async function POST(
     // const body = await request.json().catch(() => ({}));
     // const gapMinutes = (body.gapMinutes as number | undefined) || 0;
 
-    const { data: { user } } = await (await supabase).auth.getUser();
+    const {
+      data: { user },
+    } = await (await supabase).auth.getUser();
     if (!user) {
-      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      );
     }
 
-
     console.log(`[AUTO-SCHEDULE-${requestId}] Fetching tasks and events...`);
-    
+
     // Fetch tasks for the current user
     const { data: currentTasks, error: tasksError } = await (await supabase)
       .from('tasks')
       .select('*')
-      .eq('creator_id', user.id) 
-      .eq('archived', false) 
-      .eq('completed', false); 
+      .eq('creator_id', user.id)
+      .eq('archived', false)
+      .eq('completed', false);
 
-    if (tasksError) throw new Error(`Failed to fetch tasks: ${tasksError.message}`);
-    
+    if (tasksError)
+      throw new Error(`Failed to fetch tasks: ${tasksError.message}`);
+
     console.log(currentTasks, 'tasks fetched for user:', user.id);
-   
-    const { data: flexibleEventsData, error: flexibleEventsError } = await (await supabase)
+
+    const { data: flexibleEventsData, error: flexibleEventsError } = await (
+      await supabase
+    )
       .from('workspace_calendar_events')
       .select('*')
       .eq('ws_id', wsId);
 
-    if (flexibleEventsError) throw new Error(`Failed to fetch events: ${flexibleEventsError.message}`);
+    if (flexibleEventsError)
+      throw new Error(`Failed to fetch events: ${flexibleEventsError.message}`);
 
     // Map DB tasks to the format our scheduler understands
     const newTasks: Task[] = await Promise.all(
-      (currentTasks || []).map(async task => ({
+      (currentTasks || []).map(async (task) => ({
         id: task.id,
         name: task.name,
         duration: task.total_duration ?? 0,
-        minDuration: task.min_split_duration_minutes ? task.min_split_duration_minutes / 60 : 0.5,
-        maxDuration: task.max_split_duration_minutes ? task.max_split_duration_minutes / 60 : 2,
-        category: 
-          task.calendar_hours === 'work_hours' ? 'work' :
-          task.calendar_hours === 'personal_hours' ? 'personal' :
-          task.calendar_hours === 'meeting_hours' ? 'meeting' :
-          'work',
+        minDuration: task.min_split_duration_minutes
+          ? task.min_split_duration_minutes / 60
+          : 0.5,
+        maxDuration: task.max_split_duration_minutes
+          ? task.max_split_duration_minutes / 60
+          : 2,
+        category:
+          task.calendar_hours === 'work_hours'
+            ? 'work'
+            : task.calendar_hours === 'personal_hours'
+              ? 'personal'
+              : task.calendar_hours === 'meeting_hours'
+                ? 'meeting'
+                : 'work',
         events: [],
-        deadline: task.end_date ? (await import('dayjs')).default(task.end_date) : undefined,
+        deadline: task.end_date
+          ? (await import('dayjs')).default(task.end_date)
+          : undefined,
         priority: mapPriorityToTaskPriority(task.priority),
         allowSplit: !!task.is_splittable,
       }))
     );
 
-  
     const dayjs = (await import('dayjs')).default;
-    const newFlexibleEvents: Event[] = (flexibleEventsData || []).map(event => ({
-      id: event.id,
-      name: event.title,
-      range: {
-        start: dayjs(event.start_at),
-        end: dayjs(event.end_at),
-      },
-      locked: event.locked,
-      taskId: event.id ?? '',
-      category: 'work', 
-    }));
+    const newFlexibleEvents: Event[] = (flexibleEventsData || []).map(
+      (event) => ({
+        id: event.id,
+        name: event.title,
+        range: {
+          start: dayjs(event.start_at),
+          end: dayjs(event.end_at),
+        },
+        locked: event.locked,
+        taskId: event.id ?? '',
+        category: 'work',
+      })
+    );
 
- 
     const runSchedulingLogic = async (
       streamUpdate?: (message: object) => void
     ) => {
@@ -236,61 +252,71 @@ export async function POST(
         } else {
           // If a flexible event has no task or its task is not in our list,
           // promote it to a low-priority task to be re-scheduled.
-          const taskExists = newTasks.some(t => t.id === event.taskId);
+          const taskExists = newTasks.some((t) => t.id === event.taskId);
           if (!event.taskId || !taskExists) {
             tasksToProcess.push(promoteEventToTask(event));
           }
         }
       }
 
-      const activeHours=defaultActiveHours;
+      const activeHours = defaultActiveHours;
 
       // 4. RUN THE SCHEDULER TO GET THE OPTIMIZED ORDER
-      streamUpdate?.({ status: 'running', message: `Optimizing ${tasksToProcess.length} items...` });
-      const scheduleResult = scheduleWithFlexibleEvents(newTasks, newFlexibleEvents, [],activeHours);
+      streamUpdate?.({
+        status: 'running',
+        message: `Optimizing ${tasksToProcess.length} items...`,
+      });
+      const scheduleResult = scheduleWithFlexibleEvents(
+        newTasks,
+        newFlexibleEvents,
+        [],
+        activeHours
+      );
       const { events: newScheduledEvents, logs } = scheduleResult;
-      
+
       // console.log(scheduleResult.logs.length, 'logs generated:', scheduleResult.logs);
       // console.log(newScheduledEvents.length, 'new scheduled events:', newScheduledEvents);
       // 5. SAVE THE NEW SCHEDULE TO SUPABASE
       streamUpdate?.({ status: 'running', message: 'Saving new schedule...' });
-      
-      const eventsToInsert = newScheduledEvents.filter(event =>
-        !newFlexibleEvents.some(existing => existing.id === event.id)
+
+      const eventsToInsert = newScheduledEvents.filter(
+        (event) =>
+          !newFlexibleEvents.some((existing) => existing.id === event.id)
       );
       for (const optimization of newScheduledEvents) {
-      try {
-        const { error } = await (await supabase)
-          .from('workspace_calendar_events')
-          .update({
-            start_at: optimization.range.start.toISOString(),
-            end_at: optimization.range.end.toISOString(),
-          })
-          .eq('id', optimization.id)
-          .eq('ws_id', wsId);
+        try {
+          const { error } = await (await supabase)
+            .from('workspace_calendar_events')
+            .update({
+              start_at: optimization.range.start.toISOString(),
+              end_at: optimization.range.end.toISOString(),
+            })
+            .eq('id', optimization.id)
+            .eq('ws_id', wsId);
 
-          if(error) {  
-            console.error(`Failed to apply optimization for event ${optimization.id}: ${error.message}`);  
-          }  
-      } catch (err) {
-        console.error(
-          `Failed to apply optimization for event ${optimization.id}:`,
-          err
-        );
+          if (error) {
+            console.error(
+              `Failed to apply optimization for event ${optimization.id}: ${error.message}`
+            );
+          }
+        } catch (err) {
+          console.error(
+            `Failed to apply optimization for event ${optimization.id}:`,
+            err
+          );
+        }
       }
-    }
-    
 
       // Prepare new events for insertion
       if (newScheduledEvents.length > 0) {
-        const insertData = eventsToInsert.map(event => ({
+        const insertData = eventsToInsert.map((event) => ({
           ws_id: wsId,
           creator_id: user.id,
           task_id: event.taskId,
           title: event.name,
           start_at: event.range.start.toISOString(),
           end_at: event.range.end.toISOString(),
-          locked: false, 
+          locked: false,
           is_past_deadline: event.isPastDeadline ?? false,
         }));
 
@@ -298,13 +324,18 @@ export async function POST(
           .from('workspace_calendar_events')
           .insert(insertData);
 
-        if (insertError) throw new Error(`Failed to save new schedule: ${insertError.message}`);
+        if (insertError)
+          throw new Error(
+            `Failed to save new schedule: ${insertError.message}`
+          );
       }
 
-      console.log(`[AUTO-SCHEDULE-${requestId}] Scheduling complete. Logs:`, logs);
+      console.log(
+        `[AUTO-SCHEDULE-${requestId}] Scheduling complete. Logs:`,
+        logs
+      );
       return { message: 'Optimization complete!' };
     };
-
 
     if (streamMode) {
       const stream = new ReadableStream({
@@ -313,16 +344,23 @@ export async function POST(
             try {
               controller.enqueue(`data: ${JSON.stringify(data)}\n\n`);
             } catch (e) {
-              console.error(`[AUTO-SCHEDULE-${requestId}] Error writing to stream:`, e);
+              console.error(
+                `[AUTO-SCHEDULE-${requestId}] Error writing to stream:`,
+                e
+              );
               controller.error(e);
             }
           };
 
           try {
             await runSchedulingLogic(sendData);
-            sendData({ status: 'complete', message: 'Schedule has been optimized!' });
+            sendData({
+              status: 'complete',
+              message: 'Schedule has been optimized!',
+            });
           } catch (e) {
-            const errorMessage = e instanceof Error ? e.message : 'An unknown error occurred.';
+            const errorMessage =
+              e instanceof Error ? e.message : 'An unknown error occurred.';
             sendData({ status: 'error', message: errorMessage });
           } finally {
             controller.close();
@@ -330,14 +368,17 @@ export async function POST(
         },
       });
 
-      return new Response(stream, { headers: { 'Content-Type': 'text/event-stream' } });
+      return new Response(stream, {
+        headers: { 'Content-Type': 'text/event-stream' },
+      });
     } else {
       const result = await runSchedulingLogic();
       return NextResponse.json(result);
     }
   } catch (error) {
     console.error(`[AUTO-SCHEDULE-${requestId}] Top-level error:`, error);
-    const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred.';
+    const errorMessage =
+      error instanceof Error ? error.message : 'An unexpected error occurred.';
     return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }
@@ -426,7 +467,6 @@ function mapPriorityToTaskPriority(priority: number | null): TaskPriority {
     case 4:
       return 'low';
     default:
-      return 'normal'; 
+      return 'normal';
   }
 }
-

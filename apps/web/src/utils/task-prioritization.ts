@@ -1,11 +1,21 @@
+interface Assignee {
+  id: string;
+  name?: string;
+}
+
+interface Category {
+  id: string;
+  name?: string;
+}
+
 export interface Task {
   id: string;
   name: string;
   completed: boolean;
   description?: string;
   priority?: number | null;
-  assignees?: any[];
-  category?: any;
+  assignees?: Assignee[];
+  category?: Category;
   is_assigned_to_current_user?: boolean;
   board_id?: string;
   board_name?: string;
@@ -20,7 +30,7 @@ export interface PrioritizedTasksResult {
 /**
  * Prioritizes tasks based on urgency and assignment
  * 1. Urgent tasks assigned to current user
- * 2. Urgent unassigned tasks  
+ * 2. Urgent unassigned tasks
  * 3. Other tasks assigned to current user
  */
 export function prioritizeTasks(tasks: Task[]): PrioritizedTasksResult {
@@ -50,13 +60,19 @@ export function prioritizeTasks(tasks: Task[]): PrioritizedTasksResult {
 
   // Combine and sort by priority
   const prioritizedTasks = [
-    ...myUrgentTasks.sort((a: Task, b: Task) => (a.priority || 99) - (b.priority || 99)),
-    ...urgentUnassigned.sort((a: Task, b: Task) => (a.priority || 99) - (b.priority || 99)),
-    ...myOtherTasks.sort((a: Task, b: Task) => (a.priority || 99) - (b.priority || 99)),
+    ...myUrgentTasks.sort(
+      (a: Task, b: Task) => (a.priority || 99) - (b.priority || 99)
+    ),
+    ...urgentUnassigned.sort(
+      (a: Task, b: Task) => (a.priority || 99) - (b.priority || 99)
+    ),
+    ...myOtherTasks.sort(
+      (a: Task, b: Task) => (a.priority || 99) - (b.priority || 99)
+    ),
   ];
 
   return {
     nextTask: prioritizedTasks[0] || null,
     availableTasks: prioritizedTasks,
   };
-} 
+}
