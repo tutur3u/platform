@@ -1,9 +1,16 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { type NextRequest, NextResponse } from 'next/server';
 
+interface WorkspaceParams {
+  wsId: string;
+}
+
+// UUID validation regex
+const UUID_REGEX = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
+
 export async function GET(
   _: NextRequest,
-  { params }: { params: Promise<{ wsId: string }> }
+  { params }: { params: Promise<WorkspaceParams> }
 ) {
   try {
     const { wsId } = await params;
@@ -12,6 +19,14 @@ export async function GET(
     if (!wsId || wsId === 'undefined') {
       return NextResponse.json(
         { error: 'Invalid workspace ID' },
+        { status: 400 }
+      );
+    }
+
+    // Validate UUID format
+    if (!UUID_REGEX.test(wsId)) {
+      return NextResponse.json(
+        { error: 'Invalid workspace ID format' },
         { status: 400 }
       );
     }
@@ -66,7 +81,13 @@ export async function GET(
       .eq('deleted', false)
       .order('created_at', { ascending: false });
 
-    if (error) throw error;
+    if (error) {
+      console.error('Supabase error:', error);
+      return NextResponse.json(
+        { error: 'Failed to fetch boards' },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json({ boards: data });
   } catch (error) {
