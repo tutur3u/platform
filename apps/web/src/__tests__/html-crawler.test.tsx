@@ -7,6 +7,9 @@ describe('HtmlCrawler', () => {
   beforeEach(() => {
     crawler = new HtmlCrawler();
 
+    // Properly mock global.fetch as a vi.fn()
+    global.fetch = vi.fn();
+
     // Create base mock response
     const mockResponse = {
       ok: true,
@@ -93,8 +96,8 @@ describe('HtmlCrawler', () => {
     });
 
     expect(results).toHaveLength(2);
-    expect(results[0].Title).toBe('Title 1');
-    expect(results[1].Title).toBe('Title 2');
+    expect(results[0]?.Title).toBe('Title 1');
+    expect(results[1]?.Title).toBe('Title 2');
   });
 
   test('handles fetch errors gracefully', async () => {
@@ -142,8 +145,8 @@ describe('HtmlCrawler', () => {
     });
 
     expect(results).toHaveLength(2);
-    expect(results[0].Title).toBe('Title 1');
-    expect(results[1].Title).toBe('Title 2');
+    expect(results[0]?.Title).toBe('Title 1');
+    expect(results[1]?.Title).toBe('Title 2');
   });
 
   test('handles retry mechanism correctly', async () => {
@@ -176,7 +179,7 @@ describe('HtmlCrawler', () => {
     });
 
     expect(results).toHaveLength(1);
-    expect(results[0].Title).toBe('Title 1');
+    expect(results[0]?.Title).toBe('Title 1');
     expect(global.fetch).toHaveBeenCalledTimes(2);
   });
 
@@ -208,7 +211,7 @@ describe('HtmlCrawler', () => {
     });
 
     expect(results).toHaveLength(1);
-    expect(results[0].Title).toBe('Title 1');
+    expect(results[0]?.Title).toBe('Title 1');
   }, 15000); // Increased timeout
 
   test('respects maxArticles limit with pagination', async () => {
@@ -252,8 +255,8 @@ describe('HtmlCrawler', () => {
     });
 
     expect(results).toHaveLength(2);
-    expect(results[0].Title).toBe('Title 1');
-    expect(results[1].Title).toBe('Title 2');
+    expect(results[0]?.Title).toBe('Title 1');
+    expect(results[1]?.Title).toBe('Title 2');
   }, 15000); // Increased timeout
 
   test('handles complex selectors correctly', async () => {
