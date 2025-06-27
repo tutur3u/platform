@@ -63,12 +63,35 @@ jobs:
           # Parse biome output for statistics - looking for the final summary lines
           # Strip ANSI color codes first, then parse
           clean_output=$(echo "$biome_output" | sed 's/\x1b\[[0-9;]*m//g')
-          files_checked=$(echo "$clean_output" | grep "Checked [0-9]* files" | sed 's/Checked \([0-9]*\) files.*/\1/' || echo "0")
-          errors=$(echo "$clean_output" | grep "Found [0-9]* errors" | sed 's/Found \([0-9]*\) errors.*/\1/' || echo "0")
-          warnings=$(echo "$clean_output" | grep "Found [0-9]* warnings" | sed 's/Found \([0-9]*\) warnings.*/\1/' || echo "0")
+          
+          # Extract files checked count
+          if echo "$clean_output" | grep -q "Checked [0-9]* files"; then
+            files_checked=$(echo "$clean_output" | grep "Checked [0-9]* files" | sed 's/Checked \([0-9]*\) files.*/\1/')
+          else
+            files_checked="0"
+          fi
+          
+          # Extract errors count - handle case where no error line exists (means 0 errors)
+          if echo "$clean_output" | grep -q "Found [0-9]* errors"; then
+            errors=$(echo "$clean_output" | grep "Found [0-9]* errors" | sed 's/Found \([0-9]*\) errors.*/\1/')
+          else
+            errors="0"
+          fi
+          
+          # Extract warnings count - handle case where no warning line exists (means 0 warnings)
+          if echo "$clean_output" | grep -q "Found [0-9]* warnings"; then
+            warnings=$(echo "$clean_output" | grep "Found [0-9]* warnings" | sed 's/Found \([0-9]*\) warnings.*/\1/')
+          else
+            warnings="0"
+          fi
           
           # Count individual diagnostic issues (more accurate count)
-          individual_issues=$(echo "$clean_output" | grep -E "lint/|assist/" | wc -l || echo "0")
+          individual_issues=$(echo "$clean_output" | grep -E "lint/|assist/" | wc -l)
+          
+          # Ensure individual_issues is a number
+          if [ -z "$individual_issues" ]; then
+            individual_issues="0"
+          fi
           
           # Use the found errors + warnings as total, or individual count if that's higher
           found_total=$((errors + warnings))
