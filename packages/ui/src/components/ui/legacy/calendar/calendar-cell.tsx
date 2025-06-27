@@ -122,7 +122,7 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
     setIsDragging,
   } = useCalendar();
   const [isHovering, setIsHovering] = useState(false);
-  const cellRef = useRef<HTMLDivElement>(null);
+  const cellRef = useRef<HTMLButtonElement>(null);
   const dragStartRef = useRef<{ date: Date; y: number } | null>(null);
   const [dragPreview, setDragPreview] = useState<{
     startDate: Date;
@@ -489,7 +489,7 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
 
   // Update mouse move/hover logic to show tooltip for every 15-minute cell
   const handleSlotMouseMove = (
-    e: React.MouseEvent<HTMLDivElement, MouseEvent>,
+    e: React.MouseEvent<HTMLButtonElement, MouseEvent>,
     slot: 'hour' | 'half-hour' | number
   ) => {
     if (isDragging) return;
@@ -695,7 +695,8 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
   }, [setIsDragging]);
 
   return (
-    <div
+    <button
+      type="button"
       id={id}
       ref={cellRef}
       className={cn(
@@ -713,8 +714,6 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
       onMouseLeave={handleCellMouseLeave}
       data-hour={hour}
       data-date={date}
-      role="button"
-      tabIndex={0}
     >
       {/* Show only the hovered label before 1s, both after 1s */}
       {!isDragging &&
@@ -806,6 +805,6 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
       />
       {/* Show tooltip for hovered slot (hour, half-hour, or 15-min) */}
       {tooltipNode}
-    </div>
+    </button>
   );
 };

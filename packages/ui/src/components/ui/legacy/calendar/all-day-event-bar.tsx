@@ -334,6 +334,7 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
 
           return (
             <button
+              key={`spanning-event-${event.id}`}
               type="button"
               className={cn(
                 'absolute cursor-pointer truncate rounded-sm border-l-2 px-2 py-1 text-xs font-semibold',
@@ -369,7 +370,7 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
                   />
                 )}
               {event.title}
-            </div>
+            </button>
           );
         })}
       </div>

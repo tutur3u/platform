@@ -289,10 +289,12 @@ export const ComparedDateRangePicker = ({
     preset,
     label,
     isSelected,
+    setPreset,
   }: {
     preset: string;
     label: string;
     isSelected: boolean;
+    setPreset: (preset: string) => void;
   }): React.ReactNode => (
     <Button
       className={cn(isSelected && 'pointer-events-none')}
@@ -428,7 +430,7 @@ export const ComparedDateRangePicker = ({
                           setRangeCompare(undefined);
                         }
                       }}
-                      const compareModeId = useId();
+                      id="compare-mode"
                     />
                     <Label htmlFor="compare-mode">Compare</Label>
                   </div>
