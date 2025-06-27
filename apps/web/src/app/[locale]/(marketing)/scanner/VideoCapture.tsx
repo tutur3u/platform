@@ -268,9 +268,7 @@ export default function VideoCapture({ handleNewStudent }: VideoCaptureProps) {
           disabled={!cameraOn || capturing || !isReady}
           className={cn(
             'h-14 flex-1 text-base font-medium transition-all duration-200',
-            'bg-gradient-to-r from-purple-500 to-indigo-600 text-white shadow-lg hover:from-purple-600 hover:to-indigo-700',
-            (!cameraOn || capturing || !isReady) &&
-              'cursor-not-allowed opacity-50'
+            'bg-gradient-to-r from-purple-500 to-indigo-600 text-white shadow-lg hover:from-purple-600 hover:to-indigo-700'
           )}
         >
           {capturing ? (
