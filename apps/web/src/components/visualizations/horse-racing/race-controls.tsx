@@ -198,7 +198,27 @@ export function RaceControls({
             </Button>
 
             {/* Race timeline scrubber */}
-            <div
+            <button
+              type="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  const rect = (
+                    e.currentTarget as HTMLButtonElement
+                  ).getBoundingClientRect();
+                  const percentage =
+                    ((e.nativeEvent as KeyboardEvent).offsetX ?? 0) /
+                    rect.width;
+                  const position = Math.max(
+                    0,
+                    Math.min(
+                      Math.floor(percentage * races.length),
+                      races.length - 1
+                    )
+                  );
+                  navigateToRace(position);
+                }
+              }}
               className="group relative h-8 flex-1 cursor-pointer overflow-hidden rounded-md bg-muted"
               onMouseMove={(e) => {
                 const rect = e.currentTarget.getBoundingClientRect();
@@ -286,7 +306,7 @@ export function RaceControls({
                   )}
                 </div>
               </div>
-            </div>
+            </button>
 
             <Button
               variant="outline"

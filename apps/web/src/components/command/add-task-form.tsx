@@ -209,7 +209,7 @@ export function AddTaskForm({
     <div className="space-y-4 p-4">
       {/* Board Selection */}
       <div className="space-y-2">
-        <label className="text-sm font-medium text-foreground">Board</label>
+        <span className="text-sm font-medium text-foreground">Board</span>
         <Select
           value={selectedBoardId}
           onValueChange={(value) => {
@@ -245,7 +245,7 @@ export function AddTaskForm({
       {/* List Selection */}
       {selectedBoardId && (
         <div className="space-y-2">
-          <label className="text-sm font-medium text-foreground">List</label>
+          <span className="text-sm font-medium text-foreground">List</span>
           <Select
             value={selectedListId}
             onValueChange={(value) => {

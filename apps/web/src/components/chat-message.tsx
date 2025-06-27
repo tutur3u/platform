@@ -299,6 +299,7 @@ export function ChatMessage({
 
                 const optionsElements = options.map((option, index) => (
                   <button
+                    type="button"
                     key={index}
                     className={`w-full rounded border px-3 py-1 text-left font-semibold transition @md:text-center ${
                       revealCorrect && option.isCorrect
@@ -391,6 +392,7 @@ export function ChatMessage({
                     </div>
                     <Separator className="mt-2 mb-4" />
                     <button
+                      type="button"
                       className={`w-full rounded border px-3 py-1 text-center font-semibold text-foreground transition duration-300 ${
                         revealAnswer
                           ? 'cursor-default border-transparent'
@@ -442,6 +444,7 @@ export function ChatMessage({
                 if (setInput)
                   return (
                     <button
+                      type="button"
                       className="mb-2 rounded-full border bg-foreground/5 text-left font-semibold text-foreground transition last:mb-0 hover:bg-foreground/10"
                       onClick={() => setInput(content || '')}
                     >
@@ -544,6 +547,7 @@ export function ChatMessage({
 
                 const optionsElements = options.map((option, index) => (
                   <button
+                    type="button"
                     key={index}
                     className={`w-full rounded border px-3 py-1 text-left font-semibold transition @md:text-center ${
                       revealCorrect && option.isCorrect
@@ -636,6 +640,7 @@ export function ChatMessage({
                     </div>
                     <Separator className="mt-2 mb-4" />
                     <button
+                      type="button"
                       className={`w-full rounded border px-3 py-1 text-center font-semibold text-foreground transition duration-300 ${
                         revealAnswer
                           ? 'cursor-default border-transparent'
@@ -687,6 +692,7 @@ export function ChatMessage({
                 if (setInput)
                   return (
                     <button
+                      type="button"
                       className="mb-2 rounded-full border bg-foreground/5 text-left font-semibold break-all text-foreground transition last:mb-0 hover:bg-foreground/10"
                       onClick={() => setInput(content || '')}
                     >

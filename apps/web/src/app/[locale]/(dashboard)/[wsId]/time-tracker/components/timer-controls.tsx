@@ -3560,12 +3560,9 @@ export function TimerControls({
                     ) : (
                       <>
                         {/* Searchable Task Selection */}
-                        {/* biome-ignore lint/a11y/useSemanticElements */}
+                        {/* biome-ignore lint/a11y/useSemanticElements: dropdown container interactive div */}
                         <div
                           ref={dropdownContainerRef}
-                          role="button"
-                          tabIndex={0}
-                          className="relative"
                           onDragEnter={handleDragEnter}
                           onDragLeave={handleDragLeave}
                           onDragOver={handleDragOver}
@@ -3750,21 +3747,11 @@ export function TimerControls({
                           {/* Dropdown Content */}
                           {isTaskDropdownOpen && (
                             <>
-                              {/* biome-ignore lint/a11y/useSemanticElements */}
+                              {/* biome-ignore lint/a11y/useSemanticElements: dropdown content container */}
                               <div
                                 ref={dropdownContentRef}
-                                role="button"
-                                tabIndex={0}
                                 className="w-full"
-                                onKeyDown={(e) => {
-                                  if (
-                                    e.key === 'Escape' ||
-                                    e.key === 'Enter' ||
-                                    e.key === ' '
-                                  ) {
-                                    e.stopPropagation();
-                                  }
-                                }}
+                                // The dropdown content itself shouldn't be focusable or handle key events.
                               >
                                 {/* Filter Buttons */}
                                 <div className="space-y-2 border-b p-3">

@@ -1,6 +1,5 @@
 import type { Timeblock } from '@tuturuuu/types/primitives/Timeblock';
 import dayjs from 'dayjs';
-import { timetzToTime } from '@/utils/date-helper';
 import { useTimeBlocking } from './time-blocking-provider';
 
 export default function SelectableDayTime({
@@ -125,7 +124,8 @@ export default function SelectableDayTime({
           } as const;
 
           return (
-            <div
+            <button
+              type="button"
               key={`${date}-${i}`}
               onMouseDown={
                 disabled
@@ -151,6 +151,18 @@ export default function SelectableDayTime({
                         setPreviewDate(editData.date);
                       }
               }
+              onFocus={
+                disabled
+                  ? undefined
+                  : () => {
+                      if (isSelectable) {
+                        if (!editing.enabled) return;
+                        edit(editData);
+                      } else {
+                        setPreviewDate(editData.date);
+                      }
+                    }
+              }
               onTouchStart={
                 disabled
                   ? undefined
@@ -173,6 +185,20 @@ export default function SelectableDayTime({
                         edit(editData, e);
                       }
                     : undefined
+              }
+              onKeyDown={
+                disabled
+                  ? undefined
+                  : (e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        if (isSelectable) {
+                          edit(editData);
+                        } else {
+                          setPreviewDate(editData.date);
+                        }
+                      }
+                    }
               }
               className={`${
                 i + hourSplits < array.length

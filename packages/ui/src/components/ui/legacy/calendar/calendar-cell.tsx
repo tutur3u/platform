@@ -746,6 +746,7 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
 
       {/* Full cell clickable area (hour) */}
       <button
+        type="button"
         className="absolute inset-0 h-1/2 w-full cursor-pointer focus:outline-none"
         onClick={() => handleCreateEvent()}
         onMouseEnter={() => handleSlotMouseEnter('hour')}
@@ -759,6 +760,7 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
       />
       {/* 15-minute marker */}
       <button
+        type="button"
         className="absolute top-1/4 right-0 left-0 h-1/4 w-full cursor-pointer focus:outline-none"
         style={{ background: 'transparent' }}
         onMouseEnter={() => handleSlotMouseEnter(15)}
@@ -772,6 +774,7 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
       {/* Half-hour marker */}
       <div className="absolute top-1/2 right-0 left-0 border-t border-dashed border-border/30" />
       <button
+        type="button"
         className="absolute inset-x-0 top-1/2 h-1/2 cursor-pointer focus:outline-none"
         onClick={() => handleCreateEvent(true)}
         onMouseEnter={() => handleSlotMouseEnter('half-hour')}
@@ -785,6 +788,7 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
       />
       {/* 45-minute marker */}
       <button
+        type="button"
         className="absolute top-3/4 right-0 left-0 h-1/4 w-full cursor-pointer focus:outline-none"
         style={{ background: 'transparent' }}
         onMouseEnter={() => handleSlotMouseEnter(45)}

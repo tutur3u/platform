@@ -4,6 +4,7 @@ import dayjs from 'dayjs';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
 import timezone from 'dayjs/plugin/timezone';
 import { useParams } from 'next/navigation';
+import { useId } from 'react';
 import { useCalendar } from '../../../../hooks/use-calendar';
 import { CalendarColumn } from './calendar-column';
 import { DAY_HEIGHT, MAX_LEVEL } from './config';
@@ -272,6 +273,7 @@ export const CalendarEventMatrix = ({ dates }: { dates: Date[] }) => {
   const eventsWithLevels = assignLevels();
 
   const columns = dates.length;
+  const uniqueId = useId();
 
   return (
     <div
@@ -283,7 +285,10 @@ export const CalendarEventMatrix = ({ dates }: { dates: Date[] }) => {
         height: `${DAY_HEIGHT}px`, // Ensure container is exactly 24 hours high
       }}
     >
-      <div id="calendar-event-matrix" className="relative col-span-full">
+      <div
+        id={`calendar-event-matrix-${uniqueId}`}
+        className="relative col-span-full"
+      >
         {eventsWithLevels.map((event) => (
           <EventCard
             wsId={wsId}

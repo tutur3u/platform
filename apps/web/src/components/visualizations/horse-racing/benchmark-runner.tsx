@@ -428,9 +428,16 @@ export function BenchmarkRunner({ onBenchmarksUpdated }: BenchmarkRunnerProps) {
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <div
-                            className="flex cursor-pointer items-center justify-center"
+                          <button
+                            type="button"
+                            className="flex cursor-pointer items-center justify-center focus:outline-none focus:ring-2 focus:ring-primary/50"
                             onClick={() => handleSort('theoreticalMinimum')}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault();
+                                handleSort('theoreticalMinimum');
+                              }
+                            }}
                           >
                             Min
                             <HelpCircle className="ml-1 h-3 w-3" />
@@ -440,7 +447,7 @@ export function BenchmarkRunner({ onBenchmarksUpdated }: BenchmarkRunnerProps) {
                               ) : (
                                 <ArrowDown className="ml-1 h-3 w-3" />
                               ))}
-                          </div>
+                          </button>
                         </TooltipTrigger>
                         <TooltipContent>
                           <p className="max-w-60">
@@ -454,9 +461,16 @@ export function BenchmarkRunner({ onBenchmarksUpdated }: BenchmarkRunnerProps) {
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <div
-                            className="flex cursor-pointer items-center justify-center"
+                          <button
+                            type="button"
+                            className="flex cursor-pointer items-center justify-center focus:outline-none focus:ring-2 focus:ring-primary/50"
                             onClick={() => handleSort('theoreticalMaximum')}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault();
+                                handleSort('theoreticalMaximum');
+                              }
+                            }}
                           >
                             Max
                             <HelpCircle className="ml-1 h-3 w-3" />
@@ -466,7 +480,7 @@ export function BenchmarkRunner({ onBenchmarksUpdated }: BenchmarkRunnerProps) {
                               ) : (
                                 <ArrowDown className="ml-1 h-3 w-3" />
                               ))}
-                          </div>
+                          </button>
                         </TooltipTrigger>
                         <TooltipContent>
                           <p className="max-w-60">Theoretical maximum races</p>

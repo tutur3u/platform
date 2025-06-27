@@ -99,19 +99,33 @@ const WorkspaceInviteSnippet = ({ ws, transparent = true }: Props) => {
       </div>
 
       <div className="mt-2 grid gap-2 md:grid-cols-2">
-        <div
-          className="flex cursor-pointer items-center justify-center rounded border p-1 font-semibold text-foreground transition duration-300 hover:bg-foreground/5"
+        <button
+          type="button"
+          className="flex cursor-pointer items-center justify-center rounded border p-1 font-semibold text-foreground transition duration-300 hover:bg-foreground/5 focus:outline-none focus:ring-2 focus:ring-primary/50"
           onClick={() => declineInvite(ws)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              declineInvite(ws);
+            }
+          }}
         >
           {declineInviteLabel}
-        </div>
+        </button>
 
-        <div
-          className="flex flex-1 cursor-pointer items-center justify-center rounded border p-1 font-semibold text-foreground transition duration-300 hover:bg-foreground/5"
+        <button
+          type="button"
+          className="flex flex-1 cursor-pointer items-center justify-center rounded border p-1 font-semibold text-foreground transition duration-300 hover:bg-foreground/5 focus:outline-none focus:ring-2 focus:ring-primary/50"
           onClick={() => acceptInvite(ws)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              acceptInvite(ws);
+            }
+          }}
         >
           {acceptInviteLabel}
-        </div>
+        </button>
       </div>
     </div>
   );

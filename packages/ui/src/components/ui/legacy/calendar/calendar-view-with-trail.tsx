@@ -1,6 +1,6 @@
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { useCalendar } from '../../../../hooks/use-calendar';
 import { CalendarView } from './calendar-view';
 import { HOUR_HEIGHT } from './config';
@@ -13,6 +13,7 @@ export const CalendarViewWithTrail = ({ dates }: { dates: Date[] }) => {
   const calendarViewRef = useRef<HTMLDivElement>(null);
   const { settings } = useCalendar();
   const tz = settings?.timezone?.timezone;
+  const uniqueId = useId();
 
   // Scroll to current time on mount and when dates change
   useEffect(() => {
@@ -28,7 +29,7 @@ export const CalendarViewWithTrail = ({ dates }: { dates: Date[] }) => {
   return (
     <div
       ref={calendarViewRef}
-      id="calendar-view"
+      id={`calendar-view-${uniqueId}`}
       className="flex h-full overflow-y-auto scroll-smooth rounded-b-lg border-b border-l border-border text-center dark:border-zinc-800"
       style={{
         scrollbarWidth: 'thin',

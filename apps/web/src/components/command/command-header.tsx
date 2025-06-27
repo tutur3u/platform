@@ -35,6 +35,7 @@ export function CommandHeader({
           </div>
         ) : page !== 'root' ? (
           <button
+            type="button"
             className="mr-3 rounded-lg p-2 opacity-70 transition-all hover:bg-dynamic-gray/10 hover:opacity-100 focus:ring-2 focus:ring-dynamic-blue/20 focus:outline-none active:scale-95"
             onClick={onBack}
             disabled={isTransitioning}
@@ -64,6 +65,7 @@ export function CommandHeader({
           <div className="ml-3 flex items-center gap-2">
             {inputValue && (
               <button
+                type="button"
                 onClick={() => setInputValue('')}
                 className="rounded-md border border-dynamic-gray/20 bg-dynamic-gray/5 px-2 py-1 text-xs font-medium text-dynamic-gray transition-colors hover:bg-dynamic-gray/10"
               >

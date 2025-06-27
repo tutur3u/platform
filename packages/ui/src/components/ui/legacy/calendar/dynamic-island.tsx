@@ -228,6 +228,7 @@ export const DynamicIsland = () => {
 
         {pomodoroCycles > 0 && (
           <button
+            type="button"
             onClick={startTimer}
             className={`aspect-square h-fit justify-self-end rounded-lg border p-1 ${bg} transition`}
           >
