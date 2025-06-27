@@ -1,12 +1,10 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { type NextRequest, NextResponse } from 'next/server';
+import { validate } from 'uuid';
 
 interface WorkspaceParams {
   wsId: string;
 }
-
-// UUID validation regex (accepts any valid UUID format including nil UUID)
-const UUID_REGEX = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
 
 export async function GET(
   _: NextRequest,
@@ -15,18 +13,9 @@ export async function GET(
   try {
     const { wsId } = await params;
 
-    // Validate workspace ID format
-    if (!wsId || wsId === 'undefined') {
+    if (!validate(wsId)) {
       return NextResponse.json(
         { error: 'Invalid workspace ID' },
-        { status: 400 }
-      );
-    }
-
-    // Validate UUID format
-    if (!UUID_REGEX.test(wsId)) {
-      return NextResponse.json(
-        { error: 'Invalid workspace ID format' },
         { status: 400 }
       );
     }
@@ -55,7 +44,7 @@ export async function GET(
 
     if (!memberCheck) {
       return NextResponse.json(
-        { error: 'You don\'t have access to this workspace' },
+        { error: "You don't have access to this workspace" },
         { status: 403 }
       );
     }
