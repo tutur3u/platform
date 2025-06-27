@@ -331,7 +331,7 @@ export function BillingClient({
                   )}
                   {plan.isEnterprise && (
                     <p className="mt-2 text-center text-xs text-muted-foreground">
-                      {t("contact-salses-desc")}
+                      {t("contact-sales-desc")}
                     </p>
                   )}
                 </div>

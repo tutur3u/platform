@@ -12,11 +12,10 @@ import { notFound, redirect } from 'next/navigation';
 import { ROOT_WORKSPACE_ID } from './constants';
 import { permissions as rolePermissions } from './permissions';
 
-
 const isValidTuturuuuEmail = (email: string): boolean => {
     if (!email) return false;
-    const emailParts = email.split('@');
-    return emailParts.length === 2 && emailParts[1] === 'tuturuuu.com';
+    const emailRegex = /^[^\s@]+@tuturuuu\.com$/;
+    return emailRegex.test(email);
 };
 
 export async function checkTuturuuuAdmin() {
@@ -38,7 +37,7 @@ export async function checkTuturuuuAdmin() {
 
     if (error || !data) {
     console.error('Error checking Tuturuuu admin status:', error);
-    notFound();
+    throw error;
     }
 
     if (user.email && isValidTuturuuuEmail(user.email)) {
