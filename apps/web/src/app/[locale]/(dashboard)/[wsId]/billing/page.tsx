@@ -46,7 +46,7 @@ const checkCreator = async (wsId: string) => {
 
   if (error) {
     console.error("Error checking workspace creator:", error);
-    return true;
+    return false;
   }
 
   return data;
