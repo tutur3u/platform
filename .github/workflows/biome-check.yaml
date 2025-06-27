@@ -238,3 +238,13 @@ jobs:
           echo "- Total issues found: ${{ steps.progress.outputs.remaining_issues }}" >> $GITHUB_STEP_SUMMARY
           echo "- Errors: ${{ steps.biome-check.outputs.errors }}" >> $GITHUB_STEP_SUMMARY
           echo "- Warnings: ${{ steps.biome-check.outputs.warnings }}" >> $GITHUB_STEP_SUMMARY
+
+      - name: Fail on issues
+        if: steps.biome-check.outputs.has_issues == 'true'
+        run: |
+          echo "❌ Biome check found ${{ steps.progress.outputs.remaining_issues }} issues"
+          echo "- Errors: ${{ steps.biome-check.outputs.errors }}"
+          echo "- Warnings: ${{ steps.biome-check.outputs.warnings }}"
+          echo ""
+          echo "Please run 'bun format-and-lint:fix' to fix the issues and commit the changes."
+          exit 1
