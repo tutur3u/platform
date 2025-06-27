@@ -14,7 +14,7 @@ export const getTextColor = (color = defaultColor): string => {
     gray: 'text-gray-200',
   };
 
-  return colors?.[color] || colors[defaultColor]!;
+  return colors?.[color] || colors[defaultColor];
 };
 
 export const getBackgroundColor = (color = defaultColor): string => {
@@ -31,7 +31,7 @@ export const getBackgroundColor = (color = defaultColor): string => {
     gray: 'bg-gray-300/20',
   };
 
-  return colors?.[color] || colors[defaultColor]!;
+  return colors?.[color] || colors[defaultColor];
 };
 
 export const getShadowColor = (color = defaultColor): string => {
@@ -48,7 +48,7 @@ export const getShadowColor = (color = defaultColor): string => {
     gray: 'shadow-gray-300/20',
   };
 
-  return colors?.[color] || colors[defaultColor]!;
+  return colors?.[color] || colors[defaultColor];
 };
 
 export const getBorderColor = (color = defaultColor): string => {
@@ -65,7 +65,7 @@ export const getBorderColor = (color = defaultColor): string => {
     gray: 'border-gray-300',
   };
 
-  return colors?.[color] || colors[defaultColor]!;
+  return colors?.[color] || colors[defaultColor];
 };
 
 export const getCardColor = (color = defaultColor): string => {

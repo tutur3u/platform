@@ -181,7 +181,7 @@ export function HorseRacingVisualization() {
       newHorses.push({
         id: i,
         speed: speed,
-        color: COLORS[i % COLORS.length]!,
+        color: COLORS[i % COLORS.length] ?? '#000000',
       });
 
       // Initialize relationship tracking for this horse
@@ -216,27 +216,40 @@ export function HorseRacingVisualization() {
         const slowerId = raceResult[j];
 
         // Direct relationship: faster beats slower
-        fasterThanRelationships.get(fasterId!)?.add(slowerId!);
-        slowerThanRelationships.get(slowerId!)?.add(fasterId!);
+        if (fasterId !== undefined && slowerId !== undefined) {
+          fasterThanRelationships.get(fasterId)?.add(slowerId);
+          slowerThanRelationships.get(slowerId)?.add(fasterId);
+        }
 
         // Transitive relationships: if A > B and B > C, then A > C
-        const inferredFasterThan = new Set([
-          ...(fasterThanRelationships.get(slowerId!) || []),
-        ]);
+        // Transitive relationships: if A > B and B > C, then A > C
+        const inferredFasterThan = new Set<number>();
+        if (slowerId !== undefined) {
+          (fasterThanRelationships.get(slowerId) || []).forEach(item => inferredFasterThan.add(item));
+        }
 
         for (const inferredSlower of inferredFasterThan) {
-          fasterThanRelationships.get(fasterId!)?.add(inferredSlower);
-          slowerThanRelationships.get(inferredSlower!)?.add(fasterId!);
+          if (fasterId !== undefined) {
+            fasterThanRelationships.get(fasterId)?.add(inferredSlower);
+          }
+          if (inferredSlower !== undefined && fasterId !== undefined) {
+            slowerThanRelationships.get(inferredSlower)?.add(fasterId);
+          }
         }
 
         // If B < A and C < B, then C < A
-        const inferredSlowerThan = new Set([
-          ...(slowerThanRelationships.get(fasterId!) || []),
-        ]);
+        const inferredSlowerThan = new Set<number>();
+        if (fasterId !== undefined) {
+          (slowerThanRelationships.get(fasterId) || []).forEach(item => inferredSlowerThan.add(item));
+        }
 
         for (const inferredFaster of inferredSlowerThan) {
-          slowerThanRelationships.get(slowerId!)?.add(inferredFaster);
-          fasterThanRelationships.get(inferredFaster!)?.add(slowerId!);
+          if (slowerId !== undefined) {
+            slowerThanRelationships.get(slowerId)?.add(inferredFaster);
+          }
+          if (inferredFaster !== undefined && slowerId !== undefined) {
+            fasterThanRelationships.get(inferredFaster)?.add(slowerId);
+          }
         }
       }
     }
@@ -250,8 +263,9 @@ export function HorseRacingVisualization() {
   ) => {
     // Sort by speed (fastest first, lower is faster)
     const result = [...horseIds].sort((a, b) => {
-      const horseA = horses.find((h) => h.id === a)!;
-      const horseB = horses.find((h) => h.id === b)!;
+      const horseA = horses.find((h) => h.id === a);
+      const horseB = horses.find((h) => h.id === b);
+      if (!horseA || !horseB) return 0;
       return horseA.speed - horseB.speed;
     });
 
@@ -500,7 +514,7 @@ export function HorseRacingVisualization() {
                 <CardContent className="p-0">
                   <Tabs
                     value={activeInfoTab}
-                    onValueChange={(value) => setActiveInfoTab(value as any)}
+                    onValueChange={setActiveInfoTab}
                     className="w-full"
                   >
                     <TabsList className="grid h-full w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-7">

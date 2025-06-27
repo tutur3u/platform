@@ -106,8 +106,13 @@ export const getDateRange = (
   return [start.toDate(), end.toDate()];
 };
 
+type TranslationFunction = (
+  key: string,
+  options?: Record<string, any>
+) => string;
+
 export const getDateRangeUnits = (
-  t: any
+  t: TranslationFunction
 ): {
   label: string;
   value: DateRangeUnit;
@@ -124,7 +129,7 @@ export const getDateRangeUnits = (
 
 export const getDateRangeOptions = (
   unit: DateRangeUnit,
-  t: any
+  t: TranslationFunction
 ): {
   label: string;
   value: DateRangeOption;

@@ -1,6 +1,15 @@
 import type { AuditLog, Operation } from '@tuturuuu/types/primitives/audit-log';
 
-const getLeadingLabel = (t: any, op: Operation, table: string) => {
+type TranslationFunction = (
+  key: string,
+  options?: Record<string, any>
+) => string;
+
+const getLeadingLabel = (
+  t: TranslationFunction,
+  op: Operation,
+  table: string
+) => {
   switch (op) {
     case 'INSERT':
       if (table === 'workspace_members') return t('added');
@@ -22,10 +31,10 @@ const getAmount = (data: AuditLog) => {
   }
 };
 
-const getTrailingLabel = (t: any, data: AuditLog) =>
+const getTrailingLabel = (t: TranslationFunction, data: AuditLog) =>
   t(`trailing_label_${data.table_name}`, { count: getAmount(data) });
 
-export const getLabel = (t: any, data: AuditLog) => {
+export const getLabel = (t: TranslationFunction, data: AuditLog) => {
   const leadingLabel = getLeadingLabel(t, data.op, data.table_name);
   const trailingLabel = getTrailingLabel(t, data);
 

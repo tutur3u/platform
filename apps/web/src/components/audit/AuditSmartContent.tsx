@@ -918,15 +918,13 @@ const AuditSmartContent = ({ data, isExpanded }: Props) => {
                       • {t('change_role_from')}{' '}
                       <span className="font-semibold text-zinc-700 dark:text-zinc-200">
                         {t(
-                          ('ws-members.' +
-                            data.old_record.role.toLowerCase() as string
+                          `ws-members.${data.old_record.role.toLowerCase()}` as string
                         )}
                       </span>{' '}
                       {t('to')}{' '}
                       <span className="font-semibold text-zinc-700 dark:text-zinc-200">
                         {t(
-                          ('ws-members.' +
-                            data.record.role.toLowerCase() as string
+                          `ws-members.${data.record.role.toLowerCase()}` as string
                         )}
                       </span>
                     </div>

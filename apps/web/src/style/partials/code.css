@@ -1,3 +1,7 @@
+code {
+  @apply bg-inherit p-0 text-inherit shadow-none;
+}
+
 .ProseMirror {
   code {
     @apply rounded-sm bg-neutral-900 font-mono text-white caret-white shadow-lg;
@@ -12,10 +16,6 @@
 
     *::selection {
       @apply bg-white/20;
-    }
-
-    code {
-      @apply bg-inherit p-0 text-inherit shadow-none;
     }
 
     .hljs-comment,

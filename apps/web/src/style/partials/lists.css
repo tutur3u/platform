@@ -1,12 +1,4 @@
 .ProseMirror {
-  ol {
-    @apply list-decimal;
-  }
-
-  ul {
-    @apply list-disc;
-  }
-
   ul,
   ol {
     @apply my-6 px-8 py-0 first:mt-0 last:mb-0;
@@ -20,6 +12,14 @@
     p {
       @apply mt-0 mb-1;
     }
+  }
+
+  ol {
+    @apply list-decimal;
+  }
+
+  ul {
+    @apply list-disc;
   }
 
   & > ul,

@@ -3745,389 +3745,388 @@ export function TimerControls({
 
                           {/* Dropdown Content */}
                           {isTaskDropdownOpen && (
-                              <div
-                                ref={dropdownContentRef}
-                                className="w-full"
-                                // The dropdown content itself shouldn't be focusable or handle key events.
-                              >
-                                {/* Filter Buttons */}
-                                <div className="space-y-2 border-b p-3">
-                                  <div className="text-xs font-medium text-muted-foreground">
-                                    Quick Filters
-                                  </div>
+                            <div
+                              ref={dropdownContentRef}
+                              className="w-full"
+                              // The dropdown content itself shouldn't be focusable or handle key events.
+                            >
+                              {/* Filter Buttons */}
+                              <div className="space-y-2 border-b p-3">
+                                <div className="text-xs font-medium text-muted-foreground">
+                                  Quick Filters
+                                </div>
 
-                                  {/* Assignee Filters */}
-                                  <div className="flex flex-wrap gap-1">
-                                    <button
-                                      type="button"
-                                      onClick={(e) => {
-                                        e.preventDefault();
-                                        e.stopPropagation();
-                                        setTaskFilters((prev) => ({
-                                          ...prev,
-                                          assignee:
-                                            prev.assignee === 'mine'
-                                              ? 'all'
-                                              : 'mine',
-                                        }));
-                                      }}
-                                      className={cn(
-                                        'flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs font-medium transition-colors',
-                                        taskFilters.assignee === 'mine'
-                                          ? 'border-blue-200 bg-blue-100 text-blue-700 dark:border-blue-800 dark:bg-blue-900/30 dark:text-blue-300'
-                                          : 'border-border bg-background hover:bg-muted'
-                                      )}
+                                {/* Assignee Filters */}
+                                <div className="flex flex-wrap gap-1">
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      setTaskFilters((prev) => ({
+                                        ...prev,
+                                        assignee:
+                                          prev.assignee === 'mine'
+                                            ? 'all'
+                                            : 'mine',
+                                      }));
+                                    }}
+                                    className={cn(
+                                      'flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs font-medium transition-colors',
+                                      taskFilters.assignee === 'mine'
+                                        ? 'border-blue-200 bg-blue-100 text-blue-700 dark:border-blue-800 dark:bg-blue-900/30 dark:text-blue-300'
+                                        : 'border-border bg-background hover:bg-muted'
+                                    )}
+                                  >
+                                    <CheckCircle className="h-3 w-3" />
+                                    My Tasks
+                                    {myTasksCount > 0 && (
+                                      <span className="ml-1 rounded-full bg-current px-1.5 py-0.5 text-[10px] text-white">
+                                        {myTasksCount}
+                                      </span>
+                                    )}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      setTaskFilters((prev) => ({
+                                        ...prev,
+                                        assignee:
+                                          prev.assignee === 'unassigned'
+                                            ? 'all'
+                                            : 'unassigned',
+                                      }));
+                                    }}
+                                    className={cn(
+                                      'flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs font-medium transition-colors',
+                                      taskFilters.assignee === 'unassigned'
+                                        ? 'border-orange-200 bg-orange-100 text-orange-700 dark:border-orange-800 dark:bg-orange-900/30 dark:text-orange-300'
+                                        : 'border-border bg-background hover:bg-muted'
+                                    )}
+                                  >
+                                    <svg
+                                      className="h-3 w-3"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      viewBox="0 0 24 24"
                                     >
-                                      <CheckCircle className="h-3 w-3" />
-                                      My Tasks
-                                      {myTasksCount > 0 && (
-                                        <span className="ml-1 rounded-full bg-current px-1.5 py-0.5 text-[10px] text-white">
-                                          {myTasksCount}
-                                        </span>
-                                      )}
-                                    </button>
-                                    <button
-                                      type="button"
-                                      onClick={(e) => {
-                                        e.preventDefault();
-                                        e.stopPropagation();
-                                        setTaskFilters((prev) => ({
-                                          ...prev,
-                                          assignee:
-                                            prev.assignee === 'unassigned'
-                                              ? 'all'
-                                              : 'unassigned',
-                                        }));
-                                      }}
-                                      className={cn(
-                                        'flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs font-medium transition-colors',
-                                        taskFilters.assignee === 'unassigned'
-                                          ? 'border-orange-200 bg-orange-100 text-orange-700 dark:border-orange-800 dark:bg-orange-900/30 dark:text-orange-300'
-                                          : 'border-border bg-background hover:bg-muted'
-                                      )}
-                                    >
-                                      <svg
-                                        className="h-3 w-3"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        viewBox="0 0 24 24"
-                                      >
-                                        <title>Unassigned Icon</title>
-                                        <path
-                                          strokeLinecap="round"
-                                          strokeLinejoin="round"
-                                          strokeWidth={2}
-                                          d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                                        />
-                                      </svg>
-                                      Unassigned
-                                      {unassignedCount > 0 && (
-                                        <span className="ml-1 rounded-full bg-current px-1.5 py-0.5 text-[10px] text-white">
-                                          {unassignedCount}
-                                        </span>
-                                      )}
-                                    </button>
-                                  </div>
+                                      <title>Unassigned Icon</title>
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                                      />
+                                    </svg>
+                                    Unassigned
+                                    {unassignedCount > 0 && (
+                                      <span className="ml-1 rounded-full bg-current px-1.5 py-0.5 text-[10px] text-white">
+                                        {unassignedCount}
+                                      </span>
+                                    )}
+                                  </button>
+                                </div>
 
-                                  {/* Board Filters */}
-                                  <div className="flex flex-wrap gap-1">
+                                {/* Board Filters */}
+                                <div className="flex flex-wrap gap-1">
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      setTaskFilters((prev) => ({
+                                        ...prev,
+                                        board: 'all',
+                                      }));
+                                    }}
+                                    className={cn(
+                                      'rounded-md border px-2 py-1 text-xs transition-colors',
+                                      taskFilters.board === 'all'
+                                        ? 'border-primary bg-primary text-primary-foreground'
+                                        : 'border-border bg-background hover:bg-muted'
+                                    )}
+                                  >
+                                    All Boards
+                                  </button>
+                                  {uniqueBoards.map((board) => (
                                     <button
+                                      key={board}
                                       type="button"
                                       onClick={(e) => {
                                         e.preventDefault();
                                         e.stopPropagation();
                                         setTaskFilters((prev) => ({
                                           ...prev,
-                                          board: 'all',
+                                          board,
                                         }));
                                       }}
                                       className={cn(
                                         'rounded-md border px-2 py-1 text-xs transition-colors',
-                                        taskFilters.board === 'all'
+                                        taskFilters.board === board
                                           ? 'border-primary bg-primary text-primary-foreground'
                                           : 'border-border bg-background hover:bg-muted'
                                       )}
                                     >
-                                      All Boards
+                                      {board}
                                     </button>
-                                    {uniqueBoards.map((board) => (
-                                      <button
-                                        key={board}
-                                        type="button"
-                                        onClick={(e) => {
-                                          e.preventDefault();
-                                          e.stopPropagation();
-                                          setTaskFilters((prev) => ({
-                                            ...prev,
-                                            board,
-                                          }));
-                                        }}
-                                        className={cn(
-                                          'rounded-md border px-2 py-1 text-xs transition-colors',
-                                          taskFilters.board === board
-                                            ? 'border-primary bg-primary text-primary-foreground'
-                                            : 'border-border bg-background hover:bg-muted'
-                                        )}
-                                      >
-                                        {board}
-                                      </button>
-                                    ))}
-                                  </div>
+                                  ))}
+                                </div>
 
-                                  <div className="flex flex-wrap gap-1">
+                                <div className="flex flex-wrap gap-1">
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      setTaskFilters((prev) => ({
+                                        ...prev,
+                                        list: 'all',
+                                      }));
+                                    }}
+                                    className={cn(
+                                      'rounded-md border px-2 py-1 text-xs transition-colors',
+                                      taskFilters.list === 'all'
+                                        ? 'border-secondary bg-secondary text-secondary-foreground'
+                                        : 'border-border bg-background hover:bg-muted'
+                                    )}
+                                  >
+                                    All Lists
+                                  </button>
+                                  {uniqueLists.map((list) => (
                                     <button
+                                      key={list}
                                       type="button"
                                       onClick={(e) => {
                                         e.preventDefault();
                                         e.stopPropagation();
                                         setTaskFilters((prev) => ({
                                           ...prev,
-                                          list: 'all',
+                                          list,
                                         }));
                                       }}
                                       className={cn(
                                         'rounded-md border px-2 py-1 text-xs transition-colors',
-                                        taskFilters.list === 'all'
+                                        taskFilters.list === list
                                           ? 'border-secondary bg-secondary text-secondary-foreground'
                                           : 'border-border bg-background hover:bg-muted'
                                       )}
                                     >
-                                      All Lists
+                                      {list}
                                     </button>
-                                    {uniqueLists.map((list) => (
-                                      <button
-                                        key={list}
-                                        type="button"
-                                        onClick={(e) => {
-                                          e.preventDefault();
-                                          e.stopPropagation();
-                                          setTaskFilters((prev) => ({
-                                            ...prev,
-                                            list,
-                                          }));
-                                        }}
-                                        className={cn(
-                                          'rounded-md border px-2 py-1 text-xs transition-colors',
-                                          taskFilters.list === list
-                                            ? 'border-secondary bg-secondary text-secondary-foreground'
-                                            : 'border-border bg-background hover:bg-muted'
-                                        )}
-                                      >
-                                        {list}
-                                      </button>
-                                    ))}
-                                  </div>
-
-                                  {(taskSearchQuery ||
-                                    taskFilters.board !== 'all' ||
-                                    taskFilters.list !== 'all' ||
-                                    taskFilters.assignee !== 'all') && (
-                                    <div className="flex items-center justify-between text-xs">
-                                      <span className="text-muted-foreground">
-                                        {filteredTasks.length} of {tasks.length}{' '}
-                                        tasks
-                                      </span>
-                                      <button
-                                        type="button"
-                                        onClick={(e) => {
-                                          e.preventDefault();
-                                          e.stopPropagation();
-                                          setTaskSearchQuery('');
-                                          setTaskFilters({
-                                            board: 'all',
-                                            list: 'all',
-                                            priority: 'all',
-                                            status: 'all',
-                                            assignee: 'all',
-                                          });
-                                        }}
-                                        className="text-muted-foreground hover:text-foreground"
-                                      >
-                                        Clear filters
-                                      </button>
-                                    </div>
-                                  )}
+                                  ))}
                                 </div>
 
-                                {/* Task List */}
-                                <div className="max-h-[300px] overflow-y-auto">
-                                  {filteredTasks.length === 0 ? (
-                                    <div className="p-6 text-center text-sm text-muted-foreground">
-                                      {taskSearchQuery ||
-                                      taskFilters.board !== 'all' ||
-                                      taskFilters.list !== 'all' ||
-                                      taskFilters.assignee !== 'all' ? (
-                                        <>
-                                          <div className="mb-2">
-                                            No tasks found matching your
-                                            criteria
-                                          </div>
-                                          <button
-                                            type="button"
-                                            onClick={(e) => {
-                                              e.preventDefault();
-                                              e.stopPropagation();
-                                              setTaskSearchQuery('');
-                                              setTaskFilters({
-                                                board: 'all',
-                                                list: 'all',
-                                                priority: 'all',
-                                                status: 'all',
-                                                assignee: 'all',
-                                              });
-                                            }}
-                                            className="text-xs text-primary hover:underline"
-                                          >
-                                            Clear filters to see all tasks
-                                          </button>
-                                        </>
-                                      ) : (
-                                        'No tasks available'
-                                      )}
-                                    </div>
-                                  ) : (
-                                    filteredTasks.map((task) => (
-                                      <button
-                                        key={task.id}
-                                        type="button"
-                                        onClick={(e) => {
-                                          e.preventDefault();
-                                          e.stopPropagation();
-                                          if (task.id) {
-                                            handleTaskSelectionChange(task.id);
-                                          }
-                                        }}
-                                        className="w-full p-0 text-left transition-colors hover:bg-muted/50 focus:bg-muted/50 focus:outline-none"
+                                {(taskSearchQuery ||
+                                  taskFilters.board !== 'all' ||
+                                  taskFilters.list !== 'all' ||
+                                  taskFilters.assignee !== 'all') && (
+                                  <div className="flex items-center justify-between text-xs">
+                                    <span className="text-muted-foreground">
+                                      {filteredTasks.length} of {tasks.length}{' '}
+                                      tasks
+                                    </span>
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        setTaskSearchQuery('');
+                                        setTaskFilters({
+                                          board: 'all',
+                                          list: 'all',
+                                          priority: 'all',
+                                          status: 'all',
+                                          assignee: 'all',
+                                        });
+                                      }}
+                                      className="text-muted-foreground hover:text-foreground"
+                                    >
+                                      Clear filters
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Task List */}
+                              <div className="max-h-[300px] overflow-y-auto">
+                                {filteredTasks.length === 0 ? (
+                                  <div className="p-6 text-center text-sm text-muted-foreground">
+                                    {taskSearchQuery ||
+                                    taskFilters.board !== 'all' ||
+                                    taskFilters.list !== 'all' ||
+                                    taskFilters.assignee !== 'all' ? (
+                                      <>
+                                        <div className="mb-2">
+                                          No tasks found matching your criteria
+                                        </div>
+                                        <button
+                                          type="button"
+                                          onClick={(e) => {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            setTaskSearchQuery('');
+                                            setTaskFilters({
+                                              board: 'all',
+                                              list: 'all',
+                                              priority: 'all',
+                                              status: 'all',
+                                              assignee: 'all',
+                                            });
+                                          }}
+                                          className="text-xs text-primary hover:underline"
+                                        >
+                                          Clear filters to see all tasks
+                                        </button>
+                                      </>
+                                    ) : (
+                                      'No tasks available'
+                                    )}
+                                  </div>
+                                ) : (
+                                  filteredTasks.map((task) => (
+                                    <button
+                                      key={task.id}
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        if (task.id) {
+                                          handleTaskSelectionChange(task.id);
+                                        }
+                                      }}
+                                      className="w-full p-0 text-left transition-colors hover:bg-muted/50 focus:bg-muted/50 focus:outline-none"
+                                    >
+                                      <div
+                                        className={cn(
+                                          'flex w-full items-start gap-3 p-3 hover:bg-muted/30',
+                                          task.is_assigned_to_current_user &&
+                                            'bg-blue-50/50 dark:bg-blue-950/20'
+                                        )}
                                       >
                                         <div
                                           className={cn(
-                                            'flex w-full items-start gap-3 p-3 hover:bg-muted/30',
-                                            task.is_assigned_to_current_user &&
-                                              'bg-blue-50/50 dark:bg-blue-950/20'
+                                            'flex h-8 w-8 items-center justify-center rounded-lg border',
+                                            task.is_assigned_to_current_user
+                                              ? 'border-blue-400/50 bg-gradient-to-br from-blue-100 to-blue-200 dark:border-blue-600 dark:from-blue-800 dark:to-blue-700'
+                                              : 'border-dynamic-blue/30 bg-gradient-to-br from-dynamic-blue/20 to-dynamic-blue/10'
                                           )}
                                         >
-                                          <div
+                                          <CheckCircle
                                             className={cn(
-                                              'flex h-8 w-8 items-center justify-center rounded-lg border',
+                                              'h-4 w-4',
                                               task.is_assigned_to_current_user
-                                                ? 'border-blue-400/50 bg-gradient-to-br from-blue-100 to-blue-200 dark:border-blue-600 dark:from-blue-800 dark:to-blue-700'
-                                                : 'border-dynamic-blue/30 bg-gradient-to-br from-dynamic-blue/20 to-dynamic-blue/10'
+                                                ? 'text-blue-700 dark:text-blue-300'
+                                                : 'text-dynamic-blue'
                                             )}
-                                          >
-                                            <CheckCircle
-                                              className={cn(
-                                                'h-4 w-4',
-                                                task.is_assigned_to_current_user
-                                                  ? 'text-blue-700 dark:text-blue-300'
-                                                  : 'text-dynamic-blue'
-                                              )}
-                                            />
-                                          </div>
-                                          <div className="min-w-0 flex-1">
-                                            <div className="flex items-center gap-2">
-                                              <span
-                                                className={cn(
-                                                  'text-sm font-medium',
-                                                  task.is_assigned_to_current_user &&
-                                                    'text-blue-900 dark:text-blue-100'
-                                                )}
-                                              >
-                                                {task.name}
-                                                {task.is_assigned_to_current_user && (
-                                                  <span className="ml-2 inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800 dark:bg-blue-900/50 dark:text-blue-200">
-                                                    Assigned to you
-                                                  </span>
-                                                )}
-                                              </span>
-                                              <ExternalLink className="h-3 w-3 text-muted-foreground" />
-                                            </div>
-                                            {task.description && (
-                                              <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
-                                                {task.description}
-                                              </p>
-                                            )}
-
-                                            {/* Assignees Display */}
-                                            {task.assignees &&
-                                              task.assignees.length > 0 && (
-                                                <div className="mt-2 flex items-center gap-2">
-                                                  <div className="flex -space-x-1">
-                                                    {task.assignees
-                                                      .slice(0, 3)
-                                                      .map((assignee) => (
-                                                        <div
-                                                          key={assignee.id}
-                                                          className="h-4 w-4 rounded-full border border-white bg-gradient-to-br from-gray-100 to-gray-200 dark:border-gray-800 dark:from-gray-700 dark:to-gray-600"
-                                                          title={
-                                                            assignee.display_name ||
-                                                            assignee.email
-                                                          }
-                                                        >
-                                                          {assignee.avatar_url ? (
-                                                            <Image
-                                                              src={
-                                                                assignee.avatar_url
-                                                              }
-                                                              alt={
-                                                                assignee.display_name ||
-                                                                assignee.email ||
-                                                                ''
-                                                              }
-                                                              className="h-full w-full rounded-full object-cover"
-                                                              width={16}
-                                                              height={16}
-                                                            />
-                                                          ) : (
-                                                            <div className="flex h-full w-full items-center justify-center text-[8px] font-medium text-gray-600 dark:text-gray-300">
-                                                              {generateAssigneeInitials(
-                                                                assignee
-                                                              )}
-                                                            </div>
-                                                          )}
-                                                        </div>
-                                                      ))}
-                                                    {task.assignees.length >
-                                                      3 && (
-                                                      <div className="flex h-4 w-4 items-center justify-center rounded-full border border-white bg-gray-200 text-[8px] font-medium text-gray-600 dark:border-gray-800 dark:bg-gray-700 dark:text-gray-300">
-                                                        +
-                                                        {task.assignees.length -
-                                                          3}
-                                                      </div>
-                                                    )}
-                                                  </div>
-                                                  <span className="text-xs text-muted-foreground">
-                                                    {task.assignees.length}{' '}
-                                                    assigned
-                                                  </span>
-                                                </div>
-                                              )}
-
-                                            {task.board_name &&
-                                              task.list_name && (
-                                                <div className="mt-2 flex items-center gap-2">
-                                                  <div className="flex items-center gap-1.5 rounded-md bg-muted/60 px-2 py-1">
-                                                    <MapPin className="h-3 w-3 text-muted-foreground" />
-                                                    <span className="text-xs font-medium">
-                                                      {task.board_name}
-                                                    </span>
-                                                  </div>
-                                                  <div className="flex items-center gap-1.5 rounded-md border border-dynamic-green/20 bg-gradient-to-r from-dynamic-green/10 to-dynamic-green/5 px-2 py-1">
-                                                    <Tag className="h-3 w-3 text-dynamic-green" />
-                                                    <span className="text-xs font-medium text-dynamic-green">
-                                                      {task.list_name}
-                                                    </span>
-                                                  </div>
-                                                </div>
-                                              )}
-                                          </div>
+                                          />
                                         </div>
-                                      </button>
-                                    ))
-                                  )}
-                                </div>
+                                        <div className="min-w-0 flex-1">
+                                          <div className="flex items-center gap-2">
+                                            <span
+                                              className={cn(
+                                                'text-sm font-medium',
+                                                task.is_assigned_to_current_user &&
+                                                  'text-blue-900 dark:text-blue-100'
+                                              )}
+                                            >
+                                              {task.name}
+                                              {task.is_assigned_to_current_user && (
+                                                <span className="ml-2 inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800 dark:bg-blue-900/50 dark:text-blue-200">
+                                                  Assigned to you
+                                                </span>
+                                              )}
+                                            </span>
+                                            <ExternalLink className="h-3 w-3 text-muted-foreground" />
+                                          </div>
+                                          {task.description && (
+                                            <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
+                                              {task.description}
+                                            </p>
+                                          )}
+
+                                          {/* Assignees Display */}
+                                          {task.assignees &&
+                                            task.assignees.length > 0 && (
+                                              <div className="mt-2 flex items-center gap-2">
+                                                <div className="flex -space-x-1">
+                                                  {task.assignees
+                                                    .slice(0, 3)
+                                                    .map((assignee) => (
+                                                      <div
+                                                        key={assignee.id}
+                                                        className="h-4 w-4 rounded-full border border-white bg-gradient-to-br from-gray-100 to-gray-200 dark:border-gray-800 dark:from-gray-700 dark:to-gray-600"
+                                                        title={
+                                                          assignee.display_name ||
+                                                          assignee.email
+                                                        }
+                                                      >
+                                                        {assignee.avatar_url ? (
+                                                          <Image
+                                                            src={
+                                                              assignee.avatar_url
+                                                            }
+                                                            alt={
+                                                              assignee.display_name ||
+                                                              assignee.email ||
+                                                              ''
+                                                            }
+                                                            className="h-full w-full rounded-full object-cover"
+                                                            width={16}
+                                                            height={16}
+                                                          />
+                                                        ) : (
+                                                          <div className="flex h-full w-full items-center justify-center text-[8px] font-medium text-gray-600 dark:text-gray-300">
+                                                            {generateAssigneeInitials(
+                                                              assignee
+                                                            )}
+                                                          </div>
+                                                        )}
+                                                      </div>
+                                                    ))}
+                                                  {task.assignees.length >
+                                                    3 && (
+                                                    <div className="flex h-4 w-4 items-center justify-center rounded-full border border-white bg-gray-200 text-[8px] font-medium text-gray-600 dark:border-gray-800 dark:bg-gray-700 dark:text-gray-300">
+                                                      +
+                                                      {task.assignees.length -
+                                                        3}
+                                                    </div>
+                                                  )}
+                                                </div>
+                                                <span className="text-xs text-muted-foreground">
+                                                  {task.assignees.length}{' '}
+                                                  assigned
+                                                </span>
+                                              </div>
+                                            )}
+
+                                          {task.board_name &&
+                                            task.list_name && (
+                                              <div className="mt-2 flex items-center gap-2">
+                                                <div className="flex items-center gap-1.5 rounded-md bg-muted/60 px-2 py-1">
+                                                  <MapPin className="h-3 w-3 text-muted-foreground" />
+                                                  <span className="text-xs font-medium">
+                                                    {task.board_name}
+                                                  </span>
+                                                </div>
+                                                <div className="flex items-center gap-1.5 rounded-md border border-dynamic-green/20 bg-gradient-to-r from-dynamic-green/10 to-dynamic-green/5 px-2 py-1">
+                                                  <Tag className="h-3 w-3 text-dynamic-green" />
+                                                  <span className="text-xs font-medium text-dynamic-green">
+                                                    {task.list_name}
+                                                  </span>
+                                                </div>
+                                              </div>
+                                            )}
+                                        </div>
+                                      </div>
+                                    </button>
+                                  ))
+                                )}
                               </div>
+                            </div>
                           )}
-                        </div>
+                        </fieldset>
 
                         {(selectedTaskId === 'none' || !selectedTaskId) && (
                           <div className="text-center">
