@@ -2,11 +2,11 @@
 
 import { cn, formatBytes } from '@tuturuuu/utils/format';
 import { File, FileText, Upload, X } from 'lucide-react';
+import Image from 'next/image';
 import { type HTMLAttributes, useCallback, useState } from 'react';
-import Dropzone, {
-  type DropzoneProps,
-  type FileRejection,
-} from 'react-dropzone';
+import type { DropzoneProps, FileRejection } from 'react-dropzone';
+import Dropzone from 'react-dropzone';
+
 import { toast } from 'sonner';
 import { useControllableState } from '../../../hooks/use-controllable-state';
 import { Button } from '../button';
@@ -328,7 +328,7 @@ function FilePreview({ file }: { file: StatedFile }) {
     <>
       {isImage && (
         <a href={file.url} target="_blank" rel="noopener noreferrer">
-          <img
+          <Image
             src={file.url}
             alt={file.rawFile.name}
             width={48}

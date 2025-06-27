@@ -31,6 +31,7 @@ export const DayCell: React.FC<{
   )
     return (
       <button
+        type="button"
         onClick={onDateClick ? () => onDateClick(day) : undefined}
         className={cn(
           'flex flex-none cursor-default justify-center rounded border bg-foreground/5 p-2 font-semibold text-foreground/40 transition duration-300 hover:cursor-pointer md:rounded-lg dark:bg-foreground/10',
@@ -47,6 +48,7 @@ export const DayCell: React.FC<{
       <Tooltip>
         <TooltipTrigger asChild>
           <button
+            type="button"
             onClick={onDateClick ? () => onDateClick(day) : undefined}
             className={`flex flex-none cursor-pointer justify-center rounded border p-2 font-semibold transition duration-300 md:rounded-lg ${
               isDateAttended(day, attendanceData)

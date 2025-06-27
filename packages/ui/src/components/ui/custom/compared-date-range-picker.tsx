@@ -2,7 +2,7 @@
 
 import { cn } from '@tuturuuu/utils/format';
 import { Check, ChevronDown, ChevronUp } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button } from '../button';
 import { Calendar } from '../calendar';
 import { Label } from '../label';
@@ -49,9 +49,13 @@ const getDateAdjustedForTimezone = (dateInput: Date | string): Date => {
   if (typeof dateInput === 'string') {
     // Split the date string to get year, month, and day parts
     const parts = dateInput.split('-').map((part) => parseInt(part, 10));
+    // Ensure parts has enough elements before accessing them
+    if (parts.length < 3) {
+      throw new Error('Invalid date string format');
+    }
     // Create a new Date object using the local timezone
     // Note: Month is 0-indexed, so subtract 1 from the month part
-    const date = new Date(parts[0]!, parts[1]! - 1, parts[2]);
+    const date = new Date(parts[0], parts[1] - 1, parts[2]);
     return date;
   } else {
     // If dateInput is already a Date object, return it directly
@@ -220,7 +224,7 @@ export const ComparedDateRangePicker = ({
     }
   };
 
-  const checkPreset = (): void => {
+  const _checkPreset = (): void => {
     for (const preset of PRESETS) {
       const presetRange = getPresetRange(preset.name);
 
@@ -281,10 +285,6 @@ export const ComparedDateRangePicker = ({
     );
   };
 
-  useEffect(() => {
-    checkPreset();
-  }, [checkPreset]);
-
   const PresetButton = ({
     preset,
     label,
@@ -307,6 +307,38 @@ export const ComparedDateRangePicker = ({
       {label}
     </Button>
   );
+
+  const checkPreset = useCallback((): void => {
+    for (const preset of PRESETS) {
+      const presetRange = getPresetRange(preset.name);
+
+      const normalizedRangeFrom = new Date(range.from);
+      normalizedRangeFrom.setHours(0, 0, 0, 0);
+      const normalizedPresetFrom = new Date(
+        presetRange.from.setHours(0, 0, 0, 0)
+      );
+
+      const normalizedRangeTo = new Date(range.to ?? 0);
+      normalizedRangeTo.setHours(0, 0, 0, 0);
+      const normalizedPresetTo = new Date(
+        presetRange.to?.setHours(0, 0, 0, 0) ?? 0
+      );
+
+      if (
+        normalizedRangeFrom.getTime() === normalizedPresetFrom.getTime() &&
+        normalizedRangeTo.getTime() === normalizedPresetTo.getTime()
+      ) {
+        setSelectedPreset(preset.name);
+        return;
+      }
+    }
+
+    setSelectedPreset(undefined);
+  }, [range, getPresetRange]);
+
+  useEffect(() => {
+    checkPreset();
+  }, [checkPreset]);
 
   // Helper function to check if two date ranges are equal
   const areRangesEqual = (a?: DateRange, b?: DateRange): boolean => {
@@ -396,7 +428,7 @@ export const ComparedDateRangePicker = ({
                           setRangeCompare(undefined);
                         }
                       }}
-                      id="compare-mode"
+                      const compareModeId = useId();
                     />
                     <Label htmlFor="compare-mode">Compare</Label>
                   </div>

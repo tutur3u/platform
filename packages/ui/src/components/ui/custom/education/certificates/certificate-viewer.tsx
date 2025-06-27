@@ -6,7 +6,7 @@ import { ImageIcon } from '@tuturuuu/ui/icons';
 import html2canvas from 'html2canvas';
 import dynamic from 'next/dynamic';
 import { useTranslations } from 'next-intl';
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useId } from 'react';
 
 const PDFViewer = dynamic(
   () =>
@@ -74,14 +74,14 @@ export function CertificateViewer({
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center p-4">
-      <div id="certificate-area" className="w-full max-w-4xl">
+      <div id={useId()} className="w-full max-w-4xl">
         {pdfUrl && (
           <div className="rounded-lg border bg-white p-4">
             <PDFViewer url={pdfUrl} />
           </div>
         )}
       </div>
-      <div id="download-buttons" className="mt-6 flex justify-center gap-2">
+      <div id={useId()} className="mt-6 flex justify-center gap-2">
         <Button onClick={handlePNG}>
           <ImageIcon className="mr-1 h-4 w-4" />
           {t('download_button')} (PNG)

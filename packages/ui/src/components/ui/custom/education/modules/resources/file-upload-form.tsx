@@ -315,15 +315,16 @@ export function StorageObjectForm({
                                 }}
                               />
                             ) : (
-                              <div
-                                className="line-clamp-1 max-w-[400px] text-sm break-all opacity-70"
+                              <button
+                                type="button"
+                                className="line-clamp-1 max-w-[400px] text-sm break-all opacity-70 text-left"
                                 onClick={() => {
                                   setNewFileName(file.name);
                                   setEditingFile(file);
                                 }}
                               >
                                 {file.name}
-                              </div>
+                              </button>
                             )}
 
                             <div className="text-xs font-semibold">

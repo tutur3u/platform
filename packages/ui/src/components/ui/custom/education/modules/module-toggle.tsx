@@ -3,7 +3,7 @@
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { useId, useState } from 'react';
 
 export function ModuleToggles({
   courseId,
@@ -75,7 +75,7 @@ export function ModuleToggles({
       </div> */}
       <div className="flex items-center space-x-2">
         <Checkbox
-          id="isPublished"
+          id={useId()}
           checked={isPublished}
           onCheckedChange={handlePublishedChange}
           disabled={loading}

@@ -81,8 +81,8 @@ export function TagsInput({
   };
 
   return (
-    <div
-      role="button"
+    <button
+      type="button"
       tabIndex={0}
       className={cn(
         'flex min-h-10 w-full flex-wrap items-center gap-1 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2',
@@ -135,7 +135,7 @@ export function TagsInput({
           )}
         />
       )}
-    </div>
+    </button>
   );
 }
 

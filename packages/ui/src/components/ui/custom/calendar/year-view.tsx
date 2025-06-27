@@ -45,6 +45,7 @@ export const YearView: React.FC<{
       <div className="grid grid-cols-3 gap-4">
         {months.map((month, idx) => (
           <button
+            type="button"
             key={`month-${idx}`}
             onClick={() => handleMonthClick(month.getMonth())}
             className="flex flex-none cursor-pointer justify-center rounded bg-foreground/5 p-4 font-semibold transition duration-300 hover:bg-foreground/10"

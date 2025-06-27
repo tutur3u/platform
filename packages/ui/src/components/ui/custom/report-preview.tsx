@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import type { ReactNode } from 'react';
 import { Separator } from '../separator';
 
@@ -24,15 +25,17 @@ export default function ReportPreview({
   return (
     <div className="overflow-x-auto xl:flex-none">
       <div
-        id="printable-area"
+        id={useId()}
         className="h-fit w-full flex-none rounded-xl dark:bg-foreground/10 print:p-4"
       >
         <div className="h-full rounded-lg border p-4 text-foreground md:p-12">
           <div className="flex flex-wrap items-center justify-between gap-8">
             {getConfig('BRAND_LOGO_URL') && (
-              <img
-                src={getConfig('BRAND_LOGO_URL')!}
+              <Image
+                src={getConfig('BRAND_LOGO_URL')}
                 alt="logo"
+                width={100}
+                height={100}
                 // onLoad={() => setIsLogoLoaded(true)}
               />
             )}
