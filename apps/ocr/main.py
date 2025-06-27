@@ -25,29 +25,12 @@ app.add_middleware(
 )
 
 # Initialize PaddleOCR
-ocr = PaddleOCR(use_angle_cls=True, lang="en")
-
-# Development logging flag - set to True to enable debug logs
-DEBUG_LOG = False
-
-
-def preprocess_frame(frame):
-    """
-    Preprocess the image for better OCR results.
-    - Converts the image to grayscale.
-    - Applies Gaussian blur to reduce noise.
-    - Applies adaptive thresholding for better text clarity.
-    """
-    # Convert to grayscale
-    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    # Apply Gaussian blur to reduce noise
-    blurred = cv2.GaussianBlur(gray, (5, 5), 0)
-    # Apply adaptive thresholding
-    thresh = cv2.adaptiveThreshold(
-        blurred, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2
-    )
-    return thresh
-
+ocr = PaddleOCR(
+    text_detection_model_name="PP-OCRv5_mobile_det",
+    text_recognition_model_name="PP-OCRv5_mobile_rec",
+    use_doc_orientation_classify=False, 
+    use_doc_unwarping=False, 
+    use_textline_orientation=False)
 
 async def process_frame(frame):
     """
@@ -55,108 +38,48 @@ async def process_frame(frame):
     """
     result = None
     try:
-        # PaddleOCR returns a list of tuples: (bbox, (text, confidence))
-        result = await asyncio.to_thread(ocr.ocr, frame)
-        if DEBUG_LOG:
-            print(f"Raw OCR result type: {type(result)}")
-            print(f"Result length: {len(result) if result else 0}")
-
+        result = await asyncio.to_thread(ocr.predict, frame)
+        
         if not result:
-            if DEBUG_LOG:
-                print("No text detected by OCR")
+            print("No text detected by OCR")
             return ""
+        
+        print(f"Raw OCR result type: {type(result)}")
+        print(f"Result length: {len(result)}")
 
-        # Handle the new PaddleOCR format
-        if isinstance(result, list) and len(result) > 0:
+        if len(result) > 0:
             first_result = result[0]
-            if DEBUG_LOG:
-                print(f"First result type: {type(first_result)}")
-                print(
-                    f"First result keys (if dict): {list(first_result.keys()) if isinstance(first_result, dict) else 'Not a dict'}"
-                )
+            
+            try:
+                rec_texts = first_result["rec_texts"]
+                rec_scores = first_result["rec_scores"]
 
-            # Check if it's the new format with rec_texts and rec_scores
-            if (
-                isinstance(first_result, dict)
-                and "rec_texts" in first_result
-                and "rec_scores" in first_result
-            ):
-                if DEBUG_LOG:
-                    print("Using new PaddleOCR format")
-                try:
-                    rec_texts = first_result["rec_texts"]
-                    rec_scores = first_result["rec_scores"]
+                print(f"rec_texts type: {type(rec_texts)}, length: {len(rec_texts)}")
+                print(f"rec_scores type: {type(rec_scores)}, length: {len(rec_scores)}")
 
-                    if DEBUG_LOG:
-                        print(
-                            f"rec_texts type: {type(rec_texts)}, length: {len(rec_texts) if rec_texts else 0}"
-                        )
-                        print(
-                            f"rec_scores type: {type(rec_scores)}, length: {len(rec_scores) if rec_scores else 0}"
-                        )
+                # Extract text with confidence scores for debugging
+                text_with_confidence = []
+                if rec_texts and rec_scores:
+                    for i, (text, confidence) in enumerate(zip(rec_texts, rec_scores)):
+                        print(f"Processing item {i}: '{text}' (confidence: {confidence:.2f})")
 
-                    # Extract text with confidence scores for debugging
-                    text_with_confidence = []
-                    if rec_texts and rec_scores:
-                        for i, (text, confidence) in enumerate(
-                            zip(rec_texts, rec_scores)
-                        ):
-                            if DEBUG_LOG:
-                                print(
-                                    f"Processing item {i}: '{text}' (confidence: {confidence:.2f})"
-                                )
-                            # Only include text with reasonable confidence
-                            if confidence > 0.5:
-                                text_with_confidence.append(text)
-
-                    # Concatenate all detected text
-                    extracted_text = " ".join(text_with_confidence)
-                    return extracted_text
-                except Exception as new_format_error:
-                    if DEBUG_LOG:
-                        print(f"Error in new format processing: {new_format_error}")
-                    raise
-
-            # Handle the old format
-            elif isinstance(first_result, list):
-                if DEBUG_LOG:
-                    print("Using old PaddleOCR format")
-                try:
-                    text_with_confidence = []
-                    for i, line in enumerate(first_result):
-                        if DEBUG_LOG:
-                            print(
-                                f"Processing line {i}: {type(line)}, length: {len(line) if hasattr(line, '__len__') else 'No length'}"
-                            )
-
-                        if len(line) >= 2:
-                            bbox, text_info = line
-                            if isinstance(text_info, tuple) and len(text_info) >= 2:
-                                text, confidence = text_info
-                                if DEBUG_LOG:
-                                    print(
-                                        f"Detected: '{text}' (confidence: {confidence:.2f})"
-                                    )
-                                # Only include text with reasonable confidence
-                                if confidence > 0.5:
-                                    text_with_confidence.append(text)
-                except Exception as old_format_error:
-                    if DEBUG_LOG:
-                        print(f"Error in old format processing: {old_format_error}")
-                    raise
+                        # Only include text with reasonable confidence
+                        if confidence > 0.5:
+                            text_with_confidence.append(text)
 
                 # Concatenate all detected text
-                extracted_text = "\n".join(text_with_confidence)
+                extracted_text = " ".join(text_with_confidence)
                 return extracted_text
 
-        if DEBUG_LOG:
-            print("No text detected by OCR")
+            except Exception as new_format_error:
+                print(f"Error in new format processing: {new_format_error}")
+                raise
+
+        print("No text detected by OCR")
         return ""
     except Exception as e:
-        if DEBUG_LOG:
-            print(f"Error in process_frame: {str(e)}")
-            print(f"Error type: {type(e)}")
-            print(f"Result structure: {result}")
+        print(f"Error in process_frame: {e}")
+        print(f"Result structure: {result}")
         raise
 
 
@@ -166,16 +89,14 @@ def extract_info(text):
     Updated to remove specified keywords and months before processing.
     Handles names split across lines and formats uppercase names correctly.
     """
-    if DEBUG_LOG:
-        print(f"Processing text for extraction: '{text}'")
+    print(f"Processing text for extraction: '{text}'")
 
     # Define the excluded keywords, including months of the year
     excluded_keywords = r"(RMIT|Student|STUDENT|UNIVERSITY|SINH\sVIEN|January|February|March|April|May|June|July|August|September|October|November|December)"
 
     # Remove excluded keywords from the text
     cleaned_text = re.sub(excluded_keywords, "", text, flags=re.IGNORECASE)
-    if DEBUG_LOG:
-        print(f"Cleaned text: '{cleaned_text}'")
+    print(f"Cleaned text: '{cleaned_text}'")
 
     # Try multiple patterns for more flexibility
     patterns = [
@@ -192,8 +113,7 @@ def extract_info(text):
     for i, pattern in enumerate(patterns):
         match = re.search(pattern, cleaned_text, re.MULTILINE | re.DOTALL)
         if match:
-            if DEBUG_LOG:
-                print(f"Pattern {i+1} matched: {match.groups()}")
+            print(f"Pattern {i+1} matched: {match.groups()}")
             name, student_number = match.groups()
 
             # Clean and format the name
@@ -209,14 +129,10 @@ def extract_info(text):
 
             if formatted_name_parts and len(student_number) == 7:
                 formatted_name = " ".join(formatted_name_parts)
-                if DEBUG_LOG:
-                    print(
-                        f"Successfully extracted: name='{formatted_name}', student_number='{student_number}'"
-                    )
+                print(f"Successfully extracted: name='{formatted_name}', student_number='{student_number}'")
                 return formatted_name.strip(), student_number.strip()
 
-    if DEBUG_LOG:
-        print("No patterns matched")
+    print("No patterns matched")
     return None
 
 
@@ -244,8 +160,7 @@ async def capture(request: Request):
 
         # Decode the base64 image
         image_data = request.imageData.split(",")[1]
-        if DEBUG_LOG:
-            print(f"Base64 data length: {len(image_data)}")
+        print(f"Base64 data length: {len(image_data)}")
 
         nparr = np.frombuffer(base64.b64decode(image_data), np.uint8)
         frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
@@ -253,18 +168,15 @@ async def capture(request: Request):
         if frame is None:
             raise HTTPException(status_code=400, detail="Image could not be decoded")
 
-        if DEBUG_LOG:
-            print(f"Frame shape: {frame.shape}")
+        print(f"Frame shape: {frame.shape}")
 
         # Process the frame and extract text
         extracted_text = await process_frame(frame)
 
-        if DEBUG_LOG:
-            print(f"Extracted text: {extracted_text}")
+        print(f"Extracted text: {extracted_text}")
 
         info = extract_info(extracted_text)
-        if DEBUG_LOG:
-            print(f"Extracted info: {info}")
+        print(f"Extracted info: {info}")
 
         if info:
             name, student_number = info
