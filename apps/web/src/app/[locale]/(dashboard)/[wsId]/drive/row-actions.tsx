@@ -191,40 +191,38 @@ export function StorageObjectRowActions({ wsId, row, path = '' }: Props) {
   };
 
   return (
-    <>
-      <DropdownMenu modal={false}>
-        <DropdownMenuTrigger asChild>
-          <Button
-            variant="ghost"
-            className="flex h-8 w-8 p-0 data-[state=open]:bg-muted"
-          >
-            <Ellipsis className="h-4 w-4" />
-            <span className="sr-only">Open menu</span>
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-[160px]">
-          <DropdownMenuItem
-            onClick={storageObj.id ? renameStorageObject : renameStorageFolder}
-          >
-            {t('common.rename')}
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          {storageObj.id && (
-            // only allows rename & download on onject
-            <>
-              <DropdownMenuItem onClick={downloadStorageObject}>
-                {t('common.download')}
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-            </>
-          )}
-          <DropdownMenuItem
-            onClick={storageObj.id ? deleteStorageObject : deleteStorageFolder}
-          >
-            {t('common.delete')}
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    </>
+    <DropdownMenu modal={false}>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="ghost"
+          className="flex h-8 w-8 p-0 data-[state=open]:bg-muted"
+        >
+          <Ellipsis className="h-4 w-4" />
+          <span className="sr-only">Open menu</span>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-[160px]">
+        <DropdownMenuItem
+          onClick={storageObj.id ? renameStorageObject : renameStorageFolder}
+        >
+          {t('common.rename')}
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        {storageObj.id && (
+          // only allows rename & download on onject
+          <>
+            <DropdownMenuItem onClick={downloadStorageObject}>
+              {t('common.download')}
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+          </>
+        )}
+        <DropdownMenuItem
+          onClick={storageObj.id ? deleteStorageObject : deleteStorageFolder}
+        >
+          {t('common.delete')}
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }

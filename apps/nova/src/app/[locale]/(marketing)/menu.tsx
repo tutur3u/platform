@@ -179,11 +179,9 @@ const Menu: React.FC<MenuProps> = ({ sbUser, user }) => {
   const t = useTranslations();
 
   return (
-    <>
-      <div className="flex gap-2 md:hidden">
-        <MobileMenu sbUser={sbUser} user={user} t={t} />
-      </div>
-    </>
+    <div className="flex gap-2 md:hidden">
+      <MobileMenu sbUser={sbUser} user={user} t={t} />
+    </div>
   );
 };
 

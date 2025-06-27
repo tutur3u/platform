@@ -175,264 +175,262 @@ export default function UserForm({ wsId, data, onFinish }: Props) {
   const name = form.watch('display_name') || form.watch('full_name');
 
   return (
-    <>
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-3">
-          <ScrollArea className="grid h-[50vh] gap-3 border-b">
-            {data?.id && (
-              <>
-                <FormField
-                  control={form.control}
-                  name="id"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>User ID</FormLabel>
-                      <FormControl>
-                        <Input {...field} disabled />
-                      </FormControl>
-                      <FormMessage />
-                      <FormDescription>
-                        The identification number of this user in your
-                        workspace. This is automatically managed by Tuturuuu,
-                        and cannot be changed.
-                      </FormDescription>
-                    </FormItem>
-                  )}
-                />
-                <Separator />
-              </>
-            )}
-
-            <div className="flex items-center gap-2 rounded-md border p-4">
-              <Avatar>
-                <AvatarImage src={previewSrc || data?.avatar_url || ''} />
-                <AvatarFallback className="font-semibold">
-                  {name ? getInitials(name) : <UserIcon className="h-5 w-5" />}
-                </AvatarFallback>
-              </Avatar>
-
-              <div>
-                <Button variant="ghost" type="button" className="mt-2">
-                  <label htmlFor="file-upload" className="cursor-pointer">
-                    {previewSrc
-                      ? t('settings-account.new_avatar')
-                      : t('settings-account.upload_avatar')}
-                  </label>
-                </Button>
-                <input
-                  id="file-upload"
-                  type="file"
-                  accept="image/png,image/jpeg,image/jpg,image/webp"
-                  onChange={(e) => {
-                    if (e.target.files?.[0]) {
-                      handleFileSelect(e.target.files[0]);
-                    }
-                  }}
-                  className="hidden"
-                />
-                {previewSrc && (
-                  <Button variant="destructive" onClick={removeAvatar}>
-                    {saving ? (
-                      <Loader2 className="h-5 w-5 animate-spin" />
-                    ) : (
-                      t('settings-account.remove_avatar')
-                    )}
-                  </Button>
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-3">
+        <ScrollArea className="grid h-[50vh] gap-3 border-b">
+          {data?.id && (
+            <>
+              <FormField
+                control={form.control}
+                name="id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>User ID</FormLabel>
+                    <FormControl>
+                      <Input {...field} disabled />
+                    </FormControl>
+                    <FormMessage />
+                    <FormDescription>
+                      The identification number of this user in your workspace.
+                      This is automatically managed by Tuturuuu, and cannot be
+                      changed.
+                    </FormDescription>
+                  </FormItem>
                 )}
-              </div>
+              />
+              <Separator />
+            </>
+          )}
+
+          <div className="flex items-center gap-2 rounded-md border p-4">
+            <Avatar>
+              <AvatarImage src={previewSrc || data?.avatar_url || ''} />
+              <AvatarFallback className="font-semibold">
+                {name ? getInitials(name) : <UserIcon className="h-5 w-5" />}
+              </AvatarFallback>
+            </Avatar>
+
+            <div>
+              <Button variant="ghost" type="button" className="mt-2">
+                <label htmlFor="file-upload" className="cursor-pointer">
+                  {previewSrc
+                    ? t('settings-account.new_avatar')
+                    : t('settings-account.upload_avatar')}
+                </label>
+              </Button>
+              <input
+                id="file-upload"
+                type="file"
+                accept="image/png,image/jpeg,image/jpg,image/webp"
+                onChange={(e) => {
+                  if (e.target.files?.[0]) {
+                    handleFileSelect(e.target.files[0]);
+                  }
+                }}
+                className="hidden"
+              />
+              {previewSrc && (
+                <Button variant="destructive" onClick={removeAvatar}>
+                  {saving ? (
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                  ) : (
+                    t('settings-account.remove_avatar')
+                  )}
+                </Button>
+              )}
             </div>
-
-            <FormField
-              control={form.control}
-              name="full_name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Full Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="John Doe" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                  <FormDescription>The real name of this user.</FormDescription>
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="display_name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Display Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="John Doe" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                  <FormDescription>
-                    This name will be displayed everywhere in the current
-                    workspace for this user.
-                  </FormDescription>
-                </FormItem>
-              )}
-            />
-
-            <Separator />
-
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email</FormLabel>
-                  <FormControl>
-                    <Input placeholder="example@tuturuuu.com" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="phone"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Phone Number</FormLabel>
-                  <FormControl>
-                    <Input placeholder="+123456789" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <Separator />
-
-            <FormField
-              control={form.control}
-              name="gender"
-              render={({ field }) => (
-                <FormItem className="w-full">
-                  <FormLabel>Gender</FormLabel>
-                  <FormControl>
-                    <SelectField
-                      id="gender"
-                      placeholder="Please select a gender"
-                      defaultValue={field.value}
-                      onValueChange={field.onChange}
-                      options={[
-                        { value: 'MALE', label: 'Male' },
-                        { value: 'FEMALE', label: 'Female' },
-                        { value: 'OTHER', label: 'Other' },
-                      ]}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="birthday"
-              render={({ field }) => (
-                <FormItem className="grid w-full">
-                  <FormLabel>Birthday</FormLabel>
-                  <FormControl>
-                    <DatePicker
-                      defaultValue={
-                        field.value ? dayjs(field.value).toDate() : undefined
-                      }
-                      onValueChange={field.onChange}
-                      className="w-full"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <Separator />
-
-            <FormField
-              control={form.control}
-              name="national_id"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>National ID</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Empty" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="ethnicity"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Ethnicity</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Empty" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="guardian"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Guardian</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Empty" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="address"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Address</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Empty" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <Separator />
-
-            <FormField
-              control={form.control}
-              name="note"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Notes</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Empty" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </ScrollArea>
-
-          <div className="flex justify-center gap-2">
-            <Button type="submit" className="w-full">
-              Save changes
-            </Button>
           </div>
-        </form>
-      </Form>
-    </>
+
+          <FormField
+            control={form.control}
+            name="full_name"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Full Name</FormLabel>
+                <FormControl>
+                  <Input placeholder="John Doe" {...field} />
+                </FormControl>
+                <FormMessage />
+                <FormDescription>The real name of this user.</FormDescription>
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="display_name"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Display Name</FormLabel>
+                <FormControl>
+                  <Input placeholder="John Doe" {...field} />
+                </FormControl>
+                <FormMessage />
+                <FormDescription>
+                  This name will be displayed everywhere in the current
+                  workspace for this user.
+                </FormDescription>
+              </FormItem>
+            )}
+          />
+
+          <Separator />
+
+          <FormField
+            control={form.control}
+            name="email"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Email</FormLabel>
+                <FormControl>
+                  <Input placeholder="example@tuturuuu.com" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="phone"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Phone Number</FormLabel>
+                <FormControl>
+                  <Input placeholder="+123456789" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <Separator />
+
+          <FormField
+            control={form.control}
+            name="gender"
+            render={({ field }) => (
+              <FormItem className="w-full">
+                <FormLabel>Gender</FormLabel>
+                <FormControl>
+                  <SelectField
+                    id="gender"
+                    placeholder="Please select a gender"
+                    defaultValue={field.value}
+                    onValueChange={field.onChange}
+                    options={[
+                      { value: 'MALE', label: 'Male' },
+                      { value: 'FEMALE', label: 'Female' },
+                      { value: 'OTHER', label: 'Other' },
+                    ]}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="birthday"
+            render={({ field }) => (
+              <FormItem className="grid w-full">
+                <FormLabel>Birthday</FormLabel>
+                <FormControl>
+                  <DatePicker
+                    defaultValue={
+                      field.value ? dayjs(field.value).toDate() : undefined
+                    }
+                    onValueChange={field.onChange}
+                    className="w-full"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <Separator />
+
+          <FormField
+            control={form.control}
+            name="national_id"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>National ID</FormLabel>
+                <FormControl>
+                  <Input placeholder="Empty" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="ethnicity"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Ethnicity</FormLabel>
+                <FormControl>
+                  <Input placeholder="Empty" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="guardian"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Guardian</FormLabel>
+                <FormControl>
+                  <Input placeholder="Empty" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="address"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Address</FormLabel>
+                <FormControl>
+                  <Input placeholder="Empty" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <Separator />
+
+          <FormField
+            control={form.control}
+            name="note"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Notes</FormLabel>
+                <FormControl>
+                  <Input placeholder="Empty" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </ScrollArea>
+
+        <div className="flex justify-center gap-2">
+          <Button type="submit" className="w-full">
+            Save changes
+          </Button>
+        </div>
+      </form>
+    </Form>
   );
 }

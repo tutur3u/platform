@@ -49,49 +49,47 @@ export default async function WorkspaceCoursesPage({
   }));
 
   return (
-    <>
-      <div className="p-4">
-        <FeatureSummary
-          pluralTitle={t('ws-courses.plural')}
-          singularTitle={t('ws-courses.singular')}
-          description={t('ws-courses.description')}
-          createTitle={t('ws-courses.create')}
-          createDescription={t('ws-courses.create_description')}
-          form={<CourseForm wsId={wsId} enableCerts={true} />}
-        />
-        <Separator className="my-4" />
+    <div className="p-4">
+      <FeatureSummary
+        pluralTitle={t('ws-courses.plural')}
+        singularTitle={t('ws-courses.singular')}
+        description={t('ws-courses.description')}
+        createTitle={t('ws-courses.create')}
+        createDescription={t('ws-courses.create_description')}
+        form={<CourseForm wsId={wsId} enableCerts={true} />}
+      />
+      <Separator className="my-4" />
 
-        <div className="mb-4 flex justify-end">
-          <ViewToggle currentView={currentView} />
-        </div>
-
-        {currentView === 'card' ? (
-          <>
-            <CourseCardView courses={courses} />
-            <div className="mt-8">
-              <CoursePagination
-                currentPage={currentPage}
-                totalPages={totalPages}
-                totalCount={count}
-                pageSize={currentPageSize}
-                wsId={wsId}
-              />
-            </div>
-          </>
-        ) : (
-          <CustomDataTable
-            data={courses}
-            columnGenerator={getWorkspaceCourseColumns}
-            namespace="course-data-table"
-            count={count}
-            defaultVisibility={{
-              id: false,
-              created_at: false,
-            }}
-          />
-        )}
+      <div className="mb-4 flex justify-end">
+        <ViewToggle currentView={currentView} />
       </div>
-    </>
+
+      {currentView === 'card' ? (
+        <>
+          <CourseCardView courses={courses} />
+          <div className="mt-8">
+            <CoursePagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalCount={count}
+              pageSize={currentPageSize}
+              wsId={wsId}
+            />
+          </div>
+        </>
+      ) : (
+        <CustomDataTable
+          data={courses}
+          columnGenerator={getWorkspaceCourseColumns}
+          namespace="course-data-table"
+          count={count}
+          defaultVisibility={{
+            id: false,
+            created_at: false,
+          }}
+        />
+      )}
+    </div>
   );
 }
 

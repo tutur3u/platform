@@ -29,9 +29,9 @@
     "trigger:deploy": "bun run --filter @tuturuuu/trigger trigger:deploy",
     "test": "turbo run test",
     "test:watch": "turbo run test:watch",
-    "format-and-lint": "biome check",
-    "format-and-lint:fix": "biome check --write",
-    "format-and-lint:ci": "biome ci",
+    "biome": "biome check",
+    "biome:fix": "biome check --write",
+    "biome:ci": "biome ci",
     "stop": "cd apps/db && bun sb:stop",
     "diff": "cd apps/db && bun sb:diff",
     "typegen": "cd apps/db && bun sb:typegen",
@@ -56,7 +56,7 @@
     "react-scan": "^0.3.4"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.0.5",
+    "@biomejs/biome": "^2.0.6",
     "@tuturuuu/typescript-config": "workspace:*",
     "@vitest/coverage-v8": "^3.2.4",
     "concurrently": "^9.2.0",

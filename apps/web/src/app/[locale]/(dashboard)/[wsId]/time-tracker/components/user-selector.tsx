@@ -13,7 +13,7 @@ import {
 import { Check, ChevronDown, Loader2, Users } from '@tuturuuu/ui/icons';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { cn } from '@tuturuuu/utils/format';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 interface WorkspaceUser {
   id: string;
@@ -52,7 +52,11 @@ export function UserSelector({
       try {
         const response = await apiCall(`/api/v1/workspaces/${wsId}/members`);
         console.log('response', response);
-        setUsers(Array.isArray(response) ? response : response.data || []);
+        setUsers(
+          Array.isArray(response)
+            ? response
+            : (response as { data: WorkspaceUser[] }).data || []
+        );
       } catch (error) {
         console.error('Error fetching workspace users:', error);
         setError(
@@ -98,8 +102,6 @@ export function UserSelector({
       <PopoverTrigger asChild>
         <Button
           variant="outline"
-          // biome-ignore lint/a11y/useSemanticElements: This is a custom combobox component built with shadcn/ui, role="combobox" is correct for accessibility.
-          role="combobox"
           aria-expanded={open}
           className={cn(
             'min-w-[200px] justify-between transition-all hover:shadow-sm',

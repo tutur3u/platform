@@ -51,7 +51,7 @@ jobs:
         run: |
           # Capture biome output and exit code
           set +e
-          biome_output=$(bun format-and-lint:ci 2>&1)
+          biome_output=$(bun biome:ci 2>&1)
           biome_exit_code=$?
           set -e
           
@@ -181,7 +181,7 @@ jobs:
               const totalStatus = totalIssues > 0 ? '📊 See details above' : '🎯 Perfect!';
               
               const nextSteps = remainingIssues > 0 ? 
-                '### 🛠️ Next Steps\n\nRun the following command to fix issues:\n```bash\nbun format-and-lint:fix\n```\nThen commit and push the changes.' : 
+                '### 🛠️ Next Steps\n\nRun the following command to fix issues:\n```bash\nbun biome:fix\n```\nThen commit and push the changes.' : 
                 '### 🎉 All Issues Resolved!\n\nYour code is now **100% clean**! Great job! 🏆';
               
               const timestamp = new Date().toLocaleString();
@@ -246,5 +246,5 @@ jobs:
           echo "- Errors: ${{ steps.biome-check.outputs.errors }}"
           echo "- Warnings: ${{ steps.biome-check.outputs.warnings }}"
           echo ""
-          echo "Please run 'bun format-and-lint:fix' to fix the issues and commit the changes."
+          echo "Please run 'bun biome:fix' to fix the issues and commit the changes."
           exit 1
