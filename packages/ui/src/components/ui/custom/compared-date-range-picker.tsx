@@ -1,7 +1,6 @@
 'use client';
 
-import { cn } from '@tuturuuu/utils/format';
-import { Check, ChevronDown, ChevronUp } from 'lucide-react';
+import { ChevronDown, ChevronUp } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button } from '../button';
 import { Calendar } from '../calendar';
@@ -16,6 +15,7 @@ import {
 } from '../select';
 import { Switch } from '../switch';
 import { DateInput } from './date-input';
+import { PresetButton } from './date-range-preset-button';
 
 interface ComparedDateRangePickerProps {
   /** Click handler for applying the updates from DateRangePicker. */
@@ -55,6 +55,9 @@ const getDateAdjustedForTimezone = (dateInput: Date | string): Date => {
     }
     // Create a new Date object using the local timezone
     // Note: Month is 0-indexed, so subtract 1 from the month part
+    if (parts[0] == null || parts[1] == null || parts[2] == null) {
+      throw new Error('Invalid date string format');
+    }
     const date = new Date(parts[0], parts[1] - 1, parts[2]);
     return date;
   } else {
@@ -141,7 +144,7 @@ export const ComparedDateRangePicker = ({
     };
   }, []);
 
-  const getPresetRange = (presetName: string): DateRange => {
+  const getPresetRange = useCallback((presetName: string): DateRange => {
     const preset = PRESETS.find(({ name }) => name === presetName);
     if (!preset) throw new Error(`Unknown date range preset: ${presetName}`);
     const from = new Date();
@@ -200,7 +203,7 @@ export const ComparedDateRangePicker = ({
     }
 
     return { from, to };
-  };
+  }, []);
 
   const setPreset = (preset: string): void => {
     const range = getPresetRange(preset);
@@ -222,34 +225,6 @@ export const ComparedDateRangePicker = ({
       };
       setRangeCompare(rangeCompare);
     }
-  };
-
-  const _checkPreset = (): void => {
-    for (const preset of PRESETS) {
-      const presetRange = getPresetRange(preset.name);
-
-      const normalizedRangeFrom = new Date(range.from);
-      normalizedRangeFrom.setHours(0, 0, 0, 0);
-      const normalizedPresetFrom = new Date(
-        presetRange.from.setHours(0, 0, 0, 0)
-      );
-
-      const normalizedRangeTo = new Date(range.to ?? 0);
-      normalizedRangeTo.setHours(0, 0, 0, 0);
-      const normalizedPresetTo = new Date(
-        presetRange.to?.setHours(0, 0, 0, 0) ?? 0
-      );
-
-      if (
-        normalizedRangeFrom.getTime() === normalizedPresetFrom.getTime() &&
-        normalizedRangeTo.getTime() === normalizedPresetTo.getTime()
-      ) {
-        setSelectedPreset(preset.name);
-        return;
-      }
-    }
-
-    setSelectedPreset(undefined);
   };
 
   const resetValues = (): void => {
@@ -284,31 +259,6 @@ export const ComparedDateRangePicker = ({
         : undefined
     );
   };
-
-  const PresetButton = ({
-    preset,
-    label,
-    isSelected,
-    setPreset,
-  }: {
-    preset: string;
-    label: string;
-    isSelected: boolean;
-    setPreset: (preset: string) => void;
-  }): React.ReactNode => (
-    <Button
-      className={cn(isSelected && 'pointer-events-none')}
-      variant="ghost"
-      onClick={() => {
-        setPreset(preset);
-      }}
-    >
-      <span className={cn('pr-2 opacity-0', isSelected && 'opacity-70')}>
-        <Check width={18} height={18} />
-      </span>
-      {label}
-    </Button>
-  );
 
   const checkPreset = useCallback((): void => {
     for (const preset of PRESETS) {
@@ -430,7 +380,6 @@ export const ComparedDateRangePicker = ({
                           setRangeCompare(undefined);
                         }
                       }}
-                      id="compare-mode"
                     />
                     <Label htmlFor="compare-mode">Compare</Label>
                   </div>
@@ -555,6 +504,7 @@ export const ComparedDateRangePicker = ({
                     preset={preset.name}
                     label={preset.label}
                     isSelected={selectedPreset === preset.name}
+                    setPreset={setPreset}
                   />
                 ))}
               </div>

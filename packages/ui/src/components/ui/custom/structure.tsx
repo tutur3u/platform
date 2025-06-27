@@ -38,14 +38,8 @@ export function Structure({
 }: StructureProps) {
   return (
     <>
-      <nav
-        id="navbar"
-        className="fixed inset-x-0 top-0 z-30 max-sm:border-b md:hidden"
-      >
-        <div
-          id="navbar-content"
-          className="bg-background/50 px-4 py-2 font-semibold backdrop-blur-md md:px-8 lg:px-16 xl:px-32"
-        >
+      <nav className="fixed inset-x-0 top-0 z-30 max-sm:border-b md:hidden">
+        <div className="bg-background/50 px-4 py-2 font-semibold backdrop-blur-md md:px-8 lg:px-16 xl:px-32">
           <div className="relative flex items-center justify-between gap-2 md:gap-4">
             <div className="flex w-full items-center gap-2">{mobileHeader}</div>
             <div className="flex w-fit items-center gap-2">
@@ -145,7 +139,6 @@ export function Structure({
           {/* Main content area - overflow-y-auto removed to prevent double scrollbars */}
           {/* Body element now handles page-level scrolling */}
           <main
-            id="main-content"
             className={cn(
               'relative flex h-full min-h-screen flex-col overflow-x-hidden transition-all duration-300 ease-in-out',
               isCollapsed ? 'md:pl-16' : 'md:pl-72'

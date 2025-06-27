@@ -99,12 +99,7 @@ export default function MonthPicker({
             <ChevronLeft className="h-4 w-4" />
           </Button>
 
-          <div
-            className="text-sm font-medium"
-            aria-live="polite"
-            role="presentation"
-            id="month-picker"
-          >
+          <div className="text-sm font-medium">
             {format(firstDayCurrentYear, 'yyyy')}
           </div>
 
@@ -122,11 +117,7 @@ export default function MonthPicker({
           </Button>
         </div>
 
-        <div
-          className="grid w-full grid-cols-3 gap-2"
-          role="grid"
-          aria-labelledby="month-picker"
-        >
+        <div className="grid w-full grid-cols-3 gap-2">
           {months.map((month) => (
             <div
               key={month.toString()}
