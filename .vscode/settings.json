@@ -48,7 +48,7 @@
     "editor.defaultFormatter": "biomejs.biome"
   },
   "[typescriptreact]": {
-    "editor.defaultFormatter": "esbenp.prettier-vscode"
+    "editor.defaultFormatter": "biomejs.biome"
   },
   "codeQL.githubDatabase.update": "never",
   "codeQL.githubDatabase.download": "never",
