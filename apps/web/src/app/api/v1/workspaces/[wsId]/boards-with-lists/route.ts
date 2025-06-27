@@ -1,12 +1,11 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { type NextRequest, NextResponse } from 'next/server';
 
 interface WorkspaceParams {
   wsId: string;
 }
 
-// UUID validation regex (accepts UUID v4 format or the special root workspace nil UUID)
+// UUID validation regex (accepts any valid UUID format including nil UUID)
 const UUID_REGEX = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
 
 export async function GET(
@@ -24,8 +23,8 @@ export async function GET(
       );
     }
 
-    // Validate UUID format (allow root workspace or valid UUID)
-    if (!UUID_REGEX.test(wsId) && wsId !== ROOT_WORKSPACE_ID) {
+    // Validate UUID format
+    if (!UUID_REGEX.test(wsId)) {
       return NextResponse.json(
         { error: 'Invalid workspace ID format' },
         { status: 400 }
