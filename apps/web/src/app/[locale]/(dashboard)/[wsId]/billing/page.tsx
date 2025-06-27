@@ -3,7 +3,6 @@ import { ROOT_WORKSPACE_ID } from "@tuturuuu/utils/constants";
 import { createPolarClient } from "@/lib/polar";
 import { BillingClient } from "./billing-client";
 import BillingHistory from "./billing-history";
-import { useTranslations } from "next-intl";
 import { checkTuturuuuAdmin } from "@tuturuuu/utils/workspace-helper";
 const fetchProducts = async ({
   wsId,
