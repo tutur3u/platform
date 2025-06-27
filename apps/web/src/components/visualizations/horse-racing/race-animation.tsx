@@ -29,8 +29,8 @@ export function RaceAnimation({
   useEffect(() => {
     // Extract the horses that will race
     const racingHorses = raceHorses
-      .map((id) => horses.find((horse) => horse.id === id)!)
-      .filter(Boolean);
+      .map((id) => horses.find((horse) => horse.id === id))
+      .filter((horse): horse is Horse => Boolean(horse));
 
     // Sort by speed (fastest first - lower speed value is faster)
     const sortedResults = [...racingHorses]

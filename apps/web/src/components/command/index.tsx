@@ -43,6 +43,16 @@ export function CommandPalette({
 
   const boards = boardsData?.boards || [];
 
+  // Navigation handlers
+  const handleBack = React.useCallback(() => {
+    setIsTransitioning(true);
+    setInputValue('');
+    setTimeout(() => {
+      setPage('root');
+      setIsTransitioning(false);
+    }, 150);
+  }, []);
+
   // Reset state when modal closes
   React.useEffect(() => {
     if (!open) {
@@ -110,16 +120,6 @@ export function CommandPalette({
     return () =>
       document.removeEventListener('keydown', down, { capture: true });
   }, [setOpen, page, open, inputValue, handleBack]);
-
-  // Navigation handlers
-  const handleBack = React.useCallback(() => {
-    setIsTransitioning(true);
-    setInputValue('');
-    setTimeout(() => {
-      setPage('root');
-      setIsTransitioning(false);
-    }, 150);
-  }, []);
 
   const handlePageChange = React.useCallback((newPage: string) => {
     setIsTransitioning(true);

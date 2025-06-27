@@ -29,7 +29,7 @@ export const CalendarContent = ({
   externalState,
   extras,
 }: {
-  t: any;
+  t: (key: string) => string;
   locale: string;
   disabled?: boolean;
   workspace?: Workspace;

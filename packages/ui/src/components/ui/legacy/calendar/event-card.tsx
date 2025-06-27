@@ -54,6 +54,7 @@ interface EventCardProps {
 }
 
 export function EventCard({ dates, event, level = 0 }: EventCardProps) {
+  const { settings } = useCalendar();
   const {
     id,
     title,
@@ -72,8 +73,7 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
   const overlapCount = _overlapCount || 1;
   const overlapGroup = _overlapGroup || [id];
 
-  const { updateEvent, hideModal, openModal, deleteEvent, settings } =
-    useCalendar();
+  const { updateEvent, hideModal, openModal, deleteEvent } = useCalendar();
   const tz = settings?.timezone?.timezone;
 
   // Local state for immediate UI updates
@@ -134,7 +134,7 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
   const statusTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Show temporary status feedback
-  const showStatusFeedback = (status: 'success' | 'error') => {
+  const showStatusFeedback = useCallback((status: 'success' | 'error') => {
     setUpdateStatus(status);
 
     // Clear any existing timeout
@@ -158,12 +158,15 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
         statusTimeoutRef.current = null;
       }
     }, 1500);
-  };
+  }, []);
 
   // Batch visual state updates to reduce renders
-  const updateVisualState = (updates: Partial<typeof visualState>) => {
-    setVisualState((prev) => ({ ...prev, ...updates }));
-  };
+  const updateVisualState = useCallback(
+    (updates: Partial<typeof visualState>) => {
+      setVisualState((prev) => ({ ...prev, ...updates }));
+    },
+    []
+  );
 
   // Debounced update function to reduce API calls
   const updateTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -173,55 +176,58 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
   } | null>(null);
 
   // Schedule a throttled update
-  const scheduleUpdate = (updateData: { start_at: string; end_at: string }) => {
-    // For multi-day events, we need to update the original event
-    const eventId = event._originalId || id;
+  const scheduleUpdate = useCallback(
+    (updateData: { start_at: string; end_at: string }) => {
+      // For multi-day events, we need to update the original event
+      const eventId = event._originalId || id;
 
-    // Store the latest update data
-    pendingUpdateRef.current = updateData;
-    syncPendingRef.current = true;
+      // Store the latest update data
+      pendingUpdateRef.current = updateData;
+      syncPendingRef.current = true;
 
-    // Immediately update local event data for UI rendering
-    setLocalEvent((prev) => ({
-      ...prev,
-      ...updateData,
-    }));
+      // Immediately update local event data for UI rendering
+      setLocalEvent((prev) => ({
+        ...prev,
+        ...updateData,
+      }));
 
-    // Show syncing state immediately
-    setIsSyncing(true);
-    setUpdateStatus('syncing');
+      // Show syncing state immediately
+      setIsSyncing(true);
+      setUpdateStatus('syncing');
 
-    // Only start a new timer if there isn't one already
-    if (!updateTimeoutRef.current) {
-      updateTimeoutRef.current = setTimeout(() => {
-        if (pendingUpdateRef.current) {
-          updateEvent(eventId, pendingUpdateRef.current)
-            .then(() => {
-              showStatusFeedback('success');
-            })
-            .catch((error) => {
-              console.error('Failed to update event:', error);
-              showStatusFeedback('error');
+      // Only start a new timer if there isn't one already
+      if (!updateTimeoutRef.current) {
+        updateTimeoutRef.current = setTimeout(() => {
+          if (pendingUpdateRef.current) {
+            updateEvent(eventId, pendingUpdateRef.current)
+              .then(() => {
+                showStatusFeedback('success');
+              })
+              .catch((error) => {
+                console.error('Failed to update event:', error);
+                showStatusFeedback('error');
 
-              // Revert to original data on error
-              setLocalEvent(event);
-            })
-            .finally(() => {
-              syncPendingRef.current = false;
-              setTimeout(() => {
-                if (!syncPendingRef.current) {
-                  setIsSyncing(false);
-                }
-              }, 300);
-            });
+                // Revert to original data on error
+                setLocalEvent(event);
+              })
+              .finally(() => {
+                syncPendingRef.current = false;
+                setTimeout(() => {
+                  if (!syncPendingRef.current) {
+                    setIsSyncing(false);
+                  }
+                }, 300);
+              });
 
-          pendingUpdateRef.current = null;
-        }
+            pendingUpdateRef.current = null;
+          }
 
-        updateTimeoutRef.current = null;
-      }, 250); // Throttle to once every 250ms
-    }
-  };
+          updateTimeoutRef.current = null;
+        }, 250); // Throttle to once every 250ms
+      }
+    },
+    [event._originalId, id, updateEvent, showStatusFeedback, setLocalEvent]
+  );
 
   // Clean up any pending updates
   useEffect(() => {
@@ -850,16 +856,21 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
   const showEndIndicator = _isMultiDay && _dayPosition !== 'end';
 
   // Format time for display
-  const formatEventTime = (date: Date | dayjs.Dayjs) => {
-    const { settings } = useCalendar();
-    const timeFormat = settings.appearance.timeFormat;
-    const d = dayjs.isDayjs(date)
-      ? date
-      : tz === 'auto'
-        ? dayjs(date)
-        : dayjs(date).tz(tz);
-    return d.format(timeFormat === '24h' ? 'HH:mm' : 'h:mm a');
-  };
+  const formatEventTime = useCallback(
+    (
+      date: Date | dayjs.Dayjs,
+      settings: ReturnType<typeof useCalendar>['settings']
+    ) => {
+      const timeFormat = settings.appearance.timeFormat;
+      const d = dayjs.isDayjs(date)
+        ? date
+        : tz === 'auto'
+          ? dayjs(date)
+          : dayjs(date).tz(tz);
+      return d.format(timeFormat === '24h' ? 'HH:mm' : 'h:mm a');
+    },
+    [tz, settings]
+  );
 
   // Check if the event is in the past
   const isPastEvent = new Date(end_at) < new Date();
@@ -1073,13 +1084,14 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
                 <div className="mt-1 flex items-center text-xs opacity-80">
                   {_isMultiDay ? (
                     _dayPosition === 'start' ? (
-                      <span>Starts {formatEventTime(startDate)}</span>
+                      <span>Starts {formatEventTime(startDate, settings)}</span>
                     ) : (
-                      <span>Ends {formatEventTime(endDate)}</span>
+                      <span>Ends {formatEventTime(endDate, settings)}</span>
                     )
                   ) : (
                     <span>
-                      {formatEventTime(startDate)} - {formatEventTime(endDate)}
+                      {formatEventTime(startDate, settings)} -{' '}
+                      {formatEventTime(endDate, settings)}
                     </span>
                   )}
                 </div>

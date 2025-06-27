@@ -46,7 +46,7 @@ export function Navigation({
   const pathname = usePathname();
   const isRootWorkspace = currentWsId === ROOT_WORKSPACE_ID;
 
-  const scrollActiveLinksIntoView = () => {
+  const scrollActiveLinksIntoView = useCallback(() => {
     const activeWorkspaceLink = document.getElementById('active-ws-navlink');
     const activeLink = document.getElementById('active-navlink');
 
@@ -67,7 +67,7 @@ export function Navigation({
         })
       );
     }
-  };
+  }, []);
 
   const [urlToLoad, setUrlToLoad] = useState<string>();
 

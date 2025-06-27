@@ -43,8 +43,6 @@ export function ChatModelSelector({
       <PopoverTrigger asChild>
         <Button
           variant="outline"
-          role="combobox"
-          aria-expanded={open}
           className={cn('flex w-full', className)}
           disabled={open}
         >
