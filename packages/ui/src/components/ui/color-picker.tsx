@@ -95,7 +95,7 @@ export function ensureVisibleColor(
       v /= 255;
       return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
     });
-    return 0.2126 * a[0]! + 0.7152 * a[1]! + 0.0722 * a[2]!;
+    return 0.2126 * a[0] + 0.7152 * a[1] + 0.0722 * a[2];
   };
 
   const getContrastRatio = (l1: number, l2: number) => {
@@ -118,7 +118,7 @@ export function ensureVisibleColor(
   };
 
   const [r, g, b] = parseColor(color);
-  const luminance = getLuminance(r!, g!, b!);
+  const luminance = getLuminance(r, g, b);
   const backgroundLuminance = theme === 'light' ? 1 : 0;
   const contrastRatio = getContrastRatio(luminance, backgroundLuminance);
 
@@ -127,9 +127,9 @@ export function ensureVisibleColor(
   let factor = 0;
   while (contrastRatio < minimumContrastRatio) {
     factor += theme === 'light' ? -10 : 10;
-    const adjustedColor = adjustColor(r!, g!, b!, factor);
+    const adjustedColor = adjustColor(r, g, b, factor);
     const [newR, newG, newB] = parseColor(adjustedColor);
-    const newLuminance = getLuminance(newR!, newG!, newB!);
+    const newLuminance = getLuminance(newR, newG, newB);
     const newContrastRatio = getContrastRatio(
       newLuminance,
       backgroundLuminance

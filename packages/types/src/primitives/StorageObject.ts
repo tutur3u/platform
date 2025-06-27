@@ -11,7 +11,7 @@ export interface StorageObject {
   updated_at?: string;
   last_accessed_at?: string;
   // metadata has eTag, size, mimeType, and other metadata
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   path_tokens?: string[];
   version?: string;
 }

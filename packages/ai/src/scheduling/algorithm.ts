@@ -241,7 +241,7 @@ export const scheduleTasks = (
           scheduledEvents
         );
         // Try to find a slot before the deadline first
-        let slot;
+        let slot: DateRange | undefined;
         if (task.deadline) {
           slot = availableSlots.find(
             (slot) =>

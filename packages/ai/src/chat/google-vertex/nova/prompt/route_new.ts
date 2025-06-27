@@ -715,9 +715,13 @@ async function performCriteriaEvaluation(ctx: {
 
     // Validate that all criteria evaluations have valid IDs
     if (object.criteriaEvaluation) {
-      const criteriaIdsInContext = new Set(ctx.criteria.map((c: any) => c.id));
+      const criteriaIdsInContext = new Set(ctx.criteria.map((c) => c.id));
       const missingIds = object.criteriaEvaluation.filter(
-        (ce: any) => !criteriaIdsInContext.has(ce.id)
+        (
+          ce: z.infer<
+            typeof CriteriaEvaluationSchema
+          >['criteriaEvaluation'][number]
+        ) => !criteriaIdsInContext.has(ce.id)
       );
 
       if (missingIds.length > 0) {
@@ -791,10 +795,10 @@ async function performTestCaseEvaluation(ctx: {
     // Validate that all test case evaluations have valid IDs
     if (object && Array.isArray(object)) {
       const testCaseIdsInContext = new Set(
-        ctx.testCaseInputs.map((tc: any) => tc.id)
+        ctx.testCaseInputs.map((tc: NovaProblemTestCase) => tc.id)
       );
       const missingIds = object.filter(
-        (tc: any) => !testCaseIdsInContext.has(tc.id)
+        (tc: NovaProblemTestCase) => !testCaseIdsInContext.has(tc.id)
       );
 
       if (missingIds.length > 0) {
@@ -970,7 +974,9 @@ function processCriteriaEvaluations(
   return criteriaInserts;
 }
 
-async function saveCriteriaEvaluations(criteriaInserts: any[]) {
+async function saveCriteriaEvaluations(
+  criteriaInserts: NovaSubmissionCriteria[]
+) {
   if (criteriaInserts.length > 0) {
     try {
       const sbAdmin = await createAdminClient();

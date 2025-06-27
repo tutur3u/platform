@@ -6,8 +6,8 @@ export interface AuditLog {
   table_oid?: number;
   table_schema?: string;
   table_name: string;
-  record?: any;
-  old_record?: any;
+  record?: Record<string, unknown>;
+  old_record?: Record<string, unknown>;
   ts?: string;
   auth_uid?: string;
   auth_role?: string;

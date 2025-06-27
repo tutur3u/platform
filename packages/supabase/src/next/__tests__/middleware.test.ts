@@ -37,26 +37,33 @@ vi.mock('../common', () => ({
 }));
 
 describe('Supabase Middleware', () => {
-  const mockRequest = {
-    headers: new Map(),
+  interface MockRequest extends NextRequest {
+    headers: Headers;
+    cookies: {
+      getAll: () => Array<{ name: string; value: string }>;
+    };
+  }
+
+  const mockRequest: MockRequest = {
+    headers: new Headers(),
     cookies: {
       getAll: () => [],
     },
-  };
+  } as MockRequest;
 
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   it('should create a response with the request', async () => {
-    await updateSession(mockRequest as any);
+    await updateSession(mockRequest);
     expect(NextResponse.next).toHaveBeenCalledWith({
       request: mockRequest,
     });
   });
 
   it('should check for user session', async () => {
-    await updateSession(mockRequest as any);
+    await updateSession(mockRequest);
     expect(createServerClient).toHaveBeenCalledWith(
       'https://test.supabase.co',
       'test-key',
@@ -70,23 +77,27 @@ describe('Supabase Middleware', () => {
     ];
 
     // Mock a client that sets cookies
-    (createServerClient as any).mockImplementationOnce(() => ({
+    (
+      createServerClient as MockedFunction<typeof createServerClient>
+    ).mockImplementationOnce(() => ({
       auth: {
         getUser: vi.fn().mockResolvedValue({ data: { user: null } }),
       },
       cookies: mockCookies,
     }));
 
-    await updateSession(mockRequest as any);
+    await updateSession(mockRequest);
 
     // Verify cookie handling setup
-    const cookieHandler = (createServerClient as any).mock.calls[0][2].cookies;
+    const cookieHandler = (
+      createServerClient as MockedFunction<typeof createServerClient>
+    ).mock.calls[0][2].cookies;
     expect(cookieHandler.getAll).toBeDefined();
     expect(cookieHandler.setAll).toBeDefined();
   });
 
   it('should return response and user', async () => {
-    const response = await updateSession(mockRequest as any);
+    const response = await updateSession(mockRequest);
     expect(response.res).toBeDefined();
     expect(response.res.headers).toBeDefined();
     expect(response.user).toBeNull();

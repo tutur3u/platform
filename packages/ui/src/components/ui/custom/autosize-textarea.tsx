@@ -8,14 +8,14 @@ interface UseAutosizeTextAreaProps {
   textAreaRef: HTMLTextAreaElement | null;
   minHeight?: number;
   maxHeight?: number;
-  triggerAutoSize: string;
+  value: string;
 }
 
 export const useAutosizeTextArea = ({
   textAreaRef,
-  triggerAutoSize,
   maxHeight = Number.MAX_SAFE_INTEGER,
   minHeight = 0,
+  value,
 }: UseAutosizeTextAreaProps) => {
   const [init, setInit] = React.useState(true);
   React.useEffect(() => {
@@ -69,11 +69,10 @@ export const AutosizeTextarea = React.forwardRef<
     ref: React.Ref<AutosizeTextAreaRef>
   ) => {
     const textAreaRef = React.useRef<HTMLTextAreaElement | null>(null);
-    const [triggerAutoSize, setTriggerAutoSize] = React.useState('');
 
     useAutosizeTextArea({
       textAreaRef: textAreaRef.current,
-      triggerAutoSize: triggerAutoSize,
+      value: value as string,
       maxHeight,
       minHeight,
     });
@@ -87,7 +86,7 @@ export const AutosizeTextarea = React.forwardRef<
 
     React.useEffect(() => {
       if (value || props?.defaultValue) {
-        setTriggerAutoSize(value as string);
+        // setTriggerAutoSize(value as string);
       }
     }, [value, props?.defaultValue]);
 

@@ -64,7 +64,7 @@ export function createClient(): Promise<TypedSupabaseClient> {
 }
 
 export async function createDynamicClient(): Promise<
-  SupabaseClient<any, 'public', any>
+  SupabaseClient<Database, 'public', Database['public']>
 > {
   const { url, key } = checkEnvVariables({ useServiceKey: false });
   const cookieStore = await cookies();

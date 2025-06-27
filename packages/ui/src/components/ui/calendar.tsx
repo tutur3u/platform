@@ -54,7 +54,7 @@ function Calendar({
         <div className="flex items-center justify-center border-b p-2">
           <DateInput
             value={props.selected as Date}
-            onChange={props.onSelect as any}
+            onChange={props.onSelect}
             onSubmit={onSubmit}
           />
         </div>

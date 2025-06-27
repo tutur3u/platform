@@ -311,7 +311,13 @@ export async function POST(_: NextRequest, { params }: Params) {
         });
 
         // Step 1: Stream criteria evaluation if criteria exist
-        let evaluation: any = {
+        let evaluation: {
+          criteriaEvaluation: z.infer<
+            typeof CriteriaEvaluationSchema
+          >['criteriaEvaluation'];
+          overallAssessment: string;
+          totalScore: number;
+        } = {
           criteriaEvaluation: [],
           overallAssessment: 'No evaluation performed (no criteria available)',
           totalScore: 0,
@@ -418,7 +424,7 @@ export async function POST(_: NextRequest, { params }: Params) {
         });
 
         controller.close();
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error('🚨 Re-evaluation error:', error);
 
         const errorUpdate = {
@@ -516,11 +522,11 @@ async function fetchTestCasesAndCriteria(problem: NovaProblem) {
 }
 
 function buildEvaluationContext(
-  problem: any,
-  testCases: any[],
-  challengeCriteria: any[],
+  problem: NovaProblem,
+  testCases: NovaProblemTestCase[],
+  challengeCriteria: NovaChallengeCriteria[],
   prompt: string,
-  plagiarismResults: any
+  plagiarismResults: z.infer<typeof PlagiarismSchema> // TODO: Define a proper type for plagiarismResults
 ) {
   return {
     title: problem.title,
@@ -543,7 +549,7 @@ function buildEvaluationContext(
 
 // Stream criteria evaluation with real-time updates
 async function streamCriteriaEvaluation(
-  ctx: any,
+  ctx: EvaluationContext,
   sendProgress: (update: ProgressUpdate) => void
 ) {
   try {
@@ -582,9 +588,13 @@ async function streamCriteriaEvaluation(
 
     // Validate that all criteria evaluations have valid IDs
     if (finalObject.criteriaEvaluation) {
-      const criteriaIdsInContext = new Set(ctx.criteria.map((c: any) => c.id));
+      const criteriaIdsInContext = new Set(ctx.criteria.map((c) => c.id));
       const missingIds = finalObject.criteriaEvaluation.filter(
-        (ce: any) => !criteriaIdsInContext.has(ce.id)
+        (
+          ce: z.infer<
+            typeof CriteriaEvaluationSchema
+          >['criteriaEvaluation'][number]
+        ) => !criteriaIdsInContext.has(ce.id)
       );
 
       if (missingIds.length > 0) {
@@ -610,7 +620,7 @@ async function streamCriteriaEvaluation(
 
 // Stream test case evaluation with real-time updates
 async function streamTestCaseEvaluation(
-  ctx: any,
+  ctx: EvaluationContext,
   sendProgress: (update: ProgressUpdate) => void
 ) {
   try {
@@ -655,10 +665,10 @@ async function streamTestCaseEvaluation(
     // Validate that all test case evaluations have valid IDs
     if (finalObject && Array.isArray(finalObject)) {
       const testCaseIdsInContext = new Set(
-        ctx.testCaseInputs.map((tc: any) => tc.id)
+        ctx.testCaseInputs.map((tc) => tc.id)
       );
       const missingIds = finalObject.filter(
-        (tc: any) => !testCaseIdsInContext.has(tc.id)
+        (tc) => !testCaseIdsInContext.has(tc.id)
       );
 
       if (missingIds.length > 0) {
@@ -686,8 +696,10 @@ async function streamTestCaseEvaluation(
 }
 
 function processCriteriaEvaluations(
-  criteriaEvaluation: any[],
-  challengeCriteria: any[],
+  criteriaEvaluation: z.infer<
+    typeof CriteriaEvaluationSchema
+  >['criteriaEvaluation'],
+  challengeCriteria: NovaChallengeCriteria[],
   submissionId: string | null
 ) {
   if (!submissionId) {
@@ -724,7 +736,9 @@ function processCriteriaEvaluations(
   return criteriaInserts;
 }
 
-async function saveCriteriaEvaluations(criteriaInserts: any[]) {
+async function saveCriteriaEvaluations(
+  criteriaInserts: NovaSubmissionCriteria[]
+) {
   if (criteriaInserts.length > 0) {
     try {
       const sbAdmin = await createAdminClient();
@@ -761,9 +775,9 @@ async function saveCriteriaEvaluations(criteriaInserts: any[]) {
 }
 
 async function processTestCaseResults(
-  testCaseEvaluation: any[],
-  testCases: any[],
-  problem: any,
+  testCaseEvaluation: z.infer<typeof TestCaseEvaluationSchema>,
+  testCases: NovaProblemTestCase[],
+  problem: NovaProblem,
   prompt: string,
   submissionId: string | null,
   sendProgress?: (update: ProgressUpdate) => void
@@ -855,9 +869,9 @@ async function processTestCaseResults(
 }
 
 async function evaluateOutputMatch(
-  problem: any,
-  testCase: any,
-  matchingTestCase: any,
+  problem: NovaProblem,
+  testCase: z.infer<typeof TestCaseEvaluationSchema>[number],
+  matchingTestCase: NovaProblemTestCase,
   prompt: string
 ) {
   try {
@@ -891,7 +905,7 @@ async function evaluateOutputMatch(
   }
 }
 
-async function saveTestCaseResults(testCaseInserts: any[]) {
+async function saveTestCaseResults(testCaseInserts: NovaSubmissionTestCase[]) {
   if (testCaseInserts.length > 0) {
     try {
       const sbAdmin = await createAdminClient();

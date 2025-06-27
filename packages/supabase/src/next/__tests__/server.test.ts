@@ -33,7 +33,9 @@ describe('Supabase Server Client', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    (cookies as any).mockReturnValue(mockCookieStore);
+    (cookies as unknown as MockedFunction<typeof cookies>).mockReturnValue(
+      mockCookieStore
+    );
   });
 
   describe('createClient', () => {
@@ -49,8 +51,9 @@ describe('Supabase Server Client', () => {
       );
 
       // Verify cookie handler was created correctly
-      const cookieHandler = (createServerClient as any).mock.calls[0][2]
-        .cookies;
+      const cookieHandler = (
+        createServerClient as MockedFunction<typeof createServerClient>
+      ).mock.calls[0][2].cookies;
       expect(cookieHandler.getAll()).toEqual([
         { name: 'test-cookie', value: 'test-value' },
       ]);
@@ -73,8 +76,9 @@ describe('Supabase Server Client', () => {
       );
 
       // Verify admin client uses no-op cookie handler
-      const cookieHandler = (createServerClient as any).mock.calls[0][2]
-        .cookies;
+      const cookieHandler = (
+        createServerClient as MockedFunction<typeof createServerClient>
+      ).mock.calls[0][2].cookies;
       expect(cookieHandler.getAll()).toEqual([]);
     });
   });

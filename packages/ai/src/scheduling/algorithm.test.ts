@@ -211,7 +211,9 @@ describe('Scheduling Algorithm', () => {
       ];
       const result = scheduleTasks(tasks, defaultActiveHours, []);
       expect(result.events?.length).toBe(0);
-      expect(result.logs?.some((log: any) => log.type === 'error')).toBe(true);
+      expect(
+        result.logs?.some((log: { type: string }) => log.type === 'error')
+      ).toBe(true);
     });
 
     it('should split a task if allowSplit is true or undefined and needed', () => {

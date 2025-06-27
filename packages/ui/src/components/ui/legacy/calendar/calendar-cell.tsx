@@ -698,8 +698,6 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
     <div
       id={id}
       ref={cellRef}
-      role="button"
-      tabIndex={0}
       className={cn(
         'calendar-cell relative transition-colors',
         hour !== 0 && 'border-t border-border/30',

@@ -127,7 +127,10 @@ const ProgressUpdateSchema = z.object({
   step: z.string().describe('Current step being performed'),
   progress: z.number().min(0).max(100).describe('Progress percentage'),
   message: z.string().describe('Human-readable progress message'),
-  data: z.any().optional().describe('Optional step-specific data'),
+  data: z
+    .record(z.string(), z.unknown())
+    .optional()
+    .describe('Optional step-specific data'),
 });
 
 type ProgressUpdate = z.infer<typeof ProgressUpdateSchema>;
@@ -433,7 +436,7 @@ export async function POST(
         });
 
         controller.close();
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error('🚨 Server error:', error);
 
         // Clean up the submission if it was created but processing failed
@@ -516,9 +519,13 @@ async function _performCriteriaEvaluation(ctx: {
 
     // Validate that all criteria evaluations have valid IDs
     if (finalObject.criteriaEvaluation) {
-      const criteriaIdsInContext = new Set(ctx.criteria.map((c: any) => c.id));
+      const criteriaIdsInContext = new Set(ctx.criteria.map((c) => c.id));
       const missingIds = finalObject.criteriaEvaluation.filter(
-        (ce: any) => !criteriaIdsInContext.has(ce.id)
+        (
+          ce: z.infer<
+            typeof CriteriaEvaluationSchema
+          >['criteriaEvaluation'][number]
+        ) => !criteriaIdsInContext.has(ce.id)
       );
 
       if (missingIds.length > 0) {
@@ -592,10 +599,10 @@ async function streamTestCaseEvaluation(
     // Validate that all test case evaluations have valid IDs
     if (finalObject && Array.isArray(finalObject)) {
       const testCaseIdsInContext = new Set(
-        ctx.testCaseInputs.map((tc: any) => tc.id)
+        ctx.testCaseInputs.map((tc: NovaProblemTestCase) => tc.id)
       );
       const missingIds = finalObject.filter(
-        (tc: any) => !testCaseIdsInContext.has(tc.id)
+        (tc: NovaProblemTestCase) => !testCaseIdsInContext.has(tc.id)
       );
 
       if (missingIds.length > 0) {
@@ -747,9 +754,9 @@ async function createSubmissionRecord(
   }
 }
 
-function processCriteriaEvaluations(
-  criteriaEvaluation: any[],
-  challengeCriteria: any[],
+async function processCriteriaEvaluations(
+  criteriaEvaluation: NovaSubmissionCriteria[],
+  challengeCriteria: NovaChallengeCriteria[],
   submissionId: string | null
 ) {
   if (!submissionId) {
@@ -786,7 +793,9 @@ function processCriteriaEvaluations(
   return criteriaInserts;
 }
 
-async function saveCriteriaEvaluations(criteriaInserts: any[]) {
+async function saveCriteriaEvaluations(
+  criteriaInserts: NovaSubmissionCriteria[]
+) {
   if (criteriaInserts.length > 0) {
     try {
       const sbAdmin = await createAdminClient();
@@ -824,9 +833,9 @@ async function saveCriteriaEvaluations(criteriaInserts: any[]) {
 }
 
 async function processTestCaseResults(
-  testCaseEvaluation: any[],
-  testCases: any[],
-  problem: any,
+  testCaseEvaluation: NovaSubmissionTestCase[],
+  testCases: NovaProblemTestCase[],
+  problem: NovaProblem,
   prompt: string,
   submissionId: string | null,
   sendProgress?: (update: ProgressUpdate) => void
@@ -918,9 +927,9 @@ async function processTestCaseResults(
 }
 
 async function evaluateOutputMatch(
-  problem: any,
-  testCase: any,
-  matchingTestCase: any,
+  problem: NovaProblem,
+  testCase: NovaProblemTestCase,
+  matchingTestCase: NovaProblemTestCase,
   prompt: string
 ) {
   try {
@@ -954,7 +963,7 @@ async function evaluateOutputMatch(
   }
 }
 
-async function saveTestCaseResults(testCaseInserts: any[]) {
+async function saveTestCaseResults(testCaseInserts: NovaSubmissionTestCase[]) {
   if (testCaseInserts.length > 0) {
     try {
       const sbAdmin = await createAdminClient();
