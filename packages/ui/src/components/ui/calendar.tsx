@@ -63,6 +63,7 @@ function Calendar({
       <div>
         <div className="flex items-center justify-between gap-2 border-b px-2 pb-4">
           <button
+            type="button"
             onClick={() => {
               const prev = new Date(month);
               prev.setMonth(prev.getMonth() - 1);
@@ -149,6 +150,7 @@ function Calendar({
           </div>
 
           <button
+            type="button"
             onClick={() => {
               const next = new Date(month);
               next.setMonth(next.getMonth() + 1);

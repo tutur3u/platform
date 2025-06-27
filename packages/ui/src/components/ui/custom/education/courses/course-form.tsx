@@ -210,9 +210,7 @@ export function CourseForm({
                     : t('show_certificate_preview')}
                 </Button>
               </>
-            ) : (
-              <></>
-            )}
+            ) : null}
             <Button type="submit" className="w-full" disabled={disabled}>
               {data?.id ? t('edit') : t('create')}
             </Button>

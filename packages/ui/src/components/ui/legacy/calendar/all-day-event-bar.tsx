@@ -6,6 +6,7 @@ import dayjs from 'dayjs';
 import isBetween from 'dayjs/plugin/isBetween';
 import timezone from 'dayjs/plugin/timezone';
 import { Calendar, ChevronDown, ChevronUp } from 'lucide-react';
+import Image from 'next/image';
 import { useMemo, useState } from 'react';
 import { useCalendar } from '../../../../hooks/use-calendar';
 import { MIN_COLUMN_WIDTH } from './config';
@@ -332,8 +333,8 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
           if (shouldHideEvent) return null;
 
           return (
-            <div
-              key={`spanning-event-${event.id}`}
+            <button
+              type="button"
               className={cn(
                 'absolute cursor-pointer truncate rounded-sm border-l-2 px-2 py-1 text-xs font-semibold',
                 bg,
@@ -348,8 +349,6 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
                 zIndex: 5,
               }}
               onClick={() => openModal(event.id, 'all-day')}
-              role="button"
-              tabIndex={0}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
                   e.preventDefault();
@@ -359,9 +358,11 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
             >
               {typeof event.google_event_id === 'string' &&
                 event.google_event_id.trim() !== '' && (
-                  <img
+                  <Image
                     src="/media/google-calendar-icon.png"
                     alt="Google Calendar"
+                    width={20} // Approximate value, adjust as needed
+                    height={20} // Approximate value, adjust as needed
                     className="mr-1 inline-block h-[1.25em] w-[1.25em] align-middle opacity-80 dark:opacity-90"
                     title="Synced from Google Calendar"
                     data-testid="google-calendar-logo"

@@ -713,6 +713,8 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
       onMouseLeave={handleCellMouseLeave}
       data-hour={hour}
       data-date={date}
+      role="button"
+      tabIndex={0}
     >
       {/* Show only the hovered label before 1s, both after 1s */}
       {!isDragging &&

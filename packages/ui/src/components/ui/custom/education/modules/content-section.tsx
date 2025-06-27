@@ -8,6 +8,18 @@ import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 import type { ReactNode } from 'react';
 
+interface RawContentNode {
+  type: string;
+  content?: Array<{
+    type: string;
+    text?: string;
+  }>;
+}
+
+interface RawContent {
+  content?: RawContentNode[];
+}
+
 export async function CourseSection({
   href,
   title,
@@ -19,7 +31,7 @@ export async function CourseSection({
   href?: string;
   title: string;
   icon: ReactNode;
-  rawContent?: any;
+  rawContent?: RawContent;
   content?: ReactNode;
   hideContent?: boolean;
 }) {
@@ -29,7 +41,7 @@ export async function CourseSection({
     !hideContent &&
     (rawContent
       ? !rawContent.content?.some(
-          (node: any) =>
+          (node: RawContentNode) =>
             node.type !== 'paragraph' ||
             (node.content && node.content.length > 0)
         )
