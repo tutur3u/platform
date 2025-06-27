@@ -2,16 +2,16 @@
   ul,
   ol {
     @apply my-6 px-8 py-0 first:mt-0 last:mb-0;
+  }
 
-    ul,
-    ol,
-    li {
-      @apply my-1;
-    }
+  ul li,
+  ol li {
+    @apply my-1;
+  }
 
-    p {
-      @apply mt-0 mb-1;
-    }
+  ul p,
+  ol p {
+    @apply mt-0 mb-1;
   }
 
   ol {

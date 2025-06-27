@@ -102,7 +102,7 @@ export function createPATCH(
       return new Response(JSON.stringify({ response: completion }), {
         status: 200,
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.log(error);
       return NextResponse.json(
         {

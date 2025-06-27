@@ -2,7 +2,7 @@ import type { AuditLog, Operation } from '@tuturuuu/types/primitives/audit-log';
 
 type TranslationFunction = (
   key: string,
-  options?: Record<string, any>
+  options?: Record<string, unknown>
 ) => string;
 
 const getLeadingLabel = (

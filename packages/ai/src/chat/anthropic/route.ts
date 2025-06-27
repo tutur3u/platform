@@ -121,7 +121,7 @@ export async function POST(req: Request) {
     });
 
     return result.toDataStreamResponse();
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.log(error);
     return NextResponse.json(
       {

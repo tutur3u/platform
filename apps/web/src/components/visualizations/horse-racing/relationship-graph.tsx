@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { Label } from '@tuturuuu/ui/label';
 import { Switch } from '@tuturuuu/ui/switch';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 interface Horse {
   id: number;
@@ -35,41 +35,7 @@ export function RelationshipGraph({
     Math.min(currentRaceIndex + 1, finalRanking.length)
   );
 
-  // Calculate the positions of horses in a circular layout
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    // Get canvas context
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    // Get canvas dimensions
-    const resizeObserver = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        if (entry.target === canvas) {
-          const { width, height } = entry.contentRect;
-          setGraphSize({ width, height });
-          canvas.width = width;
-          canvas.height = height;
-          drawGraph();
-        }
-      }
-    });
-
-    resizeObserver.observe(canvas);
-
-    return () => {
-      resizeObserver.disconnect();
-    };
-  }, [drawGraph]);
-
-  // Redraw the graph when data changes
-  useEffect(() => {
-    drawGraph();
-  }, [drawGraph]);
-
-  const drawGraph = () => {
+  const drawGraph = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
@@ -93,7 +59,7 @@ export function RelationshipGraph({
       // Calculate positions in a circle
       const angle = (2 * Math.PI * index) / horses.length - Math.PI / 2;
       const x = centerX + radius * Math.cos(angle);
-      const y = centerY + radius * Math.sin(angle);
+      const y = centerY + centerY + radius * Math.sin(angle);
 
       horsePositions.set(horse.id, { x, y });
     });
@@ -228,7 +194,47 @@ export function RelationshipGraph({
     canvas.onmouseleave = () => {
       setHoveredHorse(null);
     };
-  };
+  }, [
+    horses,
+    fasterThanRelationships,
+    showAllRelationships,
+    hoveredHorse,
+    knownPositions,
+    drawArrowhead, // Add legend
+    drawLegend,
+    getContrastingTextColor,
+  ]);
+
+  // Calculate the positions of horses in a circular layout
+
+  // Calculate the positions of horses in a circular layout
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    // Get canvas context
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    // Get canvas dimensions
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        if (entry.target === canvas) {
+          const { width, height } = entry.contentRect;
+          setGraphSize({ width, height });
+          canvas.width = width;
+          canvas.height = height;
+          drawGraph();
+        }
+      }
+    });
+
+    resizeObserver.observe(canvas);
+
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, [drawGraph]);
 
   // Helper function to draw arrowhead
   const drawArrowhead = (

@@ -186,7 +186,7 @@ export async function runStandardBenchmarks(
   const results: HorseRacingBenchmark[] = [];
 
   for (let i = 0; i < standardConfigs.length; i++) {
-    const config = standardConfigs[i]!;
+    const config = standardConfigs[i];
     const result = await runBenchmark(config.horses, config.raceSize);
 
     results.push(result);

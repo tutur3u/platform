@@ -108,7 +108,7 @@ export const getDateRange = (
 
 type TranslationFunction = (
   key: string,
-  options?: Record<string, any>
+  options?: Record<string, unknown>
 ) => string;
 
 export const getDateRangeUnits = (

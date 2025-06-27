@@ -135,7 +135,7 @@ export function _experimentalAddTimeblocks(
 
     // If nextTBs is empty, add the current timeblock
     if (nextTBs.length === 0) {
-      nextTBs.push(currTB!);
+      nextTBs.push(currTB as Timeblock);
       continue;
     }
 
@@ -329,7 +329,7 @@ export function addTimeblocks(
 
     // If nextTBs is empty, add the current timeblock
     if (nextTBs.length === 0) {
-      nextTBs.push(currTB!);
+      nextTBs.push(currTB as Timeblock);
       continue;
     }
 

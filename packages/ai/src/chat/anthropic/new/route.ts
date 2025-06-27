@@ -90,7 +90,7 @@ export async function POST(req: Request) {
 
     if (error) return NextResponse.json(error.message, { status: 500 });
     return NextResponse.json({ id, title }, { status: 200 });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.log(error);
     return NextResponse.json(
       {

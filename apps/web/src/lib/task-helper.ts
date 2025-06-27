@@ -1,4 +1,3 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { SupabaseClient } from '@tuturuuu/supabase/next/client';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
@@ -72,10 +71,10 @@ export async function getTasks(supabase: SupabaseClient, boardId: string) {
   const transformedTasks = data.map((task) => ({
     ...task,
     assignees: task.assignees
-      ?.map((a: any) => a.user)
+      ?.map((a: { user: User }) => a.user)
       .filter(
-        (user: any, index: number, self: any[]) =>
-          user?.id && self.findIndex((u: any) => u.id === user.id) === index
+        (user: User, index: number, self: User[]) =>
+          user?.id && self.findIndex((u: User) => u.id === user.id) === index
       ),
   }));
 
@@ -142,19 +141,30 @@ export async function updateTask(
 }
 
 // Utility function to transform and deduplicate assignees
-export function transformAssignees(assignees: any[]): any[] {
+import type { User } from '@tuturuuu/types/src/primitives/User';
+
+export function transformAssignees(assignees: { user: User }[]): User[] {
   return (
     assignees
-      ?.map((a: any) => a.user)
+      ?.map((a) => a.user)
       .filter(
-        (user: any, index: number, self: any[]) =>
-          user?.id && self.findIndex((u: any) => u.id === user.id) === index
+        (user, index, self) =>
+          user?.id && self.findIndex((u) => u.id === user.id) === index
       ) || []
   );
 }
 
 // Utility function to invalidate all task-related caches consistently
-export function invalidateTaskCaches(queryClient: any, boardId?: string) {
+import {
+  type QueryClient,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
+export function invalidateTaskCaches(
+  queryClient: QueryClient,
+  boardId?: string
+) {
   if (boardId) {
     queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
     queryClient.invalidateQueries({ queryKey: ['task_lists', boardId] });

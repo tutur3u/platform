@@ -4,9 +4,9 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
-import { transformAssignees } from '@/lib/task-helper';
 import type { Task } from '@tuturuuu/types/src/primitives/Task';
 import type { User } from '@tuturuuu/types/src/primitives/User';
+import { transformAssignees } from '@/lib/task-helper';
 import 'server-only';
 
 export const getTimeTrackingData = async (wsId: string, userId: string) => {
@@ -241,7 +241,8 @@ export const getTimeTrackingData = async (wsId: string, userId: string) => {
     })),
     // Add current user assignment flag
     is_assigned_to_current_user:
-      task.assignees?.some((a: { user: User }) => a.user?.id === userId) || false,
+      task.assignees?.some((a: { user: User }) => a.user?.id === userId) ||
+      false,
     // Ensure task is available for time tracking
     completed: false, // Since we filtered out archived tasks, none should be completed
   }));

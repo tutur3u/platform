@@ -16,12 +16,13 @@ import relativeTime from 'dayjs/plugin/relativeTime';
 import mermaid from 'mermaid';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import rehypeKatex from 'rehype-katex';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 
 function MermaidRenderer({ content }: { content: string }) {
+  const elementRef = useRef<HTMLDivElement>(null);
   const [svgContent, setSvgContent] = useState<string>('');
   const [error, setError] = useState<string>('');
 
@@ -63,6 +64,12 @@ function MermaidRenderer({ content }: { content: string }) {
     renderDiagram();
   }, [content]);
 
+  useEffect(() => {
+    if (elementRef.current && svgContent) {
+      elementRef.current.innerHTML = svgContent;
+    }
+  }, [svgContent]);
+
   if (error) {
     return (
       <div className="rounded-lg border border-dynamic-red/20 bg-dynamic-red/10 p-4 text-sm text-dynamic-red">
@@ -78,13 +85,10 @@ function MermaidRenderer({ content }: { content: string }) {
     return <div className="animate-pulse">Loading diagram...</div>;
   }
 
-  return (
-    <div dangerouslySetInnerHTML={{ __html: svgContent }} className="overflow-x-auto" />
-  );
+  return <div ref={elementRef} className="overflow-x-auto" />;
 }
 
 export interface ChatMessageProps {
-
   message: Message & {
     metadata?: {
       response_types?: (
@@ -126,8 +130,6 @@ export function ChatMessage({
     text: string;
   }>({ isCorrect: false, text: '' });
   const [revealCorrectQuizH2, setRevealCorrectQuizH2] = useState(false);
-
-  
 
   const [selectedOptionQuizP, setSelectedOptionQuizP] = useState<{
     isCorrect: boolean;
@@ -305,7 +307,7 @@ export function ChatMessage({
                     className={`w-full rounded border px-3 py-1 text-left font-semibold transition @md:text-center ${
                       revealCorrectQuizH2 && option.isCorrect
                         ? 'border-dynamic-green bg-dynamic-green/10 text-dynamic-green'
-                        : revealCorrectQuizH2
+                        : revealCorrectCorrectQuizH2
                           ? 'bg-foreground/5 text-foreground opacity-50'
                           : 'bg-foreground/5 text-foreground hover:bg-foreground/10'
                     }`}
@@ -624,43 +626,65 @@ export function ChatMessage({
                 );
                 const answer = answerMatch ? answerMatch[1] : 'No answer found';
 
-                return <FlashcardRenderer question={question} answer={answer} t={t} revealAnswer={revealAnswerFlashcardP} setRevealAnswer={setRevealAnswerFlashcardP} />;
+                return (
+                  <FlashcardRenderer
+                    question={question}
+                    answer={answer}
+                    t={t}
+                    revealAnswer={revealAnswerFlashcardP}
+                    setRevealAnswer={setRevealAnswerFlashcardP}
+                  />
+                );
               }
 
-type TranslationFunction = (key: string, options?: Record<string, any>) => string;
+              type TranslationFunction = (
+                key: string,
+                options?: Record<string, unknown>
+              ) => string;
 
-function FlashcardRenderer({ question, answer, t, revealAnswer, setRevealAnswer }: { question: string; answer: string; t: TranslationFunction; revealAnswer: boolean; setRevealAnswer: (value: boolean) => void }) {
-
-  return (
-    <div className="mt-4 flex w-full flex-col items-center justify-center rounded-lg border bg-foreground/5 p-4">
-      <div className="text-lg font-bold text-foreground">
-        {question}
-      </div>
-      <Separator className="mt-2 mb-4" />
-      <button
-        type="button"
-        className={`w-full rounded border px-3 py-1 text-center font-semibold text-foreground transition duration-300 ${
-          revealAnswer
-            ? 'cursor-default border-transparent'
-            : 'bg-foreground/5 hover:bg-foreground/10'
-        }`}
-        onClick={() => setRevealAnswer(true)}
-      >
-        {revealAnswer ? (
-          <>
-            <div className="text-dynamic-yellow">{answer}</div>
-            <Separator className="my-4" />
-            <div className="w-full rounded border border-dynamic-purple/20 bg-dynamic-purple/10 p-1 text-center text-sm text-dynamic-purple">
-              {t('experimental_disclaimer')}
-            </div>
-          </>
-        ) : (
-          t('reveal_answer')
-        )}
-      </button>
-    </div>
-  );
-}
+              function FlashcardRenderer({
+                question,
+                answer,
+                t,
+                revealAnswer,
+                setRevealAnswer,
+              }: {
+                question: string;
+                answer: string;
+                t: TranslationFunction;
+                revealAnswer: boolean;
+                setRevealAnswer: (value: boolean) => void;
+              }) {
+                return (
+                  <div className="mt-4 flex w-full flex-col items-center justify-center rounded-lg border bg-foreground/5 p-4">
+                    <div className="text-lg font-bold text-foreground">
+                      {question}
+                    </div>
+                    <Separator className="mt-2 mb-4" />
+                    <button
+                      type="button"
+                      className={`w-full rounded border px-3 py-1 text-center font-semibold text-foreground transition duration-300 ${
+                        revealAnswer
+                          ? 'cursor-default border-transparent'
+                          : 'bg-foreground/5 hover:bg-foreground/10'
+                      }`}
+                      onClick={() => setRevealAnswer(true)}
+                    >
+                      {revealAnswer ? (
+                        <>
+                          <div className="text-dynamic-yellow">{answer}</div>
+                          <Separator className="my-4" />
+                          <div className="w-full rounded border border-dynamic-purple/20 bg-dynamic-purple/10 p-1 text-center text-sm text-dynamic-purple">
+                            {t('experimental_disclaimer')}
+                          </div>
+                        </>
+                      ) : (
+                        t('reveal_answer')
+                      )}
+                    </button>
+                  </div>
+                );
+              }
 
               // If the message is a followup, we will render it as a button
               if (
