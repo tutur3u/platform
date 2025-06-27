@@ -64,6 +64,14 @@ export async function getWorkspace(id: string, requireUserRole = false) {
   if (requireUserRole) queryBuilder.eq('workspace_members.user_id', user.id);
   const { data, error } = await queryBuilder.single();
 
+  // If there's an error, log it for debugging
+  if (error) {
+    console.error('Workspace query error:', error);
+    console.error('Workspace ID:', id);
+    console.error('User ID:', user.id);
+    console.error('Require user role:', requireUserRole);
+  }
+
   const workspaceJoined = !!data?.workspace_members[0]?.role;
 
   if (error) notFound();
