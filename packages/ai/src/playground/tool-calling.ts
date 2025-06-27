@@ -21,7 +21,7 @@ const calculatePower = tool<typeof calculatePowerSchema, { result: number }>({
 export const toolCalling = async ({
   extraTools,
 }: {
-  extraTools?: Record<string, Tool<any, any>>;
+  extraTools?: Record<string, Tool<unknown, unknown>>;
 } = {}) => {
   return await generateText({
     model: google('gemini-2.0-flash'),

@@ -211,7 +211,7 @@ export const verifyRouteToken = async ({
 }: {
   searchParams: URLSearchParams;
   token: string | null;
-  router: any;
+  router: { push: (path: string) => void; refresh: () => void };
   devMode: boolean;
 }) => {
   const supabase = createClient();

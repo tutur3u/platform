@@ -92,7 +92,7 @@ export async function unlinkIdentity(
  */
 export async function getUserIdentities(
   supabase: SupabaseClient
-): Promise<{ data: UserIdentitiesResponse | null; error: any }> {
+): Promise<{ data: UserIdentitiesResponse | null; error: unknown }> {
   try {
     const { data, error } = await supabase.auth.getUserIdentities();
     return { data, error };

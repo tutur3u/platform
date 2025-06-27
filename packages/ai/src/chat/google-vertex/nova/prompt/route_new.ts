@@ -224,7 +224,7 @@ export async function POST(
       problemId,
       sbAdmin,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('🚨 Server error:', error);
     return NextResponse.json(
       { message: `Internal server error: ${error.message}` },
@@ -241,7 +241,7 @@ async function streamEvaluation({
   userId,
   problemId,
 }: {
-  problem: any;
+  problem: NovaProblem;
   prompt: string;
   sessionId?: string;
   userId: string;
@@ -261,7 +261,7 @@ async function streamEvaluation({
           stage: string,
           progress: number,
           message: string,
-          data?: any
+          data?: Record<string, unknown>
         ) => {
           const progressData = {
             stage,
@@ -411,7 +411,7 @@ async function streamEvaluation({
           matchedTestCases: testCaseInserts.filter((tc) => tc.matched).length,
           totalTestCases: testCaseInserts.length,
         });
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error('Streaming evaluation error:', error);
 
         // Clean up submission if created
@@ -457,12 +457,12 @@ async function originalEvaluation({
   problemId,
   sbAdmin,
 }: {
-  problem: any;
+  problem: NovaProblem;
   prompt: string;
   sessionId?: string;
   userId: string;
   problemId: string;
-  sbAdmin: any;
+  sbAdmin: SupabaseClient;
 }) {
   let submissionId: string | null = null;
 
@@ -580,7 +580,7 @@ async function originalEvaluation({
       },
       { status: 200 }
     );
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('🚨 Server error:', error);
 
     // Clean up the submission if it was created but processing failed
@@ -661,12 +661,18 @@ async function fetchTestCasesAndCriteria(problem: NovaProblem) {
   return { testCases, challengeCriteria };
 }
 
+import type {
+  NovaChallengeCriteria,
+  NovaProblemTestCase,
+} from '@tuturuuu/types/db';
+import type { PlagiarismCheck } from '../types';
+
 function buildEvaluationContext(
-  problem: any,
-  testCases: any[],
-  challengeCriteria: any[],
+  problem: NovaProblem,
+  testCases: NovaProblemTestCase[],
+  challengeCriteria: NovaChallengeCriteria[],
   prompt: string,
-  plagiarismResults: any
+  plagiarismResults: PlagiarismCheck | null
 ) {
   return {
     title: problem.title,
@@ -687,9 +693,13 @@ function buildEvaluationContext(
   };
 }
 
-async function performCriteriaEvaluation(
-  ctx: any
-): Promise<CombinedEvaluation> {
+async function performCriteriaEvaluation(ctx: {
+  problem: NovaProblem;
+  testCases: NovaProblemTestCase[];
+  challengeCriteria: NovaChallengeCriteria[];
+  prompt: string;
+  plagiarismResults: PlagiarismCheck | null;
+}): Promise<CombinedEvaluation> {
   try {
     const systemInstruction = MAIN_EVALUATION_PROMPT.replace(
       '{{context}}',
@@ -758,7 +768,13 @@ async function createSubmissionRecord(
   }
 }
 
-async function performTestCaseEvaluation(ctx: any) {
+async function performTestCaseEvaluation(ctx: {
+  problem: NovaProblem;
+  testCases: NovaProblemTestCase[];
+  challengeCriteria: NovaChallengeCriteria[];
+  prompt: string;
+  plagiarismResults: PlagiarismCheck | null;
+}): Promise<z.infer<typeof TestCaseEvaluationSchema>> {
   try {
     const testCaseInstruction = TEST_CASE_EVALUATION_PROMPT.replace(
       '{{context}}',
@@ -796,9 +812,9 @@ async function performTestCaseEvaluation(ctx: any) {
 }
 
 async function processTestCaseResults(
-  testCaseEvaluation: any[],
-  testCases: any[],
-  problem: any,
+  testCaseEvaluation: NovaSubmissionTestCase[],
+  testCases: NovaProblemTestCase[],
+  problem: NovaProblem,
   prompt: string,
   submissionId: string | null
 ) {
@@ -843,9 +859,9 @@ async function processTestCaseResults(
 }
 
 async function evaluateOutputMatch(
-  problem: any,
-  testCase: any,
-  matchingTestCase: any,
+  problem: NovaProblem,
+  testCase: NovaProblemTestCase,
+  matchingTestCase: NovaProblemTestCase,
   prompt: string
 ) {
   try {
@@ -879,7 +895,7 @@ async function evaluateOutputMatch(
   }
 }
 
-async function saveTestCaseResults(testCaseInserts: any[]) {
+async function saveTestCaseResults(testCaseInserts: NovaSubmissionTestCase[]) {
   if (testCaseInserts.length > 0) {
     try {
       const sbAdmin = await createAdminClient();
@@ -916,8 +932,8 @@ async function saveTestCaseResults(testCaseInserts: any[]) {
 }
 
 function processCriteriaEvaluations(
-  criteriaEvaluation: any[],
-  challengeCriteria: any[],
+  criteriaEvaluation: NovaSubmissionCriteria[],
+  challengeCriteria: NovaChallengeCriteria[],
   submissionId: string | null
 ) {
   if (!submissionId) {

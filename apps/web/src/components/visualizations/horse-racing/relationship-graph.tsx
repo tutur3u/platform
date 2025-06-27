@@ -200,7 +200,7 @@ export function RelationshipGraph({
     showAllRelationships,
     hoveredHorse,
     knownPositions,
-    drawArrowhead, // Add legend
+    drawArrowhead,
     drawLegend,
     getContrastingTextColor,
   ]);

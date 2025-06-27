@@ -44,14 +44,15 @@ describe('models', () => {
     const disabledModels = models.filter((model) => model.disabled);
 
     // Check all enabled models come before disabled ones
-    const lastEnabledIndex = enabledModels[enabledModels.length - 1]
-      ? models.lastIndexOf(enabledModels[enabledModels.length - 1]!)
+    const lastEnabledModel = enabledModels[enabledModels.length - 1];
+    const lastEnabledIndex = lastEnabledModel
+      ? models.lastIndexOf(lastEnabledModel)
       : -1;
 
-    const firstDisabledIndex =
-      disabledModels.length > 0
-        ? models.indexOf(disabledModels[0]!)
-        : models.length;
+    const firstDisabledModel = disabledModels[0];
+    const firstDisabledIndex = firstDisabledModel
+      ? models.indexOf(firstDisabledModel)
+      : models.length;
     expect(lastEnabledIndex).toBeLessThan(firstDisabledIndex);
 
     // Check enabled models are sorted by provider
@@ -66,9 +67,9 @@ describe('models', () => {
     if (disabledModels.length > 0) {
       const allProviders = models.map((model) => model.provider);
       const sortedEnabledModels = enabledModels.map((model) => model.provider);
-      expect(allProviders.indexOf(sortedEnabledModels[0]!)).toBeLessThan(
-        allProviders.indexOf(disabledModels[0]?.provider)
-      );
+      expect(
+        allProviders.indexOf(sortedEnabledModels[0] as string)
+      ).toBeLessThan(allProviders.indexOf(disabledModels[0]?.provider));
     }
   });
 });

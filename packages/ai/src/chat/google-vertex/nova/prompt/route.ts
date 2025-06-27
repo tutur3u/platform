@@ -329,7 +329,7 @@ export async function POST(
         });
 
         // Step 1: Stream criteria evaluation if criteria exist
-        let evaluation: any = {
+        let evaluation: CombinedEvaluation = {
           criteriaEvaluation: [],
           overallAssessment: 'No evaluation performed (no criteria available)',
           totalScore: 0,
@@ -473,10 +473,13 @@ export async function POST(
 }
 
 // Stream criteria evaluation with real-time updates
-async function streamCriteriaEvaluation(
-  ctx: any,
-  sendProgress: (update: ProgressUpdate) => void
-) {
+async function _performCriteriaEvaluation(ctx: {
+  problem: NovaProblem;
+  testCases: NovaProblemTestCase[];
+  challengeCriteria: NovaChallengeCriteria[];
+  prompt: string;
+  plagiarismResults: PlagiarismCheck | null;
+}): Promise<CombinedEvaluation> {
   try {
     const systemInstruction = MAIN_EVALUATION_PROMPT.replace(
       '{{context}}',
@@ -541,7 +544,10 @@ async function streamCriteriaEvaluation(
 
 // Stream test case evaluation with real-time updates
 async function streamTestCaseEvaluation(
-  ctx: any,
+  ctx: {
+    userPrompt: string;
+    testCaseInputs: { id: string; input: string }[];
+  },
   sendProgress: (update: ProgressUpdate) => void
 ) {
   try {
@@ -682,11 +688,11 @@ async function fetchTestCasesAndCriteria(problem: NovaProblem) {
 }
 
 function buildEvaluationContext(
-  problem: any,
-  testCases: any[],
-  challengeCriteria: any[],
+  problem: NovaProblem,
+  testCases: NovaProblemTestCase[],
+  challengeCriteria: NovaChallengeCriteria[],
   prompt: string,
-  plagiarismResults: any
+  plagiarismResults: PlagiarismCheck | null
 ) {
   return {
     title: problem.title,
