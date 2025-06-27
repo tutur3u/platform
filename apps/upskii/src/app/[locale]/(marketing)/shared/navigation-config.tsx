@@ -60,6 +60,10 @@ export const useNavigation = (
       label: t?.('common.home') || 'Home',
     },
     {
+      href: '/courses',
+      label: t('ws-courses.plural'),
+    },
+    {
       href: '/about',
       label: t?.('common.about') || 'About',
     },

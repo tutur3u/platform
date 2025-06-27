@@ -80,7 +80,7 @@ export async function GET(
 
     return NextResponse.json({ boards: data });
   } catch (error) {
-    console.error('Error fetching boards with lists:', error);
+    console.error('Error fetching boards:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

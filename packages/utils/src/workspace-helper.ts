@@ -9,8 +9,53 @@ import type {
 } from '@tuturuuu/types/db';
 import type { WorkspaceSecret } from '@tuturuuu/types/primitives/WorkspaceSecret';
 import { notFound, redirect } from 'next/navigation';
-import { permissions as rolePermissions } from '../../../apps/web/src/lib/permissions';
 import { ROOT_WORKSPACE_ID } from './constants';
+import { permissions as rolePermissions } from './permissions';
+
+const isValidTuturuuuEmail = (email: string): boolean => {
+    if (!email) return false;
+    const emailRegex = /^[^\s@]+@tuturuuu\.com$/;
+    return emailRegex.test(email);
+};
+
+export async function checkTuturuuuAdmin() {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) redirect('/login');
+
+   const { data,error } = await supabase
+    .from('workspace_members')
+    .select('role')
+    .eq('ws_id', ROOT_WORKSPACE_ID)
+    .eq('user_id', user.id)
+    .in('role', ['OWNER', 'ADMIN'])
+    .single();
+
+    if (error || !data) {
+    console.error('Error checking Tuturuuu admin status:', error);
+    throw error;
+    }
+
+    if (user.email && isValidTuturuuuEmail(user.email)) {
+      return true;
+    }
+    return false;
+}
+
+// Structured logging utility
+const logWorkspaceError = (context: string, error: any, metadata?: Record<string, any>) => {
+  const logData = {
+    context,
+    error: error?.message || error,
+    timestamp: new Date().toISOString(),
+    ...metadata
+  };
+  console.error(`[WorkspaceHelper] ${context}:`, logData);
+};
 
 export async function getWorkspace(id: string, requireUserRole = false) {
   const supabase = await createClient();
@@ -31,9 +76,22 @@ export async function getWorkspace(id: string, requireUserRole = false) {
   if (requireUserRole) queryBuilder.eq('workspace_members.user_id', user.id);
   const { data, error } = await queryBuilder.single();
 
-  const workspaceJoined = !!data?.workspace_members[0]?.role;
+  // If there's an error, log it for debugging with structured logging
+  if (error) {
+    logWorkspaceError('Failed to fetch workspace', error, {
+      workspaceId: id,
+      userId: user.id,
+      requireUserRole,
+      errorCode: error.code,
+      errorDetails: error.details
+    });
+    
+    // Return null to let the caller handle the error appropriately
+    // This allows for more graceful error handling in different contexts
+    notFound();
+  }
 
-  if (error) notFound();
+  const workspaceJoined = !!data?.workspace_members[0]?.role;
   const { workspace_members, ...rest } = data;
 
   const ws = {
@@ -67,7 +125,14 @@ export async function getWorkspaces(noRedirect?: boolean) {
     )
     .eq('workspace_members.user_id', user.id);
 
-  if (error) notFound();
+  if (error) {
+    logWorkspaceError('Failed to fetch user workspaces', error, {
+      userId: user.id,
+      errorCode: error.code,
+      errorDetails: error.details
+    });
+    notFound();
+  }
 
   return data;
 }
@@ -167,7 +232,11 @@ export async function getSecrets({
   });
 
   if (error) {
-    console.log(error);
+    logWorkspaceError('Failed to fetch workspace secrets', error, {
+      workspaceId: wsId,
+      errorCode: error.code,
+      errorDetails: error.details
+    });
     notFound();
   }
 

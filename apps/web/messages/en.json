@@ -1,4 +1,20 @@
 {
+  "billing": {
+    "billing": "Billing",
+    "billing-info": "Manage your billing information and subscriptions here.",
+    "current-plan": "Current Plan",
+    "current-plan-details": "Current plan details",
+    "upgrade-plan": "Upgrade Plan",
+    "start-date": "Start Date",
+    "next-billing":"Next Billing Date",
+    "recommend":"Recommended",
+    "hide-upgrade": "Hide Upgrade",
+    "contact-sales": "Contact Sales",
+    "contact-sales-desc": "For enterprise solutions, please contact our sales team for personalized assistance.",
+    "plan-desc":"* Upgrading your plan will take effect immediately. You'll be charged the prorated amount for the remainder of your current billing cycle.",
+    "subscription-history": "Subscription History",
+    "subscription-history-desc": "No subscription history available."
+  },
   "common": {
     "success": "Success",
     "alpha": "Alpha",
@@ -620,7 +636,14 @@
     "password_min_length": "Password must be at least 8 characters",
     "powered-by": "Tuturuuu powers the authentication system behind {domain}.",
     "choose_sign_in_method": "Choose your preferred sign-in method",
-    "sign_in_to_your_account": "Sign in to your account to continue"
+    "sign_in_to_your_account": "Sign in to your account to continue",
+    "will_send_to": "Will send verification code to",
+    "will_sign_in_as": "Will sign in as",
+    "email_username_placeholder": "Enter your email or username",
+    "two_factor_authentication": "Two-Factor Authentication",
+    "enter_authenticator_code": "Enter your 6-digit verification code from your authenticator app",
+    "verification_code_label": "Verification Code",
+    "verify_button": "Verify"
   },
   "signup": {
     "get-started": "Get started",
@@ -2214,7 +2237,8 @@
     "image_preview_not_available": "Image Preview Not Available",
     "image_preview_not_available_description": "A preview of the certificate template is not available.",
     "hide_certificate_preview": "Hide Certificate Preview",
-    "show_certificate_preview": "Show Certificate Preview"
+    "show_certificate_preview": "Show Certificate Preview",
+    "self_paced": "Self-paced"
   },
   "ws-course-modules": {
     "plural": "Course Modules",

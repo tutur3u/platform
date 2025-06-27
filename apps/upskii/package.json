@@ -60,7 +60,7 @@
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-intersection-observer": "^9.16.0",
-    "react-pdf": "^9.2.1",
+    "react-pdf": "^10.0.1",
     "react-quizlet-flashcard": "^3.0.0",
     "react-textarea-autosize": "^8.5.9",
     "rehype-katex": "^7.0.1",

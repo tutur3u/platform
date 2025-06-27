@@ -1,10 +1,11 @@
-'use client';
+"use client";
 
-import { Button } from '@tuturuuu/ui/button';
-import { ArrowUpCircle, CheckCircle } from 'lucide-react';
-import { useState } from 'react';
-import PurchaseLink from './data-polar-checkout';
-
+import { Button } from "@tuturuuu/ui/button";
+import { ArrowUpCircle, CheckCircle } from "lucide-react";
+import { useState } from "react";
+import { createClient } from "@tuturuuu/supabase/next/client";
+import PurchaseLink from "./data-polar-checkout";
+import { useTranslations } from "next-intl";
 // Define types for the props we're passing from the server component
 interface Plan {
   name: string;
@@ -16,37 +17,55 @@ interface Plan {
   features?: string[];
 }
 
-interface UpgradePlan {
-  id: string;
-  name: string;
-  price: string;
-  billingCycle: string;
-  popular: boolean;
-  features: string[];
-  isEnterprise?: boolean;
-}
-
 interface BillingClientProps {
   currentPlan: Plan;
-  upgradePlans: UpgradePlan[];
   wsId: string;
+  products: any[];
   product_id: string;
   isCreator: boolean;
+  isAdmin?: boolean;
   activeSubscriptionId?: string;
 }
 
+const syncToProduct = async (products: any[]) => {
+  const supabase = createClient();
+
+  const insertedProducts = await Promise.all(
+    products.map(async (product) => {
+      const { data, error } = await supabase
+        .from("workspace_subscription_products")
+        .insert({
+          id: product.id,
+          name: product.name,
+          price: Number(product.price),
+          recurring_interval: product.recurringInterval,
+          description: product.description || "",
+        })
+        .select();
+
+      if (error) {
+        console.error("Error inserting product:", error);
+        return null;
+      }
+      return data;
+    }),
+  );
+
+  return insertedProducts;
+};
 export function BillingClient({
   currentPlan,
-  upgradePlans,
+  isAdmin = false,
+  products,
   wsId,
   isCreator,
-  // _product_id,
-  // activeSubscriptionId,
 }: BillingClientProps) {
   const [showUpgradeOptions, setShowUpgradeOptions] = useState(false);
   const [_isLoading, _setIsLoading] = useState(false);
-  const [message, _setMessage] = useState('');
-
+  const [message, _setMessage] = useState("");
+  const [syncCompleted, setSyncCompleted] = useState(false);
+  const [syncLoading, setSyncLoading] = useState(false);
+  const t = useTranslations("billing");
   // const handleCancelSubscription = async () => {
   //   setIsLoading(true);
   //   setMessage('');
@@ -75,27 +94,68 @@ export function BillingClient({
   //     );
   //   }
   // };
+  const upgradePlans = products.map((product, index) => ({
+    id: product.id,
+    name: product.name,
+    price:
+      product.prices && product.prices.length > 0
+        ? product.prices[0] && "priceAmount" in product.prices[0]
+          ? `$${(product.prices[0].priceAmount / 100).toFixed(2)}`
+          : "Free"
+        : "Custom",
+    billingCycle:
+      product.prices && product.prices.length > 0
+        ? product.prices[0]?.type === "recurring"
+          ? product.prices[0]?.recurringInterval || "month"
+          : "one-time"
+        : "month",
+    popular: index === 1,
+    features: product.description
+      ? [product.description, "Customer support", "Access to platform features"]
+      : [
+          "Standard features",
+          "Customer support",
+          "Access to platform features",
+        ],
+    isEnterprise: product.name.toLowerCase().includes("enterprise"),
+  }));
+
+  const handleSyncToProduct = async () => {
+    setSyncLoading(true);
+    setSyncCompleted(false);
+    try {
+      await syncToProduct(products);
+      setSyncCompleted(true);
+    } catch (error) {
+      console.error("Sync failed:", error);
+    } finally {
+      setSyncLoading(false);
+    }
+  };
 
   return (
     <>
+      <h1 className="mb-2 text-3xl font-bold tracking-tight">{t("billing")}</h1>
+      <p className="mb-8 text-muted-foreground">{t("billing-info")}</p>
+
       {/* Current Plan Card */}
       <div className="mb-8 rounded-lg border border-border bg-card p-8 shadow-sm dark:bg-card/80">
         <div className="mb-6 flex items-center justify-between">
           <div>
             <h2 className="text-2xl font-semibold tracking-tight text-card-foreground">
-              Current Plan
+              {t("current-plan")}
             </h2>
-            <p className="text-muted-foreground">Your subscription details</p>
+            <p className="text-muted-foreground">{t("current-plan-details")}</p>
           </div>
           <div className="flex items-center">
             <span
               className={`rounded-full px-3 py-1 text-sm font-medium ${
-                currentPlan.status === 'active'
-                  ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
-                  : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'
+                currentPlan.status === "active"
+                  ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
+                  : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400"
               }`}
             >
-              {currentPlan.status === 'active' ? 'Active' : 'Pending'}
+              {currentPlan.status === "active" ? "Active" : "Pending"}
             </span>
           </div>
         </div>
@@ -116,14 +176,16 @@ export function BillingClient({
 
             <div className="mb-6 grid grid-cols-2 gap-6 md:grid-cols-4">
               <div>
-                <p className="text-sm text-muted-foreground">Start Date</p>
+                <p className="text-sm text-muted-foreground">
+                  {t("start-date")}
+                </p>
                 <p className="font-medium text-card-foreground">
                   {currentPlan.startDate}
                 </p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">
-                  Next Billing Date
+                  {t("next-billing")}
                 </p>
                 <p className="font-medium text-card-foreground">
                   {currentPlan.nextBillingDate}
@@ -151,9 +213,9 @@ export function BillingClient({
             {message && (
               <div
                 className={`mb-4 rounded-lg p-3 text-sm ${
-                  message.includes('Error')
-                    ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
-                    : 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
+                  message.includes("Error")
+                    ? "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
+                    : "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
                 }`}
               >
                 {message}
@@ -168,7 +230,7 @@ export function BillingClient({
                 size="lg"
               >
                 <ArrowUpCircle className="mr-2 h-5 w-5" />
-                {showUpgradeOptions ? 'Hide Upgrade Options' : 'Upgrade Plan'}
+                {showUpgradeOptions ? t("hide-upgrade") : t("upgrade-plan")}
               </Button>
               {/* <Button
                 variant="outline"
@@ -188,19 +250,40 @@ export function BillingClient({
       {showUpgradeOptions && (
         <div className="mb-8 rounded-lg border-2 border-primary/20 bg-card p-8 shadow-sm dark:bg-card/80">
           <h2 className="mb-6 text-2xl font-semibold text-card-foreground">
-            Upgrade Options
+            {t("upgrade-plan")}
           </h2>
+          {isAdmin && (
+            <div className="mb-6 flex items-center gap-3">
+              {!syncCompleted ? (
+                <Button
+                  onClick={handleSyncToProduct}
+                  disabled={syncLoading}
+                  className="flex items-center"
+                >
+                  {syncLoading ? "Syncing..." : "Sync to product to database"}
+                </Button>
+              ) : (
+                <Button
+                  disabled
+                  className="flex items-center bg-green-600 hover:bg-green-600"
+                >
+                  <CheckCircle className="mr-2 h-4 w-4" />
+                  Sync Completed
+                </Button>
+              )}
+            </div>
+          )}
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             {upgradePlans.map((plan) => (
               <div
                 key={plan.id}
                 className={`rounded-lg border transition-shadow hover:shadow-md ${
-                  plan.popular ? 'relative border-primary' : 'border-border'
+                  plan.popular ? "relative border-primary" : "border-border"
                 }`}
               >
                 {plan.popular && (
                   <div className="absolute top-0 right-0 rounded-tr-md rounded-bl-lg bg-primary px-3 py-1 text-xs text-primary-foreground">
-                    RECOMMENDED
+                    {t("recommend")}
                   </div>
                 )}
                 <div className="p-6">
@@ -223,15 +306,15 @@ export function BillingClient({
                   </ul>
                   {plan.isEnterprise ? (
                     <Button className="w-full" variant="outline" disabled>
-                      Contact Sales
+                      {t("contact-sales")}
                     </Button>
                   ) : (
                     <Button
-                      variant={plan.popular ? 'default' : 'outline'}
+                      variant={plan.popular ? "default" : "outline"}
                       className={`w-full ${
                         plan.popular
-                          ? ''
-                          : 'border-primary bg-transparent text-primary hover:bg-primary/10'
+                          ? ""
+                          : "border-primary bg-transparent text-primary hover:bg-primary/10"
                       }`}
                       asChild
                     >
@@ -248,18 +331,14 @@ export function BillingClient({
                   )}
                   {plan.isEnterprise && (
                     <p className="mt-2 text-center text-xs text-muted-foreground">
-                      Please contact our sales team for Enterprise pricing
+                      {t("contact-sales-desc")}
                     </p>
                   )}
                 </div>
               </div>
             ))}
           </div>
-          <p className="mt-6 text-sm text-muted-foreground">
-            * Upgrading your plan will take effect immediately. You'll be
-            charged the prorated amount for the remainder of your current
-            billing cycle.
-          </p>
+          <p className="mt-6 text-sm text-muted-foreground">{t("plan-desc")}</p>
         </div>
       )}
     </>

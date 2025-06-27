@@ -30,6 +30,16 @@ interface AddEventModalProps {
   wsId?: string;
 }
 
+const minutesToHours = (minutes: number) => {
+  if (typeof minutes !== 'number' || isNaN(minutes)) return '';
+  const hours = minutes / 60;
+  return hours.toFixed(1);
+};
+
+const hoursToMinutes = (hours: number) => {
+  if (typeof hours !== 'number' || isNaN(hours)) return 0;
+  return Math.round(hours * 60);
+};
 export default function AddEventModal({
   isOpen,
   onClose,
@@ -40,8 +50,8 @@ export default function AddEventModal({
     description: '',
     total_duration: 1,
     is_splittable: true,
-    min_split_duration_minutes: 30,
-    max_split_duration_minutes: 60,
+    min_split_duration_minutes: 60,
+    max_split_duration_minutes: 120,
     calendar_hours: 'work_hours',
     start_date: '',
     end_date: '',
@@ -160,24 +170,26 @@ export default function AddEventModal({
           | 'meeting_hours',
         start_date: formData.start_date || null,
         end_date: formData.end_date || null,
-        ws_id: wsId,
-        creator_id: user.id,
-        archived: false,
-        completed: false,
-        created_at: new Date().toISOString(),
       };
 
-      const { data, error } = await supabase
-        .from('tasks')
-        .insert(taskData)
-        .select();
+      const response = await fetch(`/api/${wsId}/task/create`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(taskData),
+      });
 
-      if (error) {
-        console.error('Database error:', error);
-        setErrors({ submit: `Failed to create task: ${error.message}` });
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('API error:', errorData);
+        setErrors({
+          submit: `Failed to create task: ${errorData.error || 'Unknown error'}`,
+        });
         return false;
       }
 
+      const data = await response.json();
       console.log('Task created successfully:', data);
       return true;
     } catch (error) {
@@ -220,7 +232,7 @@ export default function AddEventModal({
 
   const workingHoursOptions = [
     {
-      value: 'working_hours',
+      value: 'work_hours',
       label: 'Working Hours',
       icon: '💼',
       description: 'Schedule during standard work hours',
@@ -230,6 +242,12 @@ export default function AddEventModal({
       label: 'Personal Time',
       icon: '⚙️',
       description: 'Schedule at any time of day',
+    },
+    {
+      value: 'meeting_hours',
+      label: 'Meeting Hours',
+      icon: '📅',
+      description: 'Schedule during typical meeting times',
     },
   ];
 
@@ -326,21 +344,23 @@ export default function AddEventModal({
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-2">
                     <Label htmlFor="min-duration" className="text-sm">
-                      Min Duration (h){' '}
-                      <span className="text-destructive">*</span>
+                      Min Duration (h) <span className="text-destructive">*</span>
                     </Label>
                     <Input
                       id="min-duration"
                       type="number"
                       step="0.25"
                       min="0.25"
-                      value={formData.min_split_duration_minutes}
-                      onChange={(e) =>
+                      value={minutesToHours(
+                        formData.min_split_duration_minutes
+                      )}
+                      onChange={(e) => {
+                        const hours = parseFloat(e.target.value);
                         updateFormData(
                           'min_split_duration_minutes',
-                          parseFloat(e.target.value)
-                        )
-                      }
+                          hoursToMinutes(hours)
+                        );
+                      }}
                       className={
                         errors.min_split_duration_minutes
                           ? 'border-destructive'
@@ -356,21 +376,23 @@ export default function AddEventModal({
 
                   <div className="space-y-2">
                     <Label htmlFor="max-duration" className="text-sm">
-                      Max Duration (h){' '}
-                      <span className="text-destructive">*</span>
+                      Max Duration (h) <span className="text-destructive">*</span>
                     </Label>
                     <Input
                       id="max-duration"
                       type="number"
                       step="0.25"
                       min="0.25"
-                      value={formData.max_split_duration_minutes}
-                      onChange={(e) =>
+                      value={minutesToHours(
+                        formData.max_split_duration_minutes
+                      )}
+                      onChange={(e) => {
+                        const hours = parseFloat(e.target.value);
                         updateFormData(
                           'max_split_duration_minutes',
-                          parseFloat(e.target.value)
-                        )
-                      }
+                          hoursToMinutes(hours)
+                        );
+                      }}
                       className={
                         errors.max_split_duration_minutes
                           ? 'border-destructive'
