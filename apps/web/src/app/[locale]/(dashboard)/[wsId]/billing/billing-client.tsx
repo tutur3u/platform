@@ -100,7 +100,7 @@ export function BillingClient({
     price:
       product.prices && product.prices.length > 0
         ? product.prices[0] && "priceAmount" in product.prices[0]
-          ? `$${((product.prices[0] as any).priceAmount / 100).toFixed(2)}`
+          ? `$${(product.prices[0].priceAmount / 100).toFixed(2)}`
           : "Free"
         : "Custom",
     billingCycle:

@@ -37,7 +37,7 @@ const checkCreator = async (wsId: string) => {
 
   if (wsId !== ROOT_WORKSPACE_ID) {
     console.error("Billing page is only available for root workspace");
-    return false;
+    throw new Error("Billing page is only available for root workspace");
   }
 
   const { data, error } = await supabase.rpc("check_ws_creator", {
