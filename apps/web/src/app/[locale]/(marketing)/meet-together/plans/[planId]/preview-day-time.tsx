@@ -19,9 +19,7 @@ export default function PreviewDayTime({
 }) {
   const {
     filteredUserIds,
-    previewDate,
     setPreviewDate,
-    getPreviewUsers,
     getOpacityForDate,
   } = useTimeBlocking();
 

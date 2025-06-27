@@ -314,7 +314,7 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
       const hasOverlaps = overlapCount > 1;
 
       // Width calculation based on overlap count
-      let eventWidth, eventLeft;
+      let eventWidth: number, eventLeft: number;
 
       if (hasOverlaps) {
         // Calculate the position of this event within its overlap group
@@ -913,7 +913,8 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
   return (
     <ContextMenu>
       <ContextMenuTrigger asChild>
-        <div
+        <button
+          type="button"
           ref={cardRef}
           id={`event-${id}`}
           className={cn(
@@ -954,7 +955,6 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
             wasDraggedRef.current = false;
             wasResizedRef.current = false;
           }}
-          role="button"
           aria-label={`Event: ${title || 'Untitled event'}`}
         >
           {/* Continuation indicators for multi-day events */}
@@ -971,7 +971,8 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
           )}
 
           {/* Edit button overlay */}
-          <div
+          <button
+            type="button"
             className={cn(
               'absolute top-2 right-2 rounded-full p-0.5 opacity-0 shadow-sm',
               'z-10 transition-opacity group-hover:opacity-100', // Higher z-index
@@ -985,9 +986,16 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
               e.preventDefault();
               openModal(event._originalId || id);
             }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.stopPropagation();
+                e.preventDefault();
+                openModal(event._originalId || id);
+              }
+            }}
           >
             <Pencil className="h-3 w-3" />
-          </div>
+          </button>
 
           {/* Status indicators */}
           {updateStatus === 'syncing' && (
@@ -1043,12 +1051,14 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
                 )}
                 {typeof localEvent.google_event_id === 'string' &&
                   localEvent.google_event_id.trim() !== '' && (
-                    <img
+                    <Image
                       src="/media/google-calendar-icon.png"
                       alt="Google Calendar"
                       className="mr-1 inline-block h-4 w-4 align-text-bottom"
                       title="Synced from Google Calendar"
                       data-testid="google-calendar-logo"
+                      width={16}
+                      height={16}
                     />
                   )}
                 <span className="min-w-0 overflow-hidden text-ellipsis">
@@ -1086,8 +1096,9 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
 
           {/* Only show resize handle for non-multi-day events or start/end segments */}
           {(!_isMultiDay || _dayPosition !== 'middle') && (
-            <div
+            <button
               ref={handleRef}
+              type="button"
               className={cn(
                 'absolute inset-x-0 bottom-0 cursor-s-resize hover:bg-primary/20',
                 'h-2 transition-colors'
@@ -1095,7 +1106,7 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
               aria-label="Resize event"
             />
           )}
-        </div>
+        </button>
       </ContextMenuTrigger>
       <ContextMenuContent className="w-48">
         <ContextMenuItem

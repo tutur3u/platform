@@ -149,7 +149,7 @@ export async function PATCH(
       const { title, description, categoryId, taskId, startTime, endTime } =
         body;
 
-      const updateData: any = {
+      const updateData: { updated_at: string; title?: string; description?: string | null; category_id?: string | null; task_id?: string | null; start_time?: string; end_time?: string; } = {
         updated_at: new Date().toISOString(),
       };
 

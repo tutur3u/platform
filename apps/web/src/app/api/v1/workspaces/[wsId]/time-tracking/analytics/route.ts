@@ -75,7 +75,7 @@ export async function GET(
       totalSessions > 0 ? Math.round(totalTime / totalSessions) : 0;
 
     // Category breakdown
-    const categoryBreakdown = sessions?.reduce((acc: any, session) => {
+    const categoryBreakdown = sessions?.reduce((acc: Record<string, { name: string; color: string; time: number; sessions: number; }>, session) => {
       const categoryName = session.category?.name || 'Uncategorized';
       if (!acc[categoryName]) {
         acc[categoryName] = {
@@ -91,7 +91,7 @@ export async function GET(
     }, {});
 
     // Daily breakdown
-    const dailyBreakdown = sessions?.reduce((acc: any, session) => {
+    const dailyBreakdown = sessions?.reduce((acc: Record<string, { date: string; time: number; sessions: number; }>, session) => {
       const date = new Date(session.start_time).toISOString().split('T')[0];
       if (!date) return acc;
       if (!acc[date]) {

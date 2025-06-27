@@ -3560,7 +3560,6 @@ export function TimerControls({
                     ) : (
                       <>
                         {/* Searchable Task Selection */}
-                        {/* biome-ignore lint/a11y/useSemanticElements: dropdown container interactive div */}
                         <div
                           ref={dropdownContainerRef}
                           onDragEnter={handleDragEnter}
@@ -3746,8 +3745,6 @@ export function TimerControls({
 
                           {/* Dropdown Content */}
                           {isTaskDropdownOpen && (
-                            <>
-                              {/* biome-ignore lint/a11y/useSemanticElements: dropdown content container */}
                               <div
                                 ref={dropdownContentRef}
                                 className="w-full"
@@ -4129,7 +4126,6 @@ export function TimerControls({
                                   )}
                                 </div>
                               </div>
-                            </>
                           )}
                         </div>
 

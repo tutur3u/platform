@@ -242,7 +242,7 @@ function SettingsDialogContent({
           <div className="w-full md:hidden">
             <Select
               value={activeSection as string}
-              onValueChange={(value) => setActiveSection(value as any)}
+              onValueChange={(value) => setActiveSection(value)}
             >
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select a setting" />

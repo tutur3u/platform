@@ -238,9 +238,16 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
               >
                 {/* Show/hide expansion button */}
                 {hiddenCount > 0 && (
-                  <div
-                    className="flex cursor-pointer items-center justify-center rounded-sm px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted/40"
+                  <button
+                    type="button"
+                    className="flex items-center justify-center rounded-sm px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted/40 focus:outline-none focus:ring-2 focus:ring-primary/50"
                     onClick={() => toggleDateExpansion(dateKey)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        toggleDateExpansion(dateKey);
+                      }
+                    }}
                     style={{
                       position: 'absolute',
                       top: `${MAX_EVENTS_DISPLAY * 1.7}rem`,
@@ -251,15 +258,22 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
                   >
                     <ChevronDown className="mr-1 h-3 w-3" />
                     {hiddenCount} more
-                  </div>
+                  </button>
                 )}
 
                 {isExpanded &&
                   !shouldShowAll &&
                   dateEvents.length > MAX_EVENTS_DISPLAY && (
-                    <div
-                      className="flex cursor-pointer items-center justify-center rounded-sm px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted/40"
+                    <button
+                      type="button"
+                      className="flex items-center justify-center rounded-sm px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted/40 focus:outline-none focus:ring-2 focus:ring-primary/50"
                       onClick={() => toggleDateExpansion(dateKey)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          toggleDateExpansion(dateKey);
+                        }
+                      }}
                       style={{
                         position: 'absolute',
                         top: `${dateEvents.length * 1.7}rem`,
@@ -270,7 +284,7 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
                     >
                       <ChevronUp className="mr-1 h-3 w-3" />
                       Show less
-                    </div>
+                    </button>
                   )}
               </div>
             );
@@ -334,6 +348,14 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
                 zIndex: 5,
               }}
               onClick={() => openModal(event.id, 'all-day')}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  openModal(event.id, 'all-day');
+                }
+              }}
             >
               {typeof event.google_event_id === 'string' &&
                 event.google_event_id.trim() !== '' && (

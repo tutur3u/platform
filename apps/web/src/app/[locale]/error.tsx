@@ -3,7 +3,7 @@
 // Error components must be Client Components
 import { Button } from '@tuturuuu/ui/button';
 
-export default function Error({
+export default function ErrorPage({
   error,
   reset,
 }: {

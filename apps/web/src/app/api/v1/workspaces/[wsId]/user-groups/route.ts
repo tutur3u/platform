@@ -38,7 +38,7 @@ export async function POST(req: Request, { params }: Params) {
     group_ids: string[];
   };
 
-  const { group_ids, ...coreData } = data;
+  const { ...coreData } = data;
 
   const { error } = await supabase.from('workspace_user_groups').insert({
     ...coreData,

@@ -1,6 +1,7 @@
 import type { UseChatHelpers } from '@tuturuuu/ai/types';
 import type { AIChat } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
+import Image from 'next/image';
 import type { StatedFile } from '@tuturuuu/ui/custom/file-uploader';
 import { Dialog } from '@tuturuuu/ui/dialog';
 import {
@@ -595,11 +596,12 @@ export function PromptForm({
                           className="group flex items-center gap-2 rounded"
                         >
                           <div className="size-8">
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img
+                            <Image
                               src={URL.createObjectURL(f.rawFile)}
                               alt={f.rawFile.name}
                               className="h-8 w-8 rounded object-cover"
+                              width={32}
+                              height={32}
                             />
                           </div>
                           <span className="line-clamp-1 w-full max-w-xs">

@@ -87,7 +87,7 @@ export async function POST(req: Request, { params }: Params) {
     );
   }
 
-  const insertData = rows.flatMap((row: Record<string, any>) =>
+  const insertData = rows.flatMap((row: Record<string, unknown>) =>
     columns.map((column: { id: string; name: string }) => ({
       dataset_id: datasetId,
       column_id: column.id,

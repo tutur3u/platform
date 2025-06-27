@@ -28,7 +28,9 @@ export const CalendarBaseMatrix = ({ dates }: { dates: Date[] }) => {
       {dates.map((_, index) => (
         <CalendarColumn
           key={`cal-col-${index}`}
-          date={dayjs(dates[index]!).format('YYYY-MM-DD')}
+          date={
+            index < dates.length ? dayjs(dates[index]).format('YYYY-MM-DD') : ''
+          }
           last={index === dates.length - 1}
         />
       ))}

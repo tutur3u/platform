@@ -84,10 +84,10 @@ export function WSSettingsDialog() {
                           asChild
                           isActive={item.name === 'Messages & media'}
                         >
-                          <a href="#">
+                          <button type="button">
                             <item.icon />
                             <span>{item.name}</span>
-                          </a>
+                          </button>
                         </SidebarMenuButton>
                       </SidebarMenuItem>
                     ))}

@@ -38,7 +38,7 @@ export async function GET(request: Request) {
     }
 
     // Validate URL
-    let parsedUrl;
+    let parsedUrl: URL | undefined;
     try {
       parsedUrl = new URL(url);
       if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
@@ -163,7 +163,7 @@ export async function GET(request: Request) {
       const buffer = await response.arrayBuffer();
       // Try to detect BOM for UTF-16/UTF-8
       const firstBytes = new Uint8Array(buffer.slice(0, 4));
-      let decoder;
+      let decoder: TextDecoder | undefined;
 
       if (firstBytes[0] === 0xff && firstBytes[1] === 0xfe) {
         decoder = new TextDecoder('utf-16le');

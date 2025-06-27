@@ -103,7 +103,7 @@ export async function POST(req: Request, { params }: Params) {
     }
 
     return NextResponse.json({ message: 'All quizzes processed successfully' });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Bulk quiz error:', error);
     return NextResponse.json(
       { message: error.message || 'An error occurred processing quizzes' },

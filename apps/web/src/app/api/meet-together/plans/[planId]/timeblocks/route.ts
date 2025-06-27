@@ -43,8 +43,8 @@ export async function GET(_: Request, { params }: Params) {
   }
 
   const timeblocks = [
-    ...(guestTimeBlocks?.data || [])?.map((tb) => ({ ...tb, is_guest: true })),
-    ...(userTimeBlocks?.data || [])?.map((tb) => ({ ...tb, is_guest: false })),
+    ...(guestTimeBlocks?.data || []).map((tb) => ({ ...tb, is_guest: true })),
+    ...(userTimeBlocks?.data || []).map((tb) => ({ ...tb, is_guest: false })),
   ];
 
   return NextResponse.json(timeblocks);

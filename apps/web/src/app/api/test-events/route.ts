@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
   const generatedEvents = [];
 
   // Start from today at the beginning of active hours in the user's timezone
-  let startDate;
+  let startDate: dayjs.Dayjs;
   try {
     startDate = dayjs()
       .tz(timezone)
