@@ -4,9 +4,13 @@ import {
   getWorkspacesForSync 
 } from './google-calendar-sync.js';
 
-// Manual trigger function for immediate sync of a specific workspace
-export const triggerWorkspaceImmediateSync = async (ws_id: string) => {
-  console.log(`=== Manually triggering immediate sync for workspace ${ws_id} ===`);
+// Helper function for single workspace sync
+const triggerWorkspaceSync = async (
+  ws_id: string, 
+  syncFunction: (workspace: any) => Promise<any>,
+  syncType: 'immediate' | 'extended'
+) => {
+  console.log(`=== Manually triggering ${syncType} sync for workspace ${ws_id} ===`);
   
   try {
     const workspaces = await getWorkspacesForSync();
@@ -17,35 +21,23 @@ export const triggerWorkspaceImmediateSync = async (ws_id: string) => {
       return { ws_id, success: false, error: 'Workspace not found or no access token' };
     }
     
-    const result = await syncWorkspaceImmediate(workspace);
-    console.log(`=== Manual immediate sync for workspace ${ws_id} completed ===`);
+    const result = await syncFunction(workspace);
+    console.log(`=== Manual ${syncType} sync for workspace ${ws_id} completed ===`);
     return result;
   } catch (error) {
-    console.error(`Error in manual immediate sync for workspace ${ws_id}:`, error);
+    console.error(`Error in manual ${syncType} sync for workspace ${ws_id}:`, error);
     return { ws_id, success: false, error: error instanceof Error ? error.message : 'Unknown error' };
   }
 };
 
+// Manual trigger function for immediate sync of a specific workspace
+export const triggerWorkspaceImmediateSync = async (ws_id: string) => {
+  return triggerWorkspaceSync(ws_id, syncWorkspaceImmediate, 'immediate');
+};
+
 // Manual trigger function for extended sync of a specific workspace
 export const triggerWorkspaceExtendedSync = async (ws_id: string) => {
-  console.log(`=== Manually triggering extended sync for workspace ${ws_id} ===`);
-  
-  try {
-    const workspaces = await getWorkspacesForSync();
-    const workspace = workspaces.find(w => w.ws_id === ws_id);
-    
-    if (!workspace) {
-      console.error(`Workspace ${ws_id} not found or no access token available`);
-      return { ws_id, success: false, error: 'Workspace not found or no access token' };
-    }
-    
-    const result = await syncWorkspaceExtended(workspace);
-    console.log(`=== Manual extended sync for workspace ${ws_id} completed ===`);
-    return result;
-  } catch (error) {
-    console.error(`Error in manual extended sync for workspace ${ws_id}:`, error);
-    return { ws_id, success: false, error: error instanceof Error ? error.message : 'Unknown error' };
-  }
+  return triggerWorkspaceSync(ws_id, syncWorkspaceExtended, 'extended');
 };
 
 // Manual trigger function for all workspaces immediate sync
