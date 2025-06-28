@@ -12,7 +12,7 @@ import {
 import { addHours, format, isAfter } from 'date-fns';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 interface PaymentDetails {
   planName?: string;
