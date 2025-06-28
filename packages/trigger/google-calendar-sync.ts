@@ -1,9 +1,6 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { WorkspaceCalendarEvent } from '@tuturuuu/types/db';
-import {
-  BACKGROUND_SYNC_RANGE,
-  updateLastUpsert,
-} from '@tuturuuu/utils/calendar-sync-coordination';
+import { updateLastUpsert } from '@tuturuuu/utils/calendar-sync-coordination';
 import dayjs from 'dayjs';
 import { OAuth2Client } from 'google-auth-library';
 import { google } from 'googleapis';
@@ -38,8 +35,14 @@ const getColorFromGoogleColorId = (colorId?: string): string => {
   return colorId && colorMap[colorId] ? colorMap[colorId] : 'BLUE';
 };
 
-export const syncGoogleCalendarEvents = async () => {
-  console.log('=== Starting syncGoogleCalendarEvents function ===');
+// Core sync function that can be reused with different time ranges
+const syncGoogleCalendarEventsForRange = async (
+  timeMin: dayjs.Dayjs,
+  timeMax: dayjs.Dayjs,
+  syncType: 'immediate' | 'extended'
+) => {
+  console.log(`=== Starting ${syncType} syncGoogleCalendarEvents function ===`);
+  console.log(`Time range: ${timeMin.format('YYYY-MM-DD HH:mm')} to ${timeMax.format('YYYY-MM-DD HH:mm')}`);
 
   try {
     console.log('Creating admin client...');
@@ -61,7 +64,7 @@ export const syncGoogleCalendarEvents = async () => {
     console.log('Number of tokens found:', tokens?.length || 0);
 
     console.log(
-      'Synchronizing Google Calendar events for',
+      `Synchronizing Google Calendar events for`,
       tokens.length,
       'wsIds',
       tokens.map((token) => token.ws_id)
@@ -82,23 +85,19 @@ export const syncGoogleCalendarEvents = async () => {
         continue;
       }
 
-      console.log(`[${ws_id}] Starting sync process...`);
+      console.log(`[${ws_id}] Starting ${syncType} sync process...`);
 
       const auth = getGoogleAuthClient(token);
 
       try {
         const calendar = google.calendar({ version: 'v3', auth });
 
-        const now = dayjs();
-        const timeMin = now.toDate();
-        const timeMax = now.add(BACKGROUND_SYNC_RANGE, 'day');
-
         console.log(`[${ws_id}] Fetching events from Google Calendar...`);
 
         const response = await calendar.events.list({
           calendarId: 'primary',
-          timeMin: timeMin.toISOString(), // from now
-          timeMax: timeMax.toISOString(), // to the next 4 weeks
+          timeMin: timeMin.toISOString(),
+          timeMax: timeMax.toISOString(),
           singleEvents: true, // separate recurring events
           orderBy: 'startTime',
           maxResults: 1000,
@@ -122,9 +121,6 @@ export const syncGoogleCalendarEvents = async () => {
           locked: false,
         }));
         console.log(`[${ws_id}] Formatted ${formattedEvents.length} events`);
-        console.log(`[${ws_id}] access_token`, access_token);
-        console.log(`[${ws_id}] refresh_token`, refresh_token);
-        console.log(`[${ws_id}] formattedEvents`, formattedEvents);
 
         // upsert the events in the database for this wsId
         console.log(
@@ -206,7 +202,7 @@ export const syncGoogleCalendarEvents = async () => {
         // Update lastUpsert timestamp after successful upsert
         console.log(`[${ws_id}] Updating lastUpsert timestamp...`);
         await updateLastUpsert(ws_id, supabase);
-        console.log(`[${ws_id}] Sync completed successfully`);
+        console.log(`[${ws_id}] ${syncType} sync completed successfully`);
       } catch (error) {
         console.error(
           `[${ws_id}] Error fetching Google Calendar events:`,
@@ -215,7 +211,7 @@ export const syncGoogleCalendarEvents = async () => {
       }
     }
   } catch (error) {
-    console.error('Error in fetchGoogleCalendarEvents:', error);
+    console.error(`Error in ${syncType} fetchGoogleCalendarEvents:`, error);
     console.error('Error details:', {
       message: error instanceof Error ? error.message : 'Unknown error',
       stack: error instanceof Error ? error.stack : 'No stack trace',
@@ -223,6 +219,29 @@ export const syncGoogleCalendarEvents = async () => {
     });
     return [];
   } finally {
-    console.log('=== syncGoogleCalendarEvents function completed ===');
+    console.log(`=== ${syncType} syncGoogleCalendarEvents function completed ===`);
   }
+};
+
+// Task 1: Sync 1 week from now (runs every 1 minute)
+export const syncGoogleCalendarEventsImmediate = async () => {
+  const now = dayjs();
+  const timeMin = now;
+  const timeMax = now.add(7, 'day'); // 1 week from now
+  
+  return syncGoogleCalendarEventsForRange(timeMin, timeMax, 'immediate');
+};
+
+// Task 2: Sync 3 weeks after the first week (runs every 10 minutes)
+export const syncGoogleCalendarEventsExtended = async () => {
+  const now = dayjs();
+  const timeMin = now.add(7, 'day'); // Start from 1 week from now
+  const timeMax = now.add(28, 'day'); // 4 weeks from now (1 week + 3 weeks)
+  
+  return syncGoogleCalendarEventsForRange(timeMin, timeMax, 'extended');
+};
+
+// Legacy function for backward compatibility
+export const syncGoogleCalendarEvents = async () => {
+  return syncGoogleCalendarEventsImmediate();
 };
