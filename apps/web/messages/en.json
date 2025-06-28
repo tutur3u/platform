@@ -13,7 +13,17 @@
     "contact-sales-desc": "For enterprise solutions, please contact our sales team for personalized assistance.",
     "plan-desc":"* Upgrading your plan will take effect immediately. You'll be charged the prorated amount for the remainder of your current billing cycle.",
     "subscription-history": "Subscription History",
-    "subscription-history-desc": "No subscription history available."
+    "subscription-history-desc": "No subscription history available.",
+    "success":{
+      "title": "Payment Successful",
+      "message": "Thank you for your subscription. Your payment has been processed successfully.",
+      "payment-summary": "Payment Summary",
+      "plan": "Plan",
+      "paid": "Paid",
+      "status":"Status",
+      "payment-method": "Payment Method",
+      "invoice-id": "Invoice ID"
+    }
   },
   "common": {
     "success": "Success",
