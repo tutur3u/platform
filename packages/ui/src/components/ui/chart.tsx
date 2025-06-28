@@ -4,6 +4,35 @@ import { cn } from '@tuturuuu/utils/format';
 import * as React from 'react';
 import * as RechartsPrimitive from 'recharts';
 
+// Type definitions for better type safety
+export interface ChartTooltipPayload {
+  value: string | number;
+  name?: string;
+  dataKey?: string;
+  color?: string;
+  payload: Record<string, unknown>;
+}
+
+export interface ChartLegendPayload {
+  value: string;
+  dataKey: string;
+  color: string;
+  type?: string;
+}
+
+export type ChartTooltipFormatter = (
+  value: string | number,
+  name: string,
+  props: ChartTooltipPayload,
+  index: number,
+  payload: Record<string, unknown>
+) => React.ReactNode;
+
+export type ChartTooltipLabelFormatter = (
+  label: string | number,
+  payload?: ChartTooltipPayload[]
+) => React.ReactNode;
+
 // Format: { THEME_NAME: CSS_SELECTOR }
 const THEMES = { light: '', dark: '.dark' } as const;
 
@@ -78,6 +107,7 @@ const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
 
   return (
     <style
+      // biome-ignore lint/security/noDangerouslySetInnerHtml: <This is a standard use case>
       dangerouslySetInnerHTML={{
         __html: Object.entries(THEMES)
           .map(
@@ -104,14 +134,20 @@ const ChartTooltip = RechartsPrimitive.Tooltip;
 
 const ChartTooltipContent = React.forwardRef<
   HTMLDivElement,
-  React.ComponentProps<typeof RechartsPrimitive.Tooltip> &
-    React.ComponentProps<'div'> & {
-      hideLabel?: boolean;
-      hideIndicator?: boolean;
-      indicator?: 'line' | 'dot' | 'dashed';
-      nameKey?: string;
-      labelKey?: string;
-    }
+  React.ComponentProps<'div'> & {
+    active?: boolean;
+    payload?: ChartTooltipPayload[];
+    label?: string | number;
+    labelFormatter?: ChartTooltipLabelFormatter;
+    formatter?: ChartTooltipFormatter;
+    hideLabel?: boolean;
+    hideIndicator?: boolean;
+    indicator?: 'line' | 'dot' | 'dashed';
+    nameKey?: string;
+    labelKey?: string;
+    color?: string;
+    labelClassName?: string;
+  }
 >(
   (
     {
@@ -141,24 +177,39 @@ const ChartTooltipContent = React.forwardRef<
       const [item] = payload;
       const key = `${labelKey || item?.dataKey || item?.name || 'value'}`;
       const itemConfig = getPayloadConfigFromPayload(config, item, key);
-      const value =
-        !labelKey && typeof label === 'string'
-          ? config[label as keyof typeof config]?.label || label
-          : itemConfig?.label;
+
+      // Determine the display value for the label
+      let displayValue: React.ReactNode;
+      if (!labelKey && typeof label === 'string') {
+        displayValue = config[label as keyof typeof config]?.label || label;
+      } else {
+        displayValue = itemConfig?.label;
+      }
 
       if (labelFormatter) {
+        // Use the original label for the formatter (string | number)
+        const formatterLabel =
+          !labelKey && (typeof label === 'string' || typeof label === 'number')
+            ? label
+            : typeof displayValue === 'string' ||
+                typeof displayValue === 'number'
+              ? displayValue
+              : String(displayValue || '');
+
         return (
           <div className={cn('font-medium', labelClassName)}>
-            {labelFormatter(value, payload)}
+            {labelFormatter(formatterLabel, payload)}
           </div>
         );
       }
 
-      if (!value) {
+      if (!displayValue) {
         return null;
       }
 
-      return <div className={cn('font-medium', labelClassName)}>{value}</div>;
+      return (
+        <div className={cn('font-medium', labelClassName)}>{displayValue}</div>
+      );
     }, [
       label,
       labelFormatter,
@@ -260,11 +311,12 @@ const ChartLegend = RechartsPrimitive.Legend;
 
 const ChartLegendContent = React.forwardRef<
   HTMLDivElement,
-  React.ComponentProps<'div'> &
-    Pick<RechartsPrimitive.LegendProps, 'payload' | 'verticalAlign'> & {
-      hideIcon?: boolean;
-      nameKey?: string;
-    }
+  React.ComponentProps<'div'> & {
+    payload?: ChartLegendPayload[];
+    verticalAlign?: 'top' | 'bottom';
+    hideIcon?: boolean;
+    nameKey?: string;
+  }
 >(
   (
     { className, hideIcon = false, payload, verticalAlign = 'bottom', nameKey },
@@ -319,7 +371,7 @@ ChartLegendContent.displayName = 'ChartLegend';
 // Helper to extract item config from a payload.
 function getPayloadConfigFromPayload(
   config: ChartConfig,
-  payload: unknown,
+  payload: ChartTooltipPayload | ChartLegendPayload | unknown,
   key: string
 ) {
   if (typeof payload !== 'object' || payload === null) {

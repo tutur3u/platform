@@ -32,6 +32,7 @@
     "format-and-lint": "biome check",
     "format-and-lint:fix": "biome check --write",
     "format-and-lint:ci": "biome ci",
+    "gemini": "bunx @google/gemini-cli",
     "stop": "cd apps/db && bun sb:stop",
     "diff": "cd apps/db && bun sb:diff",
     "typegen": "cd apps/db && bun sb:typegen",
