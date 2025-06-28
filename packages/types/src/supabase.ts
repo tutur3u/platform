@@ -7783,6 +7783,7 @@ export type Database = {
       };
       count_search_users: {
         Args:
+          | { search_query: string }
           | {
               enabled_filter?: boolean;
               search_query: string;
@@ -7799,9 +7800,10 @@ export type Database = {
         Args:
           | {
               p_user_id: string;
-              p_expiry_seconds?: number;
+
               p_origin_app: string;
               p_target_app: string;
+              p_expiry_seconds?: number;
             }
           | {
               p_user_id: string;
@@ -7820,11 +7822,11 @@ export type Database = {
         }[];
       };
       get_daily_income_expense: {
-        Args: { past_days?: number; _ws_id: string };
+        Args: { _ws_id: string; past_days?: number };
         Returns: {
-          total_expense: number;
-          total_income: number;
           day: string;
+          total_income: number;
+          total_expense: number;
         }[];
       };
       get_daily_prompt_completion_tokens: {
@@ -7985,7 +7987,7 @@ export type Database = {
       };
       get_transaction_categories_with_amount: {
         Args: Record<PropertyKey, never>;
-        Returns: {
+        Returns: { 
           ws_id: string;
           amount: number;
           id: string;
@@ -8001,8 +8003,8 @@ export type Database = {
       get_user_session_stats: {
         Args: { user_id: string };
         Returns: {
-          active_sessions: number;
           total_sessions: number;
+          active_sessions: number;
           current_session_age: unknown;
         }[];
       };
@@ -8019,7 +8021,7 @@ export type Database = {
       };
       get_user_tasks: {
         Args: { _board_id: string };
-        Returns: {
+        Returns: { 
           list_id: string;
           completed: boolean;
           board_id: string;
@@ -8153,7 +8155,7 @@ export type Database = {
         Returns: boolean;
       };
       is_nova_user_id_in_team: {
-        Args: { _team_id: string; _user_id: string };
+        Args: { _user_id: string; _team_id: string };
         Returns: boolean;
       };
       is_org_member: {
@@ -8193,7 +8195,7 @@ export type Database = {
         Returns: number;
       };
       nova_get_user_total_sessions: {
-        Args: { user_id: string; challenge_id: string };
+        Args: { challenge_id: string; user_id: string };
         Returns: number;
       };
       remove_board_tags: {
@@ -8219,9 +8221,9 @@ export type Database = {
           match_all?: boolean;
         };
         Returns: {
+          board_id: string;
           board_name: string;
           board_tags: Json;
-          board_id: string;
         }[];
       };
       search_users: {
@@ -8255,16 +8257,16 @@ export type Database = {
       };
       search_users_by_name: {
         Args: {
-          result_limit?: number;
           search_query: string;
+          result_limit?: number;
           min_similarity?: number;
         };
         Returns: {
-          relevance: number;
+          id: string;
           handle: string;
           display_name: string;
           avatar_url: string;
-          id: string;
+          relevance: number;
         }[];
       };
       sum_quiz_scores: {
@@ -8298,11 +8300,11 @@ export type Database = {
         Returns: boolean;
       };
       validate_cross_app_token: {
-        Args: { p_target_app: string; p_token: string };
+        Args: { p_token: string; p_target_app: string };
         Returns: string;
       };
       validate_cross_app_token_with_session: {
-        Args: { p_target_app: string; p_token: string };
+        Args: { p_token: string; p_target_app: string };
         Returns: {
           session_data: Json;
           user_id: string;
