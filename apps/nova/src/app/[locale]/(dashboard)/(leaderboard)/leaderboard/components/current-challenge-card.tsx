@@ -8,8 +8,8 @@ import {
   Trophy,
 } from '@tuturuuu/ui/icons';
 import { motion } from 'framer-motion';
-import { useTranslations } from 'next-intl';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 
 const CURRENT_CHALLENGE_ID = '1d81a081-5f5f-4a86-95c5-a72eb4d0e787';
 

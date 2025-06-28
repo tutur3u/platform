@@ -1,7 +1,7 @@
-import { BoardClient } from './_components/board-client';
-import { getTaskBoard, getTaskLists, getTasks } from '@/lib/task-helper';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { notFound } from 'next/navigation';
+import { getTaskBoard, getTaskLists, getTasks } from '@/lib/task-helper';
+import { BoardClient } from './_components/board-client';
 
 interface Props {
   params: Promise<{

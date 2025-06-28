@@ -1,5 +1,7 @@
 'use client';
 
+import { Suspense } from 'react';
+import LoadingStatisticCard from '@/components/loading-statistic-card';
 import {
   ExpenseStatistics,
   IncomeStatistics,
@@ -10,8 +12,6 @@ import {
   WalletsStatistics,
 } from '../../(dashboard)/statistics';
 import type { FinanceDashboardSearchParams } from './page';
-import LoadingStatisticCard from '@/components/loading-statistic-card';
-import { Suspense } from 'react';
 
 export default function FinanceMetrics({
   wsId,

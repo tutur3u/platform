@@ -1,8 +1,8 @@
 'use client';
 
-import Action from './notification-action';
 import { toast } from '@tuturuuu/ui/sonner';
-import { ReactNode, useState } from 'react';
+import { type ReactNode, useState } from 'react';
+import Action from './notification-action';
 
 type buttonVariant =
   | 'default'

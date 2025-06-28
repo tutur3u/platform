@@ -1,11 +1,8 @@
 'use client';
 
-import { WalletForm } from '../wallets/form';
-import { TransactionCategoryForm } from './categories/form';
-import { fetcher } from '@/utils/fetcher';
-import { Transaction } from '@tuturuuu/types/primitives/Transaction';
-import { TransactionCategory } from '@tuturuuu/types/primitives/TransactionCategory';
-import { Wallet } from '@tuturuuu/types/primitives/Wallet';
+import type { Transaction } from '@tuturuuu/types/primitives/Transaction';
+import type { TransactionCategory } from '@tuturuuu/types/primitives/TransactionCategory';
+import type { Wallet } from '@tuturuuu/types/primitives/Wallet';
 import { Button } from '@tuturuuu/ui/button';
 import { Calendar } from '@tuturuuu/ui/calendar';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
@@ -31,11 +28,14 @@ import { Textarea } from '@tuturuuu/ui/textarea';
 import { cn } from '@tuturuuu/utils/format';
 import { format } from 'date-fns';
 import { enUS, vi } from 'date-fns/locale';
-import { useLocale, useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
 import useSWR from 'swr';
 import * as z from 'zod';
+import { fetcher } from '@/utils/fetcher';
+import { WalletForm } from '../wallets/form';
+import { TransactionCategoryForm } from './categories/form';
 
 interface Props {
   wsId: string;

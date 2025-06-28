@@ -1,6 +1,5 @@
 'use client';
 
-import { getFullSubmission } from './actions';
 import { SubmissionCard } from '@/components/common/SubmissionCard';
 import {
   LiveResultsPreview,
@@ -9,12 +8,13 @@ import {
 import { ProgressIndicator } from '@/components/evaluation/ProgressIndicator';
 import { PromptInput } from '@/components/evaluation/PromptInput';
 import {
-  ProgressUpdate,
-  STEP_CONFIG,
   evaluatePromptStreaming,
+  type ProgressUpdate,
+  STEP_CONFIG,
 } from '@/lib/streaming';
+import { getFullSubmission } from './actions';
 import '@/styles/evaluation-animations.css';
-import {
+import type {
   NovaProblem,
   NovaProblemTestCase,
   NovaSession,

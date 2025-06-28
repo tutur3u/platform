@@ -1,14 +1,14 @@
+import { cn } from '@tuturuuu/utils/format';
+import { isAfter } from 'date-fns';
+import { Fragment } from 'react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../../tooltip';
 import {
-  WorkspaceUserAttendance,
   getAttendanceGroupNames,
   isCurrentMonth,
   isDateAbsent,
   isDateAttended,
+  type WorkspaceUserAttendance,
 } from './utils';
-import { cn } from '@tuturuuu/utils/format';
-import { isAfter } from 'date-fns';
-import { Fragment } from 'react';
 
 export const DayCell: React.FC<{
   day: Date;

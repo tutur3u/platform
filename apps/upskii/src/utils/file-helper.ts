@@ -13,7 +13,7 @@ export function formatBytes(bytes: number, decimals = 2): string {
     i = 1;
   }
 
-  const value = bytes / Math.pow(k, i);
+  const value = bytes / k ** i;
   const unit = sizes[i];
 
   return parseFloat(value.toFixed(dm)) + ' ' + unit;

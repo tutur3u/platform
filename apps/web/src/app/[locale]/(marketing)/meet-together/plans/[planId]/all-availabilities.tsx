@@ -1,10 +1,10 @@
 'use client';
 
+import type { MeetTogetherPlan } from '@tuturuuu/types/primitives/MeetTogetherPlan';
+import type { Timeblock } from '@tuturuuu/types/primitives/Timeblock';
+import { useTranslations } from 'next-intl';
 import DatePlanner from './date-planner';
 import { useTimeBlocking } from './time-blocking-provider';
-import { MeetTogetherPlan } from '@tuturuuu/types/primitives/MeetTogetherPlan';
-import { Timeblock } from '@tuturuuu/types/primitives/Timeblock';
-import { useTranslations } from 'next-intl';
 
 export default function AllAvailabilities({
   plan,

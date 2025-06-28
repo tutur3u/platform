@@ -1,10 +1,10 @@
 'use client';
 
-import { ProductCategoryRowActions } from './row-actions';
-import { ColumnDef } from '@tanstack/react-table';
-import { ProductCategory } from '@tuturuuu/types/primitives/ProductCategory';
+import type { ColumnDef } from '@tanstack/react-table';
+import type { ProductCategory } from '@tuturuuu/types/primitives/ProductCategory';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import moment from 'moment';
+import { ProductCategoryRowActions } from './row-actions';
 
 export const productCategoryColumns = (
   t: any,

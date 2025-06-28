@@ -1,12 +1,8 @@
-import { AssigneeSelect } from './_components/assignee-select';
-import { TaskActions } from './task-actions';
-import { useDeleteTask, useUpdateTask } from '@/lib/task-helper';
-import { moveTask } from '@/lib/task-helper';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { createClient } from '@tuturuuu/supabase/next/client';
-import { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
-import {
+import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
+import type {
   TaskList,
   Task as TaskType,
 } from '@tuturuuu/types/primitives/TaskBoard';
@@ -60,6 +56,9 @@ import {
   isYesterday,
 } from 'date-fns';
 import { useEffect, useRef, useState } from 'react';
+import { moveTask, useDeleteTask, useUpdateTask } from '@/lib/task-helper';
+import { AssigneeSelect } from './_components/assignee-select';
+import { TaskActions } from './task-actions';
 
 export interface Task extends TaskType {}
 

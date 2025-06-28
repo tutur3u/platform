@@ -9,7 +9,7 @@ import {
   CardTitle,
 } from '@tuturuuu/ui/card';
 import {
-  ChartConfig,
+  type ChartConfig,
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,

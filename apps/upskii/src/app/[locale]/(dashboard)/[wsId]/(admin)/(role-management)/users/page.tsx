@@ -1,7 +1,3 @@
-import { getUserColumns } from './columns';
-import EnabledFilter from './enabled-filter';
-import RoleFilter from './role-filter';
-import { CustomDataTable } from '@/components/custom-data-table';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type {
   PlatformUser,
@@ -12,9 +8,13 @@ import { Button } from '@tuturuuu/ui/button';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Mail } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
-import { getLocale } from 'next-intl/server';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { getLocale } from 'next-intl/server';
+import { CustomDataTable } from '@/components/custom-data-table';
+import { getUserColumns } from './columns';
+import EnabledFilter from './enabled-filter';
+import RoleFilter from './role-filter';
 
 interface props {
   params: Promise<{

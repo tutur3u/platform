@@ -1,5 +1,3 @@
-import MFAMethodList from './mfa-method-list';
-import ResetPasswordDialog from './reset-password-dialog';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
@@ -13,6 +11,7 @@ import {
 import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
 import {
   AlertTriangle,
+  Calendar,
   CheckCircle2,
   Eye,
   KeyRound,
@@ -22,10 +21,11 @@ import {
   Smartphone,
   UserCheck,
 } from '@tuturuuu/ui/icons';
-import { Calendar } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
-import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
+import { getTranslations } from 'next-intl/server';
+import MFAMethodList from './mfa-method-list';
+import ResetPasswordDialog from './reset-password-dialog';
 
 interface SecuritySettingsCardProps {
   user: SupabaseUser | null;

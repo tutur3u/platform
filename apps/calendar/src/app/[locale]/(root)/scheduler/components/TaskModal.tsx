@@ -10,8 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
-import { PlusIcon } from '@tuturuuu/ui/icons';
-import { SplitIcon } from '@tuturuuu/ui/icons';
+import { PlusIcon, SplitIcon } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import {

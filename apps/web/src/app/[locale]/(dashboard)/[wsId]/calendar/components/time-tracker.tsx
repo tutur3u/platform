@@ -1,10 +1,5 @@
 'use client';
 
-import type {
-  ExtendedWorkspaceTask,
-  SessionWithRelations,
-  TimerStats,
-} from '../../time-tracker/types';
 import type { TimeTrackingCategory, WorkspaceTask } from '@tuturuuu/types/db';
 import {
   AlertDialog,
@@ -71,6 +66,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { cn } from '@tuturuuu/utils/format';
 import { useCallback, useEffect, useState } from 'react';
+import type {
+  ExtendedWorkspaceTask,
+  SessionWithRelations,
+  TimerStats,
+} from '../../time-tracker/types';
 
 interface TimeTrackerProps {
   wsId: string;

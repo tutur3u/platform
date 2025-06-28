@@ -1,8 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { SupabaseClient } from '@tuturuuu/supabase/next/client';
 import { createClient } from '@tuturuuu/supabase/next/client';
-import { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
-import {
+import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
+import type {
   Task,
   TaskAssignee,
   TaskBoard,

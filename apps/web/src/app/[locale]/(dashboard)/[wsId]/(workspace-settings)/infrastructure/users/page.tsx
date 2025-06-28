@@ -1,9 +1,9 @@
-import UserCard from '../../../../../../../components/cards/UserCard';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { User } from '@tuturuuu/types/primitives/User';
+import type { User } from '@tuturuuu/types/primitives/User';
 import { Separator } from '@tuturuuu/ui/separator';
 import { enforceRootWorkspaceAdmin } from '@tuturuuu/utils/workspace-helper';
 import { notFound } from 'next/navigation';
+import UserCard from '../../../../../../../components/cards/UserCard';
 
 interface Props {
   params: Promise<{

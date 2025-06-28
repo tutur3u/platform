@@ -1,10 +1,8 @@
 'use client';
 
-import { AttendanceDialog } from './attendance-dialogue';
-import useSearchParams from '@/hooks/useSearchParams';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
-import {
+import type {
   WorkspaceUser,
   WorkspaceUserAttendance,
 } from '@tuturuuu/types/primitives/WorkspaceUser';
@@ -18,10 +16,12 @@ import {
 } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
 import { format, isAfter, parse, startOfDay } from 'date-fns';
-import { useLocale } from 'next-intl';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useLocale } from 'next-intl';
 import { Fragment, useEffect, useMemo, useState } from 'react';
+import useSearchParams from '@/hooks/useSearchParams';
+import { AttendanceDialog } from './attendance-dialogue';
 
 export default function UserMonthAttendance({
   wsId,
@@ -92,16 +92,20 @@ export default function UserMonthAttendance({
 
   // includes all days of the week, starting from monday to sunday
   const days = Array.from({ length: 7 }, (_, i) => {
-    let newDay = new Date(currentDate);
+    const newDay = new Date(currentDate);
     newDay.setDate(currentDate.getDate() - currentDate.getDay() + i + 1);
     return newDay.toLocaleString(locale, { weekday: 'narrow' });
   });
 
   // includes all days of the month, starting from monday (which could be from the previous month) to sunday (which could be from the next month)
   const daysInMonth = Array.from({ length: 42 }, (_, i) => {
-    let newDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
-    let dayOfWeek = newDay.getDay();
-    let adjustment = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // adjust for Monday start
+    const newDay = new Date(
+      currentDate.getFullYear(),
+      currentDate.getMonth(),
+      1
+    );
+    const dayOfWeek = newDay.getDay();
+    const adjustment = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // adjust for Monday start
     newDay.setDate(newDay.getDate() - adjustment + i);
     return newDay;
   });

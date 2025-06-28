@@ -1,6 +1,6 @@
 import { generateCrossAppToken } from '@tuturuuu/auth/cross-app';
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { NextRequest, NextResponse } from 'next/server';
+import { type NextRequest, NextResponse } from 'next/server';
 
 export async function POST(request: NextRequest) {
   try {

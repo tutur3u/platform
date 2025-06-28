@@ -1,8 +1,8 @@
 'use client';
 
-import AvatarInput from './avatar-input';
-import { Workspace } from '@tuturuuu/types/db';
+import type { Workspace } from '@tuturuuu/types/db';
 import { useTranslations } from 'next-intl';
+import AvatarInput from './avatar-input';
 
 interface Props {
   workspace?: Workspace | null;

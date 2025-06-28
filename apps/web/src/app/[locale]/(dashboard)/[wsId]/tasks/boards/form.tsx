@@ -1,11 +1,7 @@
 'use client';
 
-import {
-  useCreateBoardWithTemplate,
-  useStatusTemplates,
-} from '@/lib/task-helper';
-import { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
-import { TaskBoard } from '@tuturuuu/types/primitives/TaskBoard';
+import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
+import type { TaskBoard } from '@tuturuuu/types/primitives/TaskBoard';
 import { Badge } from '@tuturuuu/ui/badge';
 import { TagSuggestions, TagsInput } from '@tuturuuu/ui/board-tags-input';
 import { Button } from '@tuturuuu/ui/button';
@@ -36,10 +32,14 @@ import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { Separator } from '@tuturuuu/ui/separator';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { cn } from '@tuturuuu/utils/format';
-import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import React from 'react';
 import * as z from 'zod';
+import {
+  useCreateBoardWithTemplate,
+  useStatusTemplates,
+} from '@/lib/task-helper';
 
 interface Props {
   wsId: string;
@@ -99,6 +99,16 @@ const TAG_SUGGESTIONS = [
   'Team',
   'Client',
 ];
+
+// Utility function for error handling
+const getErrorMessage = (error: unknown): string => {
+  if (error instanceof Error) return error.message;
+  if (typeof error === 'string') return error;
+  if (error && typeof error === 'object' && 'message' in error) {
+    return String(error.message);
+  }
+  return 'An unexpected error occurred';
+};
 
 export function TaskBoardForm({ wsId, data, children, onFinish }: Props) {
   const t = useTranslations();
@@ -186,20 +196,9 @@ export function TaskBoardForm({ wsId, data, children, onFinish }: Props) {
     } catch (error) {
       console.error('Error submitting form:', error);
 
-      // Handle different types of errors
-      let errorMessage = 'An unexpected error occurred';
-
-      if (error instanceof Error) {
-        errorMessage = error.message;
-      } else if (typeof error === 'string') {
-        errorMessage = error;
-      } else if (error && typeof error === 'object' && 'message' in error) {
-        errorMessage = String(error.message);
-      }
-
       toast({
         title: `Failed to ${formData.id ? 'edit' : 'create'} task board`,
-        description: errorMessage,
+        description: getErrorMessage(error),
         variant: 'destructive',
       });
     }
@@ -286,9 +285,9 @@ export function TaskBoardForm({ wsId, data, children, onFinish }: Props) {
                           <TagSuggestions
                             suggestions={TAG_SUGGESTIONS}
                             selectedTags={field.value || []}
-                            onTagSelect={(tag) => {
-                              field.onChange([...(field.value || []), tag]);
-                            }}
+                            onTagSelect={(tag) =>
+                              field.onChange([...(field.value || []), tag])
+                            }
                             maxDisplay={6}
                           />
                         </div>

@@ -1,12 +1,12 @@
-import FlashcardForm from '../../../../../flashcards/form';
-import { AIFlashcards } from './client-ai';
-import ClientFlashcards from './client-flashcards';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { SwatchBook } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import { requireFeatureFlags } from '@tuturuuu/utils/feature-flags/core';
 import { getTranslations } from 'next-intl/server';
+import FlashcardForm from '../../../../../flashcards/form';
+import { AIFlashcards } from './client-ai';
+import ClientFlashcards from './client-flashcards';
 
 interface Props {
   params: Promise<{

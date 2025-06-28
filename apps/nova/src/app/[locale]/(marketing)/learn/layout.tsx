@@ -1,5 +1,5 @@
 import { Card } from '@tuturuuu/ui/card';
-import { ReactNode } from 'react';
+import type { ReactNode } from 'react';
 
 export default function LearnLayout({ children }: { children: ReactNode }) {
   return (

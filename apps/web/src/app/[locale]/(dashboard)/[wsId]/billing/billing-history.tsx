@@ -1,6 +1,6 @@
-import { Receipt } from '@tuturuuu/ui/icons';
-import React from 'react';
-
+import { Receipt } from "@tuturuuu/ui/icons";
+import React from "react";
+import { useTranslations } from "next-intl";
 interface BillingHistoryItem {
   id: string;
   created_at: string;
@@ -20,20 +20,21 @@ export default function BillingHistory({
 }: {
   billingHistory: BillingHistoryItem[];
 }) {
+  const t = useTranslations("billing");
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'active':
-        return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400';
-      case 'past_due':
-        return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400';
-      case 'canceled':
-      case 'cancelled':
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400';
-      case 'incomplete':
-      case 'incomplete_expired':
-        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400';
+      case "active":
+        return "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400";
+      case "past_due":
+        return "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400";
+      case "canceled":
+      case "cancelled":
+        return "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400";
+      case "incomplete":
+      case "incomplete_expired":
+        return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400";
       default:
-        return 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400';
+        return "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400";
     }
   };
 
@@ -41,12 +42,12 @@ export default function BillingHistory({
     const createdDate = new Date(item.created_at).toLocaleDateString();
 
     switch (item.status) {
-      case 'active':
+      case "active":
         return `Started: ${createdDate}`;
-      case 'past_due':
+      case "past_due":
         return `Due: ${createdDate}`;
-      case 'canceled':
-      case 'cancelled':
+      case "canceled":
+      case "cancelled":
         return `Cancelled: ${createdDate}`;
       default:
         return createdDate;
@@ -57,11 +58,11 @@ export default function BillingHistory({
     <div>
       <div className="rounded-lg border border-border bg-card p-8 shadow-sm dark:bg-card/80">
         <h2 className="mb-6 text-2xl font-semibold text-card-foreground">
-          Subscription History
+          {t("subscription-history")}
         </h2>
         {billingHistory.length === 0 ? (
           <p className="text-muted-foreground">
-            No subscription history available.
+            {t("subscription-history-desc")}
           </p>
         ) : (
           <div className="overflow-x-auto">
@@ -100,7 +101,7 @@ export default function BillingHistory({
                     <td className="px-4 py-3 whitespace-nowrap text-card-foreground">
                       <div>
                         <div className="font-medium">
-                          {subscription.product?.name || 'Unknown Plan'}
+                          {subscription.product?.name || "Unknown Plan"}
                         </div>
                       </div>
                     </td>
@@ -115,7 +116,7 @@ export default function BillingHistory({
                           </div>
                         </div>
                       ) : (
-                        'N/A'
+                        "N/A"
                       )}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">
@@ -124,7 +125,7 @@ export default function BillingHistory({
                       >
                         {subscription.status.charAt(0).toUpperCase() +
                           subscription.status.slice(1)}
-                        {subscription.cancel_at_period_end && ' (Ending)'}
+                        {subscription.cancel_at_period_end && " (Ending)"}
                       </span>
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">

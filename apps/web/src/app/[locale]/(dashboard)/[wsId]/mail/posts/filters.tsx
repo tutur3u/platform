@@ -1,9 +1,9 @@
-import { Filter } from '../../users/filters';
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
-import { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
+import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
+import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { MinusCircle, PlusCircle, User } from '@tuturuuu/ui/icons';
 import { getTranslations } from 'next-intl/server';
+import { Filter } from '../../users/filters';
 
 interface SearchParams {
   q?: string;

@@ -2,7 +2,7 @@
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { CalendarProvider } from '@tuturuuu/ui/hooks/use-calendar';
-import React from 'react';
+import type React from 'react';
 
 interface ClientLayoutWrapperProps {
   children: React.ReactNode;

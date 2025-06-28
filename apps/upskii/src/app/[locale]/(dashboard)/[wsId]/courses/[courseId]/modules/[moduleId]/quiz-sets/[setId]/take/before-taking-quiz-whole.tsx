@@ -12,7 +12,7 @@ import {
 } from '@tuturuuu/ui/card';
 import { Separator } from '@tuturuuu/ui/separator';
 import { RichTextEditor } from '@tuturuuu/ui/text-editor/editor';
-import { JSONContent } from '@tuturuuu/ui/tiptap';
+import type { JSONContent } from '@tuturuuu/ui/tiptap';
 import {
   AlertTriangle,
   Calendar,
@@ -24,8 +24,8 @@ import {
   RotateCcw,
   TriangleAlert,
 } from 'lucide-react';
-import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
 export interface AttemptSummary {
@@ -117,8 +117,6 @@ export default function BeforeTakingQuizWhole({
   // !quizData.resultsReleased;
 
   const canViewTotalPointsOnly = quizData.resultsReleased;
-
-  console.log('Test', quizData.attempts[0]);
 
   // const canViewOldAttemptsResults = quizData.resultsReleased;
   // can view attempts with points in detailed explanation
@@ -283,8 +281,8 @@ export default function BeforeTakingQuizWhole({
                 <div className="flex items-center gap-1">
                   <RotateCcw className="h-4 w-4 text-dynamic-light-purple" />
                   <span className="text-sm">
-                    {quizData.attemptsSoFar} /{' '}
-                    {quizData.attemptLimit || '∞'}{' '}
+                    {quizData.attemptsSoFar} / {quizData.attemptLimit ||
+                      '∞'}{' '}
                   </span>
                 </div>
               </div>

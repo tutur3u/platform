@@ -1,8 +1,6 @@
 'use client';
 
-import { Nav } from './nav';
-import { NavLink } from '@/components/navigation';
-import { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
+import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import {
   Accordion,
   AccordionContent,
@@ -15,16 +13,20 @@ import {
   ChevronDown,
   Crown,
   Home,
+  IconExternalLink,
   ImagePlay,
   MessagesSquare,
   WandSparkles,
 } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import { cn } from '@tuturuuu/utils/format';
-import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import Link from 'next/link';
-import { ReactNode, useState } from 'react';
+import { useTranslations } from 'next-intl';
+import { type ReactNode, useState } from 'react';
+import type { NavLink } from '@/components/navigation';
+import { TTR_URL } from '@/constants/common';
+import { Nav } from './nav';
 
 interface MailProps {
   locale: string;
@@ -50,7 +52,18 @@ export function Structure({
 
   if (!user) return null;
 
-  const rootLinks: NavLink[] = [
+  // External navigation links (outside Rewise)
+  const externalLinks: NavLink[] = [
+    {
+      href: TTR_URL,
+      title: t('common.go_to_tuturuuu'),
+      icon: <IconExternalLink className="h-5 w-5 flex-none opacity-70" />,
+      newTab: true,
+    },
+  ];
+
+  // Internal navigation links (within Rewise)
+  const internalLinks: NavLink[] = [
     {
       href: '/new',
       aliases: ['/'],
@@ -114,19 +127,41 @@ export function Structure({
 
   const sidebarContent = (
     <div className="flex flex-1 flex-col gap-2">
+      {/* External Links Section */}
       <Nav
         t={t}
         locale={locale}
         currentUser={user}
         isCollapsed={isCollapsed}
-        links={rootLinks}
+        links={externalLinks}
         onClick={() => {
           if (window.innerWidth < 768) setIsCollapsed(true);
         }}
         className="pb-0"
         single
       />
+
+      {/* Separator between external and internal links */}
       {isCollapsed || <Separator />}
+
+      {/* Internal Links Section */}
+      <Nav
+        t={t}
+        locale={locale}
+        currentUser={user}
+        isCollapsed={isCollapsed}
+        links={internalLinks}
+        onClick={() => {
+          if (window.innerWidth < 768) setIsCollapsed(true);
+        }}
+        className="pb-0"
+        single
+      />
+
+      {/* Separator before chats section */}
+      {isCollapsed || <Separator />}
+
+      {/* Chats Section */}
       <Accordion
         type="single"
         className={cn('w-full', isCollapsed && 'hidden')}
@@ -194,7 +229,8 @@ export function Structure({
       sidebarContent={sidebarContent}
       actions={actions}
       userPopover={userPopover}
-      children={children}
-    />
+    >
+      {children}
+    </BaseStructure>
   );
 }

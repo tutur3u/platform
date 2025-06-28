@@ -1,10 +1,10 @@
-import ContributorsClient from './components/contributors-client';
-import { GITHUB_OWNER, GITHUB_REPO } from '@/constants/common';
 import { createAppAuth } from '@octokit/auth-app';
 import { Octokit } from '@octokit/rest';
 import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
 import { getLocale } from 'next-intl/server';
 import { Suspense } from 'react';
+import { GITHUB_OWNER, GITHUB_REPO } from '@/constants/common';
+import ContributorsClient from './components/contributors-client';
 
 // Define static generation parameters
 export const dynamic = 'force-static';

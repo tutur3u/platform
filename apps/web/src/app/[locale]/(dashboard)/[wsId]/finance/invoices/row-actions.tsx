@@ -1,7 +1,7 @@
 'use client';
 
-import { Row } from '@tanstack/react-table';
-import { Invoice } from '@tuturuuu/types/primitives/Invoice';
+import type { Row } from '@tanstack/react-table';
+import type { Invoice } from '@tuturuuu/types/primitives/Invoice';
 import { Button } from '@tuturuuu/ui/button';
 import ModifiableDialogTrigger from '@tuturuuu/ui/custom/modifiable-dialog-trigger';
 import {
@@ -13,9 +13,9 @@ import {
 } from '@tuturuuu/ui/dropdown-menu';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Ellipsis, Eye } from '@tuturuuu/ui/icons';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
 interface InvoiceRowActionsProps {

@@ -1,9 +1,6 @@
 'use client';
 
-// Inspired by Chatbot-UI and modified to fit the needs of this project
-// @see https://github.com/mckaywrigley/chatbot-ui/blob/main/components/Chat/ChatMessage.tsx
-import { ChatMessageActions } from '@/components/chat-message-actions';
-import { type Message } from '@tuturuuu/ai/types';
+import type { Message } from '@tuturuuu/ai/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { CodeBlock } from '@tuturuuu/ui/codeblock';
 import { Bot, IconUser, Send, Sparkle } from '@tuturuuu/ui/icons';
@@ -11,11 +8,14 @@ import { MemoizedReactMarkdown } from '@tuturuuu/ui/markdown';
 import { Separator } from '@tuturuuu/ui/separator';
 import { capitalize, cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
+// Inspired by Chatbot-UI and modified to fit the needs of this project
+// @see https://github.com/mckaywrigley/chatbot-ui/blob/main/components/Chat/ChatMessage.tsx
+import { ChatMessageActions } from '@/components/chat-message-actions';
 import 'dayjs/locale/vi';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import mermaid from 'mermaid';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
 import rehypeKatex from 'rehype-katex';
 import remarkGfm from 'remark-gfm';

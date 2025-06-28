@@ -6,7 +6,7 @@ import type {
   WorkspaceCalendarEvent,
   WorkspaceCalendarGoogleToken,
 } from '@tuturuuu/types/db';
-import { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
+import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import {
   canProceedWithSync,
   updateLastUpsert,

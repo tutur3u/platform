@@ -29,8 +29,9 @@ export function LeaderboardFilters({
   setSelectedChallenge,
   challenges = [],
 }: LeaderboardFiltersProps) {
-  const [showAdvancedFilters, setShowAdvancedFilters] =
-    useState(!!selectedChallenge);
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(
+    !!selectedChallenge
+  );
   const t = useTranslations('nova.leaderboard-page.filters');
 
   return (

@@ -1,13 +1,7 @@
 'use client';
 
-import { coordinateGetter } from './keyboard-preset';
-import { TaskCard } from './task';
-import type { Column } from './task-list';
-import { BoardColumn, BoardContainer } from './task-list';
-import { TaskListForm } from './task-list-form';
-import { hasDraggableData } from './utils';
-import { getTaskLists, useMoveTask } from '@/lib/task-helper';
 import {
+  closestCenter,
   DndContext,
   type DragEndEvent,
   type DragOverEvent,
@@ -16,19 +10,25 @@ import {
   KeyboardSensor,
   MeasuringStrategy,
   PointerSensor,
-  closestCenter,
   useSensor,
   useSensors,
 } from '@dnd-kit/core';
 import {
-  SortableContext,
   horizontalListSortingStrategy,
+  SortableContext,
 } from '@dnd-kit/sortable';
 import { useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
-import { type Task as TaskType } from '@tuturuuu/types/primitives/TaskBoard';
+import type { Task as TaskType } from '@tuturuuu/types/primitives/TaskBoard';
 import { Card, CardContent } from '@tuturuuu/ui/card';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { getTaskLists, useMoveTask } from '@/lib/task-helper';
+import { coordinateGetter } from './keyboard-preset';
+import { TaskCard } from './task';
+import type { Column } from './task-list';
+import { BoardColumn, BoardContainer } from './task-list';
+import { TaskListForm } from './task-list-form';
+import { hasDraggableData } from './utils';
 
 interface Props {
   boardId: string;
@@ -315,8 +315,10 @@ export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
               const { transform } = args;
 
               // Get viewport bounds - only access window in browser environment
+              // Use responsive fallback based on common breakpoints for better mobile handling
               const viewportWidth =
-                typeof window !== 'undefined' ? window.innerWidth : 1200;
+                typeof window !== 'undefined' ? window.innerWidth : 1024; // Default to tablet landscape width for SSR (better than desktop 1200px)
+
               const maxX = viewportWidth - 350; // Account for card width
 
               return {

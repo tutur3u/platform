@@ -1,7 +1,6 @@
 'use client';
 
-import ChallengeForm, { ChallengeFormValues } from './challengeForm';
-import { type NovaExtendedChallenge } from '@tuturuuu/types/db';
+import type { NovaExtendedChallenge } from '@tuturuuu/types/db';
 import {
   Dialog,
   DialogContent,
@@ -11,9 +10,10 @@ import {
   DialogTrigger,
 } from '@tuturuuu/ui/dialog';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
-import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
+import ChallengeForm, { type ChallengeFormValues } from './challengeForm';
 
 interface Props {
   challenge: NovaExtendedChallenge;

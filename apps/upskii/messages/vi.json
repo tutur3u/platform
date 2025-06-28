@@ -467,6 +467,7 @@
     "years_old": "tuổi",
     "year_old": "tuổi",
     "average": "Trung bình",
+    "logo": "Logo {name}",
     "no_content_yet": "Chưa có nội dung",
     "words": "từ",
     "word": "từ",
@@ -1744,7 +1745,31 @@
     "continue_with_google": "Tiếp tục với Google",
     "continue_with_github": "Tiếp tục với GitHub",
     "continue_with_apple": "Tiếp tục với Apple",
-    "continue_with_discord": "Tiếp tục với Discord"
+    "continue_with_discord": "Tiếp tục với Discord",
+    "powered-by": "Được hỗ trợ bởi {domain}",
+    "welcome": "Chào mừng",
+    "sign_in_to_your_account": "Đăng nhập vào tài khoản của bạn",
+    "invalid_credentials": "Email hoặc mật khẩu không hợp lệ",
+    "password_min_length": "Mật khẩu phải có ít nhất 8 ký tự",
+    "passwordless": "Không mật khẩu",
+    "with_password": "Với mật khẩu",
+    "two_factor_authentication": "Xác thực hai yếu tố",
+    "enter_authenticator_code": "Nhập mã 6 chữ số từ ứng dụng xác thực của bạn",
+    "verification_code_label": "Mã xác thực",
+    "verify_button": "Xác thực",
+    "choose_sign_in_method": "Chọn phương thức đăng nhập ưa thích của bạn",
+    "email": "Email",
+    "email_username_placeholder": "Nhập email hoặc tên người dùng",
+    "will_send_to": "Chúng tôi sẽ gửi mã xác thực đến",
+    "verification_code": "Mã xác thực",
+    "check_email": "Kiểm tra email của bạn để lấy mã xác thực",
+    "verify": "Xác thực",
+    "password": "Mật khẩu",
+    "password_placeholder": "Nhập mật khẩu của bạn",
+    "sign_in": "Đăng nhập",
+    "forgot_password": "Quên mật khẩu? Sử dụng đăng nhập không mật khẩu",
+    "will_sign_in_as": "Bạn sẽ đăng nhập bằng",
+    "or": "hoặc"
   },
   "logout": {
     "logout": "Đăng xuất",
@@ -3563,7 +3588,8 @@
     "image_preview_not_available": "Chưa có mẫu xem trước",
     "image_preview_not_available_description": "Ảnh xem trước của mẫu chứng chỉ không có sẵn.",
     "hide_certificate_preview": "Ẩn xem mẫu chứng chỉ",
-    "show_certificate_preview": "Hiển thị xem mẫu chứng chỉ"
+    "show_certificate_preview": "Hiển thị xem mẫu chứng chỉ",
+    "self_paced": "Học tự chủ"
   },
   "ws-crawlers": {
     "plural": "Công cụ cào dữ liệu",
@@ -3836,28 +3862,168 @@
     "create_description": "Tạo một hàng chờ mới"
   },
   "ws-quiz-sets": {
-    "plural": "Bộ trắc nghiệm",
-    "singular": "Bộ trắc nghiệm",
-    "description": "Quản lý các bộ trắc nghiệm trong không gian làm việc của bạn bao gồm các câu hỏi nhiều lựa chọn dành cho mục đích học tập.",
-    "create": "Tạo bộ trắc nghiệm",
-    "create_description": "Tạo bộ trắc nghiệm mới",
-    "name": "Tên bộ trắc nghiệm",
-    "edit": "Chỉnh sửa bộ",
-    "link-quizzes": "Liên kết câu hỏi",
-    "link-modules": "Liên kết mô-đun"
+    "plural": "Bộ câu hỏi",
+    "singular": "Bộ câu hỏi",
+    "name": "Tên bộ câu hỏi",
+    "description": "Bộ câu hỏi được sử dụng để nhóm các câu quiz lại với nhau cho mục đích học tập.",
+    "create_description": "Tạo một bộ câu hỏi mới",
+    "link-quizzes": "Liên kết bài kiểm tra",
+    "link-modules": "Liên kết học phần",
+    "editing": "Đang cập nhật...",
+    "creating": "Đang tạo...",
+    "create": "Tạo bộ câu hỏi",
+    "edit": "Chỉnh sửa bộ câu hỏi",
+    "form-sections": {
+      "basic": {
+        "title": "Thông tin cơ bản",
+        "subtitle": "Thiết lập các chi tiết cơ bản cho bài kiểm tra của bạn"
+      },
+      "timing-limit": {
+        "title": "Thông tin cơ bản",
+        "subtitle": "Thiết lập các chi tiết cơ bản cho bài kiểm tra của bạn"
+      },
+      "schedule": {
+        "title": "Lịch trình",
+        "subtitle": "Đặt thời gian khả dụng và thời hạn cho bài kiểm tra"
+      },
+      "settings": {
+        "title": "Cài đặt bài kiểm tra",
+        "subtitle": "Cấu hình hành vi bài kiểm tra và quyền của sinh viên"
+      }
+    },
+    "form-description": "Cấu hình cài đặt, thời gian và quyền của bài kiểm tra để tạo trải nghiệm học tập hấp dẫn cho sinh viên của bạn.",
+    "required-badge": "Bắt buộc",
+    "form-fields": {
+      "name": {
+        "title": "Tên bộ câu hỏi",
+        "description": "Chọn một tên rõ ràng, mô tả cho bài kiểm tra của bạn",
+        "placeholder": "Ví dụ: Kiểm tra Chương 5"
+      },
+      "attempt_limit": {
+        "title": "Giới hạn số lần làm bài",
+        "description": "Số lần tối đa người dùng có thể làm bài kiểm tra. Để 0 nếu không giới hạn.",
+        "placeholder": "Ví dụ: 3"
+      },
+      "time_limit_minutes": {
+        "title": "Giới hạn thời gian (phút)",
+        "description": "Thời gian cho phép hoàn thành bài kiểm tra tính bằng phút. Để 0 nếu không giới hạn thời gian.",
+        "placeholder": "Ví dụ: 60"
+      },
+      "available_date": {
+        "title": "Có hiệu lực từ",
+        "description": "Ngày và giờ bài kiểm tra có sẵn cho người tham gia."
+      },
+      "due_date": {
+        "title": "Ngày hết hạn",
+        "description": "Thời hạn nộp bài kiểm tra."
+      },
+      "explanation_mode": {
+        "title": "Chế độ giải thích",
+        "description": "Chọn thời điểm và cách học sinh có thể xem giải thích câu trả lời",
+        "placeholder": "Chọn thời điểm giải thích",
+        "select_never": "Không bao giờ hiển thị giải thích câu trả lời",
+        "select_correct_answer": "Chỉ hiển thị giải thích các câu trả lời đúng",
+        "select_all_answer": "Hiển thị giải thích của tất cả các câu trả lời"
+      },
+      "instruction": {
+        "title": "Hướng dẫn",
+        "description": "Cung cấp hướng dẫn chi tiết cho học sinh bằng trình soạn thảo văn bản đa dạng thức, hiển thị trước khi bắt đầu bài kiểm tra."
+      },
+      "allow_view_results": {
+        "title": "Cho phép xem kết quả ngay lập tức",
+        "description": "Cho phép người dùng xem điểm của họ ngay sau khi nộp bài."
+      },
+      "results_released": {
+        "title": "Đã công bố kết quả",
+        "description": "Đánh dấu kết quả bài kiểm tra đã công bố, cho phép xem phản hồi chi tiết và giải thích."
+      },
+      "allow_view_old_attempts": {
+        "title": "Cho phép xem lại các lần làm bài cũ",
+        "description": "Cho phép người dùng xem lại các lần làm bài kiểm tra trước đó của họ. Trước khi kết quả được công bố, người dùng chỉ có thể xem các câu trả lời đã nộp của mình. Khi kết quả được công bố, họ sẽ thấy các câu trả lời cùng với kết quả chi tiết và phản hồi."
+      }
+    }
   },
   "ws-quizzes": {
     "plural": "Câu hỏi trắc nghiệm",
     "singular": "Bộ trắc nghiệm",
     "create": "Tạo câu hỏi",
+    "edit_description": "Chỉnh sửa bộ trắc nghiệm",
     "create_description": "Tạo một bộ trắc nghiệm mới",
     "description": "Quản lý bộ trắc nghiệm trong không gian làm việc của bạn có các câu hỏi nhiều lựa chọn dành cho mục đích học tập.",
     "edit": "Chỉnh sửa bộ trắc nghiệm",
+    "edit-all": "Chỉnh sửa toàn bộ",
     "question": "Câu hỏi",
     "answer": "Câu trả lời",
-    "points": "Points",
-    "submitting": "Submitting...",
-    "submit": "Submit",
+    "points": "Điểm",
+    "submitting": "Đang nộp...",
+    "submit": "Nộp",
+    "form": {
+      "edit-title": "Chỉnh sửa câu hỏi đố vui",
+      "create-title": "Tạo câu hỏi đố vui",
+      "create-description": "Tạo nhiều câu hỏi đố vui cùng lúc. Mỗi câu hỏi có thể có nhiều lựa chọn với giải thích. Người dùng cũng có thể sao chép và dán câu hỏi đố vui",
+      "edit-description": "Chỉnh sửa hoặc thêm nhiều câu hỏi đố vui cùng lúc. Mỗi câu hỏi có thể có nhiều lựa chọn với giải thích. Người dùng cũng có thể sao chép và dán câu hỏi đố vui",
+      "question-no": "Câu hỏi {no}",
+      "option-no": "Tùy chọn {no}",
+      "untitled-question": "Câu hỏi không có tiêu đề",
+      "content": {
+        "options": {
+          "label": "Tùy chọn trả lời",
+          "add-button": "Thêm tùy chọn",
+          "placeholder": "Tùy chọn {no}",
+          "total-options-text": "Tổng số tùy chọn",
+          "correct-label": "Đúng",
+          "explanation-label": "Giải thích",
+          "generate-explanation-button": "Tạo",
+          "explanation-placeholder": "Giải thích tại sao tùy chọn này đúng hoặc sai..."
+        },
+        "questions": {
+          "label": "Câu hỏi",
+          "placeholder": "Nhập câu hỏi của bạn vào đây...",
+          "count-many": "{count} Câu hỏi",
+          "count-one": "{count} Câu hỏi"
+        },
+        "correct-answers": {
+          "no-selected": "Chưa chọn câu trả lời đúng",
+          "single-selected": "Một câu trả lời đúng",
+          "multiple-selected": "Nhiều câu trả lời đúng"
+        }
+      },
+      "paste-confirm-modal": {
+        "title": "Xác nhận dán",
+        "description-plural": "Bạn sắp dán {length} câu hỏi đố vui. Xem lại nội dung bên dưới và chọn hành động.",
+        "description-single": "Bạn sắp dán 1 câu hỏi đố vui. Xem lại nội dung bên dưới và chọn hành động.",
+        "discard-button": "Hủy bỏ",
+        "confirm-button": "Xác nhận dán"
+      },
+      "add-another-button": "Thêm câu hỏi khác",
+      "paste-question-button": "Dán câu hỏi",
+      "create-button": "Tạo tất cả câu hỏi",
+      "edit-button": "Chỉnh sửa tất cả câu hỏi",
+      "creating": "Đang tạo...",
+      "updating": "Đang cập nhật...",
+      "error": {
+        "title": "Lỗi",
+        "fail-update": "Cập nhật câu đố thất bại",
+        "fail-create": "Tạo câu đố thất bại",
+        "unexpected": "Đã xảy ra lỗi không mong muốn",
+        "invalid-clipboard-title": "Lỗi",
+        "invalid-clipboard": "Định dạng câu đố không hợp lệ",
+        "invalid-clipboard-message": "Không thể dán dữ liệu câu đố. Vui lòng đảm bảo bạn có dữ liệu câu đố hợp lệ trong khay nhớ tạm.",
+        "explanation-generation-failed": "Không tạo được giải thích",
+        "quiz-copy-failed": "Sao chép câu đố vào khay nhớ tạm thất bại"
+      },
+      "success": {
+        "title": "Thành công",
+        "edit-quizzes": "Đã cập nhật thành công {length} câu đố",
+        "edit-quiz": "Đã cập nhật thành công {length} câu đố",
+        "create-quizzes": "Đã tạo thành công {length} câu đố",
+        "create-quiz": "Đã tạo thành công {length} câu đố",
+        "quiz-copied": "Đã sao chép câu đố vào khay nhớ tạm",
+        "paste-success-many": "Đã dán thành công {length} câu đố",
+        "paste-success-one": "Đã dán thành công 1 câu đố",
+        "explanation-generated": "Giải thích đã được tạo thành công"
+      }
+    },
     "quiz-status": {
       "sidebar_aria": "Thanh bên tiến độ bài kiểm tra",
       "question_status_title": "Tiến độ câu hỏi",
@@ -3866,7 +4032,11 @@
       "question_navigation_label": "Chuyển đến câu hỏi",
       "answered_state": "Đã trả lời",
       "unanswered_state": "Chưa trả lời",
-      "jump_to_question": "Chuyển đến câu hỏi"
+      "jump_to_question": "Chuyển đến câu hỏi",
+      "upcoming": "Sắp diễn ra",
+      "active": "Đang hoạt động",
+      "expired": "Đã hết hạn",
+      "draft": "Nháp"
     },
     "time": {
       "remaining": "Thời gian còn lại",
@@ -4405,5 +4575,6 @@
   },
   "request-feature": "Yêu cầu tính năng",
   "unlock-education-features": "Mở khóa các tính năng giáo dục",
-  "transform-your-workspace": "Biến đổi không gian làm việc của bạn với các công cụ học tập toàn diện: Tạo Các khóa học, các câu đố tương tác thiết kế, theo dõi tiến trình của sinh viên, ủy quyền giấy chứng nhận, và tận dụng các trợ lý giảng dạy hỗ trợ AI."
+  "transform-your-workspace": "Biến đổi không gian làm việc của bạn với các công cụ học tập toàn diện: Tạo Các khóa học, các câu đố tương tác thiết kế, theo dõi tiến trình của sinh viên, ủy quyền giấy chứng nhận, và tận dụng các trợ lý giảng dạy hỗ trợ AI.",
+  "courses-marketplace-description": "Khám phá các khóa học của nền tảng"
 }

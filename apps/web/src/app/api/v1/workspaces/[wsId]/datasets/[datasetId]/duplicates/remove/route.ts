@@ -1,6 +1,6 @@
-import { removeDuplicates } from '@/app/[locale]/(dashboard)/[wsId]/(ai)/datasets/[datasetId]/utils';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
+import { removeDuplicates } from '@/app/[locale]/(dashboard)/[wsId]/(ai)/datasets/[datasetId]/utils';
 
 export async function POST(
   _: Request,

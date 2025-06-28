@@ -1,10 +1,10 @@
 'use client';
 
-import { WorkspaceFlashcardRowActions } from './row-actions';
-import { ColumnDef } from '@tanstack/react-table';
-import { WorkspaceFlashcard } from '@tuturuuu/types/db';
+import type { ColumnDef } from '@tanstack/react-table';
+import type { WorkspaceFlashcard } from '@tuturuuu/types/db';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import moment from 'moment';
+import { WorkspaceFlashcardRowActions } from './row-actions';
 
 export const getWorkspaceFlashcardColumns = (
   t: any,

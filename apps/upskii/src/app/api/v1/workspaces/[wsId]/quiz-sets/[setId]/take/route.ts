@@ -1,6 +1,6 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { Json } from '@tuturuuu/types/supabase';
-import { NextRequest, NextResponse } from 'next/server';
+import type { Json } from '@tuturuuu/types/supabase';
+import { type NextRequest, NextResponse } from 'next/server';
 
 export type AttemptSummary = {
   attemptId: string;

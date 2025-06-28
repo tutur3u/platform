@@ -1,6 +1,6 @@
-import type { AuroraExternalStatisticalForecast } from '../types';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
+import type { AuroraExternalStatisticalForecast } from '../types';
 
 export async function GET() {
   const supabase = await createClient();

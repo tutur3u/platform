@@ -1,8 +1,8 @@
 'use client';
 
-import FeatureToggle from '@/components/feature-toggle';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import FeatureToggle from '@/components/feature-toggle';
 
 export default function FeatureToggles() {
   const t = useTranslations('sidebar_tabs');

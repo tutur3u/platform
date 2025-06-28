@@ -1,4 +1,3 @@
-import { fetcher } from '@/utils/fetcher';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Command,
@@ -13,6 +12,7 @@ import { CheckIcon, ChevronsUpDown } from '@tuturuuu/ui/icons';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { cn } from '@tuturuuu/utils/format';
 import useSWR from 'swr';
+import { fetcher } from '@/utils/fetcher';
 
 export default function AIModelSelector({
   open,

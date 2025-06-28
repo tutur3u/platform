@@ -1,11 +1,11 @@
-import { productUnitColumns } from './columns';
-import { ProductUnitForm } from './form';
-import { CustomDataTable } from '@/components/custom-data-table';
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { ProductUnit } from '@tuturuuu/types/primitives/ProductUnit';
+import type { ProductUnit } from '@tuturuuu/types/primitives/ProductUnit';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
 import { getTranslations } from 'next-intl/server';
+import { CustomDataTable } from '@/components/custom-data-table';
+import { productUnitColumns } from './columns';
+import { ProductUnitForm } from './form';
 
 interface Props {
   params: Promise<{

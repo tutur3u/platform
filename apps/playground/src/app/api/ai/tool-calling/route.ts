@@ -1,3 +1,5 @@
+import { toolCalling } from '@tuturuuu/ai/playground/tool-calling';
+import { NextResponse } from 'next/server';
 import {
   addBulkEvents,
   addEvent,
@@ -12,8 +14,6 @@ import {
   scheduleMultipleEvents,
   updateBulkEvents,
 } from './tools';
-import { toolCalling } from '@tuturuuu/ai/playground/tool-calling';
-import { NextResponse } from 'next/server';
 
 const extraTools = {
   fetchCalendarEvents,

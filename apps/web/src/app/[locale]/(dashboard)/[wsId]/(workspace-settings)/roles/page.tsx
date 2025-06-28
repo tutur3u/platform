@@ -1,14 +1,14 @@
-import { roleColumns } from './columns';
-import { RoleForm } from './form';
-import { CustomDataTable } from '@/components/custom-data-table';
-import { permissions, totalPermissions } from '@/lib/permissions';
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { WorkspaceRole } from '@tuturuuu/types/db';
+import type { WorkspaceRole } from '@tuturuuu/types/db';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
+import { permissions, totalPermissions } from '@tuturuuu/utils/permissions';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
-import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
+import { CustomDataTable } from '@/components/custom-data-table';
+import { roleColumns } from './columns';
+import { RoleForm } from './form';
 
 interface Props {
   params: Promise<{

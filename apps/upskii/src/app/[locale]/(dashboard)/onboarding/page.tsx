@@ -1,9 +1,9 @@
-import WorkspaceInvites from './workspace-invites';
 import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
 import { Separator } from '@tuturuuu/ui/separator';
-import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
+import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
+import WorkspaceInvites from './workspace-invites';
 
 export default async function OnboardingPage() {
   const t = await getTranslations('onboarding');

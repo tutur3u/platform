@@ -1,4 +1,3 @@
-import { type Horse, type Race } from './types';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Card } from '@tuturuuu/ui/card';
 import {
@@ -18,6 +17,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
+import type { Horse, Race } from './types';
 
 interface AlgorithmDiagnosticsProps {
   horses: Horse[];

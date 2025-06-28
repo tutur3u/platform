@@ -1,13 +1,5 @@
-import InvitationCard from '@/app/[locale]/(dashboard)/_components/invitation-card';
-import { Structure } from '@/components/layout/structure';
-import NavbarActions from '@/components/navbar-actions';
-import type { NavLink } from '@/components/navigation';
-import { EducationBanner } from '@/components/request-education-banner';
-import { UserNav } from '@/components/user-nav';
-import { SIDEBAR_COLLAPSED_COOKIE_NAME } from '@/constants/common';
 import {
   Award,
-  Blocks,
   Bolt,
   BookCopy,
   BookKey,
@@ -17,13 +9,9 @@ import {
   ClipboardCheck,
   Cog,
   CopyCheck,
-  FileText,
-  FolderSync,
   Home,
-  KeyRound,
   Library,
   ListTodo,
-  ScrollText,
   ShieldUser,
   SquareTerminal,
   UserCog,
@@ -36,10 +24,17 @@ import {
 } from '@tuturuuu/utils/feature-flags/core';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
-import { getTranslations } from 'next-intl/server';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { ReactNode, Suspense } from 'react';
+import { getTranslations } from 'next-intl/server';
+import { type ReactNode, Suspense } from 'react';
+import InvitationCard from '@/app/[locale]/(dashboard)/_components/invitation-card';
+import { Structure } from '@/components/layout/structure';
+import NavbarActions from '@/components/navbar-actions';
+import type { NavLink } from '@/components/navigation';
+import { EducationBanner } from '@/components/request-education-banner';
+import { UserNav } from '@/components/user-nav';
+import { SIDEBAR_COLLAPSED_COOKIE_NAME } from '@/constants/common';
 
 interface LayoutProps {
   params: Promise<{
@@ -146,13 +141,7 @@ export default async function Layout({ children, params }: LayoutProps) {
         `/${wsId}/members`,
         `/${wsId}/teams`,
         `/${wsId}/roles`,
-        `/${wsId}/settings/reports`,
-        `/${wsId}/billing`,
-        `/${wsId}/api-keys`,
         `/${wsId}/secrets`,
-        `/${wsId}/infrastructure`,
-        `/${wsId}/migrations`,
-        `/${wsId}/activities`,
         `/${wsId}/approvals`,
       ],
       shortcut: ',',
@@ -175,30 +164,11 @@ export default async function Layout({ children, params }: LayoutProps) {
           disabled: withoutPermission('manage_workspace_roles'),
         },
         {
-          title: t('workspace-settings-layout.reports'),
-          href: `/${wsId}/settings/reports`,
-          icon: <FileText className="h-4 w-4" />,
-          disabled: withoutPermission('manage_user_report_templates'),
-        },
-        {
-          title: t('workspace-settings-layout.api_keys'),
-          href: `/${wsId}/api-keys`,
-          icon: <KeyRound className="h-4 w-4" />,
-          disabled: withoutPermission('manage_workspace_security'),
-        },
-        {
           title: t('workspace-settings-layout.secrets'),
           href: `/${wsId}/secrets`,
           icon: <BookKey className="h-4 w-4" />,
           disabled: withoutPermission('manage_workspace_secrets'),
           requireRootMember: true,
-        },
-        {
-          title: t('workspace-settings-layout.infrastructure'),
-          href: `/${wsId}/infrastructure`,
-          icon: <Blocks className="h-4 w-4" />,
-          disabled: withoutPermission('view_infrastructure'),
-          requireRootWorkspace: true,
         },
         {
           title: t('sidebar.platform_users'),
@@ -208,20 +178,6 @@ export default async function Layout({ children, params }: LayoutProps) {
           disabled: withoutPermission('ai_lab'),
           requireRootWorkspace: true,
           requireRootMember: true,
-        },
-        {
-          title: t('workspace-settings-layout.migrations'),
-          href: `/${wsId}/migrations`,
-          icon: <FolderSync className="h-4 w-4" />,
-          disabled: withoutPermission('manage_external_migrations'),
-          requireRootWorkspace: true,
-        },
-        {
-          title: t('workspace-settings-layout.activities'),
-          href: `/${wsId}/activities`,
-          icon: <ScrollText className="h-4 w-4" />,
-          disabled: withoutPermission('manage_workspace_audit_logs'),
-          requireRootWorkspace: true,
         },
         {
           title: 'Approvals',

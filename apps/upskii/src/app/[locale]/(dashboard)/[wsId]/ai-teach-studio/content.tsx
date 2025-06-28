@@ -1,7 +1,5 @@
 'use client';
 
-import { recommendedTools, tools } from './data';
-import ApiKeyInput from '@/components/form-apikey';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import {
@@ -19,6 +17,8 @@ import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import ApiKeyInput from '@/components/form-apikey';
+import { recommendedTools, tools } from './data';
 
 function APITooltip({
   handleOpenChange,

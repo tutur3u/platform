@@ -1,5 +1,5 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { WorkspaceCalendarEvent } from '@tuturuuu/types/db';
+import type { WorkspaceCalendarEvent } from '@tuturuuu/types/db';
 import {
   BACKGROUND_SYNC_RANGE,
   updateLastUpsert,

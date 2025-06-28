@@ -1,10 +1,8 @@
 'use client';
 
-import { ProductCategoryForm } from '../../categories/form';
-import { ProductWarehouseForm } from '../../warehouses/form';
-import { ProductCategory } from '@tuturuuu/types/primitives/ProductCategory';
-import { ProductUnit } from '@tuturuuu/types/primitives/ProductUnit';
-import { ProductWarehouse } from '@tuturuuu/types/primitives/ProductWarehouse';
+import type { ProductCategory } from '@tuturuuu/types/primitives/ProductCategory';
+import type { ProductUnit } from '@tuturuuu/types/primitives/ProductUnit';
+import type { ProductWarehouse } from '@tuturuuu/types/primitives/ProductWarehouse';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import {
@@ -41,10 +39,12 @@ import {
 import { Separator } from '@tuturuuu/ui/separator';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { cn } from '@tuturuuu/utils/format';
-import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import * as z from 'zod';
+import { ProductCategoryForm } from '../../categories/form';
+import { ProductWarehouseForm } from '../../warehouses/form';
 
 const InventorySchema = z.object({
   unit_id: z.string(),

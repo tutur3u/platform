@@ -1,6 +1,6 @@
 'use client';
 
-import { Workspace } from '@tuturuuu/types/db';
+import type { Workspace } from '@tuturuuu/types/db';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -15,8 +15,8 @@ import { Button } from '@tuturuuu/ui/button';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { AlertTriangle, Trash2 } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
-import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
 interface Props {

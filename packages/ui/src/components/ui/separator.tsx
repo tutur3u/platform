@@ -2,7 +2,7 @@
 
 import * as SeparatorPrimitive from '@radix-ui/react-separator';
 import { cn } from '@tuturuuu/utils/format';
-import * as React from 'react';
+import type * as React from 'react';
 
 function Separator({
   className,

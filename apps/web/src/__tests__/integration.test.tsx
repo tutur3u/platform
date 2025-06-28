@@ -1,7 +1,7 @@
+import { beforeEach, describe, expect, test, vi } from 'vitest';
 import { CsvCrawler } from '../app/[locale]/(dashboard)/[wsId]/(ai)/datasets/[datasetId]/explore/crawlers/csv-crawler';
 import { ExcelCrawler } from '../app/[locale]/(dashboard)/[wsId]/(ai)/datasets/[datasetId]/explore/crawlers/excel-crawler';
 import { HtmlCrawler } from '../app/[locale]/(dashboard)/[wsId]/(ai)/datasets/[datasetId]/explore/crawlers/html-crawler';
-import { beforeEach, describe, expect, test, vi } from 'vitest';
 
 const SECONDS = 1000;
 

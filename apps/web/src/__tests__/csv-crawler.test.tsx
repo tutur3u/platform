@@ -1,5 +1,5 @@
-import { CsvCrawler } from '../app/[locale]/(dashboard)/[wsId]/(ai)/datasets/[datasetId]/explore/crawlers/csv-crawler';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
+import { CsvCrawler } from '../app/[locale]/(dashboard)/[wsId]/(ai)/datasets/[datasetId]/explore/crawlers/csv-crawler';
 
 describe('CsvCrawler', () => {
   let crawler: CsvCrawler;

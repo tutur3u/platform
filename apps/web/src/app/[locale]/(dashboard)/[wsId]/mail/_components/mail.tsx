@@ -1,10 +1,5 @@
 'use client';
 
-import { type Mail } from '../data';
-import { useMail } from '../use-mail';
-import { MailDisplay } from './mail-display';
-import { MailList } from './mail-list';
-import { Nav } from './nav';
 import { Archive, Inbox, Search, Send } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import {
@@ -17,6 +12,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { TooltipProvider } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
 import * as React from 'react';
+import type { Mail } from '../data';
+import { useMail } from '../use-mail';
+import { MailDisplay } from './mail-display';
+import { MailList } from './mail-list';
+import { Nav } from './nav';
 
 interface MailProps {
   mails: Mail[];

@@ -1,6 +1,5 @@
 'use client';
 
-import { GITHUB_OWNER, GITHUB_REPO } from '@/constants/common';
 import { Card } from '@tuturuuu/ui/card';
 import {
   ArrowRight,
@@ -15,6 +14,7 @@ import {
   Users,
 } from '@tuturuuu/ui/icons';
 import { motion } from 'framer-motion';
+import { GITHUB_OWNER, GITHUB_REPO } from '@/constants/common';
 
 const benefits = [
   {

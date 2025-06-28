@@ -1,7 +1,5 @@
 'use client';
 
-import { SessionData } from './types';
-import { calculateDuration } from './utils/date-helper';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
@@ -32,6 +30,8 @@ import {
 } from '@tuturuuu/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { useRouter } from 'next/navigation';
+import type { SessionData } from './types';
+import { calculateDuration } from './utils/date-helper';
 
 interface SessionClientProps {
   session: SessionData;

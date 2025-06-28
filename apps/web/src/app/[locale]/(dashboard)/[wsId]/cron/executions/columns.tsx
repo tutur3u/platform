@@ -1,11 +1,11 @@
 'use client';
 
-import { RowActions } from './row-actions';
-import { ColumnDef } from '@tanstack/react-table';
+import type { ColumnDef } from '@tanstack/react-table';
 import type { WorkspaceCronExecution } from '@tuturuuu/types/db';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import moment from 'moment';
 import Link from 'next/link';
+import { RowActions } from './row-actions';
 
 export const getColumns = (
   t: any,

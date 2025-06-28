@@ -1,5 +1,5 @@
-import PageContent from '@/app/[locale]/(dashboard)/[wsId]/ai-teach-studio/content';
 import { cookies } from 'next/headers';
+import PageContent from '@/app/[locale]/(dashboard)/[wsId]/ai-teach-studio/content';
 
 export default async function ToolsPage({
   params,

@@ -1,10 +1,10 @@
 'use client';
 
-import { DEV_MODE, PROD_MODE } from '@/constants/common';
-import { User } from '@tuturuuu/types/primitives/User';
+import type { User } from '@tuturuuu/types/primitives/User';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { ReactNode, useEffect, useState } from 'react';
+import { type ReactNode, useEffect, useState } from 'react';
+import { DEV_MODE, PROD_MODE } from '@/constants/common';
 
 export interface NavLink {
   title: string;
