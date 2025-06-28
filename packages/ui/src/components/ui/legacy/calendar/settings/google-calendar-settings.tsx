@@ -1,6 +1,5 @@
 'use client';
 
-import { useCalendar } from '../../../../../hooks/use-calendar';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { WorkspaceCalendarGoogleToken } from '@tuturuuu/types/db';
 import { Alert, AlertDescription } from '@tuturuuu/ui/alert';
@@ -12,11 +11,14 @@ import {
   CardHeader,
   CardTitle,
 } from '@tuturuuu/ui/card';
+import { useCalendarSync } from '@tuturuuu/ui/hooks/use-calendar-sync';
 import { useToast } from '@tuturuuu/ui/hooks/use-toast';
 import { Progress } from '@tuturuuu/ui/progress';
+import { Switch } from '@tuturuuu/ui/switch';
 import { Check, ExternalLink, Link, Loader2, RefreshCw } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useCalendar } from '../../../../../hooks/use-calendar';
 
 export type SmartSchedulingData = {
   enableSmartScheduling: boolean;
@@ -50,7 +52,7 @@ export const defaultSmartSchedulingData: SmartSchedulingData = {
 
 type GoogleCalendarSettingsProps = {
   wsId: string;
-  experimentalGoogleToken?: WorkspaceCalendarGoogleToken;
+  experimentalGoogleToken?: WorkspaceCalendarGoogleToken | null;
 };
 
 export function GoogleCalendarSettings({
@@ -58,7 +60,6 @@ export function GoogleCalendarSettings({
   experimentalGoogleToken,
 }: GoogleCalendarSettingsProps) {
   const router = useRouter();
-
   const [googleCalendarConnected, setGoogleCalendarConnected] = useState(
     !!experimentalGoogleToken?.id
   );
@@ -82,12 +83,28 @@ export function GoogleCalendarSettings({
     changesMade: false,
   });
   const { toast } = useToast();
-  const { syncGoogleCalendarNow, getEvents } = useCalendar();
+  const { syncGoogleCalendarNow, getGoogleEvents } = useCalendar();
+  const { setIsActiveSyncOn, isActiveSyncOn } = useCalendarSync();
+
+  const [isTuturuuuUser, setIsTuturuuuUser] = useState(false);
+
+  useEffect(() => {
+    const checkIfTuturuuuUser = async () => {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (user?.email?.includes('@tuturuuu.com')) {
+        setIsTuturuuuUser(true);
+      } else {
+        setIsTuturuuuUser(false);
+      }
+    };
+    checkIfTuturuuuUser();
+  }, []);
 
   // Show connected events count
-  const connectedEventsCount = getEvents().filter(
-    (e) => e.google_event_id
-  ).length;
+  const connectedEventsCount = getGoogleEvents().length;
 
   const handleGoogleAuth = async () => {
     if (!wsId) {
@@ -321,7 +338,7 @@ export function GoogleCalendarSettings({
             {experimentalGoogleToken && googleCalendarConnected ? (
               <div className="space-y-4">
                 <div className="flex items-start rounded-md border border-green-200 bg-green-50 p-4 dark:border-green-800 dark:bg-green-950">
-                  <Check className="mr-3 mt-0.5 h-5 w-5 text-green-600 dark:text-green-400" />
+                  <Check className="mt-0.5 mr-3 h-5 w-5 text-green-600 dark:text-green-400" />
                   <div className="flex-1">
                     <h4 className="font-medium text-green-800 dark:text-green-300">
                       Connected to Google Calendar
@@ -400,7 +417,7 @@ export function GoogleCalendarSettings({
                   <Button
                     variant="outline"
                     size="sm"
-                    className="border-destructive text-destructive hover:bg-destructive/10 flex items-center gap-2"
+                    className="flex items-center gap-2 border-destructive text-destructive hover:bg-destructive/10"
                     onClick={handleDisconnect}
                     disabled={isDisconnecting}
                   >
@@ -412,6 +429,15 @@ export function GoogleCalendarSettings({
                     {isDisconnecting ? 'Disconnecting...' : 'Disconnect'}
                   </Button>
                 </div>
+                {isTuturuuuUser && (
+                  <div className="flex items-center gap-2">
+                    <Switch
+                      checked={isActiveSyncOn}
+                      onCheckedChange={setIsActiveSyncOn}
+                    />
+                    <span>Active Sync</span>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="space-y-4">

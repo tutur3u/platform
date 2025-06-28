@@ -19,9 +19,9 @@ import {
 } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import { motion } from 'framer-motion';
-import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 
 // StatCard component
 function StatCard({
@@ -43,7 +43,7 @@ function StatCard({
       transition={{ delay }}
       className="text-center"
     >
-      <div className="bg-primary/10 text-primary mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full">
+      <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary">
         {icon}
       </div>
       <h3 className="mb-1 text-3xl font-bold">{value}</h3>
@@ -74,7 +74,7 @@ function TeamMemberCard({
       transition={{ delay }}
       className="group"
     >
-      <Card className="border-foreground/10 hover:border-primary/40 overflow-hidden transition-colors">
+      <Card className="overflow-hidden border-foreground/10 transition-colors hover:border-primary/40">
         <div className="aspect-square overflow-hidden">
           <div className="relative h-full w-full">
             <Image
@@ -88,7 +88,7 @@ function TeamMemberCard({
         </div>
         <div className="p-6">
           <h3 className="text-xl font-bold">{name}</h3>
-          <p className="text-primary mb-3 text-sm font-medium">{role}</p>
+          <p className="mb-3 text-sm font-medium text-primary">{role}</p>
           <p className="text-muted-foreground">{bio}</p>
         </div>
       </Card>
@@ -116,8 +116,8 @@ function ValueCard({
       transition={{ delay }}
       className="group"
     >
-      <Card className="border-foreground/10 hover:border-primary/40 h-full p-6 transition-colors">
-        <div className="bg-primary/10 text-primary mb-4 inline-flex rounded-lg p-3">
+      <Card className="h-full border-foreground/10 p-6 transition-colors hover:border-primary/40">
+        <div className="mb-4 inline-flex rounded-lg bg-primary/10 p-3 text-primary">
           {icon}
         </div>
         <h3 className="mb-2 text-xl font-bold">{title}</h3>
@@ -145,7 +145,7 @@ export default function AboutPage() {
           <h1 className="mb-4 text-4xl font-bold tracking-tight sm:text-5xl">
             {t('hero.title')}
           </h1>
-          <p className="text-muted-foreground mx-auto max-w-2xl text-lg">
+          <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
             {t('hero.description')}
           </p>
         </motion.div>
@@ -160,10 +160,10 @@ export default function AboutPage() {
             viewport={{ once: true }}
             className="relative order-2 md:order-1"
           >
-            <div className="bg-primary/5 relative aspect-square rounded-xl border backdrop-blur-sm">
-              <div className="from-primary/10 bg-linear-to-br absolute inset-0 rounded-xl via-transparent to-transparent" />
+            <div className="relative aspect-square rounded-xl border bg-primary/5 backdrop-blur-sm">
+              <div className="absolute inset-0 rounded-xl bg-linear-to-br from-primary/10 via-transparent to-transparent" />
               <div className="relative flex h-full items-center justify-center p-8">
-                <div className="from-primary bg-linear-to-r via-purple-500 to-blue-500 bg-clip-text text-center text-4xl font-bold text-transparent md:text-5xl">
+                <div className="bg-linear-to-r from-primary via-purple-500 to-blue-500 bg-clip-text text-center text-4xl font-bold text-transparent md:text-5xl">
                   {t('mission-vision.slogan-1')}
                   <br />
                   {t('mission-vision.slogan-2')}
@@ -215,10 +215,10 @@ export default function AboutPage() {
         viewport={{ once: true }}
         className="mb-24"
       >
-        <div className="bg-primary/5 rounded-xl p-12">
+        <div className="rounded-xl bg-primary/5 p-12">
           <div className="mb-8 text-center">
             <h2 className="mb-2 text-3xl font-bold">{t('impact.title')}</h2>
-            <p className="text-muted-foreground mx-auto max-w-2xl">
+            <p className="mx-auto max-w-2xl text-muted-foreground">
               {t('impact.description')}
             </p>
           </div>
@@ -261,7 +261,7 @@ export default function AboutPage() {
           className="mb-8 text-center"
         >
           <h2 className="mb-2 text-3xl font-bold">{t('values.title')}</h2>
-          <p className="text-muted-foreground mx-auto max-w-2xl">
+          <p className="mx-auto max-w-2xl text-muted-foreground">
             {t('values.description')}
           </p>
         </motion.div>
@@ -315,7 +315,7 @@ export default function AboutPage() {
           className="mb-8 text-center"
         >
           <h2 className="mb-2 text-3xl font-bold">{t('team.title')}</h2>
-          <p className="text-muted-foreground mx-auto max-w-2xl">
+          <p className="mx-auto max-w-2xl text-muted-foreground">
             {t('team.description')}
           </p>
         </motion.div>
@@ -393,12 +393,12 @@ export default function AboutPage() {
                   transition={{ delay: index * 0.1 }}
                   className="flex items-start gap-3"
                 >
-                  <div className="bg-primary/10 text-primary mt-1 shrink-0 rounded-full p-1">
+                  <div className="mt-1 shrink-0 rounded-full bg-primary/10 p-1 text-primary">
                     <CheckCircle className="h-4 w-4" />
                   </div>
                   <div>
                     <h3 className="font-bold">{item.title}</h3>
-                    <p className="text-muted-foreground text-sm">
+                    <p className="text-sm text-muted-foreground">
                       {item.description}
                     </p>
                   </div>
@@ -415,55 +415,55 @@ export default function AboutPage() {
           >
             <Card className="overflow-hidden p-6">
               <div className="grid gap-4">
-                <div className="bg-primary/5 flex items-center justify-between rounded-lg p-4">
+                <div className="flex items-center justify-between rounded-lg bg-primary/5 p-4">
                   <div className="flex items-center gap-3">
-                    <div className="bg-primary/10 text-primary rounded-full p-2">
+                    <div className="rounded-full bg-primary/10 p-2 text-primary">
                       <BookOpen className="h-5 w-5" />
                     </div>
                     <div>
                       <h3 className="font-semibold">
                         {t('approach.detail-1.title')}
                       </h3>
-                      <p className="text-muted-foreground text-sm">
+                      <p className="text-sm text-muted-foreground">
                         {t('approach.detail-1.description')}
                       </p>
                     </div>
                   </div>
-                  <div className="text-primary font-bold">95%</div>
+                  <div className="font-bold text-primary">95%</div>
                 </div>
 
-                <div className="bg-primary/5 flex items-center justify-between rounded-lg p-4">
+                <div className="flex items-center justify-between rounded-lg bg-primary/5 p-4">
                   <div className="flex items-center gap-3">
-                    <div className="bg-primary/10 text-primary rounded-full p-2">
+                    <div className="rounded-full bg-primary/10 p-2 text-primary">
                       <Brain className="h-5 w-5" />
                     </div>
                     <div>
                       <h3 className="font-semibold">
                         {t('approach.detail-2.title')}
                       </h3>
-                      <p className="text-muted-foreground text-sm">
+                      <p className="text-sm text-muted-foreground">
                         {t('approach.detail-2.description')}
                       </p>
                     </div>
                   </div>
-                  <div className="text-primary font-bold">100%</div>
+                  <div className="font-bold text-primary">100%</div>
                 </div>
 
-                <div className="bg-primary/5 flex items-center justify-between rounded-lg p-4">
+                <div className="flex items-center justify-between rounded-lg bg-primary/5 p-4">
                   <div className="flex items-center gap-3">
-                    <div className="bg-primary/10 text-primary rounded-full p-2">
+                    <div className="rounded-full bg-primary/10 p-2 text-primary">
                       <GraduationCap className="h-5 w-5" />
                     </div>
                     <div>
                       <h3 className="font-semibold">
                         {t('approach.detail-3.title')}
                       </h3>
-                      <p className="text-muted-foreground text-sm">
+                      <p className="text-sm text-muted-foreground">
                         {t('approach.detail-3.description')}
                       </p>
                     </div>
                   </div>
-                  <div className="text-primary font-bold">98%</div>
+                  <div className="font-bold text-primary">98%</div>
                 </div>
               </div>
             </Card>
@@ -478,9 +478,9 @@ export default function AboutPage() {
         viewport={{ once: true }}
         className="text-center"
       >
-        <div className="bg-primary/5 mx-auto max-w-3xl rounded-xl p-8">
+        <div className="mx-auto max-w-3xl rounded-xl bg-primary/5 p-8">
           <h2 className="mb-4 text-2xl font-bold">{t('cta-section.title')}</h2>
-          <p className="text-muted-foreground mb-6">
+          <p className="mb-6 text-muted-foreground">
             {t('cta-section.description')}
           </p>
           <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">

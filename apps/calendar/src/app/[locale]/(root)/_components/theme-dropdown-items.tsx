@@ -57,31 +57,41 @@ export function ThemeDropdownItems() {
   return (
     <>
       <DropdownMenuItem
-        className="cursor-pointer"
+        className="cursor-pointer rounded-md px-3 py-2 text-sm font-medium transition-all duration-200 hover:bg-blue-50 hover:text-blue-700 dark:hover:bg-blue-950/20 dark:hover:text-blue-300"
         onClick={() => updateTheme({ primary: 'light' })}
         disabled={primaryTheme === 'light'}
       >
-        {primaryTheme === 'light' ? (
-          <Check className="mr-2 h-4 w-4" />
-        ) : (
-          <Sun className="mr-2 h-4 w-4" />
-        )}
-
-        {t('light')}
+        <div className="flex items-center gap-3">
+          {primaryTheme === 'light' ? (
+            <div className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-500 text-white">
+              <Check className="h-3 w-3" />
+            </div>
+          ) : (
+            <div className="flex h-5 w-5 items-center justify-center rounded-full bg-orange-100 text-orange-600 dark:bg-orange-900/20 dark:text-orange-400">
+              <Sun className="h-3 w-3" />
+            </div>
+          )}
+          <span>{t('light')}</span>
+        </div>
       </DropdownMenuItem>
 
       <DropdownMenuItem
-        className="cursor-pointer"
+        className="cursor-pointer rounded-md px-3 py-2 text-sm font-medium transition-all duration-200 hover:bg-blue-50 hover:text-blue-700 dark:hover:bg-blue-950/20 dark:hover:text-blue-300"
         onClick={() => updateTheme({ primary: 'dark' })}
         disabled={primaryTheme === 'dark'}
       >
-        {primaryTheme === 'dark' ? (
-          <Check className="mr-2 h-4 w-4" />
-        ) : (
-          <Moon className="mr-2 h-4 w-4" />
-        )}
-
-        {t('dark')}
+        <div className="flex items-center gap-3">
+          {primaryTheme === 'dark' ? (
+            <div className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-500 text-white">
+              <Check className="h-3 w-3" />
+            </div>
+          ) : (
+            <div className="flex h-5 w-5 items-center justify-center rounded-full bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400">
+              <Moon className="h-3 w-3" />
+            </div>
+          )}
+          <span>{t('dark')}</span>
+        </div>
       </DropdownMenuItem>
 
       {/* <DropdownMenuSeparator />
@@ -177,20 +187,25 @@ export function ThemeDropdownItems() {
         {t('blue')}
       </DropdownMenuItem> */}
 
-      <DropdownMenuSeparator />
+      <DropdownMenuSeparator className="my-2 bg-gray-200 dark:bg-gray-700" />
 
       <DropdownMenuItem
-        className="cursor-pointer"
+        className="cursor-pointer rounded-md px-3 py-2 text-sm font-medium transition-all duration-200 hover:bg-blue-50 hover:text-blue-700 dark:hover:bg-blue-950/20 dark:hover:text-blue-300"
         onClick={() => setTheme('system')}
         disabled={isSystem}
       >
-        {isSystem ? (
-          <Check className="mr-2 h-4 w-4" />
-        ) : (
-          <Monitor className="mr-2 h-4 w-4" />
-        )}
-
-        {t('system')}
+        <div className="flex items-center gap-3">
+          {isSystem ? (
+            <div className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-500 text-white">
+              <Check className="h-3 w-3" />
+            </div>
+          ) : (
+            <div className="flex h-5 w-5 items-center justify-center rounded-full bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400">
+              <Monitor className="h-3 w-3" />
+            </div>
+          )}
+          <span>{t('system')}</span>
+        </div>
       </DropdownMenuItem>
     </>
   );

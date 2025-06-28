@@ -2,8 +2,8 @@
 
 import { DropdownMenuItem } from '@tuturuuu/ui/dropdown-menu';
 import { Check, Monitor } from '@tuturuuu/ui/icons';
-import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 
 interface Props {
   selected?: boolean;
@@ -28,9 +28,9 @@ export function SystemLanguageDropdownItem({ selected }: Props) {
       disabled={selected}
     >
       {selected ? (
-        <Check className="mr-2 h-4 w-4" />
+        <Check className="h-4 w-4" />
       ) : (
-        <Monitor className="mr-2 h-4 w-4" />
+        <Monitor className="h-4 w-4" />
       )}
       {t('system')}
     </DropdownMenuItem>

@@ -1,7 +1,7 @@
 'use client';
 
-import { Workspace } from '@tuturuuu/types/db';
-import { User } from '@tuturuuu/types/primitives/User';
+import type { Workspace } from '@tuturuuu/types/db';
+import type { User } from '@tuturuuu/types/primitives/User';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -27,8 +27,8 @@ import { Settings, User as UserIcon } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { getInitials } from '@tuturuuu/utils/name-helper';
-import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import * as z from 'zod';
 
@@ -147,7 +147,7 @@ export function MemberSettingsButton({
     >
       <DialogTrigger asChild>
         <Button variant="ghost" size="icon">
-          <Settings className="text-foreground/70 h-6 w-6" />
+          <Settings className="h-6 w-6 text-foreground/70" />
         </Button>
       </DialogTrigger>
       <DialogContent
@@ -174,7 +174,7 @@ export function MemberSettingsButton({
           </Avatar>
 
           <div className="flex-1 space-y-1">
-            <p className="line-clamp-1 text-sm font-medium leading-none">
+            <p className="line-clamp-1 text-sm leading-none font-medium">
               {user?.display_name ? (
                 user.display_name
               ) : (
@@ -183,7 +183,7 @@ export function MemberSettingsButton({
               {role ? <span className="text-orange-300">({role})</span> : null}
             </p>
 
-            <p className="text-foreground/60 line-clamp-1 text-sm">
+            <p className="line-clamp-1 text-sm text-foreground/60">
               {user?.email ||
                 (user?.handle
                   ? `@${user.handle}`

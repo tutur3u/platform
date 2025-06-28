@@ -1,6 +1,5 @@
 'use client';
 
-import ChallengeCard from './challengeCard';
 import type { NovaExtendedChallenge } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
 import { Clock, Filter, Search } from '@tuturuuu/ui/icons';
@@ -8,6 +7,7 @@ import { Input } from '@tuturuuu/ui/input';
 import { Tabs, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
+import ChallengeCard from './challengeCard';
 
 interface Props {
   isAdmin: boolean;
@@ -122,10 +122,10 @@ export default function ChallengesList({ isAdmin, challenges }: Props) {
 
   return (
     <>
-      <div className="bg-card mb-6 rounded-lg border p-4 shadow-sm">
-        <div className="flex flex-col space-y-4 md:flex-row md:items-center md:space-x-4 md:space-y-0">
+      <div className="mb-6 rounded-lg border bg-card p-4 shadow-sm">
+        <div className="flex flex-col space-y-4 md:flex-row md:items-center md:space-y-0 md:space-x-4">
           <div className="relative flex-1">
-            <Search className="text-muted-foreground absolute left-3 top-2.5 h-4 w-4" />
+            <Search className="absolute top-2.5 left-3 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder={t('search-placeholder')}
               className="pl-9"
@@ -135,7 +135,7 @@ export default function ChallengesList({ isAdmin, challenges }: Props) {
           </div>
 
           <div className="flex items-center">
-            <Filter className="text-muted-foreground mr-2 h-4 w-4" />
+            <Filter className="mr-2 h-4 w-4 text-muted-foreground" />
             <Tabs
               defaultValue="all"
               value={filter}
@@ -178,11 +178,11 @@ export default function ChallengesList({ isAdmin, challenges }: Props) {
         </div>
       ) : (
         <div className="mt-12 flex flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center">
-          <Clock className="text-muted-foreground/50 h-12 w-12" />
+          <Clock className="h-12 w-12 text-muted-foreground/50" />
           <h3 className="mt-4 text-xl font-medium">
             {t('no-challenges-found.title')}
           </h3>
-          <p className="text-muted-foreground mt-2 max-w-md">
+          <p className="mt-2 max-w-md text-muted-foreground">
             {searchQuery
               ? t('no-challenges-found.search-description')
               : t('no-challenges-found.default-description')}

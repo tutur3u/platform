@@ -1,5 +1,5 @@
-import { type UseChatHelpers } from '@tuturuuu/ai/types';
-import { AIChat } from '@tuturuuu/types/db';
+import type { UseChatHelpers } from '@tuturuuu/ai/types';
+import type { AIChat } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
 import {
   ArrowDownToDot,
@@ -14,14 +14,17 @@ import dayjs from 'dayjs';
 import 'dayjs/locale/vi';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import { useTranslations } from 'next-intl';
+import { toast } from 'sonner';
 
 export function EmptyScreen({
   // chats,
   setInput,
   locale,
+  hasApiKey,
 }: Pick<UseChatHelpers, 'setInput'> & {
   chats?: AIChat[];
   locale: string;
+  hasApiKey: boolean;
 }) {
   dayjs.extend(relativeTime);
   dayjs.locale(locale);
@@ -71,16 +74,16 @@ export function EmptyScreen({
 
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-4 lg:max-w-4xl xl:max-w-6xl">
-      <div className="bg-background rounded-lg border p-4 md:p-8">
+      <div className="rounded-lg border bg-background p-4 md:p-8">
         <div className="flex flex-col items-center justify-center text-center">
           <h1 className="mb-2 text-lg font-semibold">
             {t('welcome_to')}{' '}
-            <span className="from-dynamic-light-red via-dynamic-light-pink to-dynamic-light-blue bg-linear-to-r overflow-hidden bg-clip-text font-bold text-transparent">
+            <span className="overflow-hidden bg-linear-to-r from-dynamic-light-red via-dynamic-light-pink to-dynamic-light-blue bg-clip-text font-bold text-transparent">
               Rewise
             </span>
             .
           </h1>
-          <p className="text-foreground/90 text-sm leading-normal md:text-base">
+          <p className="text-sm leading-normal text-foreground/90 md:text-base">
             {t('welcome_msg')}
           </p>
 
@@ -93,10 +96,16 @@ export function EmptyScreen({
                   'w-full items-center justify-center gap-2 border p-2 text-left text-sm md:p-8',
                   message.color
                 )}
-                onClick={() => setInput(message.message)}
+                onClick={() => {
+                  if (hasApiKey) {
+                    setInput(message.message);
+                  } else {
+                    toast.error(t('api_key_required'));
+                  }
+                }}
               >
                 {message.icon}
-                <div className="line-clamp-1 whitespace-normal break-all">
+                <div className="line-clamp-1 break-all whitespace-normal">
                   {message.heading}
                 </div>
               </Button>

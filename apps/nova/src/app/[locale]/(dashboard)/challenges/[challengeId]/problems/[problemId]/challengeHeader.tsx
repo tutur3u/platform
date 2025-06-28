@@ -1,6 +1,4 @@
-import { ChallengeCriteriaDialog } from './challenge-criteria-dialog';
-import ScoreBadge from '@/components/common/ScoreBadge';
-import { NovaChallenge, NovaChallengeCriteria } from '@tuturuuu/types/db';
+import type { NovaChallenge, NovaChallengeCriteria } from '@tuturuuu/types/db';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -20,6 +18,8 @@ import {
 import { Progress } from '@tuturuuu/ui/progress';
 import { cn } from '@tuturuuu/utils/format';
 import { useEffect, useRef, useState } from 'react';
+import ScoreBadge from '@/components/common/ScoreBadge';
+import { ChallengeCriteriaDialog } from './challenge-criteria-dialog';
 
 type ExtendedNovaChallenge = NovaChallenge & {
   criteria: NovaChallengeCriteria[];
@@ -263,7 +263,7 @@ export default function ChallengeHeader({
         </Badge>
       </div>
 
-      <div className="absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center gap-2">
+      <div className="absolute top-1/2 left-1/2 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center gap-2">
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-1.5">
             <Clock className={cn('h-4 w-4', getTimeColor())} />

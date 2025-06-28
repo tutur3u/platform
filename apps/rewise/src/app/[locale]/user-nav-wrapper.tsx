@@ -1,5 +1,5 @@
-import { UserNav } from './user-nav';
 import { Suspense } from 'react';
+import { UserNav } from './user-nav';
 
 export async function UserNavWrapper({
   hideMetadata = false,
@@ -9,7 +9,7 @@ export async function UserNavWrapper({
   return (
     <Suspense
       fallback={
-        <div className="bg-foreground/5 h-10 w-10 animate-pulse rounded-lg" />
+        <div className="h-10 w-10 animate-pulse rounded-lg bg-foreground/5" />
       }
     >
       <UserNav hideMetadata={hideMetadata} />

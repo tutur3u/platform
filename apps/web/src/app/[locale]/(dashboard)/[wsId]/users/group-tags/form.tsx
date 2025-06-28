@@ -1,10 +1,9 @@
 'use client';
 
-import { Filter } from '../filters';
 import { useQuery } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
-import { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
-import { UserGroupTag } from '@tuturuuu/types/primitives/UserGroupTag';
+import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
+import type { UserGroupTag } from '@tuturuuu/types/primitives/UserGroupTag';
 import { Button } from '@tuturuuu/ui/button';
 import { ColorPicker } from '@tuturuuu/ui/color-picker';
 import {
@@ -21,9 +20,10 @@ import { Users } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { Separator } from '@tuturuuu/ui/separator';
-import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import * as z from 'zod';
+import { Filter } from '../filters';
 
 interface Props {
   wsId: string;
@@ -124,7 +124,7 @@ export default function GroupTagForm({ wsId, data, onFinish }: Props) {
                   text={form.watch('name')}
                   value={field.value}
                   onChange={field.onChange}
-                  className="line-clamp-1 w-full grow-0 text-ellipsis whitespace-nowrap break-all"
+                  className="line-clamp-1 w-full grow-0 break-all text-ellipsis whitespace-nowrap"
                 />
               </FormControl>
               <FormMessage />
@@ -157,7 +157,7 @@ export default function GroupTagForm({ wsId, data, onFinish }: Props) {
         )}
 
         <Button type="submit" className="w-full" disabled={disabled}>
-          {!!data?.id ? t('edit') : t('create')}
+          {data?.id ? t('edit') : t('create')}
         </Button>
       </form>
     </Form>

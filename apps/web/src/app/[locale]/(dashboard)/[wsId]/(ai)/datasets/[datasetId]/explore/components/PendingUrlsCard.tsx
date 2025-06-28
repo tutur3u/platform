@@ -1,7 +1,7 @@
-import type { UrlWithProgress } from '../types';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Card, CardContent } from '@tuturuuu/ui/card';
 import { Clock } from '@tuturuuu/ui/icons';
+import type { UrlWithProgress } from '../types';
 
 interface Props {
   pendingUrls: UrlWithProgress[];
@@ -21,8 +21,8 @@ export function PendingUrlsCard({ pendingUrls }: Props) {
               <div key={index} className="rounded-md border p-2">
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
-                    <Clock className="text-muted-foreground h-4 w-4" />
-                    <code className="text-muted-foreground flex-1 truncate text-xs">
+                    <Clock className="h-4 w-4 text-muted-foreground" />
+                    <code className="flex-1 truncate text-xs text-muted-foreground">
                       {item.url}
                     </code>
                   </div>
@@ -30,7 +30,7 @@ export function PendingUrlsCard({ pendingUrls }: Props) {
               </div>
             ))}
             {pendingUrls.length > 5 && (
-              <div className="text-muted-foreground text-center text-sm">
+              <div className="text-center text-sm text-muted-foreground">
                 +{pendingUrls.length - 5} more URLs
               </div>
             )}

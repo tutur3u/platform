@@ -1,5 +1,16 @@
 'use client';
 
+// UI Components
+import { Button } from '@tuturuuu/ui/button';
+import { Card, CardContent } from '@tuturuuu/ui/card';
+// Icons
+import { ChevronUp, Lightbulb } from '@tuturuuu/ui/icons';
+import { Separator } from '@tuturuuu/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
+import { useMemo, useRef, useState } from 'react';
+// Utils
+import { findHorseRanking } from '@/utils/horseRacing';
+import type { HorseRacingBenchmark } from '@/utils/horseRacingBenchmarks';
 // Components
 import { AlgorithmAnalytics } from './algorithm-analytics';
 import { AlgorithmBenchmarks } from './algorithm-benchmarks';
@@ -13,17 +24,6 @@ import { RaceAnimation } from './race-animation';
 import { RaceControls } from './race-controls';
 import { RaceDetails } from './race-details';
 import { RelationshipGraph } from './relationship-graph';
-// Utils
-import { findHorseRanking } from '@/utils/horseRacing';
-import { HorseRacingBenchmark } from '@/utils/horseRacingBenchmarks';
-// UI Components
-import { Button } from '@tuturuuu/ui/button';
-import { Card, CardContent } from '@tuturuuu/ui/card';
-// Icons
-import { ChevronUp, Lightbulb } from '@tuturuuu/ui/icons';
-import { Separator } from '@tuturuuu/ui/separator';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
-import { useMemo, useRef, useState } from 'react';
 
 // Types
 interface Horse {
@@ -144,7 +144,7 @@ export function HorseRacingVisualization() {
       let speed: number;
 
       switch (distributionType) {
-        case 'normal':
+        case 'normal': {
           // Bell curve distribution around 5.5
           const u1 = Math.random();
           const u2 = Math.random();
@@ -153,6 +153,7 @@ export function HorseRacingVisualization() {
           speed = 5.5 + 1.5 * z0; // Mean 5.5, SD 1.5
           speed = Math.max(1, Math.min(10, speed)); // Clamp between 1-10
           break;
+        }
 
         case 'exponential':
           // Exponential distribution - many slow horses, few fast ones
@@ -160,7 +161,7 @@ export function HorseRacingVisualization() {
           speed = Math.max(1, Math.min(10, speed)); // Clamp between 1-10
           break;
 
-        case 'clustered':
+        case 'clustered': {
           // Three clusters of speeds (fast, medium, slow)
           const cluster = Math.floor(Math.random() * 3);
           if (cluster === 0) {
@@ -171,6 +172,7 @@ export function HorseRacingVisualization() {
             speed = 8 + Math.random() * 2; // Slow: 8-10
           }
           break;
+        }
 
         case 'uniform':
         default:
@@ -551,7 +553,7 @@ export function HorseRacingVisualization() {
                             finalRanking={finalRanking}
                           />
                         ) : (
-                          <div className="text-muted-foreground flex h-40 items-center justify-center">
+                          <div className="flex h-40 items-center justify-center text-muted-foreground">
                             Start the visualization to see algorithm insights
                           </div>
                         )}
@@ -581,7 +583,7 @@ export function HorseRacingVisualization() {
                                       <div className="text-sm font-medium">
                                         Horse #{horse.id}
                                       </div>
-                                      <div className="text-muted-foreground text-xs">
+                                      <div className="text-xs text-muted-foreground">
                                         Speed:{' '}
                                         {showHorseSpeeds
                                           ? horse.speed.toFixed(2)
@@ -594,7 +596,7 @@ export function HorseRacingVisualization() {
                                   {finalRanking.includes(horse.id) &&
                                     finalRanking.indexOf(horse.id) <=
                                       currentRaceIndex && (
-                                      <div className="bg-muted/50 mt-2 flex items-center rounded-md px-2 py-1 text-xs">
+                                      <div className="mt-2 flex items-center rounded-md bg-muted/50 px-2 py-1 text-xs">
                                         <span className="font-medium">
                                           Position: #
                                           {finalRanking.indexOf(horse.id) + 1}
@@ -606,7 +608,7 @@ export function HorseRacingVisualization() {
                             </div>
                           </div>
                         ) : (
-                          <div className="text-muted-foreground flex h-40 items-center justify-center">
+                          <div className="flex h-40 items-center justify-center text-muted-foreground">
                             Start the visualization to see horse details
                           </div>
                         )}
@@ -624,7 +626,7 @@ export function HorseRacingVisualization() {
                             currentRaceIndex={currentRaceIndex}
                           />
                         ) : (
-                          <div className="text-muted-foreground flex h-40 items-center justify-center">
+                          <div className="flex h-40 items-center justify-center text-muted-foreground">
                             Start the visualization to see analytics
                           </div>
                         )}
@@ -642,7 +644,7 @@ export function HorseRacingVisualization() {
                             raceSize={raceSize}
                           />
                         ) : (
-                          <div className="text-muted-foreground flex h-40 items-center justify-center">
+                          <div className="flex h-40 items-center justify-center text-muted-foreground">
                             Start the visualization to see diagnostics
                           </div>
                         )}
@@ -752,7 +754,7 @@ export function HorseRacingVisualization() {
                           )}
                       </div>
                     ) : (
-                      <div className="text-muted-foreground py-2 text-center text-sm">
+                      <div className="py-2 text-center text-sm text-muted-foreground">
                         Start the visualization to see insights
                       </div>
                     )}

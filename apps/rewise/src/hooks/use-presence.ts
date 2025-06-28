@@ -1,5 +1,5 @@
 import { createClient } from '@tuturuuu/supabase/next/client';
-import { RealtimePresenceState } from '@tuturuuu/supabase/next/realtime';
+import type { RealtimePresenceState } from '@tuturuuu/supabase/next/realtime';
 import { useEffect, useRef, useState } from 'react';
 
 interface PresenceUser {

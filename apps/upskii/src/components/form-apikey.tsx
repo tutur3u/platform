@@ -13,8 +13,8 @@ import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Check, Eye, EyeOff, Loader2 } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
-import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import * as z from 'zod';
 
@@ -39,7 +39,9 @@ export default function ApiKeyInput({
     apiKey: z
       .string()
       .min(1, { message: t('api-key-required') })
-      .regex(/^AIza[0-9A-Za-z\-_]{35}$/, { message: t('api-key-required') }),
+      .regex(/^AIza[0-9A-Za-z\-_]{35}$/, {
+        message: t('api-key-required-format'),
+      }),
   });
 
   const form = useForm({
@@ -162,7 +164,7 @@ export default function ApiKeyInput({
             control={form.control}
             name="apiKey"
             render={({ field }) => (
-              <FormItem className="w-full md:min-w-max md:max-w-lg">
+              <FormItem className="w-full md:max-w-lg md:min-w-max">
                 <div className="relative">
                   <FormControl>
                     <Input
@@ -176,7 +178,7 @@ export default function ApiKeyInput({
                   <button
                     tabIndex={-1}
                     type="button"
-                    className="text-muted-foreground absolute right-3 top-1/2 -translate-y-1/2"
+                    className="absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground"
                     onClick={() => setShowApiKey(!showApiKey)}
                   >
                     {showApiKey ? (

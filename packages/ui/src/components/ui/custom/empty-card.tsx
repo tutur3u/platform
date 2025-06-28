@@ -1,7 +1,7 @@
 import { Card, CardDescription, CardTitle } from '@tuturuuu/ui/card';
 import { cn } from '@tuturuuu/utils/format';
 import { Image } from 'lucide-react';
-import React from 'react';
+import type React from 'react';
 
 interface EmptyCardProps extends React.ComponentPropsWithoutRef<typeof Card> {
   title: string;
@@ -27,7 +27,7 @@ export function EmptyCard({
       {...props}
     >
       <div className="mr-4 shrink-0 rounded-full border border-dashed p-4">
-        <Icon className="text-muted-foreground size-8" aria-hidden="true" />
+        <Icon className="size-8 text-muted-foreground" aria-hidden="true" />
       </div>
       <div className="flex flex-col items-center gap-1.5 text-center">
         <CardTitle>{title}</CardTitle>

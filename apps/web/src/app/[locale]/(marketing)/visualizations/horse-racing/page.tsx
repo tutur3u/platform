@@ -1,5 +1,5 @@
+import type { Metadata } from 'next';
 import { HorseRacingVisualization } from '@/components/visualizations/horse-racing/visualization';
-import { Metadata } from 'next';
 
 export const metadata: Metadata = {
   title: 'Horse Racing Algorithm Visualization',
@@ -14,7 +14,7 @@ export default function HorseRacingPage() {
         <h1 className="text-2xl font-bold tracking-tight md:text-4xl">
           Horse Racing Algorithm Visualization
         </h1>
-        <p className="text-muted-foreground text-lg">
+        <p className="text-lg text-muted-foreground">
           This interactive visualization demonstrates how to rank N horses when
           we can only race M horses at a time. The algorithm efficiently
           determines the complete ranking with the minimum number of races.

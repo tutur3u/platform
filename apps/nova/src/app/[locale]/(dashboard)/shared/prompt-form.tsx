@@ -1,6 +1,5 @@
 'use client';
 
-import { getFullSubmission } from './actions';
 import { SubmissionCard } from '@/components/common/SubmissionCard';
 import {
   LiveResultsPreview,
@@ -9,12 +8,13 @@ import {
 import { ProgressIndicator } from '@/components/evaluation/ProgressIndicator';
 import { PromptInput } from '@/components/evaluation/PromptInput';
 import {
-  ProgressUpdate,
-  STEP_CONFIG,
   evaluatePromptStreaming,
+  type ProgressUpdate,
+  STEP_CONFIG,
 } from '@/lib/streaming';
+import { getFullSubmission } from './actions';
 import '@/styles/evaluation-animations.css';
-import {
+import type {
   NovaProblem,
   NovaProblemTestCase,
   NovaSession,
@@ -540,29 +540,29 @@ export default function PromptForm({ problem, session, submissions }: Props) {
           onValueChange={setActiveTab}
           className="flex h-full w-full flex-col"
         >
-          <TabsList className="border-foreground/10 from-background/80 via-background/95 to-background/80 grid h-12 w-full grid-cols-2 gap-2 border bg-gradient-to-r shadow-lg backdrop-blur-sm">
+          <TabsList className="grid h-12 w-full grid-cols-2 gap-2 border border-foreground/10 bg-gradient-to-r from-background/80 via-background/95 to-background/80 shadow-lg backdrop-blur-sm">
             <TabsTrigger
               value="prompt"
               className={cn(
-                'bg-background text-foreground relative border-2 font-medium transition-all duration-300',
-                'data-[state=active]:border-dynamic-blue/30 data-[state=active]:from-dynamic-blue/10 data-[state=active]:to-dynamic-blue/15 data-[state=active]:text-dynamic-blue data-[state=active]:bg-gradient-to-r',
+                'relative border-2 bg-background font-medium text-foreground transition-all duration-300',
+                'data-[state=active]:border-dynamic-blue/30 data-[state=active]:bg-gradient-to-r data-[state=active]:from-dynamic-blue/10 data-[state=active]:to-dynamic-blue/15 data-[state=active]:text-dynamic-blue',
                 'hover:border-foreground/30 hover:bg-background/80',
-                'focus-visible:ring-dynamic-blue/50 focus-visible:ring-2 focus-visible:ring-offset-2'
+                'focus-visible:ring-2 focus-visible:ring-dynamic-blue/50 focus-visible:ring-offset-2'
               )}
             >
               <PlayCircle className="mr-2 h-4 w-4" />
               Prompt
               {isSubmitting && (
-                <div className="bg-dynamic-blue shadow-dynamic-blue/50 absolute -right-1 -top-1 h-3 w-3 animate-pulse rounded-full shadow-lg" />
+                <div className="absolute -top-1 -right-1 h-3 w-3 animate-pulse rounded-full bg-dynamic-blue shadow-lg shadow-dynamic-blue/50" />
               )}
             </TabsTrigger>
             <TabsTrigger
               value="submissions"
               className={cn(
-                'bg-background text-foreground relative border-2 font-medium transition-all duration-300',
-                'data-[state=active]:border-dynamic-green/30 data-[state=active]:from-dynamic-green/10 data-[state=active]:to-dynamic-green/15 data-[state=active]:text-dynamic-green data-[state=active]:bg-gradient-to-r',
+                'relative border-2 bg-background font-medium text-foreground transition-all duration-300',
+                'data-[state=active]:border-dynamic-green/30 data-[state=active]:bg-gradient-to-r data-[state=active]:from-dynamic-green/10 data-[state=active]:to-dynamic-green/15 data-[state=active]:text-dynamic-green',
                 'hover:border-foreground/30 hover:bg-background/80',
-                'focus-visible:ring-dynamic-green/50 focus-visible:ring-2 focus-visible:ring-offset-2'
+                'focus-visible:ring-2 focus-visible:ring-dynamic-green/50 focus-visible:ring-offset-2'
               )}
             >
               <TrendingUp className="mr-2 h-4 w-4" />
@@ -570,7 +570,7 @@ export default function PromptForm({ problem, session, submissions }: Props) {
               {submissions && submissions.length > 0 && (
                 <Badge
                   variant="secondary"
-                  className="border-dynamic-green/20 bg-dynamic-green/10 text-dynamic-green ml-2 font-medium shadow-sm"
+                  className="ml-2 border-dynamic-green/20 bg-dynamic-green/10 font-medium text-dynamic-green shadow-sm"
                 >
                   {submissions.length}
                 </Badge>
@@ -613,17 +613,17 @@ export default function PromptForm({ problem, session, submissions }: Props) {
 
           <TabsContent value="submissions" className="space-y-4">
             {submissions && submissions.length == 0 ? (
-              <div className="border-foreground/20 bg-background/50 flex flex-col items-center justify-center rounded-lg border border-dashed p-12 text-center backdrop-blur-sm">
+              <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-foreground/20 bg-background/50 p-12 text-center backdrop-blur-sm">
                 <div className="relative mb-4">
-                  <Clock className="text-foreground/40 mx-auto h-12 w-12" />
+                  <Clock className="mx-auto h-12 w-12 text-foreground/40" />
                   <div className="absolute inset-0 animate-pulse">
-                    <Clock className="text-foreground/20 mx-auto h-12 w-12" />
+                    <Clock className="mx-auto h-12 w-12 text-foreground/20" />
                   </div>
                 </div>
-                <h3 className="text-foreground mb-2 text-xl font-semibold">
+                <h3 className="mb-2 text-xl font-semibold text-foreground">
                   No submissions yet
                 </h3>
-                <p className="text-foreground/70 max-w-md text-base">
+                <p className="max-w-md text-base text-foreground/70">
                   Your submission history will appear here after you submit your
                   first prompt.
                 </p>
@@ -637,13 +637,13 @@ export default function PromptForm({ problem, session, submissions }: Props) {
                 <TabsList className="grid h-full w-full grid-cols-2 gap-1 bg-transparent">
                   <TabsTrigger
                     value="current"
-                    className="bg-background text-foreground data-[state=active]:border-dynamic-blue/20 data-[state=active]:bg-dynamic-blue/10 data-[state=active]:text-dynamic-blue relative border"
+                    className="relative border bg-background text-foreground data-[state=active]:border-dynamic-blue/20 data-[state=active]:bg-dynamic-blue/10 data-[state=active]:text-dynamic-blue"
                   >
                     Current Session
                     {currentSubmissions.length > 0 && (
                       <Badge
                         variant="secondary"
-                        className="border-dynamic-blue/20 bg-dynamic-blue/10 text-dynamic-blue ml-2"
+                        className="ml-2 border-dynamic-blue/20 bg-dynamic-blue/10 text-dynamic-blue"
                       >
                         {currentSubmissions.length}
                       </Badge>
@@ -651,13 +651,13 @@ export default function PromptForm({ problem, session, submissions }: Props) {
                   </TabsTrigger>
                   <TabsTrigger
                     value="past"
-                    className="bg-background text-foreground data-[state=active]:border-dynamic-purple/20 data-[state=active]:bg-dynamic-purple/10 data-[state=active]:text-dynamic-purple relative border"
+                    className="relative border bg-background text-foreground data-[state=active]:border-dynamic-purple/20 data-[state=active]:bg-dynamic-purple/10 data-[state=active]:text-dynamic-purple"
                   >
                     Past Sessions
                     {pastSubmissions.length > 0 && (
                       <Badge
                         variant="secondary"
-                        className="border-dynamic-purple/20 bg-dynamic-purple/10 text-dynamic-purple ml-2"
+                        className="ml-2 border-dynamic-purple/20 bg-dynamic-purple/10 text-dynamic-purple"
                       >
                         {pastSubmissions.length}
                       </Badge>
@@ -667,14 +667,14 @@ export default function PromptForm({ problem, session, submissions }: Props) {
 
                 <TabsContent value="current" className="space-y-4">
                   {currentSubmissions.length === 0 ? (
-                    <div className="border-foreground/20 bg-background/50 flex flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center backdrop-blur-sm">
-                      <div className="border-dynamic-blue/20 bg-dynamic-blue/10 mb-4 rounded-full border p-3">
-                        <Clock className="text-dynamic-blue h-10 w-10" />
+                    <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-foreground/20 bg-background/50 p-8 text-center backdrop-blur-sm">
+                      <div className="mb-4 rounded-full border border-dynamic-blue/20 bg-dynamic-blue/10 p-3">
+                        <Clock className="h-10 w-10 text-dynamic-blue" />
                       </div>
-                      <h3 className="text-foreground mb-2 text-lg font-medium">
+                      <h3 className="mb-2 text-lg font-medium text-foreground">
                         No submissions in current session
                       </h3>
-                      <p className="text-foreground/70 text-sm">
+                      <p className="text-sm text-foreground/70">
                         Submit your first prompt to see results here.
                       </p>
                     </div>
@@ -701,14 +701,14 @@ export default function PromptForm({ problem, session, submissions }: Props) {
 
                 <TabsContent value="past" className="space-y-4">
                   {pastSubmissions.length === 0 ? (
-                    <div className="border-foreground/20 bg-background/50 flex flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center backdrop-blur-sm">
-                      <div className="border-dynamic-purple/20 bg-dynamic-purple/10 mb-4 rounded-full border p-3">
-                        <Clock className="text-dynamic-purple h-10 w-10" />
+                    <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-foreground/20 bg-background/50 p-8 text-center backdrop-blur-sm">
+                      <div className="mb-4 rounded-full border border-dynamic-purple/20 bg-dynamic-purple/10 p-3">
+                        <Clock className="h-10 w-10 text-dynamic-purple" />
                       </div>
-                      <h3 className="text-foreground mb-2 text-lg font-medium">
+                      <h3 className="mb-2 text-lg font-medium text-foreground">
                         No submissions from past sessions
                       </h3>
-                      <p className="text-foreground/70 text-sm">
+                      <p className="text-sm text-foreground/70">
                         Past session submissions will appear here.
                       </p>
                     </div>

@@ -1,6 +1,5 @@
 'use client';
 
-import { DEV_MODE, GITHUB_OWNER, GITHUB_REPO } from '@/constants/common';
 import {
   BookText,
   Building,
@@ -22,7 +21,8 @@ import {
   Utensils,
   WandSparkles,
 } from '@tuturuuu/ui/icons';
-import { ReactNode } from 'react';
+import type { ReactNode } from 'react';
+import { DEV_MODE, GITHUB_OWNER, GITHUB_REPO } from '@/constants/common';
 
 export interface NavItem {
   href: string;
@@ -38,7 +38,6 @@ export interface NavCategory {
   items: NavItem[];
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const useNavigation = (t: any): { categories: NavCategory[] } => {
   const products: NavItem[] = [
     {
@@ -179,7 +178,7 @@ export const useNavigation = (t: any): { categories: NavCategory[] } => {
 
   const company: NavItem[] = [
     {
-      href: '/#pricing',
+      href: '/?hash-nav=1#pricing',
       label: t('common.pricing'),
       description: '',
     },

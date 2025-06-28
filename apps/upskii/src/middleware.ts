@@ -1,40 +1,25 @@
-import { LOCALE_COOKIE_NAME, PUBLIC_PATHS } from './constants/common';
-import { Locale, defaultLocale, supportedLocales } from './i18n/routing';
 import { match } from '@formatjs/intl-localematcher';
-import { createCentralizedAuthMiddleware } from '@tuturuuu/auth/middleware';
+import { updateSession } from '@tuturuuu/supabase/next/middleware';
+import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import Negotiator from 'negotiator';
-import createIntlMiddleware from 'next-intl/middleware';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
-
-const WEB_APP_URL =
-  process.env.NODE_ENV === 'production'
-    ? 'https://tuturuuu.com'
-    : 'http://localhost:7803';
-
-// Create the centralized auth middleware
-const authMiddleware = createCentralizedAuthMiddleware({
-  webAppUrl: WEB_APP_URL,
-  publicPaths: PUBLIC_PATHS,
-  skipApiRoutes: true,
-});
+import createIntlMiddleware from 'next-intl/middleware';
+import { LOCALE_COOKIE_NAME, PUBLIC_PATHS } from './constants/common';
+import { defaultLocale, type Locale, supportedLocales } from './i18n/routing';
 
 export async function middleware(req: NextRequest): Promise<NextResponse> {
-  // If token auth didn't handle it, try centralized auth
-  const authRes = await authMiddleware(req);
+  // Make sure user session is always refreshed
+  const { res, user } = await updateSession(req);
 
-  // If the auth middleware returned a redirect response, return it
-  if (authRes.headers.has('Location')) {
-    return authRes;
-  }
+  // If current path starts with /api, return without redirecting
+  if (req.nextUrl.pathname.startsWith('/api')) return res;
 
-  // Skip locale handling for API routes
-  if (req.nextUrl.pathname.startsWith('/api')) {
-    return authRes;
-  }
+  // Handle special cases for public paths
+  const { res: nextRes, redirect } = handleRedirect({ req, res, user });
+  if (redirect) return nextRes;
 
-  // Continue with locale handling
-  return handleLocale({ req, res: authRes });
+  return handleLocale({ req, res: nextRes });
 }
 
 export const config = {
@@ -56,13 +41,49 @@ export const config = {
      * - pdf
      * - gif
      * - webp
-     * - ttf (font files)
-     * - woff
-     * - woff2
      */
 
-    '/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|site.webmanifest|monitoring|.*\\.(?:svg|png|jpg|jpeg|pdf|gif|webp|ttf|woff|woff2)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|site.webmanifest|monitoring|.*\\.(?:svg|png|jpg|jpeg|pdf|gif|webp)$).*)',
   ],
+};
+
+const handleRedirect = ({
+  req,
+  res,
+  user,
+}: {
+  req: NextRequest;
+  res: NextResponse;
+  user: SupabaseUser | null;
+}): {
+  res: NextResponse;
+  redirect: boolean;
+} => {
+  // If current path ends with /login and user is logged in, redirect to onboarding page
+  if (req.nextUrl.pathname.endsWith('/login') && user) {
+    const nextRes = NextResponse.redirect(
+      req.nextUrl.href.replace('/login', '/onboarding')
+    );
+
+    return { res: nextRes, redirect: true };
+  }
+
+  // If current path ends with /onboarding and user is not logged in, redirect to login page
+  if (
+    req.nextUrl.pathname !== '/' &&
+    !req.nextUrl.pathname.endsWith('/login') &&
+    !PUBLIC_PATHS.some((path) => req.nextUrl.pathname.startsWith(path)) &&
+    !user
+  ) {
+    const nextRes = NextResponse.redirect(
+      req.nextUrl.href.replace(req.nextUrl.pathname, '/login') +
+        `?nextUrl=${req.nextUrl.pathname}`
+    );
+
+    return { res: nextRes, redirect: true };
+  }
+
+  return { res, redirect: false };
 };
 
 const getSupportedLocale = (locale: string): Locale | null => {
@@ -109,7 +130,7 @@ const getDefaultLocale = (
   const detectedLocale = match(languages, supportedLocales, defaultLocale);
 
   return {
-    locale: supportedLocales.includes(detectedLocale as any)
+    locale: supportedLocales.includes(detectedLocale as Locale)
       ? (detectedLocale as Locale)
       : defaultLocale,
   };

@@ -351,17 +351,54 @@ export const updateBulkEvents = tool({
   }),
   execute: async ({ updates }) => {
     const supabase = await createClient();
-    const results: any[] = [];
+    const results:
+      | {
+          color: string | null;
+          created_at: string | null;
+          description: string;
+          end_at: string;
+          google_event_id: string | null;
+          id: string;
+          location: string | null;
+          locked: boolean;
+          priority: string | null;
+          start_at: string;
+          title: string;
+          ws_id: string;
+        }[]
+      | null = [];
     const errors: Array<{ eventId: string; error: string }> = [];
 
     // Process updates in parallel for better performance
     const updatePromises = updates.map(async (update) => {
-      const updateData: any = {};
+      const updateData: {
+        color: string | null;
+        created_at: string | null;
+        description: string;
+        end_at: string;
+        google_event_id: string | null;
+        id: string;
+        location: string | null;
+        locked: boolean;
+        priority: string | null;
+        start_at: string;
+        title: string;
+        ws_id: string;
+      } | null = null;
 
-      if (update.title) updateData.title = update.title;
-      if (update.description) updateData.description = update.description;
-      if (update.startAt) updateData.start_at = update.startAt;
-      if (update.endAt) updateData.end_at = update.endAt;
+      if (update?.title !== undefined) updateData!.title = update.title;
+      if (update?.description !== undefined)
+        updateData!.description = update.description;
+      if (update?.startAt !== undefined) updateData!.start_at = update.startAt;
+      if (update?.endAt !== undefined) updateData!.end_at = update.endAt;
+
+      if (!updateData) {
+        return {
+          eventId: update.eventId,
+          data: null,
+          error: 'No update data provided',
+        };
+      }
 
       const { data, error } = await supabase
         .from('workspace_calendar_events')
@@ -378,10 +415,13 @@ export const updateBulkEvents = tool({
       if (result.error) {
         errors.push({
           eventId: result.eventId,
-          error: result.error.message,
+          error:
+            result.error instanceof Error ? result.error.message : result.error,
         });
       } else {
-        results.push(result.data?.[0]);
+        if (result.data) {
+          results.push(result.data[0]);
+        }
       }
     });
 
@@ -455,7 +495,13 @@ export const checkBulkEventClashes = tool({
     const results: Array<{
       proposedEvent: { id: string; startAt: string; endAt: string };
       hasClashes: boolean;
-      clashingEvents: any[];
+      clashingEvents: {
+        id: string;
+        title: string;
+        start_at: string;
+        end_at: string;
+        type: string;
+      }[];
       message: string;
     }> = [];
 
@@ -480,7 +526,13 @@ export const checkBulkEventClashes = tool({
 
     // Check each proposed event against existing events and other proposed events
     proposedEvents.forEach((proposedEvent, index) => {
-      const clashingEvents: any[] = [];
+      const clashingEvents: {
+        id: string;
+        title: string;
+        start_at: string;
+        end_at: string;
+        type: string;
+      }[] = [];
 
       // Check against existing events
       existingEvents?.forEach((existingEvent) => {
@@ -986,7 +1038,20 @@ export const rescheduleConflictingEvents = tool({
     }
 
     // Find conflicting events
-    const conflictingEventPairs: Array<{ event1: any; event2: any }> = [];
+    const conflictingEventPairs: Array<{
+      event1: {
+        id: string;
+        title: string;
+        start_at: string;
+        end_at: string;
+      };
+      event2: {
+        id: string;
+        title: string;
+        start_at: string;
+        end_at: string;
+      };
+    }> = [];
     const conflictingEventIds = new Set<string>();
 
     for (let i = 0; i < allEvents.length; i++) {
@@ -1045,7 +1110,12 @@ export const rescheduleConflictingEvents = tool({
     });
 
     const rescheduledEvents: Array<{
-      originalEvent: any;
+      originalEvent: {
+        id: string;
+        title: string;
+        start_at: string;
+        end_at: string;
+      };
       newStartAt: string;
       newEndAt: string;
       reschedulingInfo: {
@@ -1056,7 +1126,12 @@ export const rescheduleConflictingEvents = tool({
     }> = [];
 
     const failedToReschedule: Array<{
-      event: any;
+      event: {
+        id: string;
+        title: string;
+        start_at: string;
+        end_at: string;
+      };
       reason: string;
     }> = [];
 
@@ -1075,9 +1150,12 @@ export const rescheduleConflictingEvents = tool({
     };
 
     // Helper function to find available slot for rescheduling
-    const findAvailableSlotForReschedule = async (
-      event: any
-    ): Promise<{ startAt: string; endAt: string } | null> => {
+    const findAvailableSlotForReschedule = async (event: {
+      id: string;
+      title: string;
+      start_at: string;
+      end_at: string;
+    }): Promise<{ startAt: string; endAt: string } | null> => {
       const eventDuration =
         new Date(event.end_at).getTime() - new Date(event.start_at).getTime();
       let durationMinutes = eventDuration / (1000 * 60);
@@ -1338,7 +1416,12 @@ export const fixZeroDurationEvents = tool({
 
     // Find events with problematic durations
     const problematicEvents: Array<{
-      event: any;
+      event: {
+        id: string;
+        title: string;
+        start_at: string;
+        end_at: string;
+      };
       issue: 'zero_duration' | 'short_duration';
       currentDurationMinutes: number;
       suggestedDurationMinutes: number;
@@ -1393,7 +1476,12 @@ export const fixZeroDurationEvents = tool({
 
     // Fix the problematic events
     const fixedEvents: Array<{
-      originalEvent: any;
+      originalEvent: {
+        id: string;
+        title: string;
+        start_at: string;
+        end_at: string;
+      };
       newEndAt: string;
       fixInfo: {
         originalDurationMinutes: number;
@@ -1404,7 +1492,12 @@ export const fixZeroDurationEvents = tool({
     }> = [];
 
     const failedToFix: Array<{
-      event: any;
+      event: {
+        id: string;
+        title: string;
+        start_at: string;
+        end_at: string;
+      };
       reason: string;
     }> = [];
 
@@ -1457,7 +1550,7 @@ export const fixZeroDurationEvents = tool({
         }
 
         // Update the event's end time
-        const { data, error } = await supabase
+        const { error } = await supabase
           .from('workspace_calendar_events')
           .update({
             end_at: newEndTime.toISOString(),

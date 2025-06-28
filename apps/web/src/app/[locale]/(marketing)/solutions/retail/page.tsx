@@ -1,6 +1,5 @@
 'use client';
 
-import GradientHeadline from '../../gradient-headline';
 import {
   Accordion,
   AccordionContent,
@@ -28,8 +27,9 @@ import {
   Store,
   Tag,
 } from '@tuturuuu/ui/icons';
-import { motion } from 'framer-motion';
+import { motion, type Variants } from 'framer-motion';
 import Link from 'next/link';
+import GradientHeadline from '../../gradient-headline';
 
 export default function RetailPage() {
   const features = [
@@ -122,7 +122,7 @@ export default function RetailPage() {
       opacity: 1,
       transition: { staggerChildren: 0.2 },
     },
-  };
+  } satisfies Variants;
 
   const itemVariants = {
     hidden: { y: 20, opacity: 0 },
@@ -131,7 +131,7 @@ export default function RetailPage() {
       opacity: 1,
       transition: { duration: 0.5 },
     },
-  };
+  } satisfies Variants;
 
   return (
     <motion.div
@@ -145,10 +145,10 @@ export default function RetailPage() {
         <Badge variant="secondary" className="mb-4">
           Retail Management Solutions
         </Badge>
-        <h1 className="mb-4 text-balance text-center text-2xl font-bold tracking-tight md:text-4xl lg:text-6xl">
+        <h1 className="mb-4 text-center text-2xl font-bold tracking-tight text-balance md:text-4xl lg:text-6xl">
           <GradientHeadline>Transform Your Retail Business</GradientHeadline>
         </h1>
-        <p className="text-muted-foreground mx-auto max-w-2xl text-lg">
+        <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
           Streamline operations, boost sales, and delight customers with our
           comprehensive retail management platform.
         </p>
@@ -187,7 +187,7 @@ export default function RetailPage() {
       <section className="mb-24">
         <Card className="border-primary bg-primary/5 p-8">
           <div className="mx-auto flex max-w-4xl flex-col items-center gap-4 text-center">
-            <ShoppingBag className="text-primary h-12 w-12" />
+            <ShoppingBag className="h-12 w-12 text-primary" />
             <h2 className="text-2xl font-bold">Trusted by Leading Retailers</h2>
             <p className="text-muted-foreground">
               Join thousands of retailers who have transformed their operations
@@ -210,7 +210,7 @@ export default function RetailPage() {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
-              <Card className="hover:border-primary h-full p-6 transition-colors">
+              <Card className="h-full p-6 transition-colors hover:border-primary">
                 <div className="mb-4 flex items-center gap-3">
                   <div className="text-primary">{feature.icon}</div>
                   <h3 className="text-xl font-semibold">{feature.title}</h3>
@@ -228,17 +228,17 @@ export default function RetailPage() {
         <div className="grid gap-4 md:grid-cols-4 md:grid-rows-2">
           <Card className="bg-primary/5 md:col-span-2 md:row-span-2">
             <div className="flex h-full flex-col p-6">
-              <DollarSign className="text-primary mb-4 h-8 w-8" />
+              <DollarSign className="mb-4 h-8 w-8 text-primary" />
               <h3 className="mb-2 text-xl font-bold">Increased Revenue</h3>
               <p className="text-muted-foreground">
                 Boost your sales with smart inventory management, customer
                 insights, and optimized pricing strategies.
               </p>
-              <div className="bg-background/50 mt-4 grow rounded-lg p-4">
+              <div className="mt-4 grow rounded-lg bg-background/50 p-4">
                 <div className="space-y-2">
-                  <div className="bg-primary/20 h-2 w-3/4 rounded" />
-                  <div className="bg-primary/20 h-2 w-1/2 rounded" />
-                  <div className="bg-primary/20 h-2 w-2/3 rounded" />
+                  <div className="h-2 w-3/4 rounded bg-primary/20" />
+                  <div className="h-2 w-1/2 rounded bg-primary/20" />
+                  <div className="h-2 w-2/3 rounded bg-primary/20" />
                 </div>
               </div>
             </div>
@@ -252,10 +252,10 @@ export default function RetailPage() {
               >
                 {benefit.icon}
                 <h3 className="mb-2 font-bold">{benefit.title}</h3>
-                <p className="text-muted-foreground text-sm">
+                <p className="text-sm text-muted-foreground">
                   {benefit.description}
                 </p>
-                <div className="bg-primary/10 mt-4 h-1 w-0 transition-all group-hover:w-full" />
+                <div className="mt-4 h-1 w-0 bg-primary/10 transition-all group-hover:w-full" />
               </motion.div>
             </Card>
           ))}
@@ -267,23 +267,23 @@ export default function RetailPage() {
         <h2 className="mb-12 text-center text-3xl font-bold">Core Features</h2>
         <div className="grid gap-6 md:grid-cols-3">
           <Card className="p-6 text-center">
-            <QrCode className="text-primary mx-auto mb-4 h-8 w-8" />
+            <QrCode className="mx-auto mb-4 h-8 w-8 text-primary" />
             <h3 className="mb-2 font-bold">Smart Scanning</h3>
-            <p className="text-muted-foreground text-sm">
+            <p className="text-sm text-muted-foreground">
               Quick barcode and QR code scanning
             </p>
           </Card>
           <Card className="p-6 text-center">
-            <LineChart className="text-primary mx-auto mb-4 h-8 w-8" />
+            <LineChart className="mx-auto mb-4 h-8 w-8 text-primary" />
             <h3 className="mb-2 font-bold">Sales Analytics</h3>
-            <p className="text-muted-foreground text-sm">
+            <p className="text-sm text-muted-foreground">
               Real-time performance metrics
             </p>
           </Card>
           <Card className="p-6 text-center">
-            <PackageSearch className="text-primary mx-auto mb-4 h-8 w-8" />
+            <PackageSearch className="mx-auto mb-4 h-8 w-8 text-primary" />
             <h3 className="mb-2 font-bold">Inventory Tracking</h3>
-            <p className="text-muted-foreground text-sm">
+            <p className="text-sm text-muted-foreground">
               Automated stock management
             </p>
           </Card>
@@ -295,41 +295,41 @@ export default function RetailPage() {
         <Card className="overflow-hidden">
           <div className="grid md:grid-cols-2">
             <div className="p-8">
-              <Star className="text-primary mb-4 h-8 w-8" />
+              <Star className="mb-4 h-8 w-8 text-primary" />
               <h2 className="mb-4 text-2xl font-bold">Success Story</h2>
-              <p className="text-muted-foreground mb-4">
+              <p className="mb-4 text-muted-foreground">
                 "This platform has revolutionized our retail operations. We've
                 seen significant improvements in efficiency, sales, and customer
                 satisfaction."
               </p>
               <p className="font-semibold">- Sarah Johnson</p>
-              <p className="text-muted-foreground text-sm">
+              <p className="text-sm text-muted-foreground">
                 Operations Director, Fashion Retail Co.
               </p>
             </div>
-            <div className="bg-primary/5 flex items-center justify-center p-8">
+            <div className="flex items-center justify-center bg-primary/5 p-8">
               <div className="grid gap-4 text-center">
                 <div>
-                  <div className="text-primary mb-2 text-3xl font-bold">
+                  <div className="mb-2 text-3xl font-bold text-primary">
                     45%
                   </div>
-                  <div className="text-muted-foreground text-sm">
+                  <div className="text-sm text-muted-foreground">
                     Increased Sales
                   </div>
                 </div>
                 <div>
-                  <div className="text-primary mb-2 text-3xl font-bold">
+                  <div className="mb-2 text-3xl font-bold text-primary">
                     60%
                   </div>
-                  <div className="text-muted-foreground text-sm">
+                  <div className="text-sm text-muted-foreground">
                     Faster Checkout
                   </div>
                 </div>
                 <div>
-                  <div className="text-primary mb-2 text-3xl font-bold">
+                  <div className="mb-2 text-3xl font-bold text-primary">
                     30%
                   </div>
-                  <div className="text-muted-foreground text-sm">
+                  <div className="text-sm text-muted-foreground">
                     Cost Reduction
                   </div>
                 </div>
@@ -377,7 +377,7 @@ export default function RetailPage() {
           <h2 className="mb-4 text-3xl font-bold">
             Ready to Transform Your Retail Business?
           </h2>
-          <p className="text-muted-foreground mx-auto mb-8 max-w-2xl">
+          <p className="mx-auto mb-8 max-w-2xl text-muted-foreground">
             Join leading retailers using our platform to optimize operations and
             drive growth.
           </p>

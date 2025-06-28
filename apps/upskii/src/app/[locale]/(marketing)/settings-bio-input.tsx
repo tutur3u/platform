@@ -13,8 +13,8 @@ import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Check, Loader2 } from '@tuturuuu/ui/icons';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { Textarea } from '@tuturuuu/ui/textarea';
-import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import * as z from 'zod';
 
@@ -95,7 +95,7 @@ export default function BioInput({ defaultValue = '', disabled }: Props) {
             control={form.control}
             name="bio"
             render={({ field }) => (
-              <FormItem className="w-full md:min-w-max md:max-w-lg">
+              <FormItem className="w-full md:max-w-lg md:min-w-max">
                 <FormControl>
                   <Textarea
                     className="field-sizing-fixed resize-none"

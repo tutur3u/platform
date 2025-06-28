@@ -2,7 +2,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
-import { NextRequest, NextResponse } from 'next/server';
+import { type NextRequest, NextResponse } from 'next/server';
 
 export async function GET(
   request: NextRequest,
@@ -138,35 +138,47 @@ export async function GET(
         today.getMonth(),
         today.getDate()
       );
-      const startOfWeek = new Date(
-        today.getTime() - today.getDay() * 24 * 60 * 60 * 1000
-      );
+      // Use ISO week (Monday-based) for consistency with frontend
+      const startOfWeek = new Date(today);
+      const dayOfWeek = today.getDay();
+      const daysToSubtract = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // Monday = 0, Sunday = 6
+      startOfWeek.setDate(today.getDate() - daysToSubtract);
+      startOfWeek.setHours(0, 0, 0, 0);
       const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
 
       // Get all sessions with category information for breakdown
-      const [todayData, weekData, monthData] = await Promise.all([
-        supabase
-          .from('time_tracking_sessions')
-          .select('duration_seconds, category_id')
-          .eq('ws_id', wsId)
-          .eq('user_id', queryUserId)
-          .gte('start_time', startOfToday.toISOString())
-          .not('duration_seconds', 'is', null),
-        supabase
-          .from('time_tracking_sessions')
-          .select('duration_seconds, category_id')
-          .eq('ws_id', wsId)
-          .eq('user_id', queryUserId)
-          .gte('start_time', startOfWeek.toISOString())
-          .not('duration_seconds', 'is', null),
-        supabase
-          .from('time_tracking_sessions')
-          .select('duration_seconds, category_id')
-          .eq('ws_id', wsId)
-          .eq('user_id', queryUserId)
-          .gte('start_time', startOfMonth.toISOString())
-          .not('duration_seconds', 'is', null),
-      ]);
+      const [todayData, weekData, monthData, allSessionsData] =
+        await Promise.all([
+          supabase
+            .from('time_tracking_sessions')
+            .select('duration_seconds, category_id')
+            .eq('ws_id', wsId)
+            .eq('user_id', queryUserId)
+            .gte('start_time', startOfToday.toISOString())
+            .not('duration_seconds', 'is', null),
+          supabase
+            .from('time_tracking_sessions')
+            .select('duration_seconds, category_id')
+            .eq('ws_id', wsId)
+            .eq('user_id', queryUserId)
+            .gte('start_time', startOfWeek.toISOString())
+            .not('duration_seconds', 'is', null),
+          supabase
+            .from('time_tracking_sessions')
+            .select('duration_seconds, category_id')
+            .eq('ws_id', wsId)
+            .eq('user_id', queryUserId)
+            .gte('start_time', startOfMonth.toISOString())
+            .not('duration_seconds', 'is', null),
+          // Get all sessions for streak calculation
+          supabase
+            .from('time_tracking_sessions')
+            .select('start_time, duration_seconds')
+            .eq('ws_id', wsId)
+            .eq('user_id', queryUserId)
+            .not('duration_seconds', 'is', null)
+            .order('start_time', { ascending: false }),
+        ]);
 
       // Calculate total times
       const totalTodayTime =
@@ -210,16 +222,86 @@ export async function GET(
           (monthByCategory[categoryKey] || 0) + (session.duration_seconds || 0);
       });
 
+      // Calculate streak - count consecutive days with activity
+      let streak = 0;
+      if (allSessionsData.data && allSessionsData.data.length > 0) {
+        const activityDays = new Set<string>();
+        allSessionsData.data.forEach((session) => {
+          const sessionDate = new Date(session.start_time);
+          activityDays.add(sessionDate.toDateString());
+        });
+
+        const currentDate = new Date(startOfToday);
+
+        // If today has activity, start counting from today
+        if (activityDays.has(currentDate.toDateString())) {
+          while (activityDays.has(currentDate.toDateString())) {
+            streak++;
+            currentDate.setDate(currentDate.getDate() - 1);
+          }
+        } else {
+          // If today has no activity, check yesterday and count backwards
+          currentDate.setDate(currentDate.getDate() - 1);
+          while (activityDays.has(currentDate.toDateString())) {
+            streak++;
+            currentDate.setDate(currentDate.getDate() - 1);
+          }
+        }
+      }
+
+      // Calculate daily activity for the past year (for heatmap)
+      const oneYearAgo = new Date(today);
+      oneYearAgo.setFullYear(today.getFullYear() - 1);
+
+      const yearData = await supabase
+        .from('time_tracking_sessions')
+        .select('start_time, duration_seconds')
+        .eq('ws_id', wsId)
+        .eq('user_id', queryUserId)
+        .gte('start_time', oneYearAgo.toISOString())
+        .not('duration_seconds', 'is', null);
+
+      // Process daily activity for heatmap
+      const dailyActivityMap = new Map<
+        string,
+        { duration: number; sessions: number }
+      >();
+
+      yearData.data?.forEach((session) => {
+        const dateStr = new Date(session.start_time)
+          .toISOString()
+          .split('T')[0];
+        if (!dateStr) return;
+
+        const existing = dailyActivityMap.get(dateStr) || {
+          duration: 0,
+          sessions: 0,
+        };
+        dailyActivityMap.set(dateStr, {
+          duration: existing.duration + (session.duration_seconds || 0),
+          sessions: existing.sessions + 1,
+        });
+      });
+
+      const dailyActivity = Array.from(dailyActivityMap.entries()).map(
+        ([date, data]) => ({
+          date,
+          duration: data.duration,
+          sessions: data.sessions,
+        })
+      );
+
       const stats = {
         todayTime: totalTodayTime,
         weekTime: totalWeekTime,
         monthTime: totalMonthTime,
-        streak: 0, // Can be calculated based on requirements
+        streak,
         categoryBreakdown: {
           today: todayByCategory,
           week: weekByCategory,
           month: monthByCategory,
         },
+        dailyActivity,
       };
 
       return NextResponse.json({ stats });
@@ -278,10 +360,10 @@ export async function POST(
     }
 
     // Use service role client for secure operations
-    const adminSupabase = await createAdminClient(); // This should use service role
+    const sbAdmin = await createAdminClient(); // This should use service role
 
     // Stop any existing running sessions
-    await adminSupabase
+    await sbAdmin
       .from('time_tracking_sessions')
       .update({
         end_time: new Date().toISOString(),
@@ -293,7 +375,7 @@ export async function POST(
       .eq('is_running', true);
 
     // Create new session with server timestamp
-    const { data, error } = await adminSupabase
+    const { data, error } = await sbAdmin
       .from('time_tracking_sessions')
       .insert({
         ws_id: wsId,

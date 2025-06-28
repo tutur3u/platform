@@ -1,8 +1,6 @@
 'use client';
 
-import { Nav } from './nav';
-import { NavLink } from '@/components/navigation';
-import { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
+import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import {
   Accordion,
   AccordionContent,
@@ -15,22 +13,24 @@ import {
   ChevronDown,
   Crown,
   Home,
+  IconExternalLink,
   ImagePlay,
   MessagesSquare,
   WandSparkles,
 } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import { cn } from '@tuturuuu/utils/format';
-import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import Link from 'next/link';
-import { ReactNode, useState } from 'react';
+import { useTranslations } from 'next-intl';
+import { type ReactNode, useState } from 'react';
+import type { NavLink } from '@/components/navigation';
+import { TTR_URL } from '@/constants/common';
+import { Nav } from './nav';
 
 interface MailProps {
   locale: string;
-  defaultLayout: number[] | undefined;
   defaultCollapsed?: boolean;
-  navCollapsedSize: number;
   user: WorkspaceUser | null;
   links: NavLink[];
   actions: ReactNode;
@@ -40,9 +40,7 @@ interface MailProps {
 
 export function Structure({
   locale,
-  defaultLayout = [20, 80],
   defaultCollapsed = false,
-  navCollapsedSize,
   user,
   links,
   actions,
@@ -54,7 +52,18 @@ export function Structure({
 
   if (!user) return null;
 
-  const rootLinks: NavLink[] = [
+  // External navigation links (outside Rewise)
+  const externalLinks: NavLink[] = [
+    {
+      href: TTR_URL,
+      title: t('common.go_to_tuturuuu'),
+      icon: <IconExternalLink className="h-5 w-5 flex-none opacity-70" />,
+      newTab: true,
+    },
+  ];
+
+  // Internal navigation links (within Rewise)
+  const internalLinks: NavLink[] = [
     {
       href: '/new',
       aliases: ['/'],
@@ -77,7 +86,7 @@ export function Structure({
       title: t('common.current_plan'),
       icon: <Crown className="h-5 w-5 flex-none" />,
       trailing: (
-        <span className="from-dynamic-light-red via-dynamic-light-pink to-dynamic-light-blue bg-linear-to-r bg-clip-text py-1 font-semibold text-transparent">
+        <span className="bg-linear-to-r from-dynamic-light-red via-dynamic-light-pink to-dynamic-light-blue bg-clip-text py-1 font-semibold text-transparent">
           {t('common.premium')}
         </span>
       ),
@@ -85,21 +94,6 @@ export function Structure({
       showDisabled: true,
     },
   ];
-
-  // Save sidebar sizes to cookie
-  const debouncedSaveSizes = (sizes: { sidebar: number; main: number }) => {
-    document.cookie = `react-resizable-panels:layout:rewise=${JSON.stringify([
-      sizes.sidebar,
-      sizes.main,
-    ])}`;
-  };
-
-  // Save sidebar collapsed state to cookie
-  const debouncedSaveCollapsed = (collapsed: boolean) => {
-    document.cookie = `react-resizable-panels:collapsed=${JSON.stringify(
-      collapsed
-    )}`;
-  };
 
   const sidebarHeader = (
     <Link href="/new" className="flex w-full items-center gap-2">
@@ -123,7 +117,7 @@ export function Structure({
         <LogoTitle
           text="Rewise"
           className={cn(
-            'from-dynamic-light-red via-dynamic-light-pink to-dynamic-light-blue bg-linear-to-r bg-clip-text py-1 text-transparent',
+            'bg-linear-to-r from-dynamic-light-red via-dynamic-light-pink to-dynamic-light-blue bg-clip-text py-1 text-transparent',
             'text-4xl font-bold md:text-3xl lg:text-4xl'
           )}
         />
@@ -133,19 +127,41 @@ export function Structure({
 
   const sidebarContent = (
     <div className="flex flex-1 flex-col gap-2">
+      {/* External Links Section */}
       <Nav
         t={t}
         locale={locale}
         currentUser={user}
         isCollapsed={isCollapsed}
-        links={rootLinks}
+        links={externalLinks}
         onClick={() => {
           if (window.innerWidth < 768) setIsCollapsed(true);
         }}
         className="pb-0"
         single
       />
+
+      {/* Separator between external and internal links */}
       {isCollapsed || <Separator />}
+
+      {/* Internal Links Section */}
+      <Nav
+        t={t}
+        locale={locale}
+        currentUser={user}
+        isCollapsed={isCollapsed}
+        links={internalLinks}
+        onClick={() => {
+          if (window.innerWidth < 768) setIsCollapsed(true);
+        }}
+        className="pb-0"
+        single
+      />
+
+      {/* Separator before chats section */}
+      {isCollapsed || <Separator />}
+
+      {/* Chats Section */}
       <Accordion
         type="single"
         className={cn('w-full', isCollapsed && 'hidden')}
@@ -154,7 +170,7 @@ export function Structure({
         <AccordionItem value="item-1" className="border-none p-0">
           <AccordionTrigger
             showChevron={false}
-            className="bg-foreground/5 hover:bg-foreground/10 mx-2 mb-0 rounded-md px-3 py-2"
+            className="mx-2 mb-0 rounded-md bg-foreground/5 px-3 py-2 hover:bg-foreground/10"
           >
             <div className="flex items-center gap-2">
               <MessagesSquare className="h-5 w-5 flex-none" />
@@ -196,7 +212,7 @@ export function Structure({
         <LogoTitle
           text="Rewise"
           className={cn(
-            'from-dynamic-light-red via-dynamic-light-pink to-dynamic-light-blue bg-linear-to-r bg-clip-text py-1 text-transparent',
+            'bg-linear-to-r from-dynamic-light-red via-dynamic-light-pink to-dynamic-light-blue bg-clip-text py-1 text-transparent',
             'text-4xl font-bold md:text-3xl lg:text-4xl'
           )}
         />
@@ -206,18 +222,15 @@ export function Structure({
 
   return (
     <BaseStructure
-      defaultLayout={defaultLayout}
-      navCollapsedSize={navCollapsedSize}
       isCollapsed={isCollapsed}
       setIsCollapsed={setIsCollapsed}
-      debouncedSaveSizes={debouncedSaveSizes}
-      debouncedSaveCollapsed={debouncedSaveCollapsed}
       mobileHeader={mobileHeader}
       sidebarHeader={sidebarHeader}
       sidebarContent={sidebarContent}
       actions={actions}
       userPopover={userPopover}
-      children={children}
-    />
+    >
+      {children}
+    </BaseStructure>
   );
 }

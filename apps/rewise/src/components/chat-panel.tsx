@@ -1,13 +1,14 @@
 /* eslint-disable no-unused-vars */
-import { ChatModelSelector } from './chat-model-selector';
-import { PromptForm } from './prompt-form';
-import { ChatPermissions } from '@/components/chat-permissions';
-import { Model } from '@tuturuuu/ai/models';
-import { type Message, type UseChatHelpers } from '@tuturuuu/ai/types';
+
+import type { Model } from '@tuturuuu/ai/models';
+import type { Message, UseChatHelpers } from '@tuturuuu/ai/types';
 import { createDynamicClient } from '@tuturuuu/supabase/next/client';
-import { RealtimePresenceState } from '@tuturuuu/supabase/next/realtime';
-import { AIChat } from '@tuturuuu/types/db';
-import { FileUploader, StatedFile } from '@tuturuuu/ui/custom/file-uploader';
+import type { RealtimePresenceState } from '@tuturuuu/supabase/next/realtime';
+import type { AIChat } from '@tuturuuu/types/db';
+import {
+  FileUploader,
+  type StatedFile,
+} from '@tuturuuu/ui/custom/file-uploader';
 import {
   Dialog,
   DialogContent,
@@ -16,7 +17,11 @@ import {
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
 import { useTranslations } from 'next-intl';
-import React, { useState } from 'react';
+import type React from 'react';
+import { useState } from 'react';
+import { ChatPermissions } from '@/components/chat-permissions';
+import { ChatModelSelector } from './chat-model-selector';
+import { PromptForm } from './prompt-form';
 
 interface PresenceUser {
   id: string;
@@ -118,9 +123,9 @@ export function ChatPanel({
 
   return (
     <Dialog open={showDialog} onOpenChange={setShowDialog}>
-      <div className="bg-linear-to-b from-muted/30 to-muted/30 dark:from-background/0 dark:to-background/80 pointer-events-none fixed inset-x-0 bottom-0 from-0% to-50% dark:from-10%">
+      <div className="pointer-events-none fixed inset-x-0 bottom-0 bg-linear-to-b from-muted/30 from-0% to-muted/30 to-50% dark:from-background/0 dark:from-10% dark:to-background/80">
         <div className="pointer-events-auto mx-auto sm:max-w-2xl sm:px-4">
-          <div className="bg-background space-y-4 border-t px-4 py-2 shadow-lg sm:rounded-t-xl sm:border md:py-4">
+          <div className="space-y-4 border-t bg-background px-4 py-2 shadow-lg sm:rounded-t-xl sm:border md:py-4">
             {showExtraOptions && (
               <ChatModelSelector
                 open={showExtraOptions}

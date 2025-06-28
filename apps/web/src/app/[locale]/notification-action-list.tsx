@@ -1,7 +1,7 @@
 'use client';
 
+import { type ReactNode, useState } from 'react';
 import Action from './notification-action';
-import { ReactNode, useState } from 'react';
 
 type buttonVariant =
   | 'default'

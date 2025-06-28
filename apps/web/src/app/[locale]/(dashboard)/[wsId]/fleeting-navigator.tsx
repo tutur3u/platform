@@ -1,14 +1,14 @@
 'use client';
 
-import FleetingAssistant from './fleeting-assistant';
-import FleetingNavigatorMenu from './fleeting-navigator-menu';
 import { useClickOutside } from '@mantine/hooks';
 import { useChat } from '@tuturuuu/ai/react';
-import { AIChat } from '@tuturuuu/types/db';
+import type { AIChat } from '@tuturuuu/types/db';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
-import { useTranslations } from 'next-intl';
 import { usePathname } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
+import FleetingAssistant from './fleeting-assistant';
+import FleetingNavigatorMenu from './fleeting-navigator-menu';
 
 export default function FleetingNavigator({ wsId }: { wsId: string }) {
   const disabledPaths = [
@@ -98,7 +98,7 @@ export default function FleetingNavigator({ wsId }: { wsId: string }) {
       <div className="pointer-events-none fixed inset-x-0 bottom-0 z-30 hidden items-center justify-center md:flex">
         <div
           ref={ref}
-          className={`bg-secondary/10 pointer-events-auto backdrop-blur-lg md:m-4 ${
+          className={`pointer-events-auto bg-secondary/10 backdrop-blur-lg md:m-4 ${
             currentView
               ? 'h-128 w-lg rounded-t-lg border-t md:rounded-lg md:border'
               : 'mb-4 h-14 rounded-lg border p-2'

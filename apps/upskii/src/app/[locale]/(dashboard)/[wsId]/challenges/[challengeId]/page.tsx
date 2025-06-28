@@ -1,9 +1,8 @@
-import ChallengeClient from './client';
 import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
-import {
+import type {
   NovaChallenge,
   NovaChallengeCriteria,
   NovaProblem,
@@ -12,6 +11,7 @@ import {
 } from '@tuturuuu/types/db';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
+import ChallengeClient from './client';
 
 type ExtendedNovaChallenge = NovaChallenge & {
   criteria: NovaChallengeCriteria[];

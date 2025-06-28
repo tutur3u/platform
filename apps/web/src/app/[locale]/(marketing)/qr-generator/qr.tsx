@@ -1,14 +1,14 @@
 'use client';
 
-import QRColorPicker from './color';
-import QRDisplay from './display';
-import QRFormats from './formats';
-import QRStyles from './styles';
 import { Button } from '@tuturuuu/ui/button';
 import { Label } from '@tuturuuu/ui/label';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
 import { useRef, useState } from 'react';
+import QRColorPicker from './color';
+import QRDisplay from './display';
+import QRFormats from './formats';
+import QRStyles from './styles';
 
 export default function QR() {
   const t = useTranslations();

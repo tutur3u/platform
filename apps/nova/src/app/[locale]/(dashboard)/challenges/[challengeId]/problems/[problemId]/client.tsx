@@ -1,11 +1,6 @@
 'use client';
 
-import ProblemComponent from '../../../../shared/problem-component';
-import PromptComponent from '../../../../shared/prompt-component';
-import PromptForm from '../../../../shared/prompt-form';
-import TestCaseComponent from '../../../../shared/test-case-component';
-import ChallengeHeader from './challengeHeader';
-import {
+import type {
   NovaChallenge,
   NovaChallengeCriteria,
   NovaProblem,
@@ -28,6 +23,11 @@ import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import ProblemComponent from '../../../../shared/problem-component';
+import PromptComponent from '../../../../shared/prompt-component';
+import PromptForm from '../../../../shared/prompt-form';
+import TestCaseComponent from '../../../../shared/test-case-component';
+import ChallengeHeader from './challengeHeader';
 
 type ExtendedNovaChallenge = NovaChallenge & {
   criteria: NovaChallengeCriteria[];
@@ -223,10 +223,10 @@ export default function ChallengeClient({
 
         <div className="relative grid h-[calc(100vh-4rem)] grid-cols-1 gap-4 overflow-scroll p-4 md:grid-cols-2">
           <div className="flex h-full w-full flex-col gap-4 overflow-hidden">
-            <Card className="border-foreground/10 bg-foreground/5 h-full overflow-y-auto">
+            <Card className="h-full overflow-y-auto border-foreground/10 bg-foreground/5">
               <CardContent className="p-0">
                 <Tabs defaultValue="problem" className="w-full">
-                  <TabsList className="bg-foreground/10 w-full rounded-b-none rounded-t-lg">
+                  <TabsList className="w-full rounded-t-lg rounded-b-none bg-foreground/10">
                     <TabsTrigger value="problem" className="flex-1">
                       Problem
                     </TabsTrigger>

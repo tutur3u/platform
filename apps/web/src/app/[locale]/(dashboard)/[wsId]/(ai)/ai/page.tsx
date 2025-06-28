@@ -1,4 +1,4 @@
-import { getWorkspace } from '@/lib/workspace-helper';
+import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { getTranslations } from 'next-intl/server';
 
 interface Props {
@@ -16,11 +16,11 @@ export default async function WorkspaceHomePage({ params }: Props) {
 
   return (
     <>
-      <div className="bg-foreground/5 rounded-lg border p-4">
+      <div className="rounded-lg border bg-foreground/5 p-4">
         <h1 className="text-2xl font-bold">{homeLabel}</h1>
         <p className="text-foreground/80">
           {t('description_p1')}{' '}
-          <span className="text-foreground font-semibold">
+          <span className="font-semibold text-foreground">
             {ws?.name || 'Unnamed Workspace'}
           </span>{' '}
           {t('description_p2')}

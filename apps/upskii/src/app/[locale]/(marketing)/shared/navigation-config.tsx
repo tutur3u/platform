@@ -1,6 +1,6 @@
 'use client';
 
-import { ReactNode } from 'react';
+import type { ReactNode } from 'react';
 
 export interface NavItem {
   href: string;
@@ -56,6 +56,10 @@ export const useNavigation = (t: any): { categories: NavCategory[] } => {
     {
       href: '/',
       label: t('common.home'),
+    },
+    {
+      href: '/courses',
+      label: t('ws-courses.plural'),
     },
     {
       href: '/about',

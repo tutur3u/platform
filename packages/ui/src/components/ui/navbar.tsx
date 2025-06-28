@@ -1,7 +1,7 @@
 import { cn } from '@tuturuuu/utils/format';
 import Image from 'next/image';
 import Link from 'next/link';
-import { ReactNode, Suspense } from 'react';
+import { type ReactNode, Suspense } from 'react';
 
 export interface NavbarProps {
   /**
@@ -112,7 +112,7 @@ export function Navbar({
             {afterTitle && (
               <Suspense
                 fallback={
-                  <div className="bg-foreground/5 h-10 w-32 animate-pulse rounded-lg" />
+                  <div className="h-10 w-32 animate-pulse rounded-lg bg-foreground/5" />
                 }
               >
                 {afterTitle}

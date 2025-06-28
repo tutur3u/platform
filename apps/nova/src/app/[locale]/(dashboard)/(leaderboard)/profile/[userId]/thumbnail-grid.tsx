@@ -2,7 +2,7 @@
 
 import { cn } from '@tuturuuu/utils/format';
 import { motion } from 'framer-motion';
-import React from 'react';
+import type React from 'react';
 
 interface ThumbnailItem {
   id: string;
@@ -46,11 +46,11 @@ export function ThumbnailGrid({
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.3, delay: index * 0.05 }}
-          className="bg-card hover:bg-accent/5 flex items-start gap-3 rounded-lg border p-4 transition-all"
+          className="flex items-start gap-3 rounded-lg border bg-card p-4 transition-all hover:bg-accent/5"
         >
           <div
             className={cn(
-              'bg-primary/10 text-primary flex h-10 w-10 shrink-0 items-center justify-center rounded-full',
+              'flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary',
               item.bgColor,
               item.color
             )}
@@ -59,7 +59,7 @@ export function ThumbnailGrid({
           </div>
           <div>
             <p className="font-medium">{item.title}</p>
-            <p className="text-muted-foreground text-xs">{item.description}</p>
+            <p className="text-xs text-muted-foreground">{item.description}</p>
           </div>
         </motion.div>
       ))}

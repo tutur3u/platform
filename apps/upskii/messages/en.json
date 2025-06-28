@@ -1,4 +1,23 @@
 {
+  "quiz-set-statistics": {
+    "title": "Quiz Set Statistics",
+    "description": "View detailed statistics for your quizzes, including average scores, completion rates, and more.",
+    "average_pass_rate": "Average Pass Rate",
+    "average_score": "Average Score",
+    "total_participants": "Total Participants",
+    "total_quizzes": "Total Quizzes",
+    "active_quizzes": "Active quizzes in set",
+    "total_attempts": "Total Attempts",
+    "accross_all_quizzes": "Across all quizzes",
+    "individual_quiz_performance": "Individual Quiz Performance",
+    "back": "Back",
+    "pass_rate": "Pass Rate",
+    "active_students": "Active Students",
+    "unique_participants": "Unique participants",
+    "last_attempt": "Last Attempt",
+    "no_quizzes": "No Quiz Data Available",
+    "no_quizzes_description": "No quiz attempts found for this set. Students haven't started taking quizzes yet."
+  },
   "home-hero": {
     "welcome": "Welcome back, {username}!",
     "badge": "Your AI-Enhanced Learning Experience",
@@ -6,19 +25,19 @@
     "cards": {
       "courses": {
         "title": "Courses",
-        "description": "Explore diverse subjects through structured lessons that build knowledge step-by-step."
+        "description": "Learn the fundamentals and advanced techniques of prompt engineering through step-by-step lessons and practical examples."
       },
       "quizzes": {
         "title": "Quizzes",
-        "description": "Strengthen what you’ve learned with interactive quizzes across various topics."
+        "description": "Test your understanding with interactive quizzes designed to reinforce key concepts and sharpen your prompt design skills."
       },
       "challenges": {
         "title": "Challenges",
-        "description": "Put your knowledge to the test with fun and creative real-world challenges."
+        "description": "Take on creative challenges that push your limits and inspire innovative prompt solutions using AI."
       },
       "ai-chat": {
         "title": "AI Chat",
-        "description": "Chat with AI for instant help, study tips, and personalized learning support."
+        "description": "Engage in real-time conversations with AI to practice prompt engineering, get instant feedback, and refine your skills."
       }
     },
     "get-certificate": "Get Your Certificate"
@@ -191,7 +210,7 @@
     "api-key-valid-desc": "API Key succesfully validated and has been saved",
     "api-key-invalid-title": "Invalid API Key",
     "api-key-invalid-desc": "Please provide a valid API Key or try again",
-    "api-key-required": "Please provide a valid key format",
+    "api-key-required-format": "Please provide a valid key format",
     "api-key-saved-title": "API key saved",
     "api-key-saved-desc": "Your API Key has been saved. Please refresh the page to start using the AI.",
     "validate": "Validate",
@@ -201,7 +220,9 @@
     "api_input_description": "Input your API Key to access AI features",
     "delete-api-key": "Delete API Key",
     "api-key-deleted-title": "API Key Deleted",
-    "api-key-deleted-desc": "Your API Key has been successfully deleted"
+    "api-key-deleted-desc": "Your API Key has been successfully deleted",
+    "api-key-required": "Please provide your API Key to continue",
+    "get-api-key-from": "Get your API Key from"
   },
   "api-key-data-table": {
     "id": "ID",
@@ -300,6 +321,7 @@
     "events": "Events"
   },
   "common": {
+    "statistics": "Statistics",
     "allow_manage_all_challenges": "Allow Manage All Challenges",
     "name_placeholder": "Enter name",
     "name": "Name",
@@ -448,6 +470,7 @@
     "years_old": "years old",
     "year_old": "year old",
     "average": "Average",
+    "logo": "{name} Logo",
     "no_content_yet": "No content yet",
     "words": "words",
     "word": "word",
@@ -1716,7 +1739,31 @@
     "continue_with_google": "Continue with Google",
     "continue_with_github": "Continue with GitHub",
     "continue_with_apple": "Continue with Apple",
-    "continue_with_discord": "Continue with Discord"
+    "continue_with_discord": "Continue with Discord",
+    "powered-by": "Powered by {domain}",
+    "welcome": "Welcome",
+    "sign_in_to_your_account": "Sign in to your account",
+    "invalid_credentials": "Invalid email or password",
+    "password_min_length": "Password must be at least 8 characters",
+    "passwordless": "Passwordless",
+    "with_password": "With Password",
+    "two_factor_authentication": "Two-Factor Authentication",
+    "enter_authenticator_code": "Enter the 6-digit code from your authenticator app",
+    "verification_code_label": "Verification Code",
+    "verify_button": "Verify",
+    "choose_sign_in_method": "Choose your preferred sign-in method",
+    "email": "Email",
+    "email_username_placeholder": "Enter email or username",
+    "will_send_to": "We'll send a verification code to",
+    "verification_code": "Verification Code",
+    "check_email": "Check your email for the verification code",
+    "verify": "Verify",
+    "password": "Password",
+    "password_placeholder": "Enter your password",
+    "sign_in": "Sign In",
+    "forgot_password": "Forgot password? Use passwordless login",
+    "will_sign_in_as": "You'll sign in as",
+    "or": "or"
   },
   "logout": {
     "logout": "Log out",
@@ -2881,7 +2928,7 @@
     "logout-description": "Log out of your account.",
     "confirm-account-deletion": "Confirm account deletion",
     "change-password": "Change password",
-    "change-password-description": "Change your pasword",
+    "change-password-description": "Change your password",
     "delete-account": "Delete account",
     "delete-account-description": "Delete your account",
     "delete-account-message": "This will permanently delete your account and cannot be undone. Type your email address to confirm deletion.",
@@ -2979,7 +3026,10 @@
     "progress": "Progress",
     "metrics": "Metrics",
     "crawlers": "Crawlers",
-    "queues": "Queues"
+    "queues": "Queues",
+    "learning": "Learning",
+    "teaching": "Teaching",
+    "management": "Management"
   },
   "signup": {
     "get-started": "Get started",
@@ -3519,10 +3569,21 @@
     "create_description": "Create a new course",
     "description": "Manage courses in your workspace that include markdown content, slides, quizzes, and flashcards.",
     "course_description": "Course description",
+    "certificate_template": "Certificate Design",
+    "select_certificate_template": "Choose a certificate template",
     "edit": "Edit course",
     "name": "Course name",
     "edit_description": "Edit an existing course",
-    "delete_confirm_title": "Deleting \"{name}\""
+    "delete_confirm_title": "Deleting \"{name}\"",
+    "card_view": "Card View",
+    "table_view": "Table View",
+    "no_courses_found": "No courses found",
+    "no_description_provided": "No description provided",
+    "image_preview_not_available": "Image Preview Not Available",
+    "image_preview_not_available_description": "A preview of the certificate template is not available.",
+    "hide_certificate_preview": "Hide Certificate Preview",
+    "show_certificate_preview": "Show Certificate Preview",
+    "self_paced": "Self-paced"
   },
   "ws-crawlers": {
     "plural": "Crawlers",
@@ -3797,26 +3858,317 @@
   "ws-quiz-sets": {
     "plural": "Quiz Sets",
     "singular": "Quiz Set",
+    "name": "Quiz set name",
     "description": "Quiz sets are used to group quizzes together for learning purposes.",
-    "create": "Create quiz set",
     "create_description": "Create a new quiz set",
-    "name": "Set name",
-    "edit": "Edit set",
     "link-quizzes": "Link Quizzes",
-    "link-modules": "Link modules"
+    "link-modules": "Link modules",
+    "editing": "Updating...",
+    "creating": "Creating...",
+    "create": "Create Quiz Set",
+    "edit": "Edit Quiz Set",
+    "form-sections": {
+      "basic": {
+        "title": "Basic Information",
+        "subtitle": "Set up the fundamental details of your quiz"
+      },
+      "timing-limit": {
+        "title": "Basic Information",
+        "subtitle": "Set up the fundamental details of your quiz"
+      },
+      "schedule": {
+        "title": "Schedule",
+        "subtitle": "Set availability and due dates for the quiz"
+      },
+      "settings": {
+        "title": "Quiz Settings",
+        "subtitle": "Configure quiz behavior and student permissions"
+      }
+    },
+    "form-description": "Configure your quiz settings, timing, and permissions to create an engaging learning experience for your students.",
+    "required-badge": "Required",
+    "form-fields": {
+      "name": {
+        "title": "Set Name",
+        "description": "Choose a clear, descriptive name for your quiz",
+        "placeholder": "e.g., Chapter 5 Assessment"
+      },
+      "attempt_limit": {
+        "title": "Attempt Limit",
+        "description": "Maximum number of times a user can attempt the quiz. Leave 0 for unlimited.",
+        "placeholder": "e.g., 3"
+      },
+      "time_limit_minutes": {
+        "title": "Time Limit (minutes)",
+        "description": "The time allowed to complete the quiz in minutes. Leave 0 for no time limit.",
+        "placeholder": "e.g, 60"
+      },
+      "available_date": {
+        "title": "Available From",
+        "description": "Date and time when the quiz becomes available to participants."
+      },
+      "due_date": {
+        "title": "Due Date",
+        "description": "Deadline for submitting the quiz."
+      },
+      "explanation_mode": {
+        "title": "Explanation Mode",
+        "description": "Choose when and how students can see answer explanations",
+        "placeholder": "Select explanation timing",
+        "select_never": "Never show answer explanations",
+        "select_correct_answer": "Only show explanation of correct answers",
+        "select_all_answer": "Show explanation of all answers"
+      },
+      "instruction": {
+        "title": "Instructions",
+        "description": "Provide detailed instructions for students using the rich text editor, displayed before starting the quiz.",
+        "save": "Save Instruction",
+        "saving": "Saving..."
+      },
+      "allow_view_results": {
+        "title": "Allow Immediate Results",
+        "description": "Enable users to see their score immediately upon submission."
+      },
+      "results_released": {
+        "title": "Results Released",
+        "description": "Mark quiz results as released, allowing detailed feedback and explanations."
+      },
+      "allow_view_old_attempts": {
+        "title": "Allow Review Old Attempts",
+        "description": "Revisit users' previous quiz attempts. Before results are released, users can view only their submitted answers. Once results are released, they'll see their answers along with detailed results and feedback."
+      }
+    }
   },
   "ws-quizzes": {
     "plural": "Quizzes",
     "singular": "Quiz",
     "create": "Create quiz",
+    "create_multiple": "Add questions",
     "create_description": "Create a new quiz",
     "description": "Manage quizzes in your workspace that have multiple choice questions for learning purposes.",
+    "edit_description": "Edit a quiz",
     "edit": "Edit quiz",
+    "edit_all": "Edit all quizzes",
     "question": "Question",
     "answer": "Answer",
-    "edit_description": "Edit an existing quiz",
-    "generation_error": "An error has occured when generating quizzes.",
-    "generation_accepted": "AI-generated quizzes are accepted!"
+    "points": "Points",
+    "submitting": "Submitting...",
+    "submit": "Submit",
+    "form": {
+      "edit-title": "Edit Quiz Questions",
+      "create-title": "Create Quiz Questions",
+      "create-description": "Create multiple quiz questions at once. Each question can have multiple options with explanations. The user can also copy and paste quiz questions",
+      "edit-description": "Edit or add more multiple quiz questions at once. Each question can have multiple options with explanations. The user can also copy and paste quiz questions",
+      "question-no": "Question {no}",
+      "option-no": "Option {no}",
+      "untitled-question": "Untitled Question",
+      "content": {
+        "options": {
+          "label": "Answer Options",
+          "add-button": "Add Option",
+          "placeholder": "Option {no}",
+          "total-options-text": "Total Options",
+          "correct-label": "Correct",
+          "explanation-label": "Explanation",
+          "generate-explanation-button": "Generate",
+          "explanation-placeholder": "Explain why this option is correct or incorrect..."
+        },
+        "questions": {
+          "label": "Question",
+          "placeholder": "Enter your question here...",
+          "count-many": "{count} Questions",
+          "count-one": "{count} Question"
+        },
+        "correct-answers": {
+          "no-selected": "No correct answer selected",
+          "single-selected": "Single correct answer",
+          "multiple-selected": "Multiple correct answers"
+        }
+      },
+      "paste-confirm-modal": {
+        "title": "Confirm Paste",
+        "description-plural": "You are about to paste {length} quiz questions. Review the content below and choose an action.",
+        "description-single": "You are about to paste 1 quiz question. Review the content below and choose an action.",
+        "discard-button": "Discard",
+        "confirm-button": "Confirm Paste"
+      },
+      "add-another-button": "Add Another Question",
+      "paste-question-button": "Paste Question",
+      "create-button": "Create All Questions",
+      "edit-button": "Edit All Questions",
+      "creating": "Creating...",
+      "updating": "Updating...",
+      "error": {
+        "title": "Error",
+        "fail-update": "Failed to update quiz",
+        "fail-create": "Failed to create quiz",
+        "unexpected": "An unexpected error occurred",
+        "invalid-clipboard-title": "Error",
+        "invalid-clipboard": "Invalid quiz format",
+        "invalid-clipboard-message": "Failed to paste quiz data. Please ensure you have valid quiz data in your clipboard.",
+        "explanation-generation-failed": "Failed to generate explanation",
+        "quiz-copy-failed": "Failed to copy quiz to clipboard"
+      },
+      "success": {
+        "title": "Success",
+        "edit-quizzes": "Successfully updated {length} quizzes",
+        "edit-quiz": "Successfully updated {length} quiz",
+        "create-quizzes": "Successfully created {length} quizzes",
+        "create-quiz": "Successfully created {length} quiz",
+        "quiz-copied": "Quiz copied to clipboard",
+        "paste-success-many": "Pasted {length} quizzes succesfully",
+        "paste-success-one": "Pasted 1 quiz succesfully",
+        "explanation-generated": "Explanation generated successfully"
+      }
+    },
+    "quiz-status": {
+      "sidebar_aria": "Quiz progress sidebar",
+      "question_status_title": "Question Progress",
+      "answered_status_short": "answered",
+      "quiz_progress_label": "Quiz Progress",
+      "question_navigation_label": "Jump to question",
+      "answered_state": "Answered",
+      "unanswered_state": "Unanswered",
+      "jump_to_question": "Jump to question",
+      "upcoming": "Upcoming",
+      "active": "Active",
+      "expired": "Expired",
+      "draft": "Draft"
+    },
+    "time": {
+      "remaining": "Time Remaining",
+      "elapsed": "Time Elapsed",
+      "hidden_remaining": "Time Hidden",
+      "hidden_elapsed": "Time Hidden",
+      "hour": "hour",
+      "hours": "hours",
+      "minute": "minute",
+      "second": "second"
+    },
+    "errors": {
+      "error-type-submit": "Error when submitting test",
+      "unknown-error": "Unknown error",
+      "network-error": "Network error",
+      "submission-failed": "Submission failed.",
+      "network-error-submitting": "Network error submitting"
+    },
+    "quiz": {
+      "take-quiz": "Take Quiz",
+      "start-quiz": "Start Quiz",
+      "starting-quiz": "Starting Quiz...",
+      "quiz-instructions": "Quiz Instructions",
+      "attempt-limit": "Attempt Limit",
+      "due-date": "Due Date",
+      "available-date": "Available Date",
+      "attempts-remaining": "Attempts Remaining",
+      "past-due": "This quiz is past due",
+      "not-available": "This quiz is not yet available",
+      "unlimited": "Unlimited",
+      "review-info": "Review the information below before starting your exam",
+      "click-to-begin": "Click to begin your attempt",
+      "results-out": "Results are out—no further attempts",
+      "quiz-past-due": "Quiz is past due",
+      "quiz-not-available": "Quiz not yet available",
+      "no-attempts-remaining": "No attempts remaining",
+      "view-result": "View Result",
+      "view-final-total-score": "You got {score} over {maxScore} for your recent attempt.",
+      "view-final-attempt": "You got {score} over {maxScore} for your recent attempt. Click `View Result` to view your score details",
+      "quiz-not-available-message": "This quiz is not yet available. Please check back later.",
+      "quiz-past-due-message": "This quiz is past its due date. You cannot start a new attempt at this time.",
+      "no-attempts-message": "You have no attempts remaining for this quiz."
+    },
+    "info": {
+      "quiz-information": "Quiz Information",
+      "quiz-id": "Quiz ID",
+      "time-limit": "Time Limit",
+      "no-time-limit": "No time limit",
+      "minutes": "Minutes",
+      "attempts-used": "Attempts Used",
+      "explanations": "Explanations",
+      "schedule": "Schedule",
+      "available-from": "Available From",
+      "due-date": "Due Date",
+      "attempt-remaining": "attempt remaining",
+      "attempts-remaining": "attempts remaining",
+      "explanation-modes": {
+        "none": "None",
+        "correct-after-release": "Correct only after release",
+        "all-after-release": "All after release"
+      }
+    },
+    "instructions": {
+      "title": "Instructions",
+      "subtitle": "Read before you begin",
+      "default": {
+        "stable-connection": "Make sure you have a stable internet connection",
+        "cannot-pause": "You cannot pause the quiz once started",
+        "answer-all": "You should answer all questions before submitting",
+        "auto-save": "Your progress will be automatically saved",
+        "time-limit": "You have {minutes} minutes"
+      }
+    },
+    "past-attempts": {
+      "title": "Past Attempts",
+      "view-answers": "Click \"View Details\" to view your answers",
+      "view-results": "Click \"View Details\" to view your results",
+      "results-pending": "Results pending release",
+      "view-results-button": "View Results",
+      "view-details-button": "View Details",
+      "attempt-info": " at {date} ({duration})"
+    },
+    "summary": {
+      "title": "Attempt Summary",
+      "description": "Review your quiz attempt details and responses",
+      "back_to_quiz": "Back to Quiz",
+      "attempt_number": "Attempt #{number}",
+      "submitted": "Submitted",
+      "duration": "Duration",
+      "completion": "Completion",
+      "answered_of_total": "{answered} of {total} questions",
+      "progress": "Progress",
+      "questions_and_responses": "Questions & Responses",
+      "questions_count": "{count} questions",
+      "answered": "Answered",
+      "skipped": "Skipped",
+      "your_response": "Your Response:",
+      "no_answer": "No answer provided",
+      "available_options": "Available Options:",
+      "summary_stats": {
+        "attempt_number": "Attempt Number",
+        "answered": "Questions Answered",
+        "skipped": "Questions Skipped",
+        "time_taken": "Time Taken"
+      }
+    },
+    "results": {
+      "quiz-completed": "Quiz Completed!",
+      "your-score": "Your Score",
+      "attempt": "Attempt",
+      "of": "of",
+      "unlimited": "Unlimited",
+      "attempts-remaining": "Attempts Remaining",
+      "left": "left",
+      "excellent-work": "Excellent Work!",
+      "outstanding-performance": "Outstanding performance! You have mastered this material.",
+      "good-job": "Good Job!",
+      "solid-understanding": "You show a solid understanding of the material.",
+      "keep-practicing": "Keep Practicing!",
+      "room-for-improvement": "There's room for improvement. Consider reviewing the material.",
+      "needs-improvement": "Needs Improvement",
+      "review-recommended": "We recommend reviewing the material and trying again.",
+      "back-take-quiz": "Back to Quiz Page",
+      "quiz-completed-at": "Quiz completed at",
+      "time-limit": "Time limit",
+      "minutes": "minutes",
+      "started_at": "Started at",
+      "completed_at": "Completed at",
+      "duration": "Duration",
+      "points": "Points",
+      "correct": "(Correct)",
+      "your_answer": "(Your answer)",
+      "correct_option": "(Correct)",
+      "score_awarded": "Score Awarded"
+    }
   },
   "ws-reports": {
     "report": "Report",
@@ -3939,7 +4291,33 @@
     "features": "Features",
     "features_description": "Manage the features of your workspace.",
     "delete": "Delete Workspace",
-    "deleting": "Deleting Workspace"
+    "deleting": "Deleting Workspace",
+    "feature-request": {
+      "title": "Request Feature Access",
+      "description": "Request access to new features for your workspace \"{ws}\".",
+      "feature-label": "Feature",
+      "feature-placeholder": "Select a feature",
+      "no-features": "All available features have been requested or enabled.",
+      "reason-label": "Why do you need access to this feature? *",
+      "reason-placeholder": "Please explain how you plan to use the {feature} features in your workspace. Include details about your intended use case, target audience, and goals...",
+      "reason-description": "Minimum 20 characters. Be specific about your goals.",
+      "feature-details-title": "{feature} features include:",
+      "existing-requests-title": "Your Existing Requests",
+      "cancel": "Cancel",
+      "submit": "Submit Request",
+      "submitting": "Submitting...",
+      "toasts": {
+        "error": {
+          "reason-required": "Please provide a reason for your request",
+          "feature-required": "Please select a feature to request",
+          "request-failed": "Failed to submit request. Please try again."
+        },
+        "success": {
+          "request-submitted": "Feature access request submitted successfully! Platform administrators will review your request."
+        }
+      },
+      "description-2": "Platform administrators will review your request and approve access if appropriate."
+    }
   },
   "ws-slides": {
     "singular": "Slide",
@@ -4104,8 +4482,22 @@
     "completion_text": "has successfully completed the course",
     "completion_date": "Completion Date",
     "certificate_id": "Certificate ID",
-    "download_button": "Download Certificate",
-    "offered_by": "offered by"
+    "download_button": "Download",
+    "offered_by": "offered by",
+    "page_title": "My Certificates",
+    "page_description": "View and download all your earned certificates",
+    "earned_certificates": "Earned Certificates",
+    "view_certificate": "View Certificate",
+    "download_pdf": "Download PDF",
+    "download_png": "Download PNG",
+    "empty_state_title": "No certificates yet",
+    "empty_state_description": "Complete courses to earn your first certificate and showcase your achievements.",
+    "browse_courses": "Browse Courses",
+    "error_loading": "Error loading certificates. Please try again.",
+    "completed_on": "Completed on",
+    "error": "Unable to Load Certificates",
+    "error_description": "There was an error loading your certificates. Please try again later.",
+    "certified": "Certified"
   },
   "sidebar": {
     "home": "Home",
@@ -4119,6 +4511,73 @@
     "challenges": "Challenges",
     "ai_teach_studio": "AI Teaching Studio",
     "users": "Users",
-    "teams": "Teams"
-  }
+    "teams": "Teams",
+    "platform_users": "Platform users"
+  },
+  "approval-data-table": {
+    "workspace": "Workspace",
+    "requested_by": "Requested by",
+    "feature_requested": "Feature requested",
+    "request_details": "Request ",
+    "status": "Status",
+    "status-pending": "Pending",
+    "status-approved": "Approved",
+    "status-rejected": "Rejected",
+    "requested": "Requested",
+    "admin_notes": "Admin notes",
+    "no_notes": "No notes",
+    "reviewed": "Reviewed",
+    "reviewed_at": "Reviewed at {date}",
+    "reviewed_by": "Reviewed by {name}",
+    "created_at": "Created at",
+    "id": "ID",
+    "workspace_name": "Workspace",
+    "creator_name": "Requested by",
+    "request_message": "Request details",
+    "loading": "Loading",
+    "try-again": "Try Again",
+    "total-requests": "Total Requests",
+    "pending": "Pending",
+    "approved": "Approved",
+    "rejected": "Rejected",
+    "all-requests": "All Requests",
+    "all-features": "All features",
+    "approveSuccess": "Approved {feature} access for {workspace}. Features will be enabled automatically.",
+    "approveError": "Failed to approve request",
+    "rejectError": "Please provide a reason for rejection",
+    "rejectSuccess": "Rejected {feature} access request for {workspace}",
+    "detailsTitle": "Feature Request Details",
+    "requestedBy": "Requested by",
+    "timeline": "Timeline",
+    "viewDetails": "View Details",
+    "approveRequest": "Approve Request",
+    "rejectRequest": "Reject Request",
+    "revokeAccess": "Revoke Access",
+    "adminNotes": "Admin Notes",
+    "notesBy": "Notes by {name}",
+    "close": "Close",
+    "approveTitle": "Approve {feature} access",
+    "approveOverride": "This will override the previous rejection",
+    "approveDescription": "This will enable {feature} features for \"{workspace}\" and grant the workspace access to {feature} functionality.",
+    "adminNotesPlaceholder": "Add any notes about this approval",
+    "cancel": "Cancel",
+    "approving": "Approving",
+    "rejectTitle": "Reject {feature} access",
+    "rejectDescription": "This will reject the {feature} access request for {workspace}. Please provide a reason for the rejection.",
+    "reasonForRejection": "Reason for Rejection",
+    "reasonForRejectionPlaceholder": "Please explain why this request is being rejected",
+    "rejecting": "Rejecting",
+    "openMenu": "Open menu",
+    "filter-by-feature": "Filter by Feature",
+    "filter-by-status": "Filter by status",
+    "requested_at": "Requested {date}"
+  },
+  "approvals": {
+    "feature-access-requests": "Feature Requests",
+    "feature-access-requests-description": "Review and approve feature requests from workspace creators. Approved requests will automatically enable features for the respective workspaces."
+  },
+  "request-feature": "Request Feature",
+  "unlock-education-features": "Unlock Education Features",
+  "transform-your-workspace": "Transform your workspace with comprehensive learning tools: create\ncourses, design interactive quizzes, track student progress, issue\ncertificates, and leverage AI-powered teaching assistants.",
+  "courses-marketplace-description": "Discover our collection of published courses"
 }

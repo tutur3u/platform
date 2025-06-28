@@ -1,11 +1,9 @@
-import { Mail } from './_components/mail';
-import { mails } from './data';
-import {
-  ROOT_WORKSPACE_ID,
-  SIDEBAR_COLLAPSED_COOKIE_NAME,
-} from '@/constants/common';
+import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { SIDEBAR_COLLAPSED_COOKIE_NAME } from '@/constants/common';
+import { Mail } from './_components/mail';
+import { mails } from './data';
 
 interface Props {
   params: Promise<{

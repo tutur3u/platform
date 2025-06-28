@@ -2,7 +2,7 @@
 
 import { Brain, Globe, Heart } from '@tuturuuu/ui/icons';
 import { motion } from 'framer-motion';
-import { ReactNode } from 'react';
+import type { ReactNode } from 'react';
 
 interface ItemProps {
   icon: ReactNode;
@@ -12,19 +12,19 @@ interface ItemProps {
 
 const purposeItems: ItemProps[] = [
   {
-    icon: <Heart className="text-primary h-8 w-8" />,
+    icon: <Heart className="h-8 w-8 text-primary" />,
     title: 'Universal Access',
     description:
       'We believe everyone deserves access to life-changing technology. Our solutions are designed to reach and empower people from all walks of life, everywhere.',
   },
   {
-    icon: <Brain className="text-primary h-8 w-8" />,
+    icon: <Brain className="h-8 w-8 text-primary" />,
     title: 'Breakthrough Innovation',
     description:
       'Through cutting-edge AI and relentless innovation, we push the boundaries of what technology can achieve to create transformative solutions.',
   },
   {
-    icon: <Globe className="text-primary h-8 w-8" />,
+    icon: <Globe className="h-8 w-8 text-primary" />,
     title: 'Worldwide Impact',
     description:
       'From bustling cities to remote villages, we are committed to delivering technology that makes a real difference in daily lives.',
@@ -72,7 +72,7 @@ export function PurposeSection() {
             repeat: Infinity,
             ease: 'easeInOut',
           }}
-          className="bg-size-[100px] absolute inset-0 bg-[linear-gradient(to_right,rgba(var(--primary-rgb),0.02)_1px,transparent_1px)]"
+          className="absolute inset-0 bg-[linear-gradient(to_right,rgba(var(--primary-rgb),0.02)_1px,transparent_1px)] bg-size-[100px]"
         />
       </div>
 
@@ -94,12 +94,12 @@ export function PurposeSection() {
                 ease: 'easeInOut',
               },
             }}
-            className="bg-primary/10 group mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl"
+            className="group mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10"
           >
-            <Heart className="text-primary h-8 w-8 transition-transform duration-300 group-hover:scale-110" />
+            <Heart className="h-8 w-8 text-primary transition-transform duration-300 group-hover:scale-110" />
           </motion.div>
           <motion.h2
-            className="text-foreground mb-4 text-4xl font-bold"
+            className="mb-4 text-4xl font-bold text-foreground"
             whileHover={{
               scale: 1.02,
             }}
@@ -113,13 +113,13 @@ export function PurposeSection() {
                 repeat: Infinity,
                 ease: 'linear',
               }}
-              className="from-primary bg-linear-to-r bg-size-[200%_auto] relative via-orange-500 to-red-500 bg-clip-text text-transparent"
+              className="relative bg-linear-to-r from-primary via-orange-500 to-red-500 bg-size-[200%_auto] bg-clip-text text-transparent"
             >
               Our Purpose
             </motion.span>
           </motion.h2>
           <motion.p
-            className="text-foreground/60 mx-auto max-w-2xl text-lg"
+            className="mx-auto max-w-2xl text-lg text-foreground/60"
             whileHover={{
               scale: 1.01,
             }}
@@ -147,11 +147,11 @@ export function PurposeSection() {
               }}
               className="group relative"
             >
-              <div className="bg-foreground/5 relative h-full overflow-hidden rounded-2xl backdrop-blur-sm">
+              <div className="relative h-full overflow-hidden rounded-2xl bg-foreground/5 backdrop-blur-sm">
                 <motion.div
                   initial={{ opacity: 0 }}
                   whileHover={{ opacity: 1 }}
-                  className="bg-linear-to-br absolute inset-0 from-orange-500/10 via-red-500/5 to-transparent transition-opacity duration-300"
+                  className="absolute inset-0 bg-linear-to-br from-orange-500/10 via-red-500/5 to-transparent transition-opacity duration-300"
                 />
                 <motion.div
                   animate={{
@@ -163,7 +163,7 @@ export function PurposeSection() {
                     repeat: Infinity,
                     ease: 'linear',
                   }}
-                  className="bg-linear-to-br absolute -right-8 -top-8 h-24 w-24 rounded-xl from-orange-500/20 via-red-500/10 to-transparent blur-2xl"
+                  className="absolute -top-8 -right-8 h-24 w-24 rounded-xl bg-linear-to-br from-orange-500/20 via-red-500/10 to-transparent blur-2xl"
                 />
                 <div className="pointer-events-none relative p-8">
                   <motion.div
@@ -176,7 +176,7 @@ export function PurposeSection() {
                     }}
                     className="relative mb-6"
                   >
-                    <div className="bg-primary/10 group-hover:bg-primary/20 mx-auto flex h-16 w-16 items-center justify-center rounded-xl transition-all duration-300 group-hover:rotate-12">
+                    <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-xl bg-primary/10 transition-all duration-300 group-hover:rotate-12 group-hover:bg-primary/20">
                       <motion.div
                         animate={{
                           scale: [1, 1.1, 1],
@@ -192,7 +192,7 @@ export function PurposeSection() {
                     </div>
                   </motion.div>
                   <motion.h3
-                    className="text-foreground relative mb-4 text-xl font-bold"
+                    className="relative mb-4 text-xl font-bold text-foreground"
                     whileHover={{
                       scale: 1.05,
                       color: 'hsl(var(--primary))',
@@ -201,7 +201,7 @@ export function PurposeSection() {
                     {item.title}
                   </motion.h3>
                   <motion.p
-                    className="text-foreground/60 relative"
+                    className="relative text-foreground/60"
                     whileHover={{
                       scale: 1.02,
                     }}
@@ -213,7 +213,7 @@ export function PurposeSection() {
                   initial={{ scaleX: 0 }}
                   whileHover={{ scaleX: 1 }}
                   transition={{ duration: 0.3 }}
-                  className="from-primary/20 to-primary/5 bg-linear-to-r absolute bottom-0 left-0 right-0 h-1 origin-left"
+                  className="absolute right-0 bottom-0 left-0 h-1 origin-left bg-linear-to-r from-primary/20 to-primary/5"
                 />
               </div>
             </motion.div>

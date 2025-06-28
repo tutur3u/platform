@@ -1,14 +1,5 @@
 'use client';
 
-import BasicInformationComponent, {
-  BasicInformation,
-} from './components/basic-information-component';
-import { CurrentChallengeCard } from './components/current-challenge-card';
-import Guider from './components/guider';
-import { Leaderboard, LeaderboardEntry } from './components/leaderboard';
-import { LeaderboardFilters } from './components/leaderboard-filters';
-import Rewards from './components/rewards';
-import { TopThreeCards } from './components/top-three-cards';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
@@ -22,10 +13,19 @@ import {
   Sparkles,
 } from '@tuturuuu/ui/icons';
 import { motion } from 'framer-motion';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
+import BasicInformationComponent, {
+  type BasicInformation,
+} from './components/basic-information-component';
+import { CurrentChallengeCard } from './components/current-challenge-card';
+import Guider from './components/guider';
+import { Leaderboard, type LeaderboardEntry } from './components/leaderboard';
+import { LeaderboardFilters } from './components/leaderboard-filters';
+import Rewards from './components/rewards';
+import { TopThreeCards } from './components/top-three-cards';
 
 export default function LeaderboardClient({
   locale,
@@ -179,14 +179,14 @@ export default function LeaderboardClient({
           </div>
           <TopThreeCards topThree={topThree} teamMode={false} />
 
-          <div className="mb-6 mt-8">
+          <div className="mt-8 mb-6">
             <CurrentChallengeCard />
           </div>
 
           <div className="relative my-8 h-px w-full overflow-hidden">
-            <div className="bg-linear-to-r absolute inset-0 from-transparent via-slate-400 to-transparent opacity-20 dark:via-slate-600"></div>
+            <div className="absolute inset-0 bg-linear-to-r from-transparent via-slate-400 to-transparent opacity-20 dark:via-slate-600"></div>
             <motion.div
-              className="bg-linear-to-r absolute inset-0 h-px w-1/3 from-blue-500 via-purple-500 to-pink-500"
+              className="absolute inset-0 h-px w-1/3 bg-linear-to-r from-blue-500 via-purple-500 to-pink-500"
               animate={{ x: ['-100%', '400%'] }}
               transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
             />
@@ -224,20 +224,20 @@ export default function LeaderboardClient({
               />
 
               <div className="mt-6">
-                <div className="bg-foreground/[0.025] dark:bg-foreground/5 flex flex-wrap items-center justify-between gap-2 rounded-lg border px-4 py-2 text-center backdrop-blur-xl">
-                  <div className="text-muted-foreground flex-none text-sm">
-                    <span className="text-primary font-semibold">
+                <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border bg-foreground/[0.025] px-4 py-2 text-center backdrop-blur-xl dark:bg-foreground/5">
+                  <div className="flex-none text-sm text-muted-foreground">
+                    <span className="font-semibold text-primary">
                       {basicInfo.totalParticipants}
                     </span>{' '}
                     participant(s)
                   </div>
 
                   <div className="flex flex-wrap items-center justify-center gap-2 md:gap-4">
-                    <div className="text-muted-foreground w-fit text-sm">
+                    <div className="w-fit text-sm text-muted-foreground">
                       Page{' '}
-                      <span className="text-primary font-semibold">{page}</span>{' '}
+                      <span className="font-semibold text-primary">{page}</span>{' '}
                       of{' '}
-                      <span className="text-primary font-semibold">
+                      <span className="font-semibold text-primary">
                         {totalPages ||
                           Math.ceil(basicInfo.totalParticipants / 20)}
                       </span>

@@ -1,7 +1,3 @@
-import { getUserColumns } from './columns';
-import EnabledFilter from './enabled-filter';
-import RoleFilter from './role-filter';
-import { CustomDataTable } from '@/components/custom-data-table';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type {
   PlatformUser,
@@ -12,9 +8,13 @@ import { Button } from '@tuturuuu/ui/button';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Mail } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
-import { getLocale } from 'next-intl/server';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { getLocale } from 'next-intl/server';
+import { CustomDataTable } from '@/components/custom-data-table';
+import { getUserColumns } from './columns';
+import EnabledFilter from './enabled-filter';
+import RoleFilter from './role-filter';
 
 interface props {
   searchParams: Promise<{
@@ -136,13 +136,25 @@ async function getUserData({
       if (countError) {
         console.error('Error getting count:', countError);
         return {
-          userData: data || [],
-          userCount: data?.length || 0,
+          userData: (data || [])
+            .map((user: any) => ({
+              ...user,
+              services: user.services || [],
+            }))
+            .filter((user: any) => user.services?.includes('NOVA')),
+          userCount: (data || []).filter((user: any) =>
+            user.services?.includes('NOVA')
+          ).length,
         };
       }
 
       return {
-        userData: data || [],
+        userData: (data || [])
+          .map((user: any) => ({
+            ...user,
+            services: user.services || [],
+          }))
+          .filter((user: any) => user.services?.includes('NOVA')),
         userCount: countData || 0,
       };
     }
@@ -156,6 +168,7 @@ async function getUserData({
           count: 'exact',
         }
       )
+      .contains('users.services', ['NOVA'])
       .order('created_at', { ascending: false })
       .order('user_id');
 
@@ -204,6 +217,7 @@ async function getUserData({
       userData:
         data.map(({ nova_team_members, ...user }) => ({
           ...user,
+          services: user.services || [],
           team_name:
             nova_team_members
               ?.map((member) => member.team_name)

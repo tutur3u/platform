@@ -1,5 +1,4 @@
-import ScoreBadge from '@/components/common/ScoreBadge';
-import { NovaSubmissionData } from '@tuturuuu/types/db';
+import type { NovaSubmissionData } from '@tuturuuu/types/db';
 import {
   HoverCard,
   HoverCardContent,
@@ -7,6 +6,7 @@ import {
 } from '@tuturuuu/ui/hover-card';
 import { CheckCircle2, Clock, EyeIcon, XCircle } from '@tuturuuu/ui/icons';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
+import ScoreBadge from '@/components/common/ScoreBadge';
 
 interface CriteriaEvaluationProps {
   submission: Partial<NovaSubmissionData>;
@@ -75,7 +75,7 @@ export default function CriteriaEvaluation({
                           <span className="block text-sm font-medium">
                             {cs.name}
                           </span>
-                          <span className="text-muted-foreground block text-xs">
+                          <span className="block text-xs text-muted-foreground">
                             <EyeIcon className="mr-1 inline-block h-3 w-3" />
                             Hover for feedback
                           </span>
@@ -102,7 +102,7 @@ export default function CriteriaEvaluation({
                           {cs.score}/10
                         </ScoreBadge>
                       </div>
-                      <p className="text-muted-foreground text-sm">
+                      <p className="text-sm text-muted-foreground">
                         {cs.feedback}
                       </p>
                     </div>
@@ -124,7 +124,7 @@ export default function CriteriaEvaluation({
         </div>
       ) : (
         <div className="rounded-md border border-dashed p-6 text-center">
-          <p className="text-muted-foreground text-sm">
+          <p className="text-sm text-muted-foreground">
             No criteria evaluation available
           </p>
         </div>

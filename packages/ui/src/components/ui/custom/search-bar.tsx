@@ -1,9 +1,9 @@
 'use client';
 
-import { Input } from '../input';
 import { cn } from '@tuturuuu/utils/format';
 import { debounce } from 'lodash';
 import { useCallback, useEffect, useState } from 'react';
+import { Input } from '../input';
 
 interface Props {
   t: any;
@@ -48,7 +48,7 @@ const SearchBar = ({ t, defaultValue = '', className, onSearch }: Props) => {
         setValue(e.target.value);
         updateQuery(e.target.value);
       }}
-      className={cn('placeholder:text-foreground/60 h-8 min-w-64', className)}
+      className={cn('h-8 min-w-64 placeholder:text-foreground/60', className)}
     />
   );
 };

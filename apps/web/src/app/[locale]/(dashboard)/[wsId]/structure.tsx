@@ -1,42 +1,29 @@
 'use client';
 
-import { Nav } from './nav';
-import { NavLink } from '@/components/navigation';
-import { PROD_MODE, ROOT_WORKSPACE_ID } from '@/constants/common';
 import { useQuery } from '@tanstack/react-query';
-import { Workspace } from '@tuturuuu/types/db';
-import { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
-import {
-  Breadcrumb,
-  BreadcrumbEllipsis,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbSeparator,
-} from '@tuturuuu/ui/breadcrumb';
+import type { Workspace } from '@tuturuuu/types/db';
+import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { LogoTitle } from '@tuturuuu/ui/custom/logo-title';
 import { Structure as BaseStructure } from '@tuturuuu/ui/custom/structure';
 import { WorkspaceSelect } from '@tuturuuu/ui/custom/workspace-select';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@tuturuuu/ui/dropdown-menu';
+import { ArrowLeft } from '@tuturuuu/ui/icons';
+import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { cn } from '@tuturuuu/utils/format';
-import { debounce } from 'lodash';
-import { useTranslations } from 'next-intl';
+import { setCookie } from 'cookies-next';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { ReactNode, Suspense, useCallback, useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
+import { type ReactNode, Suspense, useEffect, useState } from 'react';
+import type { NavLink } from '@/components/navigation';
+import { PROD_MODE, SIDEBAR_COLLAPSED_COOKIE_NAME } from '@/constants/common';
+import { useSidebar } from '@/context/sidebar-context';
+import { Nav } from './nav';
 
 interface MailProps {
   wsId: string;
   workspace: Workspace | null;
-  defaultLayout?: number[];
   defaultCollapsed: boolean;
-  navCollapsedSize: number;
   user: WorkspaceUser | null;
   links: (NavLink | null)[];
   actions: ReactNode;
@@ -46,10 +33,7 @@ interface MailProps {
 
 export function Structure({
   wsId,
-  workspace,
-  defaultLayout = [20, 80],
   defaultCollapsed = false,
-  navCollapsedSize,
   user,
   links,
   actions,
@@ -58,85 +42,197 @@ export function Structure({
 }: MailProps) {
   const t = useTranslations();
   const pathname = usePathname();
+  const { behavior, handleBehaviorChange } = useSidebar();
   const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed);
 
-  // Add debounced function for saving sidebar sizes
-  const debouncedSaveSizes = useCallback(
-    debounce(async (sizes: { sidebar: number; main: number }) => {
-      await fetch('/api/v1/infrastructure/sidebar/sizes', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(sizes),
-      });
-    }, 500),
-    []
-  );
-
-  // Add debounced function for saving sidebar collapsed state
-  const debouncedSaveCollapsed = useCallback(
-    debounce(async (collapsed: boolean) => {
-      await fetch('/api/v1/infrastructure/sidebar', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ collapsed }),
-      });
-    }, 500),
-    []
-  );
-
-  // Cleanup debounced functions on unmount
   useEffect(() => {
-    return () => {
-      debouncedSaveSizes.cancel();
-      debouncedSaveCollapsed.cancel();
+    if (behavior === 'collapsed' || behavior === 'hover') {
+      setIsCollapsed(true);
+    } else {
+      setIsCollapsed(false);
+    }
+  }, [behavior]);
+
+  const [navState, setNavState] = useState<{
+    currentLinks: (NavLink | null)[];
+    history: (NavLink | null)[][];
+    titleHistory: (string | null)[];
+    direction: 'forward' | 'backward';
+  }>(() => {
+    for (const link of links) {
+      if (link?.children) {
+        const isActive = link.children.some(
+          (child) =>
+            child?.href &&
+            (pathname.startsWith(child.href) ||
+              child.aliases?.some((alias) => pathname.startsWith(alias)))
+        );
+        if (isActive) {
+          return {
+            currentLinks: link.children,
+            history: [links],
+            titleHistory: [link.title],
+            direction: 'forward' as const,
+          };
+        }
+      }
+    }
+    return {
+      currentLinks: links,
+      history: [],
+      titleHistory: [],
+      direction: 'forward' as const,
     };
-  }, [debouncedSaveSizes, debouncedSaveCollapsed]);
+  });
+
+  useEffect(() => {
+    setNavState((prevState) => {
+      // Find if any submenu should be active for the current path.
+      for (const link of links) {
+        if (link?.children) {
+          const isActive = link.children.some(
+            (child) =>
+              child?.href &&
+              (pathname.startsWith(child.href) ||
+                child.aliases?.some((alias) => pathname.startsWith(alias)))
+          );
+
+          if (isActive) {
+            // If the active submenu is not the one currently displayed, switch to it.
+            if (
+              prevState.titleHistory[prevState.titleHistory.length - 1] !==
+              link.title
+            ) {
+              return {
+                currentLinks: link.children,
+                history: [links],
+                titleHistory: [link.title],
+                direction: 'forward',
+              };
+            }
+            // It's the correct submenu, do nothing to the state.
+            return prevState;
+          }
+        }
+      }
+
+      // If we are in a submenu, but no submenu link is active for the current path,
+      // it means we navigated to a top-level page. Go back to the main menu.
+      if (prevState.history.length > 0) {
+        return {
+          currentLinks: links,
+          history: [],
+          titleHistory: [],
+          direction: 'backward',
+        };
+      }
+
+      // We are at the top level and no submenu is active, do nothing.
+      return prevState;
+    });
+  }, [pathname, links]);
+
+  const handleToggle = () => {
+    const newCollapsed = !isCollapsed;
+    setIsCollapsed(newCollapsed);
+    setCookie(SIDEBAR_COLLAPSED_COOKIE_NAME, newCollapsed);
+
+    if (behavior === 'expanded' && newCollapsed) {
+      handleBehaviorChange('collapsed');
+    } else if (behavior === 'collapsed' && !newCollapsed) {
+      handleBehaviorChange('expanded');
+    }
+  };
+
+  const handleNavChange = (
+    newLinks: (NavLink | null)[],
+    parentTitle: string
+  ) => {
+    setNavState((prevState) => ({
+      currentLinks: newLinks,
+      history: [...prevState.history, prevState.currentLinks],
+      titleHistory: [...prevState.titleHistory, parentTitle],
+      direction: 'forward',
+    }));
+  };
+
+  const handleNavBack = () => {
+    setNavState((prevState) => {
+      const previousLinks = prevState.history[prevState.history.length - 1];
+      return {
+        currentLinks: previousLinks || links,
+        history: prevState.history.slice(0, -1),
+        titleHistory: prevState.titleHistory.slice(0, -1),
+        direction: 'backward',
+      };
+    });
+  };
+
+  const isHoverMode = behavior === 'hover';
+  const onMouseEnter = isHoverMode ? () => setIsCollapsed(false) : undefined;
+  const onMouseLeave = isHoverMode ? () => setIsCollapsed(true) : undefined;
 
   const isRootWorkspace = wsId === ROOT_WORKSPACE_ID;
 
-  const filteredLinks = links.filter((link) => {
-    // If the link is disabled, don't render it
-    if (!link || link?.disabled) return null;
+  const getFilteredLinks = (
+    linksToFilter: (NavLink | null)[] | undefined
+  ): NavLink[] =>
+    (linksToFilter || [])
+      .map((link) => {
+        if (!link) return null;
 
-    // If the link is disabled on production, don't render it
-    if (link?.disableOnProduction && PROD_MODE) return null;
+        if (link.disabled) return null;
+        if (link.disableOnProduction && PROD_MODE) return null;
+        if (link.requireRootMember && !user?.email?.endsWith('@tuturuuu.com'))
+          return null;
+        if (link.requireRootWorkspace && !isRootWorkspace) return null;
+        if (link.allowedRoles && link.allowedRoles.length > 0) return null;
 
-    // If the link requires root membership, check if user email ends with @tuturuuu.com
-    if (link?.requireRootMember && !user?.email?.endsWith('@tuturuuu.com'))
-      return null;
+        if (link.children) {
+          const filteredChildren = getFilteredLinks(link.children);
+          if (filteredChildren.length === 0) {
+            return null;
+          }
+          return { ...link, children: filteredChildren };
+        }
 
-    // If the link requires the root workspace, check if the current workspace is the root workspace
-    if (link?.requireRootWorkspace && !isRootWorkspace) return null;
+        return link;
+      })
+      .filter((link): link is NavLink => link !== null);
 
-    // If the link is only allowed for certain roles, check if the current role is allowed
-    if (link?.allowedRoles && link.allowedRoles.length > 0) return null;
+  const backButton: NavLink = {
+    title: t('common.back'),
+    icon: <ArrowLeft className="h-4 w-4" />,
+    onClick: handleNavBack,
+    isBack: true,
+  };
 
-    return link;
-  });
+  const currentTitle = navState.titleHistory[navState.titleHistory.length - 1];
+  const filteredCurrentLinks = getFilteredLinks(navState.currentLinks);
 
-  const matchedLinks = filteredLinks
-    .filter((link) => link !== null)
+  const matchedLinks = (
+    navState.history.length > 0
+      ? [backButton, ...filteredCurrentLinks]
+      : filteredCurrentLinks
+  )
     .filter(
       (link) =>
-        pathname.startsWith(link.href) ||
-        link.aliases?.some((alias) => pathname.startsWith(alias))
+        link.href &&
+        (pathname.startsWith(link.href) ||
+          link.aliases?.some((alias) => pathname.startsWith(alias)))
     )
-    .sort((a, b) => b.href.length - a.href.length);
+    .sort((a, b) => (b.href?.length || 0) - (a.href?.length || 0));
 
   const currentLink = matchedLinks?.[0];
 
   const sidebarHeader = (
     <>
       {isCollapsed || (
-        <Link href="/" className="flex flex-none items-center gap-2">
+        <Link href="/home" className="flex flex-none items-center gap-2">
           <div className="flex-none">
             <Image
               src="/media/logos/transparent.png"
-              className="h-8 w-8"
+              className="h-6 w-6"
               width={32}
               height={32}
               alt="logo"
@@ -148,7 +244,7 @@ export function Structure({
 
       <Suspense
         fallback={
-          <div className="bg-foreground/5 h-10 w-32 animate-pulse rounded-lg" />
+          <div className="h-10 w-full animate-pulse rounded-lg bg-foreground/5" />
         }
       >
         <WorkspaceSelect
@@ -161,73 +257,74 @@ export function Structure({
   );
 
   const sidebarContent = (
-    <Nav
-      wsId={wsId}
-      currentUser={user}
-      isCollapsed={isCollapsed}
-      links={links}
-      onClick={() => window.innerWidth < 768 && setIsCollapsed(true)}
-    />
+    <div className="relative h-full overflow-hidden">
+      <div
+        key={navState.history.length}
+        className={cn(
+          'absolute flex h-full w-full flex-col transition-transform duration-300 ease-in-out',
+          navState.direction === 'forward'
+            ? 'animate-in slide-in-from-right'
+            : 'animate-in slide-in-from-left'
+        )}
+      >
+        {navState.history.length === 0 ? (
+          <Nav
+            wsId={wsId}
+            isCollapsed={isCollapsed}
+            links={filteredCurrentLinks}
+            onSubMenuClick={handleNavChange}
+            onClick={() => {
+              if (window.innerWidth < 768) {
+                setIsCollapsed(true);
+              }
+            }}
+          />
+        ) : (
+          <>
+            <Nav
+              wsId={wsId}
+              isCollapsed={isCollapsed}
+              links={[backButton]}
+              onSubMenuClick={handleNavChange}
+              onClick={() => {
+                /* For the back button, we don't want to close the sidebar */
+              }}
+            />
+            {!isCollapsed && currentTitle && (
+              <div className="p-2 pt-0">
+                <h2 className="line-clamp-1 px-2 text-sm font-semibold tracking-wide text-muted-foreground uppercase">
+                  {currentTitle}
+                </h2>
+              </div>
+            )}
+            {!isCollapsed && <div className="mx-4 my-1 border-b" />}
+            {filteredCurrentLinks.length > 0 && (
+              <div className="scrollbar-none flex-1 overflow-y-auto">
+                <Nav
+                  wsId={wsId}
+                  isCollapsed={isCollapsed}
+                  links={filteredCurrentLinks}
+                  onSubMenuClick={handleNavChange}
+                  onClick={() => {
+                    if (window.innerWidth < 768) {
+                      setIsCollapsed(true);
+                    }
+                  }}
+                />
+              </div>
+            )}
+          </>
+        )}
+      </div>
+    </div>
   );
 
-  const header = (
-    <Breadcrumb>
-      <BreadcrumbList>
-        <BreadcrumbItem>
-          <BreadcrumbLink href={pathname === `/${wsId}` ? '#' : `/${wsId}`}>
-            {workspace?.name || t('common.unnamed-workspace')}
-          </BreadcrumbLink>
-        </BreadcrumbItem>
-        <BreadcrumbSeparator />
-        <BreadcrumbItem>
-          <DropdownMenu>
-            <DropdownMenuTrigger className="flex items-center gap-1">
-              <BreadcrumbEllipsis className="h-4 w-4" />
-              <span className="sr-only">Toggle menu</span>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start">
-              {links.map((link, index) =>
-                link ? (
-                  <Link
-                    key={index}
-                    href={link.href === pathname ? '#' : link.href}
-                    className={cn(
-                      link.disabled || link.href === pathname
-                        ? 'pointer-events-none'
-                        : ''
-                    )}
-                  >
-                    <DropdownMenuItem
-                      className="flex items-center gap-2"
-                      disabled={link.disabled || link.href === pathname}
-                    >
-                      {link.icon}
-                      {link.title}
-                    </DropdownMenuItem>
-                  </Link>
-                ) : null
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </BreadcrumbItem>
-        <BreadcrumbSeparator />
-        <BreadcrumbItem>
-          <BreadcrumbLink
-            href={currentLink?.href === pathname ? '#' : currentLink?.href}
-            className="flex items-center gap-2"
-          >
-            {currentLink?.icon}
-            {currentLink?.title}
-          </BreadcrumbLink>
-        </BreadcrumbItem>
-      </BreadcrumbList>
-    </Breadcrumb>
-  );
+  const header = null;
 
   const mobileHeader = (
     <>
       <div className="flex flex-none items-center gap-2">
-        <Link href="/" className="flex flex-none items-center gap-2">
+        <Link href="/home" className="flex flex-none items-center gap-2">
           <Image
             src="/media/logos/transparent.png"
             className="h-8 w-8"
@@ -237,8 +334,8 @@ export function Structure({
           />
         </Link>
       </div>
-      <div className="rotate-30 bg-foreground/20 mx-2 h-4 w-px flex-none" />
-      <div className="flex items-center gap-2 break-all text-lg font-semibold">
+      <div className="mx-2 h-4 w-px flex-none rotate-30 bg-foreground/20" />
+      <div className="flex items-center gap-2 text-lg font-semibold break-all">
         {currentLink?.icon && (
           <div className="flex-none">{currentLink.icon}</div>
         )}
@@ -249,12 +346,8 @@ export function Structure({
 
   return (
     <BaseStructure
-      defaultLayout={defaultLayout}
-      navCollapsedSize={navCollapsedSize}
       isCollapsed={isCollapsed}
-      setIsCollapsed={setIsCollapsed}
-      debouncedSaveSizes={debouncedSaveSizes}
-      debouncedSaveCollapsed={debouncedSaveCollapsed}
+      setIsCollapsed={handleToggle}
       header={header}
       mobileHeader={mobileHeader}
       sidebarHeader={sidebarHeader}
@@ -262,6 +355,9 @@ export function Structure({
       actions={actions}
       userPopover={userPopover}
       children={children}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
+      hideSizeToggle={behavior === 'hover'}
     />
   );
 }

@@ -1,6 +1,6 @@
-import DayTime from './day-time';
-import { Timeblock } from '@tuturuuu/types/primitives/Timeblock';
+import type { Timeblock } from '@tuturuuu/types/primitives/Timeblock';
 import dayjs from 'dayjs';
+import DayTime from './day-time';
 import 'dayjs/locale/vi';
 import { useLocale } from 'next-intl';
 
@@ -24,7 +24,7 @@ export default function DayPlanner({
 
   return (
     <div>
-      <div className="pointer-events-none select-none p-1">
+      <div className="pointer-events-none p-1 select-none">
         <div className="line-clamp-1 text-xs">
           {dayjs(date)
             .locale(locale)

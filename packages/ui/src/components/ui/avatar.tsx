@@ -2,7 +2,7 @@
 
 import * as AvatarPrimitive from '@radix-ui/react-avatar';
 import { cn } from '@tuturuuu/utils/format';
-import * as React from 'react';
+import type * as React from 'react';
 
 function Avatar({
   className,
@@ -41,7 +41,7 @@ function AvatarFallback({
     <AvatarPrimitive.Fallback
       data-slot="avatar-fallback"
       className={cn(
-        'bg-muted flex size-full items-center justify-center rounded-full',
+        'flex size-full items-center justify-center rounded-full bg-muted',
         className
       )}
       {...props}

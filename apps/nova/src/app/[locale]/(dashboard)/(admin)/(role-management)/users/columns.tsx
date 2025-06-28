@@ -1,8 +1,7 @@
 'use client';
 
-import { NovaUsersRowActions } from './row-actions';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { ColumnDef } from '@tanstack/react-table';
+import type { ColumnDef } from '@tanstack/react-table';
 import type {
   PlatformUser,
   User,
@@ -36,6 +35,7 @@ import {
 import { generateFunName, getInitials } from '@tuturuuu/utils/name-helper';
 import moment from 'moment';
 import { useRouter } from 'next/navigation';
+import { NovaUsersRowActions } from './row-actions';
 
 export const getUserColumns = (
   t: any,
@@ -151,7 +151,7 @@ export const getUserColumns = (
                   generateFunName({ id: user.id, locale: extraData.locale })}
               </div>
               {user?.email && (
-                <div className="text-muted-foreground text-sm">
+                <div className="text-sm text-muted-foreground">
                   {user.email}
                 </div>
               )}

@@ -1,9 +1,9 @@
-import type { UrlWithProgress } from '../types';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Card, CardContent } from '@tuturuuu/ui/card';
 import { Check, X } from '@tuturuuu/ui/icons';
 import { Progress } from '@tuturuuu/ui/progress';
 import { cn } from '@tuturuuu/utils/format';
+import type { UrlWithProgress } from '../types';
 
 interface Props {
   recentFetches: UrlWithProgress[];
@@ -35,7 +35,7 @@ export function RecentFetchesCard({ recentFetches }: Props) {
                     {item.status === 'failed' && (
                       <X className="h-4 w-4 flex-none text-red-500" />
                     )}
-                    <code className="text-muted-foreground flex-1 truncate text-xs">
+                    <code className="flex-1 truncate text-xs text-muted-foreground">
                       <span className="line-clamp-1">{item.url}</span>
                     </code>
                   </div>

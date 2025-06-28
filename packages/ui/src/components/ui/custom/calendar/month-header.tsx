@@ -1,6 +1,6 @@
-import { Button } from '../../button';
 import { cn } from '@tuturuuu/utils/format';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { Button } from '../../button';
 
 export const MonthHeader: React.FC<{
   thisYear: number;
@@ -29,7 +29,7 @@ export const MonthHeader: React.FC<{
   >
     <div className="flex items-center gap-1">
       {hideYear || thisYear}
-      {hideYear || <div className="bg-foreground/20 rotate-30 mx-2 h-4 w-px" />}
+      {hideYear || <div className="mx-2 h-4 w-px rotate-30 bg-foreground/20" />}
       <span className="text-lg font-semibold md:text-xl">{thisMonth}</span>
     </div>
     {!hideControls && (

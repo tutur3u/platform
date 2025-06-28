@@ -1,8 +1,9 @@
-import { Button } from '../button';
-import ModifiableDialogTrigger from './modifiable-dialog-trigger';
 import { cn } from '@tuturuuu/utils/format';
 import { Cog, Plus } from 'lucide-react';
-import { type ReactElement, ReactNode } from 'react';
+import Link from 'next/link';
+import type { ReactElement, ReactNode } from 'react';
+import { Button } from '../button';
+import ModifiableDialogTrigger from './modifiable-dialog-trigger';
 
 interface FormProps<T> {
   data?: T;
@@ -17,6 +18,7 @@ interface Props<T> {
   trigger?: ReactNode;
   form?: ReactElement<FormProps<T>>;
   href?: string;
+  secondaryHref?: string;
   title?: ReactNode;
   pluralTitle?: string;
   singularTitle?: string;
@@ -46,6 +48,7 @@ export default function FeatureSummary<T>({
   defaultData,
   form,
   href,
+  secondaryHref,
   title,
   pluralTitle,
   singularTitle,
@@ -85,15 +88,19 @@ export default function FeatureSummary<T>({
   setOpen,
 }: Props<T>) {
   return (
-    <div className="border-border bg-foreground/5 flex flex-col justify-between gap-4 rounded-lg border p-4 md:flex-row md:items-start">
+    <div className="flex flex-col justify-between gap-4 rounded-lg border border-border bg-foreground/5 p-4 md:flex-row md:items-start">
       <div className="w-full">
         {title || <h1 className="w-full text-2xl font-bold">{pluralTitle}</h1>}
         {description && (
-          <div className="text-foreground/80 whitespace-pre-wrap">
+          <div className="whitespace-pre-wrap text-foreground/80">
             {description}
           </div>
         )}
       </div>
+      {href && !form && <Link href={href}>{primaryTrigger}</Link>}
+      {secondaryHref && !form && (
+        <Link href={secondaryHref}>{secondaryTrigger}</Link>
+      )}
       {(form ||
         action ||
         showDefaultFormAsSecondary ||

@@ -1,6 +1,5 @@
 'use client';
 
-import { type ExtendedNovaSubmission } from '../types';
 import { Badge } from '@tuturuuu/ui/badge';
 import {
   Card,
@@ -9,6 +8,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@tuturuuu/ui/card';
+import type { ExtendedNovaSubmission } from '../types';
 
 interface CriteriaEvaluationProps {
   submission: ExtendedNovaSubmission;
@@ -35,7 +35,7 @@ export default function CriteriaEvaluation({
       <div className="mb-4 flex items-center justify-between">
         <div className="space-y-1">
           <h3 className="font-medium">Criteria Evaluation</h3>
-          <p className="text-muted-foreground text-sm">
+          <p className="text-sm text-muted-foreground">
             {submission.sum_criterion_score.toFixed(1)} of{' '}
             {submission.total_criteria * 10} possible points
           </p>
@@ -76,7 +76,7 @@ export default function CriteriaEvaluation({
                   </p>
                 </div>
               ) : (
-                <p className="text-muted-foreground text-sm italic">
+                <p className="text-sm text-muted-foreground italic">
                   No feedback provided
                 </p>
               )}

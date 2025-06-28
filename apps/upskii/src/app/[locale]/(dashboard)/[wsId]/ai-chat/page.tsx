@@ -1,17 +1,21 @@
-import Chat from './chat';
-import { getChats } from './helper';
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { requireFeatureFlags } from '@tuturuuu/utils/feature-flags/core';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
+import Chat from './chat';
+import { getChats } from './helper';
 
 interface Props {
+  params: Promise<{
+    wsId: string;
+  }>;
   searchParams: Promise<{
     lang: string;
   }>;
 }
 
-export default async function AIPage({ searchParams }: Props) {
+export default async function AIPage({ params, searchParams }: Props) {
+  const { wsId } = await params;
   const { lang: locale } = await searchParams;
   const { data: chats, count } = await getChats();
 
@@ -19,19 +23,20 @@ export default async function AIPage({ searchParams }: Props) {
   const apiKey = cookieStore.get('google_api_key')?.value;
 
   const user = await getCurrentUser();
-  if (!user?.email) redirect('/login');
+  if (!user) redirect('/login');
 
-  const adminSb = await createAdminClient();
-
-  const { data: whitelisted, error } = await adminSb
-    .from('ai_whitelisted_emails')
-    .select('enabled')
-    .eq('email', user?.email)
-    .maybeSingle();
-
-  if (error || !whitelisted?.enabled) redirect('/not-whitelisted');
+  await requireFeatureFlags(wsId, {
+    requiredFlags: ['ENABLE_AI'],
+    redirectTo: `/${wsId}/home`,
+  });
 
   return (
-    <Chat chats={chats} count={count} locale={locale} initialApiKey={apiKey} />
+    <Chat
+      chats={chats}
+      count={count}
+      locale={locale}
+      initialApiKey={apiKey}
+      user={user}
+    />
   );
 }

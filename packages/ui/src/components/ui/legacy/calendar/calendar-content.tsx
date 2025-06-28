@@ -1,20 +1,21 @@
-import { CalendarHeader } from './calendar-header';
-import { CalendarViewWithTrail } from './calendar-view-with-trail';
-import { CreateEventButton } from './create-event-button';
-import { EventModal } from './event-modal';
-import { MonthCalendar } from './month-calendar';
-import { SettingsButton } from './settings-button';
-import type { CalendarSettings } from './settings/settings-context';
-import { WeekdayBar } from './weekday-bar';
 import type {
   Workspace,
   WorkspaceCalendarGoogleToken,
 } from '@tuturuuu/types/db';
 import { useCalendar } from '@tuturuuu/ui/hooks/use-calendar';
+import { useCalendarSync } from '@tuturuuu/ui/hooks/use-calendar-sync';
 import type { CalendarView } from '@tuturuuu/ui/hooks/use-view-transition';
 import { useViewTransition } from '@tuturuuu/ui/hooks/use-view-transition';
 import { cn } from '@tuturuuu/utils/format';
 import { useCallback, useEffect, useState } from 'react';
+import { CalendarHeader } from './calendar-header';
+import { CalendarViewWithTrail } from './calendar-view-with-trail';
+import { CreateEventButton } from './create-event-button';
+import { EventModal } from './event-modal';
+import { MonthCalendar } from './month-calendar';
+import type { CalendarSettings } from './settings/settings-context';
+import { SettingsButton } from './settings-button';
+import { WeekdayBar } from './weekday-bar';
 
 export const CalendarContent = ({
   t,
@@ -26,6 +27,7 @@ export const CalendarContent = ({
   experimentalGoogleToken,
   onSaveSettings,
   externalState,
+  extras,
 }: {
   t: any;
   locale: string;
@@ -33,7 +35,7 @@ export const CalendarContent = ({
   workspace?: Workspace;
   initialSettings?: Partial<CalendarSettings>;
   enableHeader?: boolean;
-  experimentalGoogleToken?: WorkspaceCalendarGoogleToken;
+  experimentalGoogleToken?: WorkspaceCalendarGoogleToken | null;
   onSaveSettings?: (settings: CalendarSettings) => Promise<void>;
   externalState?: {
     date: Date;
@@ -44,14 +46,15 @@ export const CalendarContent = ({
     >;
     availableViews: { value: string; label: string; disabled?: boolean }[];
   };
+  extras?: React.ReactNode;
 }) => {
   const { transition } = useViewTransition();
   const { settings } = useCalendar();
+  const { dates, setDates } = useCalendarSync();
 
   const [initialized, setInitialized] = useState(false);
   const [date, setDate] = useState(externalState?.date || new Date());
   const [view, setView] = useState<CalendarView>(externalState?.view || 'week');
-  const [dates, setDates] = useState<Date[]>([]);
   const [availableViews, setAvailableViews] = useState<
     { value: string; label: string; disabled?: boolean }[]
   >(externalState?.availableViews || []);
@@ -104,6 +107,7 @@ export const CalendarContent = ({
       handleSetView('4-days');
       setDates(dates);
     });
+    console.log('enable4DayView', dates);
   }, [date, transition, handleSetView, setDates]);
 
   const enableWeekView = useCallback(() => {
@@ -177,9 +181,22 @@ export const CalendarContent = ({
     newDate.setHours(0, 0, 0, 0);
     newDate.setDate(1); // First day of month
 
+    // Get all dates in the month
+    const monthStart = new Date(newDate);
+    const monthEnd = new Date(newDate.getFullYear(), newDate.getMonth() + 1, 0);
+    const monthDates: Date[] = [];
+
+    for (
+      let d = new Date(monthStart);
+      d <= monthEnd;
+      d.setDate(d.getDate() + 1)
+    ) {
+      monthDates.push(new Date(d));
+    }
+
     transition('month', () => {
       handleSetView('month');
-      setDates([newDate]);
+      setDates(monthDates);
     });
   }, [date, transition, handleSetView, setDates]);
 
@@ -320,7 +337,25 @@ export const CalendarContent = ({
       const newDate = new Date(date);
       newDate.setHours(0, 0, 0, 0);
       newDate.setDate(1);
-      setDates([newDate]);
+
+      // Get all dates in the month
+      const monthStart = new Date(newDate);
+      const monthEnd = new Date(
+        newDate.getFullYear(),
+        newDate.getMonth() + 1,
+        0
+      );
+      const monthDates: Date[] = [];
+
+      for (
+        let d = new Date(monthStart);
+        d <= monthEnd;
+        d.setDate(d.getDate() + 1)
+      ) {
+        monthDates.push(new Date(d));
+      }
+
+      setDates(monthDates);
     }
   }, [date, view]);
 
@@ -399,6 +434,7 @@ export const CalendarContent = ({
             else if (newView === 'week') enableWeekView();
             else if (newView === 'month') enableMonthView();
           }}
+          extras={extras}
         />
       )}
 
@@ -406,7 +442,7 @@ export const CalendarContent = ({
         <WeekdayBar locale={locale} view={view} dates={dates} />
       )}
 
-      <div className="scrollbar-none relative flex-1 overflow-hidden">
+      <div className="relative scrollbar-none flex-1 overflow-hidden bg-background/50">
         {view === 'month' && dates?.[0] ? (
           <MonthCalendar date={dates[0]} workspace={workspace} />
         ) : (

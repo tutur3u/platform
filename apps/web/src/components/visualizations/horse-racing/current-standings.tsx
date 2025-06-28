@@ -1,7 +1,7 @@
-import type { Horse } from './types';
 import { Card } from '@tuturuuu/ui/card';
 import { Progress } from '@tuturuuu/ui/progress';
 import { motion } from 'framer-motion';
+import type { Horse } from './types';
 
 interface CurrentStandingsProps {
   horses: Horse[];
@@ -84,7 +84,7 @@ export function CurrentStandings({
           {knownPositions.length > 0 && (
             <Card className="overflow-hidden">
               <div className="space-y-2 p-4">
-                <h4 className="text-muted-foreground flex items-center gap-2 text-sm font-medium">
+                <h4 className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
                   <span>Determined Ranking</span>
                   <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-xs font-semibold text-emerald-500">
                     {Math.round((knownPositions.length / horses.length) * 100)}%
@@ -114,7 +114,7 @@ export function CurrentStandings({
                           }}
                         >
                           {horse.id}
-                          <div className="bg-background absolute -bottom-6 left-1/2 z-20 -translate-x-1/2 whitespace-nowrap rounded border px-2 py-1 text-xs opacity-0 shadow-sm transition-opacity group-hover:opacity-100">
+                          <div className="absolute -bottom-6 left-1/2 z-20 -translate-x-1/2 rounded border bg-background px-2 py-1 text-xs whitespace-nowrap opacity-0 shadow-sm transition-opacity group-hover:opacity-100">
                             Speed: {horse.speed.toFixed(1)}
                           </div>
                         </div>
@@ -130,7 +130,7 @@ export function CurrentStandings({
           {unknownPositions.length > 0 && (
             <Card className="overflow-hidden">
               <div className="space-y-2 p-4">
-                <h4 className="text-muted-foreground flex items-center gap-2 text-sm font-medium">
+                <h4 className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
                   <span>Undetermined Positions</span>
                   <span className="rounded-full bg-blue-500/10 px-2 py-0.5 text-xs font-semibold text-blue-500">
                     {unknownPositions.length} remaining
@@ -150,7 +150,7 @@ export function CurrentStandings({
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         transition={{ duration: 0.3 }}
-                        className="bg-background group relative flex flex-col items-center rounded-lg border p-2 shadow-sm"
+                        className="group relative flex flex-col items-center rounded-lg border bg-background p-2 shadow-sm"
                       >
                         <div className="mb-1 text-xs">
                           Range: #{range?.min}-#{range?.max}
@@ -161,7 +161,7 @@ export function CurrentStandings({
                         >
                           {horse.id}
                         </div>
-                        <div className="bg-muted mt-2 h-1 w-full overflow-hidden rounded-full">
+                        <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-muted">
                           <div
                             className="h-full bg-blue-500 transition-all duration-500"
                             style={{
@@ -170,12 +170,12 @@ export function CurrentStandings({
                             }}
                           />
                         </div>
-                        <div className="text-muted-foreground mt-1 text-[10px]">
+                        <div className="mt-1 text-[10px] text-muted-foreground">
                           {Math.round(confidence * 100)}% certain
                         </div>
 
                         {/* Relationship tooltip */}
-                        <div className="bg-background absolute -bottom-2 left-1/2 z-20 w-48 -translate-x-1/2 translate-y-full rounded border px-2 py-1.5 text-xs opacity-0 shadow-sm transition-opacity group-hover:opacity-100">
+                        <div className="absolute -bottom-2 left-1/2 z-20 w-48 -translate-x-1/2 translate-y-full rounded border bg-background px-2 py-1.5 text-xs opacity-0 shadow-sm transition-opacity group-hover:opacity-100">
                           <div className="grid grid-cols-2 gap-1">
                             <div>
                               <span className="text-green-500">
@@ -203,7 +203,7 @@ export function CurrentStandings({
       {horses.length > 0 && (
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
           <Card className="p-3">
-            <div className="text-muted-foreground text-xs font-medium">
+            <div className="text-xs font-medium text-muted-foreground">
               Known Positions
             </div>
             <div className="mt-1 text-xl font-bold text-emerald-500">
@@ -211,7 +211,7 @@ export function CurrentStandings({
             </div>
           </Card>
           <Card className="p-3">
-            <div className="text-muted-foreground text-xs font-medium">
+            <div className="text-xs font-medium text-muted-foreground">
               Unknown Positions
             </div>
             <div className="mt-1 text-xl font-bold text-blue-500">
@@ -219,7 +219,7 @@ export function CurrentStandings({
             </div>
           </Card>
           <Card className="p-3">
-            <div className="text-muted-foreground text-xs font-medium">
+            <div className="text-xs font-medium text-muted-foreground">
               Average Confidence
             </div>
             <div className="mt-1 text-xl font-bold text-amber-500">
@@ -235,7 +235,7 @@ export function CurrentStandings({
             </div>
           </Card>
           <Card className="p-3">
-            <div className="text-muted-foreground text-xs font-medium">
+            <div className="text-xs font-medium text-muted-foreground">
               Known Relationships
             </div>
             <div className="mt-1 text-xl font-bold text-indigo-500">

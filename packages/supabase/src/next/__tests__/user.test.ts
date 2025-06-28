@@ -1,5 +1,5 @@
-import { type SupabaseUser } from '../user';
 import { describe, expect, it } from 'vitest';
+import type { SupabaseUser } from '../user';
 
 describe('user', () => {
   it('should export SupabaseUser type', () => {

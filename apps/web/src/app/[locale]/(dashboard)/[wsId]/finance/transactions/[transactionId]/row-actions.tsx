@@ -1,8 +1,7 @@
 'use client';
 
-import { joinPath } from '@/utils/path-helper';
 import { createDynamicClient } from '@tuturuuu/supabase/next/client';
-import { StorageObject } from '@tuturuuu/types/primitives/StorageObject';
+import type { StorageObject } from '@tuturuuu/types/primitives/StorageObject';
 import { Button } from '@tuturuuu/ui/button';
 import {
   DropdownMenu,
@@ -13,8 +12,9 @@ import {
 } from '@tuturuuu/ui/dropdown-menu';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Ellipsis } from '@tuturuuu/ui/icons';
-import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
+import { joinPath } from '@/utils/path-helper';
 
 interface Props {
   wsId: string;
@@ -136,7 +136,7 @@ export function TransactionObjectRowActions({
         <DropdownMenuTrigger asChild>
           <Button
             variant="ghost"
-            className="data-[state=open]:bg-muted flex h-6 w-6 p-0"
+            className="flex h-6 w-6 p-0 data-[state=open]:bg-muted"
             size="xs"
           >
             <Ellipsis className="h-4 w-4" />

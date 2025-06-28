@@ -1,5 +1,5 @@
-import LoadingIndicator from './loading-indicator';
 import { motion } from 'framer-motion';
+import LoadingIndicator from './loading-indicator';
 
 interface LoadingStateProps {
   message?: string;
@@ -14,7 +14,7 @@ export default function LoadingState({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="border-primary/10 bg-primary/5 flex min-h-[200px] w-full flex-col items-center justify-center gap-4 rounded-lg border p-8"
+        className="flex min-h-[200px] w-full flex-col items-center justify-center gap-4 rounded-lg border border-primary/10 bg-primary/5 p-8"
       >
         <LoadingIndicator size="lg" />
         <motion.p

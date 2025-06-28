@@ -1,8 +1,8 @@
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import type { NovaChallenge } from '@tuturuuu/types/db';
 import { SessionFilters } from './filters';
 import { SessionOverview } from './overview';
 import { SessionTable } from './session-table';
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { NovaChallenge } from '@tuturuuu/types/db';
 
 type SessionWithDetails = {
   id: string;
@@ -117,7 +117,7 @@ export default async function SessionsList({
     'start_time',
     'end_time',
   ];
-  let actualSortField = validSortFields.includes(sortField)
+  const actualSortField = validSortFields.includes(sortField)
     ? sortField
     : 'created_at';
 

@@ -1,15 +1,12 @@
-import { CourseSection } from '../../section';
-import ClientFlashcards from './flashcards/client-flashcards';
-import ClientQuizzes from './quizzes/client-quizzes';
-import FileDisplay from './resources/file-display';
-import { YoutubeEmbed } from './youtube-links/embed';
-import { extractYoutubeId } from '@/utils/url-helper';
 import {
   createClient,
   createDynamicClient,
 } from '@tuturuuu/supabase/next/server';
-import { WorkspaceCourseModule } from '@tuturuuu/types/db';
+import type { WorkspaceCourseModule } from '@tuturuuu/types/db';
 import { Accordion } from '@tuturuuu/ui/accordion';
+import { CourseSection } from '@tuturuuu/ui/custom/education/modules/content-section';
+import { FileDisplay } from '@tuturuuu/ui/custom/education/modules/resources/file-display';
+import { YoutubeEmbed } from '@tuturuuu/ui/custom/education/modules/youtube/embed';
 import {
   BookText,
   Goal,
@@ -20,8 +17,12 @@ import {
 } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import { RichTextEditor } from '@tuturuuu/ui/text-editor/editor';
-import { JSONContent } from '@tuturuuu/ui/tiptap';
+import type { JSONContent } from '@tuturuuu/ui/tiptap';
+import { requireFeatureFlags } from '@tuturuuu/utils/feature-flags/core';
 import { getTranslations } from 'next-intl/server';
+import { extractYoutubeId } from '@/utils/url-helper';
+import ClientQuizzes from '../../../../../../../../components/quiz/client-quizzes';
+import ClientFlashcards from './flashcards/client-flashcards';
 
 interface Props {
   params: Promise<{
@@ -37,10 +38,15 @@ export default async function UserGroupDetailsPage({ params }: Props) {
   const { wsId, courseId, moduleId } = await params;
   const data = await getModuleData(courseId, moduleId);
 
+  const { ENABLE_QUIZZES } = await requireFeatureFlags(wsId, {
+    requiredFlags: ['ENABLE_QUIZZES'],
+    redirectTo: null,
+  });
+
   const storagePath = `${wsId}/courses/${courseId}/modules/${moduleId}/resources/`;
   const resources = await getResources({ path: storagePath });
   const flashcards = await getFlashcards(moduleId);
-  const quizzes = await getQuizzes(moduleId);
+  const quizSets = await getQuizzes(moduleId);
 
   const cards = flashcards.map((fc) => ({
     id: fc.id,
@@ -53,7 +59,7 @@ export default async function UserGroupDetailsPage({ params }: Props) {
       borderColor: 'hsl(var(--green))',
     },
     frontHTML: (
-      <div className="border-dynamic-green/10 flex h-full w-full items-center justify-center rounded-2xl border p-4 text-center font-semibold">
+      <div className="flex h-full w-full items-center justify-center rounded-2xl border border-dynamic-green/10 p-4 text-center font-semibold">
         {fc?.front || '...'}
       </div>
     ),
@@ -63,7 +69,7 @@ export default async function UserGroupDetailsPage({ params }: Props) {
       borderColor: 'hsl(var(--purple))',
     },
     backHTML: (
-      <div className="border-dynamic-purple/10 flex h-full w-full items-center justify-center rounded-2xl border p-4 text-center font-semibold">
+      <div className="flex h-full w-full items-center justify-center rounded-2xl border border-dynamic-purple/10 p-4 text-center font-semibold">
         {fc?.back || '...'}
       </div>
     ),
@@ -129,23 +135,26 @@ export default async function UserGroupDetailsPage({ params }: Props) {
           ) : undefined
         }
       />
-      <CourseSection
-        href={`/${wsId}/courses/${courseId}/modules/${moduleId}/quizzes`}
-        title={t('ws-quizzes.plural')}
-        icon={<ListTodo className="h-5 w-5" />}
-        content={
-          quizzes && quizzes.length > 0 ? (
-            <div className="grid gap-4 pt-2 md:grid-cols-2">
-              <ClientQuizzes
-                wsId={wsId}
-                moduleId={moduleId}
-                quizzes={quizzes}
-                previewMode
-              />
-            </div>
-          ) : undefined
-        }
-      />
+      {ENABLE_QUIZZES ? (
+        <CourseSection
+          href={`/${wsId}/courses/${courseId}/modules/${moduleId}/quizzes`}
+          title={t('ws-quizzes.plural')}
+          icon={<ListTodo className="h-5 w-5" />}
+          content={
+            quizSets && quizSets.length > 0 ? (
+              <div className="grid gap-4 pt-2 md:grid-cols-2">
+                <ClientQuizzes
+                  wsId={wsId}
+                  courseId={courseId}
+                  moduleId={moduleId}
+                  quizSets={quizSets}
+                  previewMode
+                />
+              </div>
+            ) : undefined
+          }
+        />
+      ) : undefined}
       {/* <CourseSection
         href={`/${wsId}/courses/${courseId}/modules/${moduleId}/quiz-sets`}
         title={t('ws-quiz-sets.plural')}
@@ -229,18 +238,74 @@ const getFlashcards = async (moduleId: string) => {
 };
 
 const getQuizzes = async (moduleId: string) => {
+  // created_at: "2025-05-29T08:12:16.653395+00:00"
+  // id: "426d031f-2dc4-4370-972d-756af04288fb"
+  // question: "What are the main building blocks of a NestJS application?"
+  // quiz_options: (4) [{…}, {…}, {…}, {…}]
+  // ws_id: "00000000-0000-0000-0000-000000000000"
   const supabase = await createClient();
 
   const { data, error } = await supabase
     .from('course_module_quizzes')
-    .select('...workspace_quizzes(*, quiz_options(*))')
+    .select(
+      `
+      quiz_id,
+      workspace_quizzes (
+        id,
+        question,
+        created_at,
+        ws_id,
+        quiz_options(*),
+        quiz_set_quizzes(
+          set_id,
+          workspace_quiz_sets(name)
+        )
+      )
+    `
+    )
     .eq('module_id', moduleId);
 
   if (error) {
-    console.error('error', error);
+    console.error('Error fetching grouped quizzes:', error);
+    return [];
   }
 
-  return data || [];
+  const grouped = new Map<
+    string,
+    {
+      setId: string;
+      setName: string;
+      quizzes: any[];
+    }
+  >();
+
+  for (const cmq of data || []) {
+    const quiz = cmq.workspace_quizzes;
+    const setData = quiz?.quiz_set_quizzes?.[0]; // assume only one set
+
+    if (!quiz || !setData) continue;
+
+    const setId = setData.set_id;
+    const setName = setData.workspace_quiz_sets?.name || 'Unnamed Set';
+
+    if (!grouped.has(setId)) {
+      grouped.set(setId, {
+        setId,
+        setName,
+        quizzes: [],
+      });
+    }
+
+    grouped.get(setId)!.quizzes.push({
+      id: quiz.id,
+      question: quiz.question,
+      quiz_options: quiz.quiz_options,
+      created_at: quiz.created_at,
+      ws_id: quiz.ws_id,
+    });
+  }
+
+  return Array.from(grouped.values());
 };
 
 async function getResources({ path }: { path: string }) {

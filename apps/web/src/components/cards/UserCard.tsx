@@ -1,4 +1,4 @@
-import { User } from '@tuturuuu/types/primitives/User';
+import type { User } from '@tuturuuu/types/primitives/User';
 import { Separator } from '@tuturuuu/ui/separator';
 import moment from 'moment';
 import Link from 'next/link';
@@ -11,7 +11,7 @@ const UserCard = ({ user }: Props) => {
   return (
     <Link
       href={user?.handle ? `/users/${user.handle}` : '#'}
-      className="border-border group flex cursor-pointer flex-col items-center justify-center rounded-lg border bg-zinc-500/5 text-center transition hover:bg-zinc-500/10 dark:border-zinc-700/80 dark:bg-zinc-800/70 dark:hover:bg-zinc-800"
+      className="group flex cursor-pointer flex-col items-center justify-center rounded-lg border border-border bg-zinc-500/5 text-center transition hover:bg-zinc-500/10 dark:border-zinc-700/80 dark:bg-zinc-800/70 dark:hover:bg-zinc-800"
     >
       <div className="flex h-full w-full flex-col">
         <div className="flex h-full flex-col items-center justify-center p-2 text-center">
@@ -24,7 +24,7 @@ const UserCard = ({ user }: Props) => {
         </div>
       </div>
 
-      <Separator className="border-border w-full dark:border-zinc-700" />
+      <Separator className="w-full border-border dark:border-zinc-700" />
 
       <div className="m-2 h-full w-full px-2">
         <div className="flex h-full items-center justify-center rounded border border-green-500/20 bg-green-500/10 p-2 font-semibold text-green-600 dark:border-green-300/20 dark:bg-green-300/10 dark:text-green-300">

@@ -1,11 +1,11 @@
 'use client';
 
-import { UserReportRowActions } from './row-actions';
-import { ColumnDef } from '@tanstack/react-table';
-import { WorkspaceUserReport } from '@tuturuuu/types/db';
+import type { ColumnDef } from '@tanstack/react-table';
+import type { WorkspaceUserReport } from '@tuturuuu/types/db';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import moment from 'moment';
 import Link from 'next/link';
+import { UserReportRowActions } from './row-actions';
 
 export const getUserReportColumns = (
   t: any,
@@ -66,7 +66,7 @@ export const getUserReportColumns = (
       />
     ),
     cell: ({ row }) => (
-      <div className="line-clamp-2 min-w-32 max-w-[24rem]">
+      <div className="line-clamp-2 max-w-[24rem] min-w-32">
         {row.getValue('user_name') || '-'}
       </div>
     ),
@@ -83,7 +83,7 @@ export const getUserReportColumns = (
     cell: ({ row }) => (
       <Link
         href={row.original.href || '#'}
-        className="line-clamp-2 min-w-32 max-w-[24rem] hover:underline"
+        className="line-clamp-2 max-w-[24rem] min-w-32 hover:underline"
       >
         {row.getValue('title') || '-'}
       </Link>

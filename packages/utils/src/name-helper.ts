@@ -8,7 +8,7 @@ export const getInitials = (name?: string | null): string => {
   if (!cleanName) return '';
 
   // Split by spaces, hyphens, and apostrophes
-  let nameParts = cleanName.split(/[\s\-']+/).filter(Boolean);
+  const nameParts = cleanName.split(/[\s\-']+/).filter(Boolean);
   if (nameParts.length === 0) return '';
 
   // For single word names

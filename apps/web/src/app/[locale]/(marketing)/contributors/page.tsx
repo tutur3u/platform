@@ -1,10 +1,10 @@
-import ContributorsClient from './components/contributors-client';
-import { GITHUB_OWNER, GITHUB_REPO } from '@/constants/common';
 import { createAppAuth } from '@octokit/auth-app';
 import { Octokit } from '@octokit/rest';
 import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
 import { getLocale } from 'next-intl/server';
 import { Suspense } from 'react';
+import { GITHUB_OWNER, GITHUB_REPO } from '@/constants/common';
+import ContributorsClient from './components/contributors-client';
 
 // Define static generation parameters
 export const dynamic = 'force-static';
@@ -236,7 +236,7 @@ export default async function ContributorsPage() {
   const githubData = await getGithubData();
 
   return (
-    <div className="container space-y-12 pb-20 pt-12 md:pb-32 md:pt-20">
+    <div className="container space-y-12 pt-12 pb-20 md:pt-20 md:pb-32">
       <Suspense fallback={<LoadingContributors />}>
         <ContributorsClient githubData={githubData} locale={locale} />
       </Suspense>

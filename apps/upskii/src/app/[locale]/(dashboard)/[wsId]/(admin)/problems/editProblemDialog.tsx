@@ -1,7 +1,6 @@
 'use client';
 
-import ProblemForm, { type ProblemFormValues } from './problem-form';
-import { type NovaProblem, type NovaProblemTestCase } from '@tuturuuu/types/db';
+import type { NovaProblem, NovaProblemTestCase } from '@tuturuuu/types/db';
 import {
   Dialog,
   DialogContent,
@@ -13,6 +12,7 @@ import {
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
+import ProblemForm, { type ProblemFormValues } from './problem-form';
 
 type ExtendedNovaProblem = NovaProblem & {
   test_cases: NovaProblemTestCase[];

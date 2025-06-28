@@ -1,4 +1,4 @@
-import { Editor } from '@tiptap/react';
+import type { Editor } from '@tiptap/react';
 import { Button } from '@tuturuuu/ui/button';
 import {
   AlignCenter,
@@ -101,7 +101,7 @@ export function ToolBar({
   ];
 
   return (
-    <div className="bg-foreground/5 z-50 mb-1 flex items-center justify-between space-x-2 rounded-md border border-slate-200 p-1 dark:border-gray-950">
+    <div className="z-50 mb-1 flex items-center justify-between space-x-2 rounded-md border border-slate-200 bg-foreground/5 p-1 dark:border-gray-950">
       <div className="flex items-center space-x-2">
         {Options.map((option, index) => (
           <Toggle

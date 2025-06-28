@@ -1,6 +1,5 @@
 'use client';
 
-import useSearchParams from '@/hooks/useSearchParams';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { Button } from '@tuturuuu/ui/button';
@@ -9,6 +8,7 @@ import { cn } from '@tuturuuu/utils/format';
 import { format, parse } from 'date-fns';
 import { useLocale } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';
+import useSearchParams from '@/hooks/useSearchParams';
 
 export default function GroupSchedule({
   wsId,
@@ -65,16 +65,20 @@ export default function GroupSchedule({
 
   // includes all days of the week, starting from monday to sunday
   const days = Array.from({ length: 7 }, (_, i) => {
-    let newDay = new Date(currentDate);
+    const newDay = new Date(currentDate);
     newDay.setDate(currentDate.getDate() - currentDate.getDay() + i + 1);
     return newDay.toLocaleString(locale, { weekday: 'narrow' });
   });
 
   // includes all days of the month, starting from monday (which could be from the previous month) to sunday (which could be from the next month)
   const daysInMonth = Array.from({ length: 42 }, (_, i) => {
-    let newDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
-    let dayOfWeek = newDay.getDay();
-    let adjustment = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // adjust for Monday start
+    const newDay = new Date(
+      currentDate.getFullYear(),
+      currentDate.getMonth(),
+      1
+    );
+    const dayOfWeek = newDay.getDay();
+    const adjustment = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // adjust for Monday start
     newDay.setDate(newDay.getDate() - adjustment + i);
     return newDay;
   });
@@ -101,7 +105,7 @@ export default function GroupSchedule({
             <div className="mb-4 flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-xl font-bold md:text-2xl">
               <div className="flex items-center gap-1">
                 {thisYear}
-                <div className="bg-foreground/20 rotate-30 mx-2 h-4 w-px" />
+                <div className="mx-2 h-4 w-px rotate-30 bg-foreground/20" />
                 <span className="text-lg font-semibold md:text-xl">
                   {thisMonth}
                 </span>
@@ -122,7 +126,7 @@ export default function GroupSchedule({
                 {days.map((day, idx) => (
                   <div
                     key={`day-${idx}`}
-                    className="bg-foreground/5 flex flex-none cursor-default justify-center rounded p-2 font-semibold transition duration-300 md:rounded-lg"
+                    className="flex flex-none cursor-default justify-center rounded bg-foreground/5 p-2 font-semibold transition duration-300 md:rounded-lg"
                   >
                     {day}
                   </div>
@@ -141,7 +145,7 @@ export default function GroupSchedule({
                     return (
                       <div
                         key={`${groupId}-${currentDate.toDateString()}-day-${idx}`}
-                        className="text-foreground/20 flex flex-none cursor-default justify-center rounded border border-transparent p-2 font-semibold transition duration-300 md:rounded-lg"
+                        className="flex flex-none cursor-default justify-center rounded border border-transparent p-2 font-semibold text-foreground/20 transition duration-300 md:rounded-lg"
                       >
                         {day.getDate()}
                       </div>
@@ -150,7 +154,7 @@ export default function GroupSchedule({
                   return (
                     <div
                       key={`${groupId}-${currentDate.toDateString()}-day-${idx}`}
-                      className={`border-foreground/10 bg-foreground/10 text-foreground flex flex-none cursor-default justify-center rounded border p-2 font-semibold transition duration-300 md:rounded-lg`}
+                      className={`flex flex-none cursor-default justify-center rounded border border-foreground/10 bg-foreground/10 p-2 font-semibold text-foreground transition duration-300 md:rounded-lg`}
                     >
                       {day.getDate()}
                     </div>

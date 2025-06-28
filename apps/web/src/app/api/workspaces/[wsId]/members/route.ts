@@ -1,10 +1,53 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { NextRequest, NextResponse } from 'next/server';
+import { type NextRequest, NextResponse } from 'next/server';
 
 interface Params {
   params: Promise<{
     wsId: string;
   }>;
+}
+
+export async function GET(_: NextRequest, { params }: Params) {
+  const { wsId } = await params;
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from('workspace_members')
+    .select(
+      `
+      user_id,
+      role,
+      role_title,
+      users!inner(
+        id,
+        display_name,
+        avatar_url,
+        ...user_private_details(email)
+      )
+    `
+    )
+    .eq('ws_id', wsId);
+
+  if (error) {
+    console.error('Error fetching workspace members:', error);
+    return NextResponse.json(
+      { message: 'Error fetching workspace members' },
+      { status: 500 }
+    );
+  }
+
+  // Transform the data to flatten the user information
+  const members =
+    data?.map((member) => ({
+      id: member.users.id,
+      display_name: member.users.display_name,
+      email: member.users.email,
+      avatar_url: member.users.avatar_url,
+      role: member.role,
+      role_title: member.role_title,
+    })) || [];
+
+  return NextResponse.json({ members });
 }
 
 export async function PUT(req: NextRequest, { params }: Params) {

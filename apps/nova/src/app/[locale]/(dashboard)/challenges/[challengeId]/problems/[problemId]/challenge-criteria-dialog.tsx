@@ -1,4 +1,4 @@
-import { NovaChallengeCriteria } from '@tuturuuu/types/db';
+import type { NovaChallengeCriteria } from '@tuturuuu/types/db';
 import {
   Dialog,
   DialogContent,
@@ -67,18 +67,18 @@ export function ChallengeCriteriaDialog({
                 </div>
 
                 <div className="mt-4 flex items-center justify-end">
-                  <p className="text-muted-foreground text-md mr-2 font-medium">
+                  <p className="text-md mr-2 font-medium text-muted-foreground">
                     Total score:{' '}
-                    <span className="text-foreground text-xl font-bold">
+                    <span className="text-xl font-bold text-foreground">
                       10
                     </span>
                   </p>
                 </div>
 
                 <div className="mt-2">
-                  <p className="text-foreground text-md font-medium">Note:</p>
+                  <p className="text-md font-medium text-foreground">Note:</p>
 
-                  <p className="text-muted-foreground mr-2 text-sm font-medium">
+                  <p className="mr-2 text-sm font-medium text-muted-foreground">
                     Total score = total score of all criteria / (10 * number of
                     criteria)
                   </p>

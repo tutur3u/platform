@@ -1,11 +1,12 @@
-import FlashcardForm from '../../../../../flashcards/form';
-import { AIFlashcards } from './client-ai';
-import ClientFlashcards from './client-flashcards';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { SwatchBook } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
+import { requireFeatureFlags } from '@tuturuuu/utils/feature-flags/core';
 import { getTranslations } from 'next-intl/server';
+import FlashcardForm from '../../../../../flashcards/form';
+import { AIFlashcards } from './client-ai';
+import ClientFlashcards from './client-flashcards';
 
 interface Props {
   params: Promise<{
@@ -20,6 +21,11 @@ export default async function ModuleFlashcardsPage({ params }: Props) {
   const t = await getTranslations();
   const flashcards = await getFlashcards(moduleId);
 
+  const { ENABLE_AI } = await requireFeatureFlags(wsId, {
+    requiredFlags: ['ENABLE_AI'],
+    redirectTo: null,
+  });
+
   const cards = flashcards.map((fc) => ({
     id: fc.id,
     front: fc.front,
@@ -31,7 +37,7 @@ export default async function ModuleFlashcardsPage({ params }: Props) {
       borderColor: 'hsl(var(--green))',
     },
     frontHTML: (
-      <div className="border-dynamic-green/10 flex h-full w-full items-center justify-center rounded-2xl border p-4 text-center font-semibold">
+      <div className="flex h-full w-full items-center justify-center rounded-2xl border border-dynamic-green/10 p-4 text-center font-semibold">
         {fc?.front || '...'}
       </div>
     ),
@@ -41,7 +47,7 @@ export default async function ModuleFlashcardsPage({ params }: Props) {
       borderColor: 'hsl(var(--purple))',
     },
     backHTML: (
-      <div className="border-dynamic-purple/10 flex h-full w-full items-center justify-center rounded-2xl border p-4 text-center font-semibold">
+      <div className="flex h-full w-full items-center justify-center rounded-2xl border border-dynamic-purple/10 p-4 text-center font-semibold">
         {fc?.back || '...'}
       </div>
     ),
@@ -73,9 +79,11 @@ export default async function ModuleFlashcardsPage({ params }: Props) {
           </>
         )}
 
-        <div className="col-span-full">
-          <AIFlashcards wsId={wsId} moduleId={moduleId} />
-        </div>
+        {ENABLE_AI ? (
+          <div className="col-span-full">
+            <AIFlashcards wsId={wsId} moduleId={moduleId} />
+          </div>
+        ) : undefined}
       </div>
     </div>
   );

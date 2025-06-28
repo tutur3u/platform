@@ -1,10 +1,12 @@
 'use client';
 
+import type {
+  Workspace,
+  WorkspaceCalendarGoogleToken,
+} from '@tuturuuu/types/db';
 import { CalendarProvider } from '../../../../hooks/use-calendar';
 import { CalendarContent } from './calendar-content';
-import { CalendarSettings } from './settings/settings-context';
-import type { WorkspaceCalendarGoogleToken } from '@tuturuuu/types/db';
-import { Workspace } from '@tuturuuu/types/db';
+import type { CalendarSettings } from './settings/settings-context';
 
 export const SmartCalendar = ({
   t,
@@ -18,6 +20,7 @@ export const SmartCalendar = ({
   experimentalGoogleToken,
   onSaveSettings,
   externalState,
+  extras,
 }: {
   t: any;
   locale: string;
@@ -27,7 +30,7 @@ export const SmartCalendar = ({
   disabled?: boolean;
   initialSettings?: Partial<CalendarSettings>;
   enableHeader?: boolean;
-  experimentalGoogleToken?: WorkspaceCalendarGoogleToken;
+  experimentalGoogleToken?: WorkspaceCalendarGoogleToken | null;
   onSaveSettings?: (settings: CalendarSettings) => Promise<void>;
   externalState?: {
     date: Date;
@@ -38,6 +41,7 @@ export const SmartCalendar = ({
     >;
     availableViews: { value: string; label: string; disabled?: boolean }[];
   };
+  extras?: React.ReactNode;
 }) => {
   return (
     <CalendarProvider
@@ -57,6 +61,7 @@ export const SmartCalendar = ({
         experimentalGoogleToken={experimentalGoogleToken}
         onSaveSettings={onSaveSettings}
         externalState={externalState}
+        extras={extras}
       />
     </CalendarProvider>
   );

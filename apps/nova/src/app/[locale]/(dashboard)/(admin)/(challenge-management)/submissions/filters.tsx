@@ -11,8 +11,8 @@ import {
   SelectValue,
 } from '@tuturuuu/ui/select';
 import { cn } from '@tuturuuu/utils/format';
-import { useTranslations } from 'next-intl';
 import { usePathname, useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
 
 interface ChallengeOption {
@@ -204,14 +204,14 @@ export function SubmissionFilters({
           />
           {userDropdownOpen && (
             <div
-              className="bg-background absolute z-20 mt-1 max-h-[200px] w-full overflow-y-auto rounded-md border shadow-lg"
+              className="absolute z-20 mt-1 max-h-[200px] w-full overflow-y-auto rounded-md border bg-background shadow-lg"
               tabIndex={-1}
               onBlur={() => setTimeout(() => setUserDropdownOpen(false), 150)}
             >
               {filteredUsers.map((user) => (
                 <div
                   key={user.id}
-                  className={`hover:bg-accent cursor-pointer px-4 py-2 ${selectedUser === user.id ? 'font-semibold' : ''}`}
+                  className={`cursor-pointer px-4 py-2 hover:bg-accent ${selectedUser === user.id ? 'font-semibold' : ''}`}
                   onMouseDown={() => {
                     onUserChange(user.id);
                     setUserDropdownOpen(false);
@@ -223,7 +223,7 @@ export function SubmissionFilters({
                 </div>
               ))}
               {filteredUsers.length === 0 && (
-                <div className="text-muted-foreground px-4 py-2">
+                <div className="px-4 py-2 text-muted-foreground">
                   No users found
                 </div>
               )}

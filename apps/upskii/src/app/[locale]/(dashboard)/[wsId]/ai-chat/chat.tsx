@@ -1,19 +1,21 @@
 'use client';
 
+import { defaultModel, type Model, models } from '@tuturuuu/ai/models';
+import { useChat } from '@tuturuuu/ai/react';
+import type { Message } from '@tuturuuu/ai/types';
+import { createClient } from '@tuturuuu/supabase/next/client';
+import type { AIChat } from '@tuturuuu/types/db';
+import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
+import { toast } from '@tuturuuu/ui/hooks/use-toast';
+import { cn } from '@tuturuuu/utils/format';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
+import type React from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ChatList } from '@/components/chat-list';
 import { ChatPanel } from '@/components/chat-panel';
 import { ChatScrollAnchor } from '@/components/chat-scroll-anchor';
 import { EmptyScreen } from '@/components/empty-screen';
-import { Model, defaultModel, models } from '@tuturuuu/ai/models';
-import { useChat } from '@tuturuuu/ai/react';
-import { type Message } from '@tuturuuu/ai/types';
-import { createClient } from '@tuturuuu/supabase/next/client';
-import { AIChat } from '@tuturuuu/types/db';
-import { toast } from '@tuturuuu/ui/hooks/use-toast';
-import { cn } from '@tuturuuu/utils/format';
-import { useTranslations } from 'next-intl';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import React, { useEffect, useRef, useState } from 'react';
 
 export interface ChatProps extends React.ComponentProps<'div'> {
   inputModel?: Model;
@@ -25,6 +27,7 @@ export interface ChatProps extends React.ComponentProps<'div'> {
   noEmptyPage?: boolean;
   disabled?: boolean;
   initialApiKey?: string | null;
+  user: WorkspaceUser;
 }
 
 const Chat = ({
@@ -38,6 +41,7 @@ const Chat = ({
   noEmptyPage,
   disabled,
   initialApiKey,
+  user,
 }: ChatProps) => {
   const t = useTranslations();
 
@@ -45,9 +49,10 @@ const Chat = ({
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
+  const currentUserId = user.id;
+
   const [chat, setChat] = useState<Partial<AIChat> | undefined>(defaultChat);
   const [model, setModel] = useState<Model | undefined>(inputModel);
-  const [currentUserId, setCurrentUserId] = useState<string>();
 
   const { messages, append, reload, stop, isLoading, input, setInput } =
     useChat({
@@ -56,11 +61,12 @@ const Chat = ({
       credentials: 'include',
       api:
         chat?.model || model?.value
-          ? `/api/ai/chat/${(chat?.model
-              ? models
-                  .find((m) => m.value === chat.model)
-                  ?.provider.toLowerCase() || model?.provider.toLowerCase()
-              : model?.provider.toLowerCase()
+          ? `/api/ai/chat/${(
+              chat?.model
+                ? models
+                    .find((m) => m.value === chat.model)
+                    ?.provider.toLowerCase() || model?.provider.toLowerCase()
+                : model?.provider.toLowerCase()
             )?.replace(' ', '-')}`
           : undefined,
       body: {
@@ -84,18 +90,6 @@ const Chat = ({
         });
       },
     });
-
-  useEffect(() => {
-    const getCurrentUser = async () => {
-      const supabase = createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (user) setCurrentUserId(user.id);
-    };
-
-    getCurrentUser();
-  }, []);
 
   const [summarizing, setSummarizing] = useState(false);
   const [summary, setSummary] = useState<string | undefined>(
@@ -339,7 +333,12 @@ const Chat = ({
             {t('common.coming_soon')} ✨
           </div>
         ) : (
-          <EmptyScreen chats={chats} setInput={setInput} locale={locale} />
+          <EmptyScreen
+            chats={chats}
+            setInput={setInput}
+            locale={locale}
+            hasApiKey={!!initialApiKey}
+          />
         )}
       </div>
 

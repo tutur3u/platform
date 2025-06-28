@@ -1,12 +1,15 @@
-import { getWorkspaceCourseColumns } from './columns';
-import CourseForm from './form';
-//import { mockData } from './mock/mock-courses';
-import { CustomDataTable } from '@/components/custom-data-table';
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { WorkspaceCourse } from '@tuturuuu/types/db';
+import type { WorkspaceCourse } from '@tuturuuu/types/db';
+import { CourseCardView } from '@tuturuuu/ui/custom/education/courses/course-card-view';
+import { CourseForm } from '@tuturuuu/ui/custom/education/courses/course-form';
+import { CoursePagination } from '@tuturuuu/ui/custom/education/courses/course-pagination';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
+import { ViewToggle } from '@tuturuuu/ui/custom/view-toggle';
 import { Separator } from '@tuturuuu/ui/separator';
 import { getTranslations } from 'next-intl/server';
+//import { mockData } from './mock/mock-courses';
+import { CustomDataTable } from '@/components/custom-data-table';
+import { getWorkspaceCourseColumns } from './columns';
 
 interface SearchParams {
   q?: string;
@@ -14,6 +17,7 @@ interface SearchParams {
   pageSize?: string;
   includedTags?: string | string[];
   excludedTags?: string | string[];
+  view?: 'card' | 'table';
 }
 
 interface Props {
@@ -29,8 +33,14 @@ export default async function WorkspaceCoursesPage({
 }: Props) {
   const t = await getTranslations();
   const { wsId } = await params;
+  const searchParamsResolved = await searchParams;
+  const { page = '1', pageSize = '10' } = searchParamsResolved;
 
-  const { data, count } = await getData(wsId, await searchParams);
+  const { data, count } = await getData(wsId, searchParamsResolved);
+  const currentView = searchParamsResolved.view || 'card';
+  const currentPage = parseInt(page);
+  const currentPageSize = parseInt(pageSize);
+  const totalPages = Math.ceil(count / currentPageSize);
 
   const courses = data.map((c) => ({
     ...c,
@@ -47,19 +57,39 @@ export default async function WorkspaceCoursesPage({
           description={t('ws-courses.description')}
           createTitle={t('ws-courses.create')}
           createDescription={t('ws-courses.create_description')}
-          form={<CourseForm wsId={wsId} />}
+          form={<CourseForm wsId={wsId} enableCerts={true} />}
         />
         <Separator className="my-4" />
-        <CustomDataTable
-          data={courses}
-          columnGenerator={getWorkspaceCourseColumns}
-          namespace="course-data-table"
-          count={count}
-          defaultVisibility={{
-            id: false,
-            created_at: false,
-          }}
-        />
+
+        <div className="mb-4 flex justify-end">
+          <ViewToggle currentView={currentView} />
+        </div>
+
+        {currentView === 'card' ? (
+          <>
+            <CourseCardView courses={courses} />
+            <div className="mt-8">
+              <CoursePagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                totalCount={count}
+                pageSize={currentPageSize}
+                wsId={wsId}
+              />
+            </div>
+          </>
+        ) : (
+          <CustomDataTable
+            data={courses}
+            columnGenerator={getWorkspaceCourseColumns}
+            namespace="course-data-table"
+            count={count}
+            defaultVisibility={{
+              id: false,
+              created_at: false,
+            }}
+          />
+        )}
       </div>
     </>
   );
@@ -126,5 +156,5 @@ async function getData(
       modules: workspace_course_modules?.[0]?.count || 0,
     })),
     count,
-  } as { data: WorkspaceCourse[]; count: number };
+  } as { data: (WorkspaceCourse & { modules: number })[]; count: number };
 }

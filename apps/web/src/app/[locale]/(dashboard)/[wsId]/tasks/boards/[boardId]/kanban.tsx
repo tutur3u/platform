@@ -1,30 +1,34 @@
 'use client';
 
-import { coordinateGetter } from './keyboard-preset';
-import { TaskCard } from './task';
-import type { Column } from './task-list';
-import { BoardColumn, BoardContainer } from './task-list';
-import { TaskListForm } from './task-list-form';
-import { hasDraggableData } from './utils';
-import { getTaskLists, moveTask } from '@/lib/task-helper';
 import {
+  closestCenter,
   DndContext,
   type DragEndEvent,
   type DragOverEvent,
   DragOverlay,
   type DragStartEvent,
   KeyboardSensor,
-  MouseSensor,
-  TouchSensor,
-  closestCenter,
+  MeasuringStrategy,
+  PointerSensor,
   useSensor,
   useSensors,
 } from '@dnd-kit/core';
-import { SortableContext } from '@dnd-kit/sortable';
+import {
+  horizontalListSortingStrategy,
+  SortableContext,
+} from '@dnd-kit/sortable';
 import { useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
-import { type Task as TaskType } from '@tuturuuu/types/primitives/TaskBoard';
+import type { Task as TaskType } from '@tuturuuu/types/primitives/TaskBoard';
+import { Card, CardContent } from '@tuturuuu/ui/card';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { getTaskLists, useMoveTask } from '@/lib/task-helper';
+import { coordinateGetter } from './keyboard-preset';
+import { TaskCard } from './task';
+import type { Column } from './task-list';
+import { BoardColumn, BoardContainer } from './task-list';
+import { TaskListForm } from './task-list-form';
+import { hasDraggableData } from './utils';
 
 interface Props {
   boardId: string;
@@ -38,27 +42,30 @@ export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
   const [activeTask, setActiveTask] = useState<TaskType | null>(null);
   const pickedUpTaskColumn = useRef<string | null>(null);
   const queryClient = useQueryClient();
+  const moveTaskMutation = useMoveTask(boardId);
 
   const handleTaskCreated = () => {
     // Invalidate the tasks query to trigger a refetch
     queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
+    queryClient.invalidateQueries({ queryKey: ['task_lists', boardId] });
   };
 
   useEffect(() => {
     let mounted = true;
     const supabase = createClient();
 
-    // Initial data fetch and real-time updates for lists only
+    // Initial data fetch and real-time updates for lists
     async function loadLists() {
       try {
         const lists = await getTaskLists(supabase, boardId);
-        const columns = lists.map((list) => ({
-          id: list.id,
-          title: list.name,
+        // Use the full TaskList objects as columns (they extend Column interface)
+        const enhancedColumns: Column[] = lists.map((list) => ({
+          ...list,
+          title: list.name, // Maintain backward compatibility for title property
         }));
 
         if (mounted) {
-          setColumns(columns);
+          setColumns(enhancedColumns);
         }
       } catch (error) {
         console.error('Failed to load lists:', error);
@@ -90,8 +97,11 @@ export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
   const columnsId = useMemo(() => columns.map((col) => col.id), [columns]);
 
   const sensors = useSensors(
-    useSensor(MouseSensor),
-    useSensor(TouchSensor),
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
     useSensor(KeyboardSensor, {
       coordinateGetter: coordinateGetter,
     })
@@ -214,39 +224,29 @@ export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
         return;
       }
 
-      try {
-        // Optimistically update the task in the cache
-        queryClient.setQueryData(
-          ['tasks', boardId],
-          (oldData: TaskType[] | undefined) => {
-            if (!oldData) return oldData;
-            return oldData.map((t) =>
-              t.id === activeTask.id ? { ...t, list_id: targetListId } : t
-            );
-          }
-        );
+      // Only move if actually changing lists
+      if (targetListId !== originalListId) {
+        try {
+          // Optimistically update the task in the cache
+          queryClient.setQueryData(
+            ['tasks', boardId],
+            (oldData: TaskType[] | undefined) => {
+              if (!oldData) return oldData;
+              return oldData.map((t) =>
+                t.id === activeTask.id ? { ...t, list_id: targetListId } : t
+              );
+            }
+          );
 
-        const supabase = createClient();
-        const updatedTask = await moveTask(
-          supabase,
-          activeTask.id,
-          targetListId
-        );
-
-        // Update the cache with the server response
-        queryClient.setQueryData(
-          ['tasks', boardId],
-          (oldData: TaskType[] | undefined) => {
-            if (!oldData) return oldData;
-            return oldData.map((t) =>
-              t.id === updatedTask.id ? updatedTask : t
-            );
-          }
-        );
-      } catch (error) {
-        // Revert the optimistic update by invalidating the query
-        queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
-        console.error('Failed to move task:', error);
+          moveTaskMutation.mutate({
+            taskId: activeTask.id,
+            newListId: targetListId,
+          });
+        } catch (error) {
+          // Revert the optimistic update by invalidating the query
+          queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
+          console.error('Failed to move task:', error);
+        }
       }
     }
 
@@ -254,57 +254,154 @@ export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
   }
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="flex h-full flex-col">
+        {/* Loading skeleton for search bar */}
+        <Card className="mb-4 border-dynamic-blue/20 bg-dynamic-blue/5">
+          <CardContent className="p-4">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="relative max-w-md flex-1">
+                <div className="h-9 w-full animate-pulse rounded-md bg-dynamic-blue/10"></div>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="h-8 w-16 animate-pulse rounded-md bg-dynamic-blue/10"></div>
+                <div className="h-8 w-20 animate-pulse rounded-md bg-dynamic-blue/10"></div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Loading skeleton for kanban columns */}
+        <div className="flex-1 overflow-hidden">
+          <div className="flex h-full gap-4 p-4">
+            {[1, 2, 3, 4].map((i) => (
+              <Card key={i} className="h-full w-[350px] animate-pulse">
+                <div className="p-4">
+                  <div className="mb-4 h-6 w-32 rounded bg-gray-200"></div>
+                  <div className="space-y-3">
+                    {[1, 2, 3].map((j) => (
+                      <div
+                        key={j}
+                        className="h-24 w-full rounded bg-gray-100"
+                      ></div>
+                    ))}
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="h-full p-4">
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCenter}
-        onDragStart={onDragStart}
-        onDragOver={onDragOver}
-        onDragEnd={onDragEnd}
-      >
-        <BoardContainer>
-          <SortableContext items={columnsId}>
-            <div className="flex gap-3">
-              {columns.map((column) => (
-                <BoardColumn
-                  key={column.id}
-                  column={column}
-                  boardId={boardId}
-                  tasks={tasks.filter((task) => task.list_id === column.id)}
-                  onTaskCreated={handleTaskCreated}
-                />
-              ))}
-              <TaskListForm
-                boardId={boardId}
-                onListCreated={handleTaskCreated}
-              />
-            </div>
-          </SortableContext>
-        </BoardContainer>
+    <div className="flex h-full flex-col">
+      {/* Kanban Board */}
+      <div className="flex-1 overflow-hidden">
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragStart={onDragStart}
+          onDragOver={onDragOver}
+          onDragEnd={onDragEnd}
+          measuring={{
+            droppable: {
+              strategy: MeasuringStrategy.Always,
+            },
+          }}
+          modifiers={[
+            (args) => {
+              const { transform } = args;
 
-        <DragOverlay>
-          {activeColumn && (
-            <BoardColumn
-              column={activeColumn}
-              boardId={boardId}
-              tasks={tasks.filter((task) => task.list_id === activeColumn.id)}
-              isOverlay
-            />
-          )}
-          {activeTask && (
-            <TaskCard
-              task={activeTask}
-              boardId={boardId}
-              isOverlay
-              onUpdate={handleTaskCreated}
-            />
-          )}
-        </DragOverlay>
-      </DndContext>
+              // Get viewport bounds - only access window in browser environment
+              // Use responsive fallback based on common breakpoints for better mobile handling
+              const viewportWidth =
+                typeof window !== 'undefined' ? window.innerWidth : 1024; // Default to tablet landscape width for SSR (better than desktop 1200px)
+
+              const maxX = viewportWidth - 350; // Account for card width
+
+              return {
+                ...transform,
+                x: Math.min(Math.max(transform.x, -50), maxX), // Constrain X position
+              };
+            },
+          ]}
+        >
+          <BoardContainer>
+            <SortableContext
+              items={columnsId}
+              strategy={horizontalListSortingStrategy}
+            >
+              <div className="flex h-full gap-4">
+                {columns
+                  .sort((a, b) => {
+                    // First sort by status priority, then by position within status
+                    const statusOrder = {
+                      not_started: 0,
+                      active: 1,
+                      done: 2,
+                      closed: 3,
+                    };
+                    const statusA =
+                      statusOrder[a.status as keyof typeof statusOrder] ?? 999;
+                    const statusB =
+                      statusOrder[b.status as keyof typeof statusOrder] ?? 999;
+                    if (statusA !== statusB) return statusA - statusB;
+                    return (a.position || 0) - (b.position || 0);
+                  })
+                  .map((column) => (
+                    <BoardColumn
+                      key={column.id}
+                      column={column}
+                      boardId={boardId}
+                      tasks={tasks.filter((task) => task.list_id === column.id)}
+                      onTaskCreated={handleTaskCreated}
+                      onListUpdated={handleTaskCreated}
+                    />
+                  ))}
+                <TaskListForm
+                  boardId={boardId}
+                  onListCreated={handleTaskCreated}
+                />
+              </div>
+            </SortableContext>
+          </BoardContainer>
+
+          <DragOverlay
+            wrapperElement="div"
+            style={{
+              width: 'min(350px, 90vw)',
+              maxWidth: '350px',
+              pointerEvents: 'none',
+            }}
+          >
+            {activeColumn && (
+              <BoardColumn
+                column={activeColumn}
+                boardId={boardId}
+                tasks={tasks.filter((task) => task.list_id === activeColumn.id)}
+                isOverlay
+                onTaskCreated={handleTaskCreated}
+                onListUpdated={handleTaskCreated}
+              />
+            )}
+            {activeTask && (
+              <div className="w-full max-w-[350px]">
+                <TaskCard
+                  task={activeTask}
+                  taskList={columns.find(
+                    (col) => col.id === activeTask.list_id
+                  )}
+                  boardId={boardId}
+                  isOverlay
+                  onUpdate={handleTaskCreated}
+                />
+              </div>
+            )}
+          </DragOverlay>
+        </DndContext>
+      </div>
     </div>
   );
 }

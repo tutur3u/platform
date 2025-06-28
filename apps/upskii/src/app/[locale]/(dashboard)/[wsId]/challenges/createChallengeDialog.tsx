@@ -1,6 +1,5 @@
 'use client';
 
-import ChallengeForm, { type ChallengeFormValues } from './challengeForm';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   Dialog,
@@ -13,6 +12,7 @@ import {
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import ChallengeForm, { type ChallengeFormValues } from './challengeForm';
 
 interface CreateChallengeDialogProps {
   trigger: React.ReactNode;

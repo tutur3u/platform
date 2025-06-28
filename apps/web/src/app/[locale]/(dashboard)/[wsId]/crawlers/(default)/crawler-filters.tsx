@@ -11,8 +11,8 @@ import {
   Search,
 } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
-import { useTranslations } from 'next-intl';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import { useDebouncedCallback } from 'use-debounce';
 
@@ -91,7 +91,7 @@ export default function CrawlerFilters({ wsId }: { wsId: string }) {
   return (
     <div className="flex items-center gap-4">
       <div className="relative">
-        <Search className="text-muted-foreground absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" />
+        <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input
           placeholder="Search URLs..."
           value={urlSearch}
@@ -103,7 +103,7 @@ export default function CrawlerFilters({ wsId }: { wsId: string }) {
         />
       </div>
       <div className="flex items-center gap-2">
-        <Filter className="text-muted-foreground h-4 w-4" />
+        <Filter className="h-4 w-4 text-muted-foreground" />
         <Combobox
           t={t}
           options={comboboxOptions}

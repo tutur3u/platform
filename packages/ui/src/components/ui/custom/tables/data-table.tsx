@@ -1,6 +1,21 @@
 'use client';
 
 import {
+  type ColumnDef,
+  type ColumnFiltersState,
+  flexRender,
+  getCoreRowModel,
+  getFacetedRowModel,
+  getFacetedUniqueValues,
+  getFilteredRowModel,
+  getSortedRowModel,
+  type SortingState,
+  useReactTable,
+  type VisibilityState,
+} from '@tanstack/react-table';
+import { cn } from '@tuturuuu/utils/format';
+import { type ReactNode, useState } from 'react';
+import {
   Table,
   TableBody,
   TableCell,
@@ -10,21 +25,6 @@ import {
 } from '../../table';
 import { DataTablePagination } from './data-table-pagination';
 import { DataTableToolbar } from './data-table-toolbar';
-import {
-  ColumnDef,
-  ColumnFiltersState,
-  SortingState,
-  VisibilityState,
-  flexRender,
-  getCoreRowModel,
-  getFacetedRowModel,
-  getFacetedUniqueValues,
-  getFilteredRowModel,
-  getSortedRowModel,
-  useReactTable,
-} from '@tanstack/react-table';
-import { cn } from '@tuturuuu/utils/format';
-import { ReactNode, useState } from 'react';
 
 export interface DataTableProps<TData, TValue> {
   hideToolbar?: boolean;
@@ -218,7 +218,7 @@ export function DataTable<TData, TValue>({
               t={t}
               table={table}
               count={count}
-              className="bg-foreground/[0.025] dark:bg-foreground/5 rounded-lg border px-4 py-2 backdrop-blur-xl"
+              className="rounded-lg border bg-foreground/[0.025] px-4 py-2 backdrop-blur-xl dark:bg-foreground/5"
               setParams={setParams}
             />
             <div className="h-4" />

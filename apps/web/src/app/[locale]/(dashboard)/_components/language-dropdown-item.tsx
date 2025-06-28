@@ -32,9 +32,9 @@ export function LanguageDropdownItem({ label, locale, selected }: Props) {
       disabled={selected}
     >
       {selected ? (
-        <Check className="mr-2 h-4 w-4" />
+        <Check className="h-4 w-4" />
       ) : (
-        <Hexagon className="mr-2 h-4 w-4" />
+        <Hexagon className="h-4 w-4" />
       )}
       {label}
     </DropdownMenuItem>

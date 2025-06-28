@@ -1,4 +1,4 @@
-import { Database, Tables } from './supabase';
+import type { Database, Tables } from './supabase';
 
 export type AIChat = Tables<'ai_chats'>;
 export type AIPrompt = Tables<'workspace_ai_prompts'>;
@@ -21,6 +21,7 @@ export type WorkspaceTaskList = Tables<'task_lists'> & {
   tasks?: Partial<WorkspaceTask>[];
 };
 export type WorkspaceTask = Tables<'tasks'>;
+export type WorkspaceCalendarEvent = Tables<'workspace_calendar_events'>;
 export type User = Tables<'users'>;
 export type UserPrivateDetails = Tables<'user_private_details'>;
 export type PlatformUser = Tables<'platform_user_roles'>;
@@ -137,3 +138,10 @@ export type NovaSubmissionData = NovaSubmissionWithScores & {
     email?: string | null;
   };
 };
+
+export type CourseCertificate = Tables<'course_certificates'>;
+export type CertificateTemplate =
+  Database['public']['Enums']['certificate_templates'];
+
+export type WorkspaceEducationAccessRequest =
+  Tables<'workspace_education_access_requests'>;

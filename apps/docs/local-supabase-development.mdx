@@ -20,7 +20,7 @@ Tuturuuu utilizes Supabase for database management and authentication. This guid
 To start a local Supabase instance tailored for Tuturuuu:
 
 ```bash
-pnpm sb:start
+bun sb:start
 ```
 
 This command launches a local Supabase instance on your machine, accessible at [http://localhost:8003](http://localhost:8003).
@@ -30,7 +30,7 @@ This command launches a local Supabase instance on your machine, accessible at [
 To stop the local Supabase instance:
 
 ```bash
-pnpm sb:stop
+bun sb:stop
 ```
 
 ### Checking Status
@@ -38,7 +38,7 @@ pnpm sb:stop
 To view the current URLs and status of your local Supabase instance:
 
 ```bash
-pnpm sb:status
+bun sb:status
 ```
 
 ## Development Workflow
@@ -50,18 +50,17 @@ When developing for Tuturuuu, you have several options to start your environment
 1. **Standard Approach**: Start Next.js apps and Supabase separately.
 
    ```bash
-   pnpm dev      # Starts all Next.js apps
-   pnpm sb:start # Starts Supabase
+   bun dev      # Starts all Next.js apps
+   bun sb:start # Starts Supabase
    ```
 
 2. **Enhanced Development Experience**: Use the `devx` command for a streamlined setup.
 
    ```bash
-   pnpm devx
+   bun devx
    ```
 
    This command:
-
    - Stops any running Supabase instance and saves current data as backup
    - Installs all dependencies
    - Starts a new Supabase instance (using backed up data)
@@ -69,7 +68,7 @@ When developing for Tuturuuu, you have several options to start your environment
 
 3. **Fresh Database Setup**: When switching branches with potential schema changes.
    ```bash
-   pnpm sb:devrs
+   bun sb:devrs
    ```
    This command:
    - Stops any running Supabase instance (without backup)
@@ -79,7 +78,7 @@ When developing for Tuturuuu, you have several options to start your environment
    - Starts all Next.js apps in development mode
 
 <Warning>
-  Use `pnpm sb:devrs` when switching between branches that might have different
+  Use `bun sb:devrs` when switching between branches that might have different
   database migrations to ensure your local database schema matches the branch
   you're working on.
 </Warning>
@@ -89,7 +88,7 @@ When developing for Tuturuuu, you have several options to start your environment
 If you're keeping your Next.js server running but need to reset your database to match the current branch's schema:
 
 ```bash
-pnpm sb:reset
+bun sb:reset
 ```
 
 This command will reset your local database to use the latest schema definitions and automatically regenerate TypeScript types.
@@ -106,7 +105,7 @@ There are two approaches to modifying the database schema:
 2. Make your changes through the UI
 3. Generate a migration file:
    ```bash
-   pnpm sb:diff
+   bun sb:diff
    ```
    This creates a migration file based on the differences between your current schema and the previous state.
 
@@ -121,7 +120,7 @@ There are two approaches to modifying the database schema:
 For more control, you can create empty migration files and populate them manually:
 
 ```bash
-pnpm sb:new
+bun sb:new
 ```
 
 This creates a new empty migration file in `apps/db/supabase/migrations` that you can edit to include your desired schema changes.
@@ -131,7 +130,7 @@ This creates a new empty migration file in `apps/db/supabase/migrations` that yo
 After creating a migration, apply it to your local database:
 
 ```bash
-pnpm sb:up
+bun sb:up
 ```
 
 <Info>
@@ -144,17 +143,17 @@ pnpm sb:up
 After schema changes, regenerate the TypeScript types to keep your code in sync with the database schema:
 
 ```bash
-pnpm sb:typegen
+bun sb:typegen
 ```
 
 Alternatively, you can use the shorthand:
 
 ```bash
-pnpm typegen
+bun typegen
 ```
 
 <Info>
-  This step is automatically performed when running `pnpm sb:reset`, making it
+  This step is automatically performed when running `bun sb:reset`, making it
   useful when catching up with a new branch's schema.
 </Info>
 
@@ -413,7 +412,7 @@ For better performance in your RLS policies:
 To test your RLS policies during local development:
 
 1. Create a SQL file in `apps/db/supabase/tests` with your test cases
-2. Use the `pnpm sb:test` command to run the tests
+2. Use the `bun sb:test` command to run the tests
 
 Example test file:
 
@@ -575,7 +574,7 @@ Database seeding is the process of populating your database with initial data. I
 
 ### Seed Files Location
 
-In Tuturuuu, seed files are stored in `apps/db/supabase/seed.sql`. This file is automatically executed when you run `pnpm sb:reset` or start a fresh Supabase instance.
+In Tuturuuu, seed files are stored in `apps/db/supabase/seed.sql`. This file is automatically executed when you run `bun sb:reset` or start a fresh Supabase instance.
 
 ### Real Examples from Tuturuuu's Seed File
 
@@ -717,7 +716,7 @@ Here's how to create and modify seed data:
 
 1. Edit the `apps/db/supabase/seed.sql` file
 2. Add SQL statements to insert your data
-3. Run `pnpm sb:reset` to apply the seed data
+3. Run `bun sb:reset` to apply the seed data
 
 Example seed data format:
 
@@ -745,7 +744,7 @@ Sometimes you might want to create a custom seed file for specific testing scena
 3. Run it with the Supabase CLI:
 
 ```bash
-pnpm supabase db reset --db-url=postgresql://postgres:postgres@localhost:54322/postgres
+bun supabase db reset --db-url=postgresql://postgres:postgres@localhost:54322/postgres
 psql postgresql://postgres:postgres@localhost:54322/postgres -f apps/db/supabase/my_custom_seed.sql
 ```
 
@@ -755,7 +754,7 @@ You can also export your current database data to use as seed data:
 
 ```bash
 # Export only data (not schema) to seed.sql
-pnpm supabase db dump --db-url=postgresql://postgres:postgres@localhost:54322/postgres --data-only > apps/db/supabase/new_seed.sql
+bun supabase db dump --db-url=postgresql://postgres:postgres@localhost:54322/postgres --data-only > apps/db/supabase/new_seed.sql
 ```
 
 This is helpful when you've set up data manually and want to preserve it for future development environments.
@@ -764,12 +763,12 @@ This is helpful when you've set up data manually and want to preserve it for fut
 
 For Tuturuuu development, we recommend:
 
-1. Start with a fresh database: `pnpm sb:reset`
+1. Start with a fresh database: `bun sb:reset`
 2. Make changes through the UI or your app
-3. When you're satisfied, export the data: `pnpm supabase db dump --data-only > apps/db/supabase/new_seed.sql`
+3. When you're satisfied, export the data: `bun supabase db dump --data-only > apps/db/supabase/new_seed.sql`
 4. Edit the generated SQL to keep only what you need
 5. Update the main `seed.sql` file with your changes
-6. Test by running `pnpm sb:reset` again
+6. Test by running `bun sb:reset` again
 
 ## AI Integration with Vercel AI SDK
 

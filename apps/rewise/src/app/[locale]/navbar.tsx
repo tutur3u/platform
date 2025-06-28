@@ -1,11 +1,11 @@
-import NavbarActions from './navbar-actions';
-import NavbarSeparator from './navbar-separator';
-import ServerMenu from './server-menu';
 import { LogoTitle } from '@tuturuuu/ui/custom/logo-title';
 import { cn } from '@tuturuuu/utils/format';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Suspense } from 'react';
+import NavbarActions from './navbar-actions';
+import NavbarSeparator from './navbar-separator';
+import ServerMenu from './server-menu';
 
 export default function Navbar({
   hideMetadata = false,
@@ -33,7 +33,7 @@ export default function Navbar({
               <LogoTitle
                 text="Rewise"
                 className={cn(
-                  'from-dynamic-light-red via-dynamic-light-pink to-dynamic-light-blue bg-linear-to-r bg-clip-text py-1 text-transparent',
+                  'bg-linear-to-r from-dynamic-light-red via-dynamic-light-pink to-dynamic-light-blue bg-clip-text py-1 text-transparent',
                   'text-4xl font-bold md:text-3xl lg:text-4xl'
                 )}
               />
@@ -47,7 +47,7 @@ export default function Navbar({
 
             <Suspense
               fallback={
-                <div className="bg-foreground/5 h-10 w-[88px] animate-pulse rounded-lg" />
+                <div className="h-10 w-[88px] animate-pulse rounded-lg bg-foreground/5" />
               }
             >
               <NavbarActions hideMetadata={hideMetadata} />

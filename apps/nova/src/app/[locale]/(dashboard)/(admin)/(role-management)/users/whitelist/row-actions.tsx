@@ -1,5 +1,5 @@
-import { Row } from '@tanstack/react-table';
-import { NovaRoleBasic } from '@tuturuuu/types/db';
+import type { Row } from '@tanstack/react-table';
+import type { NovaRoleBasic } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
 import {
   DropdownMenu,
@@ -8,8 +8,8 @@ import {
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import { Ellipsis } from '@tuturuuu/ui/icons';
-import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 
 interface NovaRoleRowActionsProps {
   row: Row<NovaRoleBasic>;
@@ -37,7 +37,7 @@ export function NovaRoleRowActions({ row }: NovaRoleRowActionsProps) {
         <DropdownMenuTrigger asChild>
           <Button
             variant="ghost"
-            className="data-[state=open]:bg-muted flex h-8 w-8 p-0"
+            className="flex h-8 w-8 p-0 data-[state=open]:bg-muted"
           >
             <Ellipsis className="h-4 w-4" />
             <span className="sr-only">Open menu</span>

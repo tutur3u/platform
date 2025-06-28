@@ -1,7 +1,7 @@
-import DatePlanner from './date-planner';
-import { MeetTogetherPlan } from '@tuturuuu/types/primitives/MeetTogetherPlan';
-import { Timeblock } from '@tuturuuu/types/primitives/Timeblock';
+import type { MeetTogetherPlan } from '@tuturuuu/types/primitives/MeetTogetherPlan';
+import type { Timeblock } from '@tuturuuu/types/primitives/Timeblock';
 import { useTranslations } from 'next-intl';
+import DatePlanner from './date-planner';
 
 export default function AvailabilityPlanner({
   plan,
@@ -21,12 +21,12 @@ export default function AvailabilityPlanner({
       <div className="flex items-center justify-center gap-4 text-sm">
         <div className="flex items-center gap-2">
           <div>{t('unavailable')}</div>
-          <div className="border-foreground/50 h-4 w-8 border bg-red-500/20" />
+          <div className="h-4 w-8 border border-foreground/50 bg-red-500/20" />
         </div>
 
         <div className="flex items-center gap-2">
           <div>{t('available')}</div>
-          <div className="border-foreground/50 h-4 w-8 border bg-green-500/70" />
+          <div className="h-4 w-8 border border-foreground/50 bg-green-500/70" />
         </div>
       </div>
 

@@ -18,7 +18,7 @@
     }
 
     p {
-      @apply mb-1 mt-0;
+      @apply mt-0 mb-1;
     }
   }
 
@@ -27,7 +27,7 @@
     @apply my-8 first:mt-0 last:mb-0;
   }
 
-  ul[data-type='taskList'] {
+  ul[data-type="taskList"] {
     @apply list-none p-0;
 
     p {
@@ -38,14 +38,14 @@
       @apply flex;
 
       > label {
-        @apply mr-2 mt-1 flex-auto shrink-0 grow-0 select-none;
+        @apply mt-1 mr-2 flex-auto shrink-0 grow-0 select-none;
       }
 
       > div {
         @apply flex-auto;
       }
 
-      &[data-checked='true'] {
+      &[data-checked="true"] {
         @apply line-through;
       }
     }

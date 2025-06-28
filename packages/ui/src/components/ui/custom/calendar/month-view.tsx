@@ -1,10 +1,10 @@
+import { startOfDay } from 'date-fns';
+import { useMemo } from 'react';
 import { Separator } from '../../separator';
 import { TooltipProvider } from '../../tooltip';
 import { DayCell } from './day-cell';
 import { MonthHeader } from './month-header';
-import { WorkspaceUserAttendance } from './utils';
-import { startOfDay } from 'date-fns';
-import { useMemo } from 'react';
+import type { WorkspaceUserAttendance } from './utils';
 
 export const MonthView: React.FC<{
   locale: string;
@@ -35,7 +35,7 @@ export const MonthView: React.FC<{
   const days = useMemo(
     () =>
       Array.from({ length: 7 }, (_, i) => {
-        let newDay = new Date(currentDate);
+        const newDay = new Date(currentDate);
         newDay.setDate(currentDate.getDate() - currentDate.getDay() + i + 1);
         return newDay.toLocaleString(locale, { weekday: 'narrow' });
       }),
@@ -45,13 +45,13 @@ export const MonthView: React.FC<{
   const daysInMonth = useMemo(
     () =>
       Array.from({ length: 42 }, (_, i) => {
-        let newDay = new Date(
+        const newDay = new Date(
           currentDate.getFullYear(),
           currentDate.getMonth(),
           1
         );
-        let dayOfWeek = newDay.getDay();
-        let adjustment = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+        const dayOfWeek = newDay.getDay();
+        const adjustment = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
         newDay.setDate(newDay.getDate() - adjustment + i);
         return newDay;
       }),
@@ -83,7 +83,7 @@ export const MonthView: React.FC<{
           {days.map((day, idx) => (
             <div
               key={`day-${idx}`}
-              className="bg-foreground/5 flex flex-none cursor-default justify-center rounded p-2 font-semibold transition duration-300 md:rounded-lg"
+              className="flex flex-none cursor-default justify-center rounded bg-foreground/5 p-2 font-semibold transition duration-300 md:rounded-lg"
             >
               {day}
             </div>

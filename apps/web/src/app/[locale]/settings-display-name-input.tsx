@@ -13,8 +13,8 @@ import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Check, Loader2 } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
-import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import * as z from 'zod';
 
@@ -44,6 +44,7 @@ export default function DisplayNameInput({
   });
 
   const name = form.watch('name');
+  const hasChanges = name !== defaultValue;
 
   async function onSubmit(data: z.infer<typeof FormSchema>) {
     setSaving(true);
@@ -95,18 +96,21 @@ export default function DisplayNameInput({
             )}
           />
 
-          <Button
-            type="submit"
-            size="icon"
-            onClick={form.handleSubmit(onSubmit)}
-            disabled={name === defaultValue || saving || disabled}
-          >
-            {saving ? (
-              <Loader2 className="h-5 w-5 animate-spin" />
-            ) : (
-              <Check className="h-5 w-5" />
-            )}
-          </Button>
+          {hasChanges && (
+            <Button
+              type="submit"
+              size="icon"
+              onClick={form.handleSubmit(onSubmit)}
+              disabled={saving || disabled}
+              className="shrink-0"
+            >
+              {saving ? (
+                <Loader2 className="h-5 w-5 animate-spin" />
+              ) : (
+                <Check className="h-5 w-5" />
+              )}
+            </Button>
+          )}
         </div>
       </form>
     </Form>

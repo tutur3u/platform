@@ -2,7 +2,7 @@
 
 import { Brain, Globe, Rocket, Star } from '@tuturuuu/ui/icons';
 import { motion } from 'framer-motion';
-import { ReactNode } from 'react';
+import type { ReactNode } from 'react';
 
 interface ItemProps {
   icon: ReactNode;
@@ -12,25 +12,25 @@ interface ItemProps {
 
 const journeyItems: ItemProps[] = [
   {
-    icon: <Star className="text-primary h-8 w-8" />,
+    icon: <Star className="h-8 w-8 text-primary" />,
     title: 'The Beginning',
     description:
       'Started with a vision to democratize technology, making powerful tools accessible to everyone.',
   },
   {
-    icon: <Rocket className="text-primary h-8 w-8" />,
+    icon: <Rocket className="h-8 w-8 text-primary" />,
     title: 'Rapid Growth',
     description:
       'Expanded our reach globally, touching thousands of lives with innovative solutions.',
   },
   {
-    icon: <Brain className="text-primary h-8 w-8" />,
+    icon: <Brain className="h-8 w-8 text-primary" />,
     title: 'AI Revolution',
     description:
       'Pioneered breakthrough AI technologies that adapt and evolve to serve human needs better.',
   },
   {
-    icon: <Globe className="text-primary h-8 w-8" />,
+    icon: <Globe className="h-8 w-8 text-primary" />,
     title: 'Global Impact',
     description:
       'Building a worldwide community of innovators and dreamers who share our vision.',
@@ -69,7 +69,7 @@ export function JourneySection() {
           }}
           className="absolute inset-0 bg-[conic-gradient(from_270deg_at_50%_50%,rgba(var(--primary-rgb),0.05),transparent)]"
         />
-        <div className="bg-size-[100px] absolute inset-0 bg-[linear-gradient(to_right,rgba(var(--primary-rgb),0.02)_1px,transparent_1px)] opacity-20" />
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(var(--primary-rgb),0.02)_1px,transparent_1px)] bg-size-[100px] opacity-20" />
       </div>
 
       <div className="relative">
@@ -90,12 +90,12 @@ export function JourneySection() {
                 ease: 'easeInOut',
               },
             }}
-            className="bg-primary/10 group mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl"
+            className="group mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10"
           >
-            <Star className="text-primary h-8 w-8 transition-transform duration-300 group-hover:scale-110" />
+            <Star className="h-8 w-8 text-primary transition-transform duration-300 group-hover:scale-110" />
           </motion.div>
           <motion.h2
-            className="text-foreground mb-4 text-4xl font-bold"
+            className="mb-4 text-4xl font-bold text-foreground"
             whileHover={{
               scale: 1.02,
             }}
@@ -109,13 +109,13 @@ export function JourneySection() {
                 repeat: Infinity,
                 ease: 'linear',
               }}
-              className="from-primary bg-linear-to-r bg-size-[200%_auto] relative via-purple-500 to-pink-500 bg-clip-text text-transparent"
+              className="relative bg-linear-to-r from-primary via-purple-500 to-pink-500 bg-size-[200%_auto] bg-clip-text text-transparent"
             >
               Our Journey
             </motion.span>
           </motion.h2>
           <motion.p
-            className="text-foreground/60 mx-auto max-w-2xl text-lg"
+            className="mx-auto max-w-2xl text-lg text-foreground/60"
             whileHover={{
               scale: 1.01,
             }}
@@ -143,11 +143,11 @@ export function JourneySection() {
               }}
               className="group relative"
             >
-              <div className="bg-foreground/5 relative h-full overflow-hidden rounded-2xl backdrop-blur-sm">
+              <div className="relative h-full overflow-hidden rounded-2xl bg-foreground/5 backdrop-blur-sm">
                 <motion.div
                   initial={{ opacity: 0 }}
                   whileHover={{ opacity: 1 }}
-                  className="bg-linear-to-br absolute inset-0 from-purple-500/10 via-pink-500/5 to-transparent transition-opacity duration-300"
+                  className="absolute inset-0 bg-linear-to-br from-purple-500/10 via-pink-500/5 to-transparent transition-opacity duration-300"
                 />
                 <motion.div
                   animate={{
@@ -159,7 +159,7 @@ export function JourneySection() {
                     repeat: Infinity,
                     ease: 'linear',
                   }}
-                  className="bg-linear-to-br absolute -right-8 -top-8 h-24 w-24 rounded-xl from-purple-500/20 via-pink-500/10 to-transparent blur-2xl"
+                  className="absolute -top-8 -right-8 h-24 w-24 rounded-xl bg-linear-to-br from-purple-500/20 via-pink-500/10 to-transparent blur-2xl"
                 />
                 <div className="pointer-events-none relative p-8">
                   <motion.div
@@ -172,7 +172,7 @@ export function JourneySection() {
                     }}
                     className="relative mb-6"
                   >
-                    <div className="bg-primary/10 group-hover:bg-primary/20 mx-auto flex h-16 w-16 items-center justify-center rounded-xl transition-all duration-300 group-hover:rotate-12">
+                    <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-xl bg-primary/10 transition-all duration-300 group-hover:rotate-12 group-hover:bg-primary/20">
                       <motion.div
                         animate={{
                           scale: [1, 1.1, 1],
@@ -188,7 +188,7 @@ export function JourneySection() {
                     </div>
                   </motion.div>
                   <motion.h3
-                    className="text-foreground relative mb-4 text-xl font-bold"
+                    className="relative mb-4 text-xl font-bold text-foreground"
                     whileHover={{
                       scale: 1.05,
                       color: 'hsl(var(--primary))',
@@ -197,7 +197,7 @@ export function JourneySection() {
                     {item.title}
                   </motion.h3>
                   <motion.p
-                    className="text-foreground/60 relative"
+                    className="relative text-foreground/60"
                     whileHover={{
                       scale: 1.02,
                     }}
@@ -209,7 +209,7 @@ export function JourneySection() {
                   initial={{ scaleX: 0 }}
                   whileHover={{ scaleX: 1 }}
                   transition={{ duration: 0.3 }}
-                  className="from-primary/20 to-primary/5 bg-linear-to-r absolute bottom-0 left-0 right-0 h-1 origin-left"
+                  className="absolute right-0 bottom-0 left-0 h-1 origin-left bg-linear-to-r from-primary/20 to-primary/5"
                 />
               </div>
             </motion.div>

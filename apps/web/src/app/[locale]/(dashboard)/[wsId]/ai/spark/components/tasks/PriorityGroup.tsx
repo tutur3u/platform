@@ -1,7 +1,5 @@
 'use client';
 
-import { Priority, Task } from '../../types';
-import { TaskCard } from './TaskCard';
 import {
   AccordionContent,
   AccordionItem,
@@ -9,6 +7,8 @@ import {
 } from '@tuturuuu/ui/accordion';
 import { Badge } from '@tuturuuu/ui/badge';
 import { cn } from '@tuturuuu/utils/format';
+import type { Priority, Task } from '../../types';
+import { TaskCard } from './TaskCard';
 
 interface PriorityGroupProps {
   priority: Priority;
@@ -21,9 +21,9 @@ export function PriorityGroup({ priority, tasks }: PriorityGroupProps) {
   return (
     <AccordionItem
       value={priority}
-      className="data-[state=open]:bg-muted/50 border-none"
+      className="border-none data-[state=open]:bg-muted/50"
     >
-      <AccordionTrigger className="hover:bg-muted/50 rounded-lg border px-4 py-2 hover:no-underline data-[state=open]:rounded-b-none data-[state=open]:border-b-0">
+      <AccordionTrigger className="rounded-lg border px-4 py-2 hover:bg-muted/50 hover:no-underline data-[state=open]:rounded-b-none data-[state=open]:border-b-0">
         <div className="flex items-center gap-2">
           <div
             className={cn(
@@ -41,7 +41,7 @@ export function PriorityGroup({ priority, tasks }: PriorityGroupProps) {
           </Badge>
         </div>
       </AccordionTrigger>
-      <AccordionContent className="rounded-b-lg border border-t-0 px-4 pb-4 pt-2">
+      <AccordionContent className="rounded-b-lg border border-t-0 px-4 pt-2 pb-4">
         <div className="grid gap-2">
           {tasks.map((task, idx) => (
             <TaskCard key={idx} task={task} />

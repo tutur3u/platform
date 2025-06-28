@@ -29,8 +29,9 @@ export function LeaderboardFilters({
   setSelectedChallenge,
   challenges = [],
 }: LeaderboardFiltersProps) {
-  const [showAdvancedFilters, setShowAdvancedFilters] =
-    useState(!!selectedChallenge);
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(
+    !!selectedChallenge
+  );
   const t = useTranslations('nova.leaderboard-page.filters');
 
   return (
@@ -61,20 +62,20 @@ export function LeaderboardFilters({
 
       <div className="flex flex-col-reverse gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="relative w-full md:w-96">
-          <div className="absolute left-0 top-0 -z-10 h-full w-full rounded-md bg-blue-100/50 dark:bg-blue-500/5"></div>
+          <div className="absolute top-0 left-0 -z-10 h-full w-full rounded-md bg-blue-100/50 dark:bg-blue-500/5"></div>
           <div className="group relative">
-            <Search className="absolute left-3 top-2.5 h-4 w-4 text-blue-600/70 dark:text-blue-400/70" />
+            <Search className="absolute top-2.5 left-3 h-4 w-4 text-blue-600/70 dark:text-blue-400/70" />
             <Input
               placeholder={t('search-competitors')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full border-gray-300 bg-white pl-9 pr-9 text-gray-700 placeholder:text-gray-500 focus-visible:border-blue-500/50 focus-visible:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-200 dark:placeholder:text-slate-500 dark:focus-visible:border-blue-500/50 dark:focus-visible:ring-blue-500/20 dark:focus-visible:ring-offset-slate-900"
+              className="w-full border-gray-300 bg-white pr-9 pl-9 text-gray-700 placeholder:text-gray-500 focus-visible:border-blue-500/50 focus-visible:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-200 dark:placeholder:text-slate-500 dark:focus-visible:border-blue-500/50 dark:focus-visible:ring-blue-500/20 dark:focus-visible:ring-offset-slate-900"
             />
             {searchQuery && (
               <Button
                 variant="ghost"
                 size="icon"
-                className="absolute right-2 top-2 h-5 w-5 rounded-full p-0 text-gray-400 opacity-70 hover:bg-gray-100 hover:text-gray-700 hover:opacity-100 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+                className="absolute top-2 right-2 h-5 w-5 rounded-full p-0 text-gray-400 opacity-70 hover:bg-gray-100 hover:text-gray-700 hover:opacity-100 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
                 onClick={() => setSearchQuery('')}
               >
                 <X className="h-3 w-3" />
@@ -96,7 +97,7 @@ export function LeaderboardFilters({
           variant="outline"
           size="sm"
           className={cn(
-            'gap-1.5 border-gray-200 bg-white text-xs text-gray-700 transition-all duration-200 hover:bg-gray-50 hover:text-gray-900 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-100',
+            'gap-1.5 bg-white text-xs text-gray-700 transition-all duration-200 hover:bg-gray-50 hover:text-gray-900 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-100',
             showAdvancedFilters &&
               'border-blue-300 bg-blue-50 text-blue-700 dark:border-blue-500/50 dark:bg-blue-950/40 dark:text-blue-400'
           )}
@@ -118,7 +119,7 @@ export function LeaderboardFilters({
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.2 }}
           >
-            <Card className="relative overflow-hidden border-dashed border-gray-200 bg-white/80 dark:border-slate-700 dark:bg-slate-900/60">
+            <Card className="relative overflow-hidden border-dashed bg-white/80 dark:border-slate-700 dark:bg-slate-900/60">
               {/* Animated background glow */}
               <div className="absolute inset-0 -z-10">
                 <motion.div
@@ -146,10 +147,10 @@ export function LeaderboardFilters({
                     {t('score-range.name')}
                   </label>
                   <Select defaultValue="all">
-                    <SelectTrigger className="h-8 border-gray-200 bg-white text-xs text-gray-700 ring-offset-white transition-all duration-200 dark:border-slate-700 dark:bg-slate-800/80 dark:text-slate-300 dark:ring-offset-slate-900">
+                    <SelectTrigger className="h-8 bg-white text-xs text-gray-700 ring-offset-white transition-all duration-200 dark:border-slate-700 dark:bg-slate-800/80 dark:text-slate-300 dark:ring-offset-slate-900">
                       <SelectValue placeholder="All scores" />
                     </SelectTrigger>
-                    <SelectContent className="border-gray-200 bg-white text-gray-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
+                    <SelectContent className="bg-white text-gray-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
                       <SelectItem value="all">
                         {t('score-range.all-scores')}
                       </SelectItem>
@@ -174,10 +175,10 @@ export function LeaderboardFilters({
                     value={selectedChallenge}
                     onValueChange={setSelectedChallenge}
                   >
-                    <SelectTrigger className="h-8 border-gray-200 bg-white text-xs text-gray-700 ring-offset-white transition-all duration-200 dark:border-slate-700 dark:bg-slate-800/80 dark:text-slate-300 dark:ring-offset-slate-900">
+                    <SelectTrigger className="h-8 bg-white text-xs text-gray-700 ring-offset-white transition-all duration-200 dark:border-slate-700 dark:bg-slate-800/80 dark:text-slate-300 dark:ring-offset-slate-900">
                       <SelectValue placeholder="All challenges" />
                     </SelectTrigger>
-                    <SelectContent className="border-gray-200 bg-white text-gray-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
+                    <SelectContent className="bg-white text-gray-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
                       <SelectItem value="all">{t('all-challenges')}</SelectItem>
                       {challenges.map((challenge) => (
                         <SelectItem key={challenge.id} value={challenge.id}>

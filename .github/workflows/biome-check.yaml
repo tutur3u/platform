@@ -1,0 +1,217 @@
+name: Biome Check
+
+on:
+  push:
+    branches-ignore:
+      - 'dependabot/**'
+      - 'staging'
+      - 'production'
+  workflow_dispatch:
+
+jobs:
+  format:
+    name: Biome Check
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    strategy:
+      matrix:
+        node-version: [24]
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+          # Required for creating commits and PRs
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Cache turbo build setup
+        uses: actions/cache@v4
+        with:
+          path: .turbo
+          key: ${{ runner.os }}-turbo-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-turbo-
+
+      - uses: oven-sh/setup-bun@v2
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Check Biome formatting and linting
+        id: biome-check
+        run: |
+          # Capture biome output and exit code
+          set +e
+          biome_output=$(bun format-and-lint:ci 2>&1)
+          biome_exit_code=$?
+          set -e
+          
+          echo "biome_exit_code=$biome_exit_code" >> $GITHUB_OUTPUT
+          
+          # Save output to file for debugging
+          echo "$biome_output" > biome_output.txt
+          
+          # Parse biome output for statistics - looking for the final summary lines
+          # Strip ANSI color codes first, then parse
+          clean_output=$(echo "$biome_output" | sed 's/\x1b\[[0-9;]*m//g')
+          files_checked=$(echo "$clean_output" | grep "Checked [0-9]* files" | sed 's/Checked \([0-9]*\) files.*/\1/' || echo "0")
+          errors=$(echo "$clean_output" | grep "Found [0-9]* errors" | sed 's/Found \([0-9]*\) errors.*/\1/' || echo "0")
+          warnings=$(echo "$clean_output" | grep "Found [0-9]* warnings" | sed 's/Found \([0-9]*\) warnings.*/\1/' || echo "0")
+          
+          # Count individual diagnostic issues (more accurate count)
+          individual_issues=$(echo "$clean_output" | grep -E "lint/|assist/" | wc -l || echo "0")
+          
+          # Use the found errors + warnings as total, or individual count if that's higher
+          found_total=$((errors + warnings))
+          if [ "$individual_issues" -gt "$found_total" ]; then
+            total_issues=$individual_issues
+          else
+            total_issues=$found_total
+          fi
+          
+          echo "files_checked=$files_checked" >> $GITHUB_OUTPUT
+          echo "errors=$errors" >> $GITHUB_OUTPUT
+          echo "warnings=$warnings" >> $GITHUB_OUTPUT
+          echo "total_issues=$total_issues" >> $GITHUB_OUTPUT
+          
+          # Check if there are any issues
+          if [ "$biome_exit_code" -ne 0 ]; then
+            echo "has_issues=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_issues=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Calculate progress
+        id: progress
+        run: |
+          total_issues=${{ steps.biome-check.outputs.total_issues }}
+          
+          if [ "$total_issues" -eq 0 ]; then
+            progress_percentage=100
+          else
+            progress_percentage=0
+          fi
+          
+          echo "progress_percentage=$progress_percentage" >> $GITHUB_OUTPUT
+          echo "remaining_issues=$total_issues" >> $GITHUB_OUTPUT
+
+      - name: Comment on PR with progress
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            // Get PR number from context or search for PR associated with this branch
+            let prNumber = null;
+            
+            if (context.issue && context.issue.number) {
+              prNumber = context.issue.number;
+            } else {
+              // For push events, find PR associated with this branch
+              try {
+                const { data: prs } = await github.rest.pulls.list({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  head: `${context.repo.owner}:${context.ref.replace('refs/heads/', '')}`,
+                  state: 'open'
+                });
+                
+                if (prs.length > 0) {
+                  prNumber = prs[0].number;
+                }
+              } catch (error) {
+                console.log('No PR found for this branch or error occurred:', error.message);
+                return; // Exit if no PR is found
+              }
+            }
+            
+            if (!prNumber) {
+              console.log('No PR found to comment on');
+              return;
+            }
+            
+            const filesChecked = '${{ steps.biome-check.outputs.files_checked }}';
+            const originalErrors = '${{ steps.biome-check.outputs.errors }}';
+            const originalWarnings = '${{ steps.biome-check.outputs.warnings }}';
+            const remainingIssues = '${{ steps.progress.outputs.remaining_issues }}';
+            const progressPercentage = '${{ steps.progress.outputs.progress_percentage }}';
+            const hasIssues = '${{ steps.biome-check.outputs.has_issues }}';
+            
+            let body;
+            
+            if (hasIssues === 'false') {
+              body = '## ✅ Biome Check Passed\n\n<div align="center">\n\n🎉 **Congratulations! Your code is 100% clean!** 🎉\n\n</div>\n\n### 📊 Summary\n\n| Metric | Value |\n|--------|-------|\n| 📁 **Files Checked** | ' + filesChecked + ' |\n| ✨ **Issues Found** | 0 |\n| 🏆 **Code Quality** | 100% |\n| 🎯 **Status** | Perfect! |\n\n<div align="center">\n\n**🌟 Your code meets all quality standards! 🌟**\n\n</div>';
+            } else {
+              const issueIcon = remainingIssues > 50 ? '🚨' : remainingIssues > 20 ? '⚠️' : remainingIssues > 10 ? '🔍' : '🔧';
+              const issueStatus = remainingIssues > 0 ? '🚧 Needs attention' : '✅ All clear';
+              const errorStatus = originalErrors > 0 ? '🔴 Needs fixing' : '✅ None';
+              const warningStatus = originalWarnings > 0 ? '🟡 Consider fixing' : '✅ None';
+              const totalIssues = parseInt(originalErrors) + parseInt(originalWarnings);
+              const totalStatus = totalIssues > 0 ? '📊 See details above' : '🎯 Perfect!';
+              
+              const nextSteps = remainingIssues > 0 ? 
+                '### 🛠️ Next Steps\n\nRun the following command to fix issues:\n```bash\nbun format-and-lint:fix\n```\nThen commit and push the changes.' : 
+                '### 🎉 All Issues Resolved!\n\nYour code is now **100% clean**! Great job! 🏆';
+              
+              const timestamp = new Date().toLocaleString();
+              
+              body = '## ' + issueIcon + ' Biome Check Report\n\n<div align="center">\n\n### Issues Found: **' + remainingIssues + '**\n\n</div>\n\n### 📊 Analysis Summary\n\n| Metric | Value | Status |\n|--------|-------|--------|\n| 📁 **Files Checked** | ' + filesChecked + ' | ✅ Complete |\n| ⚠️ **Total Issues** | ' + remainingIssues + ' | ' + issueStatus + ' |\n\n### 🔍 Issue Breakdown\n\n| Issue Type | Count | Status |\n|------------|-------| -------|\n| ❌ **Errors** | ' + originalErrors + ' | ' + errorStatus + ' |\n| ⚠️ **Warnings** | ' + originalWarnings + ' | ' + warningStatus + ' |\n| 📝 **Total Issues** | ' + totalIssues + ' | ' + totalStatus + ' |\n\n' + nextSteps + '\n\n---\n<div align="center">\n<sub>🤖 Auto-generated by <strong>Biome Check</strong> workflow • Last updated: ' + timestamp + '</sub>\n</div>';
+            }
+
+            // Find existing Biome Check comment and update it, or create new one
+            try {
+              const { data: comments } = await github.rest.issues.listComments({
+                issue_number: prNumber,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+              });
+
+              // Look for existing Biome Check comment with more specific markers
+              const existingComment = comments.find(comment => 
+                comment.user.login === 'github-actions[bot]' && 
+                (comment.body.includes('<!-- biome-check-comment -->') || 
+                 comment.body.includes('Biome Check Progress Report') || 
+                 comment.body.includes('Biome Check Passed'))
+              );
+
+              // Add a unique marker to identify our comments
+              const bodyWithMarker = '<!-- biome-check-comment -->\n' + body;
+
+              if (existingComment) {
+                console.log(`Updating existing comment ${existingComment.id} on PR ${prNumber}`);
+                await github.rest.issues.updateComment({
+                  comment_id: existingComment.id,
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  body: bodyWithMarker
+                });
+              } else {
+                console.log(`Creating new comment on PR ${prNumber}`);
+                await github.rest.issues.createComment({
+                  issue_number: prNumber,
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  body: bodyWithMarker
+                });
+              }
+            } catch (error) {
+              console.log('Error managing PR comment:', error.message);
+            }
+
+
+
+      - name: Summary
+        run: |
+          echo "## Biome Check Summary" >> $GITHUB_STEP_SUMMARY
+          echo "- Files checked: ${{ steps.biome-check.outputs.files_checked }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Total issues found: ${{ steps.progress.outputs.remaining_issues }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Errors: ${{ steps.biome-check.outputs.errors }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Warnings: ${{ steps.biome-check.outputs.warnings }}" >> $GITHUB_STEP_SUMMARY

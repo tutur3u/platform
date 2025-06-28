@@ -12,8 +12,8 @@ import { Button } from '@tuturuuu/ui/button';
 import { Mail, Users } from '@tuturuuu/ui/icons';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
 import moment from 'moment';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
 interface Member {
@@ -71,13 +71,13 @@ export function TeamAccordion({ teamId }: { teamId: string }) {
     >
       <AccordionItem value="details" className="border-none">
         <AccordionTrigger
-          className="hover:bg-accent flex items-center gap-2 rounded-md px-3 py-2"
+          className="flex items-center gap-2 rounded-md px-3 py-2 hover:bg-accent"
           onMouseDown={(e) => e.preventDefault()}
         >
           <span>{t('team-tabs.overview')}</span>
         </AccordionTrigger>
         <AccordionContent>
-          <div className="space-y-4 py-2 pl-4 pr-2">
+          <div className="space-y-4 py-2 pr-2 pl-4">
             {/* Members Section */}
             <div>
               <div className="mb-2 flex items-center gap-2">
@@ -98,7 +98,7 @@ export function TeamAccordion({ teamId }: { teamId: string }) {
                       target="_blank"
                       rel="noopener noreferrer"
                       key={member.id}
-                      className="hover:bg-accent flex items-center gap-2 rounded-md px-2 py-1.5 text-sm"
+                      className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent"
                     >
                       <Avatar className="h-6 w-6">
                         <AvatarImage src="" alt={member.display_name || ''} />
@@ -108,7 +108,7 @@ export function TeamAccordion({ teamId }: { teamId: string }) {
                       </Avatar>
                       <div className="flex-1 truncate">
                         <div className="font-medium">{member.display_name}</div>
-                        <div className="text-muted-foreground truncate text-xs">
+                        <div className="truncate text-xs text-muted-foreground">
                           {member.email}
                         </div>
                       </div>
@@ -116,7 +116,7 @@ export function TeamAccordion({ teamId }: { teamId: string }) {
                   ))}
                 </div>
               ) : (
-                <div className="text-muted-foreground py-1 text-sm">
+                <div className="py-1 text-sm text-muted-foreground">
                   {t('teams.no_members')}
                 </div>
               )}
@@ -141,7 +141,7 @@ export function TeamAccordion({ teamId }: { teamId: string }) {
                   {invitations.map((invitation) => (
                     <div
                       key={invitation.id || `invite-${invitation.email}`}
-                      className="hover:bg-accent flex items-center gap-2 rounded-md px-2 py-1.5 text-sm"
+                      className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent"
                     >
                       <Avatar className="h-6 w-6">
                         <AvatarFallback>
@@ -150,7 +150,7 @@ export function TeamAccordion({ teamId }: { teamId: string }) {
                       </Avatar>
                       <div className="flex-1 truncate">
                         <div className="font-medium">{invitation.email}</div>
-                        <div className="text-muted-foreground text-xs">
+                        <div className="text-xs text-muted-foreground">
                           {t('teams.invited')}{' '}
                           {moment(invitation.created_at).format('MMM DD, YYYY')}
                         </div>
@@ -159,7 +159,7 @@ export function TeamAccordion({ teamId }: { teamId: string }) {
                   ))}
                 </div>
               ) : (
-                <div className="text-muted-foreground py-1 text-sm">
+                <div className="py-1 text-sm text-muted-foreground">
                   {t('teams.no_invitations')}
                 </div>
               )}

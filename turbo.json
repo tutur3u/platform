@@ -13,6 +13,9 @@
     "ANTHROPIC_API_KEY",
     "MODAL_TOKEN_ID",
     "OPENAI_API_KEY",
+    "GOOGLE_CLIENT_ID",
+    "GOOGLE_CLIENT_SECRET",
+    "GOOGLE_REDIRECT_URI",
     "GOOGLE_GENERATIVE_AI_API_KEY",
     "GOOGLE_VERTEX_PROJECT",
     "GOOGLE_VERTEX_LOCATION",
@@ -32,16 +35,16 @@
     "BASE_URL",
     "API_URL",
     "ANALYZE",
-    "NODE_ENV"
+    "NODE_ENV",
+    "TRIGGER_SECRET_KEY",
+    "POLAR_ACCESS_TOKEN",
+    "POLAR_WEBHOOK_SECRET"
   ],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
       "outputs": [".next/**", "!.next/cache/**"]
-    },
-    "lint": {
-      "dependsOn": ["^lint"]
     },
     "dev": {
       "cache": false,

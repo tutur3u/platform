@@ -1,10 +1,5 @@
 'use client';
 
-import GradientHeadline from '../gradient-headline';
-import AiFeatures from './ai-features';
-import AnimatedTimeline from './animated-timeline';
-import FeatureShowcase from './feature-showcase';
-import { DEV_MODE } from '@/constants/common';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card } from '@tuturuuu/ui/card';
@@ -32,10 +27,15 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@tuturuuu/ui/tooltip';
-import { type Variants, motion } from 'framer-motion';
-import { useTranslations } from 'next-intl';
+import { motion, type Variants } from 'framer-motion';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
+import { DEV_MODE } from '@/constants/common';
+import GradientHeadline from '../gradient-headline';
+import AiFeatures from './ai-features';
+import AnimatedTimeline from './animated-timeline';
+import FeatureShowcase from './feature-showcase';
 
 // Dynamically import HeroAnimation with no SSR to prevent hydration issues
 const HeroAnimation = dynamic(() => import('./hero-animation'), {
@@ -56,7 +56,7 @@ export default function MarketingPage() {
         ease: 'easeOut',
       },
     },
-  };
+  } satisfies Variants;
 
   const cardVariants = {
     hidden: { scale: 0.95, opacity: 0, y: 20 },
@@ -79,7 +79,7 @@ export default function MarketingPage() {
         damping: 10,
       },
     },
-  };
+  } satisfies Variants;
 
   // Enhanced floating effect variants with reduced movement for better performance
   const floatingVariants = {
@@ -93,7 +93,7 @@ export default function MarketingPage() {
         ease: 'easeInOut',
       },
     },
-  } as Variants;
+  } satisfies Variants;
 
   return (
     <>
@@ -113,7 +113,7 @@ export default function MarketingPage() {
                 className="group relative mb-8 overflow-hidden border-transparent backdrop-blur-sm"
               >
                 <motion.div
-                  className="bg-foreground/10 absolute inset-0 opacity-100 transition-opacity"
+                  className="absolute inset-0 bg-foreground/10 opacity-100 transition-opacity"
                   whileHover={{ opacity: 1 }}
                 />
                 <Sparkles className="mr-2 h-4 w-4" />
@@ -125,7 +125,7 @@ export default function MarketingPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2, duration: 0.6 }}
-              className="text-foreground mb-6 text-balance text-center text-4xl font-bold tracking-tight md:text-6xl lg:text-7xl"
+              className="mb-6 text-center text-4xl font-bold tracking-tight text-balance text-foreground md:text-6xl lg:text-7xl"
             >
               {t('title')}
               <br />
@@ -136,7 +136,7 @@ export default function MarketingPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4, duration: 0.8 }}
-              className="text-foreground/50 mb-8 max-w-2xl text-balance text-center text-lg"
+              className="mb-8 max-w-2xl text-center text-lg text-balance text-foreground/50"
             >
               {t('description')}
             </motion.div>
@@ -165,7 +165,7 @@ export default function MarketingPage() {
                     className="group relative overflow-hidden"
                   >
                     <motion.span
-                      className="bg-primary/10 absolute inset-0"
+                      className="absolute inset-0 bg-primary/10"
                       initial={{ x: '-100%' }}
                       whileHover={{ x: '100%' }}
                       transition={{ duration: 0.5 }}
@@ -201,17 +201,17 @@ export default function MarketingPage() {
                 >
                   <Badge
                     variant="outline"
-                    className="bg-background/50 text-primary mb-4 animate-pulse backdrop-blur-sm"
+                    className="mb-4 animate-pulse bg-background/50 text-primary backdrop-blur-sm"
                   >
                     <Trophy className="mr-2 h-4 w-4" />
                     {t('feature-event')}
                   </Badge>
 
-                  <h2 className="from-primary via-dynamic-purple to-dynamic-blue bg-linear-to-r mb-4 text-balance bg-clip-text text-4xl font-bold text-transparent">
+                  <h2 className="mb-4 bg-linear-to-r from-primary via-dynamic-purple to-dynamic-blue bg-clip-text text-4xl font-bold text-balance text-transparent">
                     NEO League {t('season')} 1
                   </h2>
 
-                  <div className="from-dynamic-purple to-dynamic-red bg-linear-to-r mb-6 bg-clip-text text-3xl font-bold text-transparent">
+                  <div className="mb-6 bg-linear-to-r from-dynamic-purple to-dynamic-red bg-clip-text text-3xl font-bold text-transparent">
                     Prompt The Future
                   </div>
                 </motion.div>
@@ -250,7 +250,7 @@ export default function MarketingPage() {
                   ]}
                 />
 
-                <Separator className="bg-foreground/10 my-12" />
+                <Separator className="my-12 bg-foreground/10" />
 
                 {/* Enhanced Requirements and Info Cards */}
                 <div className="mt-16 grid gap-6 md:grid-cols-2">
@@ -259,23 +259,23 @@ export default function MarketingPage() {
                     whileHover="hover"
                     className="group"
                   >
-                    <Card className="border-foreground/10 bg-foreground/5 h-full overflow-hidden">
+                    <Card className="h-full overflow-hidden border-foreground/10 bg-foreground/5">
                       <div className="relative overflow-hidden rounded-xl p-6">
                         <div className="relative">
                           <h3 className="mb-4 flex items-center gap-2 text-xl font-bold">
-                            <UserCheck className="text-primary h-5 w-5" />
+                            <UserCheck className="h-5 w-5 text-primary" />
                             {t('requirements')}
                           </h3>
                           <ul className="space-y-3">
-                            <li className="text-muted-foreground flex items-center gap-2">
+                            <li className="flex items-center gap-2 text-muted-foreground">
                               <MapPin className="h-4 w-4" />
                               <span>{t('based-in')}</span>
                             </li>
-                            <li className="text-muted-foreground flex items-center gap-2">
+                            <li className="flex items-center gap-2 text-muted-foreground">
                               <School className="h-4 w-4" />
                               <span>{t('undergraduates')}</span>
                             </li>
-                            <li className="text-muted-foreground flex items-center gap-2">
+                            <li className="flex items-center gap-2 text-muted-foreground">
                               <Clock className="h-4 w-4" />
                               <span>{t('age')}</span>
                             </li>
@@ -290,11 +290,11 @@ export default function MarketingPage() {
                     whileHover="hover"
                     className="group"
                   >
-                    <Card className="border-foreground/10 bg-foreground/5 h-full overflow-hidden">
+                    <Card className="h-full overflow-hidden border-foreground/10 bg-foreground/5">
                       <div className="relative overflow-hidden rounded-xl p-6">
                         <div className="relative">
                           <h3 className="mb-4 flex items-center gap-2 text-xl font-bold">
-                            <Target className="text-primary h-5 w-5" />
+                            <Target className="h-5 w-5 text-primary" />
                             {t('program-objectives')}
                           </h3>
                           <ul className="space-y-3">
@@ -307,9 +307,9 @@ export default function MarketingPage() {
                             ].map((objective, index) => (
                               <li
                                 key={index}
-                                className="text-muted-foreground flex items-start gap-2"
+                                className="flex items-start gap-2 text-muted-foreground"
                               >
-                                <CheckCircle className="text-primary mt-1 h-4 w-4 shrink-0" />
+                                <CheckCircle className="mt-1 h-4 w-4 shrink-0 text-primary" />
                                 <span>{objective}</span>
                               </li>
                             ))}
@@ -385,7 +385,7 @@ export default function MarketingPage() {
 
         {/* Learning Section with enhanced visuals */}
         <section id="learning" className="relative w-full py-24">
-          <div className="bg-primary/5 absolute inset-0" />
+          <div className="absolute inset-0 bg-primary/5" />
           <div className="absolute inset-0 bg-[radial-gradient(circle_500px_at_50%_50%,rgba(var(--primary-rgb),0.1),transparent)]" />
 
           <div className="relative mx-auto max-w-6xl px-4">
@@ -418,7 +418,7 @@ export default function MarketingPage() {
                       transition={{ delay: index * 0.1 }}
                       className="flex items-center gap-2"
                     >
-                      <div className="bg-primary/10 text-primary rounded-full p-1">
+                      <div className="rounded-full bg-primary/10 p-1 text-primary">
                         <CheckCircle className="h-4 w-4" />
                       </div>
                       <span>{item}</span>
@@ -433,8 +433,8 @@ export default function MarketingPage() {
                 viewport={{ once: true }}
                 className="relative"
               >
-                <div className="bg-background/30 relative aspect-video rounded-xl border backdrop-blur-sm">
-                  <div className="from-primary/10 bg-linear-to-br absolute inset-0 rounded-xl via-transparent to-transparent" />
+                <div className="relative aspect-video rounded-xl border bg-background/30 backdrop-blur-sm">
+                  <div className="absolute inset-0 rounded-xl bg-linear-to-br from-primary/10 via-transparent to-transparent" />
                   <div className="relative p-8">
                     <motion.div
                       initial={{ opacity: 0, y: 20 }}
@@ -465,14 +465,14 @@ export default function MarketingPage() {
                           whileInView={{ opacity: 1, y: 0 }}
                           viewport={{ once: true }}
                           transition={{ delay: index * 0.1 }}
-                          className="bg-background/10 flex items-start gap-4 rounded-lg border p-4 backdrop-blur-sm"
+                          className="flex items-start gap-4 rounded-lg border bg-background/10 p-4 backdrop-blur-sm"
                         >
-                          <div className="bg-foreground/10 text-primary rounded-full p-2">
+                          <div className="rounded-full bg-foreground/10 p-2 text-primary">
                             {item.icon}
                           </div>
                           <div>
                             <h3 className="font-semibold">{item.title}</h3>
-                            <p className="text-muted-foreground text-sm">
+                            <p className="text-sm text-muted-foreground">
                               {item.description}
                             </p>
                           </div>
@@ -504,7 +504,7 @@ export default function MarketingPage() {
             <h2 className="mb-4 text-4xl font-bold md:text-5xl">
               {t('get-started-today-subtitle')}
             </h2>
-            <p className="text-muted-foreground mb-8">
+            <p className="mb-8 text-muted-foreground">
               {t('get-started-today-description')}
             </p>
             <motion.div

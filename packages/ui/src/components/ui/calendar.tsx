@@ -1,5 +1,10 @@
 'use client';
 
+import { cn } from '@tuturuuu/utils/format';
+import { format } from 'date-fns';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import * as React from 'react';
+import { DayPicker } from 'react-day-picker';
 import { buttonVariants } from './button';
 import { DateInput } from './custom/date-input';
 import {
@@ -9,11 +14,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from './select';
-import { cn } from '@tuturuuu/utils/format';
-import { format } from 'date-fns';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-import * as React from 'react';
-import { DayPicker } from 'react-day-picker';
 
 export type CalendarProps = React.ComponentProps<typeof DayPicker> & {
   // eslint-disable-next-line no-unused-vars
@@ -70,7 +70,7 @@ function Calendar({
             }}
             className={cn(
               buttonVariants({ variant: 'ghost', size: 'icon' }),
-              'hover:bg-accent/50 h-7 w-7 transition-colors'
+              'h-7 w-7 transition-colors hover:bg-accent/50'
             )}
           >
             <ChevronLeft className="h-4 w-4" />
@@ -88,7 +88,7 @@ function Calendar({
               <SelectTrigger
                 className={cn(
                   'h-8 w-[90px] transition-colors',
-                  isCurrentYear && 'text-primary font-medium'
+                  isCurrentYear && 'font-medium text-primary'
                 )}
               >
                 <SelectValue placeholder="Year" />
@@ -97,8 +97,8 @@ function Calendar({
                 position="popper"
                 className="h-[300px] overflow-y-auto"
               >
-                <div className="bg-background sticky top-0 -mx-1 flex items-center justify-center border-b py-1">
-                  <div className="text-muted-foreground px-2 text-sm font-medium">
+                <div className="sticky top-0 -mx-1 flex items-center justify-center border-b bg-background py-1">
+                  <div className="px-2 text-sm font-medium text-muted-foreground">
                     {currentYear}
                   </div>
                 </div>
@@ -109,7 +109,7 @@ function Calendar({
                     className={cn(
                       'transition-colors',
                       parseInt(year.value) === currentYear &&
-                        'text-primary font-medium'
+                        'font-medium text-primary'
                     )}
                   >
                     {year.label}
@@ -129,7 +129,7 @@ function Calendar({
               <SelectTrigger
                 className={cn(
                   'h-8 w-[130px] transition-colors',
-                  isCurrentMonth && 'text-primary font-medium'
+                  isCurrentMonth && 'font-medium text-primary'
                 )}
               >
                 <SelectValue placeholder="Month" />
@@ -156,7 +156,7 @@ function Calendar({
             }}
             className={cn(
               buttonVariants({ variant: 'ghost', size: 'icon' }),
-              'hover:bg-accent/50 h-7 w-7 transition-colors'
+              'h-7 w-7 transition-colors hover:bg-accent/50'
             )}
           >
             <ChevronRight className="h-4 w-4" />

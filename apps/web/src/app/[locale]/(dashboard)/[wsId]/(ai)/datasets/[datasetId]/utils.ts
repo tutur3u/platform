@@ -184,7 +184,6 @@ export async function detectDuplicates(datasetId: string) {
       }
     } catch (error) {
       console.error(`Error processing row ${row.row_id}:`, error);
-      continue;
     }
   }
 

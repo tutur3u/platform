@@ -1,18 +1,18 @@
-import { LOCALE_COOKIE_NAME, PUBLIC_PATHS } from './constants/common';
-import { Locale, defaultLocale, supportedLocales } from './i18n/routing';
 import { match } from '@formatjs/intl-localematcher';
 import { createCentralizedAuthMiddleware } from '@tuturuuu/auth/middleware';
 import Negotiator from 'negotiator';
-import createIntlMiddleware from 'next-intl/middleware';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
+import createIntlMiddleware from 'next-intl/middleware';
+import { LOCALE_COOKIE_NAME, PUBLIC_PATHS } from './constants/common';
+import { defaultLocale, type Locale, supportedLocales } from './i18n/routing';
 
 const WEB_APP_URL =
   process.env.NODE_ENV === 'production'
     ? 'https://tuturuuu.com'
     : 'http://localhost:7803';
 
-// Create the centralized auth middleware
+// Create the centralized auth middleware with MFA
 const authMiddleware = createCentralizedAuthMiddleware({
   webAppUrl: WEB_APP_URL,
   publicPaths: PUBLIC_PATHS,
@@ -20,7 +20,7 @@ const authMiddleware = createCentralizedAuthMiddleware({
 });
 
 export async function middleware(req: NextRequest): Promise<NextResponse> {
-  // If token auth didn't handle it, try centralized auth
+  // Handle authentication and MFA with the centralized middleware
   const authRes = await authMiddleware(req);
 
   // If the auth middleware returned a redirect response, return it

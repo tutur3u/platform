@@ -10,12 +10,14 @@ node_modules
 coverage
 
 # next.js
-.next/
-out/
+.next
+out
+target
 build
 dist
-.swc/
+.swc
 .vercel
+.zshrc
 
 # misc
 .DS_Store
@@ -24,9 +26,9 @@ dist
 # debug
 npm-debug.log*
 yarn-debug.log*
-yarn-error.log*
 
 # local env files
+.env
 .env.local
 .env.development.local
 .env.test.local
@@ -38,3 +40,9 @@ yarn-error.log*
 # Typescript
 *.tsbuildinfo
 next-env.d.ts
+.trigger.env
+.env.local
+.env.*.local
+
+# Trigger.dev
+.trigger

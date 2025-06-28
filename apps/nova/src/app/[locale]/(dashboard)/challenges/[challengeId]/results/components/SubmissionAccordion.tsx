@@ -1,8 +1,3 @@
-import { ExtendedNovaSubmission } from '../types';
-import CriteriaEvaluation from './CriteriaEvaluation';
-import SubmissionDetails from './SubmissionDetails';
-import TestCaseEvaluation from './TestCaseEvaluation';
-import ScoreBadge from '@/components/common/ScoreBadge';
 import {
   Accordion,
   AccordionContent,
@@ -14,6 +9,11 @@ import { CheckCircle2, Clock, Code, Crown, XCircle } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { formatDistanceToNow } from 'date-fns';
+import ScoreBadge from '@/components/common/ScoreBadge';
+import type { ExtendedNovaSubmission } from '../types';
+import CriteriaEvaluation from './CriteriaEvaluation';
+import SubmissionDetails from './SubmissionDetails';
+import TestCaseEvaluation from './TestCaseEvaluation';
 
 interface SubmissionAccordionProps {
   submissions: ExtendedNovaSubmission[];
@@ -46,10 +46,10 @@ export default function SubmissionAccordion({
           <AccordionItem
             key={subIndex}
             value={`submission-${sessionIndex}-${problemIndex}-${subIndex}`}
-            className="data-[state=open]:bg-muted/30 overflow-hidden rounded-lg border border-b px-0"
+            className="overflow-hidden rounded-lg border border-b px-0 data-[state=open]:bg-muted/30"
           >
             <AccordionTrigger
-              className="hover:bg-muted/50 group gap-0 rounded-t-lg px-3 py-3"
+              className="group gap-0 rounded-t-lg px-3 py-3 hover:bg-muted/50"
               showChevron={false}
             >
               <div className="flex w-full items-center justify-between">
@@ -75,26 +75,26 @@ export default function SubmissionAccordion({
                       {isBest && (
                         <Badge
                           variant="outline"
-                          className="border-dynamic-yellow/20 bg-dynamic-yellow/10 text-dynamic-yellow text-xs"
+                          className="border-dynamic-yellow/20 bg-dynamic-yellow/10 text-xs text-dynamic-yellow"
                         >
                           Best
                         </Badge>
                       )}
                     </div>
-                    <span className="text-muted-foreground text-xs">
+                    <span className="text-xs text-muted-foreground">
                       {timeAgo}
                     </span>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-3">
-                  <div className="text-muted-foreground hidden items-center text-xs md:flex">
+                  <div className="hidden items-center text-xs text-muted-foreground md:flex">
                     {submission.passed_tests}/{submission.total_tests} tests
                     passed
                     {testPassRatio >= 0.8 ? (
-                      <CheckCircle2 className="text-dynamic-green ml-1 h-3.5 w-3.5" />
+                      <CheckCircle2 className="ml-1 h-3.5 w-3.5 text-dynamic-green" />
                     ) : (
-                      <XCircle className="text-dynamic-orange ml-1 h-3.5 w-3.5" />
+                      <XCircle className="ml-1 h-3.5 w-3.5 text-dynamic-orange" />
                     )}
                   </div>
 
@@ -108,10 +108,10 @@ export default function SubmissionAccordion({
                 </div>
               </div>
             </AccordionTrigger>
-            <AccordionContent className="overflow-hidden px-0 pb-0 pt-0">
+            <AccordionContent className="overflow-hidden px-0 pt-0 pb-0">
               <Separator />
               <div className="p-4">
-                <div className="text-muted-foreground mb-4 flex items-center text-sm">
+                <div className="mb-4 flex items-center text-sm text-muted-foreground">
                   <Clock className="mr-1.5 h-4 w-4" />
                   Submitted on {createdAt.toLocaleString()}
                 </div>

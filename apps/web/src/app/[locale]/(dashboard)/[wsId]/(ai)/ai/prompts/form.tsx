@@ -1,7 +1,6 @@
 'use client';
 
-import AIModelSelector from './model-selector';
-import { AIPrompt } from '@tuturuuu/types/db';
+import type { AIPrompt } from '@tuturuuu/types/db';
 import {
   Accordion,
   AccordionContent,
@@ -23,10 +22,11 @@ import { Input } from '@tuturuuu/ui/input';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { Separator } from '@tuturuuu/ui/separator';
 import { Textarea } from '@tuturuuu/ui/textarea';
-import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import * as z from 'zod';
+import AIModelSelector from './model-selector';
 
 interface Props {
   wsId: string;
@@ -189,7 +189,7 @@ export function AIPromptForm({ wsId, data, onComplete, submitLabel }: Props) {
       <AccordionItem value="output">
         <AccordionTrigger>Output</AccordionTrigger>
         <AccordionContent>
-          <div className="bg-foreground/5 rounded-lg border p-2">
+          <div className="rounded-lg border bg-foreground/5 p-2">
             {output || 'No output generated yet.'}
           </div>
         </AccordionContent>

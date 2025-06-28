@@ -1,6 +1,6 @@
-import { CalendarCell } from './calendar-cell';
-import { DAY_HEIGHT, HOUR_HEIGHT } from './config';
 import { cn } from '@tuturuuu/utils/format';
+import { CalendarCell } from './calendar-cell';
+import { DAY_HEIGHT, HOUR_HEIGHT, MIN_COLUMN_WIDTH } from './config';
 
 interface CalendarColumnProps {
   date: string;
@@ -13,12 +13,12 @@ export const CalendarColumn = ({ date, last }: CalendarColumnProps) => {
   return (
     <div
       className={cn(
-        'border-border/30 relative grid border border-r',
+        'relative grid border border-r border-border/30',
         last && 'border-r-border'
       )}
       style={{
         gridTemplateRows: `repeat(24, ${HOUR_HEIGHT}px)`,
-        minWidth: '120px',
+        minWidth: `${MIN_COLUMN_WIDTH}px`,
         height: `${DAY_HEIGHT}px`, // 24 hours * 80px = 1920px
       }}
       data-column-date={date}

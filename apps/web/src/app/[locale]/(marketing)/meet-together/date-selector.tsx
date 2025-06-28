@@ -3,7 +3,7 @@
 import { Calendar } from '@tuturuuu/ui/calendar';
 import { enUS, vi } from 'date-fns/locale';
 import { useLocale } from 'next-intl';
-import React from 'react';
+import type React from 'react';
 
 interface DateSelectorProps {
   value?: Date[];

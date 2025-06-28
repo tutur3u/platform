@@ -1,5 +1,5 @@
 import { motion, useMotionTemplate, useMotionValue } from 'framer-motion';
-import { MouseEvent } from 'react';
+import type { MouseEvent } from 'react';
 
 interface HoverCardProps {
   children: React.ReactNode;
@@ -21,7 +21,7 @@ export default function HoverCard({
 
   return (
     <motion.div
-      className={`border-primary/10 bg-background/80 group relative h-full overflow-hidden rounded-xl border p-6 backdrop-blur-sm ${className}`}
+      className={`group relative h-full overflow-hidden rounded-xl border border-primary/10 bg-background/80 p-6 backdrop-blur-sm ${className}`}
       onMouseMove={handleMouseMove}
     >
       <motion.div

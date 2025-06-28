@@ -1,12 +1,12 @@
 'use client';
 
-import { TeamRowActions } from './row-actions';
-import { TeamAccordion } from './team-accordion';
-import { ColumnDef } from '@tanstack/react-table';
+import type { ColumnDef } from '@tanstack/react-table';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import { cn } from '@tuturuuu/utils/format';
 import moment from 'moment';
 import Link from 'next/link';
+import { TeamRowActions } from './row-actions';
+import { TeamAccordion } from './team-accordion';
 
 interface Team {
   id: string;

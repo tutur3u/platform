@@ -1,12 +1,14 @@
-import LinkButton from '@/app/[locale]/(dashboard)/_components/link-button';
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { type WorkspaceQuizSet } from '@tuturuuu/types/db';
+import type { WorkspaceQuizSet } from '@tuturuuu/types/db';
+import { Button } from '@tuturuuu/ui/button';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
-import { Box, Eye, Paperclip } from '@tuturuuu/ui/icons';
+import { BarChart3, Box, Eye, Paperclip } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
-import { getTranslations } from 'next-intl/server';
+import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { ReactNode } from 'react';
+import { getTranslations } from 'next-intl/server';
+import type { ReactNode } from 'react';
+import LinkButton from '@/app/[locale]/(dashboard)/_components/link-button';
 
 interface Props {
   children: ReactNode;
@@ -35,7 +37,7 @@ export default async function QuizSetDetailsLayout({
         title={
           <>
             <h1 className="flex w-full items-center gap-2 text-2xl font-bold">
-              <div className="border-dynamic-purple/20 bg-dynamic-purple/10 text-dynamic-purple flex items-center gap-2 rounded-lg border px-2 text-lg max-md:hidden">
+              <div className="flex items-center gap-2 rounded-lg border border-dynamic-purple/20 bg-dynamic-purple/10 px-2 text-lg text-dynamic-purple max-md:hidden">
                 <Box className="h-6 w-6" />
                 {t('ws-quiz-sets.singular')}
               </div>
@@ -63,6 +65,14 @@ export default async function QuizSetDetailsLayout({
               />
             </div>
           </>
+        }
+        action={
+          <Button variant="outline" className="gap-2" asChild>
+            <Link href={`/${wsId}/quiz-sets/${setId}/statistics`}>
+              <BarChart3 className="h-4 w-4" />
+              {t('common.statistics')}
+            </Link>
+          </Button>
         }
       />
       <Separator className="my-4" />

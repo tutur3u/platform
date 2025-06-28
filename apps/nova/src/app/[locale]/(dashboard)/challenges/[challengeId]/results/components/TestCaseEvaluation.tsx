@@ -1,5 +1,5 @@
-import { ExtendedNovaSubmission } from '../types';
 import { Badge } from '@tuturuuu/ui/badge';
+import type { ExtendedNovaSubmission } from '../types';
 
 interface TestCaseEvaluationProps {
   submission: ExtendedNovaSubmission;
@@ -23,7 +23,7 @@ export default function TestCaseEvaluation({
         </Badge>
       </div>
 
-      <div className="text-muted-foreground space-y-1 text-sm">
+      <div className="space-y-1 text-sm text-muted-foreground">
         <div className="flex items-center justify-between">
           <span>Total Tests:</span>
           <span className="font-medium">{submission.total_tests}</span>

@@ -11,8 +11,8 @@ import { Button } from '@tuturuuu/ui/button';
 import { HelpCircle } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import { motion } from 'framer-motion';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 
 export default function FAQPage() {
   const t = useTranslations('boarding-pages.faq');
@@ -116,7 +116,7 @@ export default function FAQPage() {
           <h1 className="mb-4 text-4xl font-bold tracking-tight sm:text-5xl">
             {t('title')}
           </h1>
-          <p className="text-muted-foreground mx-auto max-w-2xl text-lg">
+          <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
             {t('subtitle')}
           </p>
         </motion.div>
@@ -141,7 +141,7 @@ export default function FAQPage() {
                   <AccordionTrigger className="text-left">
                     {faq.question}
                   </AccordionTrigger>
-                  <AccordionContent className="prose text-muted-foreground max-w-none">
+                  <AccordionContent className="prose max-w-none text-muted-foreground">
                     <p>{faq.answer}</p>
                   </AccordionContent>
                 </AccordionItem>
@@ -158,7 +158,7 @@ export default function FAQPage() {
         className="mt-16 text-center"
       >
         <h2 className="text-2xl font-bold">{t('still-have-questions')}</h2>
-        <p className="text-muted-foreground mb-6 mt-2">
+        <p className="mt-2 mb-6 text-muted-foreground">
           {t('cant-find-answer')}
         </p>
         <Link href="/contact">

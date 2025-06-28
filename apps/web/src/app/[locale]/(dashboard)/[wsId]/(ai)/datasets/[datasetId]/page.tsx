@@ -1,6 +1,3 @@
-import { DuplicateHandler } from './components/duplicate-handler';
-import { DatasetCrawler } from './explore/dataset-crawler';
-import { getDatasetMetrics } from './utils';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -13,6 +10,9 @@ import {
 import { BarChart, FileText, RefreshCw, Upload } from '@tuturuuu/ui/icons';
 import moment from 'moment';
 import Link from 'next/link';
+import { DuplicateHandler } from './components/duplicate-handler';
+import { DatasetCrawler } from './explore/dataset-crawler';
+import { getDatasetMetrics } from './utils';
 
 interface Props {
   params: Promise<{
@@ -44,7 +44,7 @@ export default async function DatasetDetailsPage({ params }: Props) {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">{dataset.name}</h1>
-          <p className="text-muted-foreground text-sm">
+          <p className="text-sm text-muted-foreground">
             {dataset.description || 'No description provided'}
           </p>
         </div>
@@ -72,11 +72,11 @@ export default async function DatasetDetailsPage({ params }: Props) {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Columns</CardTitle>
-            <FileText className="text-muted-foreground h-4 w-4" />
+            <FileText className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{totalColumns}</div>
-            <p className="text-muted-foreground text-xs">
+            <p className="text-xs text-muted-foreground">
               Number of columns in the dataset
             </p>
           </CardContent>
@@ -85,11 +85,11 @@ export default async function DatasetDetailsPage({ params }: Props) {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Rows</CardTitle>
-            <BarChart className="text-muted-foreground h-4 w-4" />
+            <BarChart className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{totalRows}</div>
-            <p className="text-muted-foreground text-xs">
+            <p className="text-xs text-muted-foreground">
               Number of rows in the dataset
             </p>
           </CardContent>
@@ -98,7 +98,7 @@ export default async function DatasetDetailsPage({ params }: Props) {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Last Updated</CardTitle>
-            <RefreshCw className="text-muted-foreground h-4 w-4" />
+            <RefreshCw className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
@@ -106,7 +106,7 @@ export default async function DatasetDetailsPage({ params }: Props) {
                 ? moment(lastUpdated).format('DD/MM/YYYY HH:mm')
                 : '-'}
             </div>
-            <p className="text-muted-foreground text-xs">
+            <p className="text-xs text-muted-foreground">
               Time since last data update
             </p>
           </CardContent>
@@ -115,11 +115,11 @@ export default async function DatasetDetailsPage({ params }: Props) {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Status</CardTitle>
-            <RefreshCw className="text-muted-foreground h-4 w-4" />
+            <RefreshCw className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold capitalize">Active</div>
-            <p className="text-muted-foreground text-xs">
+            <p className="text-xs text-muted-foreground">
               Current dataset status
             </p>
           </CardContent>

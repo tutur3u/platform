@@ -1,28 +1,34 @@
 'use client';
 
-import { AppearanceData, defaultAppearanceData } from './appearance-settings';
 import {
-  CategoryColorsData,
-  defaultCategoryColors,
-} from './category-color-settings';
-import {
-  NotificationData,
-  defaultNotificationData,
-} from './notification-settings';
-import {
-  SmartSchedulingData,
-  defaultSmartSchedulingData,
-} from './smart-scheduling-settings';
-import { TaskSettingsData, defaultTaskSettings } from './task-settings';
-import { WeekTimeRanges, defaultWeekTimeRanges } from './time-range-picker';
-import { TimezoneData, defaultTimezoneData } from './timezone-settings';
-import {
-  ReactNode,
   createContext,
+  type ReactNode,
   useContext,
   useEffect,
   useState,
 } from 'react';
+import {
+  type AppearanceData,
+  defaultAppearanceData,
+} from './appearance-settings';
+import {
+  type CategoryColorsData,
+  defaultCategoryColors,
+} from './category-color-settings';
+import {
+  defaultNotificationData,
+  type NotificationData,
+} from './notification-settings';
+import {
+  defaultSmartSchedulingData,
+  type SmartSchedulingData,
+} from './smart-scheduling-settings';
+import { defaultTaskSettings, type TaskSettingsData } from './task-settings';
+import {
+  defaultWeekTimeRanges,
+  type WeekTimeRanges,
+} from './time-range-picker';
+import { defaultTimezoneData, type TimezoneData } from './timezone-settings';
 
 export type CalendarSettings = {
   firstDayOfWeek: number;

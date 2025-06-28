@@ -1,7 +1,7 @@
 'use client';
 
 import { createClient } from '@tuturuuu/supabase/next/client';
-import { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
+import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -21,8 +21,8 @@ import { Label } from '@tuturuuu/ui/label';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { getInitials } from '@tuturuuu/utils/name-helper';
 import { generateRandomUUID } from '@tuturuuu/utils/uuid-helper';
-import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import * as z from 'zod';
 
@@ -214,7 +214,7 @@ export default function UserAvatar({ user }: AvatarProps) {
         <DialogTrigger asChild>
           <div className="flex items-center justify-center">
             <div className="relative flex w-fit flex-col items-center justify-center gap-4">
-              <Avatar className="border-foreground h-32 w-32 cursor-pointer overflow-visible border text-3xl font-semibold">
+              <Avatar className="h-32 w-32 cursor-pointer overflow-visible border border-foreground text-3xl font-semibold">
                 <AvatarImage
                   src={previewSrc || undefined}
                   alt="Avatar"
@@ -228,7 +228,7 @@ export default function UserAvatar({ user }: AvatarProps) {
               </Avatar>
               <Button
                 size="icon"
-                className="absolute bottom-0 right-0 rounded-full backdrop-blur-lg"
+                className="absolute right-0 bottom-0 rounded-full backdrop-blur-lg"
               >
                 <Settings className="h-5 w-5" />
               </Button>

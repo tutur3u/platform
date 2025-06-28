@@ -20,8 +20,8 @@ import { Label } from '@tuturuuu/ui/label';
 import { Progress } from '@tuturuuu/ui/progress';
 import { Separator } from '@tuturuuu/ui/separator';
 import { generateUUID } from '@tuturuuu/utils/uuid-helper';
-import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import * as XLSX from 'xlsx';
 
@@ -229,7 +229,7 @@ export default function ImportDialogContent({ wsId }: { wsId: string }) {
               {paginatedData.map((row, index) => (
                 <div
                   key={index}
-                  className="border-foreground/5 bg-foreground/5 rounded border p-2"
+                  className="rounded border border-foreground/5 bg-foreground/5 p-2"
                 >
                   <div className="line-clamp-1 font-semibold">
                     {row.fullName}

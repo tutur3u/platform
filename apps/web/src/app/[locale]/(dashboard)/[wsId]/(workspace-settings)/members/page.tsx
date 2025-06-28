@@ -1,20 +1,20 @@
-import InviteMemberButton from './_components/invite-member-button';
-import MemberList from './_components/member-list';
-import MemberTabs from './_components/member-tabs';
-import {
-  getPermissions,
-  getWorkspace,
-  verifyHasSecrets,
-} from '@/lib/workspace-helper';
 import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
-import { User } from '@tuturuuu/types/primitives/User';
+import type { User } from '@tuturuuu/types/primitives/User';
 import { Separator } from '@tuturuuu/ui/separator';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
-import { getTranslations } from 'next-intl/server';
+import {
+  getPermissions,
+  getWorkspace,
+  verifyHasSecrets,
+} from '@tuturuuu/utils/workspace-helper';
 import { redirect } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
+import InviteMemberButton from './_components/invite-member-button';
+import MemberList from './_components/member-list';
+import MemberTabs from './_components/member-tabs';
 
 interface Props {
   params: Promise<{
@@ -48,7 +48,7 @@ export default async function WorkspaceMembersPage({
 
   return (
     <>
-      <div className="border-border bg-foreground/5 flex flex-col justify-between gap-4 rounded-lg border p-4 md:flex-row md:items-start">
+      <div className="flex flex-col justify-between gap-4 rounded-lg border border-border bg-foreground/5 p-4 md:flex-row md:items-start">
         <div>
           <h1 className="text-2xl font-bold">
             {t('workspace-settings-layout.members')}

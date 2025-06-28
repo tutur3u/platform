@@ -1,6 +1,6 @@
 'use client';
 
-import { User } from '@tuturuuu/types/primitives/User';
+import type { User } from '@tuturuuu/types/primitives/User';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,
@@ -207,7 +207,7 @@ export default function InviteMemberButton({
           </>
         ) : (
           <div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed p-8">
-            <p className="text-muted-foreground text-center">
+            <p className="text-center text-muted-foreground">
               You must be an admin or higher to invite members.
             </p>
           </div>

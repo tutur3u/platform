@@ -1,9 +1,9 @@
-import AccountBadge from './account-badge';
-import { useTimeBlocking } from './time-blocking-provider';
-import { User as PlatformUser } from '@tuturuuu/types/primitives/User';
+import type { User as PlatformUser } from '@tuturuuu/types/primitives/User';
 import { Button } from '@tuturuuu/ui/button';
 import { Separator } from '@tuturuuu/ui/separator';
 import { useTranslations } from 'next-intl';
+import AccountBadge from './account-badge';
+import { useTimeBlocking } from './time-blocking-provider';
 
 export default function LoggedInAsButton({
   platformUser,
@@ -16,14 +16,14 @@ export default function LoggedInAsButton({
   const user = guestUser ?? platformUser;
 
   return (
-    <div className="border-foreground/20 bg-foreground/5 w-full rounded border p-2 text-center md:w-fit md:min-w-64">
+    <div className="w-full rounded border border-foreground/20 bg-foreground/5 p-2 text-center md:w-fit md:min-w-64">
       <div className="text-sm opacity-80">
         {user?.id
           ? t('meet-together-plan-details.interacting_as')
           : t('meet-together-plan-details.viewing_as')}
       </div>
       <div
-        className={`${user?.id ? '' : 'opacity-50'} line-clamp-1 break-all font-semibold`}
+        className={`${user?.id ? '' : 'opacity-50'} line-clamp-1 font-semibold break-all`}
       >
         {user?.display_name ||
           platformUser?.email ||
@@ -35,13 +35,13 @@ export default function LoggedInAsButton({
           type={
             user?.is_guest === true
               ? 'GUEST'
-              : !!platformUser?.id
+              : platformUser?.id
                 ? 'PLATFORM'
                 : 'GUEST'
           }
         />
       ) : null}
-      <Separator className="bg-foreground/20 my-2" />
+      <Separator className="my-2 bg-foreground/20" />
       <Button
         className="w-full"
         onClick={() => {

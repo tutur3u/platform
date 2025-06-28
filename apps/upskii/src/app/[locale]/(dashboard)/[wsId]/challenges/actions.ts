@@ -1,11 +1,11 @@
 'use server';
 
-import { AdminsResponse } from './challengeForm';
 import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import type { NovaExtendedChallenge } from '@tuturuuu/types/db';
+import type { AdminsResponse } from './challengeForm';
 
 export async function fetchChallenges(): Promise<NovaExtendedChallenge[]> {
   try {

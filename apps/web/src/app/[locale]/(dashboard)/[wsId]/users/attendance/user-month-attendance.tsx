@@ -1,10 +1,8 @@
 'use client';
 
-import { AttendanceDialog } from './attendance-dialogue';
-import useSearchParams from '@/hooks/useSearchParams';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
-import {
+import type {
   WorkspaceUser,
   WorkspaceUserAttendance,
 } from '@tuturuuu/types/primitives/WorkspaceUser';
@@ -18,10 +16,12 @@ import {
 } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
 import { format, isAfter, parse, startOfDay } from 'date-fns';
-import { useLocale } from 'next-intl';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useLocale } from 'next-intl';
 import { Fragment, useEffect, useMemo, useState } from 'react';
+import useSearchParams from '@/hooks/useSearchParams';
+import { AttendanceDialog } from './attendance-dialogue';
 
 export default function UserMonthAttendance({
   wsId,
@@ -92,16 +92,20 @@ export default function UserMonthAttendance({
 
   // includes all days of the week, starting from monday to sunday
   const days = Array.from({ length: 7 }, (_, i) => {
-    let newDay = new Date(currentDate);
+    const newDay = new Date(currentDate);
     newDay.setDate(currentDate.getDate() - currentDate.getDay() + i + 1);
     return newDay.toLocaleString(locale, { weekday: 'narrow' });
   });
 
   // includes all days of the month, starting from monday (which could be from the previous month) to sunday (which could be from the next month)
   const daysInMonth = Array.from({ length: 42 }, (_, i) => {
-    let newDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
-    let dayOfWeek = newDay.getDay();
-    let adjustment = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // adjust for Monday start
+    const newDay = new Date(
+      currentDate.getFullYear(),
+      currentDate.getMonth(),
+      1
+    );
+    const dayOfWeek = newDay.getDay();
+    const adjustment = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // adjust for Monday start
     newDay.setDate(newDay.getDate() - adjustment + i);
     return newDay;
   });
@@ -221,7 +225,7 @@ export default function UserMonthAttendance({
   return (
     <div className={cn('rounded-lg', noOutline || 'border p-4')}>
       <div className="mb-2 flex w-full items-center border-b pb-2">
-        <div className="bg-linear-to-br aspect-square h-12 w-12 flex-none rounded-lg from-green-300 via-blue-500 to-purple-600 dark:from-green-300/70 dark:via-blue-500/70 dark:to-purple-600/70" />
+        <div className="aspect-square h-12 w-12 flex-none rounded-lg bg-linear-to-br from-green-300 via-blue-500 to-purple-600 dark:from-green-300/70 dark:via-blue-500/70 dark:to-purple-600/70" />
         <div className="flex w-full items-start justify-between gap-2">
           <div className="ml-2 flex h-12 w-[calc(100%-3.5rem)] flex-col justify-between">
             <div className="flex items-center justify-between gap-1">
@@ -236,7 +240,7 @@ export default function UserMonthAttendance({
               {differentGroups?.map((group, idx) => (
                 <div
                   key={group.id + idx}
-                  className="bg-foreground/5 dark:bg-foreground/10 flex-none whitespace-nowrap rounded border px-2 py-0.5 text-xs font-semibold"
+                  className="flex-none rounded border bg-foreground/5 px-2 py-0.5 text-xs font-semibold whitespace-nowrap dark:bg-foreground/10"
                 >
                   {group.name}
                 </div>
@@ -255,7 +259,7 @@ export default function UserMonthAttendance({
             <div className="mb-4 flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-xl font-bold md:text-2xl">
               <div className="flex items-center gap-1">
                 {thisYear}
-                <div className="bg-foreground/20 rotate-30 mx-2 h-4 w-px" />
+                <div className="mx-2 h-4 w-px rotate-30 bg-foreground/20" />
                 <span className="text-lg font-semibold md:text-xl">
                   {thisMonth}
                 </span>
@@ -263,7 +267,7 @@ export default function UserMonthAttendance({
               <div className="flex items-center gap-1">
                 {data.attendance && (
                   <div
-                    className={`bg-foreground/5 rounded border px-2 py-0.5 text-xs ${
+                    className={`rounded border bg-foreground/5 px-2 py-0.5 text-xs ${
                       data.attendance.length === 0 || isPending || isError
                         ? 'opacity-50'
                         : ''
@@ -314,7 +318,7 @@ export default function UserMonthAttendance({
                 {days.map((day, idx) => (
                   <div
                     key={`day-${idx}`}
-                    className="bg-foreground/5 flex flex-none cursor-default justify-center rounded p-2 font-semibold transition duration-300 md:rounded-lg"
+                    className="flex flex-none cursor-default justify-center rounded bg-foreground/5 p-2 font-semibold transition duration-300 md:rounded-lg"
                   >
                     {day}
                   </div>
@@ -328,7 +332,7 @@ export default function UserMonthAttendance({
                       return (
                         <div
                           key={`${initialUser.id}-${currentDate.toDateString()}-day-${idx}`}
-                          className="text-foreground/20 flex flex-none cursor-default justify-center rounded border border-transparent p-2 font-semibold transition duration-300 md:rounded-lg"
+                          className="flex flex-none cursor-default justify-center rounded border border-transparent p-2 font-semibold text-foreground/20 transition duration-300 md:rounded-lg"
                         >
                           {day.getDate()}
                         </div>
@@ -340,7 +344,7 @@ export default function UserMonthAttendance({
                           onClick={() => handleDateClick(day)}
                           key={`${initialUser.id}-${currentDate.toDateString()}-day-${idx}`}
                           className={cn(
-                            'bg-foreground/5 text-foreground/40 dark:bg-foreground/10 flex flex-none cursor-default justify-center rounded border p-2 font-semibold transition duration-300 hover:cursor-pointer md:rounded-lg',
+                            'flex flex-none cursor-default justify-center rounded border bg-foreground/5 p-2 font-semibold text-foreground/40 transition duration-300 hover:cursor-pointer md:rounded-lg dark:bg-foreground/10',
                             isAfter(day, today) &&
                               'cursor-not-allowed opacity-50 hover:cursor-not-allowed'
                           )}

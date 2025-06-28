@@ -1,6 +1,6 @@
 'use client';
 
-import { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
+import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
 import { Button } from '@tuturuuu/ui/button';
 import { ChevronLeft, ChevronRight, Users } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
@@ -61,12 +61,12 @@ export default function ExternalGroupMembers({
           currentGroups.map((group) => (
             <div
               key={group.id}
-              className="bg-background flex items-center rounded-lg border p-2"
+              className="flex items-center rounded-lg border bg-background p-2"
             >
               <div className="w-full">
                 <Link
                   href={`/${wsId}/users/groups/${group.id}`}
-                  className="hover:border-foreground/10 hover:bg-foreground/10 line-clamp-1 break-all rounded border border-transparent text-center font-semibold"
+                  className="line-clamp-1 rounded border border-transparent text-center font-semibold break-all hover:border-foreground/10 hover:bg-foreground/10"
                 >
                   {group.name}
                 </Link>

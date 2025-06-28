@@ -2,7 +2,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
-import { NextRequest, NextResponse } from 'next/server';
+import { type NextRequest, NextResponse } from 'next/server';
 
 export async function PATCH(
   request: NextRequest,
@@ -63,9 +63,9 @@ export async function PATCH(
     }
 
     // Use admin client for update
-    const adminSupabase = await createAdminClient();
+    const sbAdmin = await createAdminClient();
 
-    const { data, error } = await adminSupabase
+    const { data, error } = await sbAdmin
       .from('time_tracking_categories')
       .update({
         name: name.trim(),
@@ -138,9 +138,9 @@ export async function DELETE(
     }
 
     // Use admin client for deletion
-    const adminSupabase = await createAdminClient();
+    const sbAdmin = await createAdminClient();
 
-    const { error } = await adminSupabase
+    const { error } = await sbAdmin
       .from('time_tracking_categories')
       .delete()
       .eq('id', categoryId);

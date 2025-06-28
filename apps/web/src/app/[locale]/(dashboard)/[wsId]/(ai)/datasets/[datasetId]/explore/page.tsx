@@ -1,7 +1,7 @@
-import { DataExplorer } from './data-explorer';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { Card, CardContent } from '@tuturuuu/ui/card';
 import { notFound } from 'next/navigation';
+import { DataExplorer } from './data-explorer';
 
 interface Props {
   params: Promise<{

@@ -1,12 +1,12 @@
-import { ChatMessage } from '@/components/chat-message';
-import { OnlineUsers } from '@/components/online-users';
-import { type Message } from '@tuturuuu/ai/types';
-import { RealtimePresenceState } from '@tuturuuu/supabase/next/realtime';
+import type { Message } from '@tuturuuu/ai/types';
+import type { RealtimePresenceState } from '@tuturuuu/supabase/next/realtime';
 import { Box, Globe, Lock, Sparkle } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { Fragment } from 'react';
+import { ChatMessage } from '@/components/chat-message';
+import { OnlineUsers } from '@/components/online-users';
 
 interface PresenceUser {
   id: string;
@@ -74,7 +74,7 @@ export function ChatList({
           key={`chat-${chatId}-${chatTitle}-${chatIsPublic}-${chatModel}-${chatSummary}`}
         >
           <div
-            className={`bg-foreground/5 rounded-lg border p-4 text-center text-2xl font-semibold ${
+            className={`rounded-lg border bg-foreground/5 p-4 text-center text-2xl font-semibold ${
               chatTitle == undefined && !!chatId
                 ? 'animate-pulse text-transparent'
                 : ''
@@ -104,13 +104,13 @@ export function ChatList({
                 )}
               </span>
               {chatModel && (
-                <span className="border-dynamic-yellow/20 bg-dynamic-yellow/10 text-dynamic-yellow inline-flex items-center gap-1 rounded border px-1 py-0.5 font-mono font-semibold lowercase">
+                <span className="inline-flex items-center gap-1 rounded border border-dynamic-yellow/20 bg-dynamic-yellow/10 px-1 py-0.5 font-mono font-semibold text-dynamic-yellow lowercase">
                   <Sparkle className="h-3 w-3" />
                   {chatModel}
                 </span>
               )}
               {chatSummary && (
-                <span className="border-dynamic-purple/20 bg-dynamic-purple/10 text-dynamic-purple inline-flex items-center gap-1 rounded border px-1 py-0.5 font-mono font-semibold lowercase">
+                <span className="inline-flex items-center gap-1 rounded border border-dynamic-purple/20 bg-dynamic-purple/10 px-1 py-0.5 font-mono font-semibold text-dynamic-purple lowercase">
                   <Box className="h-3 w-3" />
                   {t('summarized')}
                 </span>
@@ -129,13 +129,13 @@ export function ChatList({
             {(chatSummary || summarizing) && (
               <Fragment key={`chat-${chatId}-${chatSummary}`}>
                 <Separator className="my-2" />
-                <div className="mb-2 text-base font-bold uppercase tracking-widest">
+                <div className="mb-2 text-base font-bold tracking-widest uppercase">
                   {t('summary')}
                 </div>
                 {!chatSummary && summarizing ? (
-                  <div className="bg-foreground/5 h-32 w-full animate-pulse rounded border" />
+                  <div className="h-32 w-full animate-pulse rounded border bg-foreground/5" />
                 ) : (
-                  <div className="bg-foreground/5 w-full whitespace-pre-wrap break-words rounded border p-2 text-start text-lg font-normal">
+                  <div className="w-full rounded border bg-foreground/5 p-2 text-start text-lg font-normal break-words whitespace-pre-wrap">
                     {chatSummary?.trim()}
                   </div>
                 )}

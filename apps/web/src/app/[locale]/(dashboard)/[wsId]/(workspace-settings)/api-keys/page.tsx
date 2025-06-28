@@ -1,14 +1,14 @@
-import { apiKeyColumns } from './columns';
-import ApiKeyEditDialog from './edit-dialog';
-import { CustomDataTable } from '@/components/custom-data-table';
-import { getPermissions } from '@/lib/workspace-helper';
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { WorkspaceApiKey } from '@tuturuuu/types/primitives/WorkspaceApiKey';
+import type { WorkspaceApiKey } from '@tuturuuu/types/primitives/WorkspaceApiKey';
 import { Button } from '@tuturuuu/ui/button';
 import { Plus } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
-import { getTranslations } from 'next-intl/server';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { redirect } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
+import { CustomDataTable } from '@/components/custom-data-table';
+import { apiKeyColumns } from './columns';
+import ApiKeyEditDialog from './edit-dialog';
 
 interface Props {
   params: Promise<{
@@ -38,7 +38,7 @@ export default async function WorkspaceApiKeysPage({
 
   return (
     <>
-      <div className="border-border bg-foreground/5 flex flex-col justify-between gap-4 rounded-lg border p-4 md:flex-row md:items-start">
+      <div className="flex flex-col justify-between gap-4 rounded-lg border border-border bg-foreground/5 p-4 md:flex-row md:items-start">
         <div>
           <h1 className="text-2xl font-bold">{t('api_keys')}</h1>
           <p className="text-foreground/80">{t('description')}</p>

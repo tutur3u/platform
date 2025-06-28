@@ -1,12 +1,12 @@
-import { userFieldColumns } from './columns';
-import UserFieldEditDialog from './edit-dialog';
-import { CustomDataTable } from '@/components/custom-data-table';
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { WorkspaceUserField } from '@tuturuuu/types/primitives/WorkspaceUserField';
+import type { WorkspaceUserField } from '@tuturuuu/types/primitives/WorkspaceUserField';
 import { Button } from '@tuturuuu/ui/button';
 import { Plus } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import { getTranslations } from 'next-intl/server';
+import { CustomDataTable } from '@/components/custom-data-table';
+import { userFieldColumns } from './columns';
+import UserFieldEditDialog from './edit-dialog';
 
 interface Props {
   params: Promise<{
@@ -32,7 +32,7 @@ export default async function WorkspaceUserFieldsPage({
 
   return (
     <>
-      <div className="border-border bg-foreground/5 flex flex-col justify-between gap-4 rounded-lg border p-4 md:flex-row md:items-start">
+      <div className="flex flex-col justify-between gap-4 rounded-lg border border-border bg-foreground/5 p-4 md:flex-row md:items-start">
         <div>
           <h1 className="text-lg font-bold md:text-2xl">{t('module')}</h1>
           <p className="text-foreground/80">{t('module_description')}</p>

@@ -1,14 +1,14 @@
-import { getWorkspaceCourseModuleColumns } from './columns';
-import CourseModuleForm from './form';
-import { CustomDataTable } from '@/components/custom-data-table';
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { WorkspaceCourseModule } from '@tuturuuu/types/db';
-import { Database } from '@tuturuuu/types/supabase';
+import type { WorkspaceCourseModule } from '@tuturuuu/types/db';
+import type { Database } from '@tuturuuu/types/supabase';
 import { Button } from '@tuturuuu/ui/button';
+import { CourseModuleForm } from '@tuturuuu/ui/custom/education/modules/course-module-form';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
-import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
+import { getTranslations } from 'next-intl/server';
+import { CustomDataTable } from '@/components/custom-data-table';
+import { getWorkspaceCourseModuleColumns } from './columns';
 
 interface SearchParams {
   q?: string;
@@ -115,7 +115,7 @@ export default async function WorkspaceCoursesPage({
       <Separator className="my-4" />
       {allModulesCompleted && certificateId ? (
         <div className="mb-4">
-          <Link href={`/${wsId}/certificate/${certificateId}`}>
+          <Link href={`/${wsId}/certificates/${certificateId}`}>
             <Button variant="default" size="lg">
               {t('certificates.download_button')}
             </Button>

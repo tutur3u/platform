@@ -229,11 +229,11 @@ export function CategoryManager({
         <CardContent>
           {categories.length === 0 ? (
             <div className="py-12 text-center">
-              <Palette className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
-              <p className="text-muted-foreground text-lg">
+              <Palette className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
+              <p className="text-lg text-muted-foreground">
                 No categories created yet
               </p>
-              <p className="text-muted-foreground mt-1 text-sm">
+              <p className="mt-1 text-sm text-muted-foreground">
                 Create categories to organize your time tracking sessions
               </p>
               {!readOnly && (
@@ -265,7 +265,7 @@ export function CategoryManager({
                             {category.name}
                           </h3>
                           {category.description && (
-                            <p className="text-muted-foreground mt-1 line-clamp-2 text-sm">
+                            <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
                               {category.description}
                             </p>
                           )}

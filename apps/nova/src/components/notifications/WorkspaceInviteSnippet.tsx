@@ -1,12 +1,12 @@
 'use client';
 
-import { Workspace } from '@tuturuuu/types/db';
+import type { Workspace } from '@tuturuuu/types/db';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import moment from 'moment';
 import 'moment/locale/vi';
-import { useLocale } from 'next-intl';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useLocale } from 'next-intl';
 
 interface Props {
   ws: Pick<Workspace, 'id' | 'name' | 'created_at'>;
@@ -91,7 +91,7 @@ const WorkspaceInviteSnippet = ({ ws, transparent = true }: Props) => {
           {ws?.name || `Unnamed Workspace`}
         </Link>
         {ws?.created_at ? (
-          <span className="text-foreground/60 font-normal">
+          <span className="font-normal text-foreground/60">
             {' '}
             • {creationDate}
           </span>
@@ -100,14 +100,14 @@ const WorkspaceInviteSnippet = ({ ws, transparent = true }: Props) => {
 
       <div className="mt-2 grid gap-2 md:grid-cols-2">
         <div
-          className="text-foreground hover:bg-foreground/5 flex cursor-pointer items-center justify-center rounded border p-1 font-semibold transition duration-300"
+          className="flex cursor-pointer items-center justify-center rounded border p-1 font-semibold text-foreground transition duration-300 hover:bg-foreground/5"
           onClick={() => declineInvite(ws)}
         >
           {declineInviteLabel}
         </div>
 
         <div
-          className="text-foreground hover:bg-foreground/5 flex flex-1 cursor-pointer items-center justify-center rounded border p-1 font-semibold transition duration-300"
+          className="flex flex-1 cursor-pointer items-center justify-center rounded border p-1 font-semibold text-foreground transition duration-300 hover:bg-foreground/5"
           onClick={() => acceptInvite(ws)}
         >
           {acceptInviteLabel}

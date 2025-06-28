@@ -1,9 +1,9 @@
-import LoginForm from './form';
 import { Separator } from '@tuturuuu/ui/separator';
-import { getTranslations } from 'next-intl/server';
 import Image from 'next/image';
 import Link from 'next/link';
+import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
+import LoginForm from './form';
 
 export default async function Login() {
   const t = await getTranslations();
@@ -26,12 +26,12 @@ export default async function Login() {
           <LoginForm />
         </Suspense>
         <Separator className="mt-2" />
-        <div className="text-foreground/50 text-center text-sm font-semibold">
+        <div className="text-center text-sm font-semibold text-foreground/50">
           {t('auth.notice-p1')}{' '}
           <Link
             href="https://tuturuuu.com/terms"
             target="_blank"
-            className="text-foreground/70 decoration-foreground/70 hover:text-foreground hover:decoration-foreground underline underline-offset-2 transition"
+            className="text-foreground/70 underline decoration-foreground/70 underline-offset-2 transition hover:text-foreground hover:decoration-foreground"
           >
             {t('auth.tos')}
           </Link>{' '}
@@ -39,7 +39,7 @@ export default async function Login() {
           <Link
             href="https://tuturuuu.com/privacy"
             target="_blank"
-            className="text-foreground/70 decoration-foreground/70 hover:text-foreground hover:decoration-foreground underline underline-offset-2 transition"
+            className="text-foreground/70 underline decoration-foreground/70 underline-offset-2 transition hover:text-foreground hover:decoration-foreground"
           >
             {t('auth.privacy')}
           </Link>{' '}

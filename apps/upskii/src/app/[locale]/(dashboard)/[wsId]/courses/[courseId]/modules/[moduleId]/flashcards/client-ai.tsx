@@ -1,14 +1,14 @@
 'use client';
 
-import ClientFlashcards from './client-flashcards';
-import { GenerateDialog } from '@/components/generate-dialog';
 import { useObject } from '@tuturuuu/ai/object/core';
 import { flashcardSchema } from '@tuturuuu/ai/object/types';
 import { Button } from '@tuturuuu/ui/button';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
-import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { GenerateDialog } from '@/components/generate-dialog';
+import ClientFlashcards from './client-flashcards';
 
 export function AIFlashcards({
   wsId,
@@ -71,7 +71,7 @@ export function AIFlashcards({
       borderColor: 'hsl(var(--green))',
     },
     frontHTML: (
-      <div className="border-dynamic-green/10 flex h-full w-full items-center justify-center rounded-2xl border p-4 text-center font-semibold">
+      <div className="flex h-full w-full items-center justify-center rounded-2xl border border-dynamic-green/10 p-4 text-center font-semibold">
         {fc?.front || '...'}
       </div>
     ),
@@ -81,7 +81,7 @@ export function AIFlashcards({
       borderColor: 'hsl(var(--purple))',
     },
     backHTML: (
-      <div className="border-dynamic-purple/10 flex h-full w-full items-center justify-center rounded-2xl border p-4 text-center font-semibold">
+      <div className="flex h-full w-full items-center justify-center rounded-2xl border border-dynamic-purple/10 p-4 text-center font-semibold">
         {fc?.back || '...'}
       </div>
     ),

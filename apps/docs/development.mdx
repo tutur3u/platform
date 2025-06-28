@@ -10,25 +10,32 @@ description: 'Learn how to preview changes locally.'
 
 ## Installation
 
-Step 1. Install [pnpm](https://pnpm.io/installation) on your machine (if you don't already have it yet), by running the following command:
+Step 1. Install [bun](https://bun.sh/docs/installation) on your machine (if you don't already have it yet), by running the following command:
 
-<CodeGroup>
+**macOS/Linux:**
 
-```bash npm
-npm install -g pnpm
+```bash
+curl -fsSL https://bun.sh/install | bash
 ```
 
-```bash yarn
-yarn global add pnpm
+**Windows:**
+
+```bash
+powershell -c "irm bun.sh/install.ps1 | iex"
 ```
 
-</CodeGroup>
+## Why Bun?
 
-<Info>
+We chose bun as our runtime and package manager based on its [design goals](https://bun.sh/docs#design-goals), which align perfectly with our platform's needs:
 
-Check out why we recommend using pnpm instead of npm or yarn by checking out their [motivation](https://pnpm.io/motivation) and [feature comparison](https://pnpm.io/feature-comparison).
+- **4x Faster Startup**: Bun processes start significantly faster than Node.js, improving development experience and CI/CD performance
+- **Built-in TypeScript & JSX Support**: No need for additional transpilation setup - bun natively executes `.ts`, `.tsx`, and `.jsx` files
+- **All-in-One Toolkit**: Combines runtime, package manager, bundler, test runner, and script runner in a single executable
+- **Web Standards Compatibility**: Implements modern Web APIs like `fetch`, `WebSocket`, and `ReadableStream` out of the box
+- **Node.js Compatibility**: Drop-in replacement for Node.js with full compatibility for existing projects
+- **Better Performance**: Powered by JavaScriptCore engine with reduced memory usage and faster execution
 
-</Info>
+These benefits make bun an ideal choice for our monorepo architecture and development workflow.
 
 Step 2. **Configure Tiptap Pro Registry:**
 
@@ -39,11 +46,11 @@ Step 3. After configuring Tiptap Pro registry, you can install all dependencies 
 <CodeGroup>
 
 ```bash standard
-pnpm install
+bun install
 ```
 
 ```bash short-hand
-pnpm i
+bun i
 ```
 
 </CodeGroup>
@@ -74,8 +81,8 @@ To complete the initial setup, please restart your IDE so that it can recognize 
 
 To develop all apps and packages (without requiring a local setup), run the following command:
 
-```bash pnpm
-pnpm dev
+```bash bun
+bun dev
 ```
 
 <Info>
@@ -87,8 +94,8 @@ pnpm dev
 
 To start a local supabase instance (database), run the following command:
 
-```bash pnpm
-pnpm sb:start
+```bash bun
+bun sb:start
 ```
 
 <Info>
@@ -109,11 +116,11 @@ To stop the local supabase instance, run the following command:
 <CodeGroup>
 
 ```bash standard
-pnpm sb:stop
+bun sb:stop
 ```
 
 ```bash short-hand
-pnpm stop
+bun stop
 ```
 
 </CodeGroup>
@@ -122,8 +129,8 @@ pnpm stop
 
 In case you want to run all local development servers, run the following command:
 
-```bash pnpm
-pnpm devx
+```bash bun
+bun devx
 ```
 
 <Info>
@@ -134,7 +141,7 @@ Running `devx` will:
 3. Start a new supabase instance (using backed up data)
 4. Start all Next.js apps in development mode
 
-If you want to have the same procedure without the backup, you can run `pnpm devrs` instead. This will:
+If you want to have the same procedure without the backup, you can run `bun devrs` instead. This will:
 
 1. Stop the currently running supabase instance (if there is any)
 2. Install all dependencies
@@ -144,8 +151,8 @@ If you want to have the same procedure without the backup, you can run `pnpm dev
 </Info>
 
 <Tip>
-  In case you don't want to run a local supabase instance, you can run `pnpm
-  dev` instead.
+  In case you don't want to run a local supabase instance, you can run `bun dev`
+  instead.
 </Tip>
 
 ### Local development
@@ -175,16 +182,16 @@ A local mail server (**InBucket**) is automatically set up by Supabase to handle
 
 To build all apps and packages, run the following command:
 
-```bash pnpm
-pnpm build
+```bash bun
+bun run build
 ```
 
 ## Test
 
 To run all tests, run the following command:
 
-```bash pnpm
-pnpm test
+```bash bun
+bun run test
 ```
 
 <Warning>

@@ -1,7 +1,7 @@
 'use client';
 
 import { createClient } from '@tuturuuu/supabase/next/client';
-import { Workspace } from '@tuturuuu/types/db';
+import type { Workspace } from '@tuturuuu/types/db';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -46,7 +46,7 @@ import { cn } from '@tuturuuu/utils/format';
 import { getInitials } from '@tuturuuu/utils/name-helper';
 import { CheckIcon, ChevronDown, PlusCircle } from 'lucide-react';
 import { useParams, usePathname, useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { z } from 'zod';
 
 const FormSchema = z.object({
@@ -58,10 +58,12 @@ export function WorkspaceSelect({
   t,
   localUseQuery,
   hideLeading,
+  customRedirectSuffix,
 }: {
   t: any;
   localUseQuery: any;
   hideLeading?: boolean;
+  customRedirectSuffix?: string;
 }) {
   const router = useRouter();
   const params = useParams();
@@ -106,7 +108,9 @@ export function WorkspaceSelect({
 
       const { id } = await res.json();
 
-      router.push(`/${id}`);
+      customRedirectSuffix
+        ? router.push(`/${id}/${customRedirectSuffix}`)
+        : router.push(`/${id}`);
       router.refresh();
 
       setShowNewWorkspaceDialog(false);
@@ -159,28 +163,12 @@ export function WorkspaceSelect({
 
   const workspace = workspaces?.find((ws: Workspace) => ws.id === wsId);
 
-  // Toggle the menu when ⌘K is pressed
-  useEffect(() => {
-    function down(e: KeyboardEvent) {
-      if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
-        e.preventDefault();
-        setOpen((open) => !open);
-      }
-    }
-
-    document.addEventListener('keydown', down);
-
-    return () => {
-      document.removeEventListener('keydown', down);
-    };
-  }, []);
-
   if (!wsId) return <div />;
 
   return (
     <>
       {hideLeading || (
-        <div className="rotate-30 bg-foreground/20 mx-2 h-4 w-px flex-none" />
+        <div className="mx-1 h-4 w-px flex-none rotate-30 bg-foreground/20" />
       )}
       <Dialog
         open={showNewWorkspaceDialog}
@@ -195,13 +183,14 @@ export function WorkspaceSelect({
             disabled={!workspaces || workspaces.length === 0}
           >
             <Button
+              size="xs"
               variant="outline"
               role="combobox"
               aria-expanded={open}
               aria-label="Select a workspace"
               className={cn(
                 hideLeading ? 'justify-center p-0' : 'justify-start',
-                'w-full whitespace-normal text-start'
+                'w-full text-start whitespace-normal'
               )}
               disabled={!workspaces || workspaces.length === 0}
             >
@@ -490,7 +479,7 @@ async function fetchWorkspaces() {
 
   if (!user) return [];
 
-  const { data: workspaces, error: error } = await supabase
+  const { data: workspaces, error } = await supabase
     .from('workspaces')
     .select(
       'id, name, avatar_url, logo_url, created_at, workspace_members!inner(role)'

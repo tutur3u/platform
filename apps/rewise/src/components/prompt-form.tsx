@@ -1,9 +1,7 @@
-import { DEV_MODE } from '@/constants/common';
-import { useEnterSubmit } from '@/lib/hooks/use-enter-submit';
-import { type UseChatHelpers } from '@tuturuuu/ai/types';
+import type { UseChatHelpers } from '@tuturuuu/ai/types';
 import type { AIChat } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
-import { StatedFile } from '@tuturuuu/ui/custom/file-uploader';
+import type { StatedFile } from '@tuturuuu/ui/custom/file-uploader';
 import { Dialog } from '@tuturuuu/ui/dialog';
 import {
   Bolt,
@@ -27,11 +25,13 @@ import {
   TooltipTrigger,
 } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
-import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import type React from 'react';
 import { useEffect, useState } from 'react';
 import Textarea from 'react-textarea-autosize';
+import { DEV_MODE } from '@/constants/common';
+import { useEnterSubmit } from '@/lib/hooks/use-enter-submit';
 
 export interface PromptProps
   extends Pick<UseChatHelpers, 'input' | 'setInput'> {
@@ -236,7 +236,7 @@ export function PromptForm({
           <div className="scrollbar-none flex w-full items-center gap-2 overflow-x-auto font-semibold">
             {model && (
               <>
-                <div className="border-dynamic-orange/20 bg-dynamic-orange/10 text-dynamic-orange flex shrink-0 items-center gap-1 rounded border px-2 py-1 text-xs font-semibold">
+                <div className="flex shrink-0 items-center gap-1 rounded border border-dynamic-orange/20 bg-dynamic-orange/10 px-2 py-1 text-xs font-semibold text-dynamic-orange">
                   <Sparkles className="h-3 w-3" />
                   <span>
                     {provider && (
@@ -574,7 +574,7 @@ export function PromptForm({
               {pdfs.length > 0 && (
                 <Tooltip delayDuration={0}>
                   <TooltipTrigger asChild>
-                    <div className="bg-foreground text-background flex w-fit items-center gap-1 rounded px-2 py-1 font-semibold">
+                    <div className="flex w-fit items-center gap-1 rounded bg-foreground px-2 py-1 font-semibold text-background">
                       <FileText className="h-4 w-4" />
                       {pdfs.length} PDFs
                     </div>
@@ -613,7 +613,7 @@ export function PromptForm({
               {images.length > 0 && (
                 <Tooltip delayDuration={0}>
                   <TooltipTrigger asChild>
-                    <div className="bg-foreground text-background flex w-fit items-center gap-1 rounded px-2 py-1 font-semibold">
+                    <div className="flex w-fit items-center gap-1 rounded bg-foreground px-2 py-1 font-semibold text-background">
                       <ImageIcon className="h-4 w-4" />
                       {images.length} Images
                     </div>
@@ -659,7 +659,7 @@ export function PromptForm({
               {others.length > 0 && (
                 <Tooltip delayDuration={0}>
                   <TooltipTrigger asChild>
-                    <div className="bg-foreground text-background flex w-fit items-center gap-1 rounded px-2 py-1 font-semibold">
+                    <div className="flex w-fit items-center gap-1 rounded bg-foreground px-2 py-1 font-semibold text-background">
                       <File className="h-4 w-4" />
                       {others.length} Files
                     </div>
@@ -715,7 +715,7 @@ export function PromptForm({
             }
             spellCheck={false}
             maxRows={7}
-            className="scrollbar-none placeholder-foreground/50 focus-within:outline-hidden w-full resize-none bg-transparent py-2 sm:text-sm"
+            className="scrollbar-none w-full resize-none bg-transparent py-2 placeholder-foreground/50 focus-within:outline-hidden sm:text-sm"
             disabled={disabled}
           />
         </div>

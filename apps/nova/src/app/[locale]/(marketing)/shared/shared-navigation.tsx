@@ -1,10 +1,10 @@
 'use client';
 
-import { MainNavigationMenu } from '../navigation-menu';
-import { NavItem } from './navigation-config';
 import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { MainNavigationMenu } from '../navigation-menu';
+import type { NavItem } from './navigation-config';
 
 export interface NavigationProps {
   /**
@@ -53,7 +53,7 @@ export const NavigationLink = ({
         {item.icon}
         {item.label}
         {item.badge && (
-          <span className="bg-primary/10 text-primary rounded-full px-2 py-0.5 text-xs">
+          <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary">
             {item.badge}
           </span>
         )}

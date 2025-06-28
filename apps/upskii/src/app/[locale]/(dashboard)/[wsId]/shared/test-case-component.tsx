@@ -1,4 +1,4 @@
-import { NovaProblemTestCase } from '@tuturuuu/types/db';
+import type { NovaProblemTestCase } from '@tuturuuu/types/db';
 import {
   Card,
   CardContent,
@@ -22,7 +22,7 @@ export default function TestCaseComponent({
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-base">
-            <Code className="text-primary h-4 w-4" />
+            <Code className="h-4 w-4 text-primary" />
             Test Cases
           </CardTitle>
           <CardDescription>
@@ -39,7 +39,7 @@ export default function TestCaseComponent({
                   <div className="flex flex-col gap-4">
                     <div className="space-y-2">
                       <p className="ml-2 text-sm font-medium">Input</p>
-                      <div className="bg-muted rounded-md p-3 font-mono text-sm">
+                      <div className="rounded-md bg-muted p-3 font-mono text-sm">
                         {testcase.input}
                       </div>
                     </div>
@@ -47,7 +47,7 @@ export default function TestCaseComponent({
                       <p className="ml-2 text-sm font-medium">
                         Output (Expected)
                       </p>
-                      <div className="bg-muted rounded-md p-3 font-mono text-sm">
+                      <div className="rounded-md bg-muted p-3 font-mono text-sm">
                         {testcase.output}
                       </div>
                     </div>

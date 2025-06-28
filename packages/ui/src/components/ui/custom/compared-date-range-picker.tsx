@@ -1,5 +1,8 @@
 'use client';
 
+import { cn } from '@tuturuuu/utils/format';
+import { Check, ChevronDown, ChevronUp } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import { Button } from '../button';
 import { Calendar } from '../calendar';
 import { Label } from '../label';
@@ -13,9 +16,6 @@ import {
 } from '../select';
 import { Switch } from '../switch';
 import { DateInput } from './date-input';
-import { cn } from '@tuturuuu/utils/format';
-import { Check, ChevronDown, ChevronUp } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
 
 interface ComparedDateRangePickerProps {
   /** Click handler for applying the updates from DateRangePicker. */
@@ -517,8 +517,8 @@ export const ComparedDateRangePicker = ({
             </div>
           </div>
           {!isSmallScreen && (
-            <div className="flex flex-col items-end gap-1 pb-6 pl-6 pr-2">
-              <div className="flex w-full flex-col items-end gap-1 pb-6 pl-6 pr-2">
+            <div className="flex flex-col items-end gap-1 pr-2 pb-6 pl-6">
+              <div className="flex w-full flex-col items-end gap-1 pr-2 pb-6 pl-6">
                 {PRESETS.map((preset) => (
                   <PresetButton
                     key={preset.name}

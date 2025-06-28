@@ -1,6 +1,4 @@
-import ScoreBadge from '@/components/common/ScoreBadge';
-import SideBySideDiff from '@/components/common/SideBySideDiff';
-import { NovaSubmissionData } from '@tuturuuu/types/db';
+import type { NovaSubmissionData } from '@tuturuuu/types/db';
 import {
   Accordion,
   AccordionContent,
@@ -23,6 +21,8 @@ import { Switch } from '@tuturuuu/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { useState } from 'react';
+import ScoreBadge from '@/components/common/ScoreBadge';
+import SideBySideDiff from '@/components/common/SideBySideDiff';
 
 interface TestCaseEvaluationProps {
   submission: Partial<NovaSubmissionData>;
@@ -109,7 +109,7 @@ export default function TestCaseEvaluation({
 
               <div className="flex items-center gap-3">
                 <div className="flex items-center gap-1">
-                  <span className="text-muted-foreground text-xs">
+                  <span className="text-xs text-muted-foreground">
                     Line Numbers
                   </span>
                   <Switch
@@ -177,8 +177,8 @@ export default function TestCaseEvaluation({
                           {testcase.confidence !== undefined &&
                             testcase.confidence !== null && (
                               <div className="ml-2 flex items-center gap-1">
-                                <ThumbsUp className="text-muted-foreground h-3 w-3" />
-                                <span className="text-muted-foreground text-xs">
+                                <ThumbsUp className="h-3 w-3 text-muted-foreground" />
+                                <span className="text-xs text-muted-foreground">
                                   {(testcase.confidence * 100).toFixed(0)}%
                                   confidence
                                 </span>
@@ -199,33 +199,33 @@ export default function TestCaseEvaluation({
                       </div>
                     </AccordionTrigger>
                     <AccordionContent className="p-0">
-                      <div className="px-4 pb-2 pt-2">
-                        <div className="bg-muted/20 mb-4 rounded-md border p-3">
+                      <div className="px-4 pt-2 pb-2">
+                        <div className="mb-4 rounded-md border bg-muted/20 p-3">
                           <h5 className="mb-2 text-xs font-medium">Input</h5>
-                          <pre className="bg-background max-h-24 overflow-auto whitespace-pre-wrap rounded-md border p-2 text-xs">
+                          <pre className="max-h-24 overflow-auto rounded-md border bg-background p-2 text-xs whitespace-pre-wrap">
                             {testcase.input || 'No input provided'}
                           </pre>
                         </div>
 
                         {/* Test Case Reasoning */}
                         {testcase.reasoning && (
-                          <div className="bg-muted/20 mb-4 rounded-md border p-3">
+                          <div className="mb-4 rounded-md border bg-muted/20 p-3">
                             <div className="mb-2 flex items-center justify-between">
                               <h5 className="flex items-center text-xs font-medium">
-                                <Info className="text-primary/70 mr-1 h-3.5 w-3.5" />
+                                <Info className="mr-1 h-3.5 w-3.5 text-primary/70" />
                                 Reasoning
                               </h5>
 
                               {testcase.confidence !== undefined && (
                                 <div className="flex items-center gap-2">
-                                  <span className="text-muted-foreground text-xs">
+                                  <span className="text-xs text-muted-foreground">
                                     Confidence:
                                   </span>
                                   {getConfidenceBadge(testcase.confidence)}
                                 </div>
                               )}
                             </div>
-                            <div className="bg-background text-muted-foreground rounded border p-2 text-sm">
+                            <div className="rounded border bg-background p-2 text-sm text-muted-foreground">
                               {testcase.reasoning}
                             </div>
                           </div>
@@ -282,21 +282,21 @@ export default function TestCaseEvaluation({
                         <TabsContent value="raw" className="mt-0">
                           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                             <div className="space-y-2">
-                              <h5 className="text-muted-foreground text-xs font-medium">
+                              <h5 className="text-xs font-medium text-muted-foreground">
                                 Expected Output:
                               </h5>
-                              <pre className="bg-background max-h-[300px] overflow-auto whitespace-pre-wrap rounded-md border p-2 text-xs">
+                              <pre className="max-h-[300px] overflow-auto rounded-md border bg-background p-2 text-xs whitespace-pre-wrap">
                                 {testcase.expected_output ||
                                   'No expected output'}
                               </pre>
                             </div>
 
                             <div className="space-y-2">
-                              <h5 className="text-muted-foreground text-xs font-medium">
+                              <h5 className="text-xs font-medium text-muted-foreground">
                                 Your Output:
                               </h5>
                               <pre
-                                className={`max-h-[300px] overflow-auto whitespace-pre-wrap rounded-md border p-2 text-xs ${
+                                className={`max-h-[300px] overflow-auto rounded-md border p-2 text-xs whitespace-pre-wrap ${
                                   testcase.matched
                                     ? 'bg-emerald-50 dark:bg-emerald-900/20'
                                     : 'bg-red-50 dark:bg-red-900/20'
@@ -323,7 +323,7 @@ export default function TestCaseEvaluation({
         </div>
       ) : (
         <div className="rounded-md border border-dashed p-6 text-center">
-          <p className="text-muted-foreground text-sm">
+          <p className="text-sm text-muted-foreground">
             No test cases available
           </p>
         </div>

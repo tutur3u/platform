@@ -1,11 +1,11 @@
 'use client';
 
-import { QuizSetRowActions } from './row-actions';
-import { ColumnDef } from '@tanstack/react-table';
-import { WorkspaceQuizSet } from '@tuturuuu/types/db';
+import type { ColumnDef } from '@tanstack/react-table';
+import type { WorkspaceQuizSet } from '@tuturuuu/types/db';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import moment from 'moment';
 import Link from 'next/link';
+import { QuizSetRowActions } from './row-actions';
 
 export const getQuizSetColumns = (
   t: any,
@@ -93,7 +93,7 @@ export const getQuizSetColumns = (
               <Link
                 href={`/${extraData.wsId}/courses/${module.course_id}/modules/${module.module_id}`}
                 key={`${module.course_name}-${module.module_name}`}
-                className="bg-foreground/5 w-fit rounded border px-2 py-0.5 hover:underline"
+                className="w-fit rounded border bg-foreground/5 px-2 py-0.5 hover:underline"
               >
                 {module.course_name} / {module.module_name}
               </Link>

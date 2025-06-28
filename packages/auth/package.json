@@ -8,25 +8,23 @@
     "./middleware": "./src/middleware/index.ts",
     "./cross-app": "./src/cross-app/index.ts",
     "./cross-app/server": "./src/cross-app/server.ts",
-    "./cross-app/token-verifier": "./src/cross-app/token-verifier.tsx"
+    "./cross-app/token-verifier": "./src/cross-app/token-verifier.tsx",
+    "./identity-linking": "./src/identity-linking.ts"
   },
   "license": "MIT",
-  "scripts": {
-    "lint": "eslint ."
-  },
+  "scripts": {},
   "dependencies": {
     "@tuturuuu/supabase": "workspace:*",
     "@tuturuuu/types": "workspace:*",
     "@tuturuuu/ui": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
-    "next": "15.4.0-canary.63",
+    "next": "15.3.4",
     "react": "^19.1.0"
   },
   "devDependencies": {
-    "@types/node": "^22.15.29",
-    "@types/react": "^19.1.6",
-    "@types/react-dom": "^19.1.5",
-    "eslint": "^9.28.0",
+    "@types/node": "^24.0.6",
+    "@types/react": "^19.1.8",
+    "@types/react-dom": "^19.1.6",
     "typescript": "^5.8.3"
   }
 }

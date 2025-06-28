@@ -1,8 +1,7 @@
 'use client';
 
-import { WalletForm } from './form';
-import { Row } from '@tanstack/react-table';
-import { Wallet } from '@tuturuuu/types/primitives/Wallet';
+import type { Row } from '@tanstack/react-table';
+import type { Wallet } from '@tuturuuu/types/primitives/Wallet';
 import { Button } from '@tuturuuu/ui/button';
 import ModifiableDialogTrigger from '@tuturuuu/ui/custom/modifiable-dialog-trigger';
 import {
@@ -14,10 +13,11 @@ import {
 } from '@tuturuuu/ui/dropdown-menu';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Ellipsis, Eye } from '@tuturuuu/ui/icons';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { WalletForm } from './form';
 
 interface WalletRowActionsProps {
   row: Row<Wallet>;
@@ -68,7 +68,7 @@ export function WalletRowActions({ row, href }: WalletRowActionsProps) {
         <DropdownMenuTrigger asChild>
           <Button
             variant="ghost"
-            className="data-[state=open]:bg-muted flex h-8 w-8 p-0"
+            className="flex h-8 w-8 p-0 data-[state=open]:bg-muted"
           >
             <Ellipsis className="h-4 w-4" />
             <span className="sr-only">Open menu</span>

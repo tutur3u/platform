@@ -1,10 +1,10 @@
 'use client';
 
-import { Badge } from './badge';
-import { Command, CommandGroup, CommandItem } from './command';
 import { Command as CommandPrimitive } from 'cmdk';
 import { X } from 'lucide-react';
 import * as React from 'react';
+import { Badge } from './badge';
+import { Command, CommandGroup, CommandItem } from './command';
 
 interface TagInputProps {
   placeholder?: string;
@@ -62,14 +62,14 @@ export function TagInput({
 
   return (
     <Command className="overflow-visible bg-transparent">
-      <div className="border-input ring-offset-background focus-within:ring-ring group rounded-md border px-3 py-2 text-sm focus-within:ring-2 focus-within:ring-offset-2">
+      <div className="group rounded-md border border-input px-3 py-2 text-sm ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
         <div className="flex flex-wrap gap-1">
           {tags.map((tag) => (
             <Badge key={tag} variant="secondary">
               {tag}
               {!disabled && (
                 <button
-                  className="ring-offset-background outline-hidden focus:ring-ring ml-1 rounded-full focus:ring-2 focus:ring-offset-2"
+                  className="ml-1 rounded-full ring-offset-background outline-hidden focus:ring-2 focus:ring-ring focus:ring-offset-2"
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') {
                       handleRemoveTag(tag);
@@ -113,13 +113,13 @@ export function TagInput({
             }}
             onFocus={() => setOpen(true)}
             placeholder={placeholder}
-            className="outline-hidden placeholder:text-muted-foreground flex-1 bg-transparent"
+            className="flex-1 bg-transparent outline-hidden placeholder:text-muted-foreground"
           />
         </div>
       </div>
       <div className="relative mt-2">
         {open && filteredSuggestions.length > 0 && (
-          <div className="bg-popover text-popover-foreground outline-hidden animate-in absolute top-0 z-10 w-full rounded-md border shadow-md">
+          <div className="absolute top-0 z-10 w-full rounded-md border bg-popover text-popover-foreground shadow-md outline-hidden animate-in">
             <CommandGroup className="h-full overflow-auto">
               {filteredSuggestions.map((suggestion) => (
                 <CommandItem

@@ -1,8 +1,8 @@
-import { useCalendar } from '../../../../hooks/use-calendar';
-import { HOUR_HEIGHT } from './config';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import { useEffect, useState } from 'react';
+import { useCalendar } from '../../../../hooks/use-calendar';
+import { HOUR_HEIGHT } from './config';
 
 dayjs.extend(timezone);
 
@@ -52,7 +52,7 @@ export const TimeIndicatorLine = ({
       }}
     >
       {/* Left dot */}
-      <div className="absolute -left-[4px] -top-[4px] h-[10px] w-[10px] rounded-full bg-red-400 shadow-md" />
+      <div className="absolute -top-[4px] -left-[4px] h-[10px] w-[10px] rounded-full bg-red-400 shadow-md" />
 
       {/* Right dot */}
       {/* <div className="absolute -top-[4px] -right-[4px] h-[10px] w-[10px] rounded-full bg-red-400 shadow-md" /> */}

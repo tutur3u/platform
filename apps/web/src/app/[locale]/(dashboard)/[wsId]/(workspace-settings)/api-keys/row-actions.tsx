@@ -1,8 +1,7 @@
 'use client';
 
-import ApiKeyEditDialog from './edit-dialog';
-import { Row } from '@tanstack/react-table';
-import { WorkspaceApiKey } from '@tuturuuu/types/primitives/WorkspaceApiKey';
+import type { Row } from '@tanstack/react-table';
+import type { WorkspaceApiKey } from '@tuturuuu/types/primitives/WorkspaceApiKey';
 import { Button } from '@tuturuuu/ui/button';
 import {
   DropdownMenu,
@@ -13,9 +12,10 @@ import {
 } from '@tuturuuu/ui/dropdown-menu';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Ellipsis } from '@tuturuuu/ui/icons';
-import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import ApiKeyEditDialog from './edit-dialog';
 
 interface ApiKeyRowActionsProps {
   row: Row<WorkspaceApiKey>;
@@ -56,7 +56,7 @@ export function ApiKeyRowActions({ row }: ApiKeyRowActionsProps) {
         <DropdownMenuTrigger asChild>
           <Button
             variant="ghost"
-            className="data-[state=open]:bg-muted flex h-8 w-8 p-0"
+            className="flex h-8 w-8 p-0 data-[state=open]:bg-muted"
           >
             <Ellipsis className="h-4 w-4" />
             <span className="sr-only">Open menu</span>

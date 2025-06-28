@@ -21,8 +21,8 @@ import {
 import { Separator } from '@tuturuuu/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { motion } from 'framer-motion';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 
 // Guide step component
 function GuideStep({
@@ -47,7 +47,7 @@ function GuideStep({
       className="flex gap-4"
     >
       <div className="shrink-0">
-        <div className="bg-primary/10 text-primary flex h-10 w-10 items-center justify-center rounded-full text-lg font-bold">
+        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-lg font-bold text-primary">
           {number}
         </div>
       </div>
@@ -83,8 +83,8 @@ function FeatureCard({
       whileHover={{ y: -5 }}
       className="group"
     >
-      <Card className="border-foreground/10 hover:border-primary/40 h-full p-6 transition-colors">
-        <div className="bg-primary/10 text-primary mb-4 inline-flex rounded-lg p-3">
+      <Card className="h-full border-foreground/10 p-6 transition-colors hover:border-primary/40">
+        <div className="mb-4 inline-flex rounded-lg bg-primary/10 p-3 text-primary">
           {icon}
         </div>
         <h3 className="mb-2 text-xl font-bold">{title}</h3>
@@ -112,7 +112,7 @@ export default function GuidePage() {
           <h1 className="mb-4 text-4xl font-bold tracking-tight sm:text-5xl">
             {t('hero.title')}
           </h1>
-          <p className="text-muted-foreground mx-auto max-w-2xl text-lg">
+          <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
             {t('hero.description')}
           </p>
         </motion.div>
@@ -300,7 +300,7 @@ export default function GuidePage() {
                         transition={{ delay: index * 0.1 }}
                         className="flex items-start gap-3"
                       >
-                        <div className="bg-primary/10 text-primary mt-0.5 shrink-0 rounded-full p-1">
+                        <div className="mt-0.5 shrink-0 rounded-full bg-primary/10 p-1 text-primary">
                           <CheckCircle className="h-4 w-4" />
                         </div>
                         <span>{tip}</span>
@@ -331,7 +331,7 @@ export default function GuidePage() {
                         transition={{ delay: index * 0.1 }}
                         className="flex items-start gap-3"
                       >
-                        <div className="bg-primary/10 text-primary mt-0.5 shrink-0 rounded-full p-1">
+                        <div className="mt-0.5 shrink-0 rounded-full bg-primary/10 p-1 text-primary">
                           <CheckCircle className="h-4 w-4" />
                         </div>
                         <span>{tip}</span>
@@ -550,7 +550,7 @@ export default function GuidePage() {
                         transition={{ delay: index * 0.1 }}
                         className="flex items-start gap-3"
                       >
-                        <div className="bg-primary/10 text-primary mt-0.5 shrink-0 rounded-full p-1">
+                        <div className="mt-0.5 shrink-0 rounded-full bg-primary/10 p-1 text-primary">
                           <CheckCircle className="h-4 w-4" />
                         </div>
                         <span>{practice}</span>
@@ -581,7 +581,7 @@ export default function GuidePage() {
                         transition={{ delay: index * 0.1 }}
                         className="flex items-start gap-3"
                       >
-                        <div className="bg-primary/10 text-primary mt-0.5 shrink-0 rounded-full p-1">
+                        <div className="mt-0.5 shrink-0 rounded-full bg-primary/10 p-1 text-primary">
                           <CheckCircle className="h-4 w-4" />
                         </div>
                         <span>{practice}</span>
@@ -601,14 +601,14 @@ export default function GuidePage() {
               viewport={{ once: true }}
               className="text-center"
             >
-              <div className="bg-primary/5 mx-auto max-w-3xl rounded-xl p-8 backdrop-blur-sm">
-                <div className="bg-primary/10 text-primary mx-auto mb-4 inline-flex rounded-full p-3">
+              <div className="mx-auto max-w-3xl rounded-xl bg-primary/5 p-8 backdrop-blur-sm">
+                <div className="mx-auto mb-4 inline-flex rounded-full bg-primary/10 p-3 text-primary">
                   <School className="h-6 w-6" />
                 </div>
                 <h2 className="mb-4 text-2xl font-bold">
                   {t('cta-section.title')}
                 </h2>
-                <p className="text-muted-foreground mb-6">
+                <p className="mb-6 text-muted-foreground">
                   {t('cta-section.description')}
                 </p>
                 <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">

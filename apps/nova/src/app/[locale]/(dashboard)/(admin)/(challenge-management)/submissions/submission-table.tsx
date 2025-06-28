@@ -1,7 +1,10 @@
 'use client';
 
-import ScoreBadge from '@/components/common/ScoreBadge';
-import { NovaChallenge, NovaProblem, NovaSubmission } from '@tuturuuu/types/db';
+import type {
+  NovaChallenge,
+  NovaProblem,
+  NovaSubmission,
+} from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
 import {
   DropdownMenu,
@@ -33,8 +36,9 @@ import {
   TableRow,
 } from '@tuturuuu/ui/table';
 import { cn } from '@tuturuuu/utils/format';
-import { useTranslations } from 'next-intl';
 import { usePathname, useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
+import ScoreBadge from '@/components/common/ScoreBadge';
 
 type SubmissionWithDetails = NovaSubmission & {
   problem: NovaProblem & {
@@ -381,7 +385,7 @@ export function SubmissionTable({
                             className="h-8 w-8 rounded-full"
                           />
                         ) : (
-                          <div className="bg-primary/10 flex h-8 w-8 items-center justify-center rounded-full">
+                          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
                             {submission.user?.display_name?.charAt(0) || '?'}
                           </div>
                         )}
@@ -396,7 +400,7 @@ export function SubmissionTable({
                           router.push(`/submissions/${submission.id}`)
                         }
                       >
-                        <span className="text-muted-foreground text-sm">
+                        <span className="text-sm text-muted-foreground">
                           {submission.user?.email || 'No email available'}
                         </span>
                       </TableCell>
@@ -410,7 +414,7 @@ export function SubmissionTable({
                         <p className="font-medium">
                           {submission.problem?.title || 'Unknown Problem'}
                         </p>
-                        <p className="text-muted-foreground text-xs">
+                        <p className="text-xs text-muted-foreground">
                           {submission.problem?.challenge?.title ||
                             'Unknown Challenge'}
                         </p>

@@ -1,7 +1,7 @@
-import GradientHeadline from '@/app/[locale]/(marketing)/gradient-headline';
-import { getPermissions, getWorkspace } from '@/lib/workspace-helper';
-import { getTranslations } from 'next-intl/server';
+import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { redirect } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
+import GradientHeadline from '@/app/[locale]/(marketing)/gradient-headline';
 
 interface PageProps {
   params: Promise<{

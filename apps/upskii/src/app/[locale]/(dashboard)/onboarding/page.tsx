@@ -1,16 +1,16 @@
-import WorkspaceInvites from './workspace-invites';
 import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
 import { Separator } from '@tuturuuu/ui/separator';
-import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
+import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
+import WorkspaceInvites from './workspace-invites';
 
 export default async function OnboardingPage() {
   const t = await getTranslations('onboarding');
 
   return (
     <div className="inset-0 flex h-screen flex-col items-center justify-center overflow-scroll p-4 lg:px-32">
-      <div className="border-foreground/20 flex max-h-full w-full max-w-2xl flex-col items-center gap-4 rounded-xl border p-4 backdrop-blur-2xl md:p-8">
+      <div className="flex max-h-full w-full max-w-2xl flex-col items-center gap-4 rounded-xl border border-foreground/20 p-4 backdrop-blur-2xl md:p-8">
         <Suspense
           fallback={
             <div className="flex h-full w-full items-center justify-center">
@@ -23,7 +23,7 @@ export default async function OnboardingPage() {
               {t('just-a-moment')}
             </div>
 
-            <div className="text-foreground/80 text-lg font-semibold md:text-xl">
+            <div className="text-lg font-semibold text-foreground/80 md:text-xl">
               {t('just-a-moment-desc')}
             </div>
           </div>

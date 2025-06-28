@@ -1,4 +1,3 @@
-import { type Horse, type Race } from './types';
 import { Card } from '@tuturuuu/ui/card';
 import { Progress } from '@tuturuuu/ui/progress';
 import {
@@ -9,6 +8,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
+import type { Horse, Race } from './types';
 
 interface AlgorithmAnalyticsProps {
   horses: Horse[];
@@ -70,7 +70,7 @@ export function AlgorithmAnalytics({
               {Math.round(efficiency * 100)}%
             </div>
             <Progress value={efficiency * 100} className="h-2" />
-            <div className="text-muted-foreground text-xs">
+            <div className="text-xs text-muted-foreground">
               Based on theoretical minimum of {theoreticalMinRaces} races
             </div>
           </div>
@@ -83,7 +83,7 @@ export function AlgorithmAnalytics({
               {Math.round(progressPercentage * 100)}%
             </div>
             <Progress value={progressPercentage * 100} className="h-2" />
-            <div className="text-muted-foreground text-xs">
+            <div className="text-xs text-muted-foreground">
               {currentRaceIndex + 1} of {races.length} races completed
             </div>
           </div>
@@ -142,7 +142,7 @@ export function AlgorithmAnalytics({
               </BarChart>
             </ResponsiveContainer>
           </div>
-          <div className="text-muted-foreground text-xs">
+          <div className="text-xs text-muted-foreground">
             Shows potential vs actual information gained per race
           </div>
         </div>

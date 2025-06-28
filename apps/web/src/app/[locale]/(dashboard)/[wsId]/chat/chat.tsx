@@ -1,19 +1,20 @@
 'use client';
 
+import { defaultModel, type Model, models } from '@tuturuuu/ai/models';
+import { useChat } from '@tuturuuu/ai/react';
+import type { Message } from '@tuturuuu/ai/types';
+import { createClient } from '@tuturuuu/supabase/next/client';
+import type { AIChat } from '@tuturuuu/types/db';
+import { toast } from '@tuturuuu/ui/hooks/use-toast';
+import { cn } from '@tuturuuu/utils/format';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
+import type React from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ChatList } from '@/components/chat-list';
 import { ChatPanel } from '@/components/chat-panel';
 import { ChatScrollAnchor } from '@/components/chat-scroll-anchor';
 import { EmptyScreen } from '@/components/empty-screen';
-import { Model, defaultModel, models } from '@tuturuuu/ai/models';
-import { useChat } from '@tuturuuu/ai/react';
-import { type Message } from '@tuturuuu/ai/types';
-import { createClient } from '@tuturuuu/supabase/next/client';
-import { AIChat } from '@tuturuuu/types/db';
-import { toast } from '@tuturuuu/ui/hooks/use-toast';
-import { cn } from '@tuturuuu/utils/format';
-import { useTranslations } from 'next-intl';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import React, { useEffect, useRef, useState } from 'react';
 
 export interface ChatProps extends React.ComponentProps<'div'> {
   defaultChat?: Partial<AIChat>;
@@ -54,11 +55,12 @@ const Chat = ({
       initialMessages,
       api:
         chat?.model || model?.value
-          ? `/api/ai/chat/${(chat?.model
-              ? models
-                  .find((m) => m.value === chat.model)
-                  ?.provider.toLowerCase() || model?.provider.toLowerCase()
-              : model?.provider.toLowerCase()
+          ? `/api/ai/chat/${(
+              chat?.model
+                ? models
+                    .find((m) => m.value === chat.model)
+                    ?.provider.toLowerCase() || model?.provider.toLowerCase()
+                : model?.provider.toLowerCase()
             )?.replaceAll(' ', '-')}`
           : undefined,
       body: {
@@ -334,7 +336,7 @@ const Chat = ({
         ) : disableScrollToTop && disableScrollToBottom ? (
           <h1 className="mb-2 flex h-full w-full items-center justify-center text-center text-lg font-semibold">
             {t('welcome_to')}{' '}
-            <span className="bg-linear-to-r from-dynamic-red via-dynamic-purple to-dynamic-sky overflow-hidden bg-clip-text font-bold text-transparent">
+            <span className="ml-1 overflow-hidden bg-linear-to-r from-dynamic-red via-dynamic-purple to-dynamic-sky bg-clip-text font-bold text-transparent">
               Rewise
             </span>
             .

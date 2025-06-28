@@ -1,20 +1,20 @@
-import { tools } from '../data';
-import { ToolForm } from './tool-form';
-import { supportedLocales } from '@/i18n/routing';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { ChevronLeft } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { use } from 'react';
+import { supportedLocales } from '@/i18n/routing';
+import { tools } from '../data';
+import { ToolForm } from './tool-form';
 
 export function generateStaticParams() {
-  return supportedLocales
-    .map((locale) => tools.map((tool) => ({ locale, toolId: tool.id })))
-    .flat();
+  return supportedLocales.flatMap((locale) =>
+    tools.map((tool) => ({ locale, toolId: tool.id }))
+  );
 }
 
 export default function ToolDetailsPage({
@@ -48,7 +48,7 @@ export default function ToolDetailsPage({
       <Card>
         <CardHeader>
           <CardTitle className="text-3xl">{tool.name}</CardTitle>
-          <p className="text-muted-foreground mt-2">{tool.description}</p>
+          <p className="mt-2 text-muted-foreground">{tool.description}</p>
           <div className="mt-4 flex flex-wrap gap-2">
             {tool.tags.map((tag) => (
               <Badge key={tag} variant="secondary">

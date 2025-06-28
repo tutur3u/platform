@@ -1,10 +1,10 @@
 'use client';
 
-import { ProductWarehouseRowActions } from './row-actions';
-import { ColumnDef } from '@tanstack/react-table';
-import { ProductWarehouse } from '@tuturuuu/types/primitives/ProductWarehouse';
+import type { ColumnDef } from '@tanstack/react-table';
+import type { ProductWarehouse } from '@tuturuuu/types/primitives/ProductWarehouse';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import moment from 'moment';
+import { ProductWarehouseRowActions } from './row-actions';
 
 export const productWarehouseColumns = (
   t: any,

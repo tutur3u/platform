@@ -1,10 +1,10 @@
 'use client';
 
-import { useAtBottom } from '@/lib/hooks/use-at-bottom';
 import { Button, type ButtonProps } from '@tuturuuu/ui/button';
 import { IconArrowDown } from '@tuturuuu/ui/icons';
 import { cn } from '@tuturuuu/utils/format';
 import { useEffect, useState } from 'react';
+import { useAtBottom } from '@/lib/hooks/use-at-bottom';
 
 export function ScrollToBottomButton({ className, ...props }: ButtonProps) {
   const isAtBottom = useAtBottom(50);
@@ -22,7 +22,7 @@ export function ScrollToBottomButton({ className, ...props }: ButtonProps) {
   return (
     <Button
       className={cn(
-        'bg-background/20 flex-none backdrop-blur-lg transition-opacity duration-300',
+        'flex-none bg-background/20 backdrop-blur-lg transition-opacity duration-300',
         className
       )}
       onClick={() => {

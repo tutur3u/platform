@@ -1,5 +1,3 @@
-import { getColumns } from '../../executions/columns';
-import { CustomDataTable } from '@/components/custom-data-table';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type {
   WorkspaceCronExecution,
@@ -22,6 +20,8 @@ import {
 } from '@tuturuuu/ui/icons';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { CustomDataTable } from '@/components/custom-data-table';
+import { getColumns } from '../../executions/columns';
 
 interface SearchParams {
   q?: string;
@@ -59,7 +59,7 @@ export default async function DatasetCronJobDetailsPage({
     switch (status) {
       case 'active':
         return (
-          <div className="text-dynamic-green flex items-center gap-1">
+          <div className="flex items-center gap-1 text-dynamic-green">
             <CheckCircle className="h-5 w-5" />
             <span>Active</span>
           </div>
@@ -67,7 +67,7 @@ export default async function DatasetCronJobDetailsPage({
 
       case 'inactive':
         return (
-          <div className="text-dynamic-red flex items-center gap-1">
+          <div className="flex items-center gap-1 text-dynamic-red">
             <PowerOff className="h-5 w-5" />
             <span>Inactive</span>
           </div>
@@ -75,7 +75,7 @@ export default async function DatasetCronJobDetailsPage({
 
       case 'running':
         return (
-          <div className="text-dynamic-blue flex items-center gap-1">
+          <div className="flex items-center gap-1 text-dynamic-blue">
             <Clock className="h-5 w-5" />
             <span>Running</span>
           </div>
@@ -83,7 +83,7 @@ export default async function DatasetCronJobDetailsPage({
 
       case 'failed':
         return (
-          <div className="text-dynamic-red flex items-center gap-1">
+          <div className="flex items-center gap-1 text-dynamic-red">
             <XCircle className="h-5 w-5" />
             <span>Failed</span>
           </div>
@@ -105,7 +105,7 @@ export default async function DatasetCronJobDetailsPage({
           </Link>
           <div>
             <h1 className="text-2xl font-bold">{job.name}</h1>
-            <p className="text-muted-foreground text-sm">
+            <p className="text-sm text-muted-foreground">
               {job.schedule} • {job.active ? 'Active' : 'Inactive'}
             </p>
           </div>

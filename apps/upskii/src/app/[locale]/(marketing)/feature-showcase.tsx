@@ -11,7 +11,7 @@ import {
 } from '@tuturuuu/ui/icons';
 import { motion, useAnimation } from 'framer-motion';
 import { useTranslations } from 'next-intl';
-import { ReactNode, useEffect } from 'react';
+import { type ReactNode, useEffect } from 'react';
 
 interface Feature {
   icon: ReactNode;
@@ -94,10 +94,10 @@ export default function FeatureShowcase() {
           whileHover={{ scale: 1.02 }}
           className="group"
         >
-          <Card className="border-primary/10 bg-foreground/10 relative h-full overflow-hidden">
+          <Card className="relative h-full overflow-hidden border-primary/10 bg-foreground/10">
             <div className="relative z-10 flex h-full flex-col space-y-4 p-6">
               <div className="flex items-center gap-4">
-                <div className="bg-primary/10 text-primary rounded-full p-3">
+                <div className="rounded-full bg-primary/10 p-3 text-primary">
                   {feature.icon}
                 </div>
               </div>
@@ -107,7 +107,7 @@ export default function FeatureShowcase() {
 
             {/* Animated gradient background */}
             <motion.div
-              className={`bg-linear-to-br absolute inset-0 -z-10 ${feature.gradient} opacity-0 blur-xl transition-opacity duration-500 group-hover:opacity-100`}
+              className={`absolute inset-0 -z-10 bg-linear-to-br ${feature.gradient} opacity-0 blur-xl transition-opacity duration-500 group-hover:opacity-100`}
               animate={{
                 scale: [1, 1.2, 1],
                 rotate: [0, 5, 0],

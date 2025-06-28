@@ -1,10 +1,10 @@
 'use client';
 
-import { TransactionCategoryRowActions } from './row-actions';
-import { ColumnDef } from '@tanstack/react-table';
-import { TransactionCategory } from '@tuturuuu/types/primitives/TransactionCategory';
+import type { ColumnDef } from '@tanstack/react-table';
+import type { TransactionCategory } from '@tuturuuu/types/primitives/TransactionCategory';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import moment from 'moment';
+import { TransactionCategoryRowActions } from './row-actions';
 
 export const transactionCategoryColumns = (
   t: any,
@@ -78,11 +78,11 @@ export const transactionCategoryColumns = (
     cell: ({ row }) => (
       <div>
         {row.getValue('is_expense') ? (
-          <div className="border-dynamic-red/20 bg-dynamic-red/10 text-dynamic-red w-fit rounded border px-1 font-semibold">
+          <div className="w-fit rounded border border-dynamic-red/20 bg-dynamic-red/10 px-1 font-semibold text-dynamic-red">
             {t(`${namespace}.expense`)}
           </div>
         ) : (
-          <div className="border-dynamic-green/20 bg-dynamic-green/10 text-dynamic-green w-fit rounded border px-1 font-semibold">
+          <div className="w-fit rounded border border-dynamic-green/20 bg-dynamic-green/10 px-1 font-semibold text-dynamic-green">
             {t(`${namespace}.income`)}
           </div>
         )}

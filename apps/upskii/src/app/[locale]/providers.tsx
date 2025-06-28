@@ -1,7 +1,7 @@
-import { ClientProviders } from './client-providers';
 import { Toaster } from '@tuturuuu/ui/sonner';
 import { ThemeProvider } from 'next-themes';
 import type { ReactNode } from 'react';
+import { ClientProviders } from './client-providers';
 
 export function Providers({ children }: { children: ReactNode }) {
   return (

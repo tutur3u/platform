@@ -1,3 +1,8 @@
+import { createClient } from '@tuturuuu/supabase/next/server';
+import type { Transaction } from '@tuturuuu/types/primitives/Transaction';
+import { Suspense } from 'react';
+import { CustomDataTable } from '@/components/custom-data-table';
+import LoadingStatisticCard from '@/components/loading-statistic-card';
 import {
   ExpenseStatistics,
   IncomeStatistics,
@@ -9,11 +14,6 @@ import {
 } from '../../(dashboard)/statistics';
 import { transactionColumns } from '../transactions/columns';
 import { Filter } from './filter';
-import { CustomDataTable } from '@/components/custom-data-table';
-import LoadingStatisticCard from '@/components/loading-statistic-card';
-import { createClient } from '@tuturuuu/supabase/next/server';
-import type { Transaction } from '@tuturuuu/types/primitives/Transaction';
-import { Suspense } from 'react';
 
 export interface FinanceDashboardSearchParams {
   showFinanceStats?: boolean;

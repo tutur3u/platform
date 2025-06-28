@@ -1,8 +1,8 @@
-import { useCalendar } from '../../../../hooks/use-calendar';
-import { DAY_HEIGHT, HOUR_HEIGHT } from './config';
 import { cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
+import { useCalendar } from '../../../../hooks/use-calendar';
+import { DAY_HEIGHT, HOUR_HEIGHT } from './config';
 
 dayjs.extend(timezone);
 
@@ -28,7 +28,7 @@ export const TimeTrail = () => {
 
   return (
     <div
-      className="border-border relative w-16 border-r dark:border-zinc-800"
+      className="relative w-16 border-r border-border dark:border-zinc-800"
       style={{ height: DAY_HEIGHT }}
     >
       {hours.map((hour) => (
@@ -39,7 +39,7 @@ export const TimeTrail = () => {
         >
           <span
             className={cn(
-              'text-muted-foreground text-sm font-medium',
+              'text-sm font-medium text-muted-foreground',
               hour === 0 && 'hidden'
             )}
           >

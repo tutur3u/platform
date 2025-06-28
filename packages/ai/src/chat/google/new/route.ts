@@ -4,7 +4,7 @@ import {
   HarmCategory,
 } from '@google/generative-ai';
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { Message } from 'ai';
+import type { Message } from 'ai';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 
@@ -17,9 +17,11 @@ const AI_PROMPT = '\n\nAssistant:';
 
 const DEFAULT_MODEL_NAME = 'gemini-2.0-flash-001';
 
-// eslint-disable-next-line no-undef
-
-export function createPOST(options: { serverAPIKeyFallback?: boolean } = {}) {
+export function createPOST(
+  options: { serverAPIKeyFallback?: boolean } = {
+    serverAPIKeyFallback: false,
+  }
+) {
   return async function handler(req: Request) {
     try {
       const { model = DEFAULT_MODEL_NAME, message } = (await req.json()) as {
@@ -39,7 +41,8 @@ export function createPOST(options: { serverAPIKeyFallback?: boolean } = {}) {
       if (!user) return NextResponse.json('Unauthorized', { status: 401 });
 
       const apiKey = options.serverAPIKeyFallback
-        ? process.env.GOOGLE_GENERATIVE_AI_API_KEY
+        ? // eslint-disable-next-line no-undef
+          process.env.GOOGLE_GENERATIVE_AI_API_KEY
         : (await cookies()).get('google_api_key')?.value;
 
       if (!apiKey) return new Response('Missing API key', { status: 400 });

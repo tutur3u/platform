@@ -1,7 +1,5 @@
 'use client';
 
-import { recommendedTools, tools } from './data';
-import ApiKeyInput from '@/components/form-apikey';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import {
@@ -19,6 +17,8 @@ import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import ApiKeyInput from '@/components/form-apikey';
+import { recommendedTools, tools } from './data';
 
 function APITooltip({
   handleOpenChange,
@@ -74,7 +74,7 @@ export default function PageContent({
       <div className="grid gap-8 py-8">
         <section>
           <div className="flex justify-between">
-            <h2 className="from-dynamic-light-red via-dynamic-light-pink to-dynamic-light-blue bg-linear-to-br mb-4 w-fit bg-clip-text py-1 text-xl font-bold text-transparent lg:text-3xl">
+            <h2 className="mb-4 w-fit bg-linear-to-br from-dynamic-light-red via-dynamic-light-pink to-dynamic-light-blue bg-clip-text py-1 text-xl font-bold text-transparent lg:text-3xl">
               Recommended For You
             </h2>
             <APITooltip handleOpenChange={handleOpenChange} />
@@ -87,7 +87,7 @@ export default function PageContent({
                 key={tool.name}
                 className="group h-full"
               >
-                <Card className="group-hover:border-foreground h-full">
+                <Card className="h-full group-hover:border-foreground">
                   <CardHeader>
                     <CardTitle className="line-clamp-2">{tool.name}</CardTitle>
                   </CardHeader>
@@ -97,7 +97,7 @@ export default function PageContent({
                       {tool.tags.map((tag) => (
                         <p
                           key={`${tool.name}-${tag}`}
-                          className="border-dynamic-purple/20 bg-dynamic-light-purple/10 text-dynamic-light-purple mt-2 w-fit rounded-full border px-2 py-0.5"
+                          className="mt-2 w-fit rounded-full border border-dynamic-purple/20 bg-dynamic-light-purple/10 px-2 py-0.5 text-dynamic-light-purple"
                         >
                           {tag}
                         </p>
@@ -111,7 +111,7 @@ export default function PageContent({
         </section>
 
         <section>
-          <h2 className="from-dynamic-light-red via-dynamic-light-pink to-dynamic-light-blue bg-linear-to-br mb-4 w-fit bg-clip-text py-1 text-xl font-bold text-transparent lg:text-3xl">
+          <h2 className="mb-4 w-fit bg-linear-to-br from-dynamic-light-red via-dynamic-light-pink to-dynamic-light-blue bg-clip-text py-1 text-xl font-bold text-transparent lg:text-3xl">
             All Tools
           </h2>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
@@ -121,7 +121,7 @@ export default function PageContent({
                 key={tool.name}
                 className="group h-full"
               >
-                <Card className="group-hover:border-foreground h-full">
+                <Card className="h-full group-hover:border-foreground">
                   <CardHeader>
                     <CardTitle className="line-clamp-2">{tool.name}</CardTitle>
                   </CardHeader>
@@ -131,7 +131,7 @@ export default function PageContent({
                       {tool.tags.map((tag) => (
                         <p
                           key={`${tool.name}-${tag}`}
-                          className="border-dynamic-purple/20 bg-dynamic-light-purple/10 text-dynamic-light-purple mt-2 w-fit rounded-full border px-2 py-0.5"
+                          className="mt-2 w-fit rounded-full border border-dynamic-purple/20 bg-dynamic-light-purple/10 px-2 py-0.5 text-dynamic-light-purple"
                         >
                           {tag}
                         </p>

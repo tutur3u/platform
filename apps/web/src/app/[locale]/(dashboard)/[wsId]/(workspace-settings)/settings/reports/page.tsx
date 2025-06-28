@@ -1,14 +1,14 @@
-import { configColumns } from './columns';
-import { CustomDataTable } from '@/components/custom-data-table';
-import { availableConfigs } from '@/constants/configs/reports';
-import { getPermissions } from '@/lib/workspace-helper';
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { WorkspaceConfig } from '@tuturuuu/types/primitives/WorkspaceConfig';
+import type { WorkspaceConfig } from '@tuturuuu/types/primitives/WorkspaceConfig';
 import ReportPreview from '@tuturuuu/ui/custom/report-preview';
 import { Separator } from '@tuturuuu/ui/separator';
-import { getLocale, getTranslations } from 'next-intl/server';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { redirect } from 'next/navigation';
-import { ReactNode } from 'react';
+import { getLocale, getTranslations } from 'next-intl/server';
+import type { ReactNode } from 'react';
+import { CustomDataTable } from '@/components/custom-data-table';
+import { availableConfigs } from '@/constants/configs/reports';
+import { configColumns } from './columns';
 
 interface SearchParams {
   q?: string;
@@ -60,7 +60,7 @@ export default async function WorkspaceReportsSettingsPage({
         return (
           <span
             key={key + index}
-            className="bg-foreground text-background rounded px-1 py-0.5 font-semibold"
+            className="rounded bg-foreground px-1 py-0.5 font-semibold text-background"
           >
             {key}
           </span>
@@ -74,7 +74,7 @@ export default async function WorkspaceReportsSettingsPage({
 
   return (
     <>
-      <div className="border-border bg-foreground/5 flex flex-col justify-between gap-4 rounded-lg border p-4 md:flex-row md:items-start">
+      <div className="flex flex-col justify-between gap-4 rounded-lg border border-border bg-foreground/5 p-4 md:flex-row md:items-start">
         <div>
           <h1 className="text-2xl font-bold">{t('ws-reports.reports')}</h1>
           <p className="text-foreground/80">{t('ws-reports.description')}</p>
@@ -119,7 +119,7 @@ async function getConfigs(wsId: string, { q }: SearchParams) {
   if (error) throw error;
 
   // Create a copy of availableConfigs to include in the response
-  let configs = [
+  const configs = [
     ...availableConfigs.map(({ defaultValue, ...rest }) => ({
       ...rest,
       value: defaultValue,

@@ -1,9 +1,9 @@
+import { cookies as c } from 'next/headers';
+import { NextResponse } from 'next/server';
 import {
   MAIN_CONTENT_SIZE_COOKIE_NAME,
   SIDEBAR_SIZE_COOKIE_NAME,
 } from '@/constants/common';
-import { cookies as c } from 'next/headers';
-import { NextResponse } from 'next/server';
 
 export async function POST(req: Request) {
   const cookies = await c();

@@ -1,10 +1,10 @@
+import dayjs from 'dayjs';
+import timezone from 'dayjs/plugin/timezone';
+import { useEffect, useRef, useState } from 'react';
 import { useCalendar } from '../../../../hooks/use-calendar';
 import { CalendarView } from './calendar-view';
 import { HOUR_HEIGHT } from './config';
 import { TimeTrail } from './time-trail';
-import dayjs from 'dayjs';
-import timezone from 'dayjs/plugin/timezone';
-import { useEffect, useRef, useState } from 'react';
 
 dayjs.extend(timezone);
 
@@ -29,7 +29,7 @@ export const CalendarViewWithTrail = ({ dates }: { dates: Date[] }) => {
     <div
       ref={calendarViewRef}
       id="calendar-view"
-      className="border-border flex h-full overflow-y-auto scroll-smooth rounded-b-lg border-b border-l text-center dark:border-zinc-800"
+      className="flex h-full overflow-y-auto scroll-smooth rounded-b-lg border-b border-l border-border text-center dark:border-zinc-800"
       style={{
         scrollbarWidth: 'thin',
         scrollbarColor: 'rgba(0,0,0,0.2) transparent',

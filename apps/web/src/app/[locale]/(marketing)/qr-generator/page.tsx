@@ -1,6 +1,6 @@
-import QR from './qr';
 import { Separator } from '@tuturuuu/ui/separator';
 import { getTranslations } from 'next-intl/server';
+import QR from './qr';
 
 export default async function QRGeneratorPage() {
   const t = await getTranslations();

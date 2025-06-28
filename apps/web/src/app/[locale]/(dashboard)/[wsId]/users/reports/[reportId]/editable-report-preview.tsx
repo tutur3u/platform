@@ -1,16 +1,16 @@
 'use client';
 
-import UserMonthAttendance from '../../attendance/user-month-attendance';
-import UserReportForm from './form';
-import { WorkspaceUserReport } from '@tuturuuu/types/db';
-import { WorkspaceConfig } from '@tuturuuu/types/primitives/WorkspaceConfig';
+import type { WorkspaceUserReport } from '@tuturuuu/types/db';
+import type { WorkspaceConfig } from '@tuturuuu/types/primitives/WorkspaceConfig';
 import ReportPreview from '@tuturuuu/ui/custom/report-preview';
 import { useForm } from '@tuturuuu/ui/hooks/use-form';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { Separator } from '@tuturuuu/ui/separator';
 import { useLocale, useTranslations } from 'next-intl';
-import { ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import * as z from 'zod';
+import UserMonthAttendance from '../../attendance/user-month-attendance';
+import UserReportForm from './form';
 
 export const UserReportFormSchema = z.object({
   title: z.string(),
@@ -90,7 +90,7 @@ export default function EditableReportPreview({
         return (
           <span
             key={key + index}
-            className="bg-foreground text-background rounded px-1 py-0.5 font-semibold"
+            className="rounded bg-foreground px-1 py-0.5 font-semibold text-background"
           >
             {key}
           </span>
@@ -117,7 +117,7 @@ export default function EditableReportPreview({
                 <div className="flex items-center gap-1">
                   Average score:
                   <div className="flex flex-wrap gap-1">
-                    <div className="bg-foreground text-background flex aspect-square h-8 items-center justify-center overflow-hidden rounded p-1 font-semibold">
+                    <div className="flex aspect-square h-8 items-center justify-center overflow-hidden rounded bg-foreground p-1 font-semibold text-background">
                       {(
                         (report?.scores
                           ?.filter((s) => s !== null && s !== undefined)
@@ -143,7 +143,7 @@ export default function EditableReportPreview({
                       ?.map((s, idx) => (
                         <div
                           key={`report-${report.id}-score-${idx}`}
-                          className="bg-foreground text-background flex aspect-square h-8 items-center justify-center overflow-hidden rounded p-1 font-semibold"
+                          className="flex aspect-square h-8 items-center justify-center overflow-hidden rounded bg-foreground p-1 font-semibold text-background"
                         >
                           {s}
                         </div>

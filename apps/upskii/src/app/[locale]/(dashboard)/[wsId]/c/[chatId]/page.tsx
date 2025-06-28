@@ -1,13 +1,13 @@
-import Chat from '../../ai-chat/chat';
-import { getChats } from '../../ai-chat/helper';
-import { type Message } from '@tuturuuu/ai/types';
+import type { Message } from '@tuturuuu/ai/types';
 import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
-import { AIChat } from '@tuturuuu/types/db';
+import type { AIChat } from '@tuturuuu/types/db';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { notFound, redirect } from 'next/navigation';
+import Chat from '../../ai-chat/chat';
+import { getChats } from '../../ai-chat/helper';
 
 interface Props {
   params: Promise<{
@@ -26,16 +26,7 @@ export default async function AIPage({ params, searchParams }: Props) {
 
   // Check if user is whitelisted
   const user = await getCurrentUser();
-  if (!user?.email) redirect('/login');
-
-  const adminSb = await createAdminClient();
-  const { data: whitelisted, error } = await adminSb
-    .from('ai_whitelisted_emails')
-    .select('enabled')
-    .eq('email', user?.email)
-    .maybeSingle();
-
-  if (error || !whitelisted?.enabled) redirect('/not-whitelisted');
+  if (!user) redirect('/login');
 
   // Get chat data
   const chat = await getChat(chatId);
@@ -50,6 +41,7 @@ export default async function AIPage({ params, searchParams }: Props) {
         chats={chats}
         count={count}
         locale={locale}
+        user={user}
       />
     </div>
   );

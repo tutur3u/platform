@@ -1,6 +1,3 @@
-import { SectionProps } from './index';
-import RolePermission from './role-permission';
-import { permissionGroups } from '@/lib/permissions';
 import {
   Accordion,
   AccordionContent,
@@ -10,8 +7,11 @@ import {
 import { FormField, FormItem } from '@tuturuuu/ui/form';
 import { ShieldCheck } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
+import { permissionGroups } from '@tuturuuu/utils/permissions';
 import { useTranslations } from 'next-intl';
 import { Fragment } from 'react';
+import type { SectionProps } from './index';
+import RolePermission from './role-permission';
 
 export default function RoleFormPermissionsSection({
   wsId,
@@ -20,11 +20,15 @@ export default function RoleFormPermissionsSection({
   enabledPermissionsCount,
 }: SectionProps) {
   const t = useTranslations();
-  const groups = permissionGroups({ t, wsId, user });
+  const groups = permissionGroups({
+    t: t as (key: string) => string,
+    wsId,
+    user,
+  });
 
   return (
     <>
-      <div className="border-dynamic-blue/20 bg-dynamic-blue/10 text-dynamic-blue mb-2 rounded-md border p-2 text-center font-bold">
+      <div className="mb-2 rounded-md border border-dynamic-blue/20 bg-dynamic-blue/10 p-2 text-center font-bold text-dynamic-blue">
         {form.watch('name') || '-'}
       </div>
 

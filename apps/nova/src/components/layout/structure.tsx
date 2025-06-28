@@ -1,13 +1,12 @@
 'use client';
 
-import { Nav } from './nav';
 import { LogoTitle } from '@tuturuuu/ui/custom/logo-title';
 import { Structure as BaseStructure } from '@tuturuuu/ui/custom/structure';
 import { cn } from '@tuturuuu/utils/format';
-import { debounce } from 'lodash';
 import Image from 'next/image';
 import Link from 'next/link';
-import { ReactNode, useCallback, useState } from 'react';
+import { type ReactNode, useState } from 'react';
+import { Nav } from './nav';
 
 interface NavItem {
   name: string;
@@ -20,9 +19,7 @@ interface NavItem {
 interface StructureProps {
   allowChallengeManagement: boolean;
   allowRoleManagement: boolean;
-  defaultLayout?: number[];
-  defaultCollapsed: boolean;
-  navCollapsedSize: number;
+  defaultCollapsed?: boolean;
   navItems: NavItem[];
   actions: ReactNode;
   userPopover: ReactNode;
@@ -32,43 +29,13 @@ interface StructureProps {
 export default function Structure({
   allowChallengeManagement,
   allowRoleManagement,
-  defaultLayout = [20, 80],
   defaultCollapsed = false,
-  navCollapsedSize,
   navItems,
   actions,
   userPopover,
   children,
 }: StructureProps) {
   const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed);
-
-  // Add debounced function for saving sidebar sizes
-  const debouncedSaveSizes = useCallback(
-    debounce(async (sizes: { sidebar: number; main: number }) => {
-      await fetch('/api/v1/infrastructure/sidebar/sizes', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(sizes),
-      });
-    }, 500),
-    []
-  );
-
-  // Add debounced function for saving sidebar collapsed state
-  const debouncedSaveCollapsed = useCallback(
-    debounce(async (collapsed: boolean) => {
-      await fetch('/api/v1/infrastructure/sidebar', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ collapsed }),
-      });
-    }, 500),
-    []
-  );
 
   const sidebarHeader = (
     <Link href="/" className="flex w-full items-center gap-2">
@@ -126,12 +93,8 @@ export default function Structure({
 
   return (
     <BaseStructure
-      defaultLayout={defaultLayout}
-      navCollapsedSize={navCollapsedSize}
       isCollapsed={isCollapsed}
       setIsCollapsed={setIsCollapsed}
-      debouncedSaveSizes={debouncedSaveSizes}
-      debouncedSaveCollapsed={debouncedSaveCollapsed}
       mobileHeader={mobileHeader}
       sidebarHeader={sidebarHeader}
       sidebarContent={sidebarContent}
