@@ -90,7 +90,7 @@ export default function ClientComponent({ wsId }: ClientComponentProps) {
       <div className="container mx-auto max-w-6xl px-4 py-8">
         <div className="text-center">
           <div className="mx-auto mb-4 h-16 w-16 animate-spin rounded-full border-4 border-gray-300 border-t-blue-600"></div>
-          <p>Loading payment details...</p>
+          <p>{t('loading')}</p>
         </div>
       </div>
     );
@@ -186,9 +186,9 @@ export default function ClientComponent({ wsId }: ClientComponentProps) {
             </p>
           ) : (
             <p className="text-sm text-amber-700 dark:text-amber-300">
-              Download link expires on{' '}
-              {format(expiresAt, "MMMM d, yyyy 'at' h:mm a")} (24 hours after
-              payment)
+              {t('success.expired-on', {
+                date: format(expiresAt, "MMMM d, yyyy 'at' h:mm a"),
+              })}
             </p>
           )}
         </div>

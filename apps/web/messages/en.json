@@ -1,5 +1,6 @@
 {
   "billing": {
+    "loading": "Loading payment details...",
     "billing": "Billing",
     "billing-info": "Manage your billing information and subscriptions here.",
     "current-plan": "Current Plan",
@@ -15,6 +16,8 @@
     "subscription-history": "Subscription History",
     "subscription-history-desc": "No subscription history available.",
     "success": {
+      "expired-on": "Download link expires on",
+      "expired": "expired",
       "amount": "Amount",
       "title": "Payment Successful",
       "message": "Thank you for your subscription. Your payment has been processed successfully.",
