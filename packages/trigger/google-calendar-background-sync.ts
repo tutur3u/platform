@@ -58,8 +58,13 @@ export const triggerAllWorkspacesImmediateSync = async () => {
     
     const results = [];
     for (const workspace of workspaces) {
-      const result = await syncWorkspaceImmediate(workspace);
-      results.push(result);
+      try {
+        const result = await syncWorkspaceImmediate(workspace);
+        results.push(result);
+      } catch (error) {
+        console.error(`Error in manual immediate sync for workspace ${workspace.ws_id}:`, error);
+        results.push({ ws_id: workspace.ws_id, success: false, error: error instanceof Error ? error.message : 'Unknown error' });
+      }
     }
     
     console.log('=== Manual immediate sync for all workspaces completed ===');
@@ -80,8 +85,13 @@ export const triggerAllWorkspacesExtendedSync = async () => {
     
     const results = [];
     for (const workspace of workspaces) {
-      const result = await syncWorkspaceExtended(workspace);
-      results.push(result);
+      try {
+        const result = await syncWorkspaceExtended(workspace);
+        results.push(result);
+      } catch (error) {
+        console.error(`Error in manual extended sync for workspace ${workspace.ws_id}:`, error);
+        results.push({ ws_id: workspace.ws_id, success: false, error: error instanceof Error ? error.message : 'Unknown error' });
+      }
     }
     
     console.log('=== Manual extended sync for all workspaces completed ===');
