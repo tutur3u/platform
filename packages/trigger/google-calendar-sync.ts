@@ -267,8 +267,17 @@ export const syncGoogleCalendarEventsImmediate = async () => {
   const results = [];
 
   for (const workspace of workspaces) {
-    const result = await syncWorkspaceImmediate(workspace);
-    results.push(result);
+    try {
+      const result = await syncWorkspaceImmediate(workspace);
+      results.push(result);
+    } catch (error) {
+      console.error(`Error syncing workspace ${workspace.ws_id}:`, error);
+      results.push({
+        ws_id: workspace.ws_id,
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+    }
   }
 
   console.log('=== Immediate sync for all workspaces completed ===');
@@ -281,8 +290,17 @@ export const syncGoogleCalendarEventsExtended = async () => {
   const results = [];
 
   for (const workspace of workspaces) {
-    const result = await syncWorkspaceExtended(workspace);
-    results.push(result);
+    try {
+      const result = await syncWorkspaceExtended(workspace);
+      results.push(result);
+    } catch (error) {
+      console.error(`Error syncing workspace ${workspace.ws_id}:`, error);
+      results.push({
+        ws_id: workspace.ws_id,
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+    }
   }
 
   console.log('=== Extended sync for all workspaces completed ===');
