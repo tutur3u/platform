@@ -19,7 +19,7 @@
       "title": "Payment Successful",
       "message": "Thank you for your subscription. Your payment has been processed successfully.",
       "payment-summary": "Payment Summary",
-      "date:": "Date",
+      "date": "Date",
       "plan": "Plan",
       "completed": "Completed",
       "paid": "Paid",

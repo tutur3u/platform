@@ -26,18 +26,9 @@ interface ClientComponentProps {
     wsId: string;
 }
 
-interface Subscription {
-  id: string;
-  plan_name?: string;
-  created_at: string;
-  ws_id: string;
-  workspace_subscription_products: {
-    price: number;
-  };
-}
 
 export default function ClientComponent({ wsId }: ClientComponentProps) {
-  const [subscription, setSubscription] = useState<Subscription | null>(null);
+  const [subscription, setSubscription] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const t = useTranslations('billing');
 
