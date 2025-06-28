@@ -110,7 +110,7 @@ const syncGoogleCalendarEventsForWorkspace = async (
       .select('*')
       .eq('ws_id', ws_id)
       .not('google_event_id', 'is', null)
-      .gte('start_at', timeMin.toISOString())
+      .gte('end_at', timeMin.toISOString())
       .lte('start_at', timeMax.toISOString());
 
     if (dbError) {
