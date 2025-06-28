@@ -26,8 +26,18 @@ interface ClientComponentProps {
   wsId: string;
 }
 
+interface WorkspaceSubscription {
+  id: string;
+  ws_id: string;
+  created_at: string;
+  plan_name?: string;
+  workspace_subscription_products?: {
+    price: number;
+  };
+}
 export default function ClientComponent({ wsId }: ClientComponentProps) {
-  const [subscription, setSubscription] = useState<any | null>(null);
+  const [subscription, setSubscription] =
+    useState<WorkspaceSubscription | null>(null);
   const [loading, setLoading] = useState(true);
   const t = useTranslations('billing');
 
@@ -46,7 +56,16 @@ export default function ClientComponent({ wsId }: ClientComponentProps) {
           console.error('Failed to fetch workspace subscription:', error);
           setSubscription(null);
         } else {
-          setSubscription(subscription);
+          setSubscription({
+            ...subscription,
+            workspace_subscription_products:
+              subscription.workspace_subscription_products
+                ? {
+                    price:
+                      subscription.workspace_subscription_products.price ?? 0,
+                  }
+                : undefined,
+          });
         }
       } catch (err) {
         console.error('Failed to fetch workspace subscription:', err);
@@ -177,7 +196,7 @@ export default function ClientComponent({ wsId }: ClientComponentProps) {
           <div className="mb-2 flex items-center justify-center gap-2">
             <Clock className="h-5 w-5 text-amber-600 dark:text-amber-400" />
             <p className="font-medium text-amber-800 dark:text-amber-200">
-              {t('success.download-invoice')}
+              {t('success.download-receipt-availability')}
             </p>
           </div>
           {isLinkExpired ? (

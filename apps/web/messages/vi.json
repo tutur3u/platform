@@ -26,7 +26,7 @@
       "date": "Ngày thanh toán",
       "paid": "Đã thanh toán",
       "completed": "Đã hoàn tất",
-      "download-invoice": "Tải xuống hoá đơn",
+      "download-receipt-availability": "Tải xuống hoá đơn",
       "download-invoice-desc": "Tải xuống hoá đơn sẽ hết hạn sau 24h sau khi tải hoá đơn. Liên hệ hỗ trợ nếu cần cung cấp hoá đơn mới.",
       "status": "Trạng thái",
       "what-next": "Tiếp theo là gì?",

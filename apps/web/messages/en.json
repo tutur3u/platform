@@ -28,7 +28,7 @@
       "paid": "Paid",
       "status": "Status",
       "payment-method": "Payment Method",
-      "download-invoice": "Download Receipt Availability",
+      "download-receipt-availability": "Download Receipt Availability",
       "download-invoice-desc": "The download link has expired (24 hours after payment). Please contact support for a new receipt.",
       "what-next": "What happens next?",
       "active-plan": "Your active plan will be updated immediately.",
