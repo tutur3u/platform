@@ -15,14 +15,29 @@
     "subscription-history": "Lịch sử đăng ký",
     "subscription-history-desc": "Không có lịch sử đăng ký nào.",
     "success":{
+      "amount":"Số tiền",
       "title": "Thanh toán thành công",
       "message": "Cảm ơn bạn đã thanh toán. Gói đăng ký của bạn đã được cập nhật thành công.",
       "payment-summary" : "Chi tiết thanh toán",
        "plan": "Gói",
+       "date": "Ngày thanh toán",
        "paid": "Đã thanh toán",
+       "completed": "Đã hoàn tất",
+       "download-invoice": "Tải xuống hoá đơn",
+       "download-invoice-desc": "Tải xuống hoá đơn sẽ hết hạn sau 24h sau khi tải hoá đơn. Liên hệ hỗ trợ nếu cần cung cấp hoá đơn mới.",
        "status": "Trạng thái",
+       "what-next": "Tiếp theo là gì?",
+       "active-plan": "Gói của bạn sẽ được kích hoạt ngay lập tức và sẽ tự động gia hạn hàng tháng hoặc hàng năm, tùy thuộc vào gói bạn chọn.",
+       "active-plan-desc": "Bạn có thể quản lý gói đăng ký của mình trong phần 'Thanh toán' trong cài đặt tài khoản của bạn.",
        "payment-method": "Phương thức thanh toán",
-       "invoice-id": "ID hoá đơn"
+       "confirmation-email":"Email xác nhận",
+      "confirmation-email-desc": "Bạn sẽ nhận được một email xác nhận với chi tiết thanh toán và hoá đơn của bạn.",
+      "billing-cycle": "Chu kỳ thanh toán bắt đầu",
+      "billing-cycle-desc": "Chu kỳ thanh toán của bạn bắt đầu từ ngày này và sẽ tự động gia hạn vào cùng ngày hàng tháng hoặc hàng năm, tùy thuộc vào gói bạn chọn.",
+       "invoice-id": "ID hoá đơn",
+       "back-to-billing": "Quay lại trang thanh toán",
+       "download-receipt": "Tải xuống biên lai",
+       "go-to-dashboard": "Về bảng điều khiển"
     }
   },
   "common": {

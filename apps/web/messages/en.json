@@ -15,14 +15,29 @@
     "subscription-history": "Subscription History",
     "subscription-history-desc": "No subscription history available.",
     "success":{
+      "amount":"Amount",
       "title": "Payment Successful",
       "message": "Thank you for your subscription. Your payment has been processed successfully.",
       "payment-summary": "Payment Summary",
+      "date:": "Date",
       "plan": "Plan",
+      "completed": "Completed",
       "paid": "Paid",
       "status":"Status",
       "payment-method": "Payment Method",
-      "invoice-id": "Invoice ID"
+      "download-invoice": "Download Receipt Availability",
+      "download-invoice-desc": "The download link has expired (24 hours after payment). Please contact support for a new receipt.",
+      "what-next": "What happens next?",
+      "active-plan": "Your active plan will be updated immediately.",
+      "active-plan-desc": "You can start using the features of your new plan right away.",
+      "confirmation-email":"Confirmation Email",
+      "confirmation-email-desc": "You will receive a confirmation email with your payment details.",
+      "billing-cycle": "Billing Cycle Started",
+      "billing-cycle-desc": "Your billing cycle has started. You will be charged on the same date each month.",
+      "invoice-id": "Invoice ID",
+      "back-to-billing": "Back to Billing",
+      "download-receipt": "Download Receipt",
+      "go-to-dashboard": "Go to Dashboard"
     }
   },
   "common": {
