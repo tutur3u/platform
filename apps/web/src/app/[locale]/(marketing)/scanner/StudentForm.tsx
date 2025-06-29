@@ -9,12 +9,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@ncthub/ui/form';
-import {
-  GraduationCap,
-  Hash,
-  Plus,
-  User,
-} from '@ncthub/ui/icons';
+import { GraduationCap, Hash, Plus, User } from '@ncthub/ui/icons';
 import { Input } from '@ncthub/ui/input';
 import { cn } from '@ncthub/utils/format';
 import { useForm } from 'react-hook-form';
@@ -33,10 +28,7 @@ interface StudentFormProps {
   onSubmit: (data: StudentFormData) => void;
 }
 
-export default function StudentForm({
-  values,
-  onSubmit,
-}: StudentFormProps) {
+export default function StudentForm({ values, onSubmit }: StudentFormProps) {
   const form = useForm<StudentFormData>({
     resolver: zodResolver(studentFormSchema),
     values: {
@@ -140,7 +132,7 @@ export default function StudentForm({
           className={cn(
             'h-14 w-full text-base font-medium transition-all duration-200',
             'bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700',
-            'shadow-lg hover:shadow-xl',
+            'shadow-lg hover:shadow-xl'
           )}
         >
           {isSubmitting ? (
