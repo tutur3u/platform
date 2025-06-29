@@ -3121,6 +3121,7 @@ export type Database = {
           allow_challenge_management: boolean;
           allow_manage_all_challenges: boolean;
           allow_role_management: boolean;
+          allow_workspace_creation: boolean;
           created_at: string;
           enabled: boolean;
           user_id: string;
@@ -3129,6 +3130,7 @@ export type Database = {
           allow_challenge_management?: boolean;
           allow_manage_all_challenges?: boolean;
           allow_role_management?: boolean;
+          allow_workspace_creation?: boolean;
           created_at?: string;
           enabled?: boolean;
           user_id: string;
@@ -3137,6 +3139,7 @@ export type Database = {
           allow_challenge_management?: boolean;
           allow_manage_all_challenges?: boolean;
           allow_role_management?: boolean;
+          allow_workspace_creation?: boolean;
           created_at?: string;
           enabled?: boolean;
           user_id?: string;
