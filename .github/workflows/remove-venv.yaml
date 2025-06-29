@@ -1,0 +1,22 @@
+name: Remove cached venv folder from remote repository
+
+on:
+  push:
+    branches:
+      - '**'
+  workflow_dispatch:
+
+jobs:
+  remove-venv:
+    name: Remove venv folder from remote repository
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    steps:
+      - name: Remove venv folder from remote repository
+        run: git rm -r --cached venv
+
+      - name: Commit changes to remove venv folder from remote repository
+        run: git commit -m "Remove venv folder from remote repository"
+
+      - name: Push changes to remote repository
+        run: git push
