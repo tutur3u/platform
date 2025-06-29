@@ -11,6 +11,8 @@ jobs:
     name: Remove venv folder from remote repository
     timeout-minutes: 10
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
@@ -25,7 +27,10 @@ jobs:
       - name: Remove venv folder from remote repository (if exists)
         run: |
           if [ -d "apps/ocr/venv" ]; then
+            echo "Removing venv folder from remote repository"
             git rm -r --cached apps/ocr/venv
+          else
+            echo "Venv folder not found"
           fi
 
       - name: Commit changes to remove venv folder from remote repository
