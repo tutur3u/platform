@@ -9,7 +9,7 @@ import {
 } from 'react-syntax-highlighter/dist/cjs/styles/prism';
 import { useCopyToClipboard } from '../../hooks/use-copy-to-clipboard';
 import { Button } from './button';
-import { IconCheck, IconCopy, IconDownload } from './icons';
+import { CheckIcon, CopyIcon, IconDownload } from './icons';
 
 // Inspired by Chatbot-UI and modified to fit the needs of this project
 // @see https://github.com/mckaywrigley/chatbot-ui/blob/main/components/Markdown/CodeBlock.tsx
@@ -122,7 +122,7 @@ const CodeBlock: FC<Props> = memo(({ language, value }) => {
             className="text-xs hover:bg-foreground/5 focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-offset-0"
             onClick={onCopy}
           >
-            {isCopied ? <IconCheck /> : <IconCopy />}
+            {isCopied ? <CheckIcon /> : <CopyIcon />}
             <span className="sr-only">Copy code</span>
           </Button>
         </div>

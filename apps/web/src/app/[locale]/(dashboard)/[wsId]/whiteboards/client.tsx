@@ -25,13 +25,13 @@ import {
   IconChevronUpDown,
   IconEdit,
   IconTrash,
-  IconUsers,
   ImageIcon,
   LetterText,
   List,
   MoreHorizontal,
   Pen,
   Search,
+  UserIcons,
 } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { toast } from '@tuturuuu/ui/sonner';
@@ -250,7 +250,7 @@ export default function WhiteboardsList({
 
                   <div className="flex items-center justify-between text-xs text-muted-foreground">
                     <div className="flex items-center gap-2">
-                      <IconUsers className="h-3 w-3" />
+                      <UserIcons className="h-3 w-3" />
                       {whiteboard.creatorName}
                     </div>
                     <div className="flex items-center gap-2">
@@ -308,7 +308,7 @@ export default function WhiteboardsList({
                   {/* Metadata */}
                   <div className="flex items-center gap-6 text-sm text-muted-foreground">
                     <div className="flex items-center gap-1">
-                      <IconUsers className="h-3 w-3" />
+                      <UserIcons className="h-3 w-3" />
                       {whiteboard.creatorName}
                     </div>
                     <div className="flex items-center gap-1">
@@ -385,7 +385,7 @@ function CardAction({ whiteboard }: { whiteboard: Whiteboard }) {
             className="gap-2"
             onSelect={(e) => e.preventDefault()}
           >
-            <IconUsers className="h-4 w-4" />
+            <UserIcons className="h-4 w-4" />
             Share
           </DropdownMenuItem>
           <DropdownMenuItem
