@@ -12,8 +12,8 @@ import { Structure as BaseStructure } from '@tuturuuu/ui/custom/structure';
 import {
   ChevronDown,
   Crown,
+  ExternalLinkIcon,
   Home,
-  IconExternalLink,
   ImagePlay,
   MessagesSquare,
   WandSparkles,
@@ -57,7 +57,7 @@ export function Structure({
     {
       href: TTR_URL,
       title: t('common.go_to_tuturuuu'),
-      icon: <IconExternalLink className="h-5 w-5 flex-none opacity-70" />,
+      icon: <ExternalLinkIcon className="h-5 w-5 flex-none opacity-70" />,
       newTab: true,
     },
   ];
