@@ -16,7 +16,7 @@ import {
   School,
   Sparkles,
   Users,
-  Video,
+  Video
 } from "@tuturuuu/ui/icons"
 import { Separator } from "@tuturuuu/ui/separator"
 import { type Variants, motion } from "framer-motion"
@@ -27,7 +27,7 @@ import { useEffect, useState } from "react"
 import GradientHeadline from "../gradient-headline"
 import AiFeatures from "./ai-features"
 import { GeometricBackground } from "./geometric-background"
-
+import { TestimonialsSection } from "./testimonial"
 export default function MarketingPage() {
   const t = useTranslations("boarding-pages.home")
   // Fetch workspaces from the API
@@ -127,7 +127,7 @@ export default function MarketingPage() {
                     whileTap={{ scale: 0.95 }}
                     transition={{ type: "spring", stiffness: 400 }}
                   >
-                    <Link href="/guide">
+                    <Link href="/courses">
                       <Button
                         variant="outline"
                         className="group relative overflow-hidden border-white/20 bg-white/10 text-white backdrop-blur-sm hover:bg-white/20 dark:border-white/30 dark:bg-white/20 dark:hover:bg-white/30"
@@ -139,7 +139,7 @@ export default function MarketingPage() {
                           transition={{ duration: 0.5 }}
                         />
                         <span className="relative z-10 flex items-center">
-                          {t("hero.platform-guide")}
+                          {t("hero.explore-courses")}
                           <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
                         </span>
                       </Button>
@@ -617,51 +617,99 @@ export default function MarketingPage() {
               </div>
             </div>
           </section>
+          {/* Testimonials */}
+           <TestimonialsSection />
+         {/* Combined CTA and Partnership Section */}
+<section className="relative w-full py-24">
+  {/* Unified gradient background that adapts to theme */}
+  <div className="bg-gradient-to-br from-blue-500/8 via-purple-500/6 to-blue-500/8 dark:from-blue-500/15 dark:via-purple-500/12 dark:to-blue-500/15 absolute inset-0" />
+  
+  <div className="relative mx-auto max-w-6xl px-4">
+    {/* CTA Section Content */}
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      className="mx-auto max-w-4xl text-center mb-24"
+    >
+      <Badge
+        variant="outline"
+        className="mb-4 border-primary/30 bg-gradient-to-r from-blue-500/10 to-purple-500/10 text-primary backdrop-blur-sm"
+      >
+        <Sparkles className="mr-2 h-4 w-4" />
+        {t("cta-section.badge")}
+      </Badge>
+      <h2 className="mb-4 text-4xl font-bold md:text-5xl bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400 bg-clip-text text-transparent">
+        {t("cta-section.title")}
+      </h2>
+      <p className="text-muted-foreground mb-8">{t("cta-section.description")}</p>
+      <motion.div
+        className="flex flex-col items-center gap-4 sm:flex-row sm:justify-center"
+        initial={{ opacity: 0, y: 10 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        transition={{ delay: 0.2 }}
+      >
+        <GetStartedButton
+          text={t("common.get-started")}
+          href={wsId ? `/${wsId}/home` : "/login"}
+          disabled={!wsId && wsId !== null}
+        />
+        <Link href="/about">
+          <Button
+            variant="outline"
+            className="group border-primary/30 bg-gradient-to-r from-blue-500/10 to-purple-500/10 text-primary hover:from-blue-500/20 hover:to-purple-500/20 backdrop-blur-sm"
+          >
+            {t("hero.platform-guide")}
+            <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+          </Button>
+        </Link>
+      </motion.div>
+    </motion.div>
 
-          {/* Enhanced CTA Section */}
-          <section className="relative w-full py-24">
-            <div className="bg-gradient-to-r from-blue-500/5 to-purple-500/5 dark:from-blue-500/10 dark:to-purple-500/10 absolute inset-0" />
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              className="relative mx-auto max-w-4xl px-4 text-center"
-            >
-              <Badge
-                variant="outline"
-                className="mb-4 border-primary/30 bg-gradient-to-r from-blue-500/10 to-purple-500/10 text-primary backdrop-blur-sm"
-              >
-                <Sparkles className="mr-2 h-4 w-4" />
-                {t("cta-section.badge")}
-              </Badge>
-              <h2 className="mb-4 text-4xl font-bold md:text-5xl bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400 bg-clip-text text-transparent">
-                {t("cta-section.title")}
-              </h2>
-              <p className="text-muted-foreground mb-8">{t("cta-section.description")}</p>
-              <motion.div
-                className="flex flex-col items-center gap-4 sm:flex-row sm:justify-center"
-                initial={{ opacity: 0, y: 10 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: 0.2 }}
-              >
-                <GetStartedButton
-                  text={t("common.get-started")}
-                  href={wsId ? `/${wsId}/home` : "/login"}
-                  disabled={!wsId && wsId !== null}
-                />
-                <Link href="/about">
-                  <Button
-                    variant="outline"
-                    className="group border-primary/30 bg-gradient-to-r from-blue-500/10 to-purple-500/10 text-primary hover:from-blue-500/20 hover:to-purple-500/20 backdrop-blur-sm"
-                  >
-                    {t("cta-section.button")}
-                    <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
-                  </Button>
-                </Link>
-              </motion.div>
-            </motion.div>
-          </section>
+    {/* Partnership Section Content */}
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      className="text-center mb-16"
+    >
+      <Badge
+        variant="outline"
+        className="mb-4 border-purple-300/50 dark:border-purple-400/50 bg-gradient-to-r from-purple-500/10 to-blue-500/10 text-purple-600 dark:text-purple-400 backdrop-blur-sm"
+      >
+        {t("partners.badge")}
+      </Badge>
+      <h2 className="mb-4 text-3xl font-bold md:text-4xl bg-gradient-to-r from-purple-600 to-blue-600 dark:from-purple-400 dark:to-blue-400 bg-clip-text text-transparent">
+        {t("partners.title")}
+      </h2>
+    </motion.div>
+
+    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-8 items-center justify-center">
+  {Array.from({ length: 6 }).map((_, index) => (
+    <motion.div
+      key={index}
+      initial={{ opacity: 0, scale: 0.8 }}
+      whileInView={{ opacity: 1, scale: 1 }}
+      viewport={{ once: true }}
+      transition={{ delay: index * 0.1 }}
+      whileHover={{ scale: 1.05 }}
+      className="group mx-auto"
+    >
+      <Card className="border-purple-200/30 dark:border-purple-800/30 bg-gradient-to-br from-white/80 to-purple-50/30 dark:from-gray-900/80 dark:to-purple-950/30 p-6 backdrop-blur-sm hover:shadow-lg hover:shadow-purple-500/10 transition-all duration-300 flex items-center justify-center h-24">
+        <img
+          src="/media/logos/transparent.png"
+          alt="Partner Logo"
+          className="max-h-full max-w-full object-contain opacity-60 group-hover:opacity-100 transition-opacity duration-300"
+        />
+      </Card>
+    </motion.div>
+  ))}
+</div>
+
+
+  </div>
+</section>
         </div>
       </div>
     </>
@@ -675,3 +723,4 @@ async function getWorkspaces() {
   const data = await response.json()
   return data as Workspace[]
 }
+

@@ -3,6 +3,7 @@ import type { WorkspaceCourse } from '@tuturuuu/types/db';
 import { CourseCardView } from '@tuturuuu/ui/custom/education/courses/course-card-view';
 import { CoursePagination } from '@tuturuuu/ui/custom/education/courses/course-pagination';
 import { getTranslations } from 'next-intl/server';
+import { mockData } from "./mock/mock-data";
 
 interface SearchParams {
   q?: string;
@@ -79,25 +80,26 @@ async function getData({
   pageSize?: string;
   retry?: boolean;
 } = {}) {
-  // if (process.env.NODE_ENV === 'development') {
-  //   // Placing mock data for testing
-  //   const allMock: WorkspaceCourse[] = mockData();
+  if (process.env.NODE_ENV === 'development') {
+    // Placing mock data for testing
+    const t = await getTranslations("mock");
+    const allMock: WorkspaceCourse[] = mockData(t);
 
-  //   const filteredData = allMock.filter((course) =>
-  //     q ? course.name.toLowerCase().includes(q.toLowerCase()) : true
-  //   );
+    const filteredData = allMock.filter((course) =>
+      q ? course.name.toLowerCase().includes(q.toLowerCase()) : true
+    );
 
-  //   const parsedPage = parseInt(page);
-  //   const parsedSize = parseInt(pageSize);
-  //   const start = (parsedPage - 1) * parsedSize;
-  //   const end = parsedPage * parsedSize;
-  //   const paginatedData = filteredData.slice(start, end);
+    const parsedPage = parseInt(page);
+    const parsedSize = parseInt(pageSize);
+    const start = (parsedPage - 1) * parsedSize;
+    const end = parsedPage * parsedSize;
+    const paginatedData = filteredData.slice(start, end);
 
-  //   return {
-  //     data: paginatedData,
-  //     count: filteredData.length,
-  //   };
-  // }
+    return {
+      data: paginatedData,
+      count: filteredData.length,
+    };
+  }
 
   const supabase = await createAdminClient();
 
