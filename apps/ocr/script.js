@@ -4,7 +4,9 @@ const isWin = process.platform === 'win32';
 const arg = process.argv[2];
 
 if (!arg) {
-  console.error('No command provided. Usage: node script.js <install|dev|start|run|serve|deploy>');
+  console.error(
+    'No command provided. Usage: node script.js <install|dev|start|run|serve|deploy>'
+  );
   process.exit(1);
 }
 

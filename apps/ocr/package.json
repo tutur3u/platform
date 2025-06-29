@@ -1,15 +1,14 @@
 {
-    "name": "@ncthub/ocr",
-    "version": "1.0.0",
-    "private": true,
-    "scripts": {
-      "install": "node script.js install",
-      "dev": "node script.js dev",
-      "start": "node script.js start",
-      "run": "node script.js run",
-      "serve": "node script.js serve",
-      "deploy": "node script.js deploy"
-    },
-    "packageManager": "bun@1.2.17"
-  }
-  
+  "name": "@ncthub/ocr",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "install": "node script.js install",
+    "dev": "node script.js dev",
+    "start": "node script.js start",
+    "run": "node script.js run",
+    "serve": "node script.js serve",
+    "deploy": "node script.js deploy"
+  },
+  "packageManager": "bun@1.2.17"
+}
