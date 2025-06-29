@@ -62,23 +62,62 @@ export default function InteractiveDemo() {
 
   return (
     <div className="relative">
-      {/* Decorative elements */}
-      <div className="absolute inset-0 rounded-xl bg-linear-to-b from-primary/5 via-transparent to-transparent" />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_500px_at_50%_0%,rgba(var(--primary-rgb),0.1),transparent)]" />
+      {/* Enhanced decorative elements */}
+      <div className="from-primary/5 bg-linear-to-b absolute inset-0 rounded-xl via-blue-500/10 to-purple-500/10" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_500px_at_50%_0%,rgba(var(--primary-rgb),0.15),transparent)]" />
+
+      {/* Animated floating particles */}
+      {[...Array(15)].map((_, i) => (
+        <motion.div
+          key={i}
+          className="absolute h-1.5 w-1.5 rounded-full bg-gradient-to-r from-blue-400 to-purple-400 opacity-60"
+          style={{
+            top: `${Math.random() * 100}%`,
+            left: `${Math.random() * 100}%`,
+          }}
+          animate={{
+            y: [0, -20, 0],
+            x: [0, Math.random() * 10 - 5, 0],
+            opacity: [0.2, 0.8, 0.2],
+            scale: [0.8, 1.2, 0.8],
+          }}
+          transition={{
+            duration: 3 + Math.random() * 3,
+            repeat: Number.POSITIVE_INFINITY,
+            delay: Math.random() * 2,
+          }}
+        />
+      ))}
 
       <div className="relative mx-auto max-w-3xl">
-        <Card className="overflow-hidden border-primary/10 bg-background/10 backdrop-blur-sm">
-          {/* Demo header */}
-          <div className="flex items-center gap-2 border-b border-primary/10 bg-primary/5 p-4">
-            <Bot className="h-5 w-5 text-primary" />
+        <Card className="border-primary/20 shadow-primary/10 overflow-hidden bg-gradient-to-br from-white/80 via-blue-50/30 to-purple-50/30 shadow-lg backdrop-blur-md dark:from-gray-900/80 dark:via-blue-900/20 dark:to-purple-900/20">
+          {/* Demo header with enhanced gradient */}
+          <div className="border-primary/10 via-primary/80 flex items-center gap-2 border-b bg-gradient-to-r from-blue-500/80 to-purple-500/80 p-4 text-white">
+            <motion.div
+              animate={{
+                rotate: [0, 10, -10, 0],
+                scale: [1, 1.1, 1],
+              }}
+              transition={{ duration: 3, repeat: Number.POSITIVE_INFINITY }}
+            >
+              <Bot className="h-5 w-5" />
+            </motion.div>
             <span className="font-semibold">{t('title')}</span>
-            <span className="ml-auto flex items-center gap-1 rounded-full bg-primary/10 px-2 py-1 text-xs text-primary">
-              <Sparkles className="h-3 w-3" />
+            <span className="ml-auto flex items-center gap-1 rounded-full bg-white/20 px-2 py-1 text-xs text-white backdrop-blur-sm">
+              <motion.div
+                animate={{
+                  rotate: [0, 180, 360],
+                  scale: [1, 1.2, 1],
+                }}
+                transition={{ duration: 4, repeat: Number.POSITIVE_INFINITY }}
+              >
+                <Sparkles className="h-3 w-3" />
+              </motion.div>
               {t('badge')}
             </span>
           </div>
 
-          {/* Messages container */}
+          {/* Messages container with enhanced styling */}
           <div className="h-[400px] space-y-4 overflow-y-auto p-4">
             {messages.map((message, index) => (
               <motion.div
@@ -86,15 +125,14 @@ export default function InteractiveDemo() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3 }}
-                className={`flex items-start gap-3 ${
-                  message.role === 'assistant' ? 'flex-row' : 'flex-row-reverse'
-                }`}
+                className={`flex items-start gap-3 ${message.role === 'assistant' ? 'flex-row' : 'flex-row-reverse'}`}
               >
-                <div
+                <motion.div
+                  whileHover={{ scale: 1.1, rotate: 5 }}
                   className={`rounded-full p-2 ${
                     message.role === 'assistant'
-                      ? 'bg-primary/10 text-primary'
-                      : 'bg-muted'
+                      ? 'to-primary bg-gradient-to-br from-blue-500 text-white'
+                      : 'bg-gradient-to-br from-purple-500 to-pink-500 text-white'
                   }`}
                 >
                   {message.role === 'assistant' ? (
@@ -102,22 +140,23 @@ export default function InteractiveDemo() {
                   ) : (
                     <User className="h-4 w-4" />
                   )}
-                </div>
+                </motion.div>
                 <motion.div
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
+                  whileHover={{ scale: 1.02 }}
                   className={`max-w-[80%] rounded-lg ${
                     message.role === 'assistant'
-                      ? 'bg-muted'
-                      : 'bg-primary text-primary-foreground'
-                  } p-3`}
+                      ? 'to-primary/10 dark:to-primary/20 border border-blue-200/30 bg-gradient-to-r from-blue-100/80 dark:border-blue-700/30 dark:from-blue-900/30'
+                      : 'bg-gradient-to-r from-purple-500 to-pink-500 text-white'
+                  } p-3 shadow-md`}
                 >
                   <p className="text-sm">{t(message.content)}</p>
                 </motion.div>
               </motion.div>
             ))}
             {currentStep < demoConversation.length && (
-              <div className="flex items-center gap-2 text-muted-foreground">
+              <div className="text-muted-foreground flex items-center gap-2">
                 <motion.div
                   animate={{
                     scale: [1, 1.2, 1],
@@ -125,9 +164,9 @@ export default function InteractiveDemo() {
                   }}
                   transition={{
                     duration: 1.5,
-                    repeat: Infinity,
+                    repeat: Number.POSITIVE_INFINITY,
                   }}
-                  className="h-2 w-2 rounded-full bg-primary"
+                  className="to-primary h-2 w-2 rounded-full bg-gradient-to-r from-blue-400"
                 />
                 <span className="text-sm">
                   {demoConversation[currentStep]?.role === 'assistant'
@@ -138,21 +177,29 @@ export default function InteractiveDemo() {
             )}
           </div>
 
-          {/* Input area */}
-          <div className="flex items-center gap-2 border-t border-primary/10 bg-background/10 p-4">
+          {/* Input area with enhanced styling */}
+          <div className="border-primary/10 flex items-center gap-2 border-t bg-gradient-to-r from-blue-50/50 to-purple-50/50 p-4 backdrop-blur-sm dark:from-blue-900/20 dark:to-purple-900/20">
             <div className="relative flex-1">
               <input
                 type="text"
                 placeholder={t('input-place-holder')}
-                className="w-full rounded-lg border border-primary/10 bg-background/10 px-4 py-2 pr-10 text-sm placeholder:text-muted-foreground focus:ring-2 focus:ring-primary/20 focus:outline-none"
+                className="border-primary/20 placeholder:text-muted-foreground focus:ring-primary/30 w-full rounded-lg border bg-white/80 px-4 py-2 pr-10 text-sm backdrop-blur-sm focus:outline-none focus:ring-2 dark:bg-gray-800/80"
                 disabled
               />
-              <MessageSquare className="absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <MessageSquare className="text-primary absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2" />
             </div>
-            <Button size="icon" disabled>
+            <Button
+              size="icon"
+              disabled
+              className="to-primary hover:to-primary/90 bg-gradient-to-r from-blue-500 text-white hover:from-blue-600"
+            >
               <Send className="h-4 w-4" />
             </Button>
           </div>
+
+          {/* Decorative corner elements */}
+          <div className="absolute right-0 top-0 h-20 w-20 rounded-bl-full bg-gradient-to-br from-blue-400/10 to-purple-400/10"></div>
+          <div className="absolute bottom-0 left-0 h-16 w-16 rounded-tr-full bg-gradient-to-tr from-blue-400/10 to-purple-400/10"></div>
         </Card>
       </div>
     </div>

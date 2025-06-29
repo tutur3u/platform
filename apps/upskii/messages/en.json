@@ -1,4 +1,18 @@
 {
+  "mock": {
+    "course1": {
+      "name": "Introduction to Artificial Intelligence",
+      "description": "Learn the fundamentals of AI, machine learning, and neural networks."
+    },
+    "course2": {
+      "name": "Full-Stack Web Development",
+      "description": "Master both frontend and backend development using modern technologies."
+    },
+    "course3": {
+      "name": "Data Science with Python",
+      "description": "Analyze data and build predictive models using Python and popular libraries."
+    }
+  },
   "quiz-set-statistics": {
     "title": "Quiz Set Statistics",
     "description": "View detailed statistics for your quizzes, including average scores, completion rates, and more.",
@@ -784,6 +798,7 @@
         "title-1": "Your Complete",
         "title-2": "Educational Platform",
         "description": "A modern learning platform that empowers educators and students with AI-enhanced features, interactive content, and real-time collaboration tools.",
+        "explore-courses": "Explore Courses",
         "platform-guide": "Platform Guide"
       },
       "key-features": {
@@ -873,6 +888,15 @@
         "title": "Join Our Educational Community",
         "description": "Start your learning journey or begin creating and sharing your knowledge with students around the world.",
         "button": "Learn More"
+      },
+      "partners": {
+        "badge": "Trusted Partners",
+        "title": "Partnering with Leading Organizations"
+      },
+      "testimonials": {
+        "badge": "Testimonials",
+        "title": "What Our Community Says",
+        "description": "Discover how educators and students worldwide are transforming their learning experience with our platform."
       },
       "common": {
         "get-started": "Get Started"
