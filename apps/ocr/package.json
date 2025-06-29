@@ -10,6 +10,6 @@
       "serve": "node script.js serve",
       "deploy": "node script.js deploy"
     },
-    "packageManager": "bun@1.2.16"
+    "packageManager": "bun@1.2.17"
   }
   
