@@ -1111,7 +1111,11 @@
     "id": "ID",
     "display_name": "User",
     "enabled": "Status",
-    "platform_role": "Role",
+    "platform_role": "Permissions",
+    "allow_role_management": "Admin",
+    "allow_manage_all_challenges": "Global",
+    "allow_challenge_management": "Challenge",
+    "allow_workspace_creation": "Workspace",
     "created_at": "Joined"
   },
   "cron-job-data-table": {

@@ -5,6 +5,14 @@ import type {
   UserPrivateDetails,
 } from '@tuturuuu/types/db';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
+import {
+  Building,
+  Crown,
+  Globe,
+  Shield,
+  UserCheck,
+  Users,
+} from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
@@ -27,6 +35,7 @@ type SearchUserResult = {
   allow_challenge_management: boolean;
   allow_manage_all_challenges: boolean;
   allow_role_management: boolean;
+  allow_workspace_creation?: boolean;
   email: string;
   new_email: string;
   birthday: string;
@@ -35,9 +44,10 @@ type SearchUserResult = {
 
 // Create a compatible type that merges the search result with required User fields
 type PlatformUserWithDetails = Omit<User, 'services'> &
-  PlatformUser &
+  Omit<PlatformUser, 'allow_workspace_creation'> &
   Partial<UserPrivateDetails> & {
     services?: User['services']; // Make services optional since RPC doesn't return it
+    allow_workspace_creation?: boolean; // Make this optional to handle RPC function compatibility
   };
 
 interface Props {
@@ -84,12 +94,128 @@ export default async function PlatformRolesPage({
     enabled,
   });
 
+  // Calculate role statistics
+  const roleStats = userData.reduce(
+    (stats, user) => {
+      if (!user.enabled) {
+        stats.inactive += 1;
+        return stats;
+      }
+
+      stats.active += 1;
+
+      if (user.allow_role_management) stats.admins += 1;
+      if (user.allow_manage_all_challenges) stats.globalManagers += 1;
+      if (user.allow_challenge_management) stats.challengeManagers += 1;
+      if (user.allow_workspace_creation) stats.workspaceCreators += 1;
+
+      // Count users with only basic member permissions
+      if (
+        !user.allow_role_management &&
+        !user.allow_manage_all_challenges &&
+        !user.allow_challenge_management &&
+        !user.allow_workspace_creation
+      ) {
+        stats.members += 1;
+      }
+
+      return stats;
+    },
+    {
+      active: 0,
+      inactive: 0,
+      admins: 0,
+      globalManagers: 0,
+      challengeManagers: 0,
+      workspaceCreators: 0,
+      members: 0,
+    }
+  );
+
   return (
     <>
       <FeatureSummary
         pluralTitle={t('platform-roles.plural')}
         description={t('platform-roles.description')}
       />
+
+      {/* Role Statistics */}
+      <div className="my-6 grid grid-cols-2 gap-4 sm:grid-cols-4 lg:grid-cols-7">
+        <div className="rounded-lg border bg-card p-3 shadow-sm">
+          <div className="flex items-center gap-2">
+            <UserCheck className="h-4 w-4 text-dynamic-green" />
+            <div className="text-2xl font-bold text-dynamic-green">
+              {roleStats.active}
+            </div>
+          </div>
+          <p className="text-xs text-dynamic-muted-foreground">Active Users</p>
+        </div>
+
+        <div className="rounded-lg border bg-card p-3 shadow-sm">
+          <div className="flex items-center gap-2">
+            <Crown className="h-4 w-4 text-dynamic-red" />
+            <div className="text-2xl font-bold text-dynamic-red">
+              {roleStats.admins}
+            </div>
+          </div>
+          <p className="text-xs text-dynamic-muted-foreground">Admins</p>
+        </div>
+
+        <div className="rounded-lg border bg-card p-3 shadow-sm">
+          <div className="flex items-center gap-2">
+            <Globe className="h-4 w-4 text-dynamic-blue" />
+            <div className="text-2xl font-bold text-dynamic-blue">
+              {roleStats.globalManagers}
+            </div>
+          </div>
+          <p className="text-xs text-dynamic-muted-foreground">
+            Global Managers
+          </p>
+        </div>
+
+        <div className="rounded-lg border bg-card p-3 shadow-sm">
+          <div className="flex items-center gap-2">
+            <Shield className="h-4 w-4 text-dynamic-purple" />
+            <div className="text-2xl font-bold text-dynamic-purple">
+              {roleStats.challengeManagers}
+            </div>
+          </div>
+          <p className="text-xs text-dynamic-muted-foreground">
+            Challenge Managers
+          </p>
+        </div>
+
+        <div className="rounded-lg border bg-card p-3 shadow-sm">
+          <div className="flex items-center gap-2">
+            <Building className="h-4 w-4 text-dynamic-green" />
+            <div className="text-2xl font-bold text-dynamic-green">
+              {roleStats.workspaceCreators}
+            </div>
+          </div>
+          <p className="text-xs text-dynamic-muted-foreground">
+            Workspace Creators
+          </p>
+        </div>
+
+        <div className="rounded-lg border bg-card p-3 shadow-sm">
+          <div className="flex items-center gap-2">
+            <Users className="h-4 w-4 text-dynamic-muted-foreground" />
+            <div className="text-2xl font-bold">{roleStats.members}</div>
+          </div>
+          <p className="text-xs text-dynamic-muted-foreground">Members</p>
+        </div>
+
+        <div className="rounded-lg border bg-card p-3 shadow-sm">
+          <div className="flex items-center gap-2">
+            <div className="h-4 w-4 bg-dynamic-muted rounded-full" />
+            <div className="text-2xl font-bold text-dynamic-muted-foreground">
+              {roleStats.inactive}
+            </div>
+          </div>
+          <p className="text-xs text-dynamic-muted-foreground">Inactive</p>
+        </div>
+      </div>
+
       <Separator className="my-4" />
       <CustomDataTable
         data={userData}
@@ -100,6 +226,15 @@ export default async function PlatformRolesPage({
         defaultVisibility={{
           id: false,
           created_at: false,
+          // Show permissions overview by default, hide individual toggles initially
+          platform_role: true,
+          enabled: true,
+          display_name: true,
+          // Hide individual permission columns by default to prevent overwhelming UI
+          allow_role_management: false,
+          allow_manage_all_challenges: false,
+          allow_challenge_management: false,
+          allow_workspace_creation: false,
         }}
       />
     </>
@@ -157,6 +292,7 @@ async function getPlatformUserData({
           userData: (data || []).map((user: SearchUserResult) => ({
             ...user,
             services: [] as User['services'], // Provide default empty services array
+            allow_workspace_creation: user.allow_workspace_creation ?? false, // Provide default value
           })),
           userCount: (data || []).length,
         };
@@ -166,6 +302,7 @@ async function getPlatformUserData({
         userData: (data || []).map((user: SearchUserResult) => ({
           ...user,
           services: [] as User['services'], // Provide default empty services array
+          allow_workspace_creation: user.allow_workspace_creation ?? false, // Provide default value
         })),
         userCount: countData || 0,
       };
@@ -192,11 +329,15 @@ async function getPlatformUserData({
         case 'challenge_manager':
           queryBuilder.eq('allow_challenge_management', true);
           break;
+        case 'workspace_creator':
+          queryBuilder.eq('allow_workspace_creation', true);
+          break;
         default:
           queryBuilder
             .eq('allow_challenge_management', false)
             .eq('allow_manage_all_challenges', false)
-            .eq('allow_role_management', false);
+            .eq('allow_role_management', false)
+            .eq('allow_workspace_creation', false);
           break;
       }
     }

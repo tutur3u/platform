@@ -1122,7 +1122,11 @@
     "id": "Mã số",
     "display_name": "Người dùng",
     "enabled": "Trạng thái",
-    "platform_role": "Vai trò",
+    "platform_role": "Quyền",
+    "allow_role_management": "Quản trị viên",
+    "allow_manage_all_challenges": "Quản lý toàn cầu",
+    "allow_challenge_management": "Quản lý thử thách",
+    "allow_workspace_creation": "Tạo không gian",
     "created_at": "Tham gia"
   },
   "cron-job-data-table": {

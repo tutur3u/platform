@@ -15,6 +15,7 @@ export async function PUT(
       allow_challenge_management,
       allow_manage_all_challenges,
       allow_role_management,
+      allow_workspace_creation,
     } = await req.json();
 
     // Check permissions - only root workspace members with manage_workspace_roles can update platform roles
@@ -51,6 +52,7 @@ export async function PUT(
         allow_challenge_management,
         allow_manage_all_challenges,
         allow_role_management,
+        allow_workspace_creation,
       })
       .eq('user_id', userId)
       .select();

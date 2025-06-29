@@ -423,13 +423,6 @@ export default async function Layout({ children, params }: LayoutProps) {
             ENABLE_AI_ONLY || withoutPermission('manage_workspace_roles'),
         },
         {
-          title: t('workspace-settings-layout.platform_roles'),
-          href: `/${wsId}/platform/roles`,
-          icon: <ShieldUser className="h-5 w-5" />,
-          disabled:
-            ENABLE_AI_ONLY || withoutPermission('manage_workspace_roles'),
-        },
-        {
           title: t('workspace-settings-layout.reports'),
           href: `/${wsId}/settings/reports`,
           icon: <FileText className="h-5 w-5" />,
@@ -457,12 +450,20 @@ export default async function Layout({ children, params }: LayoutProps) {
           disabled: withoutPermission('manage_workspace_secrets'),
           requireRootMember: true,
         },
+
         {
           title: t('workspace-settings-layout.infrastructure'),
           href: `/${wsId}/infrastructure`,
           icon: <Blocks className="h-5 w-5" />,
           disabled: withoutPermission('view_infrastructure'),
           requireRootWorkspace: true,
+        },
+        {
+          title: t('workspace-settings-layout.platform_roles'),
+          href: `/${wsId}/platform/roles`,
+          icon: <ShieldUser className="h-5 w-5" />,
+          disabled:
+            ENABLE_AI_ONLY || withoutPermission('manage_workspace_roles'),
         },
         {
           title: t('workspace-settings-layout.migrations'),
