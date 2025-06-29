@@ -1,7 +1,6 @@
 'use client';
 
 import { createClient } from '@tuturuuu/supabase/next/client';
-import type { Workspace } from '@tuturuuu/types/db';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -61,16 +60,10 @@ export function WorkspaceSelect({
   customRedirectSuffix,
   disableCreateNewWorkspace,
 }: {
-  t: (key: string) => string;
-  localUseQuery: (options: {
-    queryKey: string[];
-    queryFn: () => Promise<Partial<Workspace>[]>;
-    enabled: boolean;
-  }) => {
-    data: Partial<Workspace>[];
-    isLoading: boolean;
-    error: Error | null;
-  };
+  // biome-ignore lint/suspicious/noExplicitAny: <No need to type this>
+  t: any;
+  // biome-ignore lint/suspicious/noExplicitAny: <No need to type this>
+  localUseQuery: any;
   hideLeading?: boolean;
   customRedirectSuffix?: string;
   disableCreateNewWorkspace?: boolean;
@@ -152,7 +145,7 @@ export function WorkspaceSelect({
       id: 'workspaces',
       label: t('common.workspaces'),
       teams:
-        workspaces?.map((workspace) => ({
+        workspaces?.map((workspace: { id: string; name: string }) => ({
           label: workspace.name || 'Untitled',
           value: workspace.id,
         })) || [],
@@ -172,7 +165,7 @@ export function WorkspaceSelect({
     }
   };
 
-  const workspace = workspaces?.find((ws) => ws.id === wsId);
+  const workspace = workspaces?.find((ws: { id: string }) => ws.id === wsId);
   if (!wsId) return <div />;
 
   return (
