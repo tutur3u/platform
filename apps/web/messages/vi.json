@@ -2110,7 +2110,9 @@
     "secrets": "Mã bí mật",
     "infrastructure": "Cơ sở hạ tầng",
     "migrations": "Chuyển dữ liệu",
-    "activities": "Hoạt động"
+    "activities": "Hoạt động",
+    "workspace_roles": "Vai trò không gian làm việc",
+    "platform_roles": "Vai trò nền tảng"
   },
   "platform-token-usage": {
     "hourly_total_from_last_12_hours": "Tổng số token sử dụng hàng giờ trong 12 giờ gần đây",

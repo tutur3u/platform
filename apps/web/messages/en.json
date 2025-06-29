@@ -2098,7 +2098,9 @@
     "secrets": "Secrets",
     "infrastructure": "Infrastructure",
     "migrations": "Migrations",
-    "activities": "Activities"
+    "activities": "Activities",
+    "workspace_roles": "Workspace Roles",
+    "platform_roles": "Platform Roles"
   },
   "platform-token-usage": {
     "hourly_total_from_last_12_hours": "Hourly total token from last 12 hours",
