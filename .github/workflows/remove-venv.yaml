@@ -25,13 +25,8 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
       - name: Remove venv folder from remote repository (if exists)
-        run: |
-          if [ -d "apps/ocr/venv" ]; then
-            echo "Removing venv folder from remote repository"
-            git rm -r --cached apps/ocr/venv
-          else
-            echo "Venv folder not found"
-          fi
+        run:
+          git rm -r --cached apps/ocr/venv
 
       - name: Commit changes to remove venv folder from remote repository
         run: |
