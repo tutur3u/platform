@@ -97,9 +97,6 @@
     "tailwindcss": "^4.1.11",
     "typescript": "^5.8.3"
   },
-  "overrides": {
-    "react-is": "^19.1.0"
-  },
   "exports": {
     ".": {
       "types": "./src/index.d.ts",
