@@ -20,11 +20,9 @@ import {
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import {
-  AlertTriangle,
   Building,
   Clock,
   Crown,
-  EyeOff,
   Loader2,
   MoreHorizontal,
   Users,
@@ -55,12 +53,10 @@ export const getPlatformRoleColumns = (
   const toggleMutation = useMutation({
     mutationFn: async ({
       userId,
-      enabled,
       allow_role_management,
       allow_workspace_creation,
     }: {
       userId: string;
-      enabled: boolean;
       allow_role_management: boolean;
       allow_workspace_creation: boolean;
     }) => {
@@ -70,7 +66,6 @@ export const getPlatformRoleColumns = (
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          enabled,
           allow_role_management,
           allow_workspace_creation,
         }),
@@ -169,17 +164,12 @@ export const getPlatformRoleColumns = (
       ),
       cell: ({ row }) => {
         const user = row.original;
-        const isActive = user.enabled;
 
         return (
           <div className="flex items-center gap-3 min-w-0">
             <div className="relative">
               <Avatar
-                className={`h-9 w-9 border-2 transition-all ${
-                  isActive
-                    ? 'border-dynamic-green/30 shadow-sm'
-                    : 'border-dynamic-muted/30 opacity-60'
-                }`}
+                className={`h-9 w-9 border-2 transition-all ${'border-dynamic-green/30 shadow-sm'}`}
               >
                 <AvatarImage
                   src={user.avatar_url || ''}
@@ -190,88 +180,21 @@ export const getPlatformRoleColumns = (
                 </AvatarFallback>
               </Avatar>
               <div
-                className={`absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-background ${
-                  isActive ? 'bg-dynamic-green' : 'bg-dynamic-muted'
-                }`}
+                className={`absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-background ${'bg-dynamic-green'}`}
               />
             </div>
             <div className="min-w-0 flex-1">
               <div
-                className={`font-medium truncate transition-opacity ${
-                  isActive ? 'opacity-100' : 'opacity-60'
-                }`}
+                className={`font-medium truncate transition-opacity ${'opacity-100'}`}
               >
                 {user.display_name ||
                   generateFunName({ id: user.id, locale: extraData.locale })}
               </div>
               {user?.email && (
                 <div
-                  className={`text-sm truncate transition-opacity ${
-                    isActive
-                      ? 'text-dynamic-muted-foreground'
-                      : 'text-dynamic-muted-foreground/60'
-                  }`}
+                  className={`text-sm truncate transition-opacity ${'text-dynamic-muted-foreground'}`}
                 >
                   {user.email}
-                </div>
-              )}
-            </div>
-          </div>
-        );
-      },
-    },
-    {
-      accessorKey: 'enabled',
-      header: ({ column }) => (
-        <DataTableColumnHeader t={t} column={column} title="Status" />
-      ),
-      cell: ({ row }) => {
-        const userId = row.original.id;
-        const enabled = row.getValue('enabled') as boolean | undefined;
-        const allowRoleManagement = row.original.allow_role_management;
-        const allowWorkspaceCreation =
-          row.original.allow_workspace_creation ?? false;
-
-        const isLoading =
-          toggleMutation.isPending &&
-          toggleMutation.variables?.userId === userId;
-
-        return (
-          <div className="flex items-center gap-3">
-            <div className="relative">
-              <Switch
-                id={`active-status-${userId}`}
-                checked={enabled === true}
-                onCheckedChange={(checked) =>
-                  toggleMutation.mutate({
-                    userId,
-                    enabled: checked,
-                    allow_role_management: allowRoleManagement,
-                    allow_workspace_creation: allowWorkspaceCreation,
-                  })
-                }
-                disabled={isLoading}
-              />
-              {isLoading && (
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <Loader2 className="h-3 w-3 animate-spin text-dynamic-muted-foreground" />
-                </div>
-              )}
-            </div>
-            <div className="flex items-center gap-2">
-              {enabled ? (
-                <div className="flex items-center gap-1.5">
-                  <div className="h-2 w-2 bg-dynamic-green rounded-full animate-pulse" />
-                  <span className="text-xs font-medium text-dynamic-green">
-                    Active
-                  </span>
-                </div>
-              ) : (
-                <div className="flex items-center gap-1.5">
-                  <div className="h-2 w-2 bg-dynamic-muted rounded-full" />
-                  <span className="text-xs font-medium text-dynamic-muted-foreground">
-                    Inactive
-                  </span>
                 </div>
               )}
             </div>
@@ -287,7 +210,6 @@ export const getPlatformRoleColumns = (
       cell: ({ row }) => {
         const user = row.original;
         const permissions = getUserPermissions(user);
-        const isActive = user.enabled;
 
         return (
           <div className="space-y-1">
@@ -298,9 +220,7 @@ export const getPlatformRoleColumns = (
                     <TooltipTrigger asChild>
                       <Badge
                         variant={permission.variant}
-                        className={`${permission.className} gap-1.5 text-xs transition-all hover:scale-105 ${
-                          !isActive ? 'opacity-50' : ''
-                        }`}
+                        className={`${permission.className} gap-1.5 text-xs transition-all hover:scale-105`}
                       >
                         {permission.icon}
                         <span className="hidden sm:inline">
@@ -323,12 +243,6 @@ export const getPlatformRoleColumns = (
                 </TooltipProvider>
               ))}
             </div>
-            {!isActive && (
-              <div className="flex items-center gap-1 text-xs text-dynamic-muted-foreground">
-                <EyeOff className="h-3 w-3" />
-                <span>User inactive</span>
-              </div>
-            )}
           </div>
         );
       },
@@ -344,7 +258,6 @@ export const getPlatformRoleColumns = (
         const isLoading =
           toggleMutation.isPending &&
           toggleMutation.variables?.userId === userId;
-        const isActive = user.enabled;
 
         return (
           <div className="flex items-center justify-center">
@@ -367,18 +280,17 @@ export const getPlatformRoleColumns = (
                         }
                         toggleMutation.mutate({
                           userId,
-                          enabled: user.enabled || false,
                           allow_role_management: checked,
                           allow_workspace_creation:
                             user.allow_workspace_creation ?? false,
                         });
                       }}
-                      disabled={isLoading || !isActive}
+                      disabled={isLoading}
                       className={`transition-all ${
                         user.allow_role_management
                           ? 'data-[state=checked]:bg-dynamic-red'
                           : ''
-                      } ${!isActive ? 'opacity-40' : ''}`}
+                      }`}
                     />
                     {isLoading && (
                       <div className="absolute inset-0 flex items-center justify-center">
@@ -398,12 +310,6 @@ export const getPlatformRoleColumns = (
                         ? 'User has full platform administration access'
                         : 'Grant complete platform control and user management'}
                     </p>
-                    {!isActive && (
-                      <p className="text-xs text-dynamic-orange flex items-center gap-1">
-                        <AlertTriangle className="h-3 w-3" />
-                        User must be active first
-                      </p>
-                    )}
                   </div>
                 </TooltipContent>
               </Tooltip>
@@ -423,7 +329,6 @@ export const getPlatformRoleColumns = (
         const isLoading =
           toggleMutation.isPending &&
           toggleMutation.variables?.userId === userId;
-        const isActive = user.enabled;
 
         return (
           <div className="flex items-center justify-center">
@@ -436,17 +341,16 @@ export const getPlatformRoleColumns = (
                       onCheckedChange={(checked) =>
                         toggleMutation.mutate({
                           userId,
-                          enabled: user.enabled || false,
                           allow_role_management: user.allow_role_management,
                           allow_workspace_creation: checked,
                         })
                       }
-                      disabled={isLoading || !isActive}
+                      disabled={isLoading}
                       className={`transition-all ${
                         user.allow_workspace_creation
                           ? 'data-[state=checked]:bg-dynamic-green'
                           : ''
-                      } ${!isActive ? 'opacity-40' : ''}`}
+                      } `}
                     />
                     {isLoading && (
                       <div className="absolute inset-0 flex items-center justify-center">
@@ -466,12 +370,6 @@ export const getPlatformRoleColumns = (
                         ? 'Can create and initialize new workspaces'
                         : 'Grant ability to create new workspaces'}
                     </p>
-                    {!isActive && (
-                      <p className="text-xs text-dynamic-orange flex items-center gap-1">
-                        <AlertTriangle className="h-3 w-3" />
-                        User must be active first
-                      </p>
-                    )}
                   </div>
                 </TooltipContent>
               </Tooltip>
@@ -518,7 +416,6 @@ export const getPlatformRoleColumns = (
         const isLoading =
           toggleMutation.isPending &&
           toggleMutation.variables?.userId === userId;
-        const isActive = user.enabled;
 
         const togglePermission = (
           permission: string,
@@ -526,7 +423,6 @@ export const getPlatformRoleColumns = (
         ) => {
           const updates = {
             userId,
-            enabled: user.enabled || false,
             allow_role_management: allowRoleManagement,
             allow_workspace_creation: allowWorkspaceCreation,
           };
@@ -563,32 +459,10 @@ export const getPlatformRoleColumns = (
 
           toggleMutation.mutate({
             userId,
-            enabled: user.enabled || false,
             allow_role_management: false,
             allow_workspace_creation: false,
           });
         };
-
-        if (!isActive) {
-          return (
-            <div className="flex items-center justify-center">
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <div className="text-dynamic-muted-foreground p-2">
-                      <MoreHorizontal className="h-4 w-4 opacity-30" />
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p className="text-xs">
-                      Activate user to manage permissions
-                    </p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </div>
-          );
-        }
 
         return (
           <DropdownMenu>
