@@ -1,7 +1,0 @@
-fastapi[standard]
-modal
-numpy
-opencv-python
-paddleocr
-paddlepaddle
-setuptools
