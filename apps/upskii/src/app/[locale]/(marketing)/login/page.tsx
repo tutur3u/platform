@@ -11,7 +11,7 @@ import { DEV_MODE } from '@/constants/common';
 const DOMAINS = {
   TUTURUUU: {
     name: 'Tuturuuu',
-    href: DEV_MODE ? 'http://localhost:7803' : 'https://tuturuuu.com',
+    href: DEV_MODE ? `http://localhost:7803` : 'https://tuturuuu.com',
     logo: '/media/logos/transparent.png',
   },
   UPSKII: {

@@ -28,7 +28,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { useCallback, useEffect, useState } from 'react';
 import * as z from 'zod';
-import { DEV_MODE } from '@/constants/common';
+import { DEV_MODE, PORT } from '@/constants/common';
 import { trpc } from '@/trpc/client';
 
 // Constants
@@ -243,7 +243,10 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
         setResendCooldown(COOLDOWN_DURATION);
 
         if (DEV_MODE) {
-          window.open(window.location.origin.replace('7803', '8004'), '_blank');
+          window.open(
+            window.location.origin.replace(PORT.toString(), '8004'),
+            '_blank'
+          );
         }
       } else {
         // Handle server-side errors returned in the response
