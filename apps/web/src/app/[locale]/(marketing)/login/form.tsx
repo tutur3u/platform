@@ -29,6 +29,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useCallback, useEffect, useState } from 'react';
 import * as z from 'zod';
 import { DEV_MODE } from '@/constants/common';
+import { trpc } from '@/trpc/client';
 
 // Constants
 const COOLDOWN_DURATION = 60;
@@ -228,71 +229,152 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
     setLoading(false);
   };
 
+  const sendOtpMutation = trpc.sendOtp.useMutation({
+    onSuccess: (data) => {
+      if (!data?.error) {
+        toast({
+          title: t('login.success'),
+          description: t('login.otp_sent'),
+        });
+
+        otpForm.setValue('otp', '');
+        otpForm.clearErrors('otp');
+        setOtpSent(true);
+        setResendCooldown(COOLDOWN_DURATION);
+
+        if (DEV_MODE) {
+          window.open(window.location.origin.replace('7803', '8004'), '_blank');
+        }
+      } else {
+        // Handle server-side errors returned in the response
+        const errorMessage = data.error || t('login.failed_to_send');
+
+        toast({
+          title: t('login.failed'),
+          description: errorMessage,
+          variant: 'destructive',
+        });
+      }
+    },
+    onError: (error) => {
+      console.error('SendOTP Error:', error);
+
+      // Handle different types of tRPC errors
+      let errorMessage = t('login.failed_to_send');
+
+      if (error.data?.code === 'BAD_REQUEST') {
+        errorMessage = error.message || t('login.failed_to_send');
+      } else if (error.data?.code === 'TOO_MANY_REQUESTS') {
+        errorMessage = 'Too many requests. Please try again later.';
+      } else if (error.data?.code === 'INTERNAL_SERVER_ERROR') {
+        errorMessage = 'Server error. Please try again later.';
+      } else if (error.message) {
+        // Use the error message if available
+        errorMessage = error.message;
+      }
+
+      toast({
+        title: t('login.failed'),
+        description: errorMessage,
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const verifyOtpMutation = trpc.verifyOtp.useMutation({
+    onSuccess: async (data) => {
+      if (!data?.error) {
+        router.refresh();
+
+        if (await needsMFA()) {
+          setRequiresMFA(true);
+        } else {
+          window.location.reload();
+        }
+      } else {
+        otpForm.setError('otp', {
+          message: t('login.invalid_verification_code'),
+        });
+        otpForm.setValue('otp', '');
+
+        toast({
+          title: t('login.failed'),
+          description: data.error,
+          variant: 'destructive',
+        });
+      }
+    },
+    onError: (error) => {
+      console.error('VerifyOTP Error:', error);
+
+      // Handle different types of tRPC errors
+      let errorMessage = t('login.failed_to_verify');
+      let formErrorMessage = t('login.invalid_verification_code');
+
+      if (error.data?.code === 'BAD_REQUEST') {
+        if (
+          error.message?.toLowerCase().includes('otp') ||
+          error.message?.toLowerCase().includes('token')
+        ) {
+          errorMessage = t('login.invalid_verification_code');
+          formErrorMessage = t('login.invalid_verification_code');
+        } else if (error.message?.toLowerCase().includes('email')) {
+          errorMessage = error.message || t('login.failed_to_verify');
+          formErrorMessage =
+            error.message || t('login.invalid_verification_code');
+        } else {
+          errorMessage = error.message || t('login.failed_to_verify');
+        }
+      } else if (error.data?.code === 'UNAUTHORIZED') {
+        errorMessage = 'Verification code expired. Please request a new one.';
+        formErrorMessage = 'Code expired';
+      } else if (error.data?.code === 'TOO_MANY_REQUESTS') {
+        errorMessage =
+          'Too many verification attempts. Please try again later.';
+        formErrorMessage = 'Too many attempts';
+      } else if (error.data?.code === 'INTERNAL_SERVER_ERROR') {
+        errorMessage = 'Server error. Please try again later.';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
+      // Set form error
+      otpForm.setError('otp', {
+        message: formErrorMessage,
+      });
+      otpForm.setValue('otp', '');
+
+      // Show toast notification
+      toast({
+        title: t('login.failed'),
+        description: errorMessage,
+        variant: 'destructive',
+      });
+    },
+  });
+
+  // Combine tRPC loading states with manual loading state
+  const _isLoading =
+    loading || sendOtpMutation.isPending || verifyOtpMutation.isPending;
+
   // Authentication Functions
   const sendOtp = async (data: { email: string }) => {
     if (!locale || !data.email) return;
-    setLoading(true);
 
-    const res = await fetch('/api/auth/otp/send', {
-      method: 'POST',
-      body: JSON.stringify({ ...data, locale }),
+    sendOtpMutation.mutate({
+      email: data.email,
+      locale,
     });
-
-    if (res.ok) {
-      toast({
-        title: t('login.success'),
-        description: t('login.otp_sent'),
-      });
-
-      otpForm.setValue('otp', '');
-      otpForm.clearErrors('otp');
-      setOtpSent(true);
-      setResendCooldown(COOLDOWN_DURATION);
-
-      if (DEV_MODE) {
-        window.open(window.location.origin.replace('7803', '8004'), '_blank');
-      }
-    } else {
-      toast({
-        title: t('login.failed'),
-        description: t('login.failed_to_send'),
-      });
-    }
-
-    setLoading(false);
   };
 
   const verifyOtp = async (data: { email: string; otp: string }) => {
     if (!locale || !data.email || !data.otp) return;
-    setLoading(true);
 
-    const res = await fetch('/api/auth/otp/verify', {
-      method: 'POST',
-      body: JSON.stringify({ ...data, locale }),
+    verifyOtpMutation.mutate({
+      email: data.email,
+      otp: data.otp,
+      locale,
     });
-
-    if (res.ok) {
-      router.refresh();
-
-      if (await needsMFA()) {
-        setRequiresMFA(true);
-        setLoading(false);
-      } else {
-        window.location.reload();
-      }
-    } else {
-      setLoading(false);
-
-      otpForm.setError('otp', {
-        message: t('login.invalid_verification_code'),
-      });
-      otpForm.setValue('otp', '');
-
-      toast({
-        title: t('login.failed'),
-        description: t('login.failed_to_verify'),
-      });
-    }
   };
 
   const needsMFA = useCallback(async () => {
@@ -481,8 +563,6 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
           'Please enter the OTP code sent to your email to continue.',
       });
     }
-
-    setLoading(false);
   };
 
   const onTOtpSubmit = async (data: z.infer<typeof TOTPFormSchema>) => {
@@ -613,11 +693,11 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
 
               <Button
                 type="submit"
-                variant={loading ? 'outline' : undefined}
+                variant={_isLoading ? 'outline' : undefined}
                 className="h-12 w-full transform font-medium shadow-lg transition-all duration-200 hover:scale-[1.02] hover:shadow-xl"
-                disabled={loading || totpForm.watch('totp').length !== 6}
+                disabled={_isLoading || totpForm.watch('totp').length !== 6}
               >
-                {loading ? (
+                {_isLoading ? (
                   <div className="flex items-center gap-2">
                     <LoadingIndicator className="h-4 w-4" />
                     <span>{t('common.loading')}...</span>
@@ -705,7 +785,7 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
                             onBlur={() =>
                               handleEmailBlur(emailDisplay.otp, 'otp', field)
                             }
-                            disabled={otpSent || loading}
+                            disabled={otpSent || _isLoading}
                           />
                           {showDomainPreview.otp &&
                             emailDisplay.otp &&
@@ -746,7 +826,7 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
                           <InputOTP
                             maxLength={MAX_OTP_LENGTH}
                             {...field}
-                            disabled={loading}
+                            disabled={_isLoading}
                             className="justify-center"
                           >
                             <InputOTPGroup className="w-full gap-2">
@@ -773,14 +853,14 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
 
                 <Button
                   type="submit"
-                  variant={loading ? 'outline' : undefined}
+                  variant={_isLoading ? 'outline' : undefined}
                   className="h-12 w-full transform font-medium shadow-lg transition-all duration-200 hover:scale-[1.02] hover:shadow-xl"
                   disabled={
-                    loading ||
+                    _isLoading ||
                     (otpSent && otpForm.watch('otp').length !== MAX_OTP_LENGTH)
                   }
                 >
-                  {loading ? (
+                  {_isLoading ? (
                     <div className="flex items-center gap-2">
                       <LoadingIndicator className="h-4 w-4" />
                       <span>{t('common.loading')}...</span>
@@ -797,7 +877,7 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
                     type="button"
                     variant="outline"
                     className="h-12 w-full bg-white/50 transition-all duration-200 hover:bg-white/80 dark:border-gray-700/50 dark:bg-gray-800/50 dark:hover:bg-gray-800/80"
-                    disabled={loading || resendCooldown > 0}
+                    disabled={_isLoading || resendCooldown > 0}
                     onClick={() => {
                       otpForm.handleSubmit(onOtpSubmit)();
                     }}
@@ -853,7 +933,7 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
                                 field
                               )
                             }
-                            disabled={loading}
+                            disabled={_isLoading}
                           />
                           {showDomainPreview.password &&
                             emailDisplay.password &&
@@ -897,7 +977,7 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
                             type={showPassword ? 'text' : 'password'}
                             placeholder={t('login.password_placeholder')}
                             {...field}
-                            disabled={loading}
+                            disabled={_isLoading}
                           />
                           <button
                             type="button"
@@ -919,11 +999,11 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
 
                 <Button
                   type="submit"
-                  variant={loading ? 'outline' : undefined}
+                  variant={_isLoading ? 'outline' : undefined}
                   className="h-12 w-full transform font-medium shadow-lg transition-all duration-200 hover:scale-[1.02] hover:shadow-xl"
-                  disabled={loading || !passwordForm.formState.isValid}
+                  disabled={_isLoading || !passwordForm.formState.isValid}
                 >
-                  {loading ? (
+                  {_isLoading ? (
                     <div className="flex items-center gap-2">
                       <LoadingIndicator className="h-4 w-4" />
                       <span>{t('common.loading')}...</span>
@@ -966,7 +1046,7 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
               <Button
                 variant="outline"
                 onClick={handleGoogleLogin}
-                disabled={loading}
+                disabled={_isLoading}
                 className="group relative h-12 w-full transform bg-white/50 transition-all duration-200 hover:scale-[1.02] hover:bg-white/80 dark:border-gray-700/50 dark:bg-gray-800/50 dark:hover:bg-gray-800/80"
               >
                 <div className="absolute left-4">
@@ -986,7 +1066,7 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
               <Button
                 variant="outline"
                 onClick={handleGitHubLogin}
-                disabled={loading}
+                disabled={_isLoading}
                 className="group relative h-12 w-full transform bg-white/50 transition-all duration-200 hover:scale-[1.02] hover:bg-white/80 dark:border-gray-700/50 dark:bg-gray-800/50 dark:hover:bg-gray-800/80"
               >
                 <div className="absolute left-4">

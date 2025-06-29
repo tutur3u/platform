@@ -34,6 +34,7 @@ function getUrl() {
     if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
     return `http://localhost:${PORT}`;
   })();
+
   return `${base}/api/trpc`;
 }
 
@@ -47,6 +48,7 @@ export function TRPCProvider(
   //       suspend because React will throw away the client on the initial
   //       render if it suspends and there is no boundary
   const queryClient = getQueryClient();
+
   const [trpcClient] = useState(() =>
     trpc.createClient({
       links: [
@@ -57,6 +59,7 @@ export function TRPCProvider(
       ],
     })
   );
+
   return (
     <trpc.Provider client={trpcClient} queryClient={queryClient}>
       <QueryClientProvider client={queryClient}>
