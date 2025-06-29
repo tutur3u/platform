@@ -13,7 +13,6 @@ build/
 .DS_Store
 
 # Virtual environment
-venv/
 env/
 .env/
 
