@@ -1,4 +1,4 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type {
   PlatformUser,
   User,
@@ -258,7 +258,7 @@ async function getPlatformUserData({
   userCount: number;
 }> {
   try {
-    const supabase = await createClient();
+    const supabase = await createAdminClient();
     if (!supabase) notFound();
 
     // If there's a search query, use the RPC function
