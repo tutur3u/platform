@@ -87,7 +87,7 @@ export const getPlatformRoleColumns = (
 
       return res.json();
     },
-    onMutate: async ({ userId, enabled }) => {
+    onMutate: async (variables) => {
       await queryClient.cancelQueries({ queryKey: ['platform-roles'] });
 
       const previousData = queryClient.getQueryData<
@@ -96,13 +96,10 @@ export const getPlatformRoleColumns = (
 
       queryClient.setQueryData<(User & PlatformUser & UserPrivateDetails)[]>(
         ['platform-roles'],
-        (old) => {
-          if (!old) return [];
-
-          return old.map((user) =>
-            user.id === userId ? { ...user, enabled } : user
-          );
-        }
+        (old) =>
+          old?.map((user) =>
+            user.id === variables.userId ? { ...user, ...variables } : user
+          ) ?? []
       );
 
       return { previousData };

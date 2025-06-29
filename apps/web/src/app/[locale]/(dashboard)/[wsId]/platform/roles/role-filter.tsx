@@ -17,7 +17,6 @@ import {
   Users,
 } from '@tuturuuu/ui/icons';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useTranslations } from 'next-intl';
 
 interface RoleFilterProps {
   currentRole?: string;
@@ -26,7 +25,6 @@ interface RoleFilterProps {
 export default function RoleFilter({ currentRole }: RoleFilterProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const _t = useTranslations();
 
   const updateFilter = (role?: string) => {
     const params = new URLSearchParams(searchParams.toString());
