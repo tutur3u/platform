@@ -54,7 +54,7 @@
   },
   "dependencies": {
     "cookies-next": "^6.0.0",
-    "react-scan": "^0.3.4"
+    "react-scan": "^0.3.6"
   },
   "devDependencies": {
     "@biomejs/biome": "2.0.6",
