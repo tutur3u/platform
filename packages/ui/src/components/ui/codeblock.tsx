@@ -9,7 +9,7 @@ import {
 } from 'react-syntax-highlighter/dist/cjs/styles/prism';
 import { useCopyToClipboard } from '../../hooks/use-copy-to-clipboard';
 import { Button } from './button';
-import { CheckIcon, CopyIcon, IconDownload } from './icons';
+import { CheckIcon, CopyIcon, Download } from './icons';
 
 // Inspired by Chatbot-UI and modified to fit the needs of this project
 // @see https://github.com/mckaywrigley/chatbot-ui/blob/main/components/Markdown/CodeBlock.tsx
@@ -113,7 +113,7 @@ const CodeBlock: FC<Props> = memo(({ language, value }) => {
             onClick={downloadAsFile}
             size="icon"
           >
-            <IconDownload />
+            <Download />
             <span className="sr-only">Download</span>
           </Button>
           <Button
