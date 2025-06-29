@@ -1107,6 +1107,13 @@
     "user_count": "User count",
     "created_at": "Created at"
   },
+  "platform-role-data-table": {
+    "id": "ID",
+    "display_name": "User",
+    "enabled": "Status",
+    "platform_role": "Role",
+    "created_at": "Joined"
+  },
   "cron-job-data-table": {
     "id": "ID",
     "name": "Name",
@@ -1519,6 +1526,10 @@
     "export_users_data_description": "Allows members to export users data in the workspace.",
     "export_finance_data": "Allow exporting finance data",
     "export_finance_data_description": "Allows members to export finance data in the workspace."
+  },
+  "platform-roles": {
+    "plural": "Platform Roles",
+    "description": "Manage platform-wide user roles and permissions across all services."
   },
   "ws-activities": {
     "description": "View all activities in your workspace",

@@ -1118,6 +1118,13 @@
     "user_count": "Số người dùng",
     "created_at": "Tạo lúc"
   },
+  "platform-role-data-table": {
+    "id": "Mã số",
+    "display_name": "Người dùng",
+    "enabled": "Trạng thái",
+    "platform_role": "Vai trò",
+    "created_at": "Tham gia"
+  },
   "cron-job-data-table": {
     "id": "Mã số",
     "name": "Tên",
@@ -1530,6 +1537,10 @@
     "export_users_data_description": "Cho phép thành viên xuất dữ liệu người dùng ảo được tạo trong không gian làm việc của bạn.",
     "export_finance_data": "Cho phép xuất dữ liệu tài chính",
     "export_finance_data_description": "Cho phép thành viên xuất dữ liệu giao dịch tài chính được tạo trong không gian làm việc của bạn."
+  },
+  "platform-roles": {
+    "plural": "Vai trò nền tảng",
+    "description": "Quản lý vai trò và quyền của người dùng trên toàn nền tảng qua tất cả các dịch vụ."
   },
   "ws-activities": {
     "description": "Xem tất cả các hoạt động trong không gian làm việc của bạn",
