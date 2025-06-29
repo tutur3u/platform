@@ -25,10 +25,8 @@ import {
   Clock,
   Crown,
   EyeOff,
-  Globe,
   Loader2,
   MoreHorizontal,
-  Shield,
   Users,
 } from '@tuturuuu/ui/icons';
 import { Switch } from '@tuturuuu/ui/switch';
@@ -44,8 +42,10 @@ import { useRouter } from 'next/navigation';
 import type { PlatformUserWithDetails } from './page';
 
 export const getPlatformRoleColumns = (
+  // biome-ignore lint/suspicious/noExplicitAny: <translation function is not typed>
   t: any,
   _: string | undefined,
+  // biome-ignore lint/suspicious/noExplicitAny: <this parameter is not used>
   __: any[] | undefined,
   extraData: { locale: string }
 ): ColumnDef<PlatformUserWithDetails>[] => {
@@ -56,15 +56,11 @@ export const getPlatformRoleColumns = (
     mutationFn: async ({
       userId,
       enabled,
-      allow_challenge_management,
-      allow_manage_all_challenges,
       allow_role_management,
       allow_workspace_creation,
     }: {
       userId: string;
       enabled: boolean;
-      allow_challenge_management: boolean;
-      allow_manage_all_challenges: boolean;
       allow_role_management: boolean;
       allow_workspace_creation: boolean;
     }) => {
@@ -75,8 +71,6 @@ export const getPlatformRoleColumns = (
         },
         body: JSON.stringify({
           enabled,
-          allow_challenge_management,
-          allow_manage_all_challenges,
           allow_role_management,
           allow_workspace_creation,
         }),
@@ -129,32 +123,6 @@ export const getPlatformRoleColumns = (
           'text-dynamic-red bg-dynamic-red/10 border-dynamic-red/30 font-semibold',
         description: 'Full platform administration access',
         priority: 1,
-      });
-    }
-
-    if (user.allow_manage_all_challenges) {
-      permissions.push({
-        label: 'Global Manager',
-        shortLabel: 'GM',
-        icon: <Globe className="h-3 w-3" />,
-        variant: 'secondary' as const,
-        className:
-          'text-dynamic-blue bg-dynamic-blue/10 border-dynamic-blue/30 font-medium',
-        description: 'Can manage all platform challenges globally',
-        priority: 2,
-      });
-    }
-
-    if (user.allow_challenge_management) {
-      permissions.push({
-        label: 'Challenge Manager',
-        shortLabel: 'CM',
-        icon: <Shield className="h-3 w-3" />,
-        variant: 'outline' as const,
-        className:
-          'text-dynamic-purple bg-dynamic-purple/10 border-dynamic-purple/30 font-medium',
-        description: 'Can manage specific challenges and competitions',
-        priority: 3,
       });
     }
 
@@ -260,10 +228,6 @@ export const getPlatformRoleColumns = (
       cell: ({ row }) => {
         const userId = row.original.id;
         const enabled = row.getValue('enabled') as boolean | undefined;
-        const allowChallengeManagement =
-          row.original.allow_challenge_management;
-        const allowManageAllChallenges =
-          row.original.allow_manage_all_challenges;
         const allowRoleManagement = row.original.allow_role_management;
         const allowWorkspaceCreation =
           row.original.allow_workspace_creation ?? false;
@@ -282,8 +246,6 @@ export const getPlatformRoleColumns = (
                   toggleMutation.mutate({
                     userId,
                     enabled: checked,
-                    allow_challenge_management: allowChallengeManagement,
-                    allow_manage_all_challenges: allowManageAllChallenges,
                     allow_role_management: allowRoleManagement,
                     allow_workspace_creation: allowWorkspaceCreation,
                   })
@@ -406,10 +368,6 @@ export const getPlatformRoleColumns = (
                         toggleMutation.mutate({
                           userId,
                           enabled: user.enabled || false,
-                          allow_challenge_management:
-                            user.allow_challenge_management,
-                          allow_manage_all_challenges:
-                            user.allow_manage_all_challenges,
                           allow_role_management: checked,
                           allow_workspace_creation:
                             user.allow_workspace_creation ?? false,
@@ -455,150 +413,6 @@ export const getPlatformRoleColumns = (
       },
     },
     {
-      accessorKey: 'allow_manage_all_challenges',
-      header: ({ column }) => (
-        <DataTableColumnHeader t={t} column={column} title="Global" />
-      ),
-      cell: ({ row }) => {
-        const userId = row.original.id;
-        const user = row.original;
-        const isLoading =
-          toggleMutation.isPending &&
-          toggleMutation.variables?.userId === userId;
-        const isActive = user.enabled;
-
-        return (
-          <div className="flex items-center justify-center">
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div className="relative">
-                    <Switch
-                      checked={user.allow_manage_all_challenges}
-                      onCheckedChange={(checked) =>
-                        toggleMutation.mutate({
-                          userId,
-                          enabled: user.enabled || false,
-                          allow_challenge_management:
-                            user.allow_challenge_management,
-                          allow_manage_all_challenges: checked,
-                          allow_role_management: user.allow_role_management,
-                          allow_workspace_creation:
-                            user.allow_workspace_creation ?? false,
-                        })
-                      }
-                      disabled={isLoading || !isActive}
-                      className={`transition-all ${
-                        user.allow_manage_all_challenges
-                          ? 'data-[state=checked]:bg-dynamic-blue'
-                          : ''
-                      } ${!isActive ? 'opacity-40' : ''}`}
-                    />
-                    {isLoading && (
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <Loader2 className="h-3 w-3 animate-spin text-dynamic-blue" />
-                      </div>
-                    )}
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent side="top" className="max-w-xs">
-                  <div className="space-y-1">
-                    <p className="font-medium flex items-center gap-1.5">
-                      <Globe className="h-3 w-3 text-dynamic-blue" />
-                      Global Manager
-                    </p>
-                    <p className="text-xs text-dynamic-muted-foreground">
-                      {user.allow_manage_all_challenges
-                        ? 'Can manage all platform challenges globally'
-                        : 'Grant access to manage all challenges across the platform'}
-                    </p>
-                    {!isActive && (
-                      <p className="text-xs text-dynamic-orange flex items-center gap-1">
-                        <AlertTriangle className="h-3 w-3" />
-                        User must be active first
-                      </p>
-                    )}
-                  </div>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          </div>
-        );
-      },
-    },
-    {
-      accessorKey: 'allow_challenge_management',
-      header: ({ column }) => (
-        <DataTableColumnHeader t={t} column={column} title="Challenge" />
-      ),
-      cell: ({ row }) => {
-        const userId = row.original.id;
-        const user = row.original;
-        const isLoading =
-          toggleMutation.isPending &&
-          toggleMutation.variables?.userId === userId;
-        const isActive = user.enabled;
-
-        return (
-          <div className="flex items-center justify-center">
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div className="relative">
-                    <Switch
-                      checked={user.allow_challenge_management}
-                      onCheckedChange={(checked) =>
-                        toggleMutation.mutate({
-                          userId,
-                          enabled: user.enabled || false,
-                          allow_challenge_management: checked,
-                          allow_manage_all_challenges:
-                            user.allow_manage_all_challenges,
-                          allow_role_management: user.allow_role_management,
-                          allow_workspace_creation:
-                            user.allow_workspace_creation ?? false,
-                        })
-                      }
-                      disabled={isLoading || !isActive}
-                      className={`transition-all ${
-                        user.allow_challenge_management
-                          ? 'data-[state=checked]:bg-dynamic-purple'
-                          : ''
-                      } ${!isActive ? 'opacity-40' : ''}`}
-                    />
-                    {isLoading && (
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <Loader2 className="h-3 w-3 animate-spin text-dynamic-purple" />
-                      </div>
-                    )}
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent side="top" className="max-w-xs">
-                  <div className="space-y-1">
-                    <p className="font-medium flex items-center gap-1.5">
-                      <Shield className="h-3 w-3 text-dynamic-purple" />
-                      Challenge Manager
-                    </p>
-                    <p className="text-xs text-dynamic-muted-foreground">
-                      {user.allow_challenge_management
-                        ? 'Can manage specific challenges and competitions'
-                        : 'Grant access to manage challenges and competitions'}
-                    </p>
-                    {!isActive && (
-                      <p className="text-xs text-dynamic-orange flex items-center gap-1">
-                        <AlertTriangle className="h-3 w-3" />
-                        User must be active first
-                      </p>
-                    )}
-                  </div>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          </div>
-        );
-      },
-    },
-    {
       accessorKey: 'allow_workspace_creation',
       header: ({ column }) => (
         <DataTableColumnHeader t={t} column={column} title="Workspace" />
@@ -623,10 +437,6 @@ export const getPlatformRoleColumns = (
                         toggleMutation.mutate({
                           userId,
                           enabled: user.enabled || false,
-                          allow_challenge_management:
-                            user.allow_challenge_management,
-                          allow_manage_all_challenges:
-                            user.allow_manage_all_challenges,
                           allow_role_management: user.allow_role_management,
                           allow_workspace_creation: checked,
                         })
@@ -702,8 +512,6 @@ export const getPlatformRoleColumns = (
       cell: ({ row }) => {
         const user = row.original;
         const userId = user.id;
-        const allowChallengeManagement = user.allow_challenge_management;
-        const allowManageAllChallenges = user.allow_manage_all_challenges;
         const allowRoleManagement = user.allow_role_management;
         const allowWorkspaceCreation = user.allow_workspace_creation ?? false;
 
@@ -719,8 +527,6 @@ export const getPlatformRoleColumns = (
           const updates = {
             userId,
             enabled: user.enabled || false,
-            allow_challenge_management: allowChallengeManagement,
-            allow_manage_all_challenges: allowManageAllChallenges,
             allow_role_management: allowRoleManagement,
             allow_workspace_creation: allowWorkspaceCreation,
           };
@@ -737,12 +543,6 @@ export const getPlatformRoleColumns = (
                 return;
               }
               updates.allow_role_management = !currentValue;
-              break;
-            case 'global_manager':
-              updates.allow_manage_all_challenges = !currentValue;
-              break;
-            case 'challenge_manager':
-              updates.allow_challenge_management = !currentValue;
               break;
             case 'workspace_creator':
               updates.allow_workspace_creation = !currentValue;
@@ -764,8 +564,6 @@ export const getPlatformRoleColumns = (
           toggleMutation.mutate({
             userId,
             enabled: user.enabled || false,
-            allow_challenge_management: false,
-            allow_manage_all_challenges: false,
             allow_role_management: false,
             allow_workspace_creation: false,
           });
@@ -841,73 +639,6 @@ export const getPlatformRoleColumns = (
                 </div>
               </DropdownMenuItem>
 
-              {/* Global Manager Permission */}
-              <DropdownMenuItem
-                onClick={() =>
-                  togglePermission('global_manager', allowManageAllChallenges)
-                }
-                className="flex items-center justify-between p-3 focus:bg-dynamic-accent/50"
-              >
-                <div className="flex items-center gap-3">
-                  <Globe className="h-4 w-4 text-dynamic-blue" />
-                  <div>
-                    <div className="font-medium">Global Manager</div>
-                    <div className="text-xs text-dynamic-muted-foreground">
-                      Can manage all platform challenges
-                    </div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Switch
-                    checked={allowManageAllChallenges}
-                    onCheckedChange={() =>
-                      togglePermission(
-                        'global_manager',
-                        allowManageAllChallenges
-                      )
-                    }
-                    disabled={isLoading}
-                    className="data-[state=checked]:bg-dynamic-blue"
-                    onClick={(e) => e.stopPropagation()}
-                  />
-                </div>
-              </DropdownMenuItem>
-
-              {/* Challenge Manager Permission */}
-              <DropdownMenuItem
-                onClick={() =>
-                  togglePermission(
-                    'challenge_manager',
-                    allowChallengeManagement
-                  )
-                }
-                className="flex items-center justify-between p-3 focus:bg-dynamic-accent/50"
-              >
-                <div className="flex items-center gap-3">
-                  <Shield className="h-4 w-4 text-dynamic-purple" />
-                  <div>
-                    <div className="font-medium">Challenge Manager</div>
-                    <div className="text-xs text-dynamic-muted-foreground">
-                      Can manage specific challenges
-                    </div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Switch
-                    checked={allowChallengeManagement}
-                    onCheckedChange={() =>
-                      togglePermission(
-                        'challenge_manager',
-                        allowChallengeManagement
-                      )
-                    }
-                    disabled={isLoading}
-                    className="data-[state=checked]:bg-dynamic-purple"
-                    onClick={(e) => e.stopPropagation()}
-                  />
-                </div>
-              </DropdownMenuItem>
-
               {/* Workspace Creator Permission */}
               <DropdownMenuItem
                 onClick={() =>
@@ -946,12 +677,7 @@ export const getPlatformRoleColumns = (
               <DropdownMenuItem
                 onClick={clearAllPermissions}
                 className="flex items-center gap-3 p-3 text-dynamic-muted-foreground hover:text-dynamic-foreground focus:bg-dynamic-accent/50"
-                disabled={
-                  !allowRoleManagement &&
-                  !allowManageAllChallenges &&
-                  !allowChallengeManagement &&
-                  !allowWorkspaceCreation
-                }
+                disabled={!allowRoleManagement && !allowWorkspaceCreation}
               >
                 <Users className="h-4 w-4" />
                 <div>
