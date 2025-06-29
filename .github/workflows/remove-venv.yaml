@@ -11,12 +11,26 @@ jobs:
     name: Remove venv folder from remote repository
     timeout-minutes: 10
     runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
-      - name: Remove venv folder from remote repository
-        run: git rm -r --cached venv
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up git user
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Remove venv folder from remote repository (if exists)
+        run: |
+          if [ -d "apps/ocr/venv" ]; then
+            git rm -r --cached apps/ocr/venv
+          fi
 
       - name: Commit changes to remove venv folder from remote repository
-        run: git commit -m "Remove venv folder from remote repository"
+        run: |
+          git commit -m "Remove venv folder from remote repository" || echo "No changes to commit"
 
       - name: Push changes to remote repository
         run: git push
