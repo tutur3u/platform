@@ -4523,6 +4523,10 @@
     "error_description": "There was an error loading your certificates. Please try again later.",
     "certified": "Certified"
   },
+  "platform-roles": {
+    "plural": "Platform Roles",
+    "description": "Manage platform-wide user roles and permissions across all services."
+  },
   "sidebar": {
     "home": "Home",
     "courses": "Courses",
