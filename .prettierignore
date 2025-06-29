@@ -17,3 +17,6 @@ coverage
 
 #turbo
 .turbo
+
+# Virtual environment
+venv
