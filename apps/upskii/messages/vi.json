@@ -4535,6 +4535,10 @@
     "browse_courses": "Xem các khóa học",
     "certified": "Được chứng nhận"
   },
+  "platform-roles": {
+    "plural": "Vai trò nền tảng",
+    "description": "Quản lý vai trò và quyền của người dùng trên toàn nền tảng qua tất cả các dịch vụ."
+  },
   "approval-data-table": {
     "workspace": "Không gian",
     "requested_by": "Yêu cầu bởi",

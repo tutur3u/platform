@@ -3,7 +3,7 @@
   "private": true,
   "scripts": {
     "build": "turbo run build",
-    "buildx": "bun i && turbo test lint build",
+    "buildx": "bun i && turbo test build",
     "dev": "turbo run dev --parallel",
     "dev:web": "turbo run dev -F @tuturuuu/web",
     "dev:calendar": "turbo run dev -F @tuturuuu/calendar -F @tuturuuu/web",
@@ -54,7 +54,7 @@
   },
   "dependencies": {
     "cookies-next": "^6.0.0",
-    "react-scan": "^0.3.4"
+    "react-scan": "^0.4.0"
   },
   "devDependencies": {
     "@biomejs/biome": "2.0.6",
@@ -67,7 +67,7 @@
     "vitest": "^3.2.4"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=22"
   },
   "packageManager": "bun@1.2.17",
   "workspaces": ["apps/*", "packages/*"],

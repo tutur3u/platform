@@ -8,12 +8,12 @@ import {
   File,
   FileText,
   Globe,
-  IconArrowElbow,
   ImageIcon,
   Languages,
   Lock,
   Paperclip,
   RefreshCw,
+  Send,
   X,
 } from '@tuturuuu/ui/icons';
 import {
@@ -528,7 +528,7 @@ export function PromptForm({
                       : 'pointer-events-auto ml-1 w-10 opacity-100'
                   )}
                 >
-                  <IconArrowElbow />
+                  <Send />
                   <span className="sr-only">{t('ai_chat.send_message')}</span>
                 </Button>
               </TooltipTrigger>
@@ -595,7 +595,7 @@ export function PromptForm({
                           className="group flex items-center gap-2 rounded"
                         >
                           <div className="size-8">
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            {/** biome-ignore lint/performance/noImgElement: <Raw image> */}
                             <img
                               src={URL.createObjectURL(f.rawFile)}
                               alt={f.rawFile.name}
