@@ -23,7 +23,8 @@ import timezone from 'dayjs/plugin/timezone';
 import { Clock, Plus } from 'lucide-react';
 import { useEffect, useMemo, useState, useRef, useCallback } from 'react';
 import { useCalendar } from '../../../../hooks/use-calendar';
-import { COLOR_HIGHLIGHTS } from './color-highlights';
+import { usePopoverManager } from '../../../../hooks/use-popover-manager';
+import { getColorHighlight } from './color-highlights';
 import { Popover, PopoverTrigger, PopoverContent } from '../../popover';
 
 dayjs.extend(timezone);
@@ -41,11 +42,6 @@ const normalizeColor = (color: string): string => {
   
   // Map specific values to standardized names
   if (normalized === '#6b7280' || normalized === 'grey') return 'gray';
-  
-  // Return valid hex colors and normalized names as-is
-  if (/^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(normalized)) {
-    return normalized;
-  }
   
   return normalized;
 };
@@ -78,87 +74,6 @@ const getScrollShadowClasses = (scrollState: { top: boolean; bottom: boolean } |
     scrollState?.bottom && 'after:absolute after:bottom-0 after:left-0 after:right-0 after:h-3 after:bg-gradient-to-t after:from-muted/80 after:to-transparent after:pointer-events-none'
   );
 };
-
-// Custom hook for popover management
-function usePopoverManager() {
-  const moreButtonRefs = useRef<(HTMLButtonElement | null)[]>([]);
-  const popoverContentRefs = useRef<(HTMLDivElement | null)[]>([]);
-  const [openPopoverIdx, setOpenPopoverIdx] = useState<number | null>(null);
-  const [scrollStates, setScrollStates] = useState<Record<number, { top: boolean; bottom: boolean }>>({});
-  const [popoverHovered, setPopoverHovered] = useState<Record<number, boolean>>({});
-
-  // Handler to close popover on scroll/resize
-  const handleClose = useCallback((event: Event) => {
-    const popoverEl = popoverContentRefs.current[openPopoverIdx!];
-    if (popoverHovered[openPopoverIdx!]) return;
-    if (!popoverEl) {
-      setOpenPopoverIdx(null);
-      return;
-    }
-    if (event.target instanceof Node && popoverEl.contains(event.target as Node)) {
-      return;
-    }
-    setOpenPopoverIdx(null);
-  }, [openPopoverIdx, popoverHovered]);
-
-  useEffect(() => {
-    if (openPopoverIdx !== null) {
-      window.addEventListener('scroll', handleClose, true);
-      window.addEventListener('resize', handleClose);
-      return () => {
-        window.removeEventListener('scroll', handleClose, true);
-        window.removeEventListener('resize', handleClose);
-      };
-    }
-  }, [openPopoverIdx, handleClose]);
-
-  // Set initial scroll state when popover opens
-  useEffect(() => {
-    if (openPopoverIdx !== null) {
-      const el = popoverContentRefs.current[openPopoverIdx];
-      if (el) {
-        setScrollStates(prev => ({
-          ...prev,
-          [openPopoverIdx]: {
-            top: el.scrollTop > 0,
-            bottom: el.scrollTop + el.clientHeight < el.scrollHeight,
-          },
-        }));
-      }
-    }
-  }, [openPopoverIdx]);
-
-  // Helper to handle scroll shadow indicators
-  const handlePopoverScroll = useCallback((e: React.UIEvent<HTMLDivElement>, idx: number) => {
-    const el = e.currentTarget;
-    setScrollStates((prev) => ({
-      ...prev,
-      [idx]: {
-        top: el.scrollTop > 0,
-        bottom: el.scrollTop + el.clientHeight < el.scrollHeight,
-      },
-    }));
-  }, []);
-
-  // Cleanup refs on unmount
-  useEffect(() => {
-    return () => {
-      moreButtonRefs.current = [];
-      popoverContentRefs.current = [];
-    };
-  }, []);
-
-  return {
-    moreButtonRefs,
-    popoverContentRefs,
-    openPopoverIdx,
-    setOpenPopoverIdx,
-    scrollStates,
-    popoverHovered,
-    setPopoverHovered,
-    handlePopoverScroll,
-  };
-}
 
 export const MonthCalendar = ({ date, visibleDates, viewedMonth }: MonthCalendarProps) => {
   const { getCurrentEvents, addEmptyEvent, openModal, settings } =
@@ -359,7 +274,7 @@ export const MonthCalendar = ({ date, visibleDates, viewedMonth }: MonthCalendar
       <div className="grid grid-cols-7 divide-x divide-y">
         {calendarDays.map((day, dayIdx) => {
           const dominantColor = dominantColorForDay[day.toISOString()] || 'primary';
-          const highlightClass = isToday(day) ? `${COLOR_HIGHLIGHTS[dominantColor as keyof typeof COLOR_HIGHLIGHTS] ?? COLOR_HIGHLIGHTS.primary} z-10` : '';
+          const highlightClass = isToday(day) ? `${getColorHighlight(dominantColor)} z-10` : '';
 
           const isCurrentMonth = isSameMonth(day, viewedMonth ?? currDate);
           const isTodayDate = isToday(day);
