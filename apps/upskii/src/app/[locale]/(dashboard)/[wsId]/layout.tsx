@@ -176,7 +176,6 @@ export default async function Layout({ children, params }: LayoutProps) {
           shortcut: 'U',
           disabled: withoutPermission('ai_lab'),
           requireRootWorkspace: true,
-          requireRootMember: true,
         },
         {
           title: 'Approvals',
