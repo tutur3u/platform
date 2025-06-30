@@ -3,7 +3,7 @@
 import type { Message } from '@tuturuuu/ai/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { CodeBlock } from '@tuturuuu/ui/codeblock';
-import { Bot, IconUser, Send, Sparkle } from '@tuturuuu/ui/icons';
+import { Bot, Send, Sparkle, UserIcon } from '@tuturuuu/ui/icons';
 import { MemoizedReactMarkdown } from '@tuturuuu/ui/markdown';
 import { Separator } from '@tuturuuu/ui/separator';
 import { capitalize, cn } from '@tuturuuu/utils/format';
@@ -155,12 +155,12 @@ export function ChatMessage({
                   />
                   <AvatarFallback className="rounded-lg font-semibold">
                     {message.user.display_name?.[0]?.toUpperCase() || (
-                      <IconUser className="h-5 w-5" />
+                      <UserIcon className="h-5 w-5" />
                     )}
                   </AvatarFallback>
                 </Avatar>
               ) : (
-                <IconUser className="h-5 w-5" />
+                <UserIcon className="h-5 w-5" />
               )
             ) : (
               <Avatar className="h-12 w-12 rounded-md border">
@@ -231,9 +231,9 @@ export function ChatMessage({
         <ChatMessageActions message={message} />
       </div>
 
-      {message.metadata?.['response_types'] && (
+      {message.metadata?.response_types && (
         <div className="mb-2 flex items-center gap-1">
-          {message.metadata?.['response_types']
+          {message.metadata?.response_types
             ?.filter((responseType) =>
               [
                 'summary',
@@ -741,7 +741,7 @@ export function ChatMessage({
             // eslint-disable-next-line no-unused-vars
             code({ node, className, children, ...props }) {
               if (children && Array.isArray(children) && children.length) {
-                if (children[0] == '▍') {
+                if (children[0] === '▍') {
                   return (
                     <span
                       className={cn(
@@ -772,7 +772,7 @@ export function ChatMessage({
               return match ? (
                 <CodeBlock
                   key={Math.random()}
-                  language={(match && match[1]) || ''}
+                  language={match?.[1] || ''}
                   value={String(children).replace(/\n$/, '')}
                   {...props}
                 />

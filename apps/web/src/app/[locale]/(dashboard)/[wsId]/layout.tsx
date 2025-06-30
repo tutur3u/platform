@@ -1,3 +1,4 @@
+import { createClient } from '@tuturuuu/supabase/next/server';
 import {
   Archive,
   Banknote,
@@ -9,6 +10,7 @@ import {
   Calendar,
   ChartArea,
   CircleCheck,
+  CircleDollarSign,
   Clock,
   ClockFading,
   Cog,
@@ -24,11 +26,11 @@ import {
   PencilLine,
   Play,
   Presentation,
-  Receipt,
   ScanSearch,
   ScrollText,
   ShieldUser,
   Sparkles,
+  UserLock,
   Users,
 } from '@tuturuuu/ui/icons';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
@@ -414,9 +416,9 @@ export default async function Layout({ children, params }: LayoutProps) {
             ENABLE_AI_ONLY || withoutPermission('manage_workspace_members'),
         },
         {
-          title: t('workspace-settings-layout.roles'),
+          title: t('workspace-settings-layout.workspace_roles'),
           href: `/${wsId}/roles`,
-          icon: <ShieldUser className="h-5 w-5" />,
+          icon: <UserLock className="h-5 w-5" />,
           disabled:
             ENABLE_AI_ONLY || withoutPermission('manage_workspace_roles'),
         },
@@ -430,7 +432,7 @@ export default async function Layout({ children, params }: LayoutProps) {
         {
           title: t('sidebar_tabs.billing'),
           href: `/${wsId}/billing`,
-          icon: <Receipt className="h-5 w-5" />,
+          icon: <CircleDollarSign className="h-5 w-5" />,
           requireRootWorkspace: true,
           requireRootMember: true,
         },
@@ -448,11 +450,20 @@ export default async function Layout({ children, params }: LayoutProps) {
           disabled: withoutPermission('manage_workspace_secrets'),
           requireRootMember: true,
         },
+
         {
           title: t('workspace-settings-layout.infrastructure'),
           href: `/${wsId}/infrastructure`,
           icon: <Blocks className="h-5 w-5" />,
           disabled: withoutPermission('view_infrastructure'),
+          requireRootWorkspace: true,
+        },
+        {
+          title: t('workspace-settings-layout.platform_roles'),
+          href: `/${wsId}/platform/roles`,
+          icon: <ShieldUser className="h-5 w-5" />,
+          disabled:
+            ENABLE_AI_ONLY || withoutPermission('manage_workspace_roles'),
           requireRootWorkspace: true,
         },
         {
@@ -476,13 +487,24 @@ export default async function Layout({ children, params }: LayoutProps) {
   const workspace = await getWorkspace(wsId);
   const user = await getCurrentUser();
 
+  if (!user?.id) redirect('/login');
+
+  const supabase = await createClient();
+  const { data: platformUserRole } = await supabase
+    .from('platform_user_roles')
+    .select('*')
+    .eq('user_id', user.id)
+    .eq('allow_workspace_creation', true)
+    .maybeSingle();
+
   const collapsed = (await cookies()).get(SIDEBAR_COLLAPSED_COOKIE_NAME);
   const behaviorCookie = (await cookies()).get(SIDEBAR_BEHAVIOR_COOKIE_NAME);
 
   const rawBehavior = behaviorCookie?.value;
   const isValidBehavior = (
-    value: any
+    value: string | undefined
   ): value is 'expanded' | 'collapsed' | 'hover' => {
+    if (!value) return false;
     return ['expanded', 'collapsed', 'hover'].includes(value);
   };
 
@@ -492,7 +514,7 @@ export default async function Layout({ children, params }: LayoutProps) {
     ? rawBehavior
     : 'expanded';
 
-  let defaultCollapsed;
+  let defaultCollapsed: boolean;
   if (sidebarBehavior === 'collapsed') {
     defaultCollapsed = true;
   } else if (sidebarBehavior === 'hover') {
@@ -535,6 +557,7 @@ export default async function Layout({ children, params }: LayoutProps) {
             <UserNav hideMetadata />
           </Suspense>
         }
+        disableCreateNewWorkspace={!platformUserRole?.allow_workspace_creation}
       >
         {children}
       </Structure>

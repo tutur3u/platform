@@ -3,6 +3,9 @@ import { supportedLocales } from '@/i18n/routing';
 export const DEV_MODE = process.env.NODE_ENV === 'development';
 export const PROD_MODE = process.env.NODE_ENV === 'production';
 
+export const PORT = process.env.PORT || 7001;
+export const CENTRAL_PORT = process.env.CENTRAL_PORT || 7803;
+
 export const BASE_URL =
   process.env.BASE_URL || PROD_MODE
     ? 'https://calendar.tuturuuu.com'

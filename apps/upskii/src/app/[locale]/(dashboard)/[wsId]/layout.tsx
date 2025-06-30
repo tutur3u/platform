@@ -139,7 +139,6 @@ export default async function Layout({ children, params }: LayoutProps) {
       icon: <Cog className="h-4 w-4" />,
       aliases: [
         `/${wsId}/members`,
-        `/${wsId}/teams`,
         `/${wsId}/roles`,
         `/${wsId}/secrets`,
         `/${wsId}/approvals`,
@@ -172,12 +171,11 @@ export default async function Layout({ children, params }: LayoutProps) {
         },
         {
           title: t('sidebar.platform_users'),
-          href: `/${wsId}/users`,
+          href: `/${wsId}/platform/roles`,
           icon: <UserCog className="h-4 w-4" />,
           shortcut: 'U',
           disabled: withoutPermission('ai_lab'),
           requireRootWorkspace: true,
-          requireRootMember: true,
         },
         {
           title: 'Approvals',
