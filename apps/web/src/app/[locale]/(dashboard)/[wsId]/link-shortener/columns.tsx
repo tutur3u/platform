@@ -35,32 +35,32 @@ const copyToClipboard = async (text: string, t: any) => {
 // Component to handle the short URL display and avoid hydration mismatch
 // biome-ignore lint/suspicious/noExplicitAny: <translation function is not typed>
 function ShortUrlDisplay({ slug, t }: { slug: string; t: any }) {
-  const [fullUrl, setFullUrl] = useState(`/${slug}`);
+  const [shortUrl, setShortUrl] = useState('');
 
   useEffect(() => {
-    setFullUrl(`${window.location.origin}/${slug}`);
+    const url =
+      process.env.NODE_ENV === 'development'
+        ? `http://localhost:3002/${slug}`
+        : `${process.env.NEXT_PUBLIC_SHORTENER_URL || ''}/${slug}`;
+    setShortUrl(url);
   }, [slug]);
+
+  if (!shortUrl) return null; // Or a loading skeleton
 
   return (
     <div className="flex items-center gap-2">
       <Link
-        href={
-          process.env.NODE_ENV === 'development'
-            ? `http://localhost:3002/${slug}`
-            : `${process.env.NEXT_PUBLIC_SHORTENER_URL || ''}/${slug}`
-        }
+        href={shortUrl}
         target="_blank"
         rel="noopener noreferrer"
         className="font-mono text-sm text-dynamic-blue hover:underline"
       >
-        {process.env.NODE_ENV === 'development'
-          ? `http://localhost:3002/${slug}`
-          : `${process.env.NEXT_PUBLIC_SHORTENER_URL || ''}/${slug}`}
+        {shortUrl}
       </Link>
       <Button
         variant="ghost"
         size="sm"
-        onClick={() => copyToClipboard(fullUrl, t)}
+        onClick={() => copyToClipboard(shortUrl, t)}
         className="h-6 w-6 p-0"
       >
         <Copy className="h-3 w-3" />
