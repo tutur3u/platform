@@ -791,19 +791,32 @@
     "recent_links": "Liên kết gần đây",
     "copy_to_clipboard": "Sao chép vào clipboard",
     "copied_to_clipboard": "Đã sao chép vào clipboard",
+    "copied_description": "URL rút ngắn đã được sao chép vào clipboard.",
     "copy_failed": "Không thể sao chép vào clipboard",
+    "copy_failed_description": "Không thể sao chép vào clipboard. Vui lòng sao chép thủ công.",
+    "visit_original": "Truy cập URL gốc",
+    "unknown_creator": "Không rõ",
+    "new": "Mới",
     "no_links_yet": "Chưa có liên kết rút ngắn nào",
     "create_first_link": "Tạo liên kết rút ngắn đầu tiên để bắt đầu.",
     "url_required": "Vui lòng nhập URL",
     "invalid_url": "Vui lòng nhập URL hợp lệ",
     "failed_to_create": "Không thể tạo liên kết rút ngắn",
-    "created_successfully": "Rút ngắn liên kết thành công!"
+    "created_successfully": "Rút ngắn liên kết thành công!",
+    "total_links": "Tổng số liên kết",
+    "all_time": "Tất cả thời gian",
+    "this_month": "Tháng này",
+    "new_links": "Liên kết mới",
+    "active_creators": "Người tạo hoạt động",
+    "unique_users": "Người dùng duy nhất",
+    "manage_description": "Xem và quản lý tất cả liên kết rút ngắn được tạo bởi nhóm của bạn."
   },
   "link-shortener-data-table": {
     "slug": "URL ngắn",
     "link": "URL gốc",
     "short_url": "URL ngắn",
     "original_url": "URL gốc",
+    "creator": "Người tạo",
     "created_at": "Ngày tạo"
   },
   "team-tabs": {

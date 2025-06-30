@@ -780,19 +780,32 @@
     "recent_links": "Recent Links",
     "copy_to_clipboard": "Copy to clipboard",
     "copied_to_clipboard": "Copied to clipboard",
+    "copied_description": "The shortened URL has been copied to your clipboard.",
     "copy_failed": "Failed to copy to clipboard",
+    "copy_failed_description": "Failed to copy to clipboard. Please copy manually.",
+    "visit_original": "Visit original URL",
+    "unknown_creator": "Unknown",
+    "new": "New",
     "no_links_yet": "No shortened links yet",
     "create_first_link": "Create your first shortened link to get started.",
     "url_required": "Please enter a URL",
     "invalid_url": "Please enter a valid URL",
     "failed_to_create": "Failed to create shortened link",
-    "created_successfully": "Link shortened successfully!"
+    "created_successfully": "Link shortened successfully!",
+    "total_links": "Total Links",
+    "all_time": "All time",
+    "this_month": "This Month",
+    "new_links": "New links",
+    "active_creators": "Active Creators",
+    "unique_users": "Unique users",
+    "manage_description": "View and manage all shortened links created by your team."
   },
   "link-shortener-data-table": {
     "slug": "Short URL",
     "link": "Original URL",
     "short_url": "Short URL",
     "original_url": "Original URL",
+    "creator": "Creator",
     "created_at": "Created At"
   },
   "team-tabs": {

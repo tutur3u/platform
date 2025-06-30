@@ -1,7 +1,7 @@
 'use client';
 
 import { Button } from '@tuturuuu/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
+import { CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import {
   Check,
@@ -54,12 +54,12 @@ export function InlineLinkShortenerForm() {
       await navigator.clipboard.writeText(text);
       toast({
         title: t('link-shortener.copied_to_clipboard'),
-        description: `${t('link-shortener.short_url')} copied!`,
+        description: t('link-shortener.copied_description'),
       });
     } catch (_err) {
       toast({
         title: t('link-shortener.copy_failed'),
-        description: 'Failed to copy to clipboard',
+        description: t('link-shortener.copy_failed_description'),
         variant: 'destructive',
       });
     }
@@ -136,18 +136,30 @@ export function InlineLinkShortenerForm() {
   };
 
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <LinkIcon className="h-5 w-5 text-dynamic-blue" />
-          {t('link-shortener.create')}
+    <div className="w-full">
+      <CardHeader className="pb-6">
+        <CardTitle className="flex items-center gap-3">
+          <div className="p-2 bg-dynamic-blue/10 rounded-lg">
+            <LinkIcon className="h-5 w-5 text-dynamic-blue" />
+          </div>
+          <div>
+            <h3 className="text-xl font-semibold">
+              {t('link-shortener.create')}
+            </h3>
+            <p className="text-sm text-muted-foreground font-normal mt-1">
+              {t('link-shortener.create_description')}
+            </p>
+          </div>
         </CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="space-y-6">
         {!result ? (
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="url" className="text-sm font-medium">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="space-y-3">
+              <Label
+                htmlFor="url"
+                className="text-sm font-semibold text-foreground"
+              >
                 {t('link-shortener.url_to_shorten')} *
               </Label>
               <Input
@@ -158,13 +170,16 @@ export function InlineLinkShortenerForm() {
                 placeholder={t('link-shortener.url_placeholder')}
                 disabled={loading}
                 required
-                className="transition-all duration-200 focus:ring-2 focus:ring-dynamic-blue/20"
+                className="h-12 text-base transition-all duration-200 focus:ring-2 focus:ring-dynamic-blue/20 border-border/60 focus:border-dynamic-blue"
               />
             </div>
 
             {showAdvanced && (
-              <div className="space-y-2">
-                <Label htmlFor="customSlug" className="text-sm font-medium">
+              <div className="space-y-3 p-4 bg-muted/30 rounded-lg border border-border/40">
+                <Label
+                  htmlFor="customSlug"
+                  className="text-sm font-semibold text-foreground"
+                >
                   {t('link-shortener.custom_slug')}
                 </Label>
                 <Input
@@ -176,7 +191,7 @@ export function InlineLinkShortenerForm() {
                   pattern="[a-zA-Z0-9\-_]+"
                   title="Only letters, numbers, hyphens, and underscores are allowed"
                   disabled={loading}
-                  className="transition-all duration-200 focus:ring-2 focus:ring-dynamic-blue/20"
+                  className="h-11 transition-all duration-200 focus:ring-2 focus:ring-dynamic-blue/20 border-border/60 focus:border-dynamic-blue"
                 />
                 <p className="text-xs text-muted-foreground">
                   {t('link-shortener.custom_slug_description')}
@@ -184,23 +199,24 @@ export function InlineLinkShortenerForm() {
               </div>
             )}
 
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <Button
                 type="button"
                 variant="outline"
-                size="sm"
+                size="default"
                 onClick={() => setShowAdvanced(!showAdvanced)}
                 disabled={loading}
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 h-11 border-border/60 hover:bg-muted/50 transition-colors"
               >
                 <Sparkles className="h-4 w-4" />
-                {showAdvanced ? 'Hide Advanced' : 'Advanced Options'}
+                {showAdvanced ? 'Hide Advanced Options' : 'Advanced Options'}
               </Button>
 
               <Button
                 type="submit"
                 disabled={loading || !url.trim()}
-                className="flex items-center gap-2 bg-dynamic-blue hover:bg-dynamic-blue/90"
+                size="default"
+                className="flex items-center gap-2 h-11 bg-dynamic-blue hover:bg-dynamic-blue/90 transition-colors px-8"
               >
                 {loading ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -212,58 +228,64 @@ export function InlineLinkShortenerForm() {
             </div>
           </form>
         ) : (
-          <div className="space-y-4">
-            <div className="flex items-center gap-2 text-dynamic-green">
-              <Check className="h-5 w-5" />
-              <span className="font-medium">
+          <div className="space-y-6">
+            <div className="flex items-center gap-3 text-dynamic-green p-4 bg-dynamic-green/5 rounded-lg border border-dynamic-green/20">
+              <div className="p-1 bg-dynamic-green/10 rounded-full">
+                <Check className="h-4 w-4" />
+              </div>
+              <span className="font-semibold">
                 {t('link-shortener.created_successfully')}
               </span>
             </div>
 
-            <div className="space-y-3 rounded-lg bg-muted/50 p-4">
-              <div>
-                <Label className="text-xs font-medium text-muted-foreground">
+            <div className="space-y-4 p-5 bg-muted/40 rounded-lg border border-border/40">
+              <div className="space-y-2">
+                <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                   {t('link-shortener.original_url')}
                 </Label>
-                <div className="flex items-center gap-2 mt-1">
-                  <p className="text-sm truncate flex-1">{result.link}</p>
+                <div className="flex items-center gap-3 group">
+                  <p className="text-sm flex-1 truncate font-medium text-foreground">
+                    {result.link}
+                  </p>
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => window.open(result.link, '_blank')}
-                    className="h-6 w-6 p-0"
+                    className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
                   >
                     <ExternalLink className="h-3 w-3" />
                   </Button>
                 </div>
               </div>
 
-              <div>
-                <Label className="text-xs font-medium text-muted-foreground">
-                  Short URL
+              <div className="space-y-2">
+                <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                  {t('link-shortener.short_url')}
                 </Label>
-                <div className="flex items-center gap-2 mt-1">
-                  <code className="text-sm font-mono bg-background rounded px-2 py-1 flex-1 text-dynamic-blue">
+                <div className="flex items-center gap-3 group p-3 bg-background rounded-md border border-border/60">
+                  <code className="text-sm font-mono flex-1 text-dynamic-blue font-semibold">
                     {getShortUrl(result.slug)}
                   </code>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => copyToClipboard(getShortUrl(result.slug))}
-                    className="h-6 w-6 p-0"
-                  >
-                    <Copy className="h-3 w-3" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() =>
-                      window.open(getShortUrl(result.slug), '_blank')
-                    }
-                    className="h-6 w-6 p-0"
-                  >
-                    <ExternalLink className="h-3 w-3" />
-                  </Button>
+                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => copyToClipboard(getShortUrl(result.slug))}
+                      className="h-8 w-8 p-0"
+                    >
+                      <Copy className="h-3 w-3" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() =>
+                        window.open(getShortUrl(result.slug), '_blank')
+                      }
+                      className="h-8 w-8 p-0"
+                    >
+                      <ExternalLink className="h-3 w-3" />
+                    </Button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -271,13 +293,14 @@ export function InlineLinkShortenerForm() {
             <Button
               onClick={handleCreateAnother}
               variant="outline"
-              className="w-full"
+              size="default"
+              className="w-full h-11 border-border/60 hover:bg-muted/50 transition-colors"
             >
               Create Another Link
             </Button>
           </div>
         )}
       </CardContent>
-    </Card>
+    </div>
   );
 }
