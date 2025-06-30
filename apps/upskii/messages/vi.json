@@ -1,4 +1,18 @@
 {
+  "mock": {
+    "course1": {
+      "name": "Nhập môn Trí tuệ Nhân tạo",
+      "description": "Tìm hiểu những kiến thức nền tảng về trí tuệ nhân tạo, học máy và mạng nơ-ron."
+    },
+    "course2": {
+      "name": "Lập trình Web Full-Stack",
+      "description": "Thành thạo cả lập trình frontend và backend với các công nghệ hiện đại."
+    },
+    "course3": {
+      "name": "Khoa học Dữ liệu với Python",
+      "description": "Phân tích dữ liệu và xây dựng mô hình dự đoán bằng Python cùng các thư viện phổ biến."
+    }
+  },
   "quiz-set-statistics": {
     "title": "Thống Kê",
     "description": "Xem thống kê chi tiết về các bài kiểm tra của bạn, bao gồm điểm trung bình, tỷ lệ hoàn thành và nhiều thông tin khác.",
@@ -789,7 +803,17 @@
         "title-1": "Nền Tảng Giáo Dục",
         "title-2": "Toàn Diện Của Bạn",
         "description": "Một nền tảng học tập hiện đại trao quyền cho giáo viên và học viên với các tính năng tăng cường bởi AI, nội dung tương tác và công cụ hợp tác thời gian thực.",
+        "explore-courses": "Xem Khoá Học",
         "platform-guide": "Hướng Dẫn Nền Tảng"
+      },
+      "partners": {
+        "badge": "Đối tác tin cậy",
+        "title": "Hợp tác cùng các tổ chức hàng đầu"
+      },
+      "testimonials": {
+        "badge": "Cảm nhận",
+        "title": "Nhận xét từ cộng đồng",
+        "description": "Khám phá cách các giáo viên và học sinh trên toàn thế giới đang thay đổi trải nghiệm học tập cùng nền tảng của chúng tôi."
       },
       "key-features": {
         "badge": "Tính Năng Nền Tảng",
