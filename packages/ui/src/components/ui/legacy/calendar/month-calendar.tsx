@@ -38,18 +38,15 @@ interface MonthCalendarProps {
 const normalizeColor = (color: string): string => {
   if (!color) return 'primary';
   const normalized = color.trim().toLowerCase();
-  // Map specific hex codes to color names
+  
+  // Map specific values to standardized names
   if (normalized === '#6b7280' || normalized === 'grey') return 'gray';
-  // Handle 6-digit hex
-  if (/^#([0-9a-f]{6})$/i.test(normalized)) {
-    // Add more mappings as needed
+  
+  // Return valid hex colors and normalized names as-is
+  if (/^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(normalized)) {
     return normalized;
   }
-  // Handle 3-digit hex
-  if (/^#([0-9a-f]{3})$/i.test(normalized)) {
-    return normalized;
-  }
-  // Add more color name mappings if needed
+  
   return normalized;
 };
 
@@ -74,6 +71,14 @@ const getDominantEventColor = (events: any[]): string => {
   return dominantColor;
 };
 
+// Utility function for scroll shadow classes
+const getScrollShadowClasses = (scrollState: { top: boolean; bottom: boolean } | undefined) => {
+  return cn(
+    scrollState?.top && 'before:absolute before:top-0 before:left-0 before:right-0 before:h-3 before:bg-gradient-to-b before:from-muted/80 before:to-transparent before:pointer-events-none',
+    scrollState?.bottom && 'after:absolute after:bottom-0 after:left-0 after:right-0 after:h-3 after:bg-gradient-to-t after:from-muted/80 after:to-transparent after:pointer-events-none'
+  );
+};
+
 // Custom hook for popover management
 function usePopoverManager() {
   const moreButtonRefs = useRef<(HTMLButtonElement | null)[]>([]);
@@ -83,20 +88,21 @@ function usePopoverManager() {
   const [popoverHovered, setPopoverHovered] = useState<Record<number, boolean>>({});
 
   // Handler to close popover on scroll/resize
+  const handleClose = useCallback((event: Event) => {
+    const popoverEl = popoverContentRefs.current[openPopoverIdx!];
+    if (popoverHovered[openPopoverIdx!]) return;
+    if (!popoverEl) {
+      setOpenPopoverIdx(null);
+      return;
+    }
+    if (event.target instanceof Node && popoverEl.contains(event.target as Node)) {
+      return;
+    }
+    setOpenPopoverIdx(null);
+  }, [openPopoverIdx, popoverHovered]);
+
   useEffect(() => {
     if (openPopoverIdx !== null) {
-      const handleClose = (event: Event) => {
-        const popoverEl = popoverContentRefs.current[openPopoverIdx];
-        if (popoverHovered[openPopoverIdx]) return;
-        if (!popoverEl) {
-          setOpenPopoverIdx(null);
-          return;
-        }
-        if (event.target instanceof Node && popoverEl.contains(event.target as Node)) {
-          return;
-        }
-        setOpenPopoverIdx(null);
-      };
       window.addEventListener('scroll', handleClose, true);
       window.addEventListener('resize', handleClose);
       return () => {
@@ -104,7 +110,7 @@ function usePopoverManager() {
         window.removeEventListener('resize', handleClose);
       };
     }
-  }, [openPopoverIdx, popoverHovered]);
+  }, [openPopoverIdx, handleClose]);
 
   // Set initial scroll state when popover opens
   useEffect(() => {
@@ -132,6 +138,14 @@ function usePopoverManager() {
         bottom: el.scrollTop + el.clientHeight < el.scrollHeight,
       },
     }));
+  }, []);
+
+  // Cleanup refs on unmount
+  useEffect(() => {
+    return () => {
+      moreButtonRefs.current = [];
+      popoverContentRefs.current = [];
+    };
   }, []);
 
   return {
@@ -310,7 +324,7 @@ export const MonthCalendar = ({ date, visibleDates, viewedMonth }: MonthCalendar
       map[day.toISOString()] = getDominantEventColor(events);
     }
     return map;
-  }, [calendarDays, getCurrentEvents]);
+  }, [calendarDays, JSON.stringify(calendarDays.map(day => getCurrentEvents(day).map(e => e.id + e.color)))]);
 
   // Use the custom popover manager hook
   const {
@@ -462,8 +476,7 @@ export const MonthCalendar = ({ date, visibleDates, viewedMonth }: MonthCalendar
                       align="start"
                       className={cn(
                         'p-2 max-h-60 overflow-y-auto relative !transition-none',
-                        scrollStates[dayIdx]?.top && 'before:absolute before:top-0 before:left-0 before:right-0 before:h-3 before:bg-gradient-to-b before:from-muted/80 before:to-transparent before:pointer-events-none',
-                        scrollStates[dayIdx]?.bottom && 'after:absolute after:bottom-0 after:left-0 after:right-0 after:h-3 after:bg-gradient-to-t after:from-muted/80 after:to-transparent after:pointer-events-none'
+                        getScrollShadowClasses(scrollStates[dayIdx])
                       )}
                       style={{ width: moreButtonRefs.current[dayIdx]?.offsetWidth || undefined }}
                     >
