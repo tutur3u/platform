@@ -12,6 +12,7 @@ export function usePopoverManager() {
 
   // Handler to close popover on scroll/resize
   const handleClose = useCallback((event: Event) => {
+    if (openPopoverIdx === null) return;
     const popoverEl = popoverContentRefs.current[openPopoverIdx!];
     if (popoverHovered[openPopoverIdx!]) return;
     if (!popoverEl) {

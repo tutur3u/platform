@@ -21,7 +21,7 @@ import {
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import { Clock, Plus } from 'lucide-react';
-import { useEffect, useMemo, useState, useRef, useCallback } from 'react';
+import { useEffect, useMemo, useState} from 'react';
 import { useCalendar } from '../../../../hooks/use-calendar';
 import { usePopoverManager } from '../../../../hooks/use-popover-manager';
 import { getColorHighlight } from './color-highlights';
