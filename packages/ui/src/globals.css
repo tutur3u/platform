@@ -374,7 +374,21 @@
   .bg-dynamic-lime { background-color: var(--color-dynamic-lime); }
   .bg-dynamic-sky { background-color: var(--color-dynamic-sky); }
 
-  /* Text colors */
+  /* Text colors - base variants */
+  .text-dynamic-red { color: var(--color-dynamic-red); }
+  .text-dynamic-orange { color: var(--color-dynamic-orange); }
+  .text-dynamic-yellow { color: var(--color-dynamic-yellow); }
+  .text-dynamic-green { color: var(--color-dynamic-green); }
+  .text-dynamic-blue { color: var(--color-dynamic-blue); }
+  .text-dynamic-purple { color: var(--color-dynamic-purple); }
+  .text-dynamic-pink { color: var(--color-dynamic-pink); }
+  .text-dynamic-indigo { color: var(--color-dynamic-indigo); }
+  .text-dynamic-cyan { color: var(--color-dynamic-cyan); }
+  .text-dynamic-gray { color: var(--color-dynamic-gray); }
+  .text-dynamic-lime { color: var(--color-dynamic-lime); }
+  .text-dynamic-sky { color: var(--color-dynamic-sky); }
+
+  /* Text colors - light variants */
   .text-dynamic-light-red { color: var(--color-dynamic-light-red); }
   .text-dynamic-light-orange { color: var(--color-dynamic-light-orange); }
   .text-dynamic-light-yellow { color: var(--color-dynamic-light-yellow); }
@@ -402,7 +416,21 @@
   .bg-dynamic-light-lime { background-color: var(--color-dynamic-light-lime); }
   .bg-dynamic-light-sky { background-color: var(--color-dynamic-light-sky); }
 
-  /* Ring colors for light variants */
+  /* Ring colors - base variants */
+  .ring-dynamic-red { --tw-ring-color: var(--color-dynamic-red); }
+  .ring-dynamic-orange { --tw-ring-color: var(--color-dynamic-orange); }
+  .ring-dynamic-yellow { --tw-ring-color: var(--color-dynamic-yellow); }
+  .ring-dynamic-green { --tw-ring-color: var(--color-dynamic-green); }
+  .ring-dynamic-blue { --tw-ring-color: var(--color-dynamic-blue); }
+  .ring-dynamic-purple { --tw-ring-color: var(--color-dynamic-purple); }
+  .ring-dynamic-pink { --tw-ring-color: var(--color-dynamic-pink); }
+  .ring-dynamic-indigo { --tw-ring-color: var(--color-dynamic-indigo); }
+  .ring-dynamic-cyan { --tw-ring-color: var(--color-dynamic-cyan); }
+  .ring-dynamic-gray { --tw-ring-color: var(--color-dynamic-gray); }
+  .ring-dynamic-lime { --tw-ring-color: var(--color-dynamic-lime); }
+  .ring-dynamic-sky { --tw-ring-color: var(--color-dynamic-sky); }
+
+  /* Ring colors - light variants */
   .ring-dynamic-light-red { --tw-ring-color: var(--color-dynamic-light-red); }
   .ring-dynamic-light-orange { --tw-ring-color: var(--color-dynamic-light-orange); }
   .ring-dynamic-light-yellow { --tw-ring-color: var(--color-dynamic-light-yellow); }
