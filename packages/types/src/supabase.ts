@@ -3457,23 +3457,48 @@ export type Database = {
       shortened_links: {
         Row: {
           created_at: string;
+          creator_id: string | null;
           id: string;
           link: string;
           slug: string;
         };
         Insert: {
           created_at?: string;
+          creator_id?: string | null;
           id?: string;
           link: string;
           slug: string;
         };
         Update: {
           created_at?: string;
+          creator_id?: string | null;
           id?: string;
           link?: string;
           slug?: string;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: 'shortened_links_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'shortened_links_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'shortened_links_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
       };
       support_inquiries: {
         Row: {

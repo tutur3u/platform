@@ -80,3 +80,9 @@ CREATE POLICY "Allow team members to select shortened links" ON "public"."shorte
       AND auth.users.email LIKE '%@tuturuuu.com'
     )
   );
+
+alter table "public"."shortened_links" add column "creator_id" uuid;
+
+alter table "public"."shortened_links" add constraint "shortened_links_creator_id_fkey" FOREIGN KEY (creator_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE SET DEFAULT not valid;
+
+alter table "public"."shortened_links" validate constraint "shortened_links_creator_id_fkey";
