@@ -6,13 +6,13 @@ import Negotiator from 'negotiator';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import createIntlMiddleware from 'next-intl/middleware';
-import { LOCALE_COOKIE_NAME, PUBLIC_PATHS } from './constants/common';
+import { LOCALE_COOKIE_NAME, PORT, PUBLIC_PATHS } from './constants/common';
 import { defaultLocale, type Locale, supportedLocales } from './i18n/routing';
 
 const WEB_APP_URL =
   process.env.NODE_ENV === 'production'
     ? 'https://tuturuuu.com'
-    : 'http://localhost:7803';
+    : `http://localhost:${PORT}`;
 
 const authMiddleware = createCentralizedAuthMiddleware({
   webAppUrl: WEB_APP_URL,
@@ -158,7 +158,7 @@ const getDefaultLocale = (
   const detectedLocale = match(languages, supportedLocales, defaultLocale);
 
   return {
-    locale: supportedLocales.includes(detectedLocale as any)
+    locale: supportedLocales.includes(detectedLocale as Locale)
       ? (detectedLocale as Locale)
       : defaultLocale,
   };

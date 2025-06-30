@@ -13,7 +13,6 @@ import { SpeedInsights as VercelInsights } from '@vercel/speed-insights/next';
 import type { Metadata, Viewport } from 'next';
 import { Noto_Sans } from 'next/font/google';
 import { notFound } from 'next/navigation';
-import { NextIntlClientProvider } from 'next-intl';
 import { setRequestLocale } from 'next-intl/server';
 import type { ReactNode } from 'react';
 
@@ -125,9 +124,7 @@ export default async function RootLayout({ children, params }: Props) {
       >
         <VercelAnalytics />
         <VercelInsights />
-        <Providers>
-          <NextIntlClientProvider>{children}</NextIntlClientProvider>
-        </Providers>
+        <Providers>{children}</Providers>
         <TailwindIndicator />
         <ProductionIndicator />
         <StaffToolbar />

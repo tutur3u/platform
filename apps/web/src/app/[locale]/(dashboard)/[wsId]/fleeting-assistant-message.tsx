@@ -4,12 +4,12 @@
 import type { Message } from '@tuturuuu/ai/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { CodeBlock } from '@tuturuuu/ui/codeblock';
-import { IconUser } from '@tuturuuu/ui/icons';
 import { MemoizedReactMarkdown } from '@tuturuuu/ui/markdown';
 import { cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
 import { ChatMessageActions } from '@/components/chat-message-actions';
 import 'dayjs/locale/vi';
+import { UserIcon } from '@tuturuuu/ui/icons';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
@@ -61,7 +61,7 @@ export function FleetingAssistantMessage({
             )}
           >
             {message.role === 'user' ? (
-              <IconUser className="h-5 w-5" />
+              <UserIcon className="h-5 w-5" />
             ) : (
               <Avatar className="h-10 w-10 rounded-md border">
                 <AvatarImage
@@ -163,6 +163,7 @@ export function FleetingAssistantMessage({
                 if (setInput)
                   return (
                     <button
+                      type="button"
                       className="mb-2 rounded-full border bg-foreground/5 text-left font-semibold text-foreground transition last:mb-0 hover:bg-foreground/10"
                       onClick={() => setInput(content || '')}
                     >
@@ -194,7 +195,7 @@ export function FleetingAssistantMessage({
             },
             code({ className, children, ...props }) {
               if (children && Array.isArray(children) && children.length) {
-                if (children[0] == '▍') {
+                if (children[0] === '▍') {
                   return (
                     <span
                       className={cn(
@@ -215,7 +216,7 @@ export function FleetingAssistantMessage({
               return match ? (
                 <CodeBlock
                   key={Math.random()}
-                  language={(match && match[1]) || ''}
+                  language={match?.[1] || ''}
                   value={String(children).replace(/\n$/, '')}
                   {...props}
                 />

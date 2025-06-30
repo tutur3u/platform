@@ -2,7 +2,7 @@
 
 import { BookOpen, Info, Shield } from '@tuturuuu/ui/icons';
 import type { ReactNode } from 'react';
-import { DEV_MODE } from '@/constants/common';
+import { CENTRAL_PORT, DEV_MODE } from '@/constants/common';
 
 export interface NavItem {
   href: string;
@@ -18,11 +18,12 @@ export interface NavCategory {
   items: NavItem[];
 }
 
+// biome-ignore lint/suspicious/noExplicitAny: <translation type is not available yet>
 export const useNavigation = (t: any): { categories: NavCategory[] } => {
   const resources: NavItem[] = [
     {
       href: DEV_MODE
-        ? 'http://localhost:7803/about'
+        ? `http://localhost:${CENTRAL_PORT}/about`
         : 'https://tuturuuu.com/about',
       label: t('common.about'),
       description: t('common.about-description'),
@@ -30,7 +31,7 @@ export const useNavigation = (t: any): { categories: NavCategory[] } => {
     },
     {
       href: DEV_MODE
-        ? 'http://localhost:7803/security'
+        ? `http://localhost:${CENTRAL_PORT}/security`
         : 'https://tuturuuu.com/security',
       label: t('common.security'),
       description: t('common.security-description'),
@@ -38,7 +39,7 @@ export const useNavigation = (t: any): { categories: NavCategory[] } => {
     },
     {
       href: DEV_MODE
-        ? 'http://localhost:7803/terms'
+        ? `http://localhost:${CENTRAL_PORT}/terms`
         : 'https://tuturuuu.com/terms',
       label: t('common.terms'),
       description: t('common.terms-description'),
@@ -46,7 +47,7 @@ export const useNavigation = (t: any): { categories: NavCategory[] } => {
     },
     {
       href: DEV_MODE
-        ? 'http://localhost:7803/privacy'
+        ? `http://localhost:${CENTRAL_PORT}/privacy`
         : 'https://tuturuuu.com/privacy',
       label: t('common.privacy'),
       description: t('common.privacy-description'),
@@ -65,7 +66,7 @@ export const useNavigation = (t: any): { categories: NavCategory[] } => {
     },
     {
       href: DEV_MODE
-        ? 'http://localhost:7803/contact'
+        ? `http://localhost:${CENTRAL_PORT}/contact`
         : 'https://tuturuuu.com/contact',
       label: t('common.contact'),
       description: '',

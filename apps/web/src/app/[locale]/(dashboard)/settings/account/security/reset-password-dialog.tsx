@@ -12,7 +12,7 @@ import {
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
-import { DEV_MODE } from '@/constants/common';
+import { DEV_MODE, PORT } from '@/constants/common';
 import ReauthenticateForm, {
   type ReauthenticateFormData,
 } from './reauthenticate-form';
@@ -60,7 +60,7 @@ export default function ResetPasswordDialog() {
           // if on DEV_MODE, auto-open inbucket
           if (DEV_MODE) {
             window.open(
-              window.location.origin.replace('7803', '8004'),
+              window.location.origin.replace(PORT.toString(), '8004'),
               '_blank'
             );
           }

@@ -3,20 +3,23 @@ import { supportedLocales } from '@/i18n/routing';
 export const DEV_MODE = process.env.NODE_ENV === 'development';
 export const PROD_MODE = process.env.NODE_ENV === 'production';
 
+export const PORT = process.env.PORT || 7804;
+export const CENTRAL_PORT = process.env.CENTRAL_PORT || 7803;
+
 export const BASE_URL =
   process.env.BASE_URL || PROD_MODE
     ? 'https://rewise.me'
-    : 'http://localhost:7804';
+    : `http://localhost:${PORT}`;
 
 export const API_URL =
   process.env.API_URL || PROD_MODE
     ? 'https://rewise.me/api'
-    : 'http://localhost:7804/api';
+    : `http://localhost:${PORT}/api`;
 
 export const TTR_URL =
   process.env.TTR_URL || PROD_MODE
     ? 'https://tuturuuu.com'
-    : 'http://localhost:7803';
+    : `http://localhost:${CENTRAL_PORT}`;
 
 export const LOCALE_COOKIE_NAME = 'NEXT_LOCALE';
 export const THEME_COOKIE_NAME = 'NEXT_THEME';

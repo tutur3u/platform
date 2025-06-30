@@ -3,7 +3,7 @@
   "private": true,
   "scripts": {
     "build": "turbo run build",
-    "buildx": "bun i && turbo test lint build",
+    "buildx": "bun i && turbo test build",
     "dev": "turbo run dev --parallel",
     "dev:web": "turbo run dev -F @tuturuuu/web",
     "dev:calendar": "turbo run dev -F @tuturuuu/calendar -F @tuturuuu/web",
@@ -11,6 +11,7 @@
     "dev:upskii": "turbo run dev -F @tuturuuu/upskii -F @tuturuuu/web",
     "dev:famigo": "turbo run dev -F @tuturuuu/famigo -F @tuturuuu/web",
     "dev:nova": "turbo run dev -F @tuturuuu/nova -F @tuturuuu/web",
+    "dev:shortener": "turbo run dev -F @tuturuuu/shortener -F @tuturuuu/web",
     "devx": "bun sb:stop && bun i && bun sb:start && bun dev",
     "devx:web": "bun sb:stop && bun i && bun sb:start && bun dev:web",
     "devx:calendar": "bun sb:stop && bun i && bun sb:start && bun dev:calendar",
@@ -18,6 +19,7 @@
     "devx:upskii": "bun sb:stop && bun i && bun sb:start && bun dev:upskii",
     "devx:famigo": "bun sb:stop && bun i && bun sb:start && bun dev:famigo",
     "devx:nova": "bun sb:stop && bun i && bun sb:start && bun dev:nova",
+    "devx:shortener": "bun sb:stop && bun i && bun sb:start && bun dev:shortener",
     "devrs": "bun sb:stop && bun i && bun sb:start && bun sb:reset && bun sb:typegen && bun dev",
     "devrs:web": "bun sb:stop && bun i && bun sb:start && bun sb:reset && bun sb:typegen && bun dev:web",
     "devrs:calendar": "bun sb:stop && bun i && bun sb:start && bun sb:reset && bun sb:typegen && bun dev:calendar",
@@ -25,6 +27,7 @@
     "devrs:upskii": "bun sb:stop && bun i && bun sb:start && bun sb:reset && bun sb:typegen && bun dev:upskii",
     "devrs:famigo": "bun sb:stop && bun i && bun sb:start && bun sb:reset && bun sb:typegen && bun dev:famigo",
     "devrs:nova": "bun sb:stop && bun i && bun sb:start && bun sb:reset && bun sb:typegen && bun dev:nova",
+    "devrs:shortener": "bun sb:stop && bun i && bun sb:start && bun sb:reset && bun sb:typegen && bun dev:shortener",
     "trigger:dev": "bun run --filter @tuturuuu/trigger trigger:dev",
     "trigger:deploy": "bun run --filter @tuturuuu/trigger trigger:deploy",
     "test": "turbo run test",
@@ -32,6 +35,7 @@
     "format-and-lint": "biome check",
     "format-and-lint:fix": "biome check --write",
     "format-and-lint:ci": "biome ci",
+    "gemini": "bunx @google/gemini-cli",
     "stop": "cd apps/db && bun sb:stop",
     "diff": "cd apps/db && bun sb:diff",
     "typegen": "cd apps/db && bun sb:typegen",
@@ -53,10 +57,10 @@
   },
   "dependencies": {
     "cookies-next": "^6.0.0",
-    "react-scan": "^0.3.4"
+    "react-scan": "^0.4.3"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.0.5",
+    "@biomejs/biome": "2.0.6",
     "@tuturuuu/typescript-config": "workspace:*",
     "@vitest/coverage-v8": "^3.2.4",
     "concurrently": "^9.2.0",
@@ -66,7 +70,7 @@
     "vitest": "^3.2.4"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=22"
   },
   "packageManager": "bun@1.2.17",
   "workspaces": ["apps/*", "packages/*"],

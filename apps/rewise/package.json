@@ -27,7 +27,7 @@
     "@emotion/react": "^11.14.0",
     "@emotion/server": "^11.11.0",
     "@formatjs/intl-localematcher": "^0.6.1",
-    "@tanstack/react-query": "^5.81.2",
+    "@tanstack/react-query": "^5.81.5",
     "@tanstack/react-table": "^8.21.3",
     "@tuturuuu/ai": "workspace:*",
     "@tuturuuu/auth": "workspace:*",
@@ -61,13 +61,13 @@
   },
   "devDependencies": {
     "@next/bundle-analyzer": "15.3.4",
-    "@tanstack/react-query-devtools": "^5.81.2",
+    "@tanstack/react-query-devtools": "^5.81.5",
     "@testing-library/react": "^16.3.0",
     "@tuturuuu/typescript-config": "workspace:*",
     "@types/js-cookie": "^3.0.6",
     "@types/lodash": "^4.17.19",
     "@types/negotiator": "^0.6.4",
-    "@types/node": "^24.0.4",
+    "@types/node": "^24.0.7",
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
     "@types/uuid": "^10.0.0",
@@ -77,9 +77,6 @@
     "postcss": "^8.5.6",
     "typescript": "^5.8.3",
     "vitest": "^3.2.4"
-  },
-  "overrides": {
-    "react-is": "^19.1.0"
   },
   "packageManager": "bun@1.2.17"
 }

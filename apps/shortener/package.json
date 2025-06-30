@@ -1,0 +1,48 @@
+{
+  "name": "@tuturuuu/shortener",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev -p 3002 --turbopack",
+    "devx": "bun sb:stop && bun sb:start && bun dev",
+    "devrs": "bun sb:stop && bun sb:reset && bun sb:start && bun dev",
+    "build": "next build",
+    "start": "next start",
+    "preview": "next build && next start -p 3002 --turbopack",
+    "stop": "cd ../db && bun sb:stop",
+    "sb:status": "cd ../db && bun sb:status",
+    "sb:start": "cd ../db && bun sb:start",
+    "sb:stop": "cd ../db && bun sb:stop",
+    "sb:sync": "cd ../db && bun sb:sync",
+    "sb:reset": "cd ../db && bun sb:reset",
+    "sb:diff": "cd ../db && bun sb:diff",
+    "sb:new": "cd ../db && bun sb:new",
+    "sb:up": "cd ../db && bun sb:up",
+    "sb:typegen": "cd ../db && bun sb:typegen",
+    "ui:add": "bunx shadcn-ui@latest add",
+    "ui:diff": "bunx shadcn-ui@latest diff"
+  },
+  "dependencies": {
+    "@tuturuuu/ai": "workspace:*",
+    "@tuturuuu/supabase": "workspace:*",
+    "@tuturuuu/types": "workspace:*",
+    "@tuturuuu/typescript-config": "workspace:*",
+    "@tuturuuu/ui": "workspace:*",
+    "@tuturuuu/utils": "workspace:*",
+    "@vercel/analytics": "^1.5.0",
+    "dayjs": "^1.11.13",
+    "nanoid": "^5.0.8",
+    "next": "15.3.4",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "tailwindcss": "^4.1.11"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.7",
+    "@types/react": "^19.1.8",
+    "@types/react-dom": "^19.1.6",
+    "postcss": "^8.5.6",
+    "typescript": "^5.8.3"
+  },
+  "packageManager": "bun@1.2.17"
+}

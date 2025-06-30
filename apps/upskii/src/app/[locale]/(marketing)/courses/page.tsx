@@ -81,7 +81,8 @@ async function getData({
 } = {}) {
   // if (process.env.NODE_ENV === 'development') {
   //   // Placing mock data for testing
-  //   const allMock: WorkspaceCourse[] = mockData();
+  //   const t = await getTranslations("mock");
+  //   const allMock: WorkspaceCourse[] = mockData(t);
 
   //   const filteredData = allMock.filter((course) =>
   //     q ? course.name.toLowerCase().includes(q.toLowerCase()) : true

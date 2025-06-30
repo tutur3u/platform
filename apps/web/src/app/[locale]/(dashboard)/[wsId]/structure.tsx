@@ -29,6 +29,7 @@ interface MailProps {
   actions: ReactNode;
   userPopover: ReactNode;
   children: ReactNode;
+  disableCreateNewWorkspace: boolean;
 }
 
 export function Structure({
@@ -39,6 +40,7 @@ export function Structure({
   actions,
   userPopover,
   children,
+  disableCreateNewWorkspace,
 }: MailProps) {
   const t = useTranslations();
   const pathname = usePathname();
@@ -248,9 +250,11 @@ export function Structure({
         }
       >
         <WorkspaceSelect
-          t={t}
+          t={t as (key: string) => string}
           hideLeading={isCollapsed}
-          localUseQuery={useQuery}
+          // biome-ignore lint/suspicious/noExplicitAny: <useQuery can be any>
+          localUseQuery={useQuery as any}
+          disableCreateNewWorkspace={disableCreateNewWorkspace}
         />
       </Suspense>
     </>
@@ -354,10 +358,11 @@ export function Structure({
       sidebarContent={sidebarContent}
       actions={actions}
       userPopover={userPopover}
-      children={children}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
       hideSizeToggle={behavior === 'hover'}
-    />
+    >
+      {children}
+    </BaseStructure>
   );
 }

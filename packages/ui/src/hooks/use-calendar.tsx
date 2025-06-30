@@ -154,6 +154,11 @@ export const CalendarProvider = ({
 
   // Load settings from localStorage if available
   const loadSettingsFromStorage = useCallback(() => {
+    // Check if we're in a browser environment
+    if (typeof window === 'undefined' || typeof localStorage === 'undefined') {
+      return null;
+    }
+    
     try {
       const storedSettings = localStorage.getItem('calendarSettings');
       if (storedSettings) {
@@ -180,6 +185,11 @@ export const CalendarProvider = ({
 
   // Save settings to localStorage when they change
   useEffect(() => {
+    // Check if we're in a browser environment
+    if (typeof window === 'undefined' || typeof localStorage === 'undefined') {
+      return;
+    }
+    
     try {
       localStorage.setItem('calendarSettings', JSON.stringify(settings));
       console.log('Saved settings to localStorage:', settings);

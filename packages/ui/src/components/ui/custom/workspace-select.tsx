@@ -1,7 +1,6 @@
 'use client';
 
 import { createClient } from '@tuturuuu/supabase/next/client';
-import type { Workspace } from '@tuturuuu/types/db';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -59,11 +58,15 @@ export function WorkspaceSelect({
   localUseQuery,
   hideLeading,
   customRedirectSuffix,
+  disableCreateNewWorkspace,
 }: {
+  // biome-ignore lint/suspicious/noExplicitAny: <No need to type this>
   t: any;
+  // biome-ignore lint/suspicious/noExplicitAny: <No need to type this>
   localUseQuery: any;
   hideLeading?: boolean;
   customRedirectSuffix?: string;
+  disableCreateNewWorkspace?: boolean;
 }) {
   const router = useRouter();
   const params = useParams();
@@ -93,6 +96,7 @@ export function WorkspaceSelect({
   const [loading, setLoading] = useState(false);
 
   async function onSubmit(formData: z.infer<typeof FormSchema>) {
+    if (disableCreateNewWorkspace) return;
     setLoading(true);
 
     const res = await fetch(`/api/v1/workspaces`, {
@@ -141,7 +145,7 @@ export function WorkspaceSelect({
       id: 'workspaces',
       label: t('common.workspaces'),
       teams:
-        workspaces?.map((workspace: Workspace) => ({
+        workspaces?.map((workspace: { id: string; name: string }) => ({
           label: workspace.name || 'Untitled',
           value: workspace.id,
         })) || [],
@@ -161,8 +165,7 @@ export function WorkspaceSelect({
     }
   };
 
-  const workspace = workspaces?.find((ws: Workspace) => ws.id === wsId);
-
+  const workspace = workspaces?.find((ws: { id: string }) => ws.id === wsId);
   if (!wsId) return <div />;
 
   return (
@@ -185,7 +188,6 @@ export function WorkspaceSelect({
             <Button
               size="xs"
               variant="outline"
-              role="combobox"
               aria-expanded={open}
               aria-label="Select a workspace"
               className={cn(
@@ -211,7 +213,7 @@ export function WorkspaceSelect({
               </Avatar>
               <div className={cn(hideLeading ? 'hidden' : 'w-full')}>
                 <span className="line-clamp-1 w-full break-all">
-                  {workspace?.name || t('common.loading') + '...'}
+                  {workspace?.name || `${t('common.loading')}...`}
                 </span>
               </div>
               {hideLeading || (
@@ -226,57 +228,66 @@ export function WorkspaceSelect({
               <CommandList className="max-h-64">
                 {groups.map((group) => (
                   <CommandGroup key={group.label} heading={group.label}>
-                    {group.teams.map((team: any) => (
-                      <CommandItem
-                        key={team.value}
-                        onSelect={() => {
-                          if (!team?.value || team?.value === wsId) return;
-                          onValueChange(team.value);
-                          setOpen(false);
-                        }}
-                        className={`text-sm ${
-                          group.id === 'personal' ? 'opacity-50' : ''
-                        }`}
-                        disabled={!team || group.id === 'personal'}
-                      >
-                        <Avatar className="mr-2 h-5 w-5">
-                          <AvatarImage
-                            src={`https://avatar.vercel.sh/${team.label}.png`}
-                            alt={team.label}
-                            className="grayscale"
-                          />
-                          <AvatarFallback>
-                            {getInitials(team.label)}
-                          </AvatarFallback>
-                        </Avatar>
-                        <span className="line-clamp-1">{team.label}</span>
-                        {group.id !== 'personal' && (
-                          <CheckIcon
-                            className={cn(
-                              'ml-auto h-4 w-4',
-                              wsId === team.value ? 'opacity-100' : 'opacity-0'
-                            )}
-                          />
-                        )}
-                      </CommandItem>
-                    ))}
+                    {group.teams.map(
+                      (team: { label: string; value: string | undefined }) => (
+                        <CommandItem
+                          key={team.value}
+                          onSelect={() => {
+                            if (!team?.value || team?.value === wsId) return;
+                            onValueChange(team.value);
+                            setOpen(false);
+                          }}
+                          className={`text-sm ${
+                            group.id === 'personal' ? 'opacity-50' : ''
+                          }`}
+                          disabled={!team || group.id === 'personal'}
+                        >
+                          <Avatar className="mr-2 h-5 w-5">
+                            <AvatarImage
+                              src={`https://avatar.vercel.sh/${team.label}.png`}
+                              alt={team.label}
+                              className="grayscale"
+                            />
+                            <AvatarFallback>
+                              {getInitials(team.label)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <span className="line-clamp-1">{team.label}</span>
+                          {group.id !== 'personal' && (
+                            <CheckIcon
+                              className={cn(
+                                'ml-auto h-4 w-4',
+                                wsId === team.value
+                                  ? 'opacity-100'
+                                  : 'opacity-0'
+                              )}
+                            />
+                          )}
+                        </CommandItem>
+                      )
+                    )}
                   </CommandGroup>
                 ))}
               </CommandList>
-              <CommandSeparator />
-              <DialogTrigger asChild>
-                <CommandGroup>
-                  <CommandItem
-                    onSelect={() => {
-                      setOpen(false);
-                      setShowNewWorkspaceDialog(true);
-                    }}
-                  >
-                    <PlusCircle className="mr-2 h-5 w-5" />
-                    {t('common.create_new_workspace')}
-                  </CommandItem>
-                </CommandGroup>
-              </DialogTrigger>
+              {!disableCreateNewWorkspace && (
+                <>
+                  <CommandSeparator />
+                  <DialogTrigger asChild>
+                    <CommandGroup>
+                      <CommandItem
+                        onSelect={() => {
+                          setOpen(false);
+                          setShowNewWorkspaceDialog(true);
+                        }}
+                        disabled={disableCreateNewWorkspace}
+                      >
+                        <PlusCircle className="mr-2 h-5 w-5" />
+                        {t('common.create_new_workspace')}
+                      </CommandItem>
+                    </CommandGroup>
+                  </DialogTrigger>
+                </>
+              )}
             </Command>
           </PopoverContent>
         </Popover>
