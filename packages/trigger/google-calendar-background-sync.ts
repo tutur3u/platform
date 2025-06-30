@@ -4,10 +4,22 @@ import {
   getWorkspacesForSync 
 } from './google-calendar-sync.js';
 
+interface WorkspaceToken {
+  ws_id: string;
+  access_token: string;
+  refresh_token?: string;
+}
+
+interface WorkspaceSyncResult {
+  ws_id: string;
+  success: boolean;
+  error?: string;
+}
+
 // Helper function for single workspace sync
 const triggerWorkspaceSync = async (
   ws_id: string, 
-  syncFunction: (workspace: any) => Promise<any>,
+  syncFunction: (workspace: WorkspaceToken) => Promise<WorkspaceSyncResult>,
   syncType: 'immediate' | 'extended'
 ) => {
   console.log(`=== Manually triggering ${syncType} sync for workspace ${ws_id} ===`);
