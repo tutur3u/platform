@@ -194,6 +194,33 @@ export const MonthCalendar = ({ date, visibleDates, viewedMonth }: MonthCalendar
     };
   };
 
+  // Memoize dominant color for each day
+  const dominantColorForDay = useMemo(() => {
+    const map: Record<string, string> = {};
+    for (const day of calendarDays) {
+      const events = getCurrentEvents(day);
+      const colorCount: Record<string, number> = {};
+      for (const event of events) {
+        const color = (event.color || 'primary').trim().toLowerCase();
+        const normalizedColor =
+          color === '#6b7280' ? 'gray' :
+          color === 'grey' ? 'gray' :
+          color;
+        colorCount[normalizedColor] = (colorCount[normalizedColor] || 0) + 1;
+      }
+      let dominantColor = 'primary';
+      let maxCount = -1;
+      for (const [color, count] of Object.entries(colorCount)) {
+        if (count > maxCount) {
+          dominantColor = color;
+          maxCount = count;
+        }
+      }
+      map[day.toISOString()] = dominantColor;
+    }
+    return map;
+  }, [calendarDays, getCurrentEvents]);
+
   return (
     <div className="flex-1 overflow-auto rounded-md border bg-background shadow-sm">
       <div className="grid grid-cols-7 divide-x divide-y border-b text-center">
@@ -215,28 +242,6 @@ export const MonthCalendar = ({ date, visibleDates, viewedMonth }: MonthCalendar
 
       <div className="grid grid-cols-7 divide-x divide-y">
         {calendarDays.map((day) => {
-          const events = getCurrentEvents(day);
-          // Efficiently count event colors
-          const colorCount: Record<string, number> = {};
-          for (const event of events) {
-            const color = (event.color || 'primary').trim().toLowerCase();
-            // Map hex or alternate spellings to 'gray'
-            const normalizedColor =
-              color === '#6b7280' ? 'gray' :
-              color === 'grey' ? 'gray' :
-              color;
-            colorCount[normalizedColor] = (colorCount[normalizedColor] || 0) + 1;
-          }
-          // Find the most frequent color
-          let dominantColor = 'primary';
-          let maxCount = -1;
-          for (const [color, count] of Object.entries(colorCount)) {
-            if (count > maxCount) {
-              dominantColor = color;
-              maxCount = count;
-            }
-          }
-          // Map event color to highlight class
           const colorHighlightMap: Record<string, string> = {
             red:    'shadow-[0_0_0_3px_rgba(239,68,68,0.18)] shadow-[inset_0_0_0_2px_rgba(239,68,68,0.35)]',
             orange: 'shadow-[0_0_0_3px_rgba(251,146,60,0.18)] shadow-[inset_0_0_0_2px_rgba(251,146,60,0.35)]',
@@ -251,6 +256,7 @@ export const MonthCalendar = ({ date, visibleDates, viewedMonth }: MonthCalendar
             gray:   'shadow-[0_0_0_3px_rgba(107,114,128,0.18)] shadow-[inset_0_0_0_2px_rgba(107,114,128,0.35)]',
             primary: 'shadow-[0_0_0_3px_rgba(59,130,246,0.18)] shadow-[inset_0_0_0_2px_rgba(59,130,246,0.35)]',
           };
+          const dominantColor = dominantColorForDay[day.toISOString()] || 'primary';
           const highlightClass = isToday(day) ? `${colorHighlightMap[dominantColor] || colorHighlightMap.primary} z-10` : '';
 
           const isCurrentMonth = isSameMonth(day, viewedMonth ?? currDate);
@@ -308,7 +314,7 @@ export const MonthCalendar = ({ date, visibleDates, viewedMonth }: MonthCalendar
               </div>
 
               <div className="mt-1 space-y-1">
-                {events.slice(0, 3).map((event) => {
+                {getCurrentEvents(day).slice(0, 3).map((event) => {
                   const { bg, text } = getEventStyles(event);
 
                   return (
@@ -350,12 +356,12 @@ export const MonthCalendar = ({ date, visibleDates, viewedMonth }: MonthCalendar
                   );
                 })}
 
-                {events.length > 3 && (
+                {getCurrentEvents(day).length > 3 && (
                   <button className={cn(
                     'w-full rounded-sm bg-muted px-1 py-0.5 text-xs font-medium text-muted-foreground hover:bg-muted/80',
                     !isCurrentMonth && 'opacity-60'
                   )}>
-                    +{events.length - 3} more
+                    +{getCurrentEvents(day).length - 3} more
                   </button>
                 )}
               </div>
