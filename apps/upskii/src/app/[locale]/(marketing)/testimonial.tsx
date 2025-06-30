@@ -1,63 +1,23 @@
-import { Star } from "lucide-react"
-import Image from "next/image"
-import { useTranslations } from "next-intl"
+import { Star} from "@tuturuuu/ui/icons";
+import { useTranslations } from "next-intl";
+import { useState, useEffect } from "react";
+import Image from "next/image";
 
-const testimonials = [
-  {
-    name: "Dr. Sarah Chen",
-    role: "Mathematics Professor",
-    quote:
-      "This platform has revolutionized how I teach calculus. The AI-powered explanations help students grasp complex concepts instantly.",
-    avatar: "/placeholder.svg?width=48&height=48&text=SL&bgColor=5E5CFF&textColor=FFFFFF",
-    stars: 4,
-  },
-  {
-    name: "Marcus Rodriguez",
-    role: "Computer Science Student",
-    quote:
-      "The collaborative coding environment is incredible. I can work with classmates in real-time and get instant feedback.",
-    avatar: "/placeholder.svg?width=48&height=48&text=SL&bgColor=5E5CFF&textColor=FFFFFF",
-    stars: 5,
-  },
-  {
-    name: "Prof. Emily Watson",
-    role: "Physics Department Head",
-    quote:
-      "The interactive simulations make abstract physics concepts tangible. My students engagement has increased dramatically.",
-    avatar: "/placeholder.svg?width=48&height=48&text=SL&bgColor=5E5CFF&textColor=FFFFFF",
-    stars: 5,
-  },
-  {
-    name: "Alex Kim",
-    role: "High School Student",
-    quote:
-      "Learning chemistry has never been this fun! The 3D molecular models help me understand reactions so much better.",
-    avatar: "/placeholder.svg?width=48&height=48&text=SL&bgColor=5E5CFF&textColor=FFFFFF",
-    stars: 4,
-  },
-  {
-    name: "Dr. Michael Thompson",
-    role: "Biology Professor",
-    quote:
-      "The adaptive learning system personalizes content for each student. It is like having a teaching assistant for every learner.",
-    avatar: "/placeholder.svg?width=48&height=48&text=SL&bgColor=5E5CFF&textColor=FFFFFF",
-    stars: 5,
-  },
-  {
-    name: "Jessica Park",
-    role: "Graduate Student",
-    quote:
-      "The research collaboration tools are outstanding. I can share findings with my advisor and peers seamlessly.",
-    avatar: "/placeholder.svg?width=48&height=48&text=SL&bgColor=5E5CFF&textColor=FFFFFF",
-    stars: 5,
-  },
-]
+export default function TestimonialsSection() {
+  const t = useTranslations("boarding-pages.home");
 
-export const TestimonialsSection = () => {
-  const t = useTranslations("boarding-pages.home")
+  const [testimonials, setTestimonials] = useState<any[]>([]);
+
+  useEffect(() => {
+    fetch("/api/v1/testimonials")
+      .then((res) => res.json())
+      .then((data) => setTestimonials(data))
+      .catch((err) => console.error(err));
+  }, []);
+
+  console.log("Testimonials: ", testimonials);
   return (
     <section id="testimonials" className="relative py-20 overflow-hidden">
-
       {/* Gradient overlay for better readability */}
       <div className="absolute inset-0 bg-gradient-to-br from-blue-50/80 via-purple-50/60 to-indigo-50/80 dark:from-blue-950/40 dark:via-purple-950/30 dark:to-indigo-950/40" />
       <div className="absolute inset-0 backdrop-blur-sm" />
@@ -83,10 +43,16 @@ export const TestimonialsSection = () => {
 
               <div className="flex items-center mb-6">
                 {[...Array(testimonial.stars)].map((_, i) => (
-                  <Star key={i} className="h-5 w-5 text-yellow-400 fill-yellow-400" />
+                  <Star
+                    key={i}
+                    className="h-5 w-5 text-yellow-400 fill-yellow-400"
+                  />
                 ))}
                 {[...Array(5 - testimonial.stars)].map((_, i) => (
-                  <Star key={i} className="h-5 w-5 text-gray-300 dark:text-gray-600" />
+                  <Star
+                    key={i}
+                    className="h-5 w-5 text-gray-300 dark:text-gray-600"
+                  />
                 ))}
               </div>
 
@@ -98,8 +64,8 @@ export const TestimonialsSection = () => {
                 <div className="relative w-12 h-12">
                   <div className="absolute inset-0 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 p-[2px]">
                     <div className="w-full h-full rounded-full bg-white dark:bg-gray-800 p-[2px]">
-                      <Image
-                        src={testimonial.avatar || "/placeholder.svg"}
+                      <Image    
+                        src={testimonial.avatar || `https://avatar.vercel.sh/${testimonial.name}`}
                         alt={testimonial.name}
                         width={40}
                         height={40}
@@ -109,17 +75,20 @@ export const TestimonialsSection = () => {
                   </div>
                 </div>
                 <div className="ml-4">
-                  <p className="font-semibold text-gray-900 dark:text-white text-lg">{testimonial.name}</p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">{testimonial.role}</p>
+                  <p className="font-semibold text-gray-900 dark:text-white text-lg">
+                    {testimonial.name}
+                  </p>
+                  {testimonial.course ? (
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      {testimonial.course}
+                    </p>
+                  ) : null}
                 </div>
               </div>
-
             </div>
           ))}
         </div>
       </div>
     </section>
-  )
+  );
 }
-
-export default TestimonialsSection

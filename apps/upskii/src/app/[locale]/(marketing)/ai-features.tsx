@@ -1,7 +1,7 @@
-"use client"
+'use client';
 
-import { Badge } from "@tuturuuu/ui/badge"
-import { Card } from "@tuturuuu/ui/card"
+import { Badge } from '@tuturuuu/ui/badge';
+import { Card } from '@tuturuuu/ui/card';
 import {
   Bot,
   BrainCircuit,
@@ -12,58 +12,58 @@ import {
   ShieldCheck,
   Sparkles,
   Wand2,
-} from "@tuturuuu/ui/icons"
-import { motion } from "framer-motion"
-import { useTranslations } from "next-intl"
-import InteractiveDemo from "./interactive-demo"
+} from '@tuturuuu/ui/icons';
+import { motion } from 'framer-motion';
+import { useTranslations } from 'next-intl';
+import InteractiveDemo from './interactive-demo';
 
 export default function AiFeatures() {
-  const t = useTranslations("nova")
+  const t = useTranslations('nova');
 
   const features = [
     {
       icon: <BrainCircuit className="h-5 w-5" />,
-      title: t("advanced-ai-models"),
-      description: t("advanced-ai-models-description"),
-      gradient: "from-blue-500/20 to-magenta-500/20",
-      iconBg: "from-blue-500 to-indigo-600",
+      title: t('advanced-ai-models'),
+      description: t('advanced-ai-models-description'),
+      gradient: 'from-blue-500/20 to-magenta-500/20',
+      iconBg: 'from-blue-500 to-indigo-600',
     },
     {
       icon: <MessageSquareCode className="h-5 w-5" />,
-      title: t("smart-templates"),
-      description: t("smart-templates-description"),
-      gradient: "from-magenta-500/20 to-blue-500/20",
-      iconBg: "from-indigo-500 to-purple-600",
+      title: t('smart-templates'),
+      description: t('smart-templates-description'),
+      gradient: 'from-magenta-500/20 to-blue-500/20',
+      iconBg: 'from-indigo-500 to-purple-600',
     },
     {
       icon: <LineChart className="h-5 w-5" />,
-      title: t("performance-analytics"),
-      description: t("performance-analytics-description"),
-      gradient: "from-purple-500/20 to-blue-500/20",
-      iconBg: "from-purple-500 to-blue-600",
+      title: t('performance-analytics'),
+      description: t('performance-analytics-description'),
+      gradient: 'from-purple-500/20 to-blue-500/20',
+      iconBg: 'from-purple-500 to-blue-600',
     },
     {
       icon: <Settings2 className="h-5 w-5" />,
-      title: t("fine-tune-controls"),
-      description: t("fine-tune-controls-description"),
-      gradient: "from-blue-500/20 to-purple-500/20",
-      iconBg: "from-blue-500 to-purple-600",
+      title: t('fine-tune-controls'),
+      description: t('fine-tune-controls-description'),
+      gradient: 'from-blue-500/20 to-purple-500/20',
+      iconBg: 'from-blue-500 to-purple-600',
     },
     {
       icon: <Lock className="h-5 w-5" />,
-      title: t("secure-processes"),
-      description: t("secure-processes-description"),
-      gradient: "from-blue-500/20 to-purple-500/20",
-      iconBg: "from-indigo-500 to-purple-600",
+      title: t('secure-processes'),
+      description: t('secure-processes-description'),
+      gradient: 'from-blue-500/20 to-purple-500/20',
+      iconBg: 'from-indigo-500 to-purple-600',
     },
     {
       icon: <ShieldCheck className="h-5 w-5" />,
-      title: t("ethical-ai"),
-      description: t("ethical-ai-description"),
-      gradient: "from-blue-500/20 to-indigo-500/20",
-      iconBg: "from-blue-500 to-indigo-600",
+      title: t('ethical-ai'),
+      description: t('ethical-ai-description'),
+      gradient: 'from-blue-500/20 to-indigo-500/20',
+      iconBg: 'from-blue-500 to-indigo-600',
     },
-  ]
+  ];
 
   return (
     <section id="ai" className="relative w-full py-24">
@@ -74,16 +74,22 @@ export default function AiFeatures() {
             className="border-primary/30 bg-gradient-to-r from-blue-500/10 to-purple-500/10 text-primary backdrop-blur-sm mb-4 inline-flex items-center gap-1"
           >
             <Bot className="h-4 w-4" />
-            {t("ai-capabilities")}
+            {t('ai-capabilities')}
           </Badge>
           <h2 className="mb-4 text-3xl font-bold md:text-4xl bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400 bg-clip-text text-transparent">
-            {t("ai-capabilities-subtitle")}
+            {t('ai-capabilities-subtitle')}
           </h2>
-          <p className="text-muted-foreground mx-auto max-w-2xl">{t("ai-capabilities-description")}</p>
+          <p className="text-muted-foreground mx-auto max-w-2xl">
+            {t('ai-capabilities-description')}
+          </p>
         </div>
 
         <div className="mb-16 grid gap-8 lg:grid-cols-2">
-          <motion.div initial={{ opacity: 0, x: -20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}>
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+          >
             <div className="grid gap-4 sm:grid-cols-2">
               {features.map((feature, index) => (
                 <motion.div
@@ -102,8 +108,12 @@ export default function AiFeatures() {
                       >
                         {feature.icon}
                       </div>
-                      <h3 className="mb-1 font-semibold text-foreground">{feature.title}</h3>
-                      <p className="text-muted-foreground text-sm">{feature.description}</p>
+                      <h3 className="mb-1 font-semibold text-foreground">
+                        {feature.title}
+                      </h3>
+                      <p className="text-muted-foreground text-sm">
+                        {feature.description}
+                      </p>
                     </div>
 
                     {/* Animated gradient background */}
@@ -116,7 +126,7 @@ export default function AiFeatures() {
                       transition={{
                         duration: 8,
                         repeat: Number.POSITIVE_INFINITY,
-                        ease: "linear",
+                        ease: 'linear',
                       }}
                     />
                   </Card>
@@ -174,9 +184,9 @@ export default function AiFeatures() {
               key={i}
               className="absolute h-1 w-1 rounded-full bg-white/60"
               style={{
-                top: i < 6 ? "0%" : "100%",
+                top: i < 6 ? '0%' : '100%',
                 left: `${(i % 6) * 20}%`,
-                right: i >= 6 ? `${((i - 6) % 6) * 20}%` : "auto",
+                right: i >= 6 ? `${((i - 6) % 6) * 20}%` : 'auto',
               }}
               animate={{
                 opacity: [0.3, 1, 0.3],
@@ -193,10 +203,10 @@ export default function AiFeatures() {
 
           {/* Corner sparkles */}
           {[
-            { top: "10px", left: "10px" },
-            { top: "10px", right: "10px" },
-            { bottom: "10px", left: "10px" },
-            { bottom: "10px", right: "10px" },
+            { top: '10px', left: '10px' },
+            { top: '10px', right: '10px' },
+            { bottom: '10px', left: '10px' },
+            { bottom: '10px', right: '10px' },
           ].map((position, i) => (
             <motion.div
               key={i}
@@ -245,9 +255,9 @@ export default function AiFeatures() {
                 className="bg-white/20 text-white rounded-full p-3 backdrop-blur-sm shadow-lg"
                 animate={{
                   boxShadow: [
-                    "0 0 20px rgba(255, 255, 255, 0.3)",
-                    "0 0 30px rgba(255, 255, 255, 0.5)",
-                    "0 0 20px rgba(255, 255, 255, 0.3)",
+                    '0 0 20px rgba(255, 255, 255, 0.3)',
+                    '0 0 30px rgba(255, 255, 255, 0.5)',
+                    '0 0 20px rgba(255, 255, 255, 0.3)',
                   ],
                 }}
                 transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY }}
@@ -255,31 +265,37 @@ export default function AiFeatures() {
                 <Wand2 className="h-6 w-6" />
               </motion.div>
               <div>
-                <h3 className="text-xl font-bold text-white">{t("magic-commands")}</h3>
-                <p className="text-white/80">{t("magic-commands-description")}</p>
+                <h3 className="text-xl font-bold text-white">
+                  {t('magic-commands')}
+                </h3>
+                <p className="text-white/80">
+                  {t('magic-commands-description')}
+                </p>
               </div>
             </div>
 
             <div className="mt-6 grid gap-4 text-sm sm:grid-cols-3">
-              {["commands.story" as const, "commands.analyze" as const, "commands.improve" as const].map(
-                (command, index) => (
-                  <motion.div
-                    key={index}
-                    initial={{ opacity: 0, y: 10 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ delay: index * 0.1 }}
-                    whileHover={{ scale: 1.05 }}
-                    className="bg-white/10 border-white/20 text-white rounded-lg border p-3 font-mono backdrop-blur-sm hover:bg-white/20 transition-all duration-200"
-                  >
-                    {t(command)}
-                  </motion.div>
-                ),
-              )}
+              {[
+                'commands.story' as const,
+                'commands.analyze' as const,
+                'commands.improve' as const,
+              ].map((command, index) => (
+                <motion.div
+                  key={index}
+                  initial={{ opacity: 0, y: 10 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: index * 0.1 }}
+                  whileHover={{ scale: 1.05 }}
+                  className="bg-white/10 border-white/20 text-white rounded-lg border p-3 font-mono backdrop-blur-sm hover:bg-white/20 transition-all duration-200"
+                >
+                  {t(command)}
+                </motion.div>
+              ))}
             </div>
           </div>
         </motion.div>
       </div>
     </section>
-  )
+  );
 }
