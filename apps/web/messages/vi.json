@@ -769,7 +769,42 @@
     "spark": "Spark",
     "media": "Phương tiện truyền thông",
     "ai_lab": "Phòng thí nghiệm AI",
-    "management": "Quản lý tài nguyên"
+    "management": "Quản lý tài nguyên",
+    "link_shortener": "Liên kết rút ngắn"
+  },
+  "link-shortener": {
+    "title": "Rút ngắn liên kết",
+    "plural": "Liên kết đã rút ngắn",
+    "singular": "Liên kết rút ngắn",
+    "description": "Tạo và quản lý các URL rút ngắn để chia sẻ dễ dàng hơn",
+    "create": "Tạo liên kết ngắn",
+    "create_description": "Nhập URL để tạo phiên bản rút ngắn cho việc chia sẻ dễ dàng hơn.",
+    "url_to_shorten": "URL cần rút ngắn",
+    "custom_slug": "Slug tùy chỉnh (tùy chọn)",
+    "custom_slug_placeholder": "slug-tuy-chinh",
+    "custom_slug_description": "Để trống để tự động tạo slug",
+    "url_placeholder": "https://example.com/very/long/url",
+    "short_url": "URL ngắn",
+    "original_url": "URL gốc",
+    "created": "Đã tạo",
+    "created_at": "Ngày tạo",
+    "recent_links": "Liên kết gần đây",
+    "copy_to_clipboard": "Sao chép vào clipboard",
+    "copied_to_clipboard": "Đã sao chép vào clipboard",
+    "copy_failed": "Không thể sao chép vào clipboard",
+    "no_links_yet": "Chưa có liên kết rút ngắn nào",
+    "create_first_link": "Tạo liên kết rút ngắn đầu tiên để bắt đầu.",
+    "url_required": "Vui lòng nhập URL",
+    "invalid_url": "Vui lòng nhập URL hợp lệ",
+    "failed_to_create": "Không thể tạo liên kết rút ngắn",
+    "created_successfully": "Rút ngắn liên kết thành công!"
+  },
+  "link-shortener-data-table": {
+    "slug": "URL ngắn",
+    "link": "URL gốc",
+    "short_url": "URL ngắn",
+    "original_url": "URL gốc",
+    "created_at": "Ngày tạo"
   },
   "team-tabs": {
     "overview": "Tổng quan",
