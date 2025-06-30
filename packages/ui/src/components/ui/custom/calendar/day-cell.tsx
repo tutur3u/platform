@@ -20,8 +20,10 @@ export const DayCell: React.FC<{
 }> = ({ day, currentDate, today, attendanceData, onDateClick }) => {
   const isInCurrentMonth = isCurrentMonth(day, currentDate);
   
-  // Check if date has attendance data
-  const hasAttendance = isDateAttended(day, attendanceData) || isDateAbsent(day, attendanceData);
+  // Cache attendance checks
+  const isAttended = isDateAttended(day, attendanceData);
+  const isAbsent = isDateAbsent(day, attendanceData);
+  const hasAttendance = isAttended || isAbsent;
 
   if (!hasAttendance) {
     return (
@@ -48,9 +50,9 @@ export const DayCell: React.FC<{
             onClick={onDateClick ? () => onDateClick(day) : undefined}
             className={cn(
               'flex flex-none cursor-pointer justify-center rounded border p-2 font-semibold transition duration-300 md:rounded-lg',
-              isDateAttended(day, attendanceData)
+              isAttended
                 ? 'border-green-500/30 bg-green-500/10 text-green-600 dark:border-green-300/20 dark:bg-green-300/20 dark:text-green-300'
-                : isDateAbsent(day, attendanceData)
+                : isAbsent
                   ? 'border-red-500/30 bg-red-500/10 text-red-600 dark:border-red-300/20 dark:bg-red-300/20 dark:text-red-300'
                   : 'bg-foreground/5 text-foreground/40 dark:bg-foreground/10',
               !isInCurrentMonth && 'opacity-60'
