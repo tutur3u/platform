@@ -17,6 +17,35 @@ import type { CalendarSettings } from './settings/settings-context';
 import { SettingsButton } from './settings-button';
 import { WeekdayBar } from './weekday-bar';
 
+function getMonthGridDates(date: Date, firstDayOfWeek: number): Date[] {
+  const newDate = new Date(date);
+  newDate.setHours(0, 0, 0, 0);
+  newDate.setDate(1);
+
+  const monthStart = new Date(newDate);
+  const monthEnd = new Date(newDate.getFullYear(), newDate.getMonth() + 1, 0);
+
+  // Calculate the first visible day (start of the week containing the 1st)
+  const gridStart = new Date(monthStart);
+  while (gridStart.getDay() !== firstDayOfWeek) {
+    gridStart.setDate(gridStart.getDate() - 1);
+  }
+
+  // Calculate the last visible day (end of the week containing the last day)
+  const gridEnd = new Date(monthEnd);
+  const lastDayOfWeek = (firstDayOfWeek + 6) % 7;
+  while (gridEnd.getDay() !== lastDayOfWeek) {
+    gridEnd.setDate(gridEnd.getDate() + 1);
+  }
+
+  // Fill all days in the grid
+  const gridDates: Date[] = [];
+  for (let d = new Date(gridStart); d <= gridEnd; d.setDate(d.getDate() + 1)) {
+    gridDates.push(new Date(d));
+  }
+  return gridDates;
+}
+
 export const CalendarContent = ({
   t,
   locale,
@@ -177,45 +206,11 @@ export const CalendarContent = ({
   }, [date, transition, settings, handleSetView, setDates]);
 
   const enableMonthView = useCallback(() => {
-    const newDate = new Date(date);
-    newDate.setHours(0, 0, 0, 0);
-    newDate.setDate(1);
-
-    const monthStart = new Date(newDate);
-    const monthEnd = new Date(newDate.getFullYear(), newDate.getMonth() + 1, 0);
-
-    // Get first day of week from settings (default to Monday)
     let firstDayNumber = 1; // Monday
     if (settings?.appearance?.firstDayOfWeek === 'sunday') firstDayNumber = 0;
     if (settings?.appearance?.firstDayOfWeek === 'saturday') firstDayNumber = 6;
-
-    // Calculate the first visible day (start of the week containing the 1st)
-    const gridStart = new Date(monthStart);
-    while (gridStart.getDay() !== firstDayNumber) {
-      gridStart.setDate(gridStart.getDate() - 1);
-    }
-
-    // Calculate the last visible day (end of the week containing the last day)
-    const gridEnd = new Date(monthEnd);
-    const lastDayOfWeek = (firstDayNumber + 6) % 7;
-    while (gridEnd.getDay() !== lastDayOfWeek) {
-      gridEnd.setDate(gridEnd.getDate() + 1);
-    }
-
-    // Fill all days in the grid
-    const gridDates: Date[] = [];
-    for (
-      let d = new Date(gridStart);
-      d <= gridEnd;
-      d.setDate(d.getDate() + 1)
-    ) {
-      gridDates.push(new Date(d));
-    }
-
-    transition('month', () => {
-      handleSetView('month');
-      setDates(gridDates);
-    });
+    const gridDates = getMonthGridDates(date, firstDayNumber);
+    setDates(gridDates);
   }, [date, transition, handleSetView, setDates]);
 
   // Initialize available views
@@ -352,41 +347,10 @@ export const CalendarContent = ({
       }
       setDates(weekDates);
     } else if (view === 'month') {
-      const newDate = new Date(date);
-      newDate.setHours(0, 0, 0, 0);
-      newDate.setDate(1);
-
-      const monthStart = new Date(newDate);
-      const monthEnd = new Date(newDate.getFullYear(), newDate.getMonth() + 1, 0);
-
-      // Get first day of week from settings (default to Monday)
       let firstDayNumber = 1; // Monday
       if (settings?.appearance?.firstDayOfWeek === 'sunday') firstDayNumber = 0;
       if (settings?.appearance?.firstDayOfWeek === 'saturday') firstDayNumber = 6;
-
-      // Calculate the first visible day (start of the week containing the 1st)
-      const gridStart = new Date(monthStart);
-      while (gridStart.getDay() !== firstDayNumber) {
-        gridStart.setDate(gridStart.getDate() - 1);
-      }
-
-      // Calculate the last visible day (end of the week containing the last day)
-      const gridEnd = new Date(monthEnd);
-      const lastDayOfWeek = (firstDayNumber + 6) % 7;
-      while (gridEnd.getDay() !== lastDayOfWeek) {
-        gridEnd.setDate(gridEnd.getDate() + 1);
-      }
-
-      // Fill all days in the grid
-      const gridDates: Date[] = [];
-      for (
-        let d = new Date(gridStart);
-        d <= gridEnd;
-        d.setDate(d.getDate() + 1)
-      ) {
-        gridDates.push(new Date(d));
-      }
-
+      const gridDates = getMonthGridDates(date, firstDayNumber);
       setDates(gridDates);
     }
   }, [date, view]);
