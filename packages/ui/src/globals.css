@@ -40,6 +40,7 @@
   .line-clamp-1 {
     overflow: hidden;
     display: -webkit-box;
+    line-clamp: 1;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 1;
   }
@@ -47,6 +48,7 @@
   .line-clamp-2 {
     overflow: hidden;
     display: -webkit-box;
+    line-clamp: 2;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
   }
@@ -54,6 +56,7 @@
   .line-clamp-none {
     overflow: visible;
     display: block;
+    line-clamp: none;
     -webkit-box-orient: horizontal;
     -webkit-line-clamp: none;
   }
@@ -358,61 +361,3 @@
   }
 }
 
-@layer utilities {
-  /* Dynamic color utility classes */
-  /* Background colors */
-  .bg-dynamic-red { background-color: var(--color-dynamic-red); }
-  .bg-dynamic-orange { background-color: var(--color-dynamic-orange); }
-  .bg-dynamic-yellow { background-color: var(--color-dynamic-yellow); }
-  .bg-dynamic-green { background-color: var(--color-dynamic-green); }
-  .bg-dynamic-blue { background-color: var(--color-dynamic-blue); }
-  .bg-dynamic-purple { background-color: var(--color-dynamic-purple); }
-  .bg-dynamic-pink { background-color: var(--color-dynamic-pink); }
-  .bg-dynamic-indigo { background-color: var(--color-dynamic-indigo); }
-  .bg-dynamic-cyan { background-color: var(--color-dynamic-cyan); }
-  .bg-dynamic-gray { background-color: var(--color-dynamic-gray); }
-  .bg-dynamic-lime { background-color: var(--color-dynamic-lime); }
-  .bg-dynamic-sky { background-color: var(--color-dynamic-sky); }
-
-  /* Text colors */
-  .text-dynamic-light-red { color: var(--color-dynamic-light-red); }
-  .text-dynamic-light-orange { color: var(--color-dynamic-light-orange); }
-  .text-dynamic-light-yellow { color: var(--color-dynamic-light-yellow); }
-  .text-dynamic-light-green { color: var(--color-dynamic-light-green); }
-  .text-dynamic-light-blue { color: var(--color-dynamic-light-blue); }
-  .text-dynamic-light-purple { color: var(--color-dynamic-light-purple); }
-  .text-dynamic-light-pink { color: var(--color-dynamic-light-pink); }
-  .text-dynamic-light-indigo { color: var(--color-dynamic-light-indigo); }
-  .text-dynamic-light-cyan { color: var(--color-dynamic-light-cyan); }
-  .text-dynamic-light-gray { color: var(--color-dynamic-light-gray); }
-  .text-dynamic-light-lime { color: var(--color-dynamic-light-lime); }
-  .text-dynamic-light-sky { color: var(--color-dynamic-light-sky); }
-
-  /* Background colors for light variants */
-  .bg-dynamic-light-red { background-color: var(--color-dynamic-light-red); }
-  .bg-dynamic-light-orange { background-color: var(--color-dynamic-light-orange); }
-  .bg-dynamic-light-yellow { background-color: var(--color-dynamic-light-yellow); }
-  .bg-dynamic-light-green { background-color: var(--color-dynamic-light-green); }
-  .bg-dynamic-light-blue { background-color: var(--color-dynamic-light-blue); }
-  .bg-dynamic-light-purple { background-color: var(--color-dynamic-light-purple); }
-  .bg-dynamic-light-pink { background-color: var(--color-dynamic-light-pink); }
-  .bg-dynamic-light-indigo { background-color: var(--color-dynamic-light-indigo); }
-  .bg-dynamic-light-cyan { background-color: var(--color-dynamic-light-cyan); }
-  .bg-dynamic-light-gray { background-color: var(--color-dynamic-light-gray); }
-  .bg-dynamic-light-lime { background-color: var(--color-dynamic-light-lime); }
-  .bg-dynamic-light-sky { background-color: var(--color-dynamic-light-sky); }
-
-  /* Ring colors for light variants */
-  .ring-dynamic-light-red { --tw-ring-color: var(--color-dynamic-light-red); }
-  .ring-dynamic-light-orange { --tw-ring-color: var(--color-dynamic-light-orange); }
-  .ring-dynamic-light-yellow { --tw-ring-color: var(--color-dynamic-light-yellow); }
-  .ring-dynamic-light-green { --tw-ring-color: var(--color-dynamic-light-green); }
-  .ring-dynamic-light-blue { --tw-ring-color: var(--color-dynamic-light-blue); }
-  .ring-dynamic-light-purple { --tw-ring-color: var(--color-dynamic-light-purple); }
-  .ring-dynamic-light-pink { --tw-ring-color: var(--color-dynamic-light-pink); }
-  .ring-dynamic-light-indigo { --tw-ring-color: var(--color-dynamic-light-indigo); }
-  .ring-dynamic-light-cyan { --tw-ring-color: var(--color-dynamic-light-cyan); }
-  .ring-dynamic-light-gray { --tw-ring-color: var(--color-dynamic-light-gray); }
-  .ring-dynamic-light-lime { --tw-ring-color: var(--color-dynamic-light-lime); }
-  .ring-dynamic-light-sky { --tw-ring-color: var(--color-dynamic-light-sky); }
-}
