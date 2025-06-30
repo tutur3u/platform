@@ -464,6 +464,7 @@ export default async function Layout({ children, params }: LayoutProps) {
           icon: <ShieldUser className="h-5 w-5" />,
           disabled:
             ENABLE_AI_ONLY || withoutPermission('manage_workspace_roles'),
+          requireRootWorkspace: true,
         },
         {
           title: t('workspace-settings-layout.migrations'),
