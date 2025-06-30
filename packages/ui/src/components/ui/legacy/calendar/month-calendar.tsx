@@ -36,10 +36,21 @@ interface MonthCalendarProps {
 }
 
 const normalizeColor = (color: string): string => {
-  const normalized = color?.trim().toLowerCase();
-  return normalized === '#6b7280' ? 'gray' :
-         normalized === 'grey' ? 'gray' :
-         normalized;
+  if (!color) return 'primary';
+  const normalized = color.trim().toLowerCase();
+  // Map specific hex codes to color names
+  if (normalized === '#6b7280' || normalized === 'grey') return 'gray';
+  // Handle 6-digit hex
+  if (/^#([0-9a-f]{6})$/i.test(normalized)) {
+    // Add more mappings as needed
+    return normalized;
+  }
+  // Handle 3-digit hex
+  if (/^#([0-9a-f]{3})$/i.test(normalized)) {
+    return normalized;
+  }
+  // Add more color name mappings if needed
+  return normalized;
 };
 
 const getDominantEventColor = (events: any[]): string => {
@@ -62,6 +73,78 @@ const getDominantEventColor = (events: any[]): string => {
   }
   return dominantColor;
 };
+
+// Custom hook for popover management
+function usePopoverManager() {
+  const moreButtonRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const popoverContentRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const [openPopoverIdx, setOpenPopoverIdx] = useState<number | null>(null);
+  const [scrollStates, setScrollStates] = useState<Record<number, { top: boolean; bottom: boolean }>>({});
+  const [popoverHovered, setPopoverHovered] = useState<Record<number, boolean>>({});
+
+  // Handler to close popover on scroll/resize
+  useEffect(() => {
+    if (openPopoverIdx !== null) {
+      const handleClose = (event: Event) => {
+        const popoverEl = popoverContentRefs.current[openPopoverIdx];
+        if (popoverHovered[openPopoverIdx]) return;
+        if (!popoverEl) {
+          setOpenPopoverIdx(null);
+          return;
+        }
+        if (event.target instanceof Node && popoverEl.contains(event.target as Node)) {
+          return;
+        }
+        setOpenPopoverIdx(null);
+      };
+      window.addEventListener('scroll', handleClose, true);
+      window.addEventListener('resize', handleClose);
+      return () => {
+        window.removeEventListener('scroll', handleClose, true);
+        window.removeEventListener('resize', handleClose);
+      };
+    }
+  }, [openPopoverIdx, popoverHovered]);
+
+  // Set initial scroll state when popover opens
+  useEffect(() => {
+    if (openPopoverIdx !== null) {
+      const el = popoverContentRefs.current[openPopoverIdx];
+      if (el) {
+        setScrollStates(prev => ({
+          ...prev,
+          [openPopoverIdx]: {
+            top: el.scrollTop > 0,
+            bottom: el.scrollTop + el.clientHeight < el.scrollHeight,
+          },
+        }));
+      }
+    }
+  }, [openPopoverIdx]);
+
+  // Helper to handle scroll shadow indicators
+  const handlePopoverScroll = useCallback((e: React.UIEvent<HTMLDivElement>, idx: number) => {
+    const el = e.currentTarget;
+    setScrollStates((prev) => ({
+      ...prev,
+      [idx]: {
+        top: el.scrollTop > 0,
+        bottom: el.scrollTop + el.clientHeight < el.scrollHeight,
+      },
+    }));
+  }, []);
+
+  return {
+    moreButtonRefs,
+    popoverContentRefs,
+    openPopoverIdx,
+    setOpenPopoverIdx,
+    scrollStates,
+    popoverHovered,
+    setPopoverHovered,
+    handlePopoverScroll,
+  };
+}
 
 export const MonthCalendar = ({ date, visibleDates, viewedMonth }: MonthCalendarProps) => {
   const { getCurrentEvents, addEmptyEvent, openModal, settings } =
@@ -229,70 +312,16 @@ export const MonthCalendar = ({ date, visibleDates, viewedMonth }: MonthCalendar
     return map;
   }, [calendarDays, getCurrentEvents]);
 
-  // Create refs for each calendar day for '+X more' button
-  const moreButtonRefs = useRef<(HTMLButtonElement | null)[]>([]);
-  // Track which popover is open (by day index)
-  const [openPopoverIdx, setOpenPopoverIdx] = useState<number | null>(null);
-  // For scroll shadow indicators
-  const [scrollStates, setScrollStates] = useState<Record<number, { top: boolean; bottom: boolean }>>({});
-  // Store refs to the scrollable popover content for each day
-  const popoverContentRefs = useRef<(HTMLDivElement | null)[]>([]);
-  // Track if the popover is hovered for each day index
-  const [popoverHovered, setPopoverHovered] = useState<Record<number, boolean>>({});
-
-  // Handler to close popover on scroll/resize
-  useEffect(() => {
-    if (openPopoverIdx !== null) {
-      const handleClose = (event: Event) => {
-        const popoverEl = popoverContentRefs.current[openPopoverIdx];
-        // Only close if not hovered
-        if (popoverHovered[openPopoverIdx]) return;
-        if (!popoverEl) {
-          setOpenPopoverIdx(null);
-          return;
-        }
-        // If the scroll event target is the popover or a descendant, do not close
-        if (event.target instanceof Node && popoverEl.contains(event.target as Node)) {
-          return;
-        }
-        setOpenPopoverIdx(null);
-      };
-      window.addEventListener('scroll', handleClose, true);
-      window.addEventListener('resize', handleClose);
-      return () => {
-        window.removeEventListener('scroll', handleClose, true);
-        window.removeEventListener('resize', handleClose);
-      };
-    }
-  }, [openPopoverIdx, popoverHovered]);
-
-  // Set initial scroll state when popover opens
-  useEffect(() => {
-    if (openPopoverIdx !== null) {
-      const el = popoverContentRefs.current[openPopoverIdx];
-      if (el) {
-        setScrollStates(prev => ({
-          ...prev,
-          [openPopoverIdx]: {
-            top: el.scrollTop > 0,
-            bottom: el.scrollTop + el.clientHeight < el.scrollHeight,
-          },
-        }));
-      }
-    }
-  }, [openPopoverIdx]);
-
-  // Helper to handle scroll shadow indicators
-  const handlePopoverScroll = useCallback((e: React.UIEvent<HTMLDivElement>, idx: number) => {
-    const el = e.currentTarget;
-    setScrollStates((prev) => ({
-      ...prev,
-      [idx]: {
-        top: el.scrollTop > 0,
-        bottom: el.scrollTop + el.clientHeight < el.scrollHeight,
-      },
-    }));
-  }, []);
+  // Use the custom popover manager hook
+  const {
+    moreButtonRefs,
+    popoverContentRefs,
+    openPopoverIdx,
+    setOpenPopoverIdx,
+    scrollStates,
+    setPopoverHovered,
+    handlePopoverScroll,
+  } = usePopoverManager();
 
   return (
     <div className="flex-1 overflow-auto rounded-md border bg-background shadow-sm">
