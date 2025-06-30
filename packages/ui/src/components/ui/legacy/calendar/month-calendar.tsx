@@ -42,14 +42,18 @@ const normalizeColor = (color: string): string => {
 };
 
 const getDominantEventColor = (events: any[]): string => {
-  const colorCount: Record<string, number> = {};
+  if (events.length === 0) return 'primary';
+  if (events.length === 1) return normalizeColor(events[0].color || 'primary');
+
+  const colorCount = new Map<string, number>();
   for (const event of events) {
     const normalizedColor = normalizeColor(event.color || 'primary');
-    colorCount[normalizedColor] = (colorCount[normalizedColor] || 0) + 1;
+    colorCount.set(normalizedColor, (colorCount.get(normalizedColor) || 0) + 1);
   }
+
   let dominantColor = 'primary';
   let maxCount = -1;
-  for (const [color, count] of Object.entries(colorCount)) {
+  for (const [color, count] of colorCount) {
     if (count > maxCount) {
       dominantColor = color;
       maxCount = count;
