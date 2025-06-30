@@ -55,9 +55,9 @@
     overflow: visible;
     display: block;
     -webkit-box-orient: horizontal;
-    -webkit-line-clamp: none;
+          -webkit-line-clamp: none;
+    }
   }
-}
 
 :root {
   --root-background: hsl(20, 60%, 98%);
@@ -107,38 +107,38 @@
 
   --radius: 0.5rem;
 
-  /* Custom colors */
-  --lime: hsl(90 40% 30%);
-  --purple: hsl(270 40% 30%);
-  --blue: hsl(220 40% 30%);
-  --sky: hsl(200 40% 30%);
-  --green: hsl(140 40% 30%);
-  --yellow: hsl(40 40% 30%);
-  --orange: hsl(25 40% 30%);
-  --red: hsl(0 40% 30%);
-  --pink: hsl(330 40% 30%);
-  --indigo: hsl(250 40% 30%);
-  --cyan: hsl(180 40% 30%);
-  --gray: hsl(0 0% 30%);
+  /* Custom colors - Light theme: darker, more saturated for visibility on light bg */
+  --lime: hsl(90 75% 35%);        /* True lime green, dark enough for light bg */
+  --purple: hsl(270 75% 40%);     /* True purple, good contrast */
+  --pink: hsl(330 75% 45%);       /* True pink/magenta */
+  --blue: hsl(220 80% 45%);       /* True blue, strong saturation */
+  --sky: hsl(200 75% 40%);        /* Sky blue */
+  --green: hsl(140 75% 35%);      /* True green, dark enough */
+  --yellow: hsl(50 90% 55%);      /* True yellow, brighter for better visibility */
+  --orange: hsl(25 85% 45%);      /* True orange */
+  --red: hsl(0 80% 45%);          /* True red */
+  --indigo: hsl(250 75% 45%);     /* True indigo */
+  --cyan: hsl(180 75% 35%);       /* True cyan */
+  --gray: hsl(0 0% 45%);          /* Neutral gray */
 
-  --light-lime: hsl(90 45% 40%);
-  --light-purple: hsl(240 45% 40%);
-  --light-pink: hsl(330 45% 40%);
-  --light-blue: hsl(220 45% 40%);
-  --light-sky: hsl(200 45% 40%);
-  --light-green: hsl(140 45% 40%);
-  --light-yellow: hsl(40 45% 40%);
-  --light-orange: hsl(25 45% 40%);
-  --light-red: hsl(0 45% 40%);
-  --light-indigo: hsl(250 45% 40%);
-  --light-cyan: hsl(180 45% 40%);
-  --light-gray: hsl(0 0% 40%);
+  --light-lime: hsl(90 70% 45%);       /* Light lime for text/borders */
+  --light-purple: hsl(270 70% 50%);   /* Light purple */
+  --light-pink: hsl(330 70% 55%);     /* Light pink */
+  --light-blue: hsl(220 75% 55%);     /* Light blue */
+  --light-sky: hsl(200 70% 50%);      /* Light sky blue */
+  --light-green: hsl(140 70% 45%);    /* Light green */
+  --light-yellow: hsl(50 85% 65%);    /* Light yellow, brighter for better contrast */
+  --light-orange: hsl(25 80% 55%);    /* Light orange */
+  --light-red: hsl(0 75% 55%);        /* Light red */
+  --light-indigo: hsl(250 70% 55%);   /* Light indigo */
+  --light-cyan: hsl(180 70% 45%);     /* Light cyan */
+  --light-gray: hsl(0 0% 50%);        /* Light gray */
 
   /* Colors for calendar events */
   --calendar-bg-blue: hsl(220 64% 95%);
   --calendar-bg-red: hsl(0 64% 95%);
   --calendar-bg-green: hsl(140 64% 95%);
-  --calendar-bg-yellow: hsl(40 64% 95%);
+  --calendar-bg-yellow: hsl(50 75% 95%);
   --calendar-bg-purple: hsl(270 64% 95%);
   --calendar-bg-pink: hsl(330 64% 95%);
   --calendar-bg-orange: hsl(25 64% 95%);
@@ -195,28 +195,32 @@
 
   --radius: 0.5rem;
 
-  /* Custom colors */
-  --lime: hsl(90 50% 70%);
-  --purple: hsl(270 50% 70%);
-  --blue: hsl(220 50% 70%);
-  --sky: hsl(200 70% 80%);
-  --green: hsl(160 50% 70%);
-  --yellow: hsl(40 50% 70%);
-  --orange: hsl(25 50% 70%);
-  --red: hsl(0 50% 70%);
+  /* Custom colors - Dark theme: lighter, softer saturation for visibility on dark bg */
+  --lime: hsl(90 60% 65%);         /* True lime, bright enough for dark bg */
+  --purple: hsl(270 65% 70%);      /* True purple, softer for dark theme */
+  --pink: hsl(330 70% 75%);        /* True pink/magenta */
+  --blue: hsl(220 70% 70%);        /* True blue, lighter for dark bg */
+  --sky: hsl(200 65% 75%);         /* Sky blue */
+  --green: hsl(140 60% 65%);       /* True green, bright enough */
+  --yellow: hsl(50 85% 75%);       /* True yellow, bright enough for dark backgrounds */
+  --orange: hsl(25 75% 70%);       /* True orange */
+  --red: hsl(0 70% 70%);           /* True red */
+  --indigo: hsl(250 65% 75%);      /* True indigo */
+  --cyan: hsl(180 60% 70%);        /* True cyan */
+  --gray: hsl(0 0% 70%);           /* Neutral gray */
 
-  --light-lime: hsl(90 60% 75%);
-  --light-purple: hsl(270 60% 75%);
-  --light-pink: hsl(330 60% 75%);
-  --light-blue: hsl(220 60% 75%);
-  --light-sky: hsl(200 70% 80%);
-  --light-green: hsl(160 60% 75%);
-  --light-yellow: hsl(40 60% 75%);
-  --light-orange: hsl(25 60% 75%);
-  --light-red: hsl(0 60% 75%);
-  --light-indigo: hsl(250 60% 75%);
-  --light-cyan: hsl(180 60% 75%);
-  --light-gray: hsl(0 0% 80%);
+  --light-lime: hsl(90 65% 75%);       /* Light lime, bright for dark theme */
+  --light-purple: hsl(270 70% 80%);   /* Light purple */
+  --light-pink: hsl(330 75% 80%);     /* Light pink */
+  --light-blue: hsl(220 75% 80%);     /* Light blue */
+  --light-sky: hsl(200 70% 80%);      /* Light sky blue */
+  --light-green: hsl(140 65% 75%);    /* Light green */
+  --light-yellow: hsl(50 90% 80%);    /* Light yellow, bright for dark theme */
+  --light-orange: hsl(25 80% 80%);    /* Light orange */
+  --light-red: hsl(0 75% 80%);        /* Light red */
+  --light-indigo: hsl(250 70% 80%);   /* Light indigo */
+  --light-cyan: hsl(180 65% 75%);     /* Light cyan */
+  --light-gray: hsl(0 0% 80%);        /* Light gray */
 
   /* Colors for calendar events */
   --calendar-bg-blue: hsl(220 14% 11%);
@@ -352,4 +356,63 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+@layer utilities {
+  /* Dynamic color utility classes */
+  /* Background colors */
+  .bg-dynamic-red { background-color: var(--color-dynamic-red); }
+  .bg-dynamic-orange { background-color: var(--color-dynamic-orange); }
+  .bg-dynamic-yellow { background-color: var(--color-dynamic-yellow); }
+  .bg-dynamic-green { background-color: var(--color-dynamic-green); }
+  .bg-dynamic-blue { background-color: var(--color-dynamic-blue); }
+  .bg-dynamic-purple { background-color: var(--color-dynamic-purple); }
+  .bg-dynamic-pink { background-color: var(--color-dynamic-pink); }
+  .bg-dynamic-indigo { background-color: var(--color-dynamic-indigo); }
+  .bg-dynamic-cyan { background-color: var(--color-dynamic-cyan); }
+  .bg-dynamic-gray { background-color: var(--color-dynamic-gray); }
+  .bg-dynamic-lime { background-color: var(--color-dynamic-lime); }
+  .bg-dynamic-sky { background-color: var(--color-dynamic-sky); }
+
+  /* Text colors */
+  .text-dynamic-light-red { color: var(--color-dynamic-light-red); }
+  .text-dynamic-light-orange { color: var(--color-dynamic-light-orange); }
+  .text-dynamic-light-yellow { color: var(--color-dynamic-light-yellow); }
+  .text-dynamic-light-green { color: var(--color-dynamic-light-green); }
+  .text-dynamic-light-blue { color: var(--color-dynamic-light-blue); }
+  .text-dynamic-light-purple { color: var(--color-dynamic-light-purple); }
+  .text-dynamic-light-pink { color: var(--color-dynamic-light-pink); }
+  .text-dynamic-light-indigo { color: var(--color-dynamic-light-indigo); }
+  .text-dynamic-light-cyan { color: var(--color-dynamic-light-cyan); }
+  .text-dynamic-light-gray { color: var(--color-dynamic-light-gray); }
+  .text-dynamic-light-lime { color: var(--color-dynamic-light-lime); }
+  .text-dynamic-light-sky { color: var(--color-dynamic-light-sky); }
+
+  /* Background colors for light variants */
+  .bg-dynamic-light-red { background-color: var(--color-dynamic-light-red); }
+  .bg-dynamic-light-orange { background-color: var(--color-dynamic-light-orange); }
+  .bg-dynamic-light-yellow { background-color: var(--color-dynamic-light-yellow); }
+  .bg-dynamic-light-green { background-color: var(--color-dynamic-light-green); }
+  .bg-dynamic-light-blue { background-color: var(--color-dynamic-light-blue); }
+  .bg-dynamic-light-purple { background-color: var(--color-dynamic-light-purple); }
+  .bg-dynamic-light-pink { background-color: var(--color-dynamic-light-pink); }
+  .bg-dynamic-light-indigo { background-color: var(--color-dynamic-light-indigo); }
+  .bg-dynamic-light-cyan { background-color: var(--color-dynamic-light-cyan); }
+  .bg-dynamic-light-gray { background-color: var(--color-dynamic-light-gray); }
+  .bg-dynamic-light-lime { background-color: var(--color-dynamic-light-lime); }
+  .bg-dynamic-light-sky { background-color: var(--color-dynamic-light-sky); }
+
+  /* Ring colors for light variants */
+  .ring-dynamic-light-red { --tw-ring-color: var(--color-dynamic-light-red); }
+  .ring-dynamic-light-orange { --tw-ring-color: var(--color-dynamic-light-orange); }
+  .ring-dynamic-light-yellow { --tw-ring-color: var(--color-dynamic-light-yellow); }
+  .ring-dynamic-light-green { --tw-ring-color: var(--color-dynamic-light-green); }
+  .ring-dynamic-light-blue { --tw-ring-color: var(--color-dynamic-light-blue); }
+  .ring-dynamic-light-purple { --tw-ring-color: var(--color-dynamic-light-purple); }
+  .ring-dynamic-light-pink { --tw-ring-color: var(--color-dynamic-light-pink); }
+  .ring-dynamic-light-indigo { --tw-ring-color: var(--color-dynamic-light-indigo); }
+  .ring-dynamic-light-cyan { --tw-ring-color: var(--color-dynamic-light-cyan); }
+  .ring-dynamic-light-gray { --tw-ring-color: var(--color-dynamic-light-gray); }
+  .ring-dynamic-light-lime { --tw-ring-color: var(--color-dynamic-light-lime); }
+  .ring-dynamic-light-sky { --tw-ring-color: var(--color-dynamic-light-sky); }
 }
