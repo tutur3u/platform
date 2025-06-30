@@ -29,9 +29,11 @@ dayjs.extend(timezone);
 interface MonthCalendarProps {
   date: Date;
   workspace?: Workspace;
+  visibleDates?: Date[];
+  viewedMonth?: Date;
 }
 
-export const MonthCalendar = ({ date }: MonthCalendarProps) => {
+export const MonthCalendar = ({ date, visibleDates, viewedMonth }: MonthCalendarProps) => {
   const { getCurrentEvents, addEmptyEvent, openModal, settings } =
     useCalendar();
   const [currDate, setCurrDate] = useState(date);
@@ -107,8 +109,8 @@ export const MonthCalendar = ({ date }: MonthCalendarProps) => {
     nextMonthDays.push(day);
   }
 
-  // Combine all days
-  const calendarDays = [...prevMonthDays, ...monthDays, ...nextMonthDays];
+  // Use visibleDates if provided, otherwise fallback to old logic
+  const calendarDays = visibleDates ?? [...prevMonthDays, ...monthDays, ...nextMonthDays];
 
   // Create weeks (group by 7 days)
   const weeks = [];
@@ -181,8 +183,12 @@ export const MonthCalendar = ({ date }: MonthCalendarProps) => {
       },
     };
 
-    const color = event.color?.toLowerCase();
-    return (color && colorMap[color] ? colorMap[color] : colorMap.blue) as {
+    const color = event.color?.trim().toLowerCase();
+    const normalizedColor =
+      color === '#6b7280' ? 'gray' :
+      color === 'grey' ? 'gray' :
+      color;
+    return (normalizedColor && colorMap[normalizedColor] ? colorMap[normalizedColor] : colorMap.blue) as {
       bg: string;
       text: string;
     };
@@ -210,7 +216,44 @@ export const MonthCalendar = ({ date }: MonthCalendarProps) => {
       <div className="grid grid-cols-7 divide-x divide-y">
         {calendarDays.map((day) => {
           const events = getCurrentEvents(day);
-          const isCurrentMonth = isSameMonth(day, currDate);
+          // Efficiently count event colors
+          const colorCount: Record<string, number> = {};
+          for (const event of events) {
+            const color = (event.color || 'primary').trim().toLowerCase();
+            // Map hex or alternate spellings to 'gray'
+            const normalizedColor =
+              color === '#6b7280' ? 'gray' :
+              color === 'grey' ? 'gray' :
+              color;
+            colorCount[normalizedColor] = (colorCount[normalizedColor] || 0) + 1;
+          }
+          // Find the most frequent color
+          let dominantColor = 'primary';
+          let maxCount = -1;
+          for (const [color, count] of Object.entries(colorCount)) {
+            if (count > maxCount) {
+              dominantColor = color;
+              maxCount = count;
+            }
+          }
+          // Map event color to highlight class
+          const colorHighlightMap: Record<string, string> = {
+            red:    'shadow-[0_0_0_3px_rgba(239,68,68,0.18)] shadow-[inset_0_0_0_2px_rgba(239,68,68,0.35)]',
+            orange: 'shadow-[0_0_0_3px_rgba(251,146,60,0.18)] shadow-[inset_0_0_0_2px_rgba(251,146,60,0.35)]',
+            yellow: 'shadow-[0_0_0_3px_rgba(250,204,21,0.18)] shadow-[inset_0_0_0_2px_rgba(250,204,21,0.35)]',
+            green:  'shadow-[0_0_0_3px_rgba(34,197,94,0.18)] shadow-[inset_0_0_0_2px_rgba(34,197,94,0.35)]',
+            blue:   'shadow-[0_0_0_3px_rgba(59,130,246,0.18)] shadow-[inset_0_0_0_2px_rgba(59,130,246,0.35)]',
+            purple: 'shadow-[0_0_0_3px_rgba(139,92,246,0.18)] shadow-[inset_0_0_0_2px_rgba(139,92,246,0.35)]',
+            pink:   'shadow-[0_0_0_3px_rgba(236,72,153,0.18)] shadow-[inset_0_0_0_2px_rgba(236,72,153,0.35)]',
+            indigo: 'shadow-[0_0_0_3px_rgba(99,102,241,0.18)] shadow-[inset_0_0_0_2px_rgba(99,102,241,0.35)]',
+            cyan:   'shadow-[0_0_0_3px_rgba(6,182,212,0.18)] shadow-[inset_0_0_0_2px_rgba(6,182,212,0.35)]',
+            teal:   'shadow-[0_0_0_3px_rgba(20,184,166,0.18)] shadow-[inset_0_0_0_2px_rgba(20,184,166,0.35)]',
+            gray:   'shadow-[0_0_0_3px_rgba(107,114,128,0.18)] shadow-[inset_0_0_0_2px_rgba(107,114,128,0.35)]',
+            primary: 'shadow-[0_0_0_3px_rgba(59,130,246,0.18)] shadow-[inset_0_0_0_2px_rgba(59,130,246,0.35)]',
+          };
+          const highlightClass = isToday(day) ? `${colorHighlightMap[dominantColor] || colorHighlightMap.primary} z-10` : '';
+
+          const isCurrentMonth = isSameMonth(day, viewedMonth ?? currDate);
           const isTodayDate = isToday(day);
           const isWeekend = day.getDay() === 0 || day.getDay() === 6;
           const isHidden = isWeekend && !settings.appearance.showWeekends;
@@ -226,7 +269,7 @@ export const MonthCalendar = ({ date }: MonthCalendarProps) => {
               className={cn(
                 'group relative min-h-[120px] p-1.5 transition-colors',
                 !isCurrentMonth && 'bg-muted/50',
-                isTodayDate && 'bg-primary/5',
+                highlightClass,
                 isHovered && 'bg-muted/30',
                 isHidden && 'bg-muted/10'
               )}
@@ -275,7 +318,8 @@ export const MonthCalendar = ({ date }: MonthCalendarProps) => {
                           className={cn(
                             'cursor-pointer items-center gap-1 truncate rounded px-1.5 py-1 text-xs font-medium',
                             bg,
-                            text
+                            text,
+                            !isCurrentMonth && 'opacity-60'
                           )}
                           onClick={() => openModal(event.id)}
                         >
@@ -307,7 +351,10 @@ export const MonthCalendar = ({ date }: MonthCalendarProps) => {
                 })}
 
                 {events.length > 3 && (
-                  <button className="w-full rounded-sm bg-muted px-1 py-0.5 text-xs font-medium text-muted-foreground hover:bg-muted/80">
+                  <button className={cn(
+                    'w-full rounded-sm bg-muted px-1 py-0.5 text-xs font-medium text-muted-foreground hover:bg-muted/80',
+                    !isCurrentMonth && 'opacity-60'
+                  )}>
                     +{events.length - 3} more
                   </button>
                 )}

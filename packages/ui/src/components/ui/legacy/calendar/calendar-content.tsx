@@ -179,24 +179,42 @@ export const CalendarContent = ({
   const enableMonthView = useCallback(() => {
     const newDate = new Date(date);
     newDate.setHours(0, 0, 0, 0);
-    newDate.setDate(1); // First day of month
+    newDate.setDate(1);
 
-    // Get all dates in the month
     const monthStart = new Date(newDate);
     const monthEnd = new Date(newDate.getFullYear(), newDate.getMonth() + 1, 0);
-    const monthDates: Date[] = [];
 
+    // Get first day of week from settings (default to Monday)
+    let firstDayNumber = 1; // Monday
+    if (settings?.appearance?.firstDayOfWeek === 'sunday') firstDayNumber = 0;
+    if (settings?.appearance?.firstDayOfWeek === 'saturday') firstDayNumber = 6;
+
+    // Calculate the first visible day (start of the week containing the 1st)
+    const gridStart = new Date(monthStart);
+    while (gridStart.getDay() !== firstDayNumber) {
+      gridStart.setDate(gridStart.getDate() - 1);
+    }
+
+    // Calculate the last visible day (end of the week containing the last day)
+    const gridEnd = new Date(monthEnd);
+    const lastDayOfWeek = (firstDayNumber + 6) % 7;
+    while (gridEnd.getDay() !== lastDayOfWeek) {
+      gridEnd.setDate(gridEnd.getDate() + 1);
+    }
+
+    // Fill all days in the grid
+    const gridDates: Date[] = [];
     for (
-      let d = new Date(monthStart);
-      d <= monthEnd;
+      let d = new Date(gridStart);
+      d <= gridEnd;
       d.setDate(d.getDate() + 1)
     ) {
-      monthDates.push(new Date(d));
+      gridDates.push(new Date(d));
     }
 
     transition('month', () => {
       handleSetView('month');
-      setDates(monthDates);
+      setDates(gridDates);
     });
   }, [date, transition, handleSetView, setDates]);
 
@@ -338,24 +356,38 @@ export const CalendarContent = ({
       newDate.setHours(0, 0, 0, 0);
       newDate.setDate(1);
 
-      // Get all dates in the month
       const monthStart = new Date(newDate);
-      const monthEnd = new Date(
-        newDate.getFullYear(),
-        newDate.getMonth() + 1,
-        0
-      );
-      const monthDates: Date[] = [];
+      const monthEnd = new Date(newDate.getFullYear(), newDate.getMonth() + 1, 0);
 
-      for (
-        let d = new Date(monthStart);
-        d <= monthEnd;
-        d.setDate(d.getDate() + 1)
-      ) {
-        monthDates.push(new Date(d));
+      // Get first day of week from settings (default to Monday)
+      let firstDayNumber = 1; // Monday
+      if (settings?.appearance?.firstDayOfWeek === 'sunday') firstDayNumber = 0;
+      if (settings?.appearance?.firstDayOfWeek === 'saturday') firstDayNumber = 6;
+
+      // Calculate the first visible day (start of the week containing the 1st)
+      const gridStart = new Date(monthStart);
+      while (gridStart.getDay() !== firstDayNumber) {
+        gridStart.setDate(gridStart.getDate() - 1);
       }
 
-      setDates(monthDates);
+      // Calculate the last visible day (end of the week containing the last day)
+      const gridEnd = new Date(monthEnd);
+      const lastDayOfWeek = (firstDayNumber + 6) % 7;
+      while (gridEnd.getDay() !== lastDayOfWeek) {
+        gridEnd.setDate(gridEnd.getDate() + 1);
+      }
+
+      // Fill all days in the grid
+      const gridDates: Date[] = [];
+      for (
+        let d = new Date(gridStart);
+        d <= gridEnd;
+        d.setDate(d.getDate() + 1)
+      ) {
+        gridDates.push(new Date(d));
+      }
+
+      setDates(gridDates);
     }
   }, [date, view]);
 
@@ -442,9 +474,9 @@ export const CalendarContent = ({
         <WeekdayBar locale={locale} view={view} dates={dates} />
       )}
 
-      <div className="relative scrollbar-none flex-1 overflow-hidden bg-background/50">
+      <div className="relative scrollbar-none flex-1 overflow-auto bg-background/50">
         {view === 'month' && dates?.[0] ? (
-          <MonthCalendar date={dates[0]} workspace={workspace} />
+          <MonthCalendar date={dates[0]} workspace={workspace} visibleDates={dates} viewedMonth={date} />
         ) : (
           <CalendarViewWithTrail dates={dates} />
         )}
