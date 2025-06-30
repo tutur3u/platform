@@ -4,7 +4,7 @@
   "scripts": {
     "build": "turbo run build",
     "buildx": "turbo test lint build",
-    "dev": "turbo run dev --parallel",
+    "dev": "turbo run dev --parallel --filter='!@ncthub/ocr'",
     "dev:web": "turbo run dev -F @ncthub/web",
     "devx": "bun sb:stop && bun sb:start && bun dev",
     "devx:web": "bun sb:stop && bun sb:start && bun dev:web",
