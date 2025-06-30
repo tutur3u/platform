@@ -7785,22 +7785,11 @@ export type Database = {
         Returns: undefined;
       };
       count_search_users: {
-<<<<<<< HEAD
-        Args:
-          | { search_query: string }
-          | {
-              enabled_filter?: boolean;
-              search_query: string;
-              role_filter?: string;
-            }
-          | { search_query: string };
-=======
         Args: {
           enabled_filter?: boolean;
           search_query: string;
           role_filter?: string;
         };
->>>>>>> baf39e3093649ef7a01ae68cc04f46012a0fbe81
         Returns: number;
       };
       create_ai_chat: {
@@ -7810,16 +7799,9 @@ export type Database = {
       generate_cross_app_token: {
         Args:
           | {
-<<<<<<< HEAD
-              p_user_id: string;
-
-              p_origin_app: string;
-              p_target_app: string;
-=======
               p_target_app: string;
               p_user_id: string;
               p_origin_app: string;
->>>>>>> baf39e3093649ef7a01ae68cc04f46012a0fbe81
               p_expiry_seconds?: number;
             }
           | {
@@ -7842,13 +7824,8 @@ export type Database = {
         Args: { _ws_id: string; past_days?: number };
         Returns: {
           day: string;
-<<<<<<< HEAD
-          total_income: number;
-          total_expense: number;
-=======
           total_expense: number;
           total_income: number;
->>>>>>> baf39e3093649ef7a01ae68cc04f46012a0fbe81
         }[];
       };
       get_daily_prompt_completion_tokens: {
@@ -8009,16 +7986,7 @@ export type Database = {
       };
       get_transaction_categories_with_amount: {
         Args: Record<PropertyKey, never>;
-<<<<<<< HEAD
-        Returns: { 
-          ws_id: string;
-          amount: number;
-          id: string;
-          name: string;
-          is_expense: boolean;
-=======
         Returns: {
->>>>>>> baf39e3093649ef7a01ae68cc04f46012a0fbe81
           created_at: string;
           is_expense: boolean;
           name: string;
@@ -8052,16 +8020,7 @@ export type Database = {
       };
       get_user_tasks: {
         Args: { _board_id: string };
-<<<<<<< HEAD
-        Returns: { 
-          list_id: string;
-          completed: boolean;
-          board_id: string;
-          name: string;
-          start_date: string;
-=======
         Returns: {
->>>>>>> baf39e3093649ef7a01ae68cc04f46012a0fbe81
           description: string;
           board_id: string;
           id: string;
@@ -8262,13 +8221,8 @@ export type Database = {
         };
         Returns: {
           board_id: string;
-<<<<<<< HEAD
-          board_name: string;
-          board_tags: Json;
-=======
           board_tags: Json;
           board_name: string;
->>>>>>> baf39e3093649ef7a01ae68cc04f46012a0fbe81
         }[];
       };
       search_users: {
@@ -8306,18 +8260,11 @@ export type Database = {
           min_similarity?: number;
         };
         Returns: {
-<<<<<<< HEAD
-=======
           relevance: number;
->>>>>>> baf39e3093649ef7a01ae68cc04f46012a0fbe81
           id: string;
           handle: string;
           display_name: string;
           avatar_url: string;
-<<<<<<< HEAD
-          relevance: number;
-=======
->>>>>>> baf39e3093649ef7a01ae68cc04f46012a0fbe81
         }[];
       };
       sum_quiz_scores: {
