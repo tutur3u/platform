@@ -55,9 +55,9 @@
     overflow: visible;
     display: block;
     -webkit-box-orient: horizontal;
-          -webkit-line-clamp: none;
-    }
+    -webkit-line-clamp: none;
   }
+}
 
 :root {
   --root-background: hsl(20, 60%, 98%);
