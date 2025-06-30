@@ -23,6 +23,7 @@ import timezone from 'dayjs/plugin/timezone';
 import { Clock, Plus } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useCalendar } from '../../../../hooks/use-calendar';
+import { COLOR_HIGHLIGHTS } from './color-highlights';
 
 dayjs.extend(timezone);
 
@@ -32,6 +33,30 @@ interface MonthCalendarProps {
   visibleDates?: Date[];
   viewedMonth?: Date;
 }
+
+const normalizeColor = (color: string): string => {
+  const normalized = color?.trim().toLowerCase();
+  return normalized === '#6b7280' ? 'gray' :
+         normalized === 'grey' ? 'gray' :
+         normalized;
+};
+
+const getDominantEventColor = (events: any[]): string => {
+  const colorCount: Record<string, number> = {};
+  for (const event of events) {
+    const normalizedColor = normalizeColor(event.color || 'primary');
+    colorCount[normalizedColor] = (colorCount[normalizedColor] || 0) + 1;
+  }
+  let dominantColor = 'primary';
+  let maxCount = -1;
+  for (const [color, count] of Object.entries(colorCount)) {
+    if (count > maxCount) {
+      dominantColor = color;
+      maxCount = count;
+    }
+  }
+  return dominantColor;
+};
 
 export const MonthCalendar = ({ date, visibleDates, viewedMonth }: MonthCalendarProps) => {
   const { getCurrentEvents, addEmptyEvent, openModal, settings } =
@@ -182,12 +207,7 @@ export const MonthCalendar = ({ date, visibleDates, viewedMonth }: MonthCalendar
         text: 'text-gray-700 dark:text-gray-300',
       },
     };
-
-    const color = event.color?.trim().toLowerCase();
-    const normalizedColor =
-      color === '#6b7280' ? 'gray' :
-      color === 'grey' ? 'gray' :
-      color;
+    const normalizedColor = normalizeColor(event.color || 'blue');
     return (normalizedColor && colorMap[normalizedColor] ? colorMap[normalizedColor] : colorMap.blue) as {
       bg: string;
       text: string;
@@ -199,24 +219,7 @@ export const MonthCalendar = ({ date, visibleDates, viewedMonth }: MonthCalendar
     const map: Record<string, string> = {};
     for (const day of calendarDays) {
       const events = getCurrentEvents(day);
-      const colorCount: Record<string, number> = {};
-      for (const event of events) {
-        const color = (event.color || 'primary').trim().toLowerCase();
-        const normalizedColor =
-          color === '#6b7280' ? 'gray' :
-          color === 'grey' ? 'gray' :
-          color;
-        colorCount[normalizedColor] = (colorCount[normalizedColor] || 0) + 1;
-      }
-      let dominantColor = 'primary';
-      let maxCount = -1;
-      for (const [color, count] of Object.entries(colorCount)) {
-        if (count > maxCount) {
-          dominantColor = color;
-          maxCount = count;
-        }
-      }
-      map[day.toISOString()] = dominantColor;
+      map[day.toISOString()] = getDominantEventColor(events);
     }
     return map;
   }, [calendarDays, getCurrentEvents]);
@@ -242,22 +245,8 @@ export const MonthCalendar = ({ date, visibleDates, viewedMonth }: MonthCalendar
 
       <div className="grid grid-cols-7 divide-x divide-y">
         {calendarDays.map((day) => {
-          const colorHighlightMap: Record<string, string> = {
-            red:    'shadow-[0_0_0_3px_rgba(239,68,68,0.18)] shadow-[inset_0_0_0_2px_rgba(239,68,68,0.35)]',
-            orange: 'shadow-[0_0_0_3px_rgba(251,146,60,0.18)] shadow-[inset_0_0_0_2px_rgba(251,146,60,0.35)]',
-            yellow: 'shadow-[0_0_0_3px_rgba(250,204,21,0.18)] shadow-[inset_0_0_0_2px_rgba(250,204,21,0.35)]',
-            green:  'shadow-[0_0_0_3px_rgba(34,197,94,0.18)] shadow-[inset_0_0_0_2px_rgba(34,197,94,0.35)]',
-            blue:   'shadow-[0_0_0_3px_rgba(59,130,246,0.18)] shadow-[inset_0_0_0_2px_rgba(59,130,246,0.35)]',
-            purple: 'shadow-[0_0_0_3px_rgba(139,92,246,0.18)] shadow-[inset_0_0_0_2px_rgba(139,92,246,0.35)]',
-            pink:   'shadow-[0_0_0_3px_rgba(236,72,153,0.18)] shadow-[inset_0_0_0_2px_rgba(236,72,153,0.35)]',
-            indigo: 'shadow-[0_0_0_3px_rgba(99,102,241,0.18)] shadow-[inset_0_0_0_2px_rgba(99,102,241,0.35)]',
-            cyan:   'shadow-[0_0_0_3px_rgba(6,182,212,0.18)] shadow-[inset_0_0_0_2px_rgba(6,182,212,0.35)]',
-            teal:   'shadow-[0_0_0_3px_rgba(20,184,166,0.18)] shadow-[inset_0_0_0_2px_rgba(20,184,166,0.35)]',
-            gray:   'shadow-[0_0_0_3px_rgba(107,114,128,0.18)] shadow-[inset_0_0_0_2px_rgba(107,114,128,0.35)]',
-            primary: 'shadow-[0_0_0_3px_rgba(59,130,246,0.18)] shadow-[inset_0_0_0_2px_rgba(59,130,246,0.35)]',
-          };
           const dominantColor = dominantColorForDay[day.toISOString()] || 'primary';
-          const highlightClass = isToday(day) ? `${colorHighlightMap[dominantColor] || colorHighlightMap.primary} z-10` : '';
+          const highlightClass = isToday(day) ? `${COLOR_HIGHLIGHTS[dominantColor as keyof typeof COLOR_HIGHLIGHTS] ?? COLOR_HIGHLIGHTS.primary} z-10` : '';
 
           const isCurrentMonth = isSameMonth(day, viewedMonth ?? currDate);
           const isTodayDate = isToday(day);

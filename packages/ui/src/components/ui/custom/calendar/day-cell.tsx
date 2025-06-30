@@ -30,9 +30,9 @@ export const DayCell: React.FC<{
       <button
         onClick={onDateClick ? () => onDateClick(day) : undefined}
         className={cn(
-          'flex flex-none cursor-default justify-center rounded border bg-foreground/5 p-2 font-semibold transition duration-300 hover:cursor-pointer md:rounded-lg dark:bg-foreground/10',
+          'flex flex-none justify-center rounded border bg-foreground/5 p-2 font-semibold transition duration-300 hover:cursor-pointer md:rounded-lg dark:bg-foreground/10',
           isAfter(day, today) &&
-            'cursor-not-allowed opacity-50 hover:cursor-not-allowed',
+            '!cursor-not-allowed opacity-50 hover:!cursor-not-allowed',
           !isInCurrentMonth && 'text-foreground/40 bg-foreground/3 dark:bg-foreground/5',
           isInCurrentMonth && 'text-foreground/40'
         )}
