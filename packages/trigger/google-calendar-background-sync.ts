@@ -15,6 +15,8 @@ interface WorkspaceSyncResult {
   ws_id: string;
   success: boolean;
   error?: string;
+  eventsSynced?: number;
+  eventsDeleted?: number;
 }
 
 // Helper function for single workspace sync
