@@ -209,9 +209,13 @@ export const CalendarContent = ({
     let firstDayNumber = 1; // Monday
     if (settings?.appearance?.firstDayOfWeek === 'sunday') firstDayNumber = 0;
     if (settings?.appearance?.firstDayOfWeek === 'saturday') firstDayNumber = 6;
-    const gridDates = getMonthGridDates(date, firstDayNumber);
+    const newDate = new Date(date);
+    newDate.setDate(1);
+    setView('month');
+    setDate(newDate);
+    const gridDates = getMonthGridDates(newDate, firstDayNumber);
     setDates(gridDates);
-  }, [date, transition, handleSetView, setDates]);
+  }, [date, settings, setView, setDate, setDates]);
 
   // Initialize available views
   useEffect(() => {
