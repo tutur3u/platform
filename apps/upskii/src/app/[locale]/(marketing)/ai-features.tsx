@@ -51,7 +51,7 @@ export default function AiFeatures() {
     },
     {
       icon: <Lock className="h-5 w-5" />,
-      title: t("secure=processes"),
+      title: t("secure-processes"),
       description: t("secure-processes-description"),
       gradient: "from-blue-500/20 to-purple-500/20",
       iconBg: "from-indigo-500 to-purple-600",
