@@ -21,9 +21,10 @@ import {
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import { Clock, Plus } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useRef, useCallback } from 'react';
 import { useCalendar } from '../../../../hooks/use-calendar';
 import { COLOR_HIGHLIGHTS } from './color-highlights';
+import { Popover, PopoverTrigger, PopoverContent } from '../../popover';
 
 dayjs.extend(timezone);
 
@@ -228,6 +229,71 @@ export const MonthCalendar = ({ date, visibleDates, viewedMonth }: MonthCalendar
     return map;
   }, [calendarDays, getCurrentEvents]);
 
+  // Create refs for each calendar day for '+X more' button
+  const moreButtonRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  // Track which popover is open (by day index)
+  const [openPopoverIdx, setOpenPopoverIdx] = useState<number | null>(null);
+  // For scroll shadow indicators
+  const [scrollStates, setScrollStates] = useState<Record<number, { top: boolean; bottom: boolean }>>({});
+  // Store refs to the scrollable popover content for each day
+  const popoverContentRefs = useRef<(HTMLDivElement | null)[]>([]);
+  // Track if the popover is hovered for each day index
+  const [popoverHovered, setPopoverHovered] = useState<Record<number, boolean>>({});
+
+  // Handler to close popover on scroll/resize
+  useEffect(() => {
+    if (openPopoverIdx !== null) {
+      const handleClose = (event: Event) => {
+        const popoverEl = popoverContentRefs.current[openPopoverIdx];
+        // Only close if not hovered
+        if (popoverHovered[openPopoverIdx]) return;
+        if (!popoverEl) {
+          setOpenPopoverIdx(null);
+          return;
+        }
+        // If the scroll event target is the popover or a descendant, do not close
+        if (event.target instanceof Node && popoverEl.contains(event.target as Node)) {
+          return;
+        }
+        setOpenPopoverIdx(null);
+      };
+      window.addEventListener('scroll', handleClose, true);
+      window.addEventListener('resize', handleClose);
+      return () => {
+        window.removeEventListener('scroll', handleClose, true);
+        window.removeEventListener('resize', handleClose);
+      };
+    }
+  }, [openPopoverIdx, popoverHovered]);
+
+  // Set initial scroll state when popover opens
+  useEffect(() => {
+    if (openPopoverIdx !== null) {
+      const el = popoverContentRefs.current[openPopoverIdx];
+      if (el) {
+        setScrollStates(prev => ({
+          ...prev,
+          [openPopoverIdx]: {
+            top: el.scrollTop > 0,
+            bottom: el.scrollTop + el.clientHeight < el.scrollHeight,
+          },
+        }));
+      }
+    }
+  }, [openPopoverIdx]);
+
+  // Helper to handle scroll shadow indicators
+  const handlePopoverScroll = useCallback((e: React.UIEvent<HTMLDivElement>, idx: number) => {
+    const el = e.currentTarget;
+    setScrollStates((prev) => ({
+      ...prev,
+      [idx]: {
+        top: el.scrollTop > 0,
+        bottom: el.scrollTop + el.clientHeight < el.scrollHeight,
+      },
+    }));
+  }, []);
+
   return (
     <div className="flex-1 overflow-auto rounded-md border bg-background shadow-sm">
       <div className="grid grid-cols-7 divide-x divide-y border-b text-center">
@@ -248,7 +314,7 @@ export const MonthCalendar = ({ date, visibleDates, viewedMonth }: MonthCalendar
       </div>
 
       <div className="grid grid-cols-7 divide-x divide-y">
-        {calendarDays.map((day) => {
+        {calendarDays.map((day, dayIdx) => {
           const dominantColor = dominantColorForDay[day.toISOString()] || 'primary';
           const highlightClass = isToday(day) ? `${COLOR_HIGHLIGHTS[dominantColor as keyof typeof COLOR_HIGHLIGHTS] ?? COLOR_HIGHLIGHTS.primary} z-10` : '';
 
@@ -350,12 +416,55 @@ export const MonthCalendar = ({ date, visibleDates, viewedMonth }: MonthCalendar
                 })}
 
                 {getCurrentEvents(day).length > 3 && (
-                  <button className={cn(
-                    'w-full rounded-sm bg-muted px-1 py-0.5 text-xs font-medium text-muted-foreground hover:bg-muted/80',
-                    !isCurrentMonth && 'opacity-60'
-                  )}>
-                    +{getCurrentEvents(day).length - 3} more
-                  </button>
+                  <Popover open={openPopoverIdx === dayIdx} onOpenChange={open => setOpenPopoverIdx(open ? dayIdx : null)}>
+                    <PopoverTrigger asChild>
+                      <button
+                        ref={el => { moreButtonRefs.current[dayIdx] = el; }}
+                        className={cn(
+                          'w-full rounded-sm bg-muted px-1 py-0.5 text-xs font-medium text-muted-foreground hover:bg-muted/80',
+                          !isCurrentMonth && 'opacity-60'
+                        )}
+                        onClick={() => setOpenPopoverIdx(dayIdx)}
+                      >
+                        +{getCurrentEvents(day).length - 3} more
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent
+                      align="start"
+                      className={cn(
+                        'p-2 max-h-60 overflow-y-auto relative !transition-none',
+                        scrollStates[dayIdx]?.top && 'before:absolute before:top-0 before:left-0 before:right-0 before:h-3 before:bg-gradient-to-b before:from-muted/80 before:to-transparent before:pointer-events-none',
+                        scrollStates[dayIdx]?.bottom && 'after:absolute after:bottom-0 after:left-0 after:right-0 after:h-3 after:bg-gradient-to-t after:from-muted/80 after:to-transparent after:pointer-events-none'
+                      )}
+                      style={{ width: moreButtonRefs.current[dayIdx]?.offsetWidth || undefined }}
+                    >
+                      <div
+                        className="flex flex-col gap-1"
+                        onScroll={e => handlePopoverScroll(e, dayIdx)}
+                        ref={el => { popoverContentRefs.current[dayIdx] = el; }}
+                        onMouseEnter={() => setPopoverHovered(prev => ({ ...prev, [dayIdx]: true }))}
+                        onMouseLeave={() => setPopoverHovered(prev => ({ ...prev, [dayIdx]: false }))}
+                      >
+                        {getCurrentEvents(day).slice(3).map((event) => {
+                          const { bg, text } = getEventStyles(event);
+                          return (
+                            <div
+                              key={event.id}
+                              className={cn(
+                                'cursor-pointer items-center gap-1 truncate rounded px-1.5 py-1 text-xs font-medium',
+                                bg,
+                                text,
+                                !isCurrentMonth && 'opacity-60'
+                              )}
+                              onClick={() => openModal(event.id)}
+                            >
+                              {event.title || 'Untitled event'}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </PopoverContent>
+                  </Popover>
                 )}
               </div>
             </div>
