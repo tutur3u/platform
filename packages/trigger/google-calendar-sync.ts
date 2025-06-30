@@ -184,6 +184,27 @@ const syncGoogleCalendarEventsForWorkspace = async (
   }
 };
 
+// Get workspace by ws_id
+export const getWorkspaceTokensByWsId = async (ws_id: string) => {
+  try {
+  const supabase = await createAdminClient({ noCookie: true });
+  const { data: tokens, error } = await supabase
+    .from('workspaces')
+    .select('ws_id, access_token, refresh_token')
+    .eq('ws_id', ws_id);
+
+  if (error) {
+    console.error(`[${ws_id}] Error fetching workspace:`, error);
+    return null;
+  }
+
+    return tokens?.[0] || null;
+  } catch (error) {
+    console.error(`[${ws_id}] Error fetching workspace:`, error);
+    return null;
+  }
+};
+
 // Get all workspaces that need sync
 export const getWorkspacesForSync = async () => {
   try {

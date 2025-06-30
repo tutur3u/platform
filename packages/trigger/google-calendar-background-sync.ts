@@ -1,6 +1,7 @@
 import { 
   syncWorkspaceImmediate, 
   syncWorkspaceExtended,
+  getWorkspaceTokensByWsId,
   getWorkspacesForSync 
 } from './google-calendar-sync.js';
 
@@ -25,8 +26,7 @@ const triggerWorkspaceSync = async (
   console.log(`=== Manually triggering ${syncType} sync for workspace ${ws_id} ===`);
   
   try {
-    const workspaces = await getWorkspacesForSync();
-    const workspace = workspaces.find(w => w.ws_id === ws_id);
+    const workspace = await getWorkspaceTokensByWsId(ws_id) as WorkspaceToken | null;
     
     if (!workspace) {
       console.error(`Workspace ${ws_id} not found or no access token available`);
