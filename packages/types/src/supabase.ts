@@ -7867,7 +7867,7 @@ export type Database = {
         }[];
       };
       get_daily_income_expense: {
-        Args: { past_days?: number; _ws_id: string };
+        Args: { _ws_id: string; past_days?: number };
         Returns: {
           total_expense: number;
           total_income: number;
@@ -8200,7 +8200,7 @@ export type Database = {
         Returns: boolean;
       };
       is_nova_user_id_in_team: {
-        Args: { _team_id: string; _user_id: string };
+        Args: { _user_id: string; _team_id: string };
         Returns: boolean;
       };
       is_org_member: {
@@ -8344,7 +8344,7 @@ export type Database = {
         Returns: boolean;
       };
       validate_cross_app_token: {
-        Args: { p_target_app: string; p_token: string };
+        Args: { p_token: string; p_target_app: string };
         Returns: string;
       };
       validate_cross_app_token_with_session: {
