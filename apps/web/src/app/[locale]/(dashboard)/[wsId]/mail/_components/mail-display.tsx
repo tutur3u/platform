@@ -1,3 +1,5 @@
+'use client';
+
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -8,6 +10,8 @@ import {
 } from '@tuturuuu/ui/dropdown-menu';
 import {
   Archive,
+  ChevronDown,
+  ChevronUp,
   Forward,
   Loader2,
   MoreVertical,
@@ -18,15 +22,16 @@ import {
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { Separator } from '@tuturuuu/ui/separator';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
+import { cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
-import 'dayjs/locale/en';
 import 'dayjs/locale/vi';
 import localizedFormat from 'dayjs/plugin/localizedFormat';
+import relativeTime from 'dayjs/plugin/relativeTime';
 import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import type { Mail } from '../client';
 
-// Extend dayjs with localizedFormat plugin
+dayjs.extend(relativeTime);
 dayjs.extend(localizedFormat);
 
 interface MailDisplayProps {
@@ -36,6 +41,7 @@ interface MailDisplayProps {
 const DISABLE_MAIL_ACTIONS = true;
 
 export function MailDisplay({ mail }: MailDisplayProps) {
+  const [isHeaderCollapsed, setIsHeaderCollapsed] = useState(false);
   const [sanitizedHtml, setSanitizedHtml] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
   const t = useTranslations('mail');
@@ -173,36 +179,57 @@ export function MailDisplay({ mail }: MailDisplayProps) {
 
       {mail ? (
         <div className="flex flex-1 flex-col min-h-0">
-          <div className="flex items-start gap-4 p-6 bg-muted/20 border-b">
-            <Avatar className="h-12 w-12 ring-2 ring-background shadow-sm">
-              <AvatarImage alt={mail.name} />
-              <AvatarFallback className="bg-primary/10 text-primary font-semibold text-sm">
-                {mail.name
-                  .split(' ')
-                  .map((chunk: string) => chunk[0])
-                  .join('')
-                  .toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
-
-            <div className="flex-1 min-w-0 space-y-3">
-              <div className="flex items-start justify-between gap-4">
-                <div className="min-w-0 flex-1">
-                  <h2 className="font-semibold text-lg text-foreground leading-tight">
+          <div className="p-4 bg-muted/20 border-b">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <Avatar className="h-10 w-10 ring-2 ring-background shadow-sm">
+                  <AvatarImage alt={mail.name} />
+                  <AvatarFallback className="bg-primary/10 text-primary font-semibold text-sm">
+                    {mail.name
+                      .split(' ')
+                      .map((chunk: string) => chunk[0])
+                      .join('')
+                      .toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="grid gap-0.5">
+                  <h2 className="font-semibold text-base text-foreground leading-tight truncate">
                     {mail.subject}
                   </h2>
-                  <p className="text-sm font-medium text-foreground/80 mt-1">
+                  <p className="text-sm font-medium text-foreground/80">
                     {mail.name}
-                    {' - '}
-                    {mail.date && (
-                      <time className="text-xs text-muted-foreground whitespace-nowrap font-medium">
-                        {dayjs(mail.date).format('LLLL')}
-                      </time>
-                    )}
                   </p>
                 </div>
               </div>
 
+              <div className="flex items-center gap-2">
+                {mail.date && (
+                  <time className="text-xs text-muted-foreground whitespace-nowrap font-medium">
+                    {dayjs(mail.date).format('LLLL')}
+                  </time>
+                )}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 rounded-full"
+                  onClick={() => setIsHeaderCollapsed(!isHeaderCollapsed)}
+                >
+                  {isHeaderCollapsed ? (
+                    <ChevronDown className="h-4 w-4" />
+                  ) : (
+                    <ChevronUp className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
+            </div>
+            <div
+              className={cn(
+                'transition-all duration-300 ease-in-out overflow-hidden',
+                isHeaderCollapsed
+                  ? 'max-h-0 opacity-0'
+                  : 'max-h-24 opacity-100 pt-3'
+              )}
+            >
               <div className="flex flex-col items-start gap-1 text-xs text-muted-foreground">
                 <div className="flex items-center gap-1">
                   <span className="font-medium">{t('from_label')}</span>
@@ -238,13 +265,15 @@ export function MailDisplay({ mail }: MailDisplayProps) {
           </ScrollArea>
         </div>
       ) : (
-        <div className="flex flex-1 items-center justify-center">
-          <div className="text-center max-w-sm mx-auto p-8">
-            <div className="text-6xl mb-6 opacity-30">📧</div>
-            <h3 className="text-xl font-semibold text-foreground mb-3">
+        <div className="flex flex-1 flex-col h-full min-h-0 items-center justify-center p-8 text-center bg-background">
+          <div className="flex flex-col items-center gap-2">
+            <div className="p-4 rounded-full bg-primary/10">
+              <MoreVertical className="h-8 w-8 text-primary" />
+            </div>
+            <p className="text-lg font-medium text-foreground mt-4">
               {t('no_email_selected')}
-            </h3>
-            <p className="text-sm text-muted-foreground leading-relaxed">
+            </p>
+            <p className="text-sm text-muted-foreground">
               {t('choose_email_message')}
             </p>
           </div>

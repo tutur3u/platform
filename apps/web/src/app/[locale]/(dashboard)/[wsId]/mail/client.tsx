@@ -1,13 +1,27 @@
 'use client';
 
 import { createClient } from '@tuturuuu/supabase/next/client';
+import type { PostEmail } from '@tuturuuu/types/primitives/post-email';
 import { useCallback, useEffect, useState } from 'react';
 import { MailClient } from './_components/mail';
 
+interface SearchParams {
+  page?: string;
+  pageSize?: string;
+  includedGroups?: string | string[];
+  excludedGroups?: string | string[];
+  userId?: string;
+}
+
 interface MailClientWrapperProps {
   wsId: string;
+  locale: string;
   defaultLayout?: number[];
   defaultCollapsed?: boolean;
+  postsData: PostEmail[];
+  postsCount: number;
+  postsStatus: { count: number | null };
+  searchParams: SearchParams;
 }
 
 export interface Mail {
@@ -19,19 +33,24 @@ export interface Mail {
   text: string;
   date: string;
   read: boolean;
-  labels: string[];
 }
+
+const PAGE_SIZE = 20;
 
 export default function MailClientWrapper({
   wsId,
+  locale,
   defaultLayout,
   defaultCollapsed,
+  postsData,
+  postsCount,
+  postsStatus,
+  searchParams,
 }: MailClientWrapperProps) {
   const [emails, setEmails] = useState<Mail[]>([]);
   const [loading, setLoading] = useState(true);
   const [hasMore, setHasMore] = useState(true);
   const [page, setPage] = useState(0);
-  const PAGE_SIZE = 20;
 
   const loadEmails = useCallback(
     async (pageNum: number = 0, reset: boolean = false) => {
@@ -69,7 +88,7 @@ export default function MailClientWrapper({
   const mailsToShow = emails.length > 0 ? emails : [];
 
   return (
-    <div className="h-[calc(100vh-5rem)] flex flex-col">
+    <div className="h-[calc(100vh-2rem)] flex flex-col">
       <div className="flex-1 rounded-xl border bg-background/80 backdrop-blur-sm shadow-lg overflow-hidden">
         <MailClient
           mails={mailsToShow}
@@ -80,6 +99,11 @@ export default function MailClientWrapper({
           hasMore={hasMore}
           loading={loading}
           wsId={wsId}
+          locale={locale}
+          postsData={postsData}
+          postsCount={postsCount}
+          postsStatus={postsStatus}
+          searchParams={searchParams}
         />
       </div>
     </div>

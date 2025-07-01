@@ -1,3 +1,5 @@
+'use client';
+
 import type { PostEmail } from '@tuturuuu/types/primitives/post-email';
 import { Button } from '@tuturuuu/ui/button';
 import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
@@ -6,7 +8,7 @@ import dayjs from 'dayjs';
 import { useTranslations } from 'next-intl';
 import useEmail from '@/hooks/useEmail';
 
-export default function RowActions({ data }: { data: PostEmail }) {
+export default function PostsRowActions({ data }: { data: PostEmail }) {
   const t = useTranslations();
   const { sendEmail, loading, error, success } = useEmail();
 
@@ -17,31 +19,43 @@ export default function RowActions({ data }: { data: PostEmail }) {
     !!data.post_id &&
     !!data.group_id &&
     !!data.group_name &&
-    !!data?.is_completed != null;
+    !!data.post_title &&
+    !!data.post_content &&
+    !!data?.is_completed;
 
   const handleSendEmail = async () => {
-    if (sendable) {
+    if (
+      !!data.email &&
+      !!data.ws_id &&
+      !!data.user_id &&
+      !!data.post_id &&
+      !!data.group_id &&
+      !!data.group_name &&
+      !!data.post_title &&
+      !!data.post_content &&
+      !!data?.is_completed
+    ) {
       await sendEmail({
-        wsId: data.ws_id!,
-        postId: data.post_id!,
-        groupId: data.group_id!,
+        wsId: data.ws_id,
+        postId: data.post_id,
+        groupId: data.group_id,
         post: {
-          id: data.post_id!,
-          title: data.post_title!,
-          content: data.post_content!,
+          id: data.post_id,
+          title: data.post_title,
+          content: data.post_content,
           notes: data.notes || '',
-          group_name: data.group_name!,
+          group_name: data.group_name,
           created_at:
             dayjs(data.post_created_at || data.created_at)?.toISOString() ||
             undefined,
         },
         users: [
           {
-            id: data.user_id!,
-            email: data.email!,
+            id: data.user_id,
+            email: data.email,
             username: data.recipient || data.email || '<Chưa có tên>',
             notes: data?.notes || '',
-            is_completed: data?.is_completed!,
+            is_completed: data?.is_completed,
           },
         ],
       });
@@ -85,10 +99,6 @@ export default function RowActions({ data }: { data: PostEmail }) {
           </>
         )}
       </Button>
-      {/* <Button size="xs" variant="outline" disabled>
-        <Eye className="mr-1.5 h-4 w-4" />
-        {t(`${namespace}.preview`)}
-      </Button> */}
     </div>
   );
 }

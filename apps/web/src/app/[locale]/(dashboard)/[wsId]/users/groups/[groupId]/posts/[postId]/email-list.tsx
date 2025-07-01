@@ -15,7 +15,7 @@ export function EmailList({
   const t = useTranslations();
 
   return (
-    <Link href={`/${wsId}/mail/posts?includedGroups=${groupId}`}>
+    <Link href={`/${wsId}/mail?includedGroups=${groupId}`}>
       <Button>
         <Mail className="mr-1" />
         {t('post-email-data-table.send_email')}
