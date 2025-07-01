@@ -256,8 +256,22 @@ export const CalendarProvider = ({
           eventEnd.getDate()
         );
 
-        // Check if the target date falls within the event's date range
-        return eventStartDay <= targetDay && eventEndDay >= targetDay;
+        // Check if this is an all-day event (start and end times are at midnight)
+        const isAllDayEvent = 
+          eventStart.getHours() === 0 && 
+          eventStart.getMinutes() === 0 && 
+          eventStart.getSeconds() === 0 &&
+          eventEnd.getHours() === 0 && 
+          eventEnd.getMinutes() === 0 && 
+          eventEnd.getSeconds() === 0;
+
+        // For all-day events, treat end date as exclusive (consistent with week view)
+        // For timed events, treat end date as inclusive
+        if (isAllDayEvent) {
+          return eventStartDay <= targetDay && eventEndDay > targetDay;
+        } else {
+          return eventStartDay <= targetDay && eventEndDay >= targetDay;
+        }
       });
     },
     [events]
