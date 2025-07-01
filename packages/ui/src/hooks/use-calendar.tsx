@@ -396,6 +396,7 @@ export const CalendarProvider = ({
             priority: event.priority || 'medium',
             ws_id: ws?.id ?? '',
             locked: false,
+            is_all_day: event.is_all_day || false,
           })
           .select()
           .single();
@@ -539,6 +540,7 @@ export const CalendarProvider = ({
             location: updateData.location,
             priority: updateData.priority,
             locked: updateData.locked,
+            is_all_day: updateData.is_all_day,
           })
           .eq('id', eventId)
           .select()

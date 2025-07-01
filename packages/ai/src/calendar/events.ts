@@ -25,6 +25,7 @@ export const calendarEventSchema = z.object({
       "Color of the event for display purposes. Should match one of the user's defined categories if applicable."
     ),
   location: z.string().optional().describe('Location of the event'),
+  is_all_day: z.boolean().default(false).describe('Whether this is an all-day event. Use true for events like birthdays, holidays, vacations, or events that span entire days without specific times.'),
 });
 
 export const calendarEventsSchema = z.array(calendarEventSchema);

@@ -227,13 +227,44 @@ export function EventModal() {
 
       // Only check for all-day if this is an existing event (not a new one)
       if (activeEvent.id !== 'new') {
-        // Check if event is all-day by comparing start and end times
-        const startDate = dayjs(eventData.start_at);
-        const endDate = dayjs(eventData.end_at);
-        const isAllDayEvent = startDate
-          .startOf('day')
-          .isSame(endDate.startOf('day').subtract(1, 'day'));
-        setIsAllDay(isAllDayEvent);
+        // First, check if the event has the is_all_day field set
+        console.log('EventModal: Editing existing event', {
+          id: eventData.id,
+          title: eventData.title,
+          is_all_day: eventData.is_all_day,
+          start_at: eventData.start_at,
+          end_at: eventData.end_at
+        });
+        
+        if (eventData.is_all_day !== undefined) {
+          console.log('EventModal: Using is_all_day field:', eventData.is_all_day);
+          setIsAllDay(eventData.is_all_day);
+        } else {
+          console.log('EventModal: is_all_day field not found, using fallback detection');
+          // Fallback logic for events without the is_all_day field
+          // Check if event times are at midnight (start of day)
+          const startDate = dayjs(eventData.start_at);
+          const endDate = dayjs(eventData.end_at);
+          
+          // An event is all-day if:
+          // 1. Start time is at the beginning of the day (00:00:00)
+          // 2. End time is at the beginning of a day (00:00:00)
+          // 3. The duration is a multiple of 24 hours
+          const isStartAtMidnight = startDate.hour() === 0 && startDate.minute() === 0 && startDate.second() === 0;
+          const isEndAtMidnight = endDate.hour() === 0 && endDate.minute() === 0 && endDate.second() === 0;
+          const durationInHours = endDate.diff(startDate, 'hour');
+          const isMultipleOf24Hours = durationInHours > 0 && durationInHours % 24 === 0;
+          
+          const isAllDayEvent = isStartAtMidnight && isEndAtMidnight && isMultipleOf24Hours;
+          console.log('EventModal: Fallback detection result:', {
+            isStartAtMidnight,
+            isEndAtMidnight,
+            durationInHours,
+            isMultipleOf24Hours,
+            isAllDayEvent
+          });
+          setIsAllDay(isAllDayEvent);
+        }
       } else {
         // For new events, always start with isAllDay as false
         setIsAllDay(false);
@@ -324,12 +355,26 @@ export function EventModal() {
         ...event,
         priority: event.priority || 'medium',
         locked: event.locked || false,
+        is_all_day: isAllDay,
       };
+
+      console.log('EventModal: Saving event data:', {
+        id: activeEvent?.id,
+        title: eventData.title,
+        is_all_day: eventData.is_all_day,
+        isAllDay: isAllDay,
+        start_at: eventData.start_at,
+        end_at: eventData.end_at
+      });
 
       if (activeEvent?.id === 'new') {
         await addEvent(eventData as Omit<CalendarEvent, 'id'>);
       } else if (activeEvent?.id) {
-        const originalId = activeEvent.id;
+        // Handle IDs for split multi-day events (they contain a dash and date)
+        const originalId = activeEvent.id.includes('-')
+          ? activeEvent.id.split('-')[0]
+          : activeEvent.id;
+        
         if (originalId) {
           await updateEvent(originalId, eventData);
         } else {
@@ -428,6 +473,7 @@ export function EventModal() {
             location: eventData.location || '',
             priority: eventData.priority || 'medium',
             locked: false, // Default to unlocked for AI-generated events
+            is_all_day: eventData.is_all_day || false, // Support AI-generated all-day events
           };
 
           const savedEvent = await addEvent(calendarEvent);

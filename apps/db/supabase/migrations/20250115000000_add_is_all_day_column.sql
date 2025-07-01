@@ -1,0 +1,1 @@
+alter table "public"."workspace_calendar_events" add column "is_all_day" boolean not null default false; 
