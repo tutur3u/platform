@@ -9,7 +9,7 @@ interface CoursePaginationProps {
   totalPages: number;
   totalCount: number;
   pageSize: number;
-  wsId: string;
+  wsId?: string;
 }
 
 export function CoursePagination({
@@ -26,7 +26,9 @@ export function CoursePagination({
     (page: number) => {
       const params = new URLSearchParams(searchParams.toString());
       params.set('page', page.toString());
-      router.push(`/${wsId}/courses?${params.toString()}`);
+
+      const route = wsId ? `/${wsId}/courses` : '/courses';
+      router.push(`${route}?${params.toString()}`);
     },
     [router, searchParams, wsId]
   );
@@ -35,11 +37,15 @@ export function CoursePagination({
     (newPageSize: number) => {
       const params = new URLSearchParams(searchParams.toString());
       params.set('pageSize', newPageSize.toString());
-      params.set('page', '1'); // Reset to first page when changing page size
-      router.push(`/${wsId}/courses?${params.toString()}`);
+      params.set('page', '1');
+
+      const route = wsId ? `/${wsId}/courses` : '/courses';
+      router.push(`${route}?${params.toString()}`);
     },
     [router, searchParams, wsId]
   );
+
+  const pageSizeOptions = wsId ? [5, 10, 20, 50] : [6, 12, 24, 48];
 
   return (
     <DataPagination
@@ -50,7 +56,7 @@ export function CoursePagination({
       onPageChange={handlePageChange}
       onPageSizeChange={handlePageSizeChange}
       itemName="courses"
-      pageSizeOptions={[5, 10, 20, 50]}
+      pageSizeOptions={pageSizeOptions}
     />
   );
 }

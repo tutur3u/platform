@@ -1,4 +1,4 @@
-import { ExtendedNovaSubmission } from '../types';
+import type { ExtendedNovaSubmission } from '../types';
 
 interface SubmissionDetailsProps {
   submission: ExtendedNovaSubmission;

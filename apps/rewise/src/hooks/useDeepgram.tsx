@@ -1,17 +1,17 @@
 'use client';
 
 import {
-  LiveClient,
+  createClient,
+  type LiveClient,
   LiveConnectionState,
   type LiveSchema,
   type LiveTranscriptionEvent,
   LiveTranscriptionEvents,
-  createClient,
 } from '@deepgram/sdk';
 import {
-  FunctionComponent,
-  ReactNode,
   createContext,
+  type FunctionComponent,
+  type ReactNode,
   useContext,
   useState,
 } from 'react';

@@ -1,11 +1,8 @@
-import { Filter } from '../../../filters';
-import EditableReportPreview from '../../../reports/[reportId]/editable-report-preview';
-import { availableConfigs } from '@/constants/configs/reports';
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { WorkspaceUserReport } from '@tuturuuu/types/db';
-import { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
-import { WorkspaceConfig } from '@tuturuuu/types/primitives/WorkspaceConfig';
-import { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
+import type { WorkspaceUserReport } from '@tuturuuu/types/db';
+import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
+import type { WorkspaceConfig } from '@tuturuuu/types/primitives/WorkspaceConfig';
+import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Button } from '@tuturuuu/ui/button';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import {
@@ -17,9 +14,12 @@ import {
 } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import { cn } from '@tuturuuu/utils/format';
-import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
+import { availableConfigs } from '@/constants/configs/reports';
+import { Filter } from '../../../filters';
+import EditableReportPreview from '../../../reports/[reportId]/editable-report-preview';
 
 interface Props {
   params: Promise<{
@@ -358,7 +358,7 @@ async function getConfigs(wsId: string) {
   if (error) throw error;
 
   // Create a copy of availableConfigs to include in the response
-  let configs = [
+  const configs = [
     ...availableConfigs.map(({ defaultValue, ...rest }) => ({
       ...rest,
       value: defaultValue,

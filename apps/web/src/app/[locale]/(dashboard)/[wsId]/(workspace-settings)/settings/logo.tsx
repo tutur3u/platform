@@ -1,8 +1,8 @@
 'use client';
 
-import LogoInput from './logo-input';
-import { Workspace } from '@tuturuuu/types/db';
+import type { Workspace } from '@tuturuuu/types/db';
 import { useTranslations } from 'next-intl';
+import LogoInput from './logo-input';
 
 interface Props {
   workspace?: Workspace | null;

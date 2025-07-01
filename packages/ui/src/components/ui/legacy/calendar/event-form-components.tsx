@@ -1,8 +1,7 @@
 'use client';
 
-import { ColorPicker, colorMap } from './settings/color-picker';
-import { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
-import { EventPriority } from '@tuturuuu/types/primitives/calendar-event';
+import type { EventPriority } from '@tuturuuu/types/primitives/calendar-event';
+import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import { Alert, AlertDescription, AlertTitle } from '@tuturuuu/ui/alert';
 import { Button } from '@tuturuuu/ui/button';
 import { DateTimePicker } from '@tuturuuu/ui/date-time-picker';
@@ -11,10 +10,10 @@ import { Label } from '@tuturuuu/ui/label';
 import { Slider } from '@tuturuuu/ui/slider';
 import { Switch } from '@tuturuuu/ui/switch';
 import { Textarea } from '@tuturuuu/ui/textarea';
-import { getEventStyles } from '@tuturuuu/utils/color-helper';
 import { cn } from '@tuturuuu/utils/format';
 import { AlertCircle, Clock, MapPin, MessageSquare } from 'lucide-react';
-import React, { ReactNode } from 'react';
+import React, { type ReactNode } from 'react';
+import { ColorPicker, colorMap } from './settings/color-picker';
 
 // Color options aligned with SupportedColor type
 export const COLOR_OPTIONS: {
@@ -24,7 +23,7 @@ export const COLOR_OPTIONS: {
 }[] = Object.entries(colorMap).map(([key, value]) => ({
   value: key as SupportedColor,
   name: value.name,
-  className: `bg-dynamic-light-${key.toLowerCase()}/20 hover:bg-dynamic-light-${key.toLowerCase()}/50`,
+  className: value.cbg, // Use the cbg class from colorMap for proper visibility
 }));
 
 // Priority options
@@ -460,7 +459,7 @@ export const EventColorPicker = ({
   onChange: (value: SupportedColor) => void;
   disabled?: boolean;
 }) => {
-  const { text } = getEventStyles(value);
+  const colorInfo = colorMap[value];
 
   return (
     <div className="space-y-3">
@@ -474,7 +473,7 @@ export const EventColorPicker = ({
             showTooltips={true}
           />
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <div className={cn('h-3 w-3 rounded-full', text)} />
+            <div className={cn('h-3 w-3 rounded-full', colorInfo.cbg)} />
             <span>
               {COLOR_OPTIONS.find((c) => c.value === value)?.name || 'Blue'}
             </span>

@@ -1,8 +1,7 @@
 'use client';
 
-import EditProblemDialog from './editProblemDialog';
-import { ColumnDef } from '@tanstack/react-table';
-import { ExtendedNovaProblem } from '@tuturuuu/types/db';
+import type { ColumnDef } from '@tanstack/react-table';
+import type { ExtendedNovaProblem } from '@tuturuuu/types/db';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -28,6 +27,7 @@ import { Edit, Eye, MoreHorizontal, Trash } from '@tuturuuu/ui/icons';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import EditProblemDialog from './editProblemDialog';
 
 export function getProblemColumns(
   t: any,

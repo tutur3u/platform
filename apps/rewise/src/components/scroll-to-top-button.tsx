@@ -1,10 +1,10 @@
 'use client';
 
-import { useAtTop } from '@/lib/hooks/use-at-bottom';
 import { Button, type ButtonProps } from '@tuturuuu/ui/button';
-import { IconArrowDown } from '@tuturuuu/ui/icons';
+import { ArrowDownIcon } from '@tuturuuu/ui/icons';
 import { cn } from '@tuturuuu/utils/format';
 import { useEffect, useState } from 'react';
+import { useAtTop } from '@/lib/hooks/use-at-bottom';
 
 export function ScrollToTopButton({ className, ...props }: ButtonProps) {
   const isAtTop = useAtTop();
@@ -36,7 +36,7 @@ export function ScrollToTopButton({ className, ...props }: ButtonProps) {
       disabled={isAtTop}
       {...props}
     >
-      <IconArrowDown className="rotate-180" />
+      <ArrowDownIcon className="rotate-180" />
       <span className="sr-only">Scroll to top</span>
     </Button>
   );

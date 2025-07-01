@@ -1,4 +1,48 @@
 {
+  "billing": {
+    "loading": "Loading payment details...",
+    "billing": "Billing",
+    "billing-info": "Manage your billing information and subscriptions here.",
+    "current-plan": "Current Plan",
+    "current-plan-details": "Current plan details",
+    "upgrade-plan": "Upgrade Plan",
+    "start-date": "Start Date",
+    "next-billing": "Next Billing Date",
+    "recommend": "Recommended",
+    "hide-upgrade": "Hide Upgrade",
+    "contact-sales": "Contact Sales",
+    "contact-sales-desc": "For enterprise solutions, please contact our sales team for personalized assistance.",
+    "plan-desc": "* Upgrading your plan will take effect immediately. You'll be charged the prorated amount for the remainder of your current billing cycle.",
+    "subscription-history": "Subscription History",
+    "subscription-history-desc": "No subscription history available.",
+    "success": {
+      "expired-on": "Download link expires on",
+      "expired": "expired",
+      "amount": "Amount",
+      "title": "Payment Successful",
+      "message": "Thank you for your subscription. Your payment has been processed successfully.",
+      "payment-summary": "Payment Summary",
+      "date": "Date",
+      "plan": "Plan",
+      "completed": "Completed",
+      "paid": "Paid",
+      "status": "Status",
+      "payment-method": "Payment Method",
+      "download-receipt-availability": "Download Receipt Availability",
+      "download-invoice-desc": "The download link has expired (24 hours after payment). Please contact support for a new receipt.",
+      "what-next": "What happens next?",
+      "active-plan": "Your active plan will be updated immediately.",
+      "active-plan-desc": "You can start using the features of your new plan right away.",
+      "confirmation-email": "Confirmation Email",
+      "confirmation-email-desc": "You will receive a confirmation email with your payment details.",
+      "billing-cycle": "Billing Cycle Started",
+      "billing-cycle-desc": "Your billing cycle has started. You will be charged on the same date each month.",
+      "invoice-id": "Invoice ID",
+      "back-to-billing": "Back to Billing",
+      "download-receipt": "Download Receipt",
+      "go-to-dashboard": "Go to Dashboard"
+    }
+  },
   "common": {
     "success": "Success",
     "alpha": "Alpha",
@@ -620,7 +664,14 @@
     "password_min_length": "Password must be at least 8 characters",
     "powered-by": "Tuturuuu powers the authentication system behind {domain}.",
     "choose_sign_in_method": "Choose your preferred sign-in method",
-    "sign_in_to_your_account": "Sign in to your account to continue"
+    "sign_in_to_your_account": "Sign in to your account to continue",
+    "will_send_to": "Will send verification code to",
+    "will_sign_in_as": "Will sign in as",
+    "email_username_placeholder": "Enter your email or username",
+    "two_factor_authentication": "Two-Factor Authentication",
+    "enter_authenticator_code": "Enter your 6-digit verification code from your authenticator app",
+    "verification_code_label": "Verification Code",
+    "verify_button": "Verify"
   },
   "signup": {
     "get-started": "Get started",
@@ -700,14 +751,62 @@
     "metrics": "Metrics",
     "crawlers": "Crawlers",
     "queues": "Queues",
-    "time_tracker": "Time tracker",
+    "time_tracker": "Time Tracker",
     "productivity": "Productivity",
     "whiteboards": "Whiteboards",
     "ai_tools": "AI Tools",
     "spark": "Spark",
     "media": "Media",
     "ai_lab": "AI Lab",
-    "management": "Management"
+    "management": "Management",
+    "link_shortener": "Link Shortener"
+  },
+  "link-shortener": {
+    "title": "Link Shortener",
+    "plural": "Shortened Links",
+    "singular": "Shortened Link",
+    "description": "Create and manage shortened URLs for easier sharing",
+    "create": "Create Short Link",
+    "create_description": "Enter a URL to create a shortened version for easier sharing.",
+    "url_to_shorten": "URL to shorten",
+    "custom_slug": "Custom slug (optional)",
+    "custom_slug_placeholder": "my-custom-slug",
+    "custom_slug_description": "Leave empty for auto-generated slug",
+    "url_placeholder": "https://example.com/very/long/url",
+    "short_url": "Short URL",
+    "original_url": "Original URL",
+    "created": "Created",
+    "created_at": "Created At",
+    "recent_links": "Recent Links",
+    "copy_to_clipboard": "Copy to clipboard",
+    "copied_to_clipboard": "Copied to clipboard",
+    "copied_description": "The shortened URL has been copied to your clipboard.",
+    "copy_failed": "Failed to copy to clipboard",
+    "copy_failed_description": "Failed to copy to clipboard. Please copy manually.",
+    "visit_original": "Visit original URL",
+    "unknown_creator": "Unknown",
+    "new": "New",
+    "no_links_yet": "No shortened links yet",
+    "create_first_link": "Create your first shortened link to get started.",
+    "url_required": "Please enter a URL",
+    "invalid_url": "Please enter a valid URL",
+    "failed_to_create": "Failed to create shortened link",
+    "created_successfully": "Link shortened successfully!",
+    "total_links": "Total Links",
+    "all_time": "All time",
+    "this_month": "This Month",
+    "new_links": "New links",
+    "active_creators": "Active Creators",
+    "unique_users": "Unique users",
+    "manage_description": "View and manage all shortened links created by your team."
+  },
+  "link-shortener-data-table": {
+    "slug": "Short URL",
+    "link": "Original URL",
+    "short_url": "Short URL",
+    "original_url": "Original URL",
+    "creator": "Creator",
+    "created_at": "Created At"
   },
   "team-tabs": {
     "overview": "Overview",
@@ -1055,6 +1154,17 @@
     "permissions": "Permissions",
     "user_count": "User count",
     "created_at": "Created at"
+  },
+  "platform-role-data-table": {
+    "id": "ID",
+    "display_name": "User",
+    "enabled": "Status",
+    "platform_role": "Permissions",
+    "allow_role_management": "Admin",
+    "allow_manage_all_challenges": "Global",
+    "allow_challenge_management": "Challenge",
+    "allow_workspace_creation": "Workspace",
+    "created_at": "Joined"
   },
   "cron-job-data-table": {
     "id": "ID",
@@ -1468,6 +1578,10 @@
     "export_users_data_description": "Allows members to export users data in the workspace.",
     "export_finance_data": "Allow exporting finance data",
     "export_finance_data_description": "Allows members to export finance data in the workspace."
+  },
+  "platform-roles": {
+    "plural": "Platform Roles",
+    "description": "Manage platform-wide user roles and permissions across all services."
   },
   "ws-activities": {
     "description": "View all activities in your workspace",
@@ -2047,7 +2161,9 @@
     "secrets": "Secrets",
     "infrastructure": "Infrastructure",
     "migrations": "Migrations",
-    "activities": "Activities"
+    "activities": "Activities",
+    "workspace_roles": "Workspace Roles",
+    "platform_roles": "Platform Roles"
   },
   "platform-token-usage": {
     "hourly_total_from_last_12_hours": "Hourly total token from last 12 hours",
@@ -2214,7 +2330,8 @@
     "image_preview_not_available": "Image Preview Not Available",
     "image_preview_not_available_description": "A preview of the certificate template is not available.",
     "hide_certificate_preview": "Hide Certificate Preview",
-    "show_certificate_preview": "Show Certificate Preview"
+    "show_certificate_preview": "Show Certificate Preview",
+    "self_paced": "Self-paced"
   },
   "ws-course-modules": {
     "plural": "Course Modules",
@@ -3425,5 +3542,32 @@
       "hours_ago": "{count}h ago",
       "days_ago": "{count}d ago"
     }
+  },
+  "mail": {
+    "compose": "Compose",
+    "compose_email": "Compose Email",
+    "to": "To",
+    "subject": "Subject",
+    "message": "Message",
+    "send_email": "Send Email",
+    "recipient_placeholder": "recipient@example.com",
+    "subject_placeholder": "Enter email subject",
+    "message_placeholder": "Write your message here...",
+    "inbox": "Inbox",
+    "loading_more_emails": "Loading more emails...",
+    "no_more_emails": "No more emails to load",
+    "to_label": "To:",
+    "from_label": "From:",
+    "archive": "Archive",
+    "move_to_trash": "Move to trash",
+    "reply": "Reply",
+    "reply_all": "Reply all",
+    "forward": "Forward",
+    "more": "More",
+    "mark_as_unread": "Mark as unread",
+    "loading_email_content": "Loading email content...",
+    "no_email_selected": "No email selected",
+    "choose_email_message": "Choose an email from the list to view its content here.",
+    "no_emails_found": "No emails found"
   }
 }

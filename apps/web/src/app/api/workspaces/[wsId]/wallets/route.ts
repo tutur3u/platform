@@ -1,5 +1,5 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { Wallet } from '@tuturuuu/types/primitives/Wallet';
+import type { Wallet } from '@tuturuuu/types/primitives/Wallet';
 import { NextResponse } from 'next/server';
 
 interface Params {

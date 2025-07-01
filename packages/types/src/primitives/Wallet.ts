@@ -1,4 +1,4 @@
-import { Entity } from './Entity';
+import type { Entity } from './Entity';
 
 export interface Wallet extends Entity {
   balance?: number;

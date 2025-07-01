@@ -1,4 +1,3 @@
-import { DEV_MODE } from '@/constants/common';
 import { useQuery } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import {
@@ -7,8 +6,9 @@ import {
   DropdownMenuSeparator,
 } from '@tuturuuu/ui/dropdown-menu';
 import { ActivitySquare, Database } from '@tuturuuu/ui/icons';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
+import { CENTRAL_PORT, DEV_MODE } from '@/constants/common';
 
 export default function DashboardMenuItem() {
   const t = useTranslations('common');
@@ -27,7 +27,7 @@ export default function DashboardMenuItem() {
         <Link
           href={`${
             DEV_MODE
-              ? `http://localhost:7803/${defaultWorkspace?.id || 'onboarding'}`
+              ? `http://localhost:${CENTRAL_PORT}/${defaultWorkspace?.id || 'onboarding'}`
               : `https://tuturuuu.com/${defaultWorkspace?.id || 'onboarding'}`
           }`}
         >

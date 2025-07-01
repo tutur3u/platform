@@ -1,6 +1,6 @@
 'use client';
 
-import { type Task } from '@tuturuuu/ai/playground/object-generation';
+import type { Task } from '@tuturuuu/ai/playground/object-generation';
 import { useEffect, useState } from 'react';
 
 export default function Home() {

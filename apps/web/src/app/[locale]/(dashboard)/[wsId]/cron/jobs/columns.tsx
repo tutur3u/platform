@@ -1,7 +1,6 @@
 'use client';
 
-import { RowActions } from './row-actions';
-import { ColumnDef } from '@tanstack/react-table';
+import type { ColumnDef } from '@tanstack/react-table';
 import type { WorkspaceCronJob } from '@tuturuuu/types/db';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import { CheckCircle, Clock, PowerOff, XCircle } from '@tuturuuu/ui/icons';
@@ -9,6 +8,7 @@ import parser from 'cron-parser';
 import cronstrue from 'cronstrue';
 import moment from 'moment';
 import Link from 'next/link';
+import { RowActions } from './row-actions';
 
 function getNextRunTime(schedule: string, lastRun?: string | null) {
   try {
@@ -17,10 +17,7 @@ function getNextRunTime(schedule: string, lastRun?: string | null) {
     // If there's a last run, get next occurrence after that
     if (lastRun) {
       const lastRunDate = new Date(lastRun);
-      while (interval.next().getTime() <= lastRunDate.getTime()) {
-        // Keep moving forward until we find the next occurrence after last run
-        continue;
-      }
+      while (interval.next().getTime() <= lastRunDate.getTime()) {}
       return interval.prev().toISOString();
     }
 

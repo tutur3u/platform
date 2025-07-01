@@ -1,5 +1,5 @@
 import { cn } from '@tuturuuu/utils/format';
-import * as React from 'react';
+import type * as React from 'react';
 
 function Card({ className, ...props }: React.ComponentProps<'div'>) {
   return (

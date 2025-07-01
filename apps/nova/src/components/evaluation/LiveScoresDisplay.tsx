@@ -330,8 +330,10 @@ export function LiveResultsPreview({
                                 key={`pending-${index}`}
                                 className="h-2 w-2 rounded-full bg-foreground/20 transition-all duration-300"
                                 title={`Test Case ${
-                                  (evaluationPreview?.testCaseResults?.length ||
-                                    0) +
+                                  (
+                                    evaluationPreview?.testCaseResults
+                                      ?.length || 0
+                                  ) +
                                   index +
                                   1
                                 }: Pending`}

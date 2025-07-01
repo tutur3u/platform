@@ -1,9 +1,9 @@
+import { getCurrentUser } from '@tuturuuu/utils/user-helper';
+import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
+import { notFound } from 'next/navigation';
+import { getTimeTrackingData } from '@/lib/time-tracking-helper';
 import TimeTrackerContent from './time-tracker-content';
 import type { TimeTrackerData } from './types';
-import { getTimeTrackingData } from '@/lib/time-tracking-helper';
-import { getCurrentUser } from '@tuturuuu/utils/user-helper';
-import { getWorkspace, verifySecret } from '@tuturuuu/utils/workspace-helper';
-import { notFound } from 'next/navigation';
 
 interface Props {
   params: Promise<{
@@ -20,16 +20,6 @@ export default async function TimeTrackerPage({ params }: Props) {
     const user = await getCurrentUser();
 
     if (!workspace || !user) notFound();
-
-    // Check if time tracking is enabled
-    const timeTrackingEnabled = await verifySecret({
-      forceAdmin: true,
-      wsId,
-      name: 'ENABLE_TASKS',
-      value: 'true',
-    });
-
-    if (!timeTrackingEnabled) notFound();
 
     const rawData = await getTimeTrackingData(wsId, user.id);
 

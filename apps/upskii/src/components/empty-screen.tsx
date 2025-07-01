@@ -1,5 +1,5 @@
-import { type UseChatHelpers } from '@tuturuuu/ai/types';
-import { AIChat } from '@tuturuuu/types/db';
+import type { UseChatHelpers } from '@tuturuuu/ai/types';
+import type { AIChat } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
 import {
   ArrowDownToDot,

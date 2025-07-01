@@ -1,3 +1,6 @@
+import type { Timeblock } from '@tuturuuu/types/primitives/Timeblock';
+import dayjs from 'dayjs';
+import { describe, expect, test } from 'vitest';
 import { compareTimetz, maxTimetz, minTimetz } from '@/utils/date-helper';
 import {
   _experimentalAddTimeblocks as addTimeblocks,
@@ -7,9 +10,6 @@ import {
   getDateStrings,
   _experimentalRemoveTimeblocks as removeTimeblocks,
 } from '@/utils/timeblock-helper';
-import { Timeblock } from '@tuturuuu/types/primitives/Timeblock';
-import dayjs from 'dayjs';
-import { describe, expect, test } from 'vitest';
 
 describe('compareTimetz', () => {
   test('check compareTimetz implementation', ({ expect }) => {

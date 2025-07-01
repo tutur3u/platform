@@ -1,13 +1,13 @@
-import { getUserGroupColumns } from './columns';
-import UserGroupForm from './form';
-import { CustomDataTable } from '@/components/custom-data-table';
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
-import { UserGroupTag } from '@tuturuuu/types/primitives/UserGroupTag';
+import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
+import type { UserGroupTag } from '@tuturuuu/types/primitives/UserGroupTag';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
-import { getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
+import { CustomDataTable } from '@/components/custom-data-table';
+import { getUserGroupColumns } from './columns';
+import UserGroupForm from './form';
 
 interface SearchParams {
   q?: string;

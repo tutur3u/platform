@@ -1,4 +1,18 @@
 {
+  "mock": {
+    "course1": {
+      "name": "Introduction to Artificial Intelligence",
+      "description": "Learn the fundamentals of AI, machine learning, and neural networks."
+    },
+    "course2": {
+      "name": "Full-Stack Web Development",
+      "description": "Master both frontend and backend development using modern technologies."
+    },
+    "course3": {
+      "name": "Data Science with Python",
+      "description": "Analyze data and build predictive models using Python and popular libraries."
+    }
+  },
   "quiz-set-statistics": {
     "title": "Quiz Set Statistics",
     "description": "View detailed statistics for your quizzes, including average scores, completion rates, and more.",
@@ -471,6 +485,7 @@
     "years_old": "years old",
     "year_old": "year old",
     "average": "Average",
+    "logo": "{name} Logo",
     "no_content_yet": "No content yet",
     "words": "words",
     "word": "word",
@@ -784,6 +799,7 @@
         "title-1": "Your Complete",
         "title-2": "Educational Platform",
         "description": "A modern learning platform that empowers educators and students with AI-enhanced features, interactive content, and real-time collaboration tools.",
+        "explore-courses": "Explore Courses",
         "platform-guide": "Platform Guide"
       },
       "key-features": {
@@ -873,6 +889,15 @@
         "title": "Join Our Educational Community",
         "description": "Start your learning journey or begin creating and sharing your knowledge with students around the world.",
         "button": "Learn More"
+      },
+      "partners": {
+        "badge": "Trusted Partners",
+        "title": "Partnering with Leading Organizations"
+      },
+      "testimonials": {
+        "badge": "Testimonials",
+        "title": "What Our Community Says",
+        "description": "Discover how educators and students worldwide are transforming their learning experience with our platform."
       },
       "common": {
         "get-started": "Get Started"
@@ -1739,7 +1764,31 @@
     "continue_with_google": "Continue with Google",
     "continue_with_github": "Continue with GitHub",
     "continue_with_apple": "Continue with Apple",
-    "continue_with_discord": "Continue with Discord"
+    "continue_with_discord": "Continue with Discord",
+    "powered-by": "Powered by {domain}",
+    "welcome": "Welcome",
+    "sign_in_to_your_account": "Sign in to your account",
+    "invalid_credentials": "Invalid email or password",
+    "password_min_length": "Password must be at least 8 characters",
+    "passwordless": "Passwordless",
+    "with_password": "With Password",
+    "two_factor_authentication": "Two-Factor Authentication",
+    "enter_authenticator_code": "Enter the 6-digit code from your authenticator app",
+    "verification_code_label": "Verification Code",
+    "verify_button": "Verify",
+    "choose_sign_in_method": "Choose your preferred sign-in method",
+    "email": "Email",
+    "email_username_placeholder": "Enter email or username",
+    "will_send_to": "We'll send a verification code to",
+    "verification_code": "Verification Code",
+    "check_email": "Check your email for the verification code",
+    "verify": "Verify",
+    "password": "Password",
+    "password_placeholder": "Enter your password",
+    "sign_in": "Sign In",
+    "forgot_password": "Forgot password? Use passwordless login",
+    "will_sign_in_as": "You'll sign in as",
+    "or": "or"
   },
   "logout": {
     "logout": "Log out",
@@ -3558,7 +3607,8 @@
     "image_preview_not_available": "Image Preview Not Available",
     "image_preview_not_available_description": "A preview of the certificate template is not available.",
     "hide_certificate_preview": "Hide Certificate Preview",
-    "show_certificate_preview": "Show Certificate Preview"
+    "show_certificate_preview": "Show Certificate Preview",
+    "self_paced": "Self-paced"
   },
   "ws-crawlers": {
     "plural": "Crawlers",
@@ -3833,26 +3883,169 @@
   "ws-quiz-sets": {
     "plural": "Quiz Sets",
     "singular": "Quiz Set",
+    "name": "Quiz set name",
     "description": "Quiz sets are used to group quizzes together for learning purposes.",
-    "create": "Create quiz set",
     "create_description": "Create a new quiz set",
-    "name": "Set name",
-    "edit": "Edit set",
     "link-quizzes": "Link Quizzes",
-    "link-modules": "Link modules"
+    "link-modules": "Link modules",
+    "editing": "Updating...",
+    "creating": "Creating...",
+    "create": "Create Quiz Set",
+    "edit": "Edit Quiz Set",
+    "form-sections": {
+      "basic": {
+        "title": "Basic Information",
+        "subtitle": "Set up the fundamental details of your quiz"
+      },
+      "timing-limit": {
+        "title": "Basic Information",
+        "subtitle": "Set up the fundamental details of your quiz"
+      },
+      "schedule": {
+        "title": "Schedule",
+        "subtitle": "Set availability and due dates for the quiz"
+      },
+      "settings": {
+        "title": "Quiz Settings",
+        "subtitle": "Configure quiz behavior and student permissions"
+      }
+    },
+    "form-description": "Configure your quiz settings, timing, and permissions to create an engaging learning experience for your students.",
+    "required-badge": "Required",
+    "form-fields": {
+      "name": {
+        "title": "Set Name",
+        "description": "Choose a clear, descriptive name for your quiz",
+        "placeholder": "e.g., Chapter 5 Assessment"
+      },
+      "attempt_limit": {
+        "title": "Attempt Limit",
+        "description": "Maximum number of times a user can attempt the quiz. Leave 0 for unlimited.",
+        "placeholder": "e.g., 3"
+      },
+      "time_limit_minutes": {
+        "title": "Time Limit (minutes)",
+        "description": "The time allowed to complete the quiz in minutes. Leave 0 for no time limit.",
+        "placeholder": "e.g, 60"
+      },
+      "available_date": {
+        "title": "Available From",
+        "description": "Date and time when the quiz becomes available to participants."
+      },
+      "due_date": {
+        "title": "Due Date",
+        "description": "Deadline for submitting the quiz."
+      },
+      "explanation_mode": {
+        "title": "Explanation Mode",
+        "description": "Choose when and how students can see answer explanations",
+        "placeholder": "Select explanation timing",
+        "select_never": "Never show answer explanations",
+        "select_correct_answer": "Only show explanation of correct answers",
+        "select_all_answer": "Show explanation of all answers"
+      },
+      "instruction": {
+        "title": "Instructions",
+        "description": "Provide detailed instructions for students using the rich text editor, displayed before starting the quiz.",
+        "save": "Save Instruction",
+        "saving": "Saving..."
+      },
+      "allow_view_results": {
+        "title": "Allow Immediate Results",
+        "description": "Enable users to see their score immediately upon submission."
+      },
+      "results_released": {
+        "title": "Results Released",
+        "description": "Mark quiz results as released, allowing detailed feedback and explanations."
+      },
+      "allow_view_old_attempts": {
+        "title": "Allow Review Old Attempts",
+        "description": "Revisit users' previous quiz attempts. Before results are released, users can view only their submitted answers. Once results are released, they'll see their answers along with detailed results and feedback."
+      }
+    }
   },
   "ws-quizzes": {
     "plural": "Quizzes",
     "singular": "Quiz",
     "create": "Create quiz",
+    "create_multiple": "Add questions",
     "create_description": "Create a new quiz",
     "description": "Manage quizzes in your workspace that have multiple choice questions for learning purposes.",
+    "edit_description": "Edit a quiz",
     "edit": "Edit quiz",
+    "edit_all": "Edit all quizzes",
     "question": "Question",
     "answer": "Answer",
     "points": "Points",
     "submitting": "Submitting...",
     "submit": "Submit",
+    "form": {
+      "edit-title": "Edit Quiz Questions",
+      "create-title": "Create Quiz Questions",
+      "create-description": "Create multiple quiz questions at once. Each question can have multiple options with explanations. The user can also copy and paste quiz questions",
+      "edit-description": "Edit or add more multiple quiz questions at once. Each question can have multiple options with explanations. The user can also copy and paste quiz questions",
+      "question-no": "Question {no}",
+      "option-no": "Option {no}",
+      "untitled-question": "Untitled Question",
+      "content": {
+        "options": {
+          "label": "Answer Options",
+          "add-button": "Add Option",
+          "placeholder": "Option {no}",
+          "total-options-text": "Total Options",
+          "correct-label": "Correct",
+          "explanation-label": "Explanation",
+          "generate-explanation-button": "Generate",
+          "explanation-placeholder": "Explain why this option is correct or incorrect..."
+        },
+        "questions": {
+          "label": "Question",
+          "placeholder": "Enter your question here...",
+          "count-many": "{count} Questions",
+          "count-one": "{count} Question"
+        },
+        "correct-answers": {
+          "no-selected": "No correct answer selected",
+          "single-selected": "Single correct answer",
+          "multiple-selected": "Multiple correct answers"
+        }
+      },
+      "paste-confirm-modal": {
+        "title": "Confirm Paste",
+        "description-plural": "You are about to paste {length} quiz questions. Review the content below and choose an action.",
+        "description-single": "You are about to paste 1 quiz question. Review the content below and choose an action.",
+        "discard-button": "Discard",
+        "confirm-button": "Confirm Paste"
+      },
+      "add-another-button": "Add Another Question",
+      "paste-question-button": "Paste Question",
+      "create-button": "Create All Questions",
+      "edit-button": "Edit All Questions",
+      "creating": "Creating...",
+      "updating": "Updating...",
+      "error": {
+        "title": "Error",
+        "fail-update": "Failed to update quiz",
+        "fail-create": "Failed to create quiz",
+        "unexpected": "An unexpected error occurred",
+        "invalid-clipboard-title": "Error",
+        "invalid-clipboard": "Invalid quiz format",
+        "invalid-clipboard-message": "Failed to paste quiz data. Please ensure you have valid quiz data in your clipboard.",
+        "explanation-generation-failed": "Failed to generate explanation",
+        "quiz-copy-failed": "Failed to copy quiz to clipboard"
+      },
+      "success": {
+        "title": "Success",
+        "edit-quizzes": "Successfully updated {length} quizzes",
+        "edit-quiz": "Successfully updated {length} quiz",
+        "create-quizzes": "Successfully created {length} quizzes",
+        "create-quiz": "Successfully created {length} quiz",
+        "quiz-copied": "Quiz copied to clipboard",
+        "paste-success-many": "Pasted {length} quizzes succesfully",
+        "paste-success-one": "Pasted 1 quiz succesfully",
+        "explanation-generated": "Explanation generated successfully"
+      }
+    },
     "quiz-status": {
       "sidebar_aria": "Quiz progress sidebar",
       "question_status_title": "Question Progress",
@@ -3861,7 +4054,11 @@
       "question_navigation_label": "Jump to question",
       "answered_state": "Answered",
       "unanswered_state": "Unanswered",
-      "jump_to_question": "Jump to question"
+      "jump_to_question": "Jump to question",
+      "upcoming": "Upcoming",
+      "active": "Active",
+      "expired": "Expired",
+      "draft": "Draft"
     },
     "time": {
       "remaining": "Time Remaining",
@@ -4327,6 +4524,10 @@
     "error_description": "There was an error loading your certificates. Please try again later.",
     "certified": "Certified"
   },
+  "platform-roles": {
+    "plural": "Platform Roles",
+    "description": "Manage platform-wide user roles and permissions across all services."
+  },
   "sidebar": {
     "home": "Home",
     "courses": "Courses",
@@ -4406,5 +4607,6 @@
   },
   "request-feature": "Request Feature",
   "unlock-education-features": "Unlock Education Features",
-  "transform-your-workspace": "Transform your workspace with comprehensive learning tools: create\ncourses, design interactive quizzes, track student progress, issue\ncertificates, and leverage AI-powered teaching assistants."
+  "transform-your-workspace": "Transform your workspace with comprehensive learning tools: create\ncourses, design interactive quizzes, track student progress, issue\ncertificates, and leverage AI-powered teaching assistants.",
+  "courses-marketplace-description": "Discover our collection of published courses"
 }

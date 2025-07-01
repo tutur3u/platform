@@ -15,10 +15,10 @@ import {
   CheckCircleIcon,
   ClockIcon,
   PlusIcon,
+  SplitIcon,
   Trash2Icon,
   ZapIcon,
 } from '@tuturuuu/ui/icons';
-import { SplitIcon } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { Progress } from '@tuturuuu/ui/progress';

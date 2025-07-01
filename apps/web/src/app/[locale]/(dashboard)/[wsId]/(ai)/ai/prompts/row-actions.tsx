@@ -1,7 +1,7 @@
 'use client';
 
-import { Row } from '@tanstack/react-table';
-import { AIPrompt } from '@tuturuuu/types/db';
+import type { Row } from '@tanstack/react-table';
+import type { AIPrompt } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
 import {
   DropdownMenu,
@@ -12,8 +12,8 @@ import {
 } from '@tuturuuu/ui/dropdown-menu';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Ellipsis } from '@tuturuuu/ui/icons';
-import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 
 interface AIPromptRowActions {
   row: Row<AIPrompt>;

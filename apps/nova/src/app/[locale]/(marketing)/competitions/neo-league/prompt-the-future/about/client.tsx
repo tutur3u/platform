@@ -1,15 +1,5 @@
 'use client';
 
-import GradientHeadline from '../../../../../gradient-headline';
-import {
-  Contributor,
-  type Sponsor,
-  type TeamMember,
-  contributors,
-  organizers,
-  platformBuilders,
-  sponsors,
-} from './data';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card } from '@tuturuuu/ui/card';
@@ -32,11 +22,21 @@ import {
 } from '@tuturuuu/ui/icons';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { cn } from '@tuturuuu/utils/format';
-import { type Variants, motion, useScroll, useTransform } from 'framer-motion';
-import { useTranslations } from 'next-intl';
+import { motion, useScroll, useTransform, type Variants } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import React, { useEffect, useRef, useState } from 'react';
+import GradientHeadline from '../../../../../gradient-headline';
+import {
+  type Contributor,
+  contributors,
+  organizers,
+  platformBuilders,
+  type Sponsor,
+  sponsors,
+  type TeamMember,
+} from './data';
 
 // Define types for our animation data
 interface ParticleData {

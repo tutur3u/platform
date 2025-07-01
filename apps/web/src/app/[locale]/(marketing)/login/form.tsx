@@ -1,9 +1,8 @@
 'use client';
 
-import { DEV_MODE } from '@/constants/common';
 import { generateCrossAppToken, mapUrlToApp } from '@tuturuuu/auth/cross-app';
 import { createClient } from '@tuturuuu/supabase/next/client';
-import { SupabaseUser } from '@tuturuuu/supabase/next/user';
+import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent } from '@tuturuuu/ui/card';
 import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
@@ -16,7 +15,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@tuturuuu/ui/form';
-import { useForm } from '@tuturuuu/ui/hooks/use-form';
+import { type FieldValues, useForm } from '@tuturuuu/ui/hooks/use-form';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Eye, EyeOff, Github, Lock, Mail } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
@@ -24,11 +23,13 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from '@tuturuuu/ui/input-otp';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { Separator } from '@tuturuuu/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
-import { useLocale, useTranslations } from 'next-intl';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useLocale, useTranslations } from 'next-intl';
 import { useCallback, useEffect, useState } from 'react';
 import * as z from 'zod';
+import { DEV_MODE, PORT } from '@/constants/common';
+import { trpc } from '@/trpc/client';
 
 // Constants
 const COOLDOWN_DURATION = 60;
@@ -41,14 +42,57 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
+  // Helper function to process email input
+  const processEmailInput = (value: string): string => {
+    const trimmedValue = value.trim();
+    // If the input contains @ symbol, return as is
+    if (trimmedValue.includes('@')) {
+      return trimmedValue;
+    }
+    // If it's just a username, append @tuturuuu.com
+    if (trimmedValue.length > 0) {
+      return `${trimmedValue}@tuturuuu.com`;
+    }
+    return trimmedValue;
+  };
+
+  // Enhanced email input change handler
+  const handleEmailChange = (
+    value: string,
+    formType: 'otp' | 'password',
+    field: FieldValues
+  ) => {
+    setEmailDisplay((prev) => ({ ...prev, [formType]: value }));
+
+    // Reset domain preview when user is typing
+    setShowDomainPreview((prev) => ({ ...prev, [formType]: false }));
+
+    // Always use the raw input value while typing
+    field.onChange(value);
+  };
+
+  // Handle blur event to show domain completion
+  const handleEmailBlur = (
+    value: string,
+    formType: 'otp' | 'password',
+    field: FieldValues
+  ) => {
+    // If value doesn't contain @ and is not empty, show domain preview
+    if (value.trim() && !value.includes('@')) {
+      setShowDomainPreview((prev) => ({ ...prev, [formType]: true }));
+    }
+
+    field.onBlur();
+  };
+
   // Schema Definitions
   const passwordFormSchema = z.object({
-    email: z.string().email(),
+    email: z.string().transform(processEmailInput).pipe(z.string().email()),
     password: z.string().min(8, t('login.password_min_length')),
   });
 
   const OTPFormSchema = z.object({
-    email: z.string().email(),
+    email: z.string().transform(processEmailInput).pipe(z.string().email()),
     otp: z.string(),
   });
 
@@ -93,6 +137,14 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
   const [otpSent, setOtpSent] = useState(false);
   const [loading, setLoading] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
+  const [emailDisplay, setEmailDisplay] = useState({
+    otp: DEV_MODE ? 'local@tuturuuu.com' : '',
+    password: DEV_MODE ? 'local@tuturuuu.com' : '',
+  });
+  const [showDomainPreview, setShowDomainPreview] = useState({
+    otp: false,
+    password: false,
+  });
 
   // URL Processing Helper
   const processNextUrl = useCallback(async () => {
@@ -139,7 +191,7 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
     }
 
     router.refresh();
-  }, [searchParams, router]);
+  }, [searchParams, router, locale, supabase]);
 
   const loginWithPassword = async (data: {
     email: string;
@@ -177,74 +229,158 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
     setLoading(false);
   };
 
+  const sendOtpMutation = trpc.sendOtp.useMutation({
+    onSuccess: (data) => {
+      if (!data?.error) {
+        toast({
+          title: t('login.success'),
+          description: t('login.otp_sent'),
+        });
+
+        otpForm.setValue('otp', '');
+        otpForm.clearErrors('otp');
+        setOtpSent(true);
+        setResendCooldown(COOLDOWN_DURATION);
+
+        if (DEV_MODE) {
+          window.open(
+            window.location.origin.replace(PORT.toString(), '8004'),
+            '_blank'
+          );
+        }
+      } else {
+        // Handle server-side errors returned in the response
+        const errorMessage = data.error || t('login.failed_to_send');
+
+        toast({
+          title: t('login.failed'),
+          description: errorMessage,
+          variant: 'destructive',
+        });
+      }
+    },
+    onError: (error) => {
+      console.error('SendOTP Error:', error);
+
+      // Handle different types of tRPC errors
+      let errorMessage = t('login.failed_to_send');
+
+      if (error.data?.code === 'BAD_REQUEST') {
+        errorMessage = error.message || t('login.failed_to_send');
+      } else if (error.data?.code === 'TOO_MANY_REQUESTS') {
+        errorMessage = 'Too many requests. Please try again later.';
+      } else if (error.data?.code === 'INTERNAL_SERVER_ERROR') {
+        errorMessage = 'Server error. Please try again later.';
+      } else if (error.message) {
+        // Use the error message if available
+        errorMessage = error.message;
+      }
+
+      toast({
+        title: t('login.failed'),
+        description: errorMessage,
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const verifyOtpMutation = trpc.verifyOtp.useMutation({
+    onSuccess: async (data) => {
+      if (!data?.error) {
+        router.refresh();
+
+        if (await needsMFA()) {
+          setRequiresMFA(true);
+        } else {
+          window.location.reload();
+        }
+      } else {
+        otpForm.setError('otp', {
+          message: t('login.invalid_verification_code'),
+        });
+        otpForm.setValue('otp', '');
+
+        toast({
+          title: t('login.failed'),
+          description: data.error,
+          variant: 'destructive',
+        });
+      }
+    },
+    onError: (error) => {
+      console.error('VerifyOTP Error:', error);
+
+      // Handle different types of tRPC errors
+      let errorMessage = t('login.failed_to_verify');
+      let formErrorMessage = t('login.invalid_verification_code');
+
+      if (error.data?.code === 'BAD_REQUEST') {
+        if (
+          error.message?.toLowerCase().includes('otp') ||
+          error.message?.toLowerCase().includes('token')
+        ) {
+          errorMessage = t('login.invalid_verification_code');
+          formErrorMessage = t('login.invalid_verification_code');
+        } else if (error.message?.toLowerCase().includes('email')) {
+          errorMessage = error.message || t('login.failed_to_verify');
+          formErrorMessage =
+            error.message || t('login.invalid_verification_code');
+        } else {
+          errorMessage = error.message || t('login.failed_to_verify');
+        }
+      } else if (error.data?.code === 'UNAUTHORIZED') {
+        errorMessage = 'Verification code expired. Please request a new one.';
+        formErrorMessage = 'Code expired';
+      } else if (error.data?.code === 'TOO_MANY_REQUESTS') {
+        errorMessage =
+          'Too many verification attempts. Please try again later.';
+        formErrorMessage = 'Too many attempts';
+      } else if (error.data?.code === 'INTERNAL_SERVER_ERROR') {
+        errorMessage = 'Server error. Please try again later.';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
+      // Set form error
+      otpForm.setError('otp', {
+        message: formErrorMessage,
+      });
+      otpForm.setValue('otp', '');
+
+      // Show toast notification
+      toast({
+        title: t('login.failed'),
+        description: errorMessage,
+        variant: 'destructive',
+      });
+    },
+  });
+
+  // Combine tRPC loading states with manual loading state
+  const _isLoading =
+    loading || sendOtpMutation.isPending || verifyOtpMutation.isPending;
+
   // Authentication Functions
   const sendOtp = async (data: { email: string }) => {
     if (!locale || !data.email) return;
-    setLoading(true);
 
-    const res = await fetch('/api/auth/otp/send', {
-      method: 'POST',
-      body: JSON.stringify({ ...data, locale }),
+    sendOtpMutation.mutate({
+      email: data.email,
+      locale,
     });
-
-    if (res.ok) {
-      toast({
-        title: t('login.success'),
-        description: t('login.otp_sent'),
-      });
-
-      otpForm.setValue('otp', '');
-      otpForm.clearErrors('otp');
-      setOtpSent(true);
-      setResendCooldown(COOLDOWN_DURATION);
-
-      if (DEV_MODE) {
-        window.open(window.location.origin.replace('7803', '8004'), '_blank');
-      }
-    } else {
-      toast({
-        title: t('login.failed'),
-        description: t('login.failed_to_send'),
-      });
-    }
-
-    setLoading(false);
   };
 
   const verifyOtp = async (data: { email: string; otp: string }) => {
     if (!locale || !data.email || !data.otp) return;
-    setLoading(true);
 
-    const res = await fetch('/api/auth/otp/verify', {
-      method: 'POST',
-      body: JSON.stringify({ ...data, locale }),
+    verifyOtpMutation.mutate({
+      email: data.email,
+      otp: data.otp,
+      locale,
     });
-
-    if (res.ok) {
-      router.refresh();
-
-      if (await needsMFA()) {
-        setRequiresMFA(true);
-        setLoading(false);
-      } else {
-        window.location.reload();
-      }
-    } else {
-      setLoading(false);
-
-      otpForm.setError('otp', {
-        message: t('login.invalid_verification_code'),
-      });
-      otpForm.setValue('otp', '');
-
-      toast({
-        title: t('login.failed'),
-        description: t('login.failed_to_verify'),
-      });
-    }
   };
 
-  const needsMFA = async () => {
+  const needsMFA = useCallback(async () => {
     const { data: assuranceLevel } =
       await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
 
@@ -255,7 +391,7 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
       return true;
 
     return false;
-  };
+  }, [supabase.auth.mfa.getAuthenticatorAssuranceLevel]);
 
   const verifyTOtp = async (data: { totp: string }) => {
     if (!data.totp) return;
@@ -275,7 +411,7 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
       }
 
       let verificationSuccess = false;
-      let lastError: any = null;
+      let lastError: Error | null = null;
 
       for (const factor of verifiedFactors) {
         try {
@@ -299,8 +435,7 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
 
           lastError = verifyError;
         } catch (error) {
-          lastError = error;
-          continue;
+          lastError = error as Error;
         }
       }
 
@@ -431,8 +566,6 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
           'Please enter the OTP code sent to your email to continue.',
       });
     }
-
-    setLoading(false);
   };
 
   const onTOtpSubmit = async (data: z.infer<typeof TOTPFormSchema>) => {
@@ -466,7 +599,7 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
     }
 
     checkUser();
-  }, [searchParams]);
+  }, [supabase.auth.getUser, needsMFA]);
 
   useEffect(() => {
     const processUrl = async () => {
@@ -480,7 +613,7 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
     if (initialized) {
       processUrl();
     }
-  }, [user, initialized, requiresMFA]);
+  }, [user, initialized, requiresMFA, processNextUrl]);
 
   useEffect(() => {
     if (DEV_MODE) {
@@ -490,7 +623,7 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
         passwordForm.setFocus('email');
       }
     }
-  }, [DEV_MODE, loginMethod]);
+  }, [loginMethod, otpForm.setFocus, passwordForm.setFocus]);
 
   useEffect(() => {
     if (resendCooldown > 0) {
@@ -518,10 +651,10 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
         <CardContent className="space-y-6 p-8">
           <div className="space-y-2 text-center">
             <h2 className="bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-2xl font-bold text-transparent dark:from-white dark:to-gray-300">
-              Two-Factor Authentication
+              {t('login.two_factor_authentication')}
             </h2>
             <p className="text-sm text-balance text-muted-foreground">
-              Enter your 6-digit verification code from your authenticator app
+              {t('login.enter_authenticator_code')}
             </p>
           </div>
 
@@ -536,7 +669,7 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                      Verification Code
+                      {t('login.verification_code_label')}
                     </FormLabel>
                     <FormControl>
                       <InputOTP
@@ -546,10 +679,10 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
                         className="justify-center"
                       >
                         <InputOTPGroup className="w-full gap-2">
-                          {Array.from({ length: 6 }).map((_, i) => (
+                          {Array.from({ length: 6 }).map((_, index) => (
                             <InputOTPSlot
-                              key={i}
-                              index={i}
+                              key={`totp-${index + 1}`}
+                              index={index}
                               className="h-12 w-full rounded-lg border bg-white/50 text-lg font-semibold transition-all duration-200 focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-gray-700/50 dark:bg-gray-800/50"
                             />
                           ))}
@@ -563,17 +696,17 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
 
               <Button
                 type="submit"
-                variant={loading ? 'outline' : undefined}
+                variant={_isLoading ? 'outline' : undefined}
                 className="h-12 w-full transform font-medium shadow-lg transition-all duration-200 hover:scale-[1.02] hover:shadow-xl"
-                disabled={loading || totpForm.watch('totp').length !== 6}
+                disabled={_isLoading || totpForm.watch('totp').length !== 6}
               >
-                {loading ? (
+                {_isLoading ? (
                   <div className="flex items-center gap-2">
                     <LoadingIndicator className="h-4 w-4" />
                     <span>{t('common.loading')}...</span>
                   </div>
                 ) : (
-                  'Verify'
+                  t('login.verify_button')
                 )}
               </Button>
             </form>
@@ -640,14 +773,45 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
                         <div className="group relative">
                           <Mail className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground transition-colors group-focus-within:text-primary" />
                           <Input
-                            className="h-12 bg-white/50 pl-10 transition-all duration-200 focus:border-primary/50 focus:ring-2 focus:ring-primary/20 dark:border-gray-700/50 dark:bg-gray-800/50"
-                            placeholder={t('login.email_placeholder')}
-                            {...field}
-                            disabled={otpSent || loading}
+                            className={`h-12 bg-white/50 pl-10 transition-all duration-200 focus:border-primary/50 focus:ring-2 focus:ring-primary/20 dark:border-gray-700/50 dark:bg-gray-800/50 ${
+                              showDomainPreview.otp &&
+                              emailDisplay.otp &&
+                              !emailDisplay.otp.includes('@')
+                                ? 'pr-32'
+                                : ''
+                            }`}
+                            placeholder={t('login.email_username_placeholder')}
+                            value={emailDisplay.otp}
+                            onChange={(e) =>
+                              handleEmailChange(e.target.value, 'otp', field)
+                            }
+                            onBlur={() =>
+                              handleEmailBlur(emailDisplay.otp, 'otp', field)
+                            }
+                            disabled={otpSent || _isLoading}
                           />
+                          {showDomainPreview.otp &&
+                            emailDisplay.otp &&
+                            !emailDisplay.otp.includes('@') && (
+                              <div className="absolute inset-y-0 right-3 flex items-center">
+                                <span className="text-xs text-dynamic-blue bg-dynamic-blue/10 px-2 py-1 rounded border border-dynamic-blue/30">
+                                  @tuturuuu.com
+                                </span>
+                              </div>
+                            )}
                         </div>
                       </FormControl>
                       <FormMessage />
+                      {showDomainPreview.otp &&
+                        emailDisplay.otp &&
+                        !emailDisplay.otp.includes('@') && (
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {t('login.will_send_to')}:{' '}
+                            <span className="font-medium text-dynamic-blue">
+                              {emailDisplay.otp}@tuturuuu.com
+                            </span>
+                          </p>
+                        )}
                     </FormItem>
                   )}
                 />
@@ -665,15 +829,15 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
                           <InputOTP
                             maxLength={MAX_OTP_LENGTH}
                             {...field}
-                            disabled={loading}
+                            disabled={_isLoading}
                             className="justify-center"
                           >
                             <InputOTPGroup className="w-full gap-2">
                               {Array.from({ length: MAX_OTP_LENGTH }).map(
-                                (_, i) => (
+                                (_, index) => (
                                   <InputOTPSlot
-                                    key={i}
-                                    index={i}
+                                    key={`otp-${index + 1}`}
+                                    index={index}
                                     className="h-12 w-full rounded-lg border bg-white/50 text-lg font-semibold transition-all duration-200 focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-gray-700/50 dark:bg-gray-800/50"
                                   />
                                 )
@@ -692,14 +856,14 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
 
                 <Button
                   type="submit"
-                  variant={loading ? 'outline' : undefined}
+                  variant={_isLoading ? 'outline' : undefined}
                   className="h-12 w-full transform font-medium shadow-lg transition-all duration-200 hover:scale-[1.02] hover:shadow-xl"
                   disabled={
-                    loading ||
+                    _isLoading ||
                     (otpSent && otpForm.watch('otp').length !== MAX_OTP_LENGTH)
                   }
                 >
-                  {loading ? (
+                  {_isLoading ? (
                     <div className="flex items-center gap-2">
                       <LoadingIndicator className="h-4 w-4" />
                       <span>{t('common.loading')}...</span>
@@ -716,7 +880,7 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
                     type="button"
                     variant="outline"
                     className="h-12 w-full bg-white/50 transition-all duration-200 hover:bg-white/80 dark:border-gray-700/50 dark:bg-gray-800/50 dark:hover:bg-gray-800/80"
-                    disabled={loading || resendCooldown > 0}
+                    disabled={_isLoading || resendCooldown > 0}
                     onClick={() => {
                       otpForm.handleSubmit(onOtpSubmit)();
                     }}
@@ -749,14 +913,53 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
                         <div className="group relative">
                           <Mail className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground transition-colors group-focus-within:text-primary" />
                           <Input
-                            className="h-12 bg-white/50 pl-10 transition-all duration-200 focus:border-primary/50 focus:ring-2 focus:ring-primary/20 dark:border-gray-700/50 dark:bg-gray-800/50"
-                            placeholder={t('login.email_placeholder')}
-                            {...field}
-                            disabled={loading}
+                            className={`h-12 bg-white/50 pl-10 transition-all duration-200 focus:border-primary/50 focus:ring-2 focus:ring-primary/20 dark:border-gray-700/50 dark:bg-gray-800/50 ${
+                              showDomainPreview.password &&
+                              emailDisplay.password &&
+                              !emailDisplay.password.includes('@')
+                                ? 'pr-32'
+                                : ''
+                            }`}
+                            placeholder={t('login.email_username_placeholder')}
+                            value={emailDisplay.password}
+                            onChange={(e) =>
+                              handleEmailChange(
+                                e.target.value,
+                                'password',
+                                field
+                              )
+                            }
+                            onBlur={() =>
+                              handleEmailBlur(
+                                emailDisplay.password,
+                                'password',
+                                field
+                              )
+                            }
+                            disabled={_isLoading}
                           />
+                          {showDomainPreview.password &&
+                            emailDisplay.password &&
+                            !emailDisplay.password.includes('@') && (
+                              <div className="absolute inset-y-0 right-3 flex items-center">
+                                <span className="text-xs text-dynamic-blue bg-dynamic-blue/10 px-2 py-1 rounded border border-dynamic-blue/30">
+                                  @tuturuuu.com
+                                </span>
+                              </div>
+                            )}
                         </div>
                       </FormControl>
                       <FormMessage />
+                      {showDomainPreview.password &&
+                        emailDisplay.password &&
+                        !emailDisplay.password.includes('@') && (
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {t('login.will_sign_in_as')}:{' '}
+                            <span className="font-medium text-dynamic-blue">
+                              {emailDisplay.password}@tuturuuu.com
+                            </span>
+                          </p>
+                        )}
                     </FormItem>
                   )}
                 />
@@ -777,7 +980,7 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
                             type={showPassword ? 'text' : 'password'}
                             placeholder={t('login.password_placeholder')}
                             {...field}
-                            disabled={loading}
+                            disabled={_isLoading}
                           />
                           <button
                             type="button"
@@ -799,11 +1002,11 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
 
                 <Button
                   type="submit"
-                  variant={loading ? 'outline' : undefined}
+                  variant={_isLoading ? 'outline' : undefined}
                   className="h-12 w-full transform font-medium shadow-lg transition-all duration-200 hover:scale-[1.02] hover:shadow-xl"
-                  disabled={loading || !passwordForm.formState.isValid}
+                  disabled={_isLoading || !passwordForm.formState.isValid}
                 >
-                  {loading ? (
+                  {_isLoading ? (
                     <div className="flex items-center gap-2">
                       <LoadingIndicator className="h-4 w-4" />
                       <span>{t('common.loading')}...</span>
@@ -846,7 +1049,7 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
               <Button
                 variant="outline"
                 onClick={handleGoogleLogin}
-                disabled={loading}
+                disabled={_isLoading}
                 className="group relative h-12 w-full transform bg-white/50 transition-all duration-200 hover:scale-[1.02] hover:bg-white/80 dark:border-gray-700/50 dark:bg-gray-800/50 dark:hover:bg-gray-800/80"
               >
                 <div className="absolute left-4">
@@ -866,7 +1069,7 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
               <Button
                 variant="outline"
                 onClick={handleGitHubLogin}
-                disabled={loading}
+                disabled={_isLoading}
                 className="group relative h-12 w-full transform bg-white/50 transition-all duration-200 hover:scale-[1.02] hover:bg-white/80 dark:border-gray-700/50 dark:bg-gray-800/50 dark:hover:bg-gray-800/80"
               >
                 <div className="absolute left-4">

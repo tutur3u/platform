@@ -1,6 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
-import {
+import type {
   Task,
   TaskBoard,
   TaskList,

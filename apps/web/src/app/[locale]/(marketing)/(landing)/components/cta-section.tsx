@@ -2,8 +2,8 @@
 
 import { Button } from '@tuturuuu/ui/button';
 import { Calendar, Clock, Sparkles } from '@tuturuuu/ui/icons';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { useRef } from 'react';
 
 export function CtaSection() {

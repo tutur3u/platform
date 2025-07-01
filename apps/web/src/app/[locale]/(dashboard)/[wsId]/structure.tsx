@@ -1,12 +1,8 @@
 'use client';
 
-import { Nav } from './nav';
-import { NavLink } from '@/components/navigation';
-import { PROD_MODE, SIDEBAR_COLLAPSED_COOKIE_NAME } from '@/constants/common';
-import { useSidebar } from '@/context/sidebar-context';
 import { useQuery } from '@tanstack/react-query';
-import { Workspace } from '@tuturuuu/types/db';
-import { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
+import type { Workspace } from '@tuturuuu/types/db';
+import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { LogoTitle } from '@tuturuuu/ui/custom/logo-title';
 import { Structure as BaseStructure } from '@tuturuuu/ui/custom/structure';
 import { WorkspaceSelect } from '@tuturuuu/ui/custom/workspace-select';
@@ -14,11 +10,15 @@ import { ArrowLeft } from '@tuturuuu/ui/icons';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { cn } from '@tuturuuu/utils/format';
 import { setCookie } from 'cookies-next';
-import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { ReactNode, Suspense, useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
+import { type ReactNode, Suspense, useEffect, useState } from 'react';
+import type { NavLink } from '@/components/navigation';
+import { PROD_MODE, SIDEBAR_COLLAPSED_COOKIE_NAME } from '@/constants/common';
+import { useSidebar } from '@/context/sidebar-context';
+import { Nav } from './nav';
 
 interface MailProps {
   wsId: string;
@@ -29,6 +29,7 @@ interface MailProps {
   actions: ReactNode;
   userPopover: ReactNode;
   children: ReactNode;
+  disableCreateNewWorkspace: boolean;
 }
 
 export function Structure({
@@ -39,6 +40,7 @@ export function Structure({
   actions,
   userPopover,
   children,
+  disableCreateNewWorkspace,
 }: MailProps) {
   const t = useTranslations();
   const pathname = usePathname();
@@ -248,9 +250,11 @@ export function Structure({
         }
       >
         <WorkspaceSelect
-          t={t}
+          t={t as (key: string) => string}
           hideLeading={isCollapsed}
-          localUseQuery={useQuery}
+          // biome-ignore lint/suspicious/noExplicitAny: <useQuery can be any>
+          localUseQuery={useQuery as any}
+          disableCreateNewWorkspace={disableCreateNewWorkspace}
         />
       </Suspense>
     </>
@@ -354,10 +358,11 @@ export function Structure({
       sidebarContent={sidebarContent}
       actions={actions}
       userPopover={userPopover}
-      children={children}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
       hideSizeToggle={behavior === 'hover'}
-    />
+    >
+      {children}
+    </BaseStructure>
   );
 }

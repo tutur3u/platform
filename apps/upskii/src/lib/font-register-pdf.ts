@@ -1,6 +1,7 @@
 // apps/upskii/src/lib/pdf/register-roboto-fonts.ts
-import { BASE_URL } from '@/constants/common';
+
 import { Font } from '@react-pdf/renderer';
+import { BASE_URL } from '@/constants/common';
 
 let alreadyRegistered = false;
 

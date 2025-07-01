@@ -1,4 +1,4 @@
-import { DeepgramError, createClient } from '@deepgram/sdk';
+import { createClient, DeepgramError } from '@deepgram/sdk';
 import { type NextRequest, NextResponse } from 'next/server';
 
 export const revalidate = 0;
@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
   const url = request.url;
   const deepgram = createClient(process.env.DEEPGRAM_API_KEY ?? '');
 
-  let { result: projectsResult, error: projectsError } =
+  const { result: projectsResult, error: projectsError } =
     await deepgram.manage.getProjects();
 
   if (projectsError) {
@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  let { result: newKeyResult, error: newKeyError } =
+  const { result: newKeyResult, error: newKeyError } =
     await deepgram.manage.createProjectKey(project.project_id, {
       comment: 'Temporary API key',
       scopes: ['usage:write'],

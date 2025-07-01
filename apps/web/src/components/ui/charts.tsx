@@ -33,6 +33,7 @@ export const LineChart = ({
       <RechartsLineChart
         data={data}
         margin={{ top: 5, right: 30, left: 20, bottom: 25 }}
+        accessibilityLayer
       >
         <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
         <XAxis
@@ -44,6 +45,7 @@ export const LineChart = ({
           }}
         />
         <YAxis
+          width="auto"
           label={{
             value: 'Value',
             angle: -90,
@@ -87,6 +89,7 @@ export const BarChart = ({
       <RechartsBarChart
         data={data}
         margin={{ top: 5, right: 30, left: 20, bottom: 25 }}
+        accessibilityLayer
       >
         <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
         <XAxis
@@ -98,6 +101,7 @@ export const BarChart = ({
           }}
         />
         <YAxis
+          width="auto"
           label={{
             value: 'Value',
             angle: -90,
@@ -131,7 +135,7 @@ export const PieChart = ({
 }: PieChartProps) => {
   return (
     <ResponsiveContainer width="100%" height="100%">
-      <RechartsPieChart>
+      <RechartsPieChart accessibilityLayer>
         <Pie
           data={data}
           cx="50%"
@@ -141,7 +145,7 @@ export const PieChart = ({
           fill="#8884d8"
           dataKey="value"
           label={({ name, percent }) =>
-            `${name}: ${(percent * 100).toFixed(0)}%`
+            `${name}: ${((percent ?? 0) * 100).toFixed(0)}%`
           }
         >
           {data.map((_, index) => (

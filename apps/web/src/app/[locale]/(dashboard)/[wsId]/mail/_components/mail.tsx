@@ -1,12 +1,8 @@
 'use client';
 
-import { type Mail } from '../data';
-import { useMail } from '../use-mail';
-import { MailDisplay } from './mail-display';
-import { MailList } from './mail-list';
-import { Nav } from './nav';
-import { Archive, Inbox, Search, Send } from '@tuturuuu/ui/icons';
-import { Input } from '@tuturuuu/ui/input';
+import type { PostEmail } from '@tuturuuu/types/primitives/post-email';
+import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
+import { Mail as MailIcon, MailWarning, Send } from '@tuturuuu/ui/icons';
 import {
   ResizableHandle,
   ResizablePanel,
@@ -15,181 +11,206 @@ import {
 import { Separator } from '@tuturuuu/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { TooltipProvider } from '@tuturuuu/ui/tooltip';
-import { cn } from '@tuturuuu/utils/format';
-import * as React from 'react';
+import { useTranslations } from 'next-intl';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { CustomDataTable } from '@/components/custom-data-table';
+import type { Mail } from '../client';
+import { useMail } from '../use-mail';
+import { createPostEmailKey, usePosts } from '../use-posts';
+import { ComposeButton } from './compose-button';
+import { ComposeDialog } from './compose-dialog';
+import { MailDisplay } from './mail-display';
+import { MailList } from './mail-list';
+import { PostDisplay } from './post-display';
+import { getPostEmailColumns } from './posts-columns';
+import PostsFilters from './posts-filters';
+
+interface SearchParams {
+  page?: string;
+  pageSize?: string;
+  includedGroups?: string | string[];
+  excludedGroups?: string | string[];
+  userId?: string;
+}
 
 interface MailProps {
   mails: Mail[];
   defaultLayout: number[] | undefined;
   defaultCollapsed?: boolean;
   navCollapsedSize: number;
+  onLoadMore?: () => void;
+  hasMore?: boolean;
+  loading?: boolean;
+  wsId: string;
+  locale: string;
+  postsData: PostEmail[];
+  postsCount: number;
+  postsStatus: { count: number | null };
+  searchParams: SearchParams;
 }
 
-export function Mail({
+export function MailClient({
   mails,
   defaultLayout = [20, 32, 48],
-  defaultCollapsed = false,
-  navCollapsedSize,
+  onLoadMore,
+  hasMore,
+  loading,
+  wsId,
+  locale,
+  postsData,
+  postsCount,
+  postsStatus,
+  searchParams,
 }: MailProps) {
-  const [isCollapsed, setIsCollapsed] = React.useState(defaultCollapsed);
   const [mail] = useMail();
+  const [posts, setPosts] = usePosts();
+  const [composeOpen, setComposeOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState('inbox');
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const t = useTranslations();
+
+  const handleScroll = useCallback(() => {
+    if (!scrollContainerRef.current || !onLoadMore || !hasMore || loading)
+      return;
+
+    const { scrollTop, scrollHeight, clientHeight } =
+      scrollContainerRef.current;
+    const isNearBottom = scrollTop + clientHeight >= scrollHeight - 200;
+
+    if (isNearBottom) {
+      onLoadMore();
+    }
+  }, [onLoadMore, hasMore, loading]);
+
+  useEffect(() => {
+    const scrollElement = scrollContainerRef.current;
+    if (!scrollElement) return;
+
+    scrollElement.addEventListener('scroll', handleScroll);
+    return () => scrollElement.removeEventListener('scroll', handleScroll);
+  }, [handleScroll]);
+
+  // Find selected post email
+  const selectedPostEmail =
+    postsData.find((item) => createPostEmailKey(item) === posts.selected) ||
+    null;
+
+  const PostsContent = () => (
+    <div className="p-6 space-y-6">
+      <FeatureSummary
+        pluralTitle={t('ws-post-emails.plural')}
+        singularTitle={t('ws-post-emails.singular')}
+        description={t('ws-post-emails.description')}
+      />
+
+      <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
+        <div className="flex w-full flex-col items-center gap-1 rounded border border-dynamic-purple/15 bg-dynamic-purple/15 p-4 text-dynamic-purple">
+          <div className="flex items-center gap-2 text-xl font-bold">
+            <Send />
+            {t('ws-post-emails.sent_emails')}
+          </div>
+          <Separator className="my-1 bg-dynamic-purple/15" />
+          <div className="text-xl font-semibold md:text-3xl">
+            {postsStatus.count || 0}
+            <span className="opacity-50">/{postsCount || 0}</span>
+          </div>
+        </div>
+        <div className="flex w-full flex-col items-center gap-1 rounded border border-dynamic-red/15 bg-dynamic-red/15 p-4 text-dynamic-red">
+          <div className="flex items-center gap-2 text-xl font-bold">
+            <MailWarning />
+            {t('ws-post-emails.pending_emails')}
+          </div>
+          <Separator className="my-1 bg-dynamic-red/15" />
+          <div className="text-3xl font-semibold">
+            {(postsCount || 0) - (postsStatus.count || 0)}
+            <span className="opacity-50">/{postsCount || 0}</span>
+          </div>
+        </div>
+      </div>
+
+      <CustomDataTable
+        data={postsData}
+        namespace="post-email-data-table"
+        columnGenerator={getPostEmailColumns}
+        extraData={{ locale }}
+        count={postsCount}
+        filters={
+          <PostsFilters wsId={wsId} searchParams={searchParams} noExclude />
+        }
+        defaultVisibility={{
+          id: false,
+          email: false,
+          subject: false,
+          is_completed: false,
+          notes: false,
+          created_at: false,
+          post_title: false,
+          post_content: false,
+        }}
+        disableSearch
+        onRowClick={(row) => {
+          setPosts({
+            ...posts,
+            selected: createPostEmailKey(row),
+          });
+        }}
+      />
+    </div>
+  );
 
   return (
     <TooltipProvider delayDuration={0}>
       <ResizablePanelGroup
         direction="horizontal"
         onLayout={(sizes: number[]) => {
+          // biome-ignore lint/suspicious/noDocumentCookie: <>
           document.cookie = `react-resizable-panels:layout:mail=${JSON.stringify(
             sizes
           )}`;
         }}
-        className="h-full max-h-[800px] items-stretch"
+        className="items-stretch h-full"
       >
         <ResizablePanel
-          defaultSize={defaultLayout[0]}
-          collapsedSize={navCollapsedSize}
-          collapsible={true}
-          minSize={15}
-          maxSize={20}
-          onCollapse={async () => {
-            setIsCollapsed(true);
-            await fetch('/api/v1/infrastructure/sidebar', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({ collapsed: true }),
-            });
-          }}
-          onResize={async () => {
-            setIsCollapsed(false);
-            await fetch('/api/v1/infrastructure/sidebar', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({ collapsed: false }),
-            });
-          }}
-          className={cn(
-            isCollapsed &&
-              'min-w-[50px] transition-all duration-300 ease-in-out'
-          )}
+          defaultSize={defaultLayout[1]}
+          minSize={30}
+          className="flex flex-col"
         >
-          <Nav
-            isCollapsed={isCollapsed}
-            links={[
-              {
-                title: 'Inbox',
-                label: '128',
-                icon: Inbox,
-                variant: 'default',
-              },
-              // {
-              //   title: 'Drafts',
-              //   label: '9',
-              //   icon: File,
-              //   variant: 'ghost',
-              // },
-              {
-                title: 'Sent',
-                label: '',
-                icon: Send,
-                variant: 'ghost',
-              },
-              // {
-              //   title: 'Junk',
-              //   label: '23',
-              //   icon: ArchiveX,
-              //   variant: 'ghost',
-              // },
-              // {
-              //   title: 'Trash',
-              //   label: '',
-              //   icon: Trash2,
-              //   variant: 'ghost',
-              // },
-              {
-                title: 'Archive',
-                label: '',
-                icon: Archive,
-                variant: 'ghost',
-              },
-            ]}
-          />
-          {/*<Separator />*/}
-          {/*<Nav*/}
-          {/*  isCollapsed={isCollapsed}*/}
-          {/*  links={[*/}
-          {/*    {*/}
-          {/*      title: 'Social',*/}
-          {/*      label: '972',*/}
-          {/*      icon: Users2,*/}
-          {/*      variant: 'ghost',*/}
-          {/*    },*/}
-          {/*    {*/}
-          {/*      title: 'Updates',*/}
-          {/*      label: '342',*/}
-          {/*      icon: AlertCircle,*/}
-          {/*      variant: 'ghost',*/}
-          {/*    },*/}
-          {/*    {*/}
-          {/*      title: 'Forums',*/}
-          {/*      label: '128',*/}
-          {/*      icon: MessagesSquare,*/}
-          {/*      variant: 'ghost',*/}
-          {/*    },*/}
-          {/*    {*/}
-          {/*      title: 'Shopping',*/}
-          {/*      label: '8',*/}
-          {/*      icon: ShoppingCart,*/}
-          {/*      variant: 'ghost',*/}
-          {/*    },*/}
-          {/*    {*/}
-          {/*      title: 'Promotions',*/}
-          {/*      label: '21',*/}
-          {/*      icon: Archive,*/}
-          {/*      variant: 'ghost',*/}
-          {/*    },*/}
-          {/*  ]}*/}
-          {/*/>*/}
-        </ResizablePanel>
-        <ResizableHandle withHandle />
-        <ResizablePanel defaultSize={defaultLayout[1]} minSize={30}>
-          <Tabs defaultValue="all">
-            <div className="flex items-center px-4 py-2">
-              <h1 className="text-xl font-bold">Inbox</h1>
-              <TabsList className="ml-auto">
-                <TabsTrigger
-                  value="all"
-                  className="text-zinc-600 dark:text-zinc-200"
-                >
-                  All mail
-                </TabsTrigger>
-                <TabsTrigger
-                  value="unread"
-                  className="text-zinc-600 dark:text-zinc-200"
-                >
-                  Unread
-                </TabsTrigger>
-              </TabsList>
-            </div>
-            <Separator />
-            <div className="bg-background/95 p-4 backdrop-blur supports-backdrop-filter:bg-background/60">
-              <form>
-                <div className="relative">
-                  <Search className="absolute top-2.5 left-2 h-4 w-4 text-muted-foreground" />
-                  <Input placeholder="Search" className="pl-8" />
-                </div>
-              </form>
-            </div>
-            <TabsContent value="all" className="m-0">
-              <MailList items={mails} />
-            </TabsContent>
-            <TabsContent value="unread" className="m-0">
-              <MailList items={mails.filter((item) => !item.read)} />
-            </TabsContent>
-          </Tabs>
+          <div
+            ref={scrollContainerRef}
+            className="overflow-y-auto h-full w-full"
+          >
+            <Tabs
+              value={activeTab}
+              onValueChange={setActiveTab}
+              defaultValue="inbox"
+            >
+              <div className="flex items-center justify-between px-4 h-16 border-b bg-background/50 backdrop-blur-sm">
+                <TabsList className="grid w-fit grid-cols-2">
+                  <TabsTrigger
+                    value="inbox"
+                    className="flex items-center gap-2"
+                  >
+                    <MailIcon className="h-4 w-4" />
+                    {t('mail.inbox')}
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="posts"
+                    className="flex items-center gap-2"
+                  >
+                    <Send className="h-4 w-4" />
+                    {t('ws-post-emails.plural')}
+                  </TabsTrigger>
+                </TabsList>
+                <ComposeButton onClick={() => setComposeOpen(true)} />
+              </div>
+              <TabsContent value="inbox" className="m-0">
+                <MailList items={mails} hasMore={hasMore} loading={loading} />
+              </TabsContent>
+              <TabsContent value="posts" className="m-0">
+                <PostsContent />
+              </TabsContent>
+            </Tabs>
+          </div>
         </ResizablePanel>
         <ResizableHandle className="hidden md:block" />
         <ResizablePanel
@@ -197,11 +218,20 @@ export function Mail({
           defaultSize={defaultLayout[2]}
           minSize={30}
         >
-          <MailDisplay
-            mail={mails.find((item) => item.id === mail.selected) || null}
-          />
+          {activeTab === 'inbox' ? (
+            <MailDisplay
+              mail={mails.find((item) => item.id === mail.selected) || null}
+            />
+          ) : (
+            <PostDisplay postEmail={selectedPostEmail} />
+          )}
         </ResizablePanel>
       </ResizablePanelGroup>
+      <ComposeDialog
+        wsId={wsId}
+        open={composeOpen}
+        onOpenChange={setComposeOpen}
+      />
     </TooltipProvider>
   );
 }

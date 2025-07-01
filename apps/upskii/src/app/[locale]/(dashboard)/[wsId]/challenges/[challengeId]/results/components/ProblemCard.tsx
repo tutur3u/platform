@@ -1,7 +1,4 @@
-import { ExtendedNovaSubmission } from '../types';
-import SubmissionAccordion from './SubmissionAccordion';
-import ScoreBadge from '@/components/common/ScoreBadge';
-import { NovaProblem } from '@tuturuuu/types/db';
+import type { NovaProblem } from '@tuturuuu/types/db';
 import { Badge } from '@tuturuuu/ui/badge';
 import {
   Card,
@@ -17,6 +14,9 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@tuturuuu/ui/tooltip';
+import ScoreBadge from '@/components/common/ScoreBadge';
+import type { ExtendedNovaSubmission } from '../types';
+import SubmissionAccordion from './SubmissionAccordion';
 
 interface ProblemCardProps {
   problem: NovaProblem & {

@@ -1,10 +1,10 @@
-import { NavLink, Navigation } from '@/components/navigation';
 import { BugPlay, Gauge, Globe, Link2 } from '@tuturuuu/ui/icons';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
-import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
-import React from 'react';
+import { getTranslations } from 'next-intl/server';
+import type React from 'react';
+import { Navigation, type NavLink } from '@/components/navigation';
 
 interface LayoutProps {
   params: Promise<{

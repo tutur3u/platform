@@ -1,11 +1,11 @@
-import Chat from './chat';
-import { getChats } from './helper';
 import {
   getPermissions,
   getWorkspace,
   verifyHasSecrets,
 } from '@tuturuuu/utils/workspace-helper';
 import { notFound } from 'next/navigation';
+import Chat from './chat';
+import { getChats } from './helper';
 
 interface Props {
   params: Promise<{

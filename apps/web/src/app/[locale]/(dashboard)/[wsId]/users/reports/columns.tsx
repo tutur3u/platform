@@ -1,11 +1,11 @@
 'use client';
 
-import { UserReportRowActions } from './row-actions';
-import { ColumnDef } from '@tanstack/react-table';
-import { WorkspaceUserReport } from '@tuturuuu/types/db';
+import type { ColumnDef } from '@tanstack/react-table';
+import type { WorkspaceUserReport } from '@tuturuuu/types/db';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import moment from 'moment';
 import Link from 'next/link';
+import { UserReportRowActions } from './row-actions';
 
 export const getUserReportColumns = (
   t: any,

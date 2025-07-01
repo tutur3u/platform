@@ -1,11 +1,10 @@
-import { getQuizSetColumns } from './columns';
-import CourseModuleForm from './form';
-import { CustomDataTable } from '@/components/custom-data-table';
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { type WorkspaceQuizSet } from '@tuturuuu/types/db';
+import type { WorkspaceQuizSet } from '@tuturuuu/types/db';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
 import { getTranslations } from 'next-intl/server';
+import { CustomDataTable } from '@/components/custom-data-table';
+import { getQuizSetColumns } from './columns';
 
 interface SearchParams {
   q?: string;
@@ -46,7 +45,8 @@ export default async function WorkspaceCoursesPage({
         singularTitle={t('ws-quiz-sets.singular')}
         createTitle={t('ws-quiz-sets.create')}
         createDescription={t('ws-quiz-sets.create_description')}
-        form={<CourseModuleForm wsId={wsId} moduleId={moduleId} />}
+        // form={<QuizSetForm wsId={wsId} moduleId={moduleId} />}
+        href={`/${wsId}/courses/${courseId}/modules/${moduleId}/quiz-sets/create`}
       />
       <Separator className="my-4" />
       <CustomDataTable

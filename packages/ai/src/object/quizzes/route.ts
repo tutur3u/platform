@@ -1,4 +1,3 @@
-import { quizSchema } from '../types';
 import { google } from '@ai-sdk/google';
 import {
   createAdminClient,
@@ -6,6 +5,7 @@ import {
 } from '@tuturuuu/supabase/next/server';
 import { streamObject } from 'ai';
 import { NextResponse } from 'next/server';
+import { quizSchema } from '../types';
 
 export const runtime = 'edge';
 export const maxDuration = 60;

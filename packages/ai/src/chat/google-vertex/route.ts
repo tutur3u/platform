@@ -3,7 +3,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
-import { CoreMessage, smoothStream, streamText } from 'ai';
+import { type CoreMessage, smoothStream, streamText } from 'ai';
 import { NextResponse } from 'next/server';
 
 const DEFAULT_MODEL_NAME = 'gemini-1.5-flash-002';

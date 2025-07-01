@@ -1,4 +1,3 @@
-import { DEV_MODE } from '@/constants/common';
 import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses';
 import {
   createAdminClient,
@@ -7,7 +6,8 @@ import {
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import dayjs from 'dayjs';
 import juice from 'juice';
-import { NextRequest, NextResponse } from 'next/server';
+import { type NextRequest, NextResponse } from 'next/server';
+import { DEV_MODE } from '@/constants/common';
 
 const forceEnableEmailSending = false;
 const disableEmailSending = DEV_MODE && !forceEnableEmailSending;
@@ -111,6 +111,7 @@ export async function POST(
     data.users.map(async (user) => {
       const subject = `Easy Center | Báo cáo tiến độ ngày ${dayjs(data.date).format('DD/MM/YYYY')} của ${user.username}`;
       return sendEmail({
+        wsId,
         client: sesClient,
         sourceName: credentials.source_name,
         sourceEmail: credentials.source_email,
@@ -137,6 +138,7 @@ export async function POST(
 }
 
 const sendEmail = async ({
+  wsId,
   client,
   sourceName,
   sourceEmail,
@@ -146,6 +148,7 @@ const sendEmail = async ({
   content,
   postId,
 }: {
+  wsId: string;
   client: SESClient;
   sourceName: string;
   sourceEmail: string;
@@ -218,6 +221,7 @@ const sendEmail = async ({
       .from('sent_emails')
       .insert({
         post_id: postId,
+        ws_id: wsId,
         sender_id: user.id,
         receiver_id: receiverId,
         email: recipient,

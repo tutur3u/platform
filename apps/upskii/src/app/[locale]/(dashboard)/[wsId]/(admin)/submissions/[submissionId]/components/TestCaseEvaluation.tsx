@@ -1,6 +1,5 @@
 'use client';
 
-import { type ExtendedNovaSubmission } from '../types';
 import { Badge } from '@tuturuuu/ui/badge';
 import {
   AlertCircle,
@@ -25,6 +24,7 @@ import {
   TooltipTrigger,
 } from '@tuturuuu/ui/tooltip';
 import { useState } from 'react';
+import type { ExtendedNovaSubmission } from '../types';
 
 interface TestCaseEvaluationProps {
   submission: ExtendedNovaSubmission;

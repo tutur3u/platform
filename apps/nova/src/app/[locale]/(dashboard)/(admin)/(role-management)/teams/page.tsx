@@ -1,10 +1,10 @@
-import TeamClient from './client-page';
-import { getTeamColumns } from './columns';
-import { CustomDataTable } from '@/components/custom-data-table';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
 import { getTranslations } from 'next-intl/server';
+import { CustomDataTable } from '@/components/custom-data-table';
+import TeamClient from './client-page';
+import { getTeamColumns } from './columns';
 
 interface SearchParams {
   q?: string;
@@ -50,7 +50,12 @@ async function getTeamsData({
   page = '1',
   pageSize = '100',
   retry = true,
-}: { q?: string; page?: string; pageSize?: string; retry?: boolean } = {}) {
+}: {
+  q?: string;
+  page?: string;
+  pageSize?: string;
+  retry?: boolean;
+} = {}) {
   const supabase = await createClient();
 
   const queryBuilder = supabase

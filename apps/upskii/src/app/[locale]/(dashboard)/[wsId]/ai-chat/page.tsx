@@ -1,9 +1,9 @@
-import Chat from './chat';
-import { getChats } from './helper';
 import { requireFeatureFlags } from '@tuturuuu/utils/feature-flags/core';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
+import Chat from './chat';
+import { getChats } from './helper';
 
 interface Props {
   params: Promise<{

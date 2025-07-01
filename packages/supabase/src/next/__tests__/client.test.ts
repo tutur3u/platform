@@ -1,6 +1,6 @@
-import { createClient, createDynamicClient } from '../client';
 import { createBrowserClient } from '@supabase/ssr';
 import { describe, expect, it, vi } from 'vitest';
+import { createClient, createDynamicClient } from '../client';
 
 // Mock the environment variables and browser client creation
 vi.mock('@supabase/ssr', () => ({

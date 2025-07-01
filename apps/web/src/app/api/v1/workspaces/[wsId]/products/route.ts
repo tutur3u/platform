@@ -1,6 +1,6 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { Product2 } from '@tuturuuu/types/primitives/Product';
-import { ProductInventory } from '@tuturuuu/types/primitives/ProductInventory';
+import type { Product2 } from '@tuturuuu/types/primitives/Product';
+import type { ProductInventory } from '@tuturuuu/types/primitives/ProductInventory';
 import { NextResponse } from 'next/server';
 
 interface Params {
@@ -16,7 +16,7 @@ export async function POST(req: Request, { params }: Params) {
   };
   const { wsId } = await params;
 
-  let product = await supabase
+  const product = await supabase
     .from('workspace_products')
     .insert({
       ...data,

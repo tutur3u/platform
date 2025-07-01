@@ -1,9 +1,6 @@
 'use client';
 
-import ChatLink from './chat-link';
-import { NavLink } from '@/components/navigation';
-import { PROD_MODE } from '@/constants/common';
-import { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
+import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Button } from '@tuturuuu/ui/button';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
 import { CirclePlus } from '@tuturuuu/ui/icons';
@@ -13,6 +10,9 @@ import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import type { NavLink } from '@/components/navigation';
+import { PROD_MODE } from '@/constants/common';
+import ChatLink from './chat-link';
 
 interface NavProps {
   t: any;

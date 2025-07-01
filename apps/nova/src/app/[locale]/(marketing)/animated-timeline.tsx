@@ -1,6 +1,6 @@
 import { Card } from '@tuturuuu/ui/card';
 import { motion } from 'framer-motion';
-import { ReactNode } from 'react';
+import type { ReactNode } from 'react';
 
 interface TimelineEvent {
   date: string;

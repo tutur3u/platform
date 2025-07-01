@@ -1,6 +1,5 @@
 'use client';
 
-import { type ExtendedNovaSubmission } from '../types';
 import { Badge } from '@tuturuuu/ui/badge';
 import {
   Card,
@@ -9,6 +8,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@tuturuuu/ui/card';
+import type { ExtendedNovaSubmission } from '../types';
 
 interface CriteriaEvaluationProps {
   submission: ExtendedNovaSubmission;

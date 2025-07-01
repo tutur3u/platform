@@ -1,10 +1,10 @@
 'use client';
 
-import Toolbar from './toolbar';
 import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
 import { useTheme } from 'next-themes';
 import { useEffect, useState } from 'react';
 import { type Editor, type TLStoreSnapshot, Tldraw } from 'tldraw';
+import Toolbar from './toolbar';
 import 'tldraw/tldraw.css';
 
 type Theme = 'system' | 'dark' | 'light';

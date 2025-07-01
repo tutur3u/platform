@@ -1,9 +1,9 @@
 'use client';
 
+import type { Workspace } from '@tuturuuu/types/db';
+import { useTranslations } from 'next-intl';
 import WorkspaceIDCopy from './id-copy';
 import NameInput from './name-input';
-import { Workspace } from '@tuturuuu/types/db';
-import { useTranslations } from 'next-intl';
 
 interface Props {
   workspace?: Workspace | null;

@@ -1,7 +1,5 @@
 'use client';
 
-import useEmail from '@/hooks/useEmail';
-import { isEmail } from '@/utils/email-helper';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { GroupPostCheck } from '@tuturuuu/types/db';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
@@ -24,6 +22,8 @@ import { cn } from '@tuturuuu/utils/format';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import useEmail from '@/hooks/useEmail';
+import { isEmail } from '@/utils/email-helper';
 
 interface Props {
   user: WorkspaceUser;

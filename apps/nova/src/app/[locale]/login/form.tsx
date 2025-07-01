@@ -1,6 +1,5 @@
 'use client';
 
-import { DEV_MODE } from '@/constants/common';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -27,11 +26,12 @@ import { Mail } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@tuturuuu/ui/input-otp';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
-import { useLocale, useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import * as z from 'zod';
+import { DEV_MODE, PORT } from '@/constants/common';
 
 const FormSchema = z.object({
   email: z.string().email(),
@@ -55,7 +55,7 @@ export default function LoginForm() {
 
   useEffect(() => {
     if (DEV_MODE) form.setFocus('email');
-  }, [DEV_MODE]);
+  }, [form.setFocus]);
 
   const [otpSent, setOtpSent] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -285,7 +285,7 @@ export default function LoginForm() {
                         {Array.from({ length: maxOTPLength }).map(
                           (_, index) => (
                             <InputOTPSlot
-                              key={index}
+                              key={`otp-${index + 1}`}
                               index={index}
                               className="max-md:w-full"
                             />
@@ -320,7 +320,7 @@ export default function LoginForm() {
           {otpSent && DEV_MODE && (
             <div className="grid gap-2 md:grid-cols-2">
               <Link
-                href={window.location.origin.replace('7803', '8004')}
+                href={window.location.origin.replace(PORT.toString(), '8004')}
                 target="_blank"
                 className="col-span-full"
                 aria-disabled={loading}

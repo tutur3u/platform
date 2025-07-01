@@ -1,11 +1,14 @@
 'use client';
 
-import { TimezoneRowActions } from '@/components/row-actions/timezones';
-import { ColumnDef } from '@tanstack/react-table';
-import { Timezone, TimezoneStatus } from '@tuturuuu/types/primitives/Timezone';
+import type { ColumnDef } from '@tanstack/react-table';
+import type {
+  Timezone,
+  TimezoneStatus,
+} from '@tuturuuu/types/primitives/Timezone';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import { Check, Clock, RefreshCw, RefreshCwOff, X } from '@tuturuuu/ui/icons';
 import moment from 'moment';
+import { TimezoneRowActions } from '@/components/row-actions/timezones';
 
 export const timezoneColumns = (
   t: any,
@@ -90,7 +93,7 @@ export const timezoneColumns = (
     ),
     cell: ({ row }) => (
       <div className="line-clamp-1 max-w-16 break-words">
-        {Boolean(row.getValue('isdst')) ? <Check /> : <X />}
+        {row.getValue('isdst') ? <Check /> : <X />}
       </div>
     ),
   },

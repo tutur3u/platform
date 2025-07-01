@@ -1,11 +1,11 @@
 'use client';
 
-import { TransactionRowActions } from './row-actions';
-import { ColumnDef } from '@tanstack/react-table';
-import { Transaction } from '@tuturuuu/types/primitives/Transaction';
+import type { ColumnDef } from '@tanstack/react-table';
+import type { Transaction } from '@tuturuuu/types/primitives/Transaction';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import { Check, X } from '@tuturuuu/ui/icons';
 import moment from 'moment';
+import { TransactionRowActions } from './row-actions';
 import 'moment/locale/vi';
 import { useLocale } from 'next-intl';
 

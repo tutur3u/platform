@@ -1,5 +1,5 @@
-import { type UseChatHelpers } from '@tuturuuu/ai/types';
-import { AIChat } from '@tuturuuu/types/db';
+import type { UseChatHelpers } from '@tuturuuu/ai/types';
+import type { AIChat } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
 import {
   ArrowDownToDot,
@@ -19,8 +19,8 @@ import { capitalize, cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
 import 'dayjs/locale/vi';
 import relativeTime from 'dayjs/plugin/relativeTime';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 
 export function EmptyScreen({
   wsId,

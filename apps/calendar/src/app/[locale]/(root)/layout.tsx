@@ -1,6 +1,6 @@
+import type React from 'react';
 import ClientLayoutWrapper from './client-layout-wrapper';
 import Navbar from './navbar';
-import React from 'react';
 
 interface LayoutProps {
   children: React.ReactNode;

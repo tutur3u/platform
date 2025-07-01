@@ -1,6 +1,6 @@
 import { updateSession } from '@tuturuuu/supabase/next/middleware';
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { SupabaseUser } from '@tuturuuu/supabase/next/user';
+import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 

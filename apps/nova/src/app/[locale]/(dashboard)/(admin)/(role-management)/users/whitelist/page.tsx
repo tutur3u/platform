@@ -1,14 +1,14 @@
-import WhitelistEmailClient from './whitelist-client-page';
-import { getNovaRoleColumns } from './whitelist-columns';
-import { CustomDataTable } from '@/components/custom-data-table';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { Button } from '@tuturuuu/ui/button';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { ArrowLeft } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
-import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
+import { CustomDataTable } from '@/components/custom-data-table';
+import WhitelistEmailClient from './whitelist-client-page';
+import { getNovaRoleColumns } from './whitelist-columns';
 
 interface props {
   params: Promise<{

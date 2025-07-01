@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 import FloatingElements from '../floating-elements';
 import { BeforeAfterSection } from './components/before-after-section';
 import { BenefitsSection } from './components/benefits-section';
@@ -14,7 +15,6 @@ import { StatsSection } from './components/stats-section';
 import { StrategicSection } from './components/strategic-section';
 import { UseCasesSection } from './components/use-cases-section';
 import { WorkflowSection } from './components/workflow-section';
-import { useEffect } from 'react';
 
 export default function MarketingPage() {
   useEffect(() => {

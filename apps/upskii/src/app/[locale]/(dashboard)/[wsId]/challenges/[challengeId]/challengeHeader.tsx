@@ -1,8 +1,9 @@
-import { ChallengeCriteriaDialog } from './challenge-criteria-dialog';
-import { NovaChallenge } from '@tuturuuu/types/db';
-import { NovaChallengeCriteria } from '@tuturuuu/types/db';
-import { NovaProblem } from '@tuturuuu/types/db';
-import { NovaProblemTestCase } from '@tuturuuu/types/db';
+import type {
+  NovaChallenge,
+  NovaChallengeCriteria,
+  NovaProblem,
+  NovaProblemTestCase,
+} from '@tuturuuu/types/db';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -15,6 +16,7 @@ import {
 import { Progress } from '@tuturuuu/ui/progress';
 import { cn } from '@tuturuuu/utils/format';
 import { useEffect, useRef, useState } from 'react';
+import { ChallengeCriteriaDialog } from './challenge-criteria-dialog';
 
 type ExtendedNovaChallenge = NovaChallenge & {
   criteria: NovaChallengeCriteria[];

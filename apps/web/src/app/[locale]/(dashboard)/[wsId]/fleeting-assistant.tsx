@@ -1,8 +1,6 @@
-import AssistantGradientName from './assistant-gradient-name';
-import { FleetingAssistantMessage } from './fleeting-assistant-message';
 import { useChat } from '@tuturuuu/ai/react';
-import { type Message } from '@tuturuuu/ai/types';
-import { AIChat } from '@tuturuuu/types/db';
+import type { Message } from '@tuturuuu/ai/types';
+import type { AIChat } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
 import { Form, FormControl, FormField, FormItem } from '@tuturuuu/ui/form';
 import { useForm } from '@tuturuuu/ui/hooks/use-form';
@@ -11,10 +9,12 @@ import { ArrowDownToLine, Expand, RotateCcw, Send } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { Separator } from '@tuturuuu/ui/separator';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { z } from 'zod';
+import AssistantGradientName from './assistant-gradient-name';
+import { FleetingAssistantMessage } from './fleeting-assistant-message';
 
 const FormSchema = z.object({
   prompt: z.string().min(1),

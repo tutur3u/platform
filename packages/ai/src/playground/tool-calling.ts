@@ -1,5 +1,5 @@
 import { google } from '@ai-sdk/google';
-import { Tool, generateText, tool } from 'ai';
+import { generateText, type Tool, tool } from 'ai';
 import dayjs from 'dayjs';
 import { z } from 'zod';
 

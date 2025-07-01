@@ -1,10 +1,10 @@
 'use client';
 
-import ApiKeySelector from './api-key-selector';
 import { Alert, AlertDescription } from '@tuturuuu/ui/alert';
 import { CodeBlock } from '@tuturuuu/ui/codeblock';
 import { Info } from '@tuturuuu/ui/icons';
 import { useEffect, useState } from 'react';
+import ApiKeySelector from './api-key-selector';
 
 interface Props {
   wsId: string;

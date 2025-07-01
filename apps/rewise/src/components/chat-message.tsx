@@ -1,21 +1,21 @@
 'use client';
 
-// Inspired by Chatbot-UI and modified to fit the needs of this project
-// @see https://github.com/mckaywrigley/chatbot-ui/blob/main/components/Chat/ChatMessage.tsx
-import { ChatMessageActions } from '@/components/chat-message-actions';
-import { type Message } from '@tuturuuu/ai/types';
+import type { Message } from '@tuturuuu/ai/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { CodeBlock } from '@tuturuuu/ui/codeblock';
-import { Bot, IconUser, Send, Sparkle } from '@tuturuuu/ui/icons';
+import { Bot, Send, Sparkle, UserIcon } from '@tuturuuu/ui/icons';
 import { MemoizedReactMarkdown } from '@tuturuuu/ui/markdown';
 import { Separator } from '@tuturuuu/ui/separator';
 import { capitalize, cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
+// Inspired by Chatbot-UI and modified to fit the needs of this project
+// @see https://github.com/mckaywrigley/chatbot-ui/blob/main/components/Chat/ChatMessage.tsx
+import { ChatMessageActions } from '@/components/chat-message-actions';
 import 'dayjs/locale/vi';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import mermaid from 'mermaid';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
 import rehypeKatex from 'rehype-katex';
 import remarkGfm from 'remark-gfm';
@@ -155,12 +155,12 @@ export function ChatMessage({
                   />
                   <AvatarFallback className="rounded-lg font-semibold">
                     {message.user.display_name?.[0]?.toUpperCase() || (
-                      <IconUser className="h-5 w-5" />
+                      <UserIcon className="h-5 w-5" />
                     )}
                   </AvatarFallback>
                 </Avatar>
               ) : (
-                <IconUser className="h-5 w-5" />
+                <UserIcon className="h-5 w-5" />
               )
             ) : (
               <Avatar className="h-12 w-12 rounded-md border">
@@ -231,9 +231,9 @@ export function ChatMessage({
         <ChatMessageActions message={message} />
       </div>
 
-      {message.metadata?.['response_types'] && (
+      {message.metadata?.response_types && (
         <div className="mb-2 flex items-center gap-1">
-          {message.metadata?.['response_types']
+          {message.metadata?.response_types
             ?.filter((responseType) =>
               [
                 'summary',
@@ -321,6 +321,7 @@ export function ChatMessage({
 
                 const optionsElements = options.map((option, index) => (
                   <button
+                    type="button"
                     key={index}
                     className={`w-full rounded border px-3 py-1 text-left font-semibold transition md:text-center ${
                       revealCorrect && option.isCorrect
@@ -413,6 +414,7 @@ export function ChatMessage({
                     </div>
                     <Separator className="mt-2 mb-4" />
                     <button
+                      type="button"
                       className={`w-full rounded border px-3 py-1 text-center font-semibold text-foreground transition duration-300 ${
                         revealAnswer
                           ? 'cursor-default border-transparent'
@@ -464,6 +466,7 @@ export function ChatMessage({
                 if (setInput)
                   return (
                     <button
+                      type="button"
                       className="mb-2 rounded-full border bg-foreground/5 text-left font-semibold text-foreground transition last:mb-0 hover:bg-foreground/10"
                       onClick={() => setInput(content || '')}
                     >
@@ -566,6 +569,7 @@ export function ChatMessage({
 
                 const optionsElements = options.map((option, index) => (
                   <button
+                    type="button"
                     key={index}
                     className={`w-full rounded border px-3 py-1 text-left font-semibold transition md:text-center ${
                       revealCorrect && option.isCorrect
@@ -658,6 +662,7 @@ export function ChatMessage({
                     </div>
                     <Separator className="mt-2 mb-4" />
                     <button
+                      type="button"
                       className={`w-full rounded border px-3 py-1 text-center font-semibold text-foreground transition duration-300 ${
                         revealAnswer
                           ? 'cursor-default border-transparent'
@@ -709,6 +714,7 @@ export function ChatMessage({
                 if (setInput)
                   return (
                     <button
+                      type="button"
                       className="mb-2 rounded-full border bg-foreground/5 text-left font-semibold text-foreground transition last:mb-0 hover:bg-foreground/10"
                       onClick={() => setInput(content || '')}
                     >
@@ -741,7 +747,7 @@ export function ChatMessage({
             // eslint-disable-next-line no-unused-vars
             code({ node, className, children, ...props }) {
               if (children && Array.isArray(children) && children.length) {
-                if (children[0] == '▍') {
+                if (children[0] === '▍') {
                   return (
                     <span
                       className={cn(
@@ -772,7 +778,7 @@ export function ChatMessage({
               return match ? (
                 <CodeBlock
                   key={Math.random()}
-                  language={(match && match[1]) || ''}
+                  language={match?.[1] || ''}
                   value={String(children).replace(/\n$/, '')}
                   {...props}
                 />

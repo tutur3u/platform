@@ -1,14 +1,14 @@
-import { NavLink } from '@/components/navigation';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { Button, buttonVariants } from '@tuturuuu/ui/button';
 import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
 import { Star, StarOff } from '@tuturuuu/ui/icons';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import type { NavLink } from '@/components/navigation';
 
 export default function ChatLink({
   single,

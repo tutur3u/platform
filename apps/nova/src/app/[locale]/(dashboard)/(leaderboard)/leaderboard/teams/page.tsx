@@ -1,13 +1,16 @@
-import { BasicInformation } from '../components/basic-information-component';
-import { LeaderboardEntry, UserInterface } from '../components/leaderboard';
-import LeaderboardClient from './client';
-import TeamsLeaderboardFallback from './fallback';
 import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import { getLocale } from 'next-intl/server';
 import { Suspense } from 'react';
+import type { BasicInformation } from '../components/basic-information-component';
+import type {
+  LeaderboardEntry,
+  UserInterface,
+} from '../components/leaderboard';
+import LeaderboardClient from './client';
+import TeamsLeaderboardFallback from './fallback';
 
 export const revalidate = 60;
 
@@ -97,9 +100,9 @@ async function fetchLeaderboard(page: number = 1, challengeId: string = 'all') {
   }
 
   // Fetch team members for avatar display and member details
-  const { data: teamMembersData, error: teamMembersError } = await sbAdmin.from(
-    'nova_team_members'
-  ).select(`
+  const { data: teamMembersData, error: teamMembersError } = await sbAdmin
+    .from('nova_team_members')
+    .select(`
       team_id,
       user_id,
       users (

@@ -1,7 +1,5 @@
-import InvoiceCard from './invoice-card';
-import { availableConfigs } from '@/constants/configs/reports';
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { WorkspaceConfig } from '@tuturuuu/types/primitives/WorkspaceConfig';
+import type { WorkspaceConfig } from '@tuturuuu/types/primitives/WorkspaceConfig';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import {
   Box,
@@ -12,10 +10,12 @@ import {
   ShoppingCart,
 } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
+import { availableConfigs } from '@/constants/configs/reports';
+import InvoiceCard from './invoice-card';
 import 'dayjs/locale/vi';
 import moment from 'moment';
-import { getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
 
 interface Props {
   params: Promise<{
@@ -242,7 +242,7 @@ async function getConfigs(wsId: string) {
   if (error) throw error;
 
   // Create a copy of availableConfigs to include in the response
-  let configs = [
+  const configs = [
     ...availableConfigs.map(({ defaultValue, ...rest }) => ({
       ...rest,
       value: defaultValue,

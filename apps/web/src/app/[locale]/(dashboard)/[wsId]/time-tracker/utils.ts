@@ -1,9 +1,9 @@
+import { useMemo } from 'react';
 import type {
   ExtendedWorkspaceTask,
   TaskFilters,
   TaskSidebarFilters,
 } from './types';
-import { useMemo } from 'react';
 
 /**
  * Shared task sorting logic - prioritizes user's assigned tasks, then by priority, then by creation date

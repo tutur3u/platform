@@ -1,17 +1,17 @@
 import LoginForm from './form';
 import './login.css';
-import { DEV_MODE } from '@/constants/common';
 import { Badge } from '@tuturuuu/ui/badge';
 import { XIcon } from '@tuturuuu/ui/icons';
-import { getTranslations } from 'next-intl/server';
 import Image from 'next/image';
 import Link from 'next/link';
+import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
+import { DEV_MODE, PORT } from '@/constants/common';
 
 const DOMAINS = {
   TUTURUUU: {
     name: 'Tuturuuu',
-    href: DEV_MODE ? 'http://localhost:7803' : 'https://tuturuuu.com',
+    href: DEV_MODE ? `http://localhost:${PORT}` : 'https://tuturuuu.com',
     logo: '/media/logos/transparent.png',
   },
   UPSKII: {

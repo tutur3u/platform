@@ -5,9 +5,12 @@ import { ChatPermissions } from '@/components/chat-permissions';
 import { Model } from '@tuturuuu/ai/models';
 import { type Message, type UseChatHelpers } from '@tuturuuu/ai/types';
 import { createDynamicClient } from '@tuturuuu/supabase/next/client';
-import { RealtimePresenceState } from '@tuturuuu/supabase/next/realtime';
-import { AIChat } from '@tuturuuu/types/db';
-import { FileUploader, StatedFile } from '@tuturuuu/ui/custom/file-uploader';
+import type { RealtimePresenceState } from '@tuturuuu/supabase/next/realtime';
+import type { AIChat } from '@tuturuuu/types/db';
+import {
+  FileUploader,
+  type StatedFile,
+} from '@tuturuuu/ui/custom/file-uploader';
 import {
   Dialog,
   DialogContent,
@@ -15,9 +18,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
-import React, { useState } from 'react';
+import { useTranslations } from 'next-intl';
+import type React from 'react';
+import { useState } from 'react';
 
 interface PresenceUser {
   id: string;

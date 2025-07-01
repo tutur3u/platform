@@ -1,11 +1,11 @@
-import WhiteboardsList, { type Whiteboard } from './client';
-import CreateWhiteboardDialog from './createWhiteboardDialog';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { Button } from '@tuturuuu/ui/button';
-import { IconPlus } from '@tuturuuu/ui/icons';
+import { PlusIcon } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
-import { getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
+import WhiteboardsList, { type Whiteboard } from './client';
+import CreateWhiteboardDialog from './createWhiteboardDialog';
 
 interface WhiteboardsPageProps {
   params: Promise<{ wsId: string }>;
@@ -65,7 +65,7 @@ export default async function WhiteboardsPage({
             wsId={wsId}
             trigger={
               <Button className="gap-2">
-                <IconPlus className="h-4 w-4" />
+                <PlusIcon className="h-4 w-4" />
                 {t('new_whiteboard')}
               </Button>
             }

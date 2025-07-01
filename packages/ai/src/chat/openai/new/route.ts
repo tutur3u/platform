@@ -4,7 +4,7 @@ import {
   HarmCategory,
 } from '@google/generative-ai';
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { Message } from 'ai';
+import type { Message } from 'ai';
 import { NextResponse } from 'next/server';
 
 export const runtime = 'edge';

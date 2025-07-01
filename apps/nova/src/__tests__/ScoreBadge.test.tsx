@@ -1,6 +1,6 @@
-import ScoreBadge from '../components/common/ScoreBadge';
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
+import ScoreBadge from '../components/common/ScoreBadge';
 
 describe('ScoreBadge', () => {
   it('renders child content correctly', () => {

@@ -8,8 +8,8 @@ import {
 } from '@tuturuuu/ui/card';
 import { ArrowRight, BookOpen, Bot, Code, Zap } from '@tuturuuu/ui/icons';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
-import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
+import { getTranslations } from 'next-intl/server';
 
 export default async function HomePage({
   params,

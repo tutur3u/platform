@@ -1,5 +1,5 @@
 import { requireFeatureFlags } from '@tuturuuu/utils/feature-flags/core';
-import { ReactNode } from 'react';
+import type { ReactNode } from 'react';
 
 interface LayoutProps {
   children: ReactNode;

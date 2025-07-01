@@ -1,10 +1,10 @@
 'use client';
 
-import { UserFieldRowActions } from './row-actions';
-import { ColumnDef } from '@tanstack/react-table';
-import { WorkspaceUserField } from '@tuturuuu/types/primitives/WorkspaceUserField';
+import type { ColumnDef } from '@tanstack/react-table';
+import type { WorkspaceUserField } from '@tuturuuu/types/primitives/WorkspaceUserField';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import moment from 'moment';
+import { UserFieldRowActions } from './row-actions';
 
 export const userFieldColumns = (
   t: any,

@@ -1,6 +1,5 @@
 'use client';
 
-import { GITHUB_OWNER, GITHUB_REPO } from '@/constants/common';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Card } from '@tuturuuu/ui/card';
 import {
@@ -17,8 +16,9 @@ import {
   Zap,
 } from '@tuturuuu/ui/icons';
 import { motion } from 'framer-motion';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
+import { GITHUB_OWNER, GITHUB_REPO } from '@/constants/common';
 
 const categories = [
   { name: 'AI & Technology', icon: <Brain className="h-4 w-4" /> },

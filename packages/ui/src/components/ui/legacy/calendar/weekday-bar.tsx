@@ -1,11 +1,11 @@
-import { useCalendar } from '../../../../hooks/use-calendar';
-import { AllDayEventBar } from './all-day-event-bar';
-import { MIN_COLUMN_WIDTH } from './config';
-import { DayTitle } from './day-title';
 import { cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import { Clock } from 'lucide-react';
+import { useCalendar } from '../../../../hooks/use-calendar';
+import { AllDayEventBar } from './all-day-event-bar';
+import { MIN_COLUMN_WIDTH } from './config';
+import { DayTitle } from './day-title';
 
 dayjs.extend(timezone);
 

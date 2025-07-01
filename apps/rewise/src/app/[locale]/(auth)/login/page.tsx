@@ -1,9 +1,9 @@
-import LoginForm from './form';
 import { Separator } from '@tuturuuu/ui/separator';
-import { getTranslations } from 'next-intl/server';
 import Image from 'next/image';
 import Link from 'next/link';
+import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
+import LoginForm from './form';
 
 export default async function Login() {
   const t = await getTranslations();

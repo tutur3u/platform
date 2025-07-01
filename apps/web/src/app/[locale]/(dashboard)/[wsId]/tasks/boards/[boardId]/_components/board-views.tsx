@@ -1,17 +1,17 @@
 'use client';
 
-import { KanbanBoard } from '../kanban';
-import { StatusGroupedBoard } from '../status-grouped-board';
-import { BoardHeader } from './board-header';
-import { BoardSummary } from './board-summary';
-import { ListView } from './list-view';
 import { useQueryClient } from '@tanstack/react-query';
-import {
+import type {
   Task,
   TaskBoard,
   TaskList,
 } from '@tuturuuu/types/primitives/TaskBoard';
 import { useState } from 'react';
+import { KanbanBoard } from '../kanban';
+import { StatusGroupedBoard } from '../status-grouped-board';
+import { BoardHeader } from './board-header';
+import { BoardSummary } from './board-summary';
+import { ListView } from './list-view';
 
 type ViewType = 'status-grouped' | 'kanban' | 'list';
 

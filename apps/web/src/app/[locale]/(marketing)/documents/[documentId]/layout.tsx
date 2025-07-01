@@ -1,9 +1,9 @@
-import { siteConfig } from '@/constants/configs';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { WorkspaceDocument } from '@tuturuuu/types/db';
-import { Metadata } from 'next';
+import type { WorkspaceDocument } from '@tuturuuu/types/db';
+import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { ReactNode } from 'react';
+import type { ReactNode } from 'react';
+import { siteConfig } from '@/constants/configs';
 
 interface Props {
   params: Promise<{

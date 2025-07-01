@@ -1,13 +1,4 @@
-import NavbarActions from '../../navbar-actions';
-import { UserNav } from '../../user-nav';
-import InvitationCard from './invitation-card';
-import { Structure } from './structure';
-import type { NavLink } from '@/components/navigation';
-import {
-  SIDEBAR_BEHAVIOR_COOKIE_NAME,
-  SIDEBAR_COLLAPSED_COOKIE_NAME,
-} from '@/constants/common';
-import { SidebarProvider } from '@/context/sidebar-context';
+import { createClient } from '@tuturuuu/supabase/next/server';
 import {
   Archive,
   Banknote,
@@ -19,6 +10,7 @@ import {
   Calendar,
   ChartArea,
   CircleCheck,
+  CircleDollarSign,
   Clock,
   ClockFading,
   Cog,
@@ -28,30 +20,40 @@ import {
   GraduationCap,
   HardDrive,
   KeyRound,
+  Link,
   Logs,
   Mail,
   MessageCircleIcon,
   PencilLine,
   Play,
   Presentation,
-  Receipt,
   ScanSearch,
   ScrollText,
   ShieldUser,
   Sparkles,
+  UserLock,
   Users,
 } from '@tuturuuu/ui/icons';
-import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import {
   getPermissions,
   getWorkspace,
   verifySecret,
 } from '@tuturuuu/utils/workspace-helper';
-import { getTranslations } from 'next-intl/server';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { ReactNode, Suspense } from 'react';
+import { getTranslations } from 'next-intl/server';
+import { type ReactNode, Suspense } from 'react';
+import type { NavLink } from '@/components/navigation';
+import {
+  SIDEBAR_BEHAVIOR_COOKIE_NAME,
+  SIDEBAR_COLLAPSED_COOKIE_NAME,
+} from '@/constants/common';
+import { SidebarProvider } from '@/context/sidebar-context';
+import NavbarActions from '../../navbar-actions';
+import { UserNav } from '../../user-nav';
+import InvitationCard from './invitation-card';
+import { Structure } from './structure';
 
 interface LayoutProps {
   params: Promise<{
@@ -222,24 +224,13 @@ export default async function Layout({ children, params }: LayoutProps) {
           title: t('sidebar_tabs.tasks'),
           href: `/${wsId}/tasks/boards`,
           icon: <CircleCheck className="h-5 w-5" />,
-          disabled:
-            ENABLE_AI_ONLY ||
-            !(await verifySecret({
-              forceAdmin: true,
-              wsId,
-              name: 'ENABLE_TASKS',
-              value: 'true',
-            })) ||
-            withoutPermission('manage_projects'),
+          disabled: ENABLE_AI_ONLY || withoutPermission('manage_projects'),
           shortcut: 'T',
           experimental: 'beta',
         },
         {
           title: t('sidebar_tabs.mail'),
-          href:
-            wsId === ROOT_WORKSPACE_ID
-              ? `/${wsId}/mail`
-              : `/${wsId}/mail/posts`,
+          href: `/${wsId}/mail`,
           icon: <Mail className="h-5 w-5" />,
           disabled:
             ENABLE_AI_ONLY ||
@@ -262,7 +253,7 @@ export default async function Layout({ children, params }: LayoutProps) {
             !(await verifySecret({
               forceAdmin: true,
               wsId,
-              name: 'ENABLE_TASKS',
+              name: 'ENABLE_WHITEBOARDS',
               value: 'true',
             })) ||
             withoutPermission('manage_projects'),
@@ -273,17 +264,16 @@ export default async function Layout({ children, params }: LayoutProps) {
           title: t('sidebar_tabs.time_tracker'),
           href: `/${wsId}/time-tracker`,
           icon: <ClockFading className="h-5 w-5" />,
-          disabled:
-            ENABLE_AI_ONLY ||
-            !(await verifySecret({
-              forceAdmin: true,
-              wsId,
-              name: 'ENABLE_TASKS',
-              value: 'true',
-            })) ||
-            withoutPermission('manage_projects'),
+          disabled: ENABLE_AI_ONLY || withoutPermission('manage_projects'),
           shortcut: 'T',
           experimental: 'beta',
+        },
+        {
+          title: t('sidebar_tabs.link_shortener'),
+          href: `/${wsId}/link-shortener`,
+          icon: <Link className="h-5 w-5" />,
+          requireRootWorkspace: true,
+          requireRootMember: true,
         },
       ],
     },
@@ -363,7 +353,15 @@ export default async function Layout({ children, params }: LayoutProps) {
           aliases: [`/${wsId}/users`],
           href: `/${wsId}/users/database`,
           icon: <Users className="h-5 w-5" />,
-          disabled: ENABLE_AI_ONLY || withoutPermission('manage_users'),
+          disabled:
+            ENABLE_AI_ONLY ||
+            !(await verifySecret({
+              forceAdmin: true,
+              wsId,
+              name: 'ENABLE_USERS',
+              value: 'true',
+            })) ||
+            withoutPermission('manage_users'),
           shortcut: 'U',
         },
         {
@@ -371,14 +369,30 @@ export default async function Layout({ children, params }: LayoutProps) {
           aliases: [`/${wsId}/finance`],
           href: `/${wsId}/finance/transactions`,
           icon: <Banknote className="h-5 w-5" />,
-          disabled: ENABLE_AI_ONLY || withoutPermission('manage_finance'),
+          disabled:
+            ENABLE_AI_ONLY ||
+            !(await verifySecret({
+              forceAdmin: true,
+              wsId,
+              name: 'ENABLE_FINANCE',
+              value: 'true',
+            })) ||
+            withoutPermission('manage_finance'),
           shortcut: 'F',
         },
         {
           title: t('sidebar_tabs.inventory'),
           href: `/${wsId}/inventory`,
           icon: <Archive className="h-5 w-5" />,
-          disabled: ENABLE_AI_ONLY || withoutPermission('manage_inventory'),
+          disabled:
+            ENABLE_AI_ONLY ||
+            !(await verifySecret({
+              forceAdmin: true,
+              wsId,
+              name: 'ENABLE_INVENTORY',
+              value: 'true',
+            })) ||
+            withoutPermission('manage_inventory'),
           shortcut: 'I',
         },
       ],
@@ -414,9 +428,9 @@ export default async function Layout({ children, params }: LayoutProps) {
             ENABLE_AI_ONLY || withoutPermission('manage_workspace_members'),
         },
         {
-          title: t('workspace-settings-layout.roles'),
+          title: t('workspace-settings-layout.workspace_roles'),
           href: `/${wsId}/roles`,
-          icon: <ShieldUser className="h-5 w-5" />,
+          icon: <UserLock className="h-5 w-5" />,
           disabled:
             ENABLE_AI_ONLY || withoutPermission('manage_workspace_roles'),
         },
@@ -430,7 +444,7 @@ export default async function Layout({ children, params }: LayoutProps) {
         {
           title: t('sidebar_tabs.billing'),
           href: `/${wsId}/billing`,
-          icon: <Receipt className="h-5 w-5" />,
+          icon: <CircleDollarSign className="h-5 w-5" />,
           requireRootWorkspace: true,
           requireRootMember: true,
         },
@@ -448,11 +462,20 @@ export default async function Layout({ children, params }: LayoutProps) {
           disabled: withoutPermission('manage_workspace_secrets'),
           requireRootMember: true,
         },
+
         {
           title: t('workspace-settings-layout.infrastructure'),
           href: `/${wsId}/infrastructure`,
           icon: <Blocks className="h-5 w-5" />,
           disabled: withoutPermission('view_infrastructure'),
+          requireRootWorkspace: true,
+        },
+        {
+          title: t('workspace-settings-layout.platform_roles'),
+          href: `/${wsId}/platform/roles`,
+          icon: <ShieldUser className="h-5 w-5" />,
+          disabled:
+            ENABLE_AI_ONLY || withoutPermission('manage_workspace_roles'),
           requireRootWorkspace: true,
         },
         {
@@ -476,13 +499,24 @@ export default async function Layout({ children, params }: LayoutProps) {
   const workspace = await getWorkspace(wsId);
   const user = await getCurrentUser();
 
+  if (!user?.id) redirect('/login');
+
+  const supabase = await createClient();
+  const { data: platformUserRole } = await supabase
+    .from('platform_user_roles')
+    .select('*')
+    .eq('user_id', user.id)
+    .eq('allow_workspace_creation', true)
+    .maybeSingle();
+
   const collapsed = (await cookies()).get(SIDEBAR_COLLAPSED_COOKIE_NAME);
   const behaviorCookie = (await cookies()).get(SIDEBAR_BEHAVIOR_COOKIE_NAME);
 
   const rawBehavior = behaviorCookie?.value;
   const isValidBehavior = (
-    value: any
+    value: string | undefined
   ): value is 'expanded' | 'collapsed' | 'hover' => {
+    if (!value) return false;
     return ['expanded', 'collapsed', 'hover'].includes(value);
   };
 
@@ -492,7 +526,7 @@ export default async function Layout({ children, params }: LayoutProps) {
     ? rawBehavior
     : 'expanded';
 
-  let defaultCollapsed;
+  let defaultCollapsed: boolean;
   if (sidebarBehavior === 'collapsed') {
     defaultCollapsed = true;
   } else if (sidebarBehavior === 'hover') {
@@ -535,6 +569,7 @@ export default async function Layout({ children, params }: LayoutProps) {
             <UserNav hideMetadata />
           </Suspense>
         }
+        disableCreateNewWorkspace={!platformUserRole?.allow_workspace_creation}
       >
         {children}
       </Structure>

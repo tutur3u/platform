@@ -1,17 +1,17 @@
-import Form from './form';
-import UserTime from './user-time';
-import GradientHeadline from '@/app/[locale]/(marketing)/gradient-headline';
 import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
-import { MeetTogetherPlan } from '@tuturuuu/types/primitives/MeetTogetherPlan';
+import type { MeetTogetherPlan } from '@tuturuuu/types/primitives/MeetTogetherPlan';
 import { Separator } from '@tuturuuu/ui/separator';
 import dayjs from 'dayjs';
+import GradientHeadline from '@/app/[locale]/(marketing)/gradient-headline';
+import Form from './form';
+import UserTime from './user-time';
 import 'dayjs/locale/vi';
-import { getLocale, getTranslations } from 'next-intl/server';
 import Link from 'next/link';
+import { getLocale, getTranslations } from 'next-intl/server';
 
 export default async function MeetTogetherPage() {
   const locale = await getLocale();

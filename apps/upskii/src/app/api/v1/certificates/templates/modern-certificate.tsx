@@ -1,5 +1,3 @@
-import { BASE_URL } from '@/constants/common';
-import { registerRobotoFonts } from '@/lib/font-register-pdf';
 import {
   Document,
   Image,
@@ -10,6 +8,8 @@ import {
 } from '@react-pdf/renderer';
 import type { CertificateData } from '@tuturuuu/ui/custom/education/certificates/types';
 import type React from 'react';
+import { BASE_URL } from '@/constants/common';
+import { registerRobotoFonts } from '@/lib/font-register-pdf';
 
 registerRobotoFonts();
 

@@ -1,8 +1,9 @@
-import { createPolarClient } from '@/lib/polar';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { getCurrentSupabaseUser } from '@tuturuuu/utils/user-helper';
-import { NextRequest, NextResponse } from 'next/server';
+import { type NextRequest, NextResponse } from 'next/server';
+import { PORT } from '@/constants/common';
+import { createPolarClient } from '@/lib/polar';
 
 export async function GET(
   request: NextRequest,
@@ -13,7 +14,7 @@ export async function GET(
 
   const BASE_URL =
     process.env.NODE_ENV === 'development'
-      ? 'http://localhost:7803'
+      ? `http://localhost:${PORT}`
       : 'https://tuturuuu.com';
 
   // const sbAdmin = await createAdminClient();
@@ -71,9 +72,7 @@ export async function GET(
       process.env.NODE_ENV === 'development'
         ? true
         : // If the workspace is the root workspace and the sandbox is true, use sandbox
-          wsId === ROOT_WORKSPACE_ID && sandbox
-          ? true // Enable sandbox for root workspace
-          : false, // Otherwise, use production
+          !!(wsId === ROOT_WORKSPACE_ID && sandbox), // Otherwise, use production
   });
 
   // HERE is where you add the metadata

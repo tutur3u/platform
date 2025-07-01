@@ -4,9 +4,9 @@ import {
   HarmCategory,
 } from '@google/generative-ai';
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { Message } from 'ai';
+import type { Message } from 'ai';
 import { cookies } from 'next/headers';
-import { NextRequest, NextResponse } from 'next/server';
+import { type NextRequest, NextResponse } from 'next/server';
 
 export const runtime = 'edge';
 export const maxDuration = 60;
