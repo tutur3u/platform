@@ -156,9 +156,6 @@ export async function POST(
     const { searchParams } = new URL(request.url);
     const streamMode = searchParams.get('stream') !== 'false';
 
-    // const body = await request.json().catch(() => ({}));
-    // const gapMinutes = (body.gapMinutes as number | undefined) || 0;
-
     const {
       data: { user },
     } = await (await supabase).auth.getUser();
@@ -182,7 +179,7 @@ export async function POST(
     if (tasksError)
       throw new Error(`Failed to fetch tasks: ${tasksError.message}`);
 
-    // console.log(currentTasks, 'tasks fetched for user:', user.id);
+    console.log(currentTasks, 'tasks fetched for user:', user.id);
 
     const { data: flexibleEventsData, error: flexibleEventsError } = await (
       await supabase
@@ -285,69 +282,74 @@ export async function POST(
       );
       for (const event of newScheduledEvents) {
         try {
-    // Check if event exists
-    const { data: existingEvent, error: checkError } = await (await supabase)
-      .from('workspace_calendar_events')
-      .select('id')
-      .eq('id', event.id)
-      .eq('ws_id', wsId)
-      .single();
+          // Check if event exists
+          const { data: existingEvent, error: checkError } = await (
+            await supabase
+          )
+            .from('workspace_calendar_events')
+            .select('id')
+            .eq('id', event.id)
+            .eq('ws_id', wsId)
+            .single();
 
-    if (checkError && checkError.code !== 'PGRST116') {
-      // PGRST116 is "not found" error, which is expected for new events
-      throw checkError;
-    }
+          if (checkError && checkError.code !== 'PGRST116') {
+            throw checkError;
+          }
 
-    if (existingEvent) {
-      // Update existing event
-      const { error: updateError } = await (await supabase)
-        .from('workspace_calendar_events')
-        .update({
-          title: event.name,
-          start_at: event.range.start.toISOString(),
-          end_at: event.range.end.toISOString(),
-          is_past_deadline: event.isPastDeadline ?? false,
-        })
-        .eq('id', event.id)
-        .eq('ws_id', wsId);
+          if (existingEvent) {
+            // Update existing event
+            const { error: updateError } = await (await supabase)
+              .from('workspace_calendar_events')
+              .update({
+                title: event.name,
+                start_at: event.range.start.toISOString(),
+                end_at: event.range.end.toISOString(),
+                // is_past_deadline: event.isPastDeadline ?? false,
+              })
+              .eq('id', event.id)
+              .eq('ws_id', wsId);
 
-      if (updateError) {
-        console.error(`Failed to update event ${event.id}: ${updateError.message}`);
-      }
-    } else {
-      // Insert new event
-      const { error: insertError } = await (await supabase)
-        .from('workspace_calendar_events')
-        .insert({
-          id: event.id,
-          ws_id: wsId,
-          task_id: event.taskId,
-          title: event.name,
-          start_at: event.range.start.toISOString(),
-          end_at: event.range.end.toISOString(),
-          locked: false,
-        });
+            if (updateError) {
+              console.error(
+                `Failed to update event ${event.id}: ${updateError.message}`
+              );
+            }
+          } else {
+            // Insert new event
+            const { error: insertError } = await (await supabase)
+              .from('workspace_calendar_events')
+              .insert({
+                id: event.id,
+                ws_id: wsId,
+                // task_id: event.taskId,
+                title: event.name,
+                start_at: event.range.start.toISOString(),
+                end_at: event.range.end.toISOString(),
+                locked: false,
+              });
 
-      if (insertError) {
-        console.error(`Failed to insert event ${event.id}: ${insertError.message}`);
-      }
-    }
-  } catch (err) {
-    console.error(`Failed to process event ${event.id}:`, err);
-  }
+            if (insertError) {
+              console.error(
+                `Failed to insert event ${event.id}: ${insertError.message}`
+              );
+            }
+          }
+        } catch (err) {
+          console.error(`Failed to process event ${event.id}:`, err);
+        }
       }
 
       // Prepare new events for insertion
       if (newScheduledEvents.length > 0) {
         const insertData = eventsToInsert.map((event) => ({
           ws_id: wsId,
-          creator_id: user.id,
+          // creator_id: user.id,
           task_id: event.taskId,
           title: event.name,
           start_at: event.range.start.toISOString(),
           end_at: event.range.end.toISOString(),
           locked: false,
-          is_past_deadline: event.isPastDeadline ?? false,
+          // is_past_deadline: event.isPastDeadline ?? false,
         }));
 
         const { error: insertError } = await (await supabase)
