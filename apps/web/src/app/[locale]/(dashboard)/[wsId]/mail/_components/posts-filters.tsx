@@ -1,8 +1,11 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+'use client';
+
+import { createClient } from '@tuturuuu/supabase/next/client';
 import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { MinusCircle, PlusCircle, User } from '@tuturuuu/ui/icons';
-import { getTranslations } from 'next-intl/server';
+import { useTranslations } from 'next-intl';
+import { useEffect, useState } from 'react';
 import { Filter } from '../../users/filters';
 
 interface SearchParams {
@@ -14,7 +17,7 @@ interface SearchParams {
   userId?: string;
 }
 
-export default async function Filters({
+export default function PostsFilters({
   wsId,
   searchParams,
   noInclude = false,
@@ -25,14 +28,31 @@ export default async function Filters({
   noInclude?: boolean;
   noExclude?: boolean;
 }) {
-  const t = await getTranslations();
+  const t = useTranslations();
+  const [userGroups, setUserGroups] = useState<UserGroup[]>([]);
+  const [excludedUserGroups, setExcludedUserGroups] = useState<UserGroup[]>([]);
+  const [users, setUsers] = useState<WorkspaceUser[]>([]);
 
-  const { data: userGroups } = await getUserGroups(wsId);
-  const { data: excludedUserGroups } = await getExcludedUserGroups(
-    wsId,
-    searchParams
-  );
-  const { data: users } = await getUsers(wsId);
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const [userGroupsData, excludedGroupsData, usersData] =
+          await Promise.all([
+            getUserGroups(wsId),
+            getExcludedUserGroups(wsId, searchParams),
+            getUsers(wsId),
+          ]);
+
+        setUserGroups(userGroupsData.data);
+        setExcludedUserGroups(excludedGroupsData.data);
+        setUsers(usersData.data);
+      } catch (error) {
+        console.error('Failed to load filter data:', error);
+      }
+    };
+
+    loadData();
+  }, [wsId, searchParams]);
 
   return (
     <>
@@ -78,7 +98,7 @@ export default async function Filters({
 }
 
 async function getUserGroups(wsId: string) {
-  const supabase = await createClient();
+  const supabase = createClient();
 
   const queryBuilder = supabase
     .from('workspace_user_groups_with_amount')
@@ -91,14 +111,17 @@ async function getUserGroups(wsId: string) {
   const { data, error, count } = await queryBuilder;
   if (error) throw error;
 
-  return { data, count } as { data: UserGroup[]; count: number };
+  return { data: data || [], count: count || 0 } as {
+    data: UserGroup[];
+    count: number;
+  };
 }
 
 async function getExcludedUserGroups(
   wsId: string,
   { includedGroups }: SearchParams
 ) {
-  const supabase = await createClient();
+  const supabase = createClient();
 
   if (!includedGroups || includedGroups.length === 0) {
     return getUserGroups(wsId);
@@ -123,11 +146,14 @@ async function getExcludedUserGroups(
   const { data, error, count } = await queryBuilder;
   if (error) throw error;
 
-  return { data, count } as { data: UserGroup[]; count: number };
+  return { data: data || [], count: count || 0 } as {
+    data: UserGroup[];
+    count: number;
+  };
 }
 
 async function getUsers(wsId: string) {
-  const supabase = await createClient();
+  const supabase = createClient();
 
   const queryBuilder = supabase
     .from('workspace_users')
@@ -138,5 +164,8 @@ async function getUsers(wsId: string) {
   const { data, error, count } = await queryBuilder;
   if (error) throw error;
 
-  return { data, count } as { data: WorkspaceUser[]; count: number };
+  return { data: data || [], count: count || 0 } as {
+    data: WorkspaceUser[];
+    count: number;
+  };
 }

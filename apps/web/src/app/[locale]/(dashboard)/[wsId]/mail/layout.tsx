@@ -1,8 +1,6 @@
 import { getPermissions, getSecrets } from '@tuturuuu/utils/workspace-helper';
 import { redirect } from 'next/navigation';
-import { getTranslations } from 'next-intl/server';
 import type React from 'react';
-import { Navigation, type NavLink } from '@/components/navigation';
 
 interface LayoutProps {
   params: Promise<{
@@ -12,7 +10,6 @@ interface LayoutProps {
 }
 
 export default async function Layout({ children, params }: LayoutProps) {
-  const t = await getTranslations();
   const { wsId } = await params;
 
   const secrets = await getSecrets({
@@ -30,37 +27,5 @@ export default async function Layout({ children, params }: LayoutProps) {
 
   if (withoutPermission('send_user_group_post_emails')) redirect(`/${wsId}`);
 
-  const navLinks: NavLink[] = [
-    {
-      title: t('sidebar_tabs.mail'),
-      href: `/${wsId}/mail`,
-      matchExact: true,
-    },
-    {
-      title: t('workspace-mail.posts'),
-      href: `/${wsId}/mail/posts`,
-    },
-    // {
-    //   title: t('workspace-mail.send'),
-    //   href: `/${wsId}/mail/send`,
-    //   disabled: true,
-    // },
-    // {
-    //   title: t('workspace-mail.history'),
-    //   href: `/${wsId}/mail/history`,
-    //   // disabled: true,
-    // },
-    // {
-    //   title: t('dworkspace-mail.destination-addresses'),
-    //   href: `/${wsId}/mail/destination-addresses`,
-    //   disabled: true,
-    // },
-  ];
-
-  return (
-    <div>
-      <Navigation navLinks={navLinks} currentWsId={wsId} />
-      {children}
-    </div>
-  );
+  return children;
 }
