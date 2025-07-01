@@ -17,6 +17,8 @@ export interface StatedFile {
   rawFile: File;
   url: string;
   status: 'pending' | 'uploading' | 'uploaded' | 'error';
+  tempPath?: string;
+  finalPath?: string;
 }
 
 interface FileUploaderProps extends HTMLAttributes<HTMLDivElement> {

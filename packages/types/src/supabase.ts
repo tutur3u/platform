@@ -8060,7 +8060,8 @@ export type Database = {
       };
       get_user_session_stats: {
         Args: { user_id: string };
-        Returns: {          current_session_age: unknown;
+        Returns: {          
+          current_session_age: unknown;
           total_sessions: number;
           active_sessions: number;
         }[];
