@@ -5,9 +5,9 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
 } from '@tuturuuu/ui/resizable';
-import { Separator } from '@tuturuuu/ui/separator';
 import { Tabs, TabsContent } from '@tuturuuu/ui/tabs';
 import { TooltipProvider } from '@tuturuuu/ui/tooltip';
+import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Mail } from '../client';
 import { useMail } from '../use-mail';
@@ -38,6 +38,7 @@ export function MailClient({
   const [mail] = useMail();
   const [composeOpen, setComposeOpen] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const t = useTranslations('mail');
 
   const handleScroll = useCallback(() => {
     if (!scrollContainerRef.current || !onLoadMore || !hasMore || loading)
@@ -192,27 +193,12 @@ export function MailClient({
             className="overflow-y-auto h-full w-full"
           >
             <Tabs defaultValue="all">
-              <div className="flex items-center px-4 h-16">
-                <h1 className="text-xl font-bold">Inbox</h1>
-                <div className="ml-auto">
-                  <ComposeButton onClick={() => setComposeOpen(true)} />
-                </div>
-                {/* <TabsList className="ml-auto">
-                  <TabsTrigger
-                    value="all"
-                    className="text-zinc-600 dark:text-zinc-200"
-                  >
-                    All mail
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="unread"
-                    className="text-zinc-600 dark:text-zinc-200"
-                  >
-                    Unread
-                  </TabsTrigger>
-                </TabsList> */}
+              <div className="flex items-center justify-between px-4 h-16 border-b bg-background/50 backdrop-blur-sm">
+                <h1 className="text-2xl font-bold text-foreground tracking-tight">
+                  {t('inbox')}
+                </h1>
+                <ComposeButton onClick={() => setComposeOpen(true)} />
               </div>
-              <Separator className="-my-2" />
               <TabsContent value="all" className="m-0">
                 <MailList items={mails} hasMore={hasMore} loading={loading} />
               </TabsContent>

@@ -70,7 +70,7 @@ export default function MailClientWrapper({
 
   return (
     <div className="h-[calc(100vh-5rem)] flex flex-col">
-      <div className="flex-1 rounded-lg border bg-background shadow-sm overflow-hidden">
+      <div className="flex-1 rounded-xl border bg-background/80 backdrop-blur-sm shadow-lg overflow-hidden">
         <MailClient
           mails={mailsToShow}
           defaultLayout={defaultLayout}
