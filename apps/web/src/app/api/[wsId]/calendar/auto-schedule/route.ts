@@ -228,7 +228,7 @@ export async function POST(
           end: dayjs(event.end_at),
         },
         locked: event.locked,
-        taskId: event.id ?? '',
+        taskId: event.task_id ?? '',
         category: 'work',
       })
     );

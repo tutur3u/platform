@@ -144,7 +144,7 @@ export const scheduleWithFlexibleEvents = (
     .filter((task): task is Task => task !== null);
 
   console.log(
-    `[Scheduler] Promoted ${promotedTasks} flexible events to tasks.`
+    `[Scheduler] Promoted ${promotedTasks.length} flexible events to tasks.`
   );
   const allTasksToProcess = [...newTasks, ...promotedTasks];
 
