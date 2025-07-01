@@ -3,7 +3,7 @@ import dayjs from 'dayjs';
 
 // Const of 4 weeks from the current week, this can be used for startDate and endDate in google calendar background sync
 // and check if the current view is within this range
-export const BACKGROUND_SYNC_RANGE = 4 * 7;
+export const BACKGROUND_SYNC_RANGE = 1 * 7;
 
 /**
  * Check if we can proceed with sync (30-second cooldown)
