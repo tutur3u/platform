@@ -4,7 +4,6 @@ import { Checkbox } from '@tuturuuu/ui/checkbox';
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -19,8 +18,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@tuturuuu/ui/select';
-import { Separator } from '@tuturuuu/ui/separator';
 import { Textarea } from '@tuturuuu/ui/textarea';
+
 import dayjs from 'dayjs';
 import React from 'react';
 
@@ -31,15 +30,16 @@ interface AddEventModalProps {
 }
 
 const minutesToHours = (minutes: number) => {
-  if (typeof minutes !== 'number' || isNaN(minutes)) return '';
+  if (typeof minutes !== 'number' || Number.isNaN(minutes)) return '';
   const hours = minutes / 60;
   return hours.toFixed(1);
 };
 
 const hoursToMinutes = (hours: number) => {
-  if (typeof hours !== 'number' || isNaN(hours)) return 0;
+  if (typeof hours !== 'number' || Number.isNaN(hours)) return 0;
   return Math.round(hours * 60);
 };
+
 export default function AddEventModal({
   isOpen,
   onClose,
@@ -55,6 +55,7 @@ export default function AddEventModal({
     calendar_hours: 'work_hours',
     start_date: '',
     end_date: '',
+    priority: 'medium',
   });
 
   const [errors, setErrors] = React.useState<Record<string, string>>({});
@@ -166,6 +167,7 @@ export default function AddEventModal({
           | 'meeting_hours',
         start_date: formData.start_date || null,
         end_date: formData.end_date || null,
+        priority: formData.priority,
       };
 
       const response = await fetch(`/api/${wsId}/task/create`, {
@@ -221,6 +223,7 @@ export default function AddEventModal({
       calendar_hours: 'work_hours',
       start_date: '',
       end_date: '',
+      priority: 'medium',
     });
     setErrors({});
     onClose?.();
@@ -247,63 +250,88 @@ export default function AddEventModal({
     },
   ];
 
+  const priorityOptions = [
+    { value: 'high', label: 'High', color: 'text-red-600', icon: '🔴' },
+    { value: 'medium', label: 'Medium', color: 'text-yellow-600', icon: '🟡' },
+    { value: 'low', label: 'Low', color: 'text-green-600', icon: '🟢' },
+  ];
+
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-md">
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg rounded-xl shadow-lg p-6 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <PlusIcon className="h-5 w-5" />
-            Create New Task
-          </DialogTitle>
-          <DialogDescription>
-            Schedule a new task with your preferred settings and constraints.
-          </DialogDescription>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <PlusIcon className="h-5 w-5 text-blue-500" />
+              <DialogTitle className="text-lg font-semibold">
+                Create Task
+              </DialogTitle>
+            </div>
+            {/* Priority icon selector */}
+            <div className="flex items-center gap-1">
+              {priorityOptions.map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => updateFormData('priority', opt.value)}
+                  aria-label={opt.label}
+                  title={opt.label}
+                  className={`text-xl px-1.5 py-1 rounded-full border transition-all focus:outline-none focus:ring-2 focus:ring-blue-300
+                    ${formData.priority === opt.value ? `${opt.color} border-blue-400 bg-zinc-100 dark:bg-zinc-800 scale-110` : 'text-zinc-400 border-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800'}`}
+                >
+                  <span>{opt.icon}</span>
+                </button>
+              ))}
+            </div>
+          </div>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-5 mt-2">
           {/* Basic Information */}
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="task-title">
+          <div className="rounded-xl border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4 space-y-3 shadow-md transition-shadow hover:shadow-lg">
+            <div className="space-y-1">
+              <Label
+                htmlFor="task-title"
+                className="text-xs font-medium text-zinc-600 dark:text-zinc-300"
+              >
                 Task Name <span className="text-destructive">*</span>
               </Label>
               <Input
                 id="task-title"
-                placeholder="e.g., Complete project documentation"
+                placeholder="e.g., Project documentation"
                 value={formData.name}
                 onChange={(e) => updateFormData('name', e.target.value)}
-                className={errors.name ? 'border-destructive' : ''}
+                className={`h-9 text-sm rounded-lg border-zinc-200 dark:border-zinc-700 focus:ring-2 focus:ring-blue-300 transition-all ${errors.name ? 'border-destructive' : ''}`}
               />
               {errors.name && (
-                <p className="text-sm text-destructive">{errors.name}</p>
+                <p className="text-xs text-destructive mt-0.5">{errors.name}</p>
               )}
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="task-description">Description (Optional)</Label>
+            <div className="space-y-1">
+              <Label
+                htmlFor="task-description"
+                className="text-xs font-medium text-zinc-600 dark:text-zinc-300"
+              >
+                Description
+              </Label>
               <Textarea
                 id="task-description"
-                placeholder="Add any additional details about this task..."
+                placeholder="Details (optional)"
                 value={formData.description}
                 onChange={(e) => updateFormData('description', e.target.value)}
                 rows={2}
+                className="h-16 text-sm rounded-lg border-zinc-200 dark:border-zinc-700 focus:ring-2 focus:ring-blue-300 transition-all"
               />
             </div>
           </div>
 
-          <Separator />
-
           {/* Duration Settings */}
-          <div className="space-y-4">
-            <div className="mb-3 flex items-center gap-2">
-              <ClockIcon className="h-4 w-4 text-muted-foreground" />
-              <Label className="text-sm font-medium">Duration Settings</Label>
-            </div>
-
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="duration" className="text-sm">
-                  Total Duration (h) <span className="text-destructive">*</span>
+          <div className="rounded-xl border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4 space-y-3 shadow-md transition-shadow hover:shadow-lg">
+            <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-1">
+                <Label htmlFor="duration" className="text-xs">
+                  Total (h) <span className="text-destructive">*</span>
                 </Label>
                 <Input
                   id="duration"
@@ -314,16 +342,15 @@ export default function AddEventModal({
                   onChange={(e) =>
                     updateFormData('total_duration', parseFloat(e.target.value))
                   }
-                  className={errors.total_duration ? 'border-destructive' : ''}
+                  className={`h-9 text-sm rounded-lg border-zinc-200 dark:border-zinc-700 focus:ring-2 focus:ring-blue-300 transition-all ${errors.total_duration ? 'border-destructive' : ''}`}
                 />
                 {errors.total_duration && (
-                  <p className="text-xs text-destructive">
+                  <p className="text-xs text-destructive mt-0.5">
                     {errors.total_duration}
                   </p>
                 )}
               </div>
-
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-2 mt-5">
                 <Checkbox
                   id="split-up"
                   checked={formData.is_splittable}
@@ -331,202 +358,173 @@ export default function AddEventModal({
                     updateFormData('is_splittable', checked)
                   }
                 />
-                <Label htmlFor="split-up" className="text-sm font-normal">
-                  Allow splitting into smaller sessions
+                <Label htmlFor="split-up" className="text-xs font-normal">
+                  Splittable
                 </Label>
               </div>
-
-              {formData.is_splittable && (
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-2">
-                    <Label htmlFor="min-duration" className="text-sm">
-                      Min Duration (h) <span className="text-destructive">*</span>
-                    </Label>
-                    <Input
-                      id="min-duration"
-                      type="number"
-                      step="0.25"
-                      min="0.25"
-                      value={minutesToHours(
-                        formData.min_split_duration_minutes
-                      )}
-                      onChange={(e) => {
-                        const hours = parseFloat(e.target.value);
-                        updateFormData(
-                          'min_split_duration_minutes',
-                          hoursToMinutes(hours)
-                        );
-                      }}
-                      className={
-                        errors.min_split_duration_minutes
-                          ? 'border-destructive'
-                          : ''
-                      }
-                    />
-                    {errors.min_split_duration_minutes && (
-                      <p className="text-xs text-destructive">
-                        {errors.min_split_duration_minutes}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="max-duration" className="text-sm">
-                      Max Duration (h) <span className="text-destructive">*</span>
-                    </Label>
-                    <Input
-                      id="max-duration"
-                      type="number"
-                      step="0.25"
-                      min="0.25"
-                      value={minutesToHours(
-                        formData.max_split_duration_minutes
-                      )}
-                      onChange={(e) => {
-                        const hours = parseFloat(e.target.value);
-                        updateFormData(
-                          'max_split_duration_minutes',
-                          hoursToMinutes(hours)
-                        );
-                      }}
-                      className={
-                        errors.max_split_duration_minutes
-                          ? 'border-destructive'
-                          : ''
-                      }
-                    />
-                    {errors.max_split_duration_minutes && (
-                      <p className="text-xs text-destructive">
-                        {errors.max_split_duration_minutes}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              <div className="rounded-lg bg-accent/50 p-3 text-xs text-muted-foreground">
-                <strong>Duration Guidelines:</strong>
-                <ul className="mt-1 space-y-1">
-                  <li>
-                    • <strong>Total:</strong> How long this task should take
-                    overall
-                  </li>
-                  {formData.is_splittable && (
-                    <>
-                      <li>
-                        • <strong>Min:</strong> Minimum time block needed for
-                        meaningful progress
-                      </li>
-                      <li>
-                        • <strong>Max:</strong> Maximum time to work on this
-                        task at once
-                      </li>
-                    </>
-                  )}
-                </ul>
-              </div>
             </div>
+            {formData.is_splittable && (
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-1">
+                  <Label htmlFor="min-duration" className="text-xs">
+                    Min (h) <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    id="min-duration"
+                    type="number"
+                    step="0.25"
+                    min="0.25"
+                    value={minutesToHours(formData.min_split_duration_minutes)}
+                    onChange={(e) => {
+                      const hours = parseFloat(e.target.value);
+                      updateFormData(
+                        'min_split_duration_minutes',
+                        hoursToMinutes(hours)
+                      );
+                    }}
+                    className={`h-9 text-sm rounded-lg border-zinc-200 dark:border-zinc-700 focus:ring-2 focus:ring-blue-300 transition-all ${errors.min_split_duration_minutes ? 'border-destructive' : ''}`}
+                  />
+                  {errors.min_split_duration_minutes && (
+                    <p className="text-xs text-destructive mt-0.5">
+                      {errors.min_split_duration_minutes}
+                    </p>
+                  )}
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="max-duration" className="text-xs">
+                    Max (h) <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    id="max-duration"
+                    type="number"
+                    step="0.25"
+                    min="0.25"
+                    value={minutesToHours(formData.max_split_duration_minutes)}
+                    onChange={(e) => {
+                      const hours = parseFloat(e.target.value);
+                      updateFormData(
+                        'max_split_duration_minutes',
+                        hoursToMinutes(hours)
+                      );
+                    }}
+                    className={`h-9 text-sm rounded-lg border-zinc-200 dark:border-zinc-700 focus:ring-2 focus:ring-blue-300 transition-all ${errors.max_split_duration_minutes ? 'border-destructive' : ''}`}
+                  />
+                  {errors.max_split_duration_minutes && (
+                    <p className="text-xs text-destructive mt-0.5">
+                      {errors.max_split_duration_minutes}
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
-          <Separator />
-
           {/* Scheduling Preferences */}
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <div className="mb-2 flex items-center gap-2">
-                <ClockIcon className="h-4 w-4 text-muted-foreground" />
-                <Label className="text-sm font-medium">Working Hours</Label>
-              </div>
-              <Select
-                value={formData.calendar_hours}
-                onValueChange={(value) =>
-                  updateFormData('calendar_hours', value)
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {workingHoursOptions.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      <div className="flex items-center gap-2">
-                        <span>{option.icon}</span>
-                        <div>
-                          <div className="font-medium">{option.label}</div>
-                          <div className="text-xs text-muted-foreground">
-                            {option.description}
-                          </div>
-                        </div>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+          <div className="rounded-xl border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4 space-y-3 shadow-md transition-shadow hover:shadow-lg">
+            <div className="flex items-center gap-2 mb-1">
+              <ClockIcon className="h-4 w-4 text-blue-400" />
+              <Label className="text-xs font-semibold text-zinc-700 dark:text-zinc-200">
+                Working Hours
+              </Label>
             </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="start-date" className="text-sm">
-                  Start Date (Optional)
-                </Label>
-                <Input
-                  id="start-date"
-                  type="datetime-local"
-                  value={formData.start_date}
-                  onChange={(e) => updateFormData('start_date', e.target.value)}
-                  min={dayjs().format('YYYY-MM-DDTHH:mm')}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <CalendarIcon className="h-4 w-4 text-muted-foreground" />
-                  <Label htmlFor="end-date" className="text-sm">
-                    End Date (Optional)
+            <Select
+              value={formData.calendar_hours}
+              onValueChange={(value) => updateFormData('calendar_hours', value)}
+            >
+              <SelectTrigger className="h-9 text-sm rounded-lg border-zinc-200 dark:border-zinc-700 focus:ring-2 focus:ring-blue-300 transition-all">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {workingHoursOptions.map((option) => (
+                  <SelectItem
+                    key={option.value}
+                    value={option.value}
+                    className="text-sm"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span>{option.icon}</span>
+                      <span>{option.label}</span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <div className="grid grid-cols-2 gap-2">
+              <div className="flex items-end gap-6 w-full">
+                {/* Start Date */}
+                <div className="w-48">
+                  <Label htmlFor="start-date" className="text-xs mb-1 block">
+                    Start (optional)
                   </Label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none flex items-center">
+                      <CalendarIcon className="h-5 w-5" />
+                    </span>
+                    <Input
+                      id="start-date"
+                      type="datetime-local"
+                      value={formData.start_date}
+                      onChange={(e) =>
+                        updateFormData('start_date', e.target.value)
+                      }
+                      min={dayjs().format('YYYY-MM-DDTHH:mm')}
+                      className="h-10 w-full text-sm rounded-lg border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 focus:ring-2 focus:ring-blue-300 transition-all pl-10 pr-2 shadow-sm focus:shadow-md"
+                    />
+                  </div>
                 </div>
-                <Input
-                  id="end-date"
-                  type="datetime-local"
-                  value={formData.end_date}
-                  onChange={(e) => updateFormData('end_date', e.target.value)}
-                  min={dayjs().format('YYYY-MM-DDTHH:mm')}
-                  className={errors.end_date ? 'border-destructive' : ''}
-                />
-                {errors.end_date && (
-                  <p className="text-xs text-destructive">{errors.end_date}</p>
-                )}
+                {/* End Date */}
+                <div className="w-48">
+                  <Label htmlFor="end-date" className="text-xs mb-1 block">
+                    End (optional)
+                  </Label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none flex items-center">
+                      <CalendarIcon className="h-5 w-5" />
+                    </span>
+                    <Input
+                      id="end-date"
+                      type="datetime-local"
+                      value={formData.end_date}
+                      onChange={(e) =>
+                        updateFormData('end_date', e.target.value)
+                      }
+                      min={dayjs().format('YYYY-MM-DDTHH:mm')}
+                      className={`h-10 w-full text-sm rounded-lg border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 focus:ring-2 focus:ring-blue-300 transition-all pl-10 pr-2 shadow-sm focus:shadow-md ${errors.end_date ? 'border-destructive' : ''}`}
+                    />
+                  </div>
+                  {errors.end_date && (
+                    <p className="text-xs text-destructive mt-0.5">
+                      {errors.end_date}
+                    </p>
+                  )}
+                </div>
               </div>
             </div>
-
-            <div className="rounded-lg bg-blue-50 p-3 text-sm text-blue-800">
-              <div className="flex items-center gap-2">
-                <span>📧</span>
-                <span>
-                  Tasks will be scheduled for {user?.email || 'your account'}
-                </span>
-              </div>
+            <div className="rounded-md bg-blue-50 dark:bg-blue-950 p-2 text-xs text-blue-800 dark:text-blue-200 flex items-center gap-2 mt-1">
+              <span>📧</span>
+              <span>For {user?.email || 'your account'}</span>
             </div>
           </div>
 
           {errors.submit && (
-            <div className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
+            <div className="rounded-lg bg-destructive/10 p-2 text-xs text-destructive">
               {errors.submit}
             </div>
           )}
 
-          <DialogFooter className="gap-2">
+          <DialogFooter className="gap-2 mt-2">
             <Button
               type="button"
               variant="outline"
               onClick={handleClose}
               disabled={isLoading}
+              className="h-9 px-5 text-sm rounded-lg border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 focus:ring-2 focus:ring-blue-300 transition-all"
             >
               Cancel
             </Button>
             <Button
               type="submit"
-              className="bg-blue-500 hover:bg-blue-600"
+              className="h-9 px-5 text-sm rounded-lg bg-blue-500 hover:bg-blue-600 focus:ring-2 focus:ring-blue-300 transition-all text-white font-semibold shadow-md"
               disabled={isLoading}
             >
               {isLoading ? (
@@ -537,7 +535,7 @@ export default function AddEventModal({
               ) : (
                 <>
                   <PlusIcon className="mr-2 h-4 w-4" />
-                  Create Task
+                  Create
                 </>
               )}
             </Button>
