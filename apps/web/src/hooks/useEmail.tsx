@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import ReactDOMServer from 'react-dom/server';
-import PostEmailTemplate from '@/app/[locale]/(dashboard)/[wsId]/mail/send/post-template';
+import PostEmailTemplate from '@/app/[locale]/(dashboard)/[wsId]/mail/default-email-template';
 import type { UserGroupPost } from '@/app/[locale]/(dashboard)/[wsId]/users/groups/[groupId]/posts';
 
 const useEmail = () => {

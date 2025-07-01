@@ -2,11 +2,12 @@
   "biome.enabled": true,
   "eslint.enable": true,
   "editor.codeActionsOnSave": {
-    "quickfix.biome": "always",
-    "source.organizeImports.biome": "always"
+    "quickfix.biome": "never",
+    "source.organizeImports.biome": "explicit"
   },
   "editor.formatOnPaste": false,
   "editor.formatOnSave": true,
+  "editor.formatOnSaveMode": "file",
   "editor.defaultFormatter": "biomejs.biome",
   "typescript.tsdk": "node_modules/typescript/lib",
   "workbench.editor.customLabels.patterns": {

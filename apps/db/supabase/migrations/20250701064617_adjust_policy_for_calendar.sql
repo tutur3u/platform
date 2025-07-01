@@ -12,8 +12,4 @@ with check (((list_id IS NULL) OR (EXISTS ( SELECT 1
    FROM task_lists tl
   WHERE (tl.id = tasks.list_id)))));
 
-
-
 alter table "public"."workspace_calendar_events" add column "task_id" uuid;
-
-
