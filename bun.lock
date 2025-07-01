@@ -30,6 +30,10 @@
         "supabase": "^2.26.9",
       },
     },
+    "apps/ocr": {
+      "name": "@ncthub/ocr",
+      "version": "1.0.0",
+    },
     "apps/web": {
       "name": "@ncthub/web",
       "version": "0.14.0",
@@ -827,6 +831,8 @@
     "@ncthub/db": ["@ncthub/db@workspace:apps/db"],
 
     "@ncthub/eslint-config": ["@ncthub/eslint-config@workspace:packages/eslint-config"],
+
+    "@ncthub/ocr": ["@ncthub/ocr@workspace:apps/ocr"],
 
     "@ncthub/supabase": ["@ncthub/supabase@workspace:packages/supabase"],
 

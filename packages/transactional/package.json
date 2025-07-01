@@ -6,7 +6,7 @@
     "dev": "email dev -p 3001",
     "export": "email export"
   },
-  "packageManager": "bun@1.2.16",
+  "packageManager": "bun@1.2.17",
   "dependencies": {
     "@react-email/components": "^0.0.41",
     "@react-email/tailwind": "^1.0.5",
