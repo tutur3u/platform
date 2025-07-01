@@ -5032,6 +5032,7 @@ export type Database = {
           locked: boolean;
           priority: string | null;
           start_at: string;
+          task_id: string | null;
           title: string;
           ws_id: string;
         };
@@ -5046,6 +5047,7 @@ export type Database = {
           locked?: boolean;
           priority?: string | null;
           start_at: string;
+          task_id?: string | null;
           title?: string;
           ws_id: string;
         };
@@ -5060,6 +5062,7 @@ export type Database = {
           locked?: boolean;
           priority?: string | null;
           start_at?: string;
+          task_id?: string | null;
           title?: string;
           ws_id?: string;
         };

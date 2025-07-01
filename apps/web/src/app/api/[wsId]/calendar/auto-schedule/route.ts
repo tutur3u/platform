@@ -271,8 +271,6 @@ export async function POST(
       );
       const { events: newScheduledEvents, logs } = scheduleResult;
 
-      // console.log(scheduleResult.logs.length, 'logs generated:', scheduleResult.logs);
-      // console.log(newScheduledEvents.length, 'new scheduled events:', newScheduledEvents);
       // 5. SAVE THE NEW SCHEDULE TO SUPABASE
       streamUpdate?.({ status: 'running', message: 'Saving new schedule...' });
 
@@ -315,7 +313,6 @@ export async function POST(
               );
             }
           } else {
-            // Insert new event
             const { error: insertError } = await (await supabase)
               .from('workspace_calendar_events')
               .insert({
@@ -349,7 +346,6 @@ export async function POST(
           start_at: event.range.start.toISOString(),
           end_at: event.range.end.toISOString(),
           locked: false,
-          // is_past_deadline: event.isPastDeadline ?? false,
         }));
 
         const { error: insertError } = await (await supabase)
