@@ -52,6 +52,8 @@ export interface DataTableProps<TData, TValue> {
   // eslint-disable-next-line no-unused-vars
   onSearch?: (query: string) => void;
   // eslint-disable-next-line no-unused-vars
+  onRowClick?: (row: TData) => void;
+  // eslint-disable-next-line no-unused-vars
   setParams?: (params: { page?: number; pageSize?: string }) => void;
   resetParams?: () => void;
   t?: any;
@@ -91,6 +93,7 @@ export function DataTable<TData, TValue>({
   className,
   onRefresh,
   onSearch,
+  onRowClick,
   setParams,
   resetParams,
   columnGenerator,
@@ -118,7 +121,9 @@ export function DataTable<TData, TValue>({
       },
     },
     pageCount:
-      count != undefined ? Math.max(Math.ceil(count / pageSize), 1) : undefined,
+      count !== undefined
+        ? Math.max(Math.ceil((count || 0) / pageSize), 1)
+        : undefined,
     enableRowSelection: true,
     autoResetPageIndex: true,
     onRowSelectionChange: setRowSelection,
@@ -180,6 +185,8 @@ export function DataTable<TData, TValue>({
                 <TableRow
                   key={`${namespace}-${row.id}`}
                   data-state={row.getIsSelected() && 'selected'}
+                  onClick={() => onRowClick?.(row.original)}
+                  className="cursor-pointer"
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={`${namespace}-${cell.id}`}>
