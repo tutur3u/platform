@@ -3542,5 +3542,32 @@
       "hours_ago": "{count}h ago",
       "days_ago": "{count}d ago"
     }
+  },
+  "mail": {
+    "compose": "Compose",
+    "compose_email": "Compose Email",
+    "to": "To",
+    "subject": "Subject",
+    "message": "Message",
+    "send_email": "Send Email",
+    "recipient_placeholder": "recipient@example.com",
+    "subject_placeholder": "Enter email subject",
+    "message_placeholder": "Write your message here...",
+    "inbox": "Inbox",
+    "loading_more_emails": "Loading more emails...",
+    "no_more_emails": "No more emails to load",
+    "to_label": "To:",
+    "from_label": "From:",
+    "archive": "Archive",
+    "move_to_trash": "Move to trash",
+    "reply": "Reply",
+    "reply_all": "Reply all",
+    "forward": "Forward",
+    "more": "More",
+    "mark_as_unread": "Mark as unread",
+    "loading_email_content": "Loading email content...",
+    "no_email_selected": "No email selected",
+    "choose_email_message": "Choose an email from the list to view its content here.",
+    "no_emails_found": "No emails found"
   }
 }

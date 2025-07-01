@@ -1,51 +1,79 @@
 'use client';
 
-import { Archive, Inbox, Search, Send } from '@tuturuuu/ui/icons';
-import { Input } from '@tuturuuu/ui/input';
 import {
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
 } from '@tuturuuu/ui/resizable';
-import { Separator } from '@tuturuuu/ui/separator';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
+import { Tabs, TabsContent } from '@tuturuuu/ui/tabs';
 import { TooltipProvider } from '@tuturuuu/ui/tooltip';
-import { cn } from '@tuturuuu/utils/format';
-import * as React from 'react';
-import type { Mail } from '../data';
+import { useTranslations } from 'next-intl';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import type { Mail } from '../client';
 import { useMail } from '../use-mail';
+import { ComposeButton } from './compose-button';
+import { ComposeDialog } from './compose-dialog';
 import { MailDisplay } from './mail-display';
 import { MailList } from './mail-list';
-import { Nav } from './nav';
 
 interface MailProps {
   mails: Mail[];
   defaultLayout: number[] | undefined;
   defaultCollapsed?: boolean;
   navCollapsedSize: number;
+  onLoadMore?: () => void;
+  hasMore?: boolean;
+  loading?: boolean;
+  wsId: string;
 }
 
-export function Mail({
+export function MailClient({
   mails,
   defaultLayout = [20, 32, 48],
-  defaultCollapsed = false,
-  navCollapsedSize,
+  onLoadMore,
+  hasMore,
+  loading,
+  wsId,
 }: MailProps) {
-  const [isCollapsed, setIsCollapsed] = React.useState(defaultCollapsed);
   const [mail] = useMail();
+  const [composeOpen, setComposeOpen] = useState(false);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const t = useTranslations('mail');
+
+  const handleScroll = useCallback(() => {
+    if (!scrollContainerRef.current || !onLoadMore || !hasMore || loading)
+      return;
+
+    const { scrollTop, scrollHeight, clientHeight } =
+      scrollContainerRef.current;
+    const isNearBottom = scrollTop + clientHeight >= scrollHeight - 200;
+
+    if (isNearBottom) {
+      onLoadMore();
+    }
+  }, [onLoadMore, hasMore, loading]);
+
+  useEffect(() => {
+    const scrollElement = scrollContainerRef.current;
+    if (!scrollElement) return;
+
+    scrollElement.addEventListener('scroll', handleScroll);
+    return () => scrollElement.removeEventListener('scroll', handleScroll);
+  }, [handleScroll]);
 
   return (
     <TooltipProvider delayDuration={0}>
       <ResizablePanelGroup
         direction="horizontal"
         onLayout={(sizes: number[]) => {
+          // biome-ignore lint/suspicious/noDocumentCookie: <>
           document.cookie = `react-resizable-panels:layout:mail=${JSON.stringify(
             sizes
           )}`;
         }}
-        className="h-full max-h-[800px] items-stretch"
+        className="items-stretch"
       >
-        <ResizablePanel
+        {/*<ResizablePanel
           defaultSize={defaultLayout[0]}
           collapsedSize={navCollapsedSize}
           collapsible={true}
@@ -118,78 +146,64 @@ export function Mail({
             ]}
           />
           {/*<Separator />*/}
-          {/*<Nav*/}
-          {/*  isCollapsed={isCollapsed}*/}
-          {/*  links={[*/}
-          {/*    {*/}
-          {/*      title: 'Social',*/}
-          {/*      label: '972',*/}
-          {/*      icon: Users2,*/}
-          {/*      variant: 'ghost',*/}
-          {/*    },*/}
-          {/*    {*/}
-          {/*      title: 'Updates',*/}
-          {/*      label: '342',*/}
-          {/*      icon: AlertCircle,*/}
-          {/*      variant: 'ghost',*/}
-          {/*    },*/}
-          {/*    {*/}
-          {/*      title: 'Forums',*/}
-          {/*      label: '128',*/}
-          {/*      icon: MessagesSquare,*/}
-          {/*      variant: 'ghost',*/}
-          {/*    },*/}
-          {/*    {*/}
-          {/*      title: 'Shopping',*/}
-          {/*      label: '8',*/}
-          {/*      icon: ShoppingCart,*/}
-          {/*      variant: 'ghost',*/}
-          {/*    },*/}
-          {/*    {*/}
-          {/*      title: 'Promotions',*/}
-          {/*      label: '21',*/}
-          {/*      icon: Archive,*/}
-          {/*      variant: 'ghost',*/}
-          {/*    },*/}
-          {/*  ]}*/}
-          {/*/>*/}
-        </ResizablePanel>
-        <ResizableHandle withHandle />
-        <ResizablePanel defaultSize={defaultLayout[1]} minSize={30}>
-          <Tabs defaultValue="all">
-            <div className="flex items-center px-4 py-2">
-              <h1 className="text-xl font-bold">Inbox</h1>
-              <TabsList className="ml-auto">
-                <TabsTrigger
-                  value="all"
-                  className="text-zinc-600 dark:text-zinc-200"
-                >
-                  All mail
-                </TabsTrigger>
-                <TabsTrigger
-                  value="unread"
-                  className="text-zinc-600 dark:text-zinc-200"
-                >
-                  Unread
-                </TabsTrigger>
-              </TabsList>
-            </div>
-            <Separator />
-            <div className="bg-background/95 p-4 backdrop-blur supports-backdrop-filter:bg-background/60">
-              <form>
-                <div className="relative">
-                  <Search className="absolute top-2.5 left-2 h-4 w-4 text-muted-foreground" />
-                  <Input placeholder="Search" className="pl-8" />
-                </div>
-              </form>
-            </div>
-            <TabsContent value="all" className="m-0">
-              <MailList items={mails} />
-            </TabsContent>
-            <TabsContent value="unread" className="m-0">
-              <MailList items={mails.filter((item) => !item.read)} />
-            </TabsContent>
-          </Tabs>
+        {/*<Nav*/}
+        {/*  isCollapsed={isCollapsed}*/}
+        {/*  links={[*/}
+        {/*    {*/}
+        {/*      title: 'Social',*/}
+        {/*      label: '972',*/}
+        {/*      icon: Users2,*/}
+        {/*      variant: 'ghost',*/}
+        {/*    },*/}
+        {/*    {*/}
+        {/*      title: 'Updates',*/}
+        {/*      label: '342',*/}
+        {/*      icon: AlertCircle,*/}
+        {/*      variant: 'ghost',*/}
+        {/*    },*/}
+        {/*    {*/}
+        {/*      title: 'Forums',*/}
+        {/*      label: '128',*/}
+        {/*      icon: MessagesSquare,*/}
+        {/*      variant: 'ghost',*/}
+        {/*    },*/}
+        {/*    {*/}
+        {/*      title: 'Shopping',*/}
+        {/*      label: '8',*/}
+        {/*      icon: ShoppingCart,*/}
+        {/*      variant: 'ghost',*/}
+        {/*    },*/}
+        {/*    {*/}
+        {/*      title: 'Promotions',*/}
+        {/*      label: '21',*/}
+        {/*      icon: Archive,*/}
+        {/*      variant: 'ghost',*/}
+        {/*    },*/}
+        {/*  ]}*/}
+        {/*/>*/}
+        {/*</ResizablePanel>*/}
+        {/*<ResizableHandle withHandle />*/}
+        <ResizablePanel
+          defaultSize={defaultLayout[1]}
+          minSize={30}
+          className="flex flex-col "
+        >
+          <div
+            ref={scrollContainerRef}
+            className="overflow-y-auto h-full w-full"
+          >
+            <Tabs defaultValue="all">
+              <div className="flex items-center justify-between px-4 h-16 border-b bg-background/50 backdrop-blur-sm">
+                <h1 className="text-2xl font-bold text-foreground tracking-tight">
+                  {t('inbox')}
+                </h1>
+                <ComposeButton onClick={() => setComposeOpen(true)} />
+              </div>
+              <TabsContent value="all" className="m-0">
+                <MailList items={mails} hasMore={hasMore} loading={loading} />
+              </TabsContent>
+            </Tabs>
+          </div>
         </ResizablePanel>
         <ResizableHandle className="hidden md:block" />
         <ResizablePanel
@@ -202,6 +216,11 @@ export function Mail({
           />
         </ResizablePanel>
       </ResizablePanelGroup>
+      <ComposeDialog
+        wsId={wsId}
+        open={composeOpen}
+        onOpenChange={setComposeOpen}
+      />
     </TooltipProvider>
   );
 }

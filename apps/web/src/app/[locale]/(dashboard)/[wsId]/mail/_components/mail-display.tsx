@@ -9,226 +9,245 @@ import {
 import {
   Archive,
   Forward,
+  Loader2,
   MoreVertical,
   Reply,
   ReplyAll,
   Trash2,
 } from '@tuturuuu/ui/icons';
-import { Label } from '@tuturuuu/ui/label';
+import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { Separator } from '@tuturuuu/ui/separator';
-import { Switch } from '@tuturuuu/ui/switch';
-import { Textarea } from '@tuturuuu/ui/textarea';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
-import { format } from 'date-fns';
-import type { Mail } from '../data';
+import dayjs from 'dayjs';
+import 'dayjs/locale/en';
+import 'dayjs/locale/vi';
+import localizedFormat from 'dayjs/plugin/localizedFormat';
+import { useLocale, useTranslations } from 'next-intl';
+import { useEffect, useState } from 'react';
+import type { Mail } from '../client';
+
+// Extend dayjs with localizedFormat plugin
+dayjs.extend(localizedFormat);
 
 interface MailDisplayProps {
   mail: Mail | null;
 }
 
+const DISABLE_MAIL_ACTIONS = true;
+
 export function MailDisplay({ mail }: MailDisplayProps) {
+  const [sanitizedHtml, setSanitizedHtml] = useState<string>('');
+  const [isLoading, setIsLoading] = useState(true);
+  const t = useTranslations('mail');
+  const locale = useLocale();
+
+  // Set dayjs locale
+  useEffect(() => {
+    dayjs.locale(locale);
+  }, [locale]);
+
+  useEffect(() => {
+    const sanitizeContent = async () => {
+      if (!mail?.text) {
+        setSanitizedHtml('');
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        // Dynamically import DOMPurify only on client-side
+        const DOMPurify = (await import('dompurify')).default;
+        const sanitized = DOMPurify.sanitize(mail.text);
+        setSanitizedHtml(sanitized);
+      } catch (error) {
+        console.error('Failed to sanitize HTML:', error);
+        // Fallback to plain text if DOMPurify fails
+        setSanitizedHtml(mail.text.replace(/<[^>]*>/g, ''));
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    setIsLoading(true);
+    sanitizeContent();
+  }, [mail?.text]);
+
   return (
-    <div className="flex h-full flex-col">
-      <div className="flex items-center p-2">
-        <div className="flex items-center gap-2">
+    <div className="flex h-full flex-col bg-background">
+      <div className="flex items-center justify-between px-4 h-16 border-b bg-background/80 backdrop-blur-sm">
+        <div className="flex items-center gap-1">
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" disabled={!mail}>
+              <Button
+                variant="ghost"
+                size="sm"
+                disabled={!mail || DISABLE_MAIL_ACTIONS}
+                className="h-8 w-8 hover:bg-accent/80"
+              >
                 <Archive className="h-4 w-4" />
-                <span className="sr-only">Archive</span>
+                <span className="sr-only">{t('archive')}</span>
               </Button>
             </TooltipTrigger>
-            <TooltipContent>Archive</TooltipContent>
+            <TooltipContent side="bottom">{t('archive')}</TooltipContent>
           </Tooltip>
-          {/*<Tooltip>*/}
-          {/*  <TooltipTrigger asChild>*/}
-          {/*    <Button variant="ghost" size="icon" disabled={!mail}>*/}
-          {/*      <ArchiveX className="h-4 w-4" />*/}
-          {/*      <span className="sr-only">Move to junk</span>*/}
-          {/*    </Button>*/}
-          {/*  </TooltipTrigger>*/}
-          {/*  <TooltipContent>Move to junk</TooltipContent>*/}
-          {/*</Tooltip>*/}
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" disabled={!mail}>
+              <Button
+                variant="ghost"
+                size="sm"
+                disabled={!mail || DISABLE_MAIL_ACTIONS}
+                className="h-8 w-8 hover:bg-destructive/10 hover:text-destructive"
+              >
                 <Trash2 className="h-4 w-4" />
-                <span className="sr-only">Move to trash</span>
+                <span className="sr-only">{t('move_to_trash')}</span>
               </Button>
             </TooltipTrigger>
-            <TooltipContent>Move to trash</TooltipContent>
+            <TooltipContent side="bottom">{t('move_to_trash')}</TooltipContent>
           </Tooltip>
-          {/*<Separator orientation="vertical" className="mx-1 h-6" />*/}
-          {/*<Tooltip>*/}
-          {/*  <Popover>*/}
-          {/*    <PopoverTrigger asChild>*/}
-          {/*      <TooltipTrigger asChild>*/}
-          {/*        <Button variant="ghost" size="icon" disabled={!mail}>*/}
-          {/*          <Clock className="h-4 w-4" />*/}
-          {/*          <span className="sr-only">Snooze</span>*/}
-          {/*        </Button>*/}
-          {/*      </TooltipTrigger>*/}
-          {/*    </PopoverTrigger>*/}
-          {/*    <PopoverContent className="flex w-[535px] p-0">*/}
-          {/*      <div className="flex flex-col gap-2 border-r px-2 py-4">*/}
-          {/*        <div className="px-4 text-sm font-medium">Snooze until</div>*/}
-          {/*        <div className="grid min-w-[250px] gap-1">*/}
-          {/*          <Button*/}
-          {/*            variant="ghost"*/}
-          {/*            className="justify-start font-normal"*/}
-          {/*          >*/}
-          {/*            Later today{' '}*/}
-          {/*            <span className="text-muted-foreground ml-auto">*/}
-          {/*              {format(addHours(today, 4), 'E, h:m b')}*/}
-          {/*            </span>*/}
-          {/*          </Button>*/}
-          {/*          <Button*/}
-          {/*            variant="ghost"*/}
-          {/*            className="justify-start font-normal"*/}
-          {/*          >*/}
-          {/*            Tomorrow*/}
-          {/*            <span className="text-muted-foreground ml-auto">*/}
-          {/*              {format(addDays(today, 1), 'E, h:m b')}*/}
-          {/*            </span>*/}
-          {/*          </Button>*/}
-          {/*          <Button*/}
-          {/*            variant="ghost"*/}
-          {/*            className="justify-start font-normal"*/}
-          {/*          >*/}
-          {/*            This weekend*/}
-          {/*            <span className="text-muted-foreground ml-auto">*/}
-          {/*              {format(nextSaturday(today), 'E, h:m b')}*/}
-          {/*            </span>*/}
-          {/*          </Button>*/}
-          {/*          <Button*/}
-          {/*            variant="ghost"*/}
-          {/*            className="justify-start font-normal"*/}
-          {/*          >*/}
-          {/*            Next week*/}
-          {/*            <span className="text-muted-foreground ml-auto">*/}
-          {/*              {format(addDays(today, 7), 'E, h:m b')}*/}
-          {/*            </span>*/}
-          {/*          </Button>*/}
-          {/*        </div>*/}
-          {/*      </div>*/}
-          {/*      <div className="p-2">*/}
-          {/*        <Calendar />*/}
-          {/*      </div>*/}
-          {/*    </PopoverContent>*/}
-          {/*  </Popover>*/}
-          {/*  <TooltipContent>Snooze</TooltipContent>*/}
-          {/*</Tooltip>*/}
         </div>
-        <div className="ml-auto flex items-center gap-2">
+
+        <div className="flex items-center gap-1">
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" disabled={!mail}>
+              <Button
+                variant="ghost"
+                size="sm"
+                disabled={!mail || DISABLE_MAIL_ACTIONS}
+                className="h-8 w-8 hover:bg-accent/80"
+              >
                 <Reply className="h-4 w-4" />
-                <span className="sr-only">Reply</span>
+                <span className="sr-only">{t('reply')}</span>
               </Button>
             </TooltipTrigger>
-            <TooltipContent>Reply</TooltipContent>
+            <TooltipContent side="bottom">{t('reply')}</TooltipContent>
           </Tooltip>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" disabled={!mail}>
+              <Button
+                variant="ghost"
+                size="sm"
+                disabled={!mail || DISABLE_MAIL_ACTIONS}
+                className="h-8 w-8 hover:bg-accent/80"
+              >
                 <ReplyAll className="h-4 w-4" />
-                <span className="sr-only">Reply all</span>
+                <span className="sr-only">{t('reply_all')}</span>
               </Button>
             </TooltipTrigger>
-            <TooltipContent>Reply all</TooltipContent>
+            <TooltipContent side="bottom">{t('reply_all')}</TooltipContent>
           </Tooltip>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" disabled={!mail}>
+              <Button
+                variant="ghost"
+                size="sm"
+                disabled={!mail || DISABLE_MAIL_ACTIONS}
+                className="h-8 w-8 hover:bg-accent/80"
+              >
                 <Forward className="h-4 w-4" />
-                <span className="sr-only">Forward</span>
+                <span className="sr-only">{t('forward')}</span>
               </Button>
             </TooltipTrigger>
-            <TooltipContent>Forward</TooltipContent>
+            <TooltipContent side="bottom">{t('forward')}</TooltipContent>
           </Tooltip>
+
+          <Separator orientation="vertical" className="mx-2 h-5" />
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                disabled={!mail || DISABLE_MAIL_ACTIONS}
+                className="h-8 w-8 hover:bg-accent/80"
+              >
+                <MoreVertical className="h-4 w-4" />
+                <span className="sr-only">{t('more')}</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem>{t('mark_as_unread')}</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
-        <Separator orientation="vertical" className="mx-2 h-6" />
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" disabled={!mail}>
-              <MoreVertical className="h-4 w-4" />
-              <span className="sr-only">More</span>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem>Mark as unread</DropdownMenuItem>
-            {/*<DropdownMenuItem>Star thread</DropdownMenuItem>*/}
-            {/*<DropdownMenuItem>Add label</DropdownMenuItem>*/}
-            {/*<DropdownMenuItem>Mute thread</DropdownMenuItem>*/}
-          </DropdownMenuContent>
-        </DropdownMenu>
       </div>
-      <Separator />
+
       {mail ? (
-        <div className="flex flex-1 flex-col">
-          <div className="flex items-start p-4">
-            <div className="flex items-start gap-4 text-sm">
-              <Avatar>
-                <AvatarImage alt={mail.name} />
-                <AvatarFallback>
-                  {mail.name
-                    .split(' ')
-                    .map((chunk) => chunk[0])
-                    .join('')}
-                </AvatarFallback>
-              </Avatar>
-              <div className="grid gap-1">
-                <div className="font-semibold">{mail.name}</div>
-                <div className="line-clamp-1 text-xs">{mail.subject}</div>
-                <div className="line-clamp-1 text-xs">
-                  <span className="font-medium">Reply-To:</span> {mail.email}
+        <div className="flex flex-1 flex-col min-h-0">
+          <div className="flex items-start gap-4 p-6 bg-muted/20 border-b">
+            <Avatar className="h-12 w-12 ring-2 ring-background shadow-sm">
+              <AvatarImage alt={mail.name} />
+              <AvatarFallback className="bg-primary/10 text-primary font-semibold text-sm">
+                {mail.name
+                  .split(' ')
+                  .map((chunk: string) => chunk[0])
+                  .join('')
+                  .toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+
+            <div className="flex-1 min-w-0 space-y-3">
+              <div className="flex items-start justify-between gap-4">
+                <div className="min-w-0 flex-1">
+                  <h2 className="font-semibold text-lg text-foreground leading-tight">
+                    {mail.subject}
+                  </h2>
+                  <p className="text-sm font-medium text-foreground/80 mt-1">
+                    {mail.name}
+                    {' - '}
+                    {mail.date && (
+                      <time className="text-xs text-muted-foreground whitespace-nowrap font-medium">
+                        {dayjs(mail.date).format('LLLL')}
+                      </time>
+                    )}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex flex-col items-start gap-1 text-xs text-muted-foreground">
+                <div className="flex items-center gap-1">
+                  <span className="font-medium">{t('from_label')}</span>
+                  <span className="text-foreground/70">{mail.email}</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <span className="font-medium">{t('to_label')}</span>
+                  <span className="text-foreground/70">{mail.recipient}</span>
                 </div>
               </div>
             </div>
-            {mail.date && (
-              <div className="ml-auto text-xs text-muted-foreground">
-                {format(new Date(mail.date), 'PPpp')}
-              </div>
-            )}
           </div>
-          <Separator />
-          <div className="flex-1 p-4 text-sm whitespace-pre-wrap">
-            {mail.text}
-          </div>
-          <Separator className="mt-auto" />
-          <div className="p-4">
-            <form>
-              <div className="grid gap-4">
-                <Textarea
-                  className="p-4"
-                  placeholder={`Reply ${mail.name}...`}
-                  disabled
-                />
-                <div className="flex items-center">
-                  <Label
-                    htmlFor="mute"
-                    className="flex items-center gap-2 text-xs font-normal text-muted-foreground"
-                  >
-                    <Switch id="mute" aria-label="Mute thread" disabled /> Mute
-                    this thread
-                  </Label>
-                  <Button
-                    onClick={(e) => e.preventDefault()}
-                    size="sm"
-                    className="ml-auto"
-                    disabled
-                  >
-                    Send
-                  </Button>
+
+          <ScrollArea className="flex-1 min-h-0">
+            <div className="p-6">
+              {isLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="flex items-center gap-3 text-muted-foreground">
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    <span className="text-sm font-medium">
+                      {t('loading_email_content')}
+                    </span>
+                  </div>
                 </div>
-              </div>
-            </form>
-          </div>
+              ) : (
+                <div
+                  className="prose prose-sm max-w-none text-black/90 leading-relaxed [&>*]:text-inherit [&_p]:text-inherit [&_div]:text-inherit [&_span]:text-inherit [&_h1]:text-black [&_h2]:text-black [&_h3]:text-black [&_h4]:text-black [&_h5]:text-black [&_h6]:text-black [&_a]:text-primary [&_a:hover]:text-primary/80 [&_strong]:font-semibold [&_em]:italic [&_ul]:list-disc [&_ol]:list-decimal [&_li]:ml-4 [&_blockquote]:border-l-4 [&_blockquote]:border-border [&_blockquote]:pl-4 [&_blockquote]:italic [&_blockquote]:text-muted-black [&_code]:bg-muted [&_code]:text-muted-black [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_pre]:bg-muted [&_pre]:text-muted-black [&_pre]:p-4 [&_pre]:rounded-lg [&_table]:border-collapse [&_td]:border [&_th]:border [&_td]:p-2 [&_th]:p-2"
+                  // biome-ignore lint/security/noDangerouslySetInnerHtml: sanitized HTML output from DOMPurify
+                  dangerouslySetInnerHTML={{ __html: sanitizedHtml }}
+                />
+              )}
+            </div>
+          </ScrollArea>
         </div>
       ) : (
-        <div className="p-8 text-center text-muted-foreground">
-          No message selected
+        <div className="flex flex-1 items-center justify-center">
+          <div className="text-center max-w-sm mx-auto p-8">
+            <div className="text-6xl mb-6 opacity-30">📧</div>
+            <h3 className="text-xl font-semibold text-foreground mb-3">
+              {t('no_email_selected')}
+            </h3>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              {t('choose_email_message')}
+            </p>
+          </div>
         </div>
       )}
     </div>

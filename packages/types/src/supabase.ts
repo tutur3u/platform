@@ -3377,6 +3377,7 @@ export type Database = {
           source_email: string;
           source_name: string;
           subject: string;
+          ws_id: string;
         };
         Insert: {
           content: string;
@@ -3389,6 +3390,7 @@ export type Database = {
           source_email: string;
           source_name: string;
           subject: string;
+          ws_id: string;
         };
         Update: {
           content?: string;
@@ -3401,6 +3403,7 @@ export type Database = {
           source_email?: string;
           source_name?: string;
           subject?: string;
+          ws_id?: string;
         };
         Relationships: [
           {
@@ -3450,6 +3453,13 @@ export type Database = {
             columns: ['sender_id'];
             isOneToOne: false;
             referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'sent_emails_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
             referencedColumns: ['id'];
           },
         ];
@@ -7838,11 +7848,12 @@ export type Database = {
           search_query: string;
           role_filter?: string;
           enabled_filter?: boolean;
+          role_filter?: string;
         };
         Returns: number;
       };
       create_ai_chat: {
-        Args: { title: string; message: string; model: string };
+        Args: { title: string; model: string; message: string };
         Returns: string;
       };
       generate_cross_app_token: {
@@ -7854,19 +7865,18 @@ export type Database = {
               p_expiry_seconds?: number;
             }
           | {
-              p_user_id: string;
-              p_origin_app: string;
               p_target_app: string;
+              p_origin_app: string;
+              p_user_id: string;
               p_expiry_seconds?: number;
-              p_session_data?: Json;
             };
         Returns: string;
       };
       get_challenge_stats: {
         Args: { challenge_id_param: string; user_id_param: string };
         Returns: {
-          total_score: number;
           problems_attempted: number;
+          total_score: number;
         }[];
       };
       get_daily_income_expense: {
@@ -7989,10 +7999,10 @@ export type Database = {
       get_possible_excluded_tags: {
         Args: { _ws_id: string; included_tags: string[] };
         Returns: {
-          id: string;
           name: string;
-          ws_id: string;
           amount: number;
+          ws_id: string;
+          id: string;
         }[];
       };
       get_session_statistics: {
@@ -8012,13 +8022,19 @@ export type Database = {
           limit_count?: number;
         };
         Returns: {
+          tags: string[];
+          task_id: string;
+          category_id: string;
+          description: string;
           title: string;
           description: string;
           category_id: string;
           task_id: string;
           tags: string[];
           category_name: string;
-          category_color: string;
+          last_used: string;
+          avg_duration: number;
+          usage_count: number;
           task_name: string;
           usage_count: number;
           avg_duration: number;
@@ -8084,11 +8100,11 @@ export type Database = {
       get_user_whitelist_status: {
         Args: { user_id_param: string };
         Returns: {
+          allow_role_management: boolean;
           is_whitelisted: boolean;
           enabled: boolean;
           allow_challenge_management: boolean;
           allow_manage_all_challenges: boolean;
-          allow_role_management: boolean;
         }[];
       };
       get_workspace_drive_size: {
@@ -8115,8 +8131,10 @@ export type Database = {
           search_query: string;
         };
         Returns: {
+          tag_count: number;
           id: string;
           name: string;
+          tags: string[];
           notes: string;
           ws_id: string;
           tags: string[];
@@ -8171,7 +8189,7 @@ export type Database = {
         Returns: number;
       };
       get_workspace_wallets_income: {
-        Args: { ws_id: string; start_date?: string; end_date?: string };
+        Args: { end_date?: string; start_date?: string; ws_id: string };
         Returns: number;
       };
       has_other_owner: {
@@ -8199,7 +8217,7 @@ export type Database = {
         Returns: boolean;
       };
       is_nova_user_email_in_team: {
-        Args: { _user_email: string; _team_id: string };
+        Args: { _team_id: string; _user_email: string };
         Returns: boolean;
       };
       is_nova_user_id_in_team: {
@@ -8223,7 +8241,7 @@ export type Database = {
         Returns: boolean;
       };
       is_user_task_in_board: {
-        Args: { _user_id: string; _task_id: string };
+        Args: { _task_id: string; _user_id: string };
         Returns: boolean;
       };
       is_user_whitelisted: {
@@ -8235,11 +8253,11 @@ export type Database = {
         Returns: Json;
       };
       nova_get_challenge_with_user_stats: {
-        Args: { challenge_id: string; user_id: string };
+        Args: { user_id: string; challenge_id: string };
         Returns: Json;
       };
       nova_get_user_daily_sessions: {
-        Args: { challenge_id: string; user_id: string };
+        Args: { user_id: string; challenge_id: string };
         Returns: number;
       };
       nova_get_user_total_sessions: {
@@ -8259,7 +8277,7 @@ export type Database = {
         Returns: number;
       };
       revoke_user_session: {
-        Args: { target_user_id: string; session_id: string };
+        Args: { session_id: string; target_user_id: string };
         Returns: boolean;
       };
       search_boards_by_tags: {
@@ -8289,7 +8307,6 @@ export type Database = {
           avatar_url: string;
           handle: string;
           bio: string;
-          created_at: string;
           user_id: string;
           enabled: boolean;
           allow_challenge_management: boolean;
@@ -8347,14 +8364,14 @@ export type Database = {
         Returns: boolean;
       };
       validate_cross_app_token: {
-        Args: { p_token: string; p_target_app: string };
+        Args: { p_target_app: string; p_token: string };
         Returns: string;
       };
       validate_cross_app_token_with_session: {
         Args: { p_token: string; p_target_app: string };
         Returns: {
-          user_id: string;
           session_data: Json;
+          user_id: string;
         }[];
       };
     };
