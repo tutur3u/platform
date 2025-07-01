@@ -1,7 +1,7 @@
 import { createClient } from '@tuturuuu/supabase/next/client';
 import dayjs from 'dayjs';
 
-// Const of 4 weeks from the current week, this can be used for startDate and endDate in google calendar background sync
+// Const of 1 week from the current week, this can be used for startDate and endDate in google calendar background sync
 // and check if the current view is within this range
 export const BACKGROUND_SYNC_RANGE = 1 * 7;
 

@@ -126,7 +126,7 @@ export const CalendarSyncProvider = ({
   const [currentView, setCurrentView] = useState<
     'day' | '4-day' | 'week' | 'month'
   >('day');
-  const [isActiveSyncOn, setIsActiveSyncOn] = useState(false);
+  const [isActiveSyncOn, setIsActiveSyncOn] = useState(true);
   const [calendarCache, setCalendarCache] = useState<CalendarCache>({});
   const [isSyncing, setIsSyncing] = useState(false);
   const prevGoogleDataRef = useRef<string>('');
