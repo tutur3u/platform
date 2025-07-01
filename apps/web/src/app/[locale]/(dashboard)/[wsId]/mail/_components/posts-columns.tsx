@@ -4,29 +4,41 @@ import type { ColumnDef } from '@tanstack/react-table';
 import type { PostEmail } from '@tuturuuu/types/primitives/post-email';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import { Check, X } from '@tuturuuu/ui/icons';
-import RowActions from './row-actions';
+import { cn } from '@tuturuuu/utils/format';
+import { createPostEmailKey, usePosts } from '../use-posts';
+import PostsRowActions from './posts-row-actions';
 import 'dayjs/locale/vi';
 import moment from 'moment';
-import Link from 'next/link';
+
+const CellWrapper = ({
+  row,
+  children,
+}: {
+  // biome-ignore lint/suspicious/noExplicitAny: <>
+  row: any;
+  children: React.ReactNode;
+}) => {
+  const [posts, _setPosts] = usePosts();
+  const postKey = createPostEmailKey(row.original);
+  const isSelected = posts.selected === postKey;
+
+  return (
+    <div
+      className={cn(
+        'w-full h-full cursor-pointer px-2 py-1.5 rounded-md transition-colors',
+        isSelected ? 'bg-primary/10 text-primary' : 'hover:bg-muted/50'
+      )}
+    >
+      {children}
+    </div>
+  );
+};
 
 export const getPostEmailColumns = (
+  // biome-ignore lint/suspicious/noExplicitAny: <translations are not typed>
   t: any,
   namespace: string | undefined
-  // extraData?: any
 ): ColumnDef<PostEmail>[] => [
-  {
-    accessorKey: 'id',
-    header: ({ column }) => (
-      <DataTableColumnHeader
-        t={t}
-        column={column}
-        title={t(`${namespace}.id`)}
-      />
-    ),
-    cell: ({ row }) => (
-      <div className="line-clamp-1 min-w-32">{row.getValue('id')}</div>
-    ),
-  },
   {
     accessorKey: 'recipient',
     header: ({ column }) => (
@@ -36,7 +48,9 @@ export const getPostEmailColumns = (
         title={t(`${namespace}.recipient`)}
       />
     ),
-    cell: ({ row }) => <div>{row.getValue('recipient') || '-'}</div>,
+    cell: ({ row }) => (
+      <CellWrapper row={row}>{row.getValue('recipient') || '-'}</CellWrapper>
+    ),
   },
   {
     accessorKey: 'email',
@@ -47,7 +61,9 @@ export const getPostEmailColumns = (
         title={t(`${namespace}.email`)}
       />
     ),
-    cell: ({ row }) => <div>{row.getValue('email') || '-'}</div>,
+    cell: ({ row }) => (
+      <CellWrapper row={row}>{row.getValue('email') || '-'}</CellWrapper>
+    ),
   },
   {
     accessorKey: 'group_name',
@@ -59,12 +75,11 @@ export const getPostEmailColumns = (
       />
     ),
     cell: ({ row }) => (
-      <Link
-        href={`/${row.original.ws_id}/users/groups/${row.original.group_id}`}
-        className="line-clamp-1 min-w-32 hover:underline"
-      >
-        {row.getValue('group_name') || '-'}
-      </Link>
+      <CellWrapper row={row}>
+        <span className="line-clamp-1 min-w-32 text-primary">
+          {row.getValue('group_name') || '-'}
+        </span>
+      </CellWrapper>
     ),
   },
   {
@@ -77,12 +92,11 @@ export const getPostEmailColumns = (
       />
     ),
     cell: ({ row }) => (
-      <Link
-        href={`/${row.original.ws_id}/users/groups/${row.original.group_id}/posts/${row.original.post_id}`}
-        className="line-clamp-1 min-w-32 hover:underline"
-      >
-        {row.getValue('post_title') || '-'}
-      </Link>
+      <CellWrapper row={row}>
+        <span className="line-clamp-1 min-w-32 text-primary">
+          {row.getValue('post_title') || '-'}
+        </span>
+      </CellWrapper>
     ),
   },
   {
@@ -94,7 +108,9 @@ export const getPostEmailColumns = (
         title={t(`${namespace}.subject`)}
       />
     ),
-    cell: ({ row }) => <div>{row.getValue('subject') || '-'}</div>,
+    cell: ({ row }) => (
+      <CellWrapper row={row}>{row.getValue('subject') || '-'}</CellWrapper>
+    ),
   },
   {
     accessorKey: 'post_content',
@@ -106,9 +122,11 @@ export const getPostEmailColumns = (
       />
     ),
     cell: ({ row }) => (
-      <div className="line-clamp-3 max-w-40 whitespace-pre-line">
-        {row.getValue('post_content') || '-'}
-      </div>
+      <CellWrapper row={row}>
+        <div className="line-clamp-3 max-w-40 whitespace-pre-line">
+          {row.getValue('post_content') || '-'}
+        </div>
+      </CellWrapper>
     ),
   },
   {
@@ -120,7 +138,13 @@ export const getPostEmailColumns = (
         title={t(`${namespace}.is_completed`)}
       />
     ),
-    cell: ({ row }) => (row.getValue('is_completed') ? <Check /> : <X />),
+    cell: ({ row }) => (
+      <CellWrapper row={row}>
+        <div className="flex items-center justify-center">
+          {row.getValue('is_completed') ? <Check /> : <X />}
+        </div>
+      </CellWrapper>
+    ),
   },
   {
     accessorKey: 'notes',
@@ -132,9 +156,11 @@ export const getPostEmailColumns = (
       />
     ),
     cell: ({ row }) => (
-      <div className="line-clamp-1 min-w-32">
-        {row.getValue('notes') || '-'}
-      </div>
+      <CellWrapper row={row}>
+        <div className="line-clamp-1 min-w-32">
+          {row.getValue('notes') || '-'}
+        </div>
+      </CellWrapper>
     ),
   },
   {
@@ -147,13 +173,15 @@ export const getPostEmailColumns = (
       />
     ),
     cell: ({ row }) => (
-      <div className="min-w-32">
-        {moment(row.getValue('created_at')).format('DD/MM/YYYY')}
-      </div>
+      <CellWrapper row={row}>
+        <div className="min-w-32">
+          {moment(row.getValue('created_at')).format('DD/MM/YYYY')}
+        </div>
+      </CellWrapper>
     ),
   },
   {
     id: 'actions',
-    cell: ({ row }) => <RowActions data={row.original} />,
+    cell: ({ row }) => <PostsRowActions data={row.original} />,
   },
 ];
