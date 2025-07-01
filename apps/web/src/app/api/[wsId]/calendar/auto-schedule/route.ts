@@ -179,8 +179,6 @@ export async function POST(
     if (tasksError)
       throw new Error(`Failed to fetch tasks: ${tasksError.message}`);
 
-    console.log(currentTasks, 'tasks fetched for user:', user.id);
-
     const { data: flexibleEventsData, error: flexibleEventsError } = await (
       await supabase
     )
@@ -278,61 +276,23 @@ export async function POST(
         (event) =>
           !newFlexibleEvents.some((existing) => existing.id === event.id)
       );
-      for (const event of newScheduledEvents) {
-        try {
-          // Check if event exists
-          const { data: existingEvent, error: checkError } = await (
-            await supabase
-          )
-            .from('workspace_calendar_events')
-            .select('id')
-            .eq('id', event.id)
-            .eq('ws_id', wsId)
-            .single();
+      const eventsToUpsert = newScheduledEvents.map((event) => ({
+        id: event.id,
+        ws_id: wsId,
+        task_id: event.taskId,
+        title: event.name,
+        start_at: event.range.start.toISOString(),
+        end_at: event.range.end.toISOString(),
+        locked: event.locked ?? false,
+      }));
 
-          if (checkError && checkError.code !== 'PGRST116') {
-            throw checkError;
-          }
+      if (eventsToUpsert.length > 0) {
+        const { error } = await (await supabase)
+          .from('workspace_calendar_events')
+          .upsert(eventsToUpsert);
 
-          if (existingEvent) {
-            // Update existing event
-            const { error: updateError } = await (await supabase)
-              .from('workspace_calendar_events')
-              .update({
-                title: event.name,
-                start_at: event.range.start.toISOString(),
-                end_at: event.range.end.toISOString(),
-                // is_past_deadline: event.isPastDeadline ?? false,
-              })
-              .eq('id', event.id)
-              .eq('ws_id', wsId);
-
-            if (updateError) {
-              console.error(
-                `Failed to update event ${event.id}: ${updateError.message}`
-              );
-            }
-          } else {
-            const { error: insertError } = await (await supabase)
-              .from('workspace_calendar_events')
-              .insert({
-                id: event.id,
-                ws_id: wsId,
-                // task_id: event.taskId,
-                title: event.name,
-                start_at: event.range.start.toISOString(),
-                end_at: event.range.end.toISOString(),
-                locked: false,
-              });
-
-            if (insertError) {
-              console.error(
-                `Failed to insert event ${event.id}: ${insertError.message}`
-              );
-            }
-          }
-        } catch (err) {
-          console.error(`Failed to process event ${event.id}:`, err);
+        if (error) {
+          throw new Error(`Failed to save new schedule: ${error.message}`);
         }
       }
 
