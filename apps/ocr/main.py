@@ -28,9 +28,11 @@ app.add_middleware(
 ocr = PaddleOCR(
     text_detection_model_name="PP-OCRv5_mobile_det",
     text_recognition_model_name="PP-OCRv5_mobile_rec",
-    use_doc_orientation_classify=False, 
-    use_doc_unwarping=False, 
-    use_textline_orientation=False)
+    use_doc_orientation_classify=False,
+    use_doc_unwarping=False,
+    use_textline_orientation=False,
+)
+
 
 async def process_frame(frame):
     """
@@ -39,17 +41,17 @@ async def process_frame(frame):
     result = None
     try:
         result = await asyncio.to_thread(ocr.predict, frame)
-        
+
         if not result:
             print("No text detected by OCR")
             return ""
-        
+
         print(f"Raw OCR result type: {type(result)}")
         print(f"Result length: {len(result)}")
 
         if len(result) > 0:
             first_result = result[0]
-            
+
             try:
                 rec_texts = first_result["rec_texts"]
                 rec_scores = first_result["rec_scores"]
@@ -61,7 +63,9 @@ async def process_frame(frame):
                 text_with_confidence = []
                 if rec_texts and rec_scores:
                     for i, (text, confidence) in enumerate(zip(rec_texts, rec_scores)):
-                        print(f"Processing item {i}: '{text}' (confidence: {confidence:.2f})")
+                        print(
+                            f"Processing item {i}: '{text}' (confidence: {confidence:.2f})"
+                        )
 
                         # Only include text with reasonable confidence
                         if confidence > 0.5:
@@ -129,7 +133,9 @@ def extract_info(text):
 
             if formatted_name_parts and len(student_number) == 7:
                 formatted_name = " ".join(formatted_name_parts)
-                print(f"Successfully extracted: name='{formatted_name}', student_number='{student_number}'")
+                print(
+                    f"Successfully extracted: name='{formatted_name}', student_number='{student_number}'"
+                )
                 return formatted_name.strip(), student_number.strip()
 
     print("No patterns matched")
