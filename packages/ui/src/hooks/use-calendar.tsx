@@ -256,14 +256,11 @@ export const CalendarProvider = ({
           eventEnd.getDate()
         );
 
-        // Check if this is an all-day event (start and end times are at midnight)
-        const isAllDayEvent = 
-          eventStart.getHours() === 0 && 
-          eventStart.getMinutes() === 0 && 
-          eventStart.getSeconds() === 0 &&
-          eventEnd.getHours() === 0 && 
-          eventEnd.getMinutes() === 0 && 
-          eventEnd.getSeconds() === 0;
+        // Check if this is an all-day event using is_all_day flag or fallback to midnight check
+        const isAllDayEvent = e.is_all_day ?? (
+          !(eventStart.getHours() || eventStart.getMinutes() || eventStart.getSeconds() || eventStart.getMilliseconds()) &&
+          !(eventEnd.getHours() || eventEnd.getMinutes() || eventEnd.getSeconds() || eventEnd.getMilliseconds())
+        );
 
         // For all-day events, treat end date as exclusive (consistent with week view)
         // For timed events, treat end date as inclusive
