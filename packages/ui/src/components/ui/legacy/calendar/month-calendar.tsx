@@ -21,17 +21,61 @@ import {
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import { Clock, Plus } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState} from 'react';
 import { useCalendar } from '../../../../hooks/use-calendar';
+import { usePopoverManager } from '../../../../hooks/use-popover-manager';
+import { getColorHighlight } from './color-highlights';
+import { Popover, PopoverTrigger, PopoverContent } from '../../popover';
 
 dayjs.extend(timezone);
 
 interface MonthCalendarProps {
   date: Date;
   workspace?: Workspace;
+  visibleDates?: Date[];
+  viewedMonth?: Date;
 }
 
-export const MonthCalendar = ({ date }: MonthCalendarProps) => {
+const normalizeColor = (color: string): string => {
+  if (!color) return 'primary';
+  const normalized = color.trim().toLowerCase();
+  
+  // Map specific values to standardized names
+  if (normalized === '#6b7280' || normalized === 'grey') return 'gray';
+  
+  return normalized;
+};
+
+const getDominantEventColor = (events: any[]): string => {
+  if (events.length === 0) return 'primary';
+  if (events.length === 1) return normalizeColor(events[0].color || 'primary');
+
+  const colorCount = new Map<string, number>();
+  for (const event of events) {
+    const normalizedColor = normalizeColor(event.color || 'primary');
+    colorCount.set(normalizedColor, (colorCount.get(normalizedColor) || 0) + 1);
+  }
+
+  let dominantColor = 'primary';
+  let maxCount = -1;
+  for (const [color, count] of colorCount) {
+    if (count > maxCount) {
+      dominantColor = color;
+      maxCount = count;
+    }
+  }
+  return dominantColor;
+};
+
+// Utility function for scroll shadow classes
+const getScrollShadowClasses = (scrollState: { top: boolean; bottom: boolean } | undefined) => {
+  return cn(
+    scrollState?.top && 'before:absolute before:top-0 before:left-0 before:right-0 before:h-3 before:bg-gradient-to-b before:from-muted/80 before:to-transparent before:pointer-events-none',
+    scrollState?.bottom && 'after:absolute after:bottom-0 after:left-0 after:right-0 after:h-3 after:bg-gradient-to-t after:from-muted/80 after:to-transparent after:pointer-events-none'
+  );
+};
+
+export const MonthCalendar = ({ date, visibleDates, viewedMonth }: MonthCalendarProps) => {
   const { getCurrentEvents, addEmptyEvent, openModal, settings } =
     useCalendar();
   const [currDate, setCurrDate] = useState(date);
@@ -107,8 +151,8 @@ export const MonthCalendar = ({ date }: MonthCalendarProps) => {
     nextMonthDays.push(day);
   }
 
-  // Combine all days
-  const calendarDays = [...prevMonthDays, ...monthDays, ...nextMonthDays];
+  // Use visibleDates if provided, otherwise fallback to old logic
+  const calendarDays = visibleDates ?? [...prevMonthDays, ...monthDays, ...nextMonthDays];
 
   // Create weeks (group by 7 days)
   const weeks = [];
@@ -180,13 +224,33 @@ export const MonthCalendar = ({ date }: MonthCalendarProps) => {
         text: 'text-gray-700 dark:text-gray-300',
       },
     };
-
-    const color = event.color?.toLowerCase();
-    return (color && colorMap[color] ? colorMap[color] : colorMap.blue) as {
+    const normalizedColor = normalizeColor(event.color || 'blue');
+    return (normalizedColor && colorMap[normalizedColor] ? colorMap[normalizedColor] : colorMap.blue) as {
       bg: string;
       text: string;
     };
   };
+
+  // Memoize dominant color for each day
+  const dominantColorForDay = useMemo(() => {
+    const map: Record<string, string> = {};
+    for (const day of calendarDays) {
+      const events = getCurrentEvents(day);
+      map[day.toISOString()] = getDominantEventColor(events);
+    }
+    return map;
+  }, [calendarDays, JSON.stringify(calendarDays.map(day => getCurrentEvents(day).map(e => e.id + e.color)))]);
+
+  // Use the custom popover manager hook
+  const {
+    moreButtonRefs,
+    popoverContentRefs,
+    openPopoverIdx,
+    setOpenPopoverIdx,
+    scrollStates,
+    setPopoverHovered,
+    handlePopoverScroll,
+  } = usePopoverManager();
 
   return (
     <div className="flex-1 overflow-auto rounded-md border bg-background shadow-sm">
@@ -208,9 +272,11 @@ export const MonthCalendar = ({ date }: MonthCalendarProps) => {
       </div>
 
       <div className="grid grid-cols-7 divide-x divide-y">
-        {calendarDays.map((day) => {
-          const events = getCurrentEvents(day);
-          const isCurrentMonth = isSameMonth(day, currDate);
+        {calendarDays.map((day, dayIdx) => {
+          const dominantColor = dominantColorForDay[day.toISOString()] || 'primary';
+          const highlightClass = isToday(day) ? `${getColorHighlight(dominantColor)} z-10` : '';
+
+          const isCurrentMonth = isSameMonth(day, viewedMonth ?? currDate);
           const isTodayDate = isToday(day);
           const isWeekend = day.getDay() === 0 || day.getDay() === 6;
           const isHidden = isWeekend && !settings.appearance.showWeekends;
@@ -226,7 +292,7 @@ export const MonthCalendar = ({ date }: MonthCalendarProps) => {
               className={cn(
                 'group relative min-h-[120px] p-1.5 transition-colors',
                 !isCurrentMonth && 'bg-muted/50',
-                isTodayDate && 'bg-primary/5',
+                highlightClass,
                 isHovered && 'bg-muted/30',
                 isHidden && 'bg-muted/10'
               )}
@@ -265,7 +331,7 @@ export const MonthCalendar = ({ date }: MonthCalendarProps) => {
               </div>
 
               <div className="mt-1 space-y-1">
-                {events.slice(0, 3).map((event) => {
+                {getCurrentEvents(day).slice(0, 3).map((event) => {
                   const { bg, text } = getEventStyles(event);
 
                   return (
@@ -275,7 +341,8 @@ export const MonthCalendar = ({ date }: MonthCalendarProps) => {
                           className={cn(
                             'cursor-pointer items-center gap-1 truncate rounded px-1.5 py-1 text-xs font-medium',
                             bg,
-                            text
+                            text,
+                            !isCurrentMonth && 'opacity-60'
                           )}
                           onClick={() => openModal(event.id)}
                         >
@@ -306,10 +373,55 @@ export const MonthCalendar = ({ date }: MonthCalendarProps) => {
                   );
                 })}
 
-                {events.length > 3 && (
-                  <button className="w-full rounded-sm bg-muted px-1 py-0.5 text-xs font-medium text-muted-foreground hover:bg-muted/80">
-                    +{events.length - 3} more
-                  </button>
+                {getCurrentEvents(day).length > 3 && (
+                  <Popover open={openPopoverIdx === dayIdx} onOpenChange={open => setOpenPopoverIdx(open ? dayIdx : null)}>
+                    <PopoverTrigger asChild>
+                      <button
+                        ref={el => { moreButtonRefs.current[dayIdx] = el; }}
+                        className={cn(
+                          'w-full rounded-sm bg-muted px-1 py-0.5 text-xs font-medium text-muted-foreground hover:bg-muted/80',
+                          !isCurrentMonth && 'opacity-60'
+                        )}
+                        onClick={() => setOpenPopoverIdx(dayIdx)}
+                      >
+                        +{getCurrentEvents(day).length - 3} more
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent
+                      align="start"
+                      className={cn(
+                        'p-2 max-h-60 overflow-y-auto relative !transition-none',
+                        getScrollShadowClasses(scrollStates[dayIdx])
+                      )}
+                      style={{ width: moreButtonRefs.current[dayIdx]?.offsetWidth || undefined }}
+                    >
+                      <div
+                        className="flex flex-col gap-1"
+                        onScroll={e => handlePopoverScroll(e, dayIdx)}
+                        ref={el => { popoverContentRefs.current[dayIdx] = el; }}
+                        onMouseEnter={() => setPopoverHovered(prev => ({ ...prev, [dayIdx]: true }))}
+                        onMouseLeave={() => setPopoverHovered(prev => ({ ...prev, [dayIdx]: false }))}
+                      >
+                        {getCurrentEvents(day).slice(3).map((event) => {
+                          const { bg, text } = getEventStyles(event);
+                          return (
+                            <div
+                              key={event.id}
+                              className={cn(
+                                'cursor-pointer items-center gap-1 truncate rounded px-1.5 py-1 text-xs font-medium',
+                                bg,
+                                text,
+                                !isCurrentMonth && 'opacity-60'
+                              )}
+                              onClick={() => openModal(event.id)}
+                            >
+                              {event.title || 'Untitled event'}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </PopoverContent>
+                  </Popover>
                 )}
               </div>
             </div>

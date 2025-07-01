@@ -154,6 +154,11 @@ export const CalendarProvider = ({
 
   // Load settings from localStorage if available
   const loadSettingsFromStorage = useCallback(() => {
+    // Check if we're in a browser environment
+    if (typeof window === 'undefined' || typeof localStorage === 'undefined') {
+      return null;
+    }
+    
     try {
       const storedSettings = localStorage.getItem('calendarSettings');
       if (storedSettings) {
@@ -180,6 +185,11 @@ export const CalendarProvider = ({
 
   // Save settings to localStorage when they change
   useEffect(() => {
+    // Check if we're in a browser environment
+    if (typeof window === 'undefined' || typeof localStorage === 'undefined') {
+      return;
+    }
+    
     try {
       localStorage.setItem('calendarSettings', JSON.stringify(settings));
       console.log('Saved settings to localStorage:', settings);
@@ -246,8 +256,19 @@ export const CalendarProvider = ({
           eventEnd.getDate()
         );
 
-        // Check if the target date falls within the event's date range
-        return eventStartDay <= targetDay && eventEndDay >= targetDay;
+        // Check if this is an all-day event using is_all_day flag or fallback to midnight check
+        const isAllDayEvent = e.is_all_day ?? (
+          !(eventStart.getHours() || eventStart.getMinutes() || eventStart.getSeconds() || eventStart.getMilliseconds()) &&
+          !(eventEnd.getHours() || eventEnd.getMinutes() || eventEnd.getSeconds() || eventEnd.getMilliseconds())
+        );
+
+        // For all-day events, treat end date as exclusive (consistent with week view)
+        // For timed events, treat end date as inclusive
+        if (isAllDayEvent) {
+          return eventStartDay <= targetDay && eventEndDay > targetDay;
+        } else {
+          return eventStartDay <= targetDay && eventEndDay >= targetDay;
+        }
       });
     },
     [events]

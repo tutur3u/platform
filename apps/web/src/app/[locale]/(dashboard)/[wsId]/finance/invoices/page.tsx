@@ -72,7 +72,7 @@ export default async function WorkspaceInvoicesPage({
 async function getData(
   wsId: string,
   {
-    q,
+    // q,
     page = '1',
     pageSize = '10',
   }: { q?: string; page?: string; pageSize?: string }
@@ -86,8 +86,6 @@ async function getData(
     })
     .eq('ws_id', wsId)
     .order('created_at', { ascending: false });
-
-  if (q) queryBuilder.ilike('name', `%${q}%`);
 
   if (page && pageSize) {
     const parsedPage = parseInt(page);

@@ -11,6 +11,7 @@
     "dev:upskii": "turbo run dev -F @tuturuuu/upskii -F @tuturuuu/web",
     "dev:famigo": "turbo run dev -F @tuturuuu/famigo -F @tuturuuu/web",
     "dev:nova": "turbo run dev -F @tuturuuu/nova -F @tuturuuu/web",
+    "dev:shortener": "turbo run dev -F @tuturuuu/shortener -F @tuturuuu/web",
     "devx": "bun sb:stop && bun i && bun sb:start && bun dev",
     "devx:web": "bun sb:stop && bun i && bun sb:start && bun dev:web",
     "devx:calendar": "bun sb:stop && bun i && bun sb:start && bun dev:calendar",
@@ -18,6 +19,7 @@
     "devx:upskii": "bun sb:stop && bun i && bun sb:start && bun dev:upskii",
     "devx:famigo": "bun sb:stop && bun i && bun sb:start && bun dev:famigo",
     "devx:nova": "bun sb:stop && bun i && bun sb:start && bun dev:nova",
+    "devx:shortener": "bun sb:stop && bun i && bun sb:start && bun dev:shortener",
     "devrs": "bun sb:stop && bun i && bun sb:start && bun sb:reset && bun sb:typegen && bun dev",
     "devrs:web": "bun sb:stop && bun i && bun sb:start && bun sb:reset && bun sb:typegen && bun dev:web",
     "devrs:calendar": "bun sb:stop && bun i && bun sb:start && bun sb:reset && bun sb:typegen && bun dev:calendar",
@@ -25,6 +27,7 @@
     "devrs:upskii": "bun sb:stop && bun i && bun sb:start && bun sb:reset && bun sb:typegen && bun dev:upskii",
     "devrs:famigo": "bun sb:stop && bun i && bun sb:start && bun sb:reset && bun sb:typegen && bun dev:famigo",
     "devrs:nova": "bun sb:stop && bun i && bun sb:start && bun sb:reset && bun sb:typegen && bun dev:nova",
+    "devrs:shortener": "bun sb:stop && bun i && bun sb:start && bun sb:reset && bun sb:typegen && bun dev:shortener",
     "trigger:dev": "bun run --filter @tuturuuu/trigger trigger:dev",
     "trigger:deploy": "bun run --filter @tuturuuu/trigger trigger:deploy",
     "test": "turbo run test",
@@ -54,7 +57,7 @@
   },
   "dependencies": {
     "cookies-next": "^6.0.0",
-    "react-scan": "^0.4.0"
+    "react-scan": "^0.4.3"
   },
   "devDependencies": {
     "@biomejs/biome": "2.0.6",
