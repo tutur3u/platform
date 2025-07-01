@@ -8,7 +8,7 @@
   "scripts": {
     "lint": "eslint ."
   },
-  "packageManager": "bun@1.2.15",
+  "packageManager": "bun@1.2.17",
   "dependencies": {
     "@ncthub/supabase": "workspace:*",
     "clsx": "^2.1.1",

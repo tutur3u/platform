@@ -1,7 +1,6 @@
 'use client';
 
 import { AuthButton } from './auth-button';
-import { PUBLIC_PATHS } from '@/constants/common';
 import { SupabaseUser } from '@ncthub/supabase/next/user';
 import { WorkspaceUser } from '@ncthub/types/primitives/WorkspaceUser';
 import { ThemeToggle } from '@ncthub/ui/custom/theme-toggle';
@@ -37,9 +36,10 @@ const navItems = (t: any) => {
     { href: '/', label: t('common.home') },
     { href: '/about', label: t('common.about') },
     { href: '/projects', label: t('common.projects') },
+    { href: '/meet-together', label: t('common.meet-together') },
     { href: '/neo-crush', label: 'Neo Crush' },
     { href: '/neo-chess', label: 'Neo Chess' },
-    { href: '/calendar/meet-together', label: t('common.meet-together') },
+    { href: '/scanner', label: 'Scanner' },
   ] as NavItem[];
 };
 
@@ -62,15 +62,6 @@ const NavLink: React.FC<NavLinkProps> = ({ item, onClick, className }) => {
 };
 
 const DesktopMenu: React.FC<{ t: any }> = ({ t }) => {
-  const pathname = usePathname();
-
-  if (
-    pathname !== '/' &&
-    !PUBLIC_PATHS.some((path) => pathname.startsWith(path)) &&
-    !pathname.startsWith('/settings')
-  )
-    return null;
-
   return (
     <div className="hidden w-full items-center rounded-2xl border-[0.5px] border-gray-700/50 bg-primary-foreground px-6 py-3 font-semibold md:flex md:gap-6 lg:gap-8">
       {navItems(t).map((item) => (
