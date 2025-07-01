@@ -265,7 +265,7 @@ export function MailDisplay({ mail }: MailDisplayProps) {
           </ScrollArea>
         </div>
       ) : (
-        <div className="flex h-full items-center justify-center p-8 text-center bg-background">
+        <div className="flex flex-1 flex-col h-full min-h-0 items-center justify-center p-8 text-center bg-background">
           <div className="flex flex-col items-center gap-2">
             <div className="p-4 rounded-full bg-primary/10">
               <MoreVertical className="h-8 w-8 text-primary" />
