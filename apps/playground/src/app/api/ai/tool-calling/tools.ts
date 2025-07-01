@@ -234,8 +234,9 @@ export const addEvent = tool({
     description: z.string().describe('The description of the event'),
     startAt: z.string().describe('The start date of the event'),
     endAt: z.string().describe('The end date of the event'),
+    isAllDay: z.boolean().default(false).describe('Whether this is an all-day event'),
   }),
-  execute: async ({ title, description, startAt, endAt }) => {
+  execute: async ({ title, description, startAt, endAt, isAllDay }) => {
     const supabase = await createClient();
 
     const { data, error } = await supabase
@@ -245,6 +246,7 @@ export const addEvent = tool({
         description,
         start_at: startAt,
         end_at: endAt,
+        is_all_day: isAllDay,
         ws_id: '00000000-0000-0000-0000-000000000000',
       });
 
