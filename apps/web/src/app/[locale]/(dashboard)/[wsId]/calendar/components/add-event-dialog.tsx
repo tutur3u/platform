@@ -21,6 +21,7 @@ import {
   SelectValue,
 } from '@tuturuuu/ui/select';
 import { Textarea } from '@tuturuuu/ui/textarea';
+
 import dayjs from 'dayjs';
 import React, { useState } from 'react';
 
@@ -56,7 +57,11 @@ export default function AddEventModal({
     calendar_hours: 'work_hours',
     start_date: '',
     end_date: '',
+<<<<<<< HEAD
     priority: 'normal',
+=======
+    priority: 'medium',
+>>>>>>> 7b530d005 (enhance add task form UI, add priority)
   });
 
   const [errors, setErrors] = React.useState<Record<string, string>>({});
@@ -318,7 +323,11 @@ export default function AddEventModal({
       calendar_hours: 'work_hours',
       start_date: '',
       end_date: '',
+<<<<<<< HEAD
       priority: 'normal',
+=======
+      priority: 'medium',
+>>>>>>> 7b530d005 (enhance add task form UI, add priority)
     });
     setErrors({});
     onClose?.();
@@ -345,13 +354,24 @@ export default function AddEventModal({
     },
   ];
 
+  const priorityOptions = [
+    { value: 'high', label: 'High', color: 'text-red-600', icon: '🔴' },
+    { value: 'medium', label: 'Medium', color: 'text-yellow-600', icon: '🟡' },
+    { value: 'low', label: 'Low', color: 'text-green-600', icon: '🟢' },
+  ];
+
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
+<<<<<<< HEAD
       <DialogContent className="max-h-[90vh] overflow-y-auto rounded-xl border border-zinc-200 bg-white p-6 shadow-lg sm:max-w-lg dark:border-zinc-800 dark:bg-zinc-900">
+=======
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg rounded-xl shadow-lg p-6 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
+>>>>>>> 7b530d005 (enhance add task form UI, add priority)
         <DialogHeader>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <PlusIcon className="h-5 w-5 text-blue-500" />
+<<<<<<< HEAD
               <DialogTitle className="font-semibold text-lg">
                 Create Task
               </DialogTitle>
@@ -454,10 +474,32 @@ export default function AddEventModal({
                   ))}
                 </div>
               </div>
+=======
+              <DialogTitle className="text-lg font-semibold">
+                Create Task
+              </DialogTitle>
+            </div>
+            {/* Priority icon selector */}
+            <div className="flex items-center gap-1">
+              {priorityOptions.map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => updateFormData('priority', opt.value)}
+                  aria-label={opt.label}
+                  title={opt.label}
+                  className={`text-xl px-1.5 py-1 rounded-full border transition-all focus:outline-none focus:ring-2 focus:ring-blue-300
+                    ${formData.priority === opt.value ? `${opt.color} border-blue-400 bg-zinc-100 dark:bg-zinc-800 scale-110` : 'text-zinc-400 border-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800'}`}
+                >
+                  <span>{opt.icon}</span>
+                </button>
+              ))}
+>>>>>>> 7b530d005 (enhance add task form UI, add priority)
             </div>
           </div>
         </DialogHeader>
 
+<<<<<<< HEAD
         <form onSubmit={handleSubmit} className="mt-2 space-y-5">
           {/* Basic Information */}
           <div className="space-y-3 rounded-xl border border-zinc-100 bg-white p-4 shadow-md transition-shadow hover:shadow-lg dark:border-zinc-800 dark:bg-zinc-900">
@@ -465,6 +507,15 @@ export default function AddEventModal({
               <Label
                 htmlFor="task-title"
                 className="font-medium text-xs text-zinc-600 dark:text-zinc-300"
+=======
+        <form onSubmit={handleSubmit} className="space-y-5 mt-2">
+          {/* Basic Information */}
+          <div className="rounded-xl border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4 space-y-3 shadow-md transition-shadow hover:shadow-lg">
+            <div className="space-y-1">
+              <Label
+                htmlFor="task-title"
+                className="text-xs font-medium text-zinc-600 dark:text-zinc-300"
+>>>>>>> 7b530d005 (enhance add task form UI, add priority)
               >
                 Task Name <span className="text-destructive">*</span>
               </Label>
@@ -473,17 +524,28 @@ export default function AddEventModal({
                 placeholder="e.g., Project documentation"
                 value={formData.name}
                 onChange={(e) => updateFormData('name', e.target.value)}
+<<<<<<< HEAD
                 className={`h-9 rounded-lg border-zinc-200 text-sm transition-all focus:ring-2 focus:ring-blue-300 dark:border-zinc-700 ${errors.name ? 'border-destructive' : ''}`}
               />
               {errors.name && (
                 <p className="mt-0.5 text-destructive text-xs">{errors.name}</p>
+=======
+                className={`h-9 text-sm rounded-lg border-zinc-200 dark:border-zinc-700 focus:ring-2 focus:ring-blue-300 transition-all ${errors.name ? 'border-destructive' : ''}`}
+              />
+              {errors.name && (
+                <p className="text-xs text-destructive mt-0.5">{errors.name}</p>
+>>>>>>> 7b530d005 (enhance add task form UI, add priority)
               )}
             </div>
 
             <div className="space-y-1">
               <Label
                 htmlFor="task-description"
+<<<<<<< HEAD
                 className="font-medium text-xs text-zinc-600 dark:text-zinc-300"
+=======
+                className="text-xs font-medium text-zinc-600 dark:text-zinc-300"
+>>>>>>> 7b530d005 (enhance add task form UI, add priority)
               >
                 Description
               </Label>
@@ -493,13 +555,21 @@ export default function AddEventModal({
                 value={formData.description}
                 onChange={(e) => updateFormData('description', e.target.value)}
                 rows={2}
+<<<<<<< HEAD
                 className="h-16 rounded-lg border-zinc-200 text-sm transition-all focus:ring-2 focus:ring-blue-300 dark:border-zinc-700"
+=======
+                className="h-16 text-sm rounded-lg border-zinc-200 dark:border-zinc-700 focus:ring-2 focus:ring-blue-300 transition-all"
+>>>>>>> 7b530d005 (enhance add task form UI, add priority)
               />
             </div>
           </div>
 
           {/* Duration Settings */}
+<<<<<<< HEAD
           <div className="space-y-3 rounded-xl border border-zinc-100 bg-white p-4 shadow-md transition-shadow hover:shadow-lg dark:border-zinc-800 dark:bg-zinc-900">
+=======
+          <div className="rounded-xl border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4 space-y-3 shadow-md transition-shadow hover:shadow-lg">
+>>>>>>> 7b530d005 (enhance add task form UI, add priority)
             <div className="grid grid-cols-2 gap-2">
               <div className="space-y-1">
                 <Label htmlFor="duration" className="text-xs">
@@ -514,15 +584,26 @@ export default function AddEventModal({
                   onChange={(e) =>
                     updateFormData('total_duration', parseFloat(e.target.value))
                   }
+<<<<<<< HEAD
                   className={`h-9 rounded-lg border-zinc-200 text-sm transition-all focus:ring-2 focus:ring-blue-300 dark:border-zinc-700 ${errors.total_duration ? 'border-destructive' : ''}`}
                 />
                 {errors.total_duration && (
                   <p className="mt-0.5 text-destructive text-xs">
+=======
+                  className={`h-9 text-sm rounded-lg border-zinc-200 dark:border-zinc-700 focus:ring-2 focus:ring-blue-300 transition-all ${errors.total_duration ? 'border-destructive' : ''}`}
+                />
+                {errors.total_duration && (
+                  <p className="text-xs text-destructive mt-0.5">
+>>>>>>> 7b530d005 (enhance add task form UI, add priority)
                     {errors.total_duration}
                   </p>
                 )}
               </div>
+<<<<<<< HEAD
               <div className="mt-5 flex items-center space-x-2">
+=======
+              <div className="flex items-center space-x-2 mt-5">
+>>>>>>> 7b530d005 (enhance add task form UI, add priority)
                 <Checkbox
                   id="split-up"
                   checked={formData.is_splittable}
@@ -530,7 +611,11 @@ export default function AddEventModal({
                     updateFormData('is_splittable', checked)
                   }
                 />
+<<<<<<< HEAD
                 <Label htmlFor="split-up" className="font-normal text-xs">
+=======
+                <Label htmlFor="split-up" className="text-xs font-normal">
+>>>>>>> 7b530d005 (enhance add task form UI, add priority)
                   Splittable
                 </Label>
               </div>
@@ -554,10 +639,17 @@ export default function AddEventModal({
                         hoursToMinutes(hours)
                       );
                     }}
+<<<<<<< HEAD
                     className={`h-9 rounded-lg border-zinc-200 text-sm transition-all focus:ring-2 focus:ring-blue-300 dark:border-zinc-700 ${errors.min_split_duration_minutes ? 'border-destructive' : ''}`}
                   />
                   {errors.min_split_duration_minutes && (
                     <p className="mt-0.5 text-destructive text-xs">
+=======
+                    className={`h-9 text-sm rounded-lg border-zinc-200 dark:border-zinc-700 focus:ring-2 focus:ring-blue-300 transition-all ${errors.min_split_duration_minutes ? 'border-destructive' : ''}`}
+                  />
+                  {errors.min_split_duration_minutes && (
+                    <p className="text-xs text-destructive mt-0.5">
+>>>>>>> 7b530d005 (enhance add task form UI, add priority)
                       {errors.min_split_duration_minutes}
                     </p>
                   )}
@@ -579,10 +671,17 @@ export default function AddEventModal({
                         hoursToMinutes(hours)
                       );
                     }}
+<<<<<<< HEAD
                     className={`h-9 rounded-lg border-zinc-200 text-sm transition-all focus:ring-2 focus:ring-blue-300 dark:border-zinc-700 ${errors.max_split_duration_minutes ? 'border-destructive' : ''}`}
                   />
                   {errors.max_split_duration_minutes && (
                     <p className="mt-0.5 text-destructive text-xs">
+=======
+                    className={`h-9 text-sm rounded-lg border-zinc-200 dark:border-zinc-700 focus:ring-2 focus:ring-blue-300 transition-all ${errors.max_split_duration_minutes ? 'border-destructive' : ''}`}
+                  />
+                  {errors.max_split_duration_minutes && (
+                    <p className="text-xs text-destructive mt-0.5">
+>>>>>>> 7b530d005 (enhance add task form UI, add priority)
                       {errors.max_split_duration_minutes}
                     </p>
                   )}
@@ -592,10 +691,17 @@ export default function AddEventModal({
           </div>
 
           {/* Scheduling Preferences */}
+<<<<<<< HEAD
           <div className="space-y-3 rounded-xl border border-zinc-100 bg-white p-4 shadow-md transition-shadow hover:shadow-lg dark:border-zinc-800 dark:bg-zinc-900">
             <div className="mb-1 flex items-center gap-2">
               <ClockIcon className="h-4 w-4 text-blue-400" />
               <Label className="font-semibold text-xs text-zinc-700 dark:text-zinc-200">
+=======
+          <div className="rounded-xl border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4 space-y-3 shadow-md transition-shadow hover:shadow-lg">
+            <div className="flex items-center gap-2 mb-1">
+              <ClockIcon className="h-4 w-4 text-blue-400" />
+              <Label className="text-xs font-semibold text-zinc-700 dark:text-zinc-200">
+>>>>>>> 7b530d005 (enhance add task form UI, add priority)
                 Working Hours
               </Label>
             </div>
@@ -603,7 +709,11 @@ export default function AddEventModal({
               value={formData.calendar_hours}
               onValueChange={(value) => updateFormData('calendar_hours', value)}
             >
+<<<<<<< HEAD
               <SelectTrigger className="h-9 rounded-lg border-zinc-200 text-sm transition-all focus:ring-2 focus:ring-blue-300 dark:border-zinc-700">
+=======
+              <SelectTrigger className="h-9 text-sm rounded-lg border-zinc-200 dark:border-zinc-700 focus:ring-2 focus:ring-blue-300 transition-all">
+>>>>>>> 7b530d005 (enhance add task form UI, add priority)
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -622,6 +732,7 @@ export default function AddEventModal({
               </SelectContent>
             </Select>
             <div className="grid grid-cols-2 gap-2">
+<<<<<<< HEAD
               <div className="col-span-2 flex w-full flex-col items-end gap-4 sm:flex-row">
                 {/* Start Date */}
                 <div className="w-full">
@@ -721,38 +832,104 @@ export default function AddEventModal({
                   </div>
                   {errors.end_date && (
                     <p className="mt-0.5 text-destructive text-xs">
+=======
+              <div className="flex items-end gap-6 w-full">
+                {/* Start Date */}
+                <div className="w-48">
+                  <Label htmlFor="start-date" className="text-xs mb-1 block">
+                    Start (optional)
+                  </Label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none flex items-center">
+                      <CalendarIcon className="h-5 w-5" />
+                    </span>
+                    <Input
+                      id="start-date"
+                      type="datetime-local"
+                      value={formData.start_date}
+                      onChange={(e) =>
+                        updateFormData('start_date', e.target.value)
+                      }
+                      min={dayjs().format('YYYY-MM-DDTHH:mm')}
+                      className="h-10 w-full text-sm rounded-lg border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 focus:ring-2 focus:ring-blue-300 transition-all pl-10 pr-2 shadow-sm focus:shadow-md"
+                    />
+                  </div>
+                </div>
+                {/* End Date */}
+                <div className="w-48">
+                  <Label htmlFor="end-date" className="text-xs mb-1 block">
+                    End (optional)
+                  </Label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none flex items-center">
+                      <CalendarIcon className="h-5 w-5" />
+                    </span>
+                    <Input
+                      id="end-date"
+                      type="datetime-local"
+                      value={formData.end_date}
+                      onChange={(e) =>
+                        updateFormData('end_date', e.target.value)
+                      }
+                      min={dayjs().format('YYYY-MM-DDTHH:mm')}
+                      className={`h-10 w-full text-sm rounded-lg border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 focus:ring-2 focus:ring-blue-300 transition-all pl-10 pr-2 shadow-sm focus:shadow-md ${errors.end_date ? 'border-destructive' : ''}`}
+                    />
+                  </div>
+                  {errors.end_date && (
+                    <p className="text-xs text-destructive mt-0.5">
+>>>>>>> 7b530d005 (enhance add task form UI, add priority)
                       {errors.end_date}
                     </p>
                   )}
                 </div>
               </div>
             </div>
+<<<<<<< HEAD
 
             <div className="mt-1 flex items-center gap-2 rounded-md bg-blue-50 p-2 text-blue-800 text-xs dark:bg-blue-950 dark:text-blue-200">
+=======
+            <div className="rounded-md bg-blue-50 dark:bg-blue-950 p-2 text-xs text-blue-800 dark:text-blue-200 flex items-center gap-2 mt-1">
+>>>>>>> 7b530d005 (enhance add task form UI, add priority)
               <span>📧</span>
               <span>For {user?.email || 'your account'}</span>
             </div>
           </div>
 
           {errors.submit && (
+<<<<<<< HEAD
             <div className="rounded-lg bg-destructive/10 p-2 text-destructive text-xs">
+=======
+            <div className="rounded-lg bg-destructive/10 p-2 text-xs text-destructive">
+>>>>>>> 7b530d005 (enhance add task form UI, add priority)
               {errors.submit}
             </div>
           )}
 
+<<<<<<< HEAD
           <DialogFooter className="mt-2 gap-2">
+=======
+          <DialogFooter className="gap-2 mt-2">
+>>>>>>> 7b530d005 (enhance add task form UI, add priority)
             <Button
               type="button"
               variant="outline"
               onClick={handleClose}
               disabled={isLoading}
+<<<<<<< HEAD
               className="h-9 rounded-lg border-zinc-200 px-5 text-sm transition-all hover:bg-zinc-100 focus:ring-2 focus:ring-blue-300 dark:border-zinc-700 dark:hover:bg-zinc-800"
+=======
+              className="h-9 px-5 text-sm rounded-lg border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 focus:ring-2 focus:ring-blue-300 transition-all"
+>>>>>>> 7b530d005 (enhance add task form UI, add priority)
             >
               Cancel
             </Button>
             <Button
               type="submit"
+<<<<<<< HEAD
               className="h-9 rounded-lg bg-blue-500 px-5 font-semibold text-sm text-white shadow-md transition-all hover:bg-blue-600 focus:ring-2 focus:ring-blue-300"
+=======
+              className="h-9 px-5 text-sm rounded-lg bg-blue-500 hover:bg-blue-600 focus:ring-2 focus:ring-blue-300 transition-all text-white font-semibold shadow-md"
+>>>>>>> 7b530d005 (enhance add task form UI, add priority)
               disabled={isLoading}
             >
               {isLoading ? (
