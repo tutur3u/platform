@@ -15,7 +15,7 @@ export default function GradientHeadline({
   return (
     <span
       className={cn(
-        'bg-linear-to-r from-dynamic-light-red via-dynamic-light-pink to-dynamic-light-blue bg-clip-text py-1 text-transparent',
+        'bg-linear-to-r dark:from-dynamic-light-red dark:via-dynamic-light-pink dark:to-dynamic-light-blue from-orange-500 via-amber-500 to-yellow-500 bg-clip-text py-1 text-transparent',
         className
       )}
     >
