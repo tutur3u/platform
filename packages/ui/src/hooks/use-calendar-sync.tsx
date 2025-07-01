@@ -21,6 +21,7 @@ import {
   useRef,
   useState,
 } from 'react';
+import { isAllDayEvent } from './calendar-utils';
 
 const CalendarSyncContext = createContext<{
   data: WorkspaceCalendarEvent[] | null;
@@ -833,32 +834,22 @@ export const CalendarSyncProvider = ({
   const eventsWithoutAllDays = useMemo(() => {
     // Process events immediately when they change
     return events.filter((event) => {
-      // Use is_all_day field if available, otherwise fallback to duration check
+      // Use is_all_day field if available, otherwise fallback to shared utility
       if (event.is_all_day !== undefined) {
         return !event.is_all_day;
       }
-      
-      // Fallback to duration-based check for backward compatibility
-      const start = dayjs(event.start_at);
-      const end = dayjs(event.end_at);
-      const duration = Math.abs(end.diff(start, 'seconds'));
-      return duration % (24 * 60 * 60) !== 0;
+      return !isAllDayEvent(event);
     });
   }, [events]);
 
   const allDayEvents = useMemo(() => {
     // Process events immediately when they change
     return events.filter((event) => {
-      // Use is_all_day field if available, otherwise fallback to duration check
+      // Use is_all_day field if available, otherwise fallback to shared utility
       if (event.is_all_day !== undefined) {
         return event.is_all_day;
       }
-      
-      // Fallback to duration-based check for backward compatibility
-      const start = dayjs(event.start_at);
-      const end = dayjs(event.end_at);
-      const duration = Math.abs(end.diff(start, 'seconds'));
-      return duration % (24 * 60 * 60) === 0;
+      return isAllDayEvent(event);
     });
   }, [events]);
 

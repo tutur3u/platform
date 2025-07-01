@@ -81,6 +81,7 @@ import {
   EventToggleSwitch,
   OverlapWarning,
 } from './event-form-components';
+import { isAllDayEvent } from '../../../../hooks/calendar-utils';
 
 dayjs.extend(ts);
 dayjs.extend(utc);
@@ -228,42 +229,11 @@ export function EventModal() {
       // Only check for all-day if this is an existing event (not a new one)
       if (activeEvent.id !== 'new') {
         // First, check if the event has the is_all_day field set
-        console.log('EventModal: Editing existing event', {
-          id: eventData.id,
-          title: eventData.title,
-          is_all_day: eventData.is_all_day,
-          start_at: eventData.start_at,
-          end_at: eventData.end_at
-        });
-        
         if (eventData.is_all_day !== undefined) {
-          console.log('EventModal: Using is_all_day field:', eventData.is_all_day);
           setIsAllDay(eventData.is_all_day);
         } else {
-          console.log('EventModal: is_all_day field not found, using fallback detection');
           // Fallback logic for events without the is_all_day field
-          // Check if event times are at midnight (start of day)
-          const startDate = dayjs(eventData.start_at);
-          const endDate = dayjs(eventData.end_at);
-          
-          // An event is all-day if:
-          // 1. Start time is at the beginning of the day (00:00:00)
-          // 2. End time is at the beginning of a day (00:00:00)
-          // 3. The duration is a multiple of 24 hours
-          const isStartAtMidnight = startDate.hour() === 0 && startDate.minute() === 0 && startDate.second() === 0;
-          const isEndAtMidnight = endDate.hour() === 0 && endDate.minute() === 0 && endDate.second() === 0;
-          const durationInHours = endDate.diff(startDate, 'hour');
-          const isMultipleOf24Hours = durationInHours > 0 && durationInHours % 24 === 0;
-          
-          const isAllDayEvent = isStartAtMidnight && isEndAtMidnight && isMultipleOf24Hours;
-          console.log('EventModal: Fallback detection result:', {
-            isStartAtMidnight,
-            isEndAtMidnight,
-            durationInHours,
-            isMultipleOf24Hours,
-            isAllDayEvent
-          });
-          setIsAllDay(isAllDayEvent);
+          setIsAllDay(isAllDayEvent(eventData));
         }
       } else {
         // For new events, always start with isAllDay as false
@@ -358,15 +328,6 @@ export function EventModal() {
         is_all_day: isAllDay,
       };
 
-      console.log('EventModal: Saving event data:', {
-        id: activeEvent?.id,
-        title: eventData.title,
-        is_all_day: eventData.is_all_day,
-        isAllDay: isAllDay,
-        start_at: eventData.start_at,
-        end_at: eventData.end_at
-      });
-
       if (activeEvent?.id === 'new') {
         await addEvent(eventData as Omit<CalendarEvent, 'id'>);
       } else if (activeEvent?.id) {
@@ -386,7 +347,6 @@ export function EventModal() {
 
       closeModal();
     } catch (error) {
-      console.error('Error saving event:', error);
       toast({
         title: 'Error',
         description: 'Failed to save or sync event. Please try again.',
@@ -442,7 +402,6 @@ export function EventModal() {
         categories: formattedCategories,
       });
     } catch (error) {
-      console.error('Error generating events:', error);
       toast({
         title: 'Error generating events',
         description: 'Please try again with a different prompt',
@@ -479,7 +438,6 @@ export function EventModal() {
           const savedEvent = await addEvent(calendarEvent);
           if (savedEvent) savedEvents.push(savedEvent);
         } catch (error) {
-          console.error('Error saving event to calendar:', error);
           failedEvents.push({ event: eventData, error });
         }
       }
@@ -502,7 +460,6 @@ export function EventModal() {
         });
       }
     } catch (error) {
-      console.error('Error saving AI events to calendar:', error);
       toast({
         title: 'Error',
         description: 'Failed to save or sync AI-generated events.',
@@ -516,7 +473,6 @@ export function EventModal() {
   // Handle event deletion
   const handleDelete = async () => {
     if (isRecording) {
-      console.log('🛑 Cancel recording due to event deletion');
       stopRecording();
     }
     if (!activeEvent?.id) return;
@@ -532,7 +488,6 @@ export function EventModal() {
       }
       closeModal();
     } catch (error) {
-      console.error('Error deleting event:', error);
       toast({
         title: 'Error',
         description: 'Failed to delete event. Please try again.',
@@ -715,7 +670,6 @@ export function EventModal() {
 
       mediaRecorder.current.onstop = async () => {
         if (audioChunks.current.length === 0) {
-          console.error('No recording data!');
           setIsRecording(false);
           setIsProcessingAudio(false);
           return;
@@ -729,12 +683,10 @@ export function EventModal() {
           const base64Audio = reader.result?.toString().split(',')[1];
 
           if (!base64Audio) {
-            console.error('Error when converting audio to base64');
             setIsProcessingAudio(false);
             return;
           }
 
-          console.log('Sending Base64 Audio to server...');
           sendAudioToServer(base64Audio);
         };
 
@@ -745,7 +697,6 @@ export function EventModal() {
 
       mediaRecorder.current.start();
     } catch (error) {
-      console.error('Error accessing microphone:', error);
       setIsRecording(false);
     }
   };
@@ -784,10 +735,8 @@ export function EventModal() {
 
       const result = await response.json();
       if (result.text) {
-        console.log('Transcribed text:', result.text);
         aiForm.setValue('prompt', result.text);
       } else {
-        console.error('Failed to transcribe audio:', result.error);
         toast({
           title: 'Transcription Error',
           description: result.error || 'Failed to transcribe audio',
@@ -795,7 +744,6 @@ export function EventModal() {
         });
       }
     } catch (error) {
-      console.error('Error calling API:', error);
       toast({
         title: 'API Error',
         description: 'Failed to process audio recording',
@@ -818,12 +766,9 @@ export function EventModal() {
     reader.onloadend = async () => {
       const base64Image = reader.result?.toString().split(',')[1]; // convert to base64
       if (!base64Image) {
-        console.error('Error when changing image to base64');
         setIsProcessingImage(false);
         return;
       }
-
-      console.log('Uploading Base64 Image to server...');
 
       try {
         const response = await fetch('/api/v1/calendar/image', {
@@ -835,10 +780,8 @@ export function EventModal() {
 
         const result = await response.json();
         if (result.text) {
-          console.log('Extracted text from image:', result.text);
           aiForm.setValue('prompt', result.text);
         } else {
-          console.error('Failed to extract text from image:', result.error);
           toast({
             title: 'Image Processing Error',
             description: result.error || 'Failed to extract text from image',
@@ -846,7 +789,6 @@ export function EventModal() {
           });
         }
       } catch (error) {
-        console.error('Error when sending image to server:', error);
         toast({
           title: 'API Error',
           description: 'Failed to process uploaded image',
@@ -922,7 +864,6 @@ export function EventModal() {
         description: `Event ${checked ? 'locked' : 'unlocked'} successfully`,
       });
     } catch (error) {
-      console.error('Error updating event lock status:', error);
       toast({
         title: 'Error',
         description: 'Failed to update event lock status',
