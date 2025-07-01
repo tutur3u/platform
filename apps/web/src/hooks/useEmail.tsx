@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import ReactDOMServer from 'react-dom/server';
-import PostEmailTemplate from '@/app/[locale]/(dashboard)/[wsId]/mail/send/post-template';
 import type { UserGroupPost } from '@/app/[locale]/(dashboard)/[wsId]/users/groups/[groupId]/posts';
+import PostEmailTemplate from '@/app/[locale]/(dashboard)/[wsId]/mail/template';
 
 const useEmail = () => {
   const [loading, setLoading] = useState(false);
