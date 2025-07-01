@@ -23,6 +23,7 @@ import {
   useRef,
   useState,
 } from 'react';
+import { isAllDayEvent } from './calendar-utils';
 
 // Utility function to round time to nearest 15-minute interval
 const roundToNearest15Minutes = (date: Date): Date => {
@@ -256,15 +257,12 @@ export const CalendarProvider = ({
           eventEnd.getDate()
         );
 
-        // Check if this is an all-day event using is_all_day flag or fallback to midnight check
-        const isAllDayEvent = e.is_all_day ?? (
-          !(eventStart.getHours() || eventStart.getMinutes() || eventStart.getSeconds() || eventStart.getMilliseconds()) &&
-          !(eventEnd.getHours() || eventEnd.getMinutes() || eventEnd.getSeconds() || eventEnd.getMilliseconds())
-        );
+        // Use only time-based logic for all-day detection
+        const isAllDay = isAllDayEvent(e);
 
         // For all-day events, treat end date as exclusive (consistent with week view)
         // For timed events, treat end date as inclusive
-        if (isAllDayEvent) {
+        if (isAllDay) {
           return eventStartDay <= targetDay && eventEndDay > targetDay;
         } else {
           return eventStartDay <= targetDay && eventEndDay >= targetDay;
@@ -396,7 +394,6 @@ export const CalendarProvider = ({
             priority: event.priority || 'medium',
             ws_id: ws?.id ?? '',
             locked: false,
-            is_all_day: event.is_all_day || false,
           })
           .select()
           .single();
@@ -540,7 +537,6 @@ export const CalendarProvider = ({
             location: updateData.location,
             priority: updateData.priority,
             locked: updateData.locked,
-            is_all_day: updateData.is_all_day,
           })
           .eq('id', eventId)
           .select()

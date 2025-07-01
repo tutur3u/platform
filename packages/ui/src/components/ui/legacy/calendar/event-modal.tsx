@@ -228,13 +228,7 @@ export function EventModal() {
 
       // Only check for all-day if this is an existing event (not a new one)
       if (activeEvent.id !== 'new') {
-        // First, check if the event has the is_all_day field set
-        if (eventData.is_all_day !== undefined) {
-          setIsAllDay(eventData.is_all_day);
-        } else {
-          // Fallback logic for events without the is_all_day field
-          setIsAllDay(isAllDayEvent(eventData));
-        }
+        setIsAllDay(isAllDayEvent(eventData));
       } else {
         // For new events, always start with isAllDay as false
         setIsAllDay(false);
@@ -325,7 +319,6 @@ export function EventModal() {
         ...event,
         priority: event.priority || 'medium',
         locked: event.locked || false,
-        is_all_day: isAllDay,
       };
 
       if (activeEvent?.id === 'new') {
@@ -432,7 +425,6 @@ export function EventModal() {
             location: eventData.location || '',
             priority: eventData.priority || 'medium',
             locked: false, // Default to unlocked for AI-generated events
-            is_all_day: eventData.is_all_day || false, // Support AI-generated all-day events
           };
 
           const savedEvent = await addEvent(calendarEvent);

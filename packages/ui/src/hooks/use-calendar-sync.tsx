@@ -834,10 +834,6 @@ export const CalendarSyncProvider = ({
   const eventsWithoutAllDays = useMemo(() => {
     // Process events immediately when they change
     return events.filter((event) => {
-      // Use is_all_day field if available, otherwise fallback to shared utility
-      if (event.is_all_day !== undefined) {
-        return !event.is_all_day;
-      }
       return !isAllDayEvent(event);
     });
   }, [events]);
@@ -845,10 +841,6 @@ export const CalendarSyncProvider = ({
   const allDayEvents = useMemo(() => {
     // Process events immediately when they change
     return events.filter((event) => {
-      // Use is_all_day field if available, otherwise fallback to shared utility
-      if (event.is_all_day !== undefined) {
-        return event.is_all_day;
-      }
       return isAllDayEvent(event);
     });
   }, [events]);
