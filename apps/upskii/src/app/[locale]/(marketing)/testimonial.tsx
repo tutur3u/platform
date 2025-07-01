@@ -8,7 +8,8 @@ const testimonials = [
     role: "Mathematics Professor",
     quote:
       "This platform has revolutionized how I teach calculus. The AI-powered explanations help students grasp complex concepts instantly.",
-    avatar: "/placeholder.svg?width=48&height=48&text=SL&bgColor=5E5CFF&textColor=FFFFFF",
+
+    avatar: "/testimonial_mock/bill_gates.jpg",
     stars: 4,
   },
   {
@@ -16,7 +17,7 @@ const testimonials = [
     role: "Computer Science Student",
     quote:
       "The collaborative coding environment is incredible. I can work with classmates in real-time and get instant feedback.",
-    avatar: "/placeholder.svg?width=48&height=48&text=SL&bgColor=5E5CFF&textColor=FFFFFF",
+    avatar: "/testimonial_mock/lebron.png",
     stars: 5,
   },
   {
@@ -24,7 +25,7 @@ const testimonials = [
     role: "Physics Department Head",
     quote:
       "The interactive simulations make abstract physics concepts tangible. My students engagement has increased dramatically.",
-    avatar: "/placeholder.svg?width=48&height=48&text=SL&bgColor=5E5CFF&textColor=FFFFFF",
+    avatar: "/testimonial_mock/elon_musk.jpg",
     stars: 5,
   },
   {
@@ -32,15 +33,15 @@ const testimonials = [
     role: "High School Student",
     quote:
       "Learning chemistry has never been this fun! The 3D molecular models help me understand reactions so much better.",
-    avatar: "/placeholder.svg?width=48&height=48&text=SL&bgColor=5E5CFF&textColor=FFFFFF",
+    avatar: "/testimonial_mock/zuck.jpg",
     stars: 4,
   },
   {
     name: "Dr. Michael Thompson",
-    role: "Biology Professor",
+    role: "Chemistry Professor",
     quote:
       "The adaptive learning system personalizes content for each student. It is like having a teaching assistant for every learner.",
-    avatar: "/placeholder.svg?width=48&height=48&text=SL&bgColor=5E5CFF&textColor=FFFFFF",
+    avatar: "/testimonial_mock/ww.png",
     stars: 5,
   },
   {
@@ -48,11 +49,10 @@ const testimonials = [
     role: "Graduate Student",
     quote:
       "The research collaboration tools are outstanding. I can share findings with my advisor and peers seamlessly.",
-    avatar: "/placeholder.svg?width=48&height=48&text=SL&bgColor=5E5CFF&textColor=FFFFFF",
+    avatar: "/testimonial_mock/obama.png",
     stars: 5,
   },
 ]
-
 export const TestimonialsSection = () => {
   const t = useTranslations("boarding-pages.home")
   return (
@@ -99,7 +99,7 @@ export const TestimonialsSection = () => {
                   <div className="absolute inset-0 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 p-[2px]">
                     <div className="w-full h-full rounded-full bg-white dark:bg-gray-800 p-[2px]">
                       <Image
-                        src={testimonial.avatar || "/placeholder.svg"}
+                        src={testimonial.avatar || "/testimonial_user.png"}
                         alt={testimonial.name}
                         width={40}
                         height={40}
