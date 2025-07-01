@@ -34,7 +34,6 @@ import {
   UserLock,
   Users,
 } from '@tuturuuu/ui/icons';
-import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import {
   getPermissions,
@@ -225,24 +224,13 @@ export default async function Layout({ children, params }: LayoutProps) {
           title: t('sidebar_tabs.tasks'),
           href: `/${wsId}/tasks/boards`,
           icon: <CircleCheck className="h-5 w-5" />,
-          disabled:
-            ENABLE_AI_ONLY ||
-            !(await verifySecret({
-              forceAdmin: true,
-              wsId,
-              name: 'ENABLE_TASKS',
-              value: 'true',
-            })) ||
-            withoutPermission('manage_projects'),
+          disabled: ENABLE_AI_ONLY || withoutPermission('manage_projects'),
           shortcut: 'T',
           experimental: 'beta',
         },
         {
           title: t('sidebar_tabs.mail'),
-          href:
-            wsId === ROOT_WORKSPACE_ID
-              ? `/${wsId}/mail`
-              : `/${wsId}/mail/posts`,
+          href: `/${wsId}/mail`,
           icon: <Mail className="h-5 w-5" />,
           disabled:
             ENABLE_AI_ONLY ||
@@ -265,7 +253,7 @@ export default async function Layout({ children, params }: LayoutProps) {
             !(await verifySecret({
               forceAdmin: true,
               wsId,
-              name: 'ENABLE_TASKS',
+              name: 'ENABLE_WHITEBOARDS',
               value: 'true',
             })) ||
             withoutPermission('manage_projects'),
@@ -276,15 +264,7 @@ export default async function Layout({ children, params }: LayoutProps) {
           title: t('sidebar_tabs.time_tracker'),
           href: `/${wsId}/time-tracker`,
           icon: <ClockFading className="h-5 w-5" />,
-          disabled:
-            ENABLE_AI_ONLY ||
-            !(await verifySecret({
-              forceAdmin: true,
-              wsId,
-              name: 'ENABLE_TASKS',
-              value: 'true',
-            })) ||
-            withoutPermission('manage_projects'),
+          disabled: ENABLE_AI_ONLY || withoutPermission('manage_projects'),
           shortcut: 'T',
           experimental: 'beta',
         },
@@ -373,7 +353,15 @@ export default async function Layout({ children, params }: LayoutProps) {
           aliases: [`/${wsId}/users`],
           href: `/${wsId}/users/database`,
           icon: <Users className="h-5 w-5" />,
-          disabled: ENABLE_AI_ONLY || withoutPermission('manage_users'),
+          disabled:
+            ENABLE_AI_ONLY ||
+            !(await verifySecret({
+              forceAdmin: true,
+              wsId,
+              name: 'ENABLE_USERS',
+              value: 'true',
+            })) ||
+            withoutPermission('manage_users'),
           shortcut: 'U',
         },
         {
@@ -381,14 +369,30 @@ export default async function Layout({ children, params }: LayoutProps) {
           aliases: [`/${wsId}/finance`],
           href: `/${wsId}/finance/transactions`,
           icon: <Banknote className="h-5 w-5" />,
-          disabled: ENABLE_AI_ONLY || withoutPermission('manage_finance'),
+          disabled:
+            ENABLE_AI_ONLY ||
+            !(await verifySecret({
+              forceAdmin: true,
+              wsId,
+              name: 'ENABLE_FINANCE',
+              value: 'true',
+            })) ||
+            withoutPermission('manage_finance'),
           shortcut: 'F',
         },
         {
           title: t('sidebar_tabs.inventory'),
           href: `/${wsId}/inventory`,
           icon: <Archive className="h-5 w-5" />,
-          disabled: ENABLE_AI_ONLY || withoutPermission('manage_inventory'),
+          disabled:
+            ENABLE_AI_ONLY ||
+            !(await verifySecret({
+              forceAdmin: true,
+              wsId,
+              name: 'ENABLE_INVENTORY',
+              value: 'true',
+            })) ||
+            withoutPermission('manage_inventory'),
           shortcut: 'I',
         },
       ],

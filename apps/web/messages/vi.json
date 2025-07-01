@@ -3478,5 +3478,16 @@
       "hours_ago": "{count} giờ trước",
       "days_ago": "{count} ngày trước"
     }
+  },
+  "mail": {
+    "compose": "Soạn thảo",
+    "compose_email": "Soạn thảo Email",
+    "to": "Đến",
+    "subject": "Chủ đề",
+    "message": "Tin nhắn",
+    "send_email": "Gửi Email",
+    "recipient_placeholder": "nguoinhan@example.com",
+    "subject_placeholder": "Nhập chủ đề email",
+    "message_placeholder": "Viết tin nhắn của bạn tại đây..."
   }
 }

@@ -3542,5 +3542,16 @@
       "hours_ago": "{count}h ago",
       "days_ago": "{count}d ago"
     }
+  },
+  "mail": {
+    "compose": "Compose",
+    "compose_email": "Compose Email",
+    "to": "To",
+    "subject": "Subject",
+    "message": "Message",
+    "send_email": "Send Email",
+    "recipient_placeholder": "recipient@example.com",
+    "subject_placeholder": "Enter email subject",
+    "message_placeholder": "Write your message here..."
   }
 }

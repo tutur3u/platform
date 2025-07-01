@@ -35,27 +35,26 @@ export default async function Layout({ children, params }: LayoutProps) {
       title: t('sidebar_tabs.mail'),
       href: `/${wsId}/mail`,
       matchExact: true,
-      requireRootWorkspace: true,
     },
     {
       title: t('workspace-mail.posts'),
       href: `/${wsId}/mail/posts`,
     },
-    {
-      title: t('workspace-mail.send'),
-      href: `/${wsId}/mail/send`,
-      disabled: true,
-    },
-    {
-      title: t('workspace-mail.history'),
-      href: `/${wsId}/mail/history`,
-      // disabled: true,
-    },
-    {
-      title: t('dworkspace-mail.destination-addresses'),
-      href: `/${wsId}/mail/destination-addresses`,
-      disabled: true,
-    },
+    // {
+    //   title: t('workspace-mail.send'),
+    //   href: `/${wsId}/mail/send`,
+    //   disabled: true,
+    // },
+    // {
+    //   title: t('workspace-mail.history'),
+    //   href: `/${wsId}/mail/history`,
+    //   // disabled: true,
+    // },
+    // {
+    //   title: t('dworkspace-mail.destination-addresses'),
+    //   href: `/${wsId}/mail/destination-addresses`,
+    //   disabled: true,
+    // },
   ];
 
   return (
