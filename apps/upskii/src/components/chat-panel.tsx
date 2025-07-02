@@ -17,6 +17,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
+import dayjs from 'dayjs';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import type React from 'react';
@@ -153,14 +154,12 @@ export function ChatPanel({
               model={model?.label}
               chat={chat}
               onSubmit={async (value) => {
-                // If there is no id, create a new chat
                 if (!id) return await handleCreateChat(value);
-                // If there is an id, append the message to the chat
+
                 await append({
                   id,
                   content: value,
                   role: 'user',
-                  // Optionally, you can add file references here if your backend supports it
                 });
               }}
               files={files}
@@ -260,39 +259,55 @@ export function ChatPanel({
 
 export async function uploadFile(
   file: StatedFile,
-  id?: string,
+  chatId?: string,
   wsId?: string
 ): Promise<{
   data: unknown;
   error: unknown;
-  tempPath?: string;
-  finalPath?: string;
+  tempPath: string | undefined;
+  finalPath: string | undefined;
 }> {
-  if (!wsId) return { data: null, error: 'No workspace id provided' };
+  if (!wsId)
+    return {
+      data: null,
+      error: 'No workspace id provided',
+      tempPath: undefined,
+      finalPath: undefined,
+    };
+
   const fileName = file.rawFile.name;
+
   let uploadPath = '';
   let tempPath: string | undefined;
   let finalPath: string | undefined;
-  if (!id) {
-    // Upload to temp path
+
+  if (!chatId) {
     const supabase = createClient();
 
     const {
       data: { user },
     } = await supabase.auth.getUser();
-    if (!user?.id) return { data: null, error: 'No user id provided' };
 
-    uploadPath = `${wsId}/temp/${user.id}/chats/ai/${fileName}`;
+    if (!user?.id)
+      return {
+        data: null,
+        error: 'No user id provided',
+        tempPath: undefined,
+        finalPath: undefined,
+      };
+
+    uploadPath = `${wsId}/chats/ai/resources/temp/${user.id}/${fileName}-${dayjs().unix()}`;
     tempPath = uploadPath;
   } else {
-    // Upload to final chat path
-    uploadPath = `${wsId}/chats/ai/resources/${id}/${fileName}`;
+    uploadPath = `${wsId}/chats/ai/resources/${chatId}/${fileName}`;
     finalPath = uploadPath;
   }
 
-  const supabaseStorage = createDynamicClient();
-  const { data, error } = await supabaseStorage.storage
+  const sbDynamic = createDynamicClient();
+
+  const { data, error } = await sbDynamic.storage
     .from('workspaces')
     .upload(uploadPath, file.rawFile);
+
   return { data, error, tempPath, finalPath };
 }
