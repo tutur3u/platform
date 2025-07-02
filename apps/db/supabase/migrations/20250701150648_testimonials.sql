@@ -124,4 +124,18 @@ to public
 using (true);
 
 
+alter table "public"."testimonials" drop constraint "testimonials_course_id_fkey";
+
+alter table "public"."testimonials" alter column "course_id" drop default;
+
+alter table "public"."testimonials" alter column "user_id" set default auth.uid();
+
+CREATE UNIQUE INDEX uq_testimonials ON public.testimonials USING btree (user_id, course_id);
+
+alter table "public"."testimonials" add constraint "testimonials_course_id_fkey" FOREIGN KEY (course_id) REFERENCES workspace_courses(id) ON UPDATE CASCADE ON DELETE SET DEFAULT not valid;
+
+alter table "public"."testimonials" validate constraint "testimonials_course_id_fkey";
+
+
+
 
