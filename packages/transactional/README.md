@@ -24,7 +24,7 @@ Then, you can run the react.email developmenet server by running:
 bun dev
 ```
 
-Open [localhost:3001](http://localhost:3001) with your browser to see the result.
+Open [localhost:7001](http://localhost:7001) with your browser to see the result.
 
 ---
 
