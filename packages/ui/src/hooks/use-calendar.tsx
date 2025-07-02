@@ -9,6 +9,7 @@ import {
   type CalendarSettings,
   defaultCalendarSettings,
 } from '@tuturuuu/ui/legacy/calendar/settings/settings-context';
+import { toast } from '../components/ui/sonner';
 import dayjs from 'dayjs';
 import moment from 'moment';
 import { useCalendarSync } from './use-calendar-sync';
@@ -410,7 +411,10 @@ export const CalendarProvider = ({
 
   const addEmptyEvent = useCallback(
     (date: Date, isAllDay?: boolean) => {
-      // TODO: Fix this weird workaround in the future
+      // NOTE: This implementation uses createAllDayEvent helper for proper timezone handling
+      // This ensures all-day events are created at midnight in the user's timezone rather than UTC
+      // The workaround is necessary because dayjs timezone handling for all-day events can be inconsistent
+      // across different browsers and timezone configurations
       const selectedDate = dayjs(date);
       const tz = settings?.timezone?.timezone;
 
@@ -757,7 +761,20 @@ export const CalendarProvider = ({
               );
               // Don't throw, just log. The event is gone from Google anyway.
             } else if (errorData.needsReAuth) {
-              // TODO: Notify user to re-authenticate. Should we block local delete? Maybe not.
+              // Notify user to re-authenticate with Google Calendar
+              toast.error('Google Calendar authentication expired', {
+                description: 'Please re-authenticate your Google Calendar connection to continue syncing events.',
+                action: {
+                  label: 'Re-authenticate',
+                  onClick: () => {
+                    // Redirect to Google Calendar auth page or open auth modal
+                    // This could be enhanced to open a specific auth flow
+                    window.open('/api/v1/calendar/auth?wsId=' + ws?.id, '_blank');
+                  },
+                },
+              });
+              // Continue with local delete - don't block user action
+              console.warn('Google Calendar re-authentication required, proceeding with local delete');
             } else {
               // Throw an error to potentially stop the local delete or notify user
               throw new Error(

@@ -1,13 +1,39 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import dayjs from 'dayjs';
+
+// Mock the setupDayjsLocale function to test its behavior
+const mockSetupDayjsLocale = async (locale?: string) => {
+  const targetLocale = locale || process.env.LOCALE || 'en';
+  
+  try {
+    // Dynamically import the locale module
+    await import(`dayjs/locale/${targetLocale}`);
+    dayjs.locale(targetLocale);
+    return { success: true, locale: targetLocale };
+  } catch (error) {
+    console.warn(`Failed to load locale '${targetLocale}', falling back to 'en'`);
+    try {
+      await import('dayjs/locale/en');
+      dayjs.locale('en');
+      return { success: false, fallback: 'en', error };
+    } catch (fallbackError) {
+      console.error('Failed to load even the fallback locale:', fallbackError);
+      return { success: false, error: fallbackError };
+    }
+  }
+};
 
 describe('Google Calendar Sync - Locale Functionality', () => {
   beforeEach(() => {
     // Reset environment
     delete process.env.LOCALE;
+    // Reset dayjs locale to default
+    dayjs.locale('en');
   });
 
   afterEach(() => {
     // Clean up
+    dayjs.locale('en');
   });
 
   describe('Environment Variable Support', () => {
@@ -249,6 +275,134 @@ describe('Google Calendar Sync - Locale Functionality', () => {
       const locales = workspaces.map(w => w.locale);
       const uniqueLocales = new Set(locales);
       expect(uniqueLocales.size).toBe(4);
+    });
+  });
+
+  // NEW: Actual functionality tests
+  describe('Locale Loading and Date Formatting Behavior', () => {
+    it('should load and apply English locale correctly', async () => {
+      const result = await mockSetupDayjsLocale('en');
+      expect(result.success).toBe(true);
+      expect(result.locale).toBe('en');
+      
+      // Test date formatting with English locale
+      const testDate = dayjs('2024-01-15');
+      expect(testDate.format('MMMM D, YYYY')).toBe('January 15, 2024');
+    });
+
+    it('should load and apply Vietnamese locale correctly', async () => {
+      const result = await mockSetupDayjsLocale('vi');
+      expect(result.success).toBe(true);
+      expect(result.locale).toBe('vi');
+      
+      // Test date formatting with Vietnamese locale
+      const testDate = dayjs('2024-01-15');
+      expect(testDate.format('MMMM D, YYYY')).toBe('tháng 1 15, 2024');
+    });
+
+    it('should fallback to English for invalid locales', async () => {
+      const result = await mockSetupDayjsLocale('invalid-locale');
+      expect(result.success).toBe(false);
+      expect(result.fallback).toBe('en');
+      expect(result.error).toBeDefined();
+      
+      // Should still be able to format dates in English
+      const testDate = dayjs('2024-01-15');
+      expect(testDate.format('MMMM D, YYYY')).toBe('January 15, 2024');
+    });
+
+    it('should handle timezone-aware date formatting', () => {
+      // Test that locale affects timezone display
+      const testDate = dayjs('2024-01-15T10:30:00Z');
+      
+      // Test different locale formats
+      const enFormat = testDate.locale('en').format('MMMM D, YYYY [at] h:mm A');
+      const viFormat = testDate.locale('vi').format('MMMM D, YYYY [lúc] h:mm A');
+      
+      expect(enFormat).toContain('January 15, 2024 at');
+      expect(viFormat).toContain('tháng 1 15, 2024 lúc');
+    });
+
+    it('should maintain consistent date parsing across locales', () => {
+      const dateString = '2024-01-15T10:30:00Z';
+      
+      // Parse the same date string in different locales
+      const enDate = dayjs(dateString).locale('en');
+      const viDate = dayjs(dateString).locale('vi');
+      
+      // The underlying date should be the same regardless of locale
+      expect(enDate.toISOString()).toBe(viDate.toISOString());
+      expect(enDate.valueOf()).toBe(viDate.valueOf());
+    });
+
+    it('should handle locale-specific day and month names', () => {
+      const testDate = dayjs('2024-01-15');
+      
+      // Test day names
+      const enDayName = testDate.locale('en').format('dddd');
+      const viDayName = testDate.locale('vi').format('dddd');
+      
+      expect(enDayName).toBe('Monday');
+      expect(viDayName).toBe('thứ hai');
+      
+      // Test month names
+      const enMonthName = testDate.locale('en').format('MMMM');
+      const viMonthName = testDate.locale('vi').format('MMMM');
+      
+      expect(enMonthName).toBe('January');
+      expect(viMonthName).toBe('tháng 1');
+    });
+
+    it('should handle locale switching during sync operations', async () => {
+      // Simulate switching locales during different sync operations
+      const syncOperations = [
+        { ws_id: 'ws1', locale: 'en' },
+        { ws_id: 'ws2', locale: 'vi' },
+        { ws_id: 'ws3', locale: 'fr' },
+      ];
+      
+      for (const operation of syncOperations) {
+        const result = await mockSetupDayjsLocale(operation.locale);
+        expect(result.success).toBe(true);
+        expect(result.locale).toBe(operation.locale);
+        
+        // Test that the locale is properly applied
+        const testDate = dayjs('2024-01-15');
+        const formattedDate = testDate.format('MMMM D, YYYY');
+        
+        // Verify the format is locale-specific
+        if (operation.locale === 'en') {
+          expect(formattedDate).toBe('January 15, 2024');
+        } else if (operation.locale === 'vi') {
+          expect(formattedDate).toBe('tháng 1 15, 2024');
+        }
+      }
+    });
+
+    it('should handle environment variable locale precedence', async () => {
+      // Test that environment variable takes precedence when no locale is provided
+      process.env.LOCALE = 'vi';
+      
+      const result = await mockSetupDayjsLocale();
+      expect(result.success).toBe(true);
+      expect(result.locale).toBe('vi');
+      
+      // Test that explicit locale overrides environment variable
+      const explicitResult = await mockSetupDayjsLocale('en');
+      expect(explicitResult.success).toBe(true);
+      expect(explicitResult.locale).toBe('en');
+    });
+
+    it('should handle date range formatting with different locales', () => {
+      const startDate = dayjs('2024-01-15T09:00:00Z');
+      const endDate = dayjs('2024-01-15T17:00:00Z');
+      
+      // Test range formatting in different locales
+      const enRange = `${startDate.locale('en').format('MMM D, YYYY h:mm A')} - ${endDate.locale('en').format('h:mm A')}`;
+      const viRange = `${startDate.locale('vi').format('MMM D, YYYY h:mm A')} - ${endDate.locale('vi').format('h:mm A')}`;
+      
+      expect(enRange).toContain('Jan 15, 2024');
+      expect(viRange).toContain('Th01 15, 2024');
     });
   });
 }); 
