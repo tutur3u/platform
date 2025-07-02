@@ -205,7 +205,7 @@ export function EventModal() {
   // Reset form when modal opens/closes or active event changes
   useEffect(() => {
     if (activeEvent) {
-      console.log('EventModal - activeEvent changed:', activeEvent);
+
       
       // Clean the event data to only include valid CalendarEvent fields
       const cleanEventData: Partial<CalendarEvent> = {
@@ -222,7 +222,7 @@ export function EventModal() {
         google_event_id: activeEvent.google_event_id,
       };
 
-      console.log('EventModal - cleaned event data:', cleanEventData);
+
 
       setEvent(cleanEventData);
 
@@ -327,8 +327,7 @@ export function EventModal() {
         locked: event.locked || false,
       };
 
-      console.log('Saving event - activeEvent:', activeEvent);
-      console.log('Saving event - cleaned eventData:', eventData);
+
 
       if (activeEvent?.id === 'new') {
         await addEvent(eventData as Omit<CalendarEvent, 'id'>);
@@ -337,8 +336,7 @@ export function EventModal() {
         // The activeEvent should already contain the original event from the database
         const eventId = activeEvent.id;
         
-        console.log('Updating event with ID:', eventId);
-        console.log('Original activeEvent from database:', activeEvent);
+
         
         if (eventId && eventId !== 'new') {
           await updateEvent(eventId, eventData);

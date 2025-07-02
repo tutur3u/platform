@@ -537,15 +537,12 @@ export const CalendarProvider = ({
         ...updateData
       } = update;
 
-      // Debug logging
-      console.log('Processing update for event:', eventId);
-      console.log('Update data:', updateData);
+
       
       // Check if the event exists before trying to update
       const existingEvent = events.find((e: CalendarEvent) => e.id === eventId);
       if (!existingEvent) {
         const errorMsg = `Event with ID ${eventId} not found in local events`;
-        console.error(errorMsg);
         if (_reject) {
           _reject(new Error(errorMsg));
         }
@@ -555,7 +552,6 @@ export const CalendarProvider = ({
       // Validate workspace ownership
       if (existingEvent.ws_id !== ws?.id) {
         const errorMsg = `Event ${eventId} does not belong to current workspace (${ws?.id})`;
-        console.error(errorMsg);
         if (_reject) {
           _reject(new Error(errorMsg));
         }
@@ -583,7 +579,7 @@ export const CalendarProvider = ({
         delete cleanUpdateData.ws_id;
         delete cleanUpdateData.google_event_id;
         
-        console.log('Clean update data being sent to Supabase:', cleanUpdateData);
+
         
         const { data, error } = await supabase
           .from('workspace_calendar_events')
@@ -617,8 +613,7 @@ export const CalendarProvider = ({
         }
       } catch (err) {
         console.error(`Failed to update event ${eventId}:`, err);
-        console.error('Error type:', typeof err);
-        console.error('Error keys:', Object.keys(err || {}));
+
         if (_reject) {
           _reject(err);
         }
@@ -637,7 +632,7 @@ export const CalendarProvider = ({
     async (eventId: string, eventUpdates: Partial<CalendarEvent>) => {
       if (!ws) throw new Error('No workspace selected');
 
-      console.log('updateEvent called with:', { eventId, eventUpdates });
+
 
       // Clean and validate the event updates - only allow known CalendarEvent fields
       const allowedFields: (keyof CalendarEvent)[] = [
@@ -652,7 +647,7 @@ export const CalendarProvider = ({
         }
       }
 
-      console.log('Cleaned event updates:', cleanedUpdates);
+
 
       // Round start and end times to nearest 15-minute interval if they exist
       if (cleanedUpdates.start_at) {

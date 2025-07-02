@@ -95,6 +95,23 @@ export const MonthCalendar = ({ date, visibleDates, viewedMonth }: MonthCalendar
   const [hoveredDay, setHoveredDay] = useState<Date | null>(null);
   const tz = settings?.timezone?.timezone;
 
+  // Layout constants for calendar dimensions and positioning
+  const LAYOUT_CONSTANTS = {
+    DAY_HEADER_HEIGHT: 28, // Height of day number and plus button area (h-7 + padding)
+    CONTAINER_PADDING: 6, // p-1.5 = 6px padding
+    EVENT_HEIGHT: 24, // Height of each event (px-1.5 py-1 text-xs)
+    EVENT_SPACING: 4, // space-y-1 = 4px spacing between events
+    MARGIN_TOP: 4, // mt-1 = 4px margin top for events container
+    MIN_DAY_HEIGHT: 120, // min-h-[120px]
+  } as const;
+
+  // Event display priority constants
+  const EVENT_DISPLAY_PRIORITY = {
+    ALL_DAY: 1, // All-day events (highest priority)
+    MULTI_DAY_FIRST: 2, // First day of multi-day timed events
+    TIMED: 3, // Regular timed events (lowest priority)
+  } as const;
+
   // Update currDate when date prop changes
   useEffect(() => {
     setCurrDate(date);
@@ -240,7 +257,7 @@ export const MonthCalendar = ({ date, visibleDates, viewedMonth }: MonthCalendar
     
     // Add all events with priority for sorting
     dayEvents.forEach(event => {
-      let eventPriority = 3; // Default for timed events (lowest priority)
+      let eventPriority: number = EVENT_DISPLAY_PRIORITY.TIMED; // Default for timed events (lowest priority)
       
       if (isAllDayEvent(event, settings?.timezone?.timezone)) {
         // Check if it's part of a multi-day span
@@ -248,7 +265,7 @@ export const MonthCalendar = ({ date, visibleDates, viewedMonth }: MonthCalendar
         
         if (isMultiDay) {
           // Multi-day all-day event gets highest priority
-          eventPriority = 1;
+          eventPriority = EVENT_DISPLAY_PRIORITY.ALL_DAY;
           result.push({
             ...event,
             isPlaceholder: true,
@@ -256,7 +273,7 @@ export const MonthCalendar = ({ date, visibleDates, viewedMonth }: MonthCalendar
           });
         } else {
           // Single-day all-day event gets medium priority
-          eventPriority = 2;
+          eventPriority = EVENT_DISPLAY_PRIORITY.MULTI_DAY_FIRST;
           result.push({
             ...event,
             _eventPriority: eventPriority
@@ -276,7 +293,7 @@ export const MonthCalendar = ({ date, visibleDates, viewedMonth }: MonthCalendar
     result.sort((a, b) => {
       // First sort by priority
       if (a._eventPriority !== b._eventPriority) {
-        return (a._eventPriority || 3) - (b._eventPriority || 3);
+        return (a._eventPriority || EVENT_DISPLAY_PRIORITY.TIMED) - (b._eventPriority || EVENT_DISPLAY_PRIORITY.TIMED);
       }
       
       // For events with same priority, sort by start time
@@ -469,7 +486,7 @@ export const MonthCalendar = ({ date, visibleDates, viewedMonth }: MonthCalendar
                           <div
                             key={event.id}
                             className="opacity-0 pointer-events-none px-1.5 py-1 text-xs font-medium"
-                            style={{ height: '24px' }}
+                            style={{ height: `${LAYOUT_CONSTANTS.EVENT_HEIGHT}px` }}
                             aria-hidden="true"
                           />
                         );
@@ -584,11 +601,11 @@ export const MonthCalendar = ({ date, visibleDates, viewedMonth }: MonthCalendar
           const { bg, text } = getEventStyles(event);
           
           // Calculate position for the spanning event to align with day container events
-          const dayHeaderHeight = 28; // Height of day number and plus button area (h-7 + padding)
-          const containerPadding = 6; // p-1.5 = 6px padding
-          const eventHeight = 24; // Height of each event (px-1.5 py-1 text-xs) - match exactly
-          const eventSpacing = 4; // space-y-1 = 4px spacing between events
-          const marginTop = 4; // mt-1 = 4px margin top for events container
+          const dayHeaderHeight = LAYOUT_CONSTANTS.DAY_HEADER_HEIGHT; // Height of day number and plus button area (h-7 + padding)
+          const containerPadding = LAYOUT_CONSTANTS.CONTAINER_PADDING; // p-1.5 = 6px padding
+          const eventHeight = LAYOUT_CONSTANTS.EVENT_HEIGHT; // Height of each event (px-1.5 py-1 text-xs) - match exactly
+          const eventSpacing = LAYOUT_CONSTANTS.EVENT_SPACING; // space-y-1 = 4px spacing between events
+          const marginTop = LAYOUT_CONSTANTS.MARGIN_TOP; // mt-1 = 4px margin top for events container
           
           // Find the position of this event in the first day it appears
           const firstDayIndex = weekIndex * 7 + startIndex;
@@ -629,14 +646,14 @@ export const MonthCalendar = ({ date, visibleDates, viewedMonth }: MonthCalendar
             });
             
             // More precise height calculation matching CSS behavior
-            const dayHeaderHeight = 28; // Height of day number header
-            const containerPadding = 6; // p-1.5 = 6px padding 
-            const minContentHeight = 120 - dayHeaderHeight - (containerPadding * 2); // min-h-[120px] minus header and padding
+            const dayHeaderHeight = LAYOUT_CONSTANTS.DAY_HEADER_HEIGHT; // Height of day number header
+            const containerPadding = LAYOUT_CONSTANTS.CONTAINER_PADDING; // p-1.5 = 6px padding 
+            const minContentHeight = LAYOUT_CONSTANTS.MIN_DAY_HEIGHT - dayHeaderHeight - (containerPadding * 2); // min-h-[120px] minus header and padding
             
             let contentHeight = minContentHeight;
             if (maxEvents > 0) {
-              const eventsHeight = maxEvents * 24 + (maxEvents - 1) * 4; // 24px per event + 4px spacing between
-              const moreButtonHeight = hasMoreButton ? 24 : 0;
+              const eventsHeight = maxEvents * eventHeight + (maxEvents - 1) * eventSpacing; // 24px per event + 4px spacing between
+              const moreButtonHeight = hasMoreButton ? eventHeight : 0;
               const marginAndPadding = 8; // Additional margin around events
               contentHeight = Math.max(minContentHeight, eventsHeight + moreButtonHeight + marginAndPadding);
             }
