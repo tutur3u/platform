@@ -9,7 +9,6 @@
     "dev:calendar": "turbo run dev -F @tuturuuu/calendar -F @tuturuuu/web",
     "dev:rewise": "turbo run dev -F @tuturuuu/rewise -F @tuturuuu/web",
     "dev:upskii": "turbo run dev -F @tuturuuu/upskii",
-    "dev:famigo": "turbo run dev -F @tuturuuu/famigo -F @tuturuuu/web",
     "dev:nova": "turbo run dev -F @tuturuuu/nova -F @tuturuuu/web",
     "dev:shortener": "turbo run dev -F @tuturuuu/shortener -F @tuturuuu/web",
     "devx": "bun sb:stop && bun i && bun sb:start && bun dev",
@@ -17,7 +16,6 @@
     "devx:calendar": "bun sb:stop && bun i && bun sb:start && bun dev:calendar",
     "devx:rewise": "bun sb:stop && bun i && bun sb:start && bun dev:rewise",
     "devx:upskii": "bun sb:stop && bun i && bun sb:start && bun dev:upskii",
-    "devx:famigo": "bun sb:stop && bun i && bun sb:start && bun dev:famigo",
     "devx:nova": "bun sb:stop && bun i && bun sb:start && bun dev:nova",
     "devx:shortener": "bun sb:stop && bun i && bun sb:start && bun dev:shortener",
     "devrs": "bun sb:stop && bun i && bun sb:start && bun sb:reset && bun sb:typegen && bun dev",
@@ -25,7 +23,6 @@
     "devrs:calendar": "bun sb:stop && bun i && bun sb:start && bun sb:reset && bun sb:typegen && bun dev:calendar",
     "devrs:rewise": "bun sb:stop && bun i && bun sb:start && bun sb:reset && bun sb:typegen && bun dev:rewise",
     "devrs:upskii": "bun sb:stop && bun i && bun sb:start && bun sb:reset && bun sb:typegen && bun dev:upskii",
-    "devrs:famigo": "bun sb:stop && bun i && bun sb:start && bun sb:reset && bun sb:typegen && bun dev:famigo",
     "devrs:nova": "bun sb:stop && bun i && bun sb:start && bun sb:reset && bun sb:typegen && bun dev:nova",
     "devrs:shortener": "bun sb:stop && bun i && bun sb:start && bun sb:reset && bun sb:typegen && bun dev:shortener",
     "trigger:dev": "bun run --filter @tuturuuu/trigger trigger:dev",
@@ -73,10 +70,7 @@
     "node": ">=22"
   },
   "packageManager": "bun@1.2.17",
-  "workspaces": [
-    "apps/*",
-    "packages/*"
-  ],
+  "workspaces": ["apps/*", "packages/*"],
   "trustedDependencies": [
     "@tailwindcss/oxide",
     "@vercel/speed-insights",
