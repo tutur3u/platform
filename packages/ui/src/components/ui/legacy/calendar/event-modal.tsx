@@ -209,33 +209,37 @@ export function EventModal() {
   // Reset form when modal opens/closes or active event changes
   useEffect(() => {
     if (activeEvent) {
-      // Handle IDs for split multi-day events (they contain a dash and date)
-      const originalId = activeEvent.id.includes('-')
-        ? activeEvent.id.split('-')[0]
-        : activeEvent.id;
+      console.log('EventModal - activeEvent changed:', activeEvent);
+      
+      // Clean the event data to only include valid CalendarEvent fields
+      const cleanEventData: Partial<CalendarEvent> = {
+        id: activeEvent.id,
+        title: activeEvent.title || '',
+        description: activeEvent.description || '',
+        start_at: activeEvent.start_at,
+        end_at: activeEvent.end_at,
+        color: activeEvent.color || 'BLUE',
+        location: activeEvent.location || '',
+        priority: activeEvent.priority || 'medium',
+        locked: activeEvent.locked || false,
+        ws_id: activeEvent.ws_id,
+        google_event_id: activeEvent.google_event_id,
+      };
 
-      // If this is a split event, we need to get the original event data
-      const extendedEvent = activeEvent as ExtendedCalendarEvent;
-      const eventData = extendedEvent._originalId
-        ? { ...extendedEvent, id: originalId }
-        : extendedEvent;
+      console.log('EventModal - cleaned event data:', cleanEventData);
 
-      setEvent({
-        ...eventData,
-        priority: eventData.priority || 'medium',
-        locked: eventData.locked,
-      });
+      setEvent(cleanEventData);
 
       // Only check for all-day if this is an existing event (not a new one)
       if (activeEvent.id !== 'new') {
-        setIsAllDay(isAllDayEvent(eventData));
+        setIsAllDay(isAllDayEvent(cleanEventData as CalendarEvent));
       } else {
         // For new events, always start with isAllDay as false
         setIsAllDay(false);
       }
 
       // Check for overlapping events
-      checkForOverlaps(eventData);
+      checkForOverlaps(cleanEventData);
 
       // Set active tab to manual when editing an existing event
       setActiveTab('manual');
@@ -315,22 +319,33 @@ export function EventModal() {
     setIsSaving(true);
 
     try {
-      const eventData = {
-        ...event,
+      // Clean event data to only include fields that should be updated
+      const eventData: Partial<CalendarEvent> = {
+        title: event.title || '',
+        description: event.description || '',
+        start_at: event.start_at,
+        end_at: event.end_at,
+        color: event.color || 'BLUE',
+        location: event.location || '',
         priority: event.priority || 'medium',
         locked: event.locked || false,
       };
 
+      console.log('Saving event - activeEvent:', activeEvent);
+      console.log('Saving event - cleaned eventData:', eventData);
+
       if (activeEvent?.id === 'new') {
         await addEvent(eventData as Omit<CalendarEvent, 'id'>);
       } else if (activeEvent?.id) {
-        // Handle IDs for split multi-day events (they contain a dash and date)
-        const originalId = activeEvent.id.includes('-')
-          ? activeEvent.id.split('-')[0]
-          : activeEvent.id;
+        // For multi-day events, always use the original event ID
+        // The activeEvent should already contain the original event from the database
+        const eventId = activeEvent.id;
         
-        if (originalId) {
-          await updateEvent(originalId, eventData);
+        console.log('Updating event with ID:', eventId);
+        console.log('Original activeEvent from database:', activeEvent);
+        
+        if (eventId && eventId !== 'new') {
+          await updateEvent(eventId, eventData);
         } else {
           throw new Error('Invalid event ID');
         }
@@ -340,6 +355,7 @@ export function EventModal() {
 
       closeModal();
     } catch (error) {
+      console.error('Error in handleManualSave:', error);
       toast({
         title: 'Error',
         description: 'Failed to save or sync event. Please try again.',

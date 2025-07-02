@@ -236,28 +236,53 @@ export const MonthCalendar = ({ date, visibleDates, viewedMonth }: MonthCalendar
   // Get events for a day including placeholders for multi-day events
   const getEventsForDay = (day: Date) => {
     const dayEvents = getCurrentEvents(day);
-    const result: (CalendarEvent & { isPlaceholder?: boolean })[] = [];
+    const result: (CalendarEvent & { isPlaceholder?: boolean; _eventPriority?: number })[] = [];
     
-    // Add all single-day events and timed events
+    // Add all events with priority for sorting
     dayEvents.forEach(event => {
-      if (!isAllDayEvent(event)) {
-        result.push(event);
-        return;
-      }
+      let eventPriority = 3; // Default for timed events (lowest priority)
       
-      // For all-day events, check if it's part of a multi-day span
-      const isMultiDay = multiDayEventSpans.some(span => span.event.id === event.id);
-      
-      if (!isMultiDay) {
-        // Single-day all-day event, add normally
-        result.push(event);
+      if (isAllDayEvent(event)) {
+        // Check if it's part of a multi-day span
+        const isMultiDay = multiDayEventSpans.some(span => span.event.id === event.id);
+        
+        if (isMultiDay) {
+          // Multi-day all-day event gets highest priority
+          eventPriority = 1;
+          result.push({
+            ...event,
+            isPlaceholder: true,
+            _eventPriority: eventPriority
+          });
+        } else {
+          // Single-day all-day event gets medium priority
+          eventPriority = 2;
+          result.push({
+            ...event,
+            _eventPriority: eventPriority
+          });
+        }
       } else {
-        // Multi-day event, add as placeholder for stacking purposes
+        // Timed event gets lowest priority
         result.push({
           ...event,
-          isPlaceholder: true
+          _eventPriority: eventPriority
         });
       }
+    });
+    
+    // Sort by priority (1 = highest priority, 3 = lowest priority)
+    // Then by start time for events with the same priority
+    result.sort((a, b) => {
+      // First sort by priority
+      if (a._eventPriority !== b._eventPriority) {
+        return (a._eventPriority || 3) - (b._eventPriority || 3);
+      }
+      
+      // For events with same priority, sort by start time
+      const aStart = new Date(a.start_at).getTime();
+      const bStart = new Date(b.start_at).getTime();
+      return aStart - bStart;
     });
     
     return result;
@@ -554,7 +579,7 @@ export const MonthCalendar = ({ date, visibleDates, viewedMonth }: MonthCalendar
         </div>
 
         {/* Render multi-day all-day event spans */}
-        {multiDayEventSpans.map((eventSpan, spanIndex) => {
+        {multiDayEventSpans.map((eventSpan) => {
           const { event, startIndex, span, weekIndex } = eventSpan;
           const { bg, text } = getEventStyles(event);
           
@@ -572,8 +597,18 @@ export const MonthCalendar = ({ date, visibleDates, viewedMonth }: MonthCalendar
           let eventIndexInDay = 0;
           if (firstDay) {
             const eventsInFirstDay = getEventsForDay(firstDay);
-            eventIndexInDay = eventsInFirstDay.findIndex(e => e.id === event.id);
-            if (eventIndexInDay === -1) eventIndexInDay = 0;
+            // Find the placeholder for this multi-day event in the sorted list
+            eventIndexInDay = eventsInFirstDay.findIndex(e => 
+              e.id === event.id && e.isPlaceholder
+            );
+            if (eventIndexInDay === -1) {
+              // Fallback: if not found as placeholder, check for any event with this ID
+              eventIndexInDay = eventsInFirstDay.findIndex(e => e.id === event.id);
+            }
+            if (eventIndexInDay === -1) {
+              // If still not found, put it at the top (should not happen with correct logic)
+              eventIndexInDay = 0;
+            }
           }
           
           // Fixed positioning approach based on empirical observation

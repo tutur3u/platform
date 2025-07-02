@@ -523,26 +523,70 @@ export const CalendarProvider = ({
         ...updateData
       } = update;
 
+      // Debug logging
+      console.log('Processing update for event:', eventId);
+      console.log('Update data:', updateData);
+      
+      // Check if the event exists before trying to update
+      const existingEvent = events.find((e: CalendarEvent) => e.id === eventId);
+      if (!existingEvent) {
+        const errorMsg = `Event with ID ${eventId} not found in local events`;
+        console.error(errorMsg);
+        if (_reject) {
+          _reject(new Error(errorMsg));
+        }
+        return;
+      }
+
+      // Validate workspace ownership
+      if (existingEvent.ws_id !== ws?.id) {
+        const errorMsg = `Event ${eventId} does not belong to current workspace (${ws?.id})`;
+        console.error(errorMsg);
+        if (_reject) {
+          _reject(new Error(errorMsg));
+        }
+        return;
+      }
+
       try {
         // Perform the actual update
         const supabase = createClient();
+        
+        // Clean up the update data to ensure no undefined values and exclude system fields
+        const cleanUpdateData: any = {
+          ...(updateData.title !== undefined && { title: updateData.title }),
+          ...(updateData.description !== undefined && { description: updateData.description }),
+          ...(updateData.start_at !== undefined && { start_at: updateData.start_at }),
+          ...(updateData.end_at !== undefined && { end_at: updateData.end_at }),
+          ...(updateData.color !== undefined && { color: updateData.color }),
+          ...(updateData.location !== undefined && { location: updateData.location }),
+          ...(updateData.priority !== undefined && { priority: updateData.priority }),
+          ...(updateData.locked !== undefined && { locked: updateData.locked }),
+        };
+        
+        // Remove system fields that shouldn't be updated (just in case they're present)
+        delete cleanUpdateData.id;
+        delete cleanUpdateData.ws_id;
+        delete cleanUpdateData.google_event_id;
+        
+        console.log('Clean update data being sent to Supabase:', cleanUpdateData);
+        
         const { data, error } = await supabase
           .from('workspace_calendar_events')
-          .update({
-            title: updateData.title,
-            description: updateData.description,
-            start_at: updateData.start_at,
-            end_at: updateData.end_at,
-            color: updateData.color,
-            location: updateData.location,
-            priority: updateData.priority,
-            locked: updateData.locked,
-          })
+          .update(cleanUpdateData)
           .eq('id', eventId)
           .select()
           .single();
 
-        if (error) throw error;
+        if (error) {
+          console.error('Supabase error details:', {
+            message: error.message,
+            details: error.details,
+            hint: error.hint,
+            code: error.code
+          });
+          throw error;
+        }
 
         // Refresh the query cache after updating an event
         refresh();
@@ -554,11 +598,13 @@ export const CalendarProvider = ({
           }
         } else {
           if (_reject) {
-            _reject(new Error(`Failed to update event ${eventId}`));
+            _reject(new Error(`Failed to update event ${eventId} - no data returned`));
           }
         }
       } catch (err) {
         console.error(`Failed to update event ${eventId}:`, err);
+        console.error('Error type:', typeof err);
+        console.error('Error keys:', Object.keys(err || {}));
         if (_reject) {
           _reject(err);
         }
@@ -571,35 +617,49 @@ export const CalendarProvider = ({
         setTimeout(processUpdateQueue, 50); // Small delay to prevent blocking
       }
     }
-  }, [refresh]);
+  }, [refresh, events]);
 
   const updateEvent = useCallback(
     async (eventId: string, eventUpdates: Partial<CalendarEvent>) => {
       if (!ws) throw new Error('No workspace selected');
 
-      // Round start and end times to nearest 15-minute interval if they exist
-      const updatedEvent = { ...eventUpdates };
-      if (updatedEvent.start_at) {
-        const startDate = roundToNearest15Minutes(
-          new Date(updatedEvent.start_at)
-        );
-        updatedEvent.start_at = startDate.toISOString();
+      console.log('updateEvent called with:', { eventId, eventUpdates });
+
+      // Clean and validate the event updates - only allow known CalendarEvent fields
+      const allowedFields: (keyof CalendarEvent)[] = [
+        'title', 'description', 'start_at', 'end_at', 'color', 
+        'location', 'priority', 'locked'
+      ];
+
+      const cleanedUpdates: Partial<CalendarEvent> = {};
+      for (const field of allowedFields) {
+        if (eventUpdates[field] !== undefined) {
+          (cleanedUpdates as any)[field] = eventUpdates[field];
+        }
       }
-      if (updatedEvent.end_at) {
-        const endDate = roundToNearest15Minutes(new Date(updatedEvent.end_at));
-        updatedEvent.end_at = endDate.toISOString();
+
+      console.log('Cleaned event updates:', cleanedUpdates);
+
+      // Round start and end times to nearest 15-minute interval if they exist
+      if (cleanedUpdates.start_at) {
+        const startDate = roundToNearest15Minutes(new Date(cleanedUpdates.start_at));
+        cleanedUpdates.start_at = startDate.toISOString();
+      }
+      if (cleanedUpdates.end_at) {
+        const endDate = roundToNearest15Minutes(new Date(cleanedUpdates.end_at));
+        cleanedUpdates.end_at = endDate.toISOString();
       }
 
       // If this is a newly created event that hasn't been saved to the database yet
       if (pendingNewEvent && eventId === 'new') {
         const newEventData = {
           ...pendingNewEvent,
-          ...updatedEvent,
+          ...cleanedUpdates,
         };
 
         try {
           // Check for potential duplicates before creating a new event
-          if (updatedEvent.title || pendingNewEvent.title) {
+          if (cleanedUpdates.title || pendingNewEvent.title) {
             const startDate = roundToNearest15Minutes(
               new Date(newEventData.start_at || new Date())
             );
@@ -648,7 +708,7 @@ export const CalendarProvider = ({
       return new Promise<CalendarEvent>((resolve, reject) => {
         // Create the update object with the promise callbacks
         const updateObject: PendingEventUpdate = {
-          ...updatedEvent,
+          ...cleanedUpdates,
           _updateId: updateId,
           _timestamp: timestamp,
           _eventId: eventId,
