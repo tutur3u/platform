@@ -56,7 +56,7 @@
     "date-fns-tz": "^3.2.0",
     "dayjs": "^1.11.13",
     "embla-carousel-react": "^8.6.0",
-    "framer-motion": "^12.22.0",
+    "framer-motion": "^12.23.0",
     "gsap": "^3.13.0",
     "input-otp": "^1.4.2",
     "lodash": "^4.17.21",

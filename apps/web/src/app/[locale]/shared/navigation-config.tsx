@@ -48,7 +48,7 @@ export const useNavigation = (t: any): { categories: NavCategory[] } => {
     },
     {
       href: DEV_MODE
-        ? 'http://localhost:7001'
+        ? 'http://localhost:3001'
         : 'https://calendar.tuturuuu.com',
       label: t('common.calendar'),
       description: t('common.calendar-description'),
