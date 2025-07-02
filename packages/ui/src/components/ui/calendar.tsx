@@ -97,8 +97,8 @@ function Calendar({
                 position="popper"
                 className="h-[300px] overflow-y-auto"
               >
-                <div className="-mx-1 sticky top-0 flex items-center justify-center border-b bg-background py-1">
-                  <div className="px-2 font-medium text-muted-foreground text-sm">
+                <div className="sticky top-0 -mx-1 flex items-center justify-center border-b bg-background py-1">
+                  <div className="px-2 text-sm font-medium text-muted-foreground">
                     {currentYear}
                   </div>
                 </div>

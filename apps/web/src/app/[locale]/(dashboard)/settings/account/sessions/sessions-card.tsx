@@ -294,28 +294,28 @@ export default function SessionsCard() {
         <CardContent>
           <div className="grid grid-cols-1 gap-4 text-center md:grid-cols-3">
             <div className="space-y-2">
-              <div className="font-bold text-2xl text-dynamic-blue">
+              <div className="text-2xl font-bold text-dynamic-blue">
                 {stats.total_sessions}
               </div>
-              <div className="text-foreground text-sm">
+              <div className="text-sm text-foreground">
                 {t('total_sessions')}
               </div>
             </div>
             <div className="space-y-2">
-              <div className="font-bold text-2xl text-dynamic-green">
+              <div className="text-2xl font-bold text-dynamic-green">
                 {stats.active_sessions}
               </div>
-              <div className="text-foreground text-sm">
+              <div className="text-sm text-foreground">
                 {t('active_sessions')}
               </div>
             </div>
             <div className="space-y-2">
-              <div className="font-bold text-2xl text-dynamic-orange">
+              <div className="text-2xl font-bold text-dynamic-orange">
                 {stats.current_session_age
                   ? `${Math.floor(parseInt(stats.current_session_age.split(':')[0] || '0') / 24)}d`
                   : 'N/A'}
               </div>
-              <div className="text-foreground text-sm">
+              <div className="text-sm text-foreground">
                 {t('current_session_age')}
               </div>
             </div>
@@ -363,7 +363,7 @@ export default function SessionsCard() {
               <Progress
                 value={(bulkProgress.completed / bulkProgress.total) * 100}
               />
-              <div className="text-foreground text-sm">
+              <div className="text-sm text-foreground">
                 Revoked {bulkProgress.completed} of {bulkProgress.total}
               </div>
             </div>
@@ -395,7 +395,7 @@ export default function SessionsCard() {
                             </Badge>
                           )}
                         </div>
-                        <div className="flex flex-col items-start gap-1 text-foreground text-sm md:flex-row md:items-center md:justify-start md:gap-2">
+                        <div className="flex flex-col items-start gap-1 text-sm text-foreground md:flex-row md:items-center md:justify-start md:gap-2">
                           <div className="flex items-center space-x-1">
                             <MapPin className="h-3 w-3" />
                             <span>{session.ip}</span>

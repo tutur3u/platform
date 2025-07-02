@@ -88,8 +88,8 @@ export default function MailClientWrapper({
   const mailsToShow = emails.length > 0 ? emails : [];
 
   return (
-    <div className="flex h-[calc(100vh-2rem)] flex-col">
-      <div className="flex-1 overflow-hidden rounded-xl border bg-background/80 shadow-lg backdrop-blur-sm">
+    <div className="h-[calc(100vh-2rem)] flex flex-col">
+      <div className="flex-1 rounded-xl border bg-background/80 backdrop-blur-sm shadow-lg overflow-hidden">
         <MailClient
           mails={mailsToShow}
           defaultLayout={defaultLayout}

@@ -357,7 +357,7 @@ export function RelationshipGraph({
         </div>
       </CardHeader>
       <CardContent>
-        <div className="mb-2 text-muted-foreground text-xs">
+        <div className="mb-2 text-xs text-muted-foreground">
           {hoveredHorse !== null ? (
             <>
               Showing relationships for Horse #{hoveredHorse}:{' '}
@@ -385,25 +385,25 @@ export function RelationshipGraph({
         <div className="mt-2 grid grid-cols-2 gap-2 text-xs sm:grid-cols-4">
           <div className="rounded-md border p-2 text-center">
             <div className="font-medium">Known Horses</div>
-            <div className="mt-1 font-bold text-2xl text-primary">
+            <div className="mt-1 text-2xl font-bold text-primary">
               {knownPositions.length}
             </div>
           </div>
           <div className="rounded-md border p-2 text-center">
             <div className="font-medium">Unknown Horses</div>
-            <div className="mt-1 font-bold text-2xl text-muted-foreground">
+            <div className="mt-1 text-2xl font-bold text-muted-foreground">
               {horses.length - knownPositions.length}
             </div>
           </div>
           <div className="rounded-md border p-2 text-center">
             <div className="font-medium">Known Relations</div>
-            <div className="mt-1 font-bold text-2xl text-blue-500">
+            <div className="mt-1 text-2xl font-bold text-blue-500">
               {countKnownRelationships()}
             </div>
           </div>
           <div className="rounded-md border p-2 text-center">
             <div className="font-medium">Inferred Relations</div>
-            <div className="mt-1 font-bold text-2xl text-indigo-500">
+            <div className="mt-1 text-2xl font-bold text-indigo-500">
               {countInferredRelationships()}
             </div>
           </div>

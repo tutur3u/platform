@@ -15,7 +15,7 @@ export function MonthCell({ date, key, hasGrid }: MonthCellProps) {
       key={key}
       className={`${
         hasGrid
-          ? 'border-zinc-800 border-r border-b font-semibold text-xl'
+          ? 'border-r border-b border-zinc-800 text-xl font-semibold'
           : 'text-sm'
       } flex justify-center`}
     >

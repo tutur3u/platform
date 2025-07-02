@@ -3,17 +3,16 @@
 import { AddTaskForm } from './add-task-form';
 import { CommandHeader } from './command-header';
 import './command-palette.css';
+import { CommandRoot } from './command-root';
+import { QuickTimeTracker } from './quick-time-tracker';
 import { Button } from '@tuturuuu/ui/button';
 import { CommandDialog, CommandList } from '@tuturuuu/ui/command';
 import { AlertTriangle, RefreshCw } from '@tuturuuu/ui/icons';
-import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { useParams, usePathname } from 'next/navigation';
 import * as React from 'react';
-import { CommandRoot } from './command-root';
-import { QuickTimeTracker } from './quick-time-tracker';
+import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 
-const UUID_REGEX =
-  /[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/;
+const UUID_REGEX = /[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/;
 
 // Function to extract workspace ID from pathname
 function getWorkspaceFromPath(pathname: string): string | null {
@@ -43,13 +42,10 @@ export function CommandPalette({
   // Try multiple methods to get workspace ID
   const workspaceId = React.useMemo(() => {
     // Method 1: From URL params (if it's a valid workspace ID)
-    if (
-      urlWsId &&
-      typeof urlWsId === 'string' &&
-      urlWsId !== 'undefined' &&
-      (urlWsId === ROOT_WORKSPACE_ID ||
-        urlWsId.match(new RegExp(`^${UUID_REGEX.source}$`)))
-    ) {
+    if (urlWsId && 
+        typeof urlWsId === 'string' && 
+        urlWsId !== 'undefined' &&
+        (urlWsId === ROOT_WORKSPACE_ID || urlWsId.match(new RegExp(`^${UUID_REGEX.source}$`)))) {
       return urlWsId;
     }
 
@@ -201,17 +197,15 @@ export function CommandPalette({
               />
             </div>
           )}
-
+          
           {!workspaceId && !isTransitioning && (
             <div className="flex flex-col items-center gap-4 p-8 text-center">
               <div className="rounded-full bg-dynamic-orange/10 p-3">
                 <AlertTriangle className="h-6 w-6 text-dynamic-orange" />
               </div>
               <div className="space-y-1">
-                <p className="font-semibold text-foreground">
-                  No workspace found
-                </p>
-                <p className="text-muted-foreground text-sm">
+                <p className="font-semibold text-foreground">No workspace found</p>
+                <p className="text-sm text-muted-foreground">
                   Please navigate to a workspace to use the command palette
                 </p>
               </div>
@@ -252,16 +246,16 @@ class CommandPaletteErrorBoundary extends React.Component<
             <h3 className="font-semibold text-foreground">
               Something went wrong
             </h3>
-            <p className="max-w-sm text-muted-foreground text-sm">
+            <p className="max-w-sm text-sm text-muted-foreground">
               The command palette encountered an unexpected error. Please try
               again.
             </p>
             {process.env.NODE_ENV === 'development' && this.state.error && (
               <details className="mt-4 text-left">
-                <summary className="cursor-pointer text-muted-foreground text-xs">
+                <summary className="cursor-pointer text-xs text-muted-foreground">
                   Error details (development)
                 </summary>
-                <pre className="mt-2 rounded bg-dynamic-red/5 p-2 text-dynamic-red text-xs">
+                <pre className="mt-2 rounded bg-dynamic-red/5 p-2 text-xs text-dynamic-red">
                   {this.state.error.message}
                 </pre>
               </details>

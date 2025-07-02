@@ -250,7 +250,7 @@ const CommodityComparison = ({
         <div className="mb-4">
           <label
             htmlFor="date"
-            className="mb-1 block font-medium text-muted-foreground text-sm"
+            className="mb-1 block text-sm font-medium text-muted-foreground"
           >
             {t('aurora.select_date')}
           </label>
@@ -311,7 +311,7 @@ const CommodityComparison = ({
                 <CardContent>
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                     <div className="flex flex-col gap-2">
-                      <div className="font-medium text-sm">
+                      <div className="text-sm font-medium">
                         AutoARIMA - AutoETS
                       </div>
                       <div className="flex items-center gap-2">
@@ -324,7 +324,7 @@ const CommodityComparison = ({
                             backgroundColor: colors.primary,
                           }}
                         />
-                        <span className="text-muted-foreground text-sm">
+                        <span className="text-sm text-muted-foreground">
                           {getCorrelationStrength(
                             correlations.auto_arima_auto_ets
                           )}
@@ -333,7 +333,7 @@ const CommodityComparison = ({
                     </div>
 
                     <div className="flex flex-col gap-2">
-                      <div className="font-medium text-sm">
+                      <div className="text-sm font-medium">
                         AutoARIMA - AutoTheta
                       </div>
                       <div className="flex items-center gap-2">
@@ -346,7 +346,7 @@ const CommodityComparison = ({
                             backgroundColor: colors.warning,
                           }}
                         />
-                        <span className="text-muted-foreground text-sm">
+                        <span className="text-sm text-muted-foreground">
                           {getCorrelationStrength(
                             correlations.auto_arima_auto_theta
                           )}
@@ -355,7 +355,7 @@ const CommodityComparison = ({
                     </div>
 
                     <div className="flex flex-col gap-2">
-                      <div className="font-medium text-sm">AutoARIMA - CES</div>
+                      <div className="text-sm font-medium">AutoARIMA - CES</div>
                       <div className="flex items-center gap-2">
                         <div
                           className="h-2 rounded-full"
@@ -366,7 +366,7 @@ const CommodityComparison = ({
                             backgroundColor: colors.info,
                           }}
                         />
-                        <span className="text-muted-foreground text-sm">
+                        <span className="text-sm text-muted-foreground">
                           {getCorrelationStrength(correlations.auto_arima_ces)}
                         </span>
                       </div>
@@ -577,15 +577,15 @@ const PriceCard = ({
       <CardContent className="pt-6">
         <div className="flex items-center justify-between">
           <div>
-            <div className="font-bold text-2xl" style={{ color }}>
+            <div className="text-2xl font-bold" style={{ color }}>
               {formatCurrency(value)}
             </div>
-            <p className="text-muted-foreground text-sm">{title}</p>
+            <p className="text-sm text-muted-foreground">{title}</p>
           </div>
           {insights && insights.trendSlope !== undefined && (
             <div className="flex flex-col items-end">
               <div
-                className={`font-semibold text-lg ${
+                className={`text-lg font-semibold ${
                   insights.trendSlope > 0 ? 'text-success' : 'text-destructive'
                 }`}
               >
@@ -598,7 +598,7 @@ const PriceCard = ({
         {insights && (
           <div className="mt-4 space-y-3 border-t pt-4">
             <div className="flex items-center justify-between">
-              <span className="text-muted-foreground text-sm">
+              <span className="text-sm text-muted-foreground">
                 {t('aurora.high')}
               </span>
               <div className="flex items-center gap-2">
@@ -609,13 +609,13 @@ const PriceCard = ({
                     backgroundColor: colors.success,
                   }}
                 />
-                <span className="font-medium text-sm text-success">
+                <span className="text-success text-sm font-medium">
                   {formatCurrency(insights.high)}
                 </span>
               </div>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-muted-foreground text-sm">
+              <span className="text-sm text-muted-foreground">
                 {t('aurora.low')}
               </span>
               <div className="flex items-center gap-2">
@@ -626,13 +626,13 @@ const PriceCard = ({
                     backgroundColor: colors.warning,
                   }}
                 />
-                <span className="font-medium text-destructive text-sm">
+                <span className="text-sm font-medium text-destructive">
                   {formatCurrency(insights.low)}
                 </span>
               </div>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-muted-foreground text-sm">
+              <span className="text-sm text-muted-foreground">
                 {t('aurora.average')}
               </span>
               <div className="flex items-center gap-2">
@@ -643,13 +643,13 @@ const PriceCard = ({
                     backgroundColor: color,
                   }}
                 />
-                <span className="font-medium text-sm">
+                <span className="text-sm font-medium">
                   {formatCurrency(insights.average)}
                 </span>
               </div>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-muted-foreground text-sm">
+              <span className="text-sm text-muted-foreground">
                 {t('aurora.volatility')}
               </span>
               <div className="flex items-center gap-2">
@@ -660,7 +660,7 @@ const PriceCard = ({
                     backgroundColor: colors.info,
                   }}
                 />
-                <span className="font-medium text-sm">
+                <span className="text-sm font-medium">
                   {formatCurrency(insights.volatility)}
                 </span>
               </div>

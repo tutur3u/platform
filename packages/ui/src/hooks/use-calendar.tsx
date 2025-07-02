@@ -159,7 +159,7 @@ export const CalendarProvider = ({
     if (typeof window === 'undefined' || typeof localStorage === 'undefined') {
       return null;
     }
-
+    
     try {
       const storedSettings = localStorage.getItem('calendarSettings');
       if (storedSettings) {
@@ -190,7 +190,7 @@ export const CalendarProvider = ({
     if (typeof window === 'undefined' || typeof localStorage === 'undefined') {
       return;
     }
-
+    
     try {
       localStorage.setItem('calendarSettings', JSON.stringify(settings));
       console.log('Saved settings to localStorage:', settings);

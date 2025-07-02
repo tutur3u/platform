@@ -124,7 +124,7 @@ export function SmartSchedulingSettings({
       </div>
 
       <div className="space-y-4">
-        <h3 className="font-medium text-lg">Meeting Preferences</h3>
+        <h3 className="text-lg font-medium">Meeting Preferences</h3>
 
         <div className="space-y-2">
           <Label htmlFor="meeting-buffer">
@@ -213,7 +213,7 @@ export function SmartSchedulingSettings({
       </div>
 
       <div className="space-y-4">
-        <h3 className="font-medium text-lg">Focus Time</h3>
+        <h3 className="text-lg font-medium">Focus Time</h3>
 
         <div className="flex items-center justify-between">
           <Label htmlFor="enable-focus-time">Schedule focus time blocks</Label>
@@ -296,7 +296,7 @@ export function SmartSchedulingSettings({
       </div>
 
       <div className="space-y-4">
-        <h3 className="font-medium text-lg">Productivity Balance</h3>
+        <h3 className="text-lg font-medium">Productivity Balance</h3>
         <div className="space-y-2">
           <div className="flex justify-between">
             <Label htmlFor="productivity-score">
@@ -314,7 +314,7 @@ export function SmartSchedulingSettings({
             disabled={!value.enableSmartScheduling}
             className="py-4"
           />
-          <div className="flex justify-between text-muted-foreground text-sm">
+          <div className="flex justify-between text-sm text-muted-foreground">
             <span>More meetings</span>
             <span>More focus time</span>
           </div>

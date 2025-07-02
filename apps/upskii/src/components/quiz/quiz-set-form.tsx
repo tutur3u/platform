@@ -156,7 +156,7 @@ export default function QuizSetForm({ wsId, moduleId, data, onFinish }: Props) {
       <div className="mx-auto max-w-4xl">
         {/* Header */}
         <div className="mb-8 text-center">
-          <h1 className="mb-2 bg-gradient-to-r from-dynamic-purple to-dynamic-red bg-clip-text font-bold text-3xl text-transparent">
+          <h1 className="mb-2 bg-gradient-to-r from-dynamic-purple to-dynamic-red bg-clip-text text-3xl font-bold text-transparent">
             {data?.id ? t('ws-quiz-sets.edit') : t('ws-quiz-sets.create')}
           </h1>
           <p className="mx-auto max-w-2xl text-muted-foreground italic">
@@ -496,7 +496,7 @@ export default function QuizSetForm({ wsId, moduleId, data, onFinish }: Props) {
                                   'ws-quiz-sets.form-fields.allow_view_results.title'
                                 )}
                               </FormLabel>
-                              <FormDescription className="text-muted-foreground text-sm">
+                              <FormDescription className="text-sm text-muted-foreground">
                                 {t(
                                   'ws-quiz-sets.form-fields.allow_view_results.description'
                                 )}
@@ -529,7 +529,7 @@ export default function QuizSetForm({ wsId, moduleId, data, onFinish }: Props) {
                                   'ws-quiz-sets.form-fields.results_released.title'
                                 )}
                               </FormLabel>
-                              <FormDescription className="text-muted-foreground text-sm">
+                              <FormDescription className="text-sm text-muted-foreground">
                                 {t(
                                   'ws-quiz-sets.form-fields.results_released.description'
                                 )}
@@ -562,7 +562,7 @@ export default function QuizSetForm({ wsId, moduleId, data, onFinish }: Props) {
                                   'ws-quiz-sets.form-fields.allow_view_old_attempts.title'
                                 )}
                               </FormLabel>
-                              <FormDescription className="text-muted-foreground text-sm">
+                              <FormDescription className="text-sm text-muted-foreground">
                                 {t(
                                   'ws-quiz-sets.form-fields.allow_view_old_attempts.description'
                                 )}
@@ -581,12 +581,12 @@ export default function QuizSetForm({ wsId, moduleId, data, onFinish }: Props) {
             <div className="flex justify-center pt-3 pb-16">
               <Button
                 type="submit"
-                className="w-full border border-dynamic-purple bg-dynamic-purple/30 px-12 py-5 font-semibold text-lg text-primary shadow-lg transition-all duration-200 hover:bg-dynamic-purple/70 hover:text-secondary-foreground hover:shadow-xl md:w-auto"
+                className="w-full border border-dynamic-purple bg-dynamic-purple/30 px-12 py-5 text-lg font-semibold text-primary shadow-lg transition-all duration-200 hover:bg-dynamic-purple/70 hover:text-secondary-foreground hover:shadow-xl md:w-auto"
                 disabled={disabled}
               >
                 {isSubmitting ? (
                   <>
-                    <div className="mr-2 h-4 w-4 animate-spin rounded-full border-white border-b-2"></div>
+                    <div className="mr-2 h-4 w-4 animate-spin rounded-full border-b-2 border-white"></div>
                     {data?.id
                       ? t('ws-quiz-sets.editing')
                       : t('ws-quiz-sets.creating')}

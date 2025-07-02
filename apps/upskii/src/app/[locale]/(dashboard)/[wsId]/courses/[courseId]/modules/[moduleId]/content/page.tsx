@@ -39,7 +39,7 @@ export default async function ModuleContentPage({ params }: Props) {
       <FeatureSummary
         title={
           <div className="flex items-center justify-between gap-4">
-            <h1 className="flex w-full items-center gap-2 font-bold text-lg md:text-2xl">
+            <h1 className="flex w-full items-center gap-2 text-lg font-bold md:text-2xl">
               <Goal className="h-5 w-5" />
               {t('course-details-tabs.module_content')}
             </h1>

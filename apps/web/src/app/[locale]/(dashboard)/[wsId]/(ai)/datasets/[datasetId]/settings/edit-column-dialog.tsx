@@ -60,7 +60,7 @@ export function EditColumnDialog({
         </DialogHeader>
         <div className="space-y-4">
           <div className="space-y-2">
-            <label className="font-medium text-sm">Column Name</label>
+            <label className="text-sm font-medium">Column Name</label>
             <Input
               value={name}
               onChange={(e) => setName(e.target.value)}

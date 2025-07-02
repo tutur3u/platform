@@ -343,19 +343,19 @@ export function GoogleCalendarSettings({
                     <h4 className="font-medium text-green-800 dark:text-green-300">
                       Connected to Google Calendar
                     </h4>
-                    <p className="mt-1 text-green-700 text-sm dark:text-green-400">
+                    <p className="mt-1 text-sm text-green-700 dark:text-green-400">
                       Your calendar is syncing with Google Calendar
                       {lastSyncTime && ` (Last synced: ${lastSyncTime})`}
                     </p>
 
                     {/* Add sync stats */}
                     <div className="mt-2 flex flex-wrap gap-2">
-                      <div className="rounded-full bg-green-100 px-2 py-1 font-medium text-green-800 text-xs dark:bg-green-900/30 dark:text-green-300">
+                      <div className="rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-800 dark:bg-green-900/30 dark:text-green-300">
                         {connectedEventsCount} synced events
                       </div>
                       {syncStatus.status !== 'idle' && (
                         <div
-                          className={`rounded-full px-2 py-1 font-medium text-xs ${
+                          className={`rounded-full px-2 py-1 text-xs font-medium ${
                             syncStatus.status === 'success'
                               ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
                               : syncStatus.status === 'error'

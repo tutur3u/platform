@@ -56,7 +56,7 @@ export default function ApiKeySelector({
         ) : (
           <div className="flex items-center gap-2 rounded-md border border-muted-foreground/20 bg-muted/50 px-3 py-2">
             <Key className="h-4 w-4 text-muted-foreground" />
-            <span className="text-muted-foreground text-sm">
+            <span className="text-sm text-muted-foreground">
               {t('no_api_keys_found')}
             </span>
           </div>

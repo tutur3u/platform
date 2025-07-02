@@ -166,7 +166,7 @@ export const getPlatformRoleColumns = (
         const user = row.original;
 
         return (
-          <div className="flex min-w-0 items-center gap-3">
+          <div className="flex items-center gap-3 min-w-0">
             <div className="relative">
               <Avatar
                 className={`h-9 w-9 border-2 transition-all ${'border-dynamic-green/30 shadow-sm'}`}
@@ -175,24 +175,24 @@ export const getPlatformRoleColumns = (
                   src={user.avatar_url || ''}
                   alt={user?.display_name || ''}
                 />
-                <AvatarFallback className="font-medium text-xs">
+                <AvatarFallback className="text-xs font-medium">
                   {getInitials(user.display_name || '?')}
                 </AvatarFallback>
               </Avatar>
               <div
-                className={`-bottom-0.5 -right-0.5 absolute h-3 w-3 rounded-full border-2 border-background ${'bg-dynamic-green'}`}
+                className={`absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-background ${'bg-dynamic-green'}`}
               />
             </div>
             <div className="min-w-0 flex-1">
               <div
-                className={`truncate font-medium transition-opacity ${'opacity-100'}`}
+                className={`font-medium truncate transition-opacity ${'opacity-100'}`}
               >
                 {user.display_name ||
                   generateFunName({ id: user.id, locale: extraData.locale })}
               </div>
               {user?.email && (
                 <div
-                  className={`truncate text-sm transition-opacity ${'text-dynamic-muted-foreground'}`}
+                  className={`text-sm truncate transition-opacity ${'text-dynamic-muted-foreground'}`}
                 >
                   {user.email}
                 </div>
@@ -226,7 +226,7 @@ export const getPlatformRoleColumns = (
                         <span className="hidden sm:inline">
                           {permission.label}
                         </span>
-                        <span className="font-mono text-[10px] sm:hidden">
+                        <span className="sm:hidden font-mono text-[10px]">
                           {permission.shortLabel}
                         </span>
                       </Badge>
@@ -234,7 +234,7 @@ export const getPlatformRoleColumns = (
                     <TooltipContent side="top" className="max-w-xs">
                       <div className="space-y-1">
                         <p className="font-medium">{permission.label}</p>
-                        <p className="text-dynamic-muted-foreground text-xs">
+                        <p className="text-xs text-dynamic-muted-foreground">
                           {permission.description}
                         </p>
                       </div>
@@ -301,11 +301,11 @@ export const getPlatformRoleColumns = (
                 </TooltipTrigger>
                 <TooltipContent side="top" className="max-w-xs">
                   <div className="space-y-1">
-                    <p className="flex items-center gap-1.5 font-medium">
+                    <p className="font-medium flex items-center gap-1.5">
                       <Crown className="h-3 w-3 text-dynamic-red" />
                       Admin Permission
                     </p>
-                    <p className="text-dynamic-muted-foreground text-xs">
+                    <p className="text-xs text-dynamic-muted-foreground">
                       {user.allow_role_management
                         ? 'User has full platform administration access'
                         : 'Grant complete platform control and user management'}
@@ -361,11 +361,11 @@ export const getPlatformRoleColumns = (
                 </TooltipTrigger>
                 <TooltipContent side="top" className="max-w-xs">
                   <div className="space-y-1">
-                    <p className="flex items-center gap-1.5 font-medium">
+                    <p className="font-medium flex items-center gap-1.5">
                       <Building className="h-3 w-3 text-dynamic-green" />
                       Workspace Creator
                     </p>
-                    <p className="text-dynamic-muted-foreground text-xs">
+                    <p className="text-xs text-dynamic-muted-foreground">
                       {user.allow_workspace_creation
                         ? 'Can create and initialize new workspaces'
                         : 'Grant ability to create new workspaces'}
@@ -389,7 +389,7 @@ export const getPlatformRoleColumns = (
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <div className="flex items-center gap-2 text-dynamic-muted-foreground text-sm">
+                <div className="flex items-center gap-2 text-sm text-dynamic-muted-foreground">
                   <Clock className="h-3 w-3" />
                   <span>{moment(createdAt).fromNow()}</span>
                 </div>
@@ -481,7 +481,7 @@ export const getPlatformRoleColumns = (
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-72">
-              <DropdownMenuLabel className="font-medium text-sm">
+              <DropdownMenuLabel className="text-sm font-medium">
                 Manage Permissions
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
@@ -495,7 +495,7 @@ export const getPlatformRoleColumns = (
                   <Crown className="h-4 w-4 text-dynamic-red" />
                   <div>
                     <div className="font-medium">Admin</div>
-                    <div className="text-dynamic-muted-foreground text-xs">
+                    <div className="text-xs text-dynamic-muted-foreground">
                       Full platform administration access
                     </div>
                   </div>
@@ -524,7 +524,7 @@ export const getPlatformRoleColumns = (
                   <Building className="h-4 w-4 text-dynamic-green" />
                   <div>
                     <div className="font-medium">Workspace Creator</div>
-                    <div className="text-dynamic-muted-foreground text-xs">
+                    <div className="text-xs text-dynamic-muted-foreground">
                       Can create new workspaces
                     </div>
                   </div>
@@ -556,7 +556,7 @@ export const getPlatformRoleColumns = (
                 <Users className="h-4 w-4" />
                 <div>
                   <div className="font-medium">Clear All Permissions</div>
-                  <div className="text-dynamic-muted-foreground text-xs">
+                  <div className="text-xs text-dynamic-muted-foreground">
                     Remove all permissions (Member only)
                   </div>
                 </div>

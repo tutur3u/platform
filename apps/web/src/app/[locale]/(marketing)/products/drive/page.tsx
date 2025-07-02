@@ -96,7 +96,7 @@ export default function DriveProductPage() {
         <Badge variant="secondary" className="mb-4">
           Coming Soon
         </Badge>
-        <h1 className="mb-4 font-bold text-4xl">Cloud Storage Solution</h1>
+        <h1 className="mb-4 text-4xl font-bold">Cloud Storage Solution</h1>
         <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
           Secure, scalable, and efficient cloud storage for your business.
           Store, share, and manage files with enterprise-grade security and
@@ -117,7 +117,7 @@ export default function DriveProductPage() {
         <Card className="border-primary bg-primary/5 p-8">
           <div className="mx-auto flex max-w-4xl flex-col items-center gap-4 text-center">
             <ShieldCheck className="h-12 w-12 text-primary" />
-            <h2 className="font-bold text-2xl">Enterprise-Grade Security</h2>
+            <h2 className="text-2xl font-bold">Enterprise-Grade Security</h2>
             <p className="text-muted-foreground">
               Your data is protected with end-to-end encryption, advanced access
               controls, and compliance with industry security standards.
@@ -128,7 +128,7 @@ export default function DriveProductPage() {
 
       {/* Features Grid */}
       <section className="mb-24">
-        <h2 className="mb-12 text-center font-bold text-3xl">
+        <h2 className="mb-12 text-center text-3xl font-bold">
           Powerful Features
         </h2>
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -136,7 +136,7 @@ export default function DriveProductPage() {
             <Card key={feature.title} className="p-6">
               <div className="mb-4 flex items-center gap-3">
                 <div className="text-primary">{feature.icon}</div>
-                <h3 className="font-semibold text-xl">{feature.title}</h3>
+                <h3 className="text-xl font-semibold">{feature.title}</h3>
               </div>
               <p className="text-muted-foreground">{feature.description}</p>
             </Card>
@@ -146,12 +146,12 @@ export default function DriveProductPage() {
 
       {/* Use Cases */}
       <section className="mb-24">
-        <h2 className="mb-12 text-center font-bold text-3xl">Use Cases</h2>
+        <h2 className="mb-12 text-center text-3xl font-bold">Use Cases</h2>
         <div className="grid gap-8 md:grid-cols-3">
           {useCases.map((useCase) => (
             <Card key={useCase.title} className="p-6">
               <HardDrive className="mb-4 h-8 w-8 text-primary" />
-              <h3 className="mb-4 font-semibold text-xl">{useCase.title}</h3>
+              <h3 className="mb-4 text-xl font-semibold">{useCase.title}</h3>
               <ul className="space-y-2 text-muted-foreground">
                 {useCase.items.map((item) => (
                   <li key={item} className="flex items-center gap-2">
@@ -169,9 +169,9 @@ export default function DriveProductPage() {
       <section className="mb-24">
         <Card className="overflow-hidden">
           <div className="grid md:grid-cols-2">
-            <div className="flex flex-col justify-center gap-4 border-border border-b p-8 md:border-r md:border-b-0">
+            <div className="flex flex-col justify-center gap-4 border-b border-border p-8 md:border-r md:border-b-0">
               <Cloud className="h-8 w-8 text-primary" />
-              <h3 className="font-bold text-2xl">Cloud-Native</h3>
+              <h3 className="text-2xl font-bold">Cloud-Native</h3>
               <p className="text-muted-foreground">
                 Built for the cloud with automatic backups, scalable storage,
                 and always-on availability.
@@ -179,7 +179,7 @@ export default function DriveProductPage() {
             </div>
             <div className="flex flex-col justify-center gap-4 p-8">
               <RefreshCcw className="h-8 w-8 text-primary" />
-              <h3 className="font-bold text-2xl">Seamless Sync</h3>
+              <h3 className="text-2xl font-bold">Seamless Sync</h3>
               <p className="text-muted-foreground">
                 Keep your files in sync across all devices with real-time
                 updates and offline access.
@@ -191,13 +191,13 @@ export default function DriveProductPage() {
 
       {/* Additional Features Section */}
       <section className="mb-24">
-        <h2 className="mb-12 text-center font-bold text-3xl">
+        <h2 className="mb-12 text-center text-3xl font-bold">
           Collaboration Tools
         </h2>
         <div className="grid gap-6 md:grid-cols-2">
           <Card className="p-6">
             <Users className="mb-4 h-8 w-8 text-primary" />
-            <h3 className="mb-2 font-bold text-xl">Team Workspace</h3>
+            <h3 className="mb-2 text-xl font-bold">Team Workspace</h3>
             <p className="text-muted-foreground">
               Create shared spaces for teams to collaborate on files and
               projects efficiently.
@@ -205,7 +205,7 @@ export default function DriveProductPage() {
           </Card>
           <Card className="p-6">
             <Copy className="mb-4 h-8 w-8 text-primary" />
-            <h3 className="mb-2 font-bold text-xl">File Management</h3>
+            <h3 className="mb-2 text-xl font-bold">File Management</h3>
             <p className="text-muted-foreground">
               Advanced file management with custom metadata, tags, and automated
               workflows.

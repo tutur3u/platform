@@ -12,7 +12,7 @@ export default async function Login() {
     <div className="relative flex h-full w-full flex-col items-center justify-center p-8">
       <Link
         href="/"
-        className="group absolute top-8 left-8 flex items-center rounded-md bg-btn-background px-4 py-2 text-foreground text-sm no-underline hover:bg-btn-background-hover"
+        className="bg-btn-background hover:bg-btn-background-hover group absolute top-8 left-8 flex items-center rounded-md px-4 py-2 text-sm text-foreground no-underline"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -24,7 +24,7 @@ export default async function Login() {
           strokeWidth="2"
           strokeLinecap="round"
           strokeLinejoin="round"
-          className="group-hover:-translate-x-1 mr-2 h-4 w-4 transition-transform"
+          className="mr-2 h-4 w-4 transition-transform group-hover:-translate-x-1"
         >
           <polyline points="15 18 9 12 15 6" />
         </svg>{' '}
@@ -48,7 +48,7 @@ export default async function Login() {
         </Suspense>
 
         <Separator className="mt-2" />
-        <div className="text-center font-semibold text-foreground/50 text-sm">
+        <div className="text-center text-sm font-semibold text-foreground/50">
           {t('auth.notice-p1')}{' '}
           <Link
             href="https://tuturuuu.com/terms"

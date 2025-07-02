@@ -57,7 +57,7 @@ export default function MarketingPage() {
   }, []);
 
   return (
-    <div className="-mt-[53px] relative flex w-screen flex-col items-center overflow-x-hidden p-4 md:p-8 lg:p-16">
+    <div className="relative -mt-[53px] flex w-screen flex-col items-center overflow-x-hidden p-4 md:p-8 lg:p-16">
       <FloatingElements />
       <HeroSection />
       <StatsSection />

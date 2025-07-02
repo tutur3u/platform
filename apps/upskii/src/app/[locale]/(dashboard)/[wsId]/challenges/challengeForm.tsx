@@ -351,7 +351,7 @@ export default function ChallengeForm({
                     <CardTitle>
                       {t('judging-criteria.judging-criteria')}
                     </CardTitle>
-                    <CardDescription className="text-muted-foreground text-sm">
+                    <CardDescription className="text-sm text-muted-foreground">
                       {t('judging-criteria.judging-criteria-description')}
                     </CardDescription>
                   </div>
@@ -377,7 +377,7 @@ export default function ChallengeForm({
                           <CardContent className="p-4">
                             <div className="mb-3 flex items-center justify-between">
                               <div className="flex items-center gap-2">
-                                <h4 className="font-medium text-sm">
+                                <h4 className="text-sm font-medium">
                                   {t('judging-criteria.criteria')} {index + 1}
                                 </h4>
                                 <TooltipProvider>
@@ -464,7 +464,7 @@ export default function ChallengeForm({
                         </Card>
                       ))
                     ) : (
-                      <p className="text-muted-foreground text-sm">
+                      <p className="text-sm text-muted-foreground">
                         {t('judging-criteria.no-criteria')}
                       </p>
                     )}
@@ -477,7 +477,7 @@ export default function ChallengeForm({
               <Card>
                 <CardHeader>
                   <CardTitle>{t('security.security')}</CardTitle>
-                  <CardDescription className="text-muted-foreground text-sm">
+                  <CardDescription className="text-sm text-muted-foreground">
                     {t('security.security-description')}
                   </CardDescription>
                 </CardHeader>
@@ -562,7 +562,7 @@ export default function ChallengeForm({
                   </div>
 
                   <div className="mt-4 space-y-4 rounded-lg border p-4">
-                    <h3 className="font-medium text-base">
+                    <h3 className="text-base font-medium">
                       Challenge Administration
                     </h3>
                     <FormField
@@ -827,7 +827,7 @@ export default function ChallengeForm({
               <Card>
                 <CardHeader>
                   <CardTitle>{t('duration.duration')}</CardTitle>
-                  <CardDescription className="text-muted-foreground text-sm">
+                  <CardDescription className="text-sm text-muted-foreground">
                     {t('duration.duration-description')}
                   </CardDescription>
                 </CardHeader>
@@ -844,7 +844,7 @@ export default function ChallengeForm({
                           </FormControl>
 
                           <div className="flex flex-col gap-2">
-                            <div className="font-medium text-sm">
+                            <div className="text-sm font-medium">
                               {t('duration.common-duration')}
                             </div>
                             <div className="flex flex-wrap gap-2">
@@ -905,7 +905,7 @@ export default function ChallengeForm({
               <Card>
                 <CardHeader>
                   <CardTitle>{t('schedule.schedule')}</CardTitle>
-                  <p className="text-muted-foreground text-sm">
+                  <p className="text-sm text-muted-foreground">
                     {t('schedule.schedule-description')}
                   </p>
                 </CardHeader>
@@ -913,11 +913,11 @@ export default function ChallengeForm({
                   <div className="mb-6 rounded-md border border-dashed p-4">
                     <div className="mb-2 flex items-center">
                       <CalendarIcon className="mr-2 h-4 w-4 text-muted-foreground" />
-                      <h3 className="font-medium text-sm">
+                      <h3 className="text-sm font-medium">
                         {t('schedule.timeline-recommendation')}
                       </h3>
                     </div>
-                    <p className="text-muted-foreground text-xs">
+                    <p className="text-xs text-muted-foreground">
                       {t('schedule.timeline-recommendation-description')}
                     </p>
                   </div>

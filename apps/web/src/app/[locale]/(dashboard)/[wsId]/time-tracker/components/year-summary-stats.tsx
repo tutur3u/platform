@@ -91,11 +91,11 @@ export function YearSummaryStats({
               <Calendar className="h-4 w-4 text-amber-600" />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="font-medium text-muted-foreground text-xs">
+              <p className="text-xs font-medium text-muted-foreground">
                 Total This Year
               </p>
               <p
-                className="truncate font-bold text-lg"
+                className="truncate text-lg font-bold"
                 title={formatDuration(additionalStats.totalYearTime)}
               >
                 {formatDuration(additionalStats.totalYearTime)}
@@ -112,10 +112,10 @@ export function YearSummaryStats({
               <TrendingUp className="h-4 w-4 text-emerald-600" />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="font-medium text-muted-foreground text-xs">
+              <p className="text-xs font-medium text-muted-foreground">
                 Active Days
               </p>
-              <p className="truncate font-bold text-lg">
+              <p className="truncate text-lg font-bold">
                 {additionalStats.activeDays}
               </p>
             </div>
@@ -130,11 +130,11 @@ export function YearSummaryStats({
               <Clock className="h-4 w-4 text-violet-600" />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="font-medium text-muted-foreground text-xs">
+              <p className="text-xs font-medium text-muted-foreground">
                 Daily Average
               </p>
               <p
-                className="truncate font-bold text-lg"
+                className="truncate text-lg font-bold"
                 title={formatDuration(additionalStats.avgDailyTime)}
               >
                 {formatDuration(additionalStats.avgDailyTime)}
@@ -151,10 +151,10 @@ export function YearSummaryStats({
               <Zap className="h-4 w-4 text-rose-600" />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="font-medium text-muted-foreground text-xs">
+              <p className="text-xs font-medium text-muted-foreground">
                 Longest Streak
               </p>
-              <p className="truncate font-bold text-lg">
+              <p className="truncate text-lg font-bold">
                 {additionalStats.longestStreak} days
               </p>
             </div>
@@ -169,11 +169,11 @@ export function YearSummaryStats({
               <Settings className="h-4 w-4 text-indigo-600" />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="font-medium text-muted-foreground text-xs">
+              <p className="text-xs font-medium text-muted-foreground">
                 Most Productive
               </p>
               <p
-                className="truncate font-bold text-sm"
+                className="truncate text-sm font-bold"
                 title={additionalStats.mostProductiveDay?.date}
               >
                 {additionalStats.mostProductiveDay

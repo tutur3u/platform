@@ -143,7 +143,7 @@ export function TaskForm({ listId, onTaskCreated }: Props) {
           'hover:text-gray-800 dark:hover:text-gray-200',
           'hover:bg-gradient-to-r hover:from-gray-50 hover:to-gray-100',
           'dark:hover:from-gray-900 dark:hover:to-gray-800',
-          'rounded-lg border border-gray-300 border-dashed dark:border-gray-700',
+          'rounded-lg border border-dashed border-gray-300 dark:border-gray-700',
           'hover:border-gray-400 dark:hover:border-gray-600',
           'transition-all duration-200'
         )}
@@ -191,7 +191,7 @@ export function TaskForm({ listId, onTaskCreated }: Props) {
 
           {/* Quick Priority Selection */}
           <div className="space-y-2">
-            <Label className="font-medium text-xs">Priority</Label>
+            <Label className="text-xs font-medium">Priority</Label>
             <div className="flex flex-wrap gap-2">
               {[
                 { value: '0', label: 'None', icon: null },
@@ -221,7 +221,7 @@ export function TaskForm({ listId, onTaskCreated }: Props) {
           {/* Quick Assignee Selection */}
           {members.length > 0 && (
             <div className="space-y-2">
-              <Label className="font-medium text-xs">Quick Assign</Label>
+              <Label className="text-xs font-medium">Quick Assign</Label>
               <div className="flex flex-wrap gap-2">
                 {members.map((member: any) => (
                   <Button
@@ -251,7 +251,7 @@ export function TaskForm({ listId, onTaskCreated }: Props) {
             type="button"
             variant="ghost"
             size="sm"
-            className="h-8 px-3 text-gray-600 text-xs dark:text-gray-400"
+            className="h-8 px-3 text-xs text-gray-600 dark:text-gray-400"
             onClick={() => setIsExpanded(!isExpanded)}
           >
             {isExpanded ? 'Hide' : 'Show'} advanced options
@@ -262,7 +262,7 @@ export function TaskForm({ listId, onTaskCreated }: Props) {
             <div className="space-y-4 border-t">
               {/* Description */}
               <div className="space-y-2">
-                <Label className="font-medium text-xs">Description</Label>
+                <Label className="text-xs font-medium">Description</Label>
                 <Textarea
                   placeholder="Add a description..."
                   value={description}
@@ -275,13 +275,13 @@ export function TaskForm({ listId, onTaskCreated }: Props) {
               <div className="grid grid-cols-2 gap-3">
                 {/* Start Date */}
                 <div className="space-y-2">
-                  <Label className="font-medium text-xs">Start Date</Label>
+                  <Label className="text-xs font-medium">Start Date</Label>
                   <Popover>
                     <PopoverTrigger asChild>
                       <Button
                         variant="outline"
                         className={cn(
-                          'h-8 justify-start text-left font-normal text-xs',
+                          'h-8 justify-start text-left text-xs font-normal',
                           !startDate && 'text-muted-foreground'
                         )}
                       >
@@ -302,13 +302,13 @@ export function TaskForm({ listId, onTaskCreated }: Props) {
 
                 {/* End Date */}
                 <div className="space-y-2">
-                  <Label className="font-medium text-xs">Due Date</Label>
+                  <Label className="text-xs font-medium">Due Date</Label>
                   <Popover>
                     <PopoverTrigger asChild>
                       <Button
                         variant="outline"
                         className={cn(
-                          'h-8 justify-start text-left font-normal text-xs',
+                          'h-8 justify-start text-left text-xs font-normal',
                           !endDate && 'text-muted-foreground'
                         )}
                       >

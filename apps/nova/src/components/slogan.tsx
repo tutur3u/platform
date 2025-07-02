@@ -9,7 +9,7 @@ export default function Slogan() {
   return (
     <section className="relative overflow-hidden p-4">
       <div className="mx-auto max-w-2xl">
-        <h2 className="mb-4 font-bold text-xl md:text-3xl">{'slogan.title'}</h2>
+        <h2 className="mb-4 text-xl font-bold md:text-3xl">{'slogan.title'}</h2>
         <p className="mb-8 text-balance text-muted-foreground">
           {'slogan.description'}
         </p>

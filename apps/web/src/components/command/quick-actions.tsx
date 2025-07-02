@@ -75,14 +75,14 @@ export function QuickActions({ wsId, setOpen, setPage }: QuickActionsProps) {
   };
 
   return (
-    <div className="border-border/50 border-b pb-2">
+    <div className="border-b border-border/50 pb-2">
       {/* Collapsible Header */}
       <div className="flex items-center justify-between px-3 py-2">
         <div className="flex items-center gap-2">
-          <span className="font-medium text-foreground text-sm">
+          <span className="text-sm font-medium text-foreground">
             ⚡ Quick Actions
           </span>
-          <div className="rounded-md bg-dynamic-blue/10 px-2 py-0.5 font-medium text-dynamic-blue text-xs">
+          <div className="rounded-md bg-dynamic-blue/10 px-2 py-0.5 text-xs font-medium text-dynamic-blue">
             4 actions
           </div>
         </div>
@@ -106,12 +106,12 @@ export function QuickActions({ wsId, setOpen, setPage }: QuickActionsProps) {
         <CommandGroup>
           <CommandItem
             onSelect={handleAddTask}
-            className="group cursor-pointer border-transparent border-l-2 transition-all duration-200 hover:border-dynamic-green/30 hover:bg-gradient-to-r hover:from-dynamic-green/5 hover:to-dynamic-emerald/5"
+            className="group hover:to-dynamic-emerald/5 cursor-pointer border-l-2 border-transparent transition-all duration-200 hover:border-dynamic-green/30 hover:bg-gradient-to-r hover:from-dynamic-green/5"
           >
             <div className="flex w-full items-center gap-4">
               <div className="relative">
-                <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-dynamic-green/20 to-dynamic-emerald/20 blur-sm transition-all group-hover:blur-md" />
-                <div className="relative rounded-lg border border-dynamic-green/20 bg-gradient-to-br from-dynamic-green/10 to-dynamic-emerald/10 p-2.5">
+                <div className="to-dynamic-emerald/20 absolute inset-0 rounded-lg bg-gradient-to-br from-dynamic-green/20 blur-sm transition-all group-hover:blur-md" />
+                <div className="to-dynamic-emerald/10 relative rounded-lg border border-dynamic-green/20 bg-gradient-to-br from-dynamic-green/10 p-2.5">
                   <PlusCircle className="h-5 w-5 text-dynamic-green" />
                 </div>
               </div>
@@ -119,11 +119,11 @@ export function QuickActions({ wsId, setOpen, setPage }: QuickActionsProps) {
                 <span className="font-semibold text-foreground transition-colors group-hover:text-dynamic-green">
                   Add new task
                 </span>
-                <span className="text-muted-foreground text-xs">
+                <span className="text-xs text-muted-foreground">
                   Create a task in any board and list
                 </span>
               </div>
-              <div className="text-dynamic-green/60 text-xs opacity-0 transition-opacity group-hover:opacity-100">
+              <div className="text-xs text-dynamic-green/60 opacity-0 transition-opacity group-hover:opacity-100">
                 Press Enter
               </div>
             </div>
@@ -131,7 +131,7 @@ export function QuickActions({ wsId, setOpen, setPage }: QuickActionsProps) {
 
           <CommandItem
             onSelect={handleQuickTimeTracker}
-            className="group cursor-pointer border-transparent border-l-2 transition-all duration-200 hover:border-dynamic-purple/30 hover:bg-gradient-to-r hover:from-dynamic-purple/5 hover:to-dynamic-pink/5"
+            className="group cursor-pointer border-l-2 border-transparent transition-all duration-200 hover:border-dynamic-purple/30 hover:bg-gradient-to-r hover:from-dynamic-purple/5 hover:to-dynamic-pink/5"
           >
             <div className="flex w-full items-center gap-4">
               <div className="relative">
@@ -148,19 +148,19 @@ export function QuickActions({ wsId, setOpen, setPage }: QuickActionsProps) {
                   {isPeakHour && (
                     <div className="flex items-center gap-1 rounded-md bg-amber-100 px-1.5 py-0.5 dark:bg-amber-900/30">
                       <Brain className="h-3 w-3 text-amber-600 dark:text-amber-400" />
-                      <span className="font-medium text-amber-700 text-xs dark:text-amber-300">
+                      <span className="text-xs font-medium text-amber-700 dark:text-amber-300">
                         Peak Time
                       </span>
                     </div>
                   )}
                 </div>
-                <span className="text-muted-foreground text-xs">
+                <span className="text-xs text-muted-foreground">
                   {isPeakHour
                     ? 'Perfect timing for deep focus work'
                     : 'Start tracking time instantly'}
                 </span>
               </div>
-              <div className="text-dynamic-purple/60 text-xs opacity-0 transition-opacity group-hover:opacity-100">
+              <div className="text-xs text-dynamic-purple/60 opacity-0 transition-opacity group-hover:opacity-100">
                 Fast start
               </div>
             </div>
@@ -168,7 +168,7 @@ export function QuickActions({ wsId, setOpen, setPage }: QuickActionsProps) {
 
           <CommandItem
             onSelect={handleTimeTracker}
-            className="group cursor-pointer border-transparent border-l-2 transition-all duration-200 hover:border-dynamic-blue/30 hover:bg-gradient-to-r hover:from-dynamic-blue/5 hover:to-dynamic-purple/5"
+            className="group cursor-pointer border-l-2 border-transparent transition-all duration-200 hover:border-dynamic-blue/30 hover:bg-gradient-to-r hover:from-dynamic-blue/5 hover:to-dynamic-purple/5"
           >
             <div className="flex w-full items-center gap-4">
               <div className="relative">
@@ -184,16 +184,16 @@ export function QuickActions({ wsId, setOpen, setPage }: QuickActionsProps) {
                   </span>
                   <div className="flex items-center gap-1 rounded-md bg-blue-100 px-1.5 py-0.5 dark:bg-blue-900/30">
                     <TrendingUp className="h-3 w-3 text-blue-600 dark:text-blue-400" />
-                    <span className="font-medium text-blue-700 text-xs dark:text-blue-300">
+                    <span className="text-xs font-medium text-blue-700 dark:text-blue-300">
                       Analytics
                     </span>
                   </div>
                 </div>
-                <span className="text-muted-foreground text-xs">
+                <span className="text-xs text-muted-foreground">
                   Advanced time tracking with focus scores & insights
                 </span>
               </div>
-              <div className="text-dynamic-blue/60 text-xs opacity-0 transition-opacity group-hover:opacity-100">
+              <div className="text-xs text-dynamic-blue/60 opacity-0 transition-opacity group-hover:opacity-100">
                 Navigate
               </div>
             </div>
@@ -201,7 +201,7 @@ export function QuickActions({ wsId, setOpen, setPage }: QuickActionsProps) {
 
           <CommandItem
             onSelect={handleCalendar}
-            className="group cursor-pointer border-transparent border-l-2 transition-all duration-200 hover:border-dynamic-orange/30 hover:bg-gradient-to-r hover:from-dynamic-orange/5 hover:to-dynamic-pink/5"
+            className="group cursor-pointer border-l-2 border-transparent transition-all duration-200 hover:border-dynamic-orange/30 hover:bg-gradient-to-r hover:from-dynamic-orange/5 hover:to-dynamic-pink/5"
           >
             <div className="flex w-full items-center gap-4">
               <div className="relative">
@@ -214,11 +214,11 @@ export function QuickActions({ wsId, setOpen, setPage }: QuickActionsProps) {
                 <span className="font-semibold text-foreground transition-colors group-hover:text-dynamic-orange">
                   Calendar
                 </span>
-                <span className="text-muted-foreground text-xs">
+                <span className="text-xs text-muted-foreground">
                   View events and manage your schedule
                 </span>
               </div>
-              <div className="text-dynamic-orange/60 text-xs opacity-0 transition-opacity group-hover:opacity-100">
+              <div className="text-xs text-dynamic-orange/60 opacity-0 transition-opacity group-hover:opacity-100">
                 Navigate
               </div>
             </div>

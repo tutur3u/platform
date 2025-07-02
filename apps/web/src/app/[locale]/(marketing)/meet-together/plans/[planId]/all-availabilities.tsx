@@ -46,7 +46,7 @@ export default function AllAvailabilities({
                 width: `calc(100% / ${totalUserCount})`,
               }}
               className={`h-full ${
-                i < totalUserCount ? 'border-foreground/50 border-r' : ''
+                i < totalUserCount ? 'border-r border-foreground/50' : ''
               }`}
             >
               <div

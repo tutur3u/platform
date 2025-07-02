@@ -43,28 +43,28 @@ export function Countdown({ target, onComplete, className }: CountdownProps) {
   }, [target, onComplete]);
 
   return (
-    <div className={`flex gap-2 font-medium text-sm ${className}`}>
+    <div className={`flex gap-2 text-sm font-medium ${className}`}>
       <div className="flex flex-col items-center">
-        <span className="font-bold text-lg">{timeLeft?.days ?? 0}</span>
-        <span className="text-muted-foreground text-xs">days</span>
+        <span className="text-lg font-bold">{timeLeft?.days ?? 0}</span>
+        <span className="text-xs text-muted-foreground">days</span>
       </div>
       <div className="flex flex-col items-center">
-        <span className="font-bold text-lg">
+        <span className="text-lg font-bold">
           {String(timeLeft?.hours ?? 0).padStart(2, '0')}
         </span>
-        <span className="text-muted-foreground text-xs">hrs</span>
+        <span className="text-xs text-muted-foreground">hrs</span>
       </div>
       <div className="flex flex-col items-center">
-        <span className="font-bold text-lg">
+        <span className="text-lg font-bold">
           {String(timeLeft?.minutes ?? 0).padStart(2, '0')}
         </span>
-        <span className="text-muted-foreground text-xs">min</span>
+        <span className="text-xs text-muted-foreground">min</span>
       </div>
       <div className="flex flex-col items-center">
-        <span className="font-bold text-lg">
+        <span className="text-lg font-bold">
           {String(timeLeft?.seconds ?? 0).padStart(2, '0')}
         </span>
-        <span className="text-muted-foreground text-xs">sec</span>
+        <span className="text-xs text-muted-foreground">sec</span>
       </div>
     </div>
   );

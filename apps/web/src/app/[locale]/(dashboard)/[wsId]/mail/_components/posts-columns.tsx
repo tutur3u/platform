@@ -25,7 +25,7 @@ const CellWrapper = ({
   return (
     <div
       className={cn(
-        'h-full w-full cursor-pointer rounded-md px-2 py-1.5 transition-colors',
+        'w-full h-full cursor-pointer px-2 py-1.5 rounded-md transition-colors',
         isSelected ? 'bg-primary/10 text-primary' : 'hover:bg-muted/50'
       )}
     >

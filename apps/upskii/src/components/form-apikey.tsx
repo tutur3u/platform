@@ -164,7 +164,7 @@ export default function ApiKeyInput({
             control={form.control}
             name="apiKey"
             render={({ field }) => (
-              <FormItem className="w-full md:min-w-max md:max-w-lg">
+              <FormItem className="w-full md:max-w-lg md:min-w-max">
                 <div className="relative">
                   <FormControl>
                     <Input
@@ -178,7 +178,7 @@ export default function ApiKeyInput({
                   <button
                     tabIndex={-1}
                     type="button"
-                    className="-translate-y-1/2 absolute top-1/2 right-3 text-muted-foreground"
+                    className="absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground"
                     onClick={() => setShowApiKey(!showApiKey)}
                   >
                     {showApiKey ? (

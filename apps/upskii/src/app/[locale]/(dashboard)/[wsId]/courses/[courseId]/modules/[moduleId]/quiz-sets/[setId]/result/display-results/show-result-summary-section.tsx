@@ -70,7 +70,7 @@ export default function ShowResultSummarySection({
             <CheckCircle className="h-8 w-8 text-dynamic-green" />
           </div>
         </div>
-        <h1 className="font-bold text-3xl text-primary">
+        <h1 className="text-3xl font-bold text-primary">
           {t('results.quiz-completed') || 'Quiz Completed!'}
         </h1>
         <p className="text-secondary-foreground">{quizMeta.setName}</p>
@@ -87,7 +87,7 @@ export default function ShowResultSummarySection({
         <CardContent className="space-y-4">
           <div className="text-center">
             <div
-              className={`font-bold text-4xl ${getScoreColor(scorePercentage)}`}
+              className={`text-4xl font-bold ${getScoreColor(scorePercentage)}`}
             >
               {submitResult.totalScore} / {submitResult.maxPossibleScore}
             </div>
@@ -101,7 +101,7 @@ export default function ShowResultSummarySection({
 
           <Progress value={scorePercentage} className="h-3" />
 
-          <div className="flex justify-between text-secondary-foreground text-sm">
+          <div className="flex justify-between text-sm text-secondary-foreground">
             <span>0%</span>
             <span>50%</span>
             <span>100%</span>
@@ -118,10 +118,10 @@ export default function ShowResultSummarySection({
                 <Target className="h-4 w-4 text-dynamic-purple" />
               </div>
               <div>
-                <p className="font-medium text-primary text-sm">
+                <p className="text-sm font-medium text-primary">
                   {t('results.attempt') || 'Attempt'}
                 </p>
-                <p className="text-secondary-foreground text-sm">
+                <p className="text-sm text-secondary-foreground">
                   #{submitResult.attemptNumber} {t('results.of') || 'of'}{' '}
                   {quizMeta.attemptLimit ??
                     (t('results.unlimited') || 'Unlimited')}
@@ -135,10 +135,10 @@ export default function ShowResultSummarySection({
                   <RotateCcw className="h-4 w-4 text-purple-600" />
                 </div>
                 <div>
-                  <p className="font-medium text-primary text-sm">
+                  <p className="text-sm font-medium text-primary">
                     {t('results.attempts-remaining') || 'Attempts Remaining'}
                   </p>
-                  <p className="text-secondary-foreground text-sm">
+                  <p className="text-sm text-secondary-foreground">
                     {attemptsRemaining} {t('results.left') || 'left'}
                   </p>
                 </div>
@@ -161,7 +161,7 @@ export default function ShowResultSummarySection({
                     ? t('results.keep-practicing') || 'Keep Practicing!'
                     : t('results.needs-improvement') || 'Needs Improvement'}
             </h3>
-            <p className="text-secondary-foreground text-sm">
+            <p className="text-sm text-secondary-foreground">
               {scorePercentage >= 90
                 ? t('results.outstanding-performance') ||
                   'Outstanding performance! You have mastered this material.'
@@ -197,7 +197,7 @@ export default function ShowResultSummarySection({
       </div>
 
       {/* Additional Info */}
-      <div className="space-y-1 text-center text-muted-foreground text-sm">
+      <div className="space-y-1 text-center text-sm text-muted-foreground">
         {quizMeta.completedAt && (
           <p>
             {t('results.quiz-completed-at') || 'Quiz completed at'}{' '}

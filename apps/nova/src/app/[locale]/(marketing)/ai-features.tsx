@@ -63,7 +63,7 @@ export default function AiFeatures() {
             <Bot className="h-4 w-4" />
             {t('ai-capabilities')}
           </Badge>
-          <h2 className="mb-4 font-bold text-3xl md:text-4xl">
+          <h2 className="mb-4 text-3xl font-bold md:text-4xl">
             {t('ai-capabilities-subtitle')}
           </h2>
           <p className="mx-auto max-w-2xl text-muted-foreground">
@@ -92,7 +92,7 @@ export default function AiFeatures() {
                         {feature.icon}
                       </div>
                       <h3 className="mb-1 font-semibold">{feature.title}</h3>
-                      <p className="text-muted-foreground text-sm">
+                      <p className="text-sm text-muted-foreground">
                         {feature.description}
                       </p>
                     </div>
@@ -115,7 +115,7 @@ export default function AiFeatures() {
 
             {/* Decorative elements */}
             <motion.div
-              className="-top-12 -right-12 absolute h-24 w-24"
+              className="absolute -top-12 -right-12 h-24 w-24"
               animate={{
                 scale: [1, 1.1, 1],
                 rotate: [0, 90, 0],
@@ -126,7 +126,7 @@ export default function AiFeatures() {
             </motion.div>
 
             <motion.div
-              className="-bottom-8 -left-8 absolute h-32 w-32"
+              className="absolute -bottom-8 -left-8 h-32 w-32"
               animate={{
                 scale: [1, 1.2, 1],
                 rotate: [0, -90, 0],
@@ -150,14 +150,14 @@ export default function AiFeatures() {
               <Wand2 className="h-6 w-6" />
             </div>
             <div>
-              <h3 className="font-bold text-xl">{t('magic-commands')}</h3>
+              <h3 className="text-xl font-bold">{t('magic-commands')}</h3>
               <p className="text-muted-foreground">
                 {t('magic-commands-description')}
               </p>
             </div>
           </div>
 
-          <div className="mt-6 grid gap-4 text-muted-foreground text-sm sm:grid-cols-3">
+          <div className="mt-6 grid gap-4 text-sm text-muted-foreground sm:grid-cols-3">
             {[
               'commands.story' as const,
               'commands.analyze' as const,

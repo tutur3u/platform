@@ -104,7 +104,7 @@ export default function ClientQuizzes({
           ) : (
             <>
               <div className="quiz-question">
-                <h3 className="font-semibold text-lg">
+                <h3 className="text-lg font-semibold">
                   {quiz?.question || '...'}
                 </h3>
                 <Separator className="my-2" />

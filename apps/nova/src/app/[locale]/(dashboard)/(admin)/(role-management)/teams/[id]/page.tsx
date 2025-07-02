@@ -33,7 +33,7 @@ export default async function TeamDetailsPage({ params }: Props) {
               <ArrowLeft className="h-4 w-4" />
             </Link>
           </Button>
-          <h1 className="font-bold text-2xl tracking-tight">
+          <h1 className="text-2xl font-bold tracking-tight">
             {t('teams.plural')}
           </h1>
         </div>

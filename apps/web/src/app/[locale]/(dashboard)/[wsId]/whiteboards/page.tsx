@@ -54,7 +54,7 @@ export default async function WhiteboardsPage({
         {/* Header */}
         <div className="flex justify-between">
           <div className="space-y-2">
-            <h1 className="font-bold text-3xl tracking-tight">
+            <h1 className="text-3xl font-bold tracking-tight">
               {t('whiteboards')}
             </h1>
             <p className="text-muted-foreground">

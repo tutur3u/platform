@@ -72,7 +72,7 @@ export function DataTablePagination<TData>({
       )}
     >
       {count != undefined && count > 0 ? (
-        <div className="flex-none text-muted-foreground text-sm">
+        <div className="flex-none text-sm text-muted-foreground">
           {/* {locale === 'vi' || locale === 'vi-VN' ? t('common.selected') : null}{' '} */}
           {/* <span className="text-primary font-semibold">
             {table ? table.getFilteredSelectedRowModel().rows.length : 0}
@@ -94,7 +94,7 @@ export function DataTablePagination<TData>({
 
       <div className="flex flex-wrap items-center justify-center gap-2 text-center md:gap-4 lg:gap-8">
         <div className="hidden items-center space-x-2 md:flex">
-          <p className="font-medium text-sm">
+          <p className="text-sm font-medium">
             {t?.('common.rows-per-page') ?? 'Rows per page'}
           </p>
           <Select
@@ -124,7 +124,7 @@ export function DataTablePagination<TData>({
             </SelectContent>
           </Select>
         </div>
-        <div className="w-fit text-muted-foreground text-sm">
+        <div className="w-fit text-sm text-muted-foreground">
           {t?.('common.page') ?? 'Page'}{' '}
           <span className="font-semibold text-primary">
             {isPageOutOfRange

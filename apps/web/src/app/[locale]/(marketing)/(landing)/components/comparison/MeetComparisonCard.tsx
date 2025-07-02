@@ -45,12 +45,12 @@ export function MeetComparisonCard() {
           </div>
         </div>
         <div className="rounded-xl border p-5 shadow-md transition-all duration-300 hover:shadow-lg">
-          <div className="mb-4 flex items-center gap-2 border-dynamic-light-green/30 border-b pb-3">
+          <div className="mb-4 flex items-center gap-2 border-b border-dynamic-light-green/30 pb-3">
             <Video className="h-5 w-5 text-dynamic-green" />
             <h4 className="font-medium">TuMeet</h4>
           </div>
           <div className="mb-3 flex aspect-video items-center justify-center rounded-md border border-dynamic-light-green/30 bg-calendar-bg-green">
-            <div className="text-dynamic-green text-xs">
+            <div className="text-xs text-dynamic-green">
               {t('ai_enhanced_video_conference')}
             </div>
           </div>

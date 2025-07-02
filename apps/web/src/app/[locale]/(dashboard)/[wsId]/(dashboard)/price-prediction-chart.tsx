@@ -172,12 +172,12 @@ const PricePredictionChart = ({ data }: { data: AuroraForecast }) => {
           <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
             <Card className="transition-all duration-200 hover:shadow-md">
               <CardContent className="pt-6">
-                <h3 className="font-medium text-muted-foreground text-sm">
+                <h3 className="text-sm font-medium text-muted-foreground">
                   {t('aurora.trend')}
                 </h3>
                 <div className="mt-2">
                   <div
-                    className={`flex items-center gap-2 font-bold text-2xl ${
+                    className={`flex items-center gap-2 text-2xl font-bold ${
                       insights.trendSlope > 0
                         ? 'text-success'
                         : 'text-destructive'
@@ -186,7 +186,7 @@ const PricePredictionChart = ({ data }: { data: AuroraForecast }) => {
                     {insights.trendSlope > 0 ? '↗' : '↘'}{' '}
                     <div className="flex flex-col">
                       <span>{Math.abs(insights.trendSlope).toFixed(2)}</span>
-                      <span className="font-normal text-muted-foreground text-sm">
+                      <span className="text-sm font-normal text-muted-foreground">
                         {t('aurora.slope')}
                       </span>
                     </div>
@@ -197,11 +197,11 @@ const PricePredictionChart = ({ data }: { data: AuroraForecast }) => {
 
             <Card className="transition-all duration-200 hover:shadow-md">
               <CardContent className="pt-6">
-                <h3 className="font-medium text-muted-foreground text-sm">
+                <h3 className="text-sm font-medium text-muted-foreground">
                   {t('aurora.volatility')}
                 </h3>
                 <div className="mt-2">
-                  <div className="font-bold text-2xl">
+                  <div className="text-2xl font-bold">
                     {formatCurrency(insights.volatility)}
                   </div>
                   <div className="mt-2 flex items-center gap-2">
@@ -215,7 +215,7 @@ const PricePredictionChart = ({ data }: { data: AuroraForecast }) => {
                         backgroundColor: colors.info,
                       }}
                     />
-                    <span className="text-muted-foreground text-sm">
+                    <span className="text-sm text-muted-foreground">
                       {formatPercentage(insights.volatility / insights.average)}{' '}
                       {t('aurora.relative')}
                     </span>
@@ -226,12 +226,12 @@ const PricePredictionChart = ({ data }: { data: AuroraForecast }) => {
 
             <Card className="transition-all duration-200 hover:shadow-md">
               <CardContent className="pt-6">
-                <h3 className="font-medium text-muted-foreground text-sm">
+                <h3 className="text-sm font-medium text-muted-foreground">
                   {t('aurora.prediction_insights')}
                 </h3>
                 <div className="mt-2 space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground text-sm">
+                    <span className="text-sm text-muted-foreground">
                       {t('aurora.high')}
                     </span>
                     <div className="flex items-center gap-2">
@@ -242,13 +242,13 @@ const PricePredictionChart = ({ data }: { data: AuroraForecast }) => {
                           backgroundColor: colors.success,
                         }}
                       />
-                      <span className="font-medium text-success">
+                      <span className="text-success font-medium">
                         {formatCurrency(insights.high)}
                       </span>
                     </div>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground text-sm">
+                    <span className="text-sm text-muted-foreground">
                       {t('aurora.low')}
                     </span>
                     <div className="flex items-center gap-2">
@@ -265,7 +265,7 @@ const PricePredictionChart = ({ data }: { data: AuroraForecast }) => {
                     </div>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground text-sm">
+                    <span className="text-sm text-muted-foreground">
                       {t('aurora.average')}
                     </span>
                     <div className="flex items-center gap-2">

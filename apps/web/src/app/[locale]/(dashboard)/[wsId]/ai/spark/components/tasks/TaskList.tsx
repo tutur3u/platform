@@ -90,11 +90,11 @@ export function TaskList({ tasks, selectedDate }: TaskListProps) {
                       )}
                     </div>
                     {task.description && (
-                      <p className="text-muted-foreground text-sm">
+                      <p className="text-sm text-muted-foreground">
                         {task.description}
                       </p>
                     )}
-                    <div className="mt-2 flex flex-wrap items-center gap-4 text-muted-foreground text-xs">
+                    <div className="mt-2 flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
                       {task.estimatedHours && (
                         <div className="flex items-center gap-1">
                           <Timer className="h-3 w-3" />

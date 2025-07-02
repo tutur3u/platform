@@ -22,7 +22,7 @@ export default async function Page({
   return (
     <div className="container mx-auto p-6">
       <div className="mb-8">
-        <h1 className="font-bold text-3xl">{t('title')}</h1>
+        <h1 className="text-3xl font-bold">{t('title')}</h1>
         <p className="mt-2 text-muted-foreground">{t('description')}</p>
       </div>
 

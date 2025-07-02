@@ -34,7 +34,7 @@ export function CommonFooter({ t, devMode }: { t: any; devMode: boolean }) {
               alt="logo"
               className="h-12 w-12"
             />
-            <div className="font-semibold text-4xl">Tuturuuu</div>
+            <div className="text-4xl font-semibold">Tuturuuu</div>
           </Link>
 
           <div className="flex gap-8">
@@ -105,98 +105,98 @@ export function CommonFooter({ t, devMode }: { t: any; devMode: boolean }) {
 
         <div className="flex flex-none flex-col flex-wrap items-center gap-4 md:flex-row md:items-start md:gap-16 lg:gap-32">
           <div className="grid gap-1 md:items-start">
-            <div className="mb-2 font-bold text-lg md:w-fit md:text-xl">
+            <div className="mb-2 text-lg font-bold md:w-fit md:text-xl">
               {t('common.resources')}
             </div>
             <Link
               href={`${TUTURUUU_URL}/blog`}
-              className="text-foreground/80 text-sm hover:text-foreground hover:underline md:w-fit"
+              className="text-sm text-foreground/80 hover:text-foreground hover:underline md:w-fit"
             >
               {t('common.blog')}
             </Link>
             <Link
               href={`${TUTURUUU_URL}/meet-together`}
-              className="text-foreground/80 text-sm hover:text-foreground hover:underline md:w-fit"
+              className="text-sm text-foreground/80 hover:text-foreground hover:underline md:w-fit"
             >
               {t('common.meet-together')}
             </Link>
             <Link
               href={`${TUTURUUU_URL}/qr-generator`}
-              className="text-foreground/80 text-sm hover:text-foreground hover:underline md:w-fit"
+              className="text-sm text-foreground/80 hover:text-foreground hover:underline md:w-fit"
             >
               {t('common.qr_generator')}
             </Link>
             <Link
               href={`${TUTURUUU_URL}/branding`}
-              className="text-foreground/80 text-sm hover:text-foreground hover:underline md:w-fit"
+              className="text-sm text-foreground/80 hover:text-foreground hover:underline md:w-fit"
             >
               {t('common.branding')}
             </Link>
           </div>
 
           <div className="grid gap-1 md:items-start">
-            <div className="mb-2 font-bold text-lg md:w-fit md:text-xl">
+            <div className="mb-2 text-lg font-bold md:w-fit md:text-xl">
               {t('common.company')}
             </div>
             <Link
               href={`${TUTURUUU_URL}/about`}
-              className="text-foreground/80 text-sm hover:text-foreground hover:underline md:w-fit"
+              className="text-sm text-foreground/80 hover:text-foreground hover:underline md:w-fit"
             >
               {t('common.about')}
             </Link>
             <Link
               href={`${TUTURUUU_URL}/contact`}
-              className="text-foreground/80 text-sm hover:text-foreground hover:underline md:w-fit"
+              className="text-sm text-foreground/80 hover:text-foreground hover:underline md:w-fit"
             >
               {t('common.contact')}
             </Link>
             <Link
               href={`${TUTURUUU_URL}/pricing`}
-              className="text-foreground/80 text-sm hover:text-foreground hover:underline md:w-fit"
+              className="text-sm text-foreground/80 hover:text-foreground hover:underline md:w-fit"
             >
               {t('common.pricing')}
             </Link>
           </div>
 
           <div className="grid gap-1 md:items-start">
-            <div className="mb-2 font-bold text-lg md:w-fit md:text-xl">
+            <div className="mb-2 text-lg font-bold md:w-fit md:text-xl">
               {t('common.legal')}
             </div>
             <Link
               href={`${TUTURUUU_URL}/security`}
-              className="text-foreground/80 text-sm hover:text-foreground hover:underline md:w-fit"
+              className="text-sm text-foreground/80 hover:text-foreground hover:underline md:w-fit"
             >
               {t('common.security')}
             </Link>
             <Link
               href={`${TUTURUUU_URL}/terms`}
-              className="text-foreground/80 text-sm hover:text-foreground hover:underline md:w-fit"
+              className="text-sm text-foreground/80 hover:text-foreground hover:underline md:w-fit"
             >
               {t('common.terms')}
             </Link>
             <Link
               href={`${TUTURUUU_URL}/privacy`}
-              className="text-foreground/80 text-sm hover:text-foreground hover:underline md:w-fit"
+              className="text-sm text-foreground/80 hover:text-foreground hover:underline md:w-fit"
             >
               {t('common.privacy')}
             </Link>
           </div>
 
           <div className="grid gap-1 md:items-start">
-            <div className="mb-2 font-bold text-lg md:w-fit md:text-xl">
+            <div className="mb-2 text-lg font-bold md:w-fit md:text-xl">
               {t('common.developers')}
             </div>
             <Link
               href="https://docs.tuturuuu.com"
               target="_blank"
-              className="text-foreground/80 text-sm hover:text-foreground hover:underline md:w-fit"
+              className="text-sm text-foreground/80 hover:text-foreground hover:underline md:w-fit"
             >
               {t('common.documentation')}
             </Link>
             <Link
               href="https://github.com/tutur3u/platform"
               target="_blank"
-              className="text-foreground/80 text-sm hover:text-foreground hover:underline md:w-fit"
+              className="text-sm text-foreground/80 hover:text-foreground hover:underline md:w-fit"
             >
               {t('common.open-source')}
             </Link>
@@ -205,7 +205,7 @@ export function CommonFooter({ t, devMode }: { t: any; devMode: boolean }) {
       </div>
 
       <Separator className="mt-8 bg-foreground/5" />
-      <div className="text-balance p-4 text-center text-sm opacity-80 md:px-32 xl:px-64">
+      <div className="p-4 text-center text-sm text-balance opacity-80 md:px-32 xl:px-64">
         {t('common.copyright')}
       </div>
     </div>

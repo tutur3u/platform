@@ -63,8 +63,8 @@ export default async function CurrentPlanCard() {
           >
             {t('free-plan')}
           </Badge>
-          <p className="font-bold text-3xl">$0</p>
-          <p className="text-muted-foreground text-sm">{t('per-month')}</p>
+          <p className="text-3xl font-bold">$0</p>
+          <p className="text-sm text-muted-foreground">{t('per-month')}</p>
         </div>
 
         {/* Usage Statistics */}
@@ -98,11 +98,11 @@ export default async function CurrentPlanCard() {
 
         {/* Upgrade Preview */}
         <div className="rounded-lg border bg-gradient-to-r from-purple-50 to-blue-50 p-4 dark:from-purple-950/20 dark:to-blue-950/20">
-          <p className="mb-2 font-medium text-muted-foreground text-xs">
+          <p className="mb-2 text-xs font-medium text-muted-foreground">
             Next tier: {t('pro-plan')}
           </p>
-          <p className="font-bold text-lg">$6/{t('per-month')}</p>
-          <p className="mt-1 text-muted-foreground text-xs">
+          <p className="text-lg font-bold">$6/{t('per-month')}</p>
+          <p className="mt-1 text-xs text-muted-foreground">
             Unlimited meetings, advanced AI features
           </p>
         </div>

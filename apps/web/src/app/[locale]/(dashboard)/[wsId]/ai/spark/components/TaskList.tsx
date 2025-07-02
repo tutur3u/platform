@@ -56,7 +56,7 @@ export function TaskList({ tasks, selectedDate }: TaskListProps) {
             <p className="text-center text-muted-foreground">
               No tasks planned for this month
             </p>
-            <p className="text-center text-muted-foreground text-sm">
+            <p className="text-center text-sm text-muted-foreground">
               Select a different month to view tasks
             </p>
           </div>
@@ -100,10 +100,10 @@ export function TaskList({ tasks, selectedDate }: TaskListProps) {
                             <div className="space-y-2">
                               <div className="flex items-start justify-between gap-4">
                                 <div className="space-y-1">
-                                  <h5 className="font-medium leading-none">
+                                  <h5 className="leading-none font-medium">
                                     {task.title}
                                   </h5>
-                                  <p className="text-muted-foreground text-sm">
+                                  <p className="text-sm text-muted-foreground">
                                     {task.description}
                                   </p>
                                   <div className="flex items-center gap-2 pt-2">

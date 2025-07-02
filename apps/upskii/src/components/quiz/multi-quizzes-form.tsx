@@ -255,7 +255,7 @@ export default function MultiQuizzesForm({
       <div className="mx-auto max-w-6xl">
         {/* Header */}
         <div className="mb-8 text-center">
-          <h1 className="mb-2 bg-gradient-to-r from-dynamic-purple to-dynamic-red bg-clip-text font-bold text-3xl text-transparent">
+          <h1 className="mb-2 bg-gradient-to-r from-dynamic-purple to-dynamic-red bg-clip-text text-3xl font-bold text-transparent">
             {data && data.length > 0
               ? t('form.edit-title')
               : t('form.create-title')}
@@ -347,7 +347,7 @@ export default function MultiQuizzesForm({
             <div className="flex justify-center pt-1 pb-14">
               <Button
                 type="submit"
-                className="w-full border border-dynamic-purple bg-dynamic-purple/20 px-12 py-6 font-semibold text-dynamic-light-purple text-lg shadow-lg transition-all duration-200 hover:bg-dynamic-purple/60 hover:text-primary hover:shadow-xl md:w-auto md:px-20"
+                className="w-full border border-dynamic-purple bg-dynamic-purple/20 px-12 py-6 text-lg font-semibold text-dynamic-light-purple shadow-lg transition-all duration-200 hover:bg-dynamic-purple/60 hover:text-primary hover:shadow-xl md:w-auto md:px-20"
                 disabled={disabled}
               >
                 {isSubmitting ? (

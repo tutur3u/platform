@@ -217,7 +217,7 @@ Response Time: Within 2 business days
   }, []);
 
   return (
-    <main className="container relative space-y-16 py-24">
+    <main className="relative container space-y-16 py-24">
       {/* Hero Section */}
       <motion.section
         initial={{ opacity: 0, y: 20 }}
@@ -228,10 +228,10 @@ Response Time: Within 2 business days
         <Badge variant="secondary" className="mb-6">
           Legal Documentation
         </Badge>
-        <h1 className="mb-6 text-balance font-bold text-5xl text-foreground">
+        <h1 className="mb-6 text-5xl font-bold text-balance text-foreground">
           Terms of Service
         </h1>
-        <p className="mx-auto max-w-2xl text-foreground/80 text-lg">
+        <p className="mx-auto max-w-2xl text-lg text-foreground/80">
           Effective Date:{' '}
           {new Date(
             // February 27, 2025
@@ -254,12 +254,12 @@ Response Time: Within 2 business days
         >
           <div className="sticky top-24">
             <Card className="p-6">
-              <h2 className="mb-4 flex items-center font-semibold text-lg">
+              <h2 className="mb-4 flex items-center text-lg font-semibold">
                 <FileText className="mr-2 h-5 w-5 text-primary" />
                 Table of Contents
               </h2>
 
-              <div className="mb-3 flex items-center text-muted-foreground text-xs">
+              <div className="mb-3 flex items-center text-xs text-muted-foreground">
                 <Clock className="mr-1 h-3 w-3" />
                 <span>Last updated: February 27, 2025</span>
               </div>
@@ -279,7 +279,7 @@ Response Time: Within 2 business days
                       }`}
                     >
                       <div className="flex items-center">
-                        <span className="mr-2 w-5 text-primary/70 text-xs">
+                        <span className="mr-2 w-5 text-xs text-primary/70">
                           {item.number.toString().padStart(2, '0')}
                         </span>
                         {item.title}
@@ -311,10 +311,10 @@ Response Time: Within 2 business days
           <Card className="bg-primary/5 p-6">
             <div className="mb-4 flex items-center gap-3">
               <AlertCircle className="h-6 w-6 text-primary" />
-              <h2 className="font-semibold text-lg">Key Points Summary</h2>
+              <h2 className="text-lg font-semibold">Key Points Summary</h2>
             </div>
 
-            <p className="mb-4 text-muted-foreground text-sm">
+            <p className="mb-4 text-sm text-muted-foreground">
               This summary provides a quick overview of the key terms but does
               not replace the full agreement below.
             </p>
@@ -369,15 +369,15 @@ Response Time: Within 2 business days
                     <div className="rounded-lg bg-primary/10 p-2 text-primary transition-transform duration-300 group-hover:scale-110 group-hover:bg-primary/20">
                       {section.icon}
                     </div>
-                    <h2 className="font-semibold text-2xl">{section.title}</h2>
+                    <h2 className="text-2xl font-semibold">{section.title}</h2>
                   </div>
-                  <div className="prose prose-gray dark:prose-invert max-w-none text-card-foreground">
+                  <div className="prose max-w-none text-card-foreground prose-gray dark:prose-invert">
                     <MemoizedReactMarkdown>
                       {section.content}
                     </MemoizedReactMarkdown>
                   </div>
                 </div>
-                <div className="bg-muted/50 px-8 py-3 text-muted-foreground text-xs">
+                <div className="bg-muted/50 px-8 py-3 text-xs text-muted-foreground">
                   <div className="flex justify-between">
                     <span>
                       Section {index + 1} of {sections.length}
@@ -409,7 +409,7 @@ Response Time: Within 2 business days
         transition={{ duration: 0.6, delay: 0.4 }}
         className="pt-12 text-center"
       >
-        <p className="mx-auto max-w-2xl text-muted-foreground text-sm">
+        <p className="mx-auto max-w-2xl text-sm text-muted-foreground">
           These Terms of Service constitute a legally binding agreement between
           you and Tuturuuu. If you have any questions about these Terms, please
           contact our legal department.

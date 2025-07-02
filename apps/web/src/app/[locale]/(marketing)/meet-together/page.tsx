@@ -22,7 +22,7 @@ export default async function MeetTogetherPage() {
     <div className="flex w-full flex-col items-center">
       <div className="container mx-auto mt-8 flex max-w-6xl flex-col gap-6 px-3 py-16 lg:gap-14 lg:py-24">
         <div className="flex flex-col items-center">
-          <h1 className="mx-auto mb-2 text-balance text-center font-bold text-2xl text-foreground leading-tight! tracking-tight md:text-4xl lg:text-6xl">
+          <h1 className="mx-auto mb-2 text-center text-2xl leading-tight! font-bold tracking-tight text-balance text-foreground md:text-4xl lg:text-6xl">
             {t('headline-p1')}{' '}
             <GradientHeadline>{t('headline-p2')}</GradientHeadline>.
           </h1>
@@ -32,7 +32,7 @@ export default async function MeetTogetherPage() {
       <Separator className="mt-8 mb-4 md:mt-16" />
 
       <div className="flex w-full flex-col items-center justify-center p-4 pb-8 text-foreground">
-        <h2 className="text-center font-bold text-2xl">{t('your_plans')}</h2>
+        <h2 className="text-center text-2xl font-bold">{t('your_plans')}</h2>
 
         {plans?.length > 0 ? (
           <div className="mt-4 grid w-full max-w-6xl grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -47,7 +47,7 @@ export default async function MeetTogetherPage() {
                     {plan.name}
                   </h3>
                   {plan.start_time && (
-                    <div className="rounded bg-foreground px-2 py-0.5 font-semibold text-background text-sm">
+                    <div className="rounded bg-foreground px-2 py-0.5 text-sm font-semibold text-background">
                       GMT
                       {Intl.NumberFormat('en-US', {
                         signDisplay: 'always',

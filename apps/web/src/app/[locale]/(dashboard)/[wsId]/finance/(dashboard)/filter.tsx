@@ -93,7 +93,7 @@ export function Filter({ className }: { className: string }) {
       )}
     >
       <div className="flex flex-col gap-2">
-        <h2 className="font-semibold text-lg">Filter by</h2>
+        <h2 className="text-lg font-semibold">Filter by</h2>
         <Select value={view} onValueChange={(value) => setView(value)}>
           <SelectTrigger className="w-full lg:min-w-48">
             <SelectValue placeholder="Filter by" />

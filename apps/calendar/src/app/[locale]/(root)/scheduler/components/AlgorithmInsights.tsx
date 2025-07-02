@@ -255,7 +255,7 @@ export function AlgorithmInsights({
                       {consideration.impact} impact
                     </Badge>
                   </div>
-                  <p className="text-muted-foreground text-sm">
+                  <p className="text-sm text-muted-foreground">
                     {consideration.description}
                   </p>
                 </div>
@@ -277,32 +277,32 @@ export function AlgorithmInsights({
           {/* Overview Stats */}
           <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
             <div className="text-center">
-              <div className="font-bold text-2xl text-dynamic-blue">
+              <div className="text-2xl font-bold text-dynamic-blue">
                 {metrics.scheduledTasks}/{metrics.totalTasks}
               </div>
-              <div className="text-muted-foreground text-sm">
+              <div className="text-sm text-muted-foreground">
                 Tasks Scheduled
               </div>
             </div>
             <div className="text-center">
-              <div className="font-bold text-2xl text-dynamic-green">
+              <div className="text-2xl font-bold text-dynamic-green">
                 {metrics.scheduledDuration.toFixed(1)}h
               </div>
-              <div className="text-muted-foreground text-sm">
+              <div className="text-sm text-muted-foreground">
                 Time Scheduled
               </div>
             </div>
             <div className="text-center">
-              <div className="font-bold text-2xl text-dynamic-orange">
+              <div className="text-2xl font-bold text-dynamic-orange">
                 {metrics.splitTasks}
               </div>
-              <div className="text-muted-foreground text-sm">Split Tasks</div>
+              <div className="text-sm text-muted-foreground">Split Tasks</div>
             </div>
             <div className="text-center">
-              <div className="font-bold text-2xl text-dynamic-purple">
+              <div className="text-2xl font-bold text-dynamic-purple">
                 {metrics.utilizationRate.toFixed(0)}%
               </div>
-              <div className="text-muted-foreground text-sm">Utilization</div>
+              <div className="text-sm text-muted-foreground">Utilization</div>
             </div>
           </div>
 

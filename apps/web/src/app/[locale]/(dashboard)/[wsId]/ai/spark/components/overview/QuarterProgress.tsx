@@ -31,7 +31,7 @@ export function QuarterProgress({
         <span>
           Q{quarter.quarter}: {quarter.focus}
         </span>
-        <span className="text-muted-foreground text-xs">
+        <span className="text-xs text-muted-foreground">
           {completedTasks}/{totalTasks} tasks
         </span>
       </div>

@@ -191,7 +191,7 @@ export function SessionTable({
 
     return (
       <span
-        className={`w-full flex-none items-center rounded-full px-2.5 py-0.5 font-medium text-xs ${className}`}
+        className={`w-full flex-none items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${className}`}
       >
         {/* @ts-ignore */}
         {t(`status.${formattedStatus as const}`)}
@@ -343,7 +343,7 @@ export function SessionTable({
                     className="h-24 text-center"
                   >
                     <div className="flex flex-col items-center justify-center py-4">
-                      <p className="mb-2 font-medium text-lg">
+                      <p className="mb-2 text-lg font-medium">
                         {searchQuery
                           ? `${t('empty-state.no-results')} "${searchQuery}"`
                           : t('empty-state.no-submissions')}
@@ -414,7 +414,7 @@ export function SessionTable({
                       <TableCell
                         onClick={() => router.push(`/sessions/${session.id}`)}
                       >
-                        <span className="text-muted-foreground text-sm">
+                        <span className="text-sm text-muted-foreground">
                           {session.user?.email || 'No email available'}
                         </span>
                       </TableCell>

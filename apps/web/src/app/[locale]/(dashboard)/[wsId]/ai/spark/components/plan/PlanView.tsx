@@ -204,14 +204,14 @@ export function PlanView({ yearPlan, isLoading }: PlanViewProps) {
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="font-medium text-sm">
+            <CardTitle className="text-sm font-medium">
               Learning Details
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-muted-foreground text-sm">
+                <span className="text-sm text-muted-foreground">
                   Skill Level
                 </span>
                 <Badge variant="secondary">
@@ -219,7 +219,7 @@ export function PlanView({ yearPlan, isLoading }: PlanViewProps) {
                 </Badge>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-muted-foreground text-sm">
+                <span className="text-sm text-muted-foreground">
                   Weekly Hours
                 </span>
                 <Badge variant="secondary">
@@ -227,7 +227,7 @@ export function PlanView({ yearPlan, isLoading }: PlanViewProps) {
                 </Badge>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-muted-foreground text-sm">
+                <span className="text-sm text-muted-foreground">
                   Total Hours
                 </span>
                 <Badge variant="secondary">
@@ -241,7 +241,7 @@ export function PlanView({ yearPlan, isLoading }: PlanViewProps) {
         {yearPlan.metadata.preferredSchedule && (
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="font-medium text-sm">Schedule</CardTitle>
+              <CardTitle className="text-sm font-medium">Schedule</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
@@ -268,7 +268,7 @@ export function PlanView({ yearPlan, isLoading }: PlanViewProps) {
           yearPlan.metadata.prerequisites.length > 0 && (
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="font-medium text-sm">
+                <CardTitle className="text-sm font-medium">
                   Prerequisites
                 </CardTitle>
               </CardHeader>
@@ -328,11 +328,11 @@ export function PlanView({ yearPlan, isLoading }: PlanViewProps) {
                 )}
               </div>
               {task.description && (
-                <p className="text-muted-foreground text-sm">
+                <p className="text-sm text-muted-foreground">
                   {task.description}
                 </p>
               )}
-              <div className="mt-2 flex flex-wrap items-center gap-4 text-muted-foreground text-xs">
+              <div className="mt-2 flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
                 {task.estimatedHours && (
                   <div className="flex items-center gap-1">
                     <Timer className="h-3 w-3" />
@@ -386,8 +386,8 @@ export function PlanView({ yearPlan, isLoading }: PlanViewProps) {
             <div className="flex items-center gap-2">
               <Target className="h-4 w-4 text-primary" />
               <div className="flex flex-col">
-                <span className="font-bold text-2xl">{stats.totalTasks}</span>
-                <span className="text-muted-foreground text-xs">
+                <span className="text-2xl font-bold">{stats.totalTasks}</span>
+                <span className="text-xs text-muted-foreground">
                   Total Tasks
                 </span>
               </div>
@@ -400,10 +400,10 @@ export function PlanView({ yearPlan, isLoading }: PlanViewProps) {
             <div className="flex items-center gap-2">
               <Calendar className="h-4 w-4 text-primary" />
               <div className="flex flex-col">
-                <span className="font-bold text-2xl">
+                <span className="text-2xl font-bold">
                   {stats.tasksThisMonth}
                 </span>
-                <span className="text-muted-foreground text-xs">
+                <span className="text-xs text-muted-foreground">
                   Tasks This Month
                 </span>
               </div>
@@ -416,10 +416,10 @@ export function PlanView({ yearPlan, isLoading }: PlanViewProps) {
             <div className="flex items-center gap-2">
               <Timer className="h-4 w-4 text-primary" />
               <div className="flex flex-col">
-                <span className="font-bold text-2xl">
+                <span className="text-2xl font-bold">
                   {stats.estimatedHours}h
                 </span>
-                <span className="text-muted-foreground text-xs">
+                <span className="text-xs text-muted-foreground">
                   Total Hours
                 </span>
               </div>
@@ -433,9 +433,9 @@ export function PlanView({ yearPlan, isLoading }: PlanViewProps) {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <BarChart className="h-4 w-4 text-primary" />
-                  <span className="font-medium text-sm">Completion</span>
+                  <span className="text-sm font-medium">Completion</span>
                 </div>
-                <span className="font-medium text-sm">{stats.completion}%</span>
+                <span className="text-sm font-medium">{stats.completion}%</span>
               </div>
               <Progress value={stats.completion} className="h-2" />
             </div>
@@ -509,7 +509,7 @@ export function PlanView({ yearPlan, isLoading }: PlanViewProps) {
         {/* Overview Section */}
         {yearPlan?.overview ? (
           <div className="rounded-lg border bg-card p-6">
-            <h3 className="mb-2 flex items-center gap-2 font-semibold text-lg">
+            <h3 className="mb-2 flex items-center gap-2 text-lg font-semibold">
               <Target className="h-5 w-5 text-primary" />
               Overview
             </h3>
@@ -529,7 +529,7 @@ export function PlanView({ yearPlan, isLoading }: PlanViewProps) {
           return (
             <div key={`quarter-${quarterIdx}`} className="space-y-6">
               <div className="rounded-lg border bg-card p-6">
-                <h3 className="mb-4 flex items-center gap-2 font-semibold text-lg">
+                <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold">
                   <CheckCircle2 className="h-5 w-5 text-primary" />Q
                   {quarter.quarter}: {quarter.focus}
                   {isCurrentQuarter && (
@@ -594,7 +594,7 @@ export function PlanView({ yearPlan, isLoading }: PlanViewProps) {
         {/* Recommendations Section */}
         {yearPlan?.recommendations && yearPlan.recommendations.length > 0 && (
           <div className="rounded-lg border bg-card p-6">
-            <h3 className="mb-3 flex items-center gap-2 font-semibold text-lg">
+            <h3 className="mb-3 flex items-center gap-2 text-lg font-semibold">
               <Target className="h-5 w-5 text-primary" />
               Key Recommendations
             </h3>
@@ -602,9 +602,9 @@ export function PlanView({ yearPlan, isLoading }: PlanViewProps) {
               {yearPlan.recommendations.map((recommendation, idx) => (
                 <li
                   key={`recommendation-${idx}`}
-                  className="flex items-start gap-2 rounded-md border bg-card/50 p-3 text-muted-foreground text-sm"
+                  className="flex items-start gap-2 rounded-md border bg-card/50 p-3 text-sm text-muted-foreground"
                 >
-                  <span className="mt-1 text-primary text-sm">•</span>
+                  <span className="mt-1 text-sm text-primary">•</span>
                   {recommendation}
                 </li>
               ))}
@@ -636,7 +636,7 @@ export function PlanView({ yearPlan, isLoading }: PlanViewProps) {
           </div>
         )}
 
-        <pre className="whitespace-pre-wrap rounded-lg bg-muted/50 p-4 text-sm">
+        <pre className="rounded-lg bg-muted/50 p-4 text-sm whitespace-pre-wrap">
           {JSON.stringify(yearPlan, null, 2)}
         </pre>
       </div>

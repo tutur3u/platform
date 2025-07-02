@@ -49,7 +49,7 @@ export default async function InvoiceDetailsPage({ params }: Props) {
       <div className="grid h-fit gap-4 md:grid-cols-2">
         <div className="flex h-full flex-col gap-4">
           <div className="grid h-fit gap-2 rounded-lg border p-4">
-            <div className="font-semibold text-lg">
+            <div className="text-lg font-semibold">
               {t('invoices.basic-info')}
             </div>
             <Separator />
@@ -99,7 +99,7 @@ export default async function InvoiceDetailsPage({ params }: Props) {
 
         <div className="flex h-full flex-col gap-4">
           <div className="grid h-fit gap-2 rounded-lg border p-4">
-            <div className="font-semibold text-lg">
+            <div className="text-lg font-semibold">
               {t('invoices.products')}
             </div>
             <Separator />
@@ -124,7 +124,7 @@ export default async function InvoiceDetailsPage({ params }: Props) {
           </div>
           <div className="h-fit rounded-lg border p-4">
             <div className="grid h-full content-start gap-2">
-              <div className="font-semibold text-lg">
+              <div className="text-lg font-semibold">
                 {t('workspace-inventory-tabs.promotions')}
               </div>
               <Separator />
@@ -151,7 +151,7 @@ export default async function InvoiceDetailsPage({ params }: Props) {
           </div>
           <div className="h-fit rounded-lg border p-4">
             <div className="grid h-fit content-start gap-2">
-              <div className="font-semibold text-lg">{t('invoices.note')}</div>
+              <div className="text-lg font-semibold">{t('invoices.note')}</div>
               <Separator />
               <p>{invoice.note || t('common.empty')}</p>
             </div>

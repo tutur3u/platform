@@ -102,7 +102,7 @@ export function ChatModelSelector({
 
         <div>
           <div className="flex items-center px-2 pt-3 pb-1">
-            <div className="font-semibold text-sm opacity-80">
+            <div className="text-sm font-semibold opacity-80">
               {previewModel?.provider}{' '}
             </div>
             <div className="mx-2 h-4 w-px rotate-30 bg-foreground/20" />
@@ -116,7 +116,7 @@ export function ChatModelSelector({
             {previewModel?.context != undefined && (
               <>
                 <Separator className="my-2" />
-                <div className="rounded bg-foreground px-2 py-0.5 text-center font-semibold text-background text-sm">
+                <div className="rounded bg-foreground px-2 py-0.5 text-center text-sm font-semibold text-background">
                   {Intl.NumberFormat('en-US', {
                     style: 'decimal',
                   }).format(previewModel.context)}{' '}

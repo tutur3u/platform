@@ -24,7 +24,12 @@ import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { prioritizeTasks, type Task } from '../../utils/task-prioritization';
+import { Task, prioritizeTasks } from '../../utils/task-prioritization';
+
+
+
+
+
 
 interface QuickTimeTrackerProps {
   wsId: string;
@@ -39,16 +44,17 @@ export function QuickTimeTracker({
   setOpen,
   setIsLoading,
 }: QuickTimeTrackerProps) {
+
   const [elapsedTime, setElapsedTime] = useState(0);
   const [isVisible, setIsVisible] = useState(true);
-
+  
   // Task selection state
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [taskSearchQuery, setTaskSearchQuery] = useState('');
   const [selectedBoardId, setSelectedBoardId] = useState<string>('all');
   const [showTaskDropdown, setShowTaskDropdown] = useState(false);
   const [showBoardDropdown, setShowBoardDropdown] = useState(false);
-
+  
   const router = useRouter();
   const queryClient = useQueryClient();
 
@@ -122,12 +128,10 @@ export function QuickTimeTracker({
   const { data: nextTaskData } = useQuery({
     queryKey: ['next-task-preview', wsId],
     queryFn: async () => {
-      const response = await fetch(
-        `/api/v1/workspaces/${wsId}/tasks?limit=100`
-      );
+      const response = await fetch(`/api/v1/workspaces/${wsId}/tasks?limit=100`);
       if (!response.ok) throw new Error('Failed to fetch tasks');
       const data = await response.json();
-
+      
       // Use the extracted prioritization utility
       const tasks = data.tasks || [];
       return prioritizeTasks(tasks);
@@ -140,9 +144,7 @@ export function QuickTimeTracker({
   const { data: boardsData } = useQuery({
     queryKey: ['boards-list', wsId],
     queryFn: async () => {
-      const response = await fetch(
-        `/api/v1/workspaces/${wsId}/boards-with-lists`
-      );
+      const response = await fetch(`/api/v1/workspaces/${wsId}/boards-with-lists`);
       if (!response.ok) throw new Error('Failed to fetch boards');
       const data = await response.json();
       return data.boards || [];
@@ -155,9 +157,7 @@ export function QuickTimeTracker({
   const { data: allTasksData } = useQuery({
     queryKey: ['all-tasks', wsId],
     queryFn: async () => {
-      const response = await fetch(
-        `/api/v1/workspaces/${wsId}/tasks?limit=200`
-      );
+      const response = await fetch(`/api/v1/workspaces/${wsId}/tasks?limit=200`);
       if (!response.ok) throw new Error('Failed to fetch tasks');
       const data = await response.json();
       return data.tasks || [];
@@ -169,34 +169,31 @@ export function QuickTimeTracker({
   // Filter tasks based on search query and selected board
   const filteredTasks = useMemo(() => {
     if (!allTasksData) return [];
-
+    
     let tasks = allTasksData.filter((task: Task) => !task.completed);
-
+    
     // Filter by board if not "all"
     if (selectedBoardId !== 'all') {
       tasks = tasks.filter((task: Task) => task.board_id === selectedBoardId);
     }
-
+    
     // Filter by search query
     if (taskSearchQuery.trim()) {
       const query = taskSearchQuery.toLowerCase();
-      tasks = tasks.filter(
-        (task: Task) =>
-          task.name?.toLowerCase().includes(query) ||
-          task.description?.toLowerCase().includes(query) ||
-          task.board_name?.toLowerCase().includes(query) ||
-          task.list_name?.toLowerCase().includes(query)
+      tasks = tasks.filter((task: Task) => 
+        task.name?.toLowerCase().includes(query) ||
+        task.description?.toLowerCase().includes(query) ||
+        task.board_name?.toLowerCase().includes(query) ||
+        task.list_name?.toLowerCase().includes(query)
       );
     }
-
+    
     // Sort by priority and assignment
     return tasks.sort((a: Task, b: Task) => {
       // Assigned tasks first
-      if (a.is_assigned_to_current_user && !b.is_assigned_to_current_user)
-        return -1;
-      if (!a.is_assigned_to_current_user && b.is_assigned_to_current_user)
-        return 1;
-
+      if (a.is_assigned_to_current_user && !b.is_assigned_to_current_user) return -1;
+      if (!a.is_assigned_to_current_user && b.is_assigned_to_current_user) return 1;
+      
       // Then by priority (lower number = higher priority)
       const aPriority = a.priority || 99;
       const bPriority = b.priority || 99;
@@ -304,7 +301,7 @@ export function QuickTimeTracker({
           </div>
           <div>
             <div className="font-medium">Timer Stopped!</div>
-            <div className="text-muted-foreground text-sm">
+            <div className="text-sm text-muted-foreground">
               Tracked {formatDuration(data.session.duration_seconds || 0)} for "
               {data.session.title}"
             </div>
@@ -360,7 +357,7 @@ export function QuickTimeTracker({
             </div>
             <div>
               <div className="font-medium">Timer Started!</div>
-              <div className="text-muted-foreground text-sm">
+              <div className="text-sm text-muted-foreground">
                 Tracking "{data.session.title}"
               </div>
             </div>
@@ -424,10 +421,7 @@ export function QuickTimeTracker({
 
   useEffect(() => {
     setIsLoading(
-      isLoadingSession ||
-        startMutation.isPending ||
-        stopMutation.isPending ||
-        resumeMutation.isPending
+      isLoadingSession || startMutation.isPending || stopMutation.isPending || resumeMutation.isPending
     );
   }, [
     isLoadingSession,
@@ -450,26 +444,22 @@ export function QuickTimeTracker({
 
   const startQuickTimer = async () => {
     if (!selectedTask) {
-      toast.error('Please select a task to work on');
+      toast.error("Please select a task to work on");
       return;
     }
-
+    
     setIsLoading(true);
-
+    
     try {
       // If task is unassigned, assign to current user first
-      const isUnassigned =
-        !selectedTask.assignees || selectedTask.assignees.length === 0;
-
+      const isUnassigned = !selectedTask.assignees || selectedTask.assignees.length === 0;
+      
       if (isUnassigned) {
-        const assignResponse = await fetch(
-          `/api/v1/workspaces/${wsId}/tasks/${selectedTask.id}/assign`,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ assign: true }),
-          }
-        );
+        const assignResponse = await fetch(`/api/v1/workspaces/${wsId}/tasks/${selectedTask.id}/assign`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ assign: true }),
+        });
 
         if (!assignResponse.ok) {
           throw new Error('Failed to assign task');
@@ -481,8 +471,7 @@ export function QuickTimeTracker({
       // Start session for the task
       startMutation.mutate({
         title: `Working on: ${selectedTask.name}`,
-        description:
-          selectedTask.description || `Working on: ${selectedTask.name}`,
+        description: selectedTask.description || `Working on: ${selectedTask.name}`,
         taskId: selectedTask.id,
       });
     } catch (error) {
@@ -522,18 +511,14 @@ export function QuickTimeTracker({
 
     try {
       // If task is unassigned, assign to current user first
-      const isUnassigned =
-        !nextTask.assignees || nextTask.assignees.length === 0;
-
+      const isUnassigned = !nextTask.assignees || nextTask.assignees.length === 0;
+      
       if (isUnassigned) {
-        const assignResponse = await fetch(
-          `/api/v1/workspaces/${wsId}/tasks/${nextTask.id}/assign`,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ assign: true }),
-          }
-        );
+        const assignResponse = await fetch(`/api/v1/workspaces/${wsId}/tasks/${nextTask.id}/assign`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ assign: true }),
+        });
 
         if (!assignResponse.ok) {
           throw new Error('Failed to assign task');
@@ -571,12 +556,12 @@ export function QuickTimeTracker({
 
   const handleTaskSearchChange = (value: string) => {
     setTaskSearchQuery(value);
-
+    
     // Clear selected task if search is cleared
     if (!value.trim()) {
       setSelectedTask(null);
     }
-
+    
     // Show dropdown when typing
     setShowTaskDropdown(true);
   };
@@ -594,11 +579,7 @@ export function QuickTimeTracker({
       startQuickTimer();
     } else if (e.key === 'Escape') {
       setShowTaskDropdown(false);
-    } else if (
-      e.key === 'ArrowDown' &&
-      showTaskDropdown &&
-      filteredTasks.length > 0
-    ) {
+    } else if (e.key === 'ArrowDown' && showTaskDropdown && filteredTasks.length > 0) {
       e.preventDefault();
       // Focus first task in dropdown (could implement arrow navigation)
     }
@@ -631,44 +612,34 @@ export function QuickTimeTracker({
 
   const getPriorityLabel = (priority: number | null | undefined) => {
     switch (priority) {
-      case 1:
-        return 'Urgent';
-      case 2:
-        return 'High';
-      case 3:
-        return 'Medium';
-      case 4:
-        return 'Low';
-      default:
-        return 'No Priority';
+      case 1: return 'Urgent';
+      case 2: return 'High';
+      case 3: return 'Medium';
+      case 4: return 'Low';
+      default: return 'No Priority';
     }
   };
 
   const getPriorityColor = (priority: number | null | undefined) => {
     switch (priority) {
-      case 1:
-        return 'text-red-600 bg-red-100 dark:text-red-400 dark:bg-red-900/30';
-      case 2:
-        return 'text-orange-600 bg-orange-100 dark:text-orange-400 dark:bg-orange-900/30';
-      case 3:
-        return 'text-yellow-600 bg-yellow-100 dark:text-yellow-400 dark:bg-yellow-900/30';
-      case 4:
-        return 'text-green-600 bg-green-100 dark:text-green-400 dark:bg-green-900/30';
-      default:
-        return 'text-gray-600 bg-gray-100 dark:text-gray-400 dark:bg-gray-900/30';
+      case 1: return 'text-red-600 bg-red-100 dark:text-red-400 dark:bg-red-900/30';
+      case 2: return 'text-orange-600 bg-orange-100 dark:text-orange-400 dark:bg-orange-900/30';
+      case 3: return 'text-yellow-600 bg-yellow-100 dark:text-yellow-400 dark:bg-yellow-900/30';
+      case 4: return 'text-green-600 bg-green-100 dark:text-green-400 dark:bg-green-900/30';
+      default: return 'text-gray-600 bg-gray-100 dark:text-gray-400 dark:bg-gray-900/30';
     }
   };
 
   return (
-    <CommandGroup
+      <CommandGroup
       heading="Time Tracker"
       className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-muted-foreground"
       data-quick-timer
-    >
+      >
       <div className="px-2 pb-2">
         <div className="space-y-3">
           {/* Current Session Display */}
-          {runningSession ? (
+        {runningSession ? (
             <div className="rounded-lg border border-green-200 bg-gradient-to-r from-green-50 to-emerald-50 p-4 dark:border-green-800 dark:from-green-950/50 dark:to-emerald-950/50">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -676,20 +647,20 @@ export function QuickTimeTracker({
                     <Timer className="h-4 w-4 text-white" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate font-medium text-green-900 text-sm dark:text-green-100">
+                    <p className="truncate text-sm font-medium text-green-900 dark:text-green-100">
                       {runningSession.title}
                     </p>
-                    <p className="text-green-700 text-xs dark:text-green-300">
+                    <p className="text-xs text-green-700 dark:text-green-300">
                       Running
                     </p>
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="font-bold font-mono text-green-900 text-lg dark:text-green-100">
-                    {formatTime(elapsedTime)}
+                  <p className="text-lg font-mono font-bold text-green-900 dark:text-green-100">
+                  {formatTime(elapsedTime)}
                   </p>
                 </div>
-              </div>
+                </div>
               <div className="mt-3 flex gap-2">
                 <Button
                   onClick={stopQuickTimer}
@@ -716,15 +687,15 @@ export function QuickTimeTracker({
             /* Task Selection */
             <div className="space-y-3">
               <div className="space-y-2">
-                <Label htmlFor="task-search" className="font-medium text-sm">
+                <Label htmlFor="task-search" className="text-sm font-medium">
                   Select Task
                 </Label>
-
+                
                 {/* Search Input with Board Filter */}
                 <div className="relative" data-task-dropdown>
                   <div className="flex">
                     <div className="relative flex-1">
-                      <Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
+                      <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                       <Input
                         id="task-search"
                         placeholder="Search tasks..."
@@ -732,42 +703,41 @@ export function QuickTimeTracker({
                         onChange={(e) => handleTaskSearchChange(e.target.value)}
                         onKeyDown={handleKeyDown}
                         onFocus={() => setShowTaskDropdown(true)}
-                        className="h-9 pr-4 pl-10"
+                        className="h-9 pl-10 pr-4"
                         autoFocus
                       />
                       {selectedTask && (
                         <button
                           onClick={() => {
                             setSelectedTask(null);
-                            setTaskSearchQuery('');
+                                setTaskSearchQuery('');
                           }}
-                          className="-translate-y-1/2 absolute top-1/2 right-3 text-muted-foreground hover:text-foreground"
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                         >
                           <X className="h-4 w-4" />
                         </button>
-                      )}
-                    </div>
+                )}
+              </div>
 
                     {/* Board Filter Dropdown */}
                     <div className="relative ml-2 w-32" data-board-dropdown>
                       <button
                         data-board-button
                         onClick={() => setShowBoardDropdown(!showBoardDropdown)}
-                        className="flex h-9 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                        className="flex h-9 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 hover:bg-accent"
                       >
                         <span className="truncate">
-                          {selectedBoardId === 'all'
+                          {selectedBoardId === 'all' 
                             ? 'All Boards'
-                            : boardsData?.find(
-                                (board: any) => board.id === selectedBoardId
-                              )?.name || 'All Boards'}
+                            : boardsData?.find((board: any) => board.id === selectedBoardId)?.name || 'All Boards'
+                          }
                         </span>
-                        <ChevronDown className="ml-2 h-3 w-3 flex-shrink-0 text-muted-foreground" />
+                        <ChevronDown className="ml-2 h-3 w-3 text-muted-foreground flex-shrink-0" />
                       </button>
-
+                      
                       {/* Board Dropdown */}
                       {showBoardDropdown && (
-                        <div className="absolute top-full right-0 z-50 mt-1 w-full rounded-md border bg-popover p-1 shadow-md">
+                        <div className="absolute top-full z-50 mt-1 w-full rounded-md border bg-popover p-1 shadow-md right-0">
                           <div className="max-h-32 overflow-y-auto">
                             <button
                               onClick={() => {
@@ -775,8 +745,8 @@ export function QuickTimeTracker({
                                 setShowBoardDropdown(false);
                               }}
                               className={cn(
-                                'w-full rounded-sm p-2 text-left text-sm transition-colors hover:bg-accent',
-                                selectedBoardId === 'all' && 'bg-accent'
+                                "w-full p-2 text-left hover:bg-accent transition-colors rounded-sm text-sm",
+                                selectedBoardId === 'all' && "bg-accent"
                               )}
                             >
                               All Boards
@@ -789,14 +759,12 @@ export function QuickTimeTracker({
                                   setShowBoardDropdown(false);
                                 }}
                                 className={cn(
-                                  'w-full rounded-sm p-2 text-left text-sm transition-colors hover:bg-accent',
-                                  selectedBoardId === board.id && 'bg-accent'
+                                  "w-full p-2 text-left hover:bg-accent transition-colors rounded-sm text-sm",
+                                  selectedBoardId === board.id && "bg-accent"
                                 )}
                                 title={board.name}
                               >
-                                <span className="line-clamp-1">
-                                  {board.name}
-                                </span>
+                                <span className="line-clamp-1">{board.name}</span>
                               </button>
                             ))}
                           </div>
@@ -804,44 +772,42 @@ export function QuickTimeTracker({
                       )}
                     </div>
                   </div>
-
-                  {/* Task Dropdown */}
+                  
+                                    {/* Task Dropdown */}
                   {showTaskDropdown && (
-                    <div className="absolute top-full right-0 left-0 z-50 mt-1 w-full max-w-full rounded-md border bg-popover p-1 shadow-md">
+                    <div className="absolute top-full z-50 mt-1 w-full rounded-md border bg-popover p-1 shadow-md max-w-full left-0 right-0">
                       <div className="max-h-32 overflow-y-auto">
                         {filteredTasks.length > 0 ? (
                           filteredTasks.slice(0, 12).map((task: any) => (
                             <button
                               key={task.id}
                               onClick={() => handleTaskSelect(task)}
-                              className="w-full rounded-sm p-2 text-left transition-colors hover:bg-accent"
+                              className="w-full p-2 text-left hover:bg-accent transition-colors rounded-sm"
                             >
                               <div className="flex items-center gap-2">
-                                <div className="flex h-4 w-4 flex-shrink-0 items-center justify-center rounded border border-dynamic-blue/30 bg-gradient-to-br from-dynamic-blue/20 to-dynamic-blue/10">
+                                <div className="flex h-4 w-4 items-center justify-center rounded border border-dynamic-blue/30 bg-gradient-to-br from-dynamic-blue/20 to-dynamic-blue/10 flex-shrink-0">
                                   <CheckCircle className="h-2.5 w-2.5 text-dynamic-blue" />
                                 </div>
                                 <div className="min-w-0 flex-1">
                                   <div className="flex items-center gap-1.5">
-                                    <span className="line-clamp-1 font-medium text-xs">
+                                    <span className="font-medium text-xs line-clamp-1">
                                       {task.name}
                                     </span>
                                     {task.is_assigned_to_current_user && (
-                                      <span className="inline-flex items-center rounded-full bg-blue-100 px-1.5 py-0.5 font-medium text-[10px] text-blue-800 dark:bg-blue-900/50 dark:text-blue-200">
+                                      <span className="inline-flex items-center rounded-full bg-blue-100 px-1.5 py-0.5 text-[10px] font-medium text-blue-800 dark:bg-blue-900/50 dark:text-blue-200">
                                         Assigned
                                       </span>
                                     )}
                                     {task.priority && (
-                                      <span
-                                        className={cn(
-                                          'inline-flex items-center rounded px-1 py-0.5 font-medium text-[10px]',
-                                          getPriorityColor(task.priority)
-                                        )}
-                                      >
+                                      <span className={cn(
+                                        'inline-flex items-center rounded px-1 py-0.5 text-[10px] font-medium',
+                                        getPriorityColor(task.priority)
+                                      )}>
                                         {getPriorityLabel(task.priority)}
                                       </span>
                                     )}
                                   </div>
-                                  <div className="mt-1 flex items-center gap-2">
+                                  <div className="flex items-center gap-2 mt-1">
                                     {task.board_name && (
                                       <div className="flex items-center gap-1">
                                         <MapPin className="h-2.5 w-2.5 text-muted-foreground" />
@@ -864,176 +830,153 @@ export function QuickTimeTracker({
                             </button>
                           ))
                         ) : (
-                          <div className="p-3 text-center text-muted-foreground text-xs">
-                            {taskSearchQuery
-                              ? 'No tasks found matching your search'
-                              : 'No tasks available'}
+                          <div className="p-3 text-center text-xs text-muted-foreground">
+                            {taskSearchQuery ? 'No tasks found matching your search' : 'No tasks available'}
                           </div>
                         )}
                       </div>
                     </div>
                   )}
-                </div>
-              </div>
+                    </div>
+                  </div>
 
               {/* Selected Task Display */}
               {selectedTask && (
                 <div className="rounded-lg border border-dynamic-green/30 bg-gradient-to-r from-dynamic-green/5 to-dynamic-green/3 p-3">
                   <div className="flex items-start gap-3">
-                    <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg border border-dynamic-green/30 bg-gradient-to-br from-dynamic-green/20 to-dynamic-green/10">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-dynamic-green/30 bg-gradient-to-br from-dynamic-green/20 to-dynamic-green/10 flex-shrink-0">
                       <CheckCircle className="h-4 w-4 text-dynamic-green" />
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
-                        <span className="font-semibold text-dynamic-green text-sm">
+                        <span className="text-sm font-semibold text-dynamic-green">
                           Selected Task
-                        </span>
+                      </span>
                       </div>
-                      <p className="mt-1 font-medium text-foreground text-sm">
+                      <p className="text-sm font-medium text-foreground mt-1">
                         {selectedTask.name}
                       </p>
                       {selectedTask.description && (
-                        <p className="mt-1 line-clamp-2 text-muted-foreground text-xs">
+                        <p className="text-xs text-muted-foreground line-clamp-2 mt-1">
                           {selectedTask.description}
                         </p>
                       )}
-                      <div className="mt-2 flex items-center gap-2">
+                      <div className="flex items-center gap-2 mt-2">
                         {selectedTask.priority && (
-                          <span
-                            className={cn(
-                              'inline-flex items-center rounded px-1.5 py-0.5 font-medium text-xs',
-                              getPriorityColor(selectedTask.priority)
-                            )}
-                          >
+                          <span className={cn(
+                            'inline-flex items-center rounded px-1.5 py-0.5 text-xs font-medium',
+                            getPriorityColor(selectedTask.priority)
+                          )}>
                             {getPriorityLabel(selectedTask.priority)}
-                          </span>
+                      </span>
                         )}
                         {selectedTask.board_name && selectedTask.list_name && (
                           <div className="flex items-center gap-2">
                             <div className="flex items-center gap-1">
                               <MapPin className="h-3 w-3 text-muted-foreground" />
-                              <span className="text-muted-foreground text-xs">
+                              <span className="text-xs text-muted-foreground">
                                 {selectedTask.board_name}
-                              </span>
+                      </span>
                             </div>
                             <div className="flex items-center gap-1">
                               <Tag className="h-3 w-3 text-dynamic-green" />
-                              <span className="text-dynamic-green text-xs">
+                              <span className="text-xs text-dynamic-green">
                                 {selectedTask.list_name}
-                              </span>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
+                      </span>
                   </div>
                 </div>
+                        )}
+                  </div>
+                </div>
+              </div>
+            </div>
               )}
 
               <div className="flex gap-2">
-                <Button
+            <Button
                   onClick={startQuickTimer}
                   className="flex-1"
-                  size="sm"
+              size="sm"
                   disabled={!selectedTask || startMutation.isPending}
                 >
                   <Play className="mr-2 h-3 w-3" />
                   Start Timer
-                </Button>
+            </Button>
                 <Link href={`/${wsId}/time-tracker`}>
                   <Button size="sm" variant="outline">
                     <ExternalLink className="h-3 w-3" />
                   </Button>
                 </Link>
-              </div>
+          </div>
 
               {/* Quick Actions */}
               <div className="grid grid-cols-2 gap-2">
                 {/* Continue Last Session */}
                 <button
                   onClick={continueLastSession}
-                  disabled={
-                    !recentSessions?.[0] ||
-                    runningSession ||
-                    resumeMutation.isPending
-                  }
+                  disabled={!recentSessions?.[0] || runningSession || resumeMutation.isPending}
                   className={cn(
                     'group rounded-lg border p-3 text-left transition-all duration-200',
                     recentSessions?.[0] && !runningSession
-                      ? 'border-blue-200 bg-gradient-to-br from-blue-50 to-blue-100/50 hover:shadow-blue-500/20 hover:shadow-md active:scale-[0.98] dark:border-blue-800 dark:from-blue-950/30 dark:to-blue-900/20'
+                      ? 'border-blue-200 bg-gradient-to-br from-blue-50 to-blue-100/50 hover:shadow-md hover:shadow-blue-500/20 active:scale-[0.98] dark:border-blue-800 dark:from-blue-950/30 dark:to-blue-900/20'
                       : 'cursor-not-allowed border-muted bg-muted/30 opacity-60'
                   )}
                 >
                   <div className="flex items-start gap-2">
-                    <div
-                      className={cn(
-                        'flex-shrink-0 rounded-full p-1 transition-colors',
+                    <div className={cn(
+                      'flex-shrink-0 rounded-full p-1 transition-colors',
+                      recentSessions?.[0] && !runningSession
+                        ? 'bg-blue-500/20 group-hover:bg-blue-500/30'
+                        : 'bg-muted-foreground/20'
+                    )}>
+                      <RotateCcw className={cn(
+                        'h-3 w-3 transition-transform group-hover:rotate-12',
                         recentSessions?.[0] && !runningSession
-                          ? 'bg-blue-500/20 group-hover:bg-blue-500/30'
-                          : 'bg-muted-foreground/20'
-                      )}
-                    >
-                      <RotateCcw
-                        className={cn(
-                          'h-3 w-3 transition-transform group-hover:rotate-12',
-                          recentSessions?.[0] && !runningSession
-                            ? 'text-blue-600 dark:text-blue-400'
-                            : 'text-muted-foreground'
-                        )}
-                      />
-                    </div>
+                          ? 'text-blue-600 dark:text-blue-400'
+                          : 'text-muted-foreground'
+                      )} />
+                </div>
                     <div className="min-w-0 flex-1">
-                      <p
-                        className={cn(
-                          'font-medium text-xs',
-                          recentSessions?.[0] && !runningSession
-                            ? 'text-blue-700 dark:text-blue-300'
-                            : 'text-muted-foreground'
-                        )}
-                      >
+                      <p className={cn(
+                        'text-xs font-medium',
+                        recentSessions?.[0] && !runningSession
+                          ? 'text-blue-700 dark:text-blue-300'
+                          : 'text-muted-foreground'
+                      )}>
                         Continue Last
                       </p>
                       {recentSessions?.[0] ? (
                         <>
-                          <p
-                            className="line-clamp-1 font-bold text-blue-900 text-sm dark:text-blue-100"
-                            title={recentSessions[0].title}
-                          >
+                          <p className="line-clamp-1 text-sm font-bold text-blue-900 dark:text-blue-100" title={recentSessions[0].title}>
                             {recentSessions[0].title}
                           </p>
                           {recentSessions[0].category && (
                             <div className="mt-1 flex items-center gap-1">
-                              <div
-                                className={cn(
-                                  'h-1.5 w-1.5 rounded-full',
-                                  recentSessions[0].category.color
-                                    ? `bg-dynamic-${recentSessions[0].category.color.toLowerCase()}/70`
-                                    : 'bg-blue-500/70'
-                                )}
-                              />
-                              <span className="truncate text-blue-700/80 text-xs dark:text-blue-300/80">
+                              <div className={cn(
+                                'h-1.5 w-1.5 rounded-full',
+                                recentSessions[0].category.color
+                                  ? `bg-dynamic-${recentSessions[0].category.color.toLowerCase()}/70`
+                                  : 'bg-blue-500/70'
+                              )} />
+                              <span className="truncate text-xs text-blue-700/80 dark:text-blue-300/80">
                                 {recentSessions[0].category.name}
                               </span>
-                            </div>
+              </div>
                           )}
                         </>
                       ) : (
-                        <p className="font-bold text-muted-foreground text-sm">
+                        <p className="text-sm font-bold text-muted-foreground">
                           No recent session
                         </p>
                       )}
-                    </div>
+              </div>
                   </div>
                 </button>
 
                 {/* Next Task */}
                 <button
                   onClick={startNextTask}
-                  disabled={
-                    !nextTaskData?.nextTask ||
-                    runningSession ||
-                    startMutation.isPending
-                  }
+                  disabled={!nextTaskData?.nextTask || runningSession || startMutation.isPending}
                   className={cn(
                     'group rounded-lg border p-3 text-left transition-all duration-200',
                     nextTaskData?.nextTask && !runningSession
@@ -1042,80 +985,68 @@ export function QuickTimeTracker({
                   )}
                 >
                   <div className="flex items-start gap-2">
-                    <div
-                      className={cn(
-                        'flex-shrink-0 rounded-full p-1 transition-colors',
+                    <div className={cn(
+                      'flex-shrink-0 rounded-full p-1 transition-colors',
+                      nextTaskData?.nextTask && !runningSession
+                        ? 'bg-purple-500/20 group-hover:bg-purple-500/30'
+                        : 'bg-muted-foreground/20'
+                    )}>
+                      <CheckSquare className={cn(
+                        'h-3 w-3 transition-transform group-hover:scale-110',
                         nextTaskData?.nextTask && !runningSession
-                          ? 'bg-purple-500/20 group-hover:bg-purple-500/30'
-                          : 'bg-muted-foreground/20'
-                      )}
-                    >
-                      <CheckSquare
-                        className={cn(
-                          'h-3 w-3 transition-transform group-hover:scale-110',
-                          nextTaskData?.nextTask && !runningSession
-                            ? 'text-purple-600 dark:text-purple-400'
-                            : 'text-muted-foreground'
-                        )}
-                      />
-                    </div>
+                          ? 'text-purple-600 dark:text-purple-400'
+                          : 'text-muted-foreground'
+                      )} />
+                  </div>
                     <div className="min-w-0 flex-1">
-                      <p
-                        className={cn(
-                          'font-medium text-xs',
-                          nextTaskData?.nextTask && !runningSession
-                            ? 'text-purple-700 dark:text-purple-300'
-                            : 'text-muted-foreground'
-                        )}
-                      >
+                      <p className={cn(
+                        'text-xs font-medium',
+                        nextTaskData?.nextTask && !runningSession
+                          ? 'text-purple-700 dark:text-purple-300'
+                          : 'text-muted-foreground'
+                      )}>
                         Next Task
                       </p>
                       {nextTaskData?.nextTask ? (
                         <>
-                          <p
-                            className="line-clamp-1 font-bold text-purple-900 text-sm dark:text-purple-100"
-                            title={nextTaskData.nextTask.name}
-                          >
+                          <p className="line-clamp-1 text-sm font-bold text-purple-900 dark:text-purple-100" title={nextTaskData.nextTask.name}>
                             {nextTaskData.nextTask.name}
                           </p>
                           <div className="mt-1 flex items-center gap-1">
-                            <span
-                              className={cn(
-                                'inline-flex items-center rounded px-1 py-0.5 font-medium text-xs',
-                                getPriorityColor(nextTaskData.nextTask.priority)
-                              )}
-                            >
+                            <span className={cn(
+                              'inline-flex items-center rounded px-1 py-0.5 text-xs font-medium',
+                              getPriorityColor(nextTaskData.nextTask.priority)
+                            )}>
                               {getPriorityLabel(nextTaskData.nextTask.priority)}
                             </span>
-                            {nextTaskData.nextTask
-                              .is_assigned_to_current_user ? (
-                              <span className="text-purple-600/80 text-xs dark:text-purple-400/80">
+                            {nextTaskData.nextTask.is_assigned_to_current_user ? (
+                              <span className="text-xs text-purple-600/80 dark:text-purple-400/80">
                                 • You
                               </span>
                             ) : (
-                              <span className="text-purple-600/80 text-xs dark:text-purple-400/80">
+                              <span className="text-xs text-purple-600/80 dark:text-purple-400/80">
                                 • Auto-assign
                               </span>
                             )}
-                          </div>
+                  </div>
                         </>
                       ) : (
                         <>
-                          <p className="font-bold text-muted-foreground text-sm">
+                          <p className="text-sm font-bold text-muted-foreground">
                             No tasks available
                           </p>
-                          <p className="text-muted-foreground text-xs">
+                          <p className="text-xs text-muted-foreground">
                             Create or assign tasks
                           </p>
                         </>
                       )}
-                    </div>
-                  </div>
-                </button>
+                </div>
               </div>
+                </button>
             </div>
-          )}
-        </div>
+          </div>
+        )}
+    </div>
       </div>
     </CommandGroup>
   );

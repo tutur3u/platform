@@ -26,7 +26,7 @@ export default async function Login() {
           <LoginForm />
         </Suspense>
         <Separator className="mt-2" />
-        <div className="text-center font-semibold text-foreground/50 text-sm">
+        <div className="text-center text-sm font-semibold text-foreground/50">
           {t('auth.notice-p1')}{' '}
           <Link
             href="https://tuturuuu.com/terms"

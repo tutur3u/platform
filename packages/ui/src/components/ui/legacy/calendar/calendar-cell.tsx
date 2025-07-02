@@ -35,7 +35,7 @@ const DragPreview = ({
   return (
     <div
       className={cn(
-        'absolute right-1 left-1 rounded-r-md rounded-l border-l-2 transition-colors duration-300',
+        'absolute right-1 left-1 rounded-l rounded-r-md border-l-2 transition-colors duration-300',
         'group transition-all hover:ring-1 focus:outline-none',
         'transform shadow-md', // Subtle transform during interaction
         border,
@@ -58,19 +58,19 @@ const DragPreview = ({
           'transition-opacity'
         )}
       >
-        <div className="absolute left-2 text-left font-semibold text-xs">
+        <div className="absolute left-2 text-left text-xs font-semibold">
           {format(startDate, 'h:mm a')}
         </div>
-        <div className="absolute bottom-1 left-2 text-left font-semibold text-xs">
+        <div className="absolute bottom-1 left-2 text-left text-xs font-semibold">
           {format(endDate, 'h:mm a')}
         </div>
       </div>
       <div
         className={cn(
-          'pointer-events-none absolute whitespace-nowrap rounded-md font-semibold text-xs',
+          'pointer-events-none absolute rounded-md text-xs font-semibold whitespace-nowrap',
           // More compact styling for short durations
           height < 60
-            ? '-translate-y-1/2 top-1/2 right-1 px-1 py-0.5 text-[10px]'
+            ? 'top-1/2 right-1 -translate-y-1/2 px-1 py-0.5 text-[10px]'
             : 'top-2 right-2 px-1.5 py-0.5',
           text,
           bg
@@ -621,7 +621,7 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
         id={tooltipId}
         role="tooltip"
         aria-live="polite"
-        className="pointer-events-none animate-fade-in rounded-md bg-neutral-900 px-3 py-1.5 font-medium text-white text-xs opacity-100 shadow-lg transition-opacity duration-150"
+        className="animate-fade-in pointer-events-none rounded-md bg-neutral-900 px-3 py-1.5 text-xs font-medium text-white opacity-100 shadow-lg transition-opacity duration-150"
         style={{
           position: 'fixed',
           left: tooltipPos.x,
@@ -695,7 +695,7 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
       ref={cellRef}
       className={cn(
         'calendar-cell relative transition-colors',
-        hour !== 0 && 'border-border/30 border-t',
+        hour !== 0 && 'border-t border-border/30',
         isHovering ? 'bg-muted/20' : 'hover:bg-muted/10'
       )}
       style={{
@@ -713,19 +713,19 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
       {!isDragging &&
         (showBothLabels ? (
           <>
-            <span className="absolute top-2 left-2 font-medium text-muted-foreground/70 text-xs">
+            <span className="absolute top-2 left-2 text-xs font-medium text-muted-foreground/70">
               {formatTime(hour)}
             </span>
-            <span className="absolute bottom-2 left-2 font-medium text-muted-foreground/70 text-xs">
+            <span className="absolute bottom-2 left-2 text-xs font-medium text-muted-foreground/70">
               {formatTime(hour, 30)}
             </span>
           </>
         ) : hoveredSlot === 'hour' ? (
-          <span className="absolute top-2 left-2 font-medium text-muted-foreground/70 text-xs">
+          <span className="absolute top-2 left-2 text-xs font-medium text-muted-foreground/70">
             {formatTime(hour)}
           </span>
         ) : hoveredSlot === 'half-hour' ? (
-          <span className="absolute bottom-2 left-2 font-medium text-muted-foreground/70 text-xs">
+          <span className="absolute bottom-2 left-2 text-xs font-medium text-muted-foreground/70">
             {formatTime(hour, 30)}
           </span>
         ) : null)}
@@ -768,7 +768,7 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
         tabIndex={-1}
       />
       {/* Half-hour marker */}
-      <div className="absolute top-1/2 right-0 left-0 border-border/30 border-t border-dashed" />
+      <div className="absolute top-1/2 right-0 left-0 border-t border-dashed border-border/30" />
       <button
         className="absolute inset-x-0 top-1/2 h-1/2 cursor-pointer focus:outline-none"
         onClick={() => handleCreateEvent(true)}

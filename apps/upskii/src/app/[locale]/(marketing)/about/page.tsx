@@ -46,7 +46,7 @@ function StatCard({
       <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary">
         {icon}
       </div>
-      <h3 className="mb-1 font-bold text-3xl">{value}</h3>
+      <h3 className="mb-1 text-3xl font-bold">{value}</h3>
       <p className="text-muted-foreground">{label}</p>
     </motion.div>
   );
@@ -87,8 +87,8 @@ function TeamMemberCard({
           </div>
         </div>
         <div className="p-6">
-          <h3 className="font-bold text-xl">{name}</h3>
-          <p className="mb-3 font-medium text-primary text-sm">{role}</p>
+          <h3 className="text-xl font-bold">{name}</h3>
+          <p className="mb-3 text-sm font-medium text-primary">{role}</p>
           <p className="text-muted-foreground">{bio}</p>
         </div>
       </Card>
@@ -120,7 +120,7 @@ function ValueCard({
         <div className="mb-4 inline-flex rounded-lg bg-primary/10 p-3 text-primary">
           {icon}
         </div>
-        <h3 className="mb-2 font-bold text-xl">{title}</h3>
+        <h3 className="mb-2 text-xl font-bold">{title}</h3>
         <p className="text-muted-foreground">{description}</p>
       </Card>
     </motion.div>
@@ -142,7 +142,7 @@ export default function AboutPage() {
             <InfoIcon className="mr-2 h-4 w-4" />
             {t('hero.badge')}
           </Badge>
-          <h1 className="mb-4 font-bold text-4xl tracking-tight sm:text-5xl">
+          <h1 className="mb-4 text-4xl font-bold tracking-tight sm:text-5xl">
             {t('hero.title')}
           </h1>
           <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
@@ -163,7 +163,7 @@ export default function AboutPage() {
             <div className="relative aspect-square rounded-xl border bg-primary/5 backdrop-blur-sm">
               <div className="absolute inset-0 rounded-xl bg-linear-to-br from-primary/10 via-transparent to-transparent" />
               <div className="relative flex h-full items-center justify-center p-8">
-                <div className="bg-linear-to-r from-primary via-purple-500 to-blue-500 bg-clip-text text-center font-bold text-4xl text-transparent md:text-5xl">
+                <div className="bg-linear-to-r from-primary via-purple-500 to-blue-500 bg-clip-text text-center text-4xl font-bold text-transparent md:text-5xl">
                   {t('mission-vision.slogan-1')}
                   <br />
                   {t('mission-vision.slogan-2')}
@@ -179,7 +179,7 @@ export default function AboutPage() {
             className="order-1 space-y-6 md:order-2"
           >
             <div>
-              <h2 className="mb-4 font-bold text-3xl">
+              <h2 className="mb-4 text-3xl font-bold">
                 {t('mission-vision.mission.title')}
               </h2>
               <p className="text-muted-foreground">
@@ -188,7 +188,7 @@ export default function AboutPage() {
             </div>
 
             <div>
-              <h2 className="mb-4 font-bold text-3xl">
+              <h2 className="mb-4 text-3xl font-bold">
                 {t('mission-vision.vision.title')}
               </h2>
               <p className="text-muted-foreground">
@@ -217,7 +217,7 @@ export default function AboutPage() {
       >
         <div className="rounded-xl bg-primary/5 p-12">
           <div className="mb-8 text-center">
-            <h2 className="mb-2 font-bold text-3xl">{t('impact.title')}</h2>
+            <h2 className="mb-2 text-3xl font-bold">{t('impact.title')}</h2>
             <p className="mx-auto max-w-2xl text-muted-foreground">
               {t('impact.description')}
             </p>
@@ -260,7 +260,7 @@ export default function AboutPage() {
           viewport={{ once: true }}
           className="mb-8 text-center"
         >
-          <h2 className="mb-2 font-bold text-3xl">{t('values.title')}</h2>
+          <h2 className="mb-2 text-3xl font-bold">{t('values.title')}</h2>
           <p className="mx-auto max-w-2xl text-muted-foreground">
             {t('values.description')}
           </p>
@@ -314,7 +314,7 @@ export default function AboutPage() {
           viewport={{ once: true }}
           className="mb-8 text-center"
         >
-          <h2 className="mb-2 font-bold text-3xl">{t('team.title')}</h2>
+          <h2 className="mb-2 text-3xl font-bold">{t('team.title')}</h2>
           <p className="mx-auto max-w-2xl text-muted-foreground">
             {t('team.description')}
           </p>
@@ -363,7 +363,7 @@ export default function AboutPage() {
             viewport={{ once: true }}
             className="space-y-6"
           >
-            <h2 className="font-bold text-3xl">{t('approach.title')}</h2>
+            <h2 className="text-3xl font-bold">{t('approach.title')}</h2>
             <p className="text-muted-foreground">{t('approach.description')}</p>
 
             <div className="space-y-4">
@@ -398,7 +398,7 @@ export default function AboutPage() {
                   </div>
                   <div>
                     <h3 className="font-bold">{item.title}</h3>
-                    <p className="text-muted-foreground text-sm">
+                    <p className="text-sm text-muted-foreground">
                       {item.description}
                     </p>
                   </div>
@@ -424,7 +424,7 @@ export default function AboutPage() {
                       <h3 className="font-semibold">
                         {t('approach.detail-1.title')}
                       </h3>
-                      <p className="text-muted-foreground text-sm">
+                      <p className="text-sm text-muted-foreground">
                         {t('approach.detail-1.description')}
                       </p>
                     </div>
@@ -441,7 +441,7 @@ export default function AboutPage() {
                       <h3 className="font-semibold">
                         {t('approach.detail-2.title')}
                       </h3>
-                      <p className="text-muted-foreground text-sm">
+                      <p className="text-sm text-muted-foreground">
                         {t('approach.detail-2.description')}
                       </p>
                     </div>
@@ -458,7 +458,7 @@ export default function AboutPage() {
                       <h3 className="font-semibold">
                         {t('approach.detail-3.title')}
                       </h3>
-                      <p className="text-muted-foreground text-sm">
+                      <p className="text-sm text-muted-foreground">
                         {t('approach.detail-3.description')}
                       </p>
                     </div>
@@ -479,7 +479,7 @@ export default function AboutPage() {
         className="text-center"
       >
         <div className="mx-auto max-w-3xl rounded-xl bg-primary/5 p-8">
-          <h2 className="mb-4 font-bold text-2xl">{t('cta-section.title')}</h2>
+          <h2 className="mb-4 text-2xl font-bold">{t('cta-section.title')}</h2>
           <p className="mb-6 text-muted-foreground">
             {t('cta-section.description')}
           </p>

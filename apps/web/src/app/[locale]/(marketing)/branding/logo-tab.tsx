@@ -35,7 +35,7 @@ export default function LogoTab({
         {svgLink && (
           <a
             href={svgLink}
-            className={`rounded bg-black/70 px-4 py-2 font-bold text-sm text-white/70 transition duration-300 hover:bg-black hover:text-white`}
+            className={`rounded bg-black/70 px-4 py-2 text-sm font-bold text-white/70 transition duration-300 hover:bg-black hover:text-white`}
             download
           >
             .svg
@@ -44,7 +44,7 @@ export default function LogoTab({
         {pngLink && (
           <a
             href={pngLink}
-            className={`rounded bg-black/70 px-4 py-2 font-bold text-sm text-white/70 transition duration-300 hover:bg-black hover:text-white`}
+            className={`rounded bg-black/70 px-4 py-2 text-sm font-bold text-white/70 transition duration-300 hover:bg-black hover:text-white`}
             download
           >
             .png

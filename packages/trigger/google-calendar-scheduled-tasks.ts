@@ -1,22 +1,18 @@
 import { schedules, task } from '@trigger.dev/sdk/v3';
-import {
-  getWorkspacesForSync,
+import { 
+  syncWorkspaceImmediate, 
   syncWorkspaceExtended,
-  syncWorkspaceImmediate,
+  getWorkspacesForSync 
 } from './google-calendar-sync.js';
 import 'dotenv/config';
 
 // Task for immediate sync of a single workspace
 export const googleCalendarWorkspaceImmediateSync = task({
-  id: 'google-calendar-workspace-immediate-sync',
+  id: "google-calendar-workspace-immediate-sync",
   queue: {
     concurrencyLimit: 1, // Only one sync per workspace at a time
   },
-  run: async (payload: {
-    ws_id: string;
-    access_token: string;
-    refresh_token?: string;
-  }) => {
+  run: async (payload: { ws_id: string; access_token: string; refresh_token?: string }) => {
     console.log(`[${payload.ws_id}] Starting immediate sync task`);
     return await syncWorkspaceImmediate(payload);
   },
@@ -24,15 +20,11 @@ export const googleCalendarWorkspaceImmediateSync = task({
 
 // Task for extended sync of a single workspace
 export const googleCalendarWorkspaceExtendedSync = task({
-  id: 'google-calendar-workspace-extended-sync',
+  id: "google-calendar-workspace-extended-sync",
   queue: {
     concurrencyLimit: 1, // Only one sync per workspace at a time
   },
-  run: async (payload: {
-    ws_id: string;
-    access_token: string;
-    refresh_token?: string;
-  }) => {
+  run: async (payload: { ws_id: string; access_token: string; refresh_token?: string }) => {
     console.log(`[${payload.ws_id}] Starting extended sync task`);
     return await syncWorkspaceExtended(payload);
   },
@@ -47,43 +39,37 @@ export const googleCalendarImmediateOrchestrator = schedules.task({
   },
   run: async () => {
     console.log('=== Starting immediate sync orchestrator ===');
-
+    
     try {
       const workspaces = await getWorkspacesForSync();
       console.log(`Found ${workspaces.length} workspaces to sync immediately`);
-
+      
       const results = [];
-
+      
       for (const workspace of workspaces) {
         try {
           // Trigger individual workspace sync with concurrency key
-          const handle = await googleCalendarWorkspaceImmediateSync.trigger(
-            workspace,
-            {
-              concurrencyKey: workspace.ws_id, // Each workspace gets its own queue
-            }
-          );
-
+          const handle = await googleCalendarWorkspaceImmediateSync.trigger(workspace, {
+            concurrencyKey: workspace.ws_id, // Each workspace gets its own queue
+          });
+          
           results.push({
             ws_id: workspace.ws_id,
             handle,
-            status: 'triggered',
+            status: 'triggered'
           });
-
+          
           console.log(`[${workspace.ws_id}] Immediate sync triggered`);
         } catch (error) {
-          console.error(
-            `[${workspace.ws_id}] Error triggering immediate sync:`,
-            error
-          );
+          console.error(`[${workspace.ws_id}] Error triggering immediate sync:`, error);
           results.push({
             ws_id: workspace.ws_id,
             error: error instanceof Error ? error.message : 'Unknown error',
-            status: 'failed',
+            status: 'failed'
           });
         }
       }
-
+      
       console.log('=== Immediate sync orchestrator completed ===');
       return results;
     } catch (error) {
@@ -102,43 +88,37 @@ export const googleCalendarExtendedOrchestrator = schedules.task({
   },
   run: async () => {
     console.log('=== Starting extended sync orchestrator ===');
-
+    
     try {
       const workspaces = await getWorkspacesForSync();
       console.log(`Found ${workspaces.length} workspaces to sync extended`);
-
+      
       const results = [];
-
+      
       for (const workspace of workspaces) {
         try {
           // Trigger individual workspace sync with concurrency key
-          const handle = await googleCalendarWorkspaceExtendedSync.trigger(
-            workspace,
-            {
-              concurrencyKey: workspace.ws_id, // Each workspace gets its own queue
-            }
-          );
-
+          const handle = await googleCalendarWorkspaceExtendedSync.trigger(workspace, {
+            concurrencyKey: workspace.ws_id, // Each workspace gets its own queue
+          });
+          
           results.push({
             ws_id: workspace.ws_id,
             handle,
-            status: 'triggered',
+            status: 'triggered'
           });
-
+          
           console.log(`[${workspace.ws_id}] Extended sync triggered`);
         } catch (error) {
-          console.error(
-            `[${workspace.ws_id}] Error triggering extended sync:`,
-            error
-          );
+          console.error(`[${workspace.ws_id}] Error triggering extended sync:`, error);
           results.push({
             ws_id: workspace.ws_id,
             error: error instanceof Error ? error.message : 'Unknown error',
-            status: 'failed',
+            status: 'failed'
           });
         }
       }
-
+      
       console.log('=== Extended sync orchestrator completed ===');
       return results;
     } catch (error) {
@@ -154,4 +134,4 @@ export const googleCalendarTasks = [
   googleCalendarWorkspaceExtendedSync,
   googleCalendarImmediateOrchestrator,
   googleCalendarExtendedOrchestrator,
-];
+]; 

@@ -71,7 +71,7 @@ const ListItem = React.forwardRef<
         <a
           ref={ref}
           className={cn(
-            'group relative block h-full select-none space-y-1 rounded-md p-4 leading-none no-underline outline-hidden transition-all duration-300',
+            'group relative block h-full space-y-1 rounded-md p-4 leading-none no-underline outline-hidden transition-all duration-300 select-none',
             'via-primary/10 to-primary/5 hover:bg-linear-to-br',
             'opacity-90 hover:opacity-100',
             'hover:scale-[1.02] hover:shadow-lg active:scale-[0.98]',
@@ -82,10 +82,10 @@ const ListItem = React.forwardRef<
         >
           <div className="relative">
             <div className="flex items-center gap-2">
-              <div className="text-primary transition-transform duration-300 group-hover:rotate-3 group-hover:scale-110">
+              <div className="text-primary transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3">
                 {icon}
               </div>
-              <div className="font-semibold text-sm leading-none">{title}</div>
+              <div className="text-sm leading-none font-semibold">{title}</div>
               {badge && (
                 <Badge
                   variant="secondary"
@@ -95,7 +95,7 @@ const ListItem = React.forwardRef<
                 </Badge>
               )}
             </div>
-            <p className="mt-2 line-clamp-2 text-muted-foreground text-sm leading-snug opacity-80 transition-opacity duration-300 group-hover:opacity-100">
+            <p className="mt-2 line-clamp-2 text-sm leading-snug text-muted-foreground opacity-80 transition-opacity duration-300 group-hover:opacity-100">
               {children}
             </p>
           </div>

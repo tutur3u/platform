@@ -331,7 +331,7 @@ const Chat = ({
             <ChatScrollAnchor trackVisibility={isLoading} />
           </>
         ) : noEmptyPage ? (
-          <div className="flex h-[calc(100vh-20rem)] w-full items-center justify-center font-bold text-2xl lg:text-4xl xl:text-5xl">
+          <div className="flex h-[calc(100vh-20rem)] w-full items-center justify-center text-2xl font-bold lg:text-4xl xl:text-5xl">
             {t('common.coming_soon')} ✨
           </div>
         ) : (

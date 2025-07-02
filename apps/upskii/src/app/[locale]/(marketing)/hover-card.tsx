@@ -25,7 +25,7 @@ export default function HoverCard({
       onMouseMove={handleMouseMove}
     >
       <motion.div
-        className="-inset-px pointer-events-none absolute rounded-xl opacity-0 transition duration-300 group-hover:opacity-100"
+        className="pointer-events-none absolute -inset-px rounded-xl opacity-0 transition duration-300 group-hover:opacity-100"
         style={{
           background: useMotionTemplate`
             radial-gradient(

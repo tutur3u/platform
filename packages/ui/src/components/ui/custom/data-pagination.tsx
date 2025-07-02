@@ -168,7 +168,7 @@ export function DataPagination({
 
       {/* Item Count Display */}
       {showItemCount && totalCount > 0 && (
-        <div className="text-center text-muted-foreground text-sm">
+        <div className="text-center text-sm text-muted-foreground">
           Showing {startItem} to {endItem} of {totalCount} {itemName}
         </div>
       )}

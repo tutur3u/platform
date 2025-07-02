@@ -137,7 +137,7 @@ export function ScheduleDisplay({ events, tasks }: ScheduleDisplayProps) {
       <Card className="border-0 bg-gradient-to-br from-white to-gray-50/50 shadow-lg dark:from-gray-900 dark:to-gray-800/50">
         <CardHeader className="pb-6">
           <div className="space-y-2">
-            <CardTitle className="flex items-center gap-3 font-bold text-2xl">
+            <CardTitle className="flex items-center gap-3 text-2xl font-bold">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 text-white shadow-lg">
                 <CalendarIcon className="h-5 w-5" />
               </div>
@@ -153,7 +153,7 @@ export function ScheduleDisplay({ events, tasks }: ScheduleDisplayProps) {
             <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-900/20 dark:to-purple-900/20">
               <SparklesIcon className="h-10 w-10 text-blue-500" />
             </div>
-            <h3 className="mb-3 font-semibold text-xl">
+            <h3 className="mb-3 text-xl font-semibold">
               No Schedule Generated
             </h3>
             <p className="mx-auto max-w-md text-muted-foreground">
@@ -173,14 +173,14 @@ export function ScheduleDisplay({ events, tasks }: ScheduleDisplayProps) {
     <div className="space-y-8">
       {/* Overdue Events Alert */}
       {overdueEventsList.length > 0 && (
-        <div className="flex animate-pulse-slow items-center gap-3 rounded-lg border border-red-300 bg-red-50 p-4 text-red-700 shadow-md dark:border-red-800 dark:bg-red-950/30 dark:text-red-300">
+        <div className="animate-pulse-slow flex items-center gap-3 rounded-lg border border-red-300 bg-red-50 p-4 text-red-700 shadow-md dark:border-red-800 dark:bg-red-950/30 dark:text-red-300">
           <AlertTriangleIcon className="h-6 w-6 animate-bounce text-red-500" />
           <span className="font-semibold">
             {overdueEventsList.length} overdue event
             {overdueEventsList.length > 1 ? 's' : ''} scheduled after their
             deadline!
           </span>
-          <span className="ml-auto text-red-500 text-xs">
+          <span className="ml-auto text-xs text-red-500">
             Check details below
           </span>
         </div>
@@ -189,7 +189,7 @@ export function ScheduleDisplay({ events, tasks }: ScheduleDisplayProps) {
       <Card className="border-0 bg-gradient-to-br from-white to-gray-50/50 shadow-lg dark:from-gray-900 dark:to-gray-800/50">
         <CardHeader className="pb-6">
           <div className="space-y-2">
-            <CardTitle className="flex items-center gap-3 font-bold text-2xl">
+            <CardTitle className="flex items-center gap-3 text-2xl font-bold">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 text-white shadow-lg">
                 <TrendingUpIcon className="h-5 w-5" />
               </div>
@@ -203,66 +203,66 @@ export function ScheduleDisplay({ events, tasks }: ScheduleDisplayProps) {
         <CardContent>
           <div className="grid grid-cols-2 gap-6 md:grid-cols-8">
             <div className="space-y-2 text-center">
-              <div className="bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text font-bold text-3xl text-transparent">
+              <div className="bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-3xl font-bold text-transparent">
                 {events.length}
               </div>
-              <div className="font-medium text-muted-foreground text-sm">
+              <div className="text-sm font-medium text-muted-foreground">
                 Events
               </div>
             </div>
             <div className="space-y-2 text-center">
-              <div className="bg-gradient-to-r from-green-600 to-emerald-700 bg-clip-text font-bold text-3xl text-transparent">
+              <div className="bg-gradient-to-r from-green-600 to-emerald-700 bg-clip-text text-3xl font-bold text-transparent">
                 {scheduleStats.uniqueTasks}
               </div>
-              <div className="font-medium text-muted-foreground text-sm">
+              <div className="text-sm font-medium text-muted-foreground">
                 Tasks
               </div>
             </div>
             <div className="space-y-2 text-center">
-              <div className="bg-gradient-to-r from-orange-600 to-amber-700 bg-clip-text font-bold text-3xl text-transparent">
+              <div className="bg-gradient-to-r from-orange-600 to-amber-700 bg-clip-text text-3xl font-bold text-transparent">
                 {scheduleStats.totalDuration.toFixed(1)}h
               </div>
-              <div className="font-medium text-muted-foreground text-sm">
+              <div className="text-sm font-medium text-muted-foreground">
                 Total Time
               </div>
             </div>
             <div className="space-y-2 text-center">
-              <div className="bg-gradient-to-r from-purple-600 to-pink-700 bg-clip-text font-bold text-3xl text-transparent">
+              <div className="bg-gradient-to-r from-purple-600 to-pink-700 bg-clip-text text-3xl font-bold text-transparent">
                 {scheduleStats.splitTasks}
               </div>
-              <div className="font-medium text-muted-foreground text-sm">
+              <div className="text-sm font-medium text-muted-foreground">
                 Split Tasks
               </div>
             </div>
             <div className="space-y-2 text-center">
-              <div className="bg-gradient-to-r from-red-600 to-rose-700 bg-clip-text font-bold text-3xl text-transparent">
+              <div className="bg-gradient-to-r from-red-600 to-rose-700 bg-clip-text text-3xl font-bold text-transparent">
                 {scheduleStats.priorityStats.critical || 0}
               </div>
-              <div className="font-medium text-muted-foreground text-sm">
+              <div className="text-sm font-medium text-muted-foreground">
                 Critical
               </div>
             </div>
             <div className="space-y-2 text-center">
-              <div className="bg-gradient-to-r from-orange-600 to-amber-700 bg-clip-text font-bold text-3xl text-transparent">
+              <div className="bg-gradient-to-r from-orange-600 to-amber-700 bg-clip-text text-3xl font-bold text-transparent">
                 {scheduleStats.priorityStats.high || 0}
               </div>
-              <div className="font-medium text-muted-foreground text-sm">
+              <div className="text-sm font-medium text-muted-foreground">
                 High
               </div>
             </div>
             <div className="space-y-2 text-center">
-              <div className="bg-gradient-to-r from-indigo-600 to-blue-700 bg-clip-text font-bold text-3xl text-transparent">
+              <div className="bg-gradient-to-r from-indigo-600 to-blue-700 bg-clip-text text-3xl font-bold text-transparent">
                 {scheduleStats.lockedEvents}
               </div>
-              <div className="font-medium text-muted-foreground text-sm">
+              <div className="text-sm font-medium text-muted-foreground">
                 Locked
               </div>
             </div>
             <div className="space-y-2 text-center">
-              <div className="bg-gradient-to-r from-rose-600 to-pink-700 bg-clip-text font-bold text-3xl text-transparent">
+              <div className="bg-gradient-to-r from-rose-600 to-pink-700 bg-clip-text text-3xl font-bold text-transparent">
                 {scheduleStats.daysSpanned}
               </div>
-              <div className="font-medium text-muted-foreground text-sm">
+              <div className="text-sm font-medium text-muted-foreground">
                 Days
               </div>
             </div>
@@ -274,7 +274,7 @@ export function ScheduleDisplay({ events, tasks }: ScheduleDisplayProps) {
       <Card className="border-0 bg-white shadow-lg dark:bg-gray-900">
         <CardHeader className="pb-6">
           <div className="space-y-2">
-            <CardTitle className="flex items-center gap-3 font-bold text-xl">
+            <CardTitle className="flex items-center gap-3 text-xl font-bold">
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 text-white shadow-lg">
                 <CalendarIcon className="h-4 w-4" />
               </div>
@@ -320,10 +320,10 @@ export function ScheduleDisplay({ events, tasks }: ScheduleDisplayProps) {
                           <CalendarIcon className="h-5 w-5" />
                         </div>
                         <div>
-                          <h3 className="font-bold text-lg">
+                          <h3 className="text-lg font-bold">
                             {dayDate.format('dddd, MMMM D')}
                           </h3>
-                          <p className="text-muted-foreground text-sm">
+                          <p className="text-sm text-muted-foreground">
                             {isToday
                               ? 'Today'
                               : isTomorrow
@@ -333,11 +333,11 @@ export function ScheduleDisplay({ events, tasks }: ScheduleDisplayProps) {
                         </div>
                       </div>
                       <div className="text-right">
-                        <div className="font-bold text-lg">
+                        <div className="text-lg font-bold">
                           {dayEvents.length} event
                           {dayEvents.length !== 1 ? 's' : ''}
                         </div>
-                        <div className="text-muted-foreground text-sm">
+                        <div className="text-sm text-muted-foreground">
                           {dayEvents
                             .reduce(
                               (sum, event) =>
@@ -388,7 +388,7 @@ export function ScheduleDisplay({ events, tasks }: ScheduleDisplayProps) {
                                       <h4 className="font-semibold">
                                         {event.name}
                                       </h4>
-                                      <p className="text-muted-foreground text-sm">
+                                      <p className="text-sm text-muted-foreground">
                                         {event.range.start.format('HH:mm')} -{' '}
                                         {event.range.end.format('HH:mm')} (
                                         {duration.toFixed(1)}h)
@@ -399,14 +399,14 @@ export function ScheduleDisplay({ events, tasks }: ScheduleDisplayProps) {
                                   {/* Tags */}
                                   <div className="flex flex-wrap items-center gap-2">
                                     <Badge
-                                      className={`${getCategoryColor(event.taskId)} px-2 py-1 font-semibold text-xs`}
+                                      className={`${getCategoryColor(event.taskId)} px-2 py-1 text-xs font-semibold`}
                                     >
                                       {task?.category || 'Unknown'}
                                     </Badge>
 
                                     {task && (
                                       <Badge
-                                        className={`${getPriorityColor(task.priority)} px-2 py-1 font-semibold text-xs`}
+                                        className={`${getPriorityColor(task.priority)} px-2 py-1 text-xs font-semibold`}
                                       >
                                         <span className="mr-1">
                                           {getPriorityIcon(task.priority)}
@@ -420,7 +420,7 @@ export function ScheduleDisplay({ events, tasks }: ScheduleDisplayProps) {
                                         <TooltipTrigger>
                                           <Badge
                                             variant="outline"
-                                            className="border-purple-200 bg-purple-50 px-2 py-1 font-semibold text-purple-600 text-xs dark:border-purple-800 dark:bg-purple-950/20"
+                                            className="border-purple-200 bg-purple-50 px-2 py-1 text-xs font-semibold text-purple-600 dark:border-purple-800 dark:bg-purple-950/20"
                                           >
                                             <LockIcon className="mr-1 h-3 w-3" />
                                             Locked
@@ -440,9 +440,9 @@ export function ScheduleDisplay({ events, tasks }: ScheduleDisplayProps) {
                                         <TooltipTrigger>
                                           <Badge
                                             variant="outline"
-                                            className="relative animate-pulse-slow border-red-300 bg-red-100 px-2 py-1 font-bold text-red-700 text-xs dark:border-red-800 dark:bg-red-950/30"
+                                            className="animate-pulse-slow relative border-red-300 bg-red-100 px-2 py-1 text-xs font-bold text-red-700 dark:border-red-800 dark:bg-red-950/30"
                                           >
-                                            <span className="-left-2 -translate-y-1/2 absolute top-1/2">
+                                            <span className="absolute top-1/2 -left-2 -translate-y-1/2">
                                               <AlertTriangleIcon className="h-4 w-4 animate-bounce text-red-500" />
                                             </span>
                                             <span className="ml-4">
@@ -475,7 +475,7 @@ export function ScheduleDisplay({ events, tasks }: ScheduleDisplayProps) {
                                         <TooltipTrigger>
                                           <Badge
                                             variant="outline"
-                                            className="border-blue-200 bg-blue-50 px-2 py-1 font-semibold text-blue-600 text-xs dark:border-blue-800 dark:bg-blue-950/20"
+                                            className="border-blue-200 bg-blue-50 px-2 py-1 text-xs font-semibold text-blue-600 dark:border-blue-800 dark:bg-blue-950/20"
                                           >
                                             Part {event.partNumber}/
                                             {event.totalParts}

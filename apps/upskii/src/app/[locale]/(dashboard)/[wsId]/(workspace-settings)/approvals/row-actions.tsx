@@ -175,10 +175,10 @@ export function ApprovalRowActions({
                 <BookOpenText className="h-6 w-6" />
               </div>
               <div>
-                <h3 className="font-semibold text-lg">
+                <h3 className="text-lg font-semibold">
                   {approval.workspace_name}
                 </h3>
-                <p className="text-muted-foreground text-sm">
+                <p className="text-sm text-muted-foreground">
                   Workspace ID: {approval.workspace_id}
                 </p>
               </div>
@@ -202,7 +202,7 @@ export function ApprovalRowActions({
                 <div>
                   <div className="font-medium">{approval.creator_name}</div>
                   {approval.creator_email && (
-                    <div className="text-muted-foreground text-sm">
+                    <div className="text-sm text-muted-foreground">
                       {approval.creator_email}
                     </div>
                   )}
@@ -231,7 +231,7 @@ export function ApprovalRowActions({
               </div>
               <div className="space-y-2">
                 <h4 className="font-medium">{t('timeline')}</h4>
-                <div className="space-y-1 text-muted-foreground text-sm">
+                <div className="space-y-1 text-sm text-muted-foreground">
                   <div className="flex items-center gap-2">
                     <Calendar className="h-4 w-4" />
                     <span>
@@ -266,7 +266,7 @@ export function ApprovalRowActions({
                   {approval.admin_notes}
                 </div>
                 {approval.reviewed_by_name && (
-                  <p className="text-muted-foreground text-xs">
+                  <p className="text-xs text-muted-foreground">
                     {t('notesBy', {
                       name: approval.reviewed_by_name,
                     })}

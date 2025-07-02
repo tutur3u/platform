@@ -67,7 +67,7 @@ export function TimeProgress({ startTime, endTime, className }: Props) {
         indicatorClassName={getProgressColor()}
       />
       {isClosed && (
-        <div className="mt-1 flex justify-between text-muted-foreground text-xs">
+        <div className="mt-1 flex justify-between text-xs text-muted-foreground">
           <span>Closed</span>
         </div>
       )}

@@ -40,7 +40,7 @@ export function ImpactStatsSection() {
       viewport={{ once: true }}
       className="relative text-center"
     >
-      <div className="-z-10 absolute inset-0">
+      <div className="absolute inset-0 -z-10">
         <motion.div
           animate={{
             opacity: [0.1, 0.15, 0.1],
@@ -100,7 +100,7 @@ export function ImpactStatsSection() {
             <BarChart className="h-8 w-8 text-primary transition-transform duration-300 group-hover:scale-110" />
           </motion.div>
           <motion.h2
-            className="mb-4 font-bold text-4xl text-foreground"
+            className="mb-4 text-4xl font-bold text-foreground"
             whileHover={{
               scale: 1.02,
             }}
@@ -114,13 +114,13 @@ export function ImpactStatsSection() {
                 repeat: Infinity,
                 ease: 'linear',
               }}
-              className="relative bg-linear-to-r bg-size-[200%_auto] from-primary via-purple-500 to-pink-500 bg-clip-text text-transparent"
+              className="relative bg-linear-to-r from-primary via-purple-500 to-pink-500 bg-size-[200%_auto] bg-clip-text text-transparent"
             >
               Our Growing Impact
             </motion.span>
           </motion.h2>
           <motion.p
-            className="mx-auto max-w-2xl text-foreground/60 text-lg"
+            className="mx-auto max-w-2xl text-lg text-foreground/60"
             whileHover={{
               scale: 1.01,
             }}
@@ -164,10 +164,10 @@ export function ImpactStatsSection() {
                     repeat: Infinity,
                     ease: 'linear',
                   }}
-                  className="-top-8 -right-8 absolute h-24 w-24 rounded-xl bg-linear-to-br from-purple-500/20 via-pink-500/10 to-transparent blur-2xl"
+                  className="absolute -top-8 -right-8 h-24 w-24 rounded-xl bg-linear-to-br from-purple-500/20 via-pink-500/10 to-transparent blur-2xl"
                 />
                 <motion.div
-                  className="pointer-events-none relative mb-2 font-bold text-4xl text-primary"
+                  className="pointer-events-none relative mb-2 text-4xl font-bold text-primary"
                   whileHover={{
                     scale: 1.1,
                     color: 'hsl(var(--primary))',
@@ -184,7 +184,7 @@ export function ImpactStatsSection() {
                   {stat.value}
                 </motion.div>
                 <motion.div
-                  className="pointer-events-none relative mb-1 font-medium text-foreground text-lg"
+                  className="pointer-events-none relative mb-1 text-lg font-medium text-foreground"
                   whileHover={{
                     scale: 1.05,
                     color: 'hsl(var(--primary))',
@@ -193,7 +193,7 @@ export function ImpactStatsSection() {
                   {stat.label}
                 </motion.div>
                 <motion.div
-                  className="pointer-events-none relative text-foreground/60 text-sm"
+                  className="pointer-events-none relative text-sm text-foreground/60"
                   whileHover={{
                     scale: 1.02,
                   }}

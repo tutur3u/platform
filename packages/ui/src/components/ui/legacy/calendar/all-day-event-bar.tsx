@@ -239,7 +239,7 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
                 {/* Show/hide expansion button */}
                 {hiddenCount > 0 && (
                   <div
-                    className="flex cursor-pointer items-center justify-center rounded-sm px-2 py-1 font-medium text-muted-foreground text-xs transition-colors hover:bg-muted/40"
+                    className="flex cursor-pointer items-center justify-center rounded-sm px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted/40"
                     onClick={() => toggleDateExpansion(dateKey)}
                     style={{
                       position: 'absolute',
@@ -258,7 +258,7 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
                   !shouldShowAll &&
                   dateEvents.length > MAX_EVENTS_DISPLAY && (
                     <div
-                      className="flex cursor-pointer items-center justify-center rounded-sm px-2 py-1 font-medium text-muted-foreground text-xs transition-colors hover:bg-muted/40"
+                      className="flex cursor-pointer items-center justify-center rounded-sm px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted/40"
                       onClick={() => toggleDateExpansion(dateKey)}
                       style={{
                         position: 'absolute',
@@ -321,7 +321,7 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
             <div
               key={`spanning-event-${event.id}`}
               className={cn(
-                'absolute cursor-pointer truncate rounded-sm border-l-2 px-2 py-1 font-semibold text-xs',
+                'absolute cursor-pointer truncate rounded-sm border-l-2 px-2 py-1 text-xs font-semibold',
                 bg,
                 border,
                 text

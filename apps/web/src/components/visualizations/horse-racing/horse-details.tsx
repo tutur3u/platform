@@ -47,7 +47,7 @@ export function HorseDetails({
         <CardTitle className="flex items-center justify-between text-lg">
           <span>Horse Details</span>
           {rankedCount > 0 && (
-            <Badge variant="outline" className="font-normal text-xs">
+            <Badge variant="outline" className="text-xs font-normal">
               {rankedCount} of {horses.length} ranked
             </Badge>
           )}
@@ -114,7 +114,7 @@ export function HorseDetails({
                           #{rank}
                         </Badge>
                       ) : (
-                        <span className="text-muted-foreground text-xs">
+                        <span className="text-xs text-muted-foreground">
                           Unknown
                         </span>
                       )}

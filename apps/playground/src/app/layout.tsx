@@ -37,7 +37,7 @@ export default function RootLayout({
               Tool Calling
             </Link>
           </div>
-          <h1 className="font-bold text-2xl">Playground</h1>
+          <h1 className="text-2xl font-bold">Playground</h1>
           {children}
         </div>
       </body>

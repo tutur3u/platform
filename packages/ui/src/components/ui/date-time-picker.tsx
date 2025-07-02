@@ -342,7 +342,7 @@ export function DateTimePicker({
                   </SelectContent>
                 </Select>
                 {noValidTimes && (
-                  <div className="mt-1 text-destructive text-xs">
+                  <div className="mt-1 text-xs text-destructive">
                     No valid end times available. Please select an earlier start
                     time or check your time selection.
                   </div>

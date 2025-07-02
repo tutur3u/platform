@@ -57,9 +57,9 @@ export default function UncrawledUrlsCount({ wsId }: { wsId: string }) {
       <Card className="transition-colors hover:bg-muted/50">
         <CardContent className="grid grid-cols-2 gap-4 p-6">
           <div className="space-y-1">
-            <p className="font-medium text-sm leading-none">Uncrawled URLs</p>
-            <p className="font-bold text-2xl">{uncrawledCount}</p>
-            <p className="text-muted-foreground text-xs">
+            <p className="text-sm leading-none font-medium">Uncrawled URLs</p>
+            <p className="text-2xl font-bold">{uncrawledCount}</p>
+            <p className="text-xs text-muted-foreground">
               {uncrawledCount === 0
                 ? 'All caught up!'
                 : 'Waiting to be crawled'}
@@ -68,10 +68,10 @@ export default function UncrawledUrlsCount({ wsId }: { wsId: string }) {
           <div className="space-y-1">
             <div className="flex items-center gap-2">
               <Globe className="h-4 w-4 text-muted-foreground" />
-              <p className="font-medium text-sm leading-none">Domains</p>
+              <p className="text-sm leading-none font-medium">Domains</p>
             </div>
-            <p className="font-bold text-2xl">{domainsCount}</p>
-            <p className="text-muted-foreground text-xs">
+            <p className="text-2xl font-bold">{domainsCount}</p>
+            <p className="text-xs text-muted-foreground">
               Unique domains discovered
             </p>
           </div>

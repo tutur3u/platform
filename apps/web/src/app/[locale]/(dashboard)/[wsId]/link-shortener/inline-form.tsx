@@ -139,14 +139,14 @@ export function InlineLinkShortenerForm() {
     <div className="w-full">
       <CardHeader className="pb-6">
         <CardTitle className="flex items-center gap-3">
-          <div className="rounded-lg bg-dynamic-blue/10 p-2">
+          <div className="p-2 bg-dynamic-blue/10 rounded-lg">
             <LinkIcon className="h-5 w-5 text-dynamic-blue" />
           </div>
           <div>
-            <h3 className="font-semibold text-xl">
+            <h3 className="text-xl font-semibold">
               {t('link-shortener.create')}
             </h3>
-            <p className="mt-1 font-normal text-muted-foreground text-sm">
+            <p className="text-sm text-muted-foreground font-normal mt-1">
               {t('link-shortener.create_description')}
             </p>
           </div>
@@ -158,7 +158,7 @@ export function InlineLinkShortenerForm() {
             <div className="space-y-3">
               <Label
                 htmlFor="url"
-                className="font-semibold text-foreground text-sm"
+                className="text-sm font-semibold text-foreground"
               >
                 {t('link-shortener.url_to_shorten')} *
               </Label>
@@ -170,15 +170,15 @@ export function InlineLinkShortenerForm() {
                 placeholder={t('link-shortener.url_placeholder')}
                 disabled={loading}
                 required
-                className="h-12 border-border/60 text-base transition-all duration-200 focus:border-dynamic-blue focus:ring-2 focus:ring-dynamic-blue/20"
+                className="h-12 text-base transition-all duration-200 focus:ring-2 focus:ring-dynamic-blue/20 border-border/60 focus:border-dynamic-blue"
               />
             </div>
 
             {showAdvanced && (
-              <div className="space-y-3 rounded-lg border border-border/40 bg-muted/30 p-4">
+              <div className="space-y-3 p-4 bg-muted/30 rounded-lg border border-border/40">
                 <Label
                   htmlFor="customSlug"
-                  className="font-semibold text-foreground text-sm"
+                  className="text-sm font-semibold text-foreground"
                 >
                   {t('link-shortener.custom_slug')}
                 </Label>
@@ -191,9 +191,9 @@ export function InlineLinkShortenerForm() {
                   pattern="[a-zA-Z0-9\-_]+"
                   title="Only letters, numbers, hyphens, and underscores are allowed"
                   disabled={loading}
-                  className="h-11 border-border/60 transition-all duration-200 focus:border-dynamic-blue focus:ring-2 focus:ring-dynamic-blue/20"
+                  className="h-11 transition-all duration-200 focus:ring-2 focus:ring-dynamic-blue/20 border-border/60 focus:border-dynamic-blue"
                 />
-                <p className="text-muted-foreground text-xs">
+                <p className="text-xs text-muted-foreground">
                   {t('link-shortener.custom_slug_description')}
                 </p>
               </div>
@@ -206,7 +206,7 @@ export function InlineLinkShortenerForm() {
                 size="default"
                 onClick={() => setShowAdvanced(!showAdvanced)}
                 disabled={loading}
-                className="flex h-11 items-center gap-2 border-border/60 transition-colors hover:bg-muted/50"
+                className="flex items-center gap-2 h-11 border-border/60 hover:bg-muted/50 transition-colors"
               >
                 <Sparkles className="h-4 w-4" />
                 {showAdvanced ? 'Hide Advanced Options' : 'Advanced Options'}
@@ -216,7 +216,7 @@ export function InlineLinkShortenerForm() {
                 type="submit"
                 disabled={loading || !url.trim()}
                 size="default"
-                className="flex h-11 items-center gap-2 bg-dynamic-blue px-8 transition-colors hover:bg-dynamic-blue/90"
+                className="flex items-center gap-2 h-11 bg-dynamic-blue hover:bg-dynamic-blue/90 transition-colors px-8"
               >
                 {loading ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -229,8 +229,8 @@ export function InlineLinkShortenerForm() {
           </form>
         ) : (
           <div className="space-y-6">
-            <div className="flex items-center gap-3 rounded-lg border border-dynamic-green/20 bg-dynamic-green/5 p-4 text-dynamic-green">
-              <div className="rounded-full bg-dynamic-green/10 p-1">
+            <div className="flex items-center gap-3 text-dynamic-green p-4 bg-dynamic-green/5 rounded-lg border border-dynamic-green/20">
+              <div className="p-1 bg-dynamic-green/10 rounded-full">
                 <Check className="h-4 w-4" />
               </div>
               <span className="font-semibold">
@@ -238,20 +238,20 @@ export function InlineLinkShortenerForm() {
               </span>
             </div>
 
-            <div className="space-y-4 rounded-lg border border-border/40 bg-muted/40 p-5">
+            <div className="space-y-4 p-5 bg-muted/40 rounded-lg border border-border/40">
               <div className="space-y-2">
-                <Label className="font-semibold text-muted-foreground text-xs uppercase tracking-wide">
+                <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                   {t('link-shortener.original_url')}
                 </Label>
-                <div className="group flex items-center gap-3">
-                  <p className="flex-1 truncate font-medium text-foreground text-sm">
+                <div className="flex items-center gap-3 group">
+                  <p className="text-sm flex-1 truncate font-medium text-foreground">
                     {result.link}
                   </p>
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => window.open(result.link, '_blank')}
-                    className="h-8 w-8 p-0 opacity-0 transition-opacity group-hover:opacity-100"
+                    className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
                   >
                     <ExternalLink className="h-3 w-3" />
                   </Button>
@@ -259,14 +259,14 @@ export function InlineLinkShortenerForm() {
               </div>
 
               <div className="space-y-2">
-                <Label className="font-semibold text-muted-foreground text-xs uppercase tracking-wide">
+                <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                   {t('link-shortener.short_url')}
                 </Label>
-                <div className="group flex items-center gap-3 rounded-md border border-border/60 bg-background p-3">
-                  <code className="flex-1 font-mono font-semibold text-dynamic-blue text-sm">
+                <div className="flex items-center gap-3 group p-3 bg-background rounded-md border border-border/60">
+                  <code className="text-sm font-mono flex-1 text-dynamic-blue font-semibold">
                     {getShortUrl(result.slug)}
                   </code>
-                  <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     <Button
                       variant="ghost"
                       size="sm"
@@ -294,7 +294,7 @@ export function InlineLinkShortenerForm() {
               onClick={handleCreateAnother}
               variant="outline"
               size="default"
-              className="h-11 w-full border-border/60 transition-colors hover:bg-muted/50"
+              className="w-full h-11 border-border/60 hover:bg-muted/50 transition-colors"
             >
               Create Another Link
             </Button>

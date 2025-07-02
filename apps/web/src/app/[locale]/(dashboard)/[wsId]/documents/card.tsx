@@ -29,7 +29,7 @@ export const DocumentCard = ({ wsId, document }: Props) => {
         </p>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2 justify-self-start font-semibold text-sm">
+      <div className="flex flex-wrap items-center gap-2 justify-self-start text-sm font-semibold">
         <div className="flex w-full max-w-full items-center gap-1 rounded-lg border border-dynamic-blue/20 bg-dynamic-blue/5 px-2 py-1.5 text-dynamic-blue">
           <FilePlus className="w-5 flex-none" />
           <div className="line-clamp-1">{creationDate}</div>

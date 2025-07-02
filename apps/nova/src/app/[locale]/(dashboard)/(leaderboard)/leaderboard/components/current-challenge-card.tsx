@@ -48,10 +48,10 @@ export function CurrentChallengeCard() {
     >
       {isCurrentChallengeSelected ? (
         <>
-          <div className="-top-16 -right-16 absolute h-40 w-40 rounded-full bg-purple-500/10 blur-3xl" />
-          <div className="-bottom-12 -left-12 absolute h-36 w-36 rounded-full bg-indigo-300/15 blur-3xl" />
+          <div className="absolute -top-16 -right-16 h-40 w-40 rounded-full bg-purple-500/10 blur-3xl" />
+          <div className="absolute -bottom-12 -left-12 h-36 w-36 rounded-full bg-indigo-300/15 blur-3xl" />
           <motion.div
-            className="-translate-y-1/2 absolute top-0 right-0 h-16 w-16 translate-x-1/2 rounded-full bg-indigo-400/20 blur-xl"
+            className="absolute top-0 right-0 h-16 w-16 translate-x-1/2 -translate-y-1/2 rounded-full bg-indigo-400/20 blur-xl"
             animate={{
               scale: [1, 1.2, 1],
               opacity: [0.5, 0.8, 0.5],
@@ -84,8 +84,8 @@ export function CurrentChallengeCard() {
         </>
       ) : (
         <>
-          <div className="-top-12 -right-12 absolute h-32 w-32 rounded-full bg-linear-to-br from-slate-500/5 to-blue-500/5 blur-2xl" />
-          <div className="-bottom-12 -left-12 absolute h-32 w-32 rounded-full bg-linear-to-tr from-slate-500/5 to-blue-500/5 blur-2xl" />
+          <div className="absolute -top-12 -right-12 h-32 w-32 rounded-full bg-linear-to-br from-slate-500/5 to-blue-500/5 blur-2xl" />
+          <div className="absolute -bottom-12 -left-12 h-32 w-32 rounded-full bg-linear-to-tr from-slate-500/5 to-blue-500/5 blur-2xl" />
         </>
       )}
 
@@ -161,7 +161,7 @@ export function CurrentChallengeCard() {
               </Button>
             ) : null}
           </div>
-          <p className="text-muted-foreground text-sm">
+          <p className="text-sm text-muted-foreground">
             {isCurrentChallengeSelected
               ? t('current-challenge-description')
               : t('description')}
@@ -171,7 +171,7 @@ export function CurrentChallengeCard() {
               <Button
                 variant="outline"
                 size="sm"
-                className={`font-medium text-xs transition-all ${
+                className={`text-xs font-medium transition-all ${
                   isCurrentChallengeSelected
                     ? 'border-purple-300/50 bg-purple-50/50 text-purple-700 hover:border-purple-400/60 hover:bg-purple-100/60 dark:border-purple-700/40 dark:bg-purple-900/20 dark:text-purple-300 dark:hover:bg-purple-800/30'
                     : ''
@@ -194,7 +194,7 @@ export function CurrentChallengeCard() {
               <Button
                 variant="outline"
                 size="sm"
-                className="font-medium text-xs hover:bg-indigo-50/50 hover:text-indigo-700 dark:hover:bg-indigo-900/20 dark:hover:text-indigo-300"
+                className="text-xs font-medium hover:bg-indigo-50/50 hover:text-indigo-700 dark:hover:bg-indigo-900/20 dark:hover:text-indigo-300"
                 onClick={handleFilterCurrentChallenge}
               >
                 {t('view-current-challenge')}

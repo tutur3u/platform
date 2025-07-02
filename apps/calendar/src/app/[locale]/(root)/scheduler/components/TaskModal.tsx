@@ -212,7 +212,7 @@ export function TaskModal({
                   className={errors.name ? 'border-destructive' : ''}
                 />
                 {errors.name && (
-                  <p className="text-destructive text-sm">{errors.name}</p>
+                  <p className="text-sm text-destructive">{errors.name}</p>
                 )}
               </div>
               <div className="space-y-2">
@@ -230,7 +230,7 @@ export function TaskModal({
               <div className="space-y-2">
                 <div className="mb-2 flex items-center gap-2">
                   <SplitIcon className="h-4 w-4 text-blue-600" />
-                  <Label htmlFor="allow-split" className="font-medium text-sm">
+                  <Label htmlFor="allow-split" className="text-sm font-medium">
                     Allow task splitting
                   </Label>
                 </div>
@@ -244,7 +244,7 @@ export function TaskModal({
                   />
                   <Label
                     htmlFor="allow-split"
-                    className="text-muted-foreground text-sm"
+                    className="text-sm text-muted-foreground"
                   >
                     Split this task into smaller sessions if needed
                   </Label>
@@ -272,7 +272,7 @@ export function TaskModal({
                     className={errors.duration ? 'border-destructive' : ''}
                   />
                   {errors.duration && (
-                    <p className="text-destructive text-xs">
+                    <p className="text-xs text-destructive">
                       {errors.duration}
                     </p>
                   )}
@@ -292,7 +292,7 @@ export function TaskModal({
                     className={errors.minDuration ? 'border-destructive' : ''}
                   />
                   {errors.minDuration && (
-                    <p className="text-destructive text-xs">
+                    <p className="text-xs text-destructive">
                       {errors.minDuration}
                     </p>
                   )}
@@ -312,7 +312,7 @@ export function TaskModal({
                     className={errors.maxDuration ? 'border-destructive' : ''}
                   />
                   {errors.maxDuration && (
-                    <p className="text-destructive text-xs">
+                    <p className="text-xs text-destructive">
                       {errors.maxDuration}
                     </p>
                   )}
@@ -382,7 +382,7 @@ export function TaskModal({
                   min={dayjs().format('YYYY-MM-DDTHH:mm')}
                 />
                 {errors.deadline && (
-                  <p className="text-destructive text-xs">{errors.deadline}</p>
+                  <p className="text-xs text-destructive">{errors.deadline}</p>
                 )}
               </div>
             </div>
@@ -392,10 +392,10 @@ export function TaskModal({
           <div className="rounded-lg bg-muted/50 p-4">
             <div className="grid grid-cols-2 gap-6">
               <div>
-                <h4 className="mb-2 font-semibold text-sm">
+                <h4 className="mb-2 text-sm font-semibold">
                   Selected Category
                 </h4>
-                <div className="flex items-center gap-2 text-muted-foreground text-sm">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <span>
                     {
                       categoryOptions.find(
@@ -413,10 +413,10 @@ export function TaskModal({
                 </div>
               </div>
               <div>
-                <h4 className="mb-2 font-semibold text-sm">
+                <h4 className="mb-2 text-sm font-semibold">
                   Selected Priority
                 </h4>
-                <div className="flex items-center gap-2 text-muted-foreground text-sm">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <span>
                     {
                       priorityOptions.find(

@@ -27,7 +27,7 @@ export function DateRangePicker({
   return (
     <div className={className}>
       <div className="flex flex-col gap-2">
-        <h2 className="font-semibold text-lg">Select start date</h2>
+        <h2 className="text-lg font-semibold">Select start date</h2>
         <DatePicker
           defaultValue={startDate}
           onValueChange={setStartDate}
@@ -35,7 +35,7 @@ export function DateRangePicker({
         />
       </div>
       <div className="flex flex-col gap-2">
-        <h2 className="font-semibold text-lg">Select end date</h2>
+        <h2 className="text-lg font-semibold">Select end date</h2>
         <DatePicker
           defaultValue={endDate}
           onValueChange={setEndDate}

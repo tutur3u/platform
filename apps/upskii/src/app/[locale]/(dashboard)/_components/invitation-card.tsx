@@ -117,7 +117,7 @@ export default function InvitationCard({
         </div>
       </CardHeader>
       <CardContent>
-        <p className="text-muted-foreground text-sm">
+        <p className="text-sm text-muted-foreground">
           {t('invite.you-been-invited-to-join-the')}{' '}
           <span className="text-foreground underline">{workspace.name}</span>
           {t('invite.accept-to-start-collaborating')}

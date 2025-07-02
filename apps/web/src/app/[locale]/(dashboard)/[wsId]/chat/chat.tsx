@@ -334,7 +334,7 @@ const Chat = ({
             <ChatScrollAnchor trackVisibility={isLoading} />
           </>
         ) : disableScrollToTop && disableScrollToBottom ? (
-          <h1 className="mb-2 flex h-full w-full items-center justify-center text-center font-semibold text-lg">
+          <h1 className="mb-2 flex h-full w-full items-center justify-center text-center text-lg font-semibold">
             {t('welcome_to')}{' '}
             <span className="ml-1 overflow-hidden bg-linear-to-r from-dynamic-red via-dynamic-purple to-dynamic-sky bg-clip-text font-bold text-transparent">
               Rewise

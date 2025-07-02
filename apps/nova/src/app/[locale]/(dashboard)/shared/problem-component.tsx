@@ -27,7 +27,7 @@ export default function ProblemComponent({ problem }: Props) {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <BookOpen className="h-5 w-5 text-primary" />
-          <h2 className="font-bold text-xl">{problem.title}</h2>
+          <h2 className="text-xl font-bold">{problem.title}</h2>
         </div>
         <Badge variant="outline" className="px-3 py-1">
           Max Length: {problem.max_prompt_length}
@@ -43,7 +43,7 @@ export default function ProblemComponent({ problem }: Props) {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="prose prose-sm dark:prose-invert max-w-none">
+            <div className="prose prose-sm max-w-none dark:prose-invert">
               <p className="whitespace-pre-wrap">{problem.description}</p>
             </div>
           </CardContent>
@@ -57,7 +57,7 @@ export default function ProblemComponent({ problem }: Props) {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <h3 className="mb-2 font-medium text-sm">Input:</h3>
+            <h3 className="mb-2 text-sm font-medium">Input:</h3>
             <div className="rounded-md bg-muted p-3 font-mono text-sm">
               {problem.example_input ? (
                 <p className="whitespace-pre-wrap">{problem.example_input}</p>
@@ -68,7 +68,7 @@ export default function ProblemComponent({ problem }: Props) {
               )}
             </div>
 
-            <h3 className="mb-2 font-medium text-sm">Output:</h3>
+            <h3 className="mb-2 text-sm font-medium">Output:</h3>
             <div className="rounded-md bg-muted p-3 font-mono text-sm">
               {problem.example_output ? (
                 <p className="whitespace-pre-wrap">{problem.example_output}</p>

@@ -100,7 +100,7 @@ export default function MonthPicker({
           </Button>
 
           <div
-            className="font-medium text-sm"
+            className="text-sm font-medium"
             aria-live="polite"
             role="presentation"
             id="month-picker"

@@ -89,7 +89,7 @@ export function GenerateDialog({
               <Checkbox id="include-content" disabled />
               <label
                 htmlFor="include-content"
-                className="font-medium text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                className="text-sm leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
               >
                 {t('ws-ai-workflows.include_module_content')}
               </label>
@@ -99,7 +99,7 @@ export function GenerateDialog({
               <Checkbox id="include-resources" disabled />
               <label
                 htmlFor="include-resources"
-                className="font-medium text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                className="text-sm leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
               >
                 {t('ws-ai-workflows.include_resources')}
               </label>
@@ -109,7 +109,7 @@ export function GenerateDialog({
               <Checkbox id="include-youtube-links" disabled />
               <label
                 htmlFor="include-youtube-links"
-                className="font-medium text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                className="text-sm leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
               >
                 {t('ws-ai-workflows.include_youtube_links')}
               </label>

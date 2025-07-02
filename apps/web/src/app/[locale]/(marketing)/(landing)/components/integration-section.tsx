@@ -59,12 +59,12 @@ export function IntegrationSection() {
   return (
     <section ref={sectionRef} className="container px-0 pt-20">
       <div className="mb-16 text-center">
-        <h2 className="integration-title mb-4 font-bold text-3xl md:text-4xl">
+        <h2 className="integration-title mb-4 text-3xl font-bold md:text-4xl">
           <span className="bg-gradient-to-r from-dynamic-purple to-dynamic-blue bg-clip-text text-transparent">
             {t('seamless_integration')}
           </span>
         </h2>
-        <p className="integration-title mx-auto max-w-3xl text-balance text-muted-foreground text-xl">
+        <p className="integration-title mx-auto max-w-3xl text-xl text-balance text-muted-foreground">
           {t(
             'tuturuuu_brings_all_your_productivity_tools_together_in_one_unified_workspace'
           )}
@@ -73,7 +73,7 @@ export function IntegrationSection() {
 
       <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-2">
         <div>
-          <h3 className="mb-6 font-bold text-2xl">
+          <h3 className="mb-6 text-2xl font-bold">
             {t('everything_works_together')}
           </h3>
           <p className="mb-8 text-lg text-muted-foreground">
@@ -86,7 +86,7 @@ export function IntegrationSection() {
                 <Calendar className="h-6 w-6 text-dynamic-purple" />
               </div>
               <div>
-                <h4 className="mb-1 font-semibold text-lg">
+                <h4 className="mb-1 text-lg font-semibold">
                   {t('calendar_tasks')}
                 </h4>
                 <p className="text-muted-foreground">
@@ -102,7 +102,7 @@ export function IntegrationSection() {
                 <Video className="h-6 w-6 text-dynamic-blue" />
               </div>
               <div>
-                <h4 className="mb-1 font-semibold text-lg">
+                <h4 className="mb-1 text-lg font-semibold">
                   {t('meetings_chat')}
                 </h4>
                 <p className="text-muted-foreground">
@@ -118,7 +118,7 @@ export function IntegrationSection() {
                 <Mail className="h-6 w-6 text-dynamic-green" />
               </div>
               <div>
-                <h4 className="mb-1 font-semibold text-lg">
+                <h4 className="mb-1 text-lg font-semibold">
                   {t('email_calendar')}
                 </h4>
                 <p className="text-muted-foreground">
@@ -134,7 +134,7 @@ export function IntegrationSection() {
                 <MessageSquare className="h-6 w-6 text-dynamic-orange" />
               </div>
               <div>
-                <h4 className="mb-1 font-semibold text-lg">
+                <h4 className="mb-1 text-lg font-semibold">
                   {t('chat_tasks')}
                 </h4>
                 <p className="text-muted-foreground">
@@ -149,8 +149,8 @@ export function IntegrationSection() {
 
         <div className="integration-image">
           <div className="relative">
-            <div className="-top-10 -right-10 absolute h-40 w-40 rounded-full bg-calendar-bg-purple opacity-20 blur-3xl filter"></div>
-            <div className="-bottom-10 -left-10 absolute h-40 w-40 rounded-full bg-calendar-bg-blue opacity-20 blur-3xl filter"></div>
+            <div className="absolute -top-10 -right-10 h-40 w-40 rounded-full bg-calendar-bg-purple opacity-20 blur-3xl filter"></div>
+            <div className="absolute -bottom-10 -left-10 h-40 w-40 rounded-full bg-calendar-bg-blue opacity-20 blur-3xl filter"></div>
 
             <div className="relative overflow-hidden rounded-xl border bg-white shadow-xl dark:bg-foreground/5">
               <div className="bg-gradient-to-r from-dynamic-purple to-dynamic-blue p-3 text-white">
@@ -162,7 +162,7 @@ export function IntegrationSection() {
                   <div className="rounded-lg border border-dynamic-light-purple/30 bg-calendar-bg-purple p-3">
                     <div className="mb-2 flex items-center gap-2">
                       <Calendar className="h-4 w-4 text-dynamic-purple" />
-                      <h4 className="font-medium text-dynamic-purple text-sm">
+                      <h4 className="text-sm font-medium text-dynamic-purple">
                         {t('calendar')}
                       </h4>
                     </div>
@@ -170,7 +170,7 @@ export function IntegrationSection() {
                       {Array.from({ length: 7 }).map((_, i) => (
                         <div
                           key={i}
-                          className="flex aspect-square items-center justify-center rounded-sm bg-calendar-bg-purple text-dynamic-purple text-xs"
+                          className="flex aspect-square items-center justify-center rounded-sm bg-calendar-bg-purple text-xs text-dynamic-purple"
                         >
                           {i + 1}
                         </div>
@@ -181,20 +181,20 @@ export function IntegrationSection() {
                   <div className="rounded-lg border border-dynamic-light-blue/30 bg-calendar-bg-blue p-3">
                     <div className="mb-2 flex items-center gap-2">
                       <Check className="h-4 w-4 text-dynamic-blue" />
-                      <h4 className="font-medium text-dynamic-blue text-sm">
+                      <h4 className="text-sm font-medium text-dynamic-blue">
                         {t('tasks')}
                       </h4>
                     </div>
                     <div className="space-y-1">
                       <div className="flex items-center gap-1">
                         <div className="h-3 w-3 rounded-full border border-dynamic-blue"></div>
-                        <span className="truncate text-dynamic-blue text-xs">
+                        <span className="truncate text-xs text-dynamic-blue">
                           {t('finalize_report')}
                         </span>
                       </div>
                       <div className="flex items-center gap-1">
                         <div className="h-3 w-3 rounded-full border border-dynamic-blue"></div>
-                        <span className="truncate text-dynamic-blue text-xs">
+                        <span className="truncate text-xs text-dynamic-blue">
                           {t('review_design')}
                         </span>
                       </div>
@@ -204,7 +204,7 @@ export function IntegrationSection() {
                   <div className="rounded-lg border border-dynamic-light-green/30 bg-calendar-bg-green p-3">
                     <div className="mb-2 flex items-center gap-2">
                       <Video className="h-4 w-4 text-dynamic-green" />
-                      <h4 className="font-medium text-dynamic-green text-sm">
+                      <h4 className="text-sm font-medium text-dynamic-green">
                         {t('meetings')}
                       </h4>
                     </div>
@@ -215,7 +215,7 @@ export function IntegrationSection() {
                       <div className="flex h-5 w-5 items-center justify-center rounded-full bg-calendar-bg-green text-[10px]">
                         B
                       </div>
-                      <span className="text-dynamic-green text-xs">
+                      <span className="text-xs text-dynamic-green">
                         {t('team_sync')}
                       </span>
                     </div>
@@ -224,7 +224,7 @@ export function IntegrationSection() {
                   <div className="rounded-lg border border-dynamic-light-orange/30 bg-calendar-bg-orange p-3">
                     <div className="mb-2 flex items-center gap-2">
                       <MessageSquare className="h-4 w-4 text-dynamic-orange" />
-                      <h4 className="font-medium text-dynamic-orange text-sm">
+                      <h4 className="text-sm font-medium text-dynamic-orange">
                         {t('chat')}
                       </h4>
                     </div>
@@ -237,7 +237,7 @@ export function IntegrationSection() {
                 <div className="mt-3 rounded-lg border border-dynamic-light-red/30 bg-calendar-bg-red p-3">
                   <div className="mb-2 flex items-center gap-2">
                     <Mail className="h-4 w-4 text-dynamic-red" />
-                    <h4 className="font-medium text-dynamic-red text-sm">
+                    <h4 className="text-sm font-medium text-dynamic-red">
                       {t('email')}
                     </h4>
                   </div>

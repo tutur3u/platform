@@ -55,7 +55,7 @@ export function OnlineUsers({
   return (
     <TooltipProvider>
       <div className="flex items-center gap-2">
-        <div className="-space-x-3 flex overflow-visible">
+        <div className="flex -space-x-3 overflow-visible">
           {Object.entries(userInstances).map(([userId, instances]) => {
             if (!instances?.[0]?.user) return null;
             const user = instances[0].user;
@@ -78,7 +78,7 @@ export function OnlineUsers({
                       </AvatarFallback>
                     </Avatar>
                     {instances.length > 1 && (
-                      <span className="-top-0.5 -right-0.5 absolute flex h-4 w-4 items-center justify-center rounded-full bg-blue-500 font-medium text-[10px] text-white ring-2 ring-white">
+                      <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-blue-500 text-[10px] font-medium text-white ring-2 ring-white">
                         {instances.length}
                       </span>
                     )}
@@ -102,7 +102,7 @@ export function OnlineUsers({
             );
           })}
         </div>
-        <div className="text-muted-foreground text-xs">
+        <div className="text-xs text-muted-foreground">
           {Object.keys(userInstances).length}{' '}
           {Object.keys(userInstances).length === 1
             ? 'user online'

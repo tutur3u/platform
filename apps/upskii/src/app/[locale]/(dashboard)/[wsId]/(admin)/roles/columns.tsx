@@ -79,7 +79,7 @@ export const roleColumns = (
     ),
     cell: ({ row }) => (
       <div className="flex items-center gap-1 font-semibold">
-        <span className="flex items-center gap-1 rounded border px-1 font-bold text-sm">
+        <span className="flex items-center gap-1 rounded border px-1 text-sm font-bold">
           <span className="text-dynamic-orange">
             {(row.getValue('permissions') as any[]).filter((x) => x.enabled)
               .length ?? '-'}

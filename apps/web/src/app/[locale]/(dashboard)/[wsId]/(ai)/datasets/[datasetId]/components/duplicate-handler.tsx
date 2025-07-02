@@ -195,8 +195,8 @@ export function DuplicateHandler({ wsId, datasetId }: Props) {
           {(isProcessing || isRemoving) && (
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <span className="font-medium text-sm">Progress</span>
-                <span className="text-muted-foreground text-sm">
+                <span className="text-sm font-medium">Progress</span>
+                <span className="text-sm text-muted-foreground">
                   {progress}%
                 </span>
               </div>
@@ -222,13 +222,13 @@ export function DuplicateHandler({ wsId, datasetId }: Props) {
                   >
                     {log.message}
                   </span>
-                  <span className="ml-auto text-muted-foreground text-xs">
+                  <span className="ml-auto text-xs text-muted-foreground">
                     {log.timestamp.toLocaleTimeString()}
                   </span>
                 </div>
               ))}
               {logs.length === 0 && (
-                <div className="text-center text-muted-foreground text-sm">
+                <div className="text-center text-sm text-muted-foreground">
                   No logs yet. Start by detecting duplicates.
                 </div>
               )}

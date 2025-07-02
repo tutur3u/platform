@@ -113,7 +113,7 @@ export default function FAQPage() {
             <HelpCircle className="mr-2 h-4 w-4" />
             {t('badge')}
           </Badge>
-          <h1 className="mb-4 font-bold text-4xl tracking-tight sm:text-5xl">
+          <h1 className="mb-4 text-4xl font-bold tracking-tight sm:text-5xl">
             {t('title')}
           </h1>
           <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
@@ -130,7 +130,7 @@ export default function FAQPage() {
       >
         {faqCategories.map((category, categoryIndex) => (
           <div key={categoryIndex}>
-            <h2 className="font-bold text-2xl">{category.name}</h2>
+            <h2 className="text-2xl font-bold">{category.name}</h2>
             <Separator className="my-4" />
             <Accordion type="single" collapsible className="w-full">
               {category.questions.map((faq, faqIndex) => (
@@ -157,7 +157,7 @@ export default function FAQPage() {
         transition={{ duration: 0.5, delay: 0.4 }}
         className="mt-16 text-center"
       >
-        <h2 className="font-bold text-2xl">{t('still-have-questions')}</h2>
+        <h2 className="text-2xl font-bold">{t('still-have-questions')}</h2>
         <p className="mt-2 mb-6 text-muted-foreground">
           {t('cant-find-answer')}
         </p>

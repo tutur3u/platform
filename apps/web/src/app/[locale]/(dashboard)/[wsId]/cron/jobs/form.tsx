@@ -168,13 +168,13 @@ export function CronJobForm({ wsId, data, onFinish }: Props) {
                   </FormControl>
                   <FormDescription className="flex flex-col gap-1">
                     <span>Common examples:</span>
-                    <span className="text-muted-foreground text-xs">
+                    <span className="text-xs text-muted-foreground">
                       • "0 0 * * *" - At midnight, every day
                       <br />• "*/15 * * * *" - Every 15 minutes
                       <br />• "0 9 * * 1-5" - At 9 AM, Monday through Friday
                     </span>
                     {field.value && (
-                      <span className="mt-2 text-muted-foreground text-sm">
+                      <span className="mt-2 text-sm text-muted-foreground">
                         ↳ {getHumanReadableSchedule(field.value)}
                       </span>
                     )}
@@ -238,7 +238,7 @@ export function CronJobForm({ wsId, data, onFinish }: Props) {
                   </FormControl>
                   <label
                     htmlFor="active"
-                    className="font-medium text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    className="text-sm leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                   >
                     Active
                   </label>

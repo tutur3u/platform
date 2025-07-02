@@ -232,7 +232,7 @@ export default function UncrawledUrls({ wsId }: { wsId: string }) {
                 {Object.entries(groupedUrls).map(([originId, urls]) => (
                   <div key={originId} className="p-4">
                     <div className="mb-2 flex items-center justify-between">
-                      <p className="font-medium text-sm">
+                      <p className="text-sm font-medium">
                         From: {urls?.[0]?.url || 'Unknown URL'}
                       </p>
                       <Button
@@ -258,7 +258,7 @@ export default function UncrawledUrls({ wsId }: { wsId: string }) {
                         >
                           <div className="flex items-center gap-2 overflow-hidden">
                             <span className="truncate text-sm">{url.url}</span>
-                            <span className="shrink-0 rounded-full bg-blue-500/10 px-2 py-0.5 text-blue-500 text-xs">
+                            <span className="shrink-0 rounded-full bg-blue-500/10 px-2 py-0.5 text-xs text-blue-500">
                               {new URL(url.url).hostname}
                             </span>
                           </div>
@@ -273,7 +273,7 @@ export default function UncrawledUrls({ wsId }: { wsId: string }) {
               </div>
 
               <div className="flex items-center justify-between">
-                <p className="text-muted-foreground text-sm">
+                <p className="text-sm text-muted-foreground">
                   Showing {(currentPage - 1) * currentPageSize + 1} to{' '}
                   {Math.min(
                     currentPage * currentPageSize,

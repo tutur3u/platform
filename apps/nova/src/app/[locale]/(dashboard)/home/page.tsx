@@ -15,10 +15,10 @@ export default async function HomePage() {
   return (
     <div className="container mx-auto px-4 py-12">
       <div className="mb-12 text-center">
-        <h1 className="mb-4 font-extrabold text-4xl tracking-tight lg:text-5xl">
+        <h1 className="mb-4 text-4xl font-extrabold tracking-tight lg:text-5xl">
           {t('badge')}
         </h1>
-        <p className="mx-auto max-w-2xl text-muted-foreground text-xl">
+        <p className="mx-auto max-w-2xl text-xl text-muted-foreground">
           {t('title')}
         </p>
       </div>

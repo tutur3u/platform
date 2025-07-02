@@ -79,7 +79,7 @@ const MobileNavLink: React.FC<NavLinkProps> = ({ item, onClick }) => (
   <NavLink
     item={item}
     onClick={onClick}
-    className="rounded-lg border border-brand-light-blue/20 bg-brand-light-blue/5 p-2 font-semibold text-brand-light-blue transition hover:bg-brand-light-blue/10"
+    className="border-brand-light-blue/20 bg-brand-light-blue/5 text-brand-light-blue hover:bg-brand-light-blue/10 rounded-lg border p-2 font-semibold transition"
   />
 );
 
@@ -89,7 +89,7 @@ const MobileMenu: React.FC<MenuProps> = ({ sbUser, user, t }) => {
 
   return (
     <Sheet open={isOpened} onOpenChange={setIsOpened}>
-      <SheetTrigger className="rounded-lg border border-brand-light-blue/20 bg-brand-light-blue/5 p-2 font-semibold text-brand-light-blue transition hover:bg-brand-light-blue/10">
+      <SheetTrigger className="border-brand-light-blue/20 bg-brand-light-blue/5 text-brand-light-blue hover:bg-brand-light-blue/10 rounded-lg border p-2 font-semibold transition">
         <MenuIcon className="h-5 w-5" />
       </SheetTrigger>
       <SheetContent className="md:hidden">

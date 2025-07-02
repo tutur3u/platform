@@ -109,7 +109,7 @@ export function YearPicker({
           </Button>
 
           <div
-            className="font-medium text-sm"
+            className="text-sm font-medium"
             aria-live="polite"
             role="presentation"
             id="year-picker"

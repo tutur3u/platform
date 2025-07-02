@@ -51,7 +51,7 @@ export default function ShowAttemptDetailSection({
   return (
     <div className="space-y-8">
       {/* Metadata */}
-      <div className="space-y-1 text-secondary-foreground text-sm">
+      <div className="space-y-1 text-sm text-secondary-foreground">
         <div>
           {t('results.started_at') || 'Started at'}: {fmtDate(detail.startedAt)}
         </div>
@@ -82,7 +82,7 @@ export default function ShowAttemptDetailSection({
             <CardHeader>
               <CardTitle>
                 {idx + 1}. {q.question}{' '}
-                <span className="text-muted-foreground text-sm">
+                <span className="text-sm text-muted-foreground">
                   ({t('results.points') || 'Points'}: {q.scoreWeight})
                 </span>
               </CardTitle>
@@ -124,7 +124,7 @@ export default function ShowAttemptDetailSection({
                         )}
                       </span>
                       {opt.explanation && (
-                        <p className="mt-1 text-primary text-sm">
+                        <p className="mt-1 text-sm text-primary">
                           {opt.explanation}
                         </p>
                       )}

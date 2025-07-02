@@ -208,7 +208,7 @@ export function ConfirmDialog({
                   <Clock className="mr-2 h-4 w-4 text-primary" />
                   <span>Duration: {formatDuration(challenge.duration)}</span>
                 </div>
-                <div className="mt-1 text-muted-foreground text-xs">
+                <div className="mt-1 text-xs text-muted-foreground">
                   Once started, the timer cannot be paused and will continue
                   until completed.
                 </div>

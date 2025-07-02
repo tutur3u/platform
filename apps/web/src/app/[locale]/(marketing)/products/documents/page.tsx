@@ -96,7 +96,7 @@ export default function DocumentsProductPage() {
         <Badge variant="secondary" className="mb-4">
           Coming Soon
         </Badge>
-        <h1 className="mb-4 font-bold text-4xl">
+        <h1 className="mb-4 text-4xl font-bold">
           Intelligent Document Management
         </h1>
         <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
@@ -119,7 +119,7 @@ export default function DocumentsProductPage() {
         <Card className="border-primary bg-primary/5 p-8">
           <div className="mx-auto flex max-w-4xl flex-col items-center gap-4 text-center">
             <ShieldCheck className="h-12 w-12 text-primary" />
-            <h2 className="font-bold text-2xl">Enterprise-Grade Security</h2>
+            <h2 className="text-2xl font-bold">Enterprise-Grade Security</h2>
             <p className="text-muted-foreground">
               Your documents are protected with industry-leading security
               measures, including end-to-end encryption and advanced access
@@ -131,7 +131,7 @@ export default function DocumentsProductPage() {
 
       {/* Features Grid */}
       <section className="mb-24">
-        <h2 className="mb-12 text-center font-bold text-3xl">
+        <h2 className="mb-12 text-center text-3xl font-bold">
           Powerful Features
         </h2>
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -139,7 +139,7 @@ export default function DocumentsProductPage() {
             <Card key={feature.title} className="p-6">
               <div className="mb-4 flex items-center gap-3">
                 <div className="text-primary">{feature.icon}</div>
-                <h3 className="font-semibold text-xl">{feature.title}</h3>
+                <h3 className="text-xl font-semibold">{feature.title}</h3>
               </div>
               <p className="text-muted-foreground">{feature.description}</p>
             </Card>
@@ -149,12 +149,12 @@ export default function DocumentsProductPage() {
 
       {/* Use Cases */}
       <section className="mb-24">
-        <h2 className="mb-12 text-center font-bold text-3xl">Use Cases</h2>
+        <h2 className="mb-12 text-center text-3xl font-bold">Use Cases</h2>
         <div className="grid gap-8 md:grid-cols-3">
           {useCases.map((useCase) => (
             <Card key={useCase.title} className="p-6">
               <FileText className="mb-4 h-8 w-8 text-primary" />
-              <h3 className="mb-4 font-semibold text-xl">{useCase.title}</h3>
+              <h3 className="mb-4 text-xl font-semibold">{useCase.title}</h3>
               <ul className="space-y-2 text-muted-foreground">
                 {useCase.items.map((item) => (
                   <li key={item} className="flex items-center gap-2">
@@ -172,9 +172,9 @@ export default function DocumentsProductPage() {
       <section className="mb-24">
         <Card className="overflow-hidden">
           <div className="grid md:grid-cols-2">
-            <div className="flex flex-col justify-center gap-4 border-border border-b p-8 md:border-r md:border-b-0">
+            <div className="flex flex-col justify-center gap-4 border-b border-border p-8 md:border-r md:border-b-0">
               <Lock className="h-8 w-8 text-primary" />
-              <h3 className="font-bold text-2xl">Advanced Security</h3>
+              <h3 className="text-2xl font-bold">Advanced Security</h3>
               <p className="text-muted-foreground">
                 Protect sensitive information with encryption, access logs, and
                 customizable security policies.
@@ -182,7 +182,7 @@ export default function DocumentsProductPage() {
             </div>
             <div className="flex flex-col justify-center gap-4 p-8">
               <Share2 className="h-8 w-8 text-primary" />
-              <h3 className="font-bold text-2xl">Seamless Sharing</h3>
+              <h3 className="text-2xl font-bold">Seamless Sharing</h3>
               <p className="text-muted-foreground">
                 Share documents securely with team members or external
                 stakeholders with customizable permissions.
@@ -194,13 +194,13 @@ export default function DocumentsProductPage() {
 
       {/* Additional Features Section */}
       <section className="mb-24">
-        <h2 className="mb-12 text-center font-bold text-3xl">
+        <h2 className="mb-12 text-center text-3xl font-bold">
           Smart Capabilities
         </h2>
         <div className="grid gap-6 md:grid-cols-2">
           <Card className="p-6">
             <Sparkles className="mb-4 h-8 w-8 text-primary" />
-            <h3 className="mb-2 font-bold text-xl">AI Assistance</h3>
+            <h3 className="mb-2 text-xl font-bold">AI Assistance</h3>
             <p className="text-muted-foreground">
               Get intelligent suggestions for content, formatting, and document
               organization powered by AI.
@@ -208,7 +208,7 @@ export default function DocumentsProductPage() {
           </Card>
           <Card className="p-6">
             <UserPlus className="mb-4 h-8 w-8 text-primary" />
-            <h3 className="mb-2 font-bold text-xl">Team Workspace</h3>
+            <h3 className="mb-2 text-xl font-bold">Team Workspace</h3>
             <p className="text-muted-foreground">
               Create collaborative spaces for teams to work together on
               documents efficiently.

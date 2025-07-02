@@ -18,11 +18,11 @@ export function WaitlistScreen() {
           className="w-full max-w-lg space-y-8"
         >
           {/* Logo and Title */}
-          <div className="text-balance text-center">
+          <div className="text-center text-balance">
             <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-foreground text-background shadow-lg">
               <Clock className="h-8 w-8" />
             </div>
-            <h1 className="mb-4 font-bold text-3xl md:text-4xl">
+            <h1 className="mb-4 text-3xl font-bold md:text-4xl">
               {t('title')}
             </h1>
             <p className="text-lg">{t('description')}</p>

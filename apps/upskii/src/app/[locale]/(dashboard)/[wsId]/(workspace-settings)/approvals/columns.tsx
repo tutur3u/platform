@@ -30,7 +30,7 @@ export const approvalsColumns = (
       />
     ),
     cell: ({ row }) => (
-      <div className="line-clamp-1 max-w-32 break-all font-mono text-muted-foreground text-xs">
+      <div className="line-clamp-1 max-w-32 font-mono text-xs break-all text-muted-foreground">
         {row.getValue('id')}
       </div>
     ),
@@ -49,7 +49,7 @@ export const approvalsColumns = (
         <div className="flex h-8 w-8 items-center justify-center rounded-md bg-dynamic-blue/10">
           <BookOpenText className="h-4 w-4 text-dynamic-blue" />
         </div>
-        <div className="line-clamp-1 max-w-48 break-words font-semibold">
+        <div className="line-clamp-1 max-w-48 font-semibold break-words">
           {row.getValue('workspace_name')}
         </div>
       </div>
@@ -78,11 +78,11 @@ export const approvalsColumns = (
             </AvatarFallback>
           </Avatar>
           <div className="flex max-w-48 flex-col gap-0.5">
-            <div className="line-clamp-1 break-words font-medium text-sm">
+            <div className="line-clamp-1 text-sm font-medium break-words">
               {creatorName}
             </div>
             {creatorEmail && (
-              <div className="line-clamp-1 break-words text-muted-foreground text-xs">
+              <div className="line-clamp-1 text-xs break-words text-muted-foreground">
                 {creatorEmail}
               </div>
             )}
@@ -125,10 +125,10 @@ export const approvalsColumns = (
             <FeatureIcon className="h-4 w-4 text-dynamic-blue" />
           </div>
           <div className="flex flex-col">
-            <div className="font-medium text-dynamic-blue text-sm">
+            <div className="text-sm font-medium text-dynamic-blue">
               {featureConfig?.name || featureRequested}
             </div>
-            <div className="text-muted-foreground text-xs">
+            <div className="text-xs text-muted-foreground">
               {featureRequested}
             </div>
           </div>
@@ -147,7 +147,7 @@ export const approvalsColumns = (
     ),
     cell: ({ row }) => (
       <div className="max-w-64">
-        <div className="line-clamp-3 break-words text-muted-foreground text-sm">
+        <div className="line-clamp-3 text-sm break-words text-muted-foreground">
           {row.getValue('request_message')}
         </div>
       </div>
@@ -184,7 +184,7 @@ export const approvalsColumns = (
             {t(`${namespace}.status-${status}`)}
           </Badge>
           {reviewedAt && reviewedByName && (
-            <div className="text-muted-foreground text-xs">
+            <div className="text-xs text-muted-foreground">
               {t(`${namespace}.reviewed_by`, { name: reviewedByName })}
             </div>
           )}
@@ -210,11 +210,11 @@ export const approvalsColumns = (
           <div className="text-muted-foreground">
             {createdAt ? moment(createdAt).format('MMM DD, YYYY') : '-'}
           </div>
-          <div className="text-muted-foreground text-xs">
+          <div className="text-xs text-muted-foreground">
             {createdAt ? moment(createdAt).format('HH:mm') : ''}
           </div>
           {reviewedAt && (
-            <div className="text-dynamic-blue text-xs">
+            <div className="text-xs text-dynamic-blue">
               {t(`${namespace}.reviewed_at`, {
                 date: moment(reviewedAt).format('MMM DD'),
               })}
@@ -239,11 +239,11 @@ export const approvalsColumns = (
       return (
         <div className="max-w-48">
           {adminNotes ? (
-            <div className="line-clamp-2 break-words text-muted-foreground text-sm">
+            <div className="line-clamp-2 text-sm break-words text-muted-foreground">
               {adminNotes}
             </div>
           ) : (
-            <div className="text-muted-foreground text-xs italic">
+            <div className="text-xs text-muted-foreground italic">
               {t(`${namespace}.no_notes`)}
             </div>
           )}
