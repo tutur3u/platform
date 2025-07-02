@@ -1,10 +1,9 @@
-import { ChatModelSelector } from './chat-model-selector';
-import ApiKeyInput from './form-apikey';
-import { PromptForm } from './prompt-form';
-import { ChatPermissions } from '@/components/chat-permissions';
-import { Model } from '@tuturuuu/ai/models';
-import { type Message, type UseChatHelpers } from '@tuturuuu/ai/types';
-import { createDynamicClient } from '@tuturuuu/supabase/next/client';
+import type { Model } from '@tuturuuu/ai/models';
+import type { Message, UseChatHelpers } from '@tuturuuu/ai/types';
+import {
+  createClient,
+  createDynamicClient,
+} from '@tuturuuu/supabase/next/client';
 import type { RealtimePresenceState } from '@tuturuuu/supabase/next/realtime';
 import type { AIChat } from '@tuturuuu/types/db';
 import {
@@ -22,7 +21,10 @@ import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import type React from 'react';
 import { useState } from 'react';
-import { v4 as uuidv4 } from 'uuid';
+import { ChatPermissions } from '@/components/chat-permissions';
+import { ChatModelSelector } from './chat-model-selector';
+import ApiKeyInput from './form-apikey';
+import { PromptForm } from './prompt-form';
 
 interface PresenceUser {
   id: string;
@@ -88,8 +90,6 @@ export function ChatPanel({
 }: ChatPanelProps) {
   const t = useTranslations('ai_chat');
 
-  // Generate a sessionId for temp uploads
-  const [sessionId] = useState(() => uuidv4());
   const [showDialog, setShowDialog] = useState(false);
   const [dialogType, setDialogType] = useState<
     'files' | 'visibility' | 'api'
@@ -107,14 +107,19 @@ export function ChatPanel({
             f.url === file.url ? { ...file, status: 'uploading' as const } : f
           )
         );
-        const { error, tempPath, finalPath } = await uploadFile(file, id, wsId, sessionId);
+        const { error, tempPath, finalPath } = await uploadFile(file, id, wsId);
         if (error) {
           console.error('File upload error:', error);
         }
         setFiles((prevFiles) =>
           prevFiles.map((f) =>
             f.url === file.url
-              ? { ...file, status: error ? 'error' : 'uploaded', tempPath, finalPath }
+              ? {
+                  ...file,
+                  status: error ? 'error' : 'uploaded',
+                  tempPath,
+                  finalPath,
+                }
               : f
           )
         );
@@ -124,34 +129,40 @@ export function ChatPanel({
   };
 
   // Move files from temp to final location after chat creation
-  const moveFilesToChat = async (newChatId: string) => {
-    const supabase = createDynamicClient();
-    const updatedFiles = await Promise.all(
-      files.map(async (file) => {
-        if (file.status !== 'uploaded' || !file.tempPath) return file;
-        const finalPath = `${wsId}/chats/ai/resources/${newChatId}/${file.rawFile.name}`;
-        // Copy file from temp to final
-        const { error: copyError } = await supabase.storage
-          .from('workspaces')
-          .copy(file.tempPath, finalPath);
-        if (copyError) {
-          console.error('File copy error:', copyError);
-          return { ...file, status: 'error' as const };
-        }
-        // Delete temp file
-        await supabase.storage.from('workspaces').remove([file.tempPath]);
-        return { ...file, status: 'uploaded' as const, tempPath: undefined, finalPath };
-      })
-    );
-    setFiles(updatedFiles);
-  };
+  // const moveFilesToChat = async (newChatId: string) => {
+  //   const supabase = createDynamicClient();
+  //   const updatedFiles = await Promise.all(
+  //     files.map(async (file) => {
+  //       if (file.status !== 'uploaded' || !file.tempPath) return file;
+  //       const finalPath = `${wsId}/chats/ai/resources/${newChatId}/${file.rawFile.name}`;
+  //       // Copy file from temp to final
+  //       const { error: copyError } = await supabase.storage
+  //         .from('workspaces')
+  //         .copy(file.tempPath, finalPath);
+  //       if (copyError) {
+  //         console.error('File copy error:', copyError);
+  //         return { ...file, status: 'error' as const };
+  //       }
+  //       // Delete temp file
+  //       await supabase.storage.from('workspaces').remove([file.tempPath]);
+  //       return {
+  //         ...file,
+  //         status: 'uploaded' as const,
+  //         tempPath: undefined,
+  //         finalPath,
+  //       };
+  //     })
+  //   );
+  //   setFiles(updatedFiles);
+  // };
 
   // Wrap createChat to move files after chat creation
-  const handleCreateChat = async (input: string, files: StatedFile[]) => {
+  const handleCreateChat = async (input: string) => {
     await createChat(input);
     // After chat is created, move files
     if (chat?.id) {
-      await moveFilesToChat(chat.id);
+      // await moveFilesToChat(chat.id);
+      console.log('Files moved to chat');
     }
     // You can add logic here to associate files with the prompt if needed
   };
@@ -175,9 +186,9 @@ export function ChatPanel({
               provider={model?.provider}
               model={model?.label}
               chat={chat}
-              onSubmit={async (value, files) => {
+              onSubmit={async (value) => {
                 // If there is no id, create a new chat
-                if (!id) return await handleCreateChat(value, files);
+                if (!id) return await handleCreateChat(value);
                 // If there is an id, append the message to the chat
                 await append({
                   id,
@@ -261,7 +272,6 @@ export function ChatPanel({
 
         {dialogType === 'files' && (
           <div className="grid gap-4">
-
             <FileUploader
               value={files}
               onValueChange={setFiles}
@@ -285,9 +295,13 @@ export function ChatPanel({
 export async function uploadFile(
   file: StatedFile,
   id?: string,
-  wsId?: string,
-  sessionId?: string
-): Promise<{ data: any; error: any; tempPath?: string; finalPath?: string }> {
+  wsId?: string
+): Promise<{
+  data: unknown;
+  error: unknown;
+  tempPath?: string;
+  finalPath?: string;
+}> {
   if (!wsId) return { data: null, error: 'No workspace id provided' };
   const fileName = file.rawFile.name;
   let uploadPath = '';
@@ -295,15 +309,17 @@ export async function uploadFile(
   let finalPath: string | undefined;
   if (!id) {
     // Upload to temp path
-    uploadPath = `temp/${wsId}/${sessionId}/${fileName}`;
+    const supabase = createClient();
+    const { data: user } = await supabase.auth.getUser();
+    uploadPath = `${wsId}/temp/${user?.user?.id}/${fileName}`;
     tempPath = uploadPath;
   } else {
     // Upload to final chat path
     uploadPath = `${wsId}/chats/ai/resources/${id}/${fileName}`;
     finalPath = uploadPath;
   }
-  const supabase = createDynamicClient();
-  const { data, error } = await supabase.storage
+  const supabaseStorage = createDynamicClient();
+  const { data, error } = await supabaseStorage.storage
     .from('workspaces')
     .upload(uploadPath, file.rawFile);
   return { data, error, tempPath, finalPath };
