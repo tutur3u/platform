@@ -645,7 +645,7 @@ export const CalendarSyncProvider = ({
       const eventsToDelete: string[] = [];
       let deletionPerformed = false;
 
-      eventGroups.forEach((eventGroup, signature) => {
+      eventGroups.forEach((eventGroup) => {
         if (eventGroup.length > 1) {
 
           // Sort by creation time if available, otherwise by ID
@@ -723,7 +723,6 @@ export const CalendarSyncProvider = ({
     const cacheKey = getCacheKey(dates);
     if (!cacheKey) return null;
 
-    const cacheData = calendarCache[cacheKey];
 
     // Use updateCache instead of direct mutation
     updateCache(cacheKey, {

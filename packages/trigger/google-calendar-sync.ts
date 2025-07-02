@@ -2,12 +2,31 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { WorkspaceCalendarEvent } from '@tuturuuu/types/db';
 import { updateLastUpsert } from '@tuturuuu/utils/calendar-sync-coordination';
 import dayjs from 'dayjs';
-import 'dayjs/locale/vi';
 import { OAuth2Client } from 'google-auth-library';
 import { google } from 'googleapis';
 import { convertGoogleAllDayEvent } from '@tuturuuu/ui/hooks/calendar-utils';
 
-dayjs.locale('vi');
+// Dynamic locale setup function
+const setupDayjsLocale = async (locale?: string) => {
+  const targetLocale = locale || process.env.LOCALE || 'en';
+  
+  try {
+    // Dynamically import the locale module
+    await import(`dayjs/locale/${targetLocale}`);
+    dayjs.locale(targetLocale);
+  } catch (error) {
+    console.warn(`Failed to load locale '${targetLocale}', falling back to 'en'`);
+    try {
+      await import('dayjs/locale/en');
+      dayjs.locale('en');
+    } catch (fallbackError) {
+      console.error('Failed to load even the fallback locale:', fallbackError);
+    }
+  }
+};
+
+// Initialize with default locale
+setupDayjsLocale();
 
 // Define the sync result type
 type SyncResult = {
@@ -55,9 +74,15 @@ const syncGoogleCalendarEventsForWorkspace = async (
   refresh_token: string | null,
   timeMin: dayjs.Dayjs,
   timeMax: dayjs.Dayjs,
-  syncType: 'immediate' | 'extended'
+  syncType: 'immediate' | 'extended',
+  locale?: string
 ): Promise<SyncResult> => {
   console.log(`Syncing Google Calendar events for workspace ${ws_id} from ${timeMin.format('YYYY-MM-DD HH:mm')} to ${timeMax.format('YYYY-MM-DD HH:mm')}`);
+
+  // Setup locale for this sync operation
+  if (locale) {
+    await setupDayjsLocale(locale);
+  }
 
   try {
     const supabase = await createAdminClient({ noCookie: true });
@@ -233,8 +258,9 @@ export const syncWorkspaceImmediate = async (payload: {
   ws_id: string;
   access_token: string;
   refresh_token?: string;
+  locale?: string;
 }) => {
-  const { ws_id, access_token, refresh_token } = payload;
+  const { ws_id, access_token, refresh_token, locale } = payload;
   
   if (!access_token) {
     console.log('No access token provided for workspace:', ws_id);
@@ -251,7 +277,8 @@ export const syncWorkspaceImmediate = async (payload: {
     refresh_token || null,
     timeMin,
     timeMax,
-    'immediate'
+    'immediate',
+    locale
   );
 };
 
@@ -260,8 +287,9 @@ export const syncWorkspaceExtended = async (payload: {
   ws_id: string;
   access_token: string;
   refresh_token?: string;
+  locale?: string;
 }) => {
-  const { ws_id, access_token, refresh_token } = payload;
+  const { ws_id, access_token, refresh_token, locale } = payload;
   
   if (!access_token) {
     console.log('No access token provided for workspace:', ws_id);
@@ -278,19 +306,20 @@ export const syncWorkspaceExtended = async (payload: {
     refresh_token || null,
     timeMin,
     timeMax,
-    'extended'
+    'extended',
+    locale
   );
   };
 
 // Legacy functions for backward compatibility
-export const syncGoogleCalendarEventsImmediate = async () => {
+export const syncGoogleCalendarEventsImmediate = async (locale?: string) => {
   console.log('Starting immediate Google Calendar sync for all workspaces');
   const workspaces = await getWorkspacesForSync();
   const results: SyncResult[] = [];
 
   for (const workspace of workspaces) {
     try {
-      const result = await syncWorkspaceImmediate(workspace);
+      const result = await syncWorkspaceImmediate({ ...workspace, locale });
       results.push(result);
     } catch (error) {
       
@@ -306,14 +335,14 @@ export const syncGoogleCalendarEventsImmediate = async () => {
   return results;
 };
 
-export const syncGoogleCalendarEventsExtended = async () => {
+export const syncGoogleCalendarEventsExtended = async (locale?: string) => {
   
   const workspaces = await getWorkspacesForSync();
   const results: SyncResult[] = [];
 
   for (const workspace of workspaces) {
     try {
-      const result = await syncWorkspaceExtended(workspace);
+      const result = await syncWorkspaceExtended({ ...workspace, locale });
       results.push(result);
     } catch (error) {
       
@@ -329,7 +358,7 @@ export const syncGoogleCalendarEventsExtended = async () => {
   return results;
 };
 
-export const syncGoogleCalendarEvents = async () => {
-  return syncGoogleCalendarEventsImmediate();
+export const syncGoogleCalendarEvents = async (locale?: string) => {
+  return syncGoogleCalendarEventsImmediate(locale);
 };
 
