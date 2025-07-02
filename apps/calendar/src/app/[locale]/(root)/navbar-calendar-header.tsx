@@ -69,7 +69,7 @@ export default function NavbarCalendarHeader({}: { locale: string }) {
         <Button
           variant="ghost"
           size="sm"
-          className="text-md h-8"
+          className="h-8 text-md"
           // onClick={isToday() || isCurrentMonth() ? undefined : selectToday}
           // disabled={isToday() || isCurrentMonth()}
           disabled

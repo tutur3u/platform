@@ -96,7 +96,7 @@ export default function LMSProductPage() {
         <Badge variant="secondary" className="mb-4">
           Coming Soon
         </Badge>
-        <h1 className="mb-4 text-4xl font-bold">Learning Management System</h1>
+        <h1 className="mb-4 font-bold text-4xl">Learning Management System</h1>
         <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
           Transform your educational and training programs with our
           comprehensive learning management system. Deliver engaging content,
@@ -117,7 +117,7 @@ export default function LMSProductPage() {
         <Card className="border-primary bg-primary/5 p-8">
           <div className="mx-auto flex max-w-4xl flex-col items-center gap-4 text-center">
             <ShieldCheck className="h-12 w-12 text-primary" />
-            <h2 className="text-2xl font-bold">Certified Learning Platform</h2>
+            <h2 className="font-bold text-2xl">Certified Learning Platform</h2>
             <p className="text-muted-foreground">
               Our LMS is designed to meet educational standards and compliance
               requirements, ensuring a secure and effective learning environment
@@ -129,7 +129,7 @@ export default function LMSProductPage() {
 
       {/* Features Grid */}
       <section className="mb-24">
-        <h2 className="mb-12 text-center text-3xl font-bold">
+        <h2 className="mb-12 text-center font-bold text-3xl">
           Powerful Features
         </h2>
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -137,7 +137,7 @@ export default function LMSProductPage() {
             <Card key={feature.title} className="p-6">
               <div className="mb-4 flex items-center gap-3">
                 <div className="text-primary">{feature.icon}</div>
-                <h3 className="text-xl font-semibold">{feature.title}</h3>
+                <h3 className="font-semibold text-xl">{feature.title}</h3>
               </div>
               <p className="text-muted-foreground">{feature.description}</p>
             </Card>
@@ -147,12 +147,12 @@ export default function LMSProductPage() {
 
       {/* Use Cases */}
       <section className="mb-24">
-        <h2 className="mb-12 text-center text-3xl font-bold">Use Cases</h2>
+        <h2 className="mb-12 text-center font-bold text-3xl">Use Cases</h2>
         <div className="grid gap-8 md:grid-cols-3">
           {useCases.map((useCase) => (
             <Card key={useCase.title} className="p-6">
               <GraduationCap className="mb-4 h-8 w-8 text-primary" />
-              <h3 className="mb-4 text-xl font-semibold">{useCase.title}</h3>
+              <h3 className="mb-4 font-semibold text-xl">{useCase.title}</h3>
               <ul className="space-y-2 text-muted-foreground">
                 {useCase.items.map((item) => (
                   <li key={item} className="flex items-center gap-2">
@@ -170,9 +170,9 @@ export default function LMSProductPage() {
       <section className="mb-24">
         <Card className="overflow-hidden">
           <div className="grid md:grid-cols-2">
-            <div className="flex flex-col justify-center gap-4 border-b border-border p-8 md:border-r md:border-b-0">
+            <div className="flex flex-col justify-center gap-4 border-border border-b p-8 md:border-r md:border-b-0">
               <LayoutDashboard className="h-8 w-8 text-primary" />
-              <h3 className="text-2xl font-bold">Learning Analytics</h3>
+              <h3 className="font-bold text-2xl">Learning Analytics</h3>
               <p className="text-muted-foreground">
                 Gain valuable insights into learning patterns, engagement
                 levels, and performance metrics with our advanced analytics
@@ -181,7 +181,7 @@ export default function LMSProductPage() {
             </div>
             <div className="flex flex-col justify-center gap-4 p-8">
               <Users className="h-8 w-8 text-primary" />
-              <h3 className="text-2xl font-bold">User Management</h3>
+              <h3 className="font-bold text-2xl">User Management</h3>
               <p className="text-muted-foreground">
                 Easily manage learners, instructors, and administrators with
                 role-based access control and detailed user profiles.
@@ -193,13 +193,13 @@ export default function LMSProductPage() {
 
       {/* Achievements Section */}
       <section className="mb-24">
-        <h2 className="mb-12 text-center text-3xl font-bold">
+        <h2 className="mb-12 text-center font-bold text-3xl">
           Learning Achievements
         </h2>
         <div className="grid gap-6 md:grid-cols-2">
           <Card className="p-6">
             <Award className="mb-4 h-8 w-8 text-primary" />
-            <h3 className="mb-2 text-xl font-bold">Certifications</h3>
+            <h3 className="mb-2 font-bold text-xl">Certifications</h3>
             <p className="text-muted-foreground">
               Issue digital certificates and badges to recognize course
               completion and achievements.
@@ -207,7 +207,7 @@ export default function LMSProductPage() {
           </Card>
           <Card className="p-6">
             <Medal className="mb-4 h-8 w-8 text-primary" />
-            <h3 className="mb-2 text-xl font-bold">Gamification</h3>
+            <h3 className="mb-2 font-bold text-xl">Gamification</h3>
             <p className="text-muted-foreground">
               Motivate learners with points, leaderboards, and rewards for
               completing learning objectives.

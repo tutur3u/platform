@@ -40,7 +40,7 @@ export const Floating3DLogo = () => {
         }}
         className="relative"
       >
-        <div className="absolute inset-0 -z-10 rounded-full bg-linear-to-br from-primary/20 via-transparent to-transparent opacity-50 blur-lg transition-all duration-300 group-hover:opacity-100" />
+        <div className="-z-10 absolute inset-0 rounded-full bg-linear-to-br from-primary/20 via-transparent to-transparent opacity-50 blur-lg transition-all duration-300 group-hover:opacity-100" />
         <Image
           src="/media/logos/transparent.png"
           width={200}

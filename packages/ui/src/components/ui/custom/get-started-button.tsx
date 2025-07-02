@@ -23,7 +23,7 @@ export function GetStartedButton({
         disabled={disabled}
         className={cn(
           hidden &&
-            'pointer-events-none bg-transparent text-foreground/50 opacity-50 select-none'
+            'pointer-events-none select-none bg-transparent text-foreground/50 opacity-50'
         )}
       >
         {text}

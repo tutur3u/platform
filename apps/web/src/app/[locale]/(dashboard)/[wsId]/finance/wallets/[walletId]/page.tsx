@@ -56,7 +56,7 @@ export default async function WalletDetailsPage({
       <div className="grid h-fit gap-4 md:grid-cols-2">
         <div className="grid gap-4">
           <div className="grid h-fit gap-2 rounded-lg border p-4">
-            <div className="text-lg font-semibold">
+            <div className="font-semibold text-lg">
               {t('invoices.basic-info')}
             </div>
             <Separator />
@@ -95,7 +95,7 @@ export default async function WalletDetailsPage({
         <div className="grid gap-4">
           <div className="h-full rounded-lg border p-4">
             <div className="grid h-full content-start gap-2">
-              <div className="text-lg font-semibold">
+              <div className="font-semibold text-lg">
                 {t('wallet-data-table.description')}
               </div>
               <Separator />

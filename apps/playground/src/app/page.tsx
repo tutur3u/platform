@@ -21,7 +21,7 @@ export default function Home() {
   return (
     <div className="grid min-h-screen items-center justify-items-center gap-8 p-8">
       {isLoading ? (
-        <div className="text-2xl font-bold">Loading...</div>
+        <div className="font-bold text-2xl">Loading...</div>
       ) : (
         <pre className="whitespace-pre-wrap">
           {JSON.stringify(taskData, null, 2)}

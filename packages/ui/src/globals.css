@@ -111,31 +111,31 @@
   --radius: 0.5rem;
 
   /* Custom colors - Light theme: darker, more saturated for visibility on light bg */
-  --lime: hsl(90 75% 35%);        /* True lime green, dark enough for light bg */
-  --purple: hsl(270 75% 40%);     /* True purple, good contrast */
-  --pink: hsl(330 75% 45%);       /* True pink/magenta */
-  --blue: hsl(220 80% 45%);       /* True blue, strong saturation */
-  --sky: hsl(200 75% 40%);        /* Sky blue */
-  --green: hsl(140 75% 35%);      /* True green, dark enough */
-  --yellow: hsl(50 90% 55%);      /* True yellow, brighter for better visibility */
-  --orange: hsl(25 85% 45%);      /* True orange */
-  --red: hsl(0 80% 45%);          /* True red */
-  --indigo: hsl(250 75% 45%);     /* True indigo */
-  --cyan: hsl(180 75% 35%);       /* True cyan */
-  --gray: hsl(0 0% 45%);          /* Neutral gray */
+  --lime: hsl(90 75% 35%); /* True lime green, dark enough for light bg */
+  --purple: hsl(270 75% 40%); /* True purple, good contrast */
+  --pink: hsl(330 75% 45%); /* True pink/magenta */
+  --blue: hsl(220 80% 45%); /* True blue, strong saturation */
+  --sky: hsl(200 75% 40%); /* Sky blue */
+  --green: hsl(140 75% 35%); /* True green, dark enough */
+  --yellow: hsl(50 90% 55%); /* True yellow, brighter for better visibility */
+  --orange: hsl(25 85% 45%); /* True orange */
+  --red: hsl(0 80% 45%); /* True red */
+  --indigo: hsl(250 75% 45%); /* True indigo */
+  --cyan: hsl(180 75% 35%); /* True cyan */
+  --gray: hsl(0 0% 45%); /* Neutral gray */
 
-  --light-lime: hsl(90 70% 45%);       /* Light lime for text/borders */
-  --light-purple: hsl(270 70% 50%);   /* Light purple */
-  --light-pink: hsl(330 70% 55%);     /* Light pink */
-  --light-blue: hsl(220 75% 55%);     /* Light blue */
-  --light-sky: hsl(200 70% 50%);      /* Light sky blue */
-  --light-green: hsl(140 70% 45%);    /* Light green */
-  --light-yellow: hsl(50 85% 65%);    /* Light yellow, brighter for better contrast */
-  --light-orange: hsl(25 80% 55%);    /* Light orange */
-  --light-red: hsl(0 75% 55%);        /* Light red */
-  --light-indigo: hsl(250 70% 55%);   /* Light indigo */
-  --light-cyan: hsl(180 70% 45%);     /* Light cyan */
-  --light-gray: hsl(0 0% 50%);        /* Light gray */
+  --light-lime: hsl(90 70% 45%); /* Light lime for text/borders */
+  --light-purple: hsl(270 70% 50%); /* Light purple */
+  --light-pink: hsl(330 70% 55%); /* Light pink */
+  --light-blue: hsl(220 75% 55%); /* Light blue */
+  --light-sky: hsl(200 70% 50%); /* Light sky blue */
+  --light-green: hsl(140 70% 45%); /* Light green */
+  --light-yellow: hsl(50 85% 65%); /* Light yellow, brighter for better contrast */
+  --light-orange: hsl(25 80% 55%); /* Light orange */
+  --light-red: hsl(0 75% 55%); /* Light red */
+  --light-indigo: hsl(250 70% 55%); /* Light indigo */
+  --light-cyan: hsl(180 70% 45%); /* Light cyan */
+  --light-gray: hsl(0 0% 50%); /* Light gray */
 
   /* Colors for calendar events */
   --calendar-bg-blue: hsl(220 64% 95%);
@@ -199,31 +199,31 @@
   --radius: 0.5rem;
 
   /* Custom colors - Dark theme: lighter, softer saturation for visibility on dark bg */
-  --lime: hsl(90 60% 65%);         /* True lime, bright enough for dark bg */
-  --purple: hsl(270 65% 70%);      /* True purple, softer for dark theme */
-  --pink: hsl(330 70% 75%);        /* True pink/magenta */
-  --blue: hsl(220 70% 70%);        /* True blue, lighter for dark bg */
-  --sky: hsl(200 65% 75%);         /* Sky blue */
-  --green: hsl(140 60% 65%);       /* True green, bright enough */
-  --yellow: hsl(50 85% 75%);       /* True yellow, bright enough for dark backgrounds */
-  --orange: hsl(25 75% 70%);       /* True orange */
-  --red: hsl(0 70% 70%);           /* True red */
-  --indigo: hsl(250 65% 75%);      /* True indigo */
-  --cyan: hsl(180 60% 70%);        /* True cyan */
-  --gray: hsl(0 0% 70%);           /* Neutral gray */
+  --lime: hsl(90 60% 65%); /* True lime, bright enough for dark bg */
+  --purple: hsl(270 65% 70%); /* True purple, softer for dark theme */
+  --pink: hsl(330 70% 75%); /* True pink/magenta */
+  --blue: hsl(220 70% 70%); /* True blue, lighter for dark bg */
+  --sky: hsl(200 65% 75%); /* Sky blue */
+  --green: hsl(140 60% 65%); /* True green, bright enough */
+  --yellow: hsl(50 85% 75%); /* True yellow, bright enough for dark backgrounds */
+  --orange: hsl(25 75% 70%); /* True orange */
+  --red: hsl(0 70% 70%); /* True red */
+  --indigo: hsl(250 65% 75%); /* True indigo */
+  --cyan: hsl(180 60% 70%); /* True cyan */
+  --gray: hsl(0 0% 70%); /* Neutral gray */
 
-  --light-lime: hsl(90 65% 75%);       /* Light lime, bright for dark theme */
-  --light-purple: hsl(270 70% 80%);   /* Light purple */
-  --light-pink: hsl(330 75% 80%);     /* Light pink */
-  --light-blue: hsl(220 75% 80%);     /* Light blue */
-  --light-sky: hsl(200 70% 80%);      /* Light sky blue */
-  --light-green: hsl(140 65% 75%);    /* Light green */
-  --light-yellow: hsl(50 90% 80%);    /* Light yellow, bright for dark theme */
-  --light-orange: hsl(25 80% 80%);    /* Light orange */
-  --light-red: hsl(0 75% 80%);        /* Light red */
-  --light-indigo: hsl(250 70% 80%);   /* Light indigo */
-  --light-cyan: hsl(180 65% 75%);     /* Light cyan */
-  --light-gray: hsl(0 0% 80%);        /* Light gray */
+  --light-lime: hsl(90 65% 75%); /* Light lime, bright for dark theme */
+  --light-purple: hsl(270 70% 80%); /* Light purple */
+  --light-pink: hsl(330 75% 80%); /* Light pink */
+  --light-blue: hsl(220 75% 80%); /* Light blue */
+  --light-sky: hsl(200 70% 80%); /* Light sky blue */
+  --light-green: hsl(140 65% 75%); /* Light green */
+  --light-yellow: hsl(50 90% 80%); /* Light yellow, bright for dark theme */
+  --light-orange: hsl(25 80% 80%); /* Light orange */
+  --light-red: hsl(0 75% 80%); /* Light red */
+  --light-indigo: hsl(250 70% 80%); /* Light indigo */
+  --light-cyan: hsl(180 65% 75%); /* Light cyan */
+  --light-gray: hsl(0 0% 80%); /* Light gray */
 
   /* Colors for calendar events */
   --calendar-bg-blue: hsl(220 14% 11%);
@@ -360,4 +360,3 @@
     @apply bg-background text-foreground;
   }
 }
-

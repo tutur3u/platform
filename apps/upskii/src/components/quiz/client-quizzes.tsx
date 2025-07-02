@@ -104,7 +104,7 @@ export default function ClientQuizzes({
             className="col-span-full flex w-full flex-col gap-4"
           >
             <div className="grid gap-4 md:grid-cols-2">
-              <h3 className="text-lg font-bold">
+              <h3 className="font-bold text-lg">
                 <LucideBubbles className="mr-2 inline h-5 w-5" />
                 {set.setName}
               </h3>
@@ -199,7 +199,7 @@ const QuizzesList = ({
           ) : (
             <>
               <div className="quiz-question">
-                <h3 className="text-lg font-semibold">
+                <h3 className="font-semibold text-lg">
                   {quiz?.question || '...'}
                 </h3>
                 <Separator className="my-2" />

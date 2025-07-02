@@ -14,7 +14,7 @@ export default function AboutPage() {
   return (
     <main className="relative mx-auto overflow-x-clip pb-12">
       {/* Enhanced Floating Orbs */}
-      <div className="pointer-events-none fixed inset-0 -z-10">
+      <div className="-z-10 pointer-events-none fixed inset-0">
         <motion.div
           animate={{
             scale: [1, 1.2, 1],
@@ -25,7 +25,7 @@ export default function AboutPage() {
             repeat: Infinity,
             ease: 'linear',
           }}
-          className="absolute top-0 -left-32 h-80 w-[20rem] rounded-full bg-linear-to-br from-purple-500/30 via-pink-500/20 to-transparent blur-3xl sm:-left-64 sm:h-160 sm:w-160"
+          className="-left-32 sm:-left-64 absolute top-0 h-80 w-[20rem] rounded-full bg-linear-to-br from-purple-500/30 via-pink-500/20 to-transparent blur-3xl sm:h-160 sm:w-160"
         />
         <motion.div
           animate={{
@@ -37,7 +37,7 @@ export default function AboutPage() {
             repeat: Infinity,
             ease: 'linear',
           }}
-          className="absolute top-[30%] -right-32 h-70 w-70 rounded-full bg-linear-to-br from-blue-500/30 via-cyan-500/20 to-transparent blur-3xl sm:-right-64 sm:h-140 sm:w-140"
+          className="-right-32 sm:-right-64 absolute top-[30%] h-70 w-70 rounded-full bg-linear-to-br from-blue-500/30 via-cyan-500/20 to-transparent blur-3xl sm:h-140 sm:w-140"
         />
         <motion.div
           animate={{
@@ -49,12 +49,12 @@ export default function AboutPage() {
             repeat: Infinity,
             ease: 'linear',
           }}
-          className="absolute -bottom-32 left-1/2 h-90 w-90 -translate-x-1/2 rounded-full bg-linear-to-br from-green-500/20 via-emerald-500/15 to-transparent blur-3xl sm:-bottom-64 sm:h-180 sm:w-180"
+          className="-bottom-32 -translate-x-1/2 sm:-bottom-64 absolute left-1/2 h-90 w-90 rounded-full bg-linear-to-br from-green-500/20 via-emerald-500/15 to-transparent blur-3xl sm:h-180 sm:w-180"
         />
       </div>
 
       {/* Enhanced Background Patterns */}
-      <div className="pointer-events-none fixed inset-0 -z-10">
+      <div className="-z-10 pointer-events-none fixed inset-0">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(var(--primary-rgb),0.05)_1px,transparent_1px)] bg-size-[24px_24px]" />
         <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(var(--primary-rgb),0.02)_1px,transparent_1px)] bg-size-[120px] opacity-20" />
         <motion.div

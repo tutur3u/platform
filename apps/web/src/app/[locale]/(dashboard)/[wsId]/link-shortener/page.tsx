@@ -78,18 +78,18 @@ export default async function LinkShortenerPage({
 
   return (
     <div>
-      <div className="container mx-auto px-4 py-8 space-y-8">
+      <div className="container mx-auto space-y-8 px-4 py-8">
         {/* Header Section */}
-        <div className="text-center space-y-4">
+        <div className="space-y-4 text-center">
           <div className="flex items-center justify-center space-x-3">
-            <div className="p-3 bg-dynamic-blue/10 rounded-full">
+            <div className="rounded-full bg-dynamic-blue/10 p-3">
               <LinkIcon className="h-8 w-8 text-dynamic-blue" />
             </div>
             <div>
-              <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
+              <h1 className="bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text font-bold text-4xl tracking-tight">
                 {t('link-shortener.plural')}
               </h1>
-              <p className="text-lg text-muted-foreground mt-2">
+              <p className="mt-2 text-lg text-muted-foreground">
                 {t('link-shortener.description')}
               </p>
             </div>
@@ -97,53 +97,53 @@ export default async function LinkShortenerPage({
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card className="border-0 shadow-md bg-gradient-to-br from-dynamic-blue/5 to-dynamic-blue/10">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+          <Card className="border-0 bg-gradient-to-br from-dynamic-blue/5 to-dynamic-blue/10 shadow-md">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
                 <LinkIcon className="h-4 w-4" />
                 {t('link-shortener.total_links')}
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-dynamic-blue">
+              <div className="font-bold text-2xl text-dynamic-blue">
                 {count}
               </div>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-muted-foreground text-xs">
                 {t('link-shortener.all_time')}
               </p>
             </CardContent>
           </Card>
 
-          <Card className="border-0 shadow-md bg-gradient-to-br from-dynamic-green/5 to-dynamic-green/10">
+          <Card className="border-0 bg-gradient-to-br from-dynamic-green/5 to-dynamic-green/10 shadow-md">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
                 <Clock className="h-4 w-4" />
                 {t('link-shortener.this_month')}
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-dynamic-green">
+              <div className="font-bold text-2xl text-dynamic-green">
                 {linksThisMonth}
               </div>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-muted-foreground text-xs">
                 {t('link-shortener.new_links')}
               </p>
             </CardContent>
           </Card>
 
-          <Card className="border-0 shadow-md bg-gradient-to-br from-dynamic-orange/5 to-dynamic-orange/10">
+          <Card className="border-0 bg-gradient-to-br from-dynamic-orange/5 to-dynamic-orange/10 shadow-md">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
                 <Users className="h-4 w-4" />
                 {t('link-shortener.active_creators')}
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-dynamic-orange">
+              <div className="font-bold text-2xl text-dynamic-orange">
                 {uniqueCreators}
               </div>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-muted-foreground text-xs">
                 {t('link-shortener.unique_users')}
               </p>
             </CardContent>
@@ -151,21 +151,21 @@ export default async function LinkShortenerPage({
         </div>
 
         {/* Create Link Section */}
-        <Card className="border-0 shadow-lg bg-card/50 backdrop-blur-sm">
+        <Card className="border-0 bg-card/50 shadow-lg backdrop-blur-sm">
           <CardContent className="p-0">
             <InlineLinkShortenerForm />
           </CardContent>
         </Card>
 
         {/* Links Table Section */}
-        <Card className="border-0 shadow-lg bg-card/50 backdrop-blur-sm">
+        <Card className="border-0 bg-card/50 shadow-lg backdrop-blur-sm">
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <TrendingUp className="h-5 w-5 text-dynamic-blue" />
                 {t('link-shortener.recent_links')}
               </div>
-              <div className="text-sm font-normal text-muted-foreground">
+              <div className="font-normal text-muted-foreground text-sm">
                 {count}{' '}
                 {count === 1
                   ? t('link-shortener.singular')

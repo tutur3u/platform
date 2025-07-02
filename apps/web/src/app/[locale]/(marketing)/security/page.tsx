@@ -84,9 +84,9 @@ const securityFeatures: SecurityFeature[] = [
 
 export default function SecurityPage() {
   return (
-    <main className="relative container space-y-24 py-16 md:py-24">
+    <main className="container relative space-y-24 py-16 md:py-24">
       {/* Enhanced Background Effects */}
-      <div className="pointer-events-none fixed inset-0 -z-10">
+      <div className="-z-10 pointer-events-none fixed inset-0">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(var(--primary-rgb),0.05)_1px,transparent_1px)] bg-size-[24px_24px]" />
         <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(var(--primary-rgb),0.02)_1px,transparent_1px)] bg-size-[120px] opacity-20" />
         <motion.div
@@ -110,17 +110,17 @@ export default function SecurityPage() {
       >
         <Badge
           variant="secondary"
-          className="mb-6 px-4 py-2 text-base font-medium"
+          className="mb-6 px-4 py-2 font-medium text-base"
         >
           Security First
         </Badge>
-        <h1 className="mb-6 text-4xl font-bold text-balance text-foreground md:text-5xl lg:text-6xl">
+        <h1 className="mb-6 text-balance font-bold text-4xl text-foreground md:text-5xl lg:text-6xl">
           Your Security is Our{' '}
           <span className="bg-linear-to-r from-primary via-purple-500 to-pink-500 bg-clip-text text-transparent">
             Top Priority
           </span>
         </h1>
-        <p className="mx-auto max-w-2xl text-lg text-foreground/80 md:text-xl">
+        <p className="mx-auto max-w-2xl text-foreground/80 text-lg md:text-xl">
           We are committed to protecting your data with industry-leading
           security practices and continuous monitoring.
         </p>
@@ -153,7 +153,7 @@ export default function SecurityPage() {
                   <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 transition-colors group-hover:bg-primary/20">
                     <feature.icon className="h-6 w-6 text-primary" />
                   </div>
-                  <h3 className="mb-2 text-lg font-bold text-foreground">
+                  <h3 className="mb-2 font-bold text-foreground text-lg">
                     {feature.title}
                   </h3>
                   <p className="text-foreground/60">{feature.description}</p>
@@ -188,12 +188,12 @@ export default function SecurityPage() {
               </motion.div>
 
               <div className="space-y-4 text-center md:text-left">
-                <h2 className="text-3xl font-bold text-foreground">
+                <h2 className="font-bold text-3xl text-foreground">
                   <span className="bg-linear-to-r from-primary via-purple-500 to-pink-500 bg-clip-text text-transparent">
                     Report a Vulnerability
                   </span>
                 </h2>
-                <p className="mx-auto max-w-2xl text-lg text-foreground/80">
+                <p className="mx-auto max-w-2xl text-foreground/80 text-lg">
                   Found a security vulnerability? We appreciate your help in
                   disclosing it responsibly. Please contact our security team
                   directly.
@@ -241,13 +241,13 @@ export default function SecurityPage() {
               <div className="flex flex-wrap justify-center gap-6 md:justify-start">
                 <div className="flex items-center gap-2">
                   <ShieldCheck className="h-5 w-5 text-primary" />
-                  <span className="text-sm text-foreground/60">
+                  <span className="text-foreground/60 text-sm">
                     Responsible Disclosure
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Globe2 className="h-5 w-5 text-primary" />
-                  <span className="text-sm text-foreground/60">
+                  <span className="text-foreground/60 text-sm">
                     Bug Bounty Program
                   </span>
                 </div>
@@ -257,7 +257,7 @@ export default function SecurityPage() {
             <div className="relative">
               <div className="relative overflow-hidden rounded-2xl bg-foreground/5 p-6 backdrop-blur-sm md:p-8">
                 <div className="space-y-6">
-                  <h3 className="text-xl font-bold text-foreground">
+                  <h3 className="font-bold text-foreground text-xl">
                     Reporting Guidelines
                   </h3>
                   <div className="space-y-4">
@@ -267,7 +267,7 @@ export default function SecurityPage() {
                       </div>
                       <div>
                         <h4 className="font-semibold">Scope</h4>
-                        <p className="text-sm text-foreground/60">
+                        <p className="text-foreground/60 text-sm">
                           Security issues in our core services and
                           infrastructure
                         </p>
@@ -280,7 +280,7 @@ export default function SecurityPage() {
                       </div>
                       <div>
                         <h4 className="font-semibold">Contact</h4>
-                        <p className="text-sm text-foreground/60">
+                        <p className="text-foreground/60 text-sm">
                           Email security@tuturuuu.com with detailed reports
                         </p>
                       </div>
@@ -292,7 +292,7 @@ export default function SecurityPage() {
                       </div>
                       <div>
                         <h4 className="font-semibold">Response</h4>
-                        <p className="text-sm text-foreground/60">
+                        <p className="text-foreground/60 text-sm">
                           We'll respond within 24 hours to acknowledge reports
                         </p>
                       </div>

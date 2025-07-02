@@ -61,7 +61,7 @@ export default function Security({ workspace }: Props) {
   return (
     <>
       <div className="flex flex-col rounded-lg border border-border bg-foreground/5 p-6">
-        <div className="mb-2 text-2xl font-bold text-foreground">
+        <div className="mb-2 font-bold text-2xl text-foreground">
           {t('security')}
         </div>
         <div className="mb-6 text-foreground/80">
@@ -74,7 +74,7 @@ export default function Security({ workspace }: Props) {
               <AlertTriangle className="mt-0.5 h-5 w-5 text-dynamic-red" />
               <div className="flex-1">
                 <h3 className="font-semibold text-dynamic-red">Danger Zone</h3>
-                <p className="mt-1 text-sm text-foreground/70">
+                <p className="mt-1 text-foreground/70 text-sm">
                   Once you delete a workspace, there is no going back. Please be
                   certain.
                 </p>
@@ -106,7 +106,7 @@ export default function Security({ workspace }: Props) {
               permanently delete the <strong>{workspace?.name}</strong>{' '}
               workspace and all of its data.
             </AlertDialogDescription>
-            <div className="mt-3 text-sm text-foreground/80">
+            <div className="mt-3 text-foreground/80 text-sm">
               Please type <strong>{workspace?.name}</strong> to confirm.
             </div>
           </AlertDialogHeader>

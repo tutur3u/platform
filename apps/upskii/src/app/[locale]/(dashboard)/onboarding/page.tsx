@@ -19,11 +19,11 @@ export default async function OnboardingPage() {
           }
         >
           <div className="text-center">
-            <div className="bg-linear-to-br from-yellow-500 via-green-500 to-blue-600 bg-clip-text py-2 text-2xl font-semibold text-transparent md:text-3xl lg:text-5xl dark:from-yellow-500 dark:via-green-200 dark:to-green-300">
+            <div className="bg-linear-to-br from-yellow-500 via-green-500 to-blue-600 bg-clip-text py-2 font-semibold text-2xl text-transparent md:text-3xl lg:text-5xl dark:from-yellow-500 dark:via-green-200 dark:to-green-300">
               {t('just-a-moment')}
             </div>
 
-            <div className="text-lg font-semibold text-foreground/80 md:text-xl">
+            <div className="font-semibold text-foreground/80 text-lg md:text-xl">
               {t('just-a-moment-desc')}
             </div>
           </div>

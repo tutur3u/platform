@@ -226,7 +226,7 @@ export function DataExplorer({ wsId, dataset }: Props) {
     if (!headers.length) {
       return (
         <div className="flex h-64 flex-col items-center justify-center">
-          <p className="text-sm text-muted-foreground">
+          <p className="text-muted-foreground text-sm">
             {t('ws-datasets.no_data')}
           </p>
           <Button variant="outline" onClick={handleRefresh} className="mt-4">
@@ -273,7 +273,7 @@ export function DataExplorer({ wsId, dataset }: Props) {
                       {headers.map((header: any, colIndex: number) => (
                         <td
                           key={colIndex}
-                          className="min-w-32 p-2 text-sm whitespace-pre-line"
+                          className="min-w-32 whitespace-pre-line p-2 text-sm"
                         >
                           <span className="line-clamp-3">
                             {row.cells[header]}
@@ -319,7 +319,7 @@ export function DataExplorer({ wsId, dataset }: Props) {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <span className="text-sm text-muted-foreground">
+          <span className="text-muted-foreground text-sm">
             {t('common.rows-per-page')}:
           </span>
           <Select value={pageSize} onValueChange={handlePageSizeChange}>
@@ -369,7 +369,7 @@ export function DataExplorer({ wsId, dataset }: Props) {
               <ScrollArea className="max-h-96 space-y-4">
                 {headers.map((header: any) => (
                   <div key={header} className="space-y-2">
-                    <label className="text-sm font-medium">{header}</label>
+                    <label className="font-medium text-sm">{header}</label>
                     <Input
                       value={newRow[header] || ''}
                       onChange={(e) =>
@@ -396,7 +396,7 @@ export function DataExplorer({ wsId, dataset }: Props) {
 
       {rowsQuery.isFetching && !data?.length ? (
         <div className="flex h-64 items-center justify-center">
-          <span className="text-sm text-muted-foreground">
+          <span className="text-muted-foreground text-sm">
             {t('common.loading')}...
           </span>
         </div>
@@ -414,7 +414,7 @@ export function DataExplorer({ wsId, dataset }: Props) {
             </>
           ) : (
             <>
-              <div className="text-sm text-muted-foreground">
+              <div className="text-muted-foreground text-sm">
                 Showing {(currentPage - 1) * parseInt(pageSize) + 1} to{' '}
                 {Math.min(currentPage * parseInt(pageSize), totalRows)} of{' '}
                 {totalRows} rows
@@ -505,7 +505,7 @@ export function DataExplorer({ wsId, dataset }: Props) {
             <ScrollArea className="max-h-96 space-y-4">
               {headers.map((header: any) => (
                 <div key={header} className="space-y-2">
-                  <label className="text-sm font-medium">{header}</label>
+                  <label className="font-medium text-sm">{header}</label>
                   <Input
                     value={editingRow.cells[header] || ''}
                     onChange={(e) =>

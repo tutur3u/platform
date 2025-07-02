@@ -250,7 +250,7 @@ export default function TeamDetailsClient({
                 </div>
               ) : (
                 <div className="flex items-center gap-2">
-                  <CardTitle className="text-2xl font-bold">
+                  <CardTitle className="font-bold text-2xl">
                     {teamData.name}
                   </CardTitle>
                   <Button
@@ -273,21 +273,21 @@ export default function TeamDetailsClient({
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="rounded-lg border p-3">
-                  <div className="text-sm font-medium text-muted-foreground">
+                  <div className="font-medium text-muted-foreground text-sm">
                     {t('common.members')}
                   </div>
                   <div className="flex items-center">
                     <UsersRound className="mr-2 h-4 w-4 text-muted-foreground" />
-                    <span className="text-2xl font-bold">{members.length}</span>
+                    <span className="font-bold text-2xl">{members.length}</span>
                   </div>
                 </div>
                 <div className="rounded-lg border p-3">
-                  <div className="text-sm font-medium text-muted-foreground">
+                  <div className="font-medium text-muted-foreground text-sm">
                     {t('teams.invitations')}
                   </div>
                   <div className="flex items-center">
                     <Mail className="mr-2 h-4 w-4 text-muted-foreground" />
-                    <span className="text-2xl font-bold">
+                    <span className="font-bold text-2xl">
                       {invitations.length}
                     </span>
                   </div>
@@ -407,7 +407,7 @@ export default function TeamDetailsClient({
                           <div className="font-medium">
                             {member.display_name}
                           </div>
-                          <div className="text-sm text-muted-foreground">
+                          <div className="text-muted-foreground text-sm">
                             {member.email}
                           </div>
                         </div>
@@ -489,7 +489,7 @@ export default function TeamDetailsClient({
                     >
                       <div>
                         <div className="font-medium">{invitation.email}</div>
-                        <div className="text-sm text-muted-foreground">
+                        <div className="text-muted-foreground text-sm">
                           {t('teams.invited')}{' '}
                           {moment(invitation.created_at).format('MMM DD, YYYY')}
                         </div>

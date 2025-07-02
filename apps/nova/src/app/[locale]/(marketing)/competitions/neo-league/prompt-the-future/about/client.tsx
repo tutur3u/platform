@@ -274,12 +274,12 @@ export function AboutUsClient() {
               </div>
               <div className="flex flex-col items-center justify-center gap-2 text-center">
                 <motion.h3
-                  className="text-xl font-bold transition-colors duration-300 group-hover:text-primary"
+                  className="font-bold text-xl transition-colors duration-300 group-hover:text-primary"
                   whileHover={{ scale: 1.02 }}
                 >
                   {name}
                 </motion.h3>
-                <p className="text-sm text-balance text-primary">{role}</p>
+                <p className="text-balance text-primary text-sm">{role}</p>
                 {organization && (
                   <Badge
                     variant="outline"
@@ -290,7 +290,7 @@ export function AboutUsClient() {
                 )}
               </div>
             </div>
-            <p className="mb-4 text-sm text-balance text-muted-foreground">
+            <p className="mb-4 text-balance text-muted-foreground text-sm">
               {bio}
             </p>
             {member.links && (
@@ -476,12 +476,12 @@ export function AboutUsClient() {
                 </Badge>
               </div>
               <motion.h3
-                className="mb-2 text-xl font-bold text-balance transition-colors duration-300 group-hover:text-primary"
+                className="mb-2 text-balance font-bold text-xl transition-colors duration-300 group-hover:text-primary"
                 whileHover={{ scale: 1.02 }}
               >
                 {name}
               </motion.h3>
-              <p className="mb-4 text-sm text-balance text-muted-foreground">
+              <p className="mb-4 text-balance text-muted-foreground text-sm">
                 {description}
               </p>
               {/* <Link
@@ -520,8 +520,8 @@ export function AboutUsClient() {
         <Card className="h-full overflow-hidden border-foreground/10 bg-foreground/5 transition-all duration-300 hover:border-primary/30 hover:bg-foreground/10 hover:shadow-md hover:shadow-primary/5">
           <div className="p-4">
             <div className="mb-2 flex flex-col items-center justify-center gap-3 text-center">
-              <h3 className="font-semibold text-balance">{name}</h3>
-              <p className="text-xs text-balance text-muted-foreground">
+              <h3 className="text-balance font-semibold">{name}</h3>
+              <p className="text-balance text-muted-foreground text-xs">
                 {contribution}
               </p>
             </div>
@@ -593,7 +593,7 @@ export function AboutUsClient() {
         {codeSnippetsData.map((snippet, i) => (
           <motion.div
             key={`code-${i}`}
-            className="absolute font-mono text-xs text-primary/20"
+            className="absolute font-mono text-primary/20 text-xs"
             style={{
               top: snippet.top,
               left: snippet.left,
@@ -622,7 +622,7 @@ export function AboutUsClient() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2, duration: 0.6 }}
-            className="mb-6 text-center text-4xl font-bold tracking-tight text-balance text-foreground md:text-6xl"
+            className="mb-6 text-balance text-center font-bold text-4xl text-foreground tracking-tight md:text-6xl"
           >
             {t('title')}
             <br />
@@ -638,7 +638,7 @@ export function AboutUsClient() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4, duration: 0.8 }}
-            className="mb-8 max-w-2xl text-center text-lg text-balance text-foreground/50"
+            className="mb-8 max-w-2xl text-balance text-center text-foreground/50 text-lg"
           >
             {t('subtitle')}
           </motion.div>
@@ -669,7 +669,7 @@ export function AboutUsClient() {
               </div>
             </div>
 
-            <div className="text-2xl font-light text-primary">×</div>
+            <div className="font-light text-2xl text-primary">×</div>
 
             <div className="flex flex-col items-center">
               <div className="relative overflow-hidden">
@@ -708,7 +708,7 @@ export function AboutUsClient() {
                 <RocketIcon className="mr-2 h-4 w-4" />
                 {t('event-intro.badge')}
               </Badge>
-              <h2 className="mb-4 text-3xl font-bold">
+              <h2 className="mb-4 font-bold text-3xl">
                 {t('event-intro.event-title')}
               </h2>
               <p className="mb-6 text-balance text-muted-foreground">
@@ -723,7 +723,7 @@ export function AboutUsClient() {
                     <h3 className="font-medium">
                       {t('event-intro.features.challengesTitle')}
                     </h3>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-muted-foreground text-sm">
                       {t('event-intro.features.challengesDesc')}
                     </p>
                   </div>
@@ -736,7 +736,7 @@ export function AboutUsClient() {
                     <h3 className="font-medium">
                       {t('event-intro.features.skillsTitle')}
                     </h3>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-muted-foreground text-sm">
                       {t('event-intro.features.skillsDesc')}
                     </p>
                   </div>
@@ -749,7 +749,7 @@ export function AboutUsClient() {
                     <h3 className="font-medium">
                       {t('event-intro.features.communityTitle')}
                     </h3>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-muted-foreground text-sm">
                       {t('event-intro.features.communityDesc')}
                     </p>
                   </div>
@@ -815,7 +815,7 @@ export function AboutUsClient() {
                   </motion.div>
 
                   <motion.h3
-                    className="mb-2 bg-linear-to-r from-primary via-purple-500 to-blue-500 bg-clip-text text-center text-2xl font-bold text-transparent"
+                    className="mb-2 bg-linear-to-r from-primary via-purple-500 to-blue-500 bg-clip-text text-center font-bold text-2xl text-transparent"
                     initial={{ y: 10, opacity: 0 }}
                     whileInView={{ y: 0, opacity: 1 }}
                     viewport={{ once: true }}
@@ -825,7 +825,7 @@ export function AboutUsClient() {
                   </motion.h3>
 
                   <motion.p
-                    className="text-center text-sm text-muted-foreground"
+                    className="text-center text-muted-foreground text-sm"
                     initial={{ y: 10, opacity: 0 }}
                     whileInView={{ y: 0, opacity: 1 }}
                     viewport={{ once: true }}
@@ -879,13 +879,13 @@ export function AboutUsClient() {
                 <Sparkles className="mr-2 h-4 w-4" />
                 {t('prompt-intro.badge')}
               </Badge>
-              <h2 className="mb-6 text-4xl font-bold md:text-5xl">
+              <h2 className="mb-6 font-bold text-4xl md:text-5xl">
                 {t('prompt-intro.title1')}
                 <span className="bg-linear-to-r from-primary to-purple-500 bg-clip-text text-transparent">
                   {t('prompt-intro.title2')}
                 </span>
               </h2>
-              <p className="mx-auto mb-12 max-w-3xl text-lg text-balance text-muted-foreground">
+              <p className="mx-auto mb-12 max-w-3xl text-balance text-lg text-muted-foreground">
                 {t('prompt-intro.description')}
               </p>
             </motion.div>
@@ -948,12 +948,12 @@ export function AboutUsClient() {
                       </motion.div>
                     </div>
                     <motion.h3
-                      className="mb-2 bg-linear-to-r from-primary to-purple-500 bg-clip-text text-center text-xl font-bold text-transparent"
+                      className="mb-2 bg-linear-to-r from-primary to-purple-500 bg-clip-text text-center font-bold text-transparent text-xl"
                       whileHover={{ scale: 1.02 }}
                     >
                       {t('prompt-intro.cards.language-title')}
                     </motion.h3>
-                    <p className="text-center text-balance text-muted-foreground">
+                    <p className="text-balance text-center text-muted-foreground">
                       {t('prompt-intro.cards.language-desc')}
                     </p>
                   </div>
@@ -1016,12 +1016,12 @@ export function AboutUsClient() {
                       </motion.div>
                     </div>
                     <motion.h3
-                      className="mb-2 bg-linear-to-r from-purple-500 to-blue-500 bg-clip-text text-center text-xl font-bold text-transparent"
+                      className="mb-2 bg-linear-to-r from-purple-500 to-blue-500 bg-clip-text text-center font-bold text-transparent text-xl"
                       whileHover={{ scale: 1.02 }}
                     >
                       {t('prompt-intro.cards.creativity-title')}
                     </motion.h3>
-                    <p className="text-center text-balance text-muted-foreground">
+                    <p className="text-balance text-center text-muted-foreground">
                       {t('prompt-intro.cards.creativity-desc')}
                     </p>
                   </div>
@@ -1091,12 +1091,12 @@ export function AboutUsClient() {
                       </motion.div>
                     </div>
                     <motion.h3
-                      className="mb-2 bg-linear-to-r from-blue-500 to-primary bg-clip-text text-center text-xl font-bold text-transparent"
+                      className="mb-2 bg-linear-to-r from-blue-500 to-primary bg-clip-text text-center font-bold text-transparent text-xl"
                       whileHover={{ scale: 1.02 }}
                     >
                       {t('prompt-intro.cards.future-work-title')}
                     </motion.h3>
-                    <p className="text-center text-balance text-muted-foreground">
+                    <p className="text-balance text-center text-muted-foreground">
                       {t('prompt-intro.cards.future-work-desc')}
                     </p>
                   </div>
@@ -1116,7 +1116,7 @@ export function AboutUsClient() {
                 <Badge variant="outline" className="mb-4">
                   {t('prompt-impact.badge')}
                 </Badge>
-                <h3 className="mb-4 text-3xl font-bold">
+                <h3 className="mb-4 font-bold text-3xl">
                   {t('prompt-impact.title')}
                 </h3>
                 <p className="mb-6 text-balance text-muted-foreground">
@@ -1132,7 +1132,7 @@ export function AboutUsClient() {
                       <h4 className="font-medium">
                         {t('prompt-impact.cards.democratize-title')}
                       </h4>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-muted-foreground text-sm">
                         {t('prompt-impact.cards.democratize-desc')}
                       </p>
                     </div>
@@ -1146,7 +1146,7 @@ export function AboutUsClient() {
                       <h4 className="font-medium">
                         {t('prompt-impact.cards.precision-title')}
                       </h4>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-muted-foreground text-sm">
                         {t('prompt-impact.cards.precision-desc')}
                       </p>
                     </div>
@@ -1160,7 +1160,7 @@ export function AboutUsClient() {
                       <h4 className="font-medium">
                         {t('prompt-impact.cards.skill-title')}
                       </h4>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-muted-foreground text-sm">
                         {t('prompt-impact.cards.skill-desc')}
                       </p>
                     </div>
@@ -1193,7 +1193,7 @@ export function AboutUsClient() {
                         <div className="h-3 w-3 rounded-full bg-red-500" />
                         <div className="h-3 w-3 rounded-full bg-yellow-500" />
                         <div className="h-3 w-3 rounded-full bg-green-500" />
-                        <div className="ml-auto text-xs text-muted-foreground">
+                        <div className="ml-auto text-muted-foreground text-xs">
                           Tuturuuu AI
                         </div>
                       </div>
@@ -1236,15 +1236,15 @@ export function AboutUsClient() {
                   variants={floatingVariants}
                   initial="initial"
                   animate="float"
-                  className="absolute -right-6 -bottom-6 rounded-lg border border-primary/20 bg-background/80 p-4 backdrop-blur-sm"
+                  className="-right-6 -bottom-6 absolute rounded-lg border border-primary/20 bg-background/80 p-4 backdrop-blur-sm"
                 >
                   <div className="flex items-center gap-2">
                     <Sparkles className="h-4 w-4 text-primary" />
-                    <p className="text-sm font-medium">
+                    <p className="font-medium text-sm">
                       {t('prompt-impact.cards.democratize-title')}
                     </p>
                   </div>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-muted-foreground text-xs">
                     {t('prompt-impact.cards.democratize-desc')}
                   </p>
                 </motion.div>
@@ -1256,7 +1256,7 @@ export function AboutUsClient() {
           <div className="mb-16 rounded-2xl border border-primary/10 bg-foreground/5 p-8">
             <div className="grid gap-8 md:grid-cols-2">
               <div>
-                <h3 className="mb-4 flex items-center gap-4 text-2xl font-bold">
+                <h3 className="mb-4 flex items-center gap-4 font-bold text-2xl">
                   <RocketIcon className="h-5 w-5" />
                   {t('why-now-why-us.why-now.title')}
                 </h3>
@@ -1283,8 +1283,8 @@ export function AboutUsClient() {
                       transition={{ duration: 3, repeat: Infinity }}
                     >
                       <div className="text-center">
-                        <h4 className="text-xl font-bold">2025</h4>
-                        <p className="text-sm text-muted-foreground">
+                        <h4 className="font-bold text-xl">2025</h4>
+                        <p className="text-muted-foreground text-sm">
                           {t('why-now-why-us.why-now.tagline')}
                         </p>
                       </div>
@@ -1294,7 +1294,7 @@ export function AboutUsClient() {
               </div>
 
               <div>
-                <h3 className="mb-4 flex items-center gap-4 text-2xl font-bold">
+                <h3 className="mb-4 flex items-center gap-4 font-bold text-2xl">
                   <Users className="h-5 w-5" />
                   {t('why-now-why-us.why-us.title')}
                 </h3>
@@ -1323,7 +1323,7 @@ export function AboutUsClient() {
                             className="object-contain"
                           />
                         </div>
-                        <p className="mt-2 text-xs text-muted-foreground">
+                        <p className="mt-2 text-muted-foreground text-xs">
                           {t('why-now-why-us.why-us.academic')}
                         </p>
                       </motion.div>
@@ -1345,7 +1345,7 @@ export function AboutUsClient() {
                             className="object-contain"
                           />
                         </div>
-                        <p className="mt-2 text-xs text-muted-foreground">
+                        <p className="mt-2 text-muted-foreground text-xs">
                           {t('why-now-why-us.why-us.technical')}
                         </p>
                       </motion.div>
@@ -1384,7 +1384,7 @@ export function AboutUsClient() {
             {/* Organizers Tab */}
             <TabsContent value="organizers">
               <div className="mb-8">
-                <h2 className="mb-2 text-2xl font-bold">
+                <h2 className="mb-2 font-bold text-2xl">
                   <span className="flex items-center gap-2">
                     <Users className="h-5 w-5 text-primary" />
                     {t('organizers.title')}
@@ -1412,7 +1412,7 @@ export function AboutUsClient() {
             {/* Platform Builders Tab */}
             <TabsContent value="builders">
               <div className="mb-8">
-                <h2 className="mb-2 text-2xl font-bold">
+                <h2 className="mb-2 font-bold text-2xl">
                   <span className="flex items-center gap-2">
                     <Code className="h-5 w-5 text-primary" />
                     {t('platform-builder.title')}
@@ -1440,7 +1440,7 @@ export function AboutUsClient() {
             {/* Sponsors Tab */}
             <TabsContent value="sponsors">
               <div className="mb-8">
-                <h2 className="mb-2 text-2xl font-bold">
+                <h2 className="mb-2 font-bold text-2xl">
                   <span className="flex items-center gap-2">
                     <Building className="h-5 w-5 text-primary" />
                     {t('sponsors.title')}
@@ -1465,7 +1465,7 @@ export function AboutUsClient() {
               </motion.div>
 
               <div className="mt-12 text-center">
-                <h3 className="mb-4 text-xl font-semibold">
+                <h3 className="mb-4 font-semibold text-xl">
                   {t('sponsors.call-to-action.text')}
                 </h3>
                 <Link href="mailto:contact@tuturuuu.com">
@@ -1480,7 +1480,7 @@ export function AboutUsClient() {
             {/* Special Thanks Tab */}
             <TabsContent value="thanks">
               <div className="mb-8">
-                <h2 className="mb-2 text-2xl font-bold">
+                <h2 className="mb-2 font-bold text-2xl">
                   <span className="flex items-center gap-2">
                     <Heart className="h-5 w-5 text-primary" />
                     {t('special-thanks.title')}
@@ -1511,7 +1511,7 @@ export function AboutUsClient() {
                       <HandHeart className="h-6 w-6" />
                     </div>
                     <div>
-                      <h3 className="mb-2 text-xl font-semibold">
+                      <h3 className="mb-2 font-semibold text-xl">
                         {t('special-thanks.community.title')}
                       </h3>
                       <p className="text-muted-foreground">
@@ -1586,7 +1586,7 @@ export function AboutUsClient() {
                   />
                 </div>
                 <motion.div
-                  className="absolute -right-3 -bottom-3 rounded-full border border-primary/20 bg-primary/10 p-2 backdrop-blur-sm"
+                  className="-right-3 -bottom-3 absolute rounded-full border border-primary/20 bg-primary/10 p-2 backdrop-blur-sm"
                   animate={{ rotate: [0, 10, 0, -10, 0] }}
                   transition={{ duration: 5, repeat: Infinity }}
                 >
@@ -1595,7 +1595,7 @@ export function AboutUsClient() {
               </motion.div>
 
               <div>
-                <h2 className="mb-4 text-3xl font-bold">
+                <h2 className="mb-4 font-bold text-3xl">
                   {t('tech-sponsor.title')}
                   <span className="bg-linear-to-r from-primary to-purple-500 bg-clip-text text-transparent">
                     Tuturuuu
@@ -1629,7 +1629,7 @@ export function AboutUsClient() {
                       <h3 className="font-medium">
                         {t('tech-sponsor.sections.infrastructure.title')}
                       </h3>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-muted-foreground text-sm">
                         {t('tech-sponsor.sections.infrastructure.description')}
                       </p>
                     </div>
@@ -1646,7 +1646,7 @@ export function AboutUsClient() {
                       <h3 className="font-medium">
                         {t('tech-sponsor.sections.challenges.title')}
                       </h3>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-muted-foreground text-sm">
                         {t('tech-sponsor.sections.challenges.description')}
                       </p>
                     </div>
@@ -1663,7 +1663,7 @@ export function AboutUsClient() {
                       <h3 className="font-medium">
                         {t('tech-sponsor.sections.resources.title')}
                       </h3>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-muted-foreground text-sm">
                         {t('tech-sponsor.sections.resources.description')}
                       </p>
                     </div>
@@ -1680,7 +1680,7 @@ export function AboutUsClient() {
                       <h3 className="font-medium">
                         {t('tech-sponsor.sections.mentorship.title')}
                       </h3>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-muted-foreground text-sm">
                         {t('tech-sponsor.sections.mentorship.description')}
                       </p>
                     </div>
@@ -1688,7 +1688,7 @@ export function AboutUsClient() {
                 </motion.div>
 
                 <motion.div
-                  className="mt-6 border-t border-primary/10 pt-4 text-sm text-muted-foreground"
+                  className="mt-6 border-primary/10 border-t pt-4 text-muted-foreground text-sm"
                   initial={{ opacity: 0 }}
                   whileInView={{ opacity: 1 }}
                   viewport={{ once: true }}

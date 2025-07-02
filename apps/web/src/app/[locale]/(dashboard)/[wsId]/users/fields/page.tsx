@@ -34,7 +34,7 @@ export default async function WorkspaceUserFieldsPage({
     <>
       <div className="flex flex-col justify-between gap-4 rounded-lg border border-border bg-foreground/5 p-4 md:flex-row md:items-start">
         <div>
-          <h1 className="text-lg font-bold md:text-2xl">{t('module')}</h1>
+          <h1 className="font-bold text-lg md:text-2xl">{t('module')}</h1>
           <p className="text-foreground/80">{t('module_description')}</p>
         </div>
 

@@ -288,7 +288,7 @@ export default function DocumentDetailsPage({ params }: Props) {
                 ref={nameInputRef}
                 type="text"
                 defaultValue={document.name || ''}
-                className="h-9 w-fit border bg-transparent px-2 text-lg font-medium focus-visible:ring-0"
+                className="h-9 w-fit border bg-transparent px-2 font-medium text-lg focus-visible:ring-0"
                 onChange={handleNameInputChange}
                 onBlur={handleNameChange}
                 onKeyDown={(e) => e.key === 'Enter' && handleNameChange()}

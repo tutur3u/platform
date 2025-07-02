@@ -125,7 +125,7 @@ export default function MarketingPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2, duration: 0.6 }}
-              className="mb-6 text-center text-4xl font-bold tracking-tight text-balance text-foreground md:text-6xl lg:text-7xl"
+              className="mb-6 text-balance text-center font-bold text-4xl text-foreground tracking-tight md:text-6xl lg:text-7xl"
             >
               {t('title')}
               <br />
@@ -136,7 +136,7 @@ export default function MarketingPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4, duration: 0.8 }}
-              className="mb-8 max-w-2xl text-center text-lg text-balance text-foreground/50"
+              className="mb-8 max-w-2xl text-balance text-center text-foreground/50 text-lg"
             >
               {t('description')}
             </motion.div>
@@ -207,11 +207,11 @@ export default function MarketingPage() {
                     {t('feature-event')}
                   </Badge>
 
-                  <h2 className="mb-4 bg-linear-to-r from-primary via-dynamic-purple to-dynamic-blue bg-clip-text text-4xl font-bold text-balance text-transparent">
+                  <h2 className="mb-4 text-balance bg-linear-to-r from-primary via-dynamic-purple to-dynamic-blue bg-clip-text font-bold text-4xl text-transparent">
                     NEO League {t('season')} 1
                   </h2>
 
-                  <div className="mb-6 bg-linear-to-r from-dynamic-purple to-dynamic-red bg-clip-text text-3xl font-bold text-transparent">
+                  <div className="mb-6 bg-linear-to-r from-dynamic-purple to-dynamic-red bg-clip-text font-bold text-3xl text-transparent">
                     Prompt The Future
                   </div>
                 </motion.div>
@@ -262,7 +262,7 @@ export default function MarketingPage() {
                     <Card className="h-full overflow-hidden border-foreground/10 bg-foreground/5">
                       <div className="relative overflow-hidden rounded-xl p-6">
                         <div className="relative">
-                          <h3 className="mb-4 flex items-center gap-2 text-xl font-bold">
+                          <h3 className="mb-4 flex items-center gap-2 font-bold text-xl">
                             <UserCheck className="h-5 w-5 text-primary" />
                             {t('requirements')}
                           </h3>
@@ -293,7 +293,7 @@ export default function MarketingPage() {
                     <Card className="h-full overflow-hidden border-foreground/10 bg-foreground/5">
                       <div className="relative overflow-hidden rounded-xl p-6">
                         <div className="relative">
-                          <h3 className="mb-4 flex items-center gap-2 text-xl font-bold">
+                          <h3 className="mb-4 flex items-center gap-2 font-bold text-xl">
                             <Target className="h-5 w-5 text-primary" />
                             {t('program-objectives')}
                           </h3>
@@ -371,7 +371,7 @@ export default function MarketingPage() {
               <Badge variant="outline" className="mb-4">
                 {t('feature')}
               </Badge>
-              <h2 className="mb-4 text-3xl font-bold md:text-4xl">
+              <h2 className="mb-4 font-bold text-3xl md:text-4xl">
                 {t('feature-title')}
               </h2>
               <p className="text-muted-foreground">
@@ -397,7 +397,7 @@ export default function MarketingPage() {
                 className="space-y-6"
               >
                 <Badge variant="outline"> {t('learning-resources')}</Badge>
-                <h2 className="text-3xl font-bold md:text-4xl">
+                <h2 className="font-bold text-3xl md:text-4xl">
                   {t('learning-subtitle')}
                 </h2>
                 <p className="text-foreground/60">
@@ -472,7 +472,7 @@ export default function MarketingPage() {
                           </div>
                           <div>
                             <h3 className="font-semibold">{item.title}</h3>
-                            <p className="text-sm text-muted-foreground">
+                            <p className="text-muted-foreground text-sm">
                               {item.description}
                             </p>
                           </div>
@@ -501,7 +501,7 @@ export default function MarketingPage() {
               <Sparkles className="mr-2 h-4 w-4" />
               {t('get-started-today')}
             </Badge>
-            <h2 className="mb-4 text-4xl font-bold md:text-5xl">
+            <h2 className="mb-4 font-bold text-4xl md:text-5xl">
               {t('get-started-today-subtitle')}
             </h2>
             <p className="mb-8 text-muted-foreground">

@@ -147,7 +147,7 @@ export default function RealEstatePage() {
         <Badge variant="secondary" className="mb-4">
           Real Estate Management Solutions
         </Badge>
-        <h1 className="mb-4 text-center text-2xl font-bold tracking-tight text-balance md:text-4xl lg:text-6xl">
+        <h1 className="mb-4 text-balance text-center font-bold text-2xl tracking-tight md:text-4xl lg:text-6xl">
           <GradientHeadline>
             Transform Your Real Estate Business
           </GradientHeadline>
@@ -192,7 +192,7 @@ export default function RealEstatePage() {
         <Card className="border-primary bg-primary/5 p-8">
           <div className="mx-auto flex max-w-4xl flex-col items-center gap-4 text-center">
             <Star className="h-12 w-12 text-primary" />
-            <h2 className="text-2xl font-bold">
+            <h2 className="font-bold text-2xl">
               Trusted by Leading Real Estate Professionals
             </h2>
             <p className="text-muted-foreground">
@@ -205,7 +205,7 @@ export default function RealEstatePage() {
 
       {/* Features Grid */}
       <motion.section variants={itemVariants} className="mb-24">
-        <h2 className="mb-12 text-center text-3xl font-bold">
+        <h2 className="mb-12 text-center font-bold text-3xl">
           Everything You Need to Succeed
         </h2>
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -219,7 +219,7 @@ export default function RealEstatePage() {
               <Card className="h-full p-6 transition-colors hover:border-primary">
                 <div className="mb-4 flex items-center gap-3">
                   <div className="text-primary">{feature.icon}</div>
-                  <h3 className="text-xl font-semibold">{feature.title}</h3>
+                  <h3 className="font-semibold text-xl">{feature.title}</h3>
                 </div>
                 <p className="text-muted-foreground">{feature.description}</p>
               </Card>
@@ -230,12 +230,12 @@ export default function RealEstatePage() {
 
       {/* Benefits Bento Grid */}
       <motion.section variants={itemVariants} className="mb-24">
-        <h2 className="mb-12 text-center text-3xl font-bold">Key Benefits</h2>
+        <h2 className="mb-12 text-center font-bold text-3xl">Key Benefits</h2>
         <div className="grid gap-4 md:grid-cols-4 md:grid-rows-2">
           <Card className="bg-primary/5 md:col-span-2 md:row-span-2">
             <div className="flex h-full flex-col p-6">
               <Home className="mb-4 h-8 w-8 text-primary" />
-              <h3 className="mb-2 text-xl font-bold">
+              <h3 className="mb-2 font-bold text-xl">
                 Streamlined Property Management
               </h3>
               <p className="text-muted-foreground">
@@ -260,7 +260,7 @@ export default function RealEstatePage() {
               >
                 {benefit.icon}
                 <h3 className="mb-2 font-bold">{benefit.title}</h3>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-muted-foreground text-sm">
                   {benefit.description}
                 </p>
                 <div className="mt-4 h-1 w-0 bg-primary/10 transition-all group-hover:w-full" />
@@ -272,26 +272,26 @@ export default function RealEstatePage() {
 
       {/* Core Features */}
       <motion.section variants={itemVariants} className="mb-24">
-        <h2 className="mb-12 text-center text-3xl font-bold">Core Features</h2>
+        <h2 className="mb-12 text-center font-bold text-3xl">Core Features</h2>
         <div className="grid gap-6 md:grid-cols-3">
           <Card className="p-6 text-center">
             <Search className="mx-auto mb-4 h-8 w-8 text-primary" />
             <h3 className="mb-2 font-bold">Property Search</h3>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-muted-foreground text-sm">
               Advanced search with custom filters
             </p>
           </Card>
           <Card className="p-6 text-center">
             <Key className="mx-auto mb-4 h-8 w-8 text-primary" />
             <h3 className="mb-2 font-bold">Access Control</h3>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-muted-foreground text-sm">
               Secure role-based permissions
             </p>
           </Card>
           <Card className="p-6 text-center">
             <MapPin className="mx-auto mb-4 h-8 w-8 text-primary" />
             <h3 className="mb-2 font-bold">Location Analysis</h3>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-muted-foreground text-sm">
               Detailed area and market insights
             </p>
           </Card>
@@ -304,38 +304,38 @@ export default function RealEstatePage() {
           <div className="grid md:grid-cols-2">
             <div className="p-8">
               <Star className="mb-4 h-8 w-8 text-primary" />
-              <h2 className="mb-4 text-2xl font-bold">Success Story</h2>
+              <h2 className="mb-4 font-bold text-2xl">Success Story</h2>
               <p className="mb-4 text-muted-foreground">
                 "This platform has revolutionized how we manage properties.
                 We've seen dramatic improvements in efficiency and client
                 satisfaction. It's been a game-changer for our business."
               </p>
               <p className="font-semibold">- Michael Chen</p>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-muted-foreground text-sm">
                 Director, Premier Real Estate Group
               </p>
             </div>
             <div className="flex items-center justify-center bg-primary/5 p-8">
               <div className="grid gap-4 text-center">
                 <div>
-                  <div className="mb-2 text-3xl font-bold text-primary">
+                  <div className="mb-2 font-bold text-3xl text-primary">
                     50%
                   </div>
-                  <div className="text-sm text-muted-foreground">
+                  <div className="text-muted-foreground text-sm">
                     Time Saved
                   </div>
                 </div>
                 <div>
-                  <div className="mb-2 text-3xl font-bold text-primary">3x</div>
-                  <div className="text-sm text-muted-foreground">
+                  <div className="mb-2 font-bold text-3xl text-primary">3x</div>
+                  <div className="text-muted-foreground text-sm">
                     More Deals Closed
                   </div>
                 </div>
                 <div>
-                  <div className="mb-2 text-3xl font-bold text-primary">
+                  <div className="mb-2 font-bold text-3xl text-primary">
                     95%
                   </div>
-                  <div className="text-sm text-muted-foreground">
+                  <div className="text-muted-foreground text-sm">
                     Client Satisfaction
                   </div>
                 </div>
@@ -347,7 +347,7 @@ export default function RealEstatePage() {
 
       {/* FAQ Section */}
       <motion.section variants={itemVariants}>
-        <h2 className="mb-12 text-center text-3xl font-bold">
+        <h2 className="mb-12 text-center font-bold text-3xl">
           Frequently Asked Questions
         </h2>
         <div className="grid gap-6 md:grid-cols-2">
@@ -380,7 +380,7 @@ export default function RealEstatePage() {
       {/* CTA Section */}
       <motion.section variants={itemVariants} className="mt-24 text-center">
         <Card className="border-primary bg-primary/5 p-12">
-          <h2 className="mb-4 text-3xl font-bold">
+          <h2 className="mb-4 font-bold text-3xl">
             Ready to Transform Your Real Estate Business?
           </h2>
           <p className="mx-auto mb-8 max-w-2xl text-muted-foreground">

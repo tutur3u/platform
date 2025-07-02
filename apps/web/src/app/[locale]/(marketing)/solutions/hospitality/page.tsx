@@ -145,7 +145,7 @@ export default function HospitalityPage() {
         <Badge variant="secondary" className="mb-4">
           Hospitality Management Solutions
         </Badge>
-        <h1 className="mb-4 text-center text-2xl font-bold tracking-tight text-balance md:text-4xl lg:text-6xl">
+        <h1 className="mb-4 text-balance text-center font-bold text-2xl tracking-tight md:text-4xl lg:text-6xl">
           <GradientHeadline>
             Transform Your Hospitality Business
           </GradientHeadline>
@@ -169,7 +169,7 @@ export default function HospitalityPage() {
         <Card className="border-primary bg-primary/5 p-8">
           <div className="mx-auto flex max-w-4xl flex-col items-center gap-4 text-center">
             <Star className="h-12 w-12 text-primary" />
-            <h2 className="text-2xl font-bold">
+            <h2 className="font-bold text-2xl">
               Trusted by Leading Hospitality Brands
             </h2>
             <p className="text-muted-foreground">
@@ -182,7 +182,7 @@ export default function HospitalityPage() {
 
       {/* Features Grid */}
       <motion.section variants={itemVariants} className="mb-24">
-        <h2 className="mb-12 text-center text-3xl font-bold">
+        <h2 className="mb-12 text-center font-bold text-3xl">
           Comprehensive Hospitality Management
         </h2>
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -196,7 +196,7 @@ export default function HospitalityPage() {
               <Card className="h-full p-6 transition-colors hover:border-primary">
                 <div className="mb-4 flex items-center gap-3">
                   <div className="text-primary">{feature.icon}</div>
-                  <h3 className="text-xl font-semibold">{feature.title}</h3>
+                  <h3 className="font-semibold text-xl">{feature.title}</h3>
                 </div>
                 <p className="text-muted-foreground">{feature.description}</p>
               </Card>
@@ -207,12 +207,12 @@ export default function HospitalityPage() {
 
       {/* Benefits Bento Grid */}
       <motion.section variants={itemVariants} className="mb-24">
-        <h2 className="mb-12 text-center text-3xl font-bold">Key Benefits</h2>
+        <h2 className="mb-12 text-center font-bold text-3xl">Key Benefits</h2>
         <div className="grid gap-4 md:grid-cols-4 md:grid-rows-2">
           <Card className="bg-primary/5 md:col-span-2 md:row-span-2">
             <div className="flex h-full flex-col p-6">
               <Bed className="mb-4 h-8 w-8 text-primary" />
-              <h3 className="mb-2 text-xl font-bold">
+              <h3 className="mb-2 font-bold text-xl">
                 Enhanced Guest Experience
               </h3>
               <p className="text-muted-foreground">
@@ -237,7 +237,7 @@ export default function HospitalityPage() {
               >
                 {benefit.icon}
                 <h3 className="mb-2 font-bold">{benefit.title}</h3>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-muted-foreground text-sm">
                   {benefit.description}
                 </p>
                 <div className="mt-4 h-1 w-0 bg-primary/10 transition-all group-hover:w-full" />
@@ -249,26 +249,26 @@ export default function HospitalityPage() {
 
       {/* Core Features */}
       <motion.section variants={itemVariants} className="mb-24">
-        <h2 className="mb-12 text-center text-3xl font-bold">Core Features</h2>
+        <h2 className="mb-12 text-center font-bold text-3xl">Core Features</h2>
         <div className="grid gap-6 md:grid-cols-3">
           <Card className="p-6 text-center">
             <Users className="mx-auto mb-4 h-8 w-8 text-primary" />
             <h3 className="mb-2 font-bold">Guest Management</h3>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-muted-foreground text-sm">
               Comprehensive guest profiles
             </p>
           </Card>
           <Card className="p-6 text-center">
             <Clock className="mx-auto mb-4 h-8 w-8 text-primary" />
             <h3 className="mb-2 font-bold">24/7 Operations</h3>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-muted-foreground text-sm">
               Round-the-clock service support
             </p>
           </Card>
           <Card className="p-6 text-center">
             <Coffee className="mx-auto mb-4 h-8 w-8 text-primary" />
             <h3 className="mb-2 font-bold">Service Management</h3>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-muted-foreground text-sm">
               Streamlined service delivery
             </p>
           </Card>
@@ -281,40 +281,40 @@ export default function HospitalityPage() {
           <div className="grid md:grid-cols-2">
             <div className="p-8">
               <HeartHandshake className="mb-4 h-8 w-8 text-primary" />
-              <h2 className="mb-4 text-2xl font-bold">Success Story</h2>
+              <h2 className="mb-4 font-bold text-2xl">Success Story</h2>
               <p className="mb-4 text-muted-foreground">
                 "This platform has revolutionized how we manage our properties.
                 Guest satisfaction has soared, and our operations are more
                 efficient than ever."
               </p>
               <p className="font-semibold">- Sarah Thompson</p>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-muted-foreground text-sm">
                 General Manager, Luxury Hotels Group
               </p>
             </div>
             <div className="flex items-center justify-center bg-primary/5 p-8">
               <div className="grid gap-4 text-center">
                 <div>
-                  <div className="mb-2 text-3xl font-bold text-primary">
+                  <div className="mb-2 font-bold text-3xl text-primary">
                     40%
                   </div>
-                  <div className="text-sm text-muted-foreground">
+                  <div className="text-muted-foreground text-sm">
                     Increased Efficiency
                   </div>
                 </div>
                 <div>
-                  <div className="mb-2 text-3xl font-bold text-primary">
+                  <div className="mb-2 font-bold text-3xl text-primary">
                     95%
                   </div>
-                  <div className="text-sm text-muted-foreground">
+                  <div className="text-muted-foreground text-sm">
                     Guest Satisfaction
                   </div>
                 </div>
                 <div>
-                  <div className="mb-2 text-3xl font-bold text-primary">
+                  <div className="mb-2 font-bold text-3xl text-primary">
                     30%
                   </div>
-                  <div className="text-sm text-muted-foreground">
+                  <div className="text-muted-foreground text-sm">
                     Revenue Growth
                   </div>
                 </div>
@@ -326,7 +326,7 @@ export default function HospitalityPage() {
 
       {/* FAQ Section */}
       <motion.section variants={itemVariants}>
-        <h2 className="mb-12 text-center text-3xl font-bold">
+        <h2 className="mb-12 text-center font-bold text-3xl">
           Frequently Asked Questions
         </h2>
         <div className="grid gap-6 md:grid-cols-2">
@@ -359,7 +359,7 @@ export default function HospitalityPage() {
       {/* CTA Section */}
       <motion.section variants={itemVariants} className="mt-24 text-center">
         <Card className="border-primary bg-primary/5 p-12">
-          <h2 className="mb-4 text-3xl font-bold">
+          <h2 className="mb-4 font-bold text-3xl">
             Ready to Transform Your Hospitality Business?
           </h2>
           <p className="mx-auto mb-8 max-w-2xl text-muted-foreground">

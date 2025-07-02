@@ -174,7 +174,7 @@ export function MemberSettingsButton({
           </Avatar>
 
           <div className="flex-1 space-y-1">
-            <p className="line-clamp-1 text-sm leading-none font-medium">
+            <p className="line-clamp-1 font-medium text-sm leading-none">
               {user?.display_name ? (
                 user.display_name
               ) : (
@@ -183,7 +183,7 @@ export function MemberSettingsButton({
               {role ? <span className="text-orange-300">({role})</span> : null}
             </p>
 
-            <p className="line-clamp-1 text-sm text-foreground/60">
+            <p className="line-clamp-1 text-foreground/60 text-sm">
               {user?.email ||
                 (user?.handle
                   ? `@${user.handle}`

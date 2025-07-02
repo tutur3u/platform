@@ -85,7 +85,7 @@ export function Structure({
           >
             <div
               className={cn(
-                'flex h-12 items-center border-b border-foreground/10 p-2 md:px-0',
+                'flex h-12 items-center border-foreground/10 border-b p-2 md:px-0',
                 isCollapsed ? 'justify-center' : 'max-sm:py-1'
               )}
             >
@@ -114,12 +114,12 @@ export function Structure({
                 </div>
               </div>
             </div>
-            <div className="scrollbar-none flex flex-1 flex-col gap-y-1 overflow-x-hidden overflow-y-auto">
+            <div className="scrollbar-none flex flex-1 flex-col gap-y-1 overflow-y-auto overflow-x-hidden">
               {sidebarContent}
             </div>
             <div
               className={cn(
-                'mt-auto flex border-t border-foreground/10 p-2',
+                'mt-auto flex border-foreground/10 border-t p-2',
                 isCollapsed ? 'justify-center' : ''
               )}
             >
@@ -130,7 +130,7 @@ export function Structure({
               <Button
                 size="icon"
                 variant="outline"
-                className="absolute top-1/2 -right-4 z-10 hidden h-auto w-auto -translate-y-1/2 rounded-full border-2 bg-background p-1.5 hover:bg-accent md:block"
+                className="-right-4 -translate-y-1/2 absolute top-1/2 z-10 hidden h-auto w-auto rounded-full border-2 bg-background p-1.5 hover:bg-accent md:block"
                 onClick={() => setIsCollapsed(!isCollapsed)}
               >
                 {isCollapsed ? (

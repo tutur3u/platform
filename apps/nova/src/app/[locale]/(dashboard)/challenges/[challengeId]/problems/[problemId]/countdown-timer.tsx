@@ -39,7 +39,7 @@ export default function CountdownTimer({
   const seconds = timeLeft % 60;
 
   return (
-    <div className="text-xl font-bold text-red-600">
+    <div className="font-bold text-red-600 text-xl">
       Time Left: {hours > 0 ? `${hours}:` : ''}
       {minutes.toString().padStart(2, '0')}:
       {seconds.toString().padStart(2, '0')}

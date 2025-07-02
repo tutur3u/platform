@@ -311,11 +311,11 @@ const StackedSessionItem: FC<{
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
-              <h4 className="truncate text-base font-semibold">
+              <h4 className="truncate font-semibold text-base">
                 {stackedSession.title}
               </h4>
               {stackedSession.isStacked && (
-                <Badge variant="secondary" className="text-xs font-medium">
+                <Badge variant="secondary" className="font-medium text-xs">
                   <Layers className="mr-1 h-3 w-3" />
                   {stackedSession.sessions.length} sessions
                 </Badge>
@@ -323,7 +323,7 @@ const StackedSessionItem: FC<{
             </div>
 
             {stackedSession.description && (
-              <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
+              <p className="mt-1 line-clamp-2 text-muted-foreground text-sm">
                 {stackedSession.description}
               </p>
             )}
@@ -332,7 +332,7 @@ const StackedSessionItem: FC<{
               {stackedSession.category && (
                 <Badge
                   className={cn(
-                    'text-xs font-medium text-white',
+                    'font-medium text-white text-xs',
                     getCategoryColor(stackedSession.category.color || 'BLUE')
                   )}
                 >
@@ -342,7 +342,7 @@ const StackedSessionItem: FC<{
               {stackedSession.task && (
                 <div className="flex items-center gap-1.5 rounded-md border border-dynamic-blue/20 bg-gradient-to-r from-dynamic-blue/10 to-dynamic-blue/5 px-2 py-1">
                   <CheckCircle className="h-3 w-3 text-dynamic-blue" />
-                  <span className="text-xs font-medium text-dynamic-blue">
+                  <span className="font-medium text-dynamic-blue text-xs">
                     {stackedSession.task.name}
                   </span>
                   <Button
@@ -358,7 +358,7 @@ const StackedSessionItem: FC<{
               {/* Focus Score Badge */}
               <div
                 className={cn(
-                  'flex items-center gap-1 rounded-md border px-2 py-1 text-xs font-medium',
+                  'flex items-center gap-1 rounded-md border px-2 py-1 font-medium text-xs',
                   avgFocusScore >= 80
                     ? 'border-green-300 bg-green-100 text-green-700 dark:border-green-800 dark:bg-green-950/30 dark:text-green-300'
                     : avgFocusScore >= 60
@@ -375,7 +375,7 @@ const StackedSessionItem: FC<{
               {/* Productivity Type Badge */}
               <div
                 className={cn(
-                  'flex items-center gap-1 rounded-md border px-2 py-1 text-xs font-medium',
+                  'flex items-center gap-1 rounded-md border px-2 py-1 font-medium text-xs',
                   getProductivityColor(productivityType)
                 )}
               >
@@ -385,7 +385,7 @@ const StackedSessionItem: FC<{
                 </span>
               </div>
 
-              <div className="flex items-center gap-1 text-xs text-muted-foreground">
+              <div className="flex items-center gap-1 text-muted-foreground text-xs">
                 <Clock className="h-3 w-3" />
                 <span>
                   {stackedSession.isStacked &&
@@ -430,7 +430,7 @@ const StackedSessionItem: FC<{
                 );
                 return taskWithDetails?.board_name &&
                   taskWithDetails?.list_name ? (
-                  <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
+                  <div className="mt-2 flex items-center gap-2 text-muted-foreground text-xs">
                     <div className="flex items-center gap-1">
                       <MapPin className="h-3 w-3" />
                       <span>{taskWithDetails.board_name}</span>
@@ -447,11 +447,11 @@ const StackedSessionItem: FC<{
 
           <div className="flex items-start gap-3">
             <div className="text-right">
-              <p className="text-xl font-bold text-primary">
+              <p className="font-bold text-primary text-xl">
                 {formatDuration(stackedSession.totalDuration)}
               </p>
               {stackedSession.isStacked && (
-                <p className="text-xs font-medium text-muted-foreground">
+                <p className="font-medium text-muted-foreground text-xs">
                   Total time • {stackedSession.sessions.length} sessions
                   {stackedSession.sessions.length > 1 && (
                     <span className="ml-1">
@@ -481,7 +481,7 @@ const StackedSessionItem: FC<{
                 </p>
               )}
               {lastEndTime && !stackedSession.isStacked && (
-                <p className="text-xs text-muted-foreground">
+                <p className="text-muted-foreground text-xs">
                   Ended at {lastEndTime.format('h:mm A')}
                 </p>
               )}
@@ -568,7 +568,7 @@ const StackedSessionItem: FC<{
           <CollapsibleContent>
             <div className="border-t bg-muted/30 p-4">
               <div className="mb-4 flex items-center justify-between">
-                <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                <div className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
                   <Layers className="h-4 w-4" />
                   Individual Sessions ({stackedSession.sessions.length})
                   {stackedSession.sessions.length > 1 && (
@@ -588,7 +588,7 @@ const StackedSessionItem: FC<{
                     </span>
                   )}
                 </div>
-                <div className="text-xs text-muted-foreground">
+                <div className="text-muted-foreground text-xs">
                   {stackedSession.sessions.filter((s) => s.end_time).length}{' '}
                   completed •{' '}
                   {stackedSession.sessions.filter((s) => s.is_running).length}{' '}
@@ -659,7 +659,7 @@ const StackedSessionItem: FC<{
                         {/* Show overlap warning */}
                         {isOverlapping && (
                           <div className="-mt-1 mb-2 flex items-center justify-center">
-                            <div className="flex items-center gap-2 rounded-full bg-amber-50 px-3 py-1 text-xs text-amber-700 ring-1 ring-amber-200 dark:bg-amber-950/30 dark:text-amber-300 dark:ring-amber-800">
+                            <div className="flex items-center gap-2 rounded-full bg-amber-50 px-3 py-1 text-amber-700 text-xs ring-1 ring-amber-200 dark:bg-amber-950/30 dark:text-amber-300 dark:ring-amber-800">
                               <div className="h-1 w-1 rounded-full bg-amber-500" />
                               <span className="font-medium">
                                 Overlapping session
@@ -681,7 +681,7 @@ const StackedSessionItem: FC<{
                               </div>
                             ) : gapType === 'short' ? (
                               // Short break - simple line with time
-                              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                              <div className="flex items-center gap-2 text-muted-foreground text-xs">
                                 <div className="h-px w-6 bg-border" />
                                 <span className="rounded bg-muted px-2 py-0.5 text-xs">
                                   {formatGap(gapInSeconds)}
@@ -690,7 +690,7 @@ const StackedSessionItem: FC<{
                               </div>
                             ) : (
                               // Long break - prominent break indicator
-                              <div className="flex items-center gap-2 rounded-full bg-muted px-3 py-1.5 text-xs text-muted-foreground shadow-sm">
+                              <div className="flex items-center gap-2 rounded-full bg-muted px-3 py-1.5 text-muted-foreground text-xs shadow-sm">
                                 <div className="h-1 w-8 bg-foreground/10" />
                                 <span className="font-medium">
                                   {formatGap(gapInSeconds)} break
@@ -705,7 +705,7 @@ const StackedSessionItem: FC<{
                           <div className="flex items-center gap-3">
                             <div
                               className={cn(
-                                'flex h-7 w-7 items-center justify-center rounded-full text-xs font-medium',
+                                'flex h-7 w-7 items-center justify-center rounded-full font-medium text-xs',
                                 session.is_running
                                   ? 'bg-green-100 text-green-700 ring-2 ring-green-200 dark:bg-green-950/30 dark:text-green-300 dark:ring-green-800'
                                   : 'bg-primary/10 text-primary'
@@ -737,7 +737,7 @@ const StackedSessionItem: FC<{
                               {session.description &&
                                 session.description !==
                                   stackedSession.description && (
-                                  <p className="mt-1 line-clamp-1 text-xs text-muted-foreground">
+                                  <p className="mt-1 line-clamp-1 text-muted-foreground text-xs">
                                     {session.description}
                                   </p>
                                 )}
@@ -745,7 +745,7 @@ const StackedSessionItem: FC<{
                           </div>
                           <div className="flex items-center gap-3">
                             <div className="text-right">
-                              <span className="text-sm font-medium">
+                              <span className="font-medium text-sm">
                                 {session.duration_seconds
                                   ? formatDuration(session.duration_seconds)
                                   : '-'}
@@ -805,7 +805,7 @@ const StackedSessionItem: FC<{
                       variant="ghost"
                       size="sm"
                       onClick={() => setShowAllSessions(!showAllSessions)}
-                      className="h-8 text-xs text-muted-foreground hover:text-foreground"
+                      className="h-8 text-muted-foreground text-xs hover:text-foreground"
                     >
                       {showAllSessions ? (
                         <>
@@ -1369,7 +1369,7 @@ export function SessionHistory({
               <History className="h-5 w-5" />
               Session History
               {sessionsForPeriod.length > 0 && (
-                <div className="text-xs text-muted-foreground">
+                <div className="text-muted-foreground text-xs">
                   {sessionsForPeriod.length} sessions
                 </div>
               )}
@@ -1378,7 +1378,7 @@ export function SessionHistory({
             <div className="flex flex-col gap-3 md:flex-row md:items-center">
               <div className="flex flex-wrap items-center gap-2">
                 <div className="relative">
-                  <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
                   <Input
                     placeholder="Search sessions..."
                     value={searchQuery}
@@ -1389,7 +1389,7 @@ export function SessionHistory({
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="absolute top-1/2 right-1 h-6 w-6 -translate-y-1/2 p-0"
+                      className="-translate-y-1/2 absolute top-1/2 right-1 h-6 w-6 p-0"
                       onClick={() => setSearchQuery('')}
                     >
                       ×
@@ -1431,7 +1431,7 @@ export function SessionHistory({
                       {/* Basic Filters */}
                       <div className="grid grid-cols-1 gap-3">
                         <div>
-                          <Label className="flex items-center gap-2 text-sm font-medium">
+                          <Label className="flex items-center gap-2 font-medium text-sm">
                             <Tag className="h-3 w-3" />
                             Category
                           </Label>
@@ -1469,7 +1469,7 @@ export function SessionHistory({
                         </div>
 
                         <div>
-                          <Label className="flex items-center gap-2 text-sm font-medium">
+                          <Label className="flex items-center gap-2 font-medium text-sm">
                             <Clock className="h-3 w-3" />
                             Duration Type
                           </Label>
@@ -1500,7 +1500,7 @@ export function SessionHistory({
                       {showAdvancedFilters && (
                         <div className="space-y-3 border-t pt-3">
                           <div>
-                            <Label className="flex items-center gap-2 text-sm font-medium">
+                            <Label className="flex items-center gap-2 font-medium text-sm">
                               <TrendingUp className="h-3 w-3" />
                               Productivity Type
                             </Label>
@@ -1533,7 +1533,7 @@ export function SessionHistory({
                           </div>
 
                           <div>
-                            <Label className="flex items-center gap-2 text-sm font-medium">
+                            <Label className="flex items-center gap-2 font-medium text-sm">
                               <Sun className="h-3 w-3" />
                               Time of Day
                             </Label>
@@ -1563,7 +1563,7 @@ export function SessionHistory({
                           </div>
 
                           <div>
-                            <Label className="flex items-center gap-2 text-sm font-medium">
+                            <Label className="flex items-center gap-2 font-medium text-sm">
                               <Briefcase className="h-3 w-3" />
                               Project Context
                             </Label>
@@ -1598,7 +1598,7 @@ export function SessionHistory({
                           </div>
 
                           <div>
-                            <Label className="flex items-center gap-2 text-sm font-medium">
+                            <Label className="flex items-center gap-2 font-medium text-sm">
                               <Star className="h-3 w-3" />
                               Session Quality
                             </Label>
@@ -1652,7 +1652,7 @@ export function SessionHistory({
                       {/* Quick Analytics Preview */}
                       {filteredSessions.length > 0 && (
                         <div className="rounded-lg border-t bg-muted/30 p-3">
-                          <div className="mb-2 text-xs font-medium text-muted-foreground">
+                          <div className="mb-2 font-medium text-muted-foreground text-xs">
                             📊 Filter Analytics
                           </div>
                           <div className="grid grid-cols-2 gap-2 text-xs">
@@ -1720,7 +1720,7 @@ export function SessionHistory({
                 >
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
-                <div className="min-w-[180px] text-center text-sm font-medium">
+                <div className="min-w-[180px] text-center font-medium text-sm">
                   {formatPeriod}
                 </div>
                 <Button
@@ -1756,10 +1756,10 @@ export function SessionHistory({
               <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-muted/50">
                 <Clock className="h-10 w-10 text-muted-foreground" />
               </div>
-              <h3 className="text-lg font-medium text-muted-foreground">
+              <h3 className="font-medium text-lg text-muted-foreground">
                 No sessions for this {viewMode}
               </h3>
-              <p className="mt-2 text-sm text-muted-foreground">
+              <p className="mt-2 text-muted-foreground text-sm">
                 {sessions.length === 0
                   ? 'Start tracking time to see your sessions here'
                   : 'Try a different time period or adjusting your filters'}
@@ -1775,9 +1775,9 @@ export function SessionHistory({
                     <div className="rounded-lg border bg-gradient-to-br from-blue-50 to-blue-100 p-4 dark:from-blue-950/50 dark:to-blue-900/50">
                       <div className="flex items-center gap-2 text-blue-700 dark:text-blue-300">
                         <Clock className="h-4 w-4" />
-                        <span className="text-sm font-medium">Total Time</span>
+                        <span className="font-medium text-sm">Total Time</span>
                       </div>
-                      <p className="mt-1 text-2xl font-bold text-blue-900 dark:text-blue-100">
+                      <p className="mt-1 font-bold text-2xl text-blue-900 dark:text-blue-100">
                         {formatDuration(periodStats.totalDuration)}
                       </p>
                     </div>
@@ -1785,9 +1785,9 @@ export function SessionHistory({
                     <div className="rounded-lg border bg-gradient-to-br from-green-50 to-green-100 p-4 dark:from-green-950/50 dark:to-green-900/50">
                       <div className="flex items-center gap-2 text-green-700 dark:text-green-300">
                         <Layers className="h-4 w-4" />
-                        <span className="text-sm font-medium">Activities</span>
+                        <span className="font-medium text-sm">Activities</span>
                       </div>
-                      <p className="mt-1 text-2xl font-bold text-green-900 dark:text-green-100">
+                      <p className="mt-1 font-bold text-2xl text-green-900 dark:text-green-100">
                         {periodStats.breakdown.length}
                       </p>
                     </div>
@@ -1795,9 +1795,9 @@ export function SessionHistory({
                     <div className="rounded-lg border bg-gradient-to-br from-purple-50 to-purple-100 p-4 dark:from-purple-950/50 dark:to-purple-900/50">
                       <div className="flex items-center gap-2 text-purple-700 dark:text-purple-300">
                         <BarChart2 className="h-4 w-4" />
-                        <span className="text-sm font-medium">Sessions</span>
+                        <span className="font-medium text-sm">Sessions</span>
                       </div>
-                      <p className="mt-1 text-2xl font-bold text-purple-900 dark:text-purple-100">
+                      <p className="mt-1 font-bold text-2xl text-purple-900 dark:text-purple-100">
                         {sessionsForPeriod.length}
                       </p>
                     </div>
@@ -1806,7 +1806,7 @@ export function SessionHistory({
                   {/* Productivity Insights */}
                   <div className="grid gap-4 md:grid-cols-2">
                     <div className="rounded-lg border p-4">
-                      <h3 className="mb-4 flex items-center gap-2 text-base font-semibold">
+                      <h3 className="mb-4 flex items-center gap-2 font-semibold text-base">
                         <BarChart2 className="h-5 w-5" />
                         Top Activities This Month
                       </h3>
@@ -1820,7 +1820,7 @@ export function SessionHistory({
                             <div key={cat.name} className="group">
                               <div className="mb-2 flex items-center justify-between">
                                 <div className="flex items-center gap-3">
-                                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-muted text-xs font-medium">
+                                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-muted font-medium text-xs">
                                     {index + 1}
                                   </div>
                                   <div className="flex items-center gap-2">
@@ -1836,7 +1836,7 @@ export function SessionHistory({
                                   </div>
                                 </div>
                                 <div className="flex items-center gap-3">
-                                  <span className="text-sm text-muted-foreground">
+                                  <span className="text-muted-foreground text-sm">
                                     {percentage.toFixed(1)}%
                                   </span>
                                   <span className="min-w-[4rem] text-right font-semibold">
@@ -1856,14 +1856,14 @@ export function SessionHistory({
                     </div>
 
                     <div className="rounded-lg border p-4">
-                      <h3 className="mb-4 flex items-center gap-2 text-base font-semibold">
+                      <h3 className="mb-4 flex items-center gap-2 font-semibold text-base">
                         <Brain className="h-5 w-5" />
                         Productivity Insights
                       </h3>
                       <div className="space-y-4">
                         {/* Focus Score */}
                         <div className="flex items-center justify-between">
-                          <span className="text-sm text-muted-foreground">
+                          <span className="text-muted-foreground text-sm">
                             Average Focus Score
                           </span>
                           <div className="flex items-center gap-2">
@@ -1886,7 +1886,7 @@ export function SessionHistory({
                                 }}
                               />
                             </div>
-                            <span className="text-lg font-bold">
+                            <span className="font-bold text-lg">
                               {Math.round(periodStats.avgFocusScore)}
                             </span>
                           </div>
@@ -1894,7 +1894,7 @@ export function SessionHistory({
 
                         {/* Best Time of Day */}
                         <div className="flex items-center justify-between">
-                          <span className="text-sm text-muted-foreground">
+                          <span className="text-muted-foreground text-sm">
                             Most Productive Time
                           </span>
                           <span className="font-medium">
@@ -1911,7 +1911,7 @@ export function SessionHistory({
 
                         {/* Session Types Breakdown */}
                         <div className="space-y-2">
-                          <div className="text-sm text-muted-foreground">
+                          <div className="text-muted-foreground text-sm">
                             Session Types
                           </div>
                           <div className="grid grid-cols-3 gap-2 text-xs">
@@ -1945,13 +1945,13 @@ export function SessionHistory({
                         {/* Longest Session Highlight */}
                         {periodStats.longestSession && (
                           <div className="rounded-md bg-muted/30 p-3">
-                            <div className="mb-1 text-xs text-muted-foreground">
+                            <div className="mb-1 text-muted-foreground text-xs">
                               🏆 Longest Session
                             </div>
-                            <div className="text-sm font-medium">
+                            <div className="font-medium text-sm">
                               {periodStats.longestSession.title}
                             </div>
-                            <div className="text-xs text-muted-foreground">
+                            <div className="text-muted-foreground text-xs">
                               {formatDuration(
                                 periodStats.longestSession.duration_seconds || 0
                               )}{' '}
@@ -1965,7 +1965,7 @@ export function SessionHistory({
 
                         {/* Productivity Pattern */}
                         <div className="space-y-2">
-                          <div className="text-sm text-muted-foreground">
+                          <div className="text-muted-foreground text-sm">
                             Work Pattern
                           </div>
                           <div className="flex gap-1">
@@ -1996,7 +1996,7 @@ export function SessionHistory({
                               ) : null;
                             })}
                           </div>
-                          <div className="flex justify-between text-xs text-muted-foreground">
+                          <div className="flex justify-between text-muted-foreground text-xs">
                             <span>
                               🧠 Deep:{' '}
                               {periodStats.productivityBreakdown['deep-work']}
@@ -2016,8 +2016,8 @@ export function SessionHistory({
 
                     {/* AI Insights Section */}
                     <div className="rounded-lg border bg-gradient-to-r from-purple-50 to-pink-50 p-4 dark:from-purple-950/20 dark:to-pink-950/20">
-                      <h3 className="mb-4 flex items-center gap-2 text-base font-semibold">
-                        <div className="flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-r from-purple-500 to-pink-500 text-xs text-white">
+                      <h3 className="mb-4 flex items-center gap-2 font-semibold text-base">
+                        <div className="flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-r from-purple-500 to-pink-500 text-white text-xs">
                           ✨
                         </div>
                         AI Productivity Insights
@@ -2161,11 +2161,11 @@ export function SessionHistory({
                           if (avgHoursPerDay > 6) {
                             return (
                               <div className="mt-4 rounded-md bg-gradient-to-r from-purple-100 to-pink-100 p-3 dark:from-purple-900/30 dark:to-pink-900/30">
-                                <div className="flex items-center gap-2 text-sm font-medium text-purple-700 dark:text-purple-300">
+                                <div className="flex items-center gap-2 font-medium text-purple-700 text-sm dark:text-purple-300">
                                   <span>🚀</span>
                                   <span>Power User Detected!</span>
                                 </div>
-                                <p className="mt-1 text-xs text-purple-600 dark:text-purple-400">
+                                <p className="mt-1 text-purple-600 text-xs dark:text-purple-400">
                                   You're averaging {avgHoursPerDay.toFixed(1)}{' '}
                                   hours/day. Consider setting up automated time
                                   tracking for even better insights!
@@ -2182,7 +2182,7 @@ export function SessionHistory({
 
                   {/* Weekly Breakdown */}
                   <div className="space-y-4">
-                    <h3 className="flex items-center gap-2 text-base font-semibold">
+                    <h3 className="flex items-center gap-2 font-semibold text-base">
                       <History className="h-5 w-5" />
                       Weekly Breakdown
                     </h3>
@@ -2202,7 +2202,7 @@ export function SessionHistory({
                               <h4 className="font-medium text-foreground">
                                 {groupTitle}
                               </h4>
-                              <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                              <div className="flex items-center gap-3 text-muted-foreground text-sm">
                                 <span>{groupSessions.length} activities</span>
                                 <span>•</span>
                                 <span className="font-semibold text-foreground">
@@ -2218,7 +2218,7 @@ export function SessionHistory({
                                 >
                                   <div className="flex items-start justify-between gap-2">
                                     <div className="min-w-0 flex-1">
-                                      <h5 className="truncate text-sm font-medium">
+                                      <h5 className="truncate font-medium text-sm">
                                         {session.title}
                                       </h5>
                                       <div className="mt-1 flex items-center gap-2">
@@ -2233,7 +2233,7 @@ export function SessionHistory({
                                                 )
                                               )}
                                             />
-                                            <span className="text-xs text-muted-foreground">
+                                            <span className="text-muted-foreground text-xs">
                                               {session.category.name}
                                             </span>
                                           </div>
@@ -2241,11 +2241,11 @@ export function SessionHistory({
                                       </div>
                                     </div>
                                     <div className="text-right">
-                                      <div className="text-sm font-semibold">
+                                      <div className="font-semibold text-sm">
                                         {formatDuration(session.totalDuration)}
                                       </div>
                                       {session.isStacked && (
-                                        <div className="text-xs text-muted-foreground">
+                                        <div className="text-muted-foreground text-xs">
                                           {session.sessions.length} sessions
                                         </div>
                                       )}
@@ -2298,7 +2298,7 @@ export function SessionHistory({
                 // Original Day/Week View Layout
                 <>
                   <div className="mb-6 rounded-lg border p-4">
-                    <h3 className="mb-3 flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                    <h3 className="mb-3 flex items-center gap-2 font-medium text-muted-foreground text-sm">
                       <BarChart2 className="h-4 w-4" />
                       {viewMode.charAt(0).toUpperCase() + viewMode.slice(1)}{' '}
                       Summary
@@ -2331,7 +2331,7 @@ export function SessionHistory({
                                 <span>{cat.name}</span>
                               </div>
                               <div className="flex items-center gap-3">
-                                <span className="w-10 text-right text-xs text-muted-foreground">
+                                <span className="w-10 text-right text-muted-foreground text-xs">
                                   {percentage.toFixed(0)}%
                                 </span>
                                 <span className="font-medium">
@@ -2362,13 +2362,13 @@ export function SessionHistory({
                           <div key={groupTitle}>
                             <div className="flex items-center justify-between">
                               <div className="flex items-center">
-                                <h3 className="pr-3 text-sm font-medium text-muted-foreground">
+                                <h3 className="pr-3 font-medium text-muted-foreground text-sm">
                                   {groupTitle}
                                 </h3>
                                 <div className="h-px flex-1 bg-border" />
                               </div>
                               {groupSessions.length > 1 && (
-                                <div className="ml-3 text-xs text-muted-foreground">
+                                <div className="ml-3 text-muted-foreground text-xs">
                                   {formatDuration(groupTotalDuration)} total
                                 </div>
                               )}

@@ -137,7 +137,7 @@ export default function SessionCard({
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <div className="flex flex-col rounded-lg border bg-card/50 p-4 transition-all hover:bg-card">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-muted-foreground">
+              <span className="font-medium text-muted-foreground text-sm">
                 Total Score
               </span>
               <TooltipProvider>
@@ -156,14 +156,14 @@ export default function SessionCard({
               </TooltipProvider>
             </div>
             <div className="mt-2 flex items-baseline">
-              <span className={`text-2xl font-bold ${scoreColorClass}`}>
+              <span className={`font-bold text-2xl ${scoreColorClass}`}>
                 {totalScore.toFixed(1)}
               </span>
-              <span className="ml-1 text-sm text-muted-foreground">
+              <span className="ml-1 text-muted-foreground text-sm">
                 /{maxPossibleScore}
               </span>
             </div>
-            <div className="mt-1 text-xs text-muted-foreground">
+            <div className="mt-1 text-muted-foreground text-xs">
               {percentageScore.toFixed(0)}% completion
             </div>
             <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-muted">
@@ -176,18 +176,18 @@ export default function SessionCard({
 
           <div className="flex flex-col rounded-lg border bg-card/50 p-4 transition-all hover:bg-card">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-muted-foreground">
+              <span className="font-medium text-muted-foreground text-sm">
                 Problems Attempted
               </span>
               <Zap className="h-4 w-4 text-primary" />
             </div>
             <div className="mt-2 flex items-baseline">
-              <span className="text-2xl font-bold">{problemsAttempted}</span>
-              <span className="ml-1 text-sm text-muted-foreground">
+              <span className="font-bold text-2xl">{problemsAttempted}</span>
+              <span className="ml-1 text-muted-foreground text-sm">
                 /{session.problems.length}
               </span>
             </div>
-            <div className="mt-1 text-xs text-muted-foreground">
+            <div className="mt-1 text-muted-foreground text-xs">
               {((problemsAttempted / session.problems.length) * 100).toFixed(0)}
               % attempted
             </div>
@@ -203,20 +203,20 @@ export default function SessionCard({
 
           <div className="flex flex-col rounded-lg border bg-card/50 p-4 transition-all hover:bg-card">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-muted-foreground">
+              <span className="font-medium text-muted-foreground text-sm">
                 Performance
               </span>
               <AlertCircle className="h-4 w-4 text-primary" />
             </div>
             <div className="mt-2 flex items-baseline">
-              <span className="text-2xl font-bold">
+              <span className="font-bold text-2xl">
                 {averageScore.toFixed(1)}
               </span>
-              <span className="ml-1 text-sm text-muted-foreground">
+              <span className="ml-1 text-muted-foreground text-sm">
                 /{MAX_SCORE_PER_PROBLEM} per problem
               </span>
             </div>
-            <div className="mt-1 flex justify-between text-xs text-muted-foreground">
+            <div className="mt-1 flex justify-between text-muted-foreground text-xs">
               <span>
                 {totalSubmissions} submission{totalSubmissions !== 1 ? 's' : ''}
               </span>

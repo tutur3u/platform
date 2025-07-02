@@ -22,7 +22,7 @@ export default async function NotWhitelistedPage() {
 
   return (
     <div className="mx-auto flex min-h-screen w-full flex-col items-center justify-center p-4 text-center md:p-8 lg:p-16">
-      <h1 className="text-xl font-bold">{t('common.not_whitelisted')}</h1>
+      <h1 className="font-bold text-xl">{t('common.not_whitelisted')}</h1>
       <p className="mb-4 text-balance opacity-70">
         Your account is not whitelisted. Please register to proceed.
       </p>

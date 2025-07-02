@@ -145,7 +145,7 @@ export default function BeforeTakingQuizWhole({
       <div className="mx-auto max-w-4xl space-y-6">
         {/* Header */}
         <div className="space-y-2 text-center">
-          <h1 className="text-3xl font-bold text-primary">
+          <h1 className="font-bold text-3xl text-primary">
             {quizData.setName}
           </h1>
           <p className="text-secondary-foreground">{t('quiz.review-info')}</p>
@@ -170,7 +170,7 @@ export default function BeforeTakingQuizWhole({
                   </>
                 )}
               </Button>
-              <p className="mt-2 text-sm text-secondary-foreground">
+              <p className="mt-2 text-secondary-foreground text-sm">
                 {t('quiz.click-to-begin')}
               </p>
             </div>
@@ -185,7 +185,7 @@ export default function BeforeTakingQuizWhole({
               >
                 <AlertDescription className="flex flex-col items-center justify-between md:flex-row">
                   <div className="flex flex-col items-start text-center md:items-center md:text-left">
-                    <h4 className="w-full text-lg font-bold">
+                    <h4 className="w-full font-bold text-lg">
                       {quizData.attempts[0].totalScore} / {quizData.maxScore}
                     </h4>
 
@@ -254,7 +254,7 @@ export default function BeforeTakingQuizWhole({
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-secondary-foreground">
+                <span className="font-medium text-secondary-foreground text-sm">
                   {t('info.quiz-id')}
                 </span>
                 <Badge variant="outline">{quizData.setId}</Badge>
@@ -262,7 +262,7 @@ export default function BeforeTakingQuizWhole({
 
               <Separator />
               <div className="flex justify-between">
-                <span className="text-sm font-medium text-secondary-foreground">
+                <span className="font-medium text-secondary-foreground text-sm">
                   {t('info.time-limit')}
                 </span>
                 <div className="flex items-center gap-1">
@@ -275,7 +275,7 @@ export default function BeforeTakingQuizWhole({
                 </div>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm font-medium text-secondary-foreground">
+                <span className="font-medium text-secondary-foreground text-sm">
                   {t('info.attempts-used')}
                 </span>
                 <div className="flex items-center gap-1">
@@ -287,7 +287,7 @@ export default function BeforeTakingQuizWhole({
                 </div>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm font-medium text-secondary-foreground">
+                <span className="font-medium text-secondary-foreground text-sm">
                   {t('info.explanations')}
                 </span>
                 <span>
@@ -311,7 +311,7 @@ export default function BeforeTakingQuizWhole({
             <CardContent className="space-y-4">
               <div>
                 <div className="mb-1 flex items-center gap-2">
-                  <span className="text-sm font-medium text-secondary-foreground">
+                  <span className="font-medium text-secondary-foreground text-sm">
                     {t('info.available-from')}
                   </span>
                   {isAvailable && (
@@ -323,7 +323,7 @@ export default function BeforeTakingQuizWhole({
               <Separator />
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium text-secondary-foreground">
+                  <span className="font-medium text-secondary-foreground text-sm">
                     {t('info.due-date')}
                   </span>
                   {isPastDue && (
@@ -335,7 +335,7 @@ export default function BeforeTakingQuizWhole({
               {attemptsRemaining != null && (
                 <>
                   <Separator />
-                  <p className="text-center text-sm text-primary">
+                  <p className="text-center text-primary text-sm">
                     {attemptsRemaining}{' '}
                     {attemptsRemaining !== 1
                       ? t('info.attempts-remaining')
@@ -361,7 +361,7 @@ export default function BeforeTakingQuizWhole({
                 readOnly
               />
             ) : (
-              <div className="space-y-2 text-sm text-secondary-foreground">
+              <div className="space-y-2 text-secondary-foreground text-sm">
                 <p>• {t('instructions.default.stable-connection')}</p>
                 <p>• {t('instructions.default.cannot-pause')}</p>
                 <p>• {t('instructions.default.answer-all')}</p>
@@ -396,7 +396,7 @@ export default function BeforeTakingQuizWhole({
               {quizData.attempts.map((att) => (
                 <div
                   key={att.attemptId}
-                  className="flex flex-col items-center justify-between gap-2 border-b border-secondary-foreground/20 py-3 last:border-b-0 md:flex-row"
+                  className="flex flex-col items-center justify-between gap-2 border-secondary-foreground/20 border-b py-3 last:border-b-0 md:flex-row"
                 >
                   <div className="text-center md:text-left">
                     <p>

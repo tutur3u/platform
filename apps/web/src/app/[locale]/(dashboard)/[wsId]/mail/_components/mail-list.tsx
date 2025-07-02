@@ -37,10 +37,10 @@ export function MailList({ items, hasMore, loading }: MailListProps) {
           key={`mail-${item.id}`}
           type="button"
           className={cn(
-            'flex flex-col items-start gap-3 rounded-lg border p-4 text-left text-sm transition-all hover:bg-accent/50 focus:bg-accent/60 focus:outline-none cursor-pointer group relative',
-            'hover:shadow-sm hover:border-accent/80',
+            'group relative flex cursor-pointer flex-col items-start gap-3 rounded-lg border p-4 text-left text-sm transition-all hover:bg-accent/50 focus:bg-accent/60 focus:outline-none',
+            'hover:border-accent/80 hover:shadow-sm',
             mail.selected === item.id &&
-              'bg-accent/70 shadow-md border-accent ring-1 ring-accent/40'
+              'border-accent bg-accent/70 shadow-md ring-1 ring-accent/40'
           )}
           onClick={() =>
             setMail({
@@ -52,28 +52,28 @@ export function MailList({ items, hasMore, loading }: MailListProps) {
           <div className="flex w-full items-start gap-3">
             <div className="flex items-center pt-1">
               {!item.read && (
-                <span className="flex h-2.5 w-2.5 rounded-full bg-primary shadow-sm flex-shrink-0" />
+                <span className="flex h-2.5 w-2.5 flex-shrink-0 rounded-full bg-primary shadow-sm" />
               )}
             </div>
 
-            <div className="flex w-full flex-col gap-1 min-w-0 flex-1">
+            <div className="flex w-full min-w-0 flex-1 flex-col gap-1">
               <div className="flex items-start justify-between gap-3">
-                <div className="flex items-center gap-2 min-w-0 flex-1">
-                  <span className="font-semibold text-sm text-foreground truncate">
+                <div className="flex min-w-0 flex-1 items-center gap-2">
+                  <span className="truncate font-semibold text-foreground text-sm">
                     {item.name}
                   </span>
                 </div>
-                <time className="text-xs text-muted-foreground whitespace-nowrap font-medium">
+                <time className="whitespace-nowrap font-medium text-muted-foreground text-xs">
                   {dayjs(item.date).fromNow()}
                 </time>
               </div>
 
-              <div className="text-xs text-muted-foreground/80 font-medium">
+              <div className="font-medium text-muted-foreground/80 text-xs">
                 <span className="text-muted-foreground">{t('to_label')}</span>{' '}
                 <span className="text-foreground/60">{item.recipient}</span>
               </div>
 
-              <div className="font-medium line-clamp-2 text-sm text-foreground/80 leading-relaxed break-words group-hover:text-foreground/95 transition-colors">
+              <div className="line-clamp-2 break-words font-medium text-foreground/80 text-sm leading-relaxed transition-colors group-hover:text-foreground/95">
                 {item.subject}
               </div>
             </div>
@@ -85,7 +85,7 @@ export function MailList({ items, hasMore, loading }: MailListProps) {
         <div className="flex items-center justify-center p-6">
           <div className="flex items-center gap-3 text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" />
-            <span className="text-sm font-medium">
+            <span className="font-medium text-sm">
               {t('loading_more_emails')}
             </span>
           </div>
@@ -93,15 +93,15 @@ export function MailList({ items, hasMore, loading }: MailListProps) {
       )}
 
       {!hasMore && items.length > 0 && (
-        <div className="flex items-center justify-center p-6 text-sm text-muted-foreground font-medium">
+        <div className="flex items-center justify-center p-6 font-medium text-muted-foreground text-sm">
           {t('no_more_emails')}
         </div>
       )}
 
       {!loading && items.length === 0 && (
         <div className="flex flex-col items-center justify-center p-12 text-center">
-          <div className="text-4xl mb-4 opacity-20">📮</div>
-          <p className="text-sm text-muted-foreground font-medium">
+          <div className="mb-4 text-4xl opacity-20">📮</div>
+          <p className="font-medium text-muted-foreground text-sm">
             {t('no_emails_found')}
           </p>
         </div>

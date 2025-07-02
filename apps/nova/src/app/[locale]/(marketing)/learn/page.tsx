@@ -182,7 +182,7 @@ export default function LearnPage() {
   } satisfies Variants;
 
   return (
-    <div className="relative container mx-auto space-y-16 p-6">
+    <div className="container relative mx-auto space-y-16 p-6">
       <div className="absolute inset-0 bg-linear-to-b from-background to-background/50" />
 
       <motion.div
@@ -194,7 +194,7 @@ export default function LearnPage() {
           <GraduationCap className="mr-2 h-4 w-4" />
           Interactive Learning Path
         </Badge>
-        <h1 className="text-4xl font-bold tracking-tight">
+        <h1 className="font-bold text-4xl tracking-tight">
           {t('learning-subtitle')}
         </h1>
         <p className="mx-auto max-w-2xl text-muted-foreground">
@@ -221,8 +221,8 @@ export default function LearnPage() {
                   {module.icon}
                 </div>
                 <div>
-                  <h2 className="text-2xl font-semibold">{module.title}</h2>
-                  <p className="text-sm text-muted-foreground">
+                  <h2 className="font-semibold text-2xl">{module.title}</h2>
+                  <p className="text-muted-foreground text-sm">
                     {module.description}
                   </p>
                 </div>
@@ -242,7 +242,7 @@ export default function LearnPage() {
                   <div className="flex items-start justify-between gap-4">
                     <div className="space-y-1">
                       <h3 className="font-medium">{section.title}</h3>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-muted-foreground text-sm">
                         {section.content}
                       </p>
                     </div>

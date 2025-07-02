@@ -102,11 +102,11 @@ export default function GroupSchedule({
       <div>
         <div className="grid h-full gap-8">
           <div key={2024} className="flex h-full flex-col">
-            <div className="mb-4 flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-xl font-bold md:text-2xl">
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-x-4 gap-y-1 font-bold text-xl md:text-2xl">
               <div className="flex items-center gap-1">
                 {thisYear}
                 <div className="mx-2 h-4 w-px rotate-30 bg-foreground/20" />
-                <span className="text-lg font-semibold md:text-xl">
+                <span className="font-semibold text-lg md:text-xl">
                   {thisMonth}
                 </span>
               </div>

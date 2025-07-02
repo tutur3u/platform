@@ -134,7 +134,7 @@ export default function MFAMethodList() {
             <div className="flex-1 space-y-1">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <h3 className="text-sm font-medium">
+                  <h3 className="font-medium text-sm">
                     {method.id === 'authenticator' && t('authenticator-app')}
                     {method.id === 'phone' && t('phone-number')}
                     {method.id === 'security-keys' && t('security-keys')}
@@ -166,7 +166,7 @@ export default function MFAMethodList() {
 
                 {method.status !== 'coming-soon' && method.dialog}
               </div>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-muted-foreground text-xs">
                 {method.id === 'authenticator' &&
                   t('authenticator-app-description')}
                 {method.id === 'phone' && t('phone-number-description')}

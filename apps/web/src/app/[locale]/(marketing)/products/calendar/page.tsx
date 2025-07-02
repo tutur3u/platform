@@ -96,7 +96,7 @@ export default function CalendarProductPage() {
         <Badge variant="secondary" className="mb-4">
           Coming Soon
         </Badge>
-        <h1 className="mb-4 text-4xl font-bold">Smart Calendar Management</h1>
+        <h1 className="mb-4 font-bold text-4xl">Smart Calendar Management</h1>
         <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
           Streamline your scheduling and time management with our intelligent
           calendar system. Coordinate meetings, manage events, and boost
@@ -117,7 +117,7 @@ export default function CalendarProductPage() {
         <Card className="border-primary bg-primary/5 p-8">
           <div className="mx-auto flex max-w-4xl flex-col items-center gap-4 text-center">
             <ShieldCheck className="h-12 w-12 text-primary" />
-            <h2 className="text-2xl font-bold">Enterprise-Ready Calendar</h2>
+            <h2 className="font-bold text-2xl">Enterprise-Ready Calendar</h2>
             <p className="text-muted-foreground">
               Built with security and scalability in mind, our calendar system
               supports organizations of all sizes while maintaining data privacy
@@ -129,7 +129,7 @@ export default function CalendarProductPage() {
 
       {/* Features Grid */}
       <section className="mb-24">
-        <h2 className="mb-12 text-center text-3xl font-bold">
+        <h2 className="mb-12 text-center font-bold text-3xl">
           Powerful Features
         </h2>
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -137,7 +137,7 @@ export default function CalendarProductPage() {
             <Card key={feature.title} className="p-6">
               <div className="mb-4 flex items-center gap-3">
                 <div className="text-primary">{feature.icon}</div>
-                <h3 className="text-xl font-semibold">{feature.title}</h3>
+                <h3 className="font-semibold text-xl">{feature.title}</h3>
               </div>
               <p className="text-muted-foreground">{feature.description}</p>
             </Card>
@@ -147,12 +147,12 @@ export default function CalendarProductPage() {
 
       {/* Use Cases */}
       <section className="mb-24">
-        <h2 className="mb-12 text-center text-3xl font-bold">Use Cases</h2>
+        <h2 className="mb-12 text-center font-bold text-3xl">Use Cases</h2>
         <div className="grid gap-8 md:grid-cols-3">
           {useCases.map((useCase) => (
             <Card key={useCase.title} className="p-6">
               <Calendar className="mb-4 h-8 w-8 text-primary" />
-              <h3 className="mb-4 text-xl font-semibold">{useCase.title}</h3>
+              <h3 className="mb-4 font-semibold text-xl">{useCase.title}</h3>
               <ul className="space-y-2 text-muted-foreground">
                 {useCase.items.map((item) => (
                   <li key={item} className="flex items-center gap-2">
@@ -170,9 +170,9 @@ export default function CalendarProductPage() {
       <section className="mb-24">
         <Card className="overflow-hidden">
           <div className="grid md:grid-cols-2">
-            <div className="flex flex-col justify-center gap-4 border-b border-border p-8 md:border-r md:border-b-0">
+            <div className="flex flex-col justify-center gap-4 border-border border-b p-8 md:border-r md:border-b-0">
               <Globe className="h-8 w-8 text-primary" />
-              <h3 className="text-2xl font-bold">Global Accessibility</h3>
+              <h3 className="font-bold text-2xl">Global Accessibility</h3>
               <p className="text-muted-foreground">
                 Access your calendar from anywhere, with automatic time zone
                 adjustments and cross-platform synchronization.
@@ -180,7 +180,7 @@ export default function CalendarProductPage() {
             </div>
             <div className="flex flex-col justify-center gap-4 p-8">
               <Share2 className="h-8 w-8 text-primary" />
-              <h3 className="text-2xl font-bold">Seamless Integration</h3>
+              <h3 className="font-bold text-2xl">Seamless Integration</h3>
               <p className="text-muted-foreground">
                 Connect with your favorite tools and services for a unified
                 workflow experience.
@@ -192,13 +192,13 @@ export default function CalendarProductPage() {
 
       {/* Communication Section */}
       <section className="mb-24">
-        <h2 className="mb-12 text-center text-3xl font-bold">
+        <h2 className="mb-12 text-center font-bold text-3xl">
           Enhanced Communication
         </h2>
         <div className="grid gap-6 md:grid-cols-2">
           <Card className="p-6">
             <MessageSquare className="mb-4 h-8 w-8 text-primary" />
-            <h3 className="mb-2 text-xl font-bold">Meeting Chat</h3>
+            <h3 className="mb-2 font-bold text-xl">Meeting Chat</h3>
             <p className="text-muted-foreground">
               Built-in chat functionality for quick discussions and meeting
               coordination.
@@ -206,7 +206,7 @@ export default function CalendarProductPage() {
           </Card>
           <Card className="p-6">
             <Zap className="mb-4 h-8 w-8 text-primary" />
-            <h3 className="mb-2 text-xl font-bold">Quick Actions</h3>
+            <h3 className="mb-2 font-bold text-xl">Quick Actions</h3>
             <p className="text-muted-foreground">
               Streamlined workflows with one-click actions for common calendar
               operations.

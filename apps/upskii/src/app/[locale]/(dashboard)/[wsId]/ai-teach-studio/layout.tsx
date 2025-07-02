@@ -37,7 +37,7 @@ export default function ToolsLayout({
   if (locale === 'vi')
     return (
       <>
-        <div className="flex h-screen w-full flex-col items-center justify-center gap-4 text-center text-2xl font-bold">
+        <div className="flex h-screen w-full flex-col items-center justify-center gap-4 text-center font-bold text-2xl">
           <div>Bạn cần đổi ngôn ngữ sang tiếng Anh để xem trang này.</div>
           <Button onClick={updateLocale} disabled={loading}>
             {loading ? (

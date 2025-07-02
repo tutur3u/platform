@@ -353,7 +353,8 @@ export const CalendarContent = ({
     } else if (view === 'month') {
       let firstDayNumber = 1; // Monday
       if (settings?.appearance?.firstDayOfWeek === 'sunday') firstDayNumber = 0;
-      if (settings?.appearance?.firstDayOfWeek === 'saturday') firstDayNumber = 6;
+      if (settings?.appearance?.firstDayOfWeek === 'saturday')
+        firstDayNumber = 6;
       const gridDates = getMonthGridDates(date, firstDayNumber);
       setDates(gridDates);
     }
@@ -442,9 +443,14 @@ export const CalendarContent = ({
         <WeekdayBar locale={locale} view={view} dates={dates} />
       )}
 
-      <div className="relative scrollbar-none flex-1 overflow-auto bg-background/50">
+      <div className="scrollbar-none relative flex-1 overflow-auto bg-background/50">
         {view === 'month' && dates?.[0] ? (
-          <MonthCalendar date={dates[0]} workspace={workspace} visibleDates={dates} viewedMonth={date} />
+          <MonthCalendar
+            date={dates[0]}
+            workspace={workspace}
+            visibleDates={dates}
+            viewedMonth={date}
+          />
         ) : (
           <CalendarViewWithTrail dates={dates} />
         )}

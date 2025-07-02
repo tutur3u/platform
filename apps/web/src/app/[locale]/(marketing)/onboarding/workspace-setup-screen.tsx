@@ -68,11 +68,11 @@ export function WorkspaceSetupScreen({
               <Building2 className="h-8 w-8" />
             </div>
 
-            <h1 className="mb-4 text-3xl font-bold text-gray-900 md:text-4xl dark:text-white">
+            <h1 className="mb-4 font-bold text-3xl text-gray-900 md:text-4xl dark:text-white">
               {t('title')}
             </h1>
 
-            <p className="text-lg text-gray-600 dark:text-gray-300">
+            <p className="text-gray-600 text-lg dark:text-gray-300">
               {t('subtitle')}
             </p>
           </div>
@@ -80,7 +80,7 @@ export function WorkspaceSetupScreen({
           {/* Form */}
           <Card className="border bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800">
             <CardHeader className="pb-6">
-              <CardTitle className="text-xl font-semibold">
+              <CardTitle className="font-semibold text-xl">
                 {t('workspace-details')}
               </CardTitle>
             </CardHeader>
@@ -113,7 +113,7 @@ export function WorkspaceSetupScreen({
                     name="name"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-base font-semibold">
+                        <FormLabel className="font-semibold text-base">
                           {t('workspace-name')}
                         </FormLabel>
                         <FormControl>
@@ -131,10 +131,10 @@ export function WorkspaceSetupScreen({
 
                   {/* Tips Section */}
                   <div className="rounded-lg bg-blue-50 p-4 dark:bg-blue-900/20">
-                    <h4 className="mb-2 text-sm font-semibold text-blue-800 dark:text-blue-200">
+                    <h4 className="mb-2 font-semibold text-blue-800 text-sm dark:text-blue-200">
                       {t('tips.title')}
                     </h4>
-                    <ul className="space-y-1 text-sm text-blue-700 dark:text-blue-300">
+                    <ul className="space-y-1 text-blue-700 text-sm dark:text-blue-300">
                       <li>{t('tips.tip1')}</li>
                       <li>{t('tips.tip2')}</li>
                       <li>{t('tips.tip3')}</li>

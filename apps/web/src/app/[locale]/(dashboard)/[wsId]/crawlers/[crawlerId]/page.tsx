@@ -54,7 +54,7 @@ export default async function DatasetDetailsPage({ params }: Props) {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">{crawledUrl?.url}</h1>
+          <h1 className="font-bold text-2xl">{crawledUrl?.url}</h1>
         </div>
       </div>
 

@@ -44,13 +44,13 @@ export async function CourseSection({
         {href ? (
           <Link
             href={href}
-            className="flex w-fit items-center gap-2 text-lg font-semibold hover:underline md:text-2xl"
+            className="flex w-fit items-center gap-2 font-semibold text-lg hover:underline md:text-2xl"
           >
             {icon}
             {title}
           </Link>
         ) : (
-          <div className="flex items-center gap-2 text-lg font-semibold md:text-2xl">
+          <div className="flex items-center gap-2 font-semibold text-lg md:text-2xl">
             {icon}
             {title}
           </div>

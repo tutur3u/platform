@@ -13,9 +13,9 @@ import { ROOT_WORKSPACE_ID } from './constants';
 import { permissions as rolePermissions } from './permissions';
 
 const isValidTuturuuuEmail = (email: string): boolean => {
-    if (!email) return false;
-    const emailRegex = /^[^\s@]+@tuturuuu\.com$/;
-    return emailRegex.test(email);
+  if (!email) return false;
+  const emailRegex = /^[^\s@]+@tuturuuu\.com$/;
+  return emailRegex.test(email);
 };
 
 export async function checkTuturuuuAdmin() {
@@ -27,7 +27,7 @@ export async function checkTuturuuuAdmin() {
 
   if (!user) redirect('/login');
 
-   const { data,error } = await supabase
+  const { data, error } = await supabase
     .from('workspace_members')
     .select('role')
     .eq('ws_id', ROOT_WORKSPACE_ID)
@@ -35,24 +35,28 @@ export async function checkTuturuuuAdmin() {
     .in('role', ['OWNER', 'ADMIN'])
     .single();
 
-    if (error || !data) {
+  if (error || !data) {
     console.error('Error checking Tuturuuu admin status:', error);
     throw error;
-    }
+  }
 
-    if (user.email && isValidTuturuuuEmail(user.email)) {
-      return true;
-    }
-    return false;
+  if (user.email && isValidTuturuuuEmail(user.email)) {
+    return true;
+  }
+  return false;
 }
 
 // Structured logging utility
-const logWorkspaceError = (context: string, error: any, metadata?: Record<string, any>) => {
+const logWorkspaceError = (
+  context: string,
+  error: any,
+  metadata?: Record<string, any>
+) => {
   const logData = {
     context,
     error: error?.message || error,
     timestamp: new Date().toISOString(),
-    ...metadata
+    ...metadata,
   };
   console.error(`[WorkspaceHelper] ${context}:`, logData);
 };
@@ -83,9 +87,9 @@ export async function getWorkspace(id: string, requireUserRole = false) {
       userId: user.id,
       requireUserRole,
       errorCode: error.code,
-      errorDetails: error.details
+      errorDetails: error.details,
     });
-    
+
     // Return null to let the caller handle the error appropriately
     // This allows for more graceful error handling in different contexts
     notFound();
@@ -129,7 +133,7 @@ export async function getWorkspaces(noRedirect?: boolean) {
     logWorkspaceError('Failed to fetch user workspaces', error, {
       userId: user.id,
       errorCode: error.code,
-      errorDetails: error.details
+      errorDetails: error.details,
     });
     notFound();
   }
@@ -235,7 +239,7 @@ export async function getSecrets({
     logWorkspaceError('Failed to fetch workspace secrets', error, {
       workspaceId: wsId,
       errorCode: error.code,
-      errorDetails: error.details
+      errorDetails: error.details,
     });
     notFound();
   }

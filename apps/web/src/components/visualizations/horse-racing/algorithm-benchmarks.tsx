@@ -88,7 +88,7 @@ export function AlgorithmBenchmarks({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Lightbulb className="h-5 w-5 text-amber-500" />
-          <h3 className="text-base font-medium">Algorithm Benchmarks</h3>
+          <h3 className="font-medium text-base">Algorithm Benchmarks</h3>
         </div>
       </div>
 
@@ -101,7 +101,7 @@ export function AlgorithmBenchmarks({
 
           <div className="mb-3 grid grid-cols-2 gap-2 md:grid-cols-3">
             <div>
-              <div className="text-xs text-muted-foreground">Configuration</div>
+              <div className="text-muted-foreground text-xs">Configuration</div>
               <div className="font-medium">
                 {closestBenchmark.horses} horses / {closestBenchmark.raceSize}{' '}
                 race size
@@ -109,21 +109,21 @@ export function AlgorithmBenchmarks({
             </div>
 
             <div>
-              <div className="text-xs text-muted-foreground">
+              <div className="text-muted-foreground text-xs">
                 Expected Races
               </div>
               <div className="font-medium">{closestBenchmark.races}</div>
             </div>
 
             <div>
-              <div className="text-xs text-muted-foreground">Efficiency</div>
+              <div className="text-muted-foreground text-xs">Efficiency</div>
               <div className="font-medium">
                 {(closestBenchmark.efficiency * 100).toFixed(1)}%
               </div>
             </div>
           </div>
 
-          <div className="text-sm text-muted-foreground">
+          <div className="text-muted-foreground text-sm">
             {isExactMatch ? (
               <>
                 Expected to complete in {closestBenchmark.races} races, which is{' '}

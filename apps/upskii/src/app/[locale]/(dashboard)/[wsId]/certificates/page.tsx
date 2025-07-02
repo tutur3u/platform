@@ -76,7 +76,7 @@ export default async function CertificatesPage({
           <div className="flex h-64 items-center justify-center">
             <div className="text-center">
               <Award className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
-              <h3 className="mb-2 text-lg font-semibold">
+              <h3 className="mb-2 font-semibold text-lg">
                 {t('empty_state_title')}
               </h3>
               <p className="mb-4 text-muted-foreground">
@@ -113,7 +113,7 @@ export default async function CertificatesPage({
                   </CardHeader>
 
                   <CardContent className="pt-0">
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <div className="flex items-center gap-2 text-muted-foreground text-sm">
                       <Calendar className="h-4 w-4" />
                       <span>
                         {t('completion_date')}{' '}
@@ -122,7 +122,7 @@ export default async function CertificatesPage({
                         )}
                       </span>
                     </div>
-                    <div className="mt-3 font-mono text-xs text-muted-foreground">
+                    <div className="mt-3 font-mono text-muted-foreground text-xs">
                       {t('certificate_id')}: {certificate.id}
                     </div>
                   </CardContent>
@@ -164,7 +164,7 @@ export default async function CertificatesPage({
     return (
       <div className="flex h-64 items-center justify-center">
         <div className="text-center">
-          <h3 className="mb-2 text-lg font-semibold">{t('error')}</h3>
+          <h3 className="mb-2 font-semibold text-lg">{t('error')}</h3>
           <p className="text-muted-foreground">{t('error_description')}</p>
         </div>
       </div>

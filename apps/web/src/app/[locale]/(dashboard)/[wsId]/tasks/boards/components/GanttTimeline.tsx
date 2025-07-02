@@ -69,10 +69,10 @@ export function GanttTimeline({
               <div
                 key={index}
                 className={cn(
-                  'flex items-center justify-center text-xs whitespace-nowrap text-muted-foreground',
+                  'flex items-center justify-center whitespace-nowrap text-muted-foreground text-xs',
                   filters.timeView === 'year'
                     ? 'flex-1 px-2 text-center'
-                    : 'absolute -translate-x-1/2 transform'
+                    : '-translate-x-1/2 absolute transform'
                 )}
                 style={
                   filters.timeView === 'year'
@@ -167,7 +167,7 @@ export function GanttTimeline({
                   <div className="w-52 min-w-0">
                     {/* Task Name with line clamp */}
                     <div
-                      className="line-clamp-1 text-sm font-medium text-gray-900 transition-all duration-200 group-hover:line-clamp-none dark:text-gray-100"
+                      className="line-clamp-1 font-medium text-gray-900 text-sm transition-all duration-200 group-hover:line-clamp-none dark:text-gray-100"
                       title={task.name}
                     >
                       {task.name}
@@ -215,7 +215,7 @@ export function GanttTimeline({
                         )}
                       </div>
 
-                      <div className="flex h-full items-center justify-center text-xs font-medium text-white">
+                      <div className="flex h-full items-center justify-center font-medium text-white text-xs">
                         {(task.status === 'done' || task.status === 'closed') &&
                         filters.timeView !== 'year' &&
                         task.width > 15
@@ -283,7 +283,7 @@ export function GanttTimeline({
                     <Badge
                       variant="outline"
                       className={cn(
-                        'border text-xs font-medium',
+                        'border font-medium text-xs',
                         task.status === 'done' &&
                           'border-green-200 bg-green-50 text-green-700 dark:border-green-800 dark:bg-green-900/20 dark:text-green-400',
                         task.status === 'closed' &&
@@ -328,10 +328,10 @@ export function GanttTimeline({
       <Collapsible className="mt-4 border-t pt-4">
         <CollapsibleTrigger className="group flex w-full items-center justify-between">
           <div className="flex items-center gap-2">
-            <h5 className="text-sm font-medium">Status Legend</h5>
+            <h5 className="font-medium text-sm">Status Legend</h5>
             <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
           </div>
-          <span className="text-xs text-muted-foreground">
+          <span className="text-muted-foreground text-xs">
             Hover over tasks for detailed timeline
           </span>
         </CollapsibleTrigger>

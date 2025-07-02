@@ -358,15 +358,15 @@ export function StatusGroupedBoard({
                 </svg>
               </div>
               <div>
-                <h2 className="text-lg font-semibold text-foreground">
+                <h2 className="font-semibold text-foreground text-lg">
                   Board Structure View
                 </h2>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-muted-foreground text-sm">
                   Viewing task lists and organization without individual tasks
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <div className="flex items-center gap-2 text-muted-foreground text-sm">
               <span className="rounded-full bg-dynamic-gray/20 px-3 py-1">
                 {lists.length} lists
               </span>

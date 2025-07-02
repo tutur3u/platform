@@ -105,11 +105,11 @@ export default function TestCaseEvaluation({
 
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h4 className="text-sm font-medium">Test Case Details</h4>
+              <h4 className="font-medium text-sm">Test Case Details</h4>
 
               <div className="flex items-center gap-3">
                 <div className="flex items-center gap-1">
-                  <span className="text-xs text-muted-foreground">
+                  <span className="text-muted-foreground text-xs">
                     Line Numbers
                   </span>
                   <Switch
@@ -170,7 +170,7 @@ export default function TestCaseEvaluation({
                           ) : (
                             <XCircle className="h-4 w-4 text-red-500" />
                           )}
-                          <span className="text-sm font-medium">
+                          <span className="font-medium text-sm">
                             Test Case {index + 1}
                           </span>
 
@@ -178,7 +178,7 @@ export default function TestCaseEvaluation({
                             testcase.confidence !== null && (
                               <div className="ml-2 flex items-center gap-1">
                                 <ThumbsUp className="h-3 w-3 text-muted-foreground" />
-                                <span className="text-xs text-muted-foreground">
+                                <span className="text-muted-foreground text-xs">
                                   {(testcase.confidence * 100).toFixed(0)}%
                                   confidence
                                 </span>
@@ -187,7 +187,7 @@ export default function TestCaseEvaluation({
                         </div>
                         <div className="flex items-center gap-2">
                           <span
-                            className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                            className={`rounded-full px-2 py-0.5 font-medium text-xs ${
                               testcase.matched
                                 ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300'
                                 : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300'
@@ -201,8 +201,8 @@ export default function TestCaseEvaluation({
                     <AccordionContent className="p-0">
                       <div className="px-4 pt-2 pb-2">
                         <div className="mb-4 rounded-md border bg-muted/20 p-3">
-                          <h5 className="mb-2 text-xs font-medium">Input</h5>
-                          <pre className="max-h-24 overflow-auto rounded-md border bg-background p-2 text-xs whitespace-pre-wrap">
+                          <h5 className="mb-2 font-medium text-xs">Input</h5>
+                          <pre className="max-h-24 overflow-auto whitespace-pre-wrap rounded-md border bg-background p-2 text-xs">
                             {testcase.input || 'No input provided'}
                           </pre>
                         </div>
@@ -211,21 +211,21 @@ export default function TestCaseEvaluation({
                         {testcase.reasoning && (
                           <div className="mb-4 rounded-md border bg-muted/20 p-3">
                             <div className="mb-2 flex items-center justify-between">
-                              <h5 className="flex items-center text-xs font-medium">
+                              <h5 className="flex items-center font-medium text-xs">
                                 <Info className="mr-1 h-3.5 w-3.5 text-primary/70" />
                                 Reasoning
                               </h5>
 
                               {testcase.confidence !== undefined && (
                                 <div className="flex items-center gap-2">
-                                  <span className="text-xs text-muted-foreground">
+                                  <span className="text-muted-foreground text-xs">
                                     Confidence:
                                   </span>
                                   {getConfidenceBadge(testcase.confidence)}
                                 </div>
                               )}
                             </div>
-                            <div className="rounded border bg-background p-2 text-sm text-muted-foreground">
+                            <div className="rounded border bg-background p-2 text-muted-foreground text-sm">
                               {testcase.reasoning}
                             </div>
                           </div>
@@ -234,7 +234,7 @@ export default function TestCaseEvaluation({
 
                       <Tabs defaultValue="side-by-side" className="px-4 pb-4">
                         <div className="mb-3 flex items-center justify-between">
-                          <span className="text-sm font-medium">
+                          <span className="font-medium text-sm">
                             Output Comparison
                           </span>
                           <TabsList>
@@ -282,21 +282,21 @@ export default function TestCaseEvaluation({
                         <TabsContent value="raw" className="mt-0">
                           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                             <div className="space-y-2">
-                              <h5 className="text-xs font-medium text-muted-foreground">
+                              <h5 className="font-medium text-muted-foreground text-xs">
                                 Expected Output:
                               </h5>
-                              <pre className="max-h-[300px] overflow-auto rounded-md border bg-background p-2 text-xs whitespace-pre-wrap">
+                              <pre className="max-h-[300px] overflow-auto whitespace-pre-wrap rounded-md border bg-background p-2 text-xs">
                                 {testcase.expected_output ||
                                   'No expected output'}
                               </pre>
                             </div>
 
                             <div className="space-y-2">
-                              <h5 className="text-xs font-medium text-muted-foreground">
+                              <h5 className="font-medium text-muted-foreground text-xs">
                                 Your Output:
                               </h5>
                               <pre
-                                className={`max-h-[300px] overflow-auto rounded-md border p-2 text-xs whitespace-pre-wrap ${
+                                className={`max-h-[300px] overflow-auto whitespace-pre-wrap rounded-md border p-2 text-xs ${
                                   testcase.matched
                                     ? 'bg-emerald-50 dark:bg-emerald-900/20'
                                     : 'bg-red-50 dark:bg-red-900/20'
@@ -323,7 +323,7 @@ export default function TestCaseEvaluation({
         </div>
       ) : (
         <div className="rounded-md border border-dashed p-6 text-center">
-          <p className="text-sm text-muted-foreground">
+          <p className="text-muted-foreground text-sm">
             No test cases available
           </p>
         </div>

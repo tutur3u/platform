@@ -23,7 +23,7 @@ export default function LoggedInAsButton({
           : t('meet-together-plan-details.viewing_as')}
       </div>
       <div
-        className={`${user?.id ? '' : 'opacity-50'} line-clamp-1 font-semibold break-all`}
+        className={`${user?.id ? '' : 'opacity-50'} line-clamp-1 break-all font-semibold`}
       >
         {user?.display_name ||
           platformUser?.email ||

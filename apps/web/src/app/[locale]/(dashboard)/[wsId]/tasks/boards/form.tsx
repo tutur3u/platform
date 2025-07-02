@@ -215,10 +215,10 @@ export function TaskBoardForm({ wsId, data, children, onFinish }: Props) {
       {/* Header */}
       <div className="flex-shrink-0 border-b bg-background px-4 py-4 sm:px-6 sm:py-6">
         <div className="text-center">
-          <h2 className="text-lg font-semibold sm:text-xl">
+          <h2 className="font-semibold text-lg sm:text-xl">
             {isEditMode ? 'Edit Task Board' : 'Create New Task Board'}
           </h2>
-          <p className="mt-1 text-sm text-muted-foreground sm:text-base">
+          <p className="mt-1 text-muted-foreground text-sm sm:text-base">
             {isEditMode
               ? 'Update your task board name'
               : 'Choose a template and create your project board'}
@@ -241,7 +241,7 @@ export function TaskBoardForm({ wsId, data, children, onFinish }: Props) {
                   name="name"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-sm font-medium sm:text-base">
+                      <FormLabel className="font-medium text-sm sm:text-base">
                         {t('ws-task-boards.name')}
                       </FormLabel>
                       <FormControl>
@@ -264,7 +264,7 @@ export function TaskBoardForm({ wsId, data, children, onFinish }: Props) {
                   name="tags"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-sm font-medium sm:text-base">
+                      <FormLabel className="font-medium text-sm sm:text-base">
                         Tags
                       </FormLabel>
                       <FormControl>
@@ -278,7 +278,7 @@ export function TaskBoardForm({ wsId, data, children, onFinish }: Props) {
                         />
                       </FormControl>
                       <div className="mt-2">
-                        <Label className="text-xs text-muted-foreground">
+                        <Label className="text-muted-foreground text-xs">
                           Suggestions:
                         </Label>
                         <div className="mt-1">
@@ -304,10 +304,10 @@ export function TaskBoardForm({ wsId, data, children, onFinish }: Props) {
 
                     <div className="space-y-4 sm:space-y-6">
                       <div className="text-center">
-                        <Label className="text-sm font-medium sm:text-base">
+                        <Label className="font-medium text-sm sm:text-base">
                           Choose a Workflow Template
                         </Label>
-                        <p className="mt-2 text-xs text-muted-foreground sm:text-sm">
+                        <p className="mt-2 text-muted-foreground text-xs sm:text-sm">
                           Select a pre-configured template to get started
                           quickly, or create a blank board
                         </p>
@@ -316,7 +316,7 @@ export function TaskBoardForm({ wsId, data, children, onFinish }: Props) {
                       {/* Error State */}
                       {templatesError && (
                         <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-center dark:border-red-800 dark:bg-red-950/30">
-                          <p className="text-sm text-red-700 dark:text-red-300">
+                          <p className="text-red-700 text-sm dark:text-red-300">
                             Failed to load templates. You can still create a
                             blank board.
                           </p>
@@ -360,7 +360,7 @@ export function TaskBoardForm({ wsId, data, children, onFinish }: Props) {
                                       <Crown className="mt-0.5 h-4 w-4 flex-shrink-0 text-muted-foreground sm:h-5 sm:w-5" />
                                       <div className="min-w-0 flex-1 space-y-1 sm:space-y-2">
                                         <div className="flex flex-wrap items-center gap-2">
-                                          <span className="text-sm font-medium sm:text-base">
+                                          <span className="font-medium text-sm sm:text-base">
                                             Blank Board
                                           </span>
                                           <Badge
@@ -370,7 +370,7 @@ export function TaskBoardForm({ wsId, data, children, onFinish }: Props) {
                                             Custom
                                           </Badge>
                                         </div>
-                                        <p className="text-xs text-muted-foreground sm:text-sm">
+                                        <p className="text-muted-foreground text-xs sm:text-sm">
                                           Start with a clean slate and create
                                           your own workflow
                                         </p>
@@ -414,7 +414,7 @@ export function TaskBoardForm({ wsId, data, children, onFinish }: Props) {
                                           <Icon className="mt-0.5 h-4 w-4 flex-shrink-0 text-muted-foreground sm:h-5 sm:w-5" />
                                           <div className="min-w-0 flex-1 space-y-1 sm:space-y-2">
                                             <div className="flex flex-wrap items-center gap-2">
-                                              <span className="text-sm font-medium sm:text-base">
+                                              <span className="font-medium text-sm sm:text-base">
                                                 {template.name}
                                               </span>
                                               {template.is_default && (
@@ -427,7 +427,7 @@ export function TaskBoardForm({ wsId, data, children, onFinish }: Props) {
                                               )}
                                             </div>
                                             {template.description && (
-                                              <p className="text-xs text-muted-foreground sm:text-sm">
+                                              <p className="text-muted-foreground text-xs sm:text-sm">
                                                 {template.description}
                                               </p>
                                             )}
@@ -446,7 +446,7 @@ export function TaskBoardForm({ wsId, data, children, onFinish }: Props) {
                                               {template.statuses.length > 4 && (
                                                 <Badge
                                                   variant="outline"
-                                                  className="text-xs text-muted-foreground"
+                                                  className="text-muted-foreground text-xs"
                                                 >
                                                   +
                                                   {template.statuses.length - 4}{' '}
@@ -469,14 +469,14 @@ export function TaskBoardForm({ wsId, data, children, onFinish }: Props) {
 
                       {/* Template Preview */}
                       {selectedTemplate && (
-                        <div className="rounded-xl border-2 border-dashed border-primary/20 bg-gradient-to-br from-primary/5 to-muted/30 p-4 sm:p-6">
+                        <div className="rounded-xl border-2 border-primary/20 border-dashed bg-gradient-to-br from-primary/5 to-muted/30 p-4 sm:p-6">
                           <div className="mb-3 flex items-center gap-2 sm:mb-4">
                             <span className="text-base sm:text-lg">✨</span>
-                            <h4 className="text-sm font-medium sm:text-base">
+                            <h4 className="font-medium text-sm sm:text-base">
                               Template Preview
                             </h4>
                           </div>
-                          <p className="mb-3 text-xs text-muted-foreground sm:mb-4 sm:text-sm">
+                          <p className="mb-3 text-muted-foreground text-xs sm:mb-4 sm:text-sm">
                             This template will create{' '}
                             <strong>{selectedTemplate.statuses.length}</strong>{' '}
                             lists to organize your workflow:
@@ -513,7 +513,7 @@ export function TaskBoardForm({ wsId, data, children, onFinish }: Props) {
                                       </Badge>
                                     )}
                                   </div>
-                                  <span className="text-xs text-muted-foreground">
+                                  <span className="text-muted-foreground text-xs">
                                     #{index + 1}
                                   </span>
                                 </div>
@@ -546,7 +546,7 @@ export function TaskBoardForm({ wsId, data, children, onFinish }: Props) {
           {isEditMode ? t('common.edit') : t('common.create')}
         </Button>
         {!isEditMode && (
-          <p className="mt-2 text-center text-xs text-muted-foreground sm:text-sm">
+          <p className="mt-2 text-center text-muted-foreground text-xs sm:text-sm">
             You can customize lists and colors after creating the board
           </p>
         )}

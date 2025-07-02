@@ -74,7 +74,7 @@ export default function PageContent({
       <div className="grid gap-8 py-8">
         <section>
           <div className="flex justify-between">
-            <h2 className="mb-4 w-fit bg-linear-to-br from-dynamic-light-red via-dynamic-light-pink to-dynamic-light-blue bg-clip-text py-1 text-xl font-bold text-transparent lg:text-3xl">
+            <h2 className="mb-4 w-fit bg-linear-to-br from-dynamic-light-red via-dynamic-light-pink to-dynamic-light-blue bg-clip-text py-1 font-bold text-transparent text-xl lg:text-3xl">
               Recommended For You
             </h2>
             <APITooltip handleOpenChange={handleOpenChange} />
@@ -93,7 +93,7 @@ export default function PageContent({
                   </CardHeader>
                   <CardContent>
                     <p className="line-clamp-2">{tool.description}</p>
-                    <div className="flex flex-wrap items-center gap-1 text-sm font-semibold">
+                    <div className="flex flex-wrap items-center gap-1 font-semibold text-sm">
                       {tool.tags.map((tag) => (
                         <p
                           key={`${tool.name}-${tag}`}
@@ -111,7 +111,7 @@ export default function PageContent({
         </section>
 
         <section>
-          <h2 className="mb-4 w-fit bg-linear-to-br from-dynamic-light-red via-dynamic-light-pink to-dynamic-light-blue bg-clip-text py-1 text-xl font-bold text-transparent lg:text-3xl">
+          <h2 className="mb-4 w-fit bg-linear-to-br from-dynamic-light-red via-dynamic-light-pink to-dynamic-light-blue bg-clip-text py-1 font-bold text-transparent text-xl lg:text-3xl">
             All Tools
           </h2>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
@@ -127,7 +127,7 @@ export default function PageContent({
                   </CardHeader>
                   <CardContent>
                     <p className="line-clamp-2">{tool.description}</p>
-                    <div className="flex flex-wrap items-center gap-1 text-sm font-semibold">
+                    <div className="flex flex-wrap items-center gap-1 font-semibold text-sm">
                       {tool.tags.map((tag) => (
                         <p
                           key={`${tool.name}-${tag}`}

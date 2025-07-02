@@ -104,8 +104,8 @@ export default async function DatasetCronJobDetailsPage({
             </Button>
           </Link>
           <div>
-            <h1 className="text-2xl font-bold">{job.name}</h1>
-            <p className="text-sm text-muted-foreground">
+            <h1 className="font-bold text-2xl">{job.name}</h1>
+            <p className="text-muted-foreground text-sm">
               {job.schedule} • {job.active ? 'Active' : 'Inactive'}
             </p>
           </div>
@@ -116,10 +116,10 @@ export default async function DatasetCronJobDetailsPage({
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Status</CardTitle>
+              <CardTitle className="font-medium text-sm">Status</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
+              <div className="font-bold text-2xl">
                 {renderStatus(job.active ? 'active' : 'inactive')}
               </div>
             </CardContent>
@@ -127,10 +127,10 @@ export default async function DatasetCronJobDetailsPage({
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Last Run</CardTitle>
+              <CardTitle className="font-medium text-sm">Last Run</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
+              <div className="font-bold text-2xl">
                 {/* {job.last_run
                   ? moment(job.last_run).format('DD/MM/YYYY HH:mm')
                   : '-'} */}
@@ -141,10 +141,10 @@ export default async function DatasetCronJobDetailsPage({
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Next Run</CardTitle>
+              <CardTitle className="font-medium text-sm">Next Run</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
+              <div className="font-bold text-2xl">
                 {/* {job.next_run
                   ? moment(job.next_run).format('DD/MM/YYYY HH:mm')
                   : '-'} */}
@@ -155,12 +155,12 @@ export default async function DatasetCronJobDetailsPage({
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
+              <CardTitle className="font-medium text-sm">
                 Total Executions
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{count || 0}</div>
+              <div className="font-bold text-2xl">{count || 0}</div>
             </CardContent>
           </Card>
         </div>

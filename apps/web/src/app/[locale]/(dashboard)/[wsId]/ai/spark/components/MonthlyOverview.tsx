@@ -47,14 +47,14 @@ export function MonthlyOverview({
       <CardContent className="space-y-4">
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-sm font-medium">Tasks This Month</span>
+            <span className="font-medium text-sm">Tasks This Month</span>
             <Badge variant="secondary">{tasks.length}</Badge>
           </div>
           <Progress value={(tasks.length / 10) * 100} className="h-2" />
         </div>
 
         <div className="space-y-2">
-          <span className="text-sm font-medium">Priority Distribution</span>
+          <span className="font-medium text-sm">Priority Distribution</span>
           <div className="grid grid-cols-3 gap-2">
             {['high', 'medium', 'low'].map((priority) => {
               const count = tasks.filter(
@@ -70,7 +70,7 @@ export function MonthlyOverview({
                 >
                   <div
                     className={cn(
-                      'text-xs font-medium',
+                      'font-medium text-xs',
                       priority === 'high'
                         ? 'text-destructive'
                         : priority === 'medium'
@@ -80,8 +80,8 @@ export function MonthlyOverview({
                   >
                     {priority.toUpperCase()}
                   </div>
-                  <div className="text-2xl font-bold">{count}</div>
-                  <div className="text-xs text-muted-foreground">
+                  <div className="font-bold text-2xl">{count}</div>
+                  <div className="text-muted-foreground text-xs">
                     {percentage}%
                   </div>
                 </div>
@@ -91,7 +91,7 @@ export function MonthlyOverview({
         </div>
 
         <div className="space-y-2">
-          <span className="text-sm font-medium">Quarter Progress</span>
+          <span className="font-medium text-sm">Quarter Progress</span>
           <div className="space-y-1">
             {yearPlan?.quarters?.map((quarter) => {
               const isCurrentQuarter =
@@ -114,7 +114,7 @@ export function MonthlyOverview({
                     <span>
                       Q{quarter.quarter}: {quarter.focus}
                     </span>
-                    <span className="text-xs text-muted-foreground">
+                    <span className="text-muted-foreground text-xs">
                       {completedTasks}/{totalTasks} tasks
                     </span>
                   </div>

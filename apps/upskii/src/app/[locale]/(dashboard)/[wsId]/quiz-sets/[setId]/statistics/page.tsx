@@ -65,7 +65,7 @@ export default async function QuizSetStatisticsPage({ params }: Props) {
           </Link>
         </Button>
         <div>
-          <h1 className="flex items-center gap-2 text-3xl font-bold">
+          <h1 className="flex items-center gap-2 font-bold text-3xl">
             <BarChart3 className="h-8 w-8" />
             {t('title')}
           </h1>
@@ -81,16 +81,16 @@ export default async function QuizSetStatisticsPage({ params }: Props) {
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-sm font-medium">
+            <CardTitle className="flex items-center gap-2 font-medium text-sm">
               <Target className="h-4 w-4 text-blue-500" />
               {t('total_quizzes')}
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">
+            <div className="font-bold text-3xl">
               {overallStats.totalQuizzes}
             </div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-muted-foreground text-xs">
               {t('active_quizzes')}
             </p>
           </CardContent>
@@ -98,16 +98,16 @@ export default async function QuizSetStatisticsPage({ params }: Props) {
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-sm font-medium">
+            <CardTitle className="flex items-center gap-2 font-medium text-sm">
               <TrendingUp className="h-4 w-4 text-green-500" />
               {t('total_attempts')}
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">
+            <div className="font-bold text-3xl">
               {overallStats.totalAttempts}
             </div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-muted-foreground text-xs">
               {t('accross_all_quizzes')}
             </p>
           </CardContent>
@@ -115,16 +115,16 @@ export default async function QuizSetStatisticsPage({ params }: Props) {
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-sm font-medium">
+            <CardTitle className="flex items-center gap-2 font-medium text-sm">
               <Users className="h-4 w-4 text-purple-500" />
               {t('active_students')}
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">
+            <div className="font-bold text-3xl">
               {overallStats.totalStudents}
             </div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-muted-foreground text-xs">
               {t('unique_participants')}
             </p>
           </CardContent>
@@ -132,16 +132,16 @@ export default async function QuizSetStatisticsPage({ params }: Props) {
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-sm font-medium">
+            <CardTitle className="flex items-center gap-2 font-medium text-sm">
               <BarChart3 className="h-4 w-4 text-orange-500" />
               {t('average_pass_rate')}
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">
+            <div className="font-bold text-3xl">
               {overallStats.averagePassRate.toFixed(1)}%
             </div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-muted-foreground text-xs">
               70% passing threshold
             </p>
           </CardContent>
@@ -153,10 +153,10 @@ export default async function QuizSetStatisticsPage({ params }: Props) {
       {/* Individual Quiz Performance */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-semibold">
+          <h2 className="font-semibold text-2xl">
             {t('individual_quiz_performance')}
           </h2>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-muted-foreground text-sm">
             {stats.length} quizzes analyzed
           </p>
         </div>
@@ -165,7 +165,7 @@ export default async function QuizSetStatisticsPage({ params }: Props) {
           <Card>
             <CardContent className="py-12 text-center">
               <BarChart3 className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
-              <h3 className="mb-2 text-lg font-semibold">{t('no_quizzes')}</h3>
+              <h3 className="mb-2 font-semibold text-lg">{t('no_quizzes')}</h3>
               <p className="text-muted-foreground">
                 {t('no_quizzes_description')}
               </p>
@@ -185,7 +185,7 @@ export default async function QuizSetStatisticsPage({ params }: Props) {
                     </div>
                     <div className="text-right">
                       <div
-                        className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                        className={`inline-flex items-center rounded-full px-2.5 py-0.5 font-medium text-xs ${
                           quiz.passRate >= 80
                             ? 'bg-green-100 text-green-800'
                             : quiz.passRate >= 60
@@ -205,32 +205,32 @@ export default async function QuizSetStatisticsPage({ params }: Props) {
                 <CardContent>
                   <div className="grid grid-cols-2 gap-6 md:grid-cols-5">
                     <div className="text-center">
-                      <div className="text-2xl font-bold text-blue-600">
+                      <div className="font-bold text-2xl text-blue-600">
                         {quiz.totalAttempts}
                       </div>
-                      <div className="text-sm text-muted-foreground">
+                      <div className="text-muted-foreground text-sm">
                         {t('total_attempts')}
                       </div>
                     </div>
                     <div className="text-center">
-                      <div className="text-2xl font-bold text-purple-600">
+                      <div className="font-bold text-2xl text-purple-600">
                         {quiz.uniqueStudents}
                       </div>
-                      <div className="text-sm text-muted-foreground">
+                      <div className="text-muted-foreground text-sm">
                         {t('unique_participants')}
                       </div>
                     </div>
                     <div className="text-center">
-                      <div className="text-2xl font-bold text-green-600">
+                      <div className="font-bold text-2xl text-green-600">
                         {quiz.averageScore}%
                       </div>
-                      <div className="text-sm text-muted-foreground">
+                      <div className="text-muted-foreground text-sm">
                         {t('average_score')}
                       </div>
                     </div>
                     <div className="text-center">
                       <div
-                        className={`text-2xl font-bold ${
+                        className={`font-bold text-2xl ${
                           quiz.passRate >= 70
                             ? 'text-green-600'
                             : quiz.passRate >= 50
@@ -240,17 +240,17 @@ export default async function QuizSetStatisticsPage({ params }: Props) {
                       >
                         {quiz.passRate}%
                       </div>
-                      <div className="text-sm text-muted-foreground">
+                      <div className="text-muted-foreground text-sm">
                         {t('pass_rate')}
                       </div>
                     </div>
                     <div className="text-center">
-                      <div className="text-sm font-medium">
+                      <div className="font-medium text-sm">
                         {quiz.lastAttempt
                           ? new Date(quiz.lastAttempt).toLocaleDateString()
                           : 'Never'}
                       </div>
-                      <div className="text-xs text-muted-foreground">
+                      <div className="text-muted-foreground text-xs">
                         {t('last_attempt')}
                       </div>
                     </div>

@@ -308,7 +308,7 @@ export function TimezoneSettings({ value, onChange }: TimezoneSettingsProps) {
           ([group, tzList], idx, arr) =>
             tzList.length > 0 && (
               <div key={group} data-region-group className="py-1">
-                <div className="rounded-t-md bg-muted px-2 py-1.5 text-xs font-semibold text-muted-foreground">
+                <div className="rounded-t-md bg-muted px-2 py-1.5 font-semibold text-muted-foreground text-xs">
                   {group}
                 </div>
                 {tzList
@@ -394,7 +394,7 @@ export function TimezoneSettings({ value, onChange }: TimezoneSettingsProps) {
               <input
                 type="text"
                 placeholder="Search timezone..."
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 autoFocus
@@ -428,7 +428,7 @@ export function TimezoneSettings({ value, onChange }: TimezoneSettingsProps) {
             >
               {recentTimezones.length > 0 && !searchQuery && (
                 <div className="py-1">
-                  <div className="rounded-t-md bg-muted px-2 py-1.5 text-xs font-semibold text-muted-foreground">
+                  <div className="rounded-t-md bg-muted px-2 py-1.5 font-semibold text-muted-foreground text-xs">
                     Recent Timezones
                   </div>
                   {recentTimezones.map((tz, idx) => {
@@ -472,7 +472,7 @@ export function TimezoneSettings({ value, onChange }: TimezoneSettingsProps) {
                   tzList.length > 0 &&
                   group !== 'Auto & UTC' && (
                     <div key={group} data-region-group className="py-1">
-                      <div className="rounded-t-md bg-muted px-2 py-1.5 text-xs font-semibold text-muted-foreground">
+                      <div className="rounded-t-md bg-muted px-2 py-1.5 font-semibold text-muted-foreground text-xs">
                         {group}
                       </div>
                       {tzList.map((tz, idx) => {
@@ -547,7 +547,7 @@ export function TimezoneSettings({ value, onChange }: TimezoneSettingsProps) {
                 <input
                   type="text"
                   placeholder="Search timezone..."
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   value={secondarySearchQuery}
                   onChange={(e) => setSecondarySearchQuery(e.target.value)}
                   autoFocus

@@ -27,15 +27,15 @@ export default function SessionsListFallback() {
         {Array.from({ length: 4 }).map((_, index) => (
           <Card key={index}>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">
+              <CardTitle className="font-medium text-sm">
                 <Skeleton className="h-4 w-24" />
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
+              <div className="font-bold text-2xl">
                 <Skeleton className="h-8 w-20" />
               </div>
-              <div className="mt-1 text-xs text-muted-foreground">
+              <div className="mt-1 text-muted-foreground text-xs">
                 <Skeleton className="h-3 w-32" />
               </div>
             </CardContent>
@@ -49,7 +49,7 @@ export default function SessionsListFallback() {
           <div className="flex flex-1 items-center space-x-2">
             <Skeleton className="h-10 w-64" />
           </div>
-          <div className="flex flex-col space-y-2 md:flex-row md:space-y-0 md:space-x-2">
+          <div className="flex flex-col space-y-2 md:flex-row md:space-x-2 md:space-y-0">
             <Skeleton className="h-10 w-40" />
             <Skeleton className="h-10 w-40" />
             <Skeleton className="h-10 w-24" />

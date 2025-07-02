@@ -73,10 +73,10 @@ export default async function UserProfilePage({ params }: Props) {
               )}
             </AvatarFallback>
           </Avatar>
-          <div className="text-3xl font-bold text-zinc-300">
+          <div className="font-bold text-3xl text-zinc-300">
             {user.display_name}
           </div>
-          <div className="text-lg font-semibold text-purple-300">
+          <div className="font-semibold text-lg text-purple-300">
             @{user.handle}
           </div>
         </div>

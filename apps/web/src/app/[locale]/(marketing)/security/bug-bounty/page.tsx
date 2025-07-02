@@ -116,7 +116,7 @@ export default function BugBountyPage() {
   }, [controls]);
 
   return (
-    <main className="relative container space-y-24 py-16 md:py-24">
+    <main className="container relative space-y-24 py-16 md:py-24">
       {/* Confetti Celebration */}
       {isConfettiActive && (
         <Confetti
@@ -129,7 +129,7 @@ export default function BugBountyPage() {
       )}
 
       {/* Enhanced Background Effects */}
-      <div className="pointer-events-none fixed inset-0 -z-10">
+      <div className="-z-10 pointer-events-none fixed inset-0">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(var(--primary-rgb),0.05)_1px,transparent_1px)] bg-size-[24px_24px]" />
         <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(var(--primary-rgb),0.02)_1px,transparent_1px)] bg-size-[120px] opacity-20" />
         <motion.div
@@ -158,14 +158,14 @@ export default function BugBountyPage() {
         >
           <Badge
             variant="secondary"
-            className="mb-6 px-4 py-2 text-base font-medium"
+            className="mb-6 px-4 py-2 font-medium text-base"
           >
             <Sparkles className="mr-2 h-4 w-4" />
             Security Hero
           </Badge>
         </motion.div>
 
-        <h1 className="mb-6 text-4xl font-bold text-balance text-foreground md:text-5xl lg:text-6xl">
+        <h1 className="mb-6 text-balance font-bold text-4xl text-foreground md:text-5xl lg:text-6xl">
           <span className="relative inline-block">
             <motion.span
               animate={{
@@ -177,7 +177,7 @@ export default function BugBountyPage() {
                 repeat: Infinity,
                 ease: 'easeInOut',
               }}
-              className="absolute -inset-1 -z-10 rounded-lg bg-linear-to-r from-primary/40 via-purple-500/40 to-pink-500/40 blur-lg"
+              className="-inset-1 -z-10 absolute rounded-lg bg-linear-to-r from-primary/40 via-purple-500/40 to-pink-500/40 blur-lg"
             />
             Thank You
           </span>{' '}
@@ -188,7 +188,7 @@ export default function BugBountyPage() {
         </h1>
 
         <motion.p
-          className="mx-auto max-w-2xl text-lg text-balance text-foreground/80 md:text-xl"
+          className="mx-auto max-w-2xl text-balance text-foreground/80 text-lg md:text-xl"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.3, duration: 0.8 }}
@@ -231,14 +231,14 @@ export default function BugBountyPage() {
                 animate={controls}
                 className="relative"
               >
-                <div className="absolute -inset-3 rounded-full bg-linear-to-r from-primary/20 via-purple-500/20 to-pink-500/20 blur-md" />
+                <div className="-inset-3 absolute rounded-full bg-linear-to-r from-primary/20 via-purple-500/20 to-pink-500/20 blur-md" />
                 <div className="relative flex h-24 w-24 items-center justify-center rounded-full bg-linear-to-br from-primary via-purple-500/80 to-pink-500/80">
                   <Trophy className="h-10 w-10 text-white" />
                 </div>
               </motion.div>
 
               <div className="text-center">
-                <h2 className="mb-2 text-3xl font-bold text-foreground">
+                <h2 className="mb-2 font-bold text-3xl text-foreground">
                   Nguyen Nghia Hiep (vapour)
                 </h2>
                 <p className="text-muted-foreground">
@@ -257,7 +257,7 @@ export default function BugBountyPage() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: 0.3 }}
-              className="mx-auto mb-8 max-w-2xl text-center text-balance"
+              className="mx-auto mb-8 max-w-2xl text-balance text-center"
             >
               <p className="text-foreground/80 italic">
                 "Thank you for your valuable contribution to making Tuturuuu's
@@ -280,7 +280,7 @@ export default function BugBountyPage() {
             <Bug className="mr-2 h-4 w-4" />
             Security Report
           </Badge>
-          <h2 className="mb-4 text-3xl font-bold">Vulnerability Discovery</h2>
+          <h2 className="mb-4 font-bold text-3xl">Vulnerability Discovery</h2>
           <p className="mx-auto max-w-2xl text-muted-foreground">
             This report has helped us identify a security vulnerability,
             allowing us to plan appropriate mitigations.
@@ -322,13 +322,13 @@ export default function BugBountyPage() {
                   <FileText className="mr-2 h-4 w-4" />
                   CWE: {bugReport.cwe}
                 </Badge>
-                <div className="flex items-center gap-2 rounded-full bg-foreground/5 px-4 py-2 text-sm text-muted-foreground">
+                <div className="flex items-center gap-2 rounded-full bg-foreground/5 px-4 py-2 text-muted-foreground text-sm">
                   <Calendar className="h-4 w-4" />
                   {bugReport.dateSubmitted}
                 </div>
               </div>
 
-              <h3 className="mb-6 text-lg font-bold text-foreground md:text-2xl">
+              <h3 className="mb-6 font-bold text-foreground text-lg md:text-2xl">
                 {bugReport.title}
               </h3>
 
@@ -429,12 +429,12 @@ export default function BugBountyPage() {
               </motion.div>
 
               <div className="space-y-4 text-center md:text-left">
-                <h2 className="text-3xl font-bold text-foreground">
+                <h2 className="font-bold text-3xl text-foreground">
                   <span className="bg-linear-to-r from-primary via-purple-500 to-pink-500 bg-clip-text text-transparent">
                     Join Our Bug Bounty Program
                   </span>
                 </h2>
-                <p className="mx-auto max-w-2xl text-lg text-foreground/80">
+                <p className="mx-auto max-w-2xl text-foreground/80 text-lg">
                   Help us identify security vulnerabilities and get recognized
                   for your contributions. We value ethical security research.
                 </p>
@@ -466,7 +466,7 @@ export default function BugBountyPage() {
             <div className="relative">
               <div className="relative overflow-hidden rounded-2xl bg-foreground/5 p-6 backdrop-blur-sm md:p-8">
                 <div className="space-y-6">
-                  <h3 className="text-xl font-bold text-foreground">
+                  <h3 className="font-bold text-foreground text-xl">
                     Program Benefits
                   </h3>
                   <div className="space-y-4">
@@ -476,7 +476,7 @@ export default function BugBountyPage() {
                       </div>
                       <div>
                         <h4 className="font-semibold">Recognition</h4>
-                        <p className="text-sm text-foreground/60">
+                        <p className="text-foreground/60 text-sm">
                           Get your name listed on our Bug Bounty Hall of Fame
                         </p>
                       </div>
@@ -488,7 +488,7 @@ export default function BugBountyPage() {
                       </div>
                       <div>
                         <h4 className="font-semibold">Direct Communication</h4>
-                        <p className="text-sm text-foreground/60">
+                        <p className="text-foreground/60 text-sm">
                           Work directly with our security team
                         </p>
                       </div>
@@ -500,7 +500,7 @@ export default function BugBountyPage() {
                       </div>
                       <div>
                         <h4 className="font-semibold">Global Impact</h4>
-                        <p className="text-sm text-foreground/60">
+                        <p className="text-foreground/60 text-sm">
                           Help protect Tuturuuu users around the world
                         </p>
                       </div>
@@ -525,7 +525,7 @@ export default function BugBountyPage() {
           initial="initial"
           animate="float"
         >
-          <h2 className="mb-6 text-2xl font-bold md:text-3xl">
+          <h2 className="mb-6 font-bold text-2xl md:text-3xl">
             Found a vulnerability?
           </h2>
         </motion.div>

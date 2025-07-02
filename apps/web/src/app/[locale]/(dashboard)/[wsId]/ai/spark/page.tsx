@@ -25,7 +25,7 @@ export default async function SparkPage({
 
   if (error || !whitelisted?.enabled)
     return (
-      <div className="flex h-screen w-full items-center justify-center text-2xl font-bold lg:text-4xl xl:text-5xl">
+      <div className="flex h-screen w-full items-center justify-center font-bold text-2xl lg:text-4xl xl:text-5xl">
         <GradientHeadline>{t('not_whitelisted')}.</GradientHeadline>
       </div>
     );

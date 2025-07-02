@@ -79,7 +79,7 @@ export function AlgorithmInsights({
         <Card className="p-4">
           <div className="flex items-center gap-2">
             <TrendingUp className="h-4 w-4 text-blue-500" />
-            <h3 className="text-sm font-medium">Algorithm Progress</h3>
+            <h3 className="font-medium text-sm">Algorithm Progress</h3>
           </div>
           <div className="mt-3 space-y-3">
             <div>
@@ -103,7 +103,7 @@ export function AlgorithmInsights({
         <Card className="p-4">
           <div className="flex items-center gap-2">
             <Target className="h-4 w-4 text-indigo-500" />
-            <h3 className="text-sm font-medium">Current Phase</h3>
+            <h3 className="font-medium text-sm">Current Phase</h3>
           </div>
           {currentRace ? (
             <div className="mt-3 space-y-2">
@@ -111,16 +111,16 @@ export function AlgorithmInsights({
                 <Badge variant="outline" className="capitalize">
                   {currentRace.raceType} Race
                 </Badge>
-                <span className="text-xs text-muted-foreground">
+                <span className="text-muted-foreground text-xs">
                   {Math.round(getPhaseEffectiveness() * 100)}% Effective
                 </span>
               </div>
-              <div className="text-xs text-muted-foreground">
+              <div className="text-muted-foreground text-xs">
                 {currentRace.raceDescription}
               </div>
             </div>
           ) : (
-            <div className="mt-3 text-xs text-muted-foreground">
+            <div className="mt-3 text-muted-foreground text-xs">
               No race in progress
             </div>
           )}
@@ -131,11 +131,11 @@ export function AlgorithmInsights({
       <Card className="p-4">
         <div className="flex items-center gap-2">
           <Lightbulb className="h-4 w-4 text-amber-500" />
-          <h3 className="text-sm font-medium">Position Predictions</h3>
+          <h3 className="font-medium text-sm">Position Predictions</h3>
         </div>
         {nextPositionPredictions.length > 0 && (
           <div className="mt-3">
-            <div className="mb-2 text-xs text-muted-foreground">
+            <div className="mb-2 text-muted-foreground text-xs">
               Top candidates for next positions:
             </div>
             <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
@@ -154,13 +154,13 @@ export function AlgorithmInsights({
                       className="flex items-center gap-2 rounded-md border p-2"
                     >
                       <div
-                        className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold text-white"
+                        className="flex h-8 w-8 items-center justify-center rounded-full font-bold text-white text-xs"
                         style={{ backgroundColor: horse.color }}
                       >
                         {horse.id}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <div className="truncate text-xs font-medium">
+                        <div className="truncate font-medium text-xs">
                           Horse #{horse.id}
                         </div>
                         <div className="text-[10px] text-muted-foreground">
@@ -179,25 +179,25 @@ export function AlgorithmInsights({
       <Card className="p-4">
         <div className="flex items-center gap-2">
           <Network className="h-4 w-4 text-green-500" />
-          <h3 className="text-sm font-medium">Relationship Network</h3>
+          <h3 className="font-medium text-sm">Relationship Network</h3>
         </div>
         <div className="mt-3 grid gap-3 sm:grid-cols-2">
           <div>
-            <div className="mb-1 text-xs text-muted-foreground">
+            <div className="mb-1 text-muted-foreground text-xs">
               Known Relationships
             </div>
-            <div className="text-2xl font-bold text-green-500">
+            <div className="font-bold text-2xl text-green-500">
               {totalRelationships}
-              <span className="ml-1 text-xs text-muted-foreground">
+              <span className="ml-1 text-muted-foreground text-xs">
                 of {maxPossibleRelationships}
               </span>
             </div>
           </div>
           <div>
-            <div className="mb-1 text-xs text-muted-foreground">
+            <div className="mb-1 text-muted-foreground text-xs">
               Average Relations per Horse
             </div>
-            <div className="text-2xl font-bold text-blue-500">
+            <div className="font-bold text-2xl text-blue-500">
               {Math.round(totalRelationships / horses.length)}
             </div>
           </div>

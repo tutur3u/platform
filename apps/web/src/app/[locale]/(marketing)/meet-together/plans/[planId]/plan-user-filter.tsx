@@ -11,7 +11,7 @@ export default function PlanUserFilter({ users }: { users: any[] }) {
 
   return (
     <div className="flex w-full flex-col items-center justify-center p-8">
-      <div className="text-center text-xl font-bold md:text-2xl">
+      <div className="text-center font-bold text-xl md:text-2xl">
         {t('plan_users')}
       </div>
       <div className="mt-2 mb-4 opacity-50 md:mb-8">
@@ -41,7 +41,7 @@ export default function PlanUserFilter({ users }: { users: any[] }) {
                 {user.is_guest ? (
                   <>
                     <br />
-                    <div className="rounded bg-foreground px-1 py-0.5 text-sm text-background">
+                    <div className="rounded bg-foreground px-1 py-0.5 text-background text-sm">
                       {t('guest')}
                     </div>
                   </>

@@ -265,7 +265,7 @@ export function RequestFeatureAccessDialog({
               )}
             </div>
             {availableFeatures.length === 0 && !isCheckingStatus && (
-              <div className="col-span-1 flex items-center justify-center rounded-lg border border-dashed border-dynamic-blue/20 bg-dynamic-blue/5 p-4 text-center text-sm text-muted-foreground">
+              <div className="col-span-1 flex items-center justify-center rounded-lg border border-dynamic-blue/20 border-dashed bg-dynamic-blue/5 p-4 text-center text-muted-foreground text-sm">
                 {t('no-features')}
               </div>
             )}
@@ -285,7 +285,7 @@ export function RequestFeatureAccessDialog({
                   rows={4}
                   className="resize-none focus:border-dynamic-blue/60 focus:ring-dynamic-blue/20"
                 />
-                <p className="text-xs text-muted-foreground">
+                <p className="text-muted-foreground text-xs">
                   {t('reason-description')}
                 </p>
               </div>
@@ -294,7 +294,7 @@ export function RequestFeatureAccessDialog({
 
           {requestsToShow.length > 0 && (
             <div>
-              <h4 className="mb-2 text-sm font-medium text-foreground">
+              <h4 className="mb-2 font-medium text-foreground text-sm">
                 {t('existing-requests-title')}
               </h4>
               <div className="space-y-2 rounded-lg border p-3">
