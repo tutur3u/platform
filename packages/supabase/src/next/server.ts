@@ -64,6 +64,7 @@ export function createClient(): Promise<TypedSupabaseClient> {
 }
 
 export async function createDynamicClient(): Promise<
+  // biome-ignore lint/suspicious/noExplicitAny: <any is expected for dynamic client>
   SupabaseClient<any, 'public', any>
 > {
   const { url, key } = checkEnvVariables({ useServiceKey: false });
