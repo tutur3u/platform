@@ -113,8 +113,8 @@ export default function WhatIsNeo() {
           <span className="relative text-[#5FC6E5]">
             {' '}
             SSET students{' '}
-            <motion.div
-              className="absolute right-0 -bottom-1 left-0 h-0.5 bg-gradient-to-r from-[#5FC6E5] to-[#FBC721]"
+            <motion.span
+              className="absolute right-0 -bottom-1 left-0 block h-0.5 bg-gradient-to-r from-[#5FC6E5] to-[#FBC721]"
               initial={{ scaleX: 0 }}
               whileInView={{ scaleX: 1 }}
               transition={{ duration: 1, delay: 1 }}
