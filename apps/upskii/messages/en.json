@@ -2849,7 +2849,8 @@
         "cancel": "Cancel"
       }
     },
-    "score-calculator": "Score Calculator"
+    "score-calculator": "Score Calculator",
+    "secure-processes": "Secure processes"
   },
   "onboarding": {
     "just-a-moment": "Just a moment...",

@@ -22,6 +22,7 @@ import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import type React from 'react';
 import { useState } from 'react';
+import sanitize from 'sanitize-filename';
 import { ChatPermissions } from '@/components/chat-permissions';
 import { ChatModelSelector } from './chat-model-selector';
 import ApiKeyInput from './form-apikey';
@@ -275,7 +276,7 @@ export async function uploadFile(
       finalPath: undefined,
     };
 
-  const fileName = file.rawFile.name;
+  const fileName = sanitize(file.rawFile.name);
 
   let uploadPath = '';
   let tempPath: string | undefined;
@@ -296,7 +297,9 @@ export async function uploadFile(
         finalPath: undefined,
       };
 
-    uploadPath = `${wsId}/chats/ai/resources/temp/${user.id}/${fileName}-${dayjs().unix()}`;
+    const randomId = `${dayjs().unix()}-${Math.random().toString(36).substring(2, 10)}`;
+    const fileExtension = fileName.split('.').pop();
+    uploadPath = `${wsId}/chats/ai/resources/temp/${user.id}/${randomId}.${fileExtension}`;
     tempPath = uploadPath;
   } else {
     uploadPath = `${wsId}/chats/ai/resources/${chatId}/${fileName}`;
