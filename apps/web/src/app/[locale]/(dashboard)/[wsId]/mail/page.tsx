@@ -24,7 +24,6 @@ export default async function MailPage({ params, searchParams }: Props) {
   const { locale, wsId } = await params;
   const searchParamsData = searchParams ? await searchParams : {};
 
-  // Read layout preferences for resizable panels & sidebar state
   const layoutCookie = (await cookies()).get(
     'react-resizable-panels:layout:mail'
   );
@@ -37,12 +36,13 @@ export default async function MailPage({ params, searchParams }: Props) {
     ? JSON.parse(collapsedCookie.value)
     : undefined;
 
-  // Fetch posts data
   const { data: postsData, count: postsCount } = await getPostsData(
     wsId,
     searchParamsData
   );
+
   const postsStatus = await getSentEmails(wsId, searchParamsData);
+  const credential = await getWorkspaceMailCredential(wsId);
 
   return (
     <MailClientWrapper
@@ -54,6 +54,7 @@ export default async function MailPage({ params, searchParams }: Props) {
       postsCount={postsCount}
       postsStatus={postsStatus}
       searchParams={searchParamsData}
+      hasCredential={!!credential}
     />
   );
 }
@@ -173,4 +174,18 @@ async function getSentEmails(
   return {
     count,
   };
+}
+
+async function getWorkspaceMailCredential(wsId: string) {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from('workspace_email_credentials')
+    .select('*')
+    .eq('ws_id', wsId)
+    .limit(1)
+    .single();
+
+  if (error) throw error;
+  return data;
 }
