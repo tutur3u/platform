@@ -13,6 +13,7 @@ import {
 } from '@ncthub/ui/icons';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
+import Link from 'next/link';
 
 type EventType = {
   src: string;
@@ -21,48 +22,53 @@ type EventType = {
   date: string;
   attendees: string;
   location: string;
+  link?: string;
 };
 
 const EventImages: EventType[] = [
   {
-    src: '/club-day/sem-c.jpg',
-    title: 'Club Day Semester C',
+    src: '/club-day/sem-c-2024.jpg',
+    title: 'Club Day Semester B 2025',
     description: 'Join us for an exciting club day experience',
-    date: 'March 2024',
-    attendees: '200+',
-    location: 'RMIT Campus',
-  },
-  {
-    src: '/media/marketing/award-day.jpg',
-    title: 'Annual Award Ceremony',
-    description: 'Celebrating outstanding achievements',
-    date: 'December 2023',
-    attendees: '150+',
-    location: 'Convention Center',
-  },
-  {
-    src: '/media/marketing/gft.jpg',
-    title: 'GFT Partnership Event',
-    description: 'Industry collaboration showcase',
-    date: 'November 2023',
+    date: 'March 2025',
     attendees: '100+',
-    location: 'GFT Office',
-  },
-  {
-    src: '/media/marketing/netcompany.jpg',
-    title: 'Netcompany Workshop',
-    description: 'Professional development session',
-    date: 'October 2023',
-    attendees: '80+',
-    location: 'Netcompany HQ',
-  },
-  {
-    src: '/media/marketing/club-day-sem-b.jpg',
-    title: 'Club Day Semester B',
-    description: 'Student engagement activities',
-    date: 'August 2023',
-    attendees: '180+',
     location: 'RMIT Campus',
+  },
+  {
+    src: '/media/marketing/neo-league/neo-league-2025.png',
+    title: 'Neo League - Prompt The Future 2025',
+    description: 'AI prompt engineering competition',
+    date: 'July 2025',
+    attendees: '170+',
+    location: 'RMIT Campus',
+    link: 'https://nova.ai.vn',
+  },
+  {
+    src: '/media/marketing/events/cyber-security-mental-peace-event.jpg',
+    title: 'Cybersecurity & Mental Peace',
+    description: 'Professional development session',
+    date: 'May 2025',
+    attendees: '50+',
+    location: 'RMIT Campus',
+    link: 'https://www.facebook.com/rmit.nct/posts/pfbid0h43xjHEiKqqFZ5Y9R8ZVHyKLPae3SNuY8GmQu8ZkbPnMchJYyg9JFkFRA7T3e5m4l',
+  },
+  {
+    src: '/media/marketing/workshops/arduino-workshop.jpg',
+    title: 'Internal Training: Arduino Workshop',
+    description: 'Internal Training for Technology Department Members',
+    date: 'April 2025',
+    attendees: '20+',
+    location: 'RMIT Campus',
+    link: 'https://www.facebook.com/rmit.nct/posts/pfbid08CE3yHibWS8E792erbtCghTbhaM6BjJpfHUDyWMW7nPXeA2Ayk6pBQRSU11jSMb6l',
+  },
+  {
+    src: '/club-day/sem-a-2025.jpg',
+    title: 'Club Day Sem A 2025',
+    description: 'Join us for an exciting club day experience',
+    date: 'March 2025',
+    attendees: '100+',
+    location: 'RMIT Campus',
+    link: 'https://www.facebook.com/rmit.nct/posts/pfbid023wQjN37mxrEk9oSx77RDzE4BftZcxRxZgwNTH7b25VmZNd5ZK6J9uJBQAZDL1duYl',
   },
 ];
 
@@ -150,10 +156,16 @@ export default function Events() {
                 Don't miss out on our upcoming activities and networking
                 opportunities
               </p>
-              <Button className="w-full">
-                View All Events
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
+              <Link
+                href={'https://www.facebook.com/rmit.nct'}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <Button className="w-full">
+                  View All Events
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </Link>
             </CardContent>
           </Card>
         </motion.div>
@@ -170,78 +182,90 @@ export default function Events() {
 
 const PrimaryEventCard = ({ event }: { event: EventType }) => {
   return (
-    <Card className="group relative h-full min-h-[400px] overflow-hidden border-2 transition-all duration-500 hover:border-primary/50 hover:shadow-2xl">
-      <div className="relative h-full">
-        <Image
-          src={event.src}
-          alt={event.title}
-          className="object-cover transition-transform duration-500 group-hover:scale-105"
-          fill
-        />
+    <Link
+      href={event.link ? event.link : 'https://www.facebook.com/rmit.nct'}
+      target="_blank"
+      rel="noopener noreferrer"
+    >
+      <Card className="group relative h-full min-h-[400px] overflow-hidden border-2 transition-all duration-500 hover:border-primary/50 hover:shadow-2xl">
+        <div className="relative h-full">
+          <Image
+            src={event.src}
+            alt={event.title}
+            className="object-cover transition-transform duration-500 group-hover:scale-105"
+            fill
+          />
 
-        {/* Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+          {/* Overlay */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
 
-        {/* Content */}
-        <div className="absolute right-0 bottom-0 left-0 p-6 text-white">
-          <Badge className="mb-3 bg-primary/90 hover:bg-primary">
-            Featured Event
-          </Badge>
+          {/* Content */}
+          <div className="absolute right-0 bottom-0 left-0 p-6 text-white">
+            <Badge className="mb-3 bg-primary/90 hover:bg-primary">
+              Featured Event
+            </Badge>
 
-          <h3 className="mb-2 text-2xl font-bold">{event.title}</h3>
-          <p className="mb-4 text-sm text-white/80">{event.description}</p>
+            <h3 className="mb-2 text-2xl font-bold">{event.title}</h3>
+            <p className="mb-4 text-sm text-white/80">{event.description}</p>
 
-          <div className="flex flex-wrap gap-4 text-sm">
-            <div className="flex items-center gap-1">
-              <Calendar className="h-4 w-4" />
-              <span>{event.date}</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <Users className="h-4 w-4" />
-              <span>{event.attendees}</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <MapPin className="h-4 w-4" />
-              <span>{event.location}</span>
+            <div className="flex flex-wrap gap-4 text-sm">
+              <div className="flex items-center gap-1">
+                <Calendar className="h-4 w-4" />
+                <span>{event.date}</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <Users className="h-4 w-4" />
+                <span>{event.attendees}</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <MapPin className="h-4 w-4" />
+                <span>{event.location}</span>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    </Card>
+      </Card>
+    </Link>
   );
 };
 
 const SecondaryEventCard = ({ event }: { event: EventType }) => {
   return (
-    <Card className="group relative h-48 overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-xl">
-      <div className="relative h-full">
-        <Image
-          src={event.src}
-          alt={event.title}
-          className="object-cover transition-transform duration-300 group-hover:scale-110"
-          fill
-        />
+    <Link
+      href={event.link ? event.link : 'https://www.facebook.com/rmit.nct'}
+      target="_blank"
+      rel="noopener noreferrer"
+    >
+      <Card className="group relative h-48 overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-xl">
+        <div className="relative h-full">
+          <Image
+            src={event.src}
+            alt={event.title}
+            className="object-cover transition-transform duration-300 group-hover:scale-110"
+            fill
+          />
 
-        {/* Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+          {/* Overlay */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
 
-        {/* Content */}
-        <div className="absolute right-0 bottom-0 left-0 p-4 text-white">
-          <h4 className="mb-1 text-sm font-semibold">{event.title}</h4>
-          <p className="mb-2 text-xs text-white/70">{event.description}</p>
+          {/* Content */}
+          <div className="absolute right-0 bottom-0 left-0 p-4 text-white">
+            <h4 className="mb-1 text-sm font-semibold">{event.title}</h4>
+            <p className="mb-2 text-xs text-white/70">{event.description}</p>
 
-          <div className="flex items-center justify-between text-xs">
-            <div className="flex items-center gap-1">
-              <Calendar className="h-3 w-3" />
-              <span>{event.date}</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <Users className="h-3 w-3" />
-              <span>{event.attendees}</span>
+            <div className="flex items-center justify-between text-xs">
+              <div className="flex items-center gap-1">
+                <Calendar className="h-3 w-3" />
+                <span>{event.date}</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <Users className="h-3 w-3" />
+                <span>{event.attendees}</span>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    </Card>
+      </Card>
+    </Link>
   );
 };
