@@ -226,14 +226,21 @@ export async function PUT(request: Request) {
     
     // Handle date/time updates with all-day detection
     if (eventUpdates.start_at || eventUpdates.end_at) {
+      // Fetch the existing event to get complete date information
+      const { data: existingEvent } = await supabase
+        .from('workspace_calendar_events')
+        .select('start_at, end_at')
+        .eq('google_event_id', googleCalendarEventId)
+        .single();
+
       // Check if this is an all-day event (we need both dates to determine this properly)
       const eventForCheck = {
-        start_at: eventUpdates.start_at || '',
-        end_at: eventUpdates.end_at || '',
+        start_at: eventUpdates.start_at || existingEvent?.start_at || '',
+        end_at: eventUpdates.end_at || existingEvent?.end_at || '',
       };
       
-      const isEventAllDay = eventUpdates.start_at && eventUpdates.end_at 
-        ? isAllDayEvent(eventForCheck)
+      const isEventAllDay = eventForCheck.start_at && eventForCheck.end_at 
+        ? isAllDayEvent(eventForCheck, 'auto')
         : false;
       
       if (isEventAllDay) {
