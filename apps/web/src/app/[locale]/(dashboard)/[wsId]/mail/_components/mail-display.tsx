@@ -67,9 +67,15 @@ export function MailDisplay({ mail }: MailDisplayProps) {
         setSanitizedHtml(sanitized);
       } catch (error) {
         console.error('Failed to sanitize HTML:', error);
-        // Fallback to plain text if DOMPurify fails
-        const sanitizeHtml = (await import('sanitize-html')).default;
-        setSanitizedHtml(sanitizeHtml(mail.text));
+        try {
+          // Fallback to sanitize-html if DOMPurify fails
+          const sanitizeHtml = (await import('sanitize-html')).default;
+          setSanitizedHtml(sanitizeHtml(mail.text));
+        } catch (fallbackError) {
+          console.error('Failed to sanitize HTML:', fallbackError);
+          // If both sanitizers fail, show plain text
+          setSanitizedHtml(mail.text.replace(/<[^>]*>?/g, ''));
+        }
       } finally {
         setIsLoading(false);
       }

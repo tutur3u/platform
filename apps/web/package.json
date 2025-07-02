@@ -38,6 +38,7 @@
     "@octokit/rest": "^22.0.0",
     "@tanstack/react-query": "^5.81.5",
     "@tanstack/react-table": "^8.21.3",
+    "@testing-library/jest-dom": "^6.6.3",
     "@tldraw/sync": "^3.13.4",
     "@trpc/client": "^11.4.3",
     "@trpc/react-query": "^11.4.3",
@@ -89,6 +90,7 @@
     "rehype-katex": "^7.0.1",
     "remark-gfm": "^4.0.1",
     "remark-math": "^6.0.0",
+    "sanitize-html": "^2.17.0",
     "server-only": "^0.0.1",
     "sharp": "^0.34.2",
     "swr": "^2.3.3",
@@ -96,8 +98,7 @@
     "use-debounce": "^10.0.5",
     "uuid": "^11.1.0",
     "xlsx": "file:vendor/xlsx-0.20.3.tgz",
-    "zod": "^3.25.67",
-    "sanitize-html": "^2.17.0"
+    "zod": "^3.25.67"
   },
   "devDependencies": {
     "@next/bundle-analyzer": "15.3.4",
@@ -112,6 +113,7 @@
     "@types/papaparse": "^5.3.16",
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
+    "@types/sanitize-html": "^2.16.0",
     "@types/uuid": "^10.0.0",
     "@vitejs/plugin-react": "^4.6.0",
     "autoprefixer": "^10.4.21",
