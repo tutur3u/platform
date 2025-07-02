@@ -4,7 +4,7 @@ import ClientSideMarketingPage from './client-side-page';
 import LoadingState from './loading-state';
 
 export const dynamic = 'force-static';
-export const revalidate = 60 * 60 * 24; // 24 hours
+export const revalidate = 86400; // 24 hours
 
 export type Testimonial = {
   name: string;
