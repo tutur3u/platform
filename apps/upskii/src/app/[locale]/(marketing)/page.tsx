@@ -2,6 +2,7 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { Workspace } from '@tuturuuu/types/db';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
+import { BASE_URL } from '@/constants/common';
 import ClientSideMarketingPage from './client-side-page';
 import LoadingState from './loading-state';
 
@@ -55,7 +56,7 @@ async function getTestimonials(): Promise<Testimonial[]> {
 }
 
 async function getWorkspaces() {
-  const response = await fetch('/api/v1/workspaces');
+  const response = await fetch(`${BASE_URL}/api/v1/workspaces`);
   if (!response.ok) notFound();
 
   const data = await response.json();
