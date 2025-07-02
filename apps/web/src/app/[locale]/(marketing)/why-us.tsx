@@ -164,8 +164,6 @@ export default function WhyUs() {
           </motion.div>
         ))}
       </div>
-
-      
     </motion.div>
   );
 }
