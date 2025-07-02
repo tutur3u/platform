@@ -184,7 +184,7 @@ async function getWorkspaceMailCredential(wsId: string) {
     .select('*')
     .eq('ws_id', wsId)
     .limit(1)
-    .single();
+    .maybeSingle();
 
   if (error) throw error;
   return data;
