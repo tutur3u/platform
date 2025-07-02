@@ -27,10 +27,10 @@ type EventType = {
 
 const EventImages: EventType[] = [
   {
-    src: '/club-day/sem-c-2024.jpg',
+    src: '/club-day/sem-b-2025.png',
     title: 'Club Day Semester B 2025',
     description: 'Join us for an exciting club day experience',
-    date: 'March 2025',
+    date: 'July 2025',
     attendees: '100+',
     location: 'RMIT Campus',
   },
@@ -38,7 +38,7 @@ const EventImages: EventType[] = [
     src: '/media/marketing/neo-league/neo-league-2025.png',
     title: 'Neo League - Prompt The Future 2025',
     description: 'AI prompt engineering competition',
-    date: 'July 2025',
+    date: 'June 2025',
     attendees: '170+',
     location: 'RMIT Campus',
     link: 'https://nova.ai.vn',
@@ -53,7 +53,7 @@ const EventImages: EventType[] = [
     link: 'https://www.facebook.com/rmit.nct/posts/pfbid0h43xjHEiKqqFZ5Y9R8ZVHyKLPae3SNuY8GmQu8ZkbPnMchJYyg9JFkFRA7T3e5m4l',
   },
   {
-    src: '/media/marketing/workshops/arduino-workshop.jpg',
+    src: '/media/marketing/workshops/arduino-workshop.png',
     title: 'Internal Training: Arduino Workshop',
     description: 'Internal Training for Technology Department Members',
     date: 'April 2025',
@@ -75,6 +75,7 @@ const EventImages: EventType[] = [
 export default function Events() {
   return (
     <motion.div
+      id="events"
       className="relative w-full py-12"
       initial={{ opacity: 0 }}
       whileInView={{ opacity: 1 }}

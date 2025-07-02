@@ -28,7 +28,7 @@ export default function Members() {
   const [pinState, setPinState] = useState<boolean>(false);
 
   return (
-    <div className="flex flex-col items-center px-2">
+    <div id="team" className="flex flex-col items-center px-2">
       <p className="mt-8 w-full bg-gradient-to-r from-[#F4B71A] to-[#1AF4E6] bg-clip-text p-3 text-center text-3xl font-black tracking-normal text-transparent md:text-5xl lg:text-6xl lg:tracking-wide">
         The Team
       </p>

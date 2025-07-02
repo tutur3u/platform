@@ -11,59 +11,74 @@ import {
 } from '@ncthub/ui/card';
 import {
   ArrowRight,
-  Calendar,
+  Briefcase,
+  ExternalLink,
+  Heart,
   Sparkles,
   Star,
-  Target,
   Users,
 } from '@ncthub/ui/icons';
 import { motion } from 'framer-motion';
+import Link from 'next/link';
 
 const reasons = [
   {
-    title: 'SPECIAL EVENTS',
-    icon: Calendar,
+    title: 'CLUB DEPARTMENTS',
+    icon: Briefcase,
     description:
-      'Events organized to support you in finding career paths in technology, gaining deeper insights from company trips and alumni, and joining coding competitions.',
+      'Explore detailed job descriptions for all 4 departments in our comprehensive JD booklet. Find the perfect role that matches your skills, interests, and career goals within NEO Culture Tech.',
     gradient: 'from-yellow-400 to-orange-500',
     features: [
-      'Company Visits',
-      'Coding Competitions',
-      'Career Workshops',
-      'Alumni Networks',
+      'Technology Department',
+      'Finance and Logistic Department',
+      'Human Resources Department',
+      'Marketing & Communications Department',
     ],
+    buttonText: 'View JD Booklet',
+    link: 'https://www.canva.com/design/',
+    isExternal: true,
+    badgeText: 'Find Your Role',
   },
   {
     title: 'NETWORKING',
     icon: Users,
     description:
-      'Our network is the most valuable asset for our members. We connect you with the right people to help you achieve your goals.',
+      'Build meaningful connections with industry professionals, experienced alumni, and passionate peers. Our network opens doors to internships, mentorships, and career opportunities.',
     gradient: 'from-blue-400 to-cyan-500',
     features: [
-      'Industry Mentors',
-      'Peer Connections',
-      'Professional Growth',
-      'Community Support',
+      'Industry Mentor Matching',
+      'Peer Study Groups',
+      'Professional Development',
+      '24/7 Community Support',
     ],
+    buttonText: 'Meet Our Team',
+    link: '/about',
+    isExternal: false,
+    badgeText: 'Career Growth',
   },
   {
-    title: 'VISIONS',
-    icon: Target,
+    title: 'MEMBERSHIP',
+    icon: Heart,
     description:
-      'We create an environment not only for SSET students but also others to learn new knowledge, have fun, and expand their network.',
+      'Be part of a community that believes in inclusive growth and continuous learning. We welcome all students passionate about technology, regardless of their background or experience level.',
     gradient: 'from-purple-400 to-pink-500',
     features: [
-      'Inclusive Learning',
-      'Knowledge Sharing',
-      'Fun Activities',
-      'Skill Development',
+      'Inclusive Learning Environment',
+      'Knowledge Sharing Sessions',
+      'Fun Tech Challenges',
+      'Continuous Skill Development',
     ],
+    buttonText: 'Join Neo Tech',
+    link: 'https://forms.office.com/r/hKUC7RdsJb?origin=lprLink',
+    isExternal: true,
+    badgeText: 'Inclusive Community',
   },
 ];
 
 export default function WhyUs() {
   return (
     <motion.div
+      id="why-us"
       className="flex flex-col"
       initial={{ opacity: 0, y: 50 }}
       transition={{ duration: 1 }}
@@ -89,7 +104,7 @@ export default function WhyUs() {
           <Sparkles className="h-8 w-8 text-yellow-400" />
         </motion.div>
 
-        <h2 className="mb-4 bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 bg-clip-text text-4xl font-bold text-transparent md:text-6xl lg:text-8xl">
+        <h2 className="mb-4 bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 bg-clip-text text-4xl font-bold text-transparent drop-shadow-sm md:text-6xl lg:text-8xl">
           Why us?
         </h2>
 
@@ -111,11 +126,11 @@ export default function WhyUs() {
             whileHover={{ scale: 1.02 }}
             className="group"
           >
-            <Card className="h-full border-2 bg-gradient-to-br from-background/50 to-background shadow-lg backdrop-blur-sm transition-all duration-300 hover:border-primary/50 hover:shadow-xl">
+            <Card className="h-full border-2 bg-gradient-to-br from-background/50 to-background shadow-lg backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:border-primary/50 hover:shadow-xl">
               <CardHeader className="pb-4 text-center">
                 {/* Icon with gradient background */}
                 <div
-                  className={`mx-auto mb-4 h-16 w-16 rounded-full bg-gradient-to-r ${reason.gradient} p-0.5`}
+                  className={`mx-auto mb-4 h-16 w-16 rounded-full bg-gradient-to-r ${reason.gradient} p-0.5 transition-transform duration-300 group-hover:scale-105`}
                 >
                   <div className="flex h-full w-full items-center justify-center rounded-full bg-background">
                     <reason.icon className="h-8 w-8 text-foreground transition-transform duration-300 group-hover:scale-110" />
@@ -128,9 +143,9 @@ export default function WhyUs() {
 
                 <Badge
                   variant="secondary"
-                  className={`bg-gradient-to-r ${reason.gradient} mb-4 border-0 text-white`}
+                  className={`bg-gradient-to-r ${reason.gradient} mb-4 border-0 text-white shadow-sm`}
                 >
-                  Premium Feature
+                  {reason.badgeText}
                 </Badge>
               </CardHeader>
 
@@ -152,13 +167,32 @@ export default function WhyUs() {
                 </div>
 
                 {/* Call to action */}
-                <Button
-                  variant="outline"
-                  className="w-full transition-all duration-300 group-hover:bg-primary group-hover:text-primary-foreground"
-                >
-                  Learn More
-                  <ArrowRight className="ml-2 h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
-                </Button>
+                {reason.isExternal ? (
+                  <Link
+                    href={reason.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={`${reason.buttonText} - Opens in new tab`}
+                  >
+                    <Button
+                      variant="outline"
+                      className="w-full transition-all duration-300 group-hover:bg-primary group-hover:text-primary-foreground group-hover:shadow-lg"
+                    >
+                      {reason.buttonText}
+                      <ExternalLink className="ml-2 h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
+                    </Button>
+                  </Link>
+                ) : (
+                  <Link href={reason.link} aria-label={reason.buttonText}>
+                    <Button
+                      variant="outline"
+                      className="w-full transition-all duration-300 group-hover:bg-primary group-hover:text-primary-foreground group-hover:shadow-lg"
+                    >
+                      {reason.buttonText}
+                      <ArrowRight className="ml-2 h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
+                    </Button>
+                  </Link>
+                )}
               </CardContent>
             </Card>
           </motion.div>
