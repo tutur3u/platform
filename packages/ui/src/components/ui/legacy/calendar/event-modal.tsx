@@ -349,7 +349,6 @@ export function EventModal() {
 
       closeModal();
     } catch (error) {
-      console.error('Error in handleManualSave:', error);
       toast({
         title: 'Error',
         description: 'Failed to save or sync event. Please try again.',

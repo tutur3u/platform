@@ -57,8 +57,7 @@ const syncGoogleCalendarEventsForWorkspace = async (
   timeMax: dayjs.Dayjs,
   syncType: 'immediate' | 'extended'
 ): Promise<SyncResult> => {
-  console.log(`[${ws_id}] Starting ${syncType} sync process...`);
-  console.log(`[${ws_id}] Time range: ${timeMin.format('YYYY-MM-DD HH:mm')} to ${timeMax.format('YYYY-MM-DD HH:mm')}`);
+  console.log(`Syncing Google Calendar events for workspace ${ws_id} from ${timeMin.format('YYYY-MM-DD HH:mm')} to ${timeMax.format('YYYY-MM-DD HH:mm')}`);
 
   try {
     const supabase = await createAdminClient({ noCookie: true });
@@ -66,7 +65,7 @@ const syncGoogleCalendarEventsForWorkspace = async (
 
     const calendar = google.calendar({ version: 'v3', auth });
 
-    console.log(`[${ws_id}] Fetching events from Google Calendar...`);
+    
 
     const response = await calendar.events.list({
       calendarId: 'primary',
@@ -78,9 +77,7 @@ const syncGoogleCalendarEventsForWorkspace = async (
     });
 
     const events = response.data.items || [];
-    console.log(
-      `[${ws_id}] Fetched ${events.length} events from Google Calendar`
-    );
+    
 
     // format the events to match the expected structure
     const formattedEvents = events.map((event) => {
@@ -105,30 +102,23 @@ const syncGoogleCalendarEventsForWorkspace = async (
         locked: false,
       };
     });
-    console.log(`[${ws_id}] Formatted ${formattedEvents.length} events`);
+    
 
     // upsert the events in the database for this wsId
-    console.log(
-      `[${ws_id}] Upserting ${formattedEvents.length} events to database...`
-    );
+    
     const { error } = await supabase
       .from('workspace_calendar_events')
       .upsert(formattedEvents, {
         onConflict: 'google_event_id',
       });
     if (error) {
-      console.error(`[${ws_id}] Error upserting events:`, error);
+      console.log('Error upserting events:', error);
       throw error;
     }
-    console.log(
-      `[${ws_id}] Successfully upserted ${formattedEvents.length} events:`,
-      formattedEvents.map((e) => e.title)
-    );
+    console.log(`Upserted ${formattedEvents.length} events:`, formattedEvents.map(e => e.title));
 
     // Google calendar not null
-    console.log(
-      `[${ws_id}] Fetching existing events from database for cleanup...`
-    );
+    
     const { data: dbEventsAfterUpsert, error: dbError } = await supabase
       .from('workspace_calendar_events')
       .select('*')
@@ -138,16 +128,11 @@ const syncGoogleCalendarEventsForWorkspace = async (
       .lte('start_at', timeMax.toISOString());
 
     if (dbError) {
-      console.error(
-        `[${ws_id}] Error fetching events after upsert:`,
-        dbError
-      );
+      console.log('Error fetching database events:', dbError);
       throw dbError;
     }
 
-    console.log(
-      `[${ws_id}] Found ${dbEventsAfterUpsert?.length || 0} existing events in database`
-    );
+    console.log(`Found ${dbEventsAfterUpsert.length} existing events in database`);
 
     const eventsToDelete: WorkspaceCalendarEvent[] = [];
     for (const event of dbEventsAfterUpsert) {
@@ -160,9 +145,7 @@ const syncGoogleCalendarEventsForWorkspace = async (
       }
     }
 
-    console.log(
-      `[${ws_id}] Found ${eventsToDelete.length} events to delete`
-    );
+    
 
     if (eventsToDelete.length > 0) {
       const { error: deleteError } = await supabase
@@ -174,20 +157,17 @@ const syncGoogleCalendarEventsForWorkspace = async (
         );
 
       if (deleteError) {
-        console.error(`[${ws_id}] Error deleting events:`, deleteError);
+        console.log('Error deleting events:', deleteError);
         throw deleteError;
       }
 
-      console.log(
-        `[${ws_id}] Successfully deleted ${eventsToDelete.length} events:`,
-        eventsToDelete.map((e) => e.title)
-      );
+      console.log(`Deleted ${eventsToDelete.length} events:`, eventsToDelete.map(e => e.title));
     }
 
     // Update lastUpsert timestamp after successful upsert
-    console.log(`[${ws_id}] Updating lastUpsert timestamp...`);
+    
     await updateLastUpsert(ws_id, supabase);
-    console.log(`[${ws_id}] ${syncType} sync completed successfully`);
+    
     
     return {
       ws_id,
@@ -196,10 +176,7 @@ const syncGoogleCalendarEventsForWorkspace = async (
       eventsDeleted: eventsToDelete.length,
     };
   } catch (error) {
-    console.error(
-      `[${ws_id}] Error in ${syncType} sync:`,
-      error
-    );
+    console.log('Error in syncGoogleCalendarEventsForWorkspace:', error);
     return {
       ws_id,
       success: false,
@@ -218,13 +195,13 @@ export const getWorkspaceTokensByWsId = async (ws_id: string) => {
     .eq('ws_id', ws_id);
 
   if (error) {
-    console.error(`[${ws_id}] Error fetching workspace:`, error);
+    console.log('Error fetching workspace tokens:', error);
     return null;
   }
 
     return tokens?.[0] || null;
   } catch (error) {
-    console.error(`[${ws_id}] Error fetching workspace:`, error);
+    console.log('Error in getWorkspaceTokensByWsId:', error);
     return null;
   }
 };
@@ -240,13 +217,13 @@ export const getWorkspacesForSync = async () => {
       .not('access_token', 'is', null);
 
     if (error) {
-      console.error('Error fetching auth tokens:', error);
+      console.log('Error fetching workspaces for sync:', error);
       return [];
     }
 
     return tokens || [];
   } catch (error) {
-    console.error('Error getting workspaces for sync:', error);
+    console.log('Error in getWorkspacesForSync:', error);
     return [];
   }
 };
@@ -260,7 +237,7 @@ export const syncWorkspaceImmediate = async (payload: {
   const { ws_id, access_token, refresh_token } = payload;
   
   if (!access_token) {
-    console.error(`[${ws_id}] No access token provided`);
+    console.log('No access token provided for workspace:', ws_id);
     return { ws_id, success: false, error: 'No access token provided' };
   }
 
@@ -287,7 +264,7 @@ export const syncWorkspaceExtended = async (payload: {
   const { ws_id, access_token, refresh_token } = payload;
   
   if (!access_token) {
-    console.error(`[${ws_id}] No access token provided`);
+    console.log('No access token provided for workspace:', ws_id);
     return { ws_id, success: false, error: 'No access token provided' };
   }
 
@@ -307,7 +284,7 @@ export const syncWorkspaceExtended = async (payload: {
 
 // Legacy functions for backward compatibility
 export const syncGoogleCalendarEventsImmediate = async () => {
-  console.log('=== Starting immediate sync for all workspaces ===');
+  console.log('Starting immediate Google Calendar sync for all workspaces');
   const workspaces = await getWorkspacesForSync();
   const results: SyncResult[] = [];
 
@@ -316,7 +293,7 @@ export const syncGoogleCalendarEventsImmediate = async () => {
       const result = await syncWorkspaceImmediate(workspace);
       results.push(result);
     } catch (error) {
-      console.error(`Error syncing workspace ${workspace.ws_id}:`, error);
+      
       results.push({
         ws_id: workspace.ws_id,
         success: false,
@@ -325,12 +302,12 @@ export const syncGoogleCalendarEventsImmediate = async () => {
     }
   }
 
-  console.log('=== Immediate sync for all workspaces completed ===');
+  
   return results;
 };
 
 export const syncGoogleCalendarEventsExtended = async () => {
-  console.log('=== Starting extended sync for all workspaces ===');
+  
   const workspaces = await getWorkspacesForSync();
   const results: SyncResult[] = [];
 
@@ -339,7 +316,7 @@ export const syncGoogleCalendarEventsExtended = async () => {
       const result = await syncWorkspaceExtended(workspace);
       results.push(result);
     } catch (error) {
-      console.error(`Error syncing workspace ${workspace.ws_id}:`, error);
+      
       results.push({
         ws_id: workspace.ws_id,
         success: false,
@@ -348,10 +325,11 @@ export const syncGoogleCalendarEventsExtended = async () => {
     }
   }
 
-  console.log('=== Extended sync for all workspaces completed ===');
+  
   return results;
 };
 
 export const syncGoogleCalendarEvents = async () => {
   return syncGoogleCalendarEventsImmediate();
 };
+

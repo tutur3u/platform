@@ -166,10 +166,7 @@ export const CalendarProvider = ({
         return JSON.parse(storedSettings) as CalendarSettings;
       }
     } catch (error) {
-      console.error(
-        'Failed to load calendar settings from localStorage:',
-        error
-      );
+      // Failed to load calendar settings from localStorage
     }
     return null;
   }, []);
@@ -193,16 +190,14 @@ export const CalendarProvider = ({
     
     try {
       localStorage.setItem('calendarSettings', JSON.stringify(settings));
-      console.log('Saved settings to localStorage:', settings);
     } catch (error) {
-      console.error('Failed to save calendar settings to localStorage:', error);
+      // Failed to save calendar settings to localStorage
     }
   }, [settings]);
 
   // Update settings function
   const updateSettings = useCallback(
     (newSettings: Partial<CalendarSettings>) => {
-      console.log('Updating settings:', newSettings);
       setSettings((prev) => ({
         ...prev,
         ...newSettings,
@@ -348,7 +343,7 @@ export const CalendarProvider = ({
     async (event: Omit<CalendarEvent, 'id'>) => {
       if (!ws) throw new Error('No workspace selected');
 
-      console.log('Adding event:', event);
+
 
       try {
         const supabase = createClient();
@@ -370,10 +365,6 @@ export const CalendarProvider = ({
 
         // If duplicates already exist, return the first one
         if (duplicates.length > 0) {
-          console.log(
-            'Prevented duplicate event creation - matching event already exists'
-          );
-
           // Clear any pending new event
           setPendingNewEvent(null);
 
@@ -411,7 +402,6 @@ export const CalendarProvider = ({
 
         return {} as CalendarEvent;
       } catch (err) {
-        console.error('Failed to add event:', err);
         throw err;
       }
     },
@@ -420,7 +410,7 @@ export const CalendarProvider = ({
 
   const addEmptyEvent = useCallback(
     (date: Date, isAllDay?: boolean) => {
-      // TOD0: Fix this weird workaround in the future
+      // TODO: Fix this weird workaround in the future
       const selectedDate = dayjs(date);
       const tz = settings?.timezone?.timezone;
 
@@ -589,12 +579,6 @@ export const CalendarProvider = ({
           .single();
 
         if (error) {
-          console.error('Supabase error details:', {
-            message: error.message,
-            details: error.details,
-            hint: error.hint,
-            code: error.code
-          });
           throw error;
         }
 
@@ -612,8 +596,6 @@ export const CalendarProvider = ({
           }
         }
       } catch (err) {
-        console.error(`Failed to update event ${eventId}:`, err);
-
         if (_reject) {
           _reject(err);
         }
@@ -686,10 +668,6 @@ export const CalendarProvider = ({
 
             // If duplicates already exist, return the first one
             if (duplicates.length > 0) {
-              console.log(
-                'Prevented duplicate event creation during update - matching event already exists'
-              );
-
               // Clear any pending new event
               setPendingNewEvent(null);
 
@@ -704,7 +682,6 @@ export const CalendarProvider = ({
           );
           return result;
         } catch (err) {
-          console.error('Failed to create new event:', err);
           throw err;
         }
       }
@@ -748,8 +725,6 @@ export const CalendarProvider = ({
 
   const deleteEvent = useCallback(
     async (eventId: string) => {
-      console.log('Current events array:', events);
-      console.log('Deleting event with ID:', eventId);
       // If this is a pending new event that hasn't been saved yet
       if (pendingNewEvent && eventId === 'new') {
         // Just clear the pending event
@@ -782,31 +757,19 @@ export const CalendarProvider = ({
               );
               // Don't throw, just log. The event is gone from Google anyway.
             } else if (errorData.needsReAuth) {
-              console.error(
-                'Google token needs refresh/re-auth during delete.'
-              );
-              // TOD0: Notify user to re-authenticate. Should we block local delete? Maybe not.
+              // TODO: Notify user to re-authenticate. Should we block local delete? Maybe not.
             } else {
               // Throw an error to potentially stop the local delete or notify user
               throw new Error(
                 `Google Calendar sync (DELETE) failed: ${syncResponse.statusText} - ${JSON.stringify(errorData)}`
               );
             }
-          } else {
-            console.log(
-              `Google Calendar event ${googleCalendarEventId} deleted via sync.`
-            );
           }
         } catch (syncError) {
-          console.error(
-            `Failed to sync delete with Google Calendar for event ${eventId}:`,
-            syncError
-          );
+          // Failed to sync delete with Google Calendar
         }
       } else if (experimentalGoogleToken && !googleCalendarEventId) {
-        console.log(
-          `Event ${eventId} has no Google Calendar ID, skipping delete sync.`
-        );
+        // Event has no Google Calendar ID, skipping delete sync
       }
 
       try {
@@ -822,7 +785,6 @@ export const CalendarProvider = ({
         refresh();
         setActiveEventId(null);
       } catch (err) {
-        console.error(`Failed to delete event ${eventId}:`, err);
         throw err;
       }
     },
@@ -932,14 +894,10 @@ export const CalendarProvider = ({
               .in('id', eventIds);
 
             if (error) {
-              console.error('Failed to delete events batch:', error);
-            } else {
-              console.log(
-                `Successfully deleted ${batch.length} events that were removed from Google Calendar`
-              );
+              // Failed to delete events batch
             }
           } catch (err) {
-            console.error('Failed to delete events batch:', err);
+            // Failed to delete events batch
           }
         }
       }
@@ -992,10 +950,6 @@ export const CalendarProvider = ({
           );
 
           if (potentialDuplicates.length > 0) {
-            console.log(
-              `Found content duplicate for Google event "${gEvent.title}"`
-            );
-
             if (potentialDuplicates[0]) {
               changesMade = true;
               // Update the existing event with the Google Event ID rather than creating a new one
@@ -1066,11 +1020,6 @@ export const CalendarProvider = ({
 
               if (error) {
                 // If there's an error, try a direct approach
-                console.error(
-                  `Failed to update event ${item.id}, trying alternative approach:`,
-                  error
-                );
-
                 // Fallback method - get the current event first
                 const { data: currentEvent } = await supabase
                   .from('workspace_calendar_events')
@@ -1089,21 +1038,12 @@ export const CalendarProvider = ({
                     .eq('id', item.id);
 
                   if (fallbackError) {
-                    console.error(
-                      `Failed to update event ${item.id} using fallback:`,
-                      fallbackError
-                    );
-                  } else {
-                    console.log(
-                      `Successfully updated event ${item.id} using fallback method`
-                    );
+                    // Failed to update event using fallback
                   }
-                } else {
-                  console.error(`Event ${item.id} not found for update`);
                 }
               }
             } catch (err) {
-              console.error(`Failed to update event ${item.id}:`, err);
+              // Failed to update event
             }
           }
         }
@@ -1143,8 +1083,6 @@ export const CalendarProvider = ({
               .insert(batch);
 
             if (error) {
-              console.error('Failed to insert events batch:', error);
-
               // Try inserting one by one as fallback
               for (const event of batch) {
                 try {
@@ -1153,24 +1091,15 @@ export const CalendarProvider = ({
                     .insert(event);
 
                   if (singleError) {
-                    console.error(
-                      `Failed to insert single event:`,
-                      singleError
-                    );
-                  } else {
-                    console.log(`Successfully inserted single event`);
+                    // Failed to insert single event
                   }
                 } catch (singleErr) {
-                  console.error('Failed to insert single event:', singleErr);
+                  // Failed to insert single event
                 }
               }
-            } else {
-              console.log(
-                `Successfully inserted ${batch.length} new events from Google Calendar`
-              );
             }
           } catch (err) {
-            console.error('Failed to insert events batch:', err);
+            // Failed to insert events batch
           }
         }
       }
@@ -1187,14 +1116,7 @@ export const CalendarProvider = ({
 
       // Only refresh local events if changes were made
       if (changesMade) {
-        console.log(
-          'Google Calendar sync: Changes detected, refreshing events'
-        );
         queryClient.invalidateQueries(['calendarEvents', ws?.id]);
-      } else {
-        console.log(
-          'Google Calendar sync: No changes detected, skipping refresh'
-        );
       }
     },
     [googleEvents, events, ws?.id, queryClient]
@@ -1279,15 +1201,10 @@ export const CalendarProvider = ({
       }) => void
     ) => {
       if (!experimentalGoogleToken || !ws?.id) {
-        console.log(
-          'Cannot sync: Google Calendar integration not enabled or missing token'
-        );
         return false;
       }
 
       try {
-        console.log('Starting manual Google Calendar sync');
-
         // First, capture current events count for comparison
         const beforeCount = events.length;
         const beforeGoogleCount = googleEvents.length;
@@ -1323,10 +1240,6 @@ export const CalendarProvider = ({
           // Update googleEvents directly through queryClient for faster UI response
           queryClient.setQueryData(['googleCalendarEvents', ws?.id], data);
 
-          console.log(
-            `Fetched ${data.events?.length || 0} events from Google Calendar`
-          );
-
           // Report fetch complete
           if (progressCallback) {
             progressCallback({
@@ -1338,7 +1251,6 @@ export const CalendarProvider = ({
             });
           }
         } catch (fetchError) {
-          console.error('Error fetching Google Calendar events:', fetchError);
 
           if (progressCallback) {
             progressCallback({
@@ -1405,10 +1317,6 @@ export const CalendarProvider = ({
         const afterCount = getEvents().length;
         const countDifference = afterCount - beforeCount;
 
-        console.log(
-          `Google Calendar sync complete. Events count changed by ${countDifference}`
-        );
-
         // Final callback with summary
         if (progressCallback) {
           progressCallback({
@@ -1425,7 +1333,6 @@ export const CalendarProvider = ({
         // Return success with indication if changes were made
         return changesMade || beforeGoogleCount !== googleEvents.length;
       } catch (error) {
-        console.error('Manual Google Calendar sync failed:', error);
 
         if (progressCallback) {
           progressCallback({
