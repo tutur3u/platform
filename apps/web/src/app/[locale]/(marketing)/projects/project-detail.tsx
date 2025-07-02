@@ -1,7 +1,7 @@
 import { Project } from './data';
-import { Separator } from '@ncthub/ui/separator';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
+import { X } from 'lucide-react';
 
 interface ProjectDetailProps {
   onClose: () => void;
@@ -12,87 +12,165 @@ export default function ProjectDetail({ onClose, data }: ProjectDetailProps) {
   if (!data) {
     return null;
   }
-  const { name, description, techStack, members } = data;
+
+  const { name, description, techStack, members, purpose, manager, type, status } = data;
+
+  const statusColors = {
+    completed: 'bg-green-500',
+    ongoing: 'bg-blue-500',
+    planning: 'bg-yellow-500',
+  };
+
+  const statusLabels = {
+    completed: 'Completed',
+    ongoing: 'In Progress',
+    planning: 'Planning',
+  };
+
+  const typeLabels = {
+    web: 'Web Development',
+    software: 'Software',
+    hardware: 'Hardware',
+  };
+
   return (
     <motion.div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-gray-800/60"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       onClick={onClose}
     >
       <motion.div
-        className="relative mx-auto h-fit max-h-[90%] w-[98%] max-w-3xl overflow-y-auto rounded-lg bg-background p-6 pb-10 text-center md:w-[90%]"
-        initial={{ scale: 0.9, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        exit={{ scale: 0.9, opacity: 0 }}
-        transition={{ duration: 0.3 }}
+        className="relative w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-3xl bg-gradient-to-br from-slate-900/95 to-slate-800/95 backdrop-blur-lg border border-white/10 shadow-2xl"
+        initial={{ scale: 0.9, opacity: 0, y: 20 }}
+        animate={{ scale: 1, opacity: 1, y: 0 }}
+        exit={{ scale: 0.9, opacity: 0, y: 20 }}
+        transition={{ type: 'spring', stiffness: 300, damping: 25 }}
         onClick={(e) => e.stopPropagation()}
       >
-        <p
-          className="absolute top-2 right-4 cursor-pointer text-2xl"
-          onClick={onClose}
-        >
-          x
-        </p>
-        <Image
-          src="/media/background/demo.jpg"
-          width={1000}
-          height={1000}
-          alt="Demo Project"
-          className="rounded-lg pt-7"
-        />
-        <p className="my-4 text-2xl font-extrabold md:text-3xl lg:text-4xl">
-          {name}
-        </p>
-        <Separator className="my-2" />
-        <p className="mb-4 px-10 text-base md:text-xl lg:text-xl">
-          {description}
-        </p>
-        <Separator className="my-2" />
-        <p className="my-4 text-lg font-semibold md:text-xl lg:text-2xl">
-          Technologies
-        </p>
-        <div className="flex flex-wrap justify-center gap-5">
-          {techStack?.map((tech, index) => (
-            <div
-              key={index}
-              className="flex w-1/3 items-center justify-center rounded-3xl px-4 py-2 text-center md:w-1/4"
-              style={{
-                background:
-                  'linear-gradient(180deg, rgba(244,183,26,0.7) 0%, rgba(135,213,128,0.6) 50%, rgba(26,244,230,0.5) 100%)',
-              }}
-            >
-              <p className="text-xs whitespace-nowrap md:text-sm">{tech}</p>
-            </div>
-          ))}
-        </div>
+        {/* Header */}
+        <div className="relative p-8">
+          <button
+            onClick={onClose}
+            className="absolute top-6 right-6 z-10 rounded-full p-2 bg-white/10 hover:bg-white/20 text-white/70 hover:text-white transition-all duration-200"
+          >
+            <X size={20} />
+          </button>
 
-        {members && (
-          <div>
-            <p className="mt-6 text-lg font-semibold md:text-xl lg:text-2xl">
-              Contributors
-            </p>
-            <Separator className="my-2" />
-            <div className="flex flex-col gap-4 py-4 md:px-6">
-              {members.map((person, index) => {
-                return (
-                  <div
-                    className="flex items-center justify-between"
-                    key={index}
-                  >
-                    <div className="flex items-center gap-4 md:gap-6">
-                      <p className="text-sm md:text-lg">{person.name}</p>
-                    </div>
-                    <div className="text-sm md:text-lg">
-                      {person.role ? person.role : 'Member'}
-                    </div>
-                  </div>
-                );
-              })}
+          {/* Project Image */}
+          <div className="relative w-full h-48 rounded-2xl overflow-hidden mb-8 bg-gradient-to-br from-[#F4B71A]/20 to-[#1AF4E6]/20">
+            <Image
+              src="/media/background/demo.jpg"
+              fill
+              alt={`${name} project demo`}
+              className="object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+            
+            {/* Floating badges */}
+            <div className="absolute top-4 left-4 flex gap-2">
+              <div className={`px-3 py-1 rounded-full text-sm font-medium text-white ${statusColors[status]}`}>
+                {statusLabels[status]}
+              </div>
+              <div className="px-3 py-1 rounded-full text-sm font-medium bg-gradient-to-r from-[#F4B71A] to-[#1AF4E6] text-black">
+                {typeLabels[type]}
+              </div>
             </div>
           </div>
-        )}
+
+          {/* Title Section */}
+          <div className="text-center">
+            <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-[#F4B71A] to-[#1AF4E6] bg-clip-text text-transparent mb-4">
+              {name}
+            </h1>
+            {manager && (
+              <p className="text-xl text-white/80">
+                Project Lead: <span className="font-semibold text-white">{manager}</span>
+              </p>
+            )}
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="px-8 pb-8 space-y-8">
+          {/* Description */}
+          {description && (
+            <div className="bg-white/5 rounded-2xl p-6 border border-white/10">
+              <h2 className="text-2xl font-semibold text-white mb-4">About</h2>
+              <p className="text-white/80 text-lg leading-relaxed">
+                {description}
+              </p>
+            </div>
+          )}
+
+          {/* Purpose */}
+          {purpose && (
+            <div className="bg-white/5 rounded-2xl p-6 border border-white/10">
+              <h2 className="text-2xl font-semibold text-white mb-4">Purpose</h2>
+              <p className="text-white/80 text-lg leading-relaxed">
+                {purpose}
+              </p>
+            </div>
+          )}
+
+          {/* Tech Stack */}
+          {techStack && techStack.length > 0 && (
+            <div className="bg-white/5 rounded-2xl p-6 border border-white/10">
+              <h2 className="text-2xl font-semibold text-white mb-6">Technologies</h2>
+              <div className="flex flex-wrap gap-3">
+                {techStack.map((tech, index) => (
+                  <motion.div
+                    key={index}
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: index * 0.1 }}
+                    className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#F4B71A]/20 to-[#1AF4E6]/20 border border-white/20 backdrop-blur-sm"
+                  >
+                    <span className="text-white font-medium">{tech}</span>
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Team Members */}
+          {members && members.length > 0 && (
+            <div className="bg-white/5 rounded-2xl p-6 border border-white/10">
+              <h2 className="text-2xl font-semibold text-white mb-6">Team Members</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {members.map((person, index) => (
+                  <motion.div
+                    key={index}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: index * 0.1 }}
+                    className="flex items-center justify-between p-4 rounded-xl bg-white/10 border border-white/10 hover:bg-white/15 transition-colors"
+                  >
+                    <div>
+                      <p className="text-white font-semibold">{person.name}</p>
+                      <p className="text-[#1AF4E6] text-sm">{person.role || 'Team Member'}</p>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="px-8 py-6 bg-white/5 border-t border-white/10 rounded-b-3xl">
+          <div className="flex justify-center">
+            <motion.button
+              onClick={onClose}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="px-8 py-3 rounded-2xl bg-gradient-to-r from-[#F4B71A] to-[#1AF4E6] text-black font-semibold hover:shadow-lg hover:shadow-[#F4B71A]/30 transition-all duration-200"
+            >
+              Close
+            </motion.button>
+          </div>
+        </div>
       </motion.div>
     </motion.div>
   );
