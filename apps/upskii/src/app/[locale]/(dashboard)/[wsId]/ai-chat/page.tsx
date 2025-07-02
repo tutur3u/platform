@@ -37,6 +37,7 @@ export default async function AIPage({ params, searchParams }: Props) {
       locale={locale}
       initialApiKey={apiKey}
       user={user}
+      wsId={wsId}
     />
   );
 }
