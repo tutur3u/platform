@@ -3,12 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev -p 3002 --turbopack",
+    "dev": "next dev -p 3003 --turbopack",
     "devx": "bun sb:stop && bun sb:start && bun dev",
     "devrs": "bun sb:stop && bun sb:reset && bun sb:start && bun dev",
     "build": "next build",
     "start": "next start",
-    "preview": "next build && next start -p 3002 --turbopack",
+    "preview": "next build && next start -p 3003 --turbopack",
     "stop": "cd ../db && bun sb:stop",
     "sb:status": "cd ../db && bun sb:status",
     "sb:start": "cd ../db && bun sb:start",
@@ -32,8 +32,7 @@
     "dayjs": "^1.11.13",
     "next": "15.3.4",
     "react": "^19.1.0",
-    "react-dom": "^19.1.0",
-    "tailwindcss": "^4.1.11"
+    "react-dom": "^19.1.0"
   },
   "devDependencies": {
     "@types/node": "^24.0.10",
