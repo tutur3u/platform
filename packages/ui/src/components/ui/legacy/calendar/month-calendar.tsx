@@ -20,20 +20,33 @@ import {
 } from 'date-fns';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
+import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import { Clock, Plus } from 'lucide-react';
 import { useEffect, useMemo, useState} from 'react';
 import { useCalendar } from '../../../../hooks/use-calendar';
 import { usePopoverManager } from '../../../../hooks/use-popover-manager';
 import { getColorHighlight } from './color-highlights';
 import { Popover, PopoverTrigger, PopoverContent } from '../../popover';
+import { isAllDayEvent } from '../../../../hooks/calendar-utils';
+import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 
 dayjs.extend(timezone);
+dayjs.extend(isSameOrAfter);
 
 interface MonthCalendarProps {
   date: Date;
   workspace?: Workspace;
   visibleDates?: Date[];
   viewedMonth?: Date;
+}
+
+// Interface for multi-day event spans
+interface EventSpan {
+  event: CalendarEvent;
+  startIndex: number;
+  endIndex: number;
+  span: number;
+  weekIndex: number;
 }
 
 const normalizeColor = (color: string): string => {
@@ -155,10 +168,100 @@ export const MonthCalendar = ({ date, visibleDates, viewedMonth }: MonthCalendar
   const calendarDays = visibleDates ?? [...prevMonthDays, ...monthDays, ...nextMonthDays];
 
   // Create weeks (group by 7 days)
-  const weeks = [];
+  const weeks: Date[][] = [];
   for (let i = 0; i < calendarDays.length; i += 7) {
     weeks.push(calendarDays.slice(i, i + 7));
   }
+
+  // Process multi-day all-day events to create spans
+  const multiDayEventSpans = useMemo(() => {
+    const spans: EventSpan[] = [];
+    const processedEvents = new Set<string>();
+
+    weeks.forEach((week: Date[], weekIndex: number) => {
+      week.forEach((day: Date) => {
+        const dayEvents = getCurrentEvents(day);
+        
+        dayEvents.forEach((event) => {
+          // Skip if already processed or not an all-day event
+          if (processedEvents.has(event.id) || !isAllDayEvent(event)) {
+            return;
+          }
+
+          const eventStart = dayjs(event.start_at);
+          const eventEnd = dayjs(event.end_at);
+          
+          // Check if this is a multi-day event
+          const durationDays = eventEnd.diff(eventStart, 'day');
+          if (durationDays <= 1) {
+            return; // Single day event, handle normally
+          }
+
+          // Find the span of this event within the current week
+          let startIndex = -1;
+          let endIndex = -1;
+
+          week.forEach((weekDay: Date, weekDayIndex: number) => {
+            const weekDayStart = dayjs(weekDay);
+            
+            // Check if event overlaps with this day
+            if (
+              weekDayStart.isSameOrAfter(eventStart, 'day') &&
+              weekDayStart.isBefore(eventEnd, 'day')
+            ) {
+              if (startIndex === -1) {
+                startIndex = weekDayIndex;
+              }
+              endIndex = weekDayIndex;
+            }
+          });
+
+          if (startIndex !== -1 && endIndex !== -1 && endIndex > startIndex) {
+            spans.push({
+              event,
+              startIndex,
+              endIndex,
+              span: endIndex - startIndex + 1,
+              weekIndex,
+            });
+            processedEvents.add(event.id);
+          }
+        });
+      });
+    });
+
+    return spans;
+  }, [weeks, getCurrentEvents]);
+
+  // Get events for a day including placeholders for multi-day events
+  const getEventsForDay = (day: Date) => {
+    const dayEvents = getCurrentEvents(day);
+    const result: (CalendarEvent & { isPlaceholder?: boolean })[] = [];
+    
+    // Add all single-day events and timed events
+    dayEvents.forEach(event => {
+      if (!isAllDayEvent(event)) {
+        result.push(event);
+        return;
+      }
+      
+      // For all-day events, check if it's part of a multi-day span
+      const isMultiDay = multiDayEventSpans.some(span => span.event.id === event.id);
+      
+      if (!isMultiDay) {
+        // Single-day all-day event, add normally
+        result.push(event);
+      } else {
+        // Multi-day event, add as placeholder for stacking purposes
+        result.push({
+          ...event,
+          isPlaceholder: true
+        });
+      }
+    });
+    
+    return result;
+  };
 
   // Handle adding a new event
   const handleAddEvent = (day: Date) => {
@@ -271,142 +374,88 @@ export const MonthCalendar = ({ date, visibleDates, viewedMonth }: MonthCalendar
         ))}
       </div>
 
-      <div className="grid grid-cols-7 divide-x divide-y">
-        {calendarDays.map((day, dayIdx) => {
-          const dominantColor = dominantColorForDay[day.toISOString()] || 'primary';
-          const highlightClass = isToday(day) ? `${getColorHighlight(dominantColor)} z-10` : '';
+              <div className="relative">
+        <div className="grid grid-cols-7 divide-x divide-y" id="calendar-grid">
+          {weeks.map((week, weekIndex) => 
+            week.map((day, dayIdx) => {
+              const globalDayIdx = weekIndex * 7 + dayIdx;
+              const dominantColor = dominantColorForDay[day.toISOString()] || 'primary';
+              const highlightClass = isToday(day) ? `${getColorHighlight(dominantColor)} z-10` : '';
 
-          const isCurrentMonth = isSameMonth(day, viewedMonth ?? currDate);
-          const isTodayDate = isToday(day);
-          const isWeekend = day.getDay() === 0 || day.getDay() === 6;
-          const isHidden = isWeekend && !settings.appearance.showWeekends;
-          const isHovered =
-            hoveredDay &&
-            hoveredDay.getDate() === day.getDate() &&
-            hoveredDay.getMonth() === day.getMonth() &&
-            hoveredDay.getFullYear() === day.getFullYear();
+              const isCurrentMonth = isSameMonth(day, viewedMonth ?? currDate);
+              const isTodayDate = isToday(day);
+              const isWeekend = day.getDay() === 0 || day.getDay() === 6;
+              const isHidden = isWeekend && !settings.appearance.showWeekends;
+              const isHovered =
+                hoveredDay &&
+                hoveredDay.getDate() === day.getDate() &&
+                hoveredDay.getMonth() === day.getMonth() &&
+                hoveredDay.getFullYear() === day.getFullYear();
 
-          return (
-            <div
-              key={day.toString()}
-              className={cn(
-                'group relative min-h-[120px] p-1.5 transition-colors',
-                !isCurrentMonth && 'bg-muted/50',
-                highlightClass,
-                isHovered && 'bg-muted/30',
-                isHidden && 'bg-muted/10'
-              )}
-              onMouseEnter={() => setHoveredDay(day)}
-              onMouseLeave={() => setHoveredDay(null)}
-            >
-              <div className="flex items-center justify-between">
-                <span
+              return (
+                <div
+                  key={day.toString()}
                   className={cn(
-                    'flex h-7 w-7 items-center justify-center text-sm',
-                    isTodayDate &&
-                      'rounded-full bg-primary font-medium text-primary-foreground',
-                    !isCurrentMonth && 'text-muted-foreground',
-                    isHidden && 'text-muted-foreground/50'
+                    'group relative min-h-[120px] p-1.5 transition-colors',
+                    !isCurrentMonth && 'bg-muted/50',
+                    highlightClass,
+                    isHovered && 'bg-muted/30',
+                    isHidden && 'bg-muted/10'
                   )}
+                  onMouseEnter={() => setHoveredDay(day)}
+                  onMouseLeave={() => setHoveredDay(null)}
                 >
-                  {format(day, 'd')}
-                </span>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
+                  <div className="flex items-center justify-between">
+                    <span
                       className={cn(
-                        'h-6 w-6 opacity-0 group-hover:opacity-100 hover:bg-primary/10 hover:opacity-100 focus:opacity-100',
-                        isHidden && 'opacity-0 group-hover:opacity-50'
+                        'flex h-7 w-7 items-center justify-center text-sm',
+                        isTodayDate &&
+                          'rounded-full bg-primary font-medium text-primary-foreground',
+                        !isCurrentMonth && 'text-muted-foreground',
+                        isHidden && 'text-muted-foreground/50'
                       )}
-                      onClick={() => handleAddEvent(day)}
-                      disabled={isHidden}
                     >
-                      <Plus className="h-3 w-3" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Add event</TooltipContent>
-                </Tooltip>
-              </div>
-
-              <div className="mt-1 space-y-1">
-                {getCurrentEvents(day).slice(0, 3).map((event) => {
-                  const { bg, text } = getEventStyles(event);
-
-                  return (
-                    <HoverCard key={event.id} openDelay={200} closeDelay={100}>
-                      <HoverCardTrigger asChild>
-                        <div
+                      {format(day, 'd')}
+                    </span>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
                           className={cn(
-                            'cursor-pointer items-center gap-1 truncate rounded px-1.5 py-1 text-xs font-medium',
-                            bg,
-                            text,
-                            !isCurrentMonth && 'opacity-60'
+                            'h-6 w-6 opacity-0 group-hover:opacity-100 hover:bg-primary/10 hover:opacity-100 focus:opacity-100',
+                            isHidden && 'opacity-0 group-hover:opacity-50'
                           )}
-                          onClick={() => openModal(event.id)}
+                          onClick={() => handleAddEvent(day)}
+                          disabled={isHidden}
                         >
-                          {event.title || 'Untitled event'}
-                        </div>
-                      </HoverCardTrigger>
-                      <HoverCardContent
-                        side="right"
-                        align="start"
-                        className="w-80"
-                      >
-                        <div className="space-y-2">
-                          <h4 className="line-clamp-2 font-medium break-words">
-                            {event.title || 'Untitled event'}
-                          </h4>
-                          {event.description && (
-                            <p className="text-sm text-muted-foreground">
-                              {event.description}
-                            </p>
-                          )}
-                          <div className="flex items-center text-xs text-muted-foreground">
-                            <Clock className="mr-1 h-3 w-3" />
-                            <span>{formatEventTime(event)}</span>
-                          </div>
-                        </div>
-                      </HoverCardContent>
-                    </HoverCard>
-                  );
-                })}
+                          <Plus className="h-3 w-3" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Add event</TooltipContent>
+                    </Tooltip>
+                  </div>
 
-                {getCurrentEvents(day).length > 3 && (
-                  <Popover open={openPopoverIdx === dayIdx} onOpenChange={open => setOpenPopoverIdx(open ? dayIdx : null)}>
-                    <PopoverTrigger asChild>
-                      <button
-                        ref={el => { moreButtonRefs.current[dayIdx] = el; }}
-                        className={cn(
-                          'w-full rounded-sm bg-muted px-1 py-0.5 text-xs font-medium text-muted-foreground hover:bg-muted/80',
-                          !isCurrentMonth && 'opacity-60'
-                        )}
-                        onClick={() => setOpenPopoverIdx(dayIdx)}
-                      >
-                        +{getCurrentEvents(day).length - 3} more
-                      </button>
-                    </PopoverTrigger>
-                    <PopoverContent
-                      align="start"
-                      className={cn(
-                        'p-2 max-h-60 overflow-y-auto relative !transition-none',
-                        getScrollShadowClasses(scrollStates[dayIdx])
-                      )}
-                      style={{ width: moreButtonRefs.current[dayIdx]?.offsetWidth || undefined }}
-                    >
-                      <div
-                        className="flex flex-col gap-1"
-                        onScroll={e => handlePopoverScroll(e, dayIdx)}
-                        ref={el => { popoverContentRefs.current[dayIdx] = el; }}
-                        onMouseEnter={() => setPopoverHovered(prev => ({ ...prev, [dayIdx]: true }))}
-                        onMouseLeave={() => setPopoverHovered(prev => ({ ...prev, [dayIdx]: false }))}
-                      >
-                        {getCurrentEvents(day).slice(3).map((event) => {
-                          const { bg, text } = getEventStyles(event);
-                          return (
+                  <div className="mt-1 space-y-1">
+                    {getEventsForDay(day).slice(0, 3).map((event) => {
+                      // Skip rendering placeholder events (they're handled by the spanning elements)
+                      if (event.isPlaceholder) {
+                        return (
+                          <div
+                            key={event.id}
+                            className="opacity-0 pointer-events-none px-1.5 py-1 text-xs font-medium"
+                            style={{ height: '24px' }}
+                            aria-hidden="true"
+                          />
+                        );
+                      }
+
+                      const { bg, text } = getEventStyles(event);
+
+                      return (
+                        <HoverCard key={event.id} openDelay={200} closeDelay={100}>
+                          <HoverCardTrigger asChild>
                             <div
-                              key={event.id}
                               className={cn(
                                 'cursor-pointer items-center gap-1 truncate rounded px-1.5 py-1 text-xs font-medium',
                                 bg,
@@ -417,14 +466,197 @@ export const MonthCalendar = ({ date, visibleDates, viewedMonth }: MonthCalendar
                             >
                               {event.title || 'Untitled event'}
                             </div>
-                          );
-                        })}
-                      </div>
-                    </PopoverContent>
-                  </Popover>
-                )}
-              </div>
-            </div>
+                          </HoverCardTrigger>
+                          <HoverCardContent
+                            side="right"
+                            align="start"
+                            className="w-80"
+                          >
+                            <div className="space-y-2">
+                              <h4 className="line-clamp-2 font-medium break-words">
+                                {event.title || 'Untitled event'}
+                              </h4>
+                              {event.description && (
+                                <p className="text-sm text-muted-foreground">
+                                  {event.description}
+                                </p>
+                              )}
+                              <div className="flex items-center text-xs text-muted-foreground">
+                                <Clock className="mr-1 h-3 w-3" />
+                                <span>{formatEventTime(event)}</span>
+                              </div>
+                            </div>
+                          </HoverCardContent>
+                        </HoverCard>
+                      );
+                    })}
+
+                    {getEventsForDay(day).length > 3 && (
+                      <Popover open={openPopoverIdx === globalDayIdx} onOpenChange={open => setOpenPopoverIdx(open ? globalDayIdx : null)}>
+                        <PopoverTrigger asChild>
+                          <button
+                            ref={el => { moreButtonRefs.current[globalDayIdx] = el; }}
+                            className={cn(
+                              'w-full rounded-sm bg-muted px-1 py-0.5 text-xs font-medium text-muted-foreground hover:bg-muted/80',
+                              !isCurrentMonth && 'opacity-60'
+                            )}
+                            onClick={() => setOpenPopoverIdx(globalDayIdx)}
+                          >
+                            +{getEventsForDay(day).length - 3} more
+                          </button>
+                        </PopoverTrigger>
+                        <PopoverContent
+                          align="start"
+                          className={cn(
+                            'p-2 max-h-60 overflow-y-auto relative !transition-none',
+                            getScrollShadowClasses(scrollStates[globalDayIdx])
+                          )}
+                          style={{ width: moreButtonRefs.current[globalDayIdx]?.offsetWidth || undefined }}
+                        >
+                          <div
+                            className="flex flex-col gap-1"
+                            onScroll={e => handlePopoverScroll(e, globalDayIdx)}
+                            ref={el => { popoverContentRefs.current[globalDayIdx] = el; }}
+                            onMouseEnter={() => setPopoverHovered(prev => ({ ...prev, [globalDayIdx]: true }))}
+                            onMouseLeave={() => setPopoverHovered(prev => ({ ...prev, [globalDayIdx]: false }))}
+                          >
+                            {getEventsForDay(day).slice(3).map((event) => {
+                              // Skip rendering placeholder events in popover too
+                              if (event.isPlaceholder) {
+                                return null;
+                              }
+
+                              const { bg, text } = getEventStyles(event);
+                              return (
+                                <div
+                                  key={event.id}
+                                  className={cn(
+                                    'cursor-pointer items-center gap-1 truncate rounded px-1.5 py-1 text-xs font-medium',
+                                    bg,
+                                    text,
+                                    !isCurrentMonth && 'opacity-60'
+                                  )}
+                                  onClick={() => openModal(event.id)}
+                                >
+                                  {event.title || 'Untitled event'}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </PopoverContent>
+                      </Popover>
+                    )}
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+
+        {/* Render multi-day all-day event spans */}
+        {multiDayEventSpans.map((eventSpan, spanIndex) => {
+          const { event, startIndex, span, weekIndex } = eventSpan;
+          const { bg, text } = getEventStyles(event);
+          
+          // Calculate position for the spanning event to align with day container events
+          const dayHeaderHeight = 28; // Height of day number and plus button area (h-7 + padding)
+          const containerPadding = 6; // p-1.5 = 6px padding
+          const eventHeight = 24; // Height of each event (px-1.5 py-1 text-xs) - match exactly
+          const eventSpacing = 4; // space-y-1 = 4px spacing between events
+          const marginTop = 4; // mt-1 = 4px margin top for events container
+          
+          // Find the position of this event in the first day it appears
+          const firstDayIndex = weekIndex * 7 + startIndex;
+          const firstDay = calendarDays[firstDayIndex];
+          
+          let eventIndexInDay = 0;
+          if (firstDay) {
+            const eventsInFirstDay = getEventsForDay(firstDay);
+            eventIndexInDay = eventsInFirstDay.findIndex(e => e.id === event.id);
+            if (eventIndexInDay === -1) eventIndexInDay = 0;
+          }
+          
+          // Fixed positioning approach based on empirical observation
+          // Use a more accurate measurement approach
+          let rowTop = 0;
+          
+          // Calculate the top position for each row more accurately
+          for (let i = 0; i < weekIndex; i++) {
+            const weekDays = weeks[i] || [];
+            let maxEvents = 0;
+            let hasMoreButton = false;
+            
+            // Get the actual maximum events per day in this week
+            weekDays.forEach((day: Date) => {
+              const dayEvents = getEventsForDay(day);
+              maxEvents = Math.max(maxEvents, Math.min(dayEvents.length, 3));
+              if (dayEvents.length > 3) hasMoreButton = true;
+            });
+            
+            // More precise height calculation matching CSS behavior
+            const dayHeaderHeight = 28; // Height of day number header
+            const containerPadding = 6; // p-1.5 = 6px padding 
+            const minContentHeight = 120 - dayHeaderHeight - (containerPadding * 2); // min-h-[120px] minus header and padding
+            
+            let contentHeight = minContentHeight;
+            if (maxEvents > 0) {
+              const eventsHeight = maxEvents * 24 + (maxEvents - 1) * 4; // 24px per event + 4px spacing between
+              const moreButtonHeight = hasMoreButton ? 24 : 0;
+              const marginAndPadding = 8; // Additional margin around events
+              contentHeight = Math.max(minContentHeight, eventsHeight + moreButtonHeight + marginAndPadding);
+            }
+            
+            const totalRowHeight = dayHeaderHeight + (containerPadding * 2) + contentHeight;
+            rowTop += totalRowHeight;
+          }
+          
+          // Position within the current row
+          const positionInRow = dayHeaderHeight + containerPadding + marginTop + (eventIndexInDay * (eventHeight + eventSpacing));
+          const eventTopPosition = rowTop + positionInRow;
+          
+          return (
+            <HoverCard key={`span-${event.id}-${weekIndex}`} openDelay={200} closeDelay={100}>
+              <HoverCardTrigger asChild>
+                <div
+                  className={cn(
+                    'absolute cursor-pointer truncate rounded px-1.5 py-1 text-xs font-medium z-20',
+                    bg,
+                    text,
+                    'border-l-2 border-l-current'
+                  )}
+                  style={{
+                    left: `calc(${(startIndex / 7) * 100}% + ${containerPadding}px)`,
+                    width: `calc(${(span / 7) * 100}% - ${containerPadding * 2}px)`,
+                    top: `${eventTopPosition}px`,
+                    height: `${eventHeight}px`,
+                    lineHeight: `${eventHeight - 8}px`,
+                  }}
+                  onClick={() => openModal(event.id)}
+                >
+                  {event.title || 'Untitled event'}
+                </div>
+              </HoverCardTrigger>
+              <HoverCardContent
+                side="right"
+                align="start"
+                className="w-80"
+              >
+                <div className="space-y-2">
+                  <h4 className="line-clamp-2 font-medium break-words">
+                    {event.title || 'Untitled event'}
+                  </h4>
+                  {event.description && (
+                    <p className="text-sm text-muted-foreground">
+                      {event.description}
+                    </p>
+                  )}
+                  <div className="flex items-center text-xs text-muted-foreground">
+                    <Clock className="mr-1 h-3 w-3" />
+                    <span>All day • {dayjs(event.start_at).format('MMM D')} - {dayjs(event.end_at).subtract(1, 'day').format('MMM D')}</span>
+                  </div>
+                </div>
+              </HoverCardContent>
+            </HoverCard>
           );
         })}
       </div>
