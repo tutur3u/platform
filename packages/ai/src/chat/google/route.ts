@@ -23,7 +23,9 @@ const DEFAULT_MODEL_NAME = 'gemini-2.0-flash-001';
 async function getAllChatFiles(
   wsId: string,
   chatId: string
-): Promise<Array<{ fileName: string; content: string; mimeType: string }>> {
+): Promise<
+  Array<{ fileName: string; content: string | ArrayBuffer; mimeType: string }>
+> {
   try {
     const sbDynamic = await createDynamicClient();
 
@@ -50,7 +52,7 @@ async function getAllChatFiles(
 
     const fileContents: Array<{
       fileName: string;
-      content: string;
+      content: string | ArrayBuffer;
       mimeType: string;
     }> = [];
 
@@ -60,46 +62,27 @@ async function getAllChatFiles(
     for (const file of files) {
       const fileName = file.name.split('/').pop() || 'unknown';
       const mimeType = file.metadata?.mimetype || 'application/octet-stream';
-      let content: string;
+      let content: string | ArrayBuffer;
+
+      const { data: fileData, error: downloadError } = await supabase.storage
+        .from('workspaces')
+        .download(file.name);
+
+      if (downloadError) {
+        console.error(`Error downloading file ${fileName}:`, downloadError);
+        continue;
+      }
+
+      if (!fileData) {
+        console.error(`No data received for file ${fileName}`);
+        continue;
+      }
 
       if (mimeType.startsWith('text/') || mimeType === 'application/json') {
-        // For text files, download and read the content
-        const { data: fileData, error: downloadError } = await supabase.storage
-          .from('workspaces')
-          .download(file.name);
-
-        if (downloadError) {
-          console.error(`Error downloading file ${fileName}:`, downloadError);
-          continue;
-        }
-
-        if (!fileData) {
-          console.error(`No data received for file ${fileName}`);
-          continue;
-        }
-
         content = await fileData.text();
       } else {
-        // For binary files (images, PDFs, etc.), create a signed URL
-        const { data: signedUrlData, error: signedUrlError } =
-          await supabase.storage
-            .from('workspaces')
-            .createSignedUrl(file.name, 300); // 5-minute expiry
-
-        if (signedUrlError) {
-          console.error(
-            `Error creating signed URL for ${fileName}:`,
-            signedUrlError
-          );
-          continue;
-        }
-
-        if (!signedUrlData) {
-          console.error(`No signed URL created for file ${fileName}`);
-          continue;
-        }
-
-        content = signedUrlData.signedUrl;
+        // For binary files (images, PDFs, etc.), get ArrayBuffer
+        content = await fileData.arrayBuffer();
       }
 
       fileContents.push({
@@ -123,163 +106,108 @@ async function processMessagesWithFiles(
   wsId: string,
   chatId: string
 ): Promise<CoreMessage[]> {
-  // Get ALL files from the chat directory first
   const chatFiles = await getAllChatFiles(wsId, chatId);
-
   if (chatFiles.length === 0) {
-    // No files to process, return original messages
     return messages;
   }
 
-  const processedMessages: CoreMessage[] = [];
-
-  for (const message of messages) {
-    if (typeof message.content === 'string') {
-      // Simple text message - add file context if this is the last user message
-      if (
-        message.role === 'user' &&
-        messages.indexOf(message) === messages.length - 1
-      ) {
-        // Create complex content with text and files
-        const complexContent = await createComplexContentWithFiles(
-          message.content,
-          chatFiles
-        );
-        processedMessages.push({
-          ...message,
-          content: complexContent,
-        });
-      } else {
-        processedMessages.push(message);
-      }
-    } else if (Array.isArray(message.content)) {
-      // Complex message content - process and add files
-      if (
-        message.role === 'user' &&
-        messages.indexOf(message) === messages.length - 1
-      ) {
-        const enhancedContent = await enhanceContentWithFiles(
-          message.content,
-          chatFiles
-        );
-        processedMessages.push({
-          ...message,
-          content: enhancedContent,
-        });
-      } else {
-        processedMessages.push(message);
-      }
-    } else {
-      // Other content types (tool messages, etc.)
-      processedMessages.push(message);
+  let lastUserMessageIndex = -1;
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const message = messages[i];
+    if (message && message.role === 'user') {
+      lastUserMessageIndex = i;
+      break;
     }
   }
+
+  if (lastUserMessageIndex === -1) {
+    return messages;
+  }
+
+  const processedMessages = [...messages];
+  const lastUserMessage = processedMessages[lastUserMessageIndex];
+
+  if (!lastUserMessage) {
+    return messages;
+  }
+
+  const newContent = addFilesToContent(lastUserMessage.content, chatFiles);
+
+  processedMessages[lastUserMessageIndex] = {
+    role: 'user',
+    content: newContent,
+  };
+
+  if (Array.isArray(newContent) && newContent.length > 0) {
+    const lastPart = newContent[newContent.length - 1];
+    if (lastPart?.type === 'file') {
+      console.log('Last file part:', {
+        type: 'file',
+        mimeType: lastPart.mimeType,
+      });
+    }
+  }
+
+  console.log('Processed messages:', processedMessages[0]?.content);
 
   return processedMessages;
 }
 
-async function createComplexContentWithFiles(
-  textContent: string,
-  chatFiles: Array<{ fileName: string; content: string; mimeType: string }>
-): Promise<Array<TextPart | ImagePart | FilePart>> {
+function addFilesToContent(
+  existingContent: CoreMessage['content'],
+  chatFiles: Array<{
+    fileName: string;
+    content: string | ArrayBuffer;
+    mimeType: string;
+  }>
+): (TextPart | ImagePart | FilePart)[] {
   const contentParts: Array<TextPart | ImagePart | FilePart> = [];
 
-  // Add the original text content
-  contentParts.push({
-    type: 'text',
-    text: textContent,
-  });
-
-  // Process each file
-  for (const file of chatFiles) {
-    if (file.mimeType.startsWith('image/')) {
-      // Create proper ImagePart for images
-      contentParts.push({
-        type: 'image',
-        image: new URL(file.content),
-        mimeType: file.mimeType,
-      });
-    } else if (
-      file.mimeType.startsWith('text/') ||
-      file.mimeType === 'application/json'
-    ) {
-      // Add text files as additional text content
-      contentParts.push({
-        type: 'text',
-        text: `\n\n**File: ${file.fileName}** (${file.mimeType})\n\`\`\`\n${file.content}\n\`\`\``,
-      });
-    } else {
-      // For other file types (PDF, binary, etc.), use FilePart
-      contentParts.push({
-        type: 'file',
-        data: new URL(file.content),
-        mimeType: file.mimeType,
-      });
-    }
-  }
-
-  return contentParts;
-}
-
-async function enhanceContentWithFiles(
-  existingContent: Array<{ type: string; text?: string; image?: unknown }>,
-  chatFiles: Array<{ fileName: string; content: string; mimeType: string }>
-): Promise<Array<TextPart | ImagePart | FilePart>> {
-  const enhancedContent: Array<TextPart | ImagePart | FilePart> = [];
-
-  // Process existing content parts
-  for (const part of existingContent) {
-    if (part.type === 'text' && part.text) {
-      enhancedContent.push({
-        type: 'text',
-        text: part.text,
-      });
-    } else if (part.type === 'image' && part.image) {
-      // Preserve existing image parts
-      if (typeof part.image === 'string') {
-        enhancedContent.push({
-          type: 'image',
-          image: part.image,
-        });
-      } else {
-        // Handle other image formats if needed
-        enhancedContent.push({
-          type: 'text',
-          text: '[Image data provided]',
-        });
+  if (typeof existingContent === 'string') {
+    contentParts.push({ type: 'text', text: existingContent });
+  } else if (Array.isArray(existingContent)) {
+    // Filter to only include parts valid for user content before adding files
+    for (const part of existingContent) {
+      if (
+        part.type === 'text' ||
+        part.type === 'image' ||
+        part.type === 'file'
+      ) {
+        contentParts.push(part);
       }
     }
   }
 
-  // Add new files from chat directory
   for (const file of chatFiles) {
-    if (file.mimeType.startsWith('image/')) {
-      // Create proper ImagePart for images
-      enhancedContent.push({
+    const { content, mimeType } = file;
+
+    if (mimeType.startsWith('image/')) {
+      const imagePart: ImagePart = {
         type: 'image',
-        image: new URL(file.content),
-        mimeType: file.mimeType,
-      });
-    } else if (
-      file.mimeType.startsWith('text/') ||
-      file.mimeType === 'application/json'
-    ) {
-      // Add text files as additional text content
-      enhancedContent.push({
-        type: 'text',
-        text: `\n\n**File: ${file.fileName}** (${file.mimeType})\n\`\`\`\n${file.content}\n\`\`\``,
-      });
-    } else {
-      // For other file types, use FilePart
-      enhancedContent.push({
+        image:
+          content instanceof ArrayBuffer ? new Uint8Array(content) : content,
+        mimeType,
+      };
+      contentParts.push(imagePart);
+    } else if (content instanceof ArrayBuffer && content.byteLength > 0) {
+      const filePart: FilePart = {
         type: 'file',
-        data: new URL(file.content),
-        mimeType: file.mimeType,
-      });
+        data: new Uint8Array(content),
+        mimeType,
+      };
+      contentParts.push(filePart);
+    } else if (typeof content === 'string') {
+      // For text-based files that were read as strings
+      const filePart: FilePart = {
+        type: 'file',
+        data: new TextEncoder().encode(content),
+        mimeType,
+      };
+      contentParts.push(filePart);
     }
   }
 
-  return enhancedContent;
+  return contentParts;
 }
 
 export function createPOST(
@@ -302,6 +230,8 @@ export function createPOST(
       messages?: CoreMessage[];
       wsId?: string;
     };
+
+    // Override provided model
 
     try {
       if (!id) return new Response('Missing chat ID', { status: 400 });
