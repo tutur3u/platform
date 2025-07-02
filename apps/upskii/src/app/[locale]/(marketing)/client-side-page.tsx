@@ -33,7 +33,7 @@ export default function ClientSideMarketingPage({
   workspaces,
 }: {
   testimonials: Testimonial[];
-  workspaces: Workspace[];
+  workspaces: Partial<Workspace>[];
 }) {
   const t = useTranslations('boarding-pages.home');
 

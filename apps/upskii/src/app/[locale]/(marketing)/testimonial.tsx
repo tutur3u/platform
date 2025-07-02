@@ -29,7 +29,7 @@ export default function TestimonialsSection({
         <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
           {testimonials.map((testimonial) => (
             <div
-              key={testimonial.name}
+              key={testimonial.name + testimonial.course}
               className="group hover:-translate-y-1 relative rounded-2xl border border-gray-200/50 bg-white/80 p-8 shadow-lg backdrop-blur-sm transition-all duration-300 hover:shadow-xl dark:border-gray-700/50 dark:bg-gray-800/80"
             >
               {/* Gradient border effect */}

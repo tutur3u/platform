@@ -8,7 +8,7 @@ export default function GetStartedWrapper({
   workspaces,
 }: {
   text: string;
-  workspaces: Workspace[];
+  workspaces: Partial<Workspace>[];
 }) {
   const wsId = workspaces?.[0]?.id;
 
