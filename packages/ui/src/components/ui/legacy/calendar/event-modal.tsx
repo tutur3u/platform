@@ -81,6 +81,7 @@ import {
   EventToggleSwitch,
   OverlapWarning,
 } from './event-form-components';
+import { isAllDayEvent } from '../../../../hooks/calendar-utils';
 
 dayjs.extend(ts);
 dayjs.extend(utc);
@@ -227,13 +228,7 @@ export function EventModal() {
 
       // Only check for all-day if this is an existing event (not a new one)
       if (activeEvent.id !== 'new') {
-        // Check if event is all-day by comparing start and end times
-        const startDate = dayjs(eventData.start_at);
-        const endDate = dayjs(eventData.end_at);
-        const isAllDayEvent = startDate
-          .startOf('day')
-          .isSame(endDate.startOf('day').subtract(1, 'day'));
-        setIsAllDay(isAllDayEvent);
+        setIsAllDay(isAllDayEvent(eventData));
       } else {
         // For new events, always start with isAllDay as false
         setIsAllDay(false);
@@ -329,7 +324,11 @@ export function EventModal() {
       if (activeEvent?.id === 'new') {
         await addEvent(eventData as Omit<CalendarEvent, 'id'>);
       } else if (activeEvent?.id) {
-        const originalId = activeEvent.id;
+        // Handle IDs for split multi-day events (they contain a dash and date)
+        const originalId = activeEvent.id.includes('-')
+          ? activeEvent.id.split('-')[0]
+          : activeEvent.id;
+        
         if (originalId) {
           await updateEvent(originalId, eventData);
         } else {
@@ -341,7 +340,6 @@ export function EventModal() {
 
       closeModal();
     } catch (error) {
-      console.error('Error saving event:', error);
       toast({
         title: 'Error',
         description: 'Failed to save or sync event. Please try again.',
@@ -397,7 +395,6 @@ export function EventModal() {
         categories: formattedCategories,
       });
     } catch (error) {
-      console.error('Error generating events:', error);
       toast({
         title: 'Error generating events',
         description: 'Please try again with a different prompt',
@@ -433,7 +430,6 @@ export function EventModal() {
           const savedEvent = await addEvent(calendarEvent);
           if (savedEvent) savedEvents.push(savedEvent);
         } catch (error) {
-          console.error('Error saving event to calendar:', error);
           failedEvents.push({ event: eventData, error });
         }
       }
@@ -456,7 +452,6 @@ export function EventModal() {
         });
       }
     } catch (error) {
-      console.error('Error saving AI events to calendar:', error);
       toast({
         title: 'Error',
         description: 'Failed to save or sync AI-generated events.',
@@ -470,7 +465,6 @@ export function EventModal() {
   // Handle event deletion
   const handleDelete = async () => {
     if (isRecording) {
-      console.log('🛑 Cancel recording due to event deletion');
       stopRecording();
     }
     if (!activeEvent?.id) return;
@@ -486,7 +480,6 @@ export function EventModal() {
       }
       closeModal();
     } catch (error) {
-      console.error('Error deleting event:', error);
       toast({
         title: 'Error',
         description: 'Failed to delete event. Please try again.',
@@ -669,7 +662,6 @@ export function EventModal() {
 
       mediaRecorder.current.onstop = async () => {
         if (audioChunks.current.length === 0) {
-          console.error('No recording data!');
           setIsRecording(false);
           setIsProcessingAudio(false);
           return;
@@ -683,12 +675,10 @@ export function EventModal() {
           const base64Audio = reader.result?.toString().split(',')[1];
 
           if (!base64Audio) {
-            console.error('Error when converting audio to base64');
             setIsProcessingAudio(false);
             return;
           }
 
-          console.log('Sending Base64 Audio to server...');
           sendAudioToServer(base64Audio);
         };
 
@@ -699,7 +689,6 @@ export function EventModal() {
 
       mediaRecorder.current.start();
     } catch (error) {
-      console.error('Error accessing microphone:', error);
       setIsRecording(false);
     }
   };
@@ -738,10 +727,8 @@ export function EventModal() {
 
       const result = await response.json();
       if (result.text) {
-        console.log('Transcribed text:', result.text);
         aiForm.setValue('prompt', result.text);
       } else {
-        console.error('Failed to transcribe audio:', result.error);
         toast({
           title: 'Transcription Error',
           description: result.error || 'Failed to transcribe audio',
@@ -749,7 +736,6 @@ export function EventModal() {
         });
       }
     } catch (error) {
-      console.error('Error calling API:', error);
       toast({
         title: 'API Error',
         description: 'Failed to process audio recording',
@@ -772,12 +758,9 @@ export function EventModal() {
     reader.onloadend = async () => {
       const base64Image = reader.result?.toString().split(',')[1]; // convert to base64
       if (!base64Image) {
-        console.error('Error when changing image to base64');
         setIsProcessingImage(false);
         return;
       }
-
-      console.log('Uploading Base64 Image to server...');
 
       try {
         const response = await fetch('/api/v1/calendar/image', {
@@ -789,10 +772,8 @@ export function EventModal() {
 
         const result = await response.json();
         if (result.text) {
-          console.log('Extracted text from image:', result.text);
           aiForm.setValue('prompt', result.text);
         } else {
-          console.error('Failed to extract text from image:', result.error);
           toast({
             title: 'Image Processing Error',
             description: result.error || 'Failed to extract text from image',
@@ -800,7 +781,6 @@ export function EventModal() {
           });
         }
       } catch (error) {
-        console.error('Error when sending image to server:', error);
         toast({
           title: 'API Error',
           description: 'Failed to process uploaded image',
@@ -876,7 +856,6 @@ export function EventModal() {
         description: `Event ${checked ? 'locked' : 'unlocked'} successfully`,
       });
     } catch (error) {
-      console.error('Error updating event lock status:', error);
       toast({
         title: 'Error',
         description: 'Failed to update event lock status',
