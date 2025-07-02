@@ -11,7 +11,7 @@ import { cn } from '@tuturuuu/utils/format';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import type React from 'react';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ChatList } from '@/components/chat-list';
 import { ChatPanel } from '@/components/chat-panel';
 import { ChatScrollAnchor } from '@/components/chat-scroll-anchor';
@@ -28,6 +28,7 @@ export interface ChatProps extends React.ComponentProps<'div'> {
   disabled?: boolean;
   initialApiKey?: string | null;
   user: WorkspaceUser;
+  wsId: string;
 }
 
 const Chat = ({
@@ -42,6 +43,7 @@ const Chat = ({
   disabled,
   initialApiKey,
   user,
+  wsId,
 }: ChatProps) => {
   const t = useTranslations();
 
@@ -72,6 +74,7 @@ const Chat = ({
       body: {
         id: chat?.id,
         model: chat?.model || model?.value,
+        wsId,
       },
       onResponse(response) {
         console.log('Response:', response);
@@ -99,7 +102,7 @@ const Chat = ({
   useEffect(() => {
     setSummary(chat?.summary || '');
     setSummarizing(false);
-  }, [chat?.id, messages?.length, chat?.latest_summarized_message_id]);
+  }, [chat?.summary]);
 
   useEffect(() => {
     if (!chat || isLoading) return;
@@ -128,6 +131,7 @@ const Chat = ({
           body: JSON.stringify({
             id: chat.id,
             model: chat.model,
+            wsId,
           }),
         }
       );
@@ -167,9 +171,16 @@ const Chat = ({
     return () => {
       clearTimeout(reloadTimeout);
     };
-  }, [summary, chat, isLoading, messages, reload]);
+  }, [t, summary, chat, isLoading, messages, reload, model, summarizing, wsId]);
 
   const [initialScroll, setInitialScroll] = useState(true);
+
+  const clearChat = useCallback(() => {
+    if (defaultChat?.id) return;
+    setSummary(undefined);
+    setChat(undefined);
+    setCollapsed(true);
+  }, [defaultChat?.id]);
 
   useEffect(() => {
     // if there is "input" in the query string, we will
@@ -205,14 +216,23 @@ const Chat = ({
       router.replace('/');
       router.refresh();
     }
-  }, [chat?.id, searchParams, router, setInput, chats, count, initialScroll]);
+  }, [
+    chat?.id,
+    searchParams,
+    router,
+    setInput,
+    chats,
+    count,
+    initialScroll,
+    clearChat,
+  ]);
 
   const [collapsed, setCollapsed] = useState(true);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     if (inputRef.current) inputRef.current.focus();
-  }, [input, inputRef]);
+  }, []);
 
   const [pendingPrompt, setPendingPrompt] = useState<string | null>(null);
 
@@ -272,13 +292,6 @@ const Chat = ({
       title: t('ai_chat.chat_updated'),
       description: t('ai_chat.visibility_updated_desc'),
     });
-  };
-
-  const clearChat = () => {
-    if (defaultChat?.id) return;
-    setSummary(undefined);
-    setChat(undefined);
-    setCollapsed(true);
   };
 
   useEffect(() => {
@@ -369,6 +382,7 @@ const Chat = ({
         disabled={disabled}
         currentUserId={currentUserId}
         apiKey={initialApiKey ?? undefined}
+        wsId={wsId}
       />
     </div>
   );
