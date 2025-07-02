@@ -83,7 +83,7 @@ export async function POST(request: Request) {
     const calendar = google.calendar({ version: 'v3', auth });
 
     // Check if this is an all-day event to format it correctly for Google Calendar
-    const isEventAllDay = isAllDayEvent(event);
+    const isEventAllDay = isAllDayEvent(event, 'auto');
     
     const googleEvent: any = {
       summary: event.title || 'Untitled Event',
