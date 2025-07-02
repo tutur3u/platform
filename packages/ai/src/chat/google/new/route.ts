@@ -27,7 +27,6 @@ export function createPOST(
       const { model = DEFAULT_MODEL_NAME, message } = (await req.json()) as {
         model?: string;
         message?: string;
-        wsId?: string;
       };
 
       if (!message)
@@ -90,11 +89,11 @@ export function createPOST(
 
       if (error) return NextResponse.json(error.message, { status: 500 });
       return NextResponse.json({ id, title }, { status: 200 });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.log(error);
       return NextResponse.json(
         {
-          message: `## Edge API Failure\nCould not complete the request. Please view the **Stack trace** below.\n\`\`\`bash\n${error?.stack}`,
+          message: `## Edge API Failure\nCould not complete the request. Please view the **Stack trace** below.\n\`\`\`bash\n${error instanceof Error ? error.stack : 'Unknown error'}`,
         },
         {
           status: 200,

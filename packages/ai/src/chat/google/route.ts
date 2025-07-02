@@ -332,7 +332,7 @@ export function createPOST(
           .schema('storage')
           .from('objects')
           .select('*')
-          .eq('path', `/${wsId}/temp/${user?.id}`);
+          .like('name', `${wsId}/temp/${user?.id}/%`);
 
         console.log('Files:', files);
 
@@ -479,10 +479,10 @@ export function createPOST(
         console.log(error.message);
         return NextResponse.json(
           {
-            message: `## Edge API Failure\nCould not complete the request. Please view the **Stack trace** below.\n\`\`\`bash\n${error?.stack}`,
+            message: `## Edge API Failure\nCould not complete the request. Please view the **Stack trace** below.\n\`\`\`bash\n${error instanceof Error ? error.stack : 'Unknown error'}`,
           },
           {
-            status: 200,
+            status: 500,
           }
         );
       }

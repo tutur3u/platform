@@ -128,43 +128,9 @@ export function ChatPanel({
     );
   };
 
-  // Move files from temp to final location after chat creation
-  // const moveFilesToChat = async (newChatId: string) => {
-  //   const supabase = createDynamicClient();
-  //   const updatedFiles = await Promise.all(
-  //     files.map(async (file) => {
-  //       if (file.status !== 'uploaded' || !file.tempPath) return file;
-  //       const finalPath = `${wsId}/chats/ai/resources/${newChatId}/${file.rawFile.name}`;
-  //       // Copy file from temp to final
-  //       const { error: copyError } = await supabase.storage
-  //         .from('workspaces')
-  //         .copy(file.tempPath, finalPath);
-  //       if (copyError) {
-  //         console.error('File copy error:', copyError);
-  //         return { ...file, status: 'error' as const };
-  //       }
-  //       // Delete temp file
-  //       await supabase.storage.from('workspaces').remove([file.tempPath]);
-  //       return {
-  //         ...file,
-  //         status: 'uploaded' as const,
-  //         tempPath: undefined,
-  //         finalPath,
-  //       };
-  //     })
-  //   );
-  //   setFiles(updatedFiles);
-  // };
-
   // Wrap createChat to move files after chat creation
   const handleCreateChat = async (input: string) => {
     await createChat(input);
-    // After chat is created, move files
-    if (chat?.id) {
-      // await moveFilesToChat(chat.id);
-      console.log('Files moved to chat');
-    }
-    // You can add logic here to associate files with the prompt if needed
   };
 
   return (
