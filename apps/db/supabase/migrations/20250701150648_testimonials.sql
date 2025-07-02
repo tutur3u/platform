@@ -28,28 +28,6 @@ alter table "public"."testimonials" validate constraint "testimonials_user_id_fk
 
 set check_function_bodies = off;
 
-CREATE OR REPLACE FUNCTION public.validate_board_tags(tags jsonb)
- RETURNS boolean
- LANGUAGE plpgsql
- IMMUTABLE
-AS $function$
-BEGIN
-  -- Use the normalize function for validation, but catch specific exceptions
-  BEGIN
-    PERFORM validate_and_normalize_board_tags(tags);
-    RETURN true;
-  EXCEPTION
-    -- Only catch the specific exceptions we raise in validate_and_normalize_board_tags
-    WHEN SQLSTATE '22000' THEN  -- our custom validation errors
-      RETURN false;
-    WHEN OTHERS THEN
-      -- Re-raise unexpected errors to avoid masking bugs
-      RAISE;
-  END;
-END;
-$function$
-;
-
 grant delete on table "public"."testimonials" to "anon";
 
 grant insert on table "public"."testimonials" to "anon";

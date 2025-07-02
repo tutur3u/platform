@@ -1,4 +1,5 @@
 'use client';
+import type { Workspace } from '@tuturuuu/types/db';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card } from '@tuturuuu/ui/card';
@@ -29,8 +30,10 @@ import TestimonialsSection from './testimonial';
 
 export default function ClientSideMarketingPage({
   testimonials,
+  workspaces,
 }: {
   testimonials: Testimonial[];
+  workspaces: Workspace[];
 }) {
   const t = useTranslations('boarding-pages.home');
 
@@ -118,7 +121,10 @@ export default function ClientSideMarketingPage({
                     whileHover={{ scale: 1.05, y: -2 }}
                     transition={{ type: 'spring', stiffness: 400 }}
                   >
-                    <GetStartedWrapper text={t('common.get-started')} />
+                    <GetStartedWrapper
+                      text={t('common.get-started')}
+                      workspaces={workspaces}
+                    />
                   </motion.div>
                   <motion.div
                     whileHover={{ scale: 1.05, y: -2 }}
@@ -680,7 +686,10 @@ export default function ClientSideMarketingPage({
                   viewport={{ once: true }}
                   transition={{ delay: 0.2 }}
                 >
-                  <GetStartedWrapper text={t('common.get-started')} />
+                  <GetStartedWrapper
+                    text={t('common.get-started')}
+                    workspaces={workspaces}
+                  />
                   <Link href="/about">
                     <Button
                       variant="outline"
