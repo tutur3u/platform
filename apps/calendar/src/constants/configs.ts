@@ -2,9 +2,9 @@ import { DEV_MODE } from './common';
 
 export const siteConfig = {
   name: 'Tuturuuu Calendar',
-  url: DEV_MODE ? 'http://localhost:7001' : 'https://calendar.tuturuuu.com',
+  url: DEV_MODE ? 'http://localhost:3001' : 'https://calendar.tuturuuu.com',
   ogImage: DEV_MODE
-    ? 'http://localhost:7001/api/og'
+    ? 'http://localhost:3001/api/og'
     : 'https://calendar.tuturuuu.com/api/og',
   links: {
     twitter: 'https://twitter.com/tutur3u',
