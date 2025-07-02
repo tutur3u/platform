@@ -175,8 +175,8 @@ export function FileUploader(props: FileUploaderProps) {
           <div
             {...getRootProps()}
             className={cn(
-              'group relative grid h-52 w-full cursor-pointer place-items-center rounded-lg border-2 border-dashed border-muted-foreground/25 px-6 py-2 text-center transition hover:bg-muted/25',
-              'ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-hidden',
+              'group relative grid h-52 w-full cursor-pointer place-items-center rounded-lg border-2 border-muted-foreground/25 border-dashed px-6 py-2 text-center transition hover:bg-muted/25',
+              'ring-offset-background focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
               isDragActive && 'border-muted-foreground/50',
               isDisabled && 'pointer-events-none opacity-60',
               className
@@ -208,7 +208,7 @@ export function FileUploader(props: FileUploaderProps) {
                   <p className="font-medium text-muted-foreground">
                     Drag {`'n'`} drop files here, or click to select files
                   </p>
-                  <p className="text-sm text-muted-foreground/70">
+                  <p className="text-muted-foreground/70 text-sm">
                     You can upload
                     {maxFileCount > 1
                       ? ` ${maxFileCount === Infinity ? 'multiple' : maxFileCount}
@@ -287,10 +287,10 @@ function FileCard({ file, onRemove }: FileCardProps) {
         </div>
         <div className="flex w-full flex-col items-start gap-2 text-start">
           <div className="flex flex-col gap-px">
-            <p className="line-clamp-1 text-sm font-semibold text-foreground/80">
+            <p className="line-clamp-1 font-semibold text-foreground/80 text-sm">
               {file.rawFile.name}
             </p>
-            <div className="text-xs font-semibold text-muted-foreground">
+            <div className="font-semibold text-muted-foreground text-xs">
               {file.status === 'pending' && (
                 <span>{formatBytes(file.rawFile.size)}</span>
               )}

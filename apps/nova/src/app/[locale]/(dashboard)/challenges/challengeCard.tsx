@@ -249,14 +249,14 @@ export default function ChallengeCard({
       return (
         <div className="mt-4 rounded-md border border-dashed p-3">
           <div className="mb-2 flex items-center justify-between">
-            <h3 className="text-sm font-medium">{t('your-session')}</h3>
+            <h3 className="font-medium text-sm">{t('your-session')}</h3>
             <Badge variant="outline" className="text-xs">
               {t('in-progress')}
             </Badge>
           </div>
 
           <div className="flex flex-col items-center justify-center">
-            <div className="flex items-center text-xs text-muted-foreground">
+            <div className="flex items-center text-muted-foreground text-xs">
               <Clock className="mr-1 h-3 w-3" /> {t('time-remaining')}:
             </div>
             <Countdown
@@ -271,7 +271,7 @@ export default function ChallengeCard({
             className="mb-2"
           />
 
-          <div className="mt-2 text-xs text-muted-foreground">
+          <div className="mt-2 text-muted-foreground text-xs">
             <div className="flex items-center">
               <span>
                 {' '}
@@ -417,7 +417,7 @@ export default function ChallengeCard({
           <div className="grid gap-2">
             <div className="flex items-center">
               <Clock className="h-4 w-4 shrink-0 text-primary" />
-              <span className="ml-2 text-sm text-muted-foreground">
+              <span className="ml-2 text-muted-foreground text-sm">
                 {t('duration')}: {formatDuration(challenge.duration)}
               </span>
             </div>
@@ -427,7 +427,7 @@ export default function ChallengeCard({
                 <div className="flex h-6 items-center">
                   <div className="flex items-center">
                     <AlertCircle className="h-4 w-4 text-indigo-500" />
-                    <span className="ml-2 text-sm text-muted-foreground">
+                    <span className="ml-2 text-muted-foreground text-sm">
                       {t('total-attempts')}: {challenge.total_sessions || 0}/
                       {challenge.max_attempts}
                     </span>
@@ -437,7 +437,7 @@ export default function ChallengeCard({
                 <div className="flex h-6 items-center">
                   <div className="flex items-center">
                     <AlertCircle className="h-4 w-4 text-violet-500" />
-                    <span className="ml-2 text-sm text-muted-foreground">
+                    <span className="ml-2 text-muted-foreground text-sm">
                       {t('daily-attempts')}: {challenge.daily_sessions || 0}/
                       {challenge.max_daily_attempts}
                     </span>
@@ -455,7 +455,7 @@ export default function ChallengeCard({
               {status === 'upcoming' && challenge.previewable_at ? (
                 <div className="mt-2 flex items-center">
                   <Eye className="h-4 w-4 text-amber-500" />
-                  <span className="ml-2 text-sm text-muted-foreground">
+                  <span className="ml-2 text-muted-foreground text-sm">
                     {t('preview-available')}:{' '}
                     {formatDistanceToNow(new Date(challenge.previewable_at), {
                       addSuffix: true,
@@ -473,7 +473,7 @@ export default function ChallengeCard({
               <div className="flex items-center justify-between">
                 <div className="flex items-center">
                   <CalendarCheck className="h-4 w-4 text-blue-500 dark:text-blue-400" />
-                  <span className="ml-2 text-sm font-medium text-blue-700 dark:text-blue-300">
+                  <span className="ml-2 font-medium text-blue-700 text-sm dark:text-blue-300">
                     {t('open-in')}
                   </span>
                 </div>
@@ -506,7 +506,7 @@ export default function ChallengeCard({
               <div className="flex items-center justify-between">
                 <div className="flex items-center">
                   <CalendarX className="h-4 w-4 text-amber-500 dark:text-amber-400" />
-                  <span className="ml-2 text-sm font-medium text-amber-700 dark:text-amber-300">
+                  <span className="ml-2 font-medium text-amber-700 text-sm dark:text-amber-300">
                     {t('closes-in')}
                   </span>
                 </div>

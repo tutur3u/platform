@@ -72,10 +72,10 @@ export default function CriteriaEvaluation({
                           <XCircle className="h-4 w-4 text-red-500" />
                         )}
                         <div>
-                          <span className="block text-sm font-medium">
+                          <span className="block font-medium text-sm">
                             {cs.name}
                           </span>
-                          <span className="block text-xs text-muted-foreground">
+                          <span className="block text-muted-foreground text-xs">
                             <EyeIcon className="mr-1 inline-block h-3 w-3" />
                             Hover for feedback
                           </span>
@@ -102,7 +102,7 @@ export default function CriteriaEvaluation({
                           {cs.score}/10
                         </ScoreBadge>
                       </div>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-muted-foreground text-sm">
                         {cs.feedback}
                       </p>
                     </div>
@@ -124,7 +124,7 @@ export default function CriteriaEvaluation({
         </div>
       ) : (
         <div className="rounded-md border border-dashed p-6 text-center">
-          <p className="text-sm text-muted-foreground">
+          <p className="text-muted-foreground text-sm">
             No criteria evaluation available
           </p>
         </div>

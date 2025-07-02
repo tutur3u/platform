@@ -51,12 +51,12 @@ export default async function CourseDetailsLayout({ children, params }: Props) {
       <FeatureSummary
         title={
           <>
-            <h1 className="flex w-full items-center gap-2 text-2xl font-bold">
-              <div className="flex items-center gap-2 rounded-lg border border-dynamic-purple/20 bg-dynamic-purple/10 px-2 text-lg text-dynamic-purple max-md:hidden">
+            <h1 className="flex w-full items-center gap-2 font-bold text-2xl">
+              <div className="flex items-center gap-2 rounded-lg border border-dynamic-purple/20 bg-dynamic-purple/10 px-2 text-dynamic-purple text-lg max-md:hidden">
                 <Box className="h-6 w-6" />
                 {t('ws-course-modules.singular')}
               </div>
-              <div className="line-clamp-1 text-lg font-bold md:text-2xl">
+              <div className="line-clamp-1 font-bold text-lg md:text-2xl">
                 {data.name || t('common.unknown')}
               </div>
             </h1>

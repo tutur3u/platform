@@ -23,7 +23,7 @@ export default function TestCaseEvaluation({
         </Badge>
       </div>
 
-      <div className="space-y-1 text-sm text-muted-foreground">
+      <div className="space-y-1 text-muted-foreground text-sm">
         <div className="flex items-center justify-between">
           <span>Total Tests:</span>
           <span className="font-medium">{submission.total_tests}</span>

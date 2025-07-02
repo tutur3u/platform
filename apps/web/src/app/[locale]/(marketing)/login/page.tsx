@@ -82,8 +82,8 @@ export default async function Login({ searchParams }: LoginProps) {
       <div className="fixed inset-0 animate-pulse bg-[linear-gradient(to_right,#8080801a_1px,transparent_1px),linear-gradient(to_bottom,#8080801a_1px,transparent_1px)] bg-[size:24px_24px] opacity-60" />
 
       {/* Floating Orbs */}
-      <div className="animate-float fixed top-1/4 left-1/4 h-64 w-64 rounded-full bg-gradient-to-r from-blue-400/30 to-purple-400/30 blur-3xl" />
-      <div className="animate-float-delayed fixed right-1/4 bottom-1/4 h-48 w-48 rounded-full bg-gradient-to-r from-purple-400/30 to-pink-400/30 blur-3xl" />
+      <div className="fixed top-1/4 left-1/4 h-64 w-64 animate-float rounded-full bg-gradient-to-r from-blue-400/30 to-purple-400/30 blur-3xl" />
+      <div className="fixed right-1/4 bottom-1/4 h-48 w-48 animate-float-delayed rounded-full bg-gradient-to-r from-purple-400/30 to-pink-400/30 blur-3xl" />
 
       {/* Main Content */}
       <div className="relative z-10 flex min-h-screen items-center justify-center p-6 py-16 sm:p-8">
@@ -101,7 +101,7 @@ export default async function Login({ searchParams }: LoginProps) {
                 </div>
                 <Badge
                   variant="secondary"
-                  className="border border-foreground/20 bg-gradient-to-br from-foreground/5 via-calendar-bg-blue to-calendar-bg-pink px-4 py-2 text-sm leading-relaxed font-medium text-balance shadow-lg backdrop-blur-sm"
+                  className="text-balance border border-foreground/20 bg-gradient-to-br from-foreground/5 via-calendar-bg-blue to-calendar-bg-pink px-4 py-2 font-medium text-sm leading-relaxed shadow-lg backdrop-blur-sm"
                 >
                   <span className="whitespace-normal">
                     {t('login.powered-by', { domain: currentDomain.name })}
@@ -112,10 +112,10 @@ export default async function Login({ searchParams }: LoginProps) {
               <div className="space-y-4">
                 {renderLogo(DOMAINS.TUTURUUU)}
                 <div className="space-y-2">
-                  <h1 className="bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-3xl font-bold text-transparent dark:from-white dark:to-gray-300">
+                  <h1 className="bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text font-bold text-3xl text-transparent dark:from-white dark:to-gray-300">
                     {t('login.welcome')}
                   </h1>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-muted-foreground text-sm">
                     {t('login.sign_in_to_your_account')}
                   </p>
                 </div>
@@ -133,7 +133,7 @@ export default async function Login({ searchParams }: LoginProps) {
                   <div className="h-10 w-full rounded-lg bg-muted" />
                   <div className="flex items-center gap-2">
                     <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-                    <span className="text-sm text-muted-foreground">
+                    <span className="text-muted-foreground text-sm">
                       {t('common.loading')}...
                     </span>
                   </div>
@@ -146,7 +146,7 @@ export default async function Login({ searchParams }: LoginProps) {
 
           {/* Footer */}
           <div className="mt-8 text-center">
-            <div className="text-xs leading-relaxed text-balance text-muted-foreground">
+            <div className="text-balance text-muted-foreground text-xs leading-relaxed">
               <span>{t('auth.notice-p1')} </span>
               <Link
                 href="/terms"

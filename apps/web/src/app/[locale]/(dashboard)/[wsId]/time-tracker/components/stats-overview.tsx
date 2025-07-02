@@ -104,7 +104,7 @@ export function StatsOverview({
           className={cn(
             'group bg-gradient-to-br transition-all duration-300',
             stat.bg,
-            'duration-500 animate-in slide-in-from-bottom'
+            'slide-in-from-bottom animate-in duration-500'
           )}
           style={{ animationDelay: `${index * 100}ms` }}
         >
@@ -123,13 +123,13 @@ export function StatsOverview({
               </div>
               <div className="min-w-0 flex-1 overflow-hidden">
                 <div className="flex items-center gap-2">
-                  <p className="text-xs font-medium text-muted-foreground sm:text-sm">
+                  <p className="font-medium text-muted-foreground text-xs sm:text-sm">
                     {stat.label}
                   </p>
                   <span className="text-sm">{stat.icon2}</span>
                 </div>
                 <p
-                  className="mb-1 truncate text-xs text-muted-foreground/80 sm:text-sm"
+                  className="mb-1 truncate text-muted-foreground/80 text-xs sm:text-sm"
                   title={stat.subtitle}
                 >
                   {stat.subtitle}
@@ -137,7 +137,7 @@ export function StatsOverview({
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
                     <p
-                      className="group truncate text-lg font-bold transition-all sm:text-2xl"
+                      className="group truncate font-bold text-lg transition-all sm:text-2xl"
                       title={stat.value}
                     >
                       {stat.value}

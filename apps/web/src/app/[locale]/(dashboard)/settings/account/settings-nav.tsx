@@ -66,11 +66,11 @@ export default function SettingsNav({ className }: SettingsNavProps) {
             key={item.href}
             href={item.href}
             className={cn(
-              'group relative flex items-center justify-between rounded-lg bg-background px-3 py-3 text-sm font-medium transition-all duration-200 ease-in-out',
+              'group relative flex items-center justify-between rounded-lg bg-background px-3 py-3 font-medium text-sm transition-all duration-200 ease-in-out',
               'hover:scale-[1.02] hover:shadow-sm active:scale-[0.98]',
               isActive
                 ? 'border border-dynamic-blue/40 bg-dynamic-blue/15 text-dynamic-blue shadow-sm ring-1 ring-dynamic-blue/20'
-                : 'hover:border-dynamic-border border border-transparent text-foreground hover:bg-foreground/8 hover:text-foreground'
+                : 'border border-transparent text-foreground hover:border-dynamic-border hover:bg-foreground/8 hover:text-foreground'
             )}
           >
             <div className="flex min-w-0 flex-1 items-center space-x-3">

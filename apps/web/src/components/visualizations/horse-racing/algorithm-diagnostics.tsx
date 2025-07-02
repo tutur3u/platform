@@ -104,13 +104,13 @@ export function AlgorithmDiagnostics({
       <div className="grid gap-4 sm:grid-cols-2">
         <Card className="p-4">
           <div className="space-y-2">
-            <div className="flex items-center gap-2 text-sm font-medium">
+            <div className="flex items-center gap-2 font-medium text-sm">
               <Workflow className="h-4 w-4 text-blue-500" />
               Algorithm State
             </div>
             <div className="grid gap-2">
               <div>
-                <div className="mb-1 text-xs text-muted-foreground">
+                <div className="mb-1 text-muted-foreground text-xs">
                   Position Resolution Progress
                 </div>
                 <Progress
@@ -122,7 +122,7 @@ export function AlgorithmDiagnostics({
                 </div>
               </div>
               <div>
-                <div className="mb-1 text-xs text-muted-foreground">
+                <div className="mb-1 text-muted-foreground text-xs">
                   Race Completion
                 </div>
                 <Progress
@@ -139,24 +139,24 @@ export function AlgorithmDiagnostics({
 
         <Card className="p-4">
           <div className="space-y-2">
-            <div className="flex items-center gap-2 text-sm font-medium">
+            <div className="flex items-center gap-2 font-medium text-sm">
               <LineChart className="h-4 w-4 text-indigo-500" />
               Performance Metrics
             </div>
             <div className="grid gap-2">
               <div className="rounded-md bg-muted p-2">
-                <div className="text-xs text-muted-foreground">
+                <div className="text-muted-foreground text-xs">
                   Convergence Rate
                 </div>
-                <div className="text-lg font-bold">
+                <div className="font-bold text-lg">
                   {Math.round(convergenceRate * 100)}%
                 </div>
               </div>
               <div className="rounded-md bg-muted p-2">
-                <div className="text-xs text-muted-foreground">
+                <div className="text-muted-foreground text-xs">
                   Remaining Horses
                 </div>
-                <div className="text-lg font-bold">{remainingHorses}</div>
+                <div className="font-bold text-lg">{remainingHorses}</div>
               </div>
             </div>
           </div>
@@ -166,7 +166,7 @@ export function AlgorithmDiagnostics({
       {/* Efficiency Over Time */}
       <Card className="p-4">
         <div className="space-y-3">
-          <div className="flex items-center gap-2 text-sm font-medium">
+          <div className="flex items-center gap-2 font-medium text-sm">
             <Sparkles className="h-4 w-4 text-amber-500" />
             Race Efficiency Over Time
           </div>
@@ -192,7 +192,7 @@ export function AlgorithmDiagnostics({
               </RechartsLineChart>
             </ResponsiveContainer>
           </div>
-          <div className="text-xs text-muted-foreground">
+          <div className="text-muted-foreground text-xs">
             Shows how efficiently each race contributes to the final ranking
           </div>
         </div>
@@ -203,7 +203,7 @@ export function AlgorithmDiagnostics({
         {/* Bottlenecks */}
         <Card className="p-4">
           <div className="space-y-3">
-            <div className="flex items-center gap-2 text-sm font-medium">
+            <div className="flex items-center gap-2 font-medium text-sm">
               <AlertTriangle className="h-4 w-4 text-amber-500" />
               Potential Bottlenecks
             </div>
@@ -226,7 +226,7 @@ export function AlgorithmDiagnostics({
                     />
                     <div className="flex-1 text-sm">
                       <div className="font-medium">{bottleneck.message}</div>
-                      <div className="text-xs text-muted-foreground">
+                      <div className="text-muted-foreground text-xs">
                         Impact:{' '}
                         <Badge
                           variant={
@@ -243,7 +243,7 @@ export function AlgorithmDiagnostics({
                 ))}
               </div>
             ) : (
-              <div className="flex items-center gap-2 rounded-md border border-green-500/20 bg-green-500/10 p-2 text-sm text-green-500">
+              <div className="flex items-center gap-2 rounded-md border border-green-500/20 bg-green-500/10 p-2 text-green-500 text-sm">
                 <CheckCircle className="h-4 w-4" />
                 No significant bottlenecks detected
               </div>
@@ -254,7 +254,7 @@ export function AlgorithmDiagnostics({
         {/* Optimization Suggestions */}
         <Card className="p-4">
           <div className="space-y-3">
-            <div className="flex items-center gap-2 text-sm font-medium">
+            <div className="flex items-center gap-2 font-medium text-sm">
               <Sparkles className="h-4 w-4 text-blue-500" />
               Optimization Suggestions
             </div>
@@ -282,7 +282,7 @@ export function AlgorithmDiagnostics({
                 ))}
               </div>
             ) : (
-              <div className="flex items-center gap-2 rounded-md border border-green-500/20 bg-green-500/10 p-2 text-sm text-green-500">
+              <div className="flex items-center gap-2 rounded-md border border-green-500/20 bg-green-500/10 p-2 text-green-500 text-sm">
                 <CheckCircle className="h-4 w-4" />
                 Algorithm is running optimally
               </div>

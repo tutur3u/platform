@@ -209,7 +209,7 @@ export default function ContributorsClient({
     return (
       <div className="flex min-h-[40vh] flex-col items-center justify-center">
         <GithubIcon className="mb-4 h-16 w-16 text-muted-foreground" />
-        <h2 className="mb-2 text-2xl font-bold">Data Fetch Error</h2>
+        <h2 className="mb-2 font-bold text-2xl">Data Fetch Error</h2>
         <p className="mb-4 text-muted-foreground">{githubData.error}</p>
         <Button asChild>
           <a
@@ -237,7 +237,7 @@ export default function ContributorsClient({
       />
 
       {/* Enhanced Background Effects */}
-      <div className="pointer-events-none fixed inset-0 -z-10">
+      <div className="-z-10 pointer-events-none fixed inset-0">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(var(--primary-rgb),0.05)_1px,transparent_1px)] bg-size-[24px_24px]" />
         <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(var(--primary-rgb),0.02)_1px,transparent_1px)] bg-size-[120px] opacity-20" />
         <motion.div
@@ -266,14 +266,14 @@ export default function ContributorsClient({
         >
           <Badge
             variant="secondary"
-            className="mb-6 px-4 py-2 text-base font-medium"
+            className="mb-6 px-4 py-2 font-medium text-base"
           >
             <Heart className="mr-2 h-4 w-4" />
             Open Source Heroes
           </Badge>
         </motion.div>
 
-        <h1 className="mb-6 text-4xl font-bold text-balance text-foreground md:text-5xl lg:text-6xl">
+        <h1 className="mb-6 text-balance font-bold text-4xl text-foreground md:text-5xl lg:text-6xl">
           <span className="relative inline-block">
             <motion.span
               animate={{
@@ -285,7 +285,7 @@ export default function ContributorsClient({
                 repeat: Infinity,
                 ease: 'easeInOut',
               }}
-              className="absolute -inset-1 -z-10 rounded-lg bg-linear-to-r from-primary/40 via-purple-500/40 to-pink-500/40 blur-lg"
+              className="-inset-1 -z-10 absolute rounded-lg bg-linear-to-r from-primary/40 via-purple-500/40 to-pink-500/40 blur-lg"
             />
             Our Amazing
           </span>{' '}
@@ -295,7 +295,7 @@ export default function ContributorsClient({
         </h1>
 
         <motion.p
-          className="mx-auto max-w-2xl text-lg text-balance text-foreground/80 md:text-xl"
+          className="mx-auto max-w-2xl text-balance text-foreground/80 text-lg md:text-xl"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.3, duration: 0.8 }}
@@ -369,7 +369,7 @@ export default function ContributorsClient({
                     <div className="rounded-lg bg-foreground/10 p-2.5">
                       <GithubIcon className="h-6 w-6" />
                     </div>
-                    <h3 className="text-2xl font-bold">
+                    <h3 className="font-bold text-2xl">
                       {githubData.repo.full_name}
                     </h3>
                   </div>
@@ -379,7 +379,7 @@ export default function ContributorsClient({
                   </p>
 
                   <div className="flex flex-wrap gap-4 pt-2">
-                    <div className="flex items-center text-sm text-foreground/80">
+                    <div className="flex items-center text-foreground/80 text-sm">
                       <Star className="mr-1.5 h-4 w-4 text-amber-500" />
                       <span>
                         {githubData.repo.stargazers_count.toLocaleString()}{' '}
@@ -387,14 +387,14 @@ export default function ContributorsClient({
                       </span>
                     </div>
 
-                    <div className="flex items-center text-sm text-foreground/80">
+                    <div className="flex items-center text-foreground/80 text-sm">
                       <GitFork className="mr-1.5 h-4 w-4 text-blue-500" />
                       <span>
                         {githubData.repo.forks_count.toLocaleString()} Forks
                       </span>
                     </div>
 
-                    <div className="flex items-center text-sm text-foreground/80">
+                    <div className="flex items-center text-foreground/80 text-sm">
                       <GitPullRequest className="mr-1.5 h-4 w-4 text-green-500" />
                       <span>
                         {githubData.stats?.pullRequests.toLocaleString() || 0}{' '}
@@ -402,7 +402,7 @@ export default function ContributorsClient({
                       </span>
                     </div>
 
-                    <div className="flex items-center text-sm text-foreground/80">
+                    <div className="flex items-center text-foreground/80 text-sm">
                       <Users className="mr-1.5 h-4 w-4 text-purple-500" />
                       <span>
                         {githubData.stats?.contributors.toLocaleString() || 0}{' '}
@@ -466,7 +466,7 @@ export default function ContributorsClient({
               <Star className="mr-2 h-4 w-4" />
               Top Contributors
             </Badge>
-            <h2 className="mb-4 text-3xl font-bold">Community Heroes</h2>
+            <h2 className="mb-4 font-bold text-3xl">Community Heroes</h2>
             <p className="mx-auto max-w-2xl text-muted-foreground">
               Meet the amazing developers who have contributed the most to
               making Tuturuuu better. These are the top{' '}
@@ -494,7 +494,7 @@ export default function ContributorsClient({
                   >
                     <div className="mb-4 flex items-center justify-between">
                       <div className="relative">
-                        <div className="absolute -inset-0.5 rounded-full bg-linear-to-r from-primary to-purple-600 opacity-75 blur-sm group-hover:opacity-100" />
+                        <div className="-inset-0.5 absolute rounded-full bg-linear-to-r from-primary to-purple-600 opacity-75 blur-sm group-hover:opacity-100" />
                         <Image
                           src={contributor.avatar_url}
                           alt={contributor.login}
@@ -503,12 +503,12 @@ export default function ContributorsClient({
                           height={64}
                         />
                         {index < 3 && (
-                          <div className="absolute -top-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-amber-500 text-[10px] font-bold text-white">
+                          <div className="-top-1 -right-1 absolute flex h-6 w-6 items-center justify-center rounded-full bg-amber-500 font-bold text-[10px] text-white">
                             #{index + 1}
                           </div>
                         )}
                       </div>
-                      <div className="flex items-center rounded-full bg-primary/10 px-3 py-1 text-xs font-medium">
+                      <div className="flex items-center rounded-full bg-primary/10 px-3 py-1 font-medium text-xs">
                         <GitCommit className="mr-1 h-3 w-3" />
                         {contributor.contributions}
                       </div>
@@ -518,17 +518,17 @@ export default function ContributorsClient({
                       <h3 className="mb-1 line-clamp-1 font-semibold group-hover:text-primary">
                         {contributor.userDetails?.name || contributor.login}
                       </h3>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-muted-foreground text-xs">
                         @{contributor.login}
                       </p>
                       {contributor.userDetails?.bio && (
-                        <p className="mt-2 line-clamp-3 text-xs text-foreground/70">
+                        <p className="mt-2 line-clamp-3 text-foreground/70 text-xs">
                           {contributor.userDetails.bio}
                         </p>
                       )}
                     </div>
 
-                    <div className="mt-4 flex items-center text-xs text-muted-foreground">
+                    <div className="mt-4 flex items-center text-muted-foreground text-xs">
                       <Calendar className="mr-1 h-3.5 w-3.5" />
                       {contributor.userDetails?.created_at
                         ? `Joined ${new Date(contributor.userDetails.created_at).toLocaleDateString()}`
@@ -555,7 +555,7 @@ export default function ContributorsClient({
               <GitPullRequest className="mr-2 h-4 w-4" />
               Contribution Activity
             </Badge>
-            <h2 className="mb-4 text-3xl font-bold">Repository Activity</h2>
+            <h2 className="mb-4 font-bold text-3xl">Repository Activity</h2>
             <p className="mx-auto max-w-2xl text-muted-foreground">
               Visualizing the contribution patterns and activity in the Tuturuuu
               platform.
@@ -576,8 +576,8 @@ export default function ContributorsClient({
               <Card className="h-full overflow-hidden border-primary/10 transition-all duration-300 hover:border-primary/30 hover:shadow-md">
                 <div className="bg-primary/5 p-6">
                   <div className="mb-4">
-                    <h3 className="text-xl font-bold">Top Contributors</h3>
-                    <p className="text-sm text-muted-foreground">
+                    <h3 className="font-bold text-xl">Top Contributors</h3>
+                    <p className="text-muted-foreground text-sm">
                       Distribution of commits among top contributors
                     </p>
                   </div>
@@ -667,8 +667,8 @@ export default function ContributorsClient({
               <Card className="h-full overflow-hidden border-primary/10 transition-all duration-300 hover:border-primary/30 hover:shadow-md">
                 <div className="bg-primary/5 p-6">
                   <div className="mb-4">
-                    <h3 className="text-xl font-bold">Contribution Timeline</h3>
-                    <p className="text-sm text-muted-foreground">
+                    <h3 className="font-bold text-xl">Contribution Timeline</h3>
+                    <p className="text-muted-foreground text-sm">
                       Activity patterns based on contribution counts
                     </p>
                   </div>
@@ -752,8 +752,8 @@ export default function ContributorsClient({
             <Card className="overflow-hidden border-primary/10 transition-all duration-300 hover:border-primary/30 hover:shadow-md">
               <div className="bg-primary/5 p-6">
                 <div className="mb-4">
-                  <h3 className="text-xl font-bold">Contribution Activity</h3>
-                  <p className="text-sm text-muted-foreground">
+                  <h3 className="font-bold text-xl">Contribution Activity</h3>
+                  <p className="text-muted-foreground text-sm">
                     Activity trends over time
                   </p>
                 </div>
@@ -840,7 +840,7 @@ export default function ContributorsClient({
                   <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
                     <Users className="h-6 w-6 text-primary" />
                   </div>
-                  <h3 className="mb-2 text-2xl font-bold">
+                  <h3 className="mb-2 font-bold text-2xl">
                     {githubData.stats.contributors.toLocaleString()}+
                   </h3>
                   <p className="text-muted-foreground">Active Contributors</p>
@@ -859,7 +859,7 @@ export default function ContributorsClient({
                   <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
                     <GitPullRequest className="h-6 w-6 text-primary" />
                   </div>
-                  <h3 className="mb-2 text-2xl font-bold">
+                  <h3 className="mb-2 font-bold text-2xl">
                     {githubData.stats.pullRequests.toLocaleString()}+
                   </h3>
                   <p className="text-muted-foreground">Pull Requests</p>
@@ -878,7 +878,7 @@ export default function ContributorsClient({
                   <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
                     <GitCommit className="h-6 w-6 text-primary" />
                   </div>
-                  <h3 className="mb-2 text-2xl font-bold">
+                  <h3 className="mb-2 font-bold text-2xl">
                     {githubData.contributors &&
                       githubData.contributors
                         .reduce((acc, curr) => acc + curr.contributions, 0)
@@ -923,7 +923,7 @@ export default function ContributorsClient({
                 <GithubIcon className="mr-2 h-4 w-4" />
                 Join Our Community
               </Badge>
-              <h2 className="mb-4 text-3xl font-bold">Become a Contributor</h2>
+              <h2 className="mb-4 font-bold text-3xl">Become a Contributor</h2>
               <p className="mb-8 text-muted-foreground">
                 Help us build the future of Tuturuuu. Whether you're a
                 developer, designer, or documentation expert, there's a place
@@ -960,7 +960,7 @@ export default function ContributorsClient({
                     <Code className="h-5 w-5 text-primary" />
                   </div>
                   <h3 className="font-semibold">Submit Code</h3>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-muted-foreground text-sm">
                     Contribute new features or fix bugs through pull requests.
                   </p>
                 </div>
@@ -970,7 +970,7 @@ export default function ContributorsClient({
                     <MessageSquare className="h-5 w-5 text-primary" />
                   </div>
                   <h3 className="font-semibold">Report Issues</h3>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-muted-foreground text-sm">
                     Help us by reporting bugs or suggesting improvements.
                   </p>
                 </div>
@@ -980,13 +980,13 @@ export default function ContributorsClient({
                     <FileText className="h-5 w-5 text-primary" />
                   </div>
                   <h3 className="font-semibold">Improve Docs</h3>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-muted-foreground text-sm">
                     Enhance our documentation to help other users.
                   </p>
                 </div>
               </div>
 
-              <p className="mt-8 text-sm text-muted-foreground">
+              <p className="mt-8 text-muted-foreground text-sm">
                 By contributing to Tuturuuu, you agree to our{' '}
                 <a
                   href={`https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/blob/main/CODE_OF_CONDUCT.md`}

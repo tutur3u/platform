@@ -26,8 +26,8 @@ export default function DocumentPageContent({ document }: Props) {
         <div className="flex items-center justify-between px-4 py-2">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-3">
-              <h1 className="text-lg font-medium">{document.name}</h1>
-              <div className="flex items-center gap-1.5 rounded-md px-2 py-1 text-sm text-emerald-500">
+              <h1 className="font-medium text-lg">{document.name}</h1>
+              <div className="flex items-center gap-1.5 rounded-md px-2 py-1 text-emerald-500 text-sm">
                 <Globe2 className="h-4 w-4" />
                 {t('common.public_document')}
               </div>

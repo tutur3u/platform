@@ -69,7 +69,7 @@ export default function TeamClient({
   if (!teamData) {
     return (
       <div className="container max-w-6xl py-16 text-center">
-        <h2 className="text-2xl font-semibold">{t('not-found')}</h2>
+        <h2 className="font-semibold text-2xl">{t('not-found')}</h2>
         <p className="mt-2 text-muted-foreground">
           {t('not-found-description')}
         </p>
@@ -171,7 +171,7 @@ export default function TeamClient({
   return (
     <div className="container max-w-6xl pt-8 pb-16">
       {/* Breadcrumb navigation */}
-      <nav className="mb-8 flex items-center space-x-2 text-sm text-muted-foreground">
+      <nav className="mb-8 flex items-center space-x-2 text-muted-foreground text-sm">
         <Link href="/home" className="hover:text-foreground">
           {t('breadcrumb.home')}
         </Link>
@@ -197,7 +197,7 @@ export default function TeamClient({
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.2 }}
-                className="absolute -inset-0.5 rounded-full bg-linear-to-br from-primary/30 to-primary/10 blur-md"
+                className="-inset-0.5 absolute rounded-full bg-linear-to-br from-primary/30 to-primary/10 blur-md"
               />
               <Avatar className="h-24 w-24 border-2 border-background shadow-md">
                 <AvatarImage src={undefined} />
@@ -207,14 +207,14 @@ export default function TeamClient({
               </Avatar>
 
               {/* Dynamic rank badge */}
-              <div className="absolute -top-2 -right-2 flex h-8 w-8 items-center justify-center rounded-full bg-linear-to-r from-amber-500 to-yellow-400 text-xs font-bold text-white shadow-lg">
+              <div className="-top-2 -right-2 absolute flex h-8 w-8 items-center justify-center rounded-full bg-linear-to-r from-amber-500 to-yellow-400 font-bold text-white text-xs shadow-lg">
                 #{teamData.rank || '?'}
               </div>
             </div>
 
             <div>
               <div className="flex flex-wrap items-center gap-2">
-                <h1 className="text-3xl font-bold">{teamInfo?.name}</h1>
+                <h1 className="font-bold text-3xl">{teamInfo?.name}</h1>
                 <Badge variant="outline" className="bg-card">
                   <Users className="mr-1 h-3.5 w-3.5 text-blue-500" />
                   {teamStats.totalMembers} {t('members')}
@@ -291,7 +291,7 @@ export default function TeamClient({
           >
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <h3 className="flex items-center gap-2 text-xl font-semibold">
+                <h3 className="flex items-center gap-2 font-semibold text-xl">
                   <Award className="h-5 w-5 text-amber-500" />
 
                   {t('overview-tab.team-rank')}
@@ -305,19 +305,19 @@ export default function TeamClient({
 
               <div className="flex items-center space-x-6">
                 <div className="text-center">
-                  <div className="text-3xl font-bold text-amber-500">
+                  <div className="font-bold text-3xl text-amber-500">
                     #{teamData.rank || '?'}
                   </div>
-                  <div className="text-sm text-muted-foreground">
+                  <div className="text-muted-foreground text-sm">
                     {t('overview-tab.rank-label')}
                   </div>
                 </div>
 
                 <div className="text-center">
-                  <div className="text-3xl font-bold text-blue-500">
+                  <div className="font-bold text-3xl text-blue-500">
                     {teamData.total_score?.toFixed(1) || 0}
                   </div>
-                  <div className="text-sm text-muted-foreground">
+                  <div className="text-muted-foreground text-sm">
                     {t('overview-tab.points')}
                   </div>
                 </div>
@@ -347,7 +347,7 @@ export default function TeamClient({
                   <CardContent>
                     {/* Score Distribution Visualization */}
                     <div className="mb-6 flex flex-col gap-2 rounded-lg border bg-card/50 p-4">
-                      <div className="text-base font-medium">
+                      <div className="font-medium text-base">
                         {t('overview-tab.score-distribution')}
                       </div>
                       <div className="flex h-8 w-full overflow-hidden rounded-lg">
@@ -412,7 +412,7 @@ export default function TeamClient({
 
                     {/* Challenge Details */}
                     <div className="space-y-6">
-                      <div className="flex justify-between border-b pb-2 text-sm font-medium text-muted-foreground">
+                      <div className="flex justify-between border-b pb-2 font-medium text-muted-foreground text-sm">
                         <span>{t('overview-tab.challenge')}</span>
                         <div className="flex gap-8">
                           <span>{t('overview-tab.score')}</span>
@@ -484,19 +484,19 @@ export default function TeamClient({
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">
+                  <span className="text-muted-foreground text-sm">
                     {t('overview-tab.total-members')}
                   </span>
                   <span className="font-medium">{teamStats.totalMembers}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">
+                  <span className="text-muted-foreground text-sm">
                     {t('overview-tab.active-since')}
                   </span>
                   <span className="font-medium">{formattedActiveDate}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">
+                  <span className="text-muted-foreground text-sm">
                     {t('overview-tab.activity-status')}
                   </span>
                   <Badge
@@ -557,15 +557,15 @@ export default function TeamClient({
                 <div className="grid gap-6 sm:grid-cols-3">
                   {/* Average Member Score */}
                   <div className="flex flex-col rounded-lg border bg-card/50 p-4">
-                    <span className="mb-1 text-xs font-medium text-muted-foreground">
+                    <span className="mb-1 font-medium text-muted-foreground text-xs">
                       {t('overview-tab.average-member-score')}
                     </span>
                     <div className="flex items-end gap-2">
-                      <span className="text-2xl font-bold text-blue-600">
+                      <span className="font-bold text-2xl text-blue-600">
                         {teamData.stats?.average_member_score?.toFixed(1) ||
                           '0'}
                       </span>
-                      <span className="text-sm text-muted-foreground">
+                      <span className="text-muted-foreground text-sm">
                         {t('overview-tab.points')}
                       </span>
                     </div>
@@ -583,14 +583,14 @@ export default function TeamClient({
 
                   {/* Weekly Activity */}
                   <div className="flex flex-col rounded-lg border bg-card/50 p-4">
-                    <span className="mb-1 text-xs font-medium text-muted-foreground">
+                    <span className="mb-1 font-medium text-muted-foreground text-xs">
                       {t('overview-tab.weekly-progress')}
                     </span>
                     <div className="flex items-end gap-2">
-                      <span className="text-2xl font-bold text-green-600">
+                      <span className="font-bold text-2xl text-green-600">
                         {teamData.stats?.weekly_progress?.toFixed(1) || '0'}
                       </span>
-                      <span className="text-sm text-muted-foreground">
+                      <span className="text-muted-foreground text-sm">
                         {t('overview-tab.points-this-week')}
                       </span>
                     </div>
@@ -604,7 +604,7 @@ export default function TeamClient({
                           ? `${t('overview-tab.active')}`
                           : `${t('overview-tab.inactive')}`}
                       </Badge>
-                      <span className="text-xs text-muted-foreground">
+                      <span className="text-muted-foreground text-xs">
                         {t('overview-tab.last-7-days')}
                       </span>
                     </div>
@@ -612,7 +612,7 @@ export default function TeamClient({
 
                   {/* Top Contributor */}
                   <div className="flex flex-col rounded-lg border bg-card/50 p-4">
-                    <span className="mb-1 text-xs font-medium text-muted-foreground">
+                    <span className="mb-1 font-medium text-muted-foreground text-xs">
                       {t('overview-tab.top-contributor')}
                     </span>
                     {teamData.members?.length > 0 && (
@@ -633,16 +633,16 @@ export default function TeamClient({
                           </span>
                         </div>
                         <div className="mt-2 flex items-end gap-2">
-                          <span className="text-2xl font-bold text-purple-600">
+                          <span className="font-bold text-2xl text-purple-600">
                             {teamData?.members?.[0]?.individual_score?.toFixed(
                               1
                             ) || '0'}
                           </span>
-                          <span className="text-sm text-muted-foreground">
+                          <span className="text-muted-foreground text-sm">
                             {t('overview-tab.points')}
                           </span>
                         </div>
-                        <div className="mt-1 text-xs text-muted-foreground">
+                        <div className="mt-1 text-muted-foreground text-xs">
                           {teamData?.members?.[0]?.contribution_percentage?.toFixed(
                             1
                           ) || '0'}
@@ -700,7 +700,7 @@ export default function TeamClient({
                             </Badge>
                           )}
                         </div>
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-muted-foreground text-sm">
                           {t('members-tab.joined')}{' '}
                           {member.join_date
                             ? new Date(member.join_date).toLocaleDateString(
@@ -718,10 +718,10 @@ export default function TeamClient({
 
                     <div className="mt-2 flex flex-col gap-4 sm:mt-0 sm:ml-auto sm:flex-row sm:items-center">
                       <div className="flex items-center gap-3">
-                        <div className="rounded-md bg-blue-50 px-2.5 py-1 text-sm font-medium text-blue-700 dark:bg-blue-900/20 dark:text-blue-300">
+                        <div className="rounded-md bg-blue-50 px-2.5 py-1 font-medium text-blue-700 text-sm dark:bg-blue-900/20 dark:text-blue-300">
                           {member.individual_score.toFixed(1)} {t('pts')}
                         </div>
-                        <div className="rounded-md bg-purple-50 px-2.5 py-1 text-sm font-medium text-purple-700 dark:bg-purple-900/20 dark:text-purple-300">
+                        <div className="rounded-md bg-purple-50 px-2.5 py-1 font-medium text-purple-700 text-sm dark:bg-purple-900/20 dark:text-purple-300">
                           {member.contribution_percentage}
                           {t('members-tab.contribution-percentage')}
                         </div>
@@ -763,37 +763,37 @@ export default function TeamClient({
                   {/* Performance Summary */}
                   <div className="grid gap-6 md:grid-cols-3">
                     <div className="flex flex-col items-center justify-center rounded-lg border bg-card p-4 text-center shadow-sm">
-                      <div className="mb-1 text-sm text-muted-foreground">
+                      <div className="mb-1 text-muted-foreground text-sm">
                         {t('activity-tab.team-average')}
                       </div>
-                      <div className="text-2xl font-bold text-blue-600">
+                      <div className="font-bold text-2xl text-blue-600">
                         {teamData.stats.average_member_score.toFixed(1)}
                       </div>
-                      <div className="text-xs text-muted-foreground">
+                      <div className="text-muted-foreground text-xs">
                         {t('activity-tab.points-per-member')}
                       </div>
                     </div>
 
                     <div className="flex flex-col items-center justify-center rounded-lg border bg-card p-4 text-center shadow-sm">
-                      <div className="mb-1 text-sm text-muted-foreground">
+                      <div className="mb-1 text-muted-foreground text-sm">
                         {t('activity-tab.weekly-activity')}
                       </div>
-                      <div className="text-2xl font-bold text-green-600">
+                      <div className="font-bold text-2xl text-green-600">
                         {teamData.stats.weekly_progress?.toFixed(1) || 0}
                       </div>
-                      <div className="text-xs text-muted-foreground">
+                      <div className="text-muted-foreground text-xs">
                         {t('activity-tab.points-this-week')}
                       </div>
                     </div>
 
                     <div className="flex flex-col items-center justify-center rounded-lg border bg-card p-4 text-center shadow-sm">
-                      <div className="mb-1 text-sm text-muted-foreground">
+                      <div className="mb-1 text-muted-foreground text-sm">
                         {t('activity-tab.top-member')}
                       </div>
-                      <div className="text-2xl font-bold text-purple-600">
+                      <div className="font-bold text-2xl text-purple-600">
                         {teamData.members[0]?.individual_score.toFixed(1) || 0}
                       </div>
-                      <div className="text-xs text-muted-foreground">
+                      <div className="text-muted-foreground text-xs">
                         {t('activity-tab.points-by')}{' '}
                         {teamData.members[0]?.display_name}
                       </div>
@@ -802,7 +802,7 @@ export default function TeamClient({
 
                   {/* Member Contribution Chart */}
                   <div className="rounded-lg border bg-card p-6 shadow-sm">
-                    <h3 className="mb-4 text-lg font-medium">
+                    <h3 className="mb-4 font-medium text-lg">
                       {t('activity-tab.member-contributions')}
                     </h3>
                     <div className="space-y-4">
@@ -825,7 +825,7 @@ export default function TeamClient({
                                 {member.display_name}
                               </span>
                             </div>
-                            <span className="text-sm text-muted-foreground">
+                            <span className="text-muted-foreground text-sm">
                               {member.individual_score.toFixed(1)} pts (
                               {member.contribution_percentage}%)
                             </span>
@@ -852,7 +852,7 @@ export default function TeamClient({
                   {teamData.challenge_details &&
                     teamData.challenge_details.length > 0 && (
                       <div className="rounded-lg border bg-card p-6 shadow-sm">
-                        <h3 className="mb-4 text-lg font-medium">
+                        <h3 className="mb-4 font-medium text-lg">
                           {t('activity-tab.challenge-performance')}
                         </h3>
                         <div className="grid gap-4 sm:grid-cols-2">
@@ -869,10 +869,10 @@ export default function TeamClient({
                                 }}
                                 className="flex flex-col rounded-lg border p-4 transition-colors hover:bg-muted/50"
                               >
-                                <div className="text-md font-medium">
+                                <div className="font-medium text-md">
                                   {challenge.title}
                                 </div>
-                                <div className="mb-2 text-sm text-muted-foreground">
+                                <div className="mb-2 text-muted-foreground text-sm">
                                   {(
                                     (challenge.score /
                                       (teamData.total_score || 1)) *
@@ -880,7 +880,7 @@ export default function TeamClient({
                                   ).toFixed(1)}
                                   {t('activity-tab.of-total-score')}
                                 </div>
-                                <div className="text-xl font-bold text-blue-600">
+                                <div className="font-bold text-blue-600 text-xl">
                                   {challenge.score.toFixed(1)}
                                 </div>
                               </motion.div>

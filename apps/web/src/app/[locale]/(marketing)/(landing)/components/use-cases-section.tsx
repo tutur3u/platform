@@ -122,15 +122,15 @@ export function UseCasesSection() {
   return (
     <section
       ref={sectionRef}
-      className="relative container px-0 py-24 md:py-40"
+      className="container relative px-0 py-24 md:py-40"
     >
       <div className="use-cases-title-wrapper mb-16 text-center">
-        <h2 className="use-cases-title mb-6 text-4xl font-bold md:text-5xl">
+        <h2 className="use-cases-title mb-6 font-bold text-4xl md:text-5xl">
           <span className="bg-gradient-to-r from-dynamic-light-purple to-dynamic-light-blue bg-clip-text text-transparent">
             {t('who_benefits_from_tuturuuu')}
           </span>
         </h2>
-        <p className="mx-auto max-w-3xl text-xl leading-relaxed text-balance text-muted-foreground">
+        <p className="mx-auto max-w-3xl text-balance text-muted-foreground text-xl leading-relaxed">
           {t(
             'tuturuuu_helps_people_from_all_walks_of_life_reclaim_their_time_and_reduce_scheduling_stress'
           )}
@@ -142,7 +142,7 @@ export function UseCasesSection() {
           <div
             key={index}
             className={cn(
-              'use-case-card group transform overflow-hidden rounded-xl border border-transparent bg-white/90 shadow-lg transition-all duration-300 hover:-translate-y-2 hover:border-dynamic-light-purple/20 hover:shadow-xl dark:bg-foreground/5 dark:hover:bg-foreground/10',
+              'use-case-card group hover:-translate-y-2 transform overflow-hidden rounded-xl border border-transparent bg-white/90 shadow-lg transition-all duration-300 hover:border-dynamic-light-purple/20 hover:shadow-xl dark:bg-foreground/5 dark:hover:bg-foreground/10',
               useCase.className
             )}
           >
@@ -158,13 +158,13 @@ export function UseCasesSection() {
                 {useCase.icon}
               </div>
 
-              <h3 className="mb-3 text-2xl font-bold">{useCase.title}</h3>
+              <h3 className="mb-3 font-bold text-2xl">{useCase.title}</h3>
               <p className="mb-6 text-muted-foreground">
                 {useCase.description}
               </p>
 
               <div className="mb-5 rounded-lg bg-gray-50 p-4 dark:bg-foreground/5">
-                <h4 className="mb-3 text-sm font-semibold text-muted-foreground">
+                <h4 className="mb-3 font-semibold text-muted-foreground text-sm">
                   {t('pain_points')}
                 </h4>
                 <ul className="space-y-2">
@@ -191,7 +191,7 @@ export function UseCasesSection() {
               >
                 <h4
                   className={cn(
-                    'mb-2 text-sm font-semibold text-muted-foreground',
+                    'mb-2 font-semibold text-muted-foreground text-sm',
                     useCase.textColor
                   )}
                 >

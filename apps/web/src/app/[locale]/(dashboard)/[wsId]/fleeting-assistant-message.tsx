@@ -53,7 +53,7 @@ export function FleetingAssistantMessage({
               : resolvedTheme === 'dark' || resolvedTheme?.startsWith('light')
                 ? 'bg-foreground/5'
                 : 'bg-foreground/10'
-          } flex h-fit w-fit items-center space-x-2 rounded-lg border p-2 select-none`}
+          } flex h-fit w-fit select-none items-center space-x-2 rounded-lg border p-2`}
         >
           <div
             className={cn(
@@ -105,7 +105,7 @@ export function FleetingAssistantMessage({
       <div
         className={cn(
           'flex-1 space-y-2',
-          'prose w-[calc(100vw-8rem)] min-w-full break-words text-foreground md:w-152 lg:w-full dark:prose-invert prose-p:leading-relaxed prose-p:before:hidden prose-p:after:hidden prose-code:before:hidden prose-code:after:hidden prose-pre:p-2 prose-li:marker:text-foreground/80 prose-tr:border-border prose-th:border prose-th:border-b-4 prose-th:border-foreground/20 prose-th:p-2 prose-th:text-center prose-th:text-lg prose-td:border prose-td:p-2'
+          'prose dark:prose-invert w-[calc(100vw-8rem)] min-w-full break-words prose-td:border prose-th:border prose-th:border-foreground/20 prose-tr:border-border prose-th:border-b-4 prose-pre:p-2 prose-td:p-2 prose-th:p-2 prose-th:text-center prose-th:text-lg text-foreground prose-p:leading-relaxed prose-li:marker:text-foreground/80 prose-code:before:hidden prose-p:before:hidden prose-code:after:hidden prose-p:after:hidden md:w-152 lg:w-full'
         )}
       >
         <MemoizedReactMarkdown
@@ -188,7 +188,7 @@ export function FleetingAssistantMessage({
             },
             blockquote({ children }) {
               return (
-                <blockquote className="border-l-4 border-foreground/30 pl-2 text-foreground/80">
+                <blockquote className="border-foreground/30 border-l-4 pl-2 text-foreground/80">
                   {children}
                 </blockquote>
               );

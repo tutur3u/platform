@@ -48,13 +48,13 @@ export default function QuizStatusSidebar({
       className="h-fit max-h-96 w-full rounded-lg border bg-card p-4 text-card-foreground shadow-sm"
       aria-label={t('sidebar_aria')}
     >
-      <h2 className="mb-4 text-lg font-semibold">
+      <h2 className="mb-4 font-semibold text-lg">
         {t('question_status_title')}
       </h2>
 
       {/* Progress overview */}
       <div className="mb-4">
-        <p className="mb-1 text-sm text-muted-foreground">
+        <p className="mb-1 text-muted-foreground text-sm">
           {answeredCount} / {questions.length} {t('answered_status_short')}
         </p>
         <div className="h-2 w-full overflow-hidden rounded-full bg-dynamic-purple/20">
@@ -89,7 +89,7 @@ export default function QuizStatusSidebar({
               onClick={() => onQuestionJump(idx)}
               aria-label={`${t('jump_to_question')} ${idx + 1}, ${labelText}`}
               className={
-                `flex h-9 w-full items-center justify-center rounded-md border text-xs font-medium transition ` +
+                `flex h-9 w-full items-center justify-center rounded-md border font-medium text-xs transition ` +
                 (answered
                   ? 'border-primary/40 bg-dynamic-purple/25 text-primary'
                   : 'border-border bg-background text-muted-foreground hover:bg-muted')

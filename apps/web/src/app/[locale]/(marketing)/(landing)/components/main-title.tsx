@@ -16,7 +16,7 @@ export function MainTitle() {
 
   return (
     <div className="w-full text-center lg:w-1/2 lg:text-left">
-      <h1 className="hero-text mb-6 flex flex-col items-center justify-center text-4xl font-bold md:text-5xl lg:text-6xl">
+      <h1 className="hero-text mb-6 flex flex-col items-center justify-center font-bold text-4xl md:text-5xl lg:text-6xl">
         <Floating3DLogo />
         <span className="leading-10 md:leading-14 lg:leading-18">
           {t('title_p1')}{' '}
@@ -51,37 +51,37 @@ export function MainTitle() {
           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-dynamic-light-purple to-[purple] shadow-md">
             <Calendar className="h-5 w-5 text-white" />
           </div>
-          <span className="text-sm font-medium">TuPlan</span>
+          <span className="font-medium text-sm">TuPlan</span>
         </div>
         <div className="hero-badge flex items-center gap-2">
           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-dynamic-light-blue to-[blue] shadow-md">
             <Check className="h-5 w-5 text-white" />
           </div>
-          <span className="text-sm font-medium">TuDo</span>
+          <span className="font-medium text-sm">TuDo</span>
         </div>
         <div className="hero-badge flex items-center gap-2">
           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-dynamic-light-green to-[green] shadow-md">
             <Video className="h-5 w-5 text-white" />
           </div>
-          <span className="text-sm font-medium">TuMeet</span>
+          <span className="font-medium text-sm">TuMeet</span>
         </div>
         <div className="hero-badge flex items-center gap-2">
           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-dynamic-light-orange to-[orange] shadow-md">
             <MessageSquare className="h-5 w-5 text-white" />
           </div>
-          <span className="text-sm font-medium">TuChat</span>
+          <span className="font-medium text-sm">TuChat</span>
         </div>
         <div className="hero-badge flex items-center gap-2">
           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-dynamic-light-red to-[red] shadow-md">
             <Mail className="h-5 w-5 text-white" />
           </div>
-          <span className="text-sm font-medium">TuMail</span>
+          <span className="font-medium text-sm">TuMail</span>
         </div>
         <div className="hero-badge flex items-center gap-2">
           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-dynamic-light-indigo to-[indigo] shadow-md">
             <Package className="h-5 w-5 text-white" />
           </div>
-          <span className="text-sm font-medium">TuDrive</span>
+          <span className="font-medium text-sm">TuDrive</span>
         </div>
       </div>
     </div>

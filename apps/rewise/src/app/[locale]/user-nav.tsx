@@ -58,10 +58,10 @@ export async function UserNav({
           </Avatar>
           {hideMetadata || (
             <div className="grid w-full">
-              <div className="line-clamp-1 text-sm font-semibold break-all">
+              <div className="line-clamp-1 break-all font-semibold text-sm">
                 {user?.display_name || user?.handle || t('common.unnamed')}
               </div>
-              <div className="line-clamp-1 text-sm break-all opacity-70">
+              <div className="line-clamp-1 break-all text-sm opacity-70">
                 {user?.email}
               </div>
             </div>
@@ -77,11 +77,11 @@ export async function UserNav({
           <div className="flex flex-col">
             <Link
               href="/settings/account"
-              className="line-clamp-1 w-fit text-sm font-medium break-all hover:underline"
+              className="line-clamp-1 w-fit break-all font-medium text-sm hover:underline"
             >
               {user?.display_name || user?.handle || t('common.unnamed')}
             </Link>
-            <p className="line-clamp-1 text-xs break-all text-muted-foreground">
+            <p className="line-clamp-1 break-all text-muted-foreground text-xs">
               {user?.email}
             </p>
           </div>

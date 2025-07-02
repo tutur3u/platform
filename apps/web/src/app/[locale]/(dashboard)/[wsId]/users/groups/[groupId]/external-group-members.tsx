@@ -66,14 +66,14 @@ export default function ExternalGroupMembers({
               <div className="w-full">
                 <Link
                   href={`/${wsId}/users/groups/${group.id}`}
-                  className="line-clamp-1 rounded border border-transparent text-center font-semibold break-all hover:border-foreground/10 hover:bg-foreground/10"
+                  className="line-clamp-1 break-all rounded border border-transparent text-center font-semibold hover:border-foreground/10 hover:bg-foreground/10"
                 >
                   {group.name}
                 </Link>
                 <Separator className="my-1" />
                 <div className="flex w-full items-center justify-center gap-1">
                   <Users className="h-4 w-4" />
-                  <div className="text-sm font-semibold">
+                  <div className="font-semibold text-sm">
                     {group.amount}
                     <span className="opacity-50">/{totalUsers}</span>
                   </div>

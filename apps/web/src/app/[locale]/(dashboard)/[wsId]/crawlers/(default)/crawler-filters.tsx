@@ -91,7 +91,7 @@ export default function CrawlerFilters({ wsId }: { wsId: string }) {
   return (
     <div className="flex items-center gap-4">
       <div className="relative">
-        <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
         <Input
           placeholder="Search URLs..."
           value={urlSearch}

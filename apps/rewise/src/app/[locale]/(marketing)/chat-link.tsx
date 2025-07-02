@@ -68,7 +68,7 @@ export default function ChatLink({
               size: isCollapsed ? 'icon' : 'sm',
             }),
             isCollapsed ? 'h-9 w-9' : 'w-full justify-start',
-            'font-semibold whitespace-normal',
+            'whitespace-normal font-semibold',
             isActive
               ? 'bg-linear-to-br from-dynamic-light-red/70 via-dynamic-light-pink/70 to-dynamic-light-blue/70 text-white hover:text-white'
               : urlToLoad === link.href
@@ -143,7 +143,7 @@ export default function ChatLink({
                 size: isCollapsed ? 'icon' : 'sm',
               }),
               isCollapsed ? 'h-9 w-9' : 'w-full justify-start',
-              'font-semibold whitespace-normal',
+              'whitespace-normal font-semibold',
               isActive
                 ? 'bg-linear-to-br from-dynamic-light-red/70 via-dynamic-light-pink/70 to-dynamic-light-blue/70 text-white hover:text-white'
                 : urlToLoad === link.href

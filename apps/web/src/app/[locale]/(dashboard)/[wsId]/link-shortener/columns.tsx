@@ -62,12 +62,12 @@ function ShortUrlDisplay({ slug, t }: { slug: string; t: any }) {
   if (!shortUrl) return null; // Or a loading skeleton
 
   return (
-    <div className="flex items-center gap-3 group">
+    <div className="group flex items-center gap-3">
       <Link
         href={shortUrl}
         target="_blank"
         rel="noopener noreferrer"
-        className="font-mono text-sm text-dynamic-blue hover:text-dynamic-blue/80 transition-colors hover:underline flex-1 truncate"
+        className="flex-1 truncate font-mono text-dynamic-blue text-sm transition-colors hover:text-dynamic-blue/80 hover:underline"
       >
         {shortUrl}
       </Link>
@@ -78,7 +78,7 @@ function ShortUrlDisplay({ slug, t }: { slug: string; t: any }) {
               variant="ghost"
               size="sm"
               onClick={() => copyToClipboard(shortUrl, t)}
-              className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+              className="h-8 w-8 p-0 opacity-0 transition-opacity group-hover:opacity-100"
             >
               <Copy className="h-3 w-3" />
             </Button>
@@ -118,17 +118,17 @@ function CreatorDisplay({
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
-          <div className="flex items-center gap-2 cursor-help">
+          <div className="flex cursor-help items-center gap-2">
             <Avatar className="h-6 w-6">
               <AvatarImage
                 src={creator.avatar_url || undefined}
                 alt={displayName}
               />
-              <AvatarFallback className="text-xs bg-dynamic-blue/10 text-dynamic-blue">
+              <AvatarFallback className="bg-dynamic-blue/10 text-dynamic-blue text-xs">
                 {initials}
               </AvatarFallback>
             </Avatar>
-            <span className="text-sm font-medium truncate max-w-32">
+            <span className="max-w-32 truncate font-medium text-sm">
               {displayName}
             </span>
           </div>
@@ -137,7 +137,7 @@ function CreatorDisplay({
           <div className="space-y-1">
             <p className="font-medium">{displayName}</p>
             {creator.email && (
-              <p className="text-xs text-muted-foreground">{creator.email}</p>
+              <p className="text-muted-foreground text-xs">{creator.email}</p>
             )}
           </div>
         </TooltipContent>
@@ -172,15 +172,15 @@ export const linkShortenerColumns = (
       />
     ),
     cell: ({ row }) => (
-      <div className="flex items-center gap-3 group">
-        <div className="flex-1 min-w-0">
+      <div className="group flex items-center gap-3">
+        <div className="min-w-0 flex-1">
           <div
-            className="truncate text-sm font-medium max-w-96"
+            className="max-w-96 truncate font-medium text-sm"
             title={row.getValue('link')}
           >
             {row.getValue('link')}
           </div>
-          <div className="text-xs text-muted-foreground">
+          <div className="text-muted-foreground text-xs">
             {new URL(row.getValue('link')).hostname}
           </div>
         </div>
@@ -195,7 +195,7 @@ export const linkShortenerColumns = (
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                  className="h-8 w-8 p-0 opacity-0 transition-opacity group-hover:opacity-100"
                 >
                   <ExternalLink className="h-3 w-3" />
                 </Button>
@@ -238,13 +238,13 @@ export const linkShortenerColumns = (
 
       return (
         <div className="flex items-center gap-2">
-          <div className="text-sm text-muted-foreground">
+          <div className="text-muted-foreground text-sm">
             {formatDistanceToNow(date, { addSuffix: true })}
           </div>
           {isRecent && (
             <Badge
               variant="secondary"
-              className="text-xs px-2 py-0.5 bg-dynamic-green/10 text-dynamic-green border-dynamic-green/20"
+              className="border-dynamic-green/20 bg-dynamic-green/10 px-2 py-0.5 text-dynamic-green text-xs"
             >
               {t('link-shortener.new')}
             </Badge>

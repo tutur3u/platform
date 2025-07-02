@@ -9,7 +9,7 @@ export default function Rewards() {
     <Card className="bg-white dark:border-slate-800 dark:bg-slate-900/80">
       <div className="absolute inset-x-0 top-0 h-1 bg-linear-to-r from-yellow-400 to-yellow-600" />
       <CardContent className="p-6">
-        <h3 className="mb-3 text-lg font-bold text-gray-900 dark:text-slate-200">
+        <h3 className="mb-3 font-bold text-gray-900 text-lg dark:text-slate-200">
           {t('rewards.current-rewards')}
         </h3>
         <ul className="space-y-3">
@@ -21,7 +21,7 @@ export default function Rewards() {
               <p className="font-medium text-gray-900 dark:text-slate-200">
                 {t('rewards.1st-place')}
               </p>
-              <p className="text-sm text-gray-500 dark:text-slate-400">
+              <p className="text-gray-500 text-sm dark:text-slate-400">
                 {t('rewards.1st-place-reward')}
               </p>
             </div>
@@ -34,7 +34,7 @@ export default function Rewards() {
               <p className="font-medium text-gray-900 dark:text-slate-200">
                 {t('rewards.2nd-place')}
               </p>
-              <p className="text-sm text-gray-500 dark:text-slate-400">
+              <p className="text-gray-500 text-sm dark:text-slate-400">
                 {t('rewards.2nd-place-reward')}
               </p>
             </div>
@@ -47,7 +47,7 @@ export default function Rewards() {
               <p className="font-medium text-gray-900 dark:text-slate-200">
                 {t('rewards.3rd-place')}
               </p>
-              <p className="text-sm text-gray-500 dark:text-slate-400">
+              <p className="text-gray-500 text-sm dark:text-slate-400">
                 {t('rewards.3rd-place-reward')}
               </p>
             </div>
@@ -60,7 +60,7 @@ export default function Rewards() {
               <p className="font-medium text-gray-900 dark:text-slate-200">
                 {t('rewards.top-5')}
               </p>
-              <p className="text-sm text-gray-500 dark:text-slate-400">
+              <p className="text-gray-500 text-sm dark:text-slate-400">
                 {t('rewards.top-5-reward')}
               </p>
             </div>
@@ -73,7 +73,7 @@ export default function Rewards() {
               <p className="font-medium text-gray-900 dark:text-slate-200">
                 {t('rewards.top-16')}
               </p>
-              <p className="text-sm text-gray-500 dark:text-slate-400">
+              <p className="text-gray-500 text-sm dark:text-slate-400">
                 {t('rewards.top-16-reward')}
               </p>
             </div>
@@ -86,7 +86,7 @@ export default function Rewards() {
               <p className="font-medium text-gray-900 dark:text-slate-200">
                 {t('rewards.first-45-teams')}
               </p>
-              <p className="text-sm text-gray-500 dark:text-slate-400">
+              <p className="text-gray-500 text-sm dark:text-slate-400">
                 {t('rewards.first-45-teams-reward')}
               </p>
             </div>

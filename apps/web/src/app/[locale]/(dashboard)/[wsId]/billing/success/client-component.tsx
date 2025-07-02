@@ -117,22 +117,22 @@ export default function ClientComponent({ wsId }: ClientComponentProps) {
 
   return (
     <>
-      <div className="container mx-auto max-w-6xl px-4 py-8 duration-700 animate-in fade-in">
-        <div className="mb-8 text-center delay-100 duration-1000 animate-in fade-in">
+      <div className="fade-in container mx-auto max-w-6xl animate-in px-4 py-8 duration-700">
+        <div className="fade-in mb-8 animate-in text-center delay-100 duration-1000">
           <div className="mx-auto mb-4 flex h-16 w-16 animate-pulse items-center justify-center rounded-full bg-green-100 delay-200 dark:bg-green-900/30">
             <CheckCircle className="h-8 w-8 text-green-600 dark:text-green-400" />
           </div>
-          <h1 className="mb-2 text-3xl font-bold tracking-tight delay-300 duration-600 animate-in slide-in-from-bottom-4">
+          <h1 className="slide-in-from-bottom-4 mb-2 animate-in font-bold text-3xl tracking-tight delay-300 duration-600">
             {t('success.title')}
           </h1>
-          <p className="text-muted-foreground delay-500 duration-600 animate-in slide-in-from-bottom-4">
+          <p className="slide-in-from-bottom-4 animate-in text-muted-foreground delay-500 duration-600">
             {t('success.message')}
           </p>
         </div>
 
         {/* Payment Summary Card */}
-        <div className="mb-8 rounded-lg border border-border bg-card p-8 shadow-sm transition-all delay-700 duration-700 animate-in slide-in-from-bottom-6 hover:scale-[1.02] hover:shadow-lg dark:bg-card/80">
-          <h2 className="mb-6 text-2xl font-semibold text-card-foreground">
+        <div className="slide-in-from-bottom-6 mb-8 animate-in rounded-lg border border-border bg-card p-8 shadow-sm transition-all delay-700 duration-700 hover:scale-[1.02] hover:shadow-lg dark:bg-card/80">
+          <h2 className="mb-6 font-semibold text-2xl text-card-foreground">
             {t('success.payment-summary')}
           </h2>
           <div className="grid gap-6 md:grid-cols-2">
@@ -183,7 +183,7 @@ export default function ClientComponent({ wsId }: ClientComponentProps) {
                 <span className="text-muted-foreground">
                   {t('success.status')}
                 </span>
-                <span className="rounded-full bg-green-100 px-2 text-xs leading-5 font-semibold text-green-800 hover:scale-110 dark:bg-green-900/30 dark:text-green-400">
+                <span className="rounded-full bg-green-100 px-2 font-semibold text-green-800 text-xs leading-5 hover:scale-110 dark:bg-green-900/30 dark:text-green-400">
                   {t('success.completed')}
                 </span>
               </div>
@@ -192,7 +192,7 @@ export default function ClientComponent({ wsId }: ClientComponentProps) {
         </div>
 
         {/* Download Link Expiration Notice */}
-        <div className="mb-8 rounded-lg border border-amber-200 bg-amber-50 p-6 text-center transition-all delay-900 duration-300 animate-in fade-in dark:border-amber-800 dark:bg-amber-900/20">
+        <div className="fade-in mb-8 animate-in rounded-lg border border-amber-200 bg-amber-50 p-6 text-center transition-all delay-900 duration-300 dark:border-amber-800 dark:bg-amber-900/20">
           <div className="mb-2 flex items-center justify-center gap-2">
             <Clock className="h-5 w-5 text-amber-600 dark:text-amber-400" />
             <p className="font-medium text-amber-800 dark:text-amber-200">
@@ -200,11 +200,11 @@ export default function ClientComponent({ wsId }: ClientComponentProps) {
             </p>
           </div>
           {isLinkExpired ? (
-            <p className="text-sm text-amber-700 dark:text-amber-300">
+            <p className="text-amber-700 text-sm dark:text-amber-300">
               {t('success.download-invoice-desc')}
             </p>
           ) : (
-            <p className="text-sm text-amber-700 dark:text-amber-300">
+            <p className="text-amber-700 text-sm dark:text-amber-300">
               {t('success.expired-on', {
                 date: format(expiresAt, "MMMM d, yyyy 'at' h:mm a"),
               })}
@@ -213,40 +213,40 @@ export default function ClientComponent({ wsId }: ClientComponentProps) {
         </div>
 
         {/* What's Next Card */}
-        <div className="mb-8 rounded-lg border border-border bg-card p-8 shadow-sm transition-all delay-1000 duration-300 duration-700 animate-in slide-in-from-bottom-6 hover:scale-[1.02] hover:shadow-lg dark:bg-card/80">
-          <h2 className="mb-6 text-2xl font-semibold text-card-foreground">
+        <div className="slide-in-from-bottom-6 mb-8 animate-in rounded-lg border border-border bg-card p-8 shadow-sm transition-all delay-1000 duration-300 duration-700 hover:scale-[1.02] hover:shadow-lg dark:bg-card/80">
+          <h2 className="mb-6 font-semibold text-2xl text-card-foreground">
             {t('success.what-next')}
           </h2>
           <div className="space-y-4">
-            <div className="-m-3 flex items-start gap-3 rounded-lg p-3 transition-all delay-1200 duration-300 duration-500 animate-in slide-in-from-left-4 hover:translate-x-2 hover:bg-muted/30">
-              <CheckCircle className="mt-0.5 h-5 w-5 text-green-600 transition-transform duration-300 hover:scale-125 hover:rotate-12 dark:text-green-400" />
+            <div className="-m-3 slide-in-from-left-4 flex animate-in items-start gap-3 rounded-lg p-3 transition-all delay-1200 duration-300 duration-500 hover:translate-x-2 hover:bg-muted/30">
+              <CheckCircle className="mt-0.5 h-5 w-5 text-green-600 transition-transform duration-300 hover:rotate-12 hover:scale-125 dark:text-green-400" />
               <div>
                 <p className="font-medium text-card-foreground">
                   {t('success.active-plan')}
                 </p>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-muted-foreground text-sm">
                   {t('success.active-plan-desc')}
                 </p>
               </div>
             </div>
-            <div className="-m-3 flex items-start gap-3 rounded-lg p-3 transition-all delay-1400 duration-300 duration-500 animate-in slide-in-from-left-4 hover:translate-x-2 hover:bg-muted/30">
-              <CheckCircle className="mt-0.5 h-5 w-5 text-green-600 transition-transform duration-300 hover:scale-125 hover:rotate-12 dark:text-green-400" />
+            <div className="-m-3 slide-in-from-left-4 flex animate-in items-start gap-3 rounded-lg p-3 transition-all delay-1400 duration-300 duration-500 hover:translate-x-2 hover:bg-muted/30">
+              <CheckCircle className="mt-0.5 h-5 w-5 text-green-600 transition-transform duration-300 hover:rotate-12 hover:scale-125 dark:text-green-400" />
               <div>
                 <p className="font-medium text-card-foreground">
                   {t('success.confirmation-email')}
                 </p>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-muted-foreground text-sm">
                   {t('success.confirmation-email-desc')}
                 </p>
               </div>
             </div>
-            <div className="-m-3 flex items-start gap-3 rounded-lg p-3 transition-all delay-1600 duration-300 duration-500 animate-in slide-in-from-left-4 hover:translate-x-2 hover:bg-muted/30">
-              <CheckCircle className="mt-0.5 h-5 w-5 text-green-600 transition-transform duration-300 hover:scale-125 hover:rotate-12 dark:text-green-400" />
+            <div className="-m-3 slide-in-from-left-4 flex animate-in items-start gap-3 rounded-lg p-3 transition-all delay-1600 duration-300 duration-500 hover:translate-x-2 hover:bg-muted/30">
+              <CheckCircle className="mt-0.5 h-5 w-5 text-green-600 transition-transform duration-300 hover:rotate-12 hover:scale-125 dark:text-green-400" />
               <div>
                 <p className="font-medium text-card-foreground">
                   {t('success.billing-cycle')}
                 </p>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-muted-foreground text-sm">
                   {t('success.billing-cycle-desc')}
                 </p>
               </div>
@@ -255,13 +255,13 @@ export default function ClientComponent({ wsId }: ClientComponentProps) {
         </div>
 
         {/* Action Buttons */}
-        <div className="flex flex-col gap-4 delay-1800 duration-600 animate-in slide-in-from-bottom-4 sm:flex-row sm:justify-center">
+        <div className="slide-in-from-bottom-4 flex animate-in flex-col gap-4 delay-1800 duration-600 sm:flex-row sm:justify-center">
           <Button
             asChild
-            className="group flex items-center gap-2 transition-all duration-300 hover:-translate-y-1 hover:scale-110 hover:shadow-xl"
+            className="group hover:-translate-y-1 flex items-center gap-2 transition-all duration-300 hover:scale-110 hover:shadow-xl"
           >
             <Link href={`/${wsId}/billing`}>
-              <ArrowLeft className="h-4 w-4 transition-transform duration-300 group-hover:-translate-x-2" />
+              <ArrowLeft className="group-hover:-translate-x-2 h-4 w-4 transition-transform duration-300" />
               {t('success.back-to-billing')}
             </Link>
           </Button>
@@ -278,7 +278,7 @@ export default function ClientComponent({ wsId }: ClientComponentProps) {
             <Button
               variant="outline"
               asChild
-              className="group flex items-center gap-2 transition-all duration-300 hover:-translate-y-1 hover:scale-110 hover:shadow-xl"
+              className="group hover:-translate-y-1 flex items-center gap-2 transition-all duration-300 hover:scale-110 hover:shadow-xl"
             >
               <Link href={`/api/billing/${wsId}/invoice`} target="_blank">
                 <Download className="h-4 w-4 transition-transform duration-300 group-hover:translate-y-2 group-hover:scale-125" />
@@ -289,18 +289,18 @@ export default function ClientComponent({ wsId }: ClientComponentProps) {
           <Button
             variant="outline"
             asChild
-            className="group flex items-center gap-2 transition-all duration-300 hover:-translate-y-1 hover:scale-110 hover:shadow-xl"
+            className="group hover:-translate-y-1 flex items-center gap-2 transition-all duration-300 hover:scale-110 hover:shadow-xl"
           >
             <Link href={`/${wsId}`}>
-              <CreditCard className="h-4 w-4 transition-transform duration-300 group-hover:scale-125 group-hover:rotate-45" />
+              <CreditCard className="h-4 w-4 transition-transform duration-300 group-hover:rotate-45 group-hover:scale-125" />
               {t('success.go-to-dashboard')}
             </Link>
           </Button>
         </div>
 
         {/* Support Information */}
-        <div className="mt-8 rounded-lg border border-border bg-muted/30 p-6 text-center transition-all delay-2000 duration-300 duration-800 animate-in fade-in hover:scale-105 hover:bg-muted/50">
-          <p className="text-sm text-muted-foreground">
+        <div className="fade-in mt-8 animate-in rounded-lg border border-border bg-muted/30 p-6 text-center transition-all delay-2000 duration-300 duration-800 hover:scale-105 hover:bg-muted/50">
+          <p className="text-muted-foreground text-sm">
             Need help? Contact our{' '}
             <Link
               href="/#"

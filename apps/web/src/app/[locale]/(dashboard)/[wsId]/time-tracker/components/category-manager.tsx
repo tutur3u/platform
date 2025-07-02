@@ -233,7 +233,7 @@ export function CategoryManager({
               <p className="text-lg text-muted-foreground">
                 No categories created yet
               </p>
-              <p className="mt-1 text-sm text-muted-foreground">
+              <p className="mt-1 text-muted-foreground text-sm">
                 Create categories to organize your time tracking sessions
               </p>
               {!readOnly && (
@@ -265,7 +265,7 @@ export function CategoryManager({
                             {category.name}
                           </h3>
                           {category.description && (
-                            <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
+                            <p className="mt-1 line-clamp-2 text-muted-foreground text-sm">
                               {category.description}
                             </p>
                           )}

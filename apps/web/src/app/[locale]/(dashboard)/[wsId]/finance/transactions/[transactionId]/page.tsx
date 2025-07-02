@@ -41,7 +41,7 @@ export default async function TransactionDetailsPage({ params }: Props) {
       <div className="grid h-fit gap-4 md:grid-cols-2">
         <div className="space-y-4 overflow-auto">
           <div className="grid h-fit gap-2 rounded-lg border p-4">
-            <div className="text-lg font-semibold">
+            <div className="font-semibold text-lg">
               {t('invoices.basic-info')}
             </div>
             <Separator />
@@ -84,7 +84,7 @@ export default async function TransactionDetailsPage({ params }: Props) {
         <div className="grid h-fit gap-4">
           <div className="h-full rounded-lg border p-4">
             <div className="grid h-full content-start gap-2">
-              <div className="text-lg font-semibold">
+              <div className="font-semibold text-lg">
                 {t('ai_chat.upload_files')}
               </div>
               <Separator className="mb-2" />

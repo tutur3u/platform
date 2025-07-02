@@ -270,7 +270,7 @@ export default function LinkedIdentitiesCard({
               <LinkIcon className="h-5 w-5 text-dynamic-blue dark:text-dynamic-blue/80" />
             </div>
             <div className="space-y-1">
-              <CardTitle className="text-xl font-semibold">
+              <CardTitle className="font-semibold text-xl">
                 {t('linked-accounts')}
               </CardTitle>
               <CardDescription className="text-sm">
@@ -315,10 +315,10 @@ export default function LinkedIdentitiesCard({
               <AlertTriangle className="h-5 w-5 text-dynamic-red dark:text-dynamic-red/80" />
             </div>
             <div className="space-y-1">
-              <CardTitle className="text-xl font-semibold">
+              <CardTitle className="font-semibold text-xl">
                 {t('linked-accounts')}
               </CardTitle>
-              <CardDescription className="text-sm text-dynamic-red dark:text-dynamic-red/80">
+              <CardDescription className="text-dynamic-red text-sm dark:text-dynamic-red/80">
                 {error}
               </CardDescription>
             </div>
@@ -343,7 +343,7 @@ export default function LinkedIdentitiesCard({
             <LinkIcon className="h-5 w-5 text-dynamic-blue dark:text-dynamic-blue/80" />
           </div>
           <div className="flex-1 space-y-1">
-            <CardTitle className="text-xl font-semibold">
+            <CardTitle className="font-semibold text-xl">
               {t('linked-accounts')}
             </CardTitle>
             <CardDescription className="text-sm">
@@ -362,10 +362,10 @@ export default function LinkedIdentitiesCard({
               </div>
               <div className="flex-1 space-y-4">
                 <div>
-                  <h3 className="mb-2 text-lg font-semibold text-dynamic-blue dark:text-dynamic-blue/90">
+                  <h3 className="mb-2 font-semibold text-dynamic-blue text-lg dark:text-dynamic-blue/90">
                     {t('enhance-security')}
                   </h3>
-                  <p className="text-sm text-dynamic-blue/80 dark:text-dynamic-blue/70">
+                  <p className="text-dynamic-blue/80 text-sm dark:text-dynamic-blue/70">
                     {t('enhance-security-description')}
                   </p>
                 </div>
@@ -385,7 +385,7 @@ export default function LinkedIdentitiesCard({
                               <h4 className="font-medium text-gray-900 dark:text-gray-100">
                                 {provider.name}
                               </h4>
-                              <p className="text-xs text-gray-600 dark:text-gray-400">
+                              <p className="text-gray-600 text-xs dark:text-gray-400">
                                 {t(`provider-benefit-${provider.id}`, {
                                   defaultValue: t('provider-benefit-default', {
                                     provider: provider.name,
@@ -427,7 +427,7 @@ export default function LinkedIdentitiesCard({
           <div className="space-y-4">
             <div className="flex items-center gap-2">
               <CheckCircle2 className="h-4 w-4 text-dynamic-green dark:text-dynamic-green/80" />
-              <h4 className="text-sm font-medium text-foreground">
+              <h4 className="font-medium text-foreground text-sm">
                 {t('connected-accounts')} ({identities.length})
               </h4>
             </div>
@@ -450,13 +450,13 @@ export default function LinkedIdentitiesCard({
                             </span>
                             <Badge
                               variant="outline"
-                              className="border-dynamic-green/30 text-xs font-medium text-dynamic-green dark:border-dynamic-green/50 dark:text-dynamic-green/80"
+                              className="border-dynamic-green/30 font-medium text-dynamic-green text-xs dark:border-dynamic-green/50 dark:text-dynamic-green/80"
                             >
                               <CheckCircle2 className="mr-1 h-3 w-3" />
                               {t('connected')}
                             </Badge>
                           </div>
-                          <p className="text-sm text-muted-foreground">
+                          <p className="text-muted-foreground text-sm">
                             {identity?.identity_data?.email ||
                               t('connected-on', {
                                 date: new Date(
@@ -491,7 +491,7 @@ export default function LinkedIdentitiesCard({
                         <AlertDialogContent>
                           <AlertDialogHeader>
                             <AlertDialogTitle className="flex items-center gap-2">
-                              <AlertTriangle className="text-dynamic-amber h-5 w-5" />
+                              <AlertTriangle className="h-5 w-5 text-dynamic-amber" />
                               {t('unlink-account')}
                             </AlertDialogTitle>
                             <AlertDialogDescription className="text-left">
@@ -527,10 +527,10 @@ export default function LinkedIdentitiesCard({
             <div className="mb-4 rounded-full bg-muted p-4">
               <LinkIcon className="h-6 w-6 text-muted-foreground" />
             </div>
-            <h3 className="mb-2 text-lg font-medium text-foreground">
+            <h3 className="mb-2 font-medium text-foreground text-lg">
               {t('no-linked-accounts')}
             </h3>
-            <p className="max-w-sm text-sm text-muted-foreground">
+            <p className="max-w-sm text-muted-foreground text-sm">
               {t('no-linked-accounts-description')}
             </p>
           </div>
@@ -538,14 +538,14 @@ export default function LinkedIdentitiesCard({
 
         {/* Security Notice */}
         {!canUnlink && identities.length === 1 && (
-          <div className="border-dynamic-amber/30 bg-dynamic-amber/5 dark:border-dynamic-amber/50 dark:bg-dynamic-amber/10 rounded-lg border p-4">
+          <div className="rounded-lg border border-dynamic-amber/30 bg-dynamic-amber/5 p-4 dark:border-dynamic-amber/50 dark:bg-dynamic-amber/10">
             <div className="flex gap-2">
-              <Shield className="text-dynamic-amber dark:text-dynamic-amber/80 mt-0.5 h-5 w-5 flex-shrink-0" />
+              <Shield className="mt-0.5 h-5 w-5 flex-shrink-0 text-dynamic-amber dark:text-dynamic-amber/80" />
               <div className="space-y-1">
-                <p className="text-dynamic-amber dark:text-dynamic-amber/90 text-sm font-medium">
+                <p className="font-medium text-dynamic-amber text-sm dark:text-dynamic-amber/90">
                   {t('account-security-notice')}
                 </p>
-                <p className="text-dynamic-amber/80 dark:text-dynamic-amber/70 text-sm">
+                <p className="text-dynamic-amber/80 text-sm dark:text-dynamic-amber/70">
                   {t('account-security-notice-description')}
                 </p>
               </div>

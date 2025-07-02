@@ -47,14 +47,14 @@ function GuideStep({
       className="flex gap-4"
     >
       <div className="shrink-0">
-        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-lg font-bold text-primary">
+        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 font-bold text-lg text-primary">
           {number}
         </div>
       </div>
       <div className="space-y-2">
         <div className="flex items-center gap-2">
           {icon}
-          <h3 className="text-xl font-bold">{title}</h3>
+          <h3 className="font-bold text-xl">{title}</h3>
         </div>
         <p className="text-muted-foreground">{description}</p>
       </div>
@@ -87,7 +87,7 @@ function FeatureCard({
         <div className="mb-4 inline-flex rounded-lg bg-primary/10 p-3 text-primary">
           {icon}
         </div>
-        <h3 className="mb-2 text-xl font-bold">{title}</h3>
+        <h3 className="mb-2 font-bold text-xl">{title}</h3>
         <p className="text-muted-foreground">{description}</p>
       </Card>
     </motion.div>
@@ -109,7 +109,7 @@ export default function GuidePage() {
             <Compass className="mr-2 h-4 w-4" />
             {t('hero.badge')}
           </Badge>
-          <h1 className="mb-4 text-4xl font-bold tracking-tight sm:text-5xl">
+          <h1 className="mb-4 font-bold text-4xl tracking-tight sm:text-5xl">
             {t('hero.title')}
           </h1>
           <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
@@ -141,7 +141,7 @@ export default function GuidePage() {
                 viewport={{ once: true }}
                 className="mb-8"
               >
-                <h2 className="mb-2 text-3xl font-bold">
+                <h2 className="mb-2 font-bold text-3xl">
                   {t('for-students.detailed-guide.title')}
                 </h2>
                 <p className="text-muted-foreground">
@@ -199,7 +199,7 @@ export default function GuidePage() {
                 viewport={{ once: true }}
                 className="mb-8"
               >
-                <h2 className="mb-2 text-3xl font-bold">
+                <h2 className="mb-2 font-bold text-3xl">
                   {t('for-students.key-features.title')}
                 </h2>
                 <p className="text-muted-foreground">
@@ -269,7 +269,7 @@ export default function GuidePage() {
                 viewport={{ once: true }}
                 className="mb-8"
               >
-                <h2 className="mb-2 text-3xl font-bold">
+                <h2 className="mb-2 font-bold text-3xl">
                   {t('for-students.tips.title')}
                 </h2>
                 <p className="text-muted-foreground">
@@ -391,7 +391,7 @@ export default function GuidePage() {
                 viewport={{ once: true }}
                 className="mb-8"
               >
-                <h2 className="mb-2 text-3xl font-bold">
+                <h2 className="mb-2 font-bold text-3xl">
                   {t('for-teachers.detailed-guide.title')}
                 </h2>
                 <p className="text-muted-foreground">
@@ -449,7 +449,7 @@ export default function GuidePage() {
                 viewport={{ once: true }}
                 className="mb-8"
               >
-                <h2 className="mb-2 text-3xl font-bold">
+                <h2 className="mb-2 font-bold text-3xl">
                   {t('for-teachers.key-features.title')}
                 </h2>
                 <p className="text-muted-foreground">
@@ -519,7 +519,7 @@ export default function GuidePage() {
                 viewport={{ once: true }}
                 className="mb-8"
               >
-                <h2 className="mb-2 text-3xl font-bold">
+                <h2 className="mb-2 font-bold text-3xl">
                   {t('for-teachers.tips.title')}
                 </h2>
                 <p className="text-muted-foreground">
@@ -605,7 +605,7 @@ export default function GuidePage() {
                 <div className="mx-auto mb-4 inline-flex rounded-full bg-primary/10 p-3 text-primary">
                   <School className="h-6 w-6" />
                 </div>
-                <h2 className="mb-4 text-2xl font-bold">
+                <h2 className="mb-4 font-bold text-2xl">
                   {t('cta-section.title')}
                 </h2>
                 <p className="mb-6 text-muted-foreground">

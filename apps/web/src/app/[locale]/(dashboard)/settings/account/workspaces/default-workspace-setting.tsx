@@ -119,7 +119,7 @@ export default function DefaultWorkspaceSetting({
 
   if (!workspaces || workspaces.length === 0) {
     return (
-      <div className="text-sm text-muted-foreground">
+      <div className="text-muted-foreground text-sm">
         No workspaces available
       </div>
     );
@@ -147,7 +147,7 @@ export default function DefaultWorkspaceSetting({
             <SelectItem key={workspace.id} value={workspace.id}>
               <div className="flex items-center">
                 <span>{workspace.name}</span>
-                <span className="ml-2 text-xs text-muted-foreground">
+                <span className="ml-2 text-muted-foreground text-xs">
                   ({workspace.role})
                 </span>
               </div>

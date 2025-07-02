@@ -42,7 +42,7 @@ export function PlanSettings({
           <div className="space-y-2">
             <label
               htmlFor="duration"
-              className="text-sm font-medium text-muted-foreground"
+              className="font-medium text-muted-foreground text-sm"
             >
               Plan Duration
             </label>

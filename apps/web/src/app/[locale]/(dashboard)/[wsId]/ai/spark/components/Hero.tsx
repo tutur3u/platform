@@ -8,7 +8,7 @@ export function Hero() {
       <Badge variant="secondary" className="mb-4">
         Beta
       </Badge>
-      <h1 className="mb-4 text-4xl font-bold">Spark AI Year Planner</h1>
+      <h1 className="mb-4 font-bold text-4xl">Spark AI Year Planner</h1>
       <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
         Transform your yearly goals into actionable daily tasks with AI-powered
         planning. Let Spark help you create a detailed roadmap for success.

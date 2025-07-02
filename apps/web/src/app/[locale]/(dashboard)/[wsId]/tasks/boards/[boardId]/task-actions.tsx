@@ -225,7 +225,7 @@ export function TaskActions({ taskId, boardId, onUpdate }: Props) {
             type="button"
             variant="outline"
             size="xs"
-            className="absolute top-2 right-2 z-10 h-7 border-border/50 px-2 text-muted-foreground opacity-0 transition-all duration-200 group-hover:opacity-100 hover:border-border hover:bg-muted/80 hover:text-foreground hover:shadow-sm"
+            className="absolute top-2 right-2 z-10 h-7 border-border/50 px-2 text-muted-foreground opacity-0 transition-all duration-200 hover:border-border hover:bg-muted/80 hover:text-foreground hover:shadow-sm group-hover:opacity-100"
           >
             <MoreHorizontal className="h-3.5 w-3.5" />
             <span className="sr-only">Open task options</span>
@@ -234,7 +234,7 @@ export function TaskActions({ taskId, boardId, onUpdate }: Props) {
         <DropdownMenuContent align="end" className="w-[200px] p-1">
           <DropdownMenuItem
             onClick={() => setIsEditDialogOpen(true)}
-            className="cursor-pointer gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-muted"
+            className="cursor-pointer gap-3 rounded-md px-3 py-2 font-medium text-sm transition-colors hover:bg-muted"
           >
             <Pencil className="h-4 w-4" />
             <span>Edit task</span>
@@ -243,7 +243,7 @@ export function TaskActions({ taskId, boardId, onUpdate }: Props) {
           <DropdownMenuSeparator className="my-1" />
           <DropdownMenuItem
             onClick={() => setIsDeleteDialogOpen(true)}
-            className="cursor-pointer gap-3 rounded-md px-3 py-2 text-sm font-medium"
+            className="cursor-pointer gap-3 rounded-md px-3 py-2 font-medium text-sm"
           >
             <Trash2 className="h-4 w-4" />
             <span>Delete task</span>
@@ -312,7 +312,7 @@ export function TaskActions({ taskId, boardId, onUpdate }: Props) {
                 })}
               />
               {!newName.trim() && (
-                <p className="text-xs text-destructive">
+                <p className="text-destructive text-xs">
                   Task name is required
                 </p>
               )}
@@ -431,7 +431,7 @@ export function TaskActions({ taskId, boardId, onUpdate }: Props) {
                 </PopoverContent>
               </Popover>
               {isStartDateAfterEndDate && (
-                <p className="text-xs text-destructive">
+                <p className="text-destructive text-xs">
                   Start date cannot be after end date
                 </p>
               )}
@@ -490,13 +490,13 @@ export function TaskActions({ taskId, boardId, onUpdate }: Props) {
                 </PopoverContent>
               </Popover>
               {isOverdue && (
-                <div className="flex items-center gap-1 text-xs text-destructive">
+                <div className="flex items-center gap-1 text-destructive text-xs">
                   <AlertCircle className="h-3 w-3" />
                   Due date is in the past
                 </div>
               )}
               {isStartDateAfterEndDate && (
-                <p className="text-xs text-destructive">
+                <p className="text-destructive text-xs">
                   Due date cannot be before start date
                 </p>
               )}
@@ -523,7 +523,7 @@ export function TaskActions({ taskId, boardId, onUpdate }: Props) {
                 </Tooltip>
               )}
               {newStartDate && (
-                <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                <div className="flex items-center gap-1 text-muted-foreground text-xs">
                   <Clock className="h-3 w-3" />
                   {isToday(newStartDate)
                     ? 'Starts today'

@@ -172,7 +172,7 @@ export function ApprovalsTable() {
     <div className="flex min-h-full w-full flex-col">
       <div className="mb-4 flex items-center justify-between">
         {isLoading && (
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <div className="flex items-center gap-2 text-muted-foreground text-sm">
             <RefreshCw className="h-4 w-4 animate-spin" />
             <span>{t('loading')}</span>
           </div>
@@ -183,30 +183,30 @@ export function ApprovalsTable() {
         {/* Statistics Cards */}
         <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
           <div className="rounded-lg border bg-card p-4">
-            <div className="text-2xl font-bold text-foreground">
+            <div className="font-bold text-2xl text-foreground">
               {stats.total}
             </div>
-            <div className="text-sm text-muted-foreground">
+            <div className="text-muted-foreground text-sm">
               {t('total-requests')}
             </div>
           </div>
           <div className="rounded-lg border bg-card p-4">
-            <div className="text-2xl font-bold text-yellow-600">
+            <div className="font-bold text-2xl text-yellow-600">
               {stats.pending}
             </div>
-            <div className="text-sm text-muted-foreground">{t('pending')}</div>
+            <div className="text-muted-foreground text-sm">{t('pending')}</div>
           </div>
           <div className="rounded-lg border bg-card p-4">
-            <div className="text-2xl font-bold text-green-600">
+            <div className="font-bold text-2xl text-green-600">
               {stats.approved}
             </div>
-            <div className="text-sm text-muted-foreground">{t('approved')}</div>
+            <div className="text-muted-foreground text-sm">{t('approved')}</div>
           </div>
           <div className="rounded-lg border bg-card p-4">
-            <div className="text-2xl font-bold text-red-600">
+            <div className="font-bold text-2xl text-red-600">
               {stats.rejected}
             </div>
-            <div className="text-sm text-muted-foreground">{t('rejected')}</div>
+            <div className="text-muted-foreground text-sm">{t('rejected')}</div>
           </div>
         </div>
 
@@ -217,7 +217,7 @@ export function ApprovalsTable() {
 
         {/* Controls */}
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <div className="flex items-center gap-2 text-muted-foreground text-sm">
             {isLoading && (
               <>
                 <RefreshCw className="h-4 w-4 animate-spin" />

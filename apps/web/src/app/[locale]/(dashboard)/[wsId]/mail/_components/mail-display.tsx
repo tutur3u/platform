@@ -87,7 +87,7 @@ export function MailDisplay({ mail }: MailDisplayProps) {
 
   return (
     <div className="flex h-full flex-col bg-background">
-      <div className="flex items-center justify-between px-4 h-16 border-b bg-background/80 backdrop-blur-sm">
+      <div className="flex h-16 items-center justify-between border-b bg-background/80 px-4 backdrop-blur-sm">
         <div className="flex items-center gap-1">
           <Tooltip>
             <TooltipTrigger asChild>
@@ -185,13 +185,13 @@ export function MailDisplay({ mail }: MailDisplayProps) {
       </div>
 
       {mail ? (
-        <div className="flex flex-1 flex-col min-h-0">
-          <div className="p-4 bg-muted/20 border-b">
+        <div className="flex min-h-0 flex-1 flex-col">
+          <div className="border-b bg-muted/20 p-4">
             <div className="flex items-start justify-between gap-4">
               <div className="flex items-center gap-4">
-                <Avatar className="h-10 w-10 ring-2 ring-background shadow-sm">
+                <Avatar className="h-10 w-10 shadow-sm ring-2 ring-background">
                   <AvatarImage alt={mail.name} />
-                  <AvatarFallback className="bg-primary/10 text-primary font-semibold text-sm">
+                  <AvatarFallback className="bg-primary/10 font-semibold text-primary text-sm">
                     {mail.name
                       .split(' ')
                       .map((chunk: string) => chunk[0])
@@ -200,10 +200,10 @@ export function MailDisplay({ mail }: MailDisplayProps) {
                   </AvatarFallback>
                 </Avatar>
                 <div className="grid gap-0.5">
-                  <h2 className="font-semibold text-base text-foreground leading-tight truncate">
+                  <h2 className="truncate font-semibold text-base text-foreground leading-tight">
                     {mail.subject}
                   </h2>
-                  <p className="text-sm font-medium text-foreground/80">
+                  <p className="font-medium text-foreground/80 text-sm">
                     {mail.name}
                   </p>
                 </div>
@@ -211,7 +211,7 @@ export function MailDisplay({ mail }: MailDisplayProps) {
 
               <div className="flex items-center gap-2">
                 {mail.date && (
-                  <time className="text-xs text-muted-foreground whitespace-nowrap font-medium">
+                  <time className="whitespace-nowrap font-medium text-muted-foreground text-xs">
                     {dayjs(mail.date).format('LLLL')}
                   </time>
                 )}
@@ -231,13 +231,13 @@ export function MailDisplay({ mail }: MailDisplayProps) {
             </div>
             <div
               className={cn(
-                'transition-all duration-300 ease-in-out overflow-hidden',
+                'overflow-hidden transition-all duration-300 ease-in-out',
                 isHeaderCollapsed
                   ? 'max-h-0 opacity-0'
-                  : 'max-h-24 opacity-100 pt-3'
+                  : 'max-h-24 pt-3 opacity-100'
               )}
             >
-              <div className="flex flex-col items-start gap-1 text-xs text-muted-foreground">
+              <div className="flex flex-col items-start gap-1 text-muted-foreground text-xs">
                 <div className="flex items-center gap-1">
                   <span className="font-medium">{t('from_label')}</span>
                   <span className="text-foreground/70">{mail.email}</span>
@@ -250,20 +250,20 @@ export function MailDisplay({ mail }: MailDisplayProps) {
             </div>
           </div>
 
-          <ScrollArea className="flex-1 min-h-0">
+          <ScrollArea className="min-h-0 flex-1">
             <div className="p-6">
               {isLoading ? (
                 <div className="flex items-center justify-center py-12">
                   <div className="flex items-center gap-3 text-muted-foreground">
                     <Loader2 className="h-5 w-5 animate-spin" />
-                    <span className="text-sm font-medium">
+                    <span className="font-medium text-sm">
                       {t('loading_email_content')}
                     </span>
                   </div>
                 </div>
               ) : (
                 <div
-                  className="prose prose-sm max-w-none text-black/90 leading-relaxed [&>*]:text-inherit [&_p]:text-inherit [&_div]:text-inherit [&_span]:text-inherit [&_h1]:text-black [&_h2]:text-black [&_h3]:text-black [&_h4]:text-black [&_h5]:text-black [&_h6]:text-black [&_a]:text-primary [&_a:hover]:text-primary/80 [&_strong]:font-semibold [&_em]:italic [&_ul]:list-disc [&_ol]:list-decimal [&_li]:ml-4 [&_blockquote]:border-l-4 [&_blockquote]:border-border [&_blockquote]:pl-4 [&_blockquote]:italic [&_blockquote]:text-muted-black [&_code]:bg-muted [&_code]:text-muted-black [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_pre]:bg-muted [&_pre]:text-muted-black [&_pre]:p-4 [&_pre]:rounded-lg [&_table]:border-collapse [&_td]:border [&_th]:border [&_td]:p-2 [&_th]:p-2"
+                  className="prose prose-sm max-w-none text-black/90 leading-relaxed [&>*]:text-inherit [&_a:hover]:text-primary/80 [&_a]:text-primary [&_blockquote]:border-border [&_blockquote]:border-l-4 [&_blockquote]:pl-4 [&_blockquote]:text-muted-black [&_blockquote]:italic [&_code]:rounded [&_code]:bg-muted [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:text-muted-black [&_div]:text-inherit [&_em]:italic [&_h1]:text-black [&_h2]:text-black [&_h3]:text-black [&_h4]:text-black [&_h5]:text-black [&_h6]:text-black [&_li]:ml-4 [&_ol]:list-decimal [&_p]:text-inherit [&_pre]:rounded-lg [&_pre]:bg-muted [&_pre]:p-4 [&_pre]:text-muted-black [&_span]:text-inherit [&_strong]:font-semibold [&_table]:border-collapse [&_td]:border [&_td]:p-2 [&_th]:border [&_th]:p-2 [&_ul]:list-disc"
                   // biome-ignore lint/security/noDangerouslySetInnerHtml: sanitized HTML output from DOMPurify
                   dangerouslySetInnerHTML={{ __html: sanitizedHtml }}
                 />
@@ -272,15 +272,15 @@ export function MailDisplay({ mail }: MailDisplayProps) {
           </ScrollArea>
         </div>
       ) : (
-        <div className="flex flex-1 flex-col h-full min-h-0 items-center justify-center p-8 text-center bg-background">
+        <div className="flex h-full min-h-0 flex-1 flex-col items-center justify-center bg-background p-8 text-center">
           <div className="flex flex-col items-center gap-2">
-            <div className="p-4 rounded-full bg-primary/10">
+            <div className="rounded-full bg-primary/10 p-4">
               <MoreVertical className="h-8 w-8 text-primary" />
             </div>
-            <p className="text-lg font-medium text-foreground mt-4">
+            <p className="mt-4 font-medium text-foreground text-lg">
               {t('no_email_selected')}
             </p>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-muted-foreground text-sm">
               {t('choose_email_message')}
             </p>
           </div>

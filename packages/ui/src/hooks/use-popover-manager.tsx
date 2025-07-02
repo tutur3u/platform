@@ -7,23 +7,33 @@ export function usePopoverManager() {
   const moreButtonRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const popoverContentRefs = useRef<(HTMLDivElement | null)[]>([]);
   const [openPopoverIdx, setOpenPopoverIdx] = useState<number | null>(null);
-  const [scrollStates, setScrollStates] = useState<Record<number, { top: boolean; bottom: boolean }>>({});
-  const [popoverHovered, setPopoverHovered] = useState<Record<number, boolean>>({});
+  const [scrollStates, setScrollStates] = useState<
+    Record<number, { top: boolean; bottom: boolean }>
+  >({});
+  const [popoverHovered, setPopoverHovered] = useState<Record<number, boolean>>(
+    {}
+  );
 
   // Handler to close popover on scroll/resize
-  const handleClose = useCallback((event: Event) => {
-    if (openPopoverIdx === null) return;
-    const popoverEl = popoverContentRefs.current[openPopoverIdx!];
-    if (popoverHovered[openPopoverIdx!]) return;
-    if (!popoverEl) {
+  const handleClose = useCallback(
+    (event: Event) => {
+      if (openPopoverIdx === null) return;
+      const popoverEl = popoverContentRefs.current[openPopoverIdx!];
+      if (popoverHovered[openPopoverIdx!]) return;
+      if (!popoverEl) {
+        setOpenPopoverIdx(null);
+        return;
+      }
+      if (
+        event.target instanceof Node &&
+        popoverEl.contains(event.target as Node)
+      ) {
+        return;
+      }
       setOpenPopoverIdx(null);
-      return;
-    }
-    if (event.target instanceof Node && popoverEl.contains(event.target as Node)) {
-      return;
-    }
-    setOpenPopoverIdx(null);
-  }, [openPopoverIdx, popoverHovered]);
+    },
+    [openPopoverIdx, popoverHovered]
+  );
 
   useEffect(() => {
     if (openPopoverIdx !== null) {
@@ -41,7 +51,7 @@ export function usePopoverManager() {
     if (openPopoverIdx !== null) {
       const el = popoverContentRefs.current[openPopoverIdx];
       if (el) {
-        setScrollStates(prev => ({
+        setScrollStates((prev) => ({
           ...prev,
           [openPopoverIdx]: {
             top: el.scrollTop > 0,
@@ -53,16 +63,19 @@ export function usePopoverManager() {
   }, [openPopoverIdx]);
 
   // Helper to handle scroll shadow indicators
-  const handlePopoverScroll = useCallback((e: React.UIEvent<HTMLDivElement>, idx: number) => {
-    const el = e.currentTarget;
-    setScrollStates((prev) => ({
-      ...prev,
-      [idx]: {
-        top: el.scrollTop > 0,
-        bottom: el.scrollTop + el.clientHeight < el.scrollHeight,
-      },
-    }));
-  }, []);
+  const handlePopoverScroll = useCallback(
+    (e: React.UIEvent<HTMLDivElement>, idx: number) => {
+      const el = e.currentTarget;
+      setScrollStates((prev) => ({
+        ...prev,
+        [idx]: {
+          top: el.scrollTop > 0,
+          bottom: el.scrollTop + el.clientHeight < el.scrollHeight,
+        },
+      }));
+    },
+    []
+  );
 
   // Cleanup refs on unmount
   useEffect(() => {
@@ -82,4 +95,4 @@ export function usePopoverManager() {
     setPopoverHovered,
     handlePopoverScroll,
   };
-} 
+}

@@ -54,12 +54,12 @@ export function StrategicSection() {
   return (
     <section ref={sectionRef} className="container w-full px-0 pt-20">
       <div className="mb-16 text-center">
-        <h2 className="strategic-title mb-4 text-3xl font-bold md:text-4xl">
+        <h2 className="strategic-title mb-4 font-bold text-3xl md:text-4xl">
           <span className="bg-gradient-to-r from-dynamic-light-purple/80 to-dynamic-light-blue/80 bg-clip-text text-transparent">
             {t('strategic_advantages')}
           </span>
         </h2>
-        <p className="strategic-title mx-auto max-w-3xl text-xl text-muted-foreground">
+        <p className="strategic-title mx-auto max-w-3xl text-muted-foreground text-xl">
           {t('why_tuturuuu_is_a_game_changer_for_your_productivity')}
         </p>
       </div>
@@ -69,7 +69,7 @@ export function StrategicSection() {
           <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-gradient-to-br from-dynamic-light-purple/80 to-dynamic-light-blue/80">
             <Zap className="h-6 w-6 text-white" />
           </div>
-          <h3 className="mb-3 text-xl font-bold">{t('unified_workspace')}</h3>
+          <h3 className="mb-3 font-bold text-xl">{t('unified_workspace')}</h3>
           <p className="mb-4 text-muted-foreground">
             {t(
               'stop_switching_between_apps_and_losing_context_tuturuuu_brings_your_calendar_tasks_meetings_chat_and_email_into_one_intelligent_workspace'
@@ -100,7 +100,7 @@ export function StrategicSection() {
           <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-gradient-to-br from-dynamic-light-blue/80 to-dynamic-light-blue/80">
             <Brain className="h-6 w-6 text-white" />
           </div>
-          <h3 className="mb-3 text-xl font-bold">
+          <h3 className="mb-3 font-bold text-xl">
             {t('ai_powered_intelligence')}
           </h3>
           <p className="mb-4 text-muted-foreground">
@@ -133,7 +133,7 @@ export function StrategicSection() {
           <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-gradient-to-br from-dynamic-light-green/80 to-dynamic-light-green/80">
             <Clock className="h-6 w-6 text-white" />
           </div>
-          <h3 className="mb-3 text-xl font-bold">
+          <h3 className="mb-3 font-bold text-xl">
             {t('focus_time_protection')}
           </h3>
           <p className="mb-4 text-muted-foreground">
@@ -166,7 +166,7 @@ export function StrategicSection() {
           <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-gradient-to-br from-dynamic-light-orange/80 to-dynamic-light-orange/80">
             <Video className="h-6 w-6 text-white" />
           </div>
-          <h3 className="mb-3 text-xl font-bold">{t('enhanced_meetings')}</h3>
+          <h3 className="mb-3 font-bold text-xl">{t('enhanced_meetings')}</h3>
           <p className="mb-4 text-muted-foreground">
             {t(
               'tuturuuu_meetings_go_beyond_video_conferencing_with_ai_generated_notes_automatic_task_creation_and_smart_follow_ups'
@@ -197,7 +197,7 @@ export function StrategicSection() {
           <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-gradient-to-br from-dynamic-light-red/80 to-dynamic-light-red/80">
             <MessageSquare className="h-6 w-6 text-white" />
           </div>
-          <h3 className="mb-3 text-xl font-bold">
+          <h3 className="mb-3 font-bold text-xl">
             {t('productive_communication')}
           </h3>
           <p className="mb-4 text-muted-foreground">
@@ -234,7 +234,7 @@ export function StrategicSection() {
           <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-gradient-to-br from-dynamic-light-purple/80 to-dynamic-light-blue/80">
             <Calendar className="h-6 w-6 text-white" />
           </div>
-          <h3 className="mb-3 text-xl font-bold">
+          <h3 className="mb-3 font-bold text-xl">
             {t('continuous_improvement')}
           </h3>
           <p className="mb-4 text-muted-foreground">

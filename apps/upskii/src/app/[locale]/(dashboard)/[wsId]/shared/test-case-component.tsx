@@ -38,13 +38,13 @@ export default function TestCaseComponent({
                   <div className="mb-2 font-medium">Test Case {index + 1}:</div>
                   <div className="flex flex-col gap-4">
                     <div className="space-y-2">
-                      <p className="ml-2 text-sm font-medium">Input</p>
+                      <p className="ml-2 font-medium text-sm">Input</p>
                       <div className="rounded-md bg-muted p-3 font-mono text-sm">
                         {testcase.input}
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <p className="ml-2 text-sm font-medium">
+                      <p className="ml-2 font-medium text-sm">
                         Output (Expected)
                       </p>
                       <div className="rounded-md bg-muted p-3 font-mono text-sm">

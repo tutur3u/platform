@@ -38,7 +38,7 @@ export default function FinanceToggle() {
       />
       <label
         htmlFor="showFinanceStats"
-        className="text-sm leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+        className="font-medium text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
       >
         {t('finance-overview.show-finance-stats')}
       </label>

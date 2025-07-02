@@ -236,7 +236,7 @@ export function PromptForm({
           <div className="scrollbar-none flex w-full items-center gap-2 overflow-x-auto font-semibold">
             {model && (
               <>
-                <div className="flex shrink-0 items-center gap-1 rounded border border-dynamic-orange/20 bg-dynamic-orange/10 px-2 py-1 text-xs font-semibold text-dynamic-orange">
+                <div className="flex shrink-0 items-center gap-1 rounded border border-dynamic-orange/20 bg-dynamic-orange/10 px-2 py-1 font-semibold text-dynamic-orange text-xs">
                   <Sparkles className="h-3 w-3" />
                   <span>
                     {provider && (

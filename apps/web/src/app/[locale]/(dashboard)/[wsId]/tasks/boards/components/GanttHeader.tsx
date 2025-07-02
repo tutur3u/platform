@@ -17,7 +17,7 @@ export function GanttHeader({ productivityStats }: GanttHeaderProps) {
     <div className="mb-6 flex items-center justify-between">
       <div>
         <h4 className="font-medium">Task Gantt Timeline</h4>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-muted-foreground text-sm">
           Visual timeline showing task lifecycle from creation to completion
         </p>
       </div>

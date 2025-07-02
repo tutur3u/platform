@@ -20,7 +20,7 @@ export default function TimeColumn({
         <div className="text-lg">0</div>
       </div>
 
-      <div className="border border-b-0 border-transparent">
+      <div className="border border-transparent border-b-0">
         {Array.from(Array(Math.floor(end + 1 - start)).keys())
           .map((i) => (i + start) * 4)
           // duplicate each item 4 times
@@ -32,12 +32,12 @@ export default function TimeColumn({
                 hr === 0
                   ? ''
                   : (hr + 1) % 4 === 0 || (hr + 1) % 2 === 0
-                    ? 'border-b border-transparent'
+                    ? 'border-transparent border-b'
                     : ''
               }`}
             >
               {i % 4 === 0 && (
-                <div className="absolute -top-2 right-0 text-xs">
+                <div className="-top-2 absolute right-0 text-xs">
                   <div className="flex-none text-xs">
                     {hr / 4 === 12
                       ? '12:00 PM'

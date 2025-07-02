@@ -229,10 +229,10 @@ export default function SideBySideDiff({
     <div className={cn('max-h-80 overflow-auto rounded-md border', className)}>
       {/* Headers */}
       <div className="grid grid-cols-2 border-b bg-muted/30">
-        <div className="border-r px-4 py-2 text-xs font-medium text-muted-foreground">
+        <div className="border-r px-4 py-2 font-medium text-muted-foreground text-xs">
           {leftTitle}
         </div>
-        <div className="px-4 py-2 text-xs font-medium text-muted-foreground">
+        <div className="px-4 py-2 font-medium text-muted-foreground text-xs">
           {rightTitle}
         </div>
       </div>
@@ -247,9 +247,9 @@ export default function SideBySideDiff({
                 <div
                   key={`left-content-${index}`}
                   className={cn(
-                    'min-h-[24px] px-2 py-1 leading-snug break-all whitespace-pre-wrap',
+                    'min-h-[24px] whitespace-pre-wrap break-all px-2 py-1 leading-snug',
                     line.type === 'removed' &&
-                      'border-l-2 border-red-500 bg-red-50 text-red-800 dark:bg-red-900/20 dark:text-red-300',
+                      'border-red-500 border-l-2 bg-red-50 text-red-800 dark:bg-red-900/20 dark:text-red-300',
                     line.type === 'modified' &&
                       'bg-amber-50/50 text-amber-800 dark:bg-amber-900/20 dark:text-amber-300'
                   )}
@@ -269,9 +269,9 @@ export default function SideBySideDiff({
                 <div
                   key={`right-content-${index}`}
                   className={cn(
-                    'min-h-[24px] px-2 py-1 leading-snug break-all whitespace-pre-wrap',
+                    'min-h-[24px] whitespace-pre-wrap break-all px-2 py-1 leading-snug',
                     line.type === 'added' &&
-                      'border-l-2 border-green-500 bg-green-50 text-green-800 dark:bg-green-900/20 dark:text-green-300',
+                      'border-green-500 border-l-2 bg-green-50 text-green-800 dark:bg-green-900/20 dark:text-green-300',
                     line.type === 'modified' &&
                       'bg-amber-50/50 text-amber-800 dark:bg-amber-900/20 dark:text-amber-300'
                   )}

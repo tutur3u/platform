@@ -82,7 +82,7 @@ export function TeamAccordion({ teamId }: { teamId: string }) {
             <div>
               <div className="mb-2 flex items-center gap-2">
                 <Users className="h-4 w-4" />
-                <h4 className="text-sm font-medium">{t('teams.members')}</h4>
+                <h4 className="font-medium text-sm">{t('teams.members')}</h4>
               </div>
 
               {isLoadingMembers ? (
@@ -108,7 +108,7 @@ export function TeamAccordion({ teamId }: { teamId: string }) {
                       </Avatar>
                       <div className="flex-1 truncate">
                         <div className="font-medium">{member.display_name}</div>
-                        <div className="truncate text-xs text-muted-foreground">
+                        <div className="truncate text-muted-foreground text-xs">
                           {member.email}
                         </div>
                       </div>
@@ -116,7 +116,7 @@ export function TeamAccordion({ teamId }: { teamId: string }) {
                   ))}
                 </div>
               ) : (
-                <div className="py-1 text-sm text-muted-foreground">
+                <div className="py-1 text-muted-foreground text-sm">
                   {t('teams.no_members')}
                 </div>
               )}
@@ -126,7 +126,7 @@ export function TeamAccordion({ teamId }: { teamId: string }) {
             <div>
               <div className="mb-2 flex items-center gap-2">
                 <Mail className="h-4 w-4" />
-                <h4 className="text-sm font-medium">
+                <h4 className="font-medium text-sm">
                   {t('teams.invitations')}
                 </h4>
               </div>
@@ -150,7 +150,7 @@ export function TeamAccordion({ teamId }: { teamId: string }) {
                       </Avatar>
                       <div className="flex-1 truncate">
                         <div className="font-medium">{invitation.email}</div>
-                        <div className="text-xs text-muted-foreground">
+                        <div className="text-muted-foreground text-xs">
                           {t('teams.invited')}{' '}
                           {moment(invitation.created_at).format('MMM DD, YYYY')}
                         </div>
@@ -159,7 +159,7 @@ export function TeamAccordion({ teamId }: { teamId: string }) {
                   ))}
                 </div>
               ) : (
-                <div className="py-1 text-sm text-muted-foreground">
+                <div className="py-1 text-muted-foreground text-sm">
                   {t('teams.no_invitations')}
                 </div>
               )}

@@ -48,7 +48,7 @@ export default function TimeElapsedStatus({
         </p>
         <button
           onClick={toggleVisibility}
-          className="ml-4 text-sm text-muted-foreground underline hover:text-foreground"
+          className="ml-4 text-muted-foreground text-sm underline hover:text-foreground"
         >
           {isVisible ? (
             <Eye className="h-5 w-5" />

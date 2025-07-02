@@ -229,7 +229,7 @@ export default function PromptForm({ problem }: Props) {
       <TabsContent value="prompt" className="space-y-4">
         <div className="flex h-full flex-col">
           <div className="mb-2 flex items-center justify-between">
-            <div className="text-sm text-muted-foreground">
+            <div className="text-muted-foreground text-sm">
               Characters: {prompt.length} / {problem.max_prompt_length}
             </div>
             <Progress
@@ -301,7 +301,7 @@ export default function PromptForm({ problem }: Props) {
 
               {testResult && (
                 <div className="mt-4">
-                  <h3 className="mb-2 text-sm font-medium">Output:</h3>
+                  <h3 className="mb-2 font-medium text-sm">Output:</h3>
                   <div className="rounded-md bg-muted p-3 font-mono text-sm">
                     {testResult.output}
                   </div>
@@ -337,13 +337,13 @@ export default function PromptForm({ problem }: Props) {
 
                 {allTestResults.map((result, index) => (
                   <div key={index} className="space-y-2">
-                    <h3 className="text-sm font-medium">
+                    <h3 className="font-medium text-sm">
                       Test Case {index + 1}:
                     </h3>
                     <div className="rounded-md bg-muted p-3 font-mono text-sm">
                       {result.input}
                     </div>
-                    <h3 className="text-sm font-medium">Output:</h3>
+                    <h3 className="font-medium text-sm">Output:</h3>
                     <div className="rounded-md bg-muted p-3 font-mono text-sm">
                       {result.output}
                     </div>
@@ -359,8 +359,8 @@ export default function PromptForm({ problem }: Props) {
         {submissions.length == 0 ? (
           <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center">
             <Clock className="mb-2 h-10 w-10 text-muted-foreground" />
-            <h3 className="text-lg font-medium">No submissions yet</h3>
-            <p className="mt-1 text-sm text-muted-foreground">
+            <h3 className="font-medium text-lg">No submissions yet</h3>
+            <p className="mt-1 text-muted-foreground text-sm">
               Your submission history will appear here after you submit your
               first prompt.
             </p>
@@ -370,7 +370,7 @@ export default function PromptForm({ problem }: Props) {
             <Card key={submission.id} className="overflow-hidden">
               <CardHeader className="pb-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-muted-foreground">
+                  <span className="text-muted-foreground text-xs">
                     <Clock className="mr-1 inline h-3 w-3" />
                     {new Date(submission.created_at).toLocaleString()}
                   </span>
@@ -386,7 +386,7 @@ export default function PromptForm({ problem }: Props) {
               </CardHeader>
               <CardContent className="space-y-6">
                 <div>
-                  <h3 className="mb-1 text-sm font-medium text-foreground">
+                  <h3 className="mb-1 font-medium text-foreground text-sm">
                     Prompt:
                   </h3>
                   <div className="rounded-md bg-muted p-2 text-sm">
@@ -398,7 +398,7 @@ export default function PromptForm({ problem }: Props) {
                 {submission.total_tests > 0 && (
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <h3 className="text-xs font-medium text-muted-foreground">
+                      <h3 className="font-medium text-muted-foreground text-xs">
                         Test Case Evaluation:
                       </h3>
                       <ScoreBadge
@@ -438,7 +438,7 @@ export default function PromptForm({ problem }: Props) {
                 {submission.total_criteria > 0 && (
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <h3 className="text-xs font-medium text-muted-foreground">
+                      <h3 className="font-medium text-muted-foreground text-xs">
                         Criteria Evaluation:
                       </h3>
                       <ScoreBadge
@@ -486,7 +486,7 @@ export default function PromptForm({ problem }: Props) {
                             <HoverCardContent className="w-80 p-4">
                               <div className="space-y-2">
                                 <h4 className="font-medium">Feedback</h4>
-                                <p className="text-sm text-muted-foreground">
+                                <p className="text-muted-foreground text-sm">
                                   {cs.result.feedback}
                                 </p>
                               </div>

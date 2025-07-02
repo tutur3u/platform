@@ -54,7 +54,7 @@ const AuditLabel = ({ data, isLoading, hasActor, actor }: Props) => {
               fullLabel.charAt(0).toUpperCase() + fullLabel.slice(1)}
         </span>
       </div>
-      <div className="line-clamp-1 pt-0.5 text-sm font-semibold text-blue-600 dark:text-blue-300">
+      <div className="line-clamp-1 pt-0.5 font-semibold text-blue-600 text-sm dark:text-blue-300">
         {relativeTime.charAt(0).toUpperCase() + relativeTime.slice(1)}
         {workspace ? (
           <span className="text-purple-600 dark:text-purple-300">

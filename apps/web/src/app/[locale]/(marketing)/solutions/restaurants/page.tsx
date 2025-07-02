@@ -150,7 +150,7 @@ export default function RestaurantsPage() {
         <Badge variant="secondary" className="mb-4">
           Restaurant Management Solutions
         </Badge>
-        <h1 className="mb-4 text-center text-2xl font-bold tracking-tight text-balance md:text-4xl lg:text-6xl">
+        <h1 className="mb-4 text-balance text-center font-bold text-2xl tracking-tight md:text-4xl lg:text-6xl">
           <GradientHeadline>
             Transform Your Restaurant Operations
           </GradientHeadline>
@@ -195,7 +195,7 @@ export default function RestaurantsPage() {
         <Card className="border-primary bg-primary/5 p-8">
           <div className="mx-auto flex max-w-4xl flex-col items-center gap-4 text-center">
             <Star className="h-12 w-12 text-primary" />
-            <h2 className="text-2xl font-bold">
+            <h2 className="font-bold text-2xl">
               Trusted by Leading Restaurants Worldwide
             </h2>
             <p className="text-muted-foreground">
@@ -208,7 +208,7 @@ export default function RestaurantsPage() {
 
       {/* Features Grid */}
       <motion.section variants={itemVariants} className="mb-24">
-        <h2 className="mb-12 text-center text-3xl font-bold">
+        <h2 className="mb-12 text-center font-bold text-3xl">
           Everything You Need to Succeed
         </h2>
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -222,7 +222,7 @@ export default function RestaurantsPage() {
               <Card className="h-full p-6 transition-colors hover:border-primary">
                 <div className="mb-4 flex items-center gap-3">
                   <div className="text-primary">{feature.icon}</div>
-                  <h3 className="text-xl font-semibold">{feature.title}</h3>
+                  <h3 className="font-semibold text-xl">{feature.title}</h3>
                 </div>
                 <p className="text-muted-foreground">{feature.description}</p>
               </Card>
@@ -233,12 +233,12 @@ export default function RestaurantsPage() {
 
       {/* Benefits Bento Grid */}
       <motion.section variants={itemVariants} className="mb-24">
-        <h2 className="mb-12 text-center text-3xl font-bold">Key Benefits</h2>
+        <h2 className="mb-12 text-center font-bold text-3xl">Key Benefits</h2>
         <div className="grid gap-4 md:grid-cols-4 md:grid-rows-2">
           <Card className="bg-primary/5 md:col-span-2 md:row-span-2">
             <div className="flex h-full flex-col p-6">
               <Utensils className="mb-4 h-8 w-8 text-primary" />
-              <h3 className="mb-2 text-xl font-bold">
+              <h3 className="mb-2 font-bold text-xl">
                 Boost Your Restaurant's Efficiency
               </h3>
               <p className="text-muted-foreground">
@@ -263,7 +263,7 @@ export default function RestaurantsPage() {
               >
                 {benefit.icon}
                 <h3 className="mb-2 font-bold">{benefit.title}</h3>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-muted-foreground text-sm">
                   {benefit.description}
                 </p>
                 <div className="mt-4 h-1 w-0 bg-primary/10 transition-all group-hover:w-full" />
@@ -275,28 +275,28 @@ export default function RestaurantsPage() {
 
       {/* Integration Partners */}
       <motion.section variants={itemVariants} className="mb-24">
-        <h2 className="mb-12 text-center text-3xl font-bold">
+        <h2 className="mb-12 text-center font-bold text-3xl">
           Seamless Integrations
         </h2>
         <div className="grid gap-6 md:grid-cols-3">
           <Card className="p-6 text-center">
             <Wallet className="mx-auto mb-4 h-8 w-8 text-primary" />
             <h3 className="mb-2 font-bold">Payment Processors</h3>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-muted-foreground text-sm">
               Connect with major payment providers
             </p>
           </Card>
           <Card className="p-6 text-center">
             <Truck className="mx-auto mb-4 h-8 w-8 text-primary" />
             <h3 className="mb-2 font-bold">Delivery Services</h3>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-muted-foreground text-sm">
               Integrate with popular delivery platforms
             </p>
           </Card>
           <Card className="p-6 text-center">
             <Receipt className="mx-auto mb-4 h-8 w-8 text-primary" />
             <h3 className="mb-2 font-bold">Accounting Software</h3>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-muted-foreground text-sm">
               Sync with your accounting system
             </p>
           </Card>
@@ -309,38 +309,38 @@ export default function RestaurantsPage() {
           <div className="grid md:grid-cols-2">
             <div className="p-8">
               <HeartHandshake className="mb-4 h-8 w-8 text-primary" />
-              <h2 className="mb-4 text-2xl font-bold">Success Story</h2>
+              <h2 className="mb-4 font-bold text-2xl">Success Story</h2>
               <p className="mb-4 text-muted-foreground">
                 "Since implementing this system, we've seen a 30% increase in
                 efficiency and a 25% boost in customer satisfaction. The
                 platform has transformed how we operate."
               </p>
               <p className="font-semibold">- John Smith</p>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-muted-foreground text-sm">
                 Owner, The Gourmet Kitchen
               </p>
             </div>
             <div className="flex items-center justify-center bg-primary/5 p-8">
               <div className="grid gap-4 text-center">
                 <div>
-                  <div className="mb-2 text-3xl font-bold text-primary">
+                  <div className="mb-2 font-bold text-3xl text-primary">
                     30%
                   </div>
-                  <div className="text-sm text-muted-foreground">
+                  <div className="text-muted-foreground text-sm">
                     Increased Efficiency
                   </div>
                 </div>
                 <div>
-                  <div className="mb-2 text-3xl font-bold text-primary">
+                  <div className="mb-2 font-bold text-3xl text-primary">
                     25%
                   </div>
-                  <div className="text-sm text-muted-foreground">
+                  <div className="text-muted-foreground text-sm">
                     Higher Satisfaction
                   </div>
                 </div>
                 <div>
-                  <div className="mb-2 text-3xl font-bold text-primary">2x</div>
-                  <div className="text-sm text-muted-foreground">
+                  <div className="mb-2 font-bold text-3xl text-primary">2x</div>
+                  <div className="text-muted-foreground text-sm">
                     Revenue Growth
                   </div>
                 </div>
@@ -352,7 +352,7 @@ export default function RestaurantsPage() {
 
       {/* FAQ Section */}
       <motion.section variants={itemVariants}>
-        <h2 className="mb-12 text-center text-3xl font-bold">
+        <h2 className="mb-12 text-center font-bold text-3xl">
           Frequently Asked Questions
         </h2>
         <div className="grid gap-6 md:grid-cols-2">
@@ -385,7 +385,7 @@ export default function RestaurantsPage() {
       {/* CTA Section */}
       <motion.section variants={itemVariants} className="mt-24 text-center">
         <Card className="border-primary bg-primary/5 p-12">
-          <h2 className="mb-4 text-3xl font-bold">
+          <h2 className="mb-4 font-bold text-3xl">
             Ready to Transform Your Restaurant?
           </h2>
           <p className="mx-auto mb-8 max-w-2xl text-muted-foreground">

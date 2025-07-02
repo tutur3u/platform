@@ -87,7 +87,7 @@ export default function TestCaseEvaluation({
       <div className="mb-4 flex items-center justify-between">
         <div className="space-y-1">
           <h3 className="font-medium">Test Case Results</h3>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-muted-foreground text-sm">
             {submission.passed_tests} of {submission.total_tests} test cases
             passed
           </p>
@@ -133,7 +133,7 @@ export default function TestCaseEvaluation({
                     <TableCell className="font-medium">{index + 1}</TableCell>
                     <TableCell>
                       {testCase.matched ? (
-                        <div className="text-success flex items-center">
+                        <div className="flex items-center text-success">
                           <CheckCircle className="mr-1 h-4 w-4" />
                           Passed
                           {renderConfidenceBadge(testCase.confidence)}
@@ -148,7 +148,7 @@ export default function TestCaseEvaluation({
                     </TableCell>
                     <TableCell>
                       <div className="max-h-20 overflow-auto">
-                        <pre className="text-xs whitespace-pre-wrap">
+                        <pre className="whitespace-pre-wrap text-xs">
                           {testCase.test_case?.input || 'No input'}
                         </pre>
                       </div>
@@ -156,23 +156,23 @@ export default function TestCaseEvaluation({
                     <TableCell>
                       <div className="flex flex-col gap-2">
                         <div>
-                          <span className="text-xs font-semibold text-muted-foreground">
+                          <span className="font-semibold text-muted-foreground text-xs">
                             Expected:
                           </span>
                           <div className="max-h-20 overflow-auto">
-                            <pre className="text-xs whitespace-pre-wrap">
+                            <pre className="whitespace-pre-wrap text-xs">
                               {testCase.test_case?.output ||
                                 'No expected output'}
                             </pre>
                           </div>
                         </div>
                         <div>
-                          <span className="text-xs font-semibold text-muted-foreground">
+                          <span className="font-semibold text-muted-foreground text-xs">
                             Actual:
                           </span>
                           <div className="max-h-20 overflow-auto">
                             <pre
-                              className={`text-xs whitespace-pre-wrap ${!testCase.matched ? 'text-destructive' : ''}`}
+                              className={`whitespace-pre-wrap text-xs ${!testCase.matched ? 'text-destructive' : ''}`}
                             >
                               {testCase.output || 'No output'}
                             </pre>
@@ -208,7 +208,7 @@ export default function TestCaseEvaluation({
                             <AlertCircle className="h-4 w-4 text-muted-foreground" />
                             <h4 className="font-medium">Reasoning</h4>
                           </div>
-                          <p className="text-sm whitespace-pre-wrap">
+                          <p className="whitespace-pre-wrap text-sm">
                             {testCase.reasoning}
                           </p>
                         </div>

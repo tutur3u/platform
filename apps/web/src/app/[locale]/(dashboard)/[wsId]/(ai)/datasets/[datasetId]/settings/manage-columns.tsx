@@ -167,7 +167,7 @@ export function ManageColumns({ wsId, datasetId }: Props) {
         {isLoading ? (
           <div className="flex h-64 flex-col items-center justify-center gap-2">
             <Loader2 className="h-6 w-6 animate-spin" />
-            <p className="text-sm text-muted-foreground">Loading columns...</p>
+            <p className="text-muted-foreground text-sm">Loading columns...</p>
           </div>
         ) : columns.length === 0 ? (
           <div className="flex h-64 flex-col items-center justify-center gap-4">
@@ -175,7 +175,7 @@ export function ManageColumns({ wsId, datasetId }: Props) {
               <Plus className="h-8 w-8 text-muted-foreground" />
             </div>
             <div className="text-center">
-              <p className="text-sm text-muted-foreground">
+              <p className="text-muted-foreground text-sm">
                 No columns found in this dataset
               </p>
               <Button
@@ -251,7 +251,7 @@ export function ManageColumns({ wsId, datasetId }: Props) {
                   <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted/50 transition-colors group-hover:bg-muted">
                     <Plus className="h-5 w-5 text-muted-foreground" />
                   </div>
-                  <span className="text-sm text-muted-foreground">
+                  <span className="text-muted-foreground text-sm">
                     Add Column
                   </span>
                 </Button>
@@ -282,7 +282,7 @@ export function ManageColumns({ wsId, datasetId }: Props) {
         </DialogHeader>
         <div className="space-y-4">
           <div className="space-y-2">
-            <label className="text-sm font-medium">Column Name</label>
+            <label className="font-medium text-sm">Column Name</label>
             <Input
               value={newColumnName}
               onChange={(e) => setNewColumnName(e.target.value)}

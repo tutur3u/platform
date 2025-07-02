@@ -40,7 +40,7 @@ export default async function Page({ searchParams }: Props) {
   return (
     <div className="container mx-auto p-6">
       <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between md:gap-0">
-        <h1 className="text-3xl font-bold">{t('problems')}</h1>
+        <h1 className="font-bold text-3xl">{t('problems')}</h1>
         <CreateProblemDialog
           trigger={
             <Button className="gap-2">

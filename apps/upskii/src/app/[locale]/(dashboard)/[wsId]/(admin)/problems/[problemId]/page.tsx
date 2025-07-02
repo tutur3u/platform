@@ -28,7 +28,7 @@ export default async function Page({ params }: Props) {
   if (!problem) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-4">
-        <p className="text-xl font-semibold">Problem not found</p>
+        <p className="font-semibold text-xl">Problem not found</p>
         <Link href={`/${wsId}/problems`}>
           <Button>Go back to problems</Button>
         </Link>
@@ -44,7 +44,7 @@ export default async function Page({ params }: Props) {
             <ArrowLeft className="h-4 w-4" />
           </Button>
         </Link>
-        <h1 className="text-xl font-bold">{problem.title}</h1>
+        <h1 className="font-bold text-xl">{problem.title}</h1>
       </div>
 
       <div className="relative grid h-[calc(100vh-4rem)] grid-cols-1 gap-4 overflow-scroll p-6 md:grid-cols-2">

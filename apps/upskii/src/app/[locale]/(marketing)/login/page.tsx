@@ -91,7 +91,7 @@ export default async function Login({ searchParams }: LoginProps) {
                 </div>
                 <Badge
                   variant="secondary"
-                  className="border border-foreground/20 bg-gradient-to-br from-foreground/5 via-calendar-bg-blue to-calendar-bg-pink px-4 py-2 text-sm leading-relaxed font-medium text-balance shadow-lg backdrop-blur-sm"
+                  className="text-balance border border-foreground/20 bg-gradient-to-br from-foreground/5 via-calendar-bg-blue to-calendar-bg-pink px-4 py-2 font-medium text-sm leading-relaxed shadow-lg backdrop-blur-sm"
                 >
                   <span className="whitespace-normal">
                     {t('login.powered-by', { domain: currentDomain.name })}
@@ -102,10 +102,10 @@ export default async function Login({ searchParams }: LoginProps) {
               <div className="space-y-4">
                 {renderLogo(DOMAINS.TUTURUUU)}
                 <div className="space-y-2">
-                  <h1 className="bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-3xl font-bold text-transparent dark:from-white dark:to-gray-300">
+                  <h1 className="bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text font-bold text-3xl text-transparent dark:from-white dark:to-gray-300">
                     {t('login.welcome')}
                   </h1>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-muted-foreground text-sm">
                     {t('login.sign_in_to_your_account')}
                   </p>
                 </div>
@@ -123,7 +123,7 @@ export default async function Login({ searchParams }: LoginProps) {
                   <div className="h-10 w-full rounded-lg bg-muted" />
                   <div className="flex items-center gap-2">
                     <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-                    <span className="text-sm text-muted-foreground">
+                    <span className="text-muted-foreground text-sm">
                       {t('common.loading')}...
                     </span>
                   </div>
@@ -136,7 +136,7 @@ export default async function Login({ searchParams }: LoginProps) {
 
           {/* Footer */}
           <div className="mt-8 text-center">
-            <div className="text-xs leading-relaxed text-balance text-muted-foreground">
+            <div className="text-balance text-muted-foreground text-xs leading-relaxed">
               <span>{t('auth.notice-p1')} </span>
               <Link
                 href="/terms"

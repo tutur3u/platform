@@ -142,7 +142,7 @@ export default function FleetingAssistant({
     <div className="flex h-full flex-col">
       <div className="flex h-113 flex-col p-2">
         <div className="mb-2 flex items-center justify-between gap-2 transition">
-          <div className="w-fit rounded border bg-foreground px-2 py-0.5 font-mono text-xs font-bold text-background">
+          <div className="w-fit rounded border bg-foreground px-2 py-0.5 font-bold font-mono text-background text-xs">
             ALPHA
           </div>
 
@@ -190,7 +190,7 @@ export default function FleetingAssistant({
               ))}
             </div>
           ) : (
-            <div className="line-clamp-1 text-lg font-semibold md:text-2xl">
+            <div className="line-clamp-1 font-semibold text-lg md:text-2xl">
               <span className="opacity-30">Get started with</span>{' '}
               <AssistantGradientName />
               <span className="opacity-30">.</span>

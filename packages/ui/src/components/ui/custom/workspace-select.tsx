@@ -192,7 +192,7 @@ export function WorkspaceSelect({
               aria-label="Select a workspace"
               className={cn(
                 hideLeading ? 'justify-center p-0' : 'justify-start',
-                'w-full text-start whitespace-normal'
+                'w-full whitespace-normal text-start'
               )}
               disabled={!workspaces || workspaces.length === 0}
             >

@@ -31,7 +31,7 @@ export default function Navbar({
   );
 
   return (
-    <div className="bg-background/80 border-border/40 fixed top-0 z-50 w-full border-b backdrop-blur-md">
+    <div className="fixed top-0 z-50 w-full border-border/40 border-b bg-background/80 backdrop-blur-md">
       <div className="container flex h-16 items-center justify-between">
         <SharedNavbar
           logo="/media/logos/nova-transparent.png"
