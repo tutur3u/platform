@@ -99,7 +99,7 @@ export function SubmissionCard({
             <ScoreBadge
               score={submission.total_score}
               maxScore={10}
-              className="h-8 px-3 py-1 font-bold text-sm"
+              className="h-8 px-3 py-1 text-sm font-bold"
             >
               {submission.total_score.toFixed(2)}/10
             </ScoreBadge>
@@ -115,9 +115,9 @@ export function SubmissionCard({
         <div className="space-y-2">
           <div className="flex items-center gap-2">
             <FileCode className="h-4 w-4 text-primary/70" />
-            <h3 className="font-medium text-foreground text-sm">Prompt</h3>
+            <h3 className="text-sm font-medium text-foreground">Prompt</h3>
           </div>
-          <div className="whitespace-pre-line rounded-md border bg-muted/50 p-3 text-sm">
+          <div className="rounded-md border bg-muted/50 p-3 text-sm whitespace-pre-line">
             {submission.prompt ||
               (showSkeleton && <Skeleton className="h-16 w-full" />)}
           </div>

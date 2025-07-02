@@ -124,22 +124,22 @@ export function PricingSection() {
     <section
       id="pricing"
       ref={sectionRef}
-      className="container relative w-full px-0 py-40"
+      className="relative container w-full px-0 py-40"
     >
       <div className="pricing-title-wrapper mb-16 text-center">
-        <h2 className="pricing-title mb-6 font-bold text-4xl md:text-5xl">
+        <h2 className="pricing-title mb-6 text-4xl font-bold md:text-5xl">
           <span className="bg-gradient-to-r from-dynamic-light-purple to-dynamic-light-blue bg-clip-text text-transparent">
             {t('simple_transparent_pricing')}
           </span>
         </h2>
-        <p className="mx-auto max-w-3xl text-muted-foreground text-xl leading-relaxed">
+        <p className="mx-auto max-w-3xl text-xl leading-relaxed text-muted-foreground">
           {t('choose_the_plan_that_works_best_for_you_and_your_team')}
         </p>
 
         <div className="pricing-toggle mt-10 flex items-center justify-center">
           <div className="inline-flex rounded-full bg-white/90 p-1.5 shadow-md backdrop-blur-sm dark:bg-foreground/5">
             <button
-              className={`relative rounded-full px-6 py-2.5 font-medium text-sm transition-all duration-300 ${
+              className={`relative rounded-full px-6 py-2.5 text-sm font-medium transition-all duration-300 ${
                 !isAnnual
                   ? 'bg-gradient-to-r from-dynamic-light-purple to-dynamic-light-blue text-white'
                   : 'text-muted-foreground hover:text-foreground'
@@ -148,11 +148,11 @@ export function PricingSection() {
             >
               {t('monthly')}
               {!isAnnual && (
-                <div className="-z-10 absolute inset-0 animate-pulse rounded-full bg-gradient-to-r from-dynamic-light-purple/80 to-dynamic-light-blue/80 blur-sm"></div>
+                <div className="absolute inset-0 -z-10 animate-pulse rounded-full bg-gradient-to-r from-dynamic-light-purple/80 to-dynamic-light-blue/80 blur-sm"></div>
               )}
             </button>
             <button
-              className={`relative rounded-full px-6 py-2.5 font-medium text-sm transition-all duration-300 ${
+              className={`relative rounded-full px-6 py-2.5 text-sm font-medium transition-all duration-300 ${
                 isAnnual
                   ? 'bg-gradient-to-r from-dynamic-light-purple to-dynamic-light-blue text-white'
                   : 'text-muted-foreground hover:text-foreground'
@@ -161,7 +161,7 @@ export function PricingSection() {
             >
               {t('annual')}
               {isAnnual && (
-                <div className="-z-10 absolute inset-0 animate-pulse rounded-full bg-gradient-to-r from-dynamic-light-purple/80 to-dynamic-light-blue/80 blur-sm"></div>
+                <div className="absolute inset-0 -z-10 animate-pulse rounded-full bg-gradient-to-r from-dynamic-light-purple/80 to-dynamic-light-blue/80 blur-sm"></div>
               )}
             </button>
           </div>
@@ -182,12 +182,12 @@ export function PricingSection() {
               key={index}
               className={`pricing-card group relative overflow-hidden rounded-2xl bg-white/90 shadow-lg transition-all duration-500 hover:shadow-xl dark:bg-foreground/5 ${
                 plan.popular
-                  ? 'md:-translate-y-4 transform ring-2 ring-purple-500'
+                  ? 'transform ring-2 ring-purple-500 md:-translate-y-4'
                   : ''
               }`}
             >
               {plan.popular && (
-                <div className="bg-gradient-to-r from-dynamic-light-purple to-dynamic-light-blue py-2 text-center font-medium text-sm text-white">
+                <div className="bg-gradient-to-r from-dynamic-light-purple to-dynamic-light-blue py-2 text-center text-sm font-medium text-white">
                   {t('most_popular')}
                 </div>
               )}
@@ -204,23 +204,23 @@ export function PricingSection() {
                   >
                     {plan.icon}
                   </div>
-                  <h3 className="font-bold text-2xl">{plan.name}</h3>
+                  <h3 className="text-2xl font-bold">{plan.name}</h3>
                 </div>
 
                 <p className="mb-8 text-muted-foreground">{plan.description}</p>
                 <div className="mb-8">
                   {price === null ? (
-                    <span className="font-bold text-4xl">{t('custom')}</span>
+                    <span className="text-4xl font-bold">{t('custom')}</span>
                   ) : (
                     <div className="flex items-baseline">
-                      <span className="font-bold text-5xl">${price}</span>
+                      <span className="text-5xl font-bold">${price}</span>
                       <span className="ml-2 text-gray-500 lowercase">
                         {isAnnual ? `/${t('year')}` : `/${t('month')}`}
                       </span>
                     </div>
                   )}
                   {plan.name === 'Pro' && isAnnual && (
-                    <div className="mt-2 inline-block rounded-full bg-green-100 px-3 py-1 font-medium text-green-600 text-sm dark:bg-green-900/30 dark:text-green-400">
+                    <div className="mt-2 inline-block rounded-full bg-green-100 px-3 py-1 text-sm font-medium text-green-600 dark:bg-green-900/30 dark:text-green-400">
                       ${plan.monthlyPrice! * 12 - price!}{' '}
                       {t('savings_annually')}
                     </div>
@@ -234,8 +234,8 @@ export function PricingSection() {
                       plan.popular
                         ? `bg-gradient-to-r ${plan.bgGradient} text-white hover:shadow-lg hover:shadow-purple-500/20`
                         : plan.name === 'Enterprise'
-                          ? `bg-gradient-to-r ${plan.bgGradient} text-white hover:shadow-blue-500/20 hover:shadow-lg`
-                          : 'hover:shadow-gray-200/50 hover:shadow-lg'
+                          ? `bg-gradient-to-r ${plan.bgGradient} text-white hover:shadow-lg hover:shadow-blue-500/20`
+                          : 'hover:shadow-lg hover:shadow-gray-200/50'
                     }`}
                     variant={plan.buttonVariant as any}
                     size="lg"
@@ -288,9 +288,9 @@ export function PricingSection() {
                           {hoveredFeature &&
                             hoveredFeature.planName === plan.name &&
                             hoveredFeature.featureName === feature.feature && (
-                              <div className="-translate-x-1/2 absolute bottom-full left-1/2 z-10 mb-2 w-64 transform rounded-lg bg-gray-800 p-3 text-white text-xs leading-relaxed shadow-lg">
+                              <div className="absolute bottom-full left-1/2 z-10 mb-2 w-64 -translate-x-1/2 transform rounded-lg bg-gray-800 p-3 text-xs leading-relaxed text-white shadow-lg">
                                 {featureDescriptions[feature.feature]}
-                                <div className="-translate-x-1/2 absolute top-full left-1/2 transform border-4 border-transparent border-t-gray-800"></div>
+                                <div className="absolute top-full left-1/2 -translate-x-1/2 transform border-4 border-transparent border-t-gray-800"></div>
                               </div>
                             )}
                         </div>

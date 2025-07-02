@@ -267,8 +267,8 @@ export function Structure({
         className={cn(
           'absolute flex h-full w-full flex-col transition-transform duration-300 ease-in-out',
           navState.direction === 'forward'
-            ? 'slide-in-from-right animate-in'
-            : 'slide-in-from-left animate-in'
+            ? 'animate-in slide-in-from-right'
+            : 'animate-in slide-in-from-left'
         )}
       >
         {navState.history.length === 0 ? (
@@ -296,7 +296,7 @@ export function Structure({
             />
             {!isCollapsed && currentTitle && (
               <div className="p-2 pt-0">
-                <h2 className="line-clamp-1 px-2 font-semibold text-muted-foreground text-sm uppercase tracking-wide">
+                <h2 className="line-clamp-1 px-2 text-sm font-semibold tracking-wide text-muted-foreground uppercase">
                   {currentTitle}
                 </h2>
               </div>
@@ -339,7 +339,7 @@ export function Structure({
         </Link>
       </div>
       <div className="mx-2 h-4 w-px flex-none rotate-30 bg-foreground/20" />
-      <div className="flex items-center gap-2 break-all font-semibold text-lg">
+      <div className="flex items-center gap-2 text-lg font-semibold break-all">
         {currentLink?.icon && (
           <div className="flex-none">{currentLink.icon}</div>
         )}

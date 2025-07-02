@@ -17,7 +17,7 @@ export default async function WorkspaceHomePage({ params }: Props) {
   return (
     <>
       <div className="rounded-lg border bg-foreground/5 p-4">
-        <h1 className="font-bold text-2xl">{homeLabel}</h1>
+        <h1 className="text-2xl font-bold">{homeLabel}</h1>
         <p className="text-foreground/80">
           {t('description_p1')}{' '}
           <span className="font-semibold text-foreground">

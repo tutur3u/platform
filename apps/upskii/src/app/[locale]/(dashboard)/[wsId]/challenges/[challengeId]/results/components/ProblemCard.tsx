@@ -88,7 +88,7 @@ export default function ProblemCard({
             <CardTitle className="flex items-center gap-2">
               Problem {problemIndex + 1}
               {problem.title && (
-                <span className="font-normal text-muted-foreground text-sm">
+                <span className="text-sm font-normal text-muted-foreground">
                   {problem.title}
                 </span>
               )}
@@ -102,7 +102,7 @@ export default function ProblemCard({
                     <ScoreBadge
                       score={bestScore}
                       maxScore={MAX_SCORE}
-                      className="inline-flex items-center justify-center rounded-full px-2 py-1 font-medium text-xs"
+                      className="inline-flex items-center justify-center rounded-full px-2 py-1 text-xs font-medium"
                     >
                       {bestScore.toFixed(1)}/{MAX_SCORE}
                     </ScoreBadge>
@@ -142,7 +142,7 @@ export default function ProblemCard({
         ) : (
           <div className="flex flex-col items-center justify-center py-6 text-center text-muted-foreground">
             <CodeIcon className="mb-2 h-10 w-10 opacity-20" />
-            <p className="font-medium text-sm">No submissions yet</p>
+            <p className="text-sm font-medium">No submissions yet</p>
             <p className="text-xs">Try solving this problem to see results</p>
           </div>
         )}

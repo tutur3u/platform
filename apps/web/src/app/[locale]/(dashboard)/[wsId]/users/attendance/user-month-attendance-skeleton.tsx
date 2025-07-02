@@ -65,11 +65,11 @@ export default function UserMonthAttendanceSkeleton() {
       <div>
         <div className="grid h-full gap-8">
           <div key={2024} className="flex h-full flex-col">
-            <div className="mb-4 flex items-center justify-between gap-4 font-bold text-xl md:text-2xl">
+            <div className="mb-4 flex items-center justify-between gap-4 text-xl font-bold md:text-2xl">
               <div className="flex items-center gap-1">
                 {thisYear}
                 <div className="mx-2 h-4 w-px rotate-30 bg-foreground/20" />
-                <span className="font-semibold text-lg md:text-xl">
+                <span className="text-lg font-semibold md:text-xl">
                   {thisMonth}
                 </span>
               </div>

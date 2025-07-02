@@ -73,7 +73,7 @@ export function CalendarHeader({
     <div className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex items-center gap-2">
         <CalendarIcon className="h-5 w-5 text-muted-foreground" />
-        <h2 className="font-semibold text-xl tracking-tight">{title}</h2>
+        <h2 className="text-xl font-semibold tracking-tight">{title}</h2>
       </div>
       <div className="flex flex-col gap-2 md:flex-row md:items-center">
         <div className="flex items-center gap-2">

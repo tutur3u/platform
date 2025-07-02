@@ -32,16 +32,16 @@ export function SessionOverview({ stats }: SessionStatsProps) {
     <div className="mb-6 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="font-medium text-sm">
+          <CardTitle className="text-sm font-medium">
             {t('total-submissions')}
           </CardTitle>
           <Users className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="font-bold text-2xl">
+          <div className="text-2xl font-bold">
             {stats.totalCount.toLocaleString()}
           </div>
-          <p className="text-muted-foreground text-xs">
+          <p className="text-xs text-muted-foreground">
             {t('total-submissions-description')}
           </p>
         </CardContent>
@@ -49,14 +49,14 @@ export function SessionOverview({ stats }: SessionStatsProps) {
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="font-medium text-sm">Active Sessions</CardTitle>
+          <CardTitle className="text-sm font-medium">Active Sessions</CardTitle>
           <Users className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="font-bold text-2xl">
+          <div className="text-2xl font-bold">
             {stats.activeCount.toLocaleString()}
           </div>
-          <p className="text-muted-foreground text-xs">
+          <p className="text-xs text-muted-foreground">
             Currently active sessions
           </p>
         </CardContent>
@@ -64,16 +64,16 @@ export function SessionOverview({ stats }: SessionStatsProps) {
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="font-medium text-sm">
+          <CardTitle className="text-sm font-medium">
             {t('unique-users')}
           </CardTitle>
           <Users className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="font-bold text-2xl">
+          <div className="text-2xl font-bold">
             {stats.uniqueUsersCount.toLocaleString()}
           </div>
-          <p className="text-muted-foreground text-xs">
+          <p className="text-xs text-muted-foreground">
             {t('unique-users-description')}
           </p>
         </CardContent>
@@ -81,16 +81,16 @@ export function SessionOverview({ stats }: SessionStatsProps) {
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="font-medium text-sm">
+          <CardTitle className="text-sm font-medium">
             {t('latest-submission')}
           </CardTitle>
           <Clock className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="font-bold text-md">
+          <div className="text-md font-bold">
             {formatDate(stats.latestSessionDate)}
           </div>
-          <p className="text-muted-foreground text-xs">
+          <p className="text-xs text-muted-foreground">
             {t('latest-submission-description')}
           </p>
         </CardContent>

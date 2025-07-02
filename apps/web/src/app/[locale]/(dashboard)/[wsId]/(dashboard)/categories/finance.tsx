@@ -18,7 +18,7 @@ export async function FinanceCategoryStatistics({ wsId }: { wsId: string }) {
   if (!enabled || !permissions.includes('manage_finance')) return null;
 
   return (
-    <div className="my-2 font-semibold text-2xl">
+    <div className="my-2 text-2xl font-semibold">
       {t('sidebar_tabs.finance')}
     </div>
   );

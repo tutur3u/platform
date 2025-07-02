@@ -553,7 +553,7 @@ export default function PromptForm({ problem, session, submissions }: Props) {
               <PlayCircle className="mr-2 h-4 w-4" />
               Prompt
               {isSubmitting && (
-                <div className="-top-1 -right-1 absolute h-3 w-3 animate-pulse rounded-full bg-dynamic-blue shadow-dynamic-blue/50 shadow-lg" />
+                <div className="absolute -top-1 -right-1 h-3 w-3 animate-pulse rounded-full bg-dynamic-blue shadow-lg shadow-dynamic-blue/50" />
               )}
             </TabsTrigger>
             <TabsTrigger
@@ -613,14 +613,14 @@ export default function PromptForm({ problem, session, submissions }: Props) {
 
           <TabsContent value="submissions" className="space-y-4">
             {submissions && submissions.length == 0 ? (
-              <div className="flex flex-col items-center justify-center rounded-lg border border-foreground/20 border-dashed bg-background/50 p-12 text-center backdrop-blur-sm">
+              <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-foreground/20 bg-background/50 p-12 text-center backdrop-blur-sm">
                 <div className="relative mb-4">
                   <Clock className="mx-auto h-12 w-12 text-foreground/40" />
                   <div className="absolute inset-0 animate-pulse">
                     <Clock className="mx-auto h-12 w-12 text-foreground/20" />
                   </div>
                 </div>
-                <h3 className="mb-2 font-semibold text-foreground text-xl">
+                <h3 className="mb-2 text-xl font-semibold text-foreground">
                   No submissions yet
                 </h3>
                 <p className="max-w-md text-base text-foreground/70">
@@ -667,14 +667,14 @@ export default function PromptForm({ problem, session, submissions }: Props) {
 
                 <TabsContent value="current" className="space-y-4">
                   {currentSubmissions.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center rounded-lg border border-foreground/20 border-dashed bg-background/50 p-8 text-center backdrop-blur-sm">
+                    <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-foreground/20 bg-background/50 p-8 text-center backdrop-blur-sm">
                       <div className="mb-4 rounded-full border border-dynamic-blue/20 bg-dynamic-blue/10 p-3">
                         <Clock className="h-10 w-10 text-dynamic-blue" />
                       </div>
-                      <h3 className="mb-2 font-medium text-foreground text-lg">
+                      <h3 className="mb-2 text-lg font-medium text-foreground">
                         No submissions in current session
                       </h3>
-                      <p className="text-foreground/70 text-sm">
+                      <p className="text-sm text-foreground/70">
                         Submit your first prompt to see results here.
                       </p>
                     </div>
@@ -701,14 +701,14 @@ export default function PromptForm({ problem, session, submissions }: Props) {
 
                 <TabsContent value="past" className="space-y-4">
                   {pastSubmissions.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center rounded-lg border border-foreground/20 border-dashed bg-background/50 p-8 text-center backdrop-blur-sm">
+                    <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-foreground/20 bg-background/50 p-8 text-center backdrop-blur-sm">
                       <div className="mb-4 rounded-full border border-dynamic-purple/20 bg-dynamic-purple/10 p-3">
                         <Clock className="h-10 w-10 text-dynamic-purple" />
                       </div>
-                      <h3 className="mb-2 font-medium text-foreground text-lg">
+                      <h3 className="mb-2 text-lg font-medium text-foreground">
                         No submissions from past sessions
                       </h3>
-                      <p className="text-foreground/70 text-sm">
+                      <p className="text-sm text-foreground/70">
                         Past session submissions will appear here.
                       </p>
                     </div>

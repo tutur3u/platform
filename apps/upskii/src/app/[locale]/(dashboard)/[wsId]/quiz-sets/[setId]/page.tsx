@@ -62,7 +62,7 @@ export default async function WorkspaceQuizzesPage({
     return (
       <div className="flex min-h-[400px] items-center justify-center">
         <div className="text-center">
-          <h2 className="mb-2 font-bold text-2xl text-primary">
+          <h2 className="mb-2 text-2xl font-bold text-primary">
             Quiz Set Not Found
           </h2>
           <p className="text-secondary-foreground">
@@ -131,7 +131,7 @@ export default async function WorkspaceQuizzesPage({
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <div className="mb-2 flex items-center gap-3">
-              <h1 className="font-bold text-3xl text-dynamic-light-purple">
+              <h1 className="text-3xl font-bold text-dynamic-light-purple">
                 {quizSet.name}
               </h1>
               <Badge
@@ -182,10 +182,10 @@ export default async function WorkspaceQuizzesPage({
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="font-medium text-secondary-foreground text-sm">
+                  <p className="text-sm font-medium text-secondary-foreground">
                     Total Questions
                   </p>
-                  <p className="font-bold text-3xl text-dynamic-purple">
+                  <p className="text-3xl font-bold text-dynamic-purple">
                     {quizCount}
                   </p>
                 </div>
@@ -198,10 +198,10 @@ export default async function WorkspaceQuizzesPage({
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="font-medium text-secondary-foreground text-sm">
+                  <p className="text-sm font-medium text-secondary-foreground">
                     Attempt Limit
                   </p>
-                  <p className="font-bold text-3xl text-dynamic-purple">
+                  <p className="text-3xl font-bold text-dynamic-purple">
                     {quizSet.attempt_limit || '∞'}
                   </p>
                 </div>
@@ -214,10 +214,10 @@ export default async function WorkspaceQuizzesPage({
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="font-medium text-secondary-foreground text-sm">
+                  <p className="text-sm font-medium text-secondary-foreground">
                     Time Limit
                   </p>
-                  <p className="font-bold text-3xl text-dynamic-purple">
+                  <p className="text-3xl font-bold text-dynamic-purple">
                     {quizSet.time_limit_minutes
                       ? `${quizSet.time_limit_minutes}m`
                       : '∞'}
@@ -232,11 +232,11 @@ export default async function WorkspaceQuizzesPage({
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="font-medium text-secondary-foreground text-sm">
+                  <p className="text-sm font-medium text-secondary-foreground">
                     Status
                   </p>
                   <p
-                    className={`font-semibold text-lg ${statusInfo.textColor}`}
+                    className={`text-lg font-semibold ${statusInfo.textColor}`}
                   >
                     {t(statusInfo.status)}
                   </p>
@@ -260,10 +260,10 @@ export default async function WorkspaceQuizzesPage({
             </CardHeader>
             <CardContent className="space-y-4 p-6">
               <div className="flex items-center justify-between">
-                <span className="font-medium text-secondary-foreground text-sm">
+                <span className="text-sm font-medium text-secondary-foreground">
                   Available From
                 </span>
-                <span className="text-primary text-sm">
+                <span className="text-sm text-primary">
                   {new Date(quizSet.available_date).toLocaleDateString()} at{' '}
                   {new Date(quizSet.available_date).toLocaleTimeString([], {
                     hour: '2-digit',
@@ -272,10 +272,10 @@ export default async function WorkspaceQuizzesPage({
                 </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="font-medium text-secondary-foreground text-sm">
+                <span className="text-sm font-medium text-secondary-foreground">
                   Due Date
                 </span>
-                <span className="text-primary text-sm">
+                <span className="text-sm text-primary">
                   {new Date(quizSet.due_date).toLocaleDateString()} at{' '}
                   {new Date(quizSet.due_date).toLocaleTimeString([], {
                     hour: '2-digit',
@@ -297,15 +297,15 @@ export default async function WorkspaceQuizzesPage({
             </CardHeader>
             <CardContent className="space-y-4 p-6">
               <div className="flex items-center justify-between">
-                <span className="font-medium text-secondary-foreground text-sm">
+                <span className="text-sm font-medium text-secondary-foreground">
                   Explanation Mode
                 </span>
-                <span className="text-right text-primary text-sm">
+                <span className="text-right text-sm text-primary">
                   {t(getExplanationModeText(quizSet.explanation_mode))}
                 </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="font-medium text-secondary-foreground text-sm">
+                <span className="text-sm font-medium text-secondary-foreground">
                   View Results
                 </span>
                 {quizSet.allow_view_results ? (
@@ -315,7 +315,7 @@ export default async function WorkspaceQuizzesPage({
                 )}
               </div>
               <div className="flex items-center justify-between">
-                <span className="font-medium text-secondary-foreground text-sm">
+                <span className="text-sm font-medium text-secondary-foreground">
                   Results Released
                 </span>
                 {quizSet.results_released ? (
@@ -325,7 +325,7 @@ export default async function WorkspaceQuizzesPage({
                 )}
               </div>
               <div className="flex items-center justify-between">
-                <span className="font-medium text-secondary-foreground text-sm">
+                <span className="text-sm font-medium text-secondary-foreground">
                   View Old Attempts
                 </span>
                 {quizSet.allow_view_old_attempts ? (
@@ -351,7 +351,7 @@ export default async function WorkspaceQuizzesPage({
             <CardContent className="p-6">
               {quizSet.instruction ? (
                 <div className="prose prose-sm max-w-none">
-                  <div className="rounded-lg p-3 text-secondary-foreground text-sm">
+                  <div className="rounded-lg p-3 text-sm text-secondary-foreground">
                     {typeof quizSet.instruction === 'string'
                       ? quizSet.instruction
                       : JSON.stringify(quizSet.instruction, null, 2)}
@@ -360,7 +360,7 @@ export default async function WorkspaceQuizzesPage({
               ) : (
                 <div className="py-8 text-center">
                   <FileText className="mx-auto mb-3 h-12 w-12 text-primary" />
-                  <p className="text-muted-foreground text-sm">
+                  <p className="text-sm text-muted-foreground">
                     No instructions provided
                   </p>
                   <Button variant="outline" size="sm" className="mt-2">
@@ -398,7 +398,7 @@ export default async function WorkspaceQuizzesPage({
             ) : (
               <div className="py-12 text-center">
                 <FileText className="mx-auto mb-4 h-16 w-16 text-gray-300" />
-                <h3 className="mb-2 font-semibold text-lg text-primary">
+                <h3 className="mb-2 text-lg font-semibold text-primary">
                   No Questions Yet
                 </h3>
                 <p className="mb-6 text-secondary-foreground">

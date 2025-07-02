@@ -145,7 +145,7 @@ export default function RetailPage() {
         <Badge variant="secondary" className="mb-4">
           Retail Management Solutions
         </Badge>
-        <h1 className="mb-4 text-balance text-center font-bold text-2xl tracking-tight md:text-4xl lg:text-6xl">
+        <h1 className="mb-4 text-center text-2xl font-bold tracking-tight text-balance md:text-4xl lg:text-6xl">
           <GradientHeadline>Transform Your Retail Business</GradientHeadline>
         </h1>
         <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
@@ -188,7 +188,7 @@ export default function RetailPage() {
         <Card className="border-primary bg-primary/5 p-8">
           <div className="mx-auto flex max-w-4xl flex-col items-center gap-4 text-center">
             <ShoppingBag className="h-12 w-12 text-primary" />
-            <h2 className="font-bold text-2xl">Trusted by Leading Retailers</h2>
+            <h2 className="text-2xl font-bold">Trusted by Leading Retailers</h2>
             <p className="text-muted-foreground">
               Join thousands of retailers who have transformed their operations
               with our platform.
@@ -199,7 +199,7 @@ export default function RetailPage() {
 
       {/* Features Grid */}
       <motion.section variants={itemVariants} className="mb-24">
-        <h2 className="mb-12 text-center font-bold text-3xl">
+        <h2 className="mb-12 text-center text-3xl font-bold">
           Comprehensive Retail Management
         </h2>
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -213,7 +213,7 @@ export default function RetailPage() {
               <Card className="h-full p-6 transition-colors hover:border-primary">
                 <div className="mb-4 flex items-center gap-3">
                   <div className="text-primary">{feature.icon}</div>
-                  <h3 className="font-semibold text-xl">{feature.title}</h3>
+                  <h3 className="text-xl font-semibold">{feature.title}</h3>
                 </div>
                 <p className="text-muted-foreground">{feature.description}</p>
               </Card>
@@ -224,12 +224,12 @@ export default function RetailPage() {
 
       {/* Benefits Bento Grid */}
       <motion.section variants={itemVariants} className="mb-24">
-        <h2 className="mb-12 text-center font-bold text-3xl">Key Benefits</h2>
+        <h2 className="mb-12 text-center text-3xl font-bold">Key Benefits</h2>
         <div className="grid gap-4 md:grid-cols-4 md:grid-rows-2">
           <Card className="bg-primary/5 md:col-span-2 md:row-span-2">
             <div className="flex h-full flex-col p-6">
               <DollarSign className="mb-4 h-8 w-8 text-primary" />
-              <h3 className="mb-2 font-bold text-xl">Increased Revenue</h3>
+              <h3 className="mb-2 text-xl font-bold">Increased Revenue</h3>
               <p className="text-muted-foreground">
                 Boost your sales with smart inventory management, customer
                 insights, and optimized pricing strategies.
@@ -252,7 +252,7 @@ export default function RetailPage() {
               >
                 {benefit.icon}
                 <h3 className="mb-2 font-bold">{benefit.title}</h3>
-                <p className="text-muted-foreground text-sm">
+                <p className="text-sm text-muted-foreground">
                   {benefit.description}
                 </p>
                 <div className="mt-4 h-1 w-0 bg-primary/10 transition-all group-hover:w-full" />
@@ -264,26 +264,26 @@ export default function RetailPage() {
 
       {/* Core Features */}
       <motion.section variants={itemVariants} className="mb-24">
-        <h2 className="mb-12 text-center font-bold text-3xl">Core Features</h2>
+        <h2 className="mb-12 text-center text-3xl font-bold">Core Features</h2>
         <div className="grid gap-6 md:grid-cols-3">
           <Card className="p-6 text-center">
             <QrCode className="mx-auto mb-4 h-8 w-8 text-primary" />
             <h3 className="mb-2 font-bold">Smart Scanning</h3>
-            <p className="text-muted-foreground text-sm">
+            <p className="text-sm text-muted-foreground">
               Quick barcode and QR code scanning
             </p>
           </Card>
           <Card className="p-6 text-center">
             <LineChart className="mx-auto mb-4 h-8 w-8 text-primary" />
             <h3 className="mb-2 font-bold">Sales Analytics</h3>
-            <p className="text-muted-foreground text-sm">
+            <p className="text-sm text-muted-foreground">
               Real-time performance metrics
             </p>
           </Card>
           <Card className="p-6 text-center">
             <PackageSearch className="mx-auto mb-4 h-8 w-8 text-primary" />
             <h3 className="mb-2 font-bold">Inventory Tracking</h3>
-            <p className="text-muted-foreground text-sm">
+            <p className="text-sm text-muted-foreground">
               Automated stock management
             </p>
           </Card>
@@ -296,40 +296,40 @@ export default function RetailPage() {
           <div className="grid md:grid-cols-2">
             <div className="p-8">
               <Star className="mb-4 h-8 w-8 text-primary" />
-              <h2 className="mb-4 font-bold text-2xl">Success Story</h2>
+              <h2 className="mb-4 text-2xl font-bold">Success Story</h2>
               <p className="mb-4 text-muted-foreground">
                 "This platform has revolutionized our retail operations. We've
                 seen significant improvements in efficiency, sales, and customer
                 satisfaction."
               </p>
               <p className="font-semibold">- Sarah Johnson</p>
-              <p className="text-muted-foreground text-sm">
+              <p className="text-sm text-muted-foreground">
                 Operations Director, Fashion Retail Co.
               </p>
             </div>
             <div className="flex items-center justify-center bg-primary/5 p-8">
               <div className="grid gap-4 text-center">
                 <div>
-                  <div className="mb-2 font-bold text-3xl text-primary">
+                  <div className="mb-2 text-3xl font-bold text-primary">
                     45%
                   </div>
-                  <div className="text-muted-foreground text-sm">
+                  <div className="text-sm text-muted-foreground">
                     Increased Sales
                   </div>
                 </div>
                 <div>
-                  <div className="mb-2 font-bold text-3xl text-primary">
+                  <div className="mb-2 text-3xl font-bold text-primary">
                     60%
                   </div>
-                  <div className="text-muted-foreground text-sm">
+                  <div className="text-sm text-muted-foreground">
                     Faster Checkout
                   </div>
                 </div>
                 <div>
-                  <div className="mb-2 font-bold text-3xl text-primary">
+                  <div className="mb-2 text-3xl font-bold text-primary">
                     30%
                   </div>
-                  <div className="text-muted-foreground text-sm">
+                  <div className="text-sm text-muted-foreground">
                     Cost Reduction
                   </div>
                 </div>
@@ -341,7 +341,7 @@ export default function RetailPage() {
 
       {/* FAQ Section */}
       <motion.section variants={itemVariants}>
-        <h2 className="mb-12 text-center font-bold text-3xl">
+        <h2 className="mb-12 text-center text-3xl font-bold">
           Frequently Asked Questions
         </h2>
         <div className="grid gap-6 md:grid-cols-2">
@@ -374,7 +374,7 @@ export default function RetailPage() {
       {/* CTA Section */}
       <motion.section variants={itemVariants} className="mt-24 text-center">
         <Card className="border-primary bg-primary/5 p-12">
-          <h2 className="mb-4 font-bold text-3xl">
+          <h2 className="mb-4 text-3xl font-bold">
             Ready to Transform Your Retail Business?
           </h2>
           <p className="mx-auto mb-8 max-w-2xl text-muted-foreground">

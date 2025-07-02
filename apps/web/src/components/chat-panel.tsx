@@ -154,7 +154,7 @@ export function ChatPanel({
         <div
           className={cn(
             'absolute z-10 flex items-end gap-2 md:flex-col',
-            chats ? 'md:-right-2 lg:-right-6 right-2' : 'right-2 md:right-4'
+            chats ? 'right-2 md:-right-2 lg:-right-6' : 'right-2 md:right-4'
           )}
           style={{
             bottom: chatInputHeight ? chatInputHeight + 4 : '1rem',
@@ -193,7 +193,7 @@ export function ChatPanel({
             <div className="relative flex items-center justify-center gap-2">
               <div
                 id="chat-sidebar"
-                className={`-bottom-1 absolute z-20 w-full rounded-lg border-t p-2 transition-all duration-500 md:border ${
+                className={`absolute -bottom-1 z-20 w-full rounded-lg border-t p-2 transition-all duration-500 md:border ${
                   collapsed
                     ? 'pointer-events-none border-transparent bg-transparent'
                     : 'border-border bg-background shadow-lg'

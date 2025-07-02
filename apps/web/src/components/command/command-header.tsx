@@ -25,7 +25,7 @@ export function CommandHeader({
   return (
     <div className="relative">
       <div className="absolute inset-0 bg-gradient-to-r from-dynamic-blue/5 via-dynamic-purple/5 to-dynamic-pink/5" />
-      <div className="relative flex items-center border-dynamic-gray/10 border-b px-4">
+      <div className="relative flex items-center border-b border-dynamic-gray/10 px-4">
         {isLoading ? (
           <div className="mr-3 rounded-lg p-2">
             <div className="relative">
@@ -37,7 +37,7 @@ export function CommandHeader({
           <>
             {page !== 'root' ? (
               <button
-                className="mr-3 rounded-lg p-2 opacity-70 transition-all hover:bg-dynamic-gray/10 hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-dynamic-blue/20 active:scale-95"
+                className="mr-3 rounded-lg p-2 opacity-70 transition-all hover:bg-dynamic-gray/10 hover:opacity-100 focus:ring-2 focus:ring-dynamic-blue/20 focus:outline-none active:scale-95"
                 onClick={onBack}
                 disabled={isTransitioning}
               >
@@ -71,12 +71,12 @@ export function CommandHeader({
             {inputValue && (
               <button
                 onClick={() => setInputValue('')}
-                className="rounded-md border border-dynamic-gray/20 bg-dynamic-gray/5 px-2 py-1 font-medium text-dynamic-gray text-xs transition-colors hover:bg-dynamic-gray/10"
+                className="rounded-md border border-dynamic-gray/20 bg-dynamic-gray/5 px-2 py-1 text-xs font-medium text-dynamic-gray transition-colors hover:bg-dynamic-gray/10"
               >
                 Clear
               </button>
             )}
-            <div className="rounded-md border border-dynamic-gray/10 bg-gradient-to-r from-dynamic-gray/10 to-dynamic-gray/5 px-3 py-1.5 font-medium text-dynamic-gray text-xs">
+            <div className="rounded-md border border-dynamic-gray/10 bg-gradient-to-r from-dynamic-gray/10 to-dynamic-gray/5 px-3 py-1.5 text-xs font-medium text-dynamic-gray">
               ⌘K
             </div>
           </div>

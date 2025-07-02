@@ -24,19 +24,19 @@ export function BenefitsSection() {
     <section
       id="benefits"
       ref={sectionRef}
-      className="container relative w-full px-0 py-24 md:py-40"
+      className="relative container w-full px-0 py-24 md:py-40"
     >
       {/* Background accents */}
-      <div className="-left-20 absolute top-40 h-64 w-64 rounded-full bg-dynamic-light-purple/20 blur-3xl filter"></div>
-      <div className="-right-20 absolute bottom-40 h-64 w-64 rounded-full bg-dynamic-light-cyan/20 blur-3xl filter"></div>
+      <div className="absolute top-40 -left-20 h-64 w-64 rounded-full bg-dynamic-light-purple/20 blur-3xl filter"></div>
+      <div className="absolute -right-20 bottom-40 h-64 w-64 rounded-full bg-dynamic-light-cyan/20 blur-3xl filter"></div>
 
       <div className="benefits-title-wrapper mb-16 text-center">
-        <h2 className="benefits-title mb-6 font-bold text-4xl md:text-5xl">
-          <span className="text-balance bg-gradient-to-r from-dynamic-light-purple to-dynamic-light-cyan bg-clip-text text-transparent">
+        <h2 className="benefits-title mb-6 text-4xl font-bold md:text-5xl">
+          <span className="bg-gradient-to-r from-dynamic-light-purple to-dynamic-light-cyan bg-clip-text text-balance text-transparent">
             {t('reclaim_your_time_for_what_matters')}
           </span>
         </h2>
-        <p className="mx-auto max-w-3xl text-balance text-muted-foreground text-xl leading-relaxed">
+        <p className="mx-auto max-w-3xl text-xl leading-relaxed text-balance text-muted-foreground">
           {t('reclaim_your_time_for_what_matters_description')}
         </p>
       </div>
@@ -54,7 +54,7 @@ export function BenefitsSection() {
                     <CheckCircle className="h-5 w-5 text-dynamic-purple" />
                   </div>
                   <div>
-                    <p className="font-medium text-lg">{benefit}</p>
+                    <p className="text-lg font-medium">{benefit}</p>
                   </div>
                 </div>
               </div>
@@ -64,19 +64,19 @@ export function BenefitsSection() {
 
         <div className="order-1 w-full lg:order-2 lg:w-1/2" ref={imageRef}>
           <div className="relative">
-            <div className="-top-10 -left-10 absolute h-40 w-40 rounded-full bg-dynamic-light-purple opacity-20 blur-3xl filter"></div>
-            <div className="-right-10 -bottom-10 absolute h-40 w-40 rounded-full bg-dynamic-light-cyan opacity-20 blur-3xl filter"></div>
+            <div className="absolute -top-10 -left-10 h-40 w-40 rounded-full bg-dynamic-light-purple opacity-20 blur-3xl filter"></div>
+            <div className="absolute -right-10 -bottom-10 h-40 w-40 rounded-full bg-dynamic-light-cyan opacity-20 blur-3xl filter"></div>
 
             <div className="relative overflow-hidden rounded-xl border bg-white/90 shadow-xl backdrop-blur-sm dark:bg-foreground/10 dark:backdrop-blur-sm">
               <div className="bg-gradient-to-r from-dynamic-light-purple to-dynamic-light-cyan p-5 text-white">
-                <h3 className="font-semibold text-lg">
+                <h3 className="text-lg font-semibold">
                   {t('time_reclaimed_dashboard')}
                 </h3>
               </div>
 
               <div className="p-6">
                 <div className="mb-6">
-                  <h4 className="mb-2 font-medium text-muted-foreground text-sm">
+                  <h4 className="mb-2 text-sm font-medium text-muted-foreground">
                     {t('meaningful_work_time')}
                   </h4>
                   <div className="h-5 w-full overflow-hidden rounded-full bg-foreground/10">
@@ -93,7 +93,7 @@ export function BenefitsSection() {
                 </div>
 
                 <div className="mb-6">
-                  <h4 className="mb-2 font-medium text-muted-foreground text-sm">
+                  <h4 className="mb-2 text-sm font-medium text-muted-foreground">
                     {t('task_completion_rate')}
                   </h4>
                   <div className="h-5 w-full overflow-hidden rounded-full bg-foreground/10">
@@ -108,17 +108,17 @@ export function BenefitsSection() {
                 </div>
 
                 <div className="mb-6 rounded-lg bg-gray-50 p-4 dark:bg-foreground/5">
-                  <h4 className="mb-3 font-medium text-muted-foreground text-sm">
+                  <h4 className="mb-3 text-sm font-medium text-muted-foreground">
                     {t('time_reclaimed')}
                   </h4>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <Clock className="h-8 w-8 text-dynamic-purple" />
-                      <div className="font-bold text-3xl text-dynamic-purple">
+                      <div className="text-3xl font-bold text-dynamic-purple">
                         10.5 {t('hours')}
                       </div>
                     </div>
-                    <div className="rounded-full bg-dynamic-light-purple/20 px-3 py-1 font-medium text-dynamic-purple text-sm">
+                    <div className="rounded-full bg-dynamic-light-purple/20 px-3 py-1 text-sm font-medium text-dynamic-purple">
                       {t('this_week')}
                     </div>
                   </div>
@@ -128,11 +128,11 @@ export function BenefitsSection() {
                   <div className="transform rounded-lg border border-dynamic-light-purple/30 bg-calendar-bg-purple p-4 transition-all duration-300 hover:shadow-md">
                     <div className="mb-2 flex items-center gap-2">
                       <Activity className="h-4 w-4 text-dynamic-purple" />
-                      <div className="font-medium text-dynamic-purple text-sm">
+                      <div className="text-sm font-medium text-dynamic-purple">
                         {t('workload_balance')}
                       </div>
                     </div>
-                    <div className="font-bold text-dynamic-purple text-lg">
+                    <div className="text-lg font-bold text-dynamic-purple">
                       {t('optimal')}
                     </div>
                   </div>
@@ -140,11 +140,11 @@ export function BenefitsSection() {
                   <div className="transform rounded-lg border border-dynamic-light-blue/30 bg-calendar-bg-blue p-4 transition-all duration-300 hover:shadow-md">
                     <div className="mb-2 flex items-center gap-2">
                       <Target className="h-4 w-4 text-dynamic-blue" />
-                      <div className="font-medium text-dynamic-blue text-sm">
+                      <div className="text-sm font-medium text-dynamic-blue">
                         {t('deadline_success')}
                       </div>
                     </div>
-                    <div className="font-bold text-dynamic-blue text-lg">
+                    <div className="text-lg font-bold text-dynamic-blue">
                       100%
                     </div>
                   </div>

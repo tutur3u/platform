@@ -39,13 +39,13 @@ const PostEmailTemplate = ({ post }: { post: UserGroupPost }) => {
                       height="38"
                     />
                   </div>
-                  <div className="font-bold text-gray-800 text-lg">
+                  <div className="text-lg font-bold text-gray-800">
                     Easy Center
                   </div>
                   <div className="font-semibold text-gray-500">
                     24 Trường Sa - Phước Long - Nha Trang
                   </div>
-                  <div className="text-gray-500 text-sm">
+                  <div className="text-sm text-gray-500">
                     (0258) 6557 457 - 0977 183 161
                   </div>
                 </div>
@@ -54,7 +54,7 @@ const PostEmailTemplate = ({ post }: { post: UserGroupPost }) => {
             <hr />
             <div className="px-6 py-4">
               <div className="flex w-full items-center justify-center text-center">
-                <div className="w-fit rounded-full bg-black px-4 py-1 font-semibold text-white text-xs">
+                <div className="w-fit rounded-full bg-black px-4 py-1 text-xs font-semibold text-white">
                   Tiếng Việt
                 </div>
               </div>
@@ -64,7 +64,7 @@ const PostEmailTemplate = ({ post }: { post: UserGroupPost }) => {
                 </div>
                 <div className="text-blue-500">{nextPost.group_name}</div>
               </div>
-              <p className="text-muted-foreground text-sm">
+              <p className="text-sm text-muted-foreground">
                 Trung tâm Easy thân gửi phụ huynh báo cáo tiến độ học tập của em{' '}
                 <span className="font-semibold text-purple-600">
                   Huỳnh Tấn Phát
@@ -81,11 +81,11 @@ const PostEmailTemplate = ({ post }: { post: UserGroupPost }) => {
                 </span>
                 , với nội dung như sau:
               </p>
-              <p className="text-muted-foreground text-sm">
+              <p className="text-sm text-muted-foreground">
                 <span className="font-semibold">Bài học:</span>{' '}
                 <span className="">{nextPost.title}</span>
               </p>
-              <p className="text-muted-foreground text-sm">
+              <p className="text-sm text-muted-foreground">
                 <span className="font-semibold">Nội dung:</span>{' '}
                 {nextPost.content}
               </p>
@@ -93,7 +93,7 @@ const PostEmailTemplate = ({ post }: { post: UserGroupPost }) => {
             <hr />
             <div className="px-6 py-4">
               <div className="flex w-full items-center justify-center text-center">
-                <div className="w-fit rounded-full bg-black px-4 py-1 font-semibold text-white text-xs">
+                <div className="w-fit rounded-full bg-black px-4 py-1 text-xs font-semibold text-white">
                   English
                 </div>
               </div>
@@ -103,7 +103,7 @@ const PostEmailTemplate = ({ post }: { post: UserGroupPost }) => {
                 </div>
                 <div className="text-blue-500">{nextPost.group_name}</div>
               </div>
-              <p className="text-muted-foreground text-sm">
+              <p className="text-sm text-muted-foreground">
                 Easy Center kindly sends parents a report on the learning
                 progress of{' '}
                 <span className="font-semibold text-purple-600">
@@ -121,11 +121,11 @@ const PostEmailTemplate = ({ post }: { post: UserGroupPost }) => {
                 </span>
                 , with the following content:
               </p>
-              <p className="text-muted-foreground text-sm">
+              <p className="text-sm text-muted-foreground">
                 <span className="font-semibold">Lesson:</span>{' '}
                 <span className="">{nextPost.title}</span>
               </p>
-              <p className="text-muted-foreground text-sm">
+              <p className="text-sm text-muted-foreground">
                 <span className="font-semibold">Content:</span>{' '}
                 {nextPost.content}
               </p>

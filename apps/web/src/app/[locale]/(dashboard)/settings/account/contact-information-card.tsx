@@ -39,11 +39,11 @@ export default async function ContactInformationCard({
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="space-y-3">
-          <label className="font-medium text-sm">{t('email-address')}</label>
+          <label className="text-sm font-medium">{t('email-address')}</label>
           <Suspense fallback={<Skeleton className="h-10 w-full" />}>
             <EmailInput oldEmail={user?.email} newEmail={user?.new_email} />
           </Suspense>
-          <p className="text-muted-foreground text-xs">
+          <p className="text-xs text-muted-foreground">
             {t('email-description')}
           </p>
           {user?.new_email && (
@@ -51,7 +51,7 @@ export default async function ContactInformationCard({
               <Badge variant="outline" className="text-xs">
                 {t('pending-verification')}
               </Badge>
-              <span className="text-muted-foreground text-xs">
+              <span className="text-xs text-muted-foreground">
                 {t('check-email-verify', {
                   email: user.new_email,
                 })}

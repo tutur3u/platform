@@ -70,7 +70,7 @@ export default function RoleFormPermissionsSection({
                   {group.icon}
                   <div className="flex flex-wrap items-center gap-2">
                     {group.title}
-                    <span className="flex items-center gap-1 rounded border px-1 font-bold text-sm">
+                    <span className="flex items-center gap-1 rounded border px-1 text-sm font-bold">
                       <span className="text-dynamic-orange">
                         {enabledPermissionsCount.find((x) => x.id === group.id)
                           ?.count || 0}

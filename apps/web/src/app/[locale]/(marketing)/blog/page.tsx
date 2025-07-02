@@ -33,7 +33,7 @@ export default function BlogPage() {
   const t = useTranslations();
 
   return (
-    <main className="container relative space-y-24 py-24">
+    <main className="relative container space-y-24 py-24">
       {/* Hero Section */}
       <motion.section
         initial={{ opacity: 0, y: 20 }}
@@ -44,10 +44,10 @@ export default function BlogPage() {
         <Badge variant="secondary" className="mb-6">
           {t('common.blog')}
         </Badge>
-        <h1 className="mb-6 text-balance font-bold text-5xl text-foreground">
+        <h1 className="mb-6 text-5xl font-bold text-balance text-foreground">
           Insights & Innovation
         </h1>
-        <p className="mx-auto max-w-2xl text-foreground/80 text-lg">
+        <p className="mx-auto max-w-2xl text-lg text-foreground/80">
           Our blog is coming soon! We&apos;re preparing insightful articles
           about technology, innovation, and business transformation.
         </p>
@@ -63,7 +63,7 @@ export default function BlogPage() {
         <Card className="relative overflow-hidden bg-foreground/5 p-12">
           {/* Animated Background */}
           <div className="absolute inset-0 overflow-hidden">
-            <div className="absolute inset-0 animate-aurora opacity-20" />
+            <div className="animate-aurora absolute inset-0 opacity-20" />
             <div className="absolute inset-0 bg-[radial-gradient(circle_500px_at_50%_50%,rgba(var(--primary-rgb),0.15),transparent)]" />
           </div>
 
@@ -85,10 +85,10 @@ export default function BlogPage() {
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.4 }}
             >
-              <h2 className="mb-4 font-bold text-3xl">
+              <h2 className="mb-4 text-3xl font-bold">
                 Exciting Content Coming Soon!
               </h2>
-              <p className="mx-auto mb-8 max-w-xl text-foreground/60 text-lg">
+              <p className="mx-auto mb-8 max-w-xl text-lg text-foreground/60">
                 We&apos;re crafting high-quality articles covering:
               </p>
 
@@ -103,7 +103,7 @@ export default function BlogPage() {
                     className="flex items-center justify-center gap-2 rounded-lg bg-foreground/10 p-3"
                   >
                     <div className="text-primary">{category.icon}</div>
-                    <span className="font-medium text-sm">{category.name}</span>
+                    <span className="text-sm font-medium">{category.name}</span>
                   </motion.div>
                 ))}
               </div>
@@ -116,7 +116,7 @@ export default function BlogPage() {
               transition={{ delay: 0.8 }}
               className="mx-auto max-w-md"
             >
-              <div className="mb-6 flex items-center justify-center gap-2 font-medium text-lg">
+              <div className="mb-6 flex items-center justify-center gap-2 text-lg font-medium">
                 <Sparkles className="h-5 w-5 text-primary" />
                 <span>Be the first to know when we launch!</span>
               </div>
@@ -133,7 +133,7 @@ export default function BlogPage() {
                 </button>
               </div>
 
-              <p className="mt-4 flex items-center justify-center gap-2 text-foreground/40 text-sm">
+              <p className="mt-4 flex items-center justify-center gap-2 text-sm text-foreground/40">
                 <Timer className="h-4 w-4" />
                 <span>Expected launch: Q2 2024</span>
               </p>
@@ -148,7 +148,7 @@ export default function BlogPage() {
             >
               <Link
                 href="/contact"
-                className="flex items-center gap-2 text-foreground/60 text-sm transition-colors hover:text-foreground"
+                className="flex items-center gap-2 text-sm text-foreground/60 transition-colors hover:text-foreground"
               >
                 <BookText className="h-4 w-4" />
                 <span>Submit a guest post</span>
@@ -158,7 +158,7 @@ export default function BlogPage() {
                 href={`https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-2 text-foreground/60 text-sm transition-colors hover:text-foreground"
+                className="flex items-center gap-2 text-sm text-foreground/60 transition-colors hover:text-foreground"
               >
                 <Globe className="h-4 w-4" />
                 <span>Follow our journey</span>

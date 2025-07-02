@@ -65,7 +65,7 @@ export default async function WorkspaceUserDetailsPage({
   return (
     <div className="flex min-h-full w-full flex-col">
       {data.avatar_url && (
-        <div className="mb-2 flex flex-col items-center justify-center gap-2 font-semibold text-lg">
+        <div className="mb-2 flex flex-col items-center justify-center gap-2 text-lg font-semibold">
           <Image
             width={128}
             height={128}
@@ -80,7 +80,7 @@ export default async function WorkspaceUserDetailsPage({
       <div className="grid h-fit gap-4 md:grid-cols-2">
         <div className="grid gap-4">
           <div className="grid h-fit gap-2 rounded-lg border p-4">
-            <div className="font-semibold text-lg">Thông tin cơ bản</div>
+            <div className="text-lg font-semibold">Thông tin cơ bản</div>
             <Separator />
             {data.display_name && (
               <div>
@@ -132,7 +132,7 @@ export default async function WorkspaceUserDetailsPage({
             <div
               className={`h-full gap-2 ${groups && groups.length ? 'grid content-start' : 'flex flex-col items-center justify-center'}`}
             >
-              <div className="font-semibold text-lg">
+              <div className="text-lg font-semibold">
                 {t('joined_groups')} ({groupCount})
               </div>
               <Separator />
@@ -165,7 +165,7 @@ export default async function WorkspaceUserDetailsPage({
             <div
               className={`h-full gap-2 ${reports && reports.length ? 'grid content-start' : 'flex flex-col items-center justify-center'}`}
             >
-              <div className="font-semibold text-lg">
+              <div className="text-lg font-semibold">
                 {t('reports')} ({reportCount})
               </div>
               <Separator />
@@ -198,7 +198,7 @@ export default async function WorkspaceUserDetailsPage({
             <div
               className={`h-full gap-2 ${groups && groups.length ? 'grid content-start' : 'flex flex-col items-center justify-center'}`}
             >
-              <div className="font-semibold text-lg">
+              <div className="text-lg font-semibold">
                 {t('coupons')} ({couponCount})
               </div>
               <Separator />
@@ -229,7 +229,7 @@ export default async function WorkspaceUserDetailsPage({
         </div>
       </div>
 
-      <div className="mt-4 mb-2 font-semibold text-lg">
+      <div className="mt-4 mb-2 text-lg font-semibold">
         Hoá đơn ({invoiceCount})
       </div>
       <CustomDataTable

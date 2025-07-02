@@ -29,9 +29,9 @@ export function EducationBanner({
       )}
     >
       {/* Decorative elements */}
-      <div className="absolute inset-0 bg-grid-pattern opacity-[0.02] dark:opacity-[0.04]"></div>
-      <div className="-top-10 -right-10 absolute h-40 w-40 rounded-full bg-dynamic-blue/20 blur-3xl"></div>
-      <div className="-bottom-8 -left-8 absolute h-32 w-32 rounded-full bg-dynamic-blue/15 blur-3xl"></div>
+      <div className="bg-grid-pattern absolute inset-0 opacity-[0.02] dark:opacity-[0.04]"></div>
+      <div className="absolute -top-10 -right-10 h-40 w-40 rounded-full bg-dynamic-blue/20 blur-3xl"></div>
+      <div className="absolute -bottom-8 -left-8 h-32 w-32 rounded-full bg-dynamic-blue/15 blur-3xl"></div>
 
       <div className="relative z-10 flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-1 gap-4">
@@ -45,7 +45,7 @@ export function EducationBanner({
                 {t('unlock-education-features')}
               </h3>
             </div>
-            <p className="text-muted-foreground text-sm leading-relaxed">
+            <p className="text-sm leading-relaxed text-muted-foreground">
               {t('transform-your-workspace')}
             </p>
           </div>

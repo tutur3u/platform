@@ -35,7 +35,7 @@ const BrandingPage = () => {
   };
 
   return (
-    <main className="container relative space-y-24 py-24">
+    <main className="relative container space-y-24 py-24">
       {/* Hero Section */}
       <motion.section
         initial={{ opacity: 0, y: 20 }}
@@ -46,10 +46,10 @@ const BrandingPage = () => {
         <Badge variant="secondary" className="mb-6">
           Brand Guidelines
         </Badge>
-        <h1 className="mb-6 text-balance font-bold text-5xl text-foreground">
+        <h1 className="mb-6 text-5xl font-bold text-balance text-foreground">
           Our Brand Identity
         </h1>
-        <p className="mx-auto max-w-2xl text-foreground/80 text-lg">
+        <p className="mx-auto max-w-2xl text-lg text-foreground/80">
           These guidelines ensure our brand remains consistent, recognizable,
           and impactful across all platforms and touchpoints.
         </p>
@@ -63,7 +63,7 @@ const BrandingPage = () => {
         className="space-y-12"
       >
         <div className="space-y-4">
-          <h2 className="font-semibold text-3xl">Tuturuuu</h2>
+          <h2 className="text-3xl font-semibold">Tuturuuu</h2>
           <p className="text-foreground/80">
             Our primary brand mark represents innovation, trust, and excellence.
           </p>
@@ -83,7 +83,7 @@ const BrandingPage = () => {
         </div>
 
         <div className="space-y-4">
-          <h2 className="font-semibold text-3xl">Mira AI</h2>
+          <h2 className="text-3xl font-semibold">Mira AI</h2>
           <p className="text-foreground/80">
             Our AI platform brand embodies intelligence, reliability, and
             innovation.
@@ -112,7 +112,7 @@ const BrandingPage = () => {
         className="space-y-8"
       >
         <div className="space-y-4">
-          <h2 className="font-semibold text-3xl">Color System</h2>
+          <h2 className="text-3xl font-semibold">Color System</h2>
           <p className="text-foreground/80">
             Our color palette reflects our brand values and ensures visual
             harmony across all platforms.
@@ -121,7 +121,7 @@ const BrandingPage = () => {
 
         <div className="grid gap-6">
           <div className="space-y-4">
-            <h3 className="font-medium text-xl">Primary Colors</h3>
+            <h3 className="text-xl font-medium">Primary Colors</h3>
             <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
               {brandValues.map((value, index) => (
                 <motion.div
@@ -137,7 +137,7 @@ const BrandingPage = () => {
                   </div>
                   <div className="space-y-1 p-4">
                     <h4 className="font-medium">{value.title}</h4>
-                    <p className="text-foreground/60 text-sm">
+                    <p className="text-sm text-foreground/60">
                       {value.description}
                     </p>
                   </div>
@@ -147,7 +147,7 @@ const BrandingPage = () => {
           </div>
 
           <div className="space-y-4">
-            <h3 className="font-medium text-xl">System Colors</h3>
+            <h3 className="text-xl font-medium">System Colors</h3>
             <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
               <div className="overflow-hidden rounded-lg border">
                 <div className="flex h-32 items-center justify-center bg-[#09090B] p-4 text-white">
@@ -197,7 +197,7 @@ const BrandingPage = () => {
         className="space-y-8"
       >
         <div className="space-y-4">
-          <h2 className="font-semibold text-3xl">Typography</h2>
+          <h2 className="text-3xl font-semibold">Typography</h2>
           <p className="text-foreground/80">
             Our typeface selection ensures clarity and readability while
             maintaining brand consistency.
@@ -207,7 +207,7 @@ const BrandingPage = () => {
         <div className="overflow-hidden rounded-lg border">
           <div className="space-y-6 p-8">
             <div>
-              <h3 className="font-medium text-2xl">{typography.primary}</h3>
+              <h3 className="text-2xl font-medium">{typography.primary}</h3>
               <p className="text-foreground/60">{typography.usage}</p>
             </div>
 
@@ -223,7 +223,7 @@ const BrandingPage = () => {
                   >
                     The quick brown fox jumps over the lazy dog
                   </span>
-                  <span className="text-foreground/60 text-sm">{weight}</span>
+                  <span className="text-sm text-foreground/60">{weight}</span>
                 </div>
               ))}
             </div>
@@ -239,7 +239,7 @@ const BrandingPage = () => {
         className="space-y-8"
       >
         <div className="space-y-4">
-          <h2 className="font-semibold text-3xl">Usage Guidelines</h2>
+          <h2 className="text-3xl font-semibold">Usage Guidelines</h2>
           <p className="text-foreground/80">
             Follow these guidelines to maintain brand consistency across all
             applications.
@@ -248,7 +248,7 @@ const BrandingPage = () => {
 
         <div className="grid gap-6 md:grid-cols-3">
           <div className="rounded-lg border p-6">
-            <h3 className="mb-4 font-medium text-xl">Logo Usage</h3>
+            <h3 className="mb-4 text-xl font-medium">Logo Usage</h3>
             <ul className="list-inside list-disc space-y-2 text-foreground/80">
               <li>Maintain clear space around logos</li>
               <li>Never alter the logo colors</li>
@@ -258,7 +258,7 @@ const BrandingPage = () => {
           </div>
 
           <div className="rounded-lg border p-6">
-            <h3 className="mb-4 font-medium text-xl">Color Application</h3>
+            <h3 className="mb-4 text-xl font-medium">Color Application</h3>
             <ul className="list-inside list-disc space-y-2 text-foreground/80">
               <li>Use primary colors for key elements</li>
               <li>Maintain proper contrast ratios</li>
@@ -268,7 +268,7 @@ const BrandingPage = () => {
           </div>
 
           <div className="rounded-lg border p-6">
-            <h3 className="mb-4 font-medium text-xl">Typography Rules</h3>
+            <h3 className="mb-4 text-xl font-medium">Typography Rules</h3>
             <ul className="list-inside list-disc space-y-2 text-foreground/80">
               <li>Maintain hierarchy in text elements</li>
               <li>Use appropriate font weights</li>

@@ -62,7 +62,7 @@ export function JoinUsSection() {
             repeat: Infinity,
             ease: 'linear',
           }}
-          className="-left-32 sm:-left-64 absolute top-0 h-80 w-[20rem] rounded-full bg-linear-to-br from-purple-500/30 via-pink-500/20 to-transparent blur-3xl sm:h-160 sm:w-160"
+          className="absolute top-0 -left-32 h-80 w-[20rem] rounded-full bg-linear-to-br from-purple-500/30 via-pink-500/20 to-transparent blur-3xl sm:-left-64 sm:h-160 sm:w-160"
         />
         <motion.div
           animate={{
@@ -74,7 +74,7 @@ export function JoinUsSection() {
             repeat: Infinity,
             ease: 'linear',
           }}
-          className="-right-32 sm:-right-64 absolute top-[30%] h-70 w-70 rounded-full bg-linear-to-br from-blue-500/30 via-cyan-500/20 to-transparent blur-3xl sm:h-140 sm:w-140"
+          className="absolute top-[30%] -right-32 h-70 w-70 rounded-full bg-linear-to-br from-blue-500/30 via-cyan-500/20 to-transparent blur-3xl sm:-right-64 sm:h-140 sm:w-140"
         />
         <motion.div
           animate={{
@@ -86,7 +86,7 @@ export function JoinUsSection() {
             repeat: Infinity,
             ease: 'linear',
           }}
-          className="-bottom-32 -translate-x-1/2 sm:-bottom-64 absolute left-1/2 h-90 w-90 rounded-full bg-linear-to-br from-green-500/20 via-emerald-500/15 to-transparent blur-3xl sm:h-180 sm:w-180"
+          className="absolute -bottom-32 left-1/2 h-90 w-90 -translate-x-1/2 rounded-full bg-linear-to-br from-green-500/20 via-emerald-500/15 to-transparent blur-3xl sm:-bottom-64 sm:h-180 sm:w-180"
         />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(var(--primary-rgb),0.05)_1px,transparent_1px)] bg-size-[24px_24px]" />
         <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(var(--primary-rgb),0.02)_1px,transparent_1px)] bg-size-[120px] opacity-20" />
@@ -125,7 +125,7 @@ export function JoinUsSection() {
               <Users className="h-8 w-8 text-primary transition-transform duration-300 group-hover:scale-110" />
             </motion.div>
             <motion.h2
-              className="mb-6 font-bold text-4xl text-foreground md:text-5xl lg:text-6xl"
+              className="mb-6 text-4xl font-bold text-foreground md:text-5xl lg:text-6xl"
               whileHover={{
                 scale: 1.02,
               }}
@@ -139,7 +139,7 @@ export function JoinUsSection() {
                   repeat: Infinity,
                   ease: 'linear',
                 }}
-                className="relative text-balance bg-linear-to-r bg-size-[200%_auto] from-primary via-purple-500 to-pink-500 bg-clip-text text-transparent"
+                className="relative bg-linear-to-r from-primary via-purple-500 to-pink-500 bg-size-[200%_auto] bg-clip-text text-balance text-transparent"
               >
                 Be Part of Our Story
               </motion.span>
@@ -186,7 +186,7 @@ export function JoinUsSection() {
                   </div>
                   <div className="text-left">
                     <div className="font-medium">{item.text}</div>
-                    <div className="text-primary text-sm">{item.metric}</div>
+                    <div className="text-sm text-primary">{item.metric}</div>
                   </div>
                 </motion.div>
               ))}
@@ -222,13 +222,13 @@ export function JoinUsSection() {
                       repeat: Infinity,
                       ease: 'linear',
                     }}
-                    className={`-top-8 -right-8 absolute h-24 w-24 rounded-xl bg-linear-to-br ${benefit.gradient} blur-2xl`}
+                    className={`absolute -top-8 -right-8 h-24 w-24 rounded-xl bg-linear-to-br ${benefit.gradient} blur-2xl`}
                   />
                   <div className="pointer-events-none relative">
                     <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-xl bg-primary/10 transition-transform duration-300 group-hover:scale-110">
                       {benefit.icon}
                     </div>
-                    <h3 className="mb-3 font-bold text-2xl">{benefit.title}</h3>
+                    <h3 className="mb-3 text-2xl font-bold">{benefit.title}</h3>
                     <p className="mb-6 text-muted-foreground">
                       {benefit.description}
                     </p>
@@ -250,10 +250,10 @@ export function JoinUsSection() {
                     <div className="mt-6 flex items-center justify-between">
                       {Object.entries(benefit.metrics).map(([key, value]) => (
                         <div key={key} className="flex items-center gap-2">
-                          <span className="font-bold text-primary text-sm">
+                          <span className="text-sm font-bold text-primary">
                             {value}
                           </span>
-                          <span className="text-muted-foreground text-xs">
+                          <span className="text-xs text-muted-foreground">
                             {key}
                           </span>
                         </div>

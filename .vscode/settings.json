@@ -40,7 +40,9 @@
     "**/components/**/index.tsx": "${dirname} - Component"
   },
   "tailwindCSS.experimental.configFile": "packages/ui/src/globals.css",
-  "i18n-ally.enabledFrameworks": ["next-intl"],
+  "i18n-ally.enabledFrameworks": [
+    "next-intl"
+  ],
   "i18n-ally.localesPaths": [
     "apps/calendar/messages",
     "apps/web/messages",
@@ -56,5 +58,8 @@
   "IDX.aI.enableCodebaseIndexing": true,
   "i18n-ally.sourceLanguage": "en",
   "typescript.experimental.useTsgo": false,
-  "cSpell.words": ["Tuturuuu", "tuturuuu"]
+  "cSpell.words": [
+    "Tuturuuu",
+    "tuturuuu"
+  ]
 }

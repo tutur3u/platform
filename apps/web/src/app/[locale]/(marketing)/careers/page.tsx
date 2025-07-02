@@ -179,7 +179,7 @@ export default function CareersPage() {
   return (
     <main ref={containerRef} className="relative mx-auto overflow-x-clip pb-12">
       {/* Enhanced Floating Orbs - Adjusted for mobile */}
-      <div className="-z-10 pointer-events-none fixed inset-0">
+      <div className="pointer-events-none fixed inset-0 -z-10">
         <motion.div
           animate={{
             scale: [1, 1.2, 1],
@@ -191,7 +191,7 @@ export default function CareersPage() {
             ease: 'linear',
           }}
           style={{ y }}
-          className="-left-32 sm:-left-64 absolute top-0 h-80 w-[20rem] rounded-full bg-linear-to-br from-purple-500/30 via-pink-500/20 to-transparent blur-3xl sm:h-160 sm:w-160"
+          className="absolute top-0 -left-32 h-80 w-[20rem] rounded-full bg-linear-to-br from-purple-500/30 via-pink-500/20 to-transparent blur-3xl sm:-left-64 sm:h-160 sm:w-160"
         />
         <motion.div
           animate={{
@@ -204,7 +204,7 @@ export default function CareersPage() {
             ease: 'linear',
           }}
           style={{ y: opacity }}
-          className="-right-32 sm:-right-64 absolute top-[30%] h-70 w-70 rounded-full bg-linear-to-br from-blue-500/30 via-cyan-500/20 to-transparent blur-3xl sm:h-140 sm:w-140"
+          className="absolute top-[30%] -right-32 h-70 w-70 rounded-full bg-linear-to-br from-blue-500/30 via-cyan-500/20 to-transparent blur-3xl sm:-right-64 sm:h-140 sm:w-140"
         />
         <motion.div
           animate={{
@@ -216,13 +216,13 @@ export default function CareersPage() {
             repeat: Infinity,
             ease: 'linear',
           }}
-          className="-bottom-32 -translate-x-1/2 sm:-bottom-64 absolute left-1/2 h-90 w-90 rounded-full bg-linear-to-br from-green-500/20 via-emerald-500/15 to-transparent blur-3xl sm:h-180 sm:w-180"
+          className="absolute -bottom-32 left-1/2 h-90 w-90 -translate-x-1/2 rounded-full bg-linear-to-br from-green-500/20 via-emerald-500/15 to-transparent blur-3xl sm:-bottom-64 sm:h-180 sm:w-180"
         />
       </div>
 
       <div className="container space-y-16 px-4 pt-12 sm:space-y-24 sm:pt-16">
         {/* Enhanced Background Patterns */}
-        <div className="-z-10 pointer-events-none fixed inset-0">
+        <div className="pointer-events-none fixed inset-0 -z-10">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(var(--primary-rgb),0.05)_1px,transparent_1px)] bg-size-[24px_24px]" />
           <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(var(--primary-rgb),0.02)_1px,transparent_1px)] bg-size-[120px] opacity-20" />
           <motion.div
@@ -245,7 +245,7 @@ export default function CareersPage() {
           className="relative text-center"
         >
           {/* Enhanced background effects */}
-          <div className="-z-10 pointer-events-none absolute inset-0">
+          <div className="pointer-events-none absolute inset-0 -z-10">
             <div className="absolute inset-0 bg-[radial-gradient(circle_500px_at_50%_50%,rgba(var(--primary-rgb),0.15),transparent)]" />
             <div className="absolute inset-0 bg-[radial-gradient(circle_700px_at_30%_50%,rgba(var(--primary-rgb),0.1),transparent)]" />
             <div className="absolute inset-0 bg-[radial-gradient(circle_600px_at_70%_50%,rgba(var(--primary-rgb),0.1),transparent)]" />
@@ -270,7 +270,7 @@ export default function CareersPage() {
           </motion.div>
 
           <motion.h1
-            className="mb-6 text-balance font-bold text-4xl text-foreground tracking-tight md:text-7xl"
+            className="mb-6 text-4xl font-bold tracking-tight text-balance text-foreground md:text-7xl"
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.4, duration: 0.5 }}
@@ -288,7 +288,7 @@ export default function CareersPage() {
           </motion.h1>
 
           <motion.p
-            className="mx-auto mb-12 max-w-2xl text-balance text-foreground/80 text-lg leading-relaxed md:text-xl"
+            className="mx-auto mb-12 max-w-2xl text-lg leading-relaxed text-balance text-foreground/80 md:text-xl"
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.6, duration: 0.5 }}
@@ -313,7 +313,7 @@ export default function CareersPage() {
                 className="flex cursor-default items-center gap-2 rounded-full bg-linear-to-r from-foreground/5 to-foreground/10 px-4 py-2 transition-colors hover:from-primary/10 hover:to-primary/5"
               >
                 <span className="text-primary">{badge.icon}</span>
-                <span className="font-medium text-foreground/80 text-sm">
+                <span className="text-sm font-medium text-foreground/80">
                   {badge.text}
                 </span>
               </motion.div>
@@ -328,7 +328,7 @@ export default function CareersPage() {
           viewport={{ once: true }}
           className="relative"
         >
-          <div className="-z-10 absolute inset-0">
+          <div className="absolute inset-0 -z-10">
             <div className="absolute inset-0 bg-[radial-gradient(circle_800px_at_50%_50%,rgba(var(--primary-rgb),0.15),transparent)]" />
             <div className="absolute inset-0 bg-[conic-gradient(from_0deg_at_50%_50%,rgba(var(--primary-rgb),0.05),transparent)]" />
             <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(var(--primary-rgb),0.02)_1px,transparent_1px)] bg-size-[100px] opacity-20" />
@@ -340,8 +340,8 @@ export default function CareersPage() {
                 <div className="absolute inset-0 bg-linear-to-br from-primary/10 via-purple-500/5 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(var(--primary-rgb),0.05)_1px,transparent_1px)] bg-size-[20px_20px]" />
                 <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(var(--primary-rgb),0.02)_1px,transparent_1px)] bg-size-[100px] opacity-20" />
-                <div className="-top-32 -left-32 absolute h-64 w-64 rounded-full bg-linear-to-br from-purple-500/30 via-pink-500/20 to-transparent blur-3xl" />
-                <div className="-right-32 -bottom-32 absolute h-64 w-64 rounded-full bg-linear-to-br from-blue-500/30 via-cyan-500/20 to-transparent blur-3xl" />
+                <div className="absolute -top-32 -left-32 h-64 w-64 rounded-full bg-linear-to-br from-purple-500/30 via-pink-500/20 to-transparent blur-3xl" />
+                <div className="absolute -right-32 -bottom-32 h-64 w-64 rounded-full bg-linear-to-br from-blue-500/30 via-cyan-500/20 to-transparent blur-3xl" />
               </div>
 
               <div className="relative grid gap-12 p-4 md:grid-cols-2 md:p-12">
@@ -351,18 +351,18 @@ export default function CareersPage() {
                     whileHover={{ scale: 1 }}
                     className="relative mx-auto flex h-20 w-20 items-center justify-center rounded-2xl bg-primary/10 transition-colors duration-300 group-hover:bg-primary/20 md:mx-0"
                   >
-                    <div className="-inset-1 absolute animate-spin-slow rounded-2xl bg-linear-to-r from-purple-500/20 via-pink-500/20 to-purple-500/20" />
+                    <div className="animate-spin-slow absolute -inset-1 rounded-2xl bg-linear-to-r from-purple-500/20 via-pink-500/20 to-purple-500/20" />
                     <div className="absolute inset-[2px] rounded-xl bg-background/80 backdrop-blur-sm" />
                     <Mail className="relative h-10 w-10 text-primary" />
                   </motion.div>
 
                   <div className="space-y-4 text-center md:text-left">
-                    <h2 className="font-bold text-4xl text-foreground">
+                    <h2 className="text-4xl font-bold text-foreground">
                       <span className="bg-linear-to-r from-primary via-purple-500 to-pink-500 bg-clip-text text-transparent">
                         Shape the Future with Us
                       </span>
                     </h2>
-                    <p className="mx-auto max-w-2xl text-foreground/80 text-lg">
+                    <p className="mx-auto max-w-2xl text-lg text-foreground/80">
                       While we don't have any open positions at the moment,
                       we're always excited to connect with talented individuals
                       who share our vision.
@@ -396,19 +396,19 @@ export default function CareersPage() {
                   <div className="flex flex-wrap justify-center gap-6 md:justify-start">
                     <div className="flex items-center gap-2">
                       <Timer className="h-5 w-5 text-primary" />
-                      <span className="text-foreground/60 text-sm">
+                      <span className="text-sm text-foreground/60">
                         Quick Response
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
                       <Shield className="h-5 w-5 text-primary" />
-                      <span className="text-foreground/60 text-sm">
+                      <span className="text-sm text-foreground/60">
                         Secure Communication
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
                       <Globe2 className="h-5 w-5 text-primary" />
-                      <span className="text-foreground/60 text-sm">
+                      <span className="text-sm text-foreground/60">
                         Global Opportunities
                       </span>
                     </div>
@@ -419,7 +419,7 @@ export default function CareersPage() {
                   <div className="group relative overflow-hidden rounded-2xl bg-foreground/5 p-4 backdrop-blur-sm md:p-8">
                     <div className="absolute inset-0 bg-linear-to-br from-purple-500/10 via-pink-500/5 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
                     <div className="relative space-y-6">
-                      <h3 className="text-balance text-center font-bold text-2xl text-foreground">
+                      <h3 className="text-center text-2xl font-bold text-balance text-foreground">
                         What We're Looking For
                       </h3>
                       <div className="space-y-4">
@@ -431,7 +431,7 @@ export default function CareersPage() {
                             <h4 className="font-semibold">
                               Technical Excellence
                             </h4>
-                            <p className="text-foreground/60 text-sm">
+                            <p className="text-sm text-foreground/60">
                               Strong problem-solving abilities
                             </p>
                           </div>
@@ -443,7 +443,7 @@ export default function CareersPage() {
                           </div>
                           <div className="flex flex-col items-start">
                             <h4 className="font-semibold">Team Player</h4>
-                            <p className="text-foreground/60 text-sm">
+                            <p className="text-sm text-foreground/60">
                               Collaborative mindset
                             </p>
                           </div>
@@ -455,7 +455,7 @@ export default function CareersPage() {
                           </div>
                           <div className="flex flex-col items-start">
                             <h4 className="font-semibold">Growth Mindset</h4>
-                            <p className="text-foreground/60 text-sm">
+                            <p className="text-sm text-foreground/60">
                               Eager to learn and grow
                             </p>
                           </div>
@@ -467,14 +467,14 @@ export default function CareersPage() {
                           </div>
                           <div className="flex flex-col items-start">
                             <h4 className="font-semibold">Global Vision</h4>
-                            <p className="text-foreground/60 text-sm">
+                            <p className="text-sm text-foreground/60">
                               International mindset
                             </p>
                           </div>
                         </div>
                       </div>
 
-                      <div className="mt-6 text-center text-foreground/60 text-sm">
+                      <div className="mt-6 text-center text-sm text-foreground/60">
                         Email us at{' '}
                         <span className="font-semibold text-primary">
                           contact@tuturuuu.com
@@ -497,7 +497,7 @@ export default function CareersPage() {
           viewport={{ once: true }}
           className="relative"
         >
-          <div className="-z-10 absolute inset-0">
+          <div className="absolute inset-0 -z-10">
             <motion.div
               animate={{
                 opacity: [0.1, 0.15, 0.1],
@@ -547,7 +547,7 @@ export default function CareersPage() {
                 <Star className="h-8 w-8 text-primary transition-transform duration-300 group-hover:scale-110" />
               </motion.div>
               <motion.h2
-                className="mb-4 font-bold text-4xl text-foreground"
+                className="mb-4 text-4xl font-bold text-foreground"
                 whileHover={{
                   scale: 1.02,
                 }}
@@ -561,13 +561,13 @@ export default function CareersPage() {
                     repeat: Infinity,
                     ease: 'linear',
                   }}
-                  className="relative bg-linear-to-r bg-size-[200%_auto] from-primary via-purple-500 to-pink-500 bg-clip-text text-transparent"
+                  className="relative bg-linear-to-r from-primary via-purple-500 to-pink-500 bg-size-[200%_auto] bg-clip-text text-transparent"
                 >
                   Our Values
                 </motion.span>
               </motion.h2>
               <motion.p
-                className="mx-auto max-w-2xl text-foreground/60 text-lg"
+                className="mx-auto max-w-2xl text-lg text-foreground/60"
                 whileHover={{
                   scale: 1.01,
                 }}
@@ -611,7 +611,7 @@ export default function CareersPage() {
                         repeat: Infinity,
                         ease: 'linear',
                       }}
-                      className="-top-8 -right-8 absolute h-24 w-24 rounded-xl bg-linear-to-br from-purple-500/20 via-pink-500/10 to-transparent blur-2xl"
+                      className="absolute -top-8 -right-8 h-24 w-24 rounded-xl bg-linear-to-br from-purple-500/20 via-pink-500/10 to-transparent blur-2xl"
                     />
                     <div className="pointer-events-none relative p-8">
                       <motion.div
@@ -640,7 +640,7 @@ export default function CareersPage() {
                         </div>
                       </motion.div>
                       <motion.h3
-                        className="relative mb-4 font-bold text-foreground text-xl"
+                        className="relative mb-4 text-xl font-bold text-foreground"
                         whileHover={{
                           scale: 1.05,
                           color: 'hsl(var(--primary))',
@@ -677,7 +677,7 @@ export default function CareersPage() {
           viewport={{ once: true }}
           className="relative"
         >
-          <div className="-z-10 absolute inset-0">
+          <div className="absolute inset-0 -z-10">
             <motion.div
               animate={{
                 opacity: [0.1, 0.15, 0.1],
@@ -727,7 +727,7 @@ export default function CareersPage() {
                 <Heart className="h-8 w-8 text-primary transition-transform duration-300 group-hover:scale-110" />
               </motion.div>
               <motion.h2
-                className="mb-4 font-bold text-4xl text-foreground"
+                className="mb-4 text-4xl font-bold text-foreground"
                 whileHover={{
                   scale: 1.02,
                 }}
@@ -741,13 +741,13 @@ export default function CareersPage() {
                     repeat: Infinity,
                     ease: 'linear',
                   }}
-                  className="relative bg-linear-to-r bg-size-[200%_auto] from-primary via-blue-500 to-cyan-500 bg-clip-text text-transparent"
+                  className="relative bg-linear-to-r from-primary via-blue-500 to-cyan-500 bg-size-[200%_auto] bg-clip-text text-transparent"
                 >
                   Benefits & Perks
                 </motion.span>
               </motion.h2>
               <motion.p
-                className="mx-auto max-w-2xl text-foreground/60 text-lg"
+                className="mx-auto max-w-2xl text-lg text-foreground/60"
                 whileHover={{
                   scale: 1.01,
                 }}
@@ -791,7 +791,7 @@ export default function CareersPage() {
                         repeat: Infinity,
                         ease: 'linear',
                       }}
-                      className="-top-8 -right-8 absolute h-24 w-24 rounded-xl bg-linear-to-br from-blue-500/20 via-cyan-500/10 to-transparent blur-2xl"
+                      className="absolute -top-8 -right-8 h-24 w-24 rounded-xl bg-linear-to-br from-blue-500/20 via-cyan-500/10 to-transparent blur-2xl"
                     />
                     <div className="pointer-events-none relative p-8">
                       <motion.div
@@ -820,7 +820,7 @@ export default function CareersPage() {
                         </div>
                       </motion.div>
                       <motion.h3
-                        className="relative mb-4 font-bold text-foreground text-xl"
+                        className="relative mb-4 text-xl font-bold text-foreground"
                         whileHover={{
                           scale: 1.05,
                           color: 'hsl(var(--primary))',
@@ -857,7 +857,7 @@ export default function CareersPage() {
           viewport={{ once: true }}
           className="relative"
         >
-          <div className="-z-10 absolute inset-0">
+          <div className="absolute inset-0 -z-10">
             <motion.div
               animate={{
                 opacity: [0.1, 0.15, 0.1],
@@ -917,7 +917,7 @@ export default function CareersPage() {
                 <Building2 className="h-8 w-8 text-primary transition-transform duration-300 group-hover:scale-110" />
               </motion.div>
               <motion.h2
-                className="mb-4 font-bold text-4xl text-foreground"
+                className="mb-4 text-4xl font-bold text-foreground"
                 whileHover={{
                   scale: 1.02,
                 }}
@@ -931,13 +931,13 @@ export default function CareersPage() {
                     repeat: Infinity,
                     ease: 'linear',
                   }}
-                  className="relative bg-linear-to-r bg-size-[200%_auto] from-primary via-orange-500 to-red-500 bg-clip-text text-transparent"
+                  className="relative bg-linear-to-r from-primary via-orange-500 to-red-500 bg-size-[200%_auto] bg-clip-text text-transparent"
                 >
                   Cultural Pillars
                 </motion.span>
               </motion.h2>
               <motion.p
-                className="mx-auto max-w-2xl text-foreground/60 text-lg"
+                className="mx-auto max-w-2xl text-lg text-foreground/60"
                 whileHover={{
                   scale: 1.01,
                 }}
@@ -980,7 +980,7 @@ export default function CareersPage() {
                         repeat: Infinity,
                         ease: 'linear',
                       }}
-                      className="-top-8 -right-8 absolute h-24 w-24 rounded-xl bg-linear-to-br from-orange-500/20 via-red-500/10 to-transparent blur-2xl"
+                      className="absolute -top-8 -right-8 h-24 w-24 rounded-xl bg-linear-to-br from-orange-500/20 via-red-500/10 to-transparent blur-2xl"
                     />
                     <div className="pointer-events-none relative p-8">
                       <motion.div
@@ -1009,7 +1009,7 @@ export default function CareersPage() {
                         </div>
                       </motion.div>
                       <motion.h3
-                        className="relative mb-4 font-bold text-foreground text-xl"
+                        className="relative mb-4 text-xl font-bold text-foreground"
                         whileHover={{
                           scale: 1.05,
                           color: 'hsl(var(--primary))',
@@ -1046,7 +1046,7 @@ export default function CareersPage() {
           viewport={{ once: true }}
           className="relative"
         >
-          <div className="-z-10 absolute inset-0">
+          <div className="absolute inset-0 -z-10">
             <motion.div
               animate={{
                 opacity: [0.1, 0.15, 0.1],
@@ -1107,7 +1107,7 @@ export default function CareersPage() {
                 <Users2 className="h-8 w-8 text-primary transition-transform duration-300 group-hover:scale-110" />
               </motion.div>
               <motion.h2
-                className="mb-4 font-bold text-4xl text-foreground"
+                className="mb-4 text-4xl font-bold text-foreground"
                 whileHover={{
                   scale: 1.02,
                 }}
@@ -1121,13 +1121,13 @@ export default function CareersPage() {
                     repeat: Infinity,
                     ease: 'linear',
                   }}
-                  className="relative bg-linear-to-r bg-size-[200%_auto] from-primary via-green-500 to-emerald-500 bg-clip-text text-transparent"
+                  className="relative bg-linear-to-r from-primary via-green-500 to-emerald-500 bg-size-[200%_auto] bg-clip-text text-transparent"
                 >
                   Team Highlights
                 </motion.span>
               </motion.h2>
               <motion.p
-                className="mx-auto max-w-2xl text-foreground/60 text-lg"
+                className="mx-auto max-w-2xl text-lg text-foreground/60"
                 whileHover={{
                   scale: 1.01,
                 }}
@@ -1170,7 +1170,7 @@ export default function CareersPage() {
                         repeat: Infinity,
                         ease: 'linear',
                       }}
-                      className="-top-8 -right-8 absolute h-24 w-24 rounded-xl bg-linear-to-br from-green-500/20 via-emerald-500/10 to-transparent blur-2xl"
+                      className="absolute -top-8 -right-8 h-24 w-24 rounded-xl bg-linear-to-br from-green-500/20 via-emerald-500/10 to-transparent blur-2xl"
                     />
                     <div className="pointer-events-none relative p-8">
                       <motion.div
@@ -1199,7 +1199,7 @@ export default function CareersPage() {
                         </div>
                       </motion.div>
                       <motion.h3
-                        className="relative mb-4 font-bold text-foreground text-xl"
+                        className="relative mb-4 text-xl font-bold text-foreground"
                         whileHover={{
                           scale: 1.05,
                           color: 'hsl(var(--primary))',

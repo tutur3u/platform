@@ -275,7 +275,7 @@ export default function AddEventModal({
                 className={errors.name ? 'border-destructive' : ''}
               />
               {errors.name && (
-                <p className="text-destructive text-sm">{errors.name}</p>
+                <p className="text-sm text-destructive">{errors.name}</p>
               )}
             </div>
 
@@ -297,7 +297,7 @@ export default function AddEventModal({
           <div className="space-y-4">
             <div className="mb-3 flex items-center gap-2">
               <ClockIcon className="h-4 w-4 text-muted-foreground" />
-              <Label className="font-medium text-sm">Duration Settings</Label>
+              <Label className="text-sm font-medium">Duration Settings</Label>
             </div>
 
             <div className="space-y-4">
@@ -317,7 +317,7 @@ export default function AddEventModal({
                   className={errors.total_duration ? 'border-destructive' : ''}
                 />
                 {errors.total_duration && (
-                  <p className="text-destructive text-xs">
+                  <p className="text-xs text-destructive">
                     {errors.total_duration}
                   </p>
                 )}
@@ -331,7 +331,7 @@ export default function AddEventModal({
                     updateFormData('is_splittable', checked)
                   }
                 />
-                <Label htmlFor="split-up" className="font-normal text-sm">
+                <Label htmlFor="split-up" className="text-sm font-normal">
                   Allow splitting into smaller sessions
                 </Label>
               </div>
@@ -340,8 +340,7 @@ export default function AddEventModal({
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-2">
                     <Label htmlFor="min-duration" className="text-sm">
-                      Min Duration (h){' '}
-                      <span className="text-destructive">*</span>
+                      Min Duration (h) <span className="text-destructive">*</span>
                     </Label>
                     <Input
                       id="min-duration"
@@ -365,7 +364,7 @@ export default function AddEventModal({
                       }
                     />
                     {errors.min_split_duration_minutes && (
-                      <p className="text-destructive text-xs">
+                      <p className="text-xs text-destructive">
                         {errors.min_split_duration_minutes}
                       </p>
                     )}
@@ -373,8 +372,7 @@ export default function AddEventModal({
 
                   <div className="space-y-2">
                     <Label htmlFor="max-duration" className="text-sm">
-                      Max Duration (h){' '}
-                      <span className="text-destructive">*</span>
+                      Max Duration (h) <span className="text-destructive">*</span>
                     </Label>
                     <Input
                       id="max-duration"
@@ -398,7 +396,7 @@ export default function AddEventModal({
                       }
                     />
                     {errors.max_split_duration_minutes && (
-                      <p className="text-destructive text-xs">
+                      <p className="text-xs text-destructive">
                         {errors.max_split_duration_minutes}
                       </p>
                     )}
@@ -406,7 +404,7 @@ export default function AddEventModal({
                 </div>
               )}
 
-              <div className="rounded-lg bg-accent/50 p-3 text-muted-foreground text-xs">
+              <div className="rounded-lg bg-accent/50 p-3 text-xs text-muted-foreground">
                 <strong>Duration Guidelines:</strong>
                 <ul className="mt-1 space-y-1">
                   <li>
@@ -437,7 +435,7 @@ export default function AddEventModal({
             <div className="space-y-2">
               <div className="mb-2 flex items-center gap-2">
                 <ClockIcon className="h-4 w-4 text-muted-foreground" />
-                <Label className="font-medium text-sm">Working Hours</Label>
+                <Label className="text-sm font-medium">Working Hours</Label>
               </div>
               <Select
                 value={formData.calendar_hours}
@@ -455,7 +453,7 @@ export default function AddEventModal({
                         <span>{option.icon}</span>
                         <div>
                           <div className="font-medium">{option.label}</div>
-                          <div className="text-muted-foreground text-xs">
+                          <div className="text-xs text-muted-foreground">
                             {option.description}
                           </div>
                         </div>
@@ -496,12 +494,12 @@ export default function AddEventModal({
                   className={errors.end_date ? 'border-destructive' : ''}
                 />
                 {errors.end_date && (
-                  <p className="text-destructive text-xs">{errors.end_date}</p>
+                  <p className="text-xs text-destructive">{errors.end_date}</p>
                 )}
               </div>
             </div>
 
-            <div className="rounded-lg bg-blue-50 p-3 text-blue-800 text-sm">
+            <div className="rounded-lg bg-blue-50 p-3 text-sm text-blue-800">
               <div className="flex items-center gap-2">
                 <span>📧</span>
                 <span>
@@ -512,7 +510,7 @@ export default function AddEventModal({
           </div>
 
           {errors.submit && (
-            <div className="rounded-lg bg-destructive/10 p-3 text-destructive text-sm">
+            <div className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
               {errors.submit}
             </div>
           )}

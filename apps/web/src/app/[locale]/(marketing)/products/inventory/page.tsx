@@ -95,7 +95,7 @@ export default function InventoryProductPage() {
         <Badge variant="secondary" className="mb-4">
           Coming Soon
         </Badge>
-        <h1 className="mb-4 font-bold text-4xl">Smart Inventory Management</h1>
+        <h1 className="mb-4 text-4xl font-bold">Smart Inventory Management</h1>
         <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
           Transform your inventory operations with our intelligent management
           system. Track stock, automate orders, and optimize your supply chain
@@ -116,7 +116,7 @@ export default function InventoryProductPage() {
         <Card className="border-primary bg-primary/5 p-8">
           <div className="mx-auto flex max-w-4xl flex-col items-center gap-4 text-center">
             <ShieldCheck className="h-12 w-12 text-primary" />
-            <h2 className="font-bold text-2xl">Enterprise-Grade Security</h2>
+            <h2 className="text-2xl font-bold">Enterprise-Grade Security</h2>
             <p className="text-muted-foreground">
               Your inventory data is protected with advanced security measures,
               ensuring safe and reliable stock management across your
@@ -128,7 +128,7 @@ export default function InventoryProductPage() {
 
       {/* Features Grid */}
       <section className="mb-24">
-        <h2 className="mb-12 text-center font-bold text-3xl">
+        <h2 className="mb-12 text-center text-3xl font-bold">
           Powerful Features
         </h2>
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -136,7 +136,7 @@ export default function InventoryProductPage() {
             <Card key={feature.title} className="p-6">
               <div className="mb-4 flex items-center gap-3">
                 <div className="text-primary">{feature.icon}</div>
-                <h3 className="font-semibold text-xl">{feature.title}</h3>
+                <h3 className="text-xl font-semibold">{feature.title}</h3>
               </div>
               <p className="text-muted-foreground">{feature.description}</p>
             </Card>
@@ -146,12 +146,12 @@ export default function InventoryProductPage() {
 
       {/* Use Cases */}
       <section className="mb-24">
-        <h2 className="mb-12 text-center font-bold text-3xl">Use Cases</h2>
+        <h2 className="mb-12 text-center text-3xl font-bold">Use Cases</h2>
         <div className="grid gap-8 md:grid-cols-3">
           {useCases.map((useCase) => (
             <Card key={useCase.title} className="p-6">
               <Building2 className="mb-4 h-8 w-8 text-primary" />
-              <h3 className="mb-4 font-semibold text-xl">{useCase.title}</h3>
+              <h3 className="mb-4 text-xl font-semibold">{useCase.title}</h3>
               <ul className="space-y-2 text-muted-foreground">
                 {useCase.items.map((item) => (
                   <li key={item} className="flex items-center gap-2">
@@ -169,9 +169,9 @@ export default function InventoryProductPage() {
       <section className="mb-24">
         <Card className="overflow-hidden">
           <div className="grid md:grid-cols-2">
-            <div className="flex flex-col justify-center gap-4 border-border border-b p-8 md:border-r md:border-b-0">
+            <div className="flex flex-col justify-center gap-4 border-b border-border p-8 md:border-r md:border-b-0">
               <Truck className="h-8 w-8 text-primary" />
-              <h3 className="font-bold text-2xl">Supply Chain Visibility</h3>
+              <h3 className="text-2xl font-bold">Supply Chain Visibility</h3>
               <p className="text-muted-foreground">
                 Get complete visibility into your supply chain with real-time
                 tracking and automated notifications for stock movements.
@@ -179,7 +179,7 @@ export default function InventoryProductPage() {
             </div>
             <div className="flex flex-col justify-center gap-4 p-8">
               <PackageSearch className="h-8 w-8 text-primary" />
-              <h3 className="font-bold text-2xl">Inventory Insights</h3>
+              <h3 className="text-2xl font-bold">Inventory Insights</h3>
               <p className="text-muted-foreground">
                 Make informed decisions with detailed analytics on stock levels,
                 turnover rates, and demand forecasting.
@@ -191,13 +191,13 @@ export default function InventoryProductPage() {
 
       {/* Additional Features Section */}
       <section className="mb-24">
-        <h2 className="mb-12 text-center font-bold text-3xl">
+        <h2 className="mb-12 text-center text-3xl font-bold">
           Operations Tools
         </h2>
         <div className="grid gap-6 md:grid-cols-2">
           <Card className="p-6">
             <Settings className="mb-4 h-8 w-8 text-primary" />
-            <h3 className="mb-2 font-bold text-xl">Process Automation</h3>
+            <h3 className="mb-2 text-xl font-bold">Process Automation</h3>
             <p className="text-muted-foreground">
               Automate routine tasks like reordering, stock counts, and report
               generation to save time and reduce errors.
@@ -205,7 +205,7 @@ export default function InventoryProductPage() {
           </Card>
           <Card className="p-6">
             <History className="mb-4 h-8 w-8 text-primary" />
-            <h3 className="mb-2 font-bold text-xl">Audit Trail</h3>
+            <h3 className="mb-2 text-xl font-bold">Audit Trail</h3>
             <p className="text-muted-foreground">
               Maintain detailed records of all inventory movements and changes
               for compliance and accountability.

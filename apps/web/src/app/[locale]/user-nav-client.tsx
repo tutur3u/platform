@@ -105,10 +105,10 @@ export default function UserNavClient({
             </Avatar>
             {hideMetadata || (
               <div className="flex w-full flex-col items-start justify-center">
-                <div className="line-clamp-1 break-all font-semibold text-sm">
+                <div className="line-clamp-1 text-sm font-semibold break-all">
                   {user?.display_name || user?.handle || t('common.unnamed')}
                 </div>
-                <div className="line-clamp-1 break-all text-xs opacity-70">
+                <div className="line-clamp-1 text-xs break-all opacity-70">
                   {user?.email}
                 </div>
               </div>
@@ -125,11 +125,11 @@ export default function UserNavClient({
             <div className="flex flex-col">
               <Link
                 href="/settings/account"
-                className="line-clamp-1 w-fit break-all font-medium text-sm hover:underline"
+                className="line-clamp-1 w-fit text-sm font-medium break-all hover:underline"
               >
                 {user?.display_name || user?.handle || t('common.unnamed')}
               </Link>
-              <p className="line-clamp-1 break-all text-muted-foreground text-xs">
+              <p className="line-clamp-1 text-xs break-all text-muted-foreground">
                 {user?.email}
               </p>
             </div>

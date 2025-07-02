@@ -140,7 +140,7 @@ export default function ScoreCalculatorPage() {
   return (
     <div className="container mx-auto p-6">
       <div className="mb-8">
-        <h1 className="flex items-center gap-2 font-bold text-3xl">
+        <h1 className="flex items-center gap-2 text-3xl font-bold">
           <Calculator className="h-7 w-7" />
           {t('title')}
         </h1>
@@ -149,7 +149,7 @@ export default function ScoreCalculatorPage() {
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Card className="border-dynamic-blue/20 shadow-sm transition-all duration-200 hover:shadow-md md:sticky md:top-6 md:self-start">
-          <CardHeader className="rounded-t-lg border-dynamic-blue/10 border-b bg-dynamic-blue/5">
+          <CardHeader className="rounded-t-lg border-b border-dynamic-blue/10 bg-dynamic-blue/5">
             <CardTitle className="text-dynamic-blue">
               {t('input_metrics')}
             </CardTitle>
@@ -158,7 +158,7 @@ export default function ScoreCalculatorPage() {
             <Form {...form}>
               <div className="space-y-6">
                 <div className="rounded-lg border border-dynamic-sky/20 bg-dynamic-sky/5 p-5">
-                  <h3 className="flex items-center gap-2 font-medium text-dynamic-sky text-lg">
+                  <h3 className="flex items-center gap-2 text-lg font-medium text-dynamic-sky">
                     <CheckCircle2 className="h-5 w-5" />
                     {t('test_results')}
                   </h3>
@@ -209,7 +209,7 @@ export default function ScoreCalculatorPage() {
                               />
                             </FormControl>
                             {formValues.total_tests ? (
-                              <div className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground text-xs">
+                              <div className="absolute inset-y-0 right-0 flex items-center pr-3 text-xs text-muted-foreground">
                                 {t('max')}: {formValues.total_tests || 0}
                               </div>
                             ) : null}
@@ -225,7 +225,7 @@ export default function ScoreCalculatorPage() {
                 </div>
 
                 <div className="rounded-lg border border-dynamic-purple/20 bg-dynamic-purple/5 p-5">
-                  <h3 className="flex items-center gap-2 font-medium text-dynamic-purple text-lg">
+                  <h3 className="flex items-center gap-2 text-lg font-medium text-dynamic-purple">
                     <AlertCircle className="h-5 w-5" />
                     {t('criteria_evaluation')}
                   </h3>
@@ -280,7 +280,7 @@ export default function ScoreCalculatorPage() {
                               />
                             </FormControl>
                             {formValues.total_criteria ? (
-                              <div className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground text-xs">
+                              <div className="absolute inset-y-0 right-0 flex items-center pr-3 text-xs text-muted-foreground">
                                 {t('max')}: {formValues.total_criteria * 10}
                               </div>
                             ) : null}
@@ -300,7 +300,7 @@ export default function ScoreCalculatorPage() {
         </Card>
 
         <Card className="border-dynamic-green/20 shadow-sm md:sticky md:top-6 md:self-start">
-          <CardHeader className="rounded-t-lg border-dynamic-green/10 border-b bg-dynamic-green/5">
+          <CardHeader className="rounded-t-lg border-b border-dynamic-green/10 bg-dynamic-green/5">
             <CardTitle className="text-dynamic-green">
               {t('score_calculation')}
             </CardTitle>
@@ -310,7 +310,7 @@ export default function ScoreCalculatorPage() {
               <div className="flex h-[300px] flex-col items-center justify-center gap-4 text-center">
                 <HelpCircle className="h-16 w-16 text-dynamic-gray/50" />
                 <div>
-                  <p className="font-medium text-lg">
+                  <p className="text-lg font-medium">
                     {t('no_calculation_yet')}
                   </p>
                   <p className="text-muted-foreground">
@@ -324,15 +324,15 @@ export default function ScoreCalculatorPage() {
                   className={`rounded-lg border-2 border-dynamic-${scoreColor}/20 bg-dynamic-${scoreColor}/5 p-6 text-center shadow-sm transition-all duration-300 hover:shadow-md`}
                 >
                   <h3
-                    className={`font-medium text-lg text-dynamic-${scoreColor}`}
+                    className={`text-lg font-medium text-dynamic-${scoreColor}`}
                   >
                     {t('final_score')}
                   </h3>
-                  <div className="mt-3 font-bold text-6xl">
+                  <div className="mt-3 text-6xl font-bold">
                     <span className={`text-dynamic-${scoreColor}`}>
                       {formatScore(result.score, 1)}
                     </span>
-                    <span className="text-muted-foreground text-xl">/10</span>
+                    <span className="text-xl text-muted-foreground">/10</span>
                   </div>
                   <p className={`mt-2 font-medium text-dynamic-${scoreColor}`}>
                     {result.percentage.toFixed(1)}% {t('of_maximum_score')}
@@ -340,7 +340,7 @@ export default function ScoreCalculatorPage() {
                 </div>
 
                 <div>
-                  <h3 className="mb-2 font-medium text-dynamic-green text-lg">
+                  <h3 className="mb-2 text-lg font-medium text-dynamic-green">
                     {t('calculation_breakdown')}
                   </h3>
                   <Separator className="my-2 bg-dynamic-green/20" />
@@ -404,7 +404,7 @@ export default function ScoreCalculatorPage() {
                 </div>
 
                 <div>
-                  <h3 className="mb-2 font-medium text-dynamic-green text-lg">
+                  <h3 className="mb-2 text-lg font-medium text-dynamic-green">
                     {t('scoring_rules')}
                   </h3>
                   <Separator className="my-2 bg-dynamic-green/20" />

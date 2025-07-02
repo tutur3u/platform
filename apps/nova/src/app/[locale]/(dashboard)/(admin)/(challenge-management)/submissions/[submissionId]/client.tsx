@@ -147,7 +147,7 @@ export default function SubmissionClient({
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div className="flex flex-col gap-2">
-          <h1 className="font-bold text-3xl">Submission Details</h1>
+          <h1 className="text-3xl font-bold">Submission Details</h1>
           <p className="text-muted-foreground">ID: {submission.id}</p>
         </div>
         <div className="ml-auto">
@@ -185,7 +185,7 @@ export default function SubmissionClient({
               </div>
               <Progress value={reEvaluationProgress.progress} className="h-2" />
             </div>
-            <p className="text-dynamic-blue text-xs">
+            <p className="text-xs text-dynamic-blue">
               Current step: {reEvaluationProgress.step}
             </p>
           </CardContent>
@@ -200,7 +200,7 @@ export default function SubmissionClient({
           <CardContent className="flex flex-col gap-4 md:flex-row">
             <div className="w-full space-y-4">
               <div className="space-y-1">
-                <p className="text-muted-foreground text-sm">User</p>
+                <p className="text-sm text-muted-foreground">User</p>
                 <div className="flex gap-2">
                   <User className="h-4 w-4 text-primary/70" />
                   <span className="font-medium">
@@ -210,7 +210,7 @@ export default function SubmissionClient({
               </div>
 
               <div className="space-y-1">
-                <p className="text-muted-foreground text-sm">Problem</p>
+                <p className="text-sm text-muted-foreground">Problem</p>
                 <div className="flex items-center gap-2">
                   <BookOpen className="h-4 w-4 text-primary/70" />
                   <Link
@@ -224,7 +224,7 @@ export default function SubmissionClient({
 
               {submission.created_at && (
                 <div className="space-y-1">
-                  <p className="text-muted-foreground text-sm">Submitted</p>
+                  <p className="text-sm text-muted-foreground">Submitted</p>
                   <div className="flex items-center gap-2">
                     <Calendar className="h-4 w-4 text-primary/70" />
                     <span className="font-medium">
@@ -238,7 +238,7 @@ export default function SubmissionClient({
             <div className="w-full">
               {/* Total Score - Highlighted */}
               <div className="mb-8 flex flex-col items-center justify-center">
-                <p className="mb-2 font-medium text-muted-foreground text-sm">
+                <p className="mb-2 text-sm font-medium text-muted-foreground">
                   Total Score
                 </p>
                 <div className="relative flex h-32 w-32 items-center justify-center rounded-full border-8 border-muted">
@@ -248,7 +248,7 @@ export default function SubmissionClient({
                       clipPath: `circle(${getProgressPercentage(submission.total_score)}% at center)`,
                     }}
                   />
-                  <span className="relative z-10 font-bold text-4xl">
+                  <span className="relative z-10 text-4xl font-bold">
                     {submission.total_score !== null
                       ? submission.total_score.toFixed(1)
                       : '-'}

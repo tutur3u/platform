@@ -125,7 +125,7 @@ export function RaceControls({
           exit={{ opacity: 0, height: 0 }}
           className="rounded-md border bg-background p-3"
         >
-          <div className="mb-2 font-medium text-xs">Animation Speed</div>
+          <div className="mb-2 text-xs font-medium">Animation Speed</div>
           <div className="flex flex-wrap gap-2">
             {speedOptions.map((option) => (
               <Button
@@ -231,10 +231,10 @@ export function RaceControls({
               {/* Hover preview */}
               {hoverPosition !== null && (
                 <div
-                  className="absolute top-0 z-10 h-full border-primary border-r-2 transition-all duration-75"
+                  className="absolute top-0 z-10 h-full border-r-2 border-primary transition-all duration-75"
                   style={{ left: `${(hoverPosition / races.length) * 100}%` }}
                 >
-                  <div className="-translate-x-1/2 -translate-y-1/2 absolute top-1/2 whitespace-nowrap rounded-md border bg-background px-1.5 py-0.5 text-xs shadow-sm">
+                  <div className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-md border bg-background px-1.5 py-0.5 text-xs whitespace-nowrap shadow-sm">
                     Race {hoverPosition + 1}
                   </div>
                 </div>
@@ -274,9 +274,9 @@ export function RaceControls({
               >
                 <div className="h-full w-full bg-primary/30" />
                 <div className="absolute top-0 right-0 h-full w-1 bg-primary" />
-                <div className="-right-2 -translate-y-1/2 absolute top-1/2 flex h-4 w-4 items-center justify-center rounded-full bg-primary shadow-sm">
+                <div className="absolute top-1/2 -right-2 flex h-4 w-4 -translate-y-1/2 items-center justify-center rounded-full bg-primary shadow-sm">
                   {races[currentRaceIndex]?.raceType === 'preliminary' ? (
-                    <span className="font-bold text-[10px] text-white">
+                    <span className="text-[10px] font-bold text-white">
                       {currentRaceIndex + 1}
                     </span>
                   ) : races[currentRaceIndex]?.raceType === 'championship' ? (

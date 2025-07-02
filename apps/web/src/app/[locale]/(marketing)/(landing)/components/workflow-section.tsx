@@ -41,7 +41,7 @@ export function WorkflowSection() {
               <MessageSquare className="h-4 w-4 text-dynamic-purple" />
             </div>
             <div>
-              <h4 className="font-medium text-sm">
+              <h4 className="text-sm font-medium">
                 {t('natural_language_input')}
               </h4>
             </div>
@@ -55,7 +55,7 @@ export function WorkflowSection() {
             <div className="flex h-6 w-6 items-center justify-center rounded-full border border-dynamic-light-green/30 bg-calendar-bg-green">
               <Check className="h-3 w-3 text-dynamic-green" />
             </div>
-            <span className="text-dynamic-green text-xs">
+            <span className="text-xs text-dynamic-green">
               {t('task_created_and_scheduled')}
             </span>
           </div>
@@ -75,36 +75,36 @@ export function WorkflowSection() {
               <Brain className="h-4 w-4 text-dynamic-blue" />
             </div>
             <div>
-              <h4 className="font-medium text-sm">{t('ai_analysis')}</h4>
+              <h4 className="text-sm font-medium">{t('ai_analysis')}</h4>
             </div>
           </div>
           <div className="space-y-2">
             <div className="rounded-lg border border-dynamic-light-blue/30 bg-calendar-bg-blue p-2">
               <div className="flex items-center justify-between">
-                <span className="font-medium text-dynamic-blue text-xs">
+                <span className="text-xs font-medium text-dynamic-blue">
                   {t('priority_analysis')}
                 </span>
-                <span className="rounded bg-calendar-bg-red px-1.5 text-dynamic-red text-xs">
+                <span className="rounded bg-calendar-bg-red px-1.5 text-xs text-dynamic-red">
                   {t('high_priority')}
                 </span>
               </div>
             </div>
             <div className="rounded-lg border border-dynamic-light-blue/30 bg-calendar-bg-blue p-2">
               <div className="flex items-center justify-between">
-                <span className="font-medium text-dynamic-blue text-xs">
+                <span className="text-xs font-medium text-dynamic-blue">
                   {t('team_availability')}
                 </span>
-                <span className="rounded bg-calendar-bg-green px-1.5 text-dynamic-green text-xs">
+                <span className="rounded bg-calendar-bg-green px-1.5 text-xs text-dynamic-green">
                   {t('all_available')}
                 </span>
               </div>
             </div>
             <div className="rounded-lg border border-dynamic-light-blue/30 bg-calendar-bg-blue p-2">
               <div className="flex items-center justify-between">
-                <span className="font-medium text-dynamic-blue text-xs">
+                <span className="text-xs font-medium text-dynamic-blue">
                   {t('optimal_time_slot')}
                 </span>
-                <span className="text-dynamic-blue text-xs">
+                <span className="text-xs text-dynamic-blue">
                   {t('tuesday_10_00_am')}
                 </span>
               </div>
@@ -126,34 +126,34 @@ export function WorkflowSection() {
               <Calendar className="h-4 w-4 text-dynamic-green" />
             </div>
             <div>
-              <h4 className="font-medium text-sm">{t('unified_workspace')}</h4>
+              <h4 className="text-sm font-medium">{t('unified_workspace')}</h4>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-2">
             <div className="flex items-center gap-1 rounded-lg border border-dynamic-light-purple/30 bg-calendar-bg-purple p-2">
               <Calendar className="h-3 w-3 text-dynamic-purple" />
-              <span className="text-dynamic-purple text-xs">
+              <span className="text-xs text-dynamic-purple">
                 {t('calendar')}
               </span>
             </div>
             <div className="flex items-center gap-1 rounded-lg border border-dynamic-light-blue/30 bg-calendar-bg-blue p-2">
               <Check className="h-3 w-3 text-dynamic-blue" />
-              <span className="text-dynamic-blue text-xs">{t('tasks')}</span>
+              <span className="text-xs text-dynamic-blue">{t('tasks')}</span>
             </div>
             <div className="flex items-center gap-1 rounded-lg border border-dynamic-light-green/30 bg-calendar-bg-green p-2">
               <Video className="h-3 w-3 text-dynamic-green" />
-              <span className="text-dynamic-green text-xs">
+              <span className="text-xs text-dynamic-green">
                 {t('meetings')}
               </span>
             </div>
             <div className="flex items-center gap-1 rounded-lg border border-dynamic-light-orange/30 bg-calendar-bg-orange p-2">
               <MessageSquare className="h-3 w-3 text-dynamic-orange" />
-              <span className="text-dynamic-orange text-xs">{t('chat')}</span>
+              <span className="text-xs text-dynamic-orange">{t('chat')}</span>
             </div>
           </div>
           <div className="mt-2 flex items-center gap-1 rounded-lg border border-dynamic-light-red/30 bg-calendar-bg-red p-2">
             <Mail className="h-3 w-3 text-dynamic-red" />
-            <span className="text-dynamic-red text-xs">{t('email')}</span>
+            <span className="text-xs text-dynamic-red">{t('email')}</span>
           </div>
         </div>
       ),
@@ -171,7 +171,7 @@ export function WorkflowSection() {
               <Clock className="h-4 w-4 text-dynamic-orange" />
             </div>
             <div>
-              <h4 className="font-medium text-sm">
+              <h4 className="text-sm font-medium">
                 {t('learning_adaptation')}
               </h4>
             </div>
@@ -179,30 +179,30 @@ export function WorkflowSection() {
           <div className="space-y-2">
             <div className="rounded-lg border border-dynamic-light-orange/30 bg-calendar-bg-orange p-2">
               <div className="flex items-center justify-between">
-                <span className="font-medium text-dynamic-orange text-xs">
+                <span className="text-xs font-medium text-dynamic-orange">
                   {t('productivity_pattern')}
                 </span>
-                <span className="text-dynamic-orange text-xs">
+                <span className="text-xs text-dynamic-orange">
                   {t('morning_focus')}
                 </span>
               </div>
             </div>
             <div className="rounded-lg border border-dynamic-light-orange/30 bg-calendar-bg-orange p-2">
               <div className="flex items-center justify-between">
-                <span className="font-medium text-dynamic-orange text-xs">
+                <span className="text-xs font-medium text-dynamic-orange">
                   {t('meeting_preference')}
                 </span>
-                <span className="text-dynamic-orange text-xs">
+                <span className="text-xs text-dynamic-orange">
                   {t('afternoons')}
                 </span>
               </div>
             </div>
             <div className="rounded-lg border border-dynamic-light-orange/30 bg-calendar-bg-orange p-2">
               <div className="flex items-center justify-between">
-                <span className="font-medium text-dynamic-orange text-xs">
+                <span className="text-xs font-medium text-dynamic-orange">
                   {t('task_completion_rate')}
                 </span>
-                <span className="rounded bg-calendar-bg-green px-1.5 text-dynamic-green text-xs">
+                <span className="rounded bg-calendar-bg-green px-1.5 text-xs text-dynamic-green">
                   92%
                 </span>
               </div>
@@ -286,12 +286,12 @@ export function WorkflowSection() {
       className="container px-0 pt-40 pb-20"
     >
       <div className="mb-16 text-center">
-        <h2 className="workflow-title mb-4 font-bold text-3xl md:text-4xl">
+        <h2 className="workflow-title mb-4 text-3xl font-bold md:text-4xl">
           <span className="bg-gradient-to-r from-dynamic-purple to-dynamic-blue bg-clip-text text-transparent">
             {t('how_tuturuuu_works')}
           </span>
         </h2>
-        <p className="workflow-title mx-auto max-w-3xl text-muted-foreground text-xl">
+        <p className="workflow-title mx-auto max-w-3xl text-xl text-muted-foreground">
           {t('our_intelligent_workflow_makes_productivity_effortless')}
         </p>
       </div>
@@ -300,7 +300,7 @@ export function WorkflowSection() {
         {workflowSteps.map((step) => (
           <button
             key={step.id}
-            className={`workflow-step-button flex items-center gap-2 rounded-full px-4 py-2 font-medium text-sm transition-colors ${
+            className={`workflow-step-button flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors ${
               activeStep === step.id
                 ? `${step.color} text-white shadow-md`
                 : 'border bg-transparent'
@@ -333,7 +333,7 @@ export function WorkflowSection() {
           >
             {currentStep.icon}
           </div>
-          <h3 className="mb-3 font-bold text-2xl">{currentStep.title}</h3>
+          <h3 className="mb-3 text-2xl font-bold">{currentStep.title}</h3>
           <p className="mb-6 text-lg text-muted-foreground">
             {currentStep.description}
           </p>

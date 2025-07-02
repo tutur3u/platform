@@ -188,7 +188,7 @@ export default function QuizForm({ wsId, moduleId, data, onFinish }: Props) {
                           control={form.control}
                           name={`quiz_options.${index}.is_correct`}
                           render={({ field }) => (
-                            <FormItem className="flex items-center space-x-1 space-y-0">
+                            <FormItem className="flex items-center space-y-0 space-x-1">
                               <Checkbox
                                 id={`quiz_options.${index}.is_correct`}
                                 checked={field.value}

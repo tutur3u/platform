@@ -79,21 +79,21 @@ export function EmptyScreen({
   ];
 
   return (
-    <div className="mx-auto flex @lg:max-w-4xl @xl:max-w-6xl max-w-2xl flex-col gap-4">
-      <div className="rounded-lg border bg-background @md:p-8 p-4">
+    <div className="mx-auto flex max-w-2xl flex-col gap-4 @lg:max-w-4xl @xl:max-w-6xl">
+      <div className="rounded-lg border bg-background p-4 @md:p-8">
         <div className="flex flex-col items-center justify-center text-center">
-          <h1 className="mb-2 font-semibold text-lg">
+          <h1 className="mb-2 text-lg font-semibold">
             {t('welcome_to')}{' '}
             <span className="overflow-hidden bg-linear-to-r from-dynamic-red via-dynamic-purple to-dynamic-sky bg-clip-text font-bold text-transparent">
               Rewise
             </span>
             .
           </h1>
-          <p className="text-foreground/90 text-sm leading-normal md:text-base">
+          <p className="text-sm leading-normal text-foreground/90 md:text-base">
             {t('welcome_msg')}
           </p>
 
-          <div className="mt-4 grid w-full @md:grid-cols-2 @xl:grid-cols-3 gap-2">
+          <div className="mt-4 grid w-full gap-2 @md:grid-cols-2 @xl:grid-cols-3">
             {exampleMessages.map((message, index) => (
               <Button
                 key={index}
@@ -105,7 +105,7 @@ export function EmptyScreen({
                 onClick={() => setInput(message.message)}
               >
                 {message.icon}
-                <div className="line-clamp-1 whitespace-normal break-all">
+                <div className="line-clamp-1 break-all whitespace-normal">
                   {message.heading}
                 </div>
               </Button>
@@ -117,10 +117,10 @@ export function EmptyScreen({
           <>
             <Separator className="my-4" />
             <div>
-              <h2 className="line-clamp-1 font-semibold text-lg">
+              <h2 className="line-clamp-1 text-lg font-semibold">
                 {t('recent_conversations')}
               </h2>
-              <div className="mt-2 grid @lg:grid-cols-2 items-start gap-2">
+              <div className="mt-2 grid items-start gap-2 @lg:grid-cols-2">
                 {chats.slice(0, 2).map((chat) => (
                   <div
                     key={chat.id}

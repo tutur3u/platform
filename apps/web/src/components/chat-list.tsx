@@ -54,7 +54,7 @@ export function ChatList({
           key={`chat-${chatId}-${chatTitle}-${chatIsPublic}-${chatModel}-${chatSummary}`}
         >
           <div
-            className={`rounded-lg border bg-foreground/5 p-4 text-center font-semibold text-2xl ${
+            className={`rounded-lg border bg-foreground/5 p-4 text-center text-2xl font-semibold ${
               chatTitle == undefined && !!chatId
                 ? 'animate-pulse text-transparent'
                 : ''
@@ -100,13 +100,13 @@ export function ChatList({
             {(chatSummary || summarizing) && (
               <Fragment key={`chat-${chatId}-${chatSummary}`}>
                 <Separator className="my-2" />
-                <div className="mb-2 font-bold text-base uppercase tracking-widest">
+                <div className="mb-2 text-base font-bold tracking-widest uppercase">
                   {t('summary')}
                 </div>
                 {!chatSummary && summarizing ? (
                   <div className="h-32 w-full animate-pulse rounded border bg-foreground/5" />
                 ) : (
-                  <div className="w-full whitespace-pre-wrap break-words rounded border bg-foreground/5 p-2 text-start font-normal text-lg">
+                  <div className="w-full rounded border bg-foreground/5 p-2 text-start text-lg font-normal break-words whitespace-pre-wrap">
                     {chatSummary}
                   </div>
                 )}

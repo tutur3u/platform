@@ -43,10 +43,10 @@ export default async function PublicCoursesPage({ searchParams }: Props) {
     <div className="container mx-auto px-4 py-8">
       {/* Header Section */}
       <div className="mb-8 text-center">
-        <h1 className="mb-4 font-bold text-4xl text-gray-900 dark:text-gray-100">
+        <h1 className="mb-4 text-4xl font-bold text-gray-900 dark:text-gray-100">
           {t('ws-courses.plural')}
         </h1>
-        <p className="text-gray-600 text-lg dark:text-gray-400">
+        <p className="text-lg text-gray-600 dark:text-gray-400">
           {t('courses-marketplace-description')}
         </p>
       </div>

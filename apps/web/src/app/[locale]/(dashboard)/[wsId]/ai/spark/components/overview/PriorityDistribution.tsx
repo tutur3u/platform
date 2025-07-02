@@ -12,7 +12,7 @@ export function PriorityDistribution({ tasks }: PriorityDistributionProps) {
 
   return (
     <div className="space-y-2">
-      <span className="font-medium text-sm">Priority Distribution</span>
+      <span className="text-sm font-medium">Priority Distribution</span>
       <div className="grid grid-cols-3 gap-2">
         {priorities.map((priority) => {
           const count = tasks.filter(
@@ -28,7 +28,7 @@ export function PriorityDistribution({ tasks }: PriorityDistributionProps) {
             >
               <div
                 className={cn(
-                  'font-medium text-xs',
+                  'text-xs font-medium',
                   priority === 'high'
                     ? 'text-destructive'
                     : priority === 'medium'
@@ -38,8 +38,8 @@ export function PriorityDistribution({ tasks }: PriorityDistributionProps) {
               >
                 {priority.toUpperCase()}
               </div>
-              <div className="font-bold text-2xl">{count}</div>
-              <div className="text-muted-foreground text-xs">{percentage}%</div>
+              <div className="text-2xl font-bold">{count}</div>
+              <div className="text-xs text-muted-foreground">{percentage}%</div>
             </div>
           );
         })}

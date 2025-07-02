@@ -82,7 +82,7 @@ export function TeamActionDialog({
       content: (
         <div className="space-y-4 py-4">
           <h3 className="font-medium">Current Goals</h3>
-          <p className="text-muted-foreground text-sm">{initialData?.goals}</p>
+          <p className="text-sm text-muted-foreground">{initialData?.goals}</p>
         </div>
       ),
     },
@@ -94,7 +94,7 @@ export function TeamActionDialog({
         <div className="space-y-4 py-4">
           <div className="rounded-lg border p-4">
             <h3 className="font-medium">Available Reports</h3>
-            <p className="text-muted-foreground text-sm">
+            <p className="text-sm text-muted-foreground">
               No reports generated yet.
             </p>
           </div>
@@ -138,7 +138,7 @@ export function TeamActionDialog({
       ) : (
         <div className="space-y-4 py-4">
           <h3 className="font-medium">Description</h3>
-          <p className="text-muted-foreground text-sm">
+          <p className="text-sm text-muted-foreground">
             {initialData?.description || 'No description available.'}
           </p>
         </div>

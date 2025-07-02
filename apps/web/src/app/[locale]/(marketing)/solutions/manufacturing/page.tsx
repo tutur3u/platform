@@ -144,7 +144,7 @@ export default function ManufacturingPage() {
         <Badge variant="secondary" className="mb-4">
           Manufacturing Management Solutions
         </Badge>
-        <h1 className="mb-4 text-balance text-center font-bold text-2xl tracking-tight md:text-4xl lg:text-6xl">
+        <h1 className="mb-4 text-center text-2xl font-bold tracking-tight text-balance md:text-4xl lg:text-6xl">
           <GradientHeadline>
             Transform Your Manufacturing Operations
           </GradientHeadline>
@@ -189,7 +189,7 @@ export default function ManufacturingPage() {
         <Card className="border-primary bg-primary/5 p-8">
           <div className="mx-auto flex max-w-4xl flex-col items-center gap-4 text-center">
             <Cog className="h-12 w-12 text-primary" />
-            <h2 className="font-bold text-2xl">
+            <h2 className="text-2xl font-bold">
               Trusted by Leading Manufacturers
             </h2>
             <p className="text-muted-foreground">
@@ -202,7 +202,7 @@ export default function ManufacturingPage() {
 
       {/* Features Grid */}
       <motion.section variants={itemVariants} className="mb-24">
-        <h2 className="mb-12 text-center font-bold text-3xl">
+        <h2 className="mb-12 text-center text-3xl font-bold">
           Comprehensive Manufacturing Management
         </h2>
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -216,7 +216,7 @@ export default function ManufacturingPage() {
               <Card className="h-full p-6 transition-colors hover:border-primary">
                 <div className="mb-4 flex items-center gap-3">
                   <div className="text-primary">{feature.icon}</div>
-                  <h3 className="font-semibold text-xl">{feature.title}</h3>
+                  <h3 className="text-xl font-semibold">{feature.title}</h3>
                 </div>
                 <p className="text-muted-foreground">{feature.description}</p>
               </Card>
@@ -227,12 +227,12 @@ export default function ManufacturingPage() {
 
       {/* Benefits Bento Grid */}
       <motion.section variants={itemVariants} className="mb-24">
-        <h2 className="mb-12 text-center font-bold text-3xl">Key Benefits</h2>
+        <h2 className="mb-12 text-center text-3xl font-bold">Key Benefits</h2>
         <div className="grid gap-4 md:grid-cols-4 md:grid-rows-2">
           <Card className="bg-primary/5 md:col-span-2 md:row-span-2">
             <div className="flex h-full flex-col p-6">
               <Factory className="mb-4 h-8 w-8 text-primary" />
-              <h3 className="mb-2 font-bold text-xl">
+              <h3 className="mb-2 text-xl font-bold">
                 Optimized Manufacturing
               </h3>
               <p className="text-muted-foreground">
@@ -257,7 +257,7 @@ export default function ManufacturingPage() {
               >
                 {benefit.icon}
                 <h3 className="mb-2 font-bold">{benefit.title}</h3>
-                <p className="text-muted-foreground text-sm">
+                <p className="text-sm text-muted-foreground">
                   {benefit.description}
                 </p>
                 <div className="mt-4 h-1 w-0 bg-primary/10 transition-all group-hover:w-full" />
@@ -269,26 +269,26 @@ export default function ManufacturingPage() {
 
       {/* Core Features */}
       <motion.section variants={itemVariants} className="mb-24">
-        <h2 className="mb-12 text-center font-bold text-3xl">Core Features</h2>
+        <h2 className="mb-12 text-center text-3xl font-bold">Core Features</h2>
         <div className="grid gap-6 md:grid-cols-3">
           <Card className="p-6 text-center">
             <Scan className="mx-auto mb-4 h-8 w-8 text-primary" />
             <h3 className="mb-2 font-bold">Quality Tracking</h3>
-            <p className="text-muted-foreground text-sm">
+            <p className="text-sm text-muted-foreground">
               Advanced quality control systems
             </p>
           </Card>
           <Card className="p-6 text-center">
             <LineChart className="mx-auto mb-4 h-8 w-8 text-primary" />
             <h3 className="mb-2 font-bold">Production Analytics</h3>
-            <p className="text-muted-foreground text-sm">
+            <p className="text-sm text-muted-foreground">
               Real-time performance metrics
             </p>
           </Card>
           <Card className="p-6 text-center">
             <PackageSearch className="mx-auto mb-4 h-8 w-8 text-primary" />
             <h3 className="mb-2 font-bold">Inventory Tracking</h3>
-            <p className="text-muted-foreground text-sm">
+            <p className="text-sm text-muted-foreground">
               Automated stock management
             </p>
           </Card>
@@ -301,40 +301,40 @@ export default function ManufacturingPage() {
           <div className="grid md:grid-cols-2">
             <div className="p-8">
               <Star className="mb-4 h-8 w-8 text-primary" />
-              <h2 className="mb-4 font-bold text-2xl">Success Story</h2>
+              <h2 className="mb-4 text-2xl font-bold">Success Story</h2>
               <p className="mb-4 text-muted-foreground">
                 "This platform has revolutionized our manufacturing processes.
                 We've seen significant improvements in efficiency, quality, and
                 overall productivity."
               </p>
               <p className="font-semibold">- Robert Chang</p>
-              <p className="text-muted-foreground text-sm">
+              <p className="text-sm text-muted-foreground">
                 Operations Director, Global Manufacturing Inc.
               </p>
             </div>
             <div className="flex items-center justify-center bg-primary/5 p-8">
               <div className="grid gap-4 text-center">
                 <div>
-                  <div className="mb-2 font-bold text-3xl text-primary">
+                  <div className="mb-2 text-3xl font-bold text-primary">
                     35%
                   </div>
-                  <div className="text-muted-foreground text-sm">
+                  <div className="text-sm text-muted-foreground">
                     Increased Efficiency
                   </div>
                 </div>
                 <div>
-                  <div className="mb-2 font-bold text-3xl text-primary">
+                  <div className="mb-2 text-3xl font-bold text-primary">
                     45%
                   </div>
-                  <div className="text-muted-foreground text-sm">
+                  <div className="text-sm text-muted-foreground">
                     Reduced Downtime
                   </div>
                 </div>
                 <div>
-                  <div className="mb-2 font-bold text-3xl text-primary">
+                  <div className="mb-2 text-3xl font-bold text-primary">
                     99%
                   </div>
-                  <div className="text-muted-foreground text-sm">
+                  <div className="text-sm text-muted-foreground">
                     Quality Rate
                   </div>
                 </div>
@@ -346,7 +346,7 @@ export default function ManufacturingPage() {
 
       {/* FAQ Section */}
       <motion.section variants={itemVariants}>
-        <h2 className="mb-12 text-center font-bold text-3xl">
+        <h2 className="mb-12 text-center text-3xl font-bold">
           Frequently Asked Questions
         </h2>
         <div className="grid gap-6 md:grid-cols-2">
@@ -379,7 +379,7 @@ export default function ManufacturingPage() {
       {/* CTA Section */}
       <motion.section variants={itemVariants} className="mt-24 text-center">
         <Card className="border-primary bg-primary/5 p-12">
-          <h2 className="mb-4 font-bold text-3xl">
+          <h2 className="mb-4 text-3xl font-bold">
             Ready to Transform Your Manufacturing Operations?
           </h2>
           <p className="mx-auto mb-8 max-w-2xl text-muted-foreground">

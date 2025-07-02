@@ -74,14 +74,14 @@ export function PromptInput({
     <div className="flex h-full flex-col">
       {!isSubmitting && (
         <div className="mb-6 rounded-xl border-2 border-foreground/10 bg-gradient-to-r from-background/60 via-background/80 to-background/60 p-5 shadow-sm backdrop-blur-sm transition-all duration-300 hover:border-foreground/20">
-          <div className="flex items-center justify-between text-foreground/70 text-sm">
+          <div className="flex items-center justify-between text-sm text-foreground/70">
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-3">
                 <Target className="h-4 w-4 text-dynamic-blue" />
                 <div className="flex items-center gap-2">
                   <div
                     className={cn(
-                      'min-w-12 rounded-lg border-2 px-3 py-1 text-center font-bold font-mono text-sm transition-all duration-300',
+                      'min-w-12 rounded-lg border-2 px-3 py-1 text-center font-mono text-sm font-bold transition-all duration-300',
                       isAtLimit
                         ? 'border-dynamic-red/40 bg-dynamic-red/15 text-dynamic-red shadow-dynamic-red/20'
                         : isNearLimit
@@ -105,9 +105,9 @@ export function PromptInput({
                     className={cn(
                       'relative h-full overflow-hidden transition-all duration-500 ease-out',
                       isAtLimit
-                        ? 'bg-gradient-to-r from-dynamic-red to-dynamic-rose'
+                        ? 'to-dynamic-rose bg-gradient-to-r from-dynamic-red'
                         : isNearLimit
-                          ? 'bg-gradient-to-r from-dynamic-amber to-dynamic-orange'
+                          ? 'from-dynamic-amber bg-gradient-to-r to-dynamic-orange'
                           : 'bg-gradient-to-r from-dynamic-blue to-dynamic-purple'
                     )}
                     style={{ width: `${Math.min(characterPercentage, 100)}%` }}
@@ -122,7 +122,7 @@ export function PromptInput({
                   <Badge
                     variant="outline"
                     className={cn(
-                      'border font-medium text-xs transition-all duration-300',
+                      'border text-xs font-medium transition-all duration-300',
                       isAtLimit
                         ? 'animate-pulse border-dynamic-red/40 bg-dynamic-red/15 text-dynamic-red'
                         : 'border-dynamic-amber/40 bg-dynamic-amber/15 text-dynamic-amber'
@@ -170,17 +170,17 @@ export function PromptInput({
                 <div className="absolute inset-0 animate-ping">
                   <div className="mx-auto h-20 w-20 rounded-full border-2 border-dynamic-blue/30 bg-dynamic-blue/10" />
                 </div>
-                <div className="-top-3 -right-3 absolute">
+                <div className="absolute -top-3 -right-3">
                   <div className="h-8 w-8 animate-bounce text-2xl">✨</div>
                 </div>
-                <div className="-bottom-2 -left-2 absolute">
+                <div className="absolute -bottom-2 -left-2">
                   <Zap className="h-6 w-6 animate-pulse text-dynamic-purple" />
                 </div>
               </div>
 
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <h3 className="bg-gradient-to-r from-dynamic-blue via-dynamic-purple to-dynamic-indigo bg-clip-text font-bold text-2xl text-transparent">
+                  <h3 className="bg-gradient-to-r from-dynamic-blue via-dynamic-purple to-dynamic-indigo bg-clip-text text-2xl font-bold text-transparent">
                     {currentProgress.step &&
                     typeof currentProgress.step === 'string'
                       ? currentProgress.step
@@ -188,7 +188,7 @@ export function PromptInput({
                           .replace(/\b\w/g, (l: string) => l.toUpperCase())
                       : 'AI Processing'}
                   </h3>
-                  <p className="text-foreground/80 text-lg leading-relaxed">
+                  <p className="text-lg leading-relaxed text-foreground/80">
                     {currentProgress.message}
                   </p>
                 </div>
@@ -249,7 +249,7 @@ export function PromptInput({
 
               {/* Character limit warning overlay */}
               {prompt.length > maxLength && (
-                <div className="absolute right-3 bottom-3 animate-bounce rounded-lg bg-dynamic-red/95 px-3 py-2 font-medium text-sm text-white shadow-xl backdrop-blur-sm">
+                <div className="absolute right-3 bottom-3 animate-bounce rounded-lg bg-dynamic-red/95 px-3 py-2 text-sm font-medium text-white shadow-xl backdrop-blur-sm">
                   <div className="flex items-center gap-2">
                     <AlertCircle className="h-4 w-4" />
                     Exceeds limit by{' '}
@@ -260,12 +260,12 @@ export function PromptInput({
             </div>
 
             <div className="mt-6 flex items-center justify-between">
-              <div className="flex items-center gap-3 text-foreground/60 text-sm">
+              <div className="flex items-center gap-3 text-sm text-foreground/60">
                 <div className="flex items-center gap-2 rounded-lg border border-foreground/10 bg-background/60 px-3 py-2">
                   <div className="flex items-center gap-1">
-                    <span className="font-bold font-mono">Ctrl</span>
+                    <span className="font-mono font-bold">Ctrl</span>
                     <Plus className="h-3 w-3" />
-                    <span className="font-bold font-mono">Enter</span>
+                    <span className="font-mono font-bold">Enter</span>
                   </div>
                   <span>to submit</span>
                 </div>
@@ -303,8 +303,8 @@ export function PromptInput({
           <div className="mt-3 flex items-start gap-3 rounded-lg border border-dynamic-red/20 bg-dynamic-red/10 p-4 shadow-sm">
             <AlertCircle className="mt-0.5 h-5 w-5 flex-shrink-0 text-dynamic-red" />
             <div>
-              <p className="font-medium text-dynamic-red text-sm">Error</p>
-              <p className="mt-1 text-dynamic-red/80 text-sm">{error}</p>
+              <p className="text-sm font-medium text-dynamic-red">Error</p>
+              <p className="mt-1 text-sm text-dynamic-red/80">{error}</p>
             </div>
           </div>
         )}

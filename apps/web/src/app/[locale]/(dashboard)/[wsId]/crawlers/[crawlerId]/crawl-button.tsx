@@ -56,7 +56,7 @@ export default function CrawlButton({
           <div className="flex flex-col gap-1 truncate">
             <span className="truncate">{url}</span>
             {originUrl && (
-              <span className="truncate text-muted-foreground text-xs">
+              <span className="truncate text-xs text-muted-foreground">
                 From: {originUrl}
               </span>
             )}

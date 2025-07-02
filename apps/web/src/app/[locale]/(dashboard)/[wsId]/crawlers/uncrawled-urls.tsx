@@ -243,12 +243,12 @@ export default function UncrawledUrls({ wsId }: { wsId: string }) {
               {urlObj.pathname === '/' ? urlObj.hostname : urlObj.pathname}
             </span>
             {urlObj.searchParams.toString() && (
-              <span className="max-w-[300px] truncate rounded-full bg-muted-foreground/10 px-2 py-0.5 text-muted-foreground text-xs">
+              <span className="max-w-[300px] truncate rounded-full bg-muted-foreground/10 px-2 py-0.5 text-xs text-muted-foreground">
                 ?{urlObj.searchParams.toString()}
               </span>
             )}
             {isCrawled && (
-              <span className="rounded-full bg-green-500/10 px-2 py-0.5 font-medium text-green-500 text-xs">
+              <span className="rounded-full bg-green-500/10 px-2 py-0.5 text-xs font-medium text-green-500">
                 Crawled
               </span>
             )}
@@ -257,7 +257,7 @@ export default function UncrawledUrls({ wsId }: { wsId: string }) {
             href={url.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="truncate text-muted-foreground text-sm hover:text-foreground"
+            className="truncate text-sm text-muted-foreground hover:text-foreground"
           >
             {url.url}
           </a>
@@ -289,12 +289,12 @@ export default function UncrawledUrls({ wsId }: { wsId: string }) {
       <div className="mb-6 flex items-center justify-between">
         <div className="space-y-2">
           <div className="flex items-center gap-2">
-            <h3 className="font-semibold text-lg">{hostname}</h3>
-            <span className="rounded-full bg-blue-500/10 px-2 py-0.5 font-medium text-blue-500 text-xs">
+            <h3 className="text-lg font-semibold">{hostname}</h3>
+            <span className="rounded-full bg-blue-500/10 px-2 py-0.5 text-xs font-medium text-blue-500">
               {urls.length} URL{urls.length !== 1 ? 's' : ''}
             </span>
             {crawledCount > 0 && (
-              <span className="rounded-full bg-green-500/10 px-2 py-0.5 font-medium text-green-500 text-xs">
+              <span className="rounded-full bg-green-500/10 px-2 py-0.5 text-xs font-medium text-green-500">
                 {progress}% Crawled
               </span>
             )}
@@ -304,7 +304,7 @@ export default function UncrawledUrls({ wsId }: { wsId: string }) {
               href={originUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-muted-foreground text-sm hover:text-foreground"
+              className="text-sm text-muted-foreground hover:text-foreground"
             >
               {originUrl}
             </a>
@@ -389,8 +389,8 @@ export default function UncrawledUrls({ wsId }: { wsId: string }) {
         <CardContent>
           <div className="flex flex-col items-center justify-center py-12">
             <BugPlay className="h-12 w-12 text-muted-foreground/50" />
-            <p className="mt-4 font-medium text-lg">All caught up!</p>
-            <p className="text-muted-foreground text-sm">
+            <p className="mt-4 text-lg font-medium">All caught up!</p>
+            <p className="text-sm text-muted-foreground">
               All discovered URLs have been crawled
             </p>
           </div>
@@ -405,7 +405,7 @@ export default function UncrawledUrls({ wsId }: { wsId: string }) {
         <CardHeader className="flex-row items-start justify-between space-y-0">
           <div className="space-y-1">
             <CardTitle>Uncrawled URLs</CardTitle>
-            <p className="text-muted-foreground text-sm">
+            <p className="text-sm text-muted-foreground">
               {pagination.totalItems} URL
               {pagination.totalItems !== 1 ? 's' : ''} waiting to be crawled
             </p>
@@ -493,7 +493,7 @@ export default function UncrawledUrls({ wsId }: { wsId: string }) {
                 </div>
 
                 <div className="flex items-center justify-between">
-                  <p className="text-muted-foreground text-sm">
+                  <p className="text-sm text-muted-foreground">
                     Showing {(currentPage - 1) * currentPageSize + 1} to{' '}
                     {Math.min(
                       currentPage * currentPageSize,
@@ -555,8 +555,8 @@ export default function UncrawledUrls({ wsId }: { wsId: string }) {
             ) : (
               !loading && (
                 <div className="flex flex-col items-center justify-center py-12">
-                  <p className="font-medium text-lg">No uncrawled URLs found</p>
-                  <p className="text-muted-foreground text-sm">
+                  <p className="text-lg font-medium">No uncrawled URLs found</p>
+                  <p className="text-sm text-muted-foreground">
                     All discovered URLs have been processed
                   </p>
                 </div>

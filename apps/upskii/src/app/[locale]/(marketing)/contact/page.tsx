@@ -96,7 +96,7 @@ export default function ContactPage() {
             <MessageSquare className="mr-2 h-4 w-4" />
             {t('page.badge')}
           </Badge>
-          <h1 className="mb-4 font-bold text-4xl tracking-tight sm:text-5xl">
+          <h1 className="mb-4 text-4xl font-bold tracking-tight sm:text-5xl">
             {t('page.title')}
           </h1>
           <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
@@ -115,7 +115,7 @@ export default function ContactPage() {
         >
           <div className="space-y-6">
             <Card className="overflow-hidden p-6">
-              <h2 className="mb-4 font-bold text-xl">{t('info.title')}</h2>
+              <h2 className="mb-4 text-xl font-bold">{t('info.title')}</h2>
               <div className="space-y-4">
                 <div className="flex items-start gap-3">
                   <div className="mt-0.5 rounded-full text-primary">
@@ -157,7 +157,7 @@ export default function ContactPage() {
 
               <Separator className="my-6" />
 
-              <h3 className="mb-4 font-semibold text-lg">
+              <h3 className="mb-4 text-lg font-semibold">
                 {t('info.hours.title')}
               </h3>
               <div className="space-y-2">
@@ -177,7 +177,7 @@ export default function ContactPage() {
             </Card>
 
             <Card className="overflow-hidden bg-primary/5 p-6">
-              <h3 className="mb-4 font-semibold text-lg">
+              <h3 className="mb-4 text-lg font-semibold">
                 {t('quick_links.title')}
               </h3>
               <div className="grid grid-cols-1 gap-2">
@@ -213,7 +213,7 @@ export default function ContactPage() {
                 <div className="mb-4 rounded-full bg-primary/10 p-3 text-primary">
                   <SendHorizontal className="h-8 w-8" />
                 </div>
-                <h2 className="mb-2 font-bold text-2xl">
+                <h2 className="mb-2 text-2xl font-bold">
                   {t('form.success.title')}
                 </h2>
                 <p className="mb-6 max-w-md text-muted-foreground">
@@ -225,7 +225,7 @@ export default function ContactPage() {
               </div>
             ) : (
               <>
-                <h2 className="mb-6 font-bold text-xl">{t('form.title')}</h2>
+                <h2 className="mb-6 text-xl font-bold">{t('form.title')}</h2>
                 <Form {...form}>
                   <form
                     onSubmit={form.handleSubmit(onSubmit)}

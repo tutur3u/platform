@@ -86,7 +86,7 @@ export default function RoleFilter({ currentRole }: RoleFilterProps) {
       <DropdownMenuTrigger asChild>
         <Button
           variant={getFilterVariant()}
-          className="flex min-w-[140px] items-center gap-2"
+          className="flex items-center gap-2 min-w-[140px]"
         >
           {currentConfig.icon}
           {currentConfig.label}
@@ -109,7 +109,7 @@ export default function RoleFilter({ currentRole }: RoleFilterProps) {
             <Filter className="h-4 w-4" />
             <div>
               <div className="font-medium">All Roles</div>
-              <div className="text-dynamic-muted-foreground text-xs">
+              <div className="text-xs text-dynamic-muted-foreground">
                 Show all users
               </div>
             </div>
@@ -127,7 +127,7 @@ export default function RoleFilter({ currentRole }: RoleFilterProps) {
             <Crown className="h-4 w-4 text-dynamic-yellow" />
             <div>
               <div className="font-medium">Admin</div>
-              <div className="text-dynamic-muted-foreground text-xs">
+              <div className="text-xs text-dynamic-muted-foreground">
                 Full platform access
               </div>
             </div>
@@ -143,7 +143,7 @@ export default function RoleFilter({ currentRole }: RoleFilterProps) {
             <Settings className="h-4 w-4 text-dynamic-blue" />
             <div>
               <div className="font-medium">Global Manager</div>
-              <div className="text-dynamic-muted-foreground text-xs">
+              <div className="text-xs text-dynamic-muted-foreground">
                 Manage all challenges
               </div>
             </div>
@@ -159,7 +159,7 @@ export default function RoleFilter({ currentRole }: RoleFilterProps) {
             <Shield className="h-4 w-4 text-dynamic-purple" />
             <div>
               <div className="font-medium">Challenge Manager</div>
-              <div className="text-dynamic-muted-foreground text-xs">
+              <div className="text-xs text-dynamic-muted-foreground">
                 Manage specific challenges
               </div>
             </div>
@@ -175,7 +175,7 @@ export default function RoleFilter({ currentRole }: RoleFilterProps) {
             <Users className="h-4 w-4 text-dynamic-green" />
             <div>
               <div className="font-medium">Member</div>
-              <div className="text-dynamic-muted-foreground text-xs">
+              <div className="text-xs text-dynamic-muted-foreground">
                 Regular platform user
               </div>
             </div>

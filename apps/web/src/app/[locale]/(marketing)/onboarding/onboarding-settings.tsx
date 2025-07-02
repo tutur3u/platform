@@ -66,7 +66,7 @@ export function OnboardingSettings({
                   src={user.avatar_url || ''}
                   alt={user.display_name || user.email || 'User'}
                 />
-                <AvatarFallback className="font-semibold text-lg">
+                <AvatarFallback className="text-lg font-semibold">
                   {user.display_name ? (
                     getInitials(user.display_name)
                   ) : (
@@ -75,12 +75,12 @@ export function OnboardingSettings({
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1 space-y-1">
-                <div className="font-semibold text-lg">
+                <div className="text-lg font-semibold">
                   {user.display_name || user.full_name || t('common.unnamed')}
                 </div>
-                <div className="text-foreground/70 text-sm">{user.email}</div>
+                <div className="text-sm text-foreground/70">{user.email}</div>
                 {user.created_at && (
-                  <div className="text-foreground/50 text-xs">
+                  <div className="text-xs text-foreground/50">
                     {t('common.member-since', {
                       date: new Date(user.created_at).toLocaleDateString(),
                     })}
@@ -105,9 +105,9 @@ export function OnboardingSettings({
           <div className="grid gap-4">
             {/* Theme Toggle */}
             <div className="grid gap-2">
-              <label className="font-medium text-sm">{t('common.theme')}</label>
+              <label className="text-sm font-medium">{t('common.theme')}</label>
               <div className="flex items-center justify-between rounded-lg border border-foreground/20 bg-dynamic-red/5 p-3">
-                <span className="text-foreground/80 text-sm">
+                <span className="text-sm text-foreground/80">
                   {t('onboarding.change-theme')}
                 </span>
                 <ThemeDropdownToggle />
@@ -116,11 +116,11 @@ export function OnboardingSettings({
 
             {/* Language Selector */}
             <div className="grid gap-2">
-              <label className="font-medium text-sm">
+              <label className="text-sm font-medium">
                 {t('common.language')}
               </label>
               <div className="flex items-center justify-between rounded-lg border border-foreground/20 bg-dynamic-blue/5 p-3">
-                <span className="text-foreground/80 text-sm">
+                <span className="text-sm text-foreground/80">
                   {t('onboarding.change-language')}
                 </span>
                 <DropdownMenu>
@@ -154,13 +154,13 @@ export function OnboardingSettings({
           </div>
 
           {/* Logout Button */}
-          <div className="mt-4 border-foreground/10 border-t pt-4">
+          <div className="mt-4 border-t border-foreground/10 pt-4">
             <div className="flex items-center justify-between rounded-lg border border-dynamic-red/30 bg-dynamic-red/5 p-3">
               <div>
-                <div className="font-medium text-foreground text-sm">
+                <div className="text-sm font-medium text-foreground">
                   {t('onboarding.sign-out')}
                 </div>
-                <div className="text-foreground/60 text-xs">
+                <div className="text-xs text-foreground/60">
                   {t('onboarding.sign-out-desc')}
                 </div>
               </div>

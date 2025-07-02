@@ -34,15 +34,15 @@ export function WelcomeScreen({ onGetStarted }: WelcomeScreenProps) {
             <Rocket className="h-8 w-8 text-white" />
           </div>
 
-          <h1 className="mb-4 font-bold text-4xl text-gray-900 md:text-5xl dark:text-white">
+          <h1 className="mb-4 text-4xl font-bold text-gray-900 md:text-5xl dark:text-white">
             {t('title')}
           </h1>
 
-          <p className="mb-6 text-gray-600 text-xl md:text-2xl dark:text-gray-300">
+          <p className="mb-6 text-xl text-gray-600 md:text-2xl dark:text-gray-300">
             {t('subtitle')}
           </p>
 
-          <p className="mx-auto mb-12 max-w-2xl text-gray-600 text-lg dark:text-gray-400">
+          <p className="mx-auto mb-12 max-w-2xl text-lg text-gray-600 dark:text-gray-400">
             {t('description')}
           </p>
         </motion.div>
@@ -61,7 +61,7 @@ export function WelcomeScreen({ onGetStarted }: WelcomeScreenProps) {
               </div>
             </CardHeader>
             <CardContent>
-              <p className="text-gray-600 text-sm dark:text-gray-400">
+              <p className="text-sm text-gray-600 dark:text-gray-400">
                 {t('features.team-collaboration.description')}
               </p>
             </CardContent>
@@ -79,7 +79,7 @@ export function WelcomeScreen({ onGetStarted }: WelcomeScreenProps) {
               </div>
             </CardHeader>
             <CardContent>
-              <p className="text-gray-600 text-sm dark:text-gray-400">
+              <p className="text-sm text-gray-600 dark:text-gray-400">
                 {t('features.powerful-tools.description')}
               </p>
             </CardContent>
@@ -97,7 +97,7 @@ export function WelcomeScreen({ onGetStarted }: WelcomeScreenProps) {
               </div>
             </CardHeader>
             <CardContent>
-              <p className="text-gray-600 text-sm dark:text-gray-400">
+              <p className="text-sm text-gray-600 dark:text-gray-400">
                 {t('features.easy-setup.description')}
               </p>
             </CardContent>
@@ -107,7 +107,7 @@ export function WelcomeScreen({ onGetStarted }: WelcomeScreenProps) {
         {/* What's Next */}
         <Card className="mb-8 border bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
           <CardHeader>
-            <h3 className="text-center font-semibold text-lg">
+            <h3 className="text-center text-lg font-semibold">
               {t('ready-to-start')}
             </h3>
             <p className="text-center text-gray-600 dark:text-gray-400">
@@ -118,25 +118,25 @@ export function WelcomeScreen({ onGetStarted }: WelcomeScreenProps) {
             <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
               <div className="flex items-center gap-3 rounded-lg bg-gray-50 p-3 dark:bg-gray-900">
                 <CheckCircle className="h-5 w-5 flex-shrink-0 text-green-500" />
-                <span className="font-medium text-sm">
+                <span className="text-sm font-medium">
                   {t('steps.create-workspace')}
                 </span>
               </div>
               <div className="flex items-center gap-3 rounded-lg bg-gray-50 p-3 dark:bg-gray-900">
                 <CheckCircle className="h-5 w-5 flex-shrink-0 text-blue-500" />
-                <span className="font-medium text-sm">
+                <span className="text-sm font-medium">
                   {t('steps.setup-profile')}
                 </span>
               </div>
               <div className="flex items-center gap-3 rounded-lg bg-gray-50 p-3 dark:bg-gray-900">
                 <CheckCircle className="h-5 w-5 flex-shrink-0 text-purple-500" />
-                <span className="font-medium text-sm">
+                <span className="text-sm font-medium">
                   {t('steps.configure-settings')}
                 </span>
               </div>
               <div className="flex items-center gap-3 rounded-lg bg-gray-50 p-3 dark:bg-gray-900">
                 <CheckCircle className="h-5 w-5 flex-shrink-0 text-indigo-500" />
-                <span className="font-medium text-sm">
+                <span className="text-sm font-medium">
                   {t('steps.start-collaborating')}
                 </span>
               </div>
@@ -151,7 +151,7 @@ export function WelcomeScreen({ onGetStarted }: WelcomeScreenProps) {
             <ArrowRight className="ml-2 h-5 w-5" />
           </Button>
 
-          <p className="mt-4 text-gray-500 text-sm dark:text-gray-400">
+          <p className="mt-4 text-sm text-gray-500 dark:text-gray-400">
             {t('completion-time')}
           </p>
         </div>

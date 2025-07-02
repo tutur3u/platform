@@ -46,16 +46,16 @@ export const TimeIndicatorText = ({ columnIndex }: { columnIndex: number }) => {
 
   return (
     <div
-      className="-left-[70px] pointer-events-none absolute top-[-0.075rem] z-100 flex items-center"
+      className="pointer-events-none absolute top-[-0.075rem] -left-[70px] z-100 flex items-center"
       style={{
         transform: `translateY(${totalHours * HOUR_HEIGHT - 10}px)`,
         transition: 'transform 0.3s ease-out',
       }}
     >
-      <div className="rounded-md bg-dynamic-light-red px-2 py-1 font-semibold text-black text-xs">
+      <div className="rounded-md bg-dynamic-light-red px-2 py-1 text-xs font-semibold text-black">
         {formattedTime}
       </div>
-      <div className="h-0 w-0 border-y-[6px] border-y-transparent border-l-[6px] border-l-dynamic-light-red" />
+      <div className="h-0 w-0 border-y-[6px] border-l-[6px] border-y-transparent border-l-dynamic-light-red" />
     </div>
   );
 };

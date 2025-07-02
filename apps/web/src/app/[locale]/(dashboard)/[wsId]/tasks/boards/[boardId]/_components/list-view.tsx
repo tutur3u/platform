@@ -531,7 +531,7 @@ export function ListView({ board }: Props) {
       <Badge
         variant="outline"
         className={cn(
-          'font-medium text-xs',
+          'text-xs font-medium',
           config.color,
           config.bgColor,
           config.borderColor
@@ -594,7 +594,7 @@ export function ListView({ board }: Props) {
         {/* Search and Actions Row */}
         <div className="flex items-center gap-4">
           <div className="relative flex-1">
-            <Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
+            <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               placeholder="Search tasks by name or description..."
               value={filters.search}
@@ -608,7 +608,7 @@ export function ListView({ board }: Props) {
                 variant="ghost"
                 size="sm"
                 onClick={() => setFilters({ ...filters, search: '' })}
-                className="-translate-y-1/2 absolute top-1/2 right-1 h-7 w-7 p-0 hover:bg-muted"
+                className="absolute top-1/2 right-1 h-7 w-7 -translate-y-1/2 p-0 hover:bg-muted"
               >
                 <X className="h-3 w-3" />
                 <span className="sr-only">Clear search</span>
@@ -853,7 +853,7 @@ export function ListView({ board }: Props) {
 
         {/* Results and Filter Summary */}
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 text-muted-foreground text-sm">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <span>
               {filteredAndSortedTasks.length} of {tasks.length} task
               {tasks.length !== 1 ? 's' : ''}
@@ -870,7 +870,7 @@ export function ListView({ board }: Props) {
 
           {/* Page Size */}
           <div className="flex items-center gap-2">
-            <span className="text-muted-foreground text-sm">Rows per page</span>
+            <span className="text-sm text-muted-foreground">Rows per page</span>
             <Select
               value={pageSize.toString()}
               onValueChange={(value) => {
@@ -898,10 +898,10 @@ export function ListView({ board }: Props) {
             <Search className="h-8 w-8 text-muted-foreground" />
           </div>
           <div className="space-y-2">
-            <h3 className="font-semibold text-lg">
+            <h3 className="text-lg font-semibold">
               {filters.search ? 'No tasks found' : 'No tasks yet'}
             </h3>
-            <p className="max-w-sm text-muted-foreground text-sm">
+            <p className="max-w-sm text-sm text-muted-foreground">
               {filters.search
                 ? `No tasks match "${filters.search}". Try adjusting your search terms.`
                 : 'Get started by creating your first task.'}
@@ -933,7 +933,7 @@ export function ListView({ board }: Props) {
                 </TableHead>
                 {columnVisibility.status && (
                   <TableHead className="w-[50px] text-center">
-                    <span className="font-medium text-muted-foreground text-xs">
+                    <span className="text-xs font-medium text-muted-foreground">
                       Status
                     </span>
                   </TableHead>
@@ -1044,14 +1044,14 @@ export function ListView({ board }: Props) {
                     <TableCell className="py-4">
                       <div className="space-y-1">
                         <div
-                          className={cn('font-medium leading-none', {
+                          className={cn('leading-none font-medium', {
                             'text-muted-foreground line-through': task.archived,
                           })}
                         >
                           {task.name}
                         </div>
                         {task.description && (
-                          <p className="line-clamp-2 text-muted-foreground text-sm leading-relaxed">
+                          <p className="line-clamp-2 text-sm leading-relaxed text-muted-foreground">
                             {task.description}
                           </p>
                         )}
@@ -1080,7 +1080,7 @@ export function ListView({ board }: Props) {
                       {task.assignees && task.assignees.length > 0 && (
                         <div className="flex items-center gap-1.5">
                           <Users className="h-3.5 w-3.5 text-muted-foreground" />
-                          <span className="font-medium text-sm">
+                          <span className="text-sm font-medium">
                             {task.assignees.length}
                           </span>
                         </div>
@@ -1122,7 +1122,7 @@ export function ListView({ board }: Props) {
       {/* Pagination */}
       {filteredAndSortedTasks.length > 0 && totalPages > 1 && (
         <div className="flex items-center justify-between border-t pt-4">
-          <div className="flex items-center gap-2 text-muted-foreground text-sm">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <span>
               Showing {(currentPage - 1) * pageSize + 1}-
               {Math.min(currentPage * pageSize, filteredAndSortedTasks.length)}{' '}
@@ -1137,7 +1137,7 @@ export function ListView({ board }: Props) {
           </div>
 
           <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1 text-muted-foreground text-sm">
+            <div className="flex items-center gap-1 text-sm text-muted-foreground">
               <span>
                 Page {currentPage} of {totalPages}
               </span>
@@ -1188,8 +1188,8 @@ export function ListView({ board }: Props) {
 
       {/* Bulk Actions for Selected Tasks */}
       {selectedTasks.size > 0 && (
-        <div className="-translate-x-1/2 fixed bottom-6 left-1/2 z-50 flex transform items-center gap-3 rounded-lg border bg-background p-3 shadow-lg">
-          <span className="font-medium text-sm">
+        <div className="fixed bottom-6 left-1/2 z-50 flex -translate-x-1/2 transform items-center gap-3 rounded-lg border bg-background p-3 shadow-lg">
+          <span className="text-sm font-medium">
             {selectedTasks.size} task{selectedTasks.size !== 1 ? 's' : ''}{' '}
             selected
           </span>

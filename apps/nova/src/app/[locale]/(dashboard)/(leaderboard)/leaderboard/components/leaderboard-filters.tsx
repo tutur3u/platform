@@ -42,7 +42,7 @@ export function LeaderboardFilters({
       className="relative mb-6 space-y-4"
     >
       {/* Animated background glow */}
-      <div className="-inset-4 -z-10 absolute rounded-xl opacity-5 blur-xl dark:opacity-10">
+      <div className="absolute -inset-4 -z-10 rounded-xl opacity-5 blur-xl dark:opacity-10">
         <motion.div
           className="absolute inset-0 rounded-xl"
           style={{
@@ -62,14 +62,14 @@ export function LeaderboardFilters({
 
       <div className="flex flex-col-reverse gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="relative w-full md:w-96">
-          <div className="-z-10 absolute top-0 left-0 h-full w-full rounded-md bg-blue-100/50 dark:bg-blue-500/5"></div>
+          <div className="absolute top-0 left-0 -z-10 h-full w-full rounded-md bg-blue-100/50 dark:bg-blue-500/5"></div>
           <div className="group relative">
             <Search className="absolute top-2.5 left-3 h-4 w-4 text-blue-600/70 dark:text-blue-400/70" />
             <Input
               placeholder={t('search-competitors')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full border-gray-300 bg-white pr-9 pl-9 text-gray-700 placeholder:text-gray-500 focus-visible:border-blue-500/50 focus-visible:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-200 dark:focus-visible:border-blue-500/50 dark:focus-visible:ring-blue-500/20 dark:focus-visible:ring-offset-slate-900 dark:placeholder:text-slate-500"
+              className="w-full border-gray-300 bg-white pr-9 pl-9 text-gray-700 placeholder:text-gray-500 focus-visible:border-blue-500/50 focus-visible:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-200 dark:placeholder:text-slate-500 dark:focus-visible:border-blue-500/50 dark:focus-visible:ring-blue-500/20 dark:focus-visible:ring-offset-slate-900"
             />
             {searchQuery && (
               <Button
@@ -84,7 +84,7 @@ export function LeaderboardFilters({
 
             {/* Animated glow effect on focus */}
             <motion.div
-              className="-inset-px -z-10 absolute rounded-md opacity-0 blur-sm transition-opacity duration-300 group-focus-within:opacity-100"
+              className="absolute -inset-px -z-10 rounded-md opacity-0 blur-sm transition-opacity duration-300 group-focus-within:opacity-100"
               style={{
                 background: 'linear-gradient(to right, #3B82F6, #8B5CF6)',
               }}
@@ -97,7 +97,7 @@ export function LeaderboardFilters({
           variant="outline"
           size="sm"
           className={cn(
-            'gap-1.5 bg-white text-gray-700 text-xs transition-all duration-200 hover:bg-gray-50 hover:text-gray-900 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-100',
+            'gap-1.5 bg-white text-xs text-gray-700 transition-all duration-200 hover:bg-gray-50 hover:text-gray-900 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-100',
             showAdvancedFilters &&
               'border-blue-300 bg-blue-50 text-blue-700 dark:border-blue-500/50 dark:bg-blue-950/40 dark:text-blue-400'
           )}
@@ -121,9 +121,9 @@ export function LeaderboardFilters({
           >
             <Card className="relative overflow-hidden border-dashed bg-white/80 dark:border-slate-700 dark:bg-slate-900/60">
               {/* Animated background glow */}
-              <div className="-z-10 absolute inset-0">
+              <div className="absolute inset-0 -z-10">
                 <motion.div
-                  className="-inset-[100px] absolute opacity-30 blur-3xl"
+                  className="absolute -inset-[100px] opacity-30 blur-3xl"
                   style={{
                     background:
                       'radial-gradient(circle, rgba(59,130,246,0.3) 0%, transparent 70%)',
@@ -143,11 +143,11 @@ export function LeaderboardFilters({
 
               <CardContent className="flex gap-4 p-4">
                 <div className="w-full space-y-2">
-                  <label className="font-medium text-blue-600 text-xs dark:text-blue-400">
+                  <label className="text-xs font-medium text-blue-600 dark:text-blue-400">
                     {t('score-range.name')}
                   </label>
                   <Select defaultValue="all">
-                    <SelectTrigger className="h-8 bg-white text-gray-700 text-xs ring-offset-white transition-all duration-200 dark:border-slate-700 dark:bg-slate-800/80 dark:text-slate-300 dark:ring-offset-slate-900">
+                    <SelectTrigger className="h-8 bg-white text-xs text-gray-700 ring-offset-white transition-all duration-200 dark:border-slate-700 dark:bg-slate-800/80 dark:text-slate-300 dark:ring-offset-slate-900">
                       <SelectValue placeholder="All scores" />
                     </SelectTrigger>
                     <SelectContent className="bg-white text-gray-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
@@ -168,14 +168,14 @@ export function LeaderboardFilters({
                 </div>
 
                 <div className="w-full space-y-2">
-                  <label className="font-medium text-blue-600 text-xs dark:text-blue-400">
+                  <label className="text-xs font-medium text-blue-600 dark:text-blue-400">
                     Challenge
                   </label>
                   <Select
                     value={selectedChallenge}
                     onValueChange={setSelectedChallenge}
                   >
-                    <SelectTrigger className="h-8 bg-white text-gray-700 text-xs ring-offset-white transition-all duration-200 dark:border-slate-700 dark:bg-slate-800/80 dark:text-slate-300 dark:ring-offset-slate-900">
+                    <SelectTrigger className="h-8 bg-white text-xs text-gray-700 ring-offset-white transition-all duration-200 dark:border-slate-700 dark:bg-slate-800/80 dark:text-slate-300 dark:ring-offset-slate-900">
                       <SelectValue placeholder="All challenges" />
                     </SelectTrigger>
                     <SelectContent className="bg-white text-gray-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">

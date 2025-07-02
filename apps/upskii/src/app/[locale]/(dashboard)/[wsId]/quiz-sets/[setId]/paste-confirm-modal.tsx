@@ -59,7 +59,7 @@ export default function PasteConfirmModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-secondary/50">
       <Card className="mx-4 w-full max-w-2xl">
         <CardHeader>
-          <CardTitle className="text-dynamic-purple text-lg">
+          <CardTitle className="text-lg text-dynamic-purple">
             {t('paste-confirm-modal.title')}
           </CardTitle>
           <CardDescription>
@@ -84,7 +84,7 @@ export default function PasteConfirmModal({
                     })}
                     : {quiz.question || t('untitled-question')}
                   </h4>
-                  <div className="space-y-1.5 px-1 text-muted-foreground text-sm">
+                  <div className="space-y-1.5 px-1 text-sm text-muted-foreground">
                     {quiz.quiz_options?.map((option: any, optIndex: number) => (
                       <div key={optIndex} className="flex items-center gap-2">
                         {option.is_correct ? (

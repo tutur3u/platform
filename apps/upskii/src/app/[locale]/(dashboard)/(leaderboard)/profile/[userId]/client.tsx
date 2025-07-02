@@ -289,7 +289,7 @@ export default function UserProfileClient({
         </Dialog>
       )}
       {/* Breadcrumb navigation */}
-      <nav className="mb-8 flex items-center space-x-2 text-muted-foreground text-sm">
+      <nav className="mb-8 flex items-center space-x-2 text-sm text-muted-foreground">
         <Link href={`/${wsId}/home`} className="hover:text-foreground">
           {t('breadcrumb.home')}
         </Link>
@@ -326,25 +326,25 @@ export default function UserProfileClient({
                       .join('')}
                   </AvatarFallback>
                 </Avatar>
-                <div className="-top-1 -right-1 absolute rounded-full border border-background bg-background p-1 shadow-md dark:bg-card">
-                  <div className="flex h-7 w-7 items-center justify-center rounded-full bg-linear-to-br from-violet-500 to-purple-600 font-bold text-primary text-xs">
+                <div className="absolute -top-1 -right-1 rounded-full border border-background bg-background p-1 shadow-md dark:bg-card">
+                  <div className="flex h-7 w-7 items-center justify-center rounded-full bg-linear-to-br from-violet-500 to-purple-600 text-xs font-bold text-primary">
                     {level}
                   </div>
                 </div>
               </motion.div>
             </div>
             <div>
-              <h1 className="text-center font-bold text-3xl md:text-left">
+              <h1 className="text-center text-3xl font-bold md:text-left">
                 {profile.name}
               </h1>
               <div className="mt-2 flex flex-wrap items-center gap-3">
                 {formattedJoinedDate && (
-                  <div className="mx-auto flex items-center text-muted-foreground text-sm md:mx-0">
+                  <div className="mx-auto flex items-center text-sm text-muted-foreground md:mx-0">
                     <Calendar className="mr-1 h-4 w-4" />
                     {t('joined')}: {formattedJoinedDate}
                   </div>
                 )}
-                <div className="mx-auto flex items-center text-muted-foreground text-sm md:mx-0">
+                <div className="mx-auto flex items-center text-sm text-muted-foreground md:mx-0">
                   <User className="mr-1 h-4 w-4" />
                   {t('role')}: {role == 'Teacher' ? t('teacher') : t('student')}
                 </div>
@@ -433,32 +433,32 @@ export default function UserProfileClient({
               <CardContent className="grid gap-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="flex flex-col">
-                    <span className="text-muted-foreground text-sm">
+                    <span className="text-sm text-muted-foreground">
                       {t('stats.total-score')}
                     </span>
-                    <span className="font-bold text-2xl">
+                    <span className="text-2xl font-bold">
                       {profile.totalScore.toFixed(1)}
                     </span>
                   </div>
                   <div className="flex flex-col">
-                    <span className="text-muted-foreground text-sm">
+                    <span className="text-sm text-muted-foreground">
                       {t('stats.rank')}
                     </span>
-                    <span className="font-bold text-2xl">#{profile.rank}</span>
+                    <span className="text-2xl font-bold">#{profile.rank}</span>
                   </div>
                   <div className="flex flex-col">
-                    <span className="text-muted-foreground text-sm">
+                    <span className="text-sm text-muted-foreground">
                       {t('stats.problems-attempted')}
                     </span>
-                    <span className="font-bold text-2xl">
+                    <span className="text-2xl font-bold">
                       {profile.problemCount}
                     </span>
                   </div>
                   <div className="flex flex-col">
-                    <span className="text-muted-foreground text-sm">
+                    <span className="text-sm text-muted-foreground">
                       {t('stats.challenges')}
                     </span>
-                    <span className="font-bold text-2xl">
+                    <span className="text-2xl font-bold">
                       {profile.challengeCount}
                     </span>
                   </div>
@@ -467,11 +467,11 @@ export default function UserProfileClient({
                 {/* Overall Progress */}
                 <div className="mt-2">
                   <div className="mb-1 flex items-center justify-between">
-                    <span className="font-medium text-sm">
+                    <span className="text-sm font-medium">
                       {t('stats.overall-progress')}
                     </span>
                     <span
-                      className={`font-medium text-sm ${overallStatus.color}`}
+                      className={`text-sm font-medium ${overallStatus.color}`}
                     >
                       {overallStatus.text}
                     </span>
@@ -481,7 +481,7 @@ export default function UserProfileClient({
                       value={profile.problemsAttemptedPercentage}
                       className="h-2"
                     />
-                    <div className="mt-1 flex justify-between text-muted-foreground text-xs">
+                    <div className="mt-1 flex justify-between text-xs text-muted-foreground">
                       <span>
                         {profile.problemCount} /{' '}
                         {profile.totalAvailableProblems} {t('stats.problems')}
@@ -496,7 +496,7 @@ export default function UserProfileClient({
                 {/* Nearby Ranks */}
                 {profile.nearbyRanks.length > 0 && (
                   <div className="mt-4">
-                    <h4 className="mb-2 font-medium text-sm">
+                    <h4 className="mb-2 text-sm font-medium">
                       {t('stats.leaderboard-position')}
                     </h4>
                     <div className="space-y-2 rounded-md bg-muted/30 p-2">
@@ -585,13 +585,13 @@ export default function UserProfileClient({
                       </div>
                     </div>
                     <div>
-                      <div className="font-medium leading-none">
+                      <div className="leading-none font-medium">
                         {achievement.title}
                         {!achievement.unlocked && (
                           <Lock className="ml-1 inline h-3 w-3 text-muted-foreground" />
                         )}
                       </div>
-                      <div className="mt-1 text-muted-foreground text-sm">
+                      <div className="mt-1 text-sm text-muted-foreground">
                         {achievement.description}
                       </div>
                     </div>
@@ -636,15 +636,15 @@ export default function UserProfileClient({
                     <CardContent>
                       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                         <div>
-                          <h3 className="font-medium text-lg">
+                          <h3 className="text-lg font-medium">
                             {bestChallenge.title}
                           </h3>
-                          <p className="mt-1 text-muted-foreground text-sm">
+                          <p className="mt-1 text-sm text-muted-foreground">
                             {bestChallenge.description}
                           </p>
                         </div>
                         <div className="flex items-center gap-2">
-                          <div className="flex items-center font-bold text-dynamic-yellow text-xl">
+                          <div className="flex items-center text-xl font-bold text-dynamic-yellow">
                             {bestChallenge.score.toFixed(1)}
                             <Trophy className="ml-1 h-5 w-5" />
                           </div>
@@ -683,34 +683,34 @@ export default function UserProfileClient({
                   <CardContent>
                     <div className="grid gap-6 sm:grid-cols-2">
                       <div className="flex flex-col gap-2">
-                        <div className="text-muted-foreground text-sm">
+                        <div className="text-sm text-muted-foreground">
                           {t('overview.problem-submissions')}
                         </div>
-                        <div className="font-bold text-3xl">
+                        <div className="text-3xl font-bold">
                           {activityStats.totalSubmissions}
                         </div>
                       </div>
                       <div className="flex flex-col gap-2">
-                        <div className="text-muted-foreground text-sm">
+                        <div className="text-sm text-muted-foreground">
                           {t('overview.avg-score')}
                         </div>
-                        <div className="font-bold text-3xl">
+                        <div className="text-3xl font-bold">
                           {activityStats.avgScore.toFixed(1)}
                         </div>
                       </div>
                       <div className="flex flex-col gap-2">
-                        <div className="text-muted-foreground text-sm">
+                        <div className="text-sm text-muted-foreground">
                           {t('overview.best-score')}
                         </div>
-                        <div className="font-bold text-3xl">
+                        <div className="text-3xl font-bold">
                           {activityStats.bestScore.toFixed(1)}
                         </div>
                       </div>
                       <div className="flex flex-col gap-2">
-                        <div className="text-muted-foreground text-sm">
+                        <div className="text-sm text-muted-foreground">
                           {t('overview.last-active')}
                         </div>
-                        <div className="font-bold text-xl">
+                        <div className="text-xl font-bold">
                           {activityStats.lastActive}
                         </div>
                       </div>
@@ -794,7 +794,7 @@ export default function UserProfileClient({
                                   {t('challenges.problems')}
                                 </span>
                               </div>
-                              <div className="font-bold text-xl">
+                              <div className="text-xl font-bold">
                                 {challenge.score.toFixed(1)}
                               </div>
                             </div>
@@ -817,7 +817,7 @@ export default function UserProfileClient({
                 ) : (
                   <div className="p-10 text-center">
                     <ScrollText className="mx-auto h-10 w-10 text-muted-foreground" />
-                    <h3 className="mt-4 font-medium text-lg">
+                    <h3 className="mt-4 text-lg font-medium">
                       {t('challenges.no-challenges')}
                     </h3>
                     <p className="mt-2 text-muted-foreground">
@@ -856,12 +856,12 @@ export default function UserProfileClient({
                               <div className="font-medium">
                                 {activity.problemTitle}
                               </div>
-                              <div className="text-muted-foreground text-sm">
+                              <div className="text-sm text-muted-foreground">
                                 {format(new Date(activity.date), 'PPP p')}
                               </div>
                             </div>
                             <div className="flex items-center gap-2 sm:flex-col sm:items-end">
-                              <div className="font-bold text-2xl">
+                              <div className="text-2xl font-bold">
                                 {activity.score.toFixed(1)}
                               </div>
                               <Badge
@@ -891,7 +891,7 @@ export default function UserProfileClient({
                     ) : (
                       <div className="p-6 text-center">
                         <Clock className="mx-auto h-10 w-10 text-muted-foreground" />
-                        <h3 className="mt-4 font-medium text-lg">
+                        <h3 className="mt-4 text-lg font-medium">
                           {t('activity.no-activity')}
                         </h3>
                         <p className="mt-2 text-muted-foreground">

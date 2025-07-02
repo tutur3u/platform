@@ -74,7 +74,7 @@ export function LessonContent({ lesson }: LessonProps) {
     <div className="flex justify-between gap-6">
       {/* Table of Contents Sidebar */}
       <div className="w-64 py-4">
-        <h2 className="p-2 font-semibold text-sm">Table of Contents</h2>
+        <h2 className="p-2 text-sm font-semibold">Table of Contents</h2>
         <nav className="space-y-1">
           {lesson.sections.map((section, index) => (
             <button
@@ -103,7 +103,7 @@ export function LessonContent({ lesson }: LessonProps) {
         <ScrollArea ref={containerRef} className="h-[calc(100vh-6rem)]">
           <div className="p-4">
             <div className="mb-4 py-2">
-              <h1 className="font-bold text-4xl tracking-tight">
+              <h1 className="text-4xl font-bold tracking-tight">
                 {lesson.title}
               </h1>
             </div>
@@ -117,7 +117,7 @@ export function LessonContent({ lesson }: LessonProps) {
                 viewport={{ once: true }}
                 className="space-y-4"
               >
-                <h2 className="font-semibold text-2xl tracking-tight">
+                <h2 className="text-2xl font-semibold tracking-tight">
                   {section.title}
                 </h2>
                 {Array.isArray(section.content) ? (

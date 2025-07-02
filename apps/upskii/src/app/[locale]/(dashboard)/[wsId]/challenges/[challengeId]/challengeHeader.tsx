@@ -218,10 +218,10 @@ export default function ChallengeHeader({
         />
       </div>
 
-      <div className="-translate-x-1/2 -translate-y-1/2 absolute top-1/2 left-1/2 flex flex-col items-center justify-center gap-2">
+      <div className="absolute top-1/2 left-1/2 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center gap-2">
         <div className="flex items-center gap-1.5">
           <Clock className={cn('h-4 w-4', getTimeColor())} />
-          <span className={cn('font-medium font-mono text-sm', getTimeColor())}>
+          <span className={cn('font-mono text-sm font-medium', getTimeColor())}>
             {String(timeLeft.hours).padStart(2, '0')}:
             {String(timeLeft.minutes).padStart(2, '0')}:
             {String(timeLeft.seconds).padStart(2, '0')}

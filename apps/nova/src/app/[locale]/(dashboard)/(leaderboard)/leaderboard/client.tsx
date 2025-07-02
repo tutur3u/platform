@@ -141,7 +141,7 @@ export default function LeaderboardClient({
               <div className="relative">
                 <Medal className="h-5 w-5 text-yellow-400" />
                 <motion.div
-                  className="-inset-1 -z-10 absolute rounded-full opacity-0 blur-sm"
+                  className="absolute -inset-1 -z-10 rounded-full opacity-0 blur-sm"
                   style={{
                     background: 'linear-gradient(to right, #F59E0B, #EF4444)',
                   }}
@@ -149,7 +149,7 @@ export default function LeaderboardClient({
                   transition={{ duration: 2, repeat: Infinity }}
                 />
               </div>
-              <h2 className="bg-linear-to-r from-yellow-500 via-amber-500 to-orange-500 bg-clip-text font-bold text-transparent text-xl dark:from-yellow-400 dark:via-amber-400 dark:to-orange-400">
+              <h2 className="bg-linear-to-r from-yellow-500 via-amber-500 to-orange-500 bg-clip-text text-xl font-bold text-transparent dark:from-yellow-400 dark:via-amber-400 dark:to-orange-400">
                 {t('top-performers.title')}
               </h2>
               {selectedChallenge !== 'all' && (
@@ -225,7 +225,7 @@ export default function LeaderboardClient({
 
               <div className="mt-6">
                 <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border bg-foreground/[0.025] px-4 py-2 text-center backdrop-blur-xl dark:bg-foreground/5">
-                  <div className="flex-none text-muted-foreground text-sm">
+                  <div className="flex-none text-sm text-muted-foreground">
                     <span className="font-semibold text-primary">
                       {basicInfo.totalParticipants}
                     </span>{' '}
@@ -233,7 +233,7 @@ export default function LeaderboardClient({
                   </div>
 
                   <div className="flex flex-wrap items-center justify-center gap-2 md:gap-4">
-                    <div className="w-fit text-muted-foreground text-sm">
+                    <div className="w-fit text-sm text-muted-foreground">
                       Page{' '}
                       <span className="font-semibold text-primary">{page}</span>{' '}
                       of{' '}
@@ -306,7 +306,7 @@ export default function LeaderboardClient({
           </div>
         </div>
 
-        <div className="mt-8 text-center text-slate-500 text-sm">
+        <div className="mt-8 text-center text-sm text-slate-500">
           <p>
             {t('last-updated')}{' '}
             {new Date(calculationDate).toLocaleString('vi-VN', {

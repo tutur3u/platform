@@ -25,7 +25,7 @@ export function MonthRangePicker({
   return (
     <div className={className}>
       <div className="flex flex-col justify-end gap-2">
-        <h2 className="font-semibold text-lg">Select start month</h2>
+        <h2 className="text-lg font-semibold">Select start month</h2>
         <MonthPicker
           defaultValue={startMonth}
           onValueChange={setStartMonth}
@@ -33,7 +33,7 @@ export function MonthRangePicker({
         />
       </div>
       <div className="flex flex-col justify-end gap-2">
-        <h2 className="font-semibold text-lg">Select end month</h2>
+        <h2 className="text-lg font-semibold">Select end month</h2>
         <MonthPicker
           defaultValue={endMonth}
           onValueChange={setEndMonth}

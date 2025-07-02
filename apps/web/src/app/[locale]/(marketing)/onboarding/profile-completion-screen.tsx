@@ -83,10 +83,10 @@ export default function ProfileCompletionScreen({
             <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full shadow-lg">
               <User className="h-8 w-8" />
             </div>
-            <h1 className="mb-4 font-bold text-3xl text-gray-900 md:text-4xl dark:text-white">
+            <h1 className="mb-4 text-3xl font-bold text-gray-900 md:text-4xl dark:text-white">
               {t('title')}
             </h1>
-            <p className="text-gray-600 text-lg dark:text-gray-300">
+            <p className="text-lg text-gray-600 dark:text-gray-300">
               {t('subtitle')}
             </p>
           </div>
@@ -94,7 +94,7 @@ export default function ProfileCompletionScreen({
           {/* Form */}
           <Card className="border bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800">
             <CardHeader className="pb-6">
-              <CardTitle className="font-semibold text-xl">
+              <CardTitle className="text-xl font-semibold">
                 {t('profile-details')}
               </CardTitle>
             </CardHeader>
@@ -110,7 +110,7 @@ export default function ProfileCompletionScreen({
                     name="displayName"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="font-semibold text-base">
+                        <FormLabel className="text-base font-semibold">
                           {t('display-name')}
                         </FormLabel>
                         <FormControl>
@@ -132,9 +132,9 @@ export default function ProfileCompletionScreen({
                     name="bio"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="font-semibold text-base">
+                        <FormLabel className="text-base font-semibold">
                           {t('bio')}{' '}
-                          <span className="font-normal text-gray-500 text-sm">
+                          <span className="text-sm font-normal text-gray-500">
                             {t('bio-optional')}
                           </span>
                         </FormLabel>
@@ -154,7 +154,7 @@ export default function ProfileCompletionScreen({
 
                   {/* Tip */}
                   <div className="rounded-lg bg-blue-50 p-4 dark:bg-blue-900/20">
-                    <p className="text-blue-800 text-sm dark:text-blue-200">
+                    <p className="text-sm text-blue-800 dark:text-blue-200">
                       {t('profile-tip')}
                     </p>
                   </div>

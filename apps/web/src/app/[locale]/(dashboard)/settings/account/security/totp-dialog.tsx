@@ -207,7 +207,7 @@ export default function TOTPDialog() {
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-8">
                 <Smartphone className="mb-4 h-12 w-12 text-muted-foreground" />
-                <div className="flex flex-col gap-2 text-center text-muted-foreground text-sm">
+                <div className="flex flex-col gap-2 text-center text-sm text-muted-foreground">
                   <p>No TOTP factors configured yet.</p>
                   <p>Add one to enhance your account security.</p>
                 </div>
@@ -232,7 +232,7 @@ export default function TOTPDialog() {
                         >
                           {factor.status}
                         </Badge>
-                        <span className="text-muted-foreground text-xs">
+                        <span className="text-xs text-muted-foreground">
                           Added{' '}
                           {new Date(factor.created_at).toLocaleDateString()}
                         </span>

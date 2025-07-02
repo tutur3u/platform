@@ -45,16 +45,11 @@ const syncGoogleCalendarEventsForWorkspace = async (
   syncType: 'immediate' | 'extended'
 ) => {
   console.log(`[${ws_id}] Starting ${syncType} sync process...`);
-  console.log(
-    `[${ws_id}] Time range: ${timeMin.format('YYYY-MM-DD HH:mm')} to ${timeMax.format('YYYY-MM-DD HH:mm')}`
-  );
+  console.log(`[${ws_id}] Time range: ${timeMin.format('YYYY-MM-DD HH:mm')} to ${timeMax.format('YYYY-MM-DD HH:mm')}`);
 
   try {
     const supabase = await createAdminClient({ noCookie: true });
-    const auth = getGoogleAuthClient({
-      access_token,
-      refresh_token: refresh_token || undefined,
-    });
+    const auth = getGoogleAuthClient({ access_token, refresh_token: refresh_token || undefined });
 
     const calendar = google.calendar({ version: 'v3', auth });
 
@@ -119,7 +114,10 @@ const syncGoogleCalendarEventsForWorkspace = async (
       .lte('start_at', timeMax.toISOString());
 
     if (dbError) {
-      console.error(`[${ws_id}] Error fetching events after upsert:`, dbError);
+      console.error(
+        `[${ws_id}] Error fetching events after upsert:`,
+        dbError
+      );
       throw dbError;
     }
 
@@ -138,7 +136,9 @@ const syncGoogleCalendarEventsForWorkspace = async (
       }
     }
 
-    console.log(`[${ws_id}] Found ${eventsToDelete.length} events to delete`);
+    console.log(
+      `[${ws_id}] Found ${eventsToDelete.length} events to delete`
+    );
 
     if (eventsToDelete.length > 0) {
       const { error: deleteError } = await supabase
@@ -164,7 +164,7 @@ const syncGoogleCalendarEventsForWorkspace = async (
     console.log(`[${ws_id}] Updating lastUpsert timestamp...`);
     await updateLastUpsert(ws_id, supabase);
     console.log(`[${ws_id}] ${syncType} sync completed successfully`);
-
+    
     return {
       ws_id,
       success: true,
@@ -172,7 +172,10 @@ const syncGoogleCalendarEventsForWorkspace = async (
       eventsDeleted: eventsToDelete.length,
     };
   } catch (error) {
-    console.error(`[${ws_id}] Error in ${syncType} sync:`, error);
+    console.error(
+      `[${ws_id}] Error in ${syncType} sync:`,
+      error
+    );
     return {
       ws_id,
       success: false,
@@ -184,16 +187,16 @@ const syncGoogleCalendarEventsForWorkspace = async (
 // Get workspace by ws_id
 export const getWorkspaceTokensByWsId = async (ws_id: string) => {
   try {
-    const supabase = await createAdminClient({ noCookie: true });
-    const { data: tokens, error } = await supabase
-      .from('workspaces')
-      .select('ws_id, access_token, refresh_token')
-      .eq('ws_id', ws_id);
+  const supabase = await createAdminClient({ noCookie: true });
+  const { data: tokens, error } = await supabase
+    .from('workspaces')
+    .select('ws_id, access_token, refresh_token')
+    .eq('ws_id', ws_id);
 
-    if (error) {
-      console.error(`[${ws_id}] Error fetching workspace:`, error);
-      return null;
-    }
+  if (error) {
+    console.error(`[${ws_id}] Error fetching workspace:`, error);
+    return null;
+  }
 
     return tokens?.[0] || null;
   } catch (error) {
@@ -206,7 +209,7 @@ export const getWorkspaceTokensByWsId = async (ws_id: string) => {
 export const getWorkspacesForSync = async () => {
   try {
     const supabase = await createAdminClient({ noCookie: true });
-
+    
     const { data: tokens, error } = await supabase
       .from('calendar_auth_tokens')
       .select('ws_id, access_token, refresh_token')
@@ -231,7 +234,7 @@ export const syncWorkspaceImmediate = async (payload: {
   refresh_token?: string;
 }) => {
   const { ws_id, access_token, refresh_token } = payload;
-
+  
   if (!access_token) {
     console.error(`[${ws_id}] No access token provided`);
     return { ws_id, success: false, error: 'No access token provided' };
@@ -240,7 +243,7 @@ export const syncWorkspaceImmediate = async (payload: {
   const now = dayjs();
   const timeMin = now;
   const timeMax = now.add(7, 'day'); // 1 week from now
-
+  
   return syncGoogleCalendarEventsForWorkspace(
     ws_id,
     access_token,
@@ -258,7 +261,7 @@ export const syncWorkspaceExtended = async (payload: {
   refresh_token?: string;
 }) => {
   const { ws_id, access_token, refresh_token } = payload;
-
+  
   if (!access_token) {
     console.error(`[${ws_id}] No access token provided`);
     return { ws_id, success: false, error: 'No access token provided' };
@@ -267,7 +270,7 @@ export const syncWorkspaceExtended = async (payload: {
   const now = dayjs();
   const timeMin = now.add(7, 'day'); // Start from 1 week from now
   const timeMax = now.add(28, 'day'); // 4 weeks from now (1 week + 3 weeks)
-
+  
   return syncGoogleCalendarEventsForWorkspace(
     ws_id,
     access_token,

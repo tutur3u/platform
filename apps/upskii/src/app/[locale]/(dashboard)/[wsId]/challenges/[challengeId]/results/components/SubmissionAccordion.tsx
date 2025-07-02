@@ -75,20 +75,20 @@ export default function SubmissionAccordion({
                       {isBest && (
                         <Badge
                           variant="outline"
-                          className="border-dynamic-yellow/20 bg-dynamic-yellow/10 text-dynamic-yellow text-xs"
+                          className="border-dynamic-yellow/20 bg-dynamic-yellow/10 text-xs text-dynamic-yellow"
                         >
                           Best
                         </Badge>
                       )}
                     </div>
-                    <span className="text-muted-foreground text-xs">
+                    <span className="text-xs text-muted-foreground">
                       {timeAgo}
                     </span>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-3">
-                  <div className="hidden items-center text-muted-foreground text-xs md:flex">
+                  <div className="hidden items-center text-xs text-muted-foreground md:flex">
                     {submission.passed_tests}/{submission.total_tests} tests
                     passed
                     {testPassRatio >= 0.8 ? (
@@ -101,7 +101,7 @@ export default function SubmissionAccordion({
                   <ScoreBadge
                     score={submission.total_score}
                     maxScore={10}
-                    className="inline-flex items-center justify-center rounded-full px-2 py-1 font-medium text-xs"
+                    className="inline-flex items-center justify-center rounded-full px-2 py-1 text-xs font-medium"
                   >
                     {submission.total_score.toFixed(1)}/10
                   </ScoreBadge>
@@ -111,7 +111,7 @@ export default function SubmissionAccordion({
             <AccordionContent className="overflow-hidden px-0 pt-0 pb-0">
               <Separator />
               <div className="p-4">
-                <div className="mb-4 flex items-center text-muted-foreground text-sm">
+                <div className="mb-4 flex items-center text-sm text-muted-foreground">
                   <Clock className="mr-1.5 h-4 w-4" />
                   Submitted on {createdAt.toLocaleString()}
                 </div>

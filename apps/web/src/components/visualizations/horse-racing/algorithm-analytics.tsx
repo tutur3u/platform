@@ -65,12 +65,12 @@ export function AlgorithmAnalytics({
       <div className="grid gap-4 sm:grid-cols-2">
         <Card className="p-4">
           <div className="space-y-2">
-            <div className="font-medium text-sm">Algorithm Efficiency</div>
-            <div className="font-bold text-2xl">
+            <div className="text-sm font-medium">Algorithm Efficiency</div>
+            <div className="text-2xl font-bold">
               {Math.round(efficiency * 100)}%
             </div>
             <Progress value={efficiency * 100} className="h-2" />
-            <div className="text-muted-foreground text-xs">
+            <div className="text-xs text-muted-foreground">
               Based on theoretical minimum of {theoreticalMinRaces} races
             </div>
           </div>
@@ -78,12 +78,12 @@ export function AlgorithmAnalytics({
 
         <Card className="p-4">
           <div className="space-y-2">
-            <div className="font-medium text-sm">Progress</div>
-            <div className="font-bold text-2xl">
+            <div className="text-sm font-medium">Progress</div>
+            <div className="text-2xl font-bold">
               {Math.round(progressPercentage * 100)}%
             </div>
             <Progress value={progressPercentage * 100} className="h-2" />
-            <div className="text-muted-foreground text-xs">
+            <div className="text-xs text-muted-foreground">
               {currentRaceIndex + 1} of {races.length} races completed
             </div>
           </div>
@@ -93,7 +93,7 @@ export function AlgorithmAnalytics({
       {/* Race Type Distribution */}
       <Card className="p-4">
         <div className="space-y-3">
-          <div className="font-medium text-sm">Race Type Distribution</div>
+          <div className="text-sm font-medium">Race Type Distribution</div>
           <div className="h-[200px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={raceTypeData}>
@@ -116,7 +116,7 @@ export function AlgorithmAnalytics({
       {/* Race Effectiveness */}
       <Card className="p-4">
         <div className="space-y-3">
-          <div className="font-medium text-sm">Race Effectiveness</div>
+          <div className="text-sm font-medium">Race Effectiveness</div>
           <div className="h-[200px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={raceEffectiveness}>
@@ -142,7 +142,7 @@ export function AlgorithmAnalytics({
               </BarChart>
             </ResponsiveContainer>
           </div>
-          <div className="text-muted-foreground text-xs">
+          <div className="text-xs text-muted-foreground">
             Shows potential vs actual information gained per race
           </div>
         </div>

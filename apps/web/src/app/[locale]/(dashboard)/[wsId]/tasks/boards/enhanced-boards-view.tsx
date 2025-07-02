@@ -415,10 +415,10 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
               <Target className="h-5 w-5 text-blue-600 dark:text-blue-400" />
             </div>
             <div>
-              <p className="font-medium text-blue-700 text-sm dark:text-blue-300">
+              <p className="text-sm font-medium text-blue-700 dark:text-blue-300">
                 Total Tasks
               </p>
-              <p className="font-bold text-2xl text-blue-900 dark:text-blue-100">
+              <p className="text-2xl font-bold text-blue-900 dark:text-blue-100">
                 {totalTasks}
               </p>
             </div>
@@ -434,10 +434,10 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
               <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400" />
             </div>
             <div>
-              <p className="font-medium text-green-700 text-sm dark:text-green-300">
+              <p className="text-sm font-medium text-green-700 dark:text-green-300">
                 Completed
               </p>
-              <p className="font-bold text-2xl text-green-900 dark:text-green-100">
+              <p className="text-2xl font-bold text-green-900 dark:text-green-100">
                 {totalCompleted}
               </p>
             </div>
@@ -450,10 +450,10 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
               <TrendingUp className="h-5 w-5 text-purple-600 dark:text-purple-400" />
             </div>
             <div>
-              <p className="font-medium text-purple-700 text-sm dark:text-purple-300">
+              <p className="text-sm font-medium text-purple-700 dark:text-purple-300">
                 Analytics
               </p>
-              <p className="font-bold text-2xl text-purple-900 dark:text-purple-100">
+              <p className="text-2xl font-bold text-purple-900 dark:text-purple-100">
                 {avgProgress}%
               </p>
             </div>
@@ -469,10 +469,10 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
               <Clock className="h-5 w-5 text-red-600 dark:text-red-400" />
             </div>
             <div>
-              <p className="font-medium text-red-700 text-sm dark:text-red-300">
+              <p className="text-sm font-medium text-red-700 dark:text-red-300">
                 Overdue
               </p>
-              <p className="font-bold text-2xl text-red-900 dark:text-red-100">
+              <p className="text-2xl font-bold text-red-900 dark:text-red-100">
                 {totalOverdue}
               </p>
             </div>
@@ -488,10 +488,10 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
               <Zap className="h-5 w-5 text-orange-600 dark:text-orange-400" />
             </div>
             <div>
-              <p className="font-medium text-orange-700 text-sm dark:text-orange-300">
+              <p className="text-sm font-medium text-orange-700 dark:text-orange-300">
                 Urgent Priority
               </p>
-              <p className="font-bold text-2xl text-orange-900 dark:text-orange-100">
+              <p className="text-2xl font-bold text-orange-900 dark:text-orange-100">
                 {totalHighPriority}
               </p>
             </div>
@@ -621,7 +621,7 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                 className="m-0 data-[state=inactive]:hidden"
               >
                 <div className="flex items-center gap-1">
-                  <span className="text-muted-foreground text-xs">
+                  <span className="text-xs text-muted-foreground">
                     Analytics view
                   </span>
                 </div>
@@ -645,7 +645,7 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
             <div className="mt-4 rounded-lg border bg-muted/30 p-4">
               <div className="flex items-center gap-4">
                 <div className="flex-1">
-                  <label className="font-medium text-sm">Search</label>
+                  <label className="text-sm font-medium">Search</label>
                   <input
                     type="text"
                     placeholder="Search boards..."
@@ -655,7 +655,7 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                   />
                 </div>
                 <div className="w-40">
-                  <label className="font-medium text-sm">Status</label>
+                  <label className="text-sm font-medium">Status</label>
                   <select
                     value={taskModal.filterType || 'all'}
                     onChange={(e) =>
@@ -672,7 +672,7 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                   </select>
                 </div>
                 <div className="w-32">
-                  <label className="font-medium text-sm">Sort By</label>
+                  <label className="text-sm font-medium">Sort By</label>
                   <select
                     value={sortBy}
                     onChange={(e) => setSortBy(e.target.value)}
@@ -705,7 +705,7 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
           {showColumnSettings && (
             <div className="mt-4 rounded-lg border bg-muted/30 p-4">
               <div className="mb-4 flex items-center justify-between">
-                <h3 className="font-medium text-sm">Column Settings</h3>
+                <h3 className="text-sm font-medium">Column Settings</h3>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -888,18 +888,18 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                 {filteredData.map((board) => (
                   <div
                     key={board.id}
-                    className="group hover:-translate-y-1 relative cursor-pointer rounded-xl border bg-card p-6 shadow-sm transition-all duration-200 hover:border-primary/20 hover:shadow-lg"
+                    className="group relative cursor-pointer rounded-xl border bg-card p-6 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:border-primary/20 hover:shadow-lg"
                     onClick={(e) => handleBoardClick(board, e)}
                   >
                     {/* Board Header */}
                     <div className="mb-4">
                       <div className="mb-3 flex items-start justify-between gap-2">
-                        <h3 className="line-clamp-2 font-semibold text-lg leading-tight transition-colors group-hover:text-primary">
+                        <h3 className="line-clamp-2 text-lg leading-tight font-semibold transition-colors group-hover:text-primary">
                           {board.name}
                         </h3>
                         <div className="flex items-center gap-2">
                           {board.archived && (
-                            <span className="inline-flex items-center rounded-full bg-muted px-2 py-1 font-medium text-muted-foreground text-xs">
+                            <span className="inline-flex items-center rounded-full bg-muted px-2 py-1 text-xs font-medium text-muted-foreground">
                               Archived
                             </span>
                           )}
@@ -925,13 +925,13 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                             .map((tag: string, index: number) => (
                               <span
                                 key={index}
-                                className="inline-flex items-center rounded-md bg-primary/10 px-2 py-1 font-medium text-primary text-xs"
+                                className="inline-flex items-center rounded-md bg-primary/10 px-2 py-1 text-xs font-medium text-primary"
                               >
                                 {tag}
                               </span>
                             ))}
                           {board.tags.length > 2 && (
-                            <span className="inline-flex items-center rounded-md bg-muted px-2 py-1 font-medium text-muted-foreground text-xs">
+                            <span className="inline-flex items-center rounded-md bg-muted px-2 py-1 text-xs font-medium text-muted-foreground">
                               +{board.tags.length - 2}
                             </span>
                           )}
@@ -942,10 +942,10 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                     {/* Progress Section */}
                     <div className="mb-4">
                       <div className="mb-2 flex items-center justify-between">
-                        <span className="font-medium text-muted-foreground text-sm">
+                        <span className="text-sm font-medium text-muted-foreground">
                           Progress
                         </span>
-                        <span className="font-bold text-sm">
+                        <span className="text-sm font-bold">
                           {board.progressPercentage}%
                         </span>
                       </div>
@@ -964,10 +964,10 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                           <BarChart3 className="h-4 w-4 text-blue-500" />
                         </div>
                         <div>
-                          <p className="font-bold text-lg">
+                          <p className="text-lg font-bold">
                             {board.totalTasks}
                           </p>
-                          <p className="text-muted-foreground text-xs">Total</p>
+                          <p className="text-xs text-muted-foreground">Total</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
@@ -975,10 +975,10 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                           <CheckCircle2 className="h-4 w-4 text-green-500" />
                         </div>
                         <div>
-                          <p className="font-bold text-lg">
+                          <p className="text-lg font-bold">
                             {board.completedTasks}
                           </p>
-                          <p className="text-muted-foreground text-xs">Done</p>
+                          <p className="text-xs text-muted-foreground">Done</p>
                         </div>
                       </div>
                     </div>
@@ -990,7 +990,7 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                         {board.overdueTasks > 0 && (
                           <div className="flex items-center gap-1 text-red-600">
                             <Clock className="h-3 w-3" />
-                            <span className="font-medium text-xs">
+                            <span className="text-xs font-medium">
                               {board.overdueTasks} overdue
                             </span>
                           </div>
@@ -998,7 +998,7 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                         {board.highPriorityTasks > 0 && (
                           <div className="flex items-center gap-1 text-orange-600">
                             <AlertTriangle className="h-3 w-3" />
-                            <span className="font-medium text-xs">
+                            <span className="text-xs font-medium">
                               {board.highPriorityTasks} urgent
                             </span>
                           </div>
@@ -1007,7 +1007,7 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                     )}
 
                     {/* Footer */}
-                    <div className="flex items-center justify-between border-t pt-3 text-muted-foreground text-xs">
+                    <div className="flex items-center justify-between border-t pt-3 text-xs text-muted-foreground">
                       <div className="flex items-center gap-1">
                         <Calendar className="h-3 w-3" />
                         <span>
@@ -1027,12 +1027,12 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
 
               {/* Empty State */}
               {safeData.length === 0 && (
-                <div className="rounded-lg border-2 border-muted-foreground/25 border-dashed p-12 text-center">
+                <div className="rounded-lg border-2 border-dashed border-muted-foreground/25 p-12 text-center">
                   <LayoutGrid className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
-                  <h3 className="mb-2 font-semibold text-lg">
+                  <h3 className="mb-2 text-lg font-semibold">
                     No boards found
                   </h3>
-                  <p className="text-muted-foreground text-sm">
+                  <p className="text-sm text-muted-foreground">
                     Create your first task board to get started.
                   </p>
                 </div>
@@ -1045,10 +1045,10 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                 {/* Analytics Header */}
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="font-semibold text-lg">
+                    <h3 className="text-lg font-semibold">
                       Task Timeline & Performance
                     </h3>
-                    <p className="text-muted-foreground text-sm">
+                    <p className="text-sm text-muted-foreground">
                       {analyticsFilters.selectedBoard
                         ? `Metrics for ${safeData.find((b) => b.id === analyticsFilters.selectedBoard)?.name || 'Selected Board'}`
                         : 'Aggregate metrics across all boards'}
@@ -1143,11 +1143,11 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                       <div className="rounded-lg bg-blue-500/10 p-2">
                         <Target className="h-4 w-4 text-blue-500" />
                       </div>
-                      <span className="font-medium text-sm">
+                      <span className="text-sm font-medium">
                         Completion Rate
                       </span>
                     </div>
-                    <p className="font-bold text-2xl text-blue-600">
+                    <p className="text-2xl font-bold text-blue-600">
                       {Math.round(
                         (analyticsMetrics.totalCompleted /
                           analyticsMetrics.totalTasks) *
@@ -1155,7 +1155,7 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                       ) || 0}
                       %
                     </p>
-                    <p className="text-muted-foreground text-xs">
+                    <p className="text-xs text-muted-foreground">
                       {analyticsMetrics.totalCompleted} of{' '}
                       {analyticsMetrics.totalTasks} tasks completed
                     </p>
@@ -1166,13 +1166,13 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                       <div className="rounded-lg bg-green-500/10 p-2">
                         <TrendingUp className="h-4 w-4 text-green-500" />
                       </div>
-                      <span className="font-medium text-sm">Active Tasks</span>
+                      <span className="text-sm font-medium">Active Tasks</span>
                     </div>
-                    <p className="font-bold text-2xl text-green-600">
+                    <p className="text-2xl font-bold text-green-600">
                       {analyticsMetrics.totalTasks -
                         analyticsMetrics.totalCompleted}
                     </p>
-                    <p className="text-muted-foreground text-xs">
+                    <p className="text-xs text-muted-foreground">
                       Currently in progress
                     </p>
                   </Card>
@@ -1182,12 +1182,12 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                       <div className="rounded-lg bg-purple-500/10 p-2">
                         <Clock className="h-4 w-4 text-purple-500" />
                       </div>
-                      <span className="font-medium text-sm">Avg Duration</span>
+                      <span className="text-sm font-medium">Avg Duration</span>
                     </div>
-                    <p className="font-bold text-2xl text-purple-600">
+                    <p className="text-2xl font-bold text-purple-600">
                       {calculateAvgDuration.label}
                     </p>
-                    <p className="text-muted-foreground text-xs">
+                    <p className="text-xs text-muted-foreground">
                       {calculateAvgDuration.description}
                     </p>
                   </Card>
@@ -1197,12 +1197,12 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                       <div className="rounded-lg bg-orange-500/10 p-2">
                         <TrendingUp className="h-4 w-4 text-orange-500" />
                       </div>
-                      <span className="font-medium text-sm">Task Velocity</span>
+                      <span className="text-sm font-medium">Task Velocity</span>
                     </div>
-                    <p className="font-bold text-2xl text-orange-600">
+                    <p className="text-2xl font-bold text-orange-600">
                       {calculateTaskVelocity.label}
                     </p>
-                    <p className="text-muted-foreground text-xs">
+                    <p className="text-xs text-muted-foreground">
                       {calculateTaskVelocity.description}
                     </p>
                   </Card>
@@ -1212,12 +1212,12 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                       <div className="rounded-lg bg-emerald-500/10 p-2">
                         <CheckCircle2 className="h-4 w-4 text-emerald-500" />
                       </div>
-                      <span className="font-medium text-sm">On-Time Rate</span>
+                      <span className="text-sm font-medium">On-Time Rate</span>
                     </div>
-                    <p className="font-bold text-2xl text-emerald-600">
+                    <p className="text-2xl font-bold text-emerald-600">
                       {calculateOnTimeRate.label}
                     </p>
-                    <p className="text-muted-foreground text-xs">
+                    <p className="text-xs text-muted-foreground">
                       {calculateOnTimeRate.description}
                     </p>
                   </Card>
@@ -1272,7 +1272,7 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                   </div>
                   <div>
                     <h2 className="font-semibold">Board Details</h2>
-                    <p className="text-muted-foreground text-sm">
+                    <p className="text-sm text-muted-foreground">
                       Quick overview
                     </p>
                   </div>
@@ -1286,7 +1286,7 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
               <div className="flex-1 space-y-6 overflow-y-auto p-6">
                 {/* Board Info */}
                 <div>
-                  <h3 className="mb-2 font-semibold text-lg">
+                  <h3 className="mb-2 text-lg font-semibold">
                     {selectedBoard}
                   </h3>
 
@@ -1298,7 +1298,7 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                           (tag: string, index: number) => (
                             <span
                               key={index}
-                              className="inline-flex items-center rounded-md bg-primary/10 px-2 py-1 font-medium text-primary text-xs"
+                              className="inline-flex items-center rounded-md bg-primary/10 px-2 py-1 text-xs font-medium text-primary"
                             >
                               {tag}
                             </span>
@@ -1312,7 +1312,7 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                 <div className="rounded-lg border p-4">
                   <div className="mb-3 flex items-center justify-between">
                     <h4 className="font-medium">Overall Progress</h4>
-                    <span className="font-bold text-2xl text-primary">
+                    <span className="text-2xl font-bold text-primary">
                       {selectedBoardData?.progressPercentage || 0}%
                     </span>
                   </div>
@@ -1324,7 +1324,7 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                       }}
                     />
                   </div>
-                  <div className="text-muted-foreground text-sm">
+                  <div className="text-sm text-muted-foreground">
                     {selectedBoardData?.completedTasks || 0} of{' '}
                     {selectedBoardData?.totalTasks || 0} tasks completed
                   </div>
@@ -1338,9 +1338,9 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                     <div className="rounded-lg border p-3">
                       <div className="mb-1 flex items-center gap-2">
                         <BarChart3 className="h-4 w-4 text-blue-500" />
-                        <span className="font-medium text-sm">Total</span>
+                        <span className="text-sm font-medium">Total</span>
                       </div>
-                      <p className="font-bold text-2xl">
+                      <p className="text-2xl font-bold">
                         {selectedBoardData?.totalTasks || 0}
                       </p>
                     </div>
@@ -1348,9 +1348,9 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                     <div className="rounded-lg border p-3">
                       <div className="mb-1 flex items-center gap-2">
                         <CheckCircle2 className="h-4 w-4 text-green-500" />
-                        <span className="font-medium text-sm">Completed</span>
+                        <span className="text-sm font-medium">Completed</span>
                       </div>
-                      <p className="font-bold text-2xl">
+                      <p className="text-2xl font-bold">
                         {selectedBoardData?.completedTasks || 0}
                       </p>
                     </div>
@@ -1358,9 +1358,9 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                     <div className="rounded-lg border p-3">
                       <div className="mb-1 flex items-center gap-2">
                         <Activity className="h-4 w-4 text-blue-500" />
-                        <span className="font-medium text-sm">Active</span>
+                        <span className="text-sm font-medium">Active</span>
                       </div>
-                      <p className="font-bold text-2xl">
+                      <p className="text-2xl font-bold">
                         {selectedBoardData?.activeTasks || 0}
                       </p>
                     </div>
@@ -1368,9 +1368,9 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                     <div className="rounded-lg border p-3">
                       <div className="mb-1 flex items-center gap-2">
                         <Clock className="h-4 w-4 text-red-500" />
-                        <span className="font-medium text-sm">Overdue</span>
+                        <span className="text-sm font-medium">Overdue</span>
                       </div>
-                      <p className="font-bold text-2xl">
+                      <p className="text-2xl font-bold">
                         {selectedBoardData?.overdueTasks || 0}
                       </p>
                     </div>
@@ -1389,7 +1389,7 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                         <div className="flex items-center justify-between rounded-lg bg-red-50 p-2 dark:bg-red-950/20">
                           <div className="flex items-center gap-2">
                             <AlertTriangle className="h-4 w-4 text-red-500" />
-                            <span className="font-medium text-sm">
+                            <span className="text-sm font-medium">
                               High Priority
                             </span>
                           </div>
@@ -1403,7 +1403,7 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                         <div className="flex items-center justify-between rounded-lg bg-orange-50 p-2 dark:bg-orange-950/20">
                           <div className="flex items-center gap-2">
                             <Clock className="h-4 w-4 text-orange-500" />
-                            <span className="font-medium text-sm">
+                            <span className="text-sm font-medium">
                               Medium Priority
                             </span>
                           </div>
@@ -1417,7 +1417,7 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                         <div className="flex items-center justify-between rounded-lg bg-green-50 p-2 dark:bg-green-950/20">
                           <div className="flex items-center gap-2">
                             <Target className="h-4 w-4 text-green-500" />
-                            <span className="font-medium text-sm">
+                            <span className="text-sm font-medium">
                               Low Priority
                             </span>
                           </div>

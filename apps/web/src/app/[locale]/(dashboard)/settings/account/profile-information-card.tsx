@@ -44,13 +44,13 @@ export default async function ProfileInformationCard({
       </CardHeader>
       <CardContent className="space-y-8 p-6">
         {/* Avatar Section */}
-        <div className="flex flex-col items-center space-y-4 sm:flex-row sm:space-x-6 sm:space-y-0">
+        <div className="flex flex-col items-center space-y-4 sm:flex-row sm:space-y-0 sm:space-x-6">
           <div className="relative">{user && <UserAvatar user={user} />}</div>
           <div className="flex-1 text-center sm:text-left">
-            <h3 className="font-semibold text-lg">
+            <h3 className="text-lg font-semibold">
               {user?.display_name || user?.full_name || t('anonymous-user')}
             </h3>
-            <p className="text-muted-foreground text-sm">
+            <p className="text-sm text-muted-foreground">
               {t('avatar-description')}
             </p>
           </div>
@@ -62,21 +62,21 @@ export default async function ProfileInformationCard({
         {/* Name Fields */}
         <div className="grid gap-6 sm:grid-cols-2">
           <div className="space-y-3">
-            <label className="font-medium text-sm">{t('display-name')}</label>
+            <label className="text-sm font-medium">{t('display-name')}</label>
             <Suspense fallback={<Skeleton className="h-10 w-full" />}>
               <DisplayNameInput defaultValue={user?.display_name} />
             </Suspense>
-            <p className="text-muted-foreground text-xs">
+            <p className="text-xs text-muted-foreground">
               {t('display-name-description')}
             </p>
           </div>
 
           <div className="space-y-3">
-            <label className="font-medium text-sm">{t('full-name')}</label>
+            <label className="text-sm font-medium">{t('full-name')}</label>
             <Suspense fallback={<Skeleton className="h-10 w-full" />}>
               <FullNameInput defaultValue={user?.full_name} />
             </Suspense>
-            <p className="text-muted-foreground text-xs">
+            <p className="text-xs text-muted-foreground">
               {t('full-name-description')}
             </p>
           </div>

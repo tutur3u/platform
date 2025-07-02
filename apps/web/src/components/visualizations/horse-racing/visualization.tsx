@@ -563,7 +563,7 @@ export function HorseRacingVisualization() {
                       <TabsContent value="details" className="mt-0 space-y-4">
                         {races.length > 0 ? (
                           <div className="space-y-4">
-                            <h3 className="font-medium text-lg">
+                            <h3 className="text-lg font-medium">
                               Horse Details
                             </h3>
                             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3">
@@ -574,16 +574,16 @@ export function HorseRacingVisualization() {
                                 >
                                   <div className="flex items-center gap-2">
                                     <div
-                                      className="flex h-10 w-10 items-center justify-center rounded-full font-bold text-sm text-white"
+                                      className="flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold text-white"
                                       style={{ backgroundColor: horse.color }}
                                     >
                                       {horse.id}
                                     </div>
                                     <div>
-                                      <div className="font-medium text-sm">
+                                      <div className="text-sm font-medium">
                                         Horse #{horse.id}
                                       </div>
-                                      <div className="text-muted-foreground text-xs">
+                                      <div className="text-xs text-muted-foreground">
                                         Speed:{' '}
                                         {showHorseSpeeds
                                           ? horse.speed.toFixed(2)
@@ -673,7 +673,7 @@ export function HorseRacingVisualization() {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <Lightbulb className="h-5 w-5 text-amber-500" />
-                        <h3 className="font-medium text-sm">
+                        <h3 className="text-sm font-medium">
                           Current Insights
                         </h3>
                       </div>
@@ -754,7 +754,7 @@ export function HorseRacingVisualization() {
                           )}
                       </div>
                     ) : (
-                      <div className="py-2 text-center text-muted-foreground text-sm">
+                      <div className="py-2 text-center text-sm text-muted-foreground">
                         Start the visualization to see insights
                       </div>
                     )}
@@ -769,7 +769,7 @@ export function HorseRacingVisualization() {
         <TabsContent value="benchmarks" className="mt-4">
           <div className="space-y-6">
             <div>
-              <h2 className="font-bold text-2xl tracking-tight">
+              <h2 className="text-2xl font-bold tracking-tight">
                 Algorithm Benchmarks
               </h2>
               <p className="text-muted-foreground">
@@ -782,7 +782,7 @@ export function HorseRacingVisualization() {
 
             <Card>
               <CardContent className="p-6">
-                <h3 className="mb-4 font-medium text-lg">
+                <h3 className="mb-4 text-lg font-medium">
                   Understanding the Metrics
                 </h3>
                 <div className="space-y-4 text-sm">

@@ -78,11 +78,11 @@ export default function ProblemCard({ problem, wsId }: ProblemCardProps) {
         <CardContent>
           <div className="flex flex-col gap-2">
             <div>
-              <span className="font-medium text-sm">Max Prompt Length:</span>
+              <span className="text-sm font-medium">Max Prompt Length:</span>
               <span className="ml-2 text-sm">{problem.max_prompt_length}</span>
             </div>
             <div>
-              <span className="font-medium text-sm">Challenge:</span>
+              <span className="text-sm font-medium">Challenge:</span>
               <span className="ml-2 text-sm">{problem.challenge.title}</span>
             </div>
           </div>

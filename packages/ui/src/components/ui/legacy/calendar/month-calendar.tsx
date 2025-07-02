@@ -21,11 +21,11 @@ import {
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import { Clock, Plus } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState} from 'react';
 import { useCalendar } from '../../../../hooks/use-calendar';
 import { usePopoverManager } from '../../../../hooks/use-popover-manager';
-import { Popover, PopoverContent, PopoverTrigger } from '../../popover';
 import { getColorHighlight } from './color-highlights';
+import { Popover, PopoverTrigger, PopoverContent } from '../../popover';
 
 dayjs.extend(timezone);
 
@@ -39,10 +39,10 @@ interface MonthCalendarProps {
 const normalizeColor = (color: string): string => {
   if (!color) return 'primary';
   const normalized = color.trim().toLowerCase();
-
+  
   // Map specific values to standardized names
   if (normalized === '#6b7280' || normalized === 'grey') return 'gray';
-
+  
   return normalized;
 };
 
@@ -68,22 +68,14 @@ const getDominantEventColor = (events: any[]): string => {
 };
 
 // Utility function for scroll shadow classes
-const getScrollShadowClasses = (
-  scrollState: { top: boolean; bottom: boolean } | undefined
-) => {
+const getScrollShadowClasses = (scrollState: { top: boolean; bottom: boolean } | undefined) => {
   return cn(
-    scrollState?.top &&
-      'before:pointer-events-none before:absolute before:top-0 before:right-0 before:left-0 before:h-3 before:bg-gradient-to-b before:from-muted/80 before:to-transparent',
-    scrollState?.bottom &&
-      'after:pointer-events-none after:absolute after:right-0 after:bottom-0 after:left-0 after:h-3 after:bg-gradient-to-t after:from-muted/80 after:to-transparent'
+    scrollState?.top && 'before:absolute before:top-0 before:left-0 before:right-0 before:h-3 before:bg-gradient-to-b before:from-muted/80 before:to-transparent before:pointer-events-none',
+    scrollState?.bottom && 'after:absolute after:bottom-0 after:left-0 after:right-0 after:h-3 after:bg-gradient-to-t after:from-muted/80 after:to-transparent after:pointer-events-none'
   );
 };
 
-export const MonthCalendar = ({
-  date,
-  visibleDates,
-  viewedMonth,
-}: MonthCalendarProps) => {
+export const MonthCalendar = ({ date, visibleDates, viewedMonth }: MonthCalendarProps) => {
   const { getCurrentEvents, addEmptyEvent, openModal, settings } =
     useCalendar();
   const [currDate, setCurrDate] = useState(date);
@@ -160,11 +152,7 @@ export const MonthCalendar = ({
   }
 
   // Use visibleDates if provided, otherwise fallback to old logic
-  const calendarDays = visibleDates ?? [
-    ...prevMonthDays,
-    ...monthDays,
-    ...nextMonthDays,
-  ];
+  const calendarDays = visibleDates ?? [...prevMonthDays, ...monthDays, ...nextMonthDays];
 
   // Create weeks (group by 7 days)
   const weeks = [];
@@ -237,11 +225,7 @@ export const MonthCalendar = ({
       },
     };
     const normalizedColor = normalizeColor(event.color || 'blue');
-    return (
-      normalizedColor && colorMap[normalizedColor]
-        ? colorMap[normalizedColor]
-        : colorMap.blue
-    ) as {
+    return (normalizedColor && colorMap[normalizedColor] ? colorMap[normalizedColor] : colorMap.blue) as {
       bg: string;
       text: string;
     };
@@ -255,14 +239,7 @@ export const MonthCalendar = ({
       map[day.toISOString()] = getDominantEventColor(events);
     }
     return map;
-  }, [
-    calendarDays,
-    JSON.stringify(
-      calendarDays.map((day) =>
-        getCurrentEvents(day).map((e) => e.id + e.color)
-      )
-    ),
-  ]);
+  }, [calendarDays, JSON.stringify(calendarDays.map(day => getCurrentEvents(day).map(e => e.id + e.color)))]);
 
   // Use the custom popover manager hook
   const {
@@ -282,7 +259,7 @@ export const MonthCalendar = ({
           <div
             key={day}
             className={cn(
-              'py-2 font-medium text-sm',
+              'py-2 text-sm font-medium',
               (day === 'Sun' || day === 'Sat') &&
                 !settings.appearance.showWeekends
                 ? 'text-muted-foreground/50'
@@ -296,11 +273,8 @@ export const MonthCalendar = ({
 
       <div className="grid grid-cols-7 divide-x divide-y">
         {calendarDays.map((day, dayIdx) => {
-          const dominantColor =
-            dominantColorForDay[day.toISOString()] || 'primary';
-          const highlightClass = isToday(day)
-            ? `${getColorHighlight(dominantColor)} z-10`
-            : '';
+          const dominantColor = dominantColorForDay[day.toISOString()] || 'primary';
+          const highlightClass = isToday(day) ? `${getColorHighlight(dominantColor)} z-10` : '';
 
           const isCurrentMonth = isSameMonth(day, viewedMonth ?? currDate);
           const isTodayDate = isToday(day);
@@ -343,7 +317,7 @@ export const MonthCalendar = ({
                       variant="ghost"
                       size="icon"
                       className={cn(
-                        'h-6 w-6 opacity-0 hover:bg-primary/10 hover:opacity-100 focus:opacity-100 group-hover:opacity-100',
+                        'h-6 w-6 opacity-0 group-hover:opacity-100 hover:bg-primary/10 hover:opacity-100 focus:opacity-100',
                         isHidden && 'opacity-0 group-hover:opacity-50'
                       )}
                       onClick={() => handleAddEvent(day)}
@@ -357,68 +331,55 @@ export const MonthCalendar = ({
               </div>
 
               <div className="mt-1 space-y-1">
-                {getCurrentEvents(day)
-                  .slice(0, 3)
-                  .map((event) => {
-                    const { bg, text } = getEventStyles(event);
+                {getCurrentEvents(day).slice(0, 3).map((event) => {
+                  const { bg, text } = getEventStyles(event);
 
-                    return (
-                      <HoverCard
-                        key={event.id}
-                        openDelay={200}
-                        closeDelay={100}
-                      >
-                        <HoverCardTrigger asChild>
-                          <div
-                            className={cn(
-                              'cursor-pointer items-center gap-1 truncate rounded px-1.5 py-1 font-medium text-xs',
-                              bg,
-                              text,
-                              !isCurrentMonth && 'opacity-60'
-                            )}
-                            onClick={() => openModal(event.id)}
-                          >
-                            {event.title || 'Untitled event'}
-                          </div>
-                        </HoverCardTrigger>
-                        <HoverCardContent
-                          side="right"
-                          align="start"
-                          className="w-80"
+                  return (
+                    <HoverCard key={event.id} openDelay={200} closeDelay={100}>
+                      <HoverCardTrigger asChild>
+                        <div
+                          className={cn(
+                            'cursor-pointer items-center gap-1 truncate rounded px-1.5 py-1 text-xs font-medium',
+                            bg,
+                            text,
+                            !isCurrentMonth && 'opacity-60'
+                          )}
+                          onClick={() => openModal(event.id)}
                         >
-                          <div className="space-y-2">
-                            <h4 className="line-clamp-2 break-words font-medium">
-                              {event.title || 'Untitled event'}
-                            </h4>
-                            {event.description && (
-                              <p className="text-muted-foreground text-sm">
-                                {event.description}
-                              </p>
-                            )}
-                            <div className="flex items-center text-muted-foreground text-xs">
-                              <Clock className="mr-1 h-3 w-3" />
-                              <span>{formatEventTime(event)}</span>
-                            </div>
+                          {event.title || 'Untitled event'}
+                        </div>
+                      </HoverCardTrigger>
+                      <HoverCardContent
+                        side="right"
+                        align="start"
+                        className="w-80"
+                      >
+                        <div className="space-y-2">
+                          <h4 className="line-clamp-2 font-medium break-words">
+                            {event.title || 'Untitled event'}
+                          </h4>
+                          {event.description && (
+                            <p className="text-sm text-muted-foreground">
+                              {event.description}
+                            </p>
+                          )}
+                          <div className="flex items-center text-xs text-muted-foreground">
+                            <Clock className="mr-1 h-3 w-3" />
+                            <span>{formatEventTime(event)}</span>
                           </div>
-                        </HoverCardContent>
-                      </HoverCard>
-                    );
-                  })}
+                        </div>
+                      </HoverCardContent>
+                    </HoverCard>
+                  );
+                })}
 
                 {getCurrentEvents(day).length > 3 && (
-                  <Popover
-                    open={openPopoverIdx === dayIdx}
-                    onOpenChange={(open) =>
-                      setOpenPopoverIdx(open ? dayIdx : null)
-                    }
-                  >
+                  <Popover open={openPopoverIdx === dayIdx} onOpenChange={open => setOpenPopoverIdx(open ? dayIdx : null)}>
                     <PopoverTrigger asChild>
                       <button
-                        ref={(el) => {
-                          moreButtonRefs.current[dayIdx] = el;
-                        }}
+                        ref={el => { moreButtonRefs.current[dayIdx] = el; }}
                         className={cn(
-                          'w-full rounded-sm bg-muted px-1 py-0.5 font-medium text-muted-foreground text-xs hover:bg-muted/80',
+                          'w-full rounded-sm bg-muted px-1 py-0.5 text-xs font-medium text-muted-foreground hover:bg-muted/80',
                           !isCurrentMonth && 'opacity-60'
                         )}
                         onClick={() => setOpenPopoverIdx(dayIdx)}
@@ -429,53 +390,35 @@ export const MonthCalendar = ({
                     <PopoverContent
                       align="start"
                       className={cn(
-                        '!transition-none relative max-h-60 overflow-y-auto p-2',
+                        'p-2 max-h-60 overflow-y-auto relative !transition-none',
                         getScrollShadowClasses(scrollStates[dayIdx])
                       )}
-                      style={{
-                        width:
-                          moreButtonRefs.current[dayIdx]?.offsetWidth ||
-                          undefined,
-                      }}
+                      style={{ width: moreButtonRefs.current[dayIdx]?.offsetWidth || undefined }}
                     >
                       <div
                         className="flex flex-col gap-1"
-                        onScroll={(e) => handlePopoverScroll(e, dayIdx)}
-                        ref={(el) => {
-                          popoverContentRefs.current[dayIdx] = el;
-                        }}
-                        onMouseEnter={() =>
-                          setPopoverHovered((prev) => ({
-                            ...prev,
-                            [dayIdx]: true,
-                          }))
-                        }
-                        onMouseLeave={() =>
-                          setPopoverHovered((prev) => ({
-                            ...prev,
-                            [dayIdx]: false,
-                          }))
-                        }
+                        onScroll={e => handlePopoverScroll(e, dayIdx)}
+                        ref={el => { popoverContentRefs.current[dayIdx] = el; }}
+                        onMouseEnter={() => setPopoverHovered(prev => ({ ...prev, [dayIdx]: true }))}
+                        onMouseLeave={() => setPopoverHovered(prev => ({ ...prev, [dayIdx]: false }))}
                       >
-                        {getCurrentEvents(day)
-                          .slice(3)
-                          .map((event) => {
-                            const { bg, text } = getEventStyles(event);
-                            return (
-                              <div
-                                key={event.id}
-                                className={cn(
-                                  'cursor-pointer items-center gap-1 truncate rounded px-1.5 py-1 font-medium text-xs',
-                                  bg,
-                                  text,
-                                  !isCurrentMonth && 'opacity-60'
-                                )}
-                                onClick={() => openModal(event.id)}
-                              >
-                                {event.title || 'Untitled event'}
-                              </div>
-                            );
-                          })}
+                        {getCurrentEvents(day).slice(3).map((event) => {
+                          const { bg, text } = getEventStyles(event);
+                          return (
+                            <div
+                              key={event.id}
+                              className={cn(
+                                'cursor-pointer items-center gap-1 truncate rounded px-1.5 py-1 text-xs font-medium',
+                                bg,
+                                text,
+                                !isCurrentMonth && 'opacity-60'
+                              )}
+                              onClick={() => openModal(event.id)}
+                            >
+                              {event.title || 'Untitled event'}
+                            </div>
+                          );
+                        })}
                       </div>
                     </PopoverContent>
                   </Popover>

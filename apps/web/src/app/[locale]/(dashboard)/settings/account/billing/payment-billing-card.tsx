@@ -31,8 +31,8 @@ export default async function PaymentBillingCard() {
         <div className="space-y-4">
           <div className="flex items-center justify-between rounded-lg border p-4">
             <div>
-              <p className="font-medium text-sm">{t('payment-method')}</p>
-              <p className="text-muted-foreground text-xs">
+              <p className="text-sm font-medium">{t('payment-method')}</p>
+              <p className="text-xs text-muted-foreground">
                 {t('no-payment-method')}
               </p>
             </div>
@@ -43,8 +43,8 @@ export default async function PaymentBillingCard() {
 
           <div className="flex items-center justify-between rounded-lg border p-4">
             <div>
-              <p className="font-medium text-sm">{t('billing-address')}</p>
-              <p className="text-muted-foreground text-xs">
+              <p className="text-sm font-medium">{t('billing-address')}</p>
+              <p className="text-xs text-muted-foreground">
                 {t('not-configured')}
               </p>
             </div>
@@ -55,8 +55,8 @@ export default async function PaymentBillingCard() {
 
           <div className="flex items-center justify-between rounded-lg border p-4">
             <div>
-              <p className="font-medium text-sm">{t('billing-history')}</p>
-              <p className="text-muted-foreground text-xs">
+              <p className="text-sm font-medium">{t('billing-history')}</p>
+              <p className="text-xs text-muted-foreground">
                 {t('billing-history-description')}
               </p>
             </div>

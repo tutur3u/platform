@@ -68,7 +68,7 @@ export function CourseCardView({ courses }: CourseCardViewProps) {
         <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-purple-100 to-blue-100">
           <BookOpen className="h-8 w-8 text-purple-600" />
         </div>
-        <p className="font-medium text-gray-900 text-lg dark:text-gray-100">
+        <p className="text-lg font-medium text-gray-900 dark:text-gray-100">
           {t('ws-courses.no_courses_found')}
         </p>
       </div>
@@ -125,46 +125,46 @@ export function CourseCardView({ courses }: CourseCardViewProps) {
 
         return (
           <Link key={course.id} href={course.href} className="group h-full">
-            <Card className="flex h-full flex-col overflow-hidden bg-white shadow-md transition-transform hover:scale-105 dark:bg-foreground/5">
+            <Card className="h-full overflow-hidden bg-white shadow-md transition-transform hover:scale-105 dark:bg-foreground/5 flex flex-col">
               {/* Top colored section with icon */}
               <div
-                className={`${style?.bgColor} flex flex-shrink-0 items-center justify-center px-8 py-8`}
+                className={`${style?.bgColor} py-8 px-8 flex items-center justify-center flex-shrink-0`}
               >
-                <div className={`${style?.iconBg} rounded-2xl p-4`}>
+                <div className={`${style?.iconBg} p-4 rounded-2xl`}>
                   <IconComponent className={`h-12 w-12 ${style?.iconColor}`} />
                 </div>
               </div>
 
-              <CardContent className="flex flex-grow flex-col gap-4 p-6">
+              <CardContent className="p-6 flex flex-col flex-grow gap-4">
                 {/* Category badge and title */}
-                <div className="flex items-start justify-between">
-                  <h3 className="line-clamp-2 flex-grow pr-2 font-semibold text-gray-900 text-lg leading-tight dark:text-gray-100">
+                <div className="flex justify-between items-start">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 line-clamp-2 flex-grow pr-2 leading-tight">
                     {course.name}
                   </h3>
-                  <div className="flex flex-shrink-0 items-center">
-                    <Star className="mr-1 h-4 w-4 fill-yellow-400 text-yellow-400" />
-                    <span className="mr-1 font-medium text-sm">4.5</span>
+                  <div className="flex items-center flex-shrink-0">
+                    <Star className="h-4 w-4 text-yellow-400 fill-yellow-400 mr-1" />
+                    <span className="font-medium text-sm mr-1">4.5</span>
                     {/* TODO: Add rating if the schema supports later on*/}
                     <span className="font-light text-sm">(123)</span>
                     {/* TODO: Add number of reviews if the schema supports later on*/}
                   </div>
                 </div>
 
-                <p className="line-clamp-2 flex-grow text-gray-600 text-sm leading-relaxed dark:text-gray-400">
+                <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed line-clamp-2 flex-grow">
                   {course.description ||
                     t('ws-courses.no_description_provided')}
                 </p>
 
                 {/* Bottom section with modules info */}
-                <div className="flex items-center justify-between text-gray-500 text-sm dark:text-gray-400">
+                <div className="flex items-center justify-between text-gray-500 dark:text-gray-400 text-sm">
                   <div className="flex items-center">
-                    <Layers className="mr-1 h-4 w-4" />
+                    <Layers className="h-4 w-4 mr-1" />
                     <span>
                       {course.modules || 0} {t('course-data-table.modules')}
                     </span>
                   </div>
                   <div className="flex items-center">
-                    <Clock className="mr-1 h-4 w-4" />
+                    <Clock className="h-4 w-4 mr-1" />
                     <span>{t('ws-courses.self_paced')}</span>{' '}
                     {/* TODO: Add duration if the schema supports later on*/}
                   </div>

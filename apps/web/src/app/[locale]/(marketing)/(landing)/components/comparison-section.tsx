@@ -166,16 +166,16 @@ export function ComparisonSection() {
       <div className="comparison-title-wrapper mb-16 text-center">
         <div className="mb-4 inline-flex items-center justify-center rounded-full bg-purple-100 px-4 py-1 dark:bg-purple-900/30">
           <Sparkles className="mr-2 h-4 w-4 text-purple-600 dark:text-purple-400" />
-          <span className="font-medium text-purple-600 text-sm dark:text-purple-400">
+          <span className="text-sm font-medium text-purple-600 dark:text-purple-400">
             {t('competitive_advantage')}
           </span>
         </div>
-        <h2 className="comparison-title mb-6 font-bold text-4xl md:text-5xl">
+        <h2 className="comparison-title mb-6 text-4xl font-bold md:text-5xl">
           <span className="bg-gradient-to-r from-dynamic-light-purple to-dynamic-light-blue bg-clip-text text-transparent">
             {t('why_choose_tuturuuu')}
           </span>
         </h2>
-        <p className="mx-auto max-w-3xl text-muted-foreground text-xl leading-relaxed">
+        <p className="mx-auto max-w-3xl text-xl leading-relaxed text-muted-foreground">
           {t(
             'see_how_tuturuuu_compares_to_traditional_productivity_tools_and_why_its_the_smarter_choice'
           )}
@@ -186,7 +186,7 @@ export function ComparisonSection() {
         {competitors.map((competitor) => (
           <button
             key={competitor.id}
-            className={`competitor-button flex items-center gap-2 rounded-full px-4 py-2.5 font-medium text-sm transition-all duration-300 ${
+            className={`competitor-button flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-medium transition-all duration-300 ${
               activeCompetitor === competitor.id
                 ? `${competitor.bgColor} text-white shadow-md`
                 : 'border bg-white/90 text-muted-foreground hover:border-gray-300 hover:bg-white hover:text-foreground hover:shadow-sm dark:bg-foreground/5 dark:hover:bg-foreground/10'
@@ -213,16 +213,16 @@ export function ComparisonSection() {
               <div className="text-white">{currentCompetitor.icon}</div>
             </div>
             <div>
-              <h3 className="mb-1 font-bold text-2xl">
+              <h3 className="mb-1 text-2xl font-bold">
                 Tuturuuu {t('vs')} {currentCompetitor.name}
               </h3>
-              <div className="text-muted-foreground text-sm">
+              <div className="text-sm text-muted-foreground">
                 {t('discover_the_key_differences')}
               </div>
             </div>
           </div>
 
-          <p className="mb-10 text-lg text-muted-foreground leading-relaxed">
+          <p className="mb-10 text-lg leading-relaxed text-muted-foreground">
             {currentCompetitor.description}
           </p>
 
@@ -272,7 +272,7 @@ export function ComparisonSection() {
                   variant="ghost"
                   size="sm"
                   onClick={() => setShowAllFeatures(!showAllFeatures)}
-                  className="font-medium text-muted-foreground text-sm hover:text-foreground"
+                  className="text-sm font-medium text-muted-foreground hover:text-foreground"
                 >
                   {showAllFeatures ? t('show_less') : t('show_all_features')}
                 </Button>
@@ -283,7 +283,7 @@ export function ComparisonSection() {
 
         <div>
           <div className="relative overflow-hidden rounded-xl border bg-white/90 p-6 shadow-xl backdrop-blur-sm dark:bg-foreground/5">
-            <div className="-mt-20 -mr-20 absolute top-0 right-0 h-40 w-40 rounded-full bg-gradient-to-br from-dynamic-light-purple to-dynamic-light-blue opacity-20 blur-3xl filter"></div>
+            <div className="absolute top-0 right-0 -mt-20 -mr-20 h-40 w-40 rounded-full bg-gradient-to-br from-dynamic-light-purple to-dynamic-light-blue opacity-20 blur-3xl filter"></div>
 
             {activeCompetitor === 'calendar' && (
               <div className="relative space-y-4">
@@ -320,14 +320,14 @@ export function ComparisonSection() {
                         </div>
                       </div>
                     </div>
-                    <div className="mt-4 flex items-center gap-2 text-dynamic-red text-sm">
+                    <div className="mt-4 flex items-center gap-2 text-sm text-dynamic-red">
                       <XIcon className="h-4 w-4 flex-none" />
                       <span>{t('no_focus_time_protection')}</span>
                     </div>
                   </div>
 
                   <div className="rounded-xl border p-5 shadow-md transition-all duration-300 hover:shadow-lg">
-                    <div className="mb-4 flex items-center gap-2 border-dynamic-light-purple/30 border-b pb-3">
+                    <div className="mb-4 flex items-center gap-2 border-b border-dynamic-light-purple/30 pb-3">
                       <Calendar className="h-5 w-5 text-dynamic-purple" />
                       <h4 className="font-medium">TuPlan</h4>
                     </div>
@@ -357,7 +357,7 @@ export function ComparisonSection() {
                         </div>
                       </div>
                     </div>
-                    <div className="mt-4 flex items-center gap-2 text-dynamic-green text-sm">
+                    <div className="mt-4 flex items-center gap-2 text-sm text-dynamic-green">
                       <Check className="h-4 w-4 flex-none" />
                       <span>{t('ai_optimized_for_focus_time')}</span>
                     </div>

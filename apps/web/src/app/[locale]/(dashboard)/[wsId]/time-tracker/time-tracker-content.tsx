@@ -734,7 +734,7 @@ export default function TimeTrackerContent({
       <div className="flex items-center justify-center py-24">
         <div className="space-y-4 text-center">
           <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
-          <p className="animate-pulse text-muted-foreground text-sm">
+          <p className="animate-pulse text-sm text-muted-foreground">
             Loading time tracker...
           </p>
         </div>
@@ -745,7 +745,7 @@ export default function TimeTrackerContent({
   return (
     <div
       className={cn(
-        'fade-in-50 animate-in space-y-6 duration-500',
+        'space-y-6 duration-500 animate-in fade-in-50',
         isLoading && 'opacity-50'
       )}
     >
@@ -759,10 +759,10 @@ export default function TimeTrackerContent({
                 <Timer className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h1 className="font-bold text-2xl tracking-tight sm:text-3xl">
+                <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
                   Time Tracker
                 </h1>
-                <p className="text-muted-foreground text-sm sm:text-base">
+                <p className="text-sm text-muted-foreground sm:text-base">
                   {isViewingOtherUser
                     ? "Viewing another user's time tracking data"
                     : 'Track and manage your time across projects'}
@@ -771,7 +771,7 @@ export default function TimeTrackerContent({
             </div>
 
             {!isViewingOtherUser && (
-              <div className="flex flex-wrap items-center gap-2 text-muted-foreground text-xs">
+              <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                 <div className="flex items-center gap-1">
                   <div className="h-2 w-2 rounded-full bg-green-500"></div>
                   <span>Week starts Monday</span>
@@ -815,7 +815,7 @@ export default function TimeTrackerContent({
             )}
 
             {lastRefresh && (
-              <div className="flex items-center gap-2 text-muted-foreground text-xs">
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <Clock className="h-3 w-3" />
                 <span>Last updated: {lastRefresh.toLocaleTimeString()}</span>
                 {isOffline && (
@@ -855,10 +855,10 @@ export default function TimeTrackerContent({
         {!isViewingOtherUser && (
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <h3 className="font-medium text-foreground text-sm">
+              <h3 className="text-sm font-medium text-foreground">
                 ⚡ Quick Actions
               </h3>
-              <div className="text-muted-foreground text-xs">
+              <div className="text-xs text-muted-foreground">
                 {(() => {
                   const hour = new Date().getHours();
                   const isPeakTime =
@@ -888,9 +888,9 @@ export default function TimeTrackerContent({
                 disabled={!recentSessions[0] || isRunning}
                 className={cn(
                   'group relative rounded-lg border p-3 text-left transition-all duration-300',
-                  'hover:shadow-blue-500/20 hover:shadow-lg active:scale-[0.98]',
+                  'hover:shadow-lg hover:shadow-blue-500/20 active:scale-[0.98]',
                   recentSessions[0] && !isRunning
-                    ? 'hover:-translate-y-1 border-blue-200/60 bg-gradient-to-br from-blue-50 to-blue-100/50 dark:border-blue-800/60 dark:from-blue-950/30 dark:to-blue-900/20'
+                    ? 'border-blue-200/60 bg-gradient-to-br from-blue-50 to-blue-100/50 hover:-translate-y-1 dark:border-blue-800/60 dark:from-blue-950/30 dark:to-blue-900/20'
                     : 'cursor-not-allowed border-muted bg-muted/30 opacity-60'
                 )}
               >
@@ -915,7 +915,7 @@ export default function TimeTrackerContent({
                   <div className="min-w-0 flex-1">
                     <p
                       className={cn(
-                        'font-medium text-xs',
+                        'text-xs font-medium',
                         recentSessions[0] && !isRunning
                           ? 'text-blue-700 dark:text-blue-300'
                           : 'text-muted-foreground'
@@ -926,7 +926,7 @@ export default function TimeTrackerContent({
                     {recentSessions[0] ? (
                       <>
                         <p
-                          className="line-clamp-2 font-bold text-blue-900 text-sm dark:text-blue-100"
+                          className="line-clamp-2 text-sm font-bold text-blue-900 dark:text-blue-100"
                           title={recentSessions[0].title}
                         >
                           {recentSessions[0].title}
@@ -941,7 +941,7 @@ export default function TimeTrackerContent({
                                   : 'bg-blue-500/70'
                               )}
                             />
-                            <span className="truncate text-blue-700/80 text-xs dark:text-blue-300/80">
+                            <span className="truncate text-xs text-blue-700/80 dark:text-blue-300/80">
                               {recentSessions[0].category.name}
                             </span>
                           </div>
@@ -957,7 +957,7 @@ export default function TimeTrackerContent({
                                 }}
                               />
                             </div>
-                            <span className="font-medium text-blue-600 text-xs dark:text-blue-400">
+                            <span className="text-xs font-medium text-blue-600 dark:text-blue-400">
                               Focus:{' '}
                               {Math.round(
                                 calculateFocusScore(recentSessions[0])
@@ -968,7 +968,7 @@ export default function TimeTrackerContent({
                         )}
                       </>
                     ) : (
-                      <p className="font-bold text-muted-foreground text-sm">
+                      <p className="text-sm font-bold text-muted-foreground">
                         No recent session
                       </p>
                     )}
@@ -1064,7 +1064,7 @@ export default function TimeTrackerContent({
                   'group relative rounded-lg border p-3 text-left transition-all duration-300',
                   'hover:shadow-lg hover:shadow-purple-500/20 active:scale-[0.98]',
                   !isRunning
-                    ? 'hover:-translate-y-1 border-purple-200/60 bg-gradient-to-br from-purple-50 to-purple-100/50 dark:border-purple-800/60 dark:from-purple-950/30 dark:to-purple-900/20'
+                    ? 'border-purple-200/60 bg-gradient-to-br from-purple-50 to-purple-100/50 hover:-translate-y-1 dark:border-purple-800/60 dark:from-purple-950/30 dark:to-purple-900/20'
                     : 'cursor-not-allowed border-muted bg-muted/30 opacity-60'
                 )}
               >
@@ -1073,18 +1073,18 @@ export default function TimeTrackerContent({
                     <CheckSquare className="h-3 w-3 text-purple-600 transition-transform group-hover:scale-110 dark:text-purple-400" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="font-medium text-purple-700 text-xs dark:text-purple-300">
+                    <p className="text-xs font-medium text-purple-700 dark:text-purple-300">
                       Next Task
                     </p>
                     {nextTaskPreview ? (
                       <>
-                        <p className="truncate font-bold text-purple-900 text-sm dark:text-purple-100">
+                        <p className="truncate text-sm font-bold text-purple-900 dark:text-purple-100">
                           {nextTaskPreview.name}
                         </p>
                         <div className="flex items-center gap-1">
                           <span
                             className={cn(
-                              'inline-flex items-center rounded-full px-1.5 py-0.5 font-medium text-xs',
+                              'inline-flex items-center rounded-full px-1.5 py-0.5 text-xs font-medium',
                               nextTaskPreview.priority === 1
                                 ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300'
                                 : nextTaskPreview.priority === 2
@@ -1107,11 +1107,11 @@ export default function TimeTrackerContent({
                                     : 'No Priority'}
                           </span>
                           {nextTaskPreview.is_assigned_to_current_user ? (
-                            <span className="text-purple-600/80 text-xs dark:text-purple-400/80">
+                            <span className="text-xs text-purple-600/80 dark:text-purple-400/80">
                               • Assigned to you
                             </span>
                           ) : (
-                            <span className="text-purple-600/80 text-xs dark:text-purple-400/80">
+                            <span className="text-xs text-purple-600/80 dark:text-purple-400/80">
                               • Can assign to yourself
                             </span>
                           )}
@@ -1119,10 +1119,10 @@ export default function TimeTrackerContent({
                       </>
                     ) : (
                       <>
-                        <p className="font-bold text-purple-900 text-sm dark:text-purple-100">
+                        <p className="text-sm font-bold text-purple-900 dark:text-purple-100">
                           No tasks available
                         </p>
-                        <p className="text-purple-600/80 text-xs dark:text-purple-400/80">
+                        <p className="text-xs text-purple-600/80 dark:text-purple-400/80">
                           Create or assign tasks
                         </p>
                       </>
@@ -1162,9 +1162,9 @@ export default function TimeTrackerContent({
                 disabled={isRunning}
                 className={cn(
                   'group relative rounded-lg border p-3 text-left transition-all duration-300',
-                  'hover:shadow-green-500/20 hover:shadow-lg active:scale-[0.98]',
+                  'hover:shadow-lg hover:shadow-green-500/20 active:scale-[0.98]',
                   !isRunning
-                    ? 'hover:-translate-y-1 border-green-200/60 bg-gradient-to-br from-green-50 to-green-100/50 dark:border-green-800/60 dark:from-green-950/30 dark:to-green-900/20'
+                    ? 'border-green-200/60 bg-gradient-to-br from-green-50 to-green-100/50 hover:-translate-y-1 dark:border-green-800/60 dark:from-green-950/30 dark:to-green-900/20'
                     : 'cursor-not-allowed border-muted bg-muted/30 opacity-60'
                 )}
               >
@@ -1173,13 +1173,13 @@ export default function TimeTrackerContent({
                     <Pause className="h-3 w-3 text-green-600 transition-transform group-hover:scale-110 dark:text-green-400" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="font-medium text-green-700 text-xs dark:text-green-300">
+                    <p className="text-xs font-medium text-green-700 dark:text-green-300">
                       Break Timer
                     </p>
-                    <p className="font-bold text-green-900 text-sm dark:text-green-100">
+                    <p className="text-sm font-bold text-green-900 dark:text-green-100">
                       Take 5 min
                     </p>
-                    <p className="text-green-600/80 text-xs dark:text-green-400/80">
+                    <p className="text-xs text-green-600/80 dark:text-green-400/80">
                       Recharge session
                     </p>
                   </div>
@@ -1194,20 +1194,20 @@ export default function TimeTrackerContent({
                 onClick={() => {
                   setActiveTab('history');
                 }}
-                className="group hover:-translate-y-1 relative rounded-lg border border-amber-200/60 bg-gradient-to-br from-amber-50 to-amber-100/50 p-3 text-left transition-all duration-300 hover:shadow-amber-500/20 hover:shadow-lg active:scale-[0.98] dark:border-amber-800/60 dark:from-amber-950/30 dark:to-amber-900/20"
+                className="group relative rounded-lg border border-amber-200/60 bg-gradient-to-br from-amber-50 to-amber-100/50 p-3 text-left transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-amber-500/20 active:scale-[0.98] dark:border-amber-800/60 dark:from-amber-950/30 dark:to-amber-900/20"
               >
                 <div className="flex items-start gap-2">
                   <div className="flex-shrink-0 rounded-full bg-amber-500/20 p-1.5 transition-colors group-hover:bg-amber-500/30">
                     <BarChart2 className="h-3 w-3 text-amber-600 transition-transform group-hover:scale-110 dark:text-amber-400" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="font-medium text-amber-700 text-xs dark:text-amber-300">
+                    <p className="text-xs font-medium text-amber-700 dark:text-amber-300">
                       Analytics
                     </p>
-                    <p className="font-bold text-amber-900 text-sm dark:text-amber-100">
+                    <p className="text-sm font-bold text-amber-900 dark:text-amber-100">
                       Focus: {productivityMetrics.avgFocusScore}%
                     </p>
-                    <p className="text-amber-600/80 text-xs dark:text-amber-400/80">
+                    <p className="text-xs text-amber-600/80 dark:text-amber-400/80">
                       {productivityMetrics.todaySessionCount} sessions today
                     </p>
                   </div>
@@ -1229,20 +1229,20 @@ export default function TimeTrackerContent({
               </div>
               <div className="flex-1">
                 <div className="flex items-center gap-2">
-                  <p className="font-medium text-red-700 text-sm dark:text-red-300">
+                  <p className="text-sm font-medium text-red-700 dark:text-red-300">
                     Currently tracking:
                   </p>
-                  <span className="font-bold text-red-900 text-sm dark:text-red-100">
+                  <span className="text-sm font-bold text-red-900 dark:text-red-100">
                     {currentSession.title}
                   </span>
                 </div>
-                <p className="text-red-600/70 text-xs dark:text-red-400/70">
+                <p className="text-xs text-red-600/70 dark:text-red-400/70">
                   Started at{' '}
                   {new Date(currentSession.start_time).toLocaleTimeString()} •
                   Running for {formatTime(elapsedTime)}
                 </p>
               </div>
-              <div className="font-bold font-mono text-lg text-red-600 dark:text-red-400">
+              <div className="font-mono text-lg font-bold text-red-600 dark:text-red-400">
                 {formatTime(elapsedTime)}
               </div>
             </div>
@@ -1253,7 +1253,7 @@ export default function TimeTrackerContent({
         {error && (
           <Alert
             variant={isOffline ? 'default' : 'destructive'}
-            className="slide-in-from-top animate-in duration-300"
+            className="duration-300 animate-in slide-in-from-top"
           >
             <AlertCircle className="h-4 w-4" />
             <AlertDescription className="flex items-center justify-between">
@@ -1294,7 +1294,7 @@ export default function TimeTrackerContent({
                     <button
                       onClick={() => setActiveTab('timer')}
                       className={cn(
-                        'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 font-medium text-xs transition-all',
+                        'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-all',
                         activeTab === 'timer'
                           ? 'bg-background text-foreground shadow-sm'
                           : 'text-muted-foreground hover:text-foreground'
@@ -1307,7 +1307,7 @@ export default function TimeTrackerContent({
                   <button
                     onClick={() => setActiveTab('history')}
                     className={cn(
-                      'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 font-medium text-xs transition-all',
+                      'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-all',
                       activeTab === 'history'
                         ? 'bg-background text-foreground shadow-sm'
                         : 'text-muted-foreground hover:text-foreground'
@@ -1320,7 +1320,7 @@ export default function TimeTrackerContent({
                     <button
                       onClick={() => setActiveTab('categories')}
                       className={cn(
-                        'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 font-medium text-xs transition-all',
+                        'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-all',
                         activeTab === 'categories'
                           ? 'bg-background text-foreground shadow-sm'
                           : 'text-muted-foreground hover:text-foreground'
@@ -1333,7 +1333,7 @@ export default function TimeTrackerContent({
                   <button
                     onClick={() => setActiveTab('goals')}
                     className={cn(
-                      'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 font-medium text-xs transition-all',
+                      'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-all',
                       activeTab === 'goals'
                         ? 'bg-background text-foreground shadow-sm'
                         : 'text-muted-foreground hover:text-foreground'
@@ -1351,7 +1351,7 @@ export default function TimeTrackerContent({
                 {!isViewingOtherUser && (
                   <TabsContent
                     value="timer"
-                    className="fade-in-50 animate-in duration-300"
+                    className="duration-300 animate-in fade-in-50"
                   >
                     <div data-timer-controls>
                       <TimerControls
@@ -1383,11 +1383,11 @@ export default function TimeTrackerContent({
 
                 <TabsContent
                   value="history"
-                  className="fade-in-50 animate-in duration-300"
+                  className="duration-300 animate-in fade-in-50"
                 >
                   {isViewingOtherUser && (
-                    <div className="slide-in-from-top mb-4 animate-in rounded-lg border border-blue-200 bg-blue-50 p-4 duration-300 dark:border-blue-800 dark:bg-blue-950/30">
-                      <p className="flex items-center gap-2 text-blue-700 text-sm dark:text-blue-300">
+                    <div className="mb-4 rounded-lg border border-blue-200 bg-blue-50 p-4 duration-300 animate-in slide-in-from-top dark:border-blue-800 dark:bg-blue-950/30">
+                      <p className="flex items-center gap-2 text-sm text-blue-700 dark:text-blue-300">
                         <Calendar className="h-4 w-4" />
                         You're viewing another user's session history. You can
                         see their sessions but cannot edit them.
@@ -1409,7 +1409,7 @@ export default function TimeTrackerContent({
                 {!isViewingOtherUser && (
                   <TabsContent
                     value="categories"
-                    className="fade-in-50 animate-in duration-300"
+                    className="duration-300 animate-in fade-in-50"
                   >
                     <CategoryManager
                       wsId={wsId}
@@ -1423,11 +1423,11 @@ export default function TimeTrackerContent({
 
                 <TabsContent
                   value="goals"
-                  className="fade-in-50 animate-in duration-300"
+                  className="duration-300 animate-in fade-in-50"
                 >
                   {isViewingOtherUser && (
-                    <div className="slide-in-from-top mb-4 animate-in rounded-lg border border-blue-200 bg-blue-50 p-4 duration-300 dark:border-blue-800 dark:bg-blue-950/30">
-                      <p className="flex items-center gap-2 text-blue-700 text-sm dark:text-blue-300">
+                    <div className="mb-4 rounded-lg border border-blue-200 bg-blue-50 p-4 duration-300 animate-in slide-in-from-top dark:border-blue-800 dark:bg-blue-950/30">
+                      <p className="flex items-center gap-2 text-sm text-blue-700 dark:text-blue-300">
                         <TrendingUp className="h-4 w-4" />
                         You're viewing another user's goals. You can see their
                         progress but cannot edit their goals.
@@ -1458,7 +1458,7 @@ export default function TimeTrackerContent({
                   <button
                     onClick={() => setSidebarView('analytics')}
                     className={cn(
-                      'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 font-medium text-xs transition-all',
+                      'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-all',
                       sidebarView === 'analytics'
                         ? 'bg-background text-foreground shadow-sm'
                         : 'text-muted-foreground hover:text-foreground'
@@ -1471,7 +1471,7 @@ export default function TimeTrackerContent({
                     <button
                       onClick={() => setSidebarView('tasks')}
                       className={cn(
-                        'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 font-medium text-xs transition-all',
+                        'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-all',
                         sidebarView === 'tasks'
                           ? 'bg-background text-foreground shadow-sm'
                           : 'text-muted-foreground hover:text-foreground'
@@ -1484,7 +1484,7 @@ export default function TimeTrackerContent({
                   <button
                     onClick={() => setSidebarView('reports')}
                     className={cn(
-                      'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 font-medium text-xs transition-all',
+                      'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-all',
                       sidebarView === 'reports'
                         ? 'bg-background text-foreground shadow-sm'
                         : 'text-muted-foreground hover:text-foreground'
@@ -1496,7 +1496,7 @@ export default function TimeTrackerContent({
                   <button
                     onClick={() => setSidebarView('settings')}
                     className={cn(
-                      'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 font-medium text-xs transition-all',
+                      'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-all',
                       sidebarView === 'settings'
                         ? 'bg-background text-foreground shadow-sm'
                         : 'text-muted-foreground hover:text-foreground'
@@ -1519,10 +1519,10 @@ export default function TimeTrackerContent({
                           <TrendingUp className="h-5 w-5 text-white" />
                         </div>
                         <div>
-                          <h3 className="font-semibold text-gray-900 text-lg sm:text-xl dark:text-gray-100">
+                          <h3 className="text-lg font-semibold text-gray-900 sm:text-xl dark:text-gray-100">
                             Your Progress
                           </h3>
-                          <p className="text-gray-600 text-sm dark:text-gray-400">
+                          <p className="text-sm text-gray-600 dark:text-gray-400">
                             Track your productivity metrics ⚡
                           </p>
                         </div>
@@ -1538,7 +1538,7 @@ export default function TimeTrackerContent({
                           </div>
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-2">
-                              <p className="font-medium text-muted-foreground text-xs">
+                              <p className="text-xs font-medium text-muted-foreground">
                                 Today
                               </p>
                               <span className="text-sm">
@@ -1548,12 +1548,12 @@ export default function TimeTrackerContent({
                                   : '💼'}
                               </span>
                             </div>
-                            <p className="text-muted-foreground/80 text-xs">
+                            <p className="text-xs text-muted-foreground/80">
                               {new Date().toLocaleDateString('en-US', {
                                 weekday: 'long',
                               })}
                             </p>
-                            <p className="font-bold text-lg">
+                            <p className="text-lg font-bold">
                               {formatDuration(timerStats.todayTime)}
                             </p>
                           </div>
@@ -1568,12 +1568,12 @@ export default function TimeTrackerContent({
                           </div>
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-2">
-                              <p className="font-medium text-muted-foreground text-xs">
+                              <p className="text-xs font-medium text-muted-foreground">
                                 This Week
                               </p>
                               <span className="text-sm">📊</span>
                             </div>
-                            <p className="text-muted-foreground/80 text-xs">
+                            <p className="text-xs text-muted-foreground/80">
                               {(() => {
                                 const today = new Date();
                                 const dayOfWeek = today.getDay();
@@ -1588,7 +1588,7 @@ export default function TimeTrackerContent({
                                 return `${startOfWeek.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${endOfWeek.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
                               })()}
                             </p>
-                            <p className="font-bold text-lg">
+                            <p className="text-lg font-bold">
                               {formatDuration(timerStats.weekTime)}
                             </p>
                           </div>
@@ -1603,18 +1603,18 @@ export default function TimeTrackerContent({
                           </div>
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-2">
-                              <p className="font-medium text-muted-foreground text-xs">
+                              <p className="text-xs font-medium text-muted-foreground">
                                 This Month
                               </p>
                               <span className="text-sm">🚀</span>
                             </div>
-                            <p className="text-muted-foreground/80 text-xs">
+                            <p className="text-xs text-muted-foreground/80">
                               {new Date().toLocaleDateString('en-US', {
                                 month: 'long',
                                 year: 'numeric',
                               })}
                             </p>
-                            <p className="font-bold text-lg">
+                            <p className="text-lg font-bold">
                               {formatDuration(timerStats.monthTime)}
                             </p>
                           </div>
@@ -1629,19 +1629,19 @@ export default function TimeTrackerContent({
                           </div>
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-2">
-                              <p className="font-medium text-muted-foreground text-xs">
+                              <p className="text-xs font-medium text-muted-foreground">
                                 Streak
                               </p>
                               <span className="text-sm">
                                 {timerStats.streak >= 7 ? '🏆' : '⭐'}
                               </span>
                             </div>
-                            <p className="text-muted-foreground/80 text-xs">
+                            <p className="text-xs text-muted-foreground/80">
                               {timerStats.streak > 0
                                 ? 'consecutive days'
                                 : 'start today!'}
                             </p>
-                            <p className="font-bold text-lg">
+                            <p className="text-lg font-bold">
                               {timerStats.streak} days
                             </p>
                           </div>
@@ -1659,10 +1659,10 @@ export default function TimeTrackerContent({
                             <Calendar className="h-5 w-5 text-white" />
                           </div>
                           <div>
-                            <h3 className="font-semibold text-gray-900 text-lg sm:text-xl dark:text-gray-100">
+                            <h3 className="text-lg font-semibold text-gray-900 sm:text-xl dark:text-gray-100">
                               Activity Heatmap
                             </h3>
-                            <p className="text-gray-600 text-sm dark:text-gray-400">
+                            <p className="text-sm text-gray-600 dark:text-gray-400">
                               {(() => {
                                 const totalDuration =
                                   timerStats.dailyActivity?.reduce(
@@ -1702,10 +1702,10 @@ export default function TimeTrackerContent({
                           <CheckCircle className="h-5 w-5 text-white" />
                         </div>
                         <div>
-                          <h3 className="font-semibold text-gray-900 text-lg sm:text-xl dark:text-gray-100">
+                          <h3 className="text-lg font-semibold text-gray-900 sm:text-xl dark:text-gray-100">
                             Task Workspace
                           </h3>
-                          <p className="mt-1 text-gray-600 text-sm dark:text-gray-400">
+                          <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
                             Drag tasks to timer to start tracking 🎯
                           </p>
                         </div>
@@ -1725,7 +1725,7 @@ export default function TimeTrackerContent({
                             }))
                           }
                           className={cn(
-                            'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 font-medium text-xs transition-all',
+                            'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-all',
                             tasksSidebarFilters.assignee === 'mine'
                               ? 'bg-blue-100 text-blue-700 ring-1 ring-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:ring-blue-800'
                               : 'bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground'
@@ -1750,7 +1750,7 @@ export default function TimeTrackerContent({
                             }))
                           }
                           className={cn(
-                            'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 font-medium text-xs transition-all',
+                            'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-all',
                             tasksSidebarFilters.assignee === 'unassigned'
                               ? 'bg-orange-100 text-orange-700 ring-1 ring-orange-200 dark:bg-orange-900/30 dark:text-orange-300 dark:ring-orange-800'
                               : 'bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground'
@@ -1856,11 +1856,11 @@ export default function TimeTrackerContent({
                         tasksSidebarFilters.list !== 'all' ||
                         tasksSidebarFilters.assignee !== 'all') && (
                         <div className="flex flex-wrap items-center gap-2">
-                          <span className="text-muted-foreground text-xs">
+                          <span className="text-xs text-muted-foreground">
                             Active filters:
                           </span>
                           {tasksSidebarSearch && (
-                            <span className="inline-flex items-center gap-1 rounded-md bg-blue-100 px-2 py-1 text-blue-700 text-xs dark:bg-blue-900/30 dark:text-blue-300">
+                            <span className="inline-flex items-center gap-1 rounded-md bg-blue-100 px-2 py-1 text-xs text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
                               Search: "{tasksSidebarSearch}"
                               <button
                                 onClick={() => setTasksSidebarSearch('')}
@@ -1871,7 +1871,7 @@ export default function TimeTrackerContent({
                             </span>
                           )}
                           {tasksSidebarFilters.board !== 'all' && (
-                            <span className="inline-flex items-center gap-1 rounded-md bg-green-100 px-2 py-1 text-green-700 text-xs dark:bg-green-900/30 dark:text-green-300">
+                            <span className="inline-flex items-center gap-1 rounded-md bg-green-100 px-2 py-1 text-xs text-green-700 dark:bg-green-900/30 dark:text-green-300">
                               Board: {tasksSidebarFilters.board}
                               <button
                                 onClick={() =>
@@ -1887,7 +1887,7 @@ export default function TimeTrackerContent({
                             </span>
                           )}
                           {tasksSidebarFilters.list !== 'all' && (
-                            <span className="inline-flex items-center gap-1 rounded-md bg-purple-100 px-2 py-1 text-purple-700 text-xs dark:bg-purple-900/30 dark:text-purple-300">
+                            <span className="inline-flex items-center gap-1 rounded-md bg-purple-100 px-2 py-1 text-xs text-purple-700 dark:bg-purple-900/30 dark:text-purple-300">
                               List: {tasksSidebarFilters.list}
                               <button
                                 onClick={() =>
@@ -1903,7 +1903,7 @@ export default function TimeTrackerContent({
                             </span>
                           )}
                           {tasksSidebarFilters.assignee !== 'all' && (
-                            <span className="inline-flex items-center gap-1 rounded-md bg-orange-100 px-2 py-1 text-orange-700 text-xs dark:bg-orange-900/30 dark:text-orange-300">
+                            <span className="inline-flex items-center gap-1 rounded-md bg-orange-100 px-2 py-1 text-xs text-orange-700 dark:bg-orange-900/30 dark:text-orange-300">
                               {tasksSidebarFilters.assignee === 'mine'
                                 ? 'My Tasks'
                                 : tasksSidebarFilters.assignee === 'unassigned'
@@ -1931,7 +1931,7 @@ export default function TimeTrackerContent({
                                 assignee: 'all',
                               });
                             }}
-                            className="text-muted-foreground text-xs hover:text-foreground"
+                            className="text-xs text-muted-foreground hover:text-foreground"
                           >
                             Clear all
                           </button>
@@ -1952,9 +1952,9 @@ export default function TimeTrackerContent({
 
                         if (tasks.length === 0) {
                           return (
-                            <div className="rounded-lg border-2 border-muted-foreground/25 border-dashed p-6 text-center">
+                            <div className="rounded-lg border-2 border-dashed border-muted-foreground/25 p-6 text-center">
                               <CheckCircle className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
-                              <p className="text-muted-foreground text-sm">
+                              <p className="text-sm text-muted-foreground">
                                 No tasks available. Create tasks in your project
                                 boards to see them here.
                               </p>
@@ -1964,9 +1964,9 @@ export default function TimeTrackerContent({
 
                         if (filteredSidebarTasks.length === 0) {
                           return (
-                            <div className="rounded-lg border-2 border-muted-foreground/25 border-dashed p-6 text-center">
+                            <div className="rounded-lg border-2 border-dashed border-muted-foreground/25 p-6 text-center">
                               <CheckCircle className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
-                              <p className="text-muted-foreground text-sm">
+                              <p className="text-sm text-muted-foreground">
                                 No tasks found matching your criteria.
                               </p>
                             </div>
@@ -1976,7 +1976,7 @@ export default function TimeTrackerContent({
                         return (
                           <>
                             {/* Task Count Header */}
-                            <div className="mb-3 flex items-center justify-between px-1 text-muted-foreground text-xs">
+                            <div className="mb-3 flex items-center justify-between px-1 text-xs text-muted-foreground">
                               <span>
                                 {filteredSidebarTasks.length} task
                                 {filteredSidebarTasks.length !== 1 ? 's' : ''}{' '}
@@ -2005,7 +2005,7 @@ export default function TimeTrackerContent({
                                         ? 'border-blue-300 bg-gradient-to-br from-blue-50 to-blue-100 ring-1 ring-blue-200 dark:border-blue-700 dark:from-blue-950/30 dark:to-blue-900/30 dark:ring-blue-800'
                                         : '/60 bg-white dark:border-gray-700/60 dark:bg-gray-800/80',
                                       isDraggingTask &&
-                                        'shadow-blue-500/10 shadow-md ring-1 ring-blue-400/30'
+                                        'shadow-md ring-1 shadow-blue-500/10 ring-blue-400/30'
                                     )}
                                     draggable
                                     onDragStart={(e) => {
@@ -2044,7 +2044,7 @@ export default function TimeTrackerContent({
                                         <div className="flex items-start justify-between gap-2">
                                           <h4
                                             className={cn(
-                                              'mb-1 font-medium text-sm',
+                                              'mb-1 text-sm font-medium',
                                               task.is_assigned_to_current_user
                                                 ? 'text-blue-900 dark:text-blue-100'
                                                 : 'text-gray-900 dark:text-gray-100'
@@ -2052,14 +2052,14 @@ export default function TimeTrackerContent({
                                           >
                                             {task.name}
                                             {task.is_assigned_to_current_user && (
-                                              <span className="ml-2 inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 font-medium text-blue-800 text-xs dark:bg-blue-900/50 dark:text-blue-200">
+                                              <span className="ml-2 inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800 dark:bg-blue-900/50 dark:text-blue-200">
                                                 Assigned to you
                                               </span>
                                             )}
                                           </h4>
                                         </div>
                                         {task.description && (
-                                          <p className="mb-3 line-clamp-2 text-gray-600 text-xs dark:text-gray-400">
+                                          <p className="mb-3 line-clamp-2 text-xs text-gray-600 dark:text-gray-400">
                                             {task.description}
                                           </p>
                                         )}
@@ -2068,7 +2068,7 @@ export default function TimeTrackerContent({
                                         {task.assignees &&
                                           task.assignees.length > 0 && (
                                             <div className="mb-2 flex items-center gap-2">
-                                              <div className="-space-x-1 flex">
+                                              <div className="flex -space-x-1">
                                                 {task.assignees
                                                   .slice(0, 3)
                                                   .map((assignee) => (
@@ -2093,7 +2093,7 @@ export default function TimeTrackerContent({
                                                           className="h-full w-full rounded-full object-cover"
                                                         />
                                                       ) : (
-                                                        <div className="flex h-full w-full items-center justify-center font-medium text-[8px] text-gray-600 dark:text-gray-300">
+                                                        <div className="flex h-full w-full items-center justify-center text-[8px] font-medium text-gray-600 dark:text-gray-300">
                                                           {generateAssigneeInitials(
                                                             assignee
                                                           )}
@@ -2102,12 +2102,12 @@ export default function TimeTrackerContent({
                                                     </div>
                                                   ))}
                                                 {task.assignees.length > 3 && (
-                                                  <div className="flex h-5 w-5 items-center justify-center rounded-full border-2 border-white bg-gray-200 font-medium text-[8px] text-gray-600 dark:border-gray-800 dark:bg-gray-700 dark:text-gray-300">
+                                                  <div className="flex h-5 w-5 items-center justify-center rounded-full border-2 border-white bg-gray-200 text-[8px] font-medium text-gray-600 dark:border-gray-800 dark:bg-gray-700 dark:text-gray-300">
                                                     +{task.assignees.length - 3}
                                                   </div>
                                                 )}
                                               </div>
-                                              <span className="text-muted-foreground text-xs">
+                                              <span className="text-xs text-muted-foreground">
                                                 {task.assignees.length} assigned
                                               </span>
                                             </div>
@@ -2117,20 +2117,20 @@ export default function TimeTrackerContent({
                                           <div className="flex items-center gap-2">
                                             <div className="flex items-center gap-1 rounded-md bg-gray-100 px-1.5 py-0.5 dark:bg-gray-700">
                                               <MapPin className="h-3 w-3 text-gray-500 dark:text-gray-400" />
-                                              <span className="font-medium text-gray-600 text-xs dark:text-gray-300">
+                                              <span className="text-xs font-medium text-gray-600 dark:text-gray-300">
                                                 {task.board_name}
                                               </span>
                                             </div>
                                             <div className="flex items-center gap-1 rounded-md bg-blue-100 px-1.5 py-0.5 dark:bg-blue-900/30">
                                               <Tag className="h-3 w-3 text-blue-600 dark:text-blue-400" />
-                                              <span className="font-medium text-blue-700 text-xs dark:text-blue-300">
+                                              <span className="text-xs font-medium text-blue-700 dark:text-blue-300">
                                                 {task.list_name}
                                               </span>
                                             </div>
                                           </div>
                                         )}
                                       </div>
-                                      <div className="flex flex-shrink-0 items-center gap-1.5 text-gray-400 text-xs opacity-0 transition-opacity group-hover:opacity-100">
+                                      <div className="flex flex-shrink-0 items-center gap-1.5 text-xs text-gray-400 opacity-0 transition-opacity group-hover:opacity-100">
                                         <span className="font-medium">
                                           Drag
                                         </span>
@@ -2156,7 +2156,7 @@ export default function TimeTrackerContent({
                               {/* Scroll indicator */}
                               {filteredSidebarTasks.length > 5 && (
                                 <div className="mt-2 text-center">
-                                  <div className="inline-flex items-center gap-1 text-muted-foreground text-xs">
+                                  <div className="inline-flex items-center gap-1 text-xs text-muted-foreground">
                                     <span>Scroll for more</span>
                                     <svg
                                       className="h-3 w-3"
@@ -2193,19 +2193,19 @@ export default function TimeTrackerContent({
                           <History className="h-5 w-5 text-white" />
                         </div>
                         <div>
-                          <h3 className="font-semibold text-gray-900 text-lg sm:text-xl dark:text-gray-100">
+                          <h3 className="text-lg font-semibold text-gray-900 sm:text-xl dark:text-gray-100">
                             Reports & Analytics
                           </h3>
-                          <p className="text-gray-600 text-sm dark:text-gray-400">
+                          <p className="text-sm text-gray-600 dark:text-gray-400">
                             Detailed insights coming soon 📊
                           </p>
                         </div>
                       </div>
                     </div>
 
-                    <div className="rounded-lg border-2 border-muted-foreground/25 border-dashed p-6 text-center">
+                    <div className="rounded-lg border-2 border-dashed border-muted-foreground/25 p-6 text-center">
                       <History className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
-                      <p className="text-muted-foreground text-sm">
+                      <p className="text-sm text-muted-foreground">
                         Advanced reporting features are coming soon. Stay tuned
                         for detailed analytics, custom reports, and productivity
                         insights.
@@ -2225,10 +2225,10 @@ export default function TimeTrackerContent({
                           <Settings className="h-5 w-5 text-white" />
                         </div>
                         <div>
-                          <h3 className="font-semibold text-gray-900 text-lg sm:text-xl dark:text-gray-100">
+                          <h3 className="text-lg font-semibold text-gray-900 sm:text-xl dark:text-gray-100">
                             Timer Settings
                           </h3>
-                          <p className="text-gray-600 text-sm dark:text-gray-400">
+                          <p className="text-sm text-gray-600 dark:text-gray-400">
                             Customize your tracking experience ⚙️
                           </p>
                         </div>
@@ -2296,7 +2296,7 @@ export default function TimeTrackerContent({
                                 </SelectItem>
                               </SelectContent>
                             </Select>
-                            <p className="text-muted-foreground text-xs">
+                            <p className="text-xs text-muted-foreground">
                               {heatmapSettings.viewMode === 'original' &&
                                 'GitHub-style grid view with day labels'}
                               {heatmapSettings.viewMode === 'hybrid' &&
@@ -2372,14 +2372,14 @@ export default function TimeTrackerContent({
                       </div>
 
                       {/* Coming Soon Section */}
-                      <div className="rounded-lg border-2 border-muted-foreground/25 border-dashed p-4">
+                      <div className="rounded-lg border-2 border-dashed border-muted-foreground/25 p-4">
                         <div className="mb-2 flex items-center gap-2">
                           <Clock className="h-4 w-4 text-muted-foreground" />
                           <h4 className="font-medium text-muted-foreground">
                             More Settings Coming Soon
                           </h4>
                         </div>
-                        <p className="text-muted-foreground text-xs">
+                        <p className="text-xs text-muted-foreground">
                           Notifications, default categories, productivity goals,
                           and more customization options.
                         </p>
@@ -2405,7 +2405,7 @@ export default function TimeTrackerContent({
                 <h3 className="font-semibold text-gray-900 dark:text-gray-100">
                   Continue Last Session?
                 </h3>
-                <p className="text-gray-600 text-sm dark:text-gray-400">
+                <p className="text-sm text-gray-600 dark:text-gray-400">
                   Resume your previous work session
                 </p>
               </div>
@@ -2416,7 +2416,7 @@ export default function TimeTrackerContent({
                 {recentSessions[0].title}
               </p>
               {recentSessions[0].description && (
-                <p className="text-gray-600 text-sm dark:text-gray-400">
+                <p className="text-sm text-gray-600 dark:text-gray-400">
                   {recentSessions[0].description}
                 </p>
               )}
@@ -2430,7 +2430,7 @@ export default function TimeTrackerContent({
                         : 'bg-blue-500/70'
                     )}
                   />
-                  <span className="text-gray-600 text-xs dark:text-gray-400">
+                  <span className="text-xs text-gray-600 dark:text-gray-400">
                     {recentSessions[0].category.name}
                   </span>
                 </div>
@@ -2490,7 +2490,7 @@ export default function TimeTrackerContent({
                 <h3 className="font-semibold text-gray-900 dark:text-gray-100">
                   Choose Your Next Task
                 </h3>
-                <p className="text-gray-600 text-sm dark:text-gray-400">
+                <p className="text-sm text-gray-600 dark:text-gray-400">
                   Tasks prioritized: Your urgent tasks → Urgent unassigned →
                   Your other tasks
                 </p>
@@ -2501,12 +2501,12 @@ export default function TimeTrackerContent({
               {availableTasks.length === 0 ? (
                 // No tasks available - show creation options
                 <div className="space-y-4">
-                  <div className="rounded-lg border-2 border-gray-300 border-dashed p-8 text-center dark:border-gray-600">
+                  <div className="rounded-lg border-2 border-dashed border-gray-300 p-8 text-center dark:border-gray-600">
                     <CheckSquare className="mx-auto mb-3 h-8 w-8 text-gray-400" />
                     <h4 className="mb-2 font-medium text-gray-900 dark:text-gray-100">
                       No Tasks Available
                     </h4>
-                    <p className="mb-4 text-gray-600 text-sm dark:text-gray-400">
+                    <p className="mb-4 text-sm text-gray-600 dark:text-gray-400">
                       You don't have any assigned tasks. Create a new task or
                       check available boards.
                     </p>
@@ -2647,24 +2647,24 @@ export default function TimeTrackerContent({
                           </h4>
                           <span
                             className={cn(
-                              'rounded-full px-2 py-0.5 font-medium text-white text-xs',
+                              'rounded-full px-2 py-0.5 text-xs font-medium text-white',
                               priorityBadge.color
                             )}
                           >
                             {priorityBadge.text}
                           </span>
                           {isUnassigned && (
-                            <span className="rounded-full bg-blue-100 px-2 py-0.5 font-medium text-blue-700 text-xs dark:bg-blue-900/30 dark:text-blue-300">
+                            <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
                               Will assign to you
                             </span>
                           )}
                         </div>
                         {task.description && (
-                          <p className="mb-2 line-clamp-2 text-gray-600 text-sm dark:text-gray-400">
+                          <p className="mb-2 line-clamp-2 text-sm text-gray-600 dark:text-gray-400">
                             {task.description}
                           </p>
                         )}
-                        <div className="flex items-center gap-2 text-gray-500 text-xs dark:text-gray-400">
+                        <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
                           {task.board_name && task.list_name && (
                             <>
                               <span>{task.board_name}</span>
@@ -2702,7 +2702,7 @@ export default function TimeTrackerContent({
               </Button>
               {availableTasks.length > 0 && (
                 <div className="flex items-center gap-4">
-                  <p className="text-gray-500 text-sm dark:text-gray-400">
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
                     {availableTasks.length} task
                     {availableTasks.length !== 1 ? 's' : ''} prioritized
                   </p>

@@ -233,7 +233,7 @@ export default function ResultClient({
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <div>
-              <h1 className="font-bold text-3xl">{challenge.title}</h1>
+              <h1 className="text-3xl font-bold">{challenge.title}</h1>
               <p className="mt-1 text-muted-foreground">
                 {challenge.description || 'Challenge Results'}
               </p>
@@ -256,10 +256,10 @@ export default function ResultClient({
                 <XCircle className="h-5 w-5 text-red-400" />
               </div>
               <div className="ml-3">
-                <h3 className="font-medium text-red-800 text-sm">
+                <h3 className="text-sm font-medium text-red-800">
                   Error loading data
                 </h3>
-                <div className="mt-2 text-red-700 text-sm">
+                <div className="mt-2 text-sm text-red-700">
                   <p>{error}</p>
                   <p className="mt-1">
                     This could be due to a temporary issue with score
@@ -313,14 +313,14 @@ export default function ResultClient({
                   <div className="col-span-2 space-y-4">
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
-                        <h3 className="font-medium text-lg">
+                        <h3 className="text-lg font-medium">
                           Overall Performance
                         </h3>
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <div
-                                className="flex cursor-pointer items-center rounded-full bg-primary/10 px-3 py-1 font-medium text-primary text-sm"
+                                className="flex cursor-pointer items-center rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary"
                                 onClick={() =>
                                   setShowScoreBreakdown(!showScoreBreakdown)
                                 }
@@ -330,7 +330,7 @@ export default function ResultClient({
                               </div>
                             </TooltipTrigger>
                             <TooltipContent className="w-[250px] p-3">
-                              <p className="mb-1 font-medium text-xs">
+                              <p className="mb-1 text-xs font-medium">
                                 Score Calculation Explanation:
                               </p>
                               <ul className="space-y-1 text-xs">
@@ -366,11 +366,11 @@ export default function ResultClient({
                         }
                       />
                       <div className="flex items-center justify-between">
-                        <p className="text-muted-foreground text-sm">
+                        <p className="text-sm text-muted-foreground">
                           You've attempted {stats.problemsAttempted || 0} out of{' '}
                           {stats.totalProblems || 0} problems
                         </p>
-                        <p className={`font-medium text-sm ${status.color}`}>
+                        <p className={`text-sm font-medium ${status.color}`}>
                           {status.text}
                         </p>
                       </div>
@@ -426,7 +426,7 @@ export default function ResultClient({
                           </div>
                           <h4 className="font-medium">Total Score</h4>
                         </div>
-                        <p className="font-bold text-2xl">
+                        <p className="text-2xl font-bold">
                           {stats.percentage.toFixed(0)}%
                         </p>
                       </div>
@@ -437,7 +437,7 @@ export default function ResultClient({
                           <Trophy className="h-4 w-4" />
                           {status.text}
                         </div>
-                        <div className="text-muted-foreground text-xs">
+                        <div className="text-xs text-muted-foreground">
                           {stats.problemsAttempted > 0 ? (
                             <>
                               You scored {stats.score.toFixed(1)} out of a
@@ -448,7 +448,7 @@ export default function ResultClient({
                           )}
                         </div>
                       </div>
-                      <div className="mt-2 text-muted-foreground text-sm">
+                      <div className="mt-2 text-sm text-muted-foreground">
                         Last attempt:{' '}
                         {sessionSummaries[0]?.created_at
                           ? formatDistanceToNow(
@@ -515,7 +515,7 @@ export default function ResultClient({
                         >
                           <AccordionTrigger className="relative px-4 py-3 hover:bg-muted/50">
                             {loadingSessions[session.id] && (
-                              <div className="-translate-y-1/2 absolute top-1/2 right-12">
+                              <div className="absolute top-1/2 right-12 -translate-y-1/2">
                                 <Loader2 className="h-4 w-4 animate-spin text-primary" />
                               </div>
                             )}
@@ -526,7 +526,7 @@ export default function ResultClient({
                                   session.created_at
                                 ).toLocaleDateString()}
                               </span>
-                              <span className="text-muted-foreground text-sm">
+                              <span className="text-sm text-muted-foreground">
                                 {formatDistanceToNow(
                                   new Date(session.created_at),
                                   { addSuffix: true }

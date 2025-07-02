@@ -245,7 +245,7 @@ export function EnhancedTaskList({
         'group relative flex flex-col border-l-4 transition-all duration-200',
         colorClass,
         isListDragging &&
-          'rotate-2 scale-105 opacity-90 shadow-xl ring-2 ring-primary/20',
+          'scale-105 rotate-2 opacity-90 shadow-xl ring-2 ring-primary/20',
         isOver && 'ring-2 ring-primary/30',
         isOverlay && 'shadow-2xl',
         'touch-none select-none hover:shadow-md',
@@ -260,7 +260,7 @@ export function EnhancedTaskList({
           {...listListeners}
           className={cn(
             'cursor-grab rounded p-1 opacity-40 transition-all',
-            'hover:bg-black/5 group-hover:opacity-70',
+            'group-hover:opacity-70 hover:bg-black/5',
             isListDragging && 'cursor-grabbing opacity-100'
           )}
         >
@@ -289,7 +289,7 @@ export function EnhancedTaskList({
           ) : (
             <div
               className={cn(
-                'truncate font-medium text-foreground text-sm',
+                'truncate text-sm font-medium text-foreground',
                 !isClosed && 'cursor-pointer hover:text-primary',
                 isClosed && 'text-muted-foreground'
               )}
@@ -303,7 +303,7 @@ export function EnhancedTaskList({
 
         {/* Task Count Badge */}
         {hideTasksMode ? (
-          <Badge variant="outline" className="text-muted-foreground text-xs">
+          <Badge variant="outline" className="text-xs text-muted-foreground">
             Hidden
           </Badge>
         ) : (
@@ -324,7 +324,7 @@ export function EnhancedTaskList({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48">
-            <div className="px-2 py-1 font-medium text-muted-foreground text-xs">
+            <div className="px-2 py-1 text-xs font-medium text-muted-foreground">
               Change Color
             </div>
             <div className="grid grid-cols-5 gap-1 p-2">
@@ -384,10 +384,10 @@ export function EnhancedTaskList({
                 />
               </svg>
             </div>
-            <p className="font-medium text-muted-foreground text-sm">
+            <p className="text-sm font-medium text-muted-foreground">
               Tasks Hidden
             </p>
-            <p className="mt-1 text-muted-foreground/80 text-xs">
+            <p className="mt-1 text-xs text-muted-foreground/80">
               Task details are hidden in structure view
             </p>
           </div>
@@ -431,7 +431,7 @@ export function EnhancedTaskList({
               variant="ghost"
               size="sm"
               onClick={() => setShowTaskForm(true)}
-              className="w-full justify-start text-muted-foreground text-xs hover:text-foreground"
+              className="w-full justify-start text-xs text-muted-foreground hover:text-foreground"
             >
               + Add task
             </Button>

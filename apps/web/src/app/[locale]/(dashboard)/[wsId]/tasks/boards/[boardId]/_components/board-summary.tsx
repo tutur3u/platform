@@ -150,11 +150,11 @@ export function BoardSummary({ board }: Props) {
               <div className="flex-1">
                 <Progress value={completionRate} className="h-3" />
               </div>
-              <span className="font-medium text-gray-700 text-sm dark:text-gray-300">
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                 {Math.round(completionRate)}%
               </span>
             </div>
-            <p className="text-gray-600 text-sm dark:text-gray-400">
+            <p className="text-sm text-gray-600 dark:text-gray-400">
               {completedTasks} of {totalTasks} tasks completed
             </p>
           </div>
@@ -267,19 +267,19 @@ export function BoardSummary({ board }: Props) {
           {nextDueTask ? (
             <div className="space-y-2">
               <p
-                className={cn('line-clamp-2 font-medium text-sm', {
+                className={cn('line-clamp-2 text-sm font-medium', {
                   'text-muted-foreground line-through': nextDueTask.archived,
                 })}
               >
                 {nextDueTask.name}
               </p>
-              <div className="flex items-center gap-1 text-gray-600 text-xs dark:text-gray-400">
+              <div className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-400">
                 <Calendar className="h-3 w-3" />
                 {format(new Date(nextDueTask.end_date!), 'MMM d, yyyy')}
               </div>
             </div>
           ) : (
-            <p className="text-gray-500 text-sm dark:text-gray-400">
+            <p className="text-sm text-gray-500 dark:text-gray-400">
               No upcoming deadlines
             </p>
           )}

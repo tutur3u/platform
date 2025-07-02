@@ -207,11 +207,11 @@ function UserCard({
           </Avatar>
         )}
         <div className="ml-4 w-full">
-          <h3 className="font-semibold text-foreground text-lg">
+          <h3 className="text-lg font-semibold text-foreground">
             {user.full_name}
           </h3>
           {(user.email || user.phone) && (
-            <p className="text-foreground text-sm">
+            <p className="text-sm text-foreground">
               {user.email || user.phone}
             </p>
           )}

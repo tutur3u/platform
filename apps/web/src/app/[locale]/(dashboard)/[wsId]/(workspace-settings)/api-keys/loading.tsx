@@ -6,7 +6,7 @@ export default function Loading() {
     <>
       <div className="flex flex-col justify-between gap-4 rounded-lg border border-border bg-foreground/5 p-4 text-transparent md:flex-row md:items-start">
         <div>
-          <h1 className="font-bold text-2xl">api keys</h1>
+          <h1 className="text-2xl font-bold">api keys</h1>
           <p className="">description</p>
         </div>
       </div>

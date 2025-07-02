@@ -61,7 +61,7 @@ export const projectColumns = (
       <div className="space-y-1">
         <Link
           href={`/${row.original.ws_id}/tasks/boards/${row.getValue('id')}`}
-          className="line-clamp-1 max-w-32 break-all font-semibold hover:underline"
+          className="line-clamp-1 max-w-32 font-semibold break-all hover:underline"
         >
           {row.getValue('name') || '-'}
         </Link>
@@ -79,7 +79,7 @@ export const projectColumns = (
             {row.original.tags.length > 3 && (
               <Badge
                 variant="outline"
-                className="px-1.5 py-0.5 text-muted-foreground text-xs"
+                className="px-1.5 py-0.5 text-xs text-muted-foreground"
               >
                 +{row.original.tags.length - 3}
               </Badge>

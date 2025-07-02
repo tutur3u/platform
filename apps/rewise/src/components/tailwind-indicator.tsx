@@ -4,7 +4,7 @@ export function TailwindIndicator() {
   if (!SHOW_TAILWIND_INDICATOR || PROD_MODE) return null;
 
   return (
-    <div className="fixed bottom-2 left-2 z-1000 flex h-8 w-8 items-center justify-center rounded-lg bg-background/30 font-mono text-foreground text-xs backdrop-blur">
+    <div className="fixed bottom-2 left-2 z-1000 flex h-8 w-8 items-center justify-center rounded-lg bg-background/30 font-mono text-xs text-foreground backdrop-blur">
       <div className="block sm:hidden">xs</div>
       <div className="hidden sm:block md:hidden">sm</div>
       <div className="hidden md:block lg:hidden">md</div>

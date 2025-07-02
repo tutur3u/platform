@@ -24,7 +24,7 @@ export default function CriteriaEvaluation({
                 {criterion.result?.score.toFixed(1)}
               </Badge>
             </div>
-            <p className="text-muted-foreground text-xs">
+            <p className="text-xs text-muted-foreground">
               {criterion.description}
             </p>
             {criterion.result?.feedback && (

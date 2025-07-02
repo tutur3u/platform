@@ -307,7 +307,7 @@ export default function QuizAddCard({
                           control={form.control}
                           name={`quizzes.${quizIndex}.quiz_options.${optionIndex}.is_correct`}
                           render={({ field }) => (
-                            <FormItem className="mt-2 flex items-center space-x-2 space-y-0">
+                            <FormItem className="mt-2 flex items-center space-y-0 space-x-2">
                               <FormControl>
                                 <Checkbox
                                   checked={field.value}
@@ -315,7 +315,7 @@ export default function QuizAddCard({
                                   className="border-dynamic-purple data-[state=checked]:border-dynamic-purple data-[state=checked]:bg-dynamic-purple"
                                 />
                               </FormControl>
-                              <FormLabel className="font-medium text-dynamic-purple text-sm">
+                              <FormLabel className="text-sm font-medium text-dynamic-purple">
                                 {t('content.options.correct-label')}
                               </FormLabel>
                             </FormItem>
@@ -367,7 +367,7 @@ export default function QuizAddCard({
                         render={({ field }) => (
                           <FormItem>
                             <div className="flex items-center justify-between">
-                              <FormLabel className="text-muted-foreground text-sm">
+                              <FormLabel className="text-sm text-muted-foreground">
                                 {t('content.options.explanation-label')}
                               </FormLabel>
                               <Button

@@ -17,9 +17,9 @@ export function MetricsPanel({ metrics, crawlState }: Props) {
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {/* Crawl Progress */}
             <div className="space-y-2">
-              <h4 className="font-medium text-sm">Crawl Progress</h4>
+              <h4 className="text-sm font-medium">Crawl Progress</h4>
               <div className="flex items-center gap-2">
-                <div className="font-bold text-2xl">
+                <div className="text-2xl font-bold">
                   {(
                     (metrics.processedArticles /
                       Math.max(metrics.totalArticles, 1)) *
@@ -45,16 +45,16 @@ export function MetricsPanel({ metrics, crawlState }: Props) {
 
             {/* Articles Found */}
             <div className="space-y-2">
-              <h4 className="font-medium text-sm">Articles Found</h4>
+              <h4 className="text-sm font-medium">Articles Found</h4>
               <div className="flex items-center justify-between">
-                <div className="font-bold text-2xl">
+                <div className="text-2xl font-bold">
                   {metrics.totalArticles}
                 </div>
                 <Badge variant="outline">
                   {metrics.processedArticles} processed
                 </Badge>
               </div>
-              <div className="text-muted-foreground text-sm">
+              <div className="text-sm text-muted-foreground">
                 {(
                   (metrics.processedArticles /
                     Math.max(metrics.totalArticles, 1)) *
@@ -66,9 +66,9 @@ export function MetricsPanel({ metrics, crawlState }: Props) {
 
             {/* Request Stats */}
             <div className="space-y-2">
-              <h4 className="font-medium text-sm">Request Stats</h4>
+              <h4 className="text-sm font-medium">Request Stats</h4>
               <div className="flex items-center justify-between">
-                <div className="font-bold text-2xl">{metrics.requestCount}</div>
+                <div className="text-2xl font-bold">{metrics.requestCount}</div>
                 <Badge
                   variant={
                     metrics.failedRequests === 0 ? 'success' : 'destructive'
@@ -77,23 +77,23 @@ export function MetricsPanel({ metrics, crawlState }: Props) {
                   {metrics.failedRequests} failed
                 </Badge>
               </div>
-              <div className="text-muted-foreground text-sm">
+              <div className="text-sm text-muted-foreground">
                 {metrics.averageRequestTime.toFixed(0)}ms average
               </div>
             </div>
 
             {/* Time Stats */}
             <div className="space-y-2">
-              <h4 className="font-medium text-sm">Time Stats</h4>
+              <h4 className="text-sm font-medium">Time Stats</h4>
               <div className="flex items-center justify-between">
-                <div className="font-bold text-2xl">
+                <div className="text-2xl font-bold">
                   {formatDuration(Date.now() - metrics.startTime)}
                 </div>
                 <Badge variant="outline">
                   {metrics.estimatedTimeLeft} left
                 </Badge>
               </div>
-              <div className="text-muted-foreground text-sm">
+              <div className="text-sm text-muted-foreground">
                 Started {formatTime(metrics.startTime)}
               </div>
             </div>
@@ -110,7 +110,7 @@ export function MetricsPanel({ metrics, crawlState }: Props) {
               <h4 className="font-medium">Page Progress</h4>
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <div className="font-bold text-2xl">
+                  <div className="text-2xl font-bold">
                     {metrics.completedPages}/{metrics.totalPages}
                   </div>
                   <Badge variant="outline">
@@ -141,7 +141,7 @@ export function MetricsPanel({ metrics, crawlState }: Props) {
               <h4 className="font-medium">Request Performance</h4>
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <div className="font-bold text-2xl">
+                  <div className="text-2xl font-bold">
                     {metrics.successfulRequests}/{metrics.requestCount}
                   </div>
                   <Badge

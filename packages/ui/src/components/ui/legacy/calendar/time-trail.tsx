@@ -28,7 +28,7 @@ export const TimeTrail = () => {
 
   return (
     <div
-      className="relative w-16 border-border border-r dark:border-zinc-800"
+      className="relative w-16 border-r border-border dark:border-zinc-800"
       style={{ height: DAY_HEIGHT }}
     >
       {hours.map((hour) => (
@@ -39,7 +39,7 @@ export const TimeTrail = () => {
         >
           <span
             className={cn(
-              'font-medium text-muted-foreground text-sm',
+              'text-sm font-medium text-muted-foreground',
               hour === 0 && 'hidden'
             )}
           >

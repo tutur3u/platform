@@ -12,7 +12,7 @@ export function VisionStatement() {
       className="relative text-center"
     >
       {/* Enhanced background effects */}
-      <div className="-z-10 absolute inset-0">
+      <div className="absolute inset-0 -z-10">
         <motion.div
           animate={{
             opacity: [0.1, 0.15, 0.1],
@@ -82,7 +82,7 @@ export function VisionStatement() {
               repeat: Infinity,
               ease: 'linear',
             }}
-            className="-top-8 -right-8 absolute h-24 w-24 rounded-xl bg-linear-to-br from-blue-500/20 via-cyan-500/10 to-transparent blur-2xl"
+            className="absolute -top-8 -right-8 h-24 w-24 rounded-xl bg-linear-to-br from-blue-500/20 via-cyan-500/10 to-transparent blur-2xl"
           />
           <motion.div
             animate={{
@@ -94,19 +94,19 @@ export function VisionStatement() {
               repeat: Infinity,
               ease: 'linear',
             }}
-            className="-bottom-8 -left-8 absolute h-24 w-24 rounded-xl bg-linear-to-br from-purple-500/20 via-pink-500/10 to-transparent blur-2xl"
+            className="absolute -bottom-8 -left-8 h-24 w-24 rounded-xl bg-linear-to-br from-purple-500/20 via-pink-500/10 to-transparent blur-2xl"
           />
 
           <blockquote className="pointer-events-none relative">
-            <div className="-top-4 -left-4 absolute text-primary/20">
+            <div className="absolute -top-4 -left-4 text-primary/20">
               <Quote className="h-8 w-8 rotate-180" />
             </div>
-            <div className="-right-4 -bottom-4 absolute text-primary/20">
+            <div className="absolute -right-4 -bottom-4 text-primary/20">
               <Quote className="h-8 w-8" />
             </div>
 
             <motion.p
-              className="relative font-medium text-2xl text-foreground italic leading-relaxed md:text-3xl"
+              className="relative text-2xl leading-relaxed font-medium text-foreground italic md:text-3xl"
               initial={{ y: 20, opacity: 0 }}
               whileInView={{ y: 0, opacity: 1 }}
               viewport={{ once: true }}
@@ -122,7 +122,7 @@ export function VisionStatement() {
             </motion.p>
 
             <motion.footer
-              className="mt-8 text-foreground/60 text-lg"
+              className="mt-8 text-lg text-foreground/60"
               initial={{ y: 20, opacity: 0 }}
               whileInView={{ y: 0, opacity: 1 }}
               viewport={{ once: true }}
@@ -136,7 +136,7 @@ export function VisionStatement() {
               </motion.span>
               <br />
               <motion.span
-                className="text-foreground/40 text-sm"
+                className="text-sm text-foreground/40"
                 whileHover={{ scale: 1.05 }}
               >
                 Founder & CEO, Tuturuuu

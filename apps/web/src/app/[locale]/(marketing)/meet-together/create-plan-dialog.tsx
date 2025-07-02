@@ -159,7 +159,7 @@ export default function CreatePlanDialog({ plan }: Props) {
         >
           <div
             className={cn(
-              '-inset-px absolute animate-tilt rounded-lg bg-linear-to-r from-dynamic-light-red/80 via-dynamic-light-pink/80 to-dynamic-light-blue/80 opacity-70 blur-lg transition-all',
+              'animate-tilt absolute -inset-px rounded-lg bg-linear-to-r from-dynamic-light-red/80 via-dynamic-light-pink/80 to-dynamic-light-blue/80 opacity-70 blur-lg transition-all',
               missingFields ||
                 creating ||
                 'group-hover:-inset-1 group-hover:opacity-100 group-hover:duration-200'

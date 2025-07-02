@@ -60,13 +60,13 @@ export default async function CourseDetailsLayout({ children, params }: Props) {
       <FeatureSummary
         title={
           <>
-            <h1 className="flex w-full items-center justify-between gap-2 font-bold text-2xl">
+            <h1 className="flex w-full items-center justify-between gap-2 text-2xl font-bold">
               <div className="flex items-center gap-2">
-                <div className="flex items-center gap-2 rounded-lg border border-dynamic-purple/20 bg-dynamic-purple/10 px-2 text-dynamic-purple text-lg max-md:hidden">
+                <div className="flex items-center gap-2 rounded-lg border border-dynamic-purple/20 bg-dynamic-purple/10 px-2 text-lg text-dynamic-purple max-md:hidden">
                   <Box className="h-6 w-6" />
                   {t('ws-course-modules.singular')}
                 </div>
-                <div className="line-clamp-1 font-bold text-lg md:text-2xl">
+                <div className="line-clamp-1 text-lg font-bold md:text-2xl">
                   {data.name || t('common.unknown')}
                 </div>
               </div>
@@ -79,7 +79,7 @@ export default async function CourseDetailsLayout({ children, params }: Props) {
                   </span>
                 </div>
               ) : (
-                <div className="flex items-center gap-2 rounded-lg border border-dynamic-red/20 bg-dynamic-red/10 px-2 py-1 text-dynamic-red text-sm sm:text-base">
+                <div className="flex items-center gap-2 rounded-lg border border-dynamic-red/20 bg-dynamic-red/10 px-2 py-1 text-sm text-dynamic-red sm:text-base">
                   <XIcon className="h-5 w-5 text-red-500" />
                   <span className="text-red-500">
                     {t('common.not_completed')}

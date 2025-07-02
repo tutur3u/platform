@@ -26,16 +26,16 @@ export default async function HomePage({
     <div className="container mx-auto space-y-8 px-4 py-12">
       {user && (
         <div className="mb-6">
-          <h2 className="font-semibold text-2xl text-muted-foreground">
+          <h2 className="text-2xl font-semibold text-muted-foreground">
             {t('welcome', { username: user.display_name || '' })}
           </h2>
         </div>
       )}
       <div className="mb-12 text-center">
-        <h1 className="mb-4 font-extrabold text-4xl tracking-tight lg:text-5xl">
+        <h1 className="mb-4 text-4xl font-extrabold tracking-tight lg:text-5xl">
           {t('badge')}
         </h1>
-        <p className="mx-auto max-w-2xl text-ellipsis whitespace-nowrap text-muted-foreground text-xl">
+        <p className="mx-auto max-w-2xl text-xl text-ellipsis whitespace-nowrap text-muted-foreground">
           {t('title')}
         </p>
       </div>

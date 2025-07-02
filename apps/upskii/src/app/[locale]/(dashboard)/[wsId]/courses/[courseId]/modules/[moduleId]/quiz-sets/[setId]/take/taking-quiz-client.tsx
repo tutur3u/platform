@@ -330,7 +330,7 @@ export default function TakingQuizClient({
       </div>
 
       <main className="order-2 w-full grow space-y-4 p-2 lg:order-1 lg:w-3/4 lg:p-0">
-        <h1 className="font-bold text-3xl">{quizMeta.setName}</h1>
+        <h1 className="text-3xl font-bold">{quizMeta.setName}</h1>
         <form
           onSubmit={(e) => {
             e.preventDefault();
@@ -347,7 +347,7 @@ export default function TakingQuizClient({
                 <CardHeader>
                   <CardTitle>
                     {idx + 1}. {q.question}{' '}
-                    <span className="text-muted-foreground text-sm">
+                    <span className="text-sm text-muted-foreground">
                       ({t('points')}: {q.score})
                     </span>
                   </CardTitle>

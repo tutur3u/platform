@@ -100,7 +100,7 @@ export function StatusSection({
             <h3 className="font-semibold text-foreground">
               {statusLabels[status]}
             </h3>
-            <p className="text-muted-foreground text-xs">
+            <p className="text-xs text-muted-foreground">
               {statusDescriptions[status]}
             </p>
           </div>
@@ -136,7 +136,7 @@ export function StatusSection({
             <div className="mb-3 rounded-full bg-muted/30 p-3">
               <span className="text-2xl">{statusIcon}</span>
             </div>
-            <p className="font-medium text-sm">
+            <p className="text-sm font-medium">
               No lists in {statusLabels[status].toLowerCase()}
             </p>
             <p className="mt-1 max-w-40 text-center text-xs">
@@ -196,7 +196,7 @@ export function StatusSection({
               <Plus className="h-4 w-4" />
               Add list to {statusLabels[status].toLowerCase()}
               {status === 'closed' && lists.length >= 1 && (
-                <span className="ml-auto text-muted-foreground text-xs">
+                <span className="ml-auto text-xs text-muted-foreground">
                   (max 1 closed list)
                 </span>
               )}

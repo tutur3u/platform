@@ -28,7 +28,7 @@ export default function UserReportForm({
 }) {
   return (
     <div className="grid h-fit gap-2 rounded-lg border p-4">
-      <div className="font-semibold text-lg">Thông tin cơ bản</div>
+      <div className="text-lg font-semibold">Thông tin cơ bản</div>
       <Separator />
       <Form {...form}>
         <form

@@ -136,8 +136,8 @@ export function RaceInsights({
         <div className="grid gap-3 md:grid-cols-2">
           <div className="space-y-3">
             <div>
-              <h4 className="mb-1 font-medium text-sm">Race Analysis</h4>
-              <div className="text-muted-foreground text-sm">
+              <h4 className="mb-1 text-sm font-medium">Race Analysis</h4>
+              <div className="text-sm text-muted-foreground">
                 {race.horses.length === horses.length ? (
                   <p>
                     This race includes all horses, providing a complete ranking.
@@ -173,7 +173,7 @@ export function RaceInsights({
             </div>
 
             <div>
-              <h4 className="mb-1 font-medium text-sm">Key Observations</h4>
+              <h4 className="mb-1 text-sm font-medium">Key Observations</h4>
               <ul className="space-y-1.5 text-xs">
                 {establishedRanking >= 0 && (
                   <li className="flex items-center gap-1.5">
@@ -237,7 +237,7 @@ export function RaceInsights({
           </div>
 
           <div>
-            <h4 className="mb-1 font-medium text-sm">Speed Comparison</h4>
+            <h4 className="mb-1 text-sm font-medium">Speed Comparison</h4>
             <div className="space-y-2">
               {race.result.map((horseId, index) => {
                 const horse = horses.find((h) => h.id === horseId);
@@ -245,7 +245,7 @@ export function RaceInsights({
 
                 return (
                   <div key={horseId} className="flex items-center">
-                    <div className="mr-2 w-4 font-medium text-xs">
+                    <div className="mr-2 w-4 text-xs font-medium">
                       #{index + 1}
                     </div>
                     <div
@@ -268,7 +268,7 @@ export function RaceInsights({
                       {horse.speed.toFixed(2)}
                     </div>
                     {index < race.result.length - 1 && (
-                      <div className="ml-1 text-muted-foreground text-xs">
+                      <div className="ml-1 text-xs text-muted-foreground">
                         {speedDifferentials[index] &&
                           parseFloat(speedDifferentials[index].percentDiff) >
                             0 && (
@@ -285,7 +285,7 @@ export function RaceInsights({
           </div>
         </div>
 
-        <div className="mt-4 text-muted-foreground text-xs">
+        <div className="mt-4 text-xs text-muted-foreground">
           <p>
             Race {currentRaceIndex + 1} of {allRaces.length} •{' '}
             {race.raceType.charAt(0).toUpperCase() + race.raceType.slice(1)}{' '}

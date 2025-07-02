@@ -189,7 +189,7 @@ export function TaskList({
         <CardHeader className="pb-6">
           <div className="flex items-center justify-between">
             <div className="space-y-2">
-              <CardTitle className="flex items-center gap-3 font-bold text-2xl">
+              <CardTitle className="flex items-center gap-3 text-2xl font-bold">
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 text-white shadow-lg">
                   <CalendarIcon className="h-5 w-5" />
                 </div>
@@ -212,50 +212,50 @@ export function TaskList({
         <CardContent>
           <div className="grid grid-cols-2 gap-6 md:grid-cols-6">
             <div className="space-y-2 text-center">
-              <div className="bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text font-bold text-3xl text-transparent">
+              <div className="bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-3xl font-bold text-transparent">
                 {tasks.length}
               </div>
-              <div className="font-medium text-muted-foreground text-sm">
+              <div className="text-sm font-medium text-muted-foreground">
                 Total Tasks
               </div>
             </div>
             <div className="space-y-2 text-center">
-              <div className="bg-gradient-to-r from-green-600 to-emerald-700 bg-clip-text font-bold text-3xl text-transparent">
+              <div className="bg-gradient-to-r from-green-600 to-emerald-700 bg-clip-text text-3xl font-bold text-transparent">
                 {completedTasks}
               </div>
-              <div className="font-medium text-muted-foreground text-sm">
+              <div className="text-sm font-medium text-muted-foreground">
                 Completed
               </div>
             </div>
             <div className="space-y-2 text-center">
-              <div className="bg-gradient-to-r from-orange-600 to-amber-700 bg-clip-text font-bold text-3xl text-transparent">
+              <div className="bg-gradient-to-r from-orange-600 to-amber-700 bg-clip-text text-3xl font-bold text-transparent">
                 {totalDuration}h
               </div>
-              <div className="font-medium text-muted-foreground text-sm">
+              <div className="text-sm font-medium text-muted-foreground">
                 Total Time
               </div>
             </div>
             <div className="space-y-2 text-center">
-              <div className="bg-gradient-to-r from-red-600 to-rose-700 bg-clip-text font-bold text-3xl text-transparent">
+              <div className="bg-gradient-to-r from-red-600 to-rose-700 bg-clip-text text-3xl font-bold text-transparent">
                 {priorityStats.critical}
               </div>
-              <div className="font-medium text-muted-foreground text-sm">
+              <div className="text-sm font-medium text-muted-foreground">
                 Critical
               </div>
             </div>
             <div className="space-y-2 text-center">
-              <div className="bg-gradient-to-r from-orange-600 to-amber-700 bg-clip-text font-bold text-3xl text-transparent">
+              <div className="bg-gradient-to-r from-orange-600 to-amber-700 bg-clip-text text-3xl font-bold text-transparent">
                 {priorityStats.high}
               </div>
-              <div className="font-medium text-muted-foreground text-sm">
+              <div className="text-sm font-medium text-muted-foreground">
                 High
               </div>
             </div>
             <div className="space-y-2 text-center">
-              <div className="bg-gradient-to-r from-purple-600 to-pink-700 bg-clip-text font-bold text-3xl text-transparent">
+              <div className="bg-gradient-to-r from-purple-600 to-pink-700 bg-clip-text text-3xl font-bold text-transparent">
                 {tasks.filter((t) => t.deadline).length}
               </div>
-              <div className="font-medium text-muted-foreground text-sm">
+              <div className="text-sm font-medium text-muted-foreground">
                 With Deadlines
               </div>
             </div>
@@ -267,7 +267,7 @@ export function TaskList({
       <Card className="border-0 bg-white shadow-lg dark:bg-gray-900">
         <CardHeader className="pb-6">
           <div className="space-y-2">
-            <CardTitle className="font-bold text-xl">Your Tasks</CardTitle>
+            <CardTitle className="text-xl font-bold">Your Tasks</CardTitle>
             <CardDescription className="text-base">
               Manage task details and constraints for intelligent scheduling
             </CardDescription>
@@ -279,7 +279,7 @@ export function TaskList({
               <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-900/20 dark:to-purple-900/20">
                 <CalendarIcon className="h-10 w-10 text-blue-500" />
               </div>
-              <h3 className="mb-3 font-semibold text-xl">No Tasks Yet</h3>
+              <h3 className="mb-3 text-xl font-semibold">No Tasks Yet</h3>
               <p className="mx-auto mb-6 max-w-md text-muted-foreground">
                 Add some tasks or load a template to get started with
                 intelligent scheduling
@@ -334,7 +334,7 @@ export function TaskList({
                               onChange={(e) =>
                                 onUpdateTask(task.id, { name: e.target.value })
                               }
-                              className={`h-auto border-none bg-transparent p-0 font-bold text-xl focus-visible:ring-0 ${
+                              className={`h-auto border-none bg-transparent p-0 text-xl font-bold focus-visible:ring-0 ${
                                 isCompleted
                                   ? 'text-muted-foreground line-through'
                                   : 'text-gray-900 dark:text-white'
@@ -380,7 +380,7 @@ export function TaskList({
                                 {task.duration}h
                               </span>
                               <span
-                                className={`font-bold text-lg ${isCompleted ? 'text-green-600' : 'text-blue-600'}`}
+                                className={`text-lg font-bold ${isCompleted ? 'text-green-600' : 'text-blue-600'}`}
                               >
                                 {Math.round(progressPercentage)}%
                               </span>
@@ -399,7 +399,7 @@ export function TaskList({
                               ></div>
                             </div>
                             {progress.remaining > 0 && (
-                              <div className="flex items-center gap-2 text-muted-foreground text-sm">
+                              <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                 <ClockIcon className="h-4 w-4" />
                                 <span className="font-medium">
                                   {progress.remaining.toFixed(1)}h remaining
@@ -471,7 +471,7 @@ export function TaskList({
                         variant="ghost"
                         size="icon"
                         onClick={() => onDeleteTask(task.id)}
-                        className="text-muted-foreground opacity-0 transition-all duration-200 hover:bg-red-50 hover:text-red-600 group-hover:opacity-100 dark:hover:bg-red-950/20"
+                        className="text-muted-foreground opacity-0 transition-all duration-200 group-hover:opacity-100 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/20"
                       >
                         <Trash2Icon className="h-5 w-5" />
                       </Button>
@@ -480,7 +480,7 @@ export function TaskList({
                     {/* Task Details */}
                     <div className="grid grid-cols-2 gap-6 md:grid-cols-5">
                       <div className="space-y-2">
-                        <Label className="font-semibold text-muted-foreground text-xs uppercase tracking-wide">
+                        <Label className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
                           Duration (hours)
                         </Label>
                         <Input
@@ -498,7 +498,7 @@ export function TaskList({
                       </div>
 
                       <div className="space-y-2">
-                        <Label className="font-semibold text-muted-foreground text-xs uppercase tracking-wide">
+                        <Label className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
                           Min Duration
                         </Label>
                         <Input
@@ -516,7 +516,7 @@ export function TaskList({
                       </div>
 
                       <div className="space-y-2">
-                        <Label className="font-semibold text-muted-foreground text-xs uppercase tracking-wide">
+                        <Label className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
                           Max Duration
                         </Label>
                         <Input
@@ -534,7 +534,7 @@ export function TaskList({
                       </div>
 
                       <div className="space-y-2">
-                        <Label className="font-semibold text-muted-foreground text-xs uppercase tracking-wide">
+                        <Label className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
                           Category
                         </Label>
                         <Select
@@ -557,7 +557,7 @@ export function TaskList({
                       </div>
 
                       <div className="space-y-2">
-                        <Label className="font-semibold text-muted-foreground text-xs uppercase tracking-wide">
+                        <Label className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
                           Priority
                         </Label>
                         <Select
@@ -583,7 +583,7 @@ export function TaskList({
 
                     {/* Deadline */}
                     <div className="space-y-2">
-                      <Label className="font-semibold text-muted-foreground text-xs uppercase tracking-wide">
+                      <Label className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
                         Deadline (Optional)
                       </Label>
                       <Input
@@ -616,7 +616,7 @@ export function TaskList({
             <Button
               onClick={onSchedule}
               size="lg"
-              className="h-12 w-full bg-gradient-to-r from-blue-500 to-purple-600 font-semibold text-lg text-white shadow-lg transition-all duration-200 hover:from-blue-600 hover:to-purple-700"
+              className="h-12 w-full bg-gradient-to-r from-blue-500 to-purple-600 text-lg font-semibold text-white shadow-lg transition-all duration-200 hover:from-blue-600 hover:to-purple-700"
               disabled={isScheduling}
             >
               {isScheduling ? (

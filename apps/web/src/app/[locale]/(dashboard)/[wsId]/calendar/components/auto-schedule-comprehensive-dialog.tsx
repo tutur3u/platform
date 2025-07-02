@@ -25,9 +25,8 @@ import { Switch } from '@tuturuuu/ui/switch';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
-import { useRouter } from 'next/navigation';
 import { useRef, useState } from 'react';
-
+import { useRouter } from 'next/navigation';
 // Extend dayjs with timezone and UTC plugins
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -123,7 +122,7 @@ export default function AutoScheduleComprehensiveDialog({
                     duration: 5000,
                   });
                   setIsOpen(false);
-                  break streamLoop;
+                  break streamLoop; 
                 }
                 if (json.status === 'error') {
                   throw new Error(json.message || 'An unknown error occurred');

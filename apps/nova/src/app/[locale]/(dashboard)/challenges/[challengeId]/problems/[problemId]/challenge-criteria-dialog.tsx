@@ -67,18 +67,18 @@ export function ChallengeCriteriaDialog({
                 </div>
 
                 <div className="mt-4 flex items-center justify-end">
-                  <p className="mr-2 font-medium text-md text-muted-foreground">
+                  <p className="text-md mr-2 font-medium text-muted-foreground">
                     Total score:{' '}
-                    <span className="font-bold text-foreground text-xl">
+                    <span className="text-xl font-bold text-foreground">
                       10
                     </span>
                   </p>
                 </div>
 
                 <div className="mt-2">
-                  <p className="font-medium text-foreground text-md">Note:</p>
+                  <p className="text-md font-medium text-foreground">Note:</p>
 
-                  <p className="mr-2 font-medium text-muted-foreground text-sm">
+                  <p className="mr-2 text-sm font-medium text-muted-foreground">
                     Total score = total score of all criteria / (10 * number of
                     criteria)
                   </p>

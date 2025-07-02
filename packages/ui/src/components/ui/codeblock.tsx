@@ -105,7 +105,7 @@ const CodeBlock: FC<Props> = memo(({ language, value }) => {
   return (
     <div className="codeblock relative w-full rounded font-sans">
       <div className="flex w-full items-center justify-between rounded border bg-foreground/10 px-4 py-1 pr-4 text-foreground">
-        <span className="font-semibold text-xs capitalize">{language}</span>
+        <span className="text-xs font-semibold capitalize">{language}</span>
         <div className="flex items-center space-x-1">
           <Button
             variant="ghost"
