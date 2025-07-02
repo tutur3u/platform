@@ -14,6 +14,9 @@ export function CustomDataTable<TData, TValue>({
   hideToolbar,
   hidePagination,
   className,
+  rowWrapper,
+  onRowClick,
+  onRowDoubleClick,
   ...props
 }: DataTableProps<TData, TValue>) {
   const t = useTranslations();
@@ -45,6 +48,9 @@ export function CustomDataTable<TData, TValue>({
         isEmpty={searchParams.isEmpty}
         newObjectTitle={t('common.create')}
         className={className}
+        rowWrapper={rowWrapper}
+        onRowClick={onRowClick}
+        onRowDoubleClick={onRowDoubleClick}
         {...props}
       />
     </Suspense>
