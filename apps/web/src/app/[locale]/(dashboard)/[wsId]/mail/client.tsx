@@ -22,6 +22,7 @@ interface MailClientWrapperProps {
   postsCount: number;
   postsStatus: { count: number | null };
   searchParams: SearchParams;
+  hasCredential: boolean;
 }
 
 export interface Mail {
@@ -46,6 +47,7 @@ export default function MailClientWrapper({
   postsCount,
   postsStatus,
   searchParams,
+  hasCredential,
 }: MailClientWrapperProps) {
   const [emails, setEmails] = useState<Mail[]>([]);
   const [loading, setLoading] = useState(true);
@@ -104,6 +106,7 @@ export default function MailClientWrapper({
           postsCount={postsCount}
           postsStatus={postsStatus}
           searchParams={searchParams}
+          hasCredential={hasCredential}
         />
       </div>
     </div>
