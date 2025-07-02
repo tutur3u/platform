@@ -81,14 +81,10 @@ import {
   EventToggleSwitch,
   OverlapWarning,
 } from './event-form-components';
-import { isAllDayEvent } from '../../../../hooks/calendar-utils';
+import { isAllDayEvent, createAllDayEvent } from '../../../../hooks/calendar-utils';
 
 dayjs.extend(ts);
 dayjs.extend(utc);
-interface ExtendedCalendarEvent extends CalendarEvent {
-  _originalId?: string;
-  _dayPosition?: 'start' | 'middle' | 'end';
-}
 
 const AIFormSchema = z.object({
   prompt: z.string().min(1, 'Please enter a prompt to generate an event'),
@@ -232,7 +228,7 @@ export function EventModal() {
 
       // Only check for all-day if this is an existing event (not a new one)
       if (activeEvent.id !== 'new') {
-        setIsAllDay(isAllDayEvent(cleanEventData as CalendarEvent));
+        setIsAllDay(isAllDayEvent(cleanEventData as CalendarEvent, tz));
       } else {
         // For new events, always start with isAllDay as false
         setIsAllDay(false);
@@ -615,15 +611,16 @@ export function EventModal() {
             end_at: alldayBackup.end,
           };
         }
-        const newStart =
-          tz === 'auto'
-            ? startDate.startOf('day')
-            : startDate.tz(tz).startOf('day');
-        const newEnd = newStart.add(1, 'day');
+        // Use the new createAllDayEvent helper for proper timezone handling
+        const { start_at, end_at } = createAllDayEvent(
+          startDate.toDate(),
+          tz,
+          1 // 1 day duration
+        );
         return {
           ...prev,
-          start_at: newStart.toISOString(),
-          end_at: newEnd.toISOString(),
+          start_at,
+          end_at,
         };
       } else {
         setPrevTimes((old) => ({

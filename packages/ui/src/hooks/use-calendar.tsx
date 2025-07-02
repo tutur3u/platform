@@ -23,7 +23,7 @@ import {
   useRef,
   useState,
 } from 'react';
-import { isAllDayEvent } from './calendar-utils';
+import { isAllDayEvent, createAllDayEvent } from './calendar-utils';
 
 // Utility function to round time to nearest 15-minute interval
 const roundToNearest15Minutes = (date: Date): Date => {
@@ -54,7 +54,7 @@ const CalendarContext = createContext<{
   addEvent: (
     event: Omit<CalendarEvent, 'id'>
   ) => Promise<CalendarEvent | undefined>;
-  addEmptyEvent: (date: Date) => CalendarEvent;
+  addEmptyEvent: (date: Date, isAllDay?: boolean) => CalendarEvent;
   addEmptyEventWithDuration: (startDate: Date, endDate: Date) => CalendarEvent;
   updateEvent: (
     eventId: string,
@@ -258,7 +258,7 @@ export const CalendarProvider = ({
         );
 
         // Use only time-based logic for all-day detection
-        const isAllDay = isAllDayEvent(e);
+        const isAllDay = isAllDayEvent(e, settings?.timezone?.timezone);
 
         // For all-day events, treat end date as exclusive (consistent with week view)
         // For timed events, treat end date as inclusive
@@ -419,17 +419,31 @@ export const CalendarProvider = ({
   );
 
   const addEmptyEvent = useCallback(
-    (date: Date) => {
+    (date: Date, isAllDay?: boolean) => {
       // TOD0: Fix this weird workaround in the future
       const selectedDate = dayjs(date);
+      const tz = settings?.timezone?.timezone;
 
-      // Round to nearest 15-minute interval
-      const start_at = roundToNearest15Minutes(selectedDate.toDate());
-      const end_at = new Date(start_at);
+      let start_at: string;
+      let end_at: string;
 
-      // Use default task duration from settings if available
-      const defaultDuration = settings.taskSettings.defaultTaskDuration || 60;
-      end_at.setMinutes(end_at.getMinutes() + defaultDuration);
+      if (isAllDay) {
+        // Use the new createAllDayEvent helper for proper timezone handling
+        const allDayTimes = createAllDayEvent(selectedDate.toDate(), tz, 1);
+        start_at = allDayTimes.start_at;
+        end_at = allDayTimes.end_at;
+      } else {
+        // Round to nearest 15-minute interval
+        const startTime = roundToNearest15Minutes(selectedDate.toDate());
+        const endTime = new Date(startTime);
+
+        // Use default task duration from settings if available
+        const defaultDuration = settings.taskSettings.defaultTaskDuration || 60;
+        endTime.setMinutes(endTime.getMinutes() + defaultDuration);
+
+        start_at = startTime.toISOString();
+        end_at = endTime.toISOString();
+      }
 
       // Use default color from settings
       const defaultColor =
@@ -440,8 +454,8 @@ export const CalendarProvider = ({
         id: 'new',
         title: '',
         description: '',
-        start_at: start_at.toISOString(),
-        end_at: end_at.toISOString(),
+        start_at,
+        end_at,
         color: defaultColor,
         ws_id: ws?.id || '',
       };
@@ -456,7 +470,7 @@ export const CalendarProvider = ({
       // Return the pending event object
       return newEvent as CalendarEvent;
     },
-    [ws?.id, settings.taskSettings, settings.categoryColors]
+    [ws?.id, settings.taskSettings, settings.categoryColors, settings?.timezone?.timezone]
   );
 
   const addEmptyEventWithDuration = useCallback(

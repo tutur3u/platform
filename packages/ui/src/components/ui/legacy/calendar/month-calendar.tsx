@@ -184,7 +184,7 @@ export const MonthCalendar = ({ date, visibleDates, viewedMonth }: MonthCalendar
         
         dayEvents.forEach((event) => {
           // Skip if already processed or not an all-day event
-          if (processedEvents.has(event.id) || !isAllDayEvent(event)) {
+          if (processedEvents.has(event.id) || !isAllDayEvent(event, settings?.timezone?.timezone)) {
             return;
           }
 
@@ -242,7 +242,7 @@ export const MonthCalendar = ({ date, visibleDates, viewedMonth }: MonthCalendar
     dayEvents.forEach(event => {
       let eventPriority = 3; // Default for timed events (lowest priority)
       
-      if (isAllDayEvent(event)) {
+      if (isAllDayEvent(event, settings?.timezone?.timezone)) {
         // Check if it's part of a multi-day span
         const isMultiDay = multiDayEventSpans.some(span => span.event.id === event.id);
         

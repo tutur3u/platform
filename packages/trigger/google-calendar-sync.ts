@@ -2,8 +2,21 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { WorkspaceCalendarEvent } from '@tuturuuu/types/db';
 import { updateLastUpsert } from '@tuturuuu/utils/calendar-sync-coordination';
 import dayjs from 'dayjs';
+import 'dayjs/locale/vi';
 import { OAuth2Client } from 'google-auth-library';
 import { google } from 'googleapis';
+import { convertGoogleAllDayEvent } from '@tuturuuu/ui/hooks/calendar-utils';
+
+dayjs.locale('vi');
+
+// Define the sync result type
+type SyncResult = {
+  ws_id: string;
+  success: boolean;
+  eventsSynced?: number;
+  eventsDeleted?: number;
+  error?: string;
+};
 
 const getGoogleAuthClient = (tokens: {
   access_token: string;
@@ -43,7 +56,7 @@ const syncGoogleCalendarEventsForWorkspace = async (
   timeMin: dayjs.Dayjs,
   timeMax: dayjs.Dayjs,
   syncType: 'immediate' | 'extended'
-) => {
+): Promise<SyncResult> => {
   console.log(`[${ws_id}] Starting ${syncType} sync process...`);
   console.log(`[${ws_id}] Time range: ${timeMin.format('YYYY-MM-DD HH:mm')} to ${timeMax.format('YYYY-MM-DD HH:mm')}`);
 
@@ -70,17 +83,28 @@ const syncGoogleCalendarEventsForWorkspace = async (
     );
 
     // format the events to match the expected structure
-    const formattedEvents = events.map((event) => ({
-      google_event_id: event.id,
-      title: event.summary || 'Untitled Event',
-      description: event.description || '',
-      start_at: event.start?.dateTime || event.start?.date || '',
-      end_at: event.end?.dateTime || event.end?.date || '',
-      location: event.location || '',
-      color: getColorFromGoogleColorId(event.colorId ?? undefined),
-      ws_id: ws_id,
-      locked: false,
-    }));
+    const formattedEvents = events.map((event) => {
+      // Use the new timezone-aware conversion for all-day events
+      const { start_at, end_at } = convertGoogleAllDayEvent(
+        event.start?.dateTime || event.start?.date || '',
+        event.end?.dateTime || event.end?.date || '',
+        // Use the user's browser timezone which is available in the process.env.TZ or system default
+        // This will be enhanced later to use actual user preferences
+        'auto'
+      );
+
+      return {
+        google_event_id: event.id,
+        title: event.summary || 'Untitled Event',
+        description: event.description || '',
+        start_at,
+        end_at,
+        location: event.location || '',
+        color: getColorFromGoogleColorId(event.colorId ?? undefined),
+        ws_id: ws_id,
+        locked: false,
+      };
+    });
     console.log(`[${ws_id}] Formatted ${formattedEvents.length} events`);
 
     // upsert the events in the database for this wsId
@@ -279,13 +303,13 @@ export const syncWorkspaceExtended = async (payload: {
     timeMax,
     'extended'
   );
-};
+  };
 
 // Legacy functions for backward compatibility
 export const syncGoogleCalendarEventsImmediate = async () => {
   console.log('=== Starting immediate sync for all workspaces ===');
   const workspaces = await getWorkspacesForSync();
-  const results = [];
+  const results: SyncResult[] = [];
 
   for (const workspace of workspaces) {
     try {
@@ -308,7 +332,7 @@ export const syncGoogleCalendarEventsImmediate = async () => {
 export const syncGoogleCalendarEventsExtended = async () => {
   console.log('=== Starting extended sync for all workspaces ===');
   const workspaces = await getWorkspacesForSync();
-  const results = [];
+  const results: SyncResult[] = [];
 
   for (const workspace of workspaces) {
     try {

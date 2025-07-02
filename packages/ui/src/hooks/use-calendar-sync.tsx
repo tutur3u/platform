@@ -834,14 +834,18 @@ export const CalendarSyncProvider = ({
   const eventsWithoutAllDays = useMemo(() => {
     // Process events immediately when they change
     return events.filter((event) => {
-      return !isAllDayEvent(event);
+      // Note: We can't access settings here easily, so we use default timezone detection
+      // This is acceptable since this is used for layout purposes mainly
+      return !isAllDayEvent(event, 'auto');
     });
   }, [events]);
 
   const allDayEvents = useMemo(() => {
     // Process events immediately when they change
     return events.filter((event) => {
-      return isAllDayEvent(event);
+      // Note: We can't access settings here easily, so we use default timezone detection
+      // This is acceptable since this is used for layout purposes mainly
+      return isAllDayEvent(event, 'auto');
     });
   }, [events]);
 

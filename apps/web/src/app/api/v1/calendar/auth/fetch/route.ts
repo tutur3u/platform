@@ -2,6 +2,7 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 import { OAuth2Client } from 'google-auth-library';
 import { google } from 'googleapis';
 import { NextResponse } from 'next/server';
+import { convertGoogleAllDayEvent } from '@tuturuuu/ui/hooks/calendar-utils';
 
 const getGoogleAuthClient = (tokens: {
   access_token: string;
@@ -178,17 +179,28 @@ export async function GET(request: Request) {
       const events = response.data.items || [];
 
       // format the events to match the expected structure
-      const formattedEvents = events.map((event) => ({
-        google_event_id: event.id,
-        title: event.summary || 'Untitled Event',
-        description: event.description || '',
-        start_at: event.start?.dateTime || event.start?.date || '',
-        end_at: event.end?.dateTime || event.end?.date || '',
-        location: event.location || '',
-        color: getColorFromGoogleColorId(event.colorId ?? undefined),
-        ws_id: '',
-        locked: false,
-      }));
+      const formattedEvents = events.map((event) => {
+        // Use the new timezone-aware conversion for all-day events
+        const { start_at, end_at } = convertGoogleAllDayEvent(
+          event.start?.dateTime || event.start?.date || '',
+          event.end?.dateTime || event.end?.date || '',
+          // Use the user's browser timezone which is available in the process.env.TZ or system default
+          // This will be enhanced later to use actual user preferences
+          'auto'
+        );
+
+        return {
+          google_event_id: event.id,
+          title: event.summary || 'Untitled Event',
+          description: event.description || '',
+          start_at,
+          end_at,
+          location: event.location || '',
+          color: getColorFromGoogleColorId(event.colorId ?? undefined),
+          ws_id: '',
+          locked: false,
+        };
+      });
 
       return NextResponse.json({ events: formattedEvents }, { status: 200 });
     } catch (error: any) {
