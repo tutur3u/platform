@@ -1,8 +1,7 @@
 {
   "biome.enabled": true,
-  "eslint.enable": true,
   "editor.codeActionsOnSave": {
-    "quickfix.biome": "never",
+    "source.fixAll.biome": "explicit",
     "source.organizeImports.biome": "explicit"
   },
   "editor.formatOnPaste": false,
@@ -27,30 +26,6 @@
   ],
   "i18n-ally.autoDetection": true,
   "i18n-ally.keystyle": "nested",
-  "[xml]": {
-    "editor.defaultFormatter": "biomejs.biome"
-  },
-  "[css]": {
-    "editor.defaultFormatter": "biomejs.biome"
-  },
-  "[json]": {
-    "editor.defaultFormatter": "biomejs.biome"
-  },
-  "[jsonc]": {
-    "editor.defaultFormatter": "biomejs.biome"
-  },
-  "[javascript]": {
-    "editor.defaultFormatter": "biomejs.biome"
-  },
-  "[typescript]": {
-    "editor.defaultFormatter": "biomejs.biome"
-  },
-  "[javascriptreact]": {
-    "editor.defaultFormatter": "biomejs.biome"
-  },
-  "[typescriptreact]": {
-    "editor.defaultFormatter": "biomejs.biome"
-  },
   "codeQL.githubDatabase.update": "never",
   "codeQL.githubDatabase.download": "never",
   "IDX.aI.enableInlineCompletion": true,

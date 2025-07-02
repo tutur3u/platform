@@ -8,7 +8,7 @@
     "dev:web": "turbo run dev -F @tuturuuu/web",
     "dev:calendar": "turbo run dev -F @tuturuuu/calendar -F @tuturuuu/web",
     "dev:rewise": "turbo run dev -F @tuturuuu/rewise -F @tuturuuu/web",
-    "dev:upskii": "turbo run dev -F @tuturuuu/upskii -F @tuturuuu/web",
+    "dev:upskii": "turbo run dev -F @tuturuuu/upskii",
     "dev:famigo": "turbo run dev -F @tuturuuu/famigo -F @tuturuuu/web",
     "dev:nova": "turbo run dev -F @tuturuuu/nova -F @tuturuuu/web",
     "dev:shortener": "turbo run dev -F @tuturuuu/shortener -F @tuturuuu/web",
@@ -73,7 +73,10 @@
     "node": ">=22"
   },
   "packageManager": "bun@1.2.17",
-  "workspaces": ["apps/*", "packages/*"],
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "trustedDependencies": [
     "@tailwindcss/oxide",
     "@vercel/speed-insights",

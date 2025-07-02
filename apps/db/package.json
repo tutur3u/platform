@@ -16,7 +16,7 @@
     "sb:typegen": "bun supabase gen types typescript --local --schema public > ../../packages/types/src/supabase.ts && biome format --write ../../packages/types/src/supabase.ts"
   },
   "devDependencies": {
-    "supabase": "^2.26.9"
+    "supabase": "^2.30.4"
   },
   "packageManager": "bun@1.2.17"
 }
