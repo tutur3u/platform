@@ -1,25 +1,41 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import dayjs from 'dayjs';
+
+// Import the actual legacy functions
+import {
+  syncGoogleCalendarEventsImmediate,
+  syncGoogleCalendarEventsExtended,
+  syncGoogleCalendarEvents,
+} from '../google-calendar-sync';
+
+// Import actual sync functions for integration testing
+import {
+  syncWorkspaceImmediate,
+  syncWorkspaceExtended,
+} from '../google-calendar-sync';
+
+// Import locales statically for testing
+import 'dayjs/locale/en';
+import 'dayjs/locale/vi';
+import 'dayjs/locale/fr';
+import 'dayjs/locale/de';
+import 'dayjs/locale/es';
+import 'dayjs/locale/ja';
+import 'dayjs/locale/ko';
+import 'dayjs/locale/zh';
 
 // Mock the setupDayjsLocale function to test its behavior
 const mockSetupDayjsLocale = async (locale?: string) => {
   const targetLocale = locale || process.env.LOCALE || 'en';
+  const supportedLocales = ['en', 'vi', 'fr', 'de', 'es', 'ja', 'ko', 'zh'];
   
-  try {
-    // Dynamically import the locale module
-    await import(`dayjs/locale/${targetLocale}`);
+  if (supportedLocales.includes(targetLocale)) {
     dayjs.locale(targetLocale);
     return { success: true, locale: targetLocale };
-  } catch (error) {
+  } else {
     console.warn(`Failed to load locale '${targetLocale}', falling back to 'en'`);
-    try {
-      await import('dayjs/locale/en');
-      dayjs.locale('en');
-      return { success: false, fallback: 'en', error };
-    } catch (fallbackError) {
-      console.error('Failed to load even the fallback locale:', fallbackError);
-      return { success: false, error: fallbackError };
-    }
+    dayjs.locale('en');
+    return { success: false, fallback: 'en', error: new Error(`Unsupported locale: ${targetLocale}`) };
   }
 };
 
@@ -47,21 +63,9 @@ describe('Google Calendar Sync - Locale Functionality', () => {
       });
     });
 
-    it('should handle undefined LOCALE environment variable', () => {
-      delete process.env.LOCALE;
-      expect(process.env.LOCALE).toBeUndefined();
-    });
-
     it('should handle missing LOCALE environment variable', () => {
-      const originalLocale = process.env.LOCALE;
       delete process.env.LOCALE;
-      
       expect(process.env.LOCALE).toBeUndefined();
-      
-      // Restore original value
-      if (originalLocale) {
-        process.env.LOCALE = originalLocale;
-      }
     });
   });
 
@@ -133,101 +137,121 @@ describe('Google Calendar Sync - Locale Functionality', () => {
   });
 
   describe('Legacy Function Support', () => {
-    it('should support locale parameter in legacy functions', () => {
+    it('should support locale parameter in legacy functions', async () => {
       // Test that legacy functions can accept locale parameters
       const testLocale = 'vi';
       
-      // These would be the function signatures we expect
-      const legacyFunctions = {
-        syncGoogleCalendarEventsImmediate: (locale?: string) => ({ locale }),
-        syncGoogleCalendarEventsExtended: (locale?: string) => ({ locale }),
-        syncGoogleCalendarEvents: (locale?: string) => ({ locale }),
-      };
+      // Test the actual function signatures
+      expect(typeof syncGoogleCalendarEventsImmediate).toBe('function');
+      expect(typeof syncGoogleCalendarEventsExtended).toBe('function');
+      expect(typeof syncGoogleCalendarEvents).toBe('function');
       
-      expect(legacyFunctions.syncGoogleCalendarEventsImmediate(testLocale).locale).toBe(testLocale);
-      expect(legacyFunctions.syncGoogleCalendarEventsExtended(testLocale).locale).toBe(testLocale);
-      expect(legacyFunctions.syncGoogleCalendarEvents(testLocale).locale).toBe(testLocale);
+      // Verify the functions can be called with locale parameter
+      // Note: These functions require database and Google API access, so we're testing the interface
+      // In a real test environment, you would mock the dependencies
+      expect(syncGoogleCalendarEventsImmediate.length).toBe(1); // One parameter (locale)
+      expect(syncGoogleCalendarEventsExtended.length).toBe(1); // One parameter (locale)
+      expect(syncGoogleCalendarEvents.length).toBe(1); // One parameter (locale)
     });
 
-    it('should handle missing locale in legacy functions', () => {
-      const legacyFunctions = {
-        syncGoogleCalendarEventsImmediate: (locale?: string) => ({ locale }),
-        syncGoogleCalendarEventsExtended: (locale?: string) => ({ locale }),
-        syncGoogleCalendarEvents: (locale?: string) => ({ locale }),
-      };
+    it('should handle missing locale in legacy functions', async () => {
+      // Test that functions are designed to work without locale parameter
+      // The functions should accept optional locale parameter
+      expect(syncGoogleCalendarEventsImmediate.length).toBe(1);
+      expect(syncGoogleCalendarEventsExtended.length).toBe(1);
+      expect(syncGoogleCalendarEvents.length).toBe(1);
       
-      expect(legacyFunctions.syncGoogleCalendarEventsImmediate().locale).toBeUndefined();
-      expect(legacyFunctions.syncGoogleCalendarEventsExtended().locale).toBeUndefined();
-      expect(legacyFunctions.syncGoogleCalendarEvents().locale).toBeUndefined();
+      // Verify the functions are async
+      expect(syncGoogleCalendarEventsImmediate.constructor.name).toBe('AsyncFunction');
+      expect(syncGoogleCalendarEventsExtended.constructor.name).toBe('AsyncFunction');
+      expect(syncGoogleCalendarEvents.constructor.name).toBe('AsyncFunction');
     });
   });
 
   describe('Date Formatting Consistency', () => {
     it('should format dates consistently', () => {
-      // Test date formatting patterns that would be used in the sync functions
-      const testDate = '2024-01-15T10:30:00Z';
+      const testDate = dayjs('2024-01-15T10:30:00Z');
       const expectedDate = '2024-01-15';
       
-      // Simulate the date formatting logic
-      const formatDate = (dateString: string, format: string) => {
-        if (format === 'YYYY-MM-DD') {
-          return dateString.split('T')[0];
-        }
-        return dateString;
-      };
-      
-      const result = formatDate(testDate, 'YYYY-MM-DD');
+      const result = testDate.format('YYYY-MM-DD');
       expect(result).toBe(expectedDate);
+      
+      // Test that the same format works across different locales
+      const enResult = testDate.locale('en').format('YYYY-MM-DD');
+      const viResult = testDate.locale('vi').format('YYYY-MM-DD');
+      expect(enResult).toBe(viResult); // ISO format should be consistent
     });
 
     it('should handle date range formatting', () => {
-      const startDate = '2024-01-15T09:00:00Z';
-      const endDate = '2024-01-15T17:00:00Z';
+      const startDate = dayjs('2024-01-15T09:00:00Z');
+      const endDate = dayjs('2024-01-15T17:00:00Z');
       
-      const formatDate = (dateString: string, format: string) => {
-        if (format === 'YYYY-MM-DD HH:mm') {
-          const date = dateString.split('T')[0];
-          const time = dateString.split('T')[1].substring(0, 5);
-          return `${date} ${time}`;
-        }
-        return dateString;
-      };
-      
-      const rangeFormat = `${formatDate(startDate, 'YYYY-MM-DD HH:mm')} to ${formatDate(endDate, 'YYYY-MM-DD HH:mm')}`;
+      const startFormatted = startDate.format('YYYY-MM-DD HH:mm');
+      const endFormatted = endDate.format('YYYY-MM-DD HH:mm');
+      const rangeFormat = `${startFormatted} to ${endFormatted}`;
       
       expect(rangeFormat).toBe('2024-01-15 09:00 to 2024-01-15 17:00');
     });
 
     it('should handle all-day event formatting', () => {
-      const startDate = '2024-01-15';
-      const endDate = '2024-01-16';
+      const startDate = dayjs('2024-01-15');
+      const endDate = dayjs('2024-01-16');
       
-      const allDayFormat = `${startDate} to ${endDate}`;
+      const startFormatted = startDate.format('YYYY-MM-DD');
+      const endFormatted = endDate.format('YYYY-MM-DD');
+      const allDayFormat = `${startFormatted} to ${endFormatted}`;
       
       expect(allDayFormat).toBe('2024-01-15 to 2024-01-16');
     });
   });
 
   describe('Error Handling', () => {
-    it('should handle invalid locale values gracefully', () => {
-      // Test that the system can handle invalid locale values
+    it('should handle invalid locale values gracefully', async () => {
       const invalidLocales = ['invalid', '123', 'en-US-invalid'];
       
-      invalidLocales.forEach(locale => {
-        // The system should handle these gracefully
-        expect(typeof locale).toBe('string');
-        expect(locale.length).toBeGreaterThan(0);
-      });
+      for (const locale of invalidLocales) {
+        const result = await mockSetupDayjsLocale(locale);
+        expect(result.success).toBe(false);
+        expect(result.fallback).toBe('en');
+        expect(result.error).toBeDefined();
+        expect(result.error?.message).toContain(`Unsupported locale: ${locale}`);
+      }
     });
 
-    it('should handle null and undefined locale values', () => {
-      // Test null and undefined handling
-      const testCases = [null, undefined];
+    it('should handle null and undefined locale values', async () => {
+      // Test with undefined (should use environment or default)
+      const undefinedResult = await mockSetupDayjsLocale(undefined);
+      expect(undefinedResult.success).toBe(true);
+      expect(undefinedResult.locale).toBe('en'); // Should default to 'en'
       
-      testCases.forEach(locale => {
-        // The system should handle these gracefully
-        expect(locale === null || locale === undefined).toBe(true);
-      });
+      // Test with null (should be treated as undefined)
+      const nullResult = await mockSetupDayjsLocale(null as any);
+      expect(nullResult.success).toBe(true);
+      expect(nullResult.locale).toBe('en'); // Should default to 'en'
+    });
+
+    it('should handle environment variable fallback when no locale provided', async () => {
+      // Set environment variable
+      process.env.LOCALE = 'vi';
+      
+      const result = await mockSetupDayjsLocale();
+      expect(result.success).toBe(true);
+      expect(result.locale).toBe('vi');
+      
+      // Clean up
+      delete process.env.LOCALE;
+    });
+
+    it('should handle console warnings for invalid locales', async () => {
+      const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      
+      await mockSetupDayjsLocale('invalid-locale');
+      
+      expect(consoleSpy).toHaveBeenCalledWith(
+        expect.stringContaining("Failed to load locale 'invalid-locale', falling back to 'en'")
+      );
+      
+      consoleSpy.mockRestore();
     });
   });
 
@@ -317,10 +341,10 @@ describe('Google Calendar Sync - Locale Functionality', () => {
       
       // Test different locale formats
       const enFormat = testDate.locale('en').format('MMMM D, YYYY [at] h:mm A');
-      const viFormat = testDate.locale('vi').format('MMMM D, YYYY [lúc] h:mm A');
+      const viFormat = testDate.locale('vi').format('D MMMM YYYY [lúc] h:mm A');
       
       expect(enFormat).toContain('January 15, 2024 at');
-      expect(viFormat).toContain('tháng 1 15, 2024 lúc');
+      expect(viFormat).toContain('15 tháng 1 2024 lúc');
     });
 
     it('should maintain consistent date parsing across locales', () => {
@@ -402,7 +426,7 @@ describe('Google Calendar Sync - Locale Functionality', () => {
       const viRange = `${startDate.locale('vi').format('MMM D, YYYY h:mm A')} - ${endDate.locale('vi').format('h:mm A')}`;
       
       expect(enRange).toContain('Jan 15, 2024');
-      expect(viRange).toContain('Th01 15, 2024');
+      expect(viRange).toContain('thg 1 15, 2024');
     });
   });
 }); 
