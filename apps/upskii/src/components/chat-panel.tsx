@@ -310,14 +310,20 @@ export async function uploadFile(
   if (!id) {
     // Upload to temp path
     const supabase = createClient();
-    const { data: user } = await supabase.auth.getUser();
-    uploadPath = `${wsId}/temp/${user?.user?.id}/${fileName}`;
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user?.id) return { data: null, error: 'No user id provided' };
+
+    uploadPath = `${wsId}/temp/${user.id}/chats/ai/${fileName}`;
     tempPath = uploadPath;
   } else {
     // Upload to final chat path
     uploadPath = `${wsId}/chats/ai/resources/${id}/${fileName}`;
     finalPath = uploadPath;
   }
+
   const supabaseStorage = createDynamicClient();
   const { data, error } = await supabaseStorage.storage
     .from('workspaces')

@@ -25,7 +25,7 @@ export function ToolForm({ wsId, tool }: { wsId: string; tool: Tool }) {
       body: JSON.stringify({
         model: 'gemini-1.5-flash-002',
         message: input,
-        wsId: wsId,
+        wsId,
       }),
     });
 
