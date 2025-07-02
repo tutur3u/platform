@@ -1,9 +1,9 @@
 {
-  "extends": "@tuturuuu/typescript-config/base.json",
-  "include": ["."],
-  "exclude": ["dist", "build", "node_modules", "dist", ".next", ".turbo"],
+  "extends": "@tuturuuu/typescript-config/react-library.json",
   "compilerOptions": {
     "strict": true,
     "jsx": "react-jsx"
-  }
+  },
+  "include": ["."],
+  "exclude": ["node_modules", "dist", ".next", ".turbo"]
 }
