@@ -10,7 +10,6 @@ import {
   Globe,
   ImageIcon,
   KeyRound,
-  Languages,
   Lock,
   Paperclip,
   RefreshCw,
@@ -31,7 +30,6 @@ import { useTranslations } from 'next-intl';
 import type React from 'react';
 import { useEffect, useState } from 'react';
 import Textarea from 'react-textarea-autosize';
-import { DEV_MODE } from '@/constants/common';
 import { useEnterSubmit } from '@/lib/hooks/use-enter-submit';
 
 export interface PromptProps
@@ -219,8 +217,6 @@ export function PromptForm({
 
   if (!element) return null;
 
-  const ENABLE_NEW_UI = DEV_MODE;
-
   return (
     <Dialog open={showPermissionDenied} onOpenChange={setShowPermissionDenied}>
       <form
@@ -366,7 +362,7 @@ export function PromptForm({
           </div>
 
           <div className="flex items-center">
-            {disabled || (
+            {/* {disabled || (
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
@@ -383,7 +379,7 @@ export function PromptForm({
                   {t('ai_chat.response_language')}
                 </TooltipContent>
               </Tooltip>
-            )}
+            )} */}
 
             <Tooltip>
               <TooltipTrigger asChild>
@@ -393,7 +389,7 @@ export function PromptForm({
                   variant="ghost"
                   className={cn('transition duration-300')}
                   onClick={toggleChatFileUpload}
-                  disabled={!ENABLE_NEW_UI || disabled}
+                  disabled={disabled}
                 >
                   <Paperclip />
                 </Button>
