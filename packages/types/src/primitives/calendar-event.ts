@@ -12,7 +12,6 @@ export interface CalendarEvent {
   ws_id?: string;
   local?: boolean;
   location?: string;
-  is_all_day?: boolean;
   scheduling_note?: string;
   priority?: EventPriority;
   locked?: boolean;

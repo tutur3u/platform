@@ -21,6 +21,7 @@ import {
   useRef,
   useState,
 } from 'react';
+import { isAllDayEvent } from './calendar-utils';
 
 const CalendarSyncContext = createContext<{
   data: WorkspaceCalendarEvent[] | null;
@@ -126,7 +127,7 @@ export const CalendarSyncProvider = ({
   const [currentView, setCurrentView] = useState<
     'day' | '4-day' | 'week' | 'month'
   >('day');
-  const [isActiveSyncOn, setIsActiveSyncOn] = useState(false);
+  const [isActiveSyncOn, setIsActiveSyncOn] = useState(true);
   const [calendarCache, setCalendarCache] = useState<CalendarCache>({});
   const [isSyncing, setIsSyncing] = useState(false);
   const prevGoogleDataRef = useRef<string>('');
@@ -833,22 +834,14 @@ export const CalendarSyncProvider = ({
   const eventsWithoutAllDays = useMemo(() => {
     // Process events immediately when they change
     return events.filter((event) => {
-      const start = dayjs(event.start_at);
-      const end = dayjs(event.end_at);
-
-      const duration = Math.abs(end.diff(start, 'seconds'));
-      return duration % (24 * 60 * 60) !== 0;
+      return !isAllDayEvent(event);
     });
   }, [events]);
 
   const allDayEvents = useMemo(() => {
     // Process events immediately when they change
     return events.filter((event) => {
-      const start = dayjs(event.start_at);
-      const end = dayjs(event.end_at);
-
-      const duration = Math.abs(end.diff(start, 'seconds'));
-      return duration % (24 * 60 * 60) === 0;
+      return isAllDayEvent(event);
     });
   }, [events]);
 
