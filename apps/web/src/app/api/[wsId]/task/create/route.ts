@@ -1,19 +1,14 @@
-import {
-  prepareTaskChunks,
-  scheduleTasks,
-} from '@tuturuuu/ai/scheduling/algorithm';
-import { defaultActiveHours } from '@tuturuuu/ai/scheduling/default';
-import type { Task } from '@tuturuuu/ai/scheduling/types';
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { createClient } from '@tuturuuu/supabase/next/server';
 import { getCurrentSupabaseUser } from '@tuturuuu/utils/user-helper';
 import { NextResponse } from 'next/server';
+
 export async function POST(
   req: Request,
   { params }: { params: Promise<{ wsId: string }> }
 ) {
   try {
     const { wsId } = await params;
-    const supabase = await createAdminClient();
+    const supabase = await createClient();
     const user = await getCurrentSupabaseUser();
 
     // 1. Authenticate the user
@@ -58,7 +53,7 @@ export async function POST(
       }
     }
 
-    // 3. Prepare task data for insertion
+    // 3. Prepare the data for insertion
     const taskToInsert = {
       creator_id: user.id,
       name: name.trim(),
@@ -76,16 +71,16 @@ export async function POST(
       end_date: end_date || null,
     };
 
-    // 4. Insert task into Supabase
-    const { data: dbTask, error: taskInsertError } = await supabase
+    // 4. Insert the data into Supabase
+    const { data, error } = await supabase
       .from('tasks')
       .insert(taskToInsert)
       .select()
       .single();
 
-    if (taskInsertError) {
-      console.error('Supabase error creating task:', taskInsertError);
-      if (taskInsertError.code === '23503') {
+    if (error) {
+      console.error('Supabase error creating task:', error);
+      if (error.code === '23503') {
         return NextResponse.json(
           { error: `Invalid workspace ID: ${wsId}` },
           { status: 400 }
@@ -97,56 +92,9 @@ export async function POST(
       );
     }
 
-    // 5. Convert task to chunkable format
-    const taskToSplit: Task = {
-      id: dbTask.id,
-      name: dbTask.name,
-      duration: dbTask.total_duration ?? 0,
-      allowSplit: dbTask.is_splittable ?? undefined,
-      maxDuration: dbTask.max_split_duration_minutes
-        ? dbTask.max_split_duration_minutes / 60
-        : 2,
-      minDuration: dbTask.min_split_duration_minutes
-        ? dbTask.min_split_duration_minutes / 60
-        : 0.5,
-      priority:
-        typeof dbTask.priority === 'string' ? dbTask.priority : 'normal',
-      category: 'work',
-      events: [],
-    };
-
-    const events = prepareTaskChunks([taskToSplit]);
-
-    const { events: newScheduledEvents } = scheduleTasks(
-      events,
-      defaultActiveHours
-    );
-    if (events.length > 0) {
-      const insertData = newScheduledEvents.map((event) => ({
-        ws_id: wsId,
-        task_id: event.taskId,
-        title: event.name,
-        start_at: event.range.start.toISOString(),
-        end_at: event.range.end.toISOString(),
-        locked: false,
-      }));
-
-      const { error: insertError } = await supabase
-        .from('workspace_calendar_events')
-        .upsert(insertData);
-
-      if (insertError) {
-        console.error('Error inserting event:', insertError);
-        return NextResponse.json(
-          { error: 'Failed to insert event into calendar.' },
-          { status: 500 }
-        );
-      }
-    }
-
-    // 6. Success
-    return NextResponse.json(dbTask, { status: 201 });
-  } catch (e: any) {
+    // 5. Return a success response
+    return NextResponse.json(data, { status: 201 });
+  } catch (e) {
     console.error('Error in task creation route:', e);
     if (e instanceof SyntaxError) {
       return NextResponse.json(

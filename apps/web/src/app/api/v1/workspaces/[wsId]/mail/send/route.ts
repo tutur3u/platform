@@ -130,7 +130,7 @@ const sendEmail = async ({
   wsId: string;
 }) => {
   try {
-    const supabase = await createAdminClient();
+    const sbAdmin = await createAdminClient();
 
     // Check if email is blacklisted
     if (domainBlacklist.some((domain) => recipient.includes(domain))) {
@@ -176,7 +176,7 @@ const sendEmail = async ({
     }
 
     // Store the sent email in the database
-    const { error } = await supabase
+    const { error } = await sbAdmin
       .from('sent_emails')
       .insert({
         sender_id: senderId,
