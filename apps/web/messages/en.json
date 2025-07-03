@@ -29,6 +29,10 @@
       "status": "Status",
       "payment-method": "Payment Method",
       "download-receipt-availability": "Download Receipt Availability",
+      "need-help": "Need help?",
+      "support-team": "Contact our support team for any questions or issues regarding your payment.",
+      "or-visit": "or visit",
+      "help-center": "help center",
       "download-invoice-desc": "The download link has expired (24 hours after payment). Please contact support for a new receipt.",
       "what-next": "What happens next?",
       "active-plan": "Your active plan will be updated immediately.",
@@ -806,7 +810,19 @@
     "short_url": "Short URL",
     "original_url": "Original URL",
     "creator": "Creator",
-    "created_at": "Created At"
+    "created_at": "Created At",
+    "date_range": "Date Range",
+    "domain": "Domain",
+    "date_filters": {
+      "today": "Today",
+      "yesterday": "Yesterday",
+      "this_week": "This Week",
+      "last_week": "Last Week",
+      "this_month": "This Month",
+      "last_month": "Last Month",
+      "last_3_months": "Last 3 Months",
+      "this_year": "This Year"
+    }
   },
   "team-tabs": {
     "overview": "Overview",

@@ -23,10 +23,6 @@ export const PRODUCTION_INTERNAL_APP_DOMAINS = [
     name: 'rewise',
     url: 'https://rewise.me',
   },
-  {
-    name: 'upskii',
-    url: 'https://upskii.com',
-  },
 ] as const;
 
 export const DEV_INTERNAL_APP_DOMAINS = [
@@ -45,10 +41,6 @@ export const DEV_INTERNAL_APP_DOMAINS = [
   {
     name: 'nova',
     url: 'http://localhost:7805',
-  },
-  {
-    name: 'upskii',
-    url: 'http://localhost:7806',
   },
 ] as const;
 

@@ -45,8 +45,7 @@
     "apps/calendar/messages",
     "apps/web/messages",
     "apps/rewise/messages",
-    "apps/nova/messages",
-    "apps/upskii/messages"
+    "apps/nova/messages"
   ],
   "i18n-ally.autoDetection": true,
   "i18n-ally.keystyle": "nested",
@@ -56,5 +55,6 @@
   "IDX.aI.enableCodebaseIndexing": true,
   "i18n-ally.sourceLanguage": "en",
   "typescript.experimental.useTsgo": false,
-  "cSpell.words": ["Tuturuuu", "tuturuuu"]
+  "cSpell.words": ["Tuturuuu", "tuturuuu"],
+  "vitest.disableWorkspaceWarning": true
 }

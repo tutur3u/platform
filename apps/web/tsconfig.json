@@ -9,21 +9,11 @@
       }
     ],
     "paths": {
-      "@/*": [
-        "./*"
-      ]
+      "@/*": ["./*"]
     },
     "esModuleInterop": true,
     "resolveJsonModule": true
   },
-  "include": [
-    "src",
-    ".next/types/**/*.ts"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist",
-    ".next",
-    ".turbo"
-  ]
+  "include": ["src", ".next/types/**/*.ts"],
+  "exclude": ["node_modules", "dist", ".turbo"]
 }
