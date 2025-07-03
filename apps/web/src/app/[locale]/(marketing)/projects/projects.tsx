@@ -7,9 +7,9 @@ import Canvas from './canvas';
 import { Project, projects } from './data';
 import ProjectCard from './project-card';
 import ProjectDetail from './project-detail';
-import { AnimatePresence, motion, PanInfo } from 'framer-motion';
-import { useState, useEffect, useCallback } from 'react';
+import { AnimatePresence, PanInfo, motion } from 'framer-motion';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
 
 // ============================================================================
 // TYPES
@@ -32,7 +32,9 @@ export default function Projects() {
   // STATE - Modal State
   // --------------------------------------------------------------------------
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
-  const [projectDetail, setProjectDetail] = useState<Project | undefined>(undefined);
+  const [projectDetail, setProjectDetail] = useState<Project | undefined>(
+    undefined
+  );
 
   // --------------------------------------------------------------------------
   // STATE - Carousel State
@@ -185,7 +187,7 @@ export default function Projects() {
     const autoScrollDuration = 4000;
 
     progressInterval = setInterval(() => {
-      setAutoScrollProgress(prev => prev + (100 / (autoScrollDuration / 50)));
+      setAutoScrollProgress((prev) => prev + 100 / (autoScrollDuration / 50));
     }, 50);
 
     const slideTimeout = setTimeout(nextSlide, autoScrollDuration);
@@ -194,8 +196,13 @@ export default function Projects() {
       clearInterval(progressInterval);
       clearTimeout(slideTimeout);
     };
-  }, [isAutoScrolling, isUserInteracting, nextSlide, filteredProjects.length, currentIndex]); // Added currentIndex to reset timeout on nav
-
+  }, [
+    isAutoScrolling,
+    isUserInteracting,
+    nextSlide,
+    filteredProjects.length,
+    currentIndex,
+  ]); // Added currentIndex to reset timeout on nav
 
   // --------------------------------------------------------------------------
   // HELPER FUNCTIONS
@@ -219,7 +226,7 @@ export default function Projects() {
       zIndex: 5 - Math.abs(position), // Center card has highest zIndex
       opacity: isOffScreen ? 0 : 1 - Math.abs(position) * 0.3,
       // You can even add rotation for a cooler effect
-      // rotate: position * 5, 
+      // rotate: position * 5,
     };
   };
 
@@ -238,8 +245,8 @@ export default function Projects() {
         </p>
         <div className="mt-1 w-2/3 md:w-full">
           <p className="text-sm font-light text-white md:mt-4 md:max-w-2xl md:text-2xl">
-            The place where you can learn, grow and have fun with technology,
-            by building projects.
+            The place where you can learn, grow and have fun with technology, by
+            building projects.
           </p>
         </div>
       </div>
@@ -254,7 +261,10 @@ export default function Projects() {
             onClick={() => handleTypeFilter(p.key as ProjectType)}
             initial={false}
             animate={{
-              background: p.key === type ? 'linear-gradient(to right, #F4B71A 40%, #1AF4E6 100%)' : 'transparent',
+              background:
+                p.key === type
+                  ? 'linear-gradient(to right, #F4B71A 40%, #1AF4E6 100%)'
+                  : 'transparent',
               color: p.key === type ? '#0F172A' : '#FFFFFF',
               scale: p.key === type ? 1.05 : 1,
             }}
@@ -274,7 +284,10 @@ export default function Projects() {
             onClick={() => handleStatusFilter(p.key as ProjectStatus)}
             initial={false}
             animate={{
-              background: p.key === status ? 'linear-gradient(to right, #F4B71A 40%, #1AF4E6 100%)' : 'transparent',
+              background:
+                p.key === status
+                  ? 'linear-gradient(to right, #F4B71A 40%, #1AF4E6 100%)'
+                  : 'transparent',
               color: p.key === status ? '#0F172A' : '#FFFFFF',
               scale: p.key === status ? 1.05 : 1,
             }}
@@ -290,21 +303,25 @@ export default function Projects() {
   );
 
   const renderProjectInfo = () => (
-    <div className="text-center mb-8">
-      <p className="text-white/70 text-sm md:text-base">
+    <div className="mb-8 text-center">
+      <p className="text-sm text-white/70 md:text-base">
         {currentIndex + 1} of {filteredProjects.length} projects
       </p>
-      <div className="flex flex-col items-center justify-center gap-2 mt-2">
+      <div className="mt-2 flex flex-col items-center justify-center gap-2">
         <div className="flex items-center gap-2">
-          <div className={`w-2 h-2 rounded-full transition-colors ${isAutoScrolling && !isUserInteracting ? 'bg-[#1AF4E6]' : 'bg-white/30'}`} />
+          <div
+            className={`h-2 w-2 rounded-full transition-colors ${isAutoScrolling && !isUserInteracting ? 'bg-[#1AF4E6]' : 'bg-white/30'}`}
+          />
           <span className="text-xs text-white/50">
-            {isAutoScrolling && !isUserInteracting ? 'Auto-scrolling' : 'Paused'}
+            {isAutoScrolling && !isUserInteracting
+              ? 'Auto-scrolling'
+              : 'Paused'}
           </span>
         </div>
         {isAutoScrolling && !isUserInteracting && (
-          <div className="w-32 h-1 bg-white/10 rounded-full overflow-hidden">
+          <div className="h-1 w-32 overflow-hidden rounded-full bg-white/10">
             <motion.div
-              className="h-full bg-gradient-to-r from-[#F4B71A] to-[#1AF4E6] rounded-full"
+              className="h-full rounded-full bg-gradient-to-r from-[#F4B71A] to-[#1AF4E6]"
               initial={{ width: '0%' }}
               animate={{ width: `${autoScrollProgress}%` }}
               transition={{ duration: 0.05, ease: 'linear' }}
@@ -314,12 +331,14 @@ export default function Projects() {
       </div>
       {!isDragging && (
         <motion.div
-          className="flex items-center justify-center gap-2 mt-3"
+          className="mt-3 flex items-center justify-center gap-2"
           initial={{ opacity: 0.7 }}
           animate={{ opacity: [0.7, 1, 0.7] }}
           transition={{ duration: 2, repeat: Infinity }}
         >
-          <span className="text-xs text-white/40">👆 Drag to browse projects</span>
+          <span className="text-xs text-white/40">
+            👆 Drag to browse projects
+          </span>
         </motion.div>
       )}
     </div>
@@ -327,12 +346,12 @@ export default function Projects() {
 
   // Render mobile carousel (single card) - Unchanged
   const renderMobileCarousel = () => (
-    <div className="block md:hidden w-full max-w-sm">
+    <div className="block w-full max-w-sm md:hidden">
       {filteredProjects[currentIndex] && (
         <motion.div
           animate={{
             scale: isDragging ? 0.95 : 1,
-            rotateY: isDragging ? dragOffset * 0.05 : 0
+            rotateY: isDragging ? dragOffset * 0.05 : 0,
           }}
           transition={{ duration: 0.2 }}
         >
@@ -350,7 +369,7 @@ export default function Projects() {
 
   // *** MODIFIED: Complete overhaul of the desktop carousel for the new animation ***
   const renderDesktopCarousel = () => (
-    <div className="hidden md:flex items-center justify-center relative w-full h-[450px] px-16">
+    <div className="relative hidden h-[450px] w-full items-center justify-center px-16 md:flex">
       {filteredProjects.map((project, index) => {
         const position = index - currentIndex;
 
@@ -360,12 +379,12 @@ export default function Projects() {
         return (
           <motion.div
             key={project.name} // Use project name as unique key
-            className="absolute w-80 h-[400px]"
+            className="absolute h-[400px] w-80"
             initial={false} // Prevent animation on initial render
             animate={calculateCardStyle(position)}
             transition={{ type: 'spring', stiffness: 300, damping: 30 }}
             style={{
-              cursor: position === 0 ? 'pointer' : 'pointer'
+              cursor: position === 0 ? 'pointer' : 'pointer',
             }}
             onClick={() => {
               setIsUserInteracting(true);
@@ -382,7 +401,7 @@ export default function Projects() {
               type={type}
               status={status}
               isCenter={position === 0}
-              onClick={() => { }}
+              onClick={() => {}}
             />
           </motion.div>
         );
@@ -400,7 +419,7 @@ export default function Projects() {
               setIsUserInteracting(true);
               setTimeout(() => setIsUserInteracting(false), 3000);
             }}
-            className="absolute left-4 top-1/2 -translate-y-1/2 z-20 p-3 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur-sm border border-white/20 transition-all duration-200 hover:scale-110 disabled:opacity-50"
+            className="absolute top-1/2 left-4 z-20 -translate-y-1/2 rounded-full border border-white/20 bg-white/10 p-3 text-white backdrop-blur-sm transition-all duration-200 hover:scale-110 hover:bg-white/20 disabled:opacity-50"
             disabled={isTransitioning}
           >
             <ChevronLeft size={24} />
@@ -411,7 +430,7 @@ export default function Projects() {
               setIsUserInteracting(true);
               setTimeout(() => setIsUserInteracting(false), 3000);
             }}
-            className="absolute right-4 top-1/2 -translate-y-1/2 z-20 p-3 rounded-full bg-white/10 hover:bg-white/20 text-white backdrop-blur-sm border border-white/20 transition-all duration-200 hover:scale-110 disabled:opacity-50"
+            className="absolute top-1/2 right-4 z-20 -translate-y-1/2 rounded-full border border-white/20 bg-white/10 p-3 text-white backdrop-blur-sm transition-all duration-200 hover:scale-110 hover:bg-white/20 disabled:opacity-50"
             disabled={isTransitioning}
           >
             <ChevronRight size={24} />
@@ -424,7 +443,7 @@ export default function Projects() {
   const renderDotIndicators = () => (
     <>
       {filteredProjects.length > 1 && (
-        <div className="flex justify-center space-x-3 mt-8">
+        <div className="mt-8 flex justify-center space-x-3">
           {filteredProjects.map((_, index) => (
             <motion.button
               key={index}
@@ -434,10 +453,11 @@ export default function Projects() {
               whileTap={{ scale: 0.9 }}
             >
               <div
-                className={`w-3 h-3 rounded-full transition-all duration-300 ${index === currentIndex
-                  ? 'bg-gradient-to-r from-[#F4B71A] to-[#1AF4E6] scale-125'
-                  : 'bg-white/30 hover:bg-white/50'
-                  }`}
+                className={`h-3 w-3 rounded-full transition-all duration-300 ${
+                  index === currentIndex
+                    ? 'scale-125 bg-gradient-to-r from-[#F4B71A] to-[#1AF4E6]'
+                    : 'bg-white/30 hover:bg-white/50'
+                }`}
               />
             </motion.button>
           ))}
@@ -447,15 +467,16 @@ export default function Projects() {
   );
 
   const renderAutoScrollControls = () => (
-    <div className="flex justify-center mt-6">
+    <div className="mt-6 flex justify-center">
       <motion.button
         onClick={() => setIsAutoScrolling(!isAutoScrolling)}
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
-        className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${isAutoScrolling
-          ? 'bg-gradient-to-r from-[#F4B71A]/20 to-[#1AF4E6]/20 text-white border border-white/20'
-          : 'bg-white/10 text-white/70 border border-white/10'
-          }`}
+        className={`rounded-xl px-4 py-2 text-sm font-medium transition-all duration-200 ${
+          isAutoScrolling
+            ? 'border border-white/20 bg-gradient-to-r from-[#F4B71A]/20 to-[#1AF4E6]/20 text-white'
+            : 'border border-white/10 bg-white/10 text-white/70'
+        }`}
       >
         {isAutoScrolling ? 'Pause Auto-scroll' : 'Resume Auto-scroll'}
       </motion.button>
@@ -472,12 +493,28 @@ export default function Projects() {
           exit={{ opacity: 0, scale: 0 }}
           transition={{ type: 'spring', stiffness: 300, damping: 20 }}
         >
-          <div className="relative w-12 h-12">
-            <div className="w-12 h-12 rounded-full bg-black/40 backdrop-blur-sm border border-white/20" />
-            <svg className="absolute inset-0 w-12 h-12 -rotate-90" viewBox="0 0 48 48">
-              <circle cx="24" cy="24" r="20" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="2" />
+          <div className="relative h-12 w-12">
+            <div className="h-12 w-12 rounded-full border border-white/20 bg-black/40 backdrop-blur-sm" />
+            <svg
+              className="absolute inset-0 h-12 w-12 -rotate-90"
+              viewBox="0 0 48 48"
+            >
+              <circle
+                cx="24"
+                cy="24"
+                r="20"
+                fill="none"
+                stroke="rgba(255,255,255,0.2)"
+                strokeWidth="2"
+              />
               <motion.circle
-                cx="24" cy="24" r="20" fill="none" stroke="url(#gradient)" strokeWidth="2" strokeLinecap="round"
+                cx="24"
+                cy="24"
+                r="20"
+                fill="none"
+                stroke="url(#gradient)"
+                strokeWidth="2"
+                strokeLinecap="round"
                 strokeDasharray={`${2 * Math.PI * 20}`}
                 strokeDashoffset={`${2 * Math.PI * 20 * (1 - autoScrollProgress / 100)}`}
                 transition={{ duration: 0.05, ease: 'linear' }}
@@ -490,7 +527,7 @@ export default function Projects() {
               </defs>
             </svg>
             <div className="absolute inset-0 flex items-center justify-center">
-              <span className="text-white/80 text-xs">⏱️</span>
+              <span className="text-xs text-white/80">⏱️</span>
             </div>
           </div>
         </motion.div>
@@ -499,13 +536,15 @@ export default function Projects() {
   );
 
   const renderEmptyState = () => (
-    <div className="text-center py-12">
-      <div className="text-6xl mb-4">🔍</div>
-      <h3 className="text-xl md:text-2xl text-white mb-2">No projects found</h3>
-      <p className="text-white/70 mb-6">Try adjusting your filters to see more projects</p>
+    <div className="py-12 text-center">
+      <div className="mb-4 text-6xl">🔍</div>
+      <h3 className="mb-2 text-xl text-white md:text-2xl">No projects found</h3>
+      <p className="mb-6 text-white/70">
+        Try adjusting your filters to see more projects
+      </p>
       <button
         onClick={clearAllFilters}
-        className="text-[#1AF4E6] hover:text-[#F4B71A] transition-colors underline underline-offset-4"
+        className="text-[#1AF4E6] underline underline-offset-4 transition-colors hover:text-[#F4B71A]"
       >
         Clear all filters
       </button>
@@ -521,7 +560,7 @@ export default function Projects() {
 
       <div className="mt-12 px-4 md:px-6 lg:px-8">
         {filteredProjects.length > 0 ? (
-          <div className="relative max-w-screen-2xl mx-auto">
+          <div className="relative mx-auto max-w-screen-2xl">
             {renderProjectInfo()}
 
             <div className="relative cursor-grab active:cursor-grabbing">
@@ -538,7 +577,7 @@ export default function Projects() {
                 onMouseEnter={() => setIsUserInteracting(true)}
                 onMouseLeave={() => setIsUserInteracting(false)}
                 animate={{ x: isDragging ? dragOffset : 0 }}
-                transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                transition={{ type: 'spring', stiffness: 300, damping: 30 }}
                 style={{ minHeight: '450px', userSelect: 'none' }}
               >
                 {renderMobileCarousel()}
@@ -558,10 +597,7 @@ export default function Projects() {
 
       <AnimatePresence>
         {isModalOpen && (
-          <ProjectDetail
-            data={projectDetail}
-            onClose={closeProjectModal}
-          />
+          <ProjectDetail data={projectDetail} onClose={closeProjectModal} />
         )}
       </AnimatePresence>
     </>
