@@ -104,7 +104,7 @@ export default function WhyUs() {
           <Sparkles className="h-8 w-8 text-yellow-400" />
         </motion.div>
 
-        <h2 className="mb-4 bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 bg-clip-text text-4xl font-bold text-transparent drop-shadow-sm md:text-6xl lg:text-8xl">
+        <h2 className="mb-4 bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 bg-clip-text pb-4 text-4xl font-bold text-transparent drop-shadow-sm md:text-6xl lg:text-8xl">
           Why us?
         </h2>
 
