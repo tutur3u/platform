@@ -118,8 +118,7 @@ export async function POST(
 
     const { events: newScheduledEvents } = scheduleTasks(
       events,
-      defaultActiveHours,
-      []
+      defaultActiveHours
     );
     if (events.length > 0) {
       const insertData = newScheduledEvents.map((event) => ({
