@@ -46,6 +46,40 @@ function ensureMinimumDuration(hours: number): number {
   return Math.max(0.25, hoursToQuarterHours(hours)); // Minimum 15 minutes
 }
 
+export const prepareTaskChunks = (tasks: Task[]): Task[] => {
+  const chunks: Task[] = [];
+  for (const task of tasks) {
+    if (
+      task.allowSplit === false ||
+      !task.maxDuration ||
+      task.maxDuration <= 0
+    ) {
+      chunks.push({ ...task, taskId: task.id });
+      continue;
+    }
+    let remainingDuration = task.duration;
+    let partNumber = 1;
+    const totalParts = Math.ceil(task.duration / task.maxDuration);
+    while (remainingDuration > 0) {
+      const partDuration = Math.min(remainingDuration, task.maxDuration);
+      chunks.push({
+        ...task,
+        name:
+          totalParts > 1
+            ? `${task.name} (Part ${partNumber}/${totalParts})`
+            : task.name,
+        duration: partDuration,
+        minDuration: partDuration,
+        maxDuration: partDuration,
+        allowSplit: false,
+        taskId: task.id,
+      });
+      remainingDuration -= partDuration;
+      partNumber++;
+    }
+  }
+  return chunks;
+};
 // Helper function to calculate task priority score
 function calculatePriorityScore(task: Task): number {
   const now = dayjs();
@@ -103,7 +137,7 @@ export const promoteEventToTask = (event: Event): Task => {
     minDuration: ensureMinimumDuration(duration),
     maxDuration: hoursToQuarterHours(duration),
     category: event.category || 'work',
-    priority: 'normal',
+    priority: event.priority || 'normal',
     events: [],
     deadline: event.range.end,
     allowSplit: false,

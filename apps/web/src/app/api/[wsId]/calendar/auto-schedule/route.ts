@@ -76,15 +76,15 @@ export async function POST(
     console.log(`[AUTO-SCHEDULE-${requestId}] Fetching tasks and events...`);
 
     // Fetch tasks for the current user
-    const { data: currentTasks, error: tasksError } = await (await supabase)
-      .from('tasks')
-      .select('*')
-      .eq('creator_id', user.id)
-      .eq('archived', false)
-      .eq('completed', false);
+    // const { data: currentTasks, error: tasksError } = await (await supabase)
+    //   .from('tasks')
+    //   .select('*')
+    //   .eq('creator_id', user.id)
+    //   .eq('archived', false)
+    //   .eq('completed', false);
 
-    if (tasksError)
-      throw new Error(`Failed to fetch tasks: ${tasksError.message}`);
+    // if (tasksError)
+    //   throw new Error(`Failed to fetch tasks: ${tasksError.message}`);
 
     const { data: flexibleEventsData, error: flexibleEventsError } = await (
       await supabase
@@ -97,34 +97,35 @@ export async function POST(
       throw new Error(`Failed to fetch events: ${flexibleEventsError.message}`);
 
     // Map DB tasks to the format our scheduler understands
-    const newTasks: Task[] = await Promise.all(
-      (currentTasks || []).map(async (task) => ({
-        id: task.id,
-        name: task.name,
-        duration: task.total_duration ?? 0,
-        minDuration: task.min_split_duration_minutes
-          ? task.min_split_duration_minutes / 60
-          : 0.5,
-        maxDuration: task.max_split_duration_minutes
-          ? task.max_split_duration_minutes / 60
-          : 2,
-        category:
-          task.calendar_hours === 'work_hours'
-            ? 'work'
-            : task.calendar_hours === 'personal_hours'
-              ? 'personal'
-              : task.calendar_hours === 'meeting_hours'
-                ? 'meeting'
-                : 'work',
-        events: [],
-        deadline: task.end_date
-          ? (await import('dayjs')).default(task.end_date)
-          : undefined,
-        priority: mapPriorityToTaskPriority(task.priority),
-        allowSplit: !!task.is_splittable,
-      }))
-    );
+    // const newTasks: Task[] = await Promise.all(
+    //   (currentTasks || []).map(async (task) => ({
+    //     id: task.id,
+    //     name: task.name,
+    //     duration: task.total_duration ?? 0,
+    //     minDuration: task.min_split_duration_minutes
+    //       ? task.min_split_duration_minutes / 60
+    //       : 0.5,
+    //     maxDuration: task.max_split_duration_minutes
+    //       ? task.max_split_duration_minutes / 60
+    //       : 2,
+    //     category:
+    //       task.calendar_hours === 'work_hours'
+    //         ? 'work'
+    //         : task.calendar_hours === 'personal_hours'
+    //           ? 'personal'
+    //           : task.calendar_hours === 'meeting_hours'
+    //             ? 'meeting'
+    //             : 'work',
+    //     events: [],
+    //     deadline: task.end_date
+    //       ? (await import('dayjs')).default(task.end_date)
+    //       : undefined,
+    //     priority: mapPriorityToTaskPriority(task.priority),
+    //     allowSplit: !!task.is_splittable,
+    //   }))
+    // );
 
+    const newTasks: Task[] = [];
     const dayjs = (await import('dayjs')).default;
     const newFlexibleEvents: Event[] = (flexibleEventsData || []).map(
       (event) => ({
@@ -135,6 +136,7 @@ export async function POST(
           end: dayjs(event.end_at),
         },
         locked: event.locked,
+        priority: event.priority,
         taskId: event.task_id ?? '',
         category: 'work',
       })
@@ -351,17 +353,17 @@ export async function GET(
     );
   }
 }
-function mapPriorityToTaskPriority(priority: number | null): TaskPriority {
-  switch (priority) {
-    case 1:
-      return 'critical';
-    case 2:
-      return 'high';
-    case 3:
-      return 'normal';
-    case 4:
-      return 'low';
-    default:
-      return 'normal';
-  }
-}
+// function mapPriorityToTaskPriority(priority: number | null): TaskPriority {
+//   switch (priority) {
+//     case 1:
+//       return 'critical';
+//     case 2:
+//       return 'high';
+//     case 3:
+//       return 'normal';
+//     case 4:
+//       return 'low';
+//     default:
+//       return 'normal';
+//   }
+// }

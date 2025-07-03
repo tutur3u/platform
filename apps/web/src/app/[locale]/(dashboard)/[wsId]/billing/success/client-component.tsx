@@ -35,6 +35,7 @@ interface WorkspaceSubscription {
     price: number;
   };
 }
+
 export default function ClientComponent({ wsId }: ClientComponentProps) {
   const [subscription, setSubscription] =
     useState<WorkspaceSubscription | null>(null);
@@ -58,13 +59,11 @@ export default function ClientComponent({ wsId }: ClientComponentProps) {
         } else {
           setSubscription({
             ...subscription,
-            workspace_subscription_products:
+            workspace_subscription_products: Array.isArray(
               subscription.workspace_subscription_products
-                ? {
-                    price:
-                      subscription.workspace_subscription_products.price ?? 0,
-                  }
-                : undefined,
+            )
+              ? subscription.workspace_subscription_products[0]
+              : subscription.workspace_subscription_products,
           });
         }
       } catch (err) {
@@ -273,7 +272,7 @@ export default function ClientComponent({ wsId }: ClientComponentProps) {
           <Button
             variant="outline"
             asChild
-            className="group flex items-center gap-2 transition-all duration-300 hover:-translate-y-1 hover:scale-110 hover:shadow-xl"
+            className="group hover:-translate-y-1 flex items-center gap-2 transition-all duration-300 hover:scale-110 hover:shadow-xl"
           >
             <Link href={`/api/billing/${wsId}/invoice`} target="_blank">
               <Download className="h-4 w-4 transition-transform duration-300 group-hover:translate-y-2 group-hover:scale-125" />
