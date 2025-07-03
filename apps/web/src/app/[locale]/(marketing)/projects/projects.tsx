@@ -384,7 +384,7 @@ export default function Projects() {
             animate={calculateCardStyle(position)}
             transition={{ type: 'spring', stiffness: 300, damping: 30 }}
             style={{
-              cursor: position === 0 ? 'pointer' : 'pointer',
+              cursor: 'pointer',
             }}
             onClick={() => {
               setIsUserInteracting(true);
@@ -401,43 +401,12 @@ export default function Projects() {
               type={type}
               status={status}
               isCenter={position === 0}
-              onClick={() => {}}
+              onClick={() => { }}
             />
           </motion.div>
         );
       })}
     </div>
-  );
-
-  const renderNavigationArrows = () => (
-    <>
-      {filteredProjects.length > 1 && (
-        <>
-          <button
-            onClick={() => {
-              prevSlide();
-              setIsUserInteracting(true);
-              setTimeout(() => setIsUserInteracting(false), 3000);
-            }}
-            className="absolute top-1/2 left-4 z-20 -translate-y-1/2 rounded-full border border-white/20 bg-white/10 p-3 text-white backdrop-blur-sm transition-all duration-200 hover:scale-110 hover:bg-white/20 disabled:opacity-50"
-            disabled={isTransitioning}
-          >
-            <ChevronLeft size={24} />
-          </button>
-          <button
-            onClick={() => {
-              nextSlide();
-              setIsUserInteracting(true);
-              setTimeout(() => setIsUserInteracting(false), 3000);
-            }}
-            className="absolute top-1/2 right-4 z-20 -translate-y-1/2 rounded-full border border-white/20 bg-white/10 p-3 text-white backdrop-blur-sm transition-all duration-200 hover:scale-110 hover:bg-white/20 disabled:opacity-50"
-            disabled={isTransitioning}
-          >
-            <ChevronRight size={24} />
-          </button>
-        </>
-      )}
-    </>
   );
 
   const renderDotIndicators = () => (
@@ -453,11 +422,10 @@ export default function Projects() {
               whileTap={{ scale: 0.9 }}
             >
               <div
-                className={`h-3 w-3 rounded-full transition-all duration-300 ${
-                  index === currentIndex
+                className={`h-3 w-3 rounded-full transition-all duration-300 ${index === currentIndex
                     ? 'scale-125 bg-gradient-to-r from-[#F4B71A] to-[#1AF4E6]'
                     : 'bg-white/30 hover:bg-white/50'
-                }`}
+                  }`}
               />
             </motion.button>
           ))}
@@ -472,67 +440,14 @@ export default function Projects() {
         onClick={() => setIsAutoScrolling(!isAutoScrolling)}
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
-        className={`rounded-xl px-4 py-2 text-sm font-medium transition-all duration-200 ${
-          isAutoScrolling
+        className={`rounded-xl px-4 py-2 text-sm font-medium transition-all duration-200 ${isAutoScrolling
             ? 'border border-white/20 bg-gradient-to-r from-[#F4B71A]/20 to-[#1AF4E6]/20 text-white'
             : 'border border-white/10 bg-white/10 text-white/70'
-        }`}
+          }`}
       >
         {isAutoScrolling ? 'Pause Auto-scroll' : 'Resume Auto-scroll'}
       </motion.button>
     </div>
-  );
-
-  const renderFloatingProgress = () => (
-    <>
-      {isAutoScrolling && !isUserInteracting && (
-        <motion.div
-          className="fixed top-20 right-6 z-40"
-          initial={{ opacity: 0, scale: 0 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0 }}
-          transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-        >
-          <div className="relative h-12 w-12">
-            <div className="h-12 w-12 rounded-full border border-white/20 bg-black/40 backdrop-blur-sm" />
-            <svg
-              className="absolute inset-0 h-12 w-12 -rotate-90"
-              viewBox="0 0 48 48"
-            >
-              <circle
-                cx="24"
-                cy="24"
-                r="20"
-                fill="none"
-                stroke="rgba(255,255,255,0.2)"
-                strokeWidth="2"
-              />
-              <motion.circle
-                cx="24"
-                cy="24"
-                r="20"
-                fill="none"
-                stroke="url(#gradient)"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeDasharray={`${2 * Math.PI * 20}`}
-                strokeDashoffset={`${2 * Math.PI * 20 * (1 - autoScrollProgress / 100)}`}
-                transition={{ duration: 0.05, ease: 'linear' }}
-              />
-              <defs>
-                <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                  <stop offset="0%" stopColor="#F4B71A" />
-                  <stop offset="100%" stopColor="#1AF4E6" />
-                </linearGradient>
-              </defs>
-            </svg>
-            <div className="absolute inset-0 flex items-center justify-center">
-              <span className="text-xs text-white/80">⏱️</span>
-            </div>
-          </div>
-        </motion.div>
-      )}
-    </>
   );
 
   const renderEmptyState = () => (
@@ -564,12 +479,10 @@ export default function Projects() {
             {renderProjectInfo()}
 
             <div className="relative cursor-grab active:cursor-grabbing">
-              {/* REMOVED: Transition effects are not needed for this style */}
-
               <motion.div
-                className="flex items-center justify-center" // Removed gap, as positioning is absolute
+                className="flex items-center justify-center"
                 drag="x"
-                dragConstraints={{ left: 0, right: 0 }} // Drag is handled by velocity now
+                dragConstraints={{ left: 0, right: 0 }}
                 dragElastic={0.1}
                 onDragStart={handleDragStart}
                 onDrag={handleDrag}
@@ -585,10 +498,8 @@ export default function Projects() {
               </motion.div>
             </div>
 
-            {renderNavigationArrows()}
             {renderDotIndicators()}
             {renderAutoScrollControls()}
-            {renderFloatingProgress()}
           </div>
         ) : (
           renderEmptyState()

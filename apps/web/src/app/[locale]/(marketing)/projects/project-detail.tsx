@@ -1,6 +1,6 @@
 import { Project } from './data';
 import { motion } from 'framer-motion';
-import { X } from 'lucide-react';
+import { Code, ExternalLink, Github, Play, X } from 'lucide-react';
 import Image from 'next/image';
 
 interface ProjectDetailProps {
@@ -55,6 +55,9 @@ export default function ProjectDetail({ onClose, data }: ProjectDetailProps) {
     manager,
     type,
     status,
+    githubUrl,
+    demoUrl,
+    image,
   } = data;
 
   const handleBackdropClick = () => {
@@ -76,7 +79,7 @@ export default function ProjectDetail({ onClose, data }: ProjectDetailProps) {
 
       <div className="relative mb-8 h-48 w-full overflow-hidden rounded-2xl bg-gradient-to-br from-[#F4B71A]/20 to-[#1AF4E6]/20">
         <Image
-          src="/media/background/demo.jpg"
+          src={image || '/media/background/demo.jpg'}
           fill
           alt={`${name} project demo`}
           className="object-cover"
@@ -104,6 +107,38 @@ export default function ProjectDetail({ onClose, data }: ProjectDetailProps) {
             Project Lead:{' '}
             <span className="font-semibold text-white">{manager}</span>
           </p>
+        )}
+
+        {/* Project Links */}
+        {(githubUrl || demoUrl) && (
+          <div className="mt-6 flex justify-center gap-4">
+            {githubUrl && (
+              <motion.a
+                href={githubUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="flex items-center gap-2 rounded-xl border border-gray-600/50 bg-gray-800/80 px-6 py-3 text-white backdrop-blur-sm transition-all duration-200 hover:border-gray-500/50 hover:bg-gray-700/80"
+              >
+                <Github size={20} />
+                <span className="font-medium">View Code</span>
+              </motion.a>
+            )}
+            {demoUrl && (
+              <motion.a
+                href={demoUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#F4B71A] to-[#1AF4E6] px-6 py-3 font-medium text-black transition-all duration-200 hover:shadow-lg hover:shadow-[#F4B71A]/30"
+              >
+                <Play size={20} />
+                <span>Try Demo</span>
+              </motion.a>
+            )}
+          </div>
         )}
       </div>
     </div>
@@ -154,6 +189,38 @@ export default function ProjectDetail({ onClose, data }: ProjectDetailProps) {
     );
   };
 
+  const renderProjectStats = () => {
+    const stats = [
+      { label: 'Technologies', value: techStack?.length || 0, icon: Code },
+      {
+        label: 'Team Size',
+        value: (members?.length || 0) + (manager ? 1 : 0),
+        icon: ExternalLink,
+      },
+      { label: 'Status', value: STATUS_CONFIG[status].label, icon: Play },
+    ];
+
+    return (
+      <div className="mb-8 grid grid-cols-3 gap-4">
+        {stats.map((stat, index) => (
+          <motion.div
+            key={index}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.1 }}
+            className="rounded-xl border border-white/10 bg-white/5 p-4 text-center"
+          >
+            <div className="mb-2 flex justify-center">
+              <stat.icon className="h-6 w-6 text-[#1AF4E6]" />
+            </div>
+            <p className="text-2xl font-bold text-white">{stat.value}</p>
+            <p className="text-sm text-white/70">{stat.label}</p>
+          </motion.div>
+        ))}
+      </div>
+    );
+  };
+
   const renderTeamMembers = () => {
     if (!members || members.length === 0) return null;
 
@@ -167,13 +234,24 @@ export default function ProjectDetail({ onClose, data }: ProjectDetailProps) {
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: index * 0.1 }}
-              className="flex items-center justify-between rounded-xl border border-white/10 bg-white/10 p-4 transition-colors hover:bg-white/15"
+              className="group flex items-center justify-between rounded-xl border border-white/10 bg-white/10 p-4 transition-colors hover:bg-white/15"
             >
-              <div>
-                <p className="font-semibold text-white">{person.name}</p>
-                <p className="text-sm text-[#1AF4E6]">
-                  {person.role || 'Team Member'}
-                </p>
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-r from-[#F4B71A] to-[#1AF4E6] font-bold text-black">
+                  {person.name
+                    .split(' ')
+                    .map((n) => n[0])
+                    .join('')
+                    .slice(0, 2)}
+                </div>
+                <div>
+                  <p className="font-semibold text-white transition-colors group-hover:text-[#1AF4E6]">
+                    {person.name}
+                  </p>
+                  <p className="text-sm text-[#1AF4E6]">
+                    {person.role || 'Team Member'}
+                  </p>
+                </div>
               </div>
             </motion.div>
           ))}
@@ -184,7 +262,20 @@ export default function ProjectDetail({ onClose, data }: ProjectDetailProps) {
 
   const renderFooter = () => (
     <div className="rounded-b-3xl border-t border-white/10 bg-white/5 px-8 py-6">
-      <div className="flex justify-center">
+      <div className="flex justify-center gap-4">
+        {githubUrl && (
+          <motion.a
+            href={githubUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className="flex items-center gap-2 rounded-xl border border-gray-600/50 bg-gray-800/80 px-6 py-3 text-white backdrop-blur-sm transition-all duration-200 hover:border-gray-500/50 hover:bg-gray-700/80"
+          >
+            <Github size={20} />
+            <span className="font-medium">View on GitHub</span>
+          </motion.a>
+        )}
         <motion.button
           onClick={onClose}
           whileHover={{ scale: 1.05 }}
@@ -215,6 +306,7 @@ export default function ProjectDetail({ onClose, data }: ProjectDetailProps) {
         {renderHeader()}
 
         <div className="space-y-8 px-8 pb-8">
+          {renderProjectStats()}
           {renderDescription()}
           {renderPurpose()}
           {renderTechStack()}
