@@ -51,7 +51,7 @@ SELECT
   MIN(sl.created_at) as first_link_created,
   MAX(sl.created_at) as last_link_created
 FROM users u
-LEFT JOIN user_private_details upd ON u.id = upd.id
+LEFT JOIN user_private_details upd ON u.id = upd.user_id
 INNER JOIN shortened_links sl ON u.id = sl.creator_id
 WHERE sl.link IS NOT NULL
 GROUP BY u.id, u.display_name, u.avatar_url, upd.email
