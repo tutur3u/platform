@@ -20,10 +20,5 @@
     "src",
     ".next/types/**/*.ts"
   ],
-  "exclude": [
-    "node_modules",
-    "dist",
-    ".next",
-    ".turbo"
-  ]
+  "exclude": ["node_modules", "dist", ".turbo"]
 }

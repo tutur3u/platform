@@ -6,11 +6,12 @@ import type { Message } from '@tuturuuu/ai/types';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { AIChat } from '@tuturuuu/types/db';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
+import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { cn } from '@tuturuuu/utils/format';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import type React from 'react';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ChatList } from '@/components/chat-list';
 import { ChatPanel } from '@/components/chat-panel';
 import { ChatScrollAnchor } from '@/components/chat-scroll-anchor';
@@ -66,6 +67,7 @@ const Chat = ({
       body: {
         id: chat?.id,
         model: chat?.model || model?.value,
+        wsId: ROOT_WORKSPACE_ID,
       },
       onResponse(response) {
         if (!response.ok)
@@ -102,7 +104,7 @@ const Chat = ({
   useEffect(() => {
     setSummary(chat?.summary || '');
     setSummarizing(false);
-  }, [chat?.id, messages?.length, chat?.latest_summarized_message_id]);
+  }, [chat?.summary]);
 
   useEffect(() => {
     if (!chat || isLoading) return;
@@ -170,9 +172,16 @@ const Chat = ({
     return () => {
       clearTimeout(reloadTimeout);
     };
-  }, [summary, chat, isLoading, messages, reload]);
+  }, [summary, chat, isLoading, messages, reload, model, t, summarizing]);
 
   const [initialScroll, setInitialScroll] = useState(true);
+
+  const clearChat = useCallback(() => {
+    if (defaultChat?.id) return;
+    setSummary(undefined);
+    setChat(undefined);
+    setCollapsed(true);
+  }, [defaultChat?.id]);
 
   useEffect(() => {
     // if there is "input" in the query string, we will
@@ -208,14 +217,23 @@ const Chat = ({
       router.replace('/');
       router.refresh();
     }
-  }, [chat?.id, searchParams, router, setInput, chats, count, initialScroll]);
+  }, [
+    chat?.id,
+    searchParams,
+    router,
+    setInput,
+    chats,
+    count,
+    initialScroll,
+    clearChat,
+  ]);
 
   const [collapsed, setCollapsed] = useState(true);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     if (inputRef.current) inputRef.current.focus();
-  }, [input, inputRef]);
+  }, []);
 
   const [pendingPrompt, setPendingPrompt] = useState<string | null>(null);
 
@@ -275,13 +293,6 @@ const Chat = ({
       title: t('ai_chat.chat_updated'),
       description: t('ai_chat.visibility_updated_desc'),
     });
-  };
-
-  const clearChat = () => {
-    if (defaultChat?.id) return;
-    setSummary(undefined);
-    setChat(undefined);
-    setCollapsed(true);
   };
 
   useEffect(() => {
@@ -365,6 +376,7 @@ const Chat = ({
         setCollapsed={setCollapsed}
         disabled={disabled}
         currentUserId={currentUserId}
+        wsId={ROOT_WORKSPACE_ID}
       />
     </div>
   );
