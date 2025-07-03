@@ -1,9 +1,12 @@
-import { prepareTaskChunks } from '@tuturuuu/ai/scheduling/algorithm';
+import {
+  prepareTaskChunks,
+  scheduleTasks,
+} from '@tuturuuu/ai/scheduling/algorithm';
+import { defaultActiveHours } from '@tuturuuu/ai/scheduling/default';
 import type { Task } from '@tuturuuu/ai/scheduling/types';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { getCurrentSupabaseUser } from '@tuturuuu/utils/user-helper';
 import { NextResponse } from 'next/server';
-
 export async function POST(
   req: Request,
   { params }: { params: Promise<{ wsId: string }> }
@@ -113,13 +116,18 @@ export async function POST(
 
     const events = prepareTaskChunks([taskToSplit]);
 
+    const { events: newScheduledEvents } = scheduleTasks(
+      events,
+      defaultActiveHours,
+      []
+    );
     if (events.length > 0) {
-      const insertData = events.map((event) => ({
+      const insertData = newScheduledEvents.map((event) => ({
         ws_id: wsId,
         task_id: event.taskId,
         title: event.name,
-        start_at: dbTask.start_date || '',
-        end_at: dbTask.end_date || '',
+        start_at: event.range.start.toISOString(),
+        end_at: event.range.end.toISOString(),
         locked: false,
       }));
 
