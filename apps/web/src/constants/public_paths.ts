@@ -5,9 +5,9 @@ export const APP_PUBLIC_PATHS = [
   '/login',
   '/about',
   '/projects',
+  '/meet-together',
   '/neo-crush',
   '/neo-chess',
-  '/meet-together',
 ].reduce((acc: string[], path) => {
   // Add the original path
   acc.push(path);

@@ -32,7 +32,8 @@
     "BASE_URL",
     "API_URL",
     "ANALYZE",
-    "NODE_ENV"
+    "NODE_ENV",
+    "OCR_SERVICE_URL"
   ],
   "tasks": {
     "build": {
