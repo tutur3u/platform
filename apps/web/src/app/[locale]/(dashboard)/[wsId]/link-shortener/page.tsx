@@ -265,7 +265,9 @@ async function getData({
 
     // Use optimized domain extraction for domain searches
     if (!searchTerm.includes('/') && searchTerm.includes('.')) {
-      searchConditions.push(`extract_domain(link).ilike.%${searchTerm}%`);
+      searchConditions.push(`link.ilike.%${searchTerm}%`);
+      searchConditions.push(`link.ilike.%://${searchTerm}%`);
+      searchConditions.push(`link.ilike.%www.${searchTerm}%`);
     }
 
     // If the search term is just a domain name without protocol, search for it
@@ -287,8 +289,16 @@ async function getData({
   if (domain) {
     const domains = Array.isArray(domain) ? domain : [domain];
     const domainConditions = domains
-      .map((d) => `extract_domain(link).ilike.%${d}%`)
-      .join(',');
+      .map((d) => {
+        // Use multiple approaches for domain matching
+        return `(
+        link.ilike.%${d}% OR 
+        link.ilike.%://${d}% OR 
+        link.ilike.%www.${d}% OR
+        link.ilike.%.${d}%
+      )`;
+      })
+      .join(' OR ');
     query = query.or(domainConditions);
   }
 
