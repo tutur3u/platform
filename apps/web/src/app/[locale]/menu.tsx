@@ -31,16 +31,22 @@ interface NavItem {
   external?: boolean;
 }
 
-const navItems = (t: any) => {
-  return [
+const navItems = (t: any, user: WorkspaceUser | null) => {
+  const baseItems = [
     { href: '/', label: t('common.home') },
     { href: '/about', label: t('common.about') },
     { href: '/projects', label: t('common.projects') },
     { href: '/meet-together', label: t('common.meet-together') },
     { href: '/neo-crush', label: 'Neo Crush' },
     { href: '/neo-chess', label: 'Neo Chess' },
-    { href: '/scanner', label: 'Scanner' },
   ] as NavItem[];
+
+  // Only add Scanner for logged-in users
+  if (user) {
+    baseItems.push({ href: '/scanner', label: 'Scanner' });
+  }
+
+  return baseItems;
 };
 
 const NavLink: React.FC<NavLinkProps> = ({ item, onClick, className }) => {
@@ -61,10 +67,13 @@ const NavLink: React.FC<NavLinkProps> = ({ item, onClick, className }) => {
   return <Link {...linkProps}>{item.label}</Link>;
 };
 
-const DesktopMenu: React.FC<{ t: any }> = ({ t }) => {
+const DesktopMenu: React.FC<{ t: any; user: WorkspaceUser | null }> = ({
+  t,
+  user,
+}) => {
   return (
     <div className="hidden w-full items-center rounded-2xl border-[0.5px] border-gray-700/50 bg-primary-foreground px-6 py-3 font-semibold md:flex md:gap-6 lg:gap-8">
-      {navItems(t).map((item) => (
+      {navItems(t, user).map((item) => (
         <NavLink
           key={item.href}
           item={item}
@@ -103,7 +112,7 @@ const MobileMenu: React.FC<MenuProps> = ({ sbUser, user, t }) => {
         </div>
         <Separator className="my-4" />
         <div className="grid gap-2 text-center font-semibold">
-          {navItems(t).map((item) => (
+          {navItems(t, user).map((item) => (
             <MobileNavLink key={item.href} item={item} onClick={closeMenu} />
           ))}
         </div>
@@ -117,7 +126,7 @@ const Menu: React.FC<MenuProps> = ({ sbUser, user }) => {
 
   return (
     <>
-      <DesktopMenu t={t} />
+      <DesktopMenu t={t} user={user} />
       <div className="flex gap-2 md:hidden">
         <MobileMenu sbUser={sbUser} user={user} t={t} />
       </div>
