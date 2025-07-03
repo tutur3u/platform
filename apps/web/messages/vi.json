@@ -817,7 +817,19 @@
     "short_url": "URL ngắn",
     "original_url": "URL gốc",
     "creator": "Người tạo",
-    "created_at": "Ngày tạo"
+    "created_at": "Ngày tạo",
+    "date_range": "Khoảng thời gian",
+    "domain": "Tên miền",
+    "date_filters": {
+      "today": "Hôm nay",
+      "yesterday": "Hôm qua",
+      "this_week": "Tuần này",
+      "last_week": "Tuần trước",
+      "this_month": "Tháng này",
+      "last_month": "Tháng trước",
+      "last_3_months": "3 tháng qua",
+      "this_year": "Năm nay"
+    }
   },
   "team-tabs": {
     "overview": "Tổng quan",

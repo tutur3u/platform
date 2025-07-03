@@ -806,7 +806,19 @@
     "short_url": "Short URL",
     "original_url": "Original URL",
     "creator": "Creator",
-    "created_at": "Created At"
+    "created_at": "Created At",
+    "date_range": "Date Range",
+    "domain": "Domain",
+    "date_filters": {
+      "today": "Today",
+      "yesterday": "Yesterday",
+      "this_week": "This Week",
+      "last_week": "Last Week",
+      "this_month": "This Month",
+      "last_month": "Last Month",
+      "last_3_months": "Last 3 Months",
+      "this_year": "This Year"
+    }
   },
   "team-tabs": {
     "overview": "Overview",
