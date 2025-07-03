@@ -228,6 +228,7 @@ export async function POST(
           end: dayjs(event.end_at),
         },
         locked: event.locked,
+        priority: event.priority,
         taskId: event.task_id ?? '',
         category: 'work',
       })

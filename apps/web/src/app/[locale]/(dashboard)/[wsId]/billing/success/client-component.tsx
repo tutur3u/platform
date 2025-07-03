@@ -31,10 +31,11 @@ interface WorkspaceSubscription {
   ws_id: string;
   created_at: string;
   plan_name?: string;
-  workspace_subscription_products?: {
+  workspace_subscription_products: {
     price: number;
   };
 }
+
 export default function ClientComponent({ wsId }: ClientComponentProps) {
   const [subscription, setSubscription] =
     useState<WorkspaceSubscription | null>(null);
@@ -58,13 +59,9 @@ export default function ClientComponent({ wsId }: ClientComponentProps) {
         } else {
           setSubscription({
             ...subscription,
-            workspace_subscription_products:
-              subscription.workspace_subscription_products
-                ? {
-                    price:
-                      subscription.workspace_subscription_products.price ?? 0,
-                  }
-                : undefined,
+            workspace_subscription_products: Array.isArray(subscription.workspace_subscription_products)
+              ? subscription.workspace_subscription_products[0]
+              : subscription.workspace_subscription_products,
           });
         }
       } catch (err) {
@@ -272,7 +269,7 @@ export default function ClientComponent({ wsId }: ClientComponentProps) {
               className="group flex cursor-not-allowed items-center gap-2 opacity-50"
             >
               <Download className="h-4 w-4" />
-              {t('success.download-receipt')}(Expired)
+              {t('success.download-receipt')} (Expired)
             </Button>
           ) : (
             <Button
@@ -301,19 +298,19 @@ export default function ClientComponent({ wsId }: ClientComponentProps) {
         {/* Support Information */}
         <div className="mt-8 rounded-lg border border-border bg-muted/30 p-6 text-center transition-all delay-2000 duration-300 duration-800 animate-in fade-in hover:scale-105 hover:bg-muted/50">
           <p className="text-sm text-muted-foreground">
-            Need help? Contact our{' '}
+            {t('success.need-help')}{' '}
             <Link
               href="/#"
               className="inline-block font-medium text-primary transition-all duration-300 hover:scale-110 hover:text-primary/80 hover:underline"
             >
-              support team
+              {t('success.support-team')}
             </Link>{' '}
-            or visit our{' '}
+            {t('success.or-visit')}{' '}
             <Link
               href="/#"
               className="inline-block font-medium text-primary transition-all duration-300 hover:scale-110 hover:text-primary/80 hover:underline"
             >
-              help center
+              {t('success.help-center')}
             </Link>
             .
           </p>
