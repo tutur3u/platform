@@ -209,6 +209,9 @@ export default async function LinkShortenerPage({
               filters={<LinkShortenerFilters />}
               defaultVisibility={{
                 id: false,
+                creator: false,
+                creator_id: false,
+                created_at: false,
               }}
             />
           </CardContent>
@@ -257,26 +260,7 @@ async function getData({
   // Apply search filter - supports URL, domain, and slug search
   if (q) {
     const searchTerm = q.trim();
-    const searchConditions: string[] = [];
-
-    // Search in link URL and slug
-    searchConditions.push(`link.ilike.%${searchTerm}%`);
-    searchConditions.push(`slug.ilike.%${searchTerm}%`);
-
-    // Use optimized domain extraction for domain searches
-    if (!searchTerm.includes('/') && searchTerm.includes('.')) {
-      searchConditions.push(`link.ilike.%${searchTerm}%`);
-      searchConditions.push(`link.ilike.%://${searchTerm}%`);
-      searchConditions.push(`link.ilike.%www.${searchTerm}%`);
-    }
-
-    // If the search term is just a domain name without protocol, search for it
-    if (!searchTerm.includes('://') && searchTerm.includes('.')) {
-      searchConditions.push(`link.ilike.%://${searchTerm}%`);
-      searchConditions.push(`link.ilike.%www.${searchTerm}%`);
-    }
-
-    query = query.or(searchConditions.join(','));
+    query = query.textSearch('link', searchTerm);
   }
 
   // Apply creator filter
@@ -285,21 +269,10 @@ async function getData({
     query = query.in('creator_id', creatorIds);
   }
 
-  // Apply domain filter using the optimized domain extraction
+  // Apply domain filter
   if (domain) {
     const domains = Array.isArray(domain) ? domain : [domain];
-    const domainConditions = domains
-      .map((d) => {
-        // Use multiple approaches for domain matching
-        return `(
-        link.ilike.%${d}% OR 
-        link.ilike.%://${d}% OR 
-        link.ilike.%www.${d}% OR
-        link.ilike.%.${d}%
-      )`;
-      })
-      .join(' OR ');
-    query = query.or(domainConditions);
+    query = query.in('domain', domains);
   }
 
   // Apply date range filter
