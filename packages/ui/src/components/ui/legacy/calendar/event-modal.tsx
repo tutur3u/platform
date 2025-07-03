@@ -81,14 +81,10 @@ import {
   EventToggleSwitch,
   OverlapWarning,
 } from './event-form-components';
-import { isAllDayEvent } from '../../../../hooks/calendar-utils';
+import { isAllDayEvent, createAllDayEvent } from '../../../../hooks/calendar-utils';
 
 dayjs.extend(ts);
 dayjs.extend(utc);
-interface ExtendedCalendarEvent extends CalendarEvent {
-  _originalId?: string;
-  _dayPosition?: 'start' | 'middle' | 'end';
-}
 
 const AIFormSchema = z.object({
   prompt: z.string().min(1, 'Please enter a prompt to generate an event'),
@@ -209,33 +205,37 @@ export function EventModal() {
   // Reset form when modal opens/closes or active event changes
   useEffect(() => {
     if (activeEvent) {
-      // Handle IDs for split multi-day events (they contain a dash and date)
-      const originalId = activeEvent.id.includes('-')
-        ? activeEvent.id.split('-')[0]
-        : activeEvent.id;
 
-      // If this is a split event, we need to get the original event data
-      const extendedEvent = activeEvent as ExtendedCalendarEvent;
-      const eventData = extendedEvent._originalId
-        ? { ...extendedEvent, id: originalId }
-        : extendedEvent;
+      
+      // Clean the event data to only include valid CalendarEvent fields
+      const cleanEventData: Partial<CalendarEvent> = {
+        id: activeEvent.id,
+        title: activeEvent.title || '',
+        description: activeEvent.description || '',
+        start_at: activeEvent.start_at,
+        end_at: activeEvent.end_at,
+        color: activeEvent.color || 'BLUE',
+        location: activeEvent.location || '',
+        priority: activeEvent.priority || 'medium',
+        locked: activeEvent.locked || false,
+        ws_id: activeEvent.ws_id,
+        google_event_id: activeEvent.google_event_id,
+      };
 
-      setEvent({
-        ...eventData,
-        priority: eventData.priority || 'medium',
-        locked: eventData.locked,
-      });
+
+
+      setEvent(cleanEventData);
 
       // Only check for all-day if this is an existing event (not a new one)
       if (activeEvent.id !== 'new') {
-        setIsAllDay(isAllDayEvent(eventData));
+        setIsAllDay(isAllDayEvent(cleanEventData as CalendarEvent, tz));
       } else {
         // For new events, always start with isAllDay as false
         setIsAllDay(false);
       }
 
       // Check for overlapping events
-      checkForOverlaps(eventData);
+      checkForOverlaps(cleanEventData);
 
       // Set active tab to manual when editing an existing event
       setActiveTab('manual');
@@ -315,22 +315,31 @@ export function EventModal() {
     setIsSaving(true);
 
     try {
-      const eventData = {
-        ...event,
+      // Clean event data to only include fields that should be updated
+      const eventData: Partial<CalendarEvent> = {
+        title: event.title || '',
+        description: event.description || '',
+        start_at: event.start_at,
+        end_at: event.end_at,
+        color: event.color || 'BLUE',
+        location: event.location || '',
         priority: event.priority || 'medium',
         locked: event.locked || false,
       };
 
+
+
       if (activeEvent?.id === 'new') {
         await addEvent(eventData as Omit<CalendarEvent, 'id'>);
       } else if (activeEvent?.id) {
-        // Handle IDs for split multi-day events (they contain a dash and date)
-        const originalId = activeEvent.id.includes('-')
-          ? activeEvent.id.split('-')[0]
-          : activeEvent.id;
+        // For multi-day events, always use the original event ID
+        // The activeEvent should already contain the original event from the database
+        const eventId = activeEvent.id;
         
-        if (originalId) {
-          await updateEvent(originalId, eventData);
+
+        
+        if (eventId && eventId !== 'new') {
+          await updateEvent(eventId, eventData);
         } else {
           throw new Error('Invalid event ID');
         }
@@ -599,15 +608,16 @@ export function EventModal() {
             end_at: alldayBackup.end,
           };
         }
-        const newStart =
-          tz === 'auto'
-            ? startDate.startOf('day')
-            : startDate.tz(tz).startOf('day');
-        const newEnd = newStart.add(1, 'day');
+        // Use the new createAllDayEvent helper for proper timezone handling
+        const { start_at, end_at } = createAllDayEvent(
+          startDate.toDate(),
+          tz,
+          1 // 1 day duration
+        );
         return {
           ...prev,
-          start_at: newStart.toISOString(),
-          end_at: newEnd.toISOString(),
+          start_at,
+          end_at,
         };
       } else {
         setPrevTimes((old) => ({
