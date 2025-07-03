@@ -169,15 +169,15 @@ export async function POST(
     console.log(`[AUTO-SCHEDULE-${requestId}] Fetching tasks and events...`);
 
     // Fetch tasks for the current user
-    const { data: currentTasks, error: tasksError } = await (await supabase)
-      .from('tasks')
-      .select('*')
-      .eq('creator_id', user.id)
-      .eq('archived', false)
-      .eq('completed', false);
+    // const { data: currentTasks, error: tasksError } = await (await supabase)
+    //   .from('tasks')
+    //   .select('*')
+    //   .eq('creator_id', user.id)
+    //   .eq('archived', false)
+    //   .eq('completed', false);
 
-    if (tasksError)
-      throw new Error(`Failed to fetch tasks: ${tasksError.message}`);
+    // if (tasksError)
+    //   throw new Error(`Failed to fetch tasks: ${tasksError.message}`);
 
     const { data: flexibleEventsData, error: flexibleEventsError } = await (
       await supabase
