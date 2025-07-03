@@ -17,21 +17,21 @@ import { useTranslations } from 'next-intl';
 
 const stats = [
   {
-    number: '100+',
+    number: '40+',
     content: 'Active Members',
     icon: Users,
     gradient: 'from-blue-500 to-cyan-500',
     description: 'Passionate tech enthusiasts',
   },
   {
-    number: '70+',
+    number: '25+',
     content: 'Student Projects',
     icon: Code,
     gradient: 'from-purple-500 to-pink-500',
     description: 'Innovation driven solutions',
   },
   {
-    number: '50+',
+    number: '20+',
     content: 'Industry Partners',
     icon: Building2,
     gradient: 'from-green-500 to-emerald-500',

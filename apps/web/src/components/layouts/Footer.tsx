@@ -1,4 +1,4 @@
-import { GetStartedButton } from '@ncthub/ui/custom/get-started-button';
+import FooterCTA from './FooterCTA';
 import { Separator } from '@ncthub/ui/separator';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
@@ -9,14 +9,9 @@ export default async function Footer() {
   return (
     <div className="w-full px-0 text-center md:px-4 lg:px-10">
       <Separator className="mt-8 mb-5 bg-foreground/5" />
-      <p className="mb-8 text-2xl font-bold md:text-3xl">
-        Want to join with us?
-      </p>
-      <div className="mx-auto mb-9 w-full px-1 text-lg text-white/50 sm:px-0 md:w-[32rem] md:text-xl">
-        Feel free to reach out if you want to collaborate with us, or simply
-        have a chat.
-      </div>
-      <GetStartedButton href="/login" text={t('common.get-started')} />
+      {/* Client component with motion */}
+      <FooterCTA />
+
       <Separator className="mt-8 h-1 bg-gradient-to-r from-[#5FC6E5] to-[#FBC821] blur-sm" />
 
       <div className="mx-auto flex flex-col items-center justify-evenly gap-5 py-8 md:flex-row md:py-24">
@@ -131,7 +126,6 @@ export default async function Footer() {
           </div>
         </div>
       </div>
-      {/* <Separator className="mt-8 h-1 bg-gradient-to-r from-[#5FC6E5] to-[#FBC821] blur-sm" /> */}
 
       <div className="mt-4 flex flex-col items-center justify-between gap-4 pb-4 md:flex-row">
         <div className="text-center opacity-80">{t('common.copyright')}</div>
