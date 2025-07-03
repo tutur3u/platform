@@ -31,7 +31,9 @@ export interface DataTableProps<TData, TValue> {
   hidePagination?: boolean;
   columns?: ColumnDef<TData, TValue>[];
   filters?: ReactNode[] | ReactNode;
+  // biome-ignore lint/suspicious/noExplicitAny: <extraColumns type is not known ahead of time>
   extraColumns?: any[];
+  // biome-ignore lint/suspicious/noExplicitAny: <extraData type is not known ahead of time>
   extraData?: any;
   newObjectTitle?: string;
   editContent?: ReactNode;
@@ -53,20 +55,23 @@ export interface DataTableProps<TData, TValue> {
   onSearch?: (query: string) => void;
   // eslint-disable-next-line no-unused-vars
   onRowClick?: (row: TData) => void;
+  onRowDoubleClick?: (row: TData) => void;
   // eslint-disable-next-line no-unused-vars
   setParams?: (params: { page?: number; pageSize?: string }) => void;
   resetParams?: () => void;
+  // biome-ignore lint/suspicious/noExplicitAny: <t type is not known ahead of time>
   t?: any;
   columnGenerator?: (
-    // eslint-disable-next-line no-unused-vars
+    // biome-ignore lint/suspicious/noExplicitAny: <t type is not known ahead of time>
     t: any,
-    // eslint-disable-next-line no-unused-vars
     namespace: string | undefined,
-    // eslint-disable-next-line no-unused-vars
+    // biome-ignore lint/suspicious/noExplicitAny: <extraColumns type is not known ahead of time>
     extraColumns?: any[],
-    // eslint-disable-next-line no-unused-vars
+    // biome-ignore lint/suspicious/noExplicitAny: <extraData type is not known ahead of time>
     extraData?: any
   ) => ColumnDef<TData, TValue>[];
+  // Optional row wrapper for custom row rendering (e.g., context menu)
+  rowWrapper?: (row: React.ReactElement, rowData: TData) => React.ReactElement;
 }
 
 export function DataTable<TData, TValue>({
@@ -94,9 +99,11 @@ export function DataTable<TData, TValue>({
   onRefresh,
   onSearch,
   onRowClick,
+  onRowDoubleClick,
   setParams,
   resetParams,
   columnGenerator,
+  rowWrapper,
 }: DataTableProps<TData, TValue>) {
   const [rowSelection, setRowSelection] = useState({});
   const [columnVisibility, setColumnVisibility] =
@@ -181,23 +188,29 @@ export function DataTable<TData, TValue>({
           </TableHeader>
           <TableBody>
             {table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow
-                  key={`${namespace}-${row.id}`}
-                  data-state={row.getIsSelected() && 'selected'}
-                  onClick={() => onRowClick?.(row.original)}
-                  className="cursor-pointer"
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={`${namespace}-${cell.id}`}>
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                      )}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))
+              table.getRowModel().rows.map((row) => {
+                const tableRow = (
+                  <TableRow
+                    key={`${namespace}-${row.id}`}
+                    data-state={row.getIsSelected() && 'selected'}
+                    className="cursor-pointer"
+                    onClick={() => onRowClick?.(row.original)}
+                    onDoubleClick={() => onRowDoubleClick?.(row.original)}
+                  >
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell key={`${namespace}-${cell.id}`}>
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext()
+                        )}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                );
+                return rowWrapper
+                  ? rowWrapper(tableRow, row.original)
+                  : tableRow;
+              })
             ) : (
               <TableRow>
                 <TableCell
