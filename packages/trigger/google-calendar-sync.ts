@@ -227,7 +227,7 @@ export const getWorkspacesForSync = async () => {
   }
 };
 
-// Sync a single workspace for immediate range
+// Sync a single workspace for 1 week from now
 export const syncWorkspaceImmediate = async (payload: {
   ws_id: string;
   access_token: string;
@@ -254,7 +254,7 @@ export const syncWorkspaceImmediate = async (payload: {
   );
 };
 
-// Sync a single workspace for extended range
+// Sync a single workspace for 4 weeks (28 days) from now
 export const syncWorkspaceExtended = async (payload: {
   ws_id: string;
   access_token: string;
@@ -268,7 +268,7 @@ export const syncWorkspaceExtended = async (payload: {
   }
 
   const now = dayjs();
-  const timeMin = now.add(7, 'day'); // Start from 1 week from now
+  const timeMin = now; // Start from now
   const timeMax = now.add(28, 'day'); // 4 weeks from now (1 week + 3 weeks)
   
   return syncGoogleCalendarEventsForWorkspace(
@@ -343,3 +343,37 @@ export const syncGoogleCalendarEventsExtended = async () => {
 export const syncGoogleCalendarEvents = async () => {
   return syncGoogleCalendarEventsImmediate();
 };
+
+const storeSyncToken = async (ws_id: string, syncToken: string, lastSyncedAt: Date) => {
+  const supabase = await createAdminClient({ noCookie: true });
+  const { error } = await supabase
+    .from('calendar_sync_states')
+    .upsert({ ws_id, sync_token: syncToken, last_synced_at: lastSyncedAt.toISOString() });
+};
+
+export async function performFullSyncForWorkspace(calendarId = "primary", ws_id: string,
+  access_token: string,
+  refresh_token: string) {
+  const auth = getGoogleAuthClient({ access_token, refresh_token: refresh_token || undefined });
+  const calendar = google.calendar({ version: "v3", auth });
+
+  const res = await calendar.events.list({
+    calendarId,
+    showDeleted: true,
+    singleEvents: true,
+    maxResults: 2500,
+  });
+
+  const events = res.data.items || [];
+  const syncToken = res.data.nextSyncToken;
+
+  if (events.length > 0) {
+    syncWorkspaceExtended({ ws_id, access_token, refresh_token });
+  }
+
+  if (syncToken) {
+    await storeSyncToken(ws_id, syncToken, new Date());
+  }
+
+  return events;
+}
