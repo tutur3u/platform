@@ -1,3 +1,0 @@
-User-Agent: *
-Allow: /
-Sitemap: https://tuturuuu.com/sitemap.xml
