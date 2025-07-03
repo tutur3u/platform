@@ -62,14 +62,55 @@ export default async function LinkShortenerFilters() {
 async function getCreators() {
   const sbAdmin = await createAdminClient();
 
-  const { data, error } = await sbAdmin
+  // Try the optimized view first, fallback to manual aggregation
+  let { data, error } = await sbAdmin
     .from('shortened_links_creator_stats')
     .select('*')
     .order('link_count', { ascending: false });
 
   if (error) {
-    console.error('Error fetching creators:', error);
-    return { data: [] };
+    console.log('Falling back to manual creator aggregation:', error.message);
+
+    // Fallback: manual aggregation
+    const { data: rawData, error: rawError } = await sbAdmin
+      .from('shortened_links')
+      .select(`
+        creator_id,
+        creator:users!creator_id (
+          id,
+          display_name,
+          avatar_url,
+          ...user_private_details(email)
+        )
+      `)
+      .not('creator_id', 'is', null);
+
+    if (rawError) {
+      console.error('Error fetching creators:', rawError);
+      return { data: [] };
+    }
+
+    // Aggregate creators with link counts
+    const creatorCounts = new Map();
+
+    rawData?.forEach((link) => {
+      if (link.creator) {
+        const creatorId = link.creator.id;
+        if (creatorCounts.has(creatorId)) {
+          creatorCounts.set(creatorId, {
+            ...creatorCounts.get(creatorId),
+            link_count: creatorCounts.get(creatorId).link_count + 1,
+          });
+        } else {
+          creatorCounts.set(creatorId, {
+            ...link.creator,
+            link_count: 1,
+          });
+        }
+      }
+    });
+
+    data = Array.from(creatorCounts.values());
   }
 
   return { data: data || [] };
@@ -78,14 +119,54 @@ async function getCreators() {
 async function getDomains() {
   const sbAdmin = await createAdminClient();
 
-  const { data, error } = await sbAdmin
+  // Try the optimized view first, fallback to manual aggregation
+  let { data, error } = await sbAdmin
     .from('shortened_links_domain_stats')
     .select('*')
     .order('link_count', { ascending: false });
 
   if (error) {
-    console.error('Error fetching domains:', error);
-    return { data: [] };
+    console.log('Falling back to manual domain aggregation:', error.message);
+
+    // Fallback: manual aggregation
+    const { data: rawData, error: rawError } = await sbAdmin
+      .from('shortened_links')
+      .select('link');
+
+    if (rawError) {
+      console.error('Error fetching domains:', rawError);
+      return { data: [] };
+    }
+
+    // Extract domains and count occurrences
+    const domainCounts = new Map();
+
+    rawData?.forEach((link) => {
+      try {
+        const url = new URL(link.link);
+        const domain = url.hostname;
+
+        if (domainCounts.has(domain)) {
+          domainCounts.set(domain, domainCounts.get(domain) + 1);
+        } else {
+          domainCounts.set(domain, 1);
+        }
+      } catch (e) {
+        // Skip invalid URLs
+        console.error('Error fetching domains:', e);
+      }
+    });
+
+    // Convert to array and sort by count
+    data = Array.from(domainCounts.entries())
+      .map(([name, count]) => ({
+        domain: name,
+        link_count: count,
+        creator_count: null,
+        first_created: null,
+        last_created: null,
+      }))
+      .sort((a, b) => b.link_count - a.link_count);
   }
 
   return { data: data || [] };
