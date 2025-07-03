@@ -8,6 +8,7 @@ import { Project, projects } from './data';
 import ProjectCard from './project-card';
 import ProjectDetail from './project-detail';
 import { AnimatePresence, PanInfo, motion } from 'framer-motion';
+import { Layers, LayoutGrid } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 
 // ============================================================================
@@ -15,6 +16,7 @@ import { useCallback, useEffect, useState } from 'react';
 // ============================================================================
 type ProjectType = 'web' | 'software' | 'hardware' | undefined;
 type ProjectStatus = 'planning' | 'ongoing' | 'completed' | undefined;
+type ViewMode = 'carousel' | 'grid';
 
 // ============================================================================
 // MAIN COMPONENT
@@ -25,6 +27,11 @@ export default function Projects() {
   // --------------------------------------------------------------------------
   const [type, setType] = useState<ProjectType>(undefined);
   const [status, setStatus] = useState<ProjectStatus>(undefined);
+
+  // --------------------------------------------------------------------------
+  // STATE - View Mode State
+  // --------------------------------------------------------------------------
+  const [viewMode, setViewMode] = useState<ViewMode>('carousel');
 
   // --------------------------------------------------------------------------
   // STATE - Modal State
@@ -225,6 +232,17 @@ export default function Projects() {
   };
 
   // --------------------------------------------------------------------------
+  // VIEW MODE HANDLERS
+  // --------------------------------------------------------------------------
+  const handleViewModeChange = (mode: ViewMode) => {
+    setViewMode(mode);
+    // Reset auto-scroll when switching to grid
+    if (mode === 'grid') {
+      setIsAutoScrolling(false);
+    }
+  };
+
+  // --------------------------------------------------------------------------
   // MAIN RENDER
   // --------------------------------------------------------------------------
   return (
@@ -245,6 +263,43 @@ export default function Projects() {
             </p>
           </div>
         </div>
+
+        {/* View Mode Toggle */}
+        <div className="mt-6 mb-4">
+          <div className="relative inline-flex rounded-xl border border-white/20 bg-white/5 p-1 backdrop-blur-sm">
+            <motion.div
+              className="absolute inset-y-1 rounded-lg bg-gradient-to-r from-[#F4B71A] to-[#1AF4E6]"
+              animate={{
+                x: viewMode === 'carousel' ? 0 : '100%',
+                width: viewMode === 'carousel' ? '50%' : '50%',
+              }}
+              transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+            />
+            <button
+              onClick={() => handleViewModeChange('carousel')}
+              className={`relative z-10 flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors duration-200 ${
+                viewMode === 'carousel'
+                  ? 'text-slate-900'
+                  : 'text-white/70 hover:text-white'
+              }`}
+            >
+              <Layers size={16} />
+              Swipe
+            </button>
+            <button
+              onClick={() => handleViewModeChange('grid')}
+              className={`relative z-10 flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors duration-200 ${
+                viewMode === 'grid'
+                  ? 'text-slate-900'
+                  : 'text-white/70 hover:text-white'
+              }`}
+            >
+              <LayoutGrid size={16} />
+              Grid
+            </button>
+          </div>
+        </div>
+
         <div className="mt-4 grid max-w-4xl grid-cols-3 gap-2 text-center">
           {[
             { key: 'web', label: 'Web Development' },
@@ -299,170 +354,201 @@ export default function Projects() {
       {/* Main Content */}
       <div className="mt-12 px-4 md:px-6 lg:px-8">
         {filteredProjects.length > 0 ? (
-          <div className="relative mx-auto max-w-screen-2xl">
-            {/* Project Info */}
-            <div className="mb-8 text-center">
-              <p className="text-sm text-white/70 md:text-base">
-                {currentIndex + 1} of {filteredProjects.length} projects
-              </p>
-              <div className="mt-2 flex flex-col items-center justify-center gap-2">
-                <div className="flex items-center gap-2">
-                  <div
-                    className={`h-2 w-2 rounded-full transition-colors ${isAutoScrolling && !isUserInteracting ? 'bg-[#1AF4E6]' : 'bg-white/30'}`}
-                  />
-                  <span className="text-xs text-white/50">
-                    {isAutoScrolling && !isUserInteracting
-                      ? 'Auto-scrolling'
-                      : 'Paused'}
-                  </span>
-                </div>
-                {isAutoScrolling && !isUserInteracting && (
-                  <div className="h-1 w-32 overflow-hidden rounded-full bg-white/10">
+          <>
+            {viewMode === 'carousel' ? (
+              /* Carousel Layout */
+              <div className="relative mx-auto max-w-screen-2xl">
+                {/* Project Info */}
+                <div className="mb-8 text-center">
+                  <div className="mt-2 flex flex-col items-center justify-center gap-2">
+                    <div className="flex items-center gap-2"></div>
+                    {isAutoScrolling && !isUserInteracting && (
+                      <div className="h-1 w-32 overflow-hidden rounded-full bg-white/10">
+                        <motion.div
+                          className="h-full rounded-full bg-gradient-to-r from-[#F4B71A] to-[#1AF4E6]"
+                          initial={{ width: '0%' }}
+                          animate={{ width: `${autoScrollProgress}%` }}
+                          transition={{ duration: 0.05, ease: 'linear' }}
+                        />
+                      </div>
+                    )}
+                  </div>
+                  {!isDragging && (
                     <motion.div
-                      className="h-full rounded-full bg-gradient-to-r from-[#F4B71A] to-[#1AF4E6]"
-                      initial={{ width: '0%' }}
-                      animate={{ width: `${autoScrollProgress}%` }}
-                      transition={{ duration: 0.05, ease: 'linear' }}
-                    />
+                      className="mt-3 flex items-center justify-center gap-2"
+                      initial={{ opacity: 0.7 }}
+                      animate={{ opacity: [0.7, 1, 0.7] }}
+                      transition={{ duration: 2, repeat: Infinity }}
+                    ></motion.div>
+                  )}
+                </div>
+                {/* Carousel Container */}
+                <div className="relative cursor-grab active:cursor-grabbing">
+                  <motion.div
+                    className="flex items-center justify-center"
+                    drag="x"
+                    dragConstraints={{ left: 0, right: 0 }}
+                    dragElastic={0.1}
+                    onDragStart={handleDragStart}
+                    onDrag={handleDrag}
+                    onDragEnd={handleDragEnd}
+                    onMouseEnter={() => setIsUserInteracting(true)}
+                    onMouseLeave={() => setIsUserInteracting(false)}
+                    animate={{ x: isDragging ? dragOffset : 0 }}
+                    transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                    style={{ minHeight: '450px', userSelect: 'none' }}
+                  >
+                    {/* Mobile Carousel */}
+                    <div className="block w-full max-w-sm md:hidden">
+                      {filteredProjects[currentIndex] && (
+                        <motion.div
+                          animate={{
+                            scale: isDragging ? 0.95 : 1,
+                            rotateY: isDragging ? dragOffset * 0.05 : 0,
+                          }}
+                          transition={{ duration: 0.2 }}
+                        >
+                          <ProjectCard
+                            project={filteredProjects[currentIndex]!}
+                            type={type}
+                            status={status}
+                            isCenter={true}
+                            onClick={() =>
+                              openProjectModal(filteredProjects[currentIndex]!)
+                            }
+                          />
+                        </motion.div>
+                      )}
+                    </div>
+                    {/* Desktop Carousel */}
+                    <div className="relative hidden h-[450px] w-full items-center justify-center px-16 md:flex">
+                      {filteredProjects.map((project, index) => {
+                        const position = index - currentIndex;
+
+                        // Only render a few cards around the current one for performance
+                        if (Math.abs(position) > 3) return null;
+
+                        return (
+                          <motion.div
+                            key={project.name}
+                            className="absolute h-[400px] w-80"
+                            initial={false}
+                            animate={calculateCardStyle(position)}
+                            transition={{
+                              type: 'spring',
+                              stiffness: 300,
+                              damping: 30,
+                            }}
+                            style={{ cursor: 'pointer' }}
+                            onClick={() => {
+                              setIsUserInteracting(true);
+                              if (position === 0) {
+                                openProjectModal(project);
+                              } else {
+                                goToSlide(index);
+                              }
+                              setTimeout(
+                                () => setIsUserInteracting(false),
+                                3000
+                              );
+                            }}
+                          >
+                            <ProjectCard
+                              project={project}
+                              type={type}
+                              status={status}
+                              isCenter={position === 0}
+                              onClick={() => {}}
+                            />
+                          </motion.div>
+                        );
+                      })}
+                    </div>
+                  </motion.div>
+                </div>
+
+                {/* Dot Indicators */}
+                {filteredProjects.length > 1 && (
+                  <div className="mt-8 flex justify-center space-x-3">
+                    {filteredProjects.map((_, index) => (
+                      <motion.button
+                        key={index}
+                        onClick={() => goToSlide(index)}
+                        className="relative"
+                        whileHover={{ scale: 1.2 }}
+                        whileTap={{ scale: 0.9 }}
+                      >
+                        <div
+                          className={`h-3 w-3 rounded-full transition-all duration-300 ${
+                            index === currentIndex
+                              ? 'scale-125 bg-gradient-to-r from-[#F4B71A] to-[#1AF4E6]'
+                              : 'bg-white/30 hover:bg-white/50'
+                          }`}
+                        />
+                      </motion.button>
+                    ))}
                   </div>
                 )}
-              </div>
-              {!isDragging && (
-                <motion.div
-                  className="mt-3 flex items-center justify-center gap-2"
-                  initial={{ opacity: 0.7 }}
-                  animate={{ opacity: [0.7, 1, 0.7] }}
-                  transition={{ duration: 2, repeat: Infinity }}
-                >
-                  <span className="text-xs text-white/40">
-                    👆 Drag to browse projects
-                  </span>
-                </motion.div>
-              )}
-            </div>
 
-            {/* Carousel Container */}
-            <div className="relative cursor-grab active:cursor-grabbing">
-              <motion.div
-                className="flex items-center justify-center"
-                drag="x"
-                dragConstraints={{ left: 0, right: 0 }}
-                dragElastic={0.1}
-                onDragStart={handleDragStart}
-                onDrag={handleDrag}
-                onDragEnd={handleDragEnd}
-                onMouseEnter={() => setIsUserInteracting(true)}
-                onMouseLeave={() => setIsUserInteracting(false)}
-                animate={{ x: isDragging ? dragOffset : 0 }}
-                transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                style={{ minHeight: '450px', userSelect: 'none' }}
-              >
-                {/* Mobile Carousel */}
-                <div className="block w-full max-w-sm md:hidden">
-                  {filteredProjects[currentIndex] && (
+                {/* Auto-scroll Controls */}
+                <div className="mt-6 flex justify-center">
+                  <motion.button
+                    onClick={() => setIsAutoScrolling(!isAutoScrolling)}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    className={`rounded-xl px-4 py-2 text-sm font-medium transition-all duration-200 ${
+                      isAutoScrolling
+                        ? 'border border-white/20 bg-gradient-to-r from-[#F4B71A]/20 to-[#1AF4E6]/20 text-white'
+                        : 'border border-white/10 bg-white/10 text-white/70'
+                    }`}
+                  >
+                    {isAutoScrolling
+                      ? 'Pause Auto-scroll'
+                      : 'Resume Auto-scroll'}
+                  </motion.button>
+                </div>
+              </div>
+            ) : (
+              /* Grid Layout */
+              <div className="mx-auto max-w-7xl">
+                {/* Project Info for Grid */}
+                <div className="mb-8 text-center">
+                  <p className="text-sm text-white/70 md:text-base">
+                    Showing {filteredProjects.length} projects
+                  </p>
+                </div>
+
+                {/* Grid Container */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5 }}
+                  className="grid gap-6 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+                >
+                  {filteredProjects.map((project, index) => (
                     <motion.div
-                      animate={{
-                        scale: isDragging ? 0.95 : 1,
-                        rotateY: isDragging ? dragOffset * 0.05 : 0,
-                      }}
-                      transition={{ duration: 0.2 }}
+                      key={project.name}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.3, delay: index * 0.1 }}
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      className="cursor-pointer"
+                      onClick={() => openProjectModal(project)}
                     >
                       <ProjectCard
-                        project={filteredProjects[currentIndex]!}
+                        project={project}
                         type={type}
                         status={status}
                         isCenter={true}
-                        onClick={() =>
-                          openProjectModal(filteredProjects[currentIndex]!)
-                        }
+                        onClick={() => {}}
                       />
                     </motion.div>
-                  )}
-                </div>
-
-                {/* Desktop Carousel */}
-                <div className="relative hidden h-[450px] w-full items-center justify-center px-16 md:flex">
-                  {filteredProjects.map((project, index) => {
-                    const position = index - currentIndex;
-
-                    // Only render a few cards around the current one for performance
-                    if (Math.abs(position) > 3) return null;
-
-                    return (
-                      <motion.div
-                        key={project.name}
-                        className="absolute h-[400px] w-80"
-                        initial={false}
-                        animate={calculateCardStyle(position)}
-                        transition={{
-                          type: 'spring',
-                          stiffness: 300,
-                          damping: 30,
-                        }}
-                        style={{ cursor: 'pointer' }}
-                        onClick={() => {
-                          setIsUserInteracting(true);
-                          if (position === 0) {
-                            openProjectModal(project);
-                          } else {
-                            goToSlide(index);
-                          }
-                          setTimeout(() => setIsUserInteracting(false), 3000);
-                        }}
-                      >
-                        <ProjectCard
-                          project={project}
-                          type={type}
-                          status={status}
-                          isCenter={position === 0}
-                          onClick={() => {}}
-                        />
-                      </motion.div>
-                    );
-                  })}
-                </div>
-              </motion.div>
-            </div>
-
-            {/* Dot Indicators */}
-            {filteredProjects.length > 1 && (
-              <div className="mt-8 flex justify-center space-x-3">
-                {filteredProjects.map((_, index) => (
-                  <motion.button
-                    key={index}
-                    onClick={() => goToSlide(index)}
-                    className="relative"
-                    whileHover={{ scale: 1.2 }}
-                    whileTap={{ scale: 0.9 }}
-                  >
-                    <div
-                      className={`h-3 w-3 rounded-full transition-all duration-300 ${
-                        index === currentIndex
-                          ? 'scale-125 bg-gradient-to-r from-[#F4B71A] to-[#1AF4E6]'
-                          : 'bg-white/30 hover:bg-white/50'
-                      }`}
-                    />
-                  </motion.button>
-                ))}
+                  ))}
+                </motion.div>
               </div>
             )}
-
-            {/* Auto-scroll Controls */}
-            <div className="mt-6 flex justify-center">
-              <motion.button
-                onClick={() => setIsAutoScrolling(!isAutoScrolling)}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className={`rounded-xl px-4 py-2 text-sm font-medium transition-all duration-200 ${
-                  isAutoScrolling
-                    ? 'border border-white/20 bg-gradient-to-r from-[#F4B71A]/20 to-[#1AF4E6]/20 text-white'
-                    : 'border border-white/10 bg-white/10 text-white/70'
-                }`}
-              >
-                {isAutoScrolling ? 'Pause Auto-scroll' : 'Resume Auto-scroll'}
-              </motion.button>
-            </div>
-          </div>
+          </>
         ) : (
           /* Empty State */
           <div className="py-12 text-center">
