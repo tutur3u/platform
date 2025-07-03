@@ -231,253 +231,123 @@ export default function Projects() {
   };
 
   // --------------------------------------------------------------------------
-  // RENDER FUNCTIONS
-  // --------------------------------------------------------------------------
-
-  const renderHeroSection = () => (
-    <div className="relative mt-96 flex flex-col items-center text-center md:mt-72">
-      <div className="flex flex-col items-center text-center">
-        <p className="text-4xl tracking-wider text-white md:text-6xl">
-          NEO Culture Tech
-        </p>
-        <p className="mt-1 bg-gradient-to-r from-[#F4B71A] to-[#1AF4E6] bg-clip-text text-5xl font-bold tracking-widest text-transparent md:mt-6 md:text-7xl">
-          PROJECTS
-        </p>
-        <div className="mt-1 w-2/3 md:w-full">
-          <p className="text-sm font-light text-white md:mt-4 md:max-w-2xl md:text-2xl">
-            The place where you can learn, grow and have fun with technology, by
-            building projects.
-          </p>
-        </div>
-      </div>
-      <div className="mt-4 grid max-w-4xl grid-cols-3 gap-2 text-center">
-        {[
-          { key: 'web', label: 'Web Development' },
-          { key: 'software', label: 'Software' },
-          { key: 'hardware', label: 'Hardware' },
-        ].map((p) => (
-          <motion.button
-            key={p.key}
-            onClick={() => handleTypeFilter(p.key as ProjectType)}
-            initial={false}
-            animate={{
-              background:
-                p.key === type
-                  ? 'linear-gradient(to right, #F4B71A 40%, #1AF4E6 100%)'
-                  : 'transparent',
-              color: p.key === type ? '#0F172A' : '#FFFFFF',
-              scale: p.key === type ? 1.05 : 1,
-            }}
-            transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-            className="rounded-xl border-2 border-[#4F4F4F] px-2 py-3 text-[0.7rem] whitespace-nowrap text-white md:text-base"
-          >
-            {p.label}
-          </motion.button>
-        ))}
-        {[
-          { key: 'planning', label: 'Planning Projects' },
-          { key: 'ongoing', label: 'Ongoing Projects' },
-          { key: 'completed', label: 'Completed Projects' },
-        ].map((p) => (
-          <motion.button
-            key={p.key}
-            onClick={() => handleStatusFilter(p.key as ProjectStatus)}
-            initial={false}
-            animate={{
-              background:
-                p.key === status
-                  ? 'linear-gradient(to right, #F4B71A 40%, #1AF4E6 100%)'
-                  : 'transparent',
-              color: p.key === status ? '#0F172A' : '#FFFFFF',
-              scale: p.key === status ? 1.05 : 1,
-            }}
-            transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-            className="rounded-xl border-2 border-[#4F4F4F] px-2 py-3 text-[0.7rem] whitespace-nowrap text-white md:text-base"
-          >
-            {p.label}
-          </motion.button>
-        ))}
-      </div>
-      <Canvas className="absolute top-2/4 -z-10 aspect-square w-[120%] -translate-y-1/2" />
-    </div>
-  );
-
-  const renderProjectInfo = () => (
-    <div className="mb-8 text-center">
-      <p className="text-sm text-white/70 md:text-base">
-        {currentIndex + 1} of {filteredProjects.length} projects
-      </p>
-      <div className="mt-2 flex flex-col items-center justify-center gap-2">
-        <div className="flex items-center gap-2">
-          <div
-            className={`h-2 w-2 rounded-full transition-colors ${isAutoScrolling && !isUserInteracting ? 'bg-[#1AF4E6]' : 'bg-white/30'}`}
-          />
-          <span className="text-xs text-white/50">
-            {isAutoScrolling && !isUserInteracting
-              ? 'Auto-scrolling'
-              : 'Paused'}
-          </span>
-        </div>
-        {isAutoScrolling && !isUserInteracting && (
-          <div className="h-1 w-32 overflow-hidden rounded-full bg-white/10">
-            <motion.div
-              className="h-full rounded-full bg-gradient-to-r from-[#F4B71A] to-[#1AF4E6]"
-              initial={{ width: '0%' }}
-              animate={{ width: `${autoScrollProgress}%` }}
-              transition={{ duration: 0.05, ease: 'linear' }}
-            />
-          </div>
-        )}
-      </div>
-      {!isDragging && (
-        <motion.div
-          className="mt-3 flex items-center justify-center gap-2"
-          initial={{ opacity: 0.7 }}
-          animate={{ opacity: [0.7, 1, 0.7] }}
-          transition={{ duration: 2, repeat: Infinity }}
-        >
-          <span className="text-xs text-white/40">
-            👆 Drag to browse projects
-          </span>
-        </motion.div>
-      )}
-    </div>
-  );
-
-  // Render mobile carousel (single card) - Unchanged
-  const renderMobileCarousel = () => (
-    <div className="block w-full max-w-sm md:hidden">
-      {filteredProjects[currentIndex] && (
-        <motion.div
-          animate={{
-            scale: isDragging ? 0.95 : 1,
-            rotateY: isDragging ? dragOffset * 0.05 : 0,
-          }}
-          transition={{ duration: 0.2 }}
-        >
-          <ProjectCard
-            project={filteredProjects[currentIndex]!}
-            type={type}
-            status={status}
-            isCenter={true}
-            onClick={() => openProjectModal(filteredProjects[currentIndex]!)}
-          />
-        </motion.div>
-      )}
-    </div>
-  );
-
-  // *** MODIFIED: Complete overhaul of the desktop carousel for the new animation ***
-  const renderDesktopCarousel = () => (
-    <div className="relative hidden h-[450px] w-full items-center justify-center px-16 md:flex">
-      {filteredProjects.map((project, index) => {
-        const position = index - currentIndex;
-
-        // Only render a few cards around the current one for performance
-        if (Math.abs(position) > 3) return null;
-
-        return (
-          <motion.div
-            key={project.name} // Use project name as unique key
-            className="absolute h-[400px] w-80"
-            initial={false} // Prevent animation on initial render
-            animate={calculateCardStyle(position)}
-            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-            style={{
-              cursor: 'pointer',
-            }}
-            onClick={() => {
-              setIsUserInteracting(true);
-              if (position === 0) {
-                openProjectModal(project);
-              } else {
-                goToSlide(index);
-              }
-              setTimeout(() => setIsUserInteracting(false), 3000);
-            }}
-          >
-            <ProjectCard
-              project={project}
-              type={type}
-              status={status}
-              isCenter={position === 0}
-              onClick={() => { }}
-            />
-          </motion.div>
-        );
-      })}
-    </div>
-  );
-
-  const renderDotIndicators = () => (
-    <>
-      {filteredProjects.length > 1 && (
-        <div className="mt-8 flex justify-center space-x-3">
-          {filteredProjects.map((_, index) => (
-            <motion.button
-              key={index}
-              onClick={() => goToSlide(index)}
-              className="relative"
-              whileHover={{ scale: 1.2 }}
-              whileTap={{ scale: 0.9 }}
-            >
-              <div
-                className={`h-3 w-3 rounded-full transition-all duration-300 ${index === currentIndex
-                    ? 'scale-125 bg-gradient-to-r from-[#F4B71A] to-[#1AF4E6]'
-                    : 'bg-white/30 hover:bg-white/50'
-                  }`}
-              />
-            </motion.button>
-          ))}
-        </div>
-      )}
-    </>
-  );
-
-  const renderAutoScrollControls = () => (
-    <div className="mt-6 flex justify-center">
-      <motion.button
-        onClick={() => setIsAutoScrolling(!isAutoScrolling)}
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
-        className={`rounded-xl px-4 py-2 text-sm font-medium transition-all duration-200 ${isAutoScrolling
-            ? 'border border-white/20 bg-gradient-to-r from-[#F4B71A]/20 to-[#1AF4E6]/20 text-white'
-            : 'border border-white/10 bg-white/10 text-white/70'
-          }`}
-      >
-        {isAutoScrolling ? 'Pause Auto-scroll' : 'Resume Auto-scroll'}
-      </motion.button>
-    </div>
-  );
-
-  const renderEmptyState = () => (
-    <div className="py-12 text-center">
-      <div className="mb-4 text-6xl">🔍</div>
-      <h3 className="mb-2 text-xl text-white md:text-2xl">No projects found</h3>
-      <p className="mb-6 text-white/70">
-        Try adjusting your filters to see more projects
-      </p>
-      <button
-        onClick={clearAllFilters}
-        className="text-[#1AF4E6] underline underline-offset-4 transition-colors hover:text-[#F4B71A]"
-      >
-        Clear all filters
-      </button>
-    </div>
-  );
-
-  // --------------------------------------------------------------------------
   // MAIN RENDER
   // --------------------------------------------------------------------------
   return (
     <>
-      {renderHeroSection()}
+      {/* Hero Section */}
+      <div className="relative mt-96 flex flex-col items-center text-center md:mt-72">
+        <div className="flex flex-col items-center text-center">
+          <p className="text-4xl tracking-wider text-white md:text-6xl">
+            NEO Culture Tech
+          </p>
+          <p className="mt-1 bg-gradient-to-r from-[#F4B71A] to-[#1AF4E6] bg-clip-text text-5xl font-bold tracking-widest text-transparent md:mt-6 md:text-7xl">
+            PROJECTS
+          </p>
+          <div className="mt-1 w-2/3 md:w-full">
+            <p className="text-sm font-light text-white md:mt-4 md:max-w-2xl md:text-2xl">
+              The place where you can learn, grow and have fun with technology, by
+              building projects.
+            </p>
+          </div>
+        </div>
+        <div className="mt-4 grid max-w-4xl grid-cols-3 gap-2 text-center">
+          {[
+            { key: 'web', label: 'Web Development' },
+            { key: 'software', label: 'Software' },
+            { key: 'hardware', label: 'Hardware' },
+          ].map((p) => (
+            <motion.button
+              key={p.key}
+              onClick={() => handleTypeFilter(p.key as ProjectType)}
+              initial={false}
+              animate={{
+                background:
+                  p.key === type
+                    ? 'linear-gradient(to right, #F4B71A 40%, #1AF4E6 100%)'
+                    : 'transparent',
+                color: p.key === type ? '#0F172A' : '#FFFFFF',
+                scale: p.key === type ? 1.05 : 1,
+              }}
+              transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+              className="rounded-xl border-2 border-[#4F4F4F] px-2 py-3 text-[0.7rem] whitespace-nowrap text-white md:text-base"
+            >
+              {p.label}
+            </motion.button>
+          ))}
+          {[
+            { key: 'planning', label: 'Planning Projects' },
+            { key: 'ongoing', label: 'Ongoing Projects' },
+            { key: 'completed', label: 'Completed Projects' },
+          ].map((p) => (
+            <motion.button
+              key={p.key}
+              onClick={() => handleStatusFilter(p.key as ProjectStatus)}
+              initial={false}
+              animate={{
+                background:
+                  p.key === status
+                    ? 'linear-gradient(to right, #F4B71A 40%, #1AF4E6 100%)'
+                    : 'transparent',
+                color: p.key === status ? '#0F172A' : '#FFFFFF',
+                scale: p.key === status ? 1.05 : 1,
+              }}
+              transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+              className="rounded-xl border-2 border-[#4F4F4F] px-2 py-3 text-[0.7rem] whitespace-nowrap text-white md:text-base"
+            >
+              {p.label}
+            </motion.button>
+          ))}
+        </div>
+        <Canvas className="absolute top-2/4 -z-10 aspect-square w-[120%] -translate-y-1/2" />
+      </div>
 
+      {/* Main Content */}
       <div className="mt-12 px-4 md:px-6 lg:px-8">
         {filteredProjects.length > 0 ? (
           <div className="relative mx-auto max-w-screen-2xl">
-            {renderProjectInfo()}
+            {/* Project Info */}
+            <div className="mb-8 text-center">
+              <p className="text-sm text-white/70 md:text-base">
+                {currentIndex + 1} of {filteredProjects.length} projects
+              </p>
+              <div className="mt-2 flex flex-col items-center justify-center gap-2">
+                <div className="flex items-center gap-2">
+                  <div
+                    className={`h-2 w-2 rounded-full transition-colors ${isAutoScrolling && !isUserInteracting ? 'bg-[#1AF4E6]' : 'bg-white/30'}`}
+                  />
+                  <span className="text-xs text-white/50">
+                    {isAutoScrolling && !isUserInteracting
+                      ? 'Auto-scrolling'
+                      : 'Paused'}
+                  </span>
+                </div>
+                {isAutoScrolling && !isUserInteracting && (
+                  <div className="h-1 w-32 overflow-hidden rounded-full bg-white/10">
+                    <motion.div
+                      className="h-full rounded-full bg-gradient-to-r from-[#F4B71A] to-[#1AF4E6]"
+                      initial={{ width: '0%' }}
+                      animate={{ width: `${autoScrollProgress}%` }}
+                      transition={{ duration: 0.05, ease: 'linear' }}
+                    />
+                  </div>
+                )}
+              </div>
+              {!isDragging && (
+                <motion.div
+                  className="mt-3 flex items-center justify-center gap-2"
+                  initial={{ opacity: 0.7 }}
+                  animate={{ opacity: [0.7, 1, 0.7] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                >
+                  <span className="text-xs text-white/40">
+                    👆 Drag to browse projects
+                  </span>
+                </motion.div>
+              )}
+            </div>
 
+            {/* Carousel Container */}
             <div className="relative cursor-grab active:cursor-grabbing">
               <motion.div
                 className="flex items-center justify-center"
@@ -493,19 +363,123 @@ export default function Projects() {
                 transition={{ type: 'spring', stiffness: 300, damping: 30 }}
                 style={{ minHeight: '450px', userSelect: 'none' }}
               >
-                {renderMobileCarousel()}
-                {renderDesktopCarousel()}
+                {/* Mobile Carousel */}
+                <div className="block w-full max-w-sm md:hidden">
+                  {filteredProjects[currentIndex] && (
+                    <motion.div
+                      animate={{
+                        scale: isDragging ? 0.95 : 1,
+                        rotateY: isDragging ? dragOffset * 0.05 : 0,
+                      }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <ProjectCard
+                        project={filteredProjects[currentIndex]!}
+                        type={type}
+                        status={status}
+                        isCenter={true}
+                        onClick={() => openProjectModal(filteredProjects[currentIndex]!)}
+                      />
+                    </motion.div>
+                  )}
+                </div>
+
+                {/* Desktop Carousel */}
+                <div className="relative hidden h-[450px] w-full items-center justify-center px-16 md:flex">
+                  {filteredProjects.map((project, index) => {
+                    const position = index - currentIndex;
+
+                    // Only render a few cards around the current one for performance
+                    if (Math.abs(position) > 3) return null;
+
+                    return (
+                      <motion.div
+                        key={project.name}
+                        className="absolute h-[400px] w-80"
+                        initial={false}
+                        animate={calculateCardStyle(position)}
+                        transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                        style={{ cursor: 'pointer' }}
+                        onClick={() => {
+                          setIsUserInteracting(true);
+                          if (position === 0) {
+                            openProjectModal(project);
+                          } else {
+                            goToSlide(index);
+                          }
+                          setTimeout(() => setIsUserInteracting(false), 3000);
+                        }}
+                      >
+                        <ProjectCard
+                          project={project}
+                          type={type}
+                          status={status}
+                          isCenter={position === 0}
+                          onClick={() => { }}
+                        />
+                      </motion.div>
+                    );
+                  })}
+                </div>
               </motion.div>
             </div>
 
-            {renderDotIndicators()}
-            {renderAutoScrollControls()}
+            {/* Dot Indicators */}
+            {filteredProjects.length > 1 && (
+              <div className="mt-8 flex justify-center space-x-3">
+                {filteredProjects.map((_, index) => (
+                  <motion.button
+                    key={index}
+                    onClick={() => goToSlide(index)}
+                    className="relative"
+                    whileHover={{ scale: 1.2 }}
+                    whileTap={{ scale: 0.9 }}
+                  >
+                    <div
+                      className={`h-3 w-3 rounded-full transition-all duration-300 ${index === currentIndex
+                        ? 'scale-125 bg-gradient-to-r from-[#F4B71A] to-[#1AF4E6]'
+                        : 'bg-white/30 hover:bg-white/50'
+                        }`}
+                    />
+                  </motion.button>
+                ))}
+              </div>
+            )}
+
+            {/* Auto-scroll Controls */}
+            <div className="mt-6 flex justify-center">
+              <motion.button
+                onClick={() => setIsAutoScrolling(!isAutoScrolling)}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className={`rounded-xl px-4 py-2 text-sm font-medium transition-all duration-200 ${isAutoScrolling
+                  ? 'border border-white/20 bg-gradient-to-r from-[#F4B71A]/20 to-[#1AF4E6]/20 text-white'
+                  : 'border border-white/10 bg-white/10 text-white/70'
+                  }`}
+              >
+                {isAutoScrolling ? 'Pause Auto-scroll' : 'Resume Auto-scroll'}
+              </motion.button>
+            </div>
           </div>
         ) : (
-          renderEmptyState()
+          /* Empty State */
+          <div className="py-12 text-center">
+            <div className="mb-4 text-6xl">🔍</div>
+            <h3 className="mb-2 text-xl text-white md:text-2xl">No projects found</h3>
+            <p className="mb-6 text-white/70">
+              Try adjusting your filters to see more projects
+            </p>
+            <button
+              onClick={clearAllFilters}
+              className="text-[#1AF4E6] underline underline-offset-4 transition-colors hover:text-[#F4B71A]"
+            >
+              Clear all filters
+            </button>
+          </div>
         )}
       </div>
 
+      {/* Project Modal */}
       <AnimatePresence>
         {isModalOpen && (
           <ProjectDetail data={projectDetail} onClose={closeProjectModal} />
