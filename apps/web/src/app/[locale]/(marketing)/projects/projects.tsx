@@ -415,7 +415,7 @@ export default function Projects() {
                           type={type}
                           status={status}
                           isCenter={position === 0}
-                          onClick={() => { }}
+                          onClick={() => {}}
                         />
                       </motion.div>
                     );
@@ -436,10 +436,11 @@ export default function Projects() {
                     whileTap={{ scale: 0.9 }}
                   >
                     <div
-                      className={`h-3 w-3 rounded-full transition-all duration-300 ${index === currentIndex
-                        ? 'scale-125 bg-gradient-to-r from-[#F4B71A] to-[#1AF4E6]'
-                        : 'bg-white/30 hover:bg-white/50'
-                        }`}
+                      className={`h-3 w-3 rounded-full transition-all duration-300 ${
+                        index === currentIndex
+                          ? 'scale-125 bg-gradient-to-r from-[#F4B71A] to-[#1AF4E6]'
+                          : 'bg-white/30 hover:bg-white/50'
+                      }`}
                     />
                   </motion.button>
                 ))}
@@ -452,10 +453,11 @@ export default function Projects() {
                 onClick={() => setIsAutoScrolling(!isAutoScrolling)}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className={`rounded-xl px-4 py-2 text-sm font-medium transition-all duration-200 ${isAutoScrolling
-                  ? 'border border-white/20 bg-gradient-to-r from-[#F4B71A]/20 to-[#1AF4E6]/20 text-white'
-                  : 'border border-white/10 bg-white/10 text-white/70'
-                  }`}
+                className={`rounded-xl px-4 py-2 text-sm font-medium transition-all duration-200 ${
+                  isAutoScrolling
+                    ? 'border border-white/20 bg-gradient-to-r from-[#F4B71A]/20 to-[#1AF4E6]/20 text-white'
+                    : 'border border-white/10 bg-white/10 text-white/70'
+                }`}
               >
                 {isAutoScrolling ? 'Pause Auto-scroll' : 'Resume Auto-scroll'}
               </motion.button>
