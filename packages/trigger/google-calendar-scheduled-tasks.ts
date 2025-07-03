@@ -44,7 +44,12 @@ export const googleCalendarImmediateOrchestrator = schedules.task({
       const workspaces = await getWorkspacesForSync();
       console.log(`Found ${workspaces.length} workspaces to sync immediately`);
       
-      const results = [];
+      const results: Array<{
+        ws_id: string;
+        handle?: any;
+        error?: string;
+        status: string;
+      }> = [];
       
       for (const workspace of workspaces) {
         try {
@@ -93,7 +98,12 @@ export const googleCalendarExtendedOrchestrator = schedules.task({
       const workspaces = await getWorkspacesForSync();
       console.log(`Found ${workspaces.length} workspaces to sync extended`);
       
-      const results = [];
+      const results: Array<{
+        ws_id: string;
+        handle?: any;
+        error?: string;
+        status: string;
+      }> = [];
       
       for (const workspace of workspaces) {
         try {
