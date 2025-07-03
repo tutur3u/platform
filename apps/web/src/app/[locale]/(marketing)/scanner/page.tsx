@@ -153,8 +153,8 @@ export default function Page() {
   };
 
   const handleUpload = async () => {
-    const uploadPromises = students.map((student) =>
-      fetch(`/api/students`, {
+    const uploadPromises = students.map(async (student) => {
+      const response = await fetch(`/api/students`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -165,8 +165,14 @@ export default function Page() {
           program: student.program,
           timestamp: student.timestamp,
         }),
-      })
-    );
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to upload student');
+      }
+
+      return response.json();
+    });
 
     try {
       const results = await Promise.allSettled(uploadPromises);
@@ -175,24 +181,32 @@ export default function Page() {
         (result) => result.status === 'fulfilled'
       );
 
-      if (successfulUploads.length > 0) {
-        const remainingStudents = students.filter((_, index) => {
-          const result = results[index];
-          return result && result.status === 'rejected';
-        });
-        setStudents(remainingStudents);
+      const remainingStudents = students.filter((_, index) => {
+        const result = results[index];
+        return result && result.status === 'rejected';
+      });
 
+      setStudents(remainingStudents);
+
+      if (successfulUploads.length > 0) {
         toast({
           title: 'Students Uploaded',
-          description: `Successfully uploaded ${successfulUploads.length} student(s)`,
+          description: `Successfully uploaded ${successfulUploads.length}/${students.length} student(s)`,
+          variant: 'default',
+        });
+      } else {
+        toast({
+          title: 'No Students Uploaded',
+          description: 'Failed to upload students to database',
+          variant: 'destructive',
         });
       }
     } catch (error) {
       console.error(error);
 
       toast({
-        title: 'Failed to upload students to database',
-        description: 'Please try again',
+        title: 'Error',
+        description: 'Unexpected error occurred',
         variant: 'destructive',
       });
     }

@@ -57,18 +57,15 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const { name, studentNumber, program, timestamp } = await request.json();
+
     const supabase = await createClient();
 
-    const { data: student, error } = await supabase
-      .from('students')
-      .insert({
-        name,
-        student_number: studentNumber,
-        program,
-        created_at: timestamp,
-      })
-      .select()
-      .single();
+    const { error } = await supabase.from('students').insert({
+      name,
+      student_number: studentNumber,
+      program,
+      created_at: timestamp,
+    });
 
     if (error) {
       return NextResponse.json(
@@ -77,7 +74,10 @@ export async function POST(request: Request) {
       );
     }
 
-    return NextResponse.json({ student });
+    return NextResponse.json(
+      { message: 'Students added successfully' },
+      { status: 200 }
+    );
   } catch (error) {
     console.error(error);
 
