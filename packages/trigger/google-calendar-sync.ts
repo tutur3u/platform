@@ -285,7 +285,13 @@ export const syncWorkspaceExtended = async (payload: {
 export const syncGoogleCalendarEventsImmediate = async () => {
   console.log('=== Starting immediate sync for all workspaces ===');
   const workspaces = await getWorkspacesForSync();
-  const results = [];
+  const results: Array<{
+    ws_id: string;
+    success: boolean;
+    eventsSynced?: number;
+    eventsDeleted?: number;
+    error?: string;
+  }> = [];
 
   for (const workspace of workspaces) {
     try {
@@ -308,7 +314,13 @@ export const syncGoogleCalendarEventsImmediate = async () => {
 export const syncGoogleCalendarEventsExtended = async () => {
   console.log('=== Starting extended sync for all workspaces ===');
   const workspaces = await getWorkspacesForSync();
-  const results = [];
+  const results: Array<{
+    ws_id: string;
+    success: boolean;
+    eventsSynced?: number;
+    eventsDeleted?: number;
+    error?: string;
+  }> = [];
 
   for (const workspace of workspaces) {
     try {

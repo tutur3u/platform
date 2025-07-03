@@ -81,7 +81,13 @@ export const triggerAllWorkspacesImmediateSync = async () => {
     const workspaces = await getWorkspacesForSync();
     console.log(`Found ${workspaces.length} workspaces to sync immediately`);
 
-    const results = [];
+    const results: Array<{
+      ws_id: string;
+      success: boolean;
+      eventsSynced?: number;
+      eventsDeleted?: number;
+      error?: string;
+    }> = [];
     for (const workspace of workspaces) {
       try {
         const result = await syncWorkspaceImmediate(workspace);
@@ -115,7 +121,13 @@ export const triggerAllWorkspacesExtendedSync = async () => {
     const workspaces = await getWorkspacesForSync();
     console.log(`Found ${workspaces.length} workspaces to sync extended`);
 
-    const results = [];
+    const results: Array<{
+      ws_id: string;
+      success: boolean;
+      eventsSynced?: number;
+      eventsDeleted?: number;
+      error?: string;
+    }> = [];
     for (const workspace of workspaces) {
       try {
         const result = await syncWorkspaceExtended(workspace);
