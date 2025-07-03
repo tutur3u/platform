@@ -29,6 +29,7 @@ export interface Task {
   category: 'work' | 'personal' | 'meeting';
   priority: TaskPriority;
   events: Event[];
+  
   deadline?: dayjs.Dayjs;
   taskId?: string;
   allowSplit?: boolean;

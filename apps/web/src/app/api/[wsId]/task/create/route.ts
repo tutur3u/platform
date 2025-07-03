@@ -109,7 +109,8 @@ export async function POST(
       minDuration: dbTask.min_split_duration_minutes
         ? dbTask.min_split_duration_minutes / 60
         : 0.5,
-      priority: 'normal',
+      priority:
+        typeof dbTask.priority === 'string' ? dbTask.priority : 'normal',
       category: 'work',
       events: [],
     };

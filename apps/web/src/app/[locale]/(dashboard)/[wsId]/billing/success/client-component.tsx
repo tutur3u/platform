@@ -31,9 +31,7 @@ interface WorkspaceSubscription {
   ws_id: string;
   created_at: string;
   plan_name?: string;
-  workspace_subscription_products: {
-    price: number;
-  };
+  workspace_subscription_products: { price: number } | { price: number }[];
 }
 
 export default function ClientComponent({ wsId }: ClientComponentProps) {

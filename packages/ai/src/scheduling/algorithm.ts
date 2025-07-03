@@ -46,11 +46,11 @@ function ensureMinimumDuration(hours: number): number {
   return Math.max(0.25, hoursToQuarterHours(hours)); // Minimum 15 minutes
 }
 
-export const prepareTaskChunks = (tasks: any[]): Task[] => {
+export const prepareTaskChunks = (tasks: Task[]): Task[] => {
   const chunks: Task[] = [];
   for (const task of tasks) {
     if (
-      task.is_splittable === false ||
+      task.allowSplit === false ||
       !task.maxDuration ||
       task.maxDuration <= 0
     ) {
