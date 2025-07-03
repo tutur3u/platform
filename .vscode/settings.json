@@ -45,8 +45,7 @@
     "apps/calendar/messages",
     "apps/web/messages",
     "apps/rewise/messages",
-    "apps/nova/messages",
-    "apps/upskii/messages"
+    "apps/nova/messages"
   ],
   "i18n-ally.autoDetection": true,
   "i18n-ally.keystyle": "nested",
