@@ -446,17 +446,17 @@ export async function GET(
     );
   }
 }
-function mapPriorityToTaskPriority(priority: number | null): TaskPriority {
-  switch (priority) {
-    case 1:
-      return 'critical';
-    case 2:
-      return 'high';
-    case 3:
-      return 'normal';
-    case 4:
-      return 'low';
-    default:
-      return 'normal';
-  }
-}
+// function mapPriorityToTaskPriority(priority: number | null): TaskPriority {
+//   switch (priority) {
+//     case 1:
+//       return 'critical';
+//     case 2:
+//       return 'high';
+//     case 3:
+//       return 'normal';
+//     case 4:
+//       return 'low';
+//     default:
+//       return 'normal';
+//   }
+// }
