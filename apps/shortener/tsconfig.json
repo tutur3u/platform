@@ -23,5 +23,5 @@
     }
   },
   "include": ["src"],
-  "exclude": ["node_modules", "dist", ".next", ".turbo"]
+  "exclude": ["node_modules", "dist", ".turbo"]
 }
