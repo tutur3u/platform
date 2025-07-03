@@ -163,13 +163,21 @@ export default function ProjectDetail({ onClose, data }: ProjectDetailProps) {
           {/* Project Stats */}
           <div className="mb-8 grid grid-cols-3 gap-4">
             {[
-              { label: 'Technologies', value: techStack?.length || 0, icon: Code },
+              {
+                label: 'Technologies',
+                value: techStack?.length || 0,
+                icon: Code,
+              },
               {
                 label: 'Team Size',
                 value: (members?.length || 0) + (manager ? 1 : 0),
                 icon: ExternalLink,
               },
-              { label: 'Status', value: STATUS_CONFIG[status].label, icon: Play },
+              {
+                label: 'Status',
+                value: STATUS_CONFIG[status].label,
+                icon: Play,
+              },
             ].map((stat, index) => (
               <motion.div
                 key={index}
@@ -191,14 +199,18 @@ export default function ProjectDetail({ onClose, data }: ProjectDetailProps) {
           {description && (
             <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
               <h2 className="mb-4 text-2xl font-semibold text-white">About</h2>
-              <p className="text-lg leading-relaxed text-white/80">{description}</p>
+              <p className="text-lg leading-relaxed text-white/80">
+                {description}
+              </p>
             </div>
           )}
 
           {/* Purpose */}
           {purpose && (
             <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
-              <h2 className="mb-4 text-2xl font-semibold text-white">Purpose</h2>
+              <h2 className="mb-4 text-2xl font-semibold text-white">
+                Purpose
+              </h2>
               <p className="text-lg leading-relaxed text-white/80">{purpose}</p>
             </div>
           )}
@@ -206,7 +218,9 @@ export default function ProjectDetail({ onClose, data }: ProjectDetailProps) {
           {/* Tech Stack */}
           {techStack && techStack.length > 0 && (
             <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
-              <h2 className="mb-6 text-2xl font-semibold text-white">Technologies</h2>
+              <h2 className="mb-6 text-2xl font-semibold text-white">
+                Technologies
+              </h2>
               <div className="flex flex-wrap gap-3">
                 {techStack.map((tech, index) => (
                   <motion.div
@@ -226,7 +240,9 @@ export default function ProjectDetail({ onClose, data }: ProjectDetailProps) {
           {/* Team Members */}
           {members && members.length > 0 && (
             <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
-              <h2 className="mb-6 text-2xl font-semibold text-white">Team Members</h2>
+              <h2 className="mb-6 text-2xl font-semibold text-white">
+                Team Members
+              </h2>
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 {members.map((person, index) => (
                   <motion.div

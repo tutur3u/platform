@@ -8,7 +8,6 @@ import { Project, projects } from './data';
 import ProjectCard from './project-card';
 import ProjectDetail from './project-detail';
 import { AnimatePresence, PanInfo, motion } from 'framer-motion';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 
 // ============================================================================
@@ -16,7 +15,6 @@ import { useCallback, useEffect, useState } from 'react';
 // ============================================================================
 type ProjectType = 'web' | 'software' | 'hardware' | undefined;
 type ProjectStatus = 'planning' | 'ongoing' | 'completed' | undefined;
-type SlideDirection = 'left' | 'right';
 
 // ============================================================================
 // MAIN COMPONENT
@@ -40,7 +38,6 @@ export default function Projects() {
   // STATE - Carousel State
   // --------------------------------------------------------------------------
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [slideDirection, setSlideDirection] = useState<SlideDirection>('right');
   const [isTransitioning, setIsTransitioning] = useState(false);
 
   // --------------------------------------------------------------------------
@@ -75,7 +72,6 @@ export default function Projects() {
     if (isTransitioning || filteredProjects.length <= 1) return;
     setIsTransitioning(true);
     setAutoScrollProgress(0);
-    setSlideDirection('right');
     setCurrentIndex((prev) =>
       prev === filteredProjects.length - 1 ? 0 : prev + 1
     );
@@ -87,7 +83,6 @@ export default function Projects() {
     if (isTransitioning || filteredProjects.length <= 1) return;
     setIsTransitioning(true);
     setAutoScrollProgress(0);
-    setSlideDirection('left');
     setCurrentIndex((prev) =>
       prev === 0 ? filteredProjects.length - 1 : prev - 1
     );
@@ -100,7 +95,6 @@ export default function Projects() {
     setIsTransitioning(true);
     setAutoScrollProgress(0);
     setIsUserInteracting(true);
-    setSlideDirection(index > currentIndex ? 'right' : 'left');
     setCurrentIndex(index);
     setTimeout(() => {
       setIsTransitioning(false);
@@ -117,11 +111,11 @@ export default function Projects() {
     setIsDragging(true);
   };
 
-  const handleDrag = (event: any, info: PanInfo) => {
+  const handleDrag = (_event: any, info: PanInfo) => {
     setDragOffset(info.offset.x);
   };
 
-  const handleDragEnd = (event: any, info: PanInfo) => {
+  const handleDragEnd = (_event: any, info: PanInfo) => {
     const swipeThreshold = 100;
     const velocity = info.velocity.x;
     let didSwipe = false;
@@ -246,8 +240,8 @@ export default function Projects() {
           </p>
           <div className="mt-1 w-2/3 md:w-full">
             <p className="text-sm font-light text-white md:mt-4 md:max-w-2xl md:text-2xl">
-              The place where you can learn, grow and have fun with technology, by
-              building projects.
+              The place where you can learn, grow and have fun with technology,
+              by building projects.
             </p>
           </div>
         </div>
@@ -378,7 +372,9 @@ export default function Projects() {
                         type={type}
                         status={status}
                         isCenter={true}
-                        onClick={() => openProjectModal(filteredProjects[currentIndex]!)}
+                        onClick={() =>
+                          openProjectModal(filteredProjects[currentIndex]!)
+                        }
                       />
                     </motion.div>
                   )}
@@ -398,7 +394,11 @@ export default function Projects() {
                         className="absolute h-[400px] w-80"
                         initial={false}
                         animate={calculateCardStyle(position)}
-                        transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                        transition={{
+                          type: 'spring',
+                          stiffness: 300,
+                          damping: 30,
+                        }}
                         style={{ cursor: 'pointer' }}
                         onClick={() => {
                           setIsUserInteracting(true);
@@ -465,7 +465,9 @@ export default function Projects() {
           /* Empty State */
           <div className="py-12 text-center">
             <div className="mb-4 text-6xl">🔍</div>
-            <h3 className="mb-2 text-xl text-white md:text-2xl">No projects found</h3>
+            <h3 className="mb-2 text-xl text-white md:text-2xl">
+              No projects found
+            </h3>
             <p className="mb-6 text-white/70">
               Try adjusting your filters to see more projects
             </p>
