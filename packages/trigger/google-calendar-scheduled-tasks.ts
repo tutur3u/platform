@@ -3,7 +3,7 @@ import {
   syncWorkspaceImmediate, 
   syncWorkspaceExtended,
   getWorkspacesForSync 
-} from './google-calendar-sync.js';
+} from './google-calendar-sync';
 import 'dotenv/config';
 
 // Task for immediate sync of a single workspace

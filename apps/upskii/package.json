@@ -68,10 +68,10 @@
     "remark-math": "^6.0.0",
     "sanitize-filename": "^1.6.3",
     "sharp": "^0.34.2",
-    "swr": "^2.3.3",
+    "swr": "^2.3.4",
     "use-debounce": "^10.0.5",
     "uuid": "^11.1.0",
-    "zod": "^3.25.67"
+    "zod": "^3.25.71"
   },
   "devDependencies": {
     "@next/bundle-analyzer": "15.3.4",
