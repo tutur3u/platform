@@ -3,6 +3,7 @@
 import StudentForm from './StudentForm';
 import StudentList from './StudentList';
 import VideoCapture from './VideoCapture';
+import { createClient } from '@ncthub/supabase/next/client';
 import { Student } from '@ncthub/types/primitives/Student';
 import {
   AlertDialog,
@@ -45,7 +46,42 @@ export default function Page() {
   const [students, setStudents] = useState<Student[]>([]);
   const [filteredStudents, setFilteredStudents] = useState<Student[]>([]);
   const [showClearDialog, setShowClearDialog] = useState(false);
+  const [whitelisted, setWhitelisted] = useState(false);
   const { toast } = useToast();
+
+  useEffect(() => {
+    const checkWhitelisted = async () => {
+      try {
+        const supabase = createClient();
+        const {
+          data: { user },
+          error: userError,
+        } = await supabase.auth.getUser();
+
+        if (userError || !user) {
+          setWhitelisted(false);
+          return;
+        }
+
+        const { data: workspaces, error: workspaceError } = await supabase
+          .from('workspace_members')
+          .select('ws_id')
+          .eq('user_id', user.id);
+
+        if (workspaceError) {
+          console.error('Error fetching workspaces:', workspaceError);
+          setWhitelisted(false);
+        } else {
+          setWhitelisted(workspaces && workspaces.length > 0);
+        }
+      } catch (error) {
+        console.error('Error checking workspace membership:', error);
+        setWhitelisted(false);
+      }
+    };
+
+    checkWhitelisted();
+  }, []);
 
   useEffect(() => {
     const storedStudents = localStorage.getItem('students');
@@ -153,8 +189,18 @@ export default function Page() {
   };
 
   const handleUpload = async () => {
-    const uploadPromises = students.map((student) =>
-      fetch(`/api/students`, {
+    if (!whitelisted) {
+      toast({
+        title: 'Access Denied',
+        description:
+          'You must be a member of a workspace to upload students to the database.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const uploadPromises = students.map(async (student) => {
+      const response = await fetch(`/api/students`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -165,8 +211,14 @@ export default function Page() {
           program: student.program,
           timestamp: student.timestamp,
         }),
-      })
-    );
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to upload student');
+      }
+
+      return response.json();
+    });
 
     try {
       const results = await Promise.allSettled(uploadPromises);
@@ -175,24 +227,32 @@ export default function Page() {
         (result) => result.status === 'fulfilled'
       );
 
-      if (successfulUploads.length > 0) {
-        const remainingStudents = students.filter((_, index) => {
-          const result = results[index];
-          return result && result.status === 'rejected';
-        });
-        setStudents(remainingStudents);
+      const remainingStudents = students.filter((_, index) => {
+        const result = results[index];
+        return result && result.status === 'rejected';
+      });
 
+      setStudents(remainingStudents);
+
+      if (successfulUploads.length > 0) {
         toast({
           title: 'Students Uploaded',
-          description: `Successfully uploaded ${successfulUploads.length} student(s)`,
+          description: `Successfully uploaded ${successfulUploads.length}/${students.length} student(s)`,
+          variant: 'default',
+        });
+      } else {
+        toast({
+          title: 'No Students Uploaded',
+          description: 'Failed to upload students to database',
+          variant: 'destructive',
         });
       }
     } catch (error) {
       console.error(error);
 
       toast({
-        title: 'Failed to upload students to database',
-        description: 'Please try again',
+        title: 'Error',
+        description: 'Unexpected error occurred',
         variant: 'destructive',
       });
     }
@@ -394,7 +454,7 @@ export default function Page() {
               <Button
                 size="lg"
                 className="h-14 bg-gradient-to-r from-green-500 to-emerald-600 text-base font-medium shadow-lg hover:from-green-600 hover:to-emerald-700"
-                disabled={students.length === 0}
+                disabled={students.length === 0 || !whitelisted}
                 onClick={handleUpload}
               >
                 <Database className="mr-2 h-5 w-5" />
@@ -410,6 +470,7 @@ export default function Page() {
                 variant="outline"
                 size="lg"
                 className="h-14 w-full bg-primary/10 text-base font-medium hover:bg-primary/20"
+                disabled={!whitelisted}
               >
                 <Scan className="mr-2 h-5 w-5" />
                 View All Students
