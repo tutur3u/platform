@@ -9,20 +9,16 @@
       }
     ],
     "paths": {
-      "@/*": ["./*"]
+      "@/*": [
+        "./*"
+      ]
     },
     "esModuleInterop": true,
     "resolveJsonModule": true
   },
   "include": [
-    "**/*.js",
-    "**/*.ts",
-    "**/*.tsx",
-    "global.d.ts",
-    "next-env.d.ts",
-    "next.config.mjs",
-    "postcss.config.mjs",
+    "src",
     ".next/types/**/*.ts"
   ],
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules", "dist", ".turbo"]
 }

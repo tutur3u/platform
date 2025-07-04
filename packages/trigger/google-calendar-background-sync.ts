@@ -3,7 +3,7 @@ import {
   getWorkspaceTokensByWsId,
   syncWorkspaceExtended,
   syncWorkspaceImmediate,
-} from './google-calendar-sync.js';
+} from './google-calendar-sync';
 
 interface WorkspaceToken {
   ws_id: string;

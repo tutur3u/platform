@@ -3,6 +3,8 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 import { OAuth2Client } from 'google-auth-library';
 import { google } from 'googleapis';
 import { NextResponse } from 'next/server';
+import { isAllDayEvent } from '@tuturuuu/ui/hooks/calendar-utils';
+import dayjs from 'dayjs';
 
 interface CalendarEvent extends BaseCalendarEvent {
   id?: string; // Add the optional 'id' property
@@ -80,20 +82,34 @@ export async function POST(request: Request) {
     const auth = getGoogleAuthClient(googleTokens);
     const calendar = google.calendar({ version: 'v3', auth });
 
-    const googleEvent = {
+    // Check if this is an all-day event to format it correctly for Google Calendar
+    const isEventAllDay = isAllDayEvent(event, 'auto');
+    
+    const googleEvent: any = {
       summary: event.title || 'Untitled Event',
       description: event.description || '',
       location: event.location || '',
-      start: {
-        dateTime: event.start_at,
-        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-      },
-      end: {
-        dateTime: event.end_at,
-        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-      },
       colorId: getGoogleColorId(event.color),
     };
+
+    if (isEventAllDay) {
+      // For all-day events, use date format (not dateTime)
+      const startDate = dayjs(event.start_at).format('YYYY-MM-DD');
+      const endDate = dayjs(event.end_at).format('YYYY-MM-DD');
+      
+      googleEvent.start = { date: startDate };
+      googleEvent.end = { date: endDate };
+    } else {
+      // For timed events, use dateTime format
+      googleEvent.start = {
+        dateTime: event.start_at,
+        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      };
+      googleEvent.end = {
+        dateTime: event.end_at,
+        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      };
+    }
 
     const response = await calendar.events.insert({
       calendarId: 'primary',
@@ -207,18 +223,55 @@ export async function PUT(request: Request) {
       googleEventUpdate.description = eventUpdates.description || '';
     if (eventUpdates.location !== undefined)
       googleEventUpdate.location = eventUpdates.location || ''; // Update location
-    if (eventUpdates.start_at) {
-      googleEventUpdate.start = {
-        dateTime: eventUpdates.start_at,
-        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    
+    // Handle date/time updates with all-day detection
+    if (eventUpdates.start_at || eventUpdates.end_at) {
+      // Fetch the existing event to get complete date information
+      const { data: existingEvent } = await supabase
+        .from('workspace_calendar_events')
+        .select('start_at, end_at')
+        .eq('google_event_id', googleCalendarEventId)
+        .single();
+
+      // Check if this is an all-day event (we need both dates to determine this properly)
+      const eventForCheck = {
+        start_at: eventUpdates.start_at || existingEvent?.start_at || '',
+        end_at: eventUpdates.end_at || existingEvent?.end_at || '',
       };
+      
+      const isEventAllDay = eventForCheck.start_at && eventForCheck.end_at 
+        ? isAllDayEvent(eventForCheck, 'auto')
+        : false;
+      
+      if (isEventAllDay) {
+        // For all-day events, use date format
+        if (eventUpdates.start_at) {
+          googleEventUpdate.start = { 
+            date: dayjs(eventUpdates.start_at).format('YYYY-MM-DD') 
+          };
+        }
+        if (eventUpdates.end_at) {
+          googleEventUpdate.end = { 
+            date: dayjs(eventUpdates.end_at).format('YYYY-MM-DD') 
+          };
+        }
+      } else {
+        // For timed events, use dateTime format
+        if (eventUpdates.start_at) {
+          googleEventUpdate.start = {
+            dateTime: eventUpdates.start_at,
+            timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+          };
+        }
+        if (eventUpdates.end_at) {
+          googleEventUpdate.end = {
+            dateTime: eventUpdates.end_at,
+            timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+          };
+        }
+      }
     }
-    if (eventUpdates.end_at) {
-      googleEventUpdate.end = {
-        dateTime: eventUpdates.end_at,
-        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-      };
-    }
+    
     if (eventUpdates.color)
       googleEventUpdate.colorId = getGoogleColorId(eventUpdates.color);
 

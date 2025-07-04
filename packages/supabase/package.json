@@ -12,12 +12,12 @@
   "packageManager": "bun@1.2.17",
   "dependencies": {
     "@supabase/ssr": "^0.6.1",
-    "@supabase/supabase-js": "^2.50.2",
+    "@supabase/supabase-js": "^2.50.3",
     "@tuturuuu/types": "workspace:*",
     "next": "15.3.4",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "zod": "^3.25.67"
+    "zod": "^3.25.72"
   },
   "devDependencies": {
     "@tuturuuu/typescript-config": "workspace:*",

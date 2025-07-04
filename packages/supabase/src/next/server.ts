@@ -5,12 +5,6 @@ import type { ReadonlyRequestCookies } from 'next/dist/server/web/spec-extension
 import { cookies } from 'next/headers';
 import { checkEnvVariables, type SupabaseCookie } from './common';
 
-type TypedSupabaseClient = SupabaseClient<
-  Database,
-  'public',
-  Database['public']
->;
-
 function createCookieHandler(cookieStore: ReadonlyRequestCookies) {
   return {
     getAll() {
@@ -50,7 +44,9 @@ export function createAdminClient({
   noCookie = false,
 }: {
   noCookie?: boolean;
-} = {}): TypedSupabaseClient | Promise<TypedSupabaseClient> {
+} = {}):
+  | SupabaseClient<Database, 'public', Database['public']>
+  | Promise<SupabaseClient<Database, 'public', Database['public']>> {
   if (noCookie) {
     const { url, key } = checkEnvVariables({ useServiceKey: true });
     return createBrowserClient<Database>(url, key);
@@ -59,11 +55,14 @@ export function createAdminClient({
   return createGenericClient(true);
 }
 
-export function createClient(): Promise<TypedSupabaseClient> {
+export function createClient(): Promise<
+  SupabaseClient<Database, 'public', Database['public']>
+> {
   return createGenericClient(false);
 }
 
 export async function createDynamicClient(): Promise<
+  // biome-ignore lint/suspicious/noExplicitAny: <any is expected for dynamic client>
   SupabaseClient<any, 'public', any>
 > {
   const { url, key } = checkEnvVariables({ useServiceKey: false });

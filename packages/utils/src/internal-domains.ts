@@ -23,20 +23,12 @@ export const PRODUCTION_INTERNAL_APP_DOMAINS = [
     name: 'rewise',
     url: 'https://rewise.me',
   },
-  {
-    name: 'upskii',
-    url: 'https://upskii.com',
-  },
-  {
-    name: 'famigo',
-    url: 'https://famigo.vercel.app',
-  },
 ] as const;
 
 export const DEV_INTERNAL_APP_DOMAINS = [
   {
     name: 'calendar',
-    url: 'http://localhost:7001',
+    url: 'http://localhost:3001',
   },
   {
     name: 'platform',
@@ -49,14 +41,6 @@ export const DEV_INTERNAL_APP_DOMAINS = [
   {
     name: 'nova',
     url: 'http://localhost:7805',
-  },
-  {
-    name: 'upskii',
-    url: 'http://localhost:7806',
-  },
-  {
-    name: 'famigo',
-    url: 'http://localhost:7807',
   },
 ] as const;
 

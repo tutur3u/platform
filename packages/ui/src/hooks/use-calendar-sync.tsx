@@ -178,7 +178,7 @@ export const CalendarSyncProvider = ({
     const isStale = Date.now() - lastUpdated >= staleTime;
 
     if (isCurrentWeek && isStale) {
-      console.log('Current week cache is stale, forcing fresh fetch');
+      // Current week cache is stale, forcing fresh fetch
     }
 
     return isStale;
@@ -214,12 +214,10 @@ export const CalendarSyncProvider = ({
     queryKey: ['databaseCalendarEvents', wsId, getCacheKey(dates)],
     enabled: !!wsId && dates.length > 0,
     queryFn: async () => {
-      console.log('30s: Fetching database events');
       const cacheKey = getCacheKey(dates);
       if (!cacheKey) return null;
 
       const cachedData = calendarCache[cacheKey];
-      console.log('cachedData.dbEvents', cachedData?.dbEvents);
 
       // If we have cached data and it's not stale, return it immediately
       if (
@@ -246,7 +244,6 @@ export const CalendarSyncProvider = ({
         .order('start_at', { ascending: true });
 
       if (dbError) {
-        console.error(dbError);
         setError(dbError);
         return null;
       }
@@ -286,7 +283,6 @@ export const CalendarSyncProvider = ({
       }
 
       // Otherwise fetch fresh data
-      console.log('Fetching fresh google events');
       const startDate = dayjs(dates[0]).startOf('day');
       const endDate = dayjs(dates[dates.length - 1]).endOf('day');
 
@@ -302,7 +298,6 @@ export const CalendarSyncProvider = ({
           googleResponse.googleError +
           ': ' +
           googleResponse.details?.reason;
-        console.error(errorMessage);
         setError(new Error(errorMessage));
         return null;
       }
@@ -343,7 +338,6 @@ export const CalendarSyncProvider = ({
       }) => void
     ) => {
       if (!isActiveSyncOn) {
-        console.log('Sync blocked due to isActiveSyncOn is false');
         return;
       }
 
@@ -352,7 +346,6 @@ export const CalendarSyncProvider = ({
         // Check if we can proceed with sync
         const canProceed = await canProceedWithSync(wsId);
         if (!canProceed) {
-          console.log('Sync blocked due to 30-second cooldown');
           return;
         }
 
@@ -383,21 +376,11 @@ export const CalendarSyncProvider = ({
           .order('start_at', { ascending: true });
 
         if (dbError) {
-          console.error(dbError);
           setError(dbError);
           return;
         }
 
-        // Debug log for database data
-        console.log(
-          'Database events:',
-          dbData?.map((e: WorkspaceCalendarEvent) => ({
-            id: e.id,
-            title: e.title,
-            google_event_id: e.google_event_id,
-            ws_id: e.ws_id,
-          }))
-        );
+
 
         setData(dbData);
 
@@ -425,23 +408,11 @@ export const CalendarSyncProvider = ({
             googleResponse.googleError +
             ': ' +
             googleResponse.details?.reason;
-          console.error(errorMessage);
           setError(new Error(errorMessage));
           return;
         } else {
           setError(null);
         }
-
-        // Debug log for Google events
-        console.log(
-          'Google Calendar events:',
-          googleResponse.events?.map((e: WorkspaceCalendarEvent) => ({
-            title: e.title,
-            google_event_id: e.google_event_id,
-            start_at: e.start_at,
-            end_at: e.end_at,
-          }))
-        );
 
         setGoogleData(googleResponse.events);
 
@@ -467,7 +438,6 @@ export const CalendarSyncProvider = ({
           (e: WorkspaceCalendarEvent) =>
             e.google_event_id && !googleEventIds.has(e.google_event_id)
         );
-        console.log('dataToDelete', dataToDelete);
         // Delete dataToDelete
         if (dataToDelete) {
           await supabase
@@ -494,7 +464,6 @@ export const CalendarSyncProvider = ({
           (event: WorkspaceCalendarEvent) => {
             // Only try to match if we have google_event_id
             if (!event.google_event_id) {
-              console.log('Event has no google_event_id:', event.title);
               return {
                 ...event,
                 id: crypto.randomUUID(),
@@ -502,42 +471,15 @@ export const CalendarSyncProvider = ({
               };
             }
 
-            // Debug log for each comparison attempt
-            console.log('Trying to match event:', {
-              title: event.title,
-              google_event_id: event.google_event_id,
-              start_at: event.start_at,
-              end_at: event.end_at,
-            });
-
             // Find existing event with same google_event_id
             const existingEvent = dbData?.find((e) => {
               const matches =
                 e.google_event_id === event.google_event_id &&
                 e.google_event_id !== null;
-              if (matches) {
-                console.log('Found match:', {
-                  dbEvent: {
-                    id: e.id,
-                    title: e.title,
-                    google_event_id: e.google_event_id,
-                    ws_id: e.ws_id,
-                  },
-                  googleEvent: {
-                    title: event.title,
-                    google_event_id: event.google_event_id,
-                  },
-                });
-              }
               return matches;
             });
 
             if (existingEvent) {
-              console.log('Using existing event ID:', {
-                title: event.title,
-                existingId: existingEvent.id,
-                google_event_id: event.google_event_id,
-              });
               return {
                 ...event,
                 id: existingEvent.id,
@@ -545,7 +487,6 @@ export const CalendarSyncProvider = ({
               };
             }
 
-            console.log('No match found, generating new ID for:', event.title);
             return {
               ...event,
               id: crypto.randomUUID(),
@@ -554,16 +495,7 @@ export const CalendarSyncProvider = ({
           }
         );
 
-        // Debug log for final upsert data
-        console.log(
-          'Events to upsert:',
-          eventsToUpsert.map((e: WorkspaceCalendarEvent) => ({
-            id: e.id,
-            title: e.title,
-            google_event_id: e.google_event_id,
-            ws_id: e.ws_id,
-          }))
-        );
+
 
         // Upsert using id as conflict target since we've properly assigned ids
         const { error: upsertError } = await supabase
@@ -574,12 +506,10 @@ export const CalendarSyncProvider = ({
           });
 
         if (upsertError) {
-          console.error('Error upserting events:', upsertError);
           setError(upsertError);
           return;
         } else {
           setError(null);
-          console.log('Upsert status: Finished');
 
           // Update lastUpsert timestamp after successful upsert
           await updateLastUpsert(wsId);
@@ -618,7 +548,6 @@ export const CalendarSyncProvider = ({
     const hasDataChanged = currentGoogleDataStr !== prevGoogleDataRef.current;
 
     if (hasDataChanged) {
-      console.log('useEffect 1');
       syncToTuturuuu();
       // Update refs with current values
       prevGoogleDataRef.current = currentGoogleDataStr;
@@ -634,9 +563,6 @@ export const CalendarSyncProvider = ({
 
     // Only sync when isActiveSyncOn becomes true and we have Google data
     if (isActiveSyncOn && fetchedGoogleData && fetchedGoogleData.length > 0) {
-      console.log(
-        'useEffect - isActiveSyncOn changed to true, triggering sync'
-      );
       syncToTuturuuu();
     }
   }, [
@@ -659,7 +585,6 @@ export const CalendarSyncProvider = ({
       return;
     }
 
-    console.log('useEffect 2');
     const cacheKey = getCacheKey(dates);
     const cacheData = calendarCache[cacheKey];
 
@@ -720,11 +645,8 @@ export const CalendarSyncProvider = ({
       const eventsToDelete: string[] = [];
       let deletionPerformed = false;
 
-      eventGroups.forEach((eventGroup, signature) => {
+      eventGroups.forEach((eventGroup) => {
         if (eventGroup.length > 1) {
-          console.log(
-            `Found ${eventGroup.length} duplicates with signature "${signature}"`
-          );
 
           // Sort by creation time if available, otherwise by ID
           // Keep the first/oldest event, delete the rest
@@ -763,12 +685,9 @@ export const CalendarSyncProvider = ({
               .in('id', batch);
 
             if (error) {
-              console.error('Error deleting duplicate events:', error);
+              // Error deleting duplicate events
             } else {
               deletionPerformed = true;
-              console.log(
-                `Successfully deleted ${batch.length} duplicate events`
-              );
             }
           }
 
@@ -779,7 +698,7 @@ export const CalendarSyncProvider = ({
             });
           }
         } catch (err) {
-          console.error('Failed to delete duplicate events:', err);
+          // Failed to delete duplicate events
         }
       }
 
@@ -801,29 +720,14 @@ export const CalendarSyncProvider = ({
 
   // Invalidate and refetch events
   const refresh = useCallback(() => {
-    console.log('Refreshing events');
     const cacheKey = getCacheKey(dates);
     if (!cacheKey) return null;
 
-    const cacheData = calendarCache[cacheKey];
-    console.log('Before refresh - cacheData:', {
-      isForced: cacheData?.isForced,
-      dbLastUpdated: cacheData?.dbLastUpdated,
-      googleLastUpdated: cacheData?.googleLastUpdated,
-      dbEventsLength: cacheData?.dbEvents?.length,
-    });
 
     // Use updateCache instead of direct mutation
     updateCache(cacheKey, {
       isForced: true,
       dbLastUpdated: 0,
-    });
-
-    console.log('After refresh - cacheData:', {
-      isForced: cacheData?.isForced,
-      dbLastUpdated: cacheData?.dbLastUpdated,
-      googleLastUpdated: cacheData?.googleLastUpdated,
-      dbEventsLength: cacheData?.dbEvents?.length,
     });
 
     queryClient.invalidateQueries({
@@ -834,14 +738,18 @@ export const CalendarSyncProvider = ({
   const eventsWithoutAllDays = useMemo(() => {
     // Process events immediately when they change
     return events.filter((event) => {
-      return !isAllDayEvent(event);
+      // Note: We can't access settings here easily, so we use default timezone detection
+      // This is acceptable since this is used for layout purposes mainly
+      return !isAllDayEvent(event, 'auto');
     });
   }, [events]);
 
   const allDayEvents = useMemo(() => {
     // Process events immediately when they change
     return events.filter((event) => {
-      return isAllDayEvent(event);
+      // Note: We can't access settings here easily, so we use default timezone detection
+      // This is acceptable since this is used for layout purposes mainly
+      return isAllDayEvent(event, 'auto');
     });
   }, [events]);
 
