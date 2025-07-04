@@ -1,27 +1,61 @@
+import { Card, CardContent, CardFooter, CardHeader } from '@ncthub/ui/card';
+import { Facebook, Linkedin, Twitter } from '@ncthub/ui/icons';
 import Image from 'next/image';
+import Link from 'next/link';
 
 interface MemberCardProps {
   name: string;
   role: string;
   image: string;
+  bio: string;
+  quote: string;
+  socials: {
+    facebook: string;
+    twitter: string;
+    linkedin: string;
+  };
 }
 
-export default function MemberCard({ name, role, image }: MemberCardProps) {
+export default function MemberCard({
+  name,
+  role,
+  image,
+  bio,
+  quote,
+  socials,
+}: MemberCardProps) {
   return (
-    <div className="flex flex-col items-center">
-      <div className="flex h-full w-full justify-center">
-        <Image
-          src={image}
-          width={1000}
-          height={1000}
-          alt={name}
-          className="w-full rounded-lg object-cover md:w-2/3"
-        />
-      </div>
-      <p className="mt-3 text-center text-xl font-black md:text-xl">{name}</p>
-      <p className="mt-2 text-center text-lg font-semibold md:text-xl">
-        {role}
-      </p>
-    </div>
+    <Card className="group relative flex w-full max-w-sm flex-col overflow-hidden rounded-lg border-1 border-transparent bg-calendar-bg-blue transition-all duration-300 ease-in-out hover:border-foreground/20 hover:shadow-lg hover:shadow-primary/20">
+      <CardHeader className="p-0">
+        <div className="relative h-64 w-full">
+          <Image
+            src={image}
+            layout="fill"
+            alt={name}
+            className="object-cover transition-transform duration-300 ease-in-out group-hover:scale-105"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
+          <div className="absolute bottom-0 w-full p-4">
+            <h3 className="text-2xl font-bold text-white">{name}</h3>
+            <p className="text-md font-medium text-muted-foreground">{role}</p>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="flex-1 p-4">
+        <p className="text-muted-foreground italic">"{quote}"</p>
+        <p className="mt-2 text-sm text-foreground/80">{bio}</p>
+      </CardContent>
+      <CardFooter className="flex justify-center gap-4 p-4 pt-0">
+        <Link href={socials.facebook} target="_blank" rel="noopener noreferrer">
+          <Facebook className="h-6 w-6 text-muted-foreground transition-colors hover:text-primary" />
+        </Link>
+        <Link href={socials.twitter} target="_blank" rel="noopener noreferrer">
+          <Twitter className="h-6 w-6 text-muted-foreground transition-colors hover:text-primary" />
+        </Link>
+        <Link href={socials.linkedin} target="_blank" rel="noopener noreferrer">
+          <Linkedin className="h-6 w-6 text-muted-foreground transition-colors hover:text-primary" />
+        </Link>
+      </CardFooter>
+    </Card>
   );
 }
