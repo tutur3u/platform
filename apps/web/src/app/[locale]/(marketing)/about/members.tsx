@@ -30,7 +30,7 @@ const departments: { name: DepartmentName; color: string }[] = [
 
 export default function Members() {
   return (
-    <div id="team" className="flex flex-col items-center px-2 py-12">
+    <div className="flex flex-col items-center px-2 py-12">
       <p className="mt-8 w-full bg-gradient-to-r from-yellow-400 via-red-500 to-pink-500 bg-clip-text p-3 text-center text-4xl font-black tracking-tight text-transparent md:text-5xl lg:text-6xl dark:from-yellow-300 dark:via-red-400 dark:to-pink-400">
         Meet Our Team
       </p>
