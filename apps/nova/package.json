@@ -59,7 +59,7 @@
     "sharp": "^0.34.2",
     "use-debounce": "^10.0.5",
     "uuid": "^11.1.0",
-    "zod": "^3.25.71"
+    "zod": "^3.25.72"
   },
   "devDependencies": {
     "@next/bundle-analyzer": "15.3.4",
