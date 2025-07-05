@@ -1,8 +1,7 @@
 import {
   getWorkspacesForSync,
   getWorkspaceTokensByWsId,
-  syncWorkspaceExtended,
-  syncWorkspaceImmediate,
+  syncWorkspaceExtended
 } from './google-calendar-sync';
 
 interface WorkspaceToken {
@@ -63,54 +62,10 @@ const triggerWorkspaceSync = async (
   }
 };
 
-// Manual trigger function for immediate sync of a specific workspace
-export const triggerWorkspaceImmediateSync = async (ws_id: string) => {
-  return triggerWorkspaceSync(ws_id, syncWorkspaceImmediate, 'immediate');
-};
 
 // Manual trigger function for extended sync of a specific workspace
 export const triggerWorkspaceExtendedSync = async (ws_id: string) => {
   return triggerWorkspaceSync(ws_id, syncWorkspaceExtended, 'extended');
-};
-
-// Manual trigger function for all workspaces immediate sync
-export const triggerAllWorkspacesImmediateSync = async () => {
-  console.log('=== Manually triggering immediate sync for all workspaces ===');
-
-  try {
-    const workspaces = await getWorkspacesForSync();
-    console.log(`Found ${workspaces.length} workspaces to sync immediately`);
-
-    const results: Array<{
-      ws_id: string;
-      success: boolean;
-      eventsSynced?: number;
-      eventsDeleted?: number;
-      error?: string;
-    }> = [];
-    for (const workspace of workspaces) {
-      try {
-        const result = await syncWorkspaceImmediate(workspace);
-        results.push(result);
-      } catch (error) {
-        console.error(
-          `Error in manual immediate sync for workspace ${workspace.ws_id}:`,
-          error
-        );
-        results.push({
-          ws_id: workspace.ws_id,
-          success: false,
-          error: error instanceof Error ? error.message : 'Unknown error',
-        });
-      }
-    }
-
-    console.log('=== Manual immediate sync for all workspaces completed ===');
-    return results;
-  } catch (error) {
-    console.error('Error in manual immediate sync for all workspaces:', error);
-    throw error;
-  }
 };
 
 // Manual trigger function for all workspaces extended sync
@@ -169,4 +124,4 @@ export const getWorkspaceSyncStatus = async () => {
 };
 
 // Export individual functions for separate scheduling
-export { syncWorkspaceImmediate, syncWorkspaceExtended, getWorkspacesForSync };
+export { syncWorkspaceExtended, getWorkspacesForSync };

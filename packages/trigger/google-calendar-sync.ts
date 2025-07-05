@@ -74,7 +74,6 @@ const syncGoogleCalendarEventsForWorkspace = async (
   refresh_token: string | null,
   timeMin: dayjs.Dayjs,
   timeMax: dayjs.Dayjs,
-  syncType: 'immediate' | 'extended',
   locale?: string
 ): Promise<SyncResult> => {
   console.log(`Syncing Google Calendar events for workspace ${ws_id} from ${timeMin.format('YYYY-MM-DD HH:mm')} to ${timeMax.format('YYYY-MM-DD HH:mm')}`);
@@ -277,7 +276,6 @@ export const syncWorkspaceImmediate = async (payload: {
     refresh_token || null,
     timeMin,
     timeMax,
-    'immediate',
     locale
   );
 };
@@ -306,34 +304,9 @@ export const syncWorkspaceExtended = async (payload: {
     refresh_token || null,
     timeMin,
     timeMax,
-    'extended',
     locale
   );
   };
-
-// Legacy functions for backward compatibility
-export const syncGoogleCalendarEventsImmediate = async (locale?: string) => {
-  console.log('Starting immediate Google Calendar sync for all workspaces');
-  const workspaces = await getWorkspacesForSync();
-  const results: SyncResult[] = [];
-
-  for (const workspace of workspaces) {
-    try {
-      const result = await syncWorkspaceImmediate({ ...workspace, locale });
-      results.push(result);
-    } catch (error) {
-      
-      results.push({
-        ws_id: workspace.ws_id,
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
-      });
-    }
-  }
-
-  
-  return results;
-};
 
 export const syncGoogleCalendarEventsExtended = async (locale?: string) => {
   
@@ -358,15 +331,16 @@ export const syncGoogleCalendarEventsExtended = async (locale?: string) => {
   return results;
 };
 
-export const syncGoogleCalendarEvents = async (locale?: string) => {
-  return syncGoogleCalendarEventsImmediate(locale);
-};
-
 const storeSyncToken = async (ws_id: string, syncToken: string, lastSyncedAt: Date) => {
   const supabase = await createAdminClient({ noCookie: true });
   const { error } = await supabase
     .from('calendar_sync_states')
     .upsert({ ws_id, sync_token: syncToken, last_synced_at: lastSyncedAt.toISOString() });
+  
+  if (error) {
+    console.log('Error storing sync token:', error);
+    throw error;
+  }
 };
 
 export async function performFullSyncForWorkspace(calendarId = "primary", ws_id: string,
