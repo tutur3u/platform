@@ -14,11 +14,6 @@ const DOMAINS = {
     href: DEV_MODE ? `http://localhost:${PORT}` : 'https://tuturuuu.com',
     logo: '/media/logos/transparent.png',
   },
-  UPSKII: {
-    name: 'Upskii',
-    href: DEV_MODE ? 'http://localhost:7806' : 'https://upskii.com',
-    logo: '/media/logos/upskii/upskii-transparent.png',
-  },
   NOVA: {
     name: 'Nova',
     href: DEV_MODE ? 'http://localhost:7805' : 'https://nova.ai.vn',
