@@ -46,22 +46,73 @@ export default function History() {
   const [emblaApi, setEmblaApi] = useState<CarouselApi | null>(null);
   const [selectedIndex, setSelectedIndex] = useState(1);
 
+  const onSelect = () => {
+    if (!emblaApi) return;
+
+    setSelectedIndex(emblaApi.selectedScrollSnap() + 1);
+  };
+
+  const onScroll = () => {
+    if (!emblaApi) return;
+
+    const root = emblaApi.rootNode();
+    const slides = emblaApi.slideNodes();
+    const slidesInView = emblaApi.slidesInView();
+
+    if (slidesInView.length === 0) return;
+
+    const rootRect = root.getBoundingClientRect();
+    const rootCenter = rootRect.left + rootRect.width / 2;
+
+    let closestSlide = slidesInView[0] ?? 0;
+    let minDistance = Infinity;
+
+    slidesInView.forEach((slideIndex) => {
+      const slideRect = slides[slideIndex]?.getBoundingClientRect();
+      if (!slideRect) return;
+
+      const slideCenter = slideRect.left + slideRect.width / 2;
+      const distance = Math.abs(slideCenter - rootCenter);
+
+      if (distance < minDistance) {
+        minDistance = distance;
+        closestSlide = slideIndex;
+      }
+    });
+
+    const newSelectedIndex = closestSlide;
+
+    setSelectedIndex((selectedIndex) => {
+      if (
+        newSelectedIndex !== selectedIndex &&
+        newSelectedIndex !== 0 &&
+        newSelectedIndex !== slides.length - 1
+      ) {
+        return newSelectedIndex;
+      }
+
+      return selectedIndex;
+    });
+  };
+
+  const onReInit = () => {
+    if (!emblaApi) return;
+
+    emblaApi.scrollTo(0);
+    setSelectedIndex(1);
+  };
+
   useEffect(() => {
     if (!emblaApi) return;
 
-    const onSelect = () => {
-      setSelectedIndex(emblaApi.selectedScrollSnap() + 1);
-    };
-    const onReInit = () => {
-      emblaApi.scrollTo(0);
-      setSelectedIndex(1);
-    };
     onReInit();
 
     emblaApi.on('select', onSelect);
+    emblaApi.on('scroll', onScroll);
     emblaApi.on('reInit', onReInit);
     return () => {
       emblaApi.off('select', onSelect);
+      emblaApi.off('scroll', onScroll);
       emblaApi.off('reInit', onReInit);
     };
   }, [emblaApi]);
@@ -141,30 +192,39 @@ export default function History() {
       </div>
 
       {/* Mobile/Tablet: Grid Layout */}
-      <div className="grid gap-8 md:hidden">
-        {timelineData.map((item, index) => (
-          <div key={index} className="flex justify-center">
-            {item && (
+      <motion.div
+        initial={{ opacity: 0, y: 50 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8, delay: 0.8 }}
+        viewport={{ once: true }}
+        className="flex flex-col items-center gap-8 md:hidden"
+      >
+        {timelineData.map(
+          (item, index) =>
+            item && (
               <TimelineCard
+                key={index}
                 year={item.year}
                 title={item.title}
                 description={item.description}
-                isSelected={true} // Always show as selected in grid view
+                isSelected={true}
               />
-            )}
-          </div>
-        ))}
-      </div>
+            )
+        )}
+      </motion.div>
 
       {/* Desktop: Carousel */}
-      <div className="hidden md:block">
+      <motion.div
+        initial={{ opacity: 0, y: 50 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8, delay: 0.8 }}
+        viewport={{ once: true }}
+        className="hidden md:block"
+      >
         <Carousel setApi={setEmblaApi}>
           <CarouselContent>
             {timelineData.map((item, index) => (
-              <CarouselItem
-                key={index}
-                className="flex basis-1/3 justify-center"
-              >
+              <CarouselItem key={index} className="basis-1/3">
                 {item && (
                   <TimelineCard
                     year={item.year}
@@ -179,7 +239,7 @@ export default function History() {
           <CarouselPrevious className="ml-16 h-12 w-12" />
           <CarouselNext className="mr-16 h-12 w-12" />
         </Carousel>
-      </div>
+      </motion.div>
     </div>
   );
 }
