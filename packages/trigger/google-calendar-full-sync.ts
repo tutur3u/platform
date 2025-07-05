@@ -1,6 +1,5 @@
 import { task } from '@trigger.dev/sdk/v3';
 import { getGoogleAuthClient, getWorkspacesForSync, storeSyncToken, syncWorkspaceExtended } from './google-calendar-sync';
-import 'dotenv/config';
 import { google } from 'googleapis';
 
 export async function performFullSyncForWorkspace(calendarId = "primary", ws_id: string,
