@@ -121,7 +121,7 @@ export async function POST(
       events,
       defaultActiveHours
     );
-    if (events.length > 0) {
+if (newScheduledEvents.length > 0) {
       const insertData = newScheduledEvents.map((event) => ({
         ws_id: wsId,
         task_id: event.taskId,
