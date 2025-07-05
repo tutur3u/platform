@@ -1,6 +1,34 @@
 import { task } from '@trigger.dev/sdk/v3';
-import { getWorkspacesForSync, performFullSyncForWorkspace } from './google-calendar-sync';
+import { getGoogleAuthClient, getWorkspacesForSync, storeSyncToken, syncWorkspaceExtended } from './google-calendar-sync';
 import 'dotenv/config';
+import { google } from 'googleapis';
+
+async function performFullSyncForWorkspace(calendarId = "primary", ws_id: string,
+    access_token: string,
+    refresh_token: string) {
+    const auth = getGoogleAuthClient({ access_token, refresh_token: refresh_token || undefined });
+    const calendar = google.calendar({ version: "v3", auth });
+  
+    const res = await calendar.events.list({
+      calendarId,
+      showDeleted: true,
+      singleEvents: true,
+      maxResults: 2500,
+    });
+  
+    const events = res.data.items || [];
+    const syncToken = res.data.nextSyncToken;
+  
+    if (events.length > 0) {
+        syncWorkspaceExtended({ ws_id, access_token, refresh_token });
+    }
+  
+    if (syncToken) {
+      await storeSyncToken(ws_id, syncToken, new Date());
+    }
+  
+    return events;
+  }
 
 // Task for performing a full sync of a single workspace
 export const googleCalendarFullSync = task({

@@ -37,7 +37,7 @@ type SyncResult = {
   error?: string;
 };
 
-const getGoogleAuthClient = (tokens: {
+export const getGoogleAuthClient = (tokens: {
   access_token: string;
   refresh_token?: string;
 }) => {
@@ -303,7 +303,7 @@ export const syncGoogleCalendarEventsExtended = async (locale?: string) => {
   return results;
 };
 
-const storeSyncToken = async (ws_id: string, syncToken: string, lastSyncedAt: Date) => {
+export const storeSyncToken = async (ws_id: string, syncToken: string, lastSyncedAt: Date) => {
   const supabase = await createAdminClient({ noCookie: true });
   const { error } = await supabase
     .from('calendar_sync_states')
@@ -315,29 +315,18 @@ const storeSyncToken = async (ws_id: string, syncToken: string, lastSyncedAt: Da
   }
 };
 
-export async function performFullSyncForWorkspace(calendarId = "primary", ws_id: string,
-  access_token: string,
-  refresh_token: string) {
-  const auth = getGoogleAuthClient({ access_token, refresh_token: refresh_token || undefined });
-  const calendar = google.calendar({ version: "v3", auth });
 
-  const res = await calendar.events.list({
-    calendarId,
-    showDeleted: true,
-    singleEvents: true,
-    maxResults: 2500,
-  });
+export const getSyncToken = async (ws_id: string) => {
+  const supabase = await createAdminClient({ noCookie: true });
+  const { data: syncToken, error } = await supabase
+    .from('calendar_sync_states')
+    .select('sync_token')
+    .eq('ws_id', ws_id);
 
-  const events = res.data.items || [];
-  const syncToken = res.data.nextSyncToken;
-
-  if (events.length > 0) {
-    syncWorkspaceExtended({ ws_id, access_token, refresh_token });
+  if (error) {
+    console.log('Error fetching sync token:', error);
+    throw error;
   }
 
-  if (syncToken) {
-    await storeSyncToken(ws_id, syncToken, new Date());
-  }
-
-  return events;
-}
+  return syncToken?.[0]?.sync_token || null;
+};

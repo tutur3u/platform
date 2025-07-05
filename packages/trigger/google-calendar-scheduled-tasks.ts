@@ -1,4 +1,4 @@
-import { schedules, task } from '@trigger.dev/sdk/v3';
+import { task } from '@trigger.dev/sdk/v3';
 import { 
   syncWorkspaceExtended,
   getWorkspacesForSync 
@@ -18,12 +18,8 @@ export const googleCalendarWorkspaceExtendedSync = task({
 });
 
 // Orchestrator task that runs every 10 minutes and triggers individual workspace extended syncs
-export const googleCalendarExtendedOrchestrator = schedules.task({
+export const googleCalendarExtendedOrchestrator = task({
   id: 'google-calendar-extended-orchestrator',
-  cron: {
-    // every 10 minutes
-    pattern: '*/10 * * * *',
-  },
   run: async () => {
     console.log('=== Starting extended sync orchestrator ===');
     
