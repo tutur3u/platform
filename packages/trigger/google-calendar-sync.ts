@@ -37,7 +37,7 @@ type SyncResult = {
   error?: string;
 };
 
-const getGoogleAuthClient = (tokens: {
+export const getGoogleAuthClient = (tokens: {
   access_token: string;
   refresh_token?: string;
 }) => {
@@ -74,7 +74,6 @@ const syncGoogleCalendarEventsForWorkspace = async (
   refresh_token: string | null,
   timeMin: dayjs.Dayjs,
   timeMax: dayjs.Dayjs,
-  syncType: 'immediate' | 'extended',
   locale?: string
 ): Promise<SyncResult> => {
   console.log(`Syncing Google Calendar events for workspace ${ws_id} from ${timeMin.format('YYYY-MM-DD HH:mm')} to ${timeMax.format('YYYY-MM-DD HH:mm')}`);
@@ -253,36 +252,7 @@ export const getWorkspacesForSync = async () => {
   }
 };
 
-// Sync a single workspace for immediate range
-export const syncWorkspaceImmediate = async (payload: {
-  ws_id: string;
-  access_token: string;
-  refresh_token?: string;
-  locale?: string;
-}) => {
-  const { ws_id, access_token, refresh_token, locale } = payload;
-  
-  if (!access_token) {
-    console.log('No access token provided for workspace:', ws_id);
-    return { ws_id, success: false, error: 'No access token provided' };
-  }
-
-  const now = dayjs();
-  const timeMin = now;
-  const timeMax = now.add(7, 'day'); // 1 week from now
-  
-  return syncGoogleCalendarEventsForWorkspace(
-    ws_id,
-    access_token,
-    refresh_token || null,
-    timeMin,
-    timeMax,
-    'immediate',
-    locale
-  );
-};
-
-// Sync a single workspace for extended range
+// Sync a single workspace for 4 weeks (28 days) from now
 export const syncWorkspaceExtended = async (payload: {
   ws_id: string;
   access_token: string;
@@ -297,7 +267,7 @@ export const syncWorkspaceExtended = async (payload: {
   }
 
   const now = dayjs();
-  const timeMin = now.add(7, 'day'); // Start from 1 week from now
+  const timeMin = now; // Start from now
   const timeMax = now.add(28, 'day'); // 4 weeks from now (1 week + 3 weeks)
   
   return syncGoogleCalendarEventsForWorkspace(
@@ -306,33 +276,8 @@ export const syncWorkspaceExtended = async (payload: {
     refresh_token || null,
     timeMin,
     timeMax,
-    'extended',
     locale
   );
-  };
-
-// Legacy functions for backward compatibility
-export const syncGoogleCalendarEventsImmediate = async (locale?: string) => {
-  console.log('Starting immediate Google Calendar sync for all workspaces');
-  const workspaces = await getWorkspacesForSync();
-  const results: SyncResult[] = [];
-
-  for (const workspace of workspaces) {
-    try {
-      const result = await syncWorkspaceImmediate({ ...workspace, locale });
-      results.push(result);
-    } catch (error) {
-      
-      results.push({
-        ws_id: workspace.ws_id,
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
-      });
-    }
-  }
-
-  
-  return results;
 };
 
 export const syncGoogleCalendarEventsExtended = async (locale?: string) => {
@@ -358,7 +303,30 @@ export const syncGoogleCalendarEventsExtended = async (locale?: string) => {
   return results;
 };
 
-export const syncGoogleCalendarEvents = async (locale?: string) => {
-  return syncGoogleCalendarEventsImmediate(locale);
+export const storeSyncToken = async (ws_id: string, syncToken: string, lastSyncedAt: Date) => {
+  const supabase = await createAdminClient({ noCookie: true });
+  const { error } = await supabase
+    .from('calendar_sync_states')
+    .upsert({ ws_id, sync_token: syncToken, last_synced_at: lastSyncedAt.toISOString() });
+  
+  if (error) {
+    console.log('Error storing sync token:', error);
+    throw error;
+  }
 };
 
+
+export const getSyncToken = async (ws_id: string) => {
+  const supabase = await createAdminClient({ noCookie: true });
+  const { data: syncToken, error } = await supabase
+    .from('calendar_sync_states')
+    .select('sync_token')
+    .eq('ws_id', ws_id);
+
+  if (error) {
+    console.log('Error fetching sync token:', error);
+    throw error;
+  }
+
+  return syncToken?.[0]?.sync_token || null;
+};

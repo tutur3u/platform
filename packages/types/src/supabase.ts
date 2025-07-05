@@ -729,6 +729,35 @@ export type Database = {
           },
         ];
       };
+      calendar_sync_states: {
+        Row: {
+          calendar_id: string;
+          last_synced_at: string | null;
+          sync_token: string | null;
+          ws_id: string;
+        };
+        Insert: {
+          calendar_id?: string;
+          last_synced_at?: string | null;
+          sync_token?: string | null;
+          ws_id: string;
+        };
+        Update: {
+          calendar_id?: string;
+          last_synced_at?: string | null;
+          sync_token?: string | null;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'calendar_sync_states_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: true;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       course_certificates: {
         Row: {
           completed_date: string;

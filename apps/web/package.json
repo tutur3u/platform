@@ -48,6 +48,7 @@
     "@tuturuuu/payment": "workspace:*",
     "@tuturuuu/supabase": "workspace:*",
     "@tuturuuu/transactional": "workspace:*",
+    "@tuturuuu/trigger": "workspace:*",
     "@tuturuuu/types": "workspace:*",
     "@tuturuuu/ui": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
