@@ -7,6 +7,7 @@ import type { Task } from '@tuturuuu/ai/scheduling/types';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { getCurrentSupabaseUser } from '@tuturuuu/utils/user-helper';
 import { NextResponse } from 'next/server';
+
 export async function POST(
   req: Request,
   { params }: { params: Promise<{ wsId: string }> }
