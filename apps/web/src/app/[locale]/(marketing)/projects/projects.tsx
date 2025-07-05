@@ -212,22 +212,20 @@ export default function Projects() {
   // *** NEW: Helper function to calculate card styles based on position ***
   const calculateCardStyle = (position: number) => {
     const isCenter = position === 0;
-    const isOffScreen = Math.abs(position) > 2;
+    const isVisible = Math.abs(position) <= 1; // Show only 3 cards
 
     let x = 0;
     if (position !== 0) {
-      // Reduced spacing to keep cards within viewport
-      x = position * 300; // Simplified positioning - 300px spacing between cards
+      // Tighter spacing for 3-card layout
+      x = position * 300; // Reduced spacing to prevent overflow
     }
 
     return {
       x: x,
-      y: isCenter ? 0 : 20, // Reduced y offset
-      scale: isCenter ? 1 : 0.85,
+      y: isCenter ? 0 : 15, // Slight y offset
+      scale: isCenter ? 1 : 0.9, // Less dramatic scaling
       zIndex: 5 - Math.abs(position), // Center card has highest zIndex
-      opacity: isOffScreen ? 0 : 1 - Math.abs(position) * 0.3,
-      // You can even add rotation for a cooler effect
-      // rotate: position * 5,
+      opacity: isVisible ? (isCenter ? 1 : 0.7) : 0,
     };
   };
 
@@ -425,8 +423,8 @@ export default function Projects() {
                       {filteredProjects.map((project, index) => {
                         const position = index - currentIndex;
 
-                        // Only render a few cards around the current one for performance
-                        if (Math.abs(position) > 3) return null;
+                        // Only render 3 cards: left, center, right
+                        if (Math.abs(position) > 1) return null;
 
                         return (
                           <motion.div
