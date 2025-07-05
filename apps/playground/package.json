@@ -30,7 +30,7 @@
     "@tuturuuu/ui": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
     "dayjs": "^1.11.13",
-    "next": "15.3.4",
+    "next": "^15.3.5",
     "react": "^19.1.0",
     "react-dom": "^19.1.0"
   },
@@ -41,5 +41,5 @@
     "postcss": "^8.5.6",
     "typescript": "^5.8.3"
   },
-  "packageManager": "bun@1.2.17"
+  "packageManager": "bun@1.2.18"
 }
