@@ -258,12 +258,12 @@ async function getPlatformUserData({
   userCount: number;
 }> {
   try {
-    const supabase = await createAdminClient();
-    if (!supabase) notFound();
+    const sbAdmin = await createAdminClient();
+    if (!sbAdmin) notFound();
 
     // If there's a search query, use the RPC function
     if (q) {
-      const { data, error } = await supabase.rpc('search_users', {
+      const { data, error } = await sbAdmin.rpc('search_users', {
         search_query: q,
         page_number: parseInt(page),
         page_size: parseInt(pageSize),
@@ -277,7 +277,7 @@ async function getPlatformUserData({
       }
 
       // Get count for pagination
-      const { data: countData, error: countError } = await supabase.rpc(
+      const { data: countData, error: countError } = await sbAdmin.rpc(
         'count_search_users',
         {
           search_query: q,
@@ -309,7 +309,7 @@ async function getPlatformUserData({
     }
 
     // Regular query for when there's no search
-    const queryBuilder = supabase
+    const queryBuilder = sbAdmin
       .from('platform_user_roles')
       .select('*,...users!inner(*, ...user_private_details(*))', {
         count: 'exact',

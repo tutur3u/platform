@@ -11,6 +11,7 @@ import {
 import { Separator } from '@tuturuuu/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { TooltipProvider } from '@tuturuuu/ui/tooltip';
+import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { CustomDataTable } from '@/components/custom-data-table';
@@ -47,6 +48,7 @@ interface MailProps {
   postsCount: number;
   postsStatus: { count: number | null };
   searchParams: SearchParams;
+  hasCredential: boolean;
 }
 
 export function MailClient({
@@ -61,6 +63,7 @@ export function MailClient({
   postsCount,
   postsStatus,
   searchParams,
+  hasCredential,
 }: MailProps) {
   const [mail] = useMail();
   const [posts, setPosts] = usePosts();
@@ -201,7 +204,12 @@ export function MailClient({
                     {t('ws-post-emails.plural')}
                   </TabsTrigger>
                 </TabsList>
-                <ComposeButton onClick={() => setComposeOpen(true)} />
+                {wsId === ROOT_WORKSPACE_ID && (
+                  <ComposeButton
+                    onClick={() => setComposeOpen(true)}
+                    disabled={!hasCredential}
+                  />
+                )}
               </div>
               <TabsContent value="inbox" className="m-0">
                 <MailList items={mails} hasMore={hasMore} loading={loading} />

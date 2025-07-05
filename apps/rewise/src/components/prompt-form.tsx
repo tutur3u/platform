@@ -30,7 +30,6 @@ import { useTranslations } from 'next-intl';
 import type React from 'react';
 import { useEffect, useState } from 'react';
 import Textarea from 'react-textarea-autosize';
-import { DEV_MODE } from '@/constants/common';
 import { useEnterSubmit } from '@/lib/hooks/use-enter-submit';
 
 export interface PromptProps
@@ -87,121 +86,7 @@ export function PromptForm({
   const images = files.filter((f) => f.rawFile.type.startsWith('image/'));
   const others = files.filter((f) => !pdfs.includes(f) && !images.includes(f));
 
-  // const [caption, setCaption] = useState<string | undefined>();
-  // const {
-  //   connection,
-  //   connectToDeepgram,
-  //   disconnectFromDeepgram,
-  //   connectionState,
-  // } = useDeepgram();
-  // const {
-  //   setupMicrophone,
-  //   microphone,
-  //   startMicrophone,
-  //   stopMicrophone,
-  //   microphoneState,
-  // } = useMicrophone();
-
-  // const captionTimeout = useRef<any>();
-  // const keepAliveInterval = useRef<any>();
-
   const [showPermissionDenied, setShowPermissionDenied] = useState(false);
-
-  // useEffect(() => {
-  //   if (microphoneState === MicrophoneState.NotSetup) {
-  //     setupMicrophone();
-  //   }
-
-  //   if (
-  //     microphoneState === MicrophoneState.Paused &&
-  //     connectionState === LiveConnectionState.OPEN
-  //   ) {
-  //     disconnectFromDeepgram();
-  //   }
-  // }, [microphoneState]);
-
-  // useEffect(() => {
-  //   if (!microphone) {
-  //     console.log('!microphone');
-  //     return;
-  //   }
-
-  //   if (!connection) {
-  //     console.log('!connection');
-  //     return;
-  //   }
-
-  //   console.log('connectionState', connectionState);
-
-  //   const onData = (e: BlobEvent) => {
-  //     connection?.send(e.data);
-  //   };
-
-  //   const onTranscript = (data: LiveTranscriptionEvent) => {
-  //     const { is_final: isFinal, speech_final: speechFinal } = data;
-  //     let thisCaption = data.channel.alternatives?.[0]?.transcript;
-
-  //     console.log('thisCaption', thisCaption);
-  //     if (thisCaption !== '') {
-  //       console.log('thisCaption !== ""', thisCaption);
-  //       setCaption(thisCaption);
-  //     }
-
-  //     if (isFinal && speechFinal) {
-  //       clearTimeout(captionTimeout.current);
-  //       captionTimeout.current = setTimeout(() => {
-  //         setInput((prev) => [prev, thisCaption].join(' '));
-  //         setCaption(undefined);
-  //         disconnectFromDeepgram();
-  //         stopMicrophone();
-  //         clearTimeout(captionTimeout.current);
-  //       }, 3000);
-  //     }
-  //   };
-
-  //   if (connectionState === LiveConnectionState.OPEN) {
-  //     connection?.addListener(LiveTranscriptionEvents.Transcript, onTranscript);
-  //     microphone?.addEventListener(MicrophoneEvents.DataAvailable, onData);
-  //     startMicrophone();
-  //   }
-
-  //   return () => {
-  //     // prettier-ignore
-  //     connection?.removeListener(LiveTranscriptionEvents.Transcript, onTranscript);
-  //     microphone?.removeEventListener(MicrophoneEvents.DataAvailable, onData);
-  //     clearTimeout(captionTimeout.current);
-  //     stopMicrophone();
-  //   };
-  // }, [microphone, connection, connectionState]);
-
-  // useEffect(() => {
-  //   if (!connection) return;
-
-  //   if (
-  //     microphoneState !== MicrophoneState.Open &&
-  //     connectionState === LiveConnectionState.OPEN
-  //   ) {
-  //     connection.keepAlive();
-
-  //     keepAliveInterval.current = setInterval(() => {
-  //       connection.keepAlive();
-  //     }, 10000);
-  //   } else {
-  //     clearInterval(keepAliveInterval.current);
-  //   }
-
-  //   return () => {
-  //     clearInterval(keepAliveInterval.current);
-  //   };
-  // }, [microphoneState, connectionState]);
-
-  // const [responseTypes, setResponseTypes] = useState<{
-  //   summary?: boolean;
-  //   notes?: boolean;
-  //   multiChoiceQuiz?: boolean;
-  //   paragraphQuiz?: boolean;
-  //   flashcards?: boolean;
-  // }>({});
 
   const [element, setElement] = useState<HTMLElement | null>(null);
 
@@ -213,8 +98,6 @@ export function PromptForm({
   }, []);
 
   if (!element) return null;
-
-  const ENABLE_NEW_UI = DEV_MODE;
 
   return (
     <Dialog open={showPermissionDenied} onOpenChange={setShowPermissionDenied}>
@@ -252,111 +135,6 @@ export function PromptForm({
                 )}
               </>
             )}
-            {/* <Button
-              size="xs"
-              type="button"
-              variant={responseTypes.summary ? undefined : 'secondary'}
-              className={cn(
-                'border text-xs',
-                responseTypes.summary
-                  ? 'border-dynamic-red/20 bg-dynamic-red/10 text-dynamic-red hover:bg-dynamic-red/20'
-                  : 'bg-background text-foreground/70 hover:bg-foreground/5'
-              )}
-              onClick={() =>
-                setResponseTypes((types) => ({
-                  ...types,
-                  summary: !types.summary,
-                }))
-              }
-              disabled={!ENABLE_NEW_UI}
-            >
-              <ArrowDownWideNarrow className="mr-1 h-4 w-4" />
-              {t('ai_chat.chat_summary')}
-            </Button>
-            <Button
-              size="xs"
-              type="button"
-              variant={responseTypes.notes ? undefined : 'secondary'}
-              className={cn(
-                'border text-xs',
-                responseTypes.notes
-                  ? 'border-dynamic-purple/20 bg-dynamic-purple/10 text-dynamic-purple hover:bg-dynamic-purple/20'
-                  : 'bg-background text-foreground/70 hover:bg-foreground/5'
-              )}
-              onClick={() =>
-                setResponseTypes((types) => ({
-                  ...types,
-                  notes: !types.notes,
-                }))
-              }
-              disabled={!ENABLE_NEW_UI}
-            >
-              <NotebookPen className="mr-1 h-4 w-4" />
-              {t('ai_chat.chat_notes')}
-            </Button>
-            <Button
-              size="xs"
-              type="button"
-              variant={responseTypes.multiChoiceQuiz ? undefined : 'secondary'}
-              className={cn(
-                'border text-xs',
-                responseTypes.multiChoiceQuiz
-                  ? 'border-dynamic-green/20 bg-dynamic-green/10 text-dynamic-green hover:bg-dynamic-green/20'
-                  : 'bg-background text-foreground/70 hover:bg-foreground/5'
-              )}
-              onClick={() =>
-                setResponseTypes((types) => ({
-                  ...types,
-                  multiChoiceQuiz: !types.multiChoiceQuiz,
-                }))
-              }
-              disabled={!ENABLE_NEW_UI}
-            >
-              <SquareStack className="mr-1 h-4 w-4" />
-              {t('ai_chat.multiple_choice')}
-            </Button>
-            <Button
-              size="xs"
-              type="button"
-              variant={responseTypes.paragraphQuiz ? undefined : 'secondary'}
-              className={cn(
-                'border text-xs',
-                responseTypes.paragraphQuiz
-                  ? 'border-dynamic-orange/20 bg-dynamic-orange/10 text-dynamic-orange hover:bg-dynamic-orange/20'
-                  : 'bg-background text-foreground/70 hover:bg-foreground/5'
-              )}
-              onClick={() =>
-                setResponseTypes((types) => ({
-                  ...types,
-                  paragraphQuiz: !types.paragraphQuiz,
-                }))
-              }
-              disabled={!ENABLE_NEW_UI}
-            >
-              <PencilLine className="mr-1 h-4 w-4" />
-              {t('ai_chat.paragraph_answers')}
-            </Button>
-            <Button
-              size="xs"
-              type="button"
-              variant={responseTypes.flashcards ? undefined : 'secondary'}
-              className={cn(
-                'border text-xs',
-                responseTypes.flashcards
-                  ? 'border-dynamic-blue/20 bg-dynamic-blue/10 text-dynamic-blue hover:bg-dynamic-blue/20'
-                  : 'bg-background text-foreground/70 hover:bg-foreground/5'
-              )}
-              onClick={() =>
-                setResponseTypes((types) => ({
-                  ...types,
-                  flashcards: !types.flashcards,
-                }))
-              }
-              disabled={!ENABLE_NEW_UI}
-            >
-              <NotebookTabs className="mr-1 h-4 w-4" />
-              {t('ai_chat.flashcards')}
-            </Button> */}
           </div>
 
           <div className="flex items-center">
@@ -368,7 +146,7 @@ export function PromptForm({
                     size="icon"
                     variant="ghost"
                     className={cn('mr-1 transition duration-300')}
-                    disabled={!ENABLE_NEW_UI || disabled}
+                    disabled
                   >
                     <Languages />
                   </Button>
@@ -387,83 +165,13 @@ export function PromptForm({
                   variant="ghost"
                   className={cn('transition duration-300')}
                   onClick={toggleChatFileUpload}
-                  disabled={!ENABLE_NEW_UI || disabled}
+                  disabled={disabled}
                 >
                   <Paperclip />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>{t('ai_chat.add_attachments')}</TooltipContent>
             </Tooltip>
-
-            {/* <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className={cn(
-                    'transition duration-300',
-                    (!chat?.id || !isInternalLoading) && input
-                      ? 'mx-1'
-                      : 'ml-1',
-                    chat?.id && isInternalLoading ? 'md:mr-0' : ''
-                  )}
-                  type="button"
-                  onClick={() => {
-                    if (microphoneState === MicrophoneState.Error) {
-                      setShowPermissionDenied(true);
-                      return;
-                    }
-
-                    if (
-                      microphoneState === MicrophoneState.Ready ||
-                      microphoneState === MicrophoneState.Paused
-                    ) {
-                      connectToDeepgram({
-                        model: 'nova-2',
-                        interim_results: true,
-                        smart_format: true,
-                        filler_words: true,
-                        utterance_end_ms: 3000,
-                      });
-                      return;
-                    }
-
-                    if (microphoneState === MicrophoneState.Open) {
-                      setInput((prev) =>
-                        [prev, caption || ''].filter(Boolean).join(' ')
-                      );
-                      setCaption(undefined);
-                      disconnectFromDeepgram();
-                      stopMicrophone();
-                      return;
-                    }
-                  }}
-                  disabled={
-                    isInternalLoading ||
-                    microphoneState === MicrophoneState.Opening ||
-                    microphoneState === MicrophoneState.Pausing ||
-                    microphoneState === MicrophoneState.SettingUp ||
-                    microphoneState === MicrophoneState.NotSetup
-                  }
-                  disabled
-                >
-                  {microphoneState === MicrophoneState.Open ? (
-                  <Mic />
-                  ) : (
-                    <MicOff />
-                  )}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>{t('ai_chat.voice_input')}</TooltipContent>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>{t('ai_chat.permission_denied')}</DialogTitle>
-                  <DialogDescription>
-                    {t('ai_chat.microphone_permission_denied')}
-                  </DialogDescription>
-                </DialogHeader>
-              </DialogContent>
-            </Tooltip> */}
 
             <Tooltip>
               <TooltipTrigger className="hidden md:flex" asChild>

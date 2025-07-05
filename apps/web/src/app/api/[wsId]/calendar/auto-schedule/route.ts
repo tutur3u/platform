@@ -44,99 +44,6 @@ export interface ActiveHours {
   work: DateRange[];
   meeting: DateRange[];
 }
-// export async function POST(
-//   request: NextRequest,
-//   { params }: { params: Promise<{ wsId: string }> }
-// ) {
-//   const requestId = Math.random().toString(36).substring(7);
-//   console.log(`[AUTO-SCHEDULE-STREAM-${requestId}] Starting POST request`);
-
-//   try {
-//     const { wsId } = await params;
-//     console.log(`[AUTO-SCHEDULE-STREAM-${requestId}] Workspace ID: ${wsId}`);
-
-//     // Check permissions
-//     const { withoutPermission } = await getPermissions({ wsId });
-//     if (withoutPermission('manage_calendar')) {
-//       return NextResponse.json(
-//         { error: 'You do not have permission to manage calendar' },
-//         { status: 403 }
-//       );
-//     }
-
-//     const { searchParams } = new URL(request.url);
-//     const streamMode = searchParams.get('stream') !== 'false';
-//     const startDate = searchParams.get('startDate');
-//     const endDate = searchParams.get('endDate');
-//     const dateRange = startDate && endDate ? { startDate, endDate } : undefined;
-
-//     const textBody = await request.text();
-//     const body = textBody ? JSON.parse(textBody) : {};
-//     const gapMinutes = body.gapMinutes as number | undefined;
-
-//     const optimizer = createCalendarOptimizer(wsId, dateRange);
-
-//     if (streamMode) {
-//       const encoder = new TextEncoder();
-//       const stream = new ReadableStream({
-//         async start(controller) {
-//           const writer = (chunk: string) => {
-//             try {
-//               controller.enqueue(encoder.encode(`data: ${chunk}\\n\\n`));
-//             } catch (e) {
-//               console.error('Error writing to stream:', e);
-//             }
-//           };
-
-//           try {
-//             await optimizer.optimizeComprehensively(writer, { gapMinutes });
-//           } catch (error) {
-//             const errorMessage =
-//               error instanceof Error ? error.message : 'Unknown error';
-//             writer(
-//               JSON.stringify({
-//                 status: 'error',
-//                 message: `An error occurred: ${errorMessage}`,
-//               })
-//             );
-//           } finally {
-//             controller.close();
-//           }
-//         },
-//       });
-
-//       return new Response(stream, {
-//         headers: {
-//           'Content-Type': 'text/event-stream',
-//           'Cache-Control': 'no-cache',
-//           Connection: 'keep-alive',
-//         },
-//       });
-//     } else {
-//       // Non-streaming mode: wait for completion and return a single JSON response
-//       let finalResult: any = {};
-//       const writer = (chunk: string) => {
-//         const data = JSON.parse(chunk);
-//         // The last message is the one we want
-//         finalResult = data;
-//       };
-
-//       await optimizer.optimizeComprehensively(writer, { gapMinutes });
-//       return NextResponse.json(finalResult);
-//     }
-//   } catch (error) {
-//     const errorMessage =
-//       error instanceof Error ? error.message : 'Unknown error';
-//     console.error(
-//       `[AUTO-SCHEDULE-${requestId}] Top-level error:`,
-//       errorMessage
-//     );
-//     return NextResponse.json(
-//       { error: 'Failed to auto-schedule calendar' },
-//       { status: 500 }
-//     );
-//   }
-// }
 
 export async function POST(
   request: NextRequest,
@@ -169,15 +76,15 @@ export async function POST(
     console.log(`[AUTO-SCHEDULE-${requestId}] Fetching tasks and events...`);
 
     // Fetch tasks for the current user
-    const { data: currentTasks, error: tasksError } = await (await supabase)
-      .from('tasks')
-      .select('*')
-      .eq('creator_id', user.id)
-      .eq('archived', false)
-      .eq('completed', false);
+    // const { data: currentTasks, error: tasksError } = await (await supabase)
+    //   .from('tasks')
+    //   .select('*')
+    //   .eq('creator_id', user.id)
+    //   .eq('archived', false)
+    //   .eq('completed', false);
 
-    if (tasksError)
-      throw new Error(`Failed to fetch tasks: ${tasksError.message}`);
+    // if (tasksError)
+    //   throw new Error(`Failed to fetch tasks: ${tasksError.message}`);
 
     const { data: flexibleEventsData, error: flexibleEventsError } = await (
       await supabase
@@ -190,34 +97,35 @@ export async function POST(
       throw new Error(`Failed to fetch events: ${flexibleEventsError.message}`);
 
     // Map DB tasks to the format our scheduler understands
-    const newTasks: Task[] = await Promise.all(
-      (currentTasks || []).map(async (task) => ({
-        id: task.id,
-        name: task.name,
-        duration: task.total_duration ?? 0,
-        minDuration: task.min_split_duration_minutes
-          ? task.min_split_duration_minutes / 60
-          : 0.5,
-        maxDuration: task.max_split_duration_minutes
-          ? task.max_split_duration_minutes / 60
-          : 2,
-        category:
-          task.calendar_hours === 'work_hours'
-            ? 'work'
-            : task.calendar_hours === 'personal_hours'
-              ? 'personal'
-              : task.calendar_hours === 'meeting_hours'
-                ? 'meeting'
-                : 'work',
-        events: [],
-        deadline: task.end_date
-          ? (await import('dayjs')).default(task.end_date)
-          : undefined,
-        priority: mapPriorityToTaskPriority(task.priority),
-        allowSplit: !!task.is_splittable,
-      }))
-    );
+    // const newTasks: Task[] = await Promise.all(
+    //   (currentTasks || []).map(async (task) => ({
+    //     id: task.id,
+    //     name: task.name,
+    //     duration: task.total_duration ?? 0,
+    //     minDuration: task.min_split_duration_minutes
+    //       ? task.min_split_duration_minutes / 60
+    //       : 0.5,
+    //     maxDuration: task.max_split_duration_minutes
+    //       ? task.max_split_duration_minutes / 60
+    //       : 2,
+    //     category:
+    //       task.calendar_hours === 'work_hours'
+    //         ? 'work'
+    //         : task.calendar_hours === 'personal_hours'
+    //           ? 'personal'
+    //           : task.calendar_hours === 'meeting_hours'
+    //             ? 'meeting'
+    //             : 'work',
+    //     events: [],
+    //     deadline: task.end_date
+    //       ? (await import('dayjs')).default(task.end_date)
+    //       : undefined,
+    //     priority: mapPriorityToTaskPriority(task.priority),
+    //     allowSplit: !!task.is_splittable,
+    //   }))
+    // );
 
+    const newTasks: Task[] = [];
     const dayjs = (await import('dayjs')).default;
     const newFlexibleEvents: Event[] = (flexibleEventsData || []).map(
       (event) => ({
@@ -228,6 +136,7 @@ export async function POST(
           end: dayjs(event.end_at),
         },
         locked: event.locked,
+        priority: event.priority,
         taskId: event.task_id ?? '',
         category: 'work',
       })
@@ -444,17 +353,17 @@ export async function GET(
     );
   }
 }
-function mapPriorityToTaskPriority(priority: number | null): TaskPriority {
-  switch (priority) {
-    case 1:
-      return 'critical';
-    case 2:
-      return 'high';
-    case 3:
-      return 'normal';
-    case 4:
-      return 'low';
-    default:
-      return 'normal';
-  }
-}
+// function mapPriorityToTaskPriority(priority: number | null): TaskPriority {
+//   switch (priority) {
+//     case 1:
+//       return 'critical';
+//     case 2:
+//       return 'high';
+//     case 3:
+//       return 'normal';
+//     case 4:
+//       return 'low';
+//     default:
+//       return 'normal';
+//   }
+// }

@@ -245,6 +245,19 @@ export default async function Layout({ children, params }: LayoutProps) {
           experimental: 'beta',
         },
         {
+          title: t('sidebar_tabs.drive'),
+          href: `/${wsId}/drive`,
+          icon: <HardDrive className="h-5 w-5" />,
+          disabled:
+            !(await verifySecret({
+              forceAdmin: true,
+              wsId,
+              name: 'ENABLE_DRIVE',
+              value: 'true',
+            })) || withoutPermission('manage_drive'),
+          experimental: 'beta',
+        },
+        {
           title: t('sidebar_tabs.whiteboards'),
           href: `/${wsId}/whiteboards`,
           icon: <PencilLine className="h-5 w-5" />,
@@ -295,20 +308,6 @@ export default async function Layout({ children, params }: LayoutProps) {
             })) ||
             withoutPermission('manage_documents'),
           shortcut: 'O',
-          experimental: 'beta',
-        },
-        {
-          title: t('sidebar_tabs.drive'),
-          href: `/${wsId}/drive`,
-          icon: <HardDrive className="h-5 w-5" />,
-          disabled:
-            !(await verifySecret({
-              forceAdmin: true,
-              wsId,
-              name: 'ENABLE_DRIVE',
-              value: 'true',
-            })) || withoutPermission('manage_drive'),
-          shortcut: 'R',
           experimental: 'beta',
         },
         {
