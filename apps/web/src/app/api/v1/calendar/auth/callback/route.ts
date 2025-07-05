@@ -1,7 +1,7 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { OAuth2Client } from 'google-auth-library';
 import { NextResponse } from 'next/server';
-import { performFullSyncForWorkspace } from '@tuturuuu/trigger/google-calendar-sync';
+import { performFullSyncForWorkspace } from '@tuturuuu/trigger/google-calendar-full-sync';
 
 export async function GET(request: Request) {
   const url = new URL(request.url);

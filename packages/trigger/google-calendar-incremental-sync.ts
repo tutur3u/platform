@@ -46,7 +46,7 @@ async function performIncrementalSyncForWorkspace(
   }
 }
 
-const googleCalendarIncrementalSync = task({
+export const googleCalendarIncrementalSync = task({
   id: 'google-calendar-incremental-sync',
   queue: {
     concurrencyLimit: 1,

@@ -3,7 +3,7 @@ import { getGoogleAuthClient, getWorkspacesForSync, storeSyncToken, syncWorkspac
 import 'dotenv/config';
 import { google } from 'googleapis';
 
-async function performFullSyncForWorkspace(calendarId = "primary", ws_id: string,
+export async function performFullSyncForWorkspace(calendarId = "primary", ws_id: string,
     access_token: string,
     refresh_token: string) {
     const auth = getGoogleAuthClient({ access_token, refresh_token: refresh_token || undefined });
