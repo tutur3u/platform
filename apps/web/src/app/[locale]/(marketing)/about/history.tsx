@@ -1,5 +1,6 @@
 'use client';
 
+import { TimelineCard } from './timeline-card';
 import {
   Carousel,
   CarouselApi,
@@ -8,6 +9,7 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from '@ncthub/ui/carousel';
+import { cn } from '@ncthub/utils/format';
 import { useEffect, useState } from 'react';
 
 const timelineData = [
@@ -44,12 +46,17 @@ export default function History() {
 
   useEffect(() => {
     if (!emblaApi) return;
+
     const onSelect = () => {
-      setSelectedIndex(emblaApi.selectedScrollSnap() + 1);
+      setSelectedIndex(emblaApi.selectedScrollSnap());
     };
+
+    emblaApi.scrollTo(1);
+    setSelectedIndex(1);
 
     emblaApi.on('select', onSelect);
     emblaApi.on('reInit', onSelect);
+
     return () => {
       emblaApi.off('select', onSelect);
       emblaApi.off('reInit', onSelect);
@@ -57,25 +64,27 @@ export default function History() {
   }, [emblaApi]);
 
   return (
-    <div className="space-y-8">
-      <div className="space-y-8 text-center">
+    <div className="space-y-24">
+      <div className="space-y-8">
         <div
-          className="mt-8 flex h-24 w-full items-center justify-center rounded-lg border-2 border-[#5FC6E5] py-2 text-center lg:h-28"
-          style={{
-            background: `linear-gradient(
-                to right,
-                #356F80 0%, #030303 20%, /* Left gradient */
-                #000000 40%, #000000 60%, /* Middle black section */
-                #030303 80%, #A58211 100% /* Right gradient */
-              )`,
-          }}
+          className={cn(
+            'mt-8 flex h-24 w-full items-center justify-center rounded-lg border-2 bg-gradient-to-r py-2 text-center lg:h-28',
+            'border-[#B8D4E3] from-[#D4E8F0] via-[#F8F9FA] to-[#F5F0D8]',
+            'dark:border-[#5FC6E5] dark:from-[#356F80] dark:via-[#030303] dark:to-[#A58211]'
+          )}
         >
-          <p className="bg-gradient-to-r from-[#F4B71A] to-[#1AF4E6] bg-clip-text p-3 text-3xl font-black tracking-normal text-transparent md:text-5xl lg:text-6xl lg:tracking-wide">
+          <p
+            className={cn(
+              'bg-gradient-to-r bg-clip-text p-3 text-center text-3xl font-black tracking-normal text-transparent md:text-5xl lg:text-6xl lg:tracking-wide',
+              'from-[#D4A017] to-[#1B8A9A]',
+              'dark:from-[#F4B71A] dark:to-[#1AF4E6]'
+            )}
+          >
             NEO Culture Tech History
           </p>
         </div>
 
-        <p className="text-xl text-foreground">
+        <p className="mx-auto max-w-2xl text-center text-lg text-muted-foreground">
           A journey of innovation, community, and passion for technology. Step
           through our history and see how we've grown.
         </p>
@@ -84,40 +93,14 @@ export default function History() {
       <Carousel setApi={setEmblaApi}>
         <CarouselContent>
           {timelineData.map((item, index) => (
-            <CarouselItem key={index} className="md:basis-1/2 lg:basis-1/3">
+            <CarouselItem key={index} className="basis-1/2">
               {item && (
-                <div
-                  className="h-full p-1"
-                  style={{
-                    transition:
-                      'transform 0.5s ease-in-out, opacity 0.5s ease-in-out',
-                    transform: `scale(${selectedIndex === index ? 1 : 0.75})`,
-                    opacity: selectedIndex === index ? 1 : 0.6,
-                  }}
-                >
-                  <div className="relative flex h-full flex-col items-center justify-center space-y-4 overflow-hidden rounded-lg bg-background/50 p-4 text-center shadow-lg">
-                    <div className="flex size-24 items-center justify-center rounded-full bg-gradient-to-br from-cyan-400 to-yellow-400 p-1">
-                      <div className="flex size-full items-center justify-center rounded-full bg-background">
-                        <p className="text-2xl font-bold text-cyan-400">
-                          {item.year}
-                        </p>
-                      </div>
-                    </div>
-                    <h3 className="mt-1 text-xl font-bold text-foreground">
-                      {item.title}
-                    </h3>
-                    <p className="mt-2 text-sm text-muted-foreground">
-                      {item.description}
-                    </p>
-                    <div
-                      className="absolute inset-0 bg-black/40"
-                      style={{
-                        transition: 'opacity 0.5s ease-in-out',
-                        opacity: selectedIndex === index ? 0 : 1,
-                      }}
-                    />
-                  </div>
-                </div>
+                <TimelineCard
+                  year={item.year}
+                  title={item.title}
+                  description={item.description}
+                  isSelected={selectedIndex === index}
+                />
               )}
             </CarouselItem>
           ))}
