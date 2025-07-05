@@ -1,5 +1,6 @@
 import { Card, CardContent, CardFooter, CardHeader } from '@ncthub/ui/card';
-import { Facebook, Linkedin, Twitter } from '@ncthub/ui/icons';
+import { Facebook, Linkedin } from '@ncthub/ui/icons';
+// Changed Twitter to X
 import Image from 'next/image';
 import Link from 'next/link';
 
@@ -11,7 +12,6 @@ interface MemberCardProps {
   quote: string;
   socials: {
     facebook: string;
-    twitter: string;
     linkedin: string;
   };
 }
@@ -27,14 +27,14 @@ export default function MemberCard({
   return (
     <Card className="group relative flex w-full max-w-sm flex-col overflow-hidden rounded-lg border-1 border-transparent bg-calendar-bg-blue transition-all duration-300 ease-in-out hover:border-foreground/20 hover:shadow-lg hover:shadow-primary/20">
       <CardHeader className="p-0">
-        <div className="relative h-64 w-full">
+        <div className="relative h-64 w-full overflow-hidden transition-transform duration-300 ease-in-out group-hover:scale-105">
           <Image
             src={image}
-            layout="fill"
+            fill
             alt={name}
-            className="object-cover transition-transform duration-300 ease-in-out group-hover:scale-105"
+            className="object-cover object-top"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/5 to-transparent" />
           <div className="absolute bottom-0 w-full p-4">
             <h3 className="text-2xl font-bold text-white">{name}</h3>
             <p className="text-md font-medium text-muted-foreground">{role}</p>
@@ -48,9 +48,6 @@ export default function MemberCard({
       <CardFooter className="flex justify-center gap-4 p-4 pt-0">
         <Link href={socials.facebook} target="_blank" rel="noopener noreferrer">
           <Facebook className="h-6 w-6 text-muted-foreground transition-colors hover:text-primary" />
-        </Link>
-        <Link href={socials.twitter} target="_blank" rel="noopener noreferrer">
-          <Twitter className="h-6 w-6 text-muted-foreground transition-colors hover:text-primary" />
         </Link>
         <Link href={socials.linkedin} target="_blank" rel="noopener noreferrer">
           <Linkedin className="h-6 w-6 text-muted-foreground transition-colors hover:text-primary" />
