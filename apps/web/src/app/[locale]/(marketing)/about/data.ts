@@ -80,7 +80,7 @@ export const members: {
     name: 'Ngo Van Tai',
     role: 'Head of Technology',
     departments: ['Executive Board', 'Technology'],
-    image: '/members/tai1.png',
+    image: '/members/tai.png',
     bio: 'Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt.',
     quote: 'The journey of a thousand miles begins with a single step.',
     socials: {
