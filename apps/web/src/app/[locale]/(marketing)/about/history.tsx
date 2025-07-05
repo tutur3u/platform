@@ -48,18 +48,19 @@ export default function History() {
     if (!emblaApi) return;
 
     const onSelect = () => {
-      setSelectedIndex(emblaApi.selectedScrollSnap());
+      setSelectedIndex(emblaApi.selectedScrollSnap() + 1);
     };
-
-    emblaApi.scrollTo(1);
-    setSelectedIndex(1);
+    const onReInit = () => {
+      emblaApi.scrollTo(0);
+      setSelectedIndex(1);
+    };
+    onReInit();
 
     emblaApi.on('select', onSelect);
-    emblaApi.on('reInit', onSelect);
-
+    emblaApi.on('reInit', onReInit);
     return () => {
       emblaApi.off('select', onSelect);
-      emblaApi.off('reInit', onSelect);
+      emblaApi.off('reInit', onReInit);
     };
   }, [emblaApi]);
 
@@ -93,7 +94,7 @@ export default function History() {
       <Carousel setApi={setEmblaApi}>
         <CarouselContent>
           {timelineData.map((item, index) => (
-            <CarouselItem key={index} className="basis-1/2">
+            <CarouselItem key={index} className="basis-1/3">
               {item && (
                 <TimelineCard
                   year={item.year}
