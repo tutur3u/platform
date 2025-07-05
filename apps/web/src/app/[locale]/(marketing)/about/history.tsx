@@ -1,6 +1,7 @@
 'use client';
 
 import { TimelineCard } from './timeline-card';
+import { Badge } from '@ncthub/ui/badge';
 import {
   Carousel,
   CarouselApi,
@@ -9,7 +10,8 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from '@ncthub/ui/carousel';
-import { cn } from '@ncthub/utils/format';
+import { Award, Sparkles } from '@ncthub/ui/icons';
+import { motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
 
 const timelineData = [
@@ -65,50 +67,119 @@ export default function History() {
   }, [emblaApi]);
 
   return (
-    <div className="space-y-24">
-      <div className="space-y-8">
-        <div
-          className={cn(
-            'mt-8 flex h-24 w-full items-center justify-center rounded-lg border-2 bg-gradient-to-r py-2 text-center lg:h-28',
-            'border-[#B8D4E3] from-[#D4E8F0] via-[#F8F9FA] to-[#F5F0D8]',
-            'dark:border-[#5FC6E5] dark:from-[#356F80] dark:via-[#030303] dark:to-[#A58211]'
-          )}
+    <div className="space-y-10">
+      <div className="space-y-8 text-center">
+        {/* Hero Badge */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.8 }}
+          whileInView={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.8, delay: 0.2 }}
+          viewport={{ once: true }}
+          className="inline-flex items-center gap-2"
         >
-          <p
-            className={cn(
-              'bg-gradient-to-r bg-clip-text p-3 text-center text-3xl font-black tracking-normal text-transparent md:text-5xl lg:text-6xl lg:tracking-wide',
-              'from-[#D4A017] to-[#1B8A9A]',
-              'dark:from-[#F4B71A] dark:to-[#1AF4E6]'
-            )}
+          <Sparkles className="h-5 w-5 text-[#FBC721]" />
+          <Badge
+            variant="outline"
+            className="border-[#5FC6E5]/50 px-3 py-1 text-sm text-[#5FC6E5]"
           >
-            NEO Culture Tech History
-          </p>
-        </div>
+            Our Journey
+          </Badge>
+          <Sparkles className="h-5 w-5 text-[#FBC721]" />
+        </motion.div>
 
-        <p className="mx-auto max-w-2xl text-center text-lg text-muted-foreground">
-          A journey of innovation, community, and passion for technology. Step
-          through our history and see how we've grown.
-        </p>
+        {/* Main Title */}
+        <motion.h1
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.4 }}
+          viewport={{ once: true }}
+          className="text-4xl leading-tight font-extrabold md:text-5xl lg:text-6xl"
+        >
+          NEO Culture Tech{' '}
+          <span className="relative">
+            <span className="border-b-4 border-[#FBC721] text-[#5FC6E5]">
+              History
+            </span>
+            <motion.div
+              className="absolute -top-2 -right-2"
+              animate={{
+                rotate: [0, 10, -10, 0],
+                scale: [1, 1.1, 1],
+              }}
+              transition={{
+                duration: 2,
+                repeat: Infinity,
+                repeatDelay: 3,
+              }}
+            >
+              <Award className="h-5 w-5 text-[#FBC721] md:h-6 md:w-6" />
+            </motion.div>
+          </span>
+        </motion.h1>
+
+        {/* Description */}
+        <motion.p
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.6 }}
+          viewport={{ once: true }}
+          className="mx-auto max-w-3xl text-lg font-medium text-muted-foreground md:text-xl"
+        >
+          A journey of innovation, community, and passion for technology.{' '}
+          <span className="relative font-semibold text-[#5FC6E5]">
+            Step through our history
+            <motion.span
+              className="absolute right-0 -bottom-1 left-0 h-0.5 bg-gradient-to-r from-[#5FC6E5] to-[#FBC721]"
+              initial={{ scaleX: 0 }}
+              whileInView={{ scaleX: 1 }}
+              transition={{ duration: 1, delay: 1 }}
+              viewport={{ once: true }}
+            />
+          </span>{' '}
+          and see how we've grown.
+        </motion.p>
       </div>
 
-      <Carousel setApi={setEmblaApi}>
-        <CarouselContent>
-          {timelineData.map((item, index) => (
-            <CarouselItem key={index} className="basis-1/3">
-              {item && (
-                <TimelineCard
-                  year={item.year}
-                  title={item.title}
-                  description={item.description}
-                  isSelected={selectedIndex === index}
-                />
-              )}
-            </CarouselItem>
-          ))}
-        </CarouselContent>
-        <CarouselPrevious className="ml-16" />
-        <CarouselNext className="mr-16" />
-      </Carousel>
+      {/* Mobile/Tablet: Grid Layout */}
+      <div className="grid gap-8 md:hidden">
+        {timelineData.map((item, index) => (
+          <div key={index} className="flex justify-center">
+            {item && (
+              <TimelineCard
+                year={item.year}
+                title={item.title}
+                description={item.description}
+                isSelected={true} // Always show as selected in grid view
+              />
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* Desktop: Carousel */}
+      <div className="hidden md:block">
+        <Carousel setApi={setEmblaApi}>
+          <CarouselContent>
+            {timelineData.map((item, index) => (
+              <CarouselItem
+                key={index}
+                className="flex basis-1/3 justify-center"
+              >
+                {item && (
+                  <TimelineCard
+                    year={item.year}
+                    title={item.title}
+                    description={item.description}
+                    isSelected={selectedIndex === index}
+                  />
+                )}
+              </CarouselItem>
+            ))}
+          </CarouselContent>
+          <CarouselPrevious className="ml-16 h-12 w-12" />
+          <CarouselNext className="mr-16 h-12 w-12" />
+        </Carousel>
+      </div>
     </div>
   );
 }

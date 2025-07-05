@@ -25,7 +25,8 @@ export function TimelineCard({
       className={cn(
         'relative h-full overflow-hidden border-2 border-border/50 bg-card/80 shadow-lg',
         'transition-all duration-500 ease-in-out hover:shadow-xl',
-        isSelected ? 'scale-100 opacity-100' : 'scale-75 opacity-60'
+        isSelected ? 'scale-100 opacity-100' : 'scale-75 opacity-60',
+        'mx-auto w-full max-w-md py-4 md:max-w-md md:py-8 lg:max-w-lg' // Made responsive
       )}
     >
       <div
@@ -35,12 +36,14 @@ export function TimelineCard({
         )}
       />
       <CardHeader className="items-center gap-4">
-        <div className="flex size-28 items-center justify-center rounded-full bg-gradient-to-br from-brand-light-blue to-brand-light-yellow p-1 shadow-md">
+        <div className="flex size-20 items-center justify-center rounded-full bg-gradient-to-br from-brand-light-blue to-brand-light-yellow p-1 shadow-md md:size-24 lg:size-28">
           <div className="flex size-full items-center justify-center rounded-full border-2 border-brand-light-blue/20 bg-card">
-            <p className="text-xl font-bold text-brand-dark-blue">{year}</p>
+            <p className="text-lg font-bold text-brand-dark-blue md:text-xl">
+              {year}
+            </p>
           </div>
         </div>
-        <CardTitle className="text-center text-xl font-bold text-card-foreground">
+        <CardTitle className="text-center text-lg font-bold text-card-foreground md:text-xl">
           {title}
         </CardTitle>
       </CardHeader>
