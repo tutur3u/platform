@@ -252,34 +252,6 @@ export const getWorkspacesForSync = async () => {
   }
 };
 
-// Sync a single workspace for 1 week from now
-export const syncWorkspaceImmediate = async (payload: {
-  ws_id: string;
-  access_token: string;
-  refresh_token?: string;
-  locale?: string;
-}) => {
-  const { ws_id, access_token, refresh_token, locale } = payload;
-  
-  if (!access_token) {
-    console.log('No access token provided for workspace:', ws_id);
-    return { ws_id, success: false, error: 'No access token provided' };
-  }
-
-  const now = dayjs();
-  const timeMin = now;
-  const timeMax = now.add(7, 'day'); // 1 week from now
-  
-  return syncGoogleCalendarEventsForWorkspace(
-    ws_id,
-    access_token,
-    refresh_token || null,
-    timeMin,
-    timeMax,
-    locale
-  );
-};
-
 // Sync a single workspace for 4 weeks (28 days) from now
 export const syncWorkspaceExtended = async (payload: {
   ws_id: string;
@@ -306,7 +278,7 @@ export const syncWorkspaceExtended = async (payload: {
     timeMax,
     locale
   );
-  };
+};
 
 export const syncGoogleCalendarEventsExtended = async (locale?: string) => {
   

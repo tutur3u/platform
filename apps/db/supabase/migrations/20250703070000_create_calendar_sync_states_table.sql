@@ -1,5 +1,5 @@
 create table "public"."calendar_sync_states" (
-  "ws_id" uuid primary key references auth.users(id) on delete cascade,
+  "ws_id" uuid primary key references "workspaces"("id") ON DELETE CASCADE,
   "calendar_id" text not null default 'primary',
   "sync_token" text,
   "last_synced_at" timestamp with time zone default now()
