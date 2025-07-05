@@ -1,6 +1,6 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
-import { performFullSyncForWorkspace } from '@tuturuuu/trigger/google-calendar-sync';
+import { performFullSyncForWorkspace } from '@tuturuuu/trigger/google-calendar-full-sync';
 
 export async function POST(request: Request) {
   try {
