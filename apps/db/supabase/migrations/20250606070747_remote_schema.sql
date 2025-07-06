@@ -16,7 +16,7 @@ drop view if exists "public"."workspace_members_and_invites";
 
 drop extension if exists "pg_trgm";
 
-CREATE UNIQUE INDEX workspace_calendar_events_google_event_id_key ON public.workspace_calendar_events USING btree (google_event_id);
+CREATE UNIQUE INDEX workspace_calendar_events_google_event_id_key ON public.workspace_calendar_events USING btree (ws_id, google_event_id);
 
 alter table "public"."workspace_calendar_events" add constraint "workspace_calendar_events_google_event_id_key" UNIQUE using index "workspace_calendar_events_google_event_id_key";
 

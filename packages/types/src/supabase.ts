@@ -752,7 +752,7 @@ export type Database = {
           {
             foreignKeyName: 'calendar_sync_states_ws_id_fkey';
             columns: ['ws_id'];
-            isOneToOne: true;
+            isOneToOne: false;
             referencedRelation: 'workspaces';
             referencedColumns: ['id'];
           },

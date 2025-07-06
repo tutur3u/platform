@@ -106,7 +106,8 @@ const syncGoogleCalendarEventsForWorkspace = async (
     const { error } = await supabase
       .from('workspace_calendar_events')
       .upsert(formattedEvents, {
-        onConflict: 'google_event_id',
+        onConflict: 'ws_id,google_event_id',
+        ignoreDuplicates: true,
       });
     if (error) {
       console.log('Error upserting events:', error);
