@@ -5,7 +5,7 @@ import { Project, projects } from './data';
 import ProjectCard from './project-card';
 import ProjectDetail from './project-detail';
 import { AnimatePresence, PanInfo, motion } from 'framer-motion';
-import { Bot, Layers, LayoutGrid } from 'lucide-react';
+import { Bot, Layers, LayoutGrid, Search, Smile } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 
 type ProjectType = 'web' | 'software' | 'hardware' | undefined;
@@ -277,7 +277,7 @@ export default function Projects() {
                         : status === 'completed'
                           ? 220
                           : -200,
-                  width: status ? 112 : 0,
+                  width: status ? 115 : 0,
                   opacity: status ? 1 : 0,
                 }}
                 transition={{ type: 'spring', stiffness: 400, damping: 35 }}
@@ -467,18 +467,24 @@ export default function Projects() {
           </>
         ) : (
           <div className="py-12 text-center">
-            <div className="mb-4 text-6xl">🔍</div>
-            <h3 className="mb-2 text-xl text-white md:text-2xl">
-              No projects found
+            <div className="mb-6">
+              <Search className="mx-auto h-16 w-16 text-yellow-400 md:h-20 md:w-20" />
+            </div>
+            <h3 className="mb-2 text-xl leading-normal font-extrabold md:text-4xl lg:text-5xl">
+              <span className="border-b-4 border-[#FBC721] whitespace-nowrap text-[#5FC6E5]">
+                NEOThing's
+              </span>{' '}
+              <span className="text-white"> Here :(</span>
             </h3>
-            <p className="mb-6 text-white/70">
-              Try adjusting your filters to see more projects
+            <p className="mb-6 flex items-center justify-center gap-2 text-lg leading-normal font-bold text-gray-400 md:text-xl lg:text-2xl">
+              Try Clearing the Filters u just click{' '}
+              <Smile className="h-6 w-6 text-yellow-400 md:h-8 md:w-8" />
             </p>
             <button
               onClick={clearAllFilters}
-              className="text-[#1AF4E6] underline underline-offset-4 transition-colors hover:text-[#F4B71A]"
+              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#F4B71A] to-[#1AF4E6] px-6 py-3 text-lg font-bold text-slate-900 transition-all duration-300 hover:scale-105 hover:shadow-lg"
             >
-              Clear all filters
+              Clear Filters
             </button>
           </div>
         )}
