@@ -6,25 +6,6 @@ import { OAuth2Client } from 'google-auth-library';
 import { google } from 'googleapis';
 import { convertGoogleAllDayEvent } from '@tuturuuu/ui/hooks/calendar-utils';
 
-// Dynamic locale setup function
-const setupDayjsLocale = async (locale?: string) => {
-  const targetLocale = locale || process.env.LOCALE || 'en';
-  
-  try {
-    // Dynamically import the locale module
-    await import(`dayjs/locale/${targetLocale}`);
-    dayjs.locale(targetLocale);
-  } catch (error) {
-    console.warn(`Failed to load locale '${targetLocale}', falling back to 'en'`);
-    try {
-      await import('dayjs/locale/en');
-      dayjs.locale('en');
-    } catch (fallbackError) {
-      console.error('Failed to load even the fallback locale:', fallbackError);
-    }
-  }
-};
-
 // Define the sync result type
 type SyncResult = {
   ws_id: string;
@@ -71,14 +52,9 @@ const syncGoogleCalendarEventsForWorkspace = async (
   refresh_token: string | null,
   timeMin: dayjs.Dayjs,
   timeMax: dayjs.Dayjs,
-  locale?: string
 ): Promise<SyncResult> => {
   console.log(`Syncing Google Calendar events for workspace ${ws_id} from ${timeMin.format('YYYY-MM-DD HH:mm')} to ${timeMax.format('YYYY-MM-DD HH:mm')}`);
 
-  // Setup locale for this sync operation
-  if (locale) {
-    await setupDayjsLocale(locale);
-  }
 
   try {
     const supabase = await createAdminClient({ noCookie: true });
@@ -254,9 +230,8 @@ export const syncWorkspaceExtended = async (payload: {
   ws_id: string;
   access_token: string;
   refresh_token?: string;
-  locale?: string;
 }) => {
-  const { ws_id, access_token, refresh_token, locale } = payload;
+  const { ws_id, access_token, refresh_token } = payload;
   
   if (!access_token) {
     console.log('No access token provided for workspace:', ws_id);
@@ -272,19 +247,18 @@ export const syncWorkspaceExtended = async (payload: {
     access_token,
     refresh_token || null,
     timeMin,
-    timeMax,
-    locale
+    timeMax
   );
 };
 
-export const syncGoogleCalendarEventsExtended = async (locale?: string) => {
+export const syncGoogleCalendarEventsExtended = async () => {
   
   const workspaces = await getWorkspacesForSync();
   const results: SyncResult[] = [];
 
   for (const workspace of workspaces) {
     try {
-      const result = await syncWorkspaceExtended({ ...workspace, locale });
+      const result = await syncWorkspaceExtended({ ...workspace });
       results.push(result);
     } catch (error) {
       
