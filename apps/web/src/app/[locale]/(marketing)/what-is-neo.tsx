@@ -39,8 +39,6 @@ const stats = [
 ];
 
 export default function WhatIsNeo() {
-  const t = useTranslations();
-
   return (
     <motion.div
       className="mt-4 flex flex-col items-center text-center md:mt-28"
