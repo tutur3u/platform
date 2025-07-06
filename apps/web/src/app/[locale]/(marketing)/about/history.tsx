@@ -17,27 +17,40 @@ import { useEffect, useState } from 'react';
 const timelineData = [
   null,
   {
+    year: '2020',
+    title: 'The Vision',
+    description:
+      'A group of passionate RMIT students identified the need for a dedicated tech community within SSET. Late-night coding sessions and shared dreams of innovation sparked the idea that would become NEO Culture Tech.',
+  },
+  {
     year: '2021',
-    title: 'The Beginning',
-    description: 'Once you have passion in technology, you are a part of us!',
+    title: 'The Foundation',
+    description:
+      'NEO Culture Tech was officially established! Starting with just 15 founding members, we held our first workshop on web development and created our initial organizational structure with a focus on hands-on learning.',
   },
   {
     year: '2022',
-    title: 'A Playground for Tech Enthusiasts',
+    title: 'Building Our Structure',
     description:
-      'Our club is a playground for tech enthusiasts and students from the School of Science, Engineering, and Technology.',
+      'We formalized our four core departments: Technology, Marketing, Human Resources, and Finance. Launched weekly tech talks, our first hackathon, and grew to over 50 active members across SSET.',
   },
   {
     year: '2023',
-    title: 'Fueled by Passion',
+    title: 'Growing Our Impact',
     description:
-      'We are a community fueled by the passion for technology and innovations.',
+      'Expanded beyond RMIT with industry partnerships and guest speaker series. Hosted our signature annual hackathon, introduced mentorship programs, and celebrated our 40th member milestone.',
   },
   {
     year: '2024',
-    title: 'Stronger Together',
+    title: 'Restructuring for Growth',
     description:
-      'STRONGER TOGETHER is our core value. As a club, we strive to create a community where everyone can learn and grow together.',
+      'Completely reconstructed our club management with a new organizational system. Implemented modern governance structures, streamlined operations across all departments, and established clear leadership pathways to support our evolving community.',
+  },
+  {
+    year: '2025',
+    title: 'NEO League Success',
+    description:
+      "Made history with NEO League - Prompt the Future 2025, our first competition! This groundbreaking event attracted over 170 competitors, showcasing our growth from a small club to a major force in Vietnam's tech competition scene.",
   },
   null,
 ];
