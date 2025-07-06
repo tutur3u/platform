@@ -1,8 +1,9 @@
 'use client';
 
+import { DefaultChatTransport } from '@tuturuuu/ai/core';
 import { defaultModel, type Model, models } from '@tuturuuu/ai/models';
 import { useChat } from '@tuturuuu/ai/react';
-import type { Message } from '@tuturuuu/ai/types';
+import type { UIMessage } from '@tuturuuu/ai/types';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { AIChat } from '@tuturuuu/types/db';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
@@ -19,7 +20,7 @@ import { EmptyScreen } from '@/components/empty-screen';
 export interface ChatProps extends React.ComponentProps<'div'> {
   defaultChat?: Partial<AIChat>;
   wsId?: string;
-  initialMessages?: Message[];
+  initialMessages?: UIMessage[];
   chats?: AIChat[];
   count?: number | null;
   hasKeys: { openAI: boolean; anthropic: boolean; google: boolean };
@@ -48,11 +49,12 @@ const Chat = ({
 
   const [chat, setChat] = useState<Partial<AIChat> | undefined>(defaultChat);
   const [model, setModel] = useState<Model | undefined>(defaultModel);
+  const [input, setInput] = useState('');
 
-  const { messages, append, reload, stop, isLoading, input, setInput } =
-    useChat({
-      id: chat?.id,
-      initialMessages,
+  const { messages, sendMessage, regenerate, stop, status } = useChat({
+    id: chat?.id,
+    messages: initialMessages,
+    transport: new DefaultChatTransport({
       api:
         chat?.model || model?.value
           ? `/api/ai/chat/${(
@@ -63,25 +65,21 @@ const Chat = ({
                 : model?.provider.toLowerCase()
             )?.replaceAll(' ', '-')}`
           : undefined,
+      credentials: 'include',
+      headers: { 'Custom-Header': 'value' },
       body: {
         id: chat?.id,
         wsId,
         model: chat?.model || model?.value,
       },
-      onResponse(response) {
-        if (!response.ok)
-          toast({
-            title: t('something_went_wrong'),
-            description: t('try_again_later'),
-          });
-      },
-      onError() {
-        toast({
-          title: t('something_went_wrong'),
-          description: t('try_again_later'),
-        });
-      },
-    });
+    }),
+    onError() {
+      toast({
+        title: t('something_went_wrong'),
+        description: t('try_again_later'),
+      });
+    },
+  });
 
   const [summarizing, setSummarizing] = useState(false);
   const [summary, setSummary] = useState<string | undefined>(
@@ -94,9 +92,9 @@ const Chat = ({
   }, [chat?.id, messages?.length, chat?.latest_summarized_message_id]);
 
   useEffect(() => {
-    if (!chat || !hasKeys || isLoading) return;
+    if (!chat || !hasKeys || status === 'streaming') return;
 
-    const generateSummary = async (messages: Message[] = []) => {
+    const generateSummary = async (messages: UIMessage[] = []) => {
       if (
         !wsId ||
         summary ||
@@ -140,7 +138,7 @@ const Chat = ({
     // is not the same as the last message id in the chat
     if (
       wsId &&
-      !isLoading &&
+      status === 'ready' &&
       !summary &&
       !chat.latest_summarized_message_id &&
       chat.latest_summarized_message_id !== messages[messages.length - 1]?.id &&
@@ -154,13 +152,13 @@ const Chat = ({
     // but the AI did not respond yet after 1 second
     const reloadTimeout = setTimeout(() => {
       if (!wsId || messages[messages.length - 1]?.role !== 'user') return;
-      reload();
+      regenerate();
     }, 1000);
 
     return () => {
       clearTimeout(reloadTimeout);
     };
-  }, [wsId, summary, chat, hasKeys, isLoading, messages, reload]);
+  }, [wsId, summary, chat, hasKeys, status, messages, regenerate]);
 
   const [initialScroll, setInitialScroll] = useState(true);
 
@@ -288,13 +286,13 @@ const Chat = ({
 
   useEffect(() => {
     if (!pendingPrompt || !chat?.id || !wsId) return;
-    append({
+    sendMessage({
       id: chat?.id,
-      content: pendingPrompt,
       role: 'user',
+      parts: [{ type: 'text', text: pendingPrompt }],
     });
     setPendingPrompt(null);
-  }, [wsId, pendingPrompt, chat?.id, append]);
+  }, [wsId, pendingPrompt, chat?.id, sendMessage]);
 
   useEffect(() => {
     console.log(pathname);
@@ -331,10 +329,10 @@ const Chat = ({
               model={chat?.model ?? undefined}
               anonymize={!chats || count === undefined}
             />
-            <ChatScrollAnchor trackVisibility={isLoading} />
+            <ChatScrollAnchor trackVisibility={status === 'streaming'} />
           </>
         ) : disableScrollToTop && disableScrollToBottom ? (
-          <h1 className="mb-2 flex h-full w-full items-center justify-center text-center text-lg font-semibold">
+          <h1 className="mb-2 flex h-full w-full items-center justify-center text-center font-semibold text-lg">
             {t('welcome_to')}{' '}
             <span className="ml-1 overflow-hidden bg-linear-to-r from-dynamic-red via-dynamic-purple to-dynamic-sky bg-clip-text font-bold text-transparent">
               Rewise
@@ -358,10 +356,10 @@ const Chat = ({
           chat={chat}
           chats={chats}
           count={count}
-          isLoading={isLoading}
+          status={status}
+          sendMessage={sendMessage}
+          regenerate={regenerate}
           stop={stop}
-          append={append}
-          reload={reload}
           input={input}
           inputRef={inputRef}
           setInput={setInput}

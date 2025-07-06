@@ -1,5 +1,6 @@
+import { DefaultChatTransport } from '@tuturuuu/ai/core';
 import { useChat } from '@tuturuuu/ai/react';
-import type { Message } from '@tuturuuu/ai/types';
+import type { UIMessage } from '@tuturuuu/ai/types';
 import type { AIChat } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
 import { Form, FormControl, FormField, FormItem } from '@tuturuuu/ui/form';
@@ -32,7 +33,7 @@ export default function FleetingAssistant({
   wsId: string;
   chat?: Partial<AIChat>;
   model: 'google';
-  messages: Message[];
+  messages: UIMessage[];
   onBack: () => void;
   onReset: () => void;
   // eslint-disable-next-line no-unused-vars
@@ -40,21 +41,17 @@ export default function FleetingAssistant({
 }) {
   const t = useTranslations();
 
-  const { isLoading, append, setMessages } = useChat({
+  const { status, sendMessage, setMessages } = useChat({
     id: chat?.id,
-    //   initialMessages,
-    api: `/api/ai/chat/${model}`,
-    body: {
-      id: chat?.id,
-      wsId,
-    },
-    onResponse(response) {
-      if (!response.ok)
-        toast({
-          title: t('ai_chat.something_went_wrong'),
-          description: t('ai_chat.try_again_later'),
-        });
-    },
+    transport: new DefaultChatTransport({
+      api: `/api/ai/chat/${model}`,
+      credentials: 'include',
+      headers: { 'Custom-Header': 'value' },
+      body: {
+        id: chat?.id,
+        wsId,
+      },
+    }),
     onError() {
       toast({
         title: t('ai_chat.something_went_wrong'),
@@ -73,7 +70,7 @@ export default function FleetingAssistant({
   const [pendingPrompt, setPendingPrompt] = useState<string | undefined>();
 
   async function onSubmit(data: z.infer<typeof FormSchema>) {
-    if (!!chat?.id && isLoading) return;
+    if (!!chat?.id && status === 'streaming') return;
 
     setPendingPrompt(data.prompt);
     form.setValue('prompt', '');
@@ -92,10 +89,10 @@ export default function FleetingAssistant({
       setMessages([]);
     }
 
-    await append({
+    await sendMessage({
       id: currentChat.id,
       role: 'user',
-      content: data.prompt,
+      parts: [{ type: 'text', text: data.prompt }],
     });
 
     setPendingPrompt(undefined);
@@ -108,19 +105,21 @@ export default function FleetingAssistant({
           ? [
               {
                 id: 'pending',
-                content: pendingPrompt,
                 role: 'user',
+                parts: [{ type: 'text', text: pendingPrompt }],
               },
               {
                 id: 'assistant-pending',
-                content: t('common.waiting_for_response'),
                 role: 'assistant',
+                parts: [
+                  { type: 'text', text: t('common.waiting_for_response') },
+                ],
               },
             ]
           : messages
         : messages,
     [t, messages, pendingPrompt]
-  ) as Message[];
+  ) as UIMessage[];
 
   const messagesRef = useRef<HTMLDivElement>(null);
 
@@ -142,7 +141,7 @@ export default function FleetingAssistant({
     <div className="flex h-full flex-col">
       <div className="flex h-113 flex-col p-2">
         <div className="mb-2 flex items-center justify-between gap-2 transition">
-          <div className="w-fit rounded border bg-foreground px-2 py-0.5 font-mono text-xs font-bold text-background">
+          <div className="w-fit rounded border bg-foreground px-2 py-0.5 font-bold font-mono text-background text-xs">
             ALPHA
           </div>
 
@@ -156,7 +155,7 @@ export default function FleetingAssistant({
                 form.reset();
                 onReset();
               }}
-              disabled={chat?.id === undefined || isLoading}
+              disabled={chat?.id === undefined || status === 'streaming'}
             >
               <RotateCcw className="h-5 w-5" />
             </Button>
@@ -184,13 +183,19 @@ export default function FleetingAssistant({
                     form.setValue('prompt', value);
                     form.trigger('prompt');
                   }}
-                  message={{ ...message, content: message.content.trim() }}
+                  message={{
+                    ...message,
+                    content:
+                      message.parts[0]?.type === 'text'
+                        ? message.parts[0].text
+                        : '',
+                  }}
                   model={chat?.model}
                 />
               ))}
             </div>
           ) : (
-            <div className="line-clamp-1 text-lg font-semibold md:text-2xl">
+            <div className="line-clamp-1 font-semibold text-lg md:text-2xl">
               <span className="opacity-30">Get started with</span>{' '}
               <AssistantGradientName />
               <span className="opacity-30">.</span>
@@ -240,7 +245,7 @@ export default function FleetingAssistant({
                 className="shrink-0"
                 disabled={
                   !form.formState.isValid ||
-                  (!!chat?.id && isLoading) ||
+                  (!!chat?.id && status === 'streaming') ||
                   !!pendingPrompt
                 }
               >
