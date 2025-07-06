@@ -231,10 +231,6 @@ export default function WhatIsNeo() {
             </div>
           </CardContent>
         </Card>
-
-        <div className="inline-block">
-          <GetStartedButton href="/login" text={t('common.get-started')} />
-        </div>
       </motion.div>
     </motion.div>
   );
