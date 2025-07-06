@@ -258,12 +258,12 @@ export default function AddEventModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg rounded-xl shadow-lg p-6 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800">
+      <DialogContent className="max-h-[90vh] overflow-y-auto rounded-xl border border-zinc-200 bg-white p-6 shadow-lg sm:max-w-lg dark:border-zinc-800 dark:bg-zinc-900">
         <DialogHeader>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <PlusIcon className="h-5 w-5 text-blue-500" />
-              <DialogTitle className="text-lg font-semibold">
+              <DialogTitle className="font-semibold text-lg">
                 Create Task
               </DialogTitle>
             </div>
@@ -276,8 +276,7 @@ export default function AddEventModal({
                   onClick={() => updateFormData('priority', opt.value)}
                   aria-label={opt.label}
                   title={opt.label}
-                  className={`text-xl px-1.5 py-1 rounded-full border transition-all focus:outline-none focus:ring-2 focus:ring-blue-300
-                    ${formData.priority === opt.value ? `${opt.color} border-blue-400 bg-zinc-100 dark:bg-zinc-800 scale-110` : 'text-zinc-400 border-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800'}`}
+                  className={`rounded-full border px-1.5 py-1 text-xl transition-all focus:outline-none focus:ring-2 focus:ring-blue-300 ${formData.priority === opt.value ? `${opt.color} scale-110 border-blue-400 bg-zinc-100 dark:bg-zinc-800` : 'border-transparent text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800'}`}
                 >
                   <span>{opt.icon}</span>
                 </button>
@@ -286,13 +285,13 @@ export default function AddEventModal({
           </div>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-5 mt-2">
+        <form onSubmit={handleSubmit} className="mt-2 space-y-5">
           {/* Basic Information */}
-          <div className="rounded-xl border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4 space-y-3 shadow-md transition-shadow hover:shadow-lg">
+          <div className="space-y-3 rounded-xl border border-zinc-100 bg-white p-4 shadow-md transition-shadow hover:shadow-lg dark:border-zinc-800 dark:bg-zinc-900">
             <div className="space-y-1">
               <Label
                 htmlFor="task-title"
-                className="text-xs font-medium text-zinc-600 dark:text-zinc-300"
+                className="font-medium text-xs text-zinc-600 dark:text-zinc-300"
               >
                 Task Name <span className="text-destructive">*</span>
               </Label>
@@ -301,17 +300,17 @@ export default function AddEventModal({
                 placeholder="e.g., Project documentation"
                 value={formData.name}
                 onChange={(e) => updateFormData('name', e.target.value)}
-                className={`h-9 text-sm rounded-lg border-zinc-200 dark:border-zinc-700 focus:ring-2 focus:ring-blue-300 transition-all ${errors.name ? 'border-destructive' : ''}`}
+                className={`h-9 rounded-lg border-zinc-200 text-sm transition-all focus:ring-2 focus:ring-blue-300 dark:border-zinc-700 ${errors.name ? 'border-destructive' : ''}`}
               />
               {errors.name && (
-                <p className="text-xs text-destructive mt-0.5">{errors.name}</p>
+                <p className="mt-0.5 text-destructive text-xs">{errors.name}</p>
               )}
             </div>
 
             <div className="space-y-1">
               <Label
                 htmlFor="task-description"
-                className="text-xs font-medium text-zinc-600 dark:text-zinc-300"
+                className="font-medium text-xs text-zinc-600 dark:text-zinc-300"
               >
                 Description
               </Label>
@@ -321,13 +320,13 @@ export default function AddEventModal({
                 value={formData.description}
                 onChange={(e) => updateFormData('description', e.target.value)}
                 rows={2}
-                className="h-16 text-sm rounded-lg border-zinc-200 dark:border-zinc-700 focus:ring-2 focus:ring-blue-300 transition-all"
+                className="h-16 rounded-lg border-zinc-200 text-sm transition-all focus:ring-2 focus:ring-blue-300 dark:border-zinc-700"
               />
             </div>
           </div>
 
           {/* Duration Settings */}
-          <div className="rounded-xl border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4 space-y-3 shadow-md transition-shadow hover:shadow-lg">
+          <div className="space-y-3 rounded-xl border border-zinc-100 bg-white p-4 shadow-md transition-shadow hover:shadow-lg dark:border-zinc-800 dark:bg-zinc-900">
             <div className="grid grid-cols-2 gap-2">
               <div className="space-y-1">
                 <Label htmlFor="duration" className="text-xs">
@@ -342,15 +341,15 @@ export default function AddEventModal({
                   onChange={(e) =>
                     updateFormData('total_duration', parseFloat(e.target.value))
                   }
-                  className={`h-9 text-sm rounded-lg border-zinc-200 dark:border-zinc-700 focus:ring-2 focus:ring-blue-300 transition-all ${errors.total_duration ? 'border-destructive' : ''}`}
+                  className={`h-9 rounded-lg border-zinc-200 text-sm transition-all focus:ring-2 focus:ring-blue-300 dark:border-zinc-700 ${errors.total_duration ? 'border-destructive' : ''}`}
                 />
                 {errors.total_duration && (
-                  <p className="text-xs text-destructive mt-0.5">
+                  <p className="mt-0.5 text-destructive text-xs">
                     {errors.total_duration}
                   </p>
                 )}
               </div>
-              <div className="flex items-center space-x-2 mt-5">
+              <div className="mt-5 flex items-center space-x-2">
                 <Checkbox
                   id="split-up"
                   checked={formData.is_splittable}
@@ -358,7 +357,7 @@ export default function AddEventModal({
                     updateFormData('is_splittable', checked)
                   }
                 />
-                <Label htmlFor="split-up" className="text-xs font-normal">
+                <Label htmlFor="split-up" className="font-normal text-xs">
                   Splittable
                 </Label>
               </div>
@@ -382,10 +381,10 @@ export default function AddEventModal({
                         hoursToMinutes(hours)
                       );
                     }}
-                    className={`h-9 text-sm rounded-lg border-zinc-200 dark:border-zinc-700 focus:ring-2 focus:ring-blue-300 transition-all ${errors.min_split_duration_minutes ? 'border-destructive' : ''}`}
+                    className={`h-9 rounded-lg border-zinc-200 text-sm transition-all focus:ring-2 focus:ring-blue-300 dark:border-zinc-700 ${errors.min_split_duration_minutes ? 'border-destructive' : ''}`}
                   />
                   {errors.min_split_duration_minutes && (
-                    <p className="text-xs text-destructive mt-0.5">
+                    <p className="mt-0.5 text-destructive text-xs">
                       {errors.min_split_duration_minutes}
                     </p>
                   )}
@@ -407,10 +406,10 @@ export default function AddEventModal({
                         hoursToMinutes(hours)
                       );
                     }}
-                    className={`h-9 text-sm rounded-lg border-zinc-200 dark:border-zinc-700 focus:ring-2 focus:ring-blue-300 transition-all ${errors.max_split_duration_minutes ? 'border-destructive' : ''}`}
+                    className={`h-9 rounded-lg border-zinc-200 text-sm transition-all focus:ring-2 focus:ring-blue-300 dark:border-zinc-700 ${errors.max_split_duration_minutes ? 'border-destructive' : ''}`}
                   />
                   {errors.max_split_duration_minutes && (
-                    <p className="text-xs text-destructive mt-0.5">
+                    <p className="mt-0.5 text-destructive text-xs">
                       {errors.max_split_duration_minutes}
                     </p>
                   )}
@@ -420,10 +419,10 @@ export default function AddEventModal({
           </div>
 
           {/* Scheduling Preferences */}
-          <div className="rounded-xl border border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4 space-y-3 shadow-md transition-shadow hover:shadow-lg">
-            <div className="flex items-center gap-2 mb-1">
+          <div className="space-y-3 rounded-xl border border-zinc-100 bg-white p-4 shadow-md transition-shadow hover:shadow-lg dark:border-zinc-800 dark:bg-zinc-900">
+            <div className="mb-1 flex items-center gap-2">
               <ClockIcon className="h-4 w-4 text-blue-400" />
-              <Label className="text-xs font-semibold text-zinc-700 dark:text-zinc-200">
+              <Label className="font-semibold text-xs text-zinc-700 dark:text-zinc-200">
                 Working Hours
               </Label>
             </div>
@@ -431,7 +430,7 @@ export default function AddEventModal({
               value={formData.calendar_hours}
               onValueChange={(value) => updateFormData('calendar_hours', value)}
             >
-              <SelectTrigger className="h-9 text-sm rounded-lg border-zinc-200 dark:border-zinc-700 focus:ring-2 focus:ring-blue-300 transition-all">
+              <SelectTrigger className="h-9 rounded-lg border-zinc-200 text-sm transition-all focus:ring-2 focus:ring-blue-300 dark:border-zinc-700">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -450,14 +449,14 @@ export default function AddEventModal({
               </SelectContent>
             </Select>
             <div className="grid grid-cols-2 gap-2">
-              <div className="flex items-end gap-6 w-full">
+              <div className="flex w-full items-end gap-6">
                 {/* Start Date */}
                 <div className="w-48">
-                  <Label htmlFor="start-date" className="text-xs mb-1 block">
+                  <Label htmlFor="start-date" className="mb-1 block text-xs">
                     Start (optional)
                   </Label>
                   <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none flex items-center">
+                    <span className="-translate-y-1/2 pointer-events-none absolute top-1/2 left-3 flex items-center text-zinc-400">
                       <CalendarIcon className="h-5 w-5" />
                     </span>
                     <Input
@@ -468,17 +467,17 @@ export default function AddEventModal({
                         updateFormData('start_date', e.target.value)
                       }
                       min={dayjs().format('YYYY-MM-DDTHH:mm')}
-                      className="h-10 w-full text-sm rounded-lg border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 focus:ring-2 focus:ring-blue-300 transition-all pl-10 pr-2 shadow-sm focus:shadow-md"
+                      className="h-10 w-full rounded-lg border-zinc-200 bg-zinc-50 pr-2 pl-10 text-sm shadow-sm transition-all focus:shadow-md focus:ring-2 focus:ring-blue-300 dark:border-zinc-700 dark:bg-zinc-800"
                     />
                   </div>
                 </div>
                 {/* End Date */}
                 <div className="w-48">
-                  <Label htmlFor="end-date" className="text-xs mb-1 block">
+                  <Label htmlFor="end-date" className="mb-1 block text-xs">
                     End (optional)
                   </Label>
                   <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none flex items-center">
+                    <span className="-translate-y-1/2 pointer-events-none absolute top-1/2 left-3 flex items-center text-zinc-400">
                       <CalendarIcon className="h-5 w-5" />
                     </span>
                     <Input
@@ -489,42 +488,42 @@ export default function AddEventModal({
                         updateFormData('end_date', e.target.value)
                       }
                       min={dayjs().format('YYYY-MM-DDTHH:mm')}
-                      className={`h-10 w-full text-sm rounded-lg border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 focus:ring-2 focus:ring-blue-300 transition-all pl-10 pr-2 shadow-sm focus:shadow-md ${errors.end_date ? 'border-destructive' : ''}`}
+                      className={`h-10 w-full rounded-lg border-zinc-200 bg-zinc-50 pr-2 pl-10 text-sm shadow-sm transition-all focus:shadow-md focus:ring-2 focus:ring-blue-300 dark:border-zinc-700 dark:bg-zinc-800 ${errors.end_date ? 'border-destructive' : ''}`}
                     />
                   </div>
                   {errors.end_date && (
-                    <p className="text-xs text-destructive mt-0.5">
+                    <p className="mt-0.5 text-destructive text-xs">
                       {errors.end_date}
                     </p>
                   )}
                 </div>
               </div>
             </div>
-            <div className="rounded-md bg-blue-50 dark:bg-blue-950 p-2 text-xs text-blue-800 dark:text-blue-200 flex items-center gap-2 mt-1">
+            <div className="mt-1 flex items-center gap-2 rounded-md bg-blue-50 p-2 text-blue-800 text-xs dark:bg-blue-950 dark:text-blue-200">
               <span>📧</span>
               <span>For {user?.email || 'your account'}</span>
             </div>
           </div>
 
           {errors.submit && (
-            <div className="rounded-lg bg-destructive/10 p-2 text-xs text-destructive">
+            <div className="rounded-lg bg-destructive/10 p-2 text-destructive text-xs">
               {errors.submit}
             </div>
           )}
 
-          <DialogFooter className="gap-2 mt-2">
+          <DialogFooter className="mt-2 gap-2">
             <Button
               type="button"
               variant="outline"
               onClick={handleClose}
               disabled={isLoading}
-              className="h-9 px-5 text-sm rounded-lg border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 focus:ring-2 focus:ring-blue-300 transition-all"
+              className="h-9 rounded-lg border-zinc-200 px-5 text-sm transition-all hover:bg-zinc-100 focus:ring-2 focus:ring-blue-300 dark:border-zinc-700 dark:hover:bg-zinc-800"
             >
               Cancel
             </Button>
             <Button
               type="submit"
-              className="h-9 px-5 text-sm rounded-lg bg-blue-500 hover:bg-blue-600 focus:ring-2 focus:ring-blue-300 transition-all text-white font-semibold shadow-md"
+              className="h-9 rounded-lg bg-blue-500 px-5 font-semibold text-sm text-white shadow-md transition-all hover:bg-blue-600 focus:ring-2 focus:ring-blue-300"
               disabled={isLoading}
             >
               {isLoading ? (
