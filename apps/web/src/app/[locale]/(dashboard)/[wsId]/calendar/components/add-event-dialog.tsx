@@ -394,7 +394,6 @@ export default function AddEventModal({
                   onKeyDown={(e) => {
                     const currentIndex = getCurrentPriorityIndex();
                     if (
-                      e.key === 'ArrowLeft' &&
                       currentIndex > 0 &&
                       prioritySliderOptions[currentIndex - 1]?.value
                     ) {

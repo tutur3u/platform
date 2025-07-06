@@ -173,17 +173,6 @@ export default function TasksSidebarContent({
             className="m-0 flex flex-1 flex-col space-y-4 p-4"
           >
             <div className="mx-auto max-w-lg p-2">
-              {/* Debug: Show all task names */}
-              <div style={{ marginBottom: 16 }}>
-                <strong>Debug: Tasks received:</strong>
-                {tasks.length === 0 ? (
-                  <div>No tasks found</div>
-                ) : (
-                  tasks.map((task: ExtendedWorkspaceTask) => (
-                    <div key={task.id}>{task.name}</div>
-                  ))
-                )}
-              </div>
               <PriorityView allTasks={tasks} />
             </div>
           </TabsContent>
