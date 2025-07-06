@@ -36,7 +36,7 @@ export default function MemberCard({
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/5 to-transparent" />
           <div className="absolute bottom-0 w-full p-4">
-            <h3 className="text-2xl font-bold text-white">{name}</h3>
+            <h3 className="text-xl font-bold text-white">{name}</h3>
             <p className="text-md font-medium text-muted-foreground">{role}</p>
           </div>
         </div>
@@ -46,12 +46,29 @@ export default function MemberCard({
         <p className="mt-2 text-sm text-foreground/80">{bio}</p>
       </CardContent>
       <CardFooter className="flex justify-center gap-4 p-4 pt-0">
-        <Link href={socials.facebook} target="_blank" rel="noopener noreferrer">
-          <Facebook className="h-6 w-6 text-muted-foreground transition-colors hover:text-primary" />
-        </Link>
-        <Link href={socials.linkedin} target="_blank" rel="noopener noreferrer">
-          <Linkedin className="h-6 w-6 text-muted-foreground transition-colors hover:text-primary" />
-        </Link>
+        {socials.facebook === '#' ? (
+          <Facebook className="h-6 w-6 text-muted-foreground" />
+        ) : (
+          <Link
+            href={socials.facebook}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <Facebook className="h-6 w-6 text-muted-foreground transition-colors hover:text-primary" />
+          </Link>
+        )}
+
+        {socials.linkedin === '#' ? (
+          <Linkedin className="h-6 w-6 text-muted-foreground" />
+        ) : (
+          <Link
+            href={socials.linkedin}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <Linkedin className="h-6 w-6 text-muted-foreground transition-colors hover:text-primary" />
+          </Link>
+        )}
       </CardFooter>
     </Card>
   );

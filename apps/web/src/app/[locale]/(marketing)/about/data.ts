@@ -6,7 +6,7 @@ export const members: {
     | 'Technology'
     | 'Marketing'
     | 'Human Resources'
-    | 'Finance'
+    | 'FinLog'
   )[];
   image: string;
   bio: string;
@@ -19,7 +19,7 @@ export const members: {
   {
     name: 'Pham Ngoc Thien Kim',
     role: 'CFO',
-    departments: ['Executive Board', 'Finance'],
+    departments: ['Executive Board', 'FinLog'],
     image: '/members/kim.png',
     bio: 'Financial strategist with a passion for sustainable growth and fiscal responsibility. Kim ensures our club operates efficiently while investing in innovative projects that benefit our members.',
     quote: 'The best way to predict the future is to create it.',
@@ -30,7 +30,7 @@ export const members: {
   },
   {
     name: 'Nguyen Ha Gia Tam',
-    role: 'Head of HR',
+    role: 'Head of HR & Liaison Officer',
     departments: ['Executive Board', 'Human Resources'],
     image: '/members/tam.png',
     bio: 'People-focused leader dedicated to building inclusive communities and fostering personal growth. Tam creates opportunities for members to develop both technical and soft skills.',
