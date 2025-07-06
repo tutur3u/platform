@@ -8,7 +8,7 @@ import { Project, projects } from './data';
 import ProjectCard from './project-card';
 import ProjectDetail from './project-detail';
 import { AnimatePresence, PanInfo, motion } from 'framer-motion';
-import { Layers, LayoutGrid } from 'lucide-react';
+import { Bot, Layers, LayoutGrid } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 
 // ============================================================================
@@ -251,11 +251,12 @@ export default function Projects() {
           <p className="text-4xl leading-normal font-extrabold md:text-5xl lg:text-6xl">
             <span className="text-white">NEO Culture</span>{' '}
             <span className="border-b-4 border-[#FBC721] whitespace-nowrap text-[#5FC6E5]">
-              PROJECTS
+              PROJECTS{' '}
+              <Bot className="inline-block h-8 w-8 text-yellow-400 md:h-10 md:w-10 lg:h-12 lg:w-12" />
             </span>
           </p>
           <div className="mt-1 w-2/3 md:w-full">
-            <p className="text-sm font-light text-white md:mt-4 md:max-w-2xl md:text-2xl">
+            <p className="text-lg leading-normal font-medium text-white md:mt-4 md:max-w-2xl md:text-xl lg:text-2xl">
               The place where you can learn, grow and have fun with technology,
               by building projects.
             </p>
