@@ -246,13 +246,13 @@ export default function Projects() {
   return (
     <>
       {/* Hero Section */}
-      <div className="relative mt-96 flex flex-col items-center text-center md:mt-72">
+      <div className="relative mt-16 flex flex-col items-center text-center md:mt-12">
         <div className="flex flex-col items-center text-center">
-          <p className="text-4xl tracking-wider text-white md:text-6xl">
-            NEO Culture Tech
-          </p>
-          <p className="mt-1 bg-gradient-to-r from-[#F4B71A] to-[#1AF4E6] bg-clip-text text-5xl font-bold tracking-widest text-transparent md:mt-6 md:text-7xl">
-            PROJECTS
+          <p className="text-4xl leading-normal font-extrabold md:text-5xl lg:text-6xl">
+            <span className="text-white">NEO Culture</span>{' '}
+            <span className="border-b-4 border-[#FBC721] whitespace-nowrap text-[#5FC6E5]">
+              PROJECTS
+            </span>
           </p>
           <div className="mt-1 w-2/3 md:w-full">
             <p className="text-sm font-light text-white md:mt-4 md:max-w-2xl md:text-2xl">
@@ -262,7 +262,6 @@ export default function Projects() {
           </div>
         </div>
 
-        {/* View Mode Toggle */}
         <div className="mt-6 mb-4">
           <div className="relative inline-flex rounded-xl border border-white/20 bg-white/5 p-1 backdrop-blur-sm">
             <motion.div
@@ -298,58 +297,88 @@ export default function Projects() {
           </div>
         </div>
 
-        <div className="mt-4 grid max-w-4xl grid-cols-3 gap-2 text-center">
-          {[
-            { key: 'web', label: 'Web Development' },
-            { key: 'software', label: 'Software' },
-            { key: 'hardware', label: 'Hardware' },
-          ].map((p) => (
-            <motion.button
-              key={p.key}
-              onClick={() => handleTypeFilter(p.key as ProjectType)}
-              initial={false}
-              animate={{
-                background:
-                  p.key === type
-                    ? 'linear-gradient(to right, #F4B71A 40%, #1AF4E6 100%)'
-                    : 'transparent',
-                color: p.key === type ? '#0F172A' : '#FFFFFF',
-                scale: p.key === type ? 1.05 : 1,
-              }}
-              transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-              className="rounded-xl border-2 border-[#4F4F4F] px-2 py-3 text-[0.7rem] whitespace-nowrap text-white md:text-base"
-            >
-              {p.label}
-            </motion.button>
-          ))}
-          {[
-            { key: 'planning', label: 'Planning Projects' },
-            { key: 'ongoing', label: 'Ongoing Projects' },
-            { key: 'completed', label: 'Completed Projects' },
-          ].map((p) => (
-            <motion.button
-              key={p.key}
-              onClick={() => handleStatusFilter(p.key as ProjectStatus)}
-              initial={false}
-              animate={{
-                background:
-                  p.key === status
-                    ? 'linear-gradient(to right, #F4B71A 40%, #1AF4E6 100%)'
-                    : 'transparent',
-                color: p.key === status ? '#0F172A' : '#FFFFFF',
-                scale: p.key === status ? 1.05 : 1,
-              }}
-              transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-              className="rounded-xl border-2 border-[#4F4F4F] px-2 py-3 text-[0.7rem] whitespace-nowrap text-white md:text-base"
-            >
-              {p.label}
-            </motion.button>
-          ))}
+        <div className="mt-4 flex flex-col gap-4">
+          {/* Type Filters */}
+          <div className="flex justify-center">
+            <div className="relative flex rounded-2xl border border-white/10 bg-white/5 p-1">
+              <motion.div
+                className="absolute inset-y-1 rounded-xl bg-gradient-to-r from-[#F4B71A] to-[#1AF4E6]"
+                animate={{
+                  x:
+                    type === 'web'
+                      ? 0
+                      : type === 'software'
+                        ? 112
+                        : type === 'hardware'
+                          ? 224
+                          : -200,
+                  width: type ? 112 : 0,
+                  opacity: type ? 1 : 0,
+                }}
+                transition={{ type: 'spring', stiffness: 400, damping: 35 }}
+              />
+              {[
+                { key: 'web', label: 'Web' },
+                { key: 'software', label: 'Software' },
+                { key: 'hardware', label: 'Hardware' },
+              ].map((p) => (
+                <button
+                  key={p.key}
+                  onClick={() => handleTypeFilter(p.key as ProjectType)}
+                  className={`relative z-10 w-28 px-5 py-3 text-sm font-medium transition-colors duration-200 ${
+                    p.key === type
+                      ? 'text-slate-900'
+                      : 'text-white/80 hover:text-white'
+                  }`}
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Status Filters */}
+          <div className="flex justify-center">
+            <div className="relative flex rounded-2xl border border-white/10 bg-white/5 p-1">
+              <motion.div
+                className="absolute inset-y-1 rounded-xl bg-gradient-to-r from-[#F4B71A] to-[#1AF4E6]"
+                animate={{
+                  x:
+                    status === 'planning'
+                      ? 0
+                      : status === 'ongoing'
+                        ? 112
+                        : status === 'completed'
+                          ? 224
+                          : -200,
+                  width: status ? 112 : 0,
+                  opacity: status ? 1 : 0,
+                }}
+                transition={{ type: 'spring', stiffness: 400, damping: 35 }}
+              />
+              {[
+                { key: 'planning', label: 'Planning' },
+                { key: 'ongoing', label: 'Ongoing' },
+                { key: 'completed', label: 'Completed' },
+              ].map((p) => (
+                <button
+                  key={p.key}
+                  onClick={() => handleStatusFilter(p.key as ProjectStatus)}
+                  className={`relative z-10 w-28 px-5 py-3 text-sm font-medium transition-colors duration-200 ${
+                    p.key === status
+                      ? 'text-slate-900'
+                      : 'text-white/80 hover:text-white'
+                  }`}
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
-        <Canvas className="absolute top-2/4 -z-10 aspect-square w-[120%] -translate-y-1/2" />
+        {/* <Canvas className="absolute top-2/4 -z-10 aspect-square w-[120%] -translate-y-1/2" /> */}
       </div>
 
-      {/* Main Content */}
       <div className="mt-12 px-4 md:px-6 lg:px-8">
         {filteredProjects.length > 0 ? (
           <>
@@ -360,16 +389,6 @@ export default function Projects() {
                 <div className="mb-8 text-center">
                   <div className="mt-2 flex flex-col items-center justify-center gap-2">
                     <div className="flex items-center gap-2"></div>
-                    {isAutoScrolling && !isUserInteracting && (
-                      <div className="h-1 w-32 overflow-hidden rounded-full bg-white/10">
-                        <motion.div
-                          className="h-full rounded-full bg-gradient-to-r from-[#F4B71A] to-[#1AF4E6]"
-                          initial={{ width: '0%' }}
-                          animate={{ width: `${autoScrollProgress}%` }}
-                          transition={{ duration: 0.05, ease: 'linear' }}
-                        />
-                      </div>
-                    )}
                   </div>
                   {!isDragging && (
                     <motion.div
@@ -510,11 +529,7 @@ export default function Projects() {
               /* Grid Layout */
               <div className="mx-auto max-w-7xl">
                 {/* Project Info for Grid */}
-                <div className="mb-8 text-center">
-                  <p className="text-sm text-white/70 md:text-base">
-                    Showing {filteredProjects.length} projects
-                  </p>
-                </div>
+                <div className="mb-8 text-center"></div>
 
                 {/* Grid Container */}
                 <motion.div
