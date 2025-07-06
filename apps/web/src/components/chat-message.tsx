@@ -785,7 +785,7 @@ export function ChatMessage({
             },
           }}
         >
-          {message.content}
+          {message.parts[0]?.type === 'text' ? message.parts[0].text : ''}
         </MemoizedReactMarkdown>
       </div>
     </div>
