@@ -189,42 +189,183 @@ export default function Projects() {
           </div>
         </div>
 
-        <div className="mt-8 mb-6">
-          <div className="relative flex rounded-xl border border-white/20 bg-white/5 p-1 backdrop-blur-sm">
-            <motion.div
-              className="absolute inset-y-1 rounded-lg bg-gradient-to-r from-[#F4B71A] to-[#1AF4E6]"
-              animate={{
-                x: viewMode === 'carousel' ? '2px' : 'calc(100% + 2px)',
-              }}
-              style={{ width: 'calc(50% - 4px)' }}
-              transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-            />
-            <button
-              onClick={() => handleViewModeChange('carousel')}
-              className={`relative z-10 flex w-1/2 items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors duration-200 ${
-                viewMode === 'carousel'
-                  ? 'text-slate-900'
-                  : 'text-white/70 hover:text-white'
-              }`}
-            >
-              <Layers size={16} />
-              Swipe
-            </button>
-            <button
-              onClick={() => handleViewModeChange('grid')}
-              className={`relative z-10 flex w-1/2 items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors duration-200 ${
-                viewMode === 'grid'
-                  ? 'text-slate-900'
-                  : 'text-white/70 hover:text-white'
-              }`}
-            >
-              <LayoutGrid size={16} />
-              Grid
-            </button>
-          </div>
-        </div>
+        {/* <Canvas className="absolute top-2/4 -z-10 aspect-square w-[120%] -translate-y-1/2" /> */}
+      </motion.div>
 
-        <div className="mt-6 flex flex-col gap-6">
+      <motion.div
+        className="relative mt-16 flex flex-col items-center text-center md:mt-24"
+        initial={{ opacity: 0, y: 50 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.8, delay: 0.2 }}
+      >
+        <p className="text-2xl leading-normal font-extrabold md:text-3xl lg:text-4xl">
+          <span className="text-white">Our</span>{' '}
+          <span className="border-b-4 border-[#FBC721] whitespace-nowrap text-[#5FC6E5]">
+            FlagShip
+          </span>{' '}
+          <span className="text-white">Project</span>
+        </p>
+
+        <motion.div
+          className="mx-auto mt-12 max-w-6xl px-4 md:px-6 lg:px-8"
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.8, delay: 0.4 }}
+        >
+          <div className="grid grid-cols-1 items-center gap-8 lg:grid-cols-2 lg:gap-12">
+            <motion.div
+              className="group relative"
+              initial={{ opacity: 0, x: -50 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.8, delay: 0.6 }}
+            >
+              <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#F4B71A]/20 to-[#1AF4E6]/20 p-1">
+                <div className="relative h-64 overflow-hidden rounded-xl bg-gradient-to-br from-slate-800 to-slate-900 md:h-80 lg:h-96">
+                  <div className="absolute inset-0 bg-gradient-to-tr from-[#F4B71A]/10 to-[#1AF4E6]/10"></div>
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="text-6xl opacity-20 md:text-8xl lg:text-9xl">
+                      🚀
+                    </div>
+                  </div>
+                  <div className="absolute right-4 bottom-4 left-4">
+                    <div className="rounded-lg bg-black/40 px-4 py-2 backdrop-blur-sm">
+                      <p className="text-sm font-medium text-white/90">
+                        Project Screenshot
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="absolute -inset-4 rounded-3xl bg-gradient-to-r from-[#F4B71A]/20 to-[#1AF4E6]/20 opacity-0 blur-xl transition-opacity duration-500 group-hover:opacity-100"></div>
+            </motion.div>
+
+            <motion.div
+              className="space-y-6"
+              initial={{ opacity: 0, x: 50 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.8, delay: 0.8 }}
+            >
+              <div>
+                <h3 className="mb-4 text-2xl font-extrabold text-white md:text-3xl lg:text-4xl">
+                  NeoCulture{' '}
+                  <span className="text-[#5FC6E5]">Hub Platform</span>
+                </h3>
+                <p className="text-lg leading-relaxed font-medium text-gray-300 md:text-xl">
+                  Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed
+                  do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+                  Ut enim ad minim veniam, quis nostrud exercitation ullamco
+                  laboris.
+                </p>
+              </div>
+
+              <div className="space-y-4">
+                <div className="flex items-start gap-3">
+                  <div className="mt-3 h-2 w-2 flex-shrink-0 rounded-full bg-[#F4B71A]"></div>
+                  <p className="font-medium text-gray-400">
+                    Duis aute irure dolor in reprehenderit in voluptate velit
+                    esse cillum dolore eu fugiat nulla pariatur.
+                  </p>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="mt-3 h-2 w-2 flex-shrink-0 rounded-full bg-[#1AF4E6]"></div>
+                  <p className="font-medium text-gray-400">
+                    Excepteur sint occaecat cupidatat non proident, sunt in
+                    culpa qui officia deserunt mollit anim.
+                  </p>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="mt-3 h-2 w-2 flex-shrink-0 rounded-full bg-[#F4B71A]"></div>
+                  <p className="font-medium text-gray-400">
+                    Sed ut perspiciatis unde omnis iste natus error sit
+                    voluptatem accusantium doloremque laudantium.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap gap-3 pt-4">
+                {[
+                  'React',
+                  'TypeScript',
+                  'Next.js',
+                  'Tailwind CSS',
+                  'Framer Motion',
+                ].map((tech) => (
+                  <span
+                    key={tech}
+                    className="rounded-full border border-white/10 bg-gradient-to-r from-[#F4B71A]/20 to-[#1AF4E6]/20 px-3 py-1 text-sm font-medium text-white/90"
+                  >
+                    {tech}
+                  </span>
+                ))}
+              </div>
+
+              <motion.button
+                className="mt-6 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#F4B71A] to-[#1AF4E6] px-6 py-3 text-lg font-bold text-slate-900 transition-all duration-300 hover:scale-105 hover:shadow-lg"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                Learn More <Bot className="h-5 w-5" />
+              </motion.button>
+            </motion.div>
+          </div>
+        </motion.div>
+      </motion.div>
+
+      <motion.div
+        className="relative mt-16 flex flex-col items-center text-center md:mt-20"
+        initial={{ opacity: 0, y: 30 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.6, delay: 0.2 }}
+      >
+        <p className="text-2xl leading-normal font-extrabold md:text-3xl lg:text-4xl">
+          <span className="text-white">Don't miss our</span>{' '}
+          <span className="border-b-4 border-[#FBC721] whitespace-nowrap text-[#5FC6E5]">
+            other projects
+          </span>
+          <span className="text-white">!</span>
+        </p>
+
+        <div className="mt-8 flex flex-col gap-6">
+          <div className="flex justify-center">
+            <div className="relative flex rounded-xl border border-white/20 bg-white/5 p-1 backdrop-blur-sm">
+              <motion.div
+                className="absolute inset-y-1 rounded-lg bg-gradient-to-r from-[#F4B71A] to-[#1AF4E6]"
+                animate={{
+                  x: viewMode === 'carousel' ? '2px' : 'calc(100% + 2px)',
+                }}
+                style={{ width: 'calc(50% - 4px)' }}
+                transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+              />
+              <button
+                onClick={() => handleViewModeChange('carousel')}
+                className={`relative z-10 flex w-1/2 items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors duration-200 ${
+                  viewMode === 'carousel'
+                    ? 'text-slate-900'
+                    : 'text-white/70 hover:text-white'
+                }`}
+              >
+                <Layers size={16} />
+                Swipe
+              </button>
+              <button
+                onClick={() => handleViewModeChange('grid')}
+                className={`relative z-10 flex w-1/2 items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors duration-200 ${
+                  viewMode === 'grid'
+                    ? 'text-slate-900'
+                    : 'text-white/70 hover:text-white'
+                }`}
+              >
+                <LayoutGrid size={16} />
+                Grid
+              </button>
+            </div>
+          </div>
+
           <div className="flex justify-center">
             <div className="relative flex rounded-2xl border border-white/10 bg-white/5 p-1">
               <motion.div
@@ -303,7 +444,6 @@ export default function Projects() {
             </div>
           </div>
         </div>
-        {/* <Canvas className="absolute top-2/4 -z-10 aspect-square w-[120%] -translate-y-1/2" /> */}
       </motion.div>
 
       <div className="mt-8 px-4 md:px-6 lg:px-8">
