@@ -12,7 +12,6 @@ import {
   Users,
 } from '@ncthub/ui/icons';
 import { motion } from 'framer-motion';
-import { useTranslations } from 'next-intl';
 
 const stats = [
   {
