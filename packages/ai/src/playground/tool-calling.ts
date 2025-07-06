@@ -1,5 +1,5 @@
 import { google } from '@ai-sdk/google';
-import { generateText, type Tool, tool } from 'ai';
+import { generateText, stepCountIs, type Tool, tool } from 'ai';
 import dayjs from 'dayjs';
 import { z } from 'zod';
 
@@ -29,7 +29,7 @@ export const toolCalling = async ({
       calculatePower,
       ...extraTools,
     },
-    maxRetries: 30,
+    stopWhen: stepCountIs(30),
     // prompt: 'What is the power of 2 to the power of 100?',
     system: `
     You are an intelligent calendar management assistant. Your primary goal is to ensure all events are properly scheduled without any conflicts.
