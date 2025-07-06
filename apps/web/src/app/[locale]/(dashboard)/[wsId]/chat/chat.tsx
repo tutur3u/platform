@@ -317,8 +317,8 @@ const Chat = ({
                   ? [
                       {
                         id: 'pending',
-                        content: pendingPrompt,
                         role: 'user',
+                        parts: [{ type: 'text', text: pendingPrompt }],
                       },
                     ]
                   : messages
