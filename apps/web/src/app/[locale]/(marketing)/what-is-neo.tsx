@@ -2,7 +2,6 @@
 
 import { Badge } from '@ncthub/ui/badge';
 import { Card, CardContent } from '@ncthub/ui/card';
-import { GetStartedButton } from '@ncthub/ui/custom/get-started-button';
 import {
   Award,
   Building2,
