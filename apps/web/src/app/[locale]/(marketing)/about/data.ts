@@ -24,7 +24,7 @@ export const members: {
     bio: 'Financial strategist with a passion for sustainable growth and fiscal responsibility. Kim ensures our club operates efficiently while investing in innovative projects that benefit our members.',
     quote: 'The best way to predict the future is to create it.',
     socials: {
-      facebook: '#',
+      facebook: 'https://www.facebook.com/share/1A1d7YDkBA/?mibextid=wwXIfr',
       linkedin: 'https://www.linkedin.com/in/carolpham14042006',
     },
   },
@@ -36,7 +36,7 @@ export const members: {
     bio: 'People-focused leader dedicated to building inclusive communities and fostering personal growth. Tam creates opportunities for members to develop both technical and soft skills.',
     quote: 'People first, technology second.',
     socials: {
-      facebook: '#',
+      facebook: 'https://www.facebook.com/giatam.nguyen.39/',
       linkedin: 'https://www.linkedin.com/in/gia-tâm-nguyễn-hà-bb435429a',
     },
   },
@@ -48,7 +48,7 @@ export const members: {
     bio: 'Visionary leader bridging technology and community. Duc drives our strategic direction while maintaining our core values of innovation, collaboration, and excellence in everything we do.',
     quote: 'Your work is going to fill a large part of your life.',
     socials: {
-      facebook: '#',
+      facebook: 'https://www.facebook.com/hhoangduc12',
       linkedin: 'https://www.linkedin.com/in/hhoang-duc',
     },
   },
@@ -60,7 +60,7 @@ export const members: {
     bio: 'Creative storyteller and brand strategist who amplifies our voice in the tech community. Minh crafts compelling narratives that showcase our impact and attract like-minded innovators.',
     quote: 'Strive not to be a success, but rather to be of value.',
     socials: {
-      facebook: '#',
+      facebook: 'https://www.facebook.com/share/12MY7CjvZmb/?mibextid=wwXIfr',
       linkedin: '#',
     },
   },
@@ -72,7 +72,7 @@ export const members: {
     bio: 'Hardware enthusiast and Embedded specialist who brings ideas to life through circuits and code. Duong leads our hardware projects and workshops, from Arduino basics to advanced robotics.',
     quote: 'The only way to do great work is to love what you do.',
     socials: {
-      facebook: '#',
+      facebook: 'https://www.facebook.com/ht.kurt.12/',
       linkedin: 'https://www.linkedin.com/in/huỳnh-thái-dương-4aa58824a',
     },
   },
@@ -84,7 +84,7 @@ export const members: {
     bio: 'Technology department leader with expertise in both software and hardware domains. Tai manages and navigates the entire tech department, bridging development teams and ensuring seamless integration across all technical initiatives.',
     quote: 'The journey of a thousand miles begins with a single step.',
     socials: {
-      facebook: '#',
+      facebook: 'https://www.facebook.com/van.tai.461142/',
       linkedin: 'https://www.linkedin.com/in/taivanngo',
     },
   },
@@ -96,7 +96,7 @@ export const members: {
     bio: 'Software architect and algorithm enthusiast who transforms complex problems into elegant solutions. Khoa leads our development teams and champions best practices in modern software engineering.',
     quote: 'Code is poetry written for machines but read by humans.',
     socials: {
-      facebook: '#',
+      facebook: 'https://www.facebook.com/kyle.mai261/',
       linkedin: 'https://www.linkedin.com/in/kylemai261',
     },
   },
