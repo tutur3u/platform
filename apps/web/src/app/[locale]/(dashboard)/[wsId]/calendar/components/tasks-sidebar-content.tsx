@@ -2,63 +2,63 @@
 
 import type {
   AIChat,
-  WorkspaceTask,
-  WorkspaceTaskBoard,
+  // WorkspaceTask,
+  // WorkspaceTaskBoard,
 } from '@tuturuuu/types/db';
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from '@tuturuuu/ui/accordion';
-import { Badge } from '@tuturuuu/ui/badge';
+// import {
+//   Accordion,
+//   AccordionContent,
+//   AccordionItem,
+//   AccordionTrigger,
+// } from '@tuturuuu/ui/accordion';
+// import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
-import {
-  Command,
-  CommandEmpty,
-  CommandInput,
-  CommandItem,
-  CommandList,
-  CommandSeparator,
-} from '@tuturuuu/ui/command';
+// import {
+//   Command,
+//   CommandEmpty,
+//   CommandInput,
+//   CommandItem,
+//   CommandList,
+//   CommandSeparator,
+// } from '@tuturuuu/ui/command';
 import {
   Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
+  // DialogContent,
+  // DialogHeader,
+  // DialogTitle,
+  // DialogTrigger,
 } from '@tuturuuu/ui/dialog';
 import {
   Bot,
-  CheckCircle2,
-  ChevronDown,
-  Clock,
-  FilePlus2,
+  // CheckCircle2,
+  // ChevronDown,
+  // Clock,
+  // FilePlus2,
   LayoutDashboard,
-  ListPlus,
+  // ListPlus,
   PanelLeftClose,
   PanelRightClose,
-  Plus,
-  PlusCircle,
+  // Plus,
+  // PlusCircle,
 } from '@tuturuuu/ui/icons';
-import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
-import { ScrollArea } from '@tuturuuu/ui/scroll-area';
+// import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
+// import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
-import { cn } from '@tuturuuu/utils/format';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useEffect, useMemo, useState } from 'react';
+// import { cn } from '@tuturuuu/utils/format';
+// import Link from 'next/link';
+// import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import Chat from '../../chat/chat';
-import { TaskBoardForm } from '../../tasks/boards/form';
+// import { TaskBoardForm } from '../../tasks/boards/form';
 import type { ExtendedWorkspaceTask } from '../../time-tracker/types';
-import QuickTaskTimer from './quick-task-timer';
-import { TaskForm } from './task-form';
-import { TaskListForm } from './task-list-form';
+// import QuickTaskTimer from './quick-task-timer';
+// import { TaskForm } from './task-form';
+// import { TaskListForm } from './task-list-form';
 import TimeTracker from './time-tracker';
 
 interface TasksSidebarContentProps {
   wsId: string;
-  tasks?: any[]; // Accept tasks as a prop
+  tasks?: ExtendedWorkspaceTask[]; // Accept tasks as a prop
   hasKeys?: { openAI: boolean; anthropic: boolean; google: boolean };
   chats?: AIChat[];
   count?: number | null;
@@ -179,7 +179,9 @@ export default function TasksSidebarContent({
                 {tasks.length === 0 ? (
                   <div>No tasks found</div>
                 ) : (
-                  tasks.map((task: any) => <div key={task.id}>{task.name}</div>)
+                  tasks.map((task: ExtendedWorkspaceTask) => (
+                    <div key={task.id}>{task.name}</div>
+                  ))
                 )}
               </div>
               <PriorityView allTasks={tasks} />
