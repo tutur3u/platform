@@ -669,6 +669,30 @@ export default function AddEventModal({
                   )}
                 </div>
               </div>
+              {/* End Date */}
+              <div className="w-48">
+                <Label htmlFor="end-date" className="mb-1 block text-xs">
+                  End (optional)
+                </Label>
+                <div className="relative">
+                  <span className="-translate-y-1/2 pointer-events-none absolute top-1/2 left-3 flex items-center text-zinc-400">
+                    <CalendarIcon className="h-5 w-5" />
+                  </span>
+                  <Input
+                    id="end-date"
+                    type="datetime-local"
+                    value={formData.end_date}
+                    onChange={(e) => updateFormData('end_date', e.target.value)}
+                    min={dayjs().format('YYYY-MM-DDTHH:mm')}
+                    className={`h-10 w-full rounded-lg border-zinc-200 bg-zinc-50 pr-2 pl-10 text-sm shadow-sm transition-all focus:shadow-md focus:ring-2 focus:ring-blue-300 dark:border-zinc-700 dark:bg-zinc-800 ${errors.end_date ? 'border-destructive' : ''}`}
+                  />
+                </div>
+                {errors.end_date && (
+                  <p className="mt-0.5 text-destructive text-xs">
+                    {errors.end_date}
+                  </p>
+                )}
+              </div>
             </div>
             <div className="mt-1 flex items-center gap-2 rounded-md bg-blue-50 p-2 text-blue-800 text-xs dark:bg-blue-950 dark:text-blue-200">
               <span>📧</span>
