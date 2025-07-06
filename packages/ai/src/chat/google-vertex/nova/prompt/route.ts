@@ -1,5 +1,4 @@
 import { google } from '@ai-sdk/google';
-import type { SafetySetting } from '@google/generative-ai';
 import type {
   NovaSubmissionCriteria,
   NovaSubmissionTestCase,
@@ -35,16 +34,12 @@ const modelSafetySettings = [
     category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
     threshold: 'BLOCK_NONE',
   },
-] as SafetySetting[];
+];
 
 // Initialize model with appropriate provider
-const critizierModel = google('gemini-2.0-flash', {
-  safetySettings: modelSafetySettings,
-});
+const critizierModel = google('gemini-2.0-flash');
 
-const evaluatorModel = google('gemini-2.0-flash', {
-  safetySettings: modelSafetySettings,
-});
+const evaluatorModel = google('gemini-2.0-flash');
 
 // Schema definitions
 const PlagiarismSchema = z.object({
@@ -494,6 +489,11 @@ async function streamCriteriaEvaluation(
       schema: CriteriaEvaluationSchema,
       prompt: ctx.userPrompt,
       system: systemInstruction,
+      providerOptions: {
+        google: {
+          safetySettings: modelSafetySettings,
+        },
+      },
     });
 
     let progressIncrement = 0;
@@ -561,6 +561,11 @@ async function streamTestCaseEvaluation(
       schema: TestCaseEvaluationSchema,
       prompt: ctx.userPrompt,
       system: testCaseInstruction,
+      providerOptions: {
+        google: {
+          safetySettings: modelSafetySettings,
+        },
+      },
     });
 
     let progressIncrement = 0;
@@ -643,6 +648,11 @@ async function checkPlagiarism(problem: NovaProblem, prompt: string) {
       schema: PlagiarismSchema,
       prompt: plagiarismPrompt,
       temperature: 0.1,
+      providerOptions: {
+        google: {
+          safetySettings: modelSafetySettings,
+        },
+      },
     });
 
     console.log('Plagiarism check results:', plagiarismCheck);
@@ -931,6 +941,11 @@ async function evaluateOutputMatch(
       model: critizierModel,
       schema: TestCaseCheckSchema,
       prompt: evaluationPrompt,
+      providerOptions: {
+        google: {
+          safetySettings: modelSafetySettings,
+        },
+      },
     });
 
     return {

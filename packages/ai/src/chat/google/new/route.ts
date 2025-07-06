@@ -4,7 +4,7 @@ import {
   HarmCategory,
 } from '@google/generative-ai';
 import { createClient } from '@tuturuuu/supabase/next/server';
-import type { Message } from 'ai';
+import type { UIMessage } from 'ai';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 
@@ -50,7 +50,7 @@ export function createPOST(
       const prompt = buildPrompt([
         {
           id: 'initial-message',
-          content: `"${message}"`,
+          parts: [{ type: 'text', text: `"${message}"` }],
           role: 'user',
         },
       ]);
@@ -103,20 +103,24 @@ export function createPOST(
   };
 }
 
-const normalize = (message: Message) => {
-  const { content, role } = message;
+const normalize = (message: UIMessage) => {
+  const { parts, role } = message;
+  // Extract text from parts array
+  const content =
+    parts?.map((part) => (part.type === 'text' ? part.text : '')).join('') ||
+    '';
   if (role === 'user') return `${HUMAN_PROMPT} ${content}`;
   if (role === 'assistant') return `${AI_PROMPT} ${content}`;
   return content;
 };
 
-const normalizeMessages = (messages: Message[]) =>
+const normalizeMessages = (messages: UIMessage[]) =>
   [...leadingMessages, ...messages, ...trailingMessages]
     .map(normalize)
     .join('')
     .trim();
 
-function buildPrompt(messages: Message[]) {
+function buildPrompt(messages: UIMessage[]) {
   const normalizedMsgs = normalizeMessages(messages);
   return normalizedMsgs + AI_PROMPT;
 }
@@ -142,20 +146,28 @@ const safetySettings = [
   },
 ];
 
-const leadingMessages: Message[] = [
+const leadingMessages: UIMessage[] = [
   {
     id: 'initial-message',
     role: 'assistant',
-    content:
-      'Please provide an initial message so I can generate a short and comprehensive title for this chat conversation.',
+    parts: [
+      {
+        type: 'text',
+        text: 'Please provide an initial message so I can generate a short and comprehensive title for this chat conversation.',
+      },
+    ],
   },
 ];
 
-const trailingMessages: Message[] = [
+const trailingMessages: UIMessage[] = [
   {
     id: 'final-message',
     role: 'assistant',
-    content:
-      'Thank you, I will respond with a title in my next response that will briefly demonstrate what the chat conversation is about, and it will only contain the title without any quotation marks, markdown, and anything else but the title. The title will be in the language you provided the initial message in.',
+    parts: [
+      {
+        type: 'text',
+        text: 'Thank you, I will respond with a title in my next response that will briefly demonstrate what the chat conversation is about, and it will only contain the title without any quotation marks, markdown, and anything else but the title. The title will be in the language you provided the initial message in.',
+      },
+    ],
   },
 ];

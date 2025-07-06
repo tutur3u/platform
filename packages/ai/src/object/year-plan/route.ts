@@ -118,52 +118,60 @@ export async function POST(req: Request) {
 
     try {
       const result = streamObject({
-        model: vertex('gemini-1.5-flash', {
-          safetySettings: [
-            { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
-            { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
-            {
-              category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
-              threshold: 'BLOCK_NONE',
-            },
-            {
-              category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
-              threshold: 'BLOCK_NONE',
-            },
-          ],
-        }),
-        maxTokens: 8192,
-        prompt: `Create a detailed ${planDuration}-month learning and achievement plan.
+        model: vertex('gemini-1.5-flash'),
+        maxOutputTokens: 8192,
+        providerOptions: {
+          vertex: {
+            safetySettings: [
+              { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
+              {
+                category: 'HARM_CATEGORY_HATE_SPEECH',
+                threshold: 'BLOCK_NONE',
+              },
+              {
+                category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
+                threshold: 'BLOCK_NONE',
+              },
+              {
+                category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
+                threshold: 'BLOCK_NONE',
+              },
+            ],
+          },
+        },
+        prompt: `
+          Create a detailed ${planDuration}-month learning and achievement plan.
 
-GOALS:
-${formattedGoals}
+          GOALS:
+          ${formattedGoals}
 
-USER PROFILE:
-${skillContext}
+          USER PROFILE:
+          ${skillContext}
 
-SCHEDULE PREFERENCES:
-${schedulePreference}
+          SCHEDULE PREFERENCES:
+          ${schedulePreference}
 
-PLANNING PREFERENCES:
-- Plan duration: ${planDuration} months
-- Milestone frequency: ${milestoneFrequency}
+          PLANNING PREFERENCES:
+          - Plan duration: ${planDuration} months
+          - Milestone frequency: ${milestoneFrequency}
 
-REQUIREMENTS:
-1. Break down goals into achievable milestones and specific tasks
-2. Consider user's skill level and learning style
-3. Adapt task complexity progressively
-4. Account for dependencies between tasks
-5. Distribute tasks according to availability and schedule preferences
-6. Include specific success metrics for each milestone
-7. Provide actionable recommendations
-8. Consider potential obstacles and mitigation strategies
-9. Include stretch goals for faster progress
-10. Add learning resources and practice exercises
-11. Make sure the plan is realistic and achievable, with no duplicate tasks
+          REQUIREMENTS:
+          1. Break down goals into achievable milestones and specific tasks
+          2. Consider user's skill level and learning style
+          3. Adapt task complexity progressively
+          4. Account for dependencies between tasks
+          5. Distribute tasks according to availability and schedule preferences
+          6. Include specific success metrics for each milestone
+          7. Provide actionable recommendations
+          8. Consider potential obstacles and mitigation strategies
+          9. Include stretch goals for faster progress
+          10. Add learning resources and practice exercises
+          11. Make sure the plan is realistic and achievable, with no duplicate tasks
 
-Format the response in a clear, hierarchical structure with quarters, months, and weeks as appropriate.
+          Format the response in a clear, hierarchical structure with quarters, months, and weeks as appropriate.
 
-Today's date: ${new Date().toISOString().split('T')[0]}`,
+          Today's date: ${new Date().toISOString().split('T')[0]}
+        `,
         schema: yearPlanSchema,
       });
 

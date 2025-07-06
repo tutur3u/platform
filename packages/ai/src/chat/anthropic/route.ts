@@ -3,7 +3,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
-import { type CoreMessage, smoothStream, streamText } from 'ai';
+import { type ModelMessage, smoothStream, streamText } from 'ai';
 import { NextResponse } from 'next/server';
 
 export const runtime = 'edge';
@@ -16,7 +16,7 @@ export async function POST(req: Request) {
   const { id, model, messages, previewToken } = (await req.json()) as {
     id?: string;
     model?: string;
-    messages?: CoreMessage[];
+    messages?: ModelMessage[];
     previewToken?: string;
   };
 
@@ -56,7 +56,7 @@ export async function POST(req: Request) {
 
     if (messages.length !== 1) {
       const userMessages = messages.filter(
-        (msg: CoreMessage) => msg.role === 'user'
+        (msg: ModelMessage) => msg.role === 'user'
       );
 
       const message = userMessages[userMessages.length - 1]?.content;
@@ -85,11 +85,14 @@ export async function POST(req: Request) {
 
     const result = streamText({
       experimental_transform: smoothStream(),
-      model: anthropic(model, {
-        cacheControl: true,
-      }),
+      model: anthropic(model),
       messages,
       system: systemInstruction,
+      providerOptions: {
+        anthropic: {
+          cacheControl: true,
+        },
+      },
       onFinish: async (response) => {
         console.log('AI Response:', response);
 
@@ -105,8 +108,8 @@ export async function POST(req: Request) {
           role: 'ASSISTANT',
           model: model.toLowerCase(),
           finish_reason: response.finishReason,
-          prompt_tokens: response.usage.promptTokens,
-          completion_tokens: response.usage.completionTokens,
+          prompt_tokens: response.usage.inputTokens,
+          completion_tokens: response.usage.outputTokens,
           metadata: { source: 'Rewise' },
         });
 
@@ -120,7 +123,7 @@ export async function POST(req: Request) {
       },
     });
 
-    return result.toDataStreamResponse();
+    return result.toTextStreamResponse();
   } catch (error: any) {
     console.log(error);
     return NextResponse.json(

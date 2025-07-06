@@ -8,9 +8,9 @@ const calculatePowerSchema = z.object({
   power: z.number().describe('The power to calculate the power of'),
 });
 
-const calculatePower = tool<typeof calculatePowerSchema, { result: number }>({
+const calculatePower = tool({
   description: 'Calculate the power of a number to the power of another number',
-  parameters: calculatePowerSchema,
+  inputSchema: calculatePowerSchema,
   execute: async ({ number, power }) => {
     return {
       result: number ** power,
@@ -29,7 +29,7 @@ export const toolCalling = async ({
       calculatePower,
       ...extraTools,
     },
-    maxSteps: 30,
+    maxRetries: 30,
     // prompt: 'What is the power of 2 to the power of 100?',
     system: `
     You are an intelligent calendar management assistant. Your primary goal is to ensure all events are properly scheduled without any conflicts.

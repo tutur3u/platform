@@ -3,7 +3,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
-import { type CoreMessage, smoothStream, streamText } from 'ai';
+import { type ModelMessage, smoothStream, streamText } from 'ai';
 import { NextResponse } from 'next/server';
 
 const DEFAULT_MODEL_NAME = 'gemini-1.5-flash-002';
@@ -11,14 +11,7 @@ export const runtime = 'edge';
 export const maxDuration = 60;
 export const preferredRegion = 'sin1';
 
-const vertexModel = vertex(DEFAULT_MODEL_NAME, {
-  safetySettings: [
-    { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
-    { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
-    { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
-    { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
-  ],
-});
+const vertexModel = vertex(DEFAULT_MODEL_NAME);
 
 export async function POST(req: Request) {
   const sbAdmin = await createAdminClient();
@@ -30,7 +23,7 @@ export async function POST(req: Request) {
   } = (await req.json()) as {
     id?: string;
     model?: string;
-    messages?: CoreMessage[];
+    messages?: ModelMessage[];
   };
 
   try {
@@ -65,7 +58,7 @@ export async function POST(req: Request) {
     // Filter user messages, and save message (prompt) to DB
     if (messages.length !== 1) {
       const userMessages = messages.filter(
-        (msg: CoreMessage) => msg.role === 'user'
+        (msg: ModelMessage) => msg.role === 'user'
       );
 
       // Extract last user message to become the prompt
@@ -98,6 +91,22 @@ export async function POST(req: Request) {
       experimental_transform: smoothStream(),
       model: vertexModel,
       messages: messages,
+      providerOptions: {
+        vertex: {
+          safetySettings: [
+            { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
+            { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
+            {
+              category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
+              threshold: 'BLOCK_NONE',
+            },
+            {
+              category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
+              threshold: 'BLOCK_NONE',
+            },
+          ],
+        },
+      },
       system: systemInstruction,
       onFinish: async (response) => {
         console.log('AI Response:', response);
@@ -114,8 +123,8 @@ export async function POST(req: Request) {
           role: 'ASSISTANT',
           model: model.toLowerCase(),
           finish_reason: response.finishReason,
-          prompt_tokens: response.usage.promptTokens,
-          completion_tokens: response.usage.completionTokens,
+          prompt_tokens: response.usage.inputTokens,
+          completion_tokens: response.usage.outputTokens,
           metadata: { source: 'Rewise' },
         });
 
@@ -129,7 +138,7 @@ export async function POST(req: Request) {
       },
     });
 
-    return result.toDataStreamResponse();
+    return result.toTextStreamResponse();
   } catch (error: any) {
     console.log(error);
     return NextResponse.json(
