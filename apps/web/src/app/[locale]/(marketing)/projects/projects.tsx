@@ -3,7 +3,7 @@
 // ============================================================================
 // IMPORTS
 // ============================================================================
-import Canvas from './canvas';
+// import Canvas from './canvas';
 import { Project, projects } from './data';
 import ProjectCard from './project-card';
 import ProjectDetail from './project-detail';
@@ -262,7 +262,7 @@ export default function Projects() {
             </span>
           </p>
           <div className="mt-1 w-2/3 md:w-full">
-            <p className="text-lg leading-normal font-medium text-white md:mt-4 md:max-w-2xl md:text-xl lg:text-2xl">
+            <p className="text-lg leading-normal font-bold text-white md:mt-4 md:max-w-2xl md:text-xl lg:text-2xl">
               The place where you can learn, grow and have fun with technology,
               by building projects.
             </p>
@@ -318,7 +318,7 @@ export default function Projects() {
                         ? 112
                         : type === 'hardware'
                           ? 224
-                          : -200,
+                          : 0,
                   width: type ? 112 : 0,
                   opacity: type ? 1 : 0,
                 }}
@@ -332,7 +332,7 @@ export default function Projects() {
                 <button
                   key={p.key}
                   onClick={() => handleTypeFilter(p.key as ProjectType)}
-                  className={`relative z-10 w-28 px-5 py-3 text-sm font-medium transition-colors duration-200 ${
+                  className={`relative z-10 w-28 px-5 py-3 text-base font-bold transition-colors duration-200 ${
                     p.key === type
                       ? 'text-slate-900'
                       : 'text-white/80 hover:text-white'
@@ -356,7 +356,7 @@ export default function Projects() {
                       : status === 'ongoing'
                         ? 112
                         : status === 'completed'
-                          ? 224
+                          ? 220
                           : -200,
                   width: status ? 112 : 0,
                   opacity: status ? 1 : 0,
@@ -371,7 +371,9 @@ export default function Projects() {
                 <button
                   key={p.key}
                   onClick={() => handleStatusFilter(p.key as ProjectStatus)}
-                  className={`relative z-10 w-28 px-5 py-3 text-sm font-medium transition-colors duration-200 ${
+                  className={`relative z-10 w-28 py-3 text-base font-bold transition-colors duration-200 ${
+                    p.key === 'completed' ? 'px-3' : 'px-5'
+                  } ${
                     p.key === status
                       ? 'text-slate-900'
                       : 'text-white/80 hover:text-white'
@@ -392,20 +394,6 @@ export default function Projects() {
             {viewMode === 'carousel' ? (
               /* Carousel Layout */
               <div className="relative mx-auto max-w-screen-2xl">
-              
-                <div className=" text-center">
-                  <div className="mt-2 flex flex-col items-center justify-center gap-2">
-              
-                  </div>
-                  {!isDragging && (
-                    <motion.div
-                      className="mt-3 flex items-center justify-center gap-2"
-                      initial={{ opacity: 0.7 }}
-                      animate={{ opacity: [0.7, 1, 0.7] }}
-                      transition={{ duration: 2, repeat: Infinity }}
-                    ></motion.div>
-                  )}
-                </div>
                 {/* Carousel Container */}
                 <div className="relative cursor-grab active:cursor-grabbing">
                   <motion.div
@@ -535,9 +523,6 @@ export default function Projects() {
             ) : (
               /* Grid Layout */
               <div className="mx-auto max-w-7xl">
-                {/* Project Info for Grid */}
-                <div className="mb-8 text-center"></div>
-
                 {/* Grid Container */}
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
