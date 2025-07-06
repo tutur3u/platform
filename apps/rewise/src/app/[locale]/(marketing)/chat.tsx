@@ -1,8 +1,9 @@
 'use client';
 
+import { DefaultChatTransport } from '@tuturuuu/ai/core';
 import { defaultModel, type Model, models } from '@tuturuuu/ai/models';
 import { useChat } from '@tuturuuu/ai/react';
-import type { Message } from '@tuturuuu/ai/types';
+import type { UIMessage } from '@tuturuuu/ai/types';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { AIChat } from '@tuturuuu/types/db';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
@@ -20,7 +21,7 @@ import { EmptyScreen } from '@/components/empty-screen';
 export interface ChatProps extends React.ComponentProps<'div'> {
   inputModel?: Model;
   defaultChat?: Partial<AIChat>;
-  initialMessages?: Message[];
+  initialMessages?: UIMessage[];
   chats?: AIChat[];
   count?: number | null;
   locale: string;
@@ -48,12 +49,12 @@ const Chat = ({
   const [chat, setChat] = useState<Partial<AIChat> | undefined>(defaultChat);
   const [model, setModel] = useState<Model | undefined>(inputModel);
   const [currentUserId, setCurrentUserId] = useState<string>();
+  const [input, setInput] = useState('');
 
-  const { messages, append, reload, stop, isLoading, input, setInput } =
-    useChat({
-      id: chat?.id,
-      initialMessages,
-      credentials: 'include',
+  const { messages, sendMessage, regenerate, stop, status } = useChat({
+    id: chat?.id,
+    messages: initialMessages,
+    transport: new DefaultChatTransport({
       api:
         chat?.model || model?.value
           ? `/api/ai/chat/${(
@@ -64,25 +65,21 @@ const Chat = ({
                 : model?.provider.toLowerCase()
             )?.replace(' ', '-')}`
           : undefined,
+      credentials: 'include',
+      headers: { 'Custom-Header': 'value' },
       body: {
         id: chat?.id,
         model: chat?.model || model?.value,
         wsId: ROOT_WORKSPACE_ID,
       },
-      onResponse(response) {
-        if (!response.ok)
-          toast({
-            title: t('ai_chat.something_went_wrong'),
-            description: t('ai_chat.try_again_later'),
-          });
-      },
-      onError() {
-        toast({
-          title: t('ai_chat.something_went_wrong'),
-          description: t('ai_chat.try_again_later'),
-        });
-      },
-    });
+    }),
+    onError() {
+      toast({
+        title: t('ai_chat.something_went_wrong'),
+        description: t('ai_chat.try_again_later'),
+      });
+    },
+  });
 
   useEffect(() => {
     const getCurrentUser = async () => {
@@ -107,9 +104,9 @@ const Chat = ({
   }, [chat?.summary]);
 
   useEffect(() => {
-    if (!chat || isLoading) return;
+    if (!chat || status === 'streaming') return;
 
-    const generateSummary = async (messages: Message[] = []) => {
+    const generateSummary = async (messages: UIMessage[] = []) => {
       if (
         summary ||
         summarizing ||
@@ -152,7 +149,7 @@ const Chat = ({
     // Generate the chat summary if the chat's latest summarized message id
     // is not the same as the last message id in the chat
     if (
-      !isLoading &&
+      status === 'ready' &&
       !summary &&
       !chat.latest_summarized_message_id &&
       chat.latest_summarized_message_id !== messages[messages.length - 1]?.id &&
@@ -166,13 +163,13 @@ const Chat = ({
     // but the AI did not respond yet after 1 second
     const reloadTimeout = setTimeout(() => {
       if (messages[messages.length - 1]?.role !== 'user') return;
-      reload();
+      regenerate();
     }, 1000);
 
     return () => {
       clearTimeout(reloadTimeout);
     };
-  }, [summary, chat, isLoading, messages, reload, model, t, summarizing]);
+  }, [summary, chat, status, messages, regenerate, model, t, summarizing]);
 
   const [initialScroll, setInitialScroll] = useState(true);
 
@@ -217,16 +214,7 @@ const Chat = ({
       router.replace('/');
       router.refresh();
     }
-  }, [
-    chat?.id,
-    searchParams,
-    router,
-    setInput,
-    chats,
-    count,
-    initialScroll,
-    clearChat,
-  ]);
+  }, [chat?.id, searchParams, router, chats, count, initialScroll, clearChat]);
 
   const [collapsed, setCollapsed] = useState(true);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -297,13 +285,12 @@ const Chat = ({
 
   useEffect(() => {
     if (!pendingPrompt || !chat?.id) return;
-    append({
-      id: chat?.id,
-      content: pendingPrompt,
-      role: 'user',
+    sendMessage({
+      messageId: chat?.id,
+      text: pendingPrompt,
     });
     setPendingPrompt(null);
-  }, [pendingPrompt, chat?.id, append]);
+  }, [pendingPrompt, chat?.id, sendMessage]);
 
   useEffect(() => {
     if (!pathname.includes('/c/') && messages.length === 1) {
@@ -328,8 +315,8 @@ const Chat = ({
                   ? [
                       {
                         id: 'pending',
-                        content: pendingPrompt,
                         role: 'user',
+                        parts: [{ type: 'text', text: pendingPrompt }],
                       },
                     ]
                   : messages
@@ -339,10 +326,10 @@ const Chat = ({
               model={chat?.model ?? undefined}
               anonymize={!chats || count === undefined}
             />
-            <ChatScrollAnchor trackVisibility={isLoading} />
+            <ChatScrollAnchor trackVisibility={status === 'streaming'} />
           </>
         ) : noEmptyPage ? (
-          <div className="flex h-[calc(100vh-20rem)] w-full items-center justify-center text-2xl font-bold lg:text-4xl xl:text-5xl">
+          <div className="flex h-[calc(100vh-20rem)] w-full items-center justify-center font-bold text-2xl lg:text-4xl xl:text-5xl">
             {t('common.coming_soon')} ✨
           </div>
         ) : (
@@ -355,10 +342,10 @@ const Chat = ({
         chat={chat}
         chats={chats}
         count={count}
-        isLoading={isLoading}
+        status={status}
         stop={stop}
-        append={append}
-        reload={reload}
+        sendMessage={sendMessage}
+        regenerate={regenerate}
         input={input}
         inputRef={inputRef}
         setInput={setInput}

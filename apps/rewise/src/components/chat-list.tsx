@@ -1,4 +1,4 @@
-import type { Message } from '@tuturuuu/ai/types';
+import type { UIMessage } from '@tuturuuu/ai/types';
 import type { RealtimePresenceState } from '@tuturuuu/supabase/next/realtime';
 import { Box, Globe, Lock, Sparkle } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
@@ -28,7 +28,7 @@ export interface ChatListProps {
   chatModel?: string | null;
   chatSummary?: string | null;
   titleLoading?: boolean;
-  messages: (Message & {
+  messages: (UIMessage & {
     chat_id?: string;
     model?: string;
     created_at?: string;
@@ -74,13 +74,13 @@ export function ChatList({
           key={`chat-${chatId}-${chatTitle}-${chatIsPublic}-${chatModel}-${chatSummary}`}
         >
           <div
-            className={`rounded-lg border bg-foreground/5 p-4 text-center text-2xl font-semibold ${
-              chatTitle == undefined && !!chatId
+            className={`rounded-lg border bg-foreground/5 p-4 text-center font-semibold text-2xl ${
+              chatTitle === undefined && !!chatId
                 ? 'animate-pulse text-transparent'
                 : ''
             }`}
           >
-            {chatTitle == undefined && !!chatId ? '...' : chatTitle || '...'}
+            {chatTitle === undefined && !!chatId ? '...' : chatTitle || '...'}
 
             <div className="mt-2 flex flex-wrap items-center justify-center gap-1 text-xs">
               <span
@@ -129,13 +129,13 @@ export function ChatList({
             {(chatSummary || summarizing) && (
               <Fragment key={`chat-${chatId}-${chatSummary}`}>
                 <Separator className="my-2" />
-                <div className="mb-2 text-base font-bold tracking-widest uppercase">
+                <div className="mb-2 font-bold text-base uppercase tracking-widest">
                   {t('summary')}
                 </div>
                 {!chatSummary && summarizing ? (
                   <div className="h-32 w-full animate-pulse rounded border bg-foreground/5" />
                 ) : (
-                  <div className="w-full rounded border bg-foreground/5 p-2 text-start text-lg font-normal break-words whitespace-pre-wrap">
+                  <div className="w-full whitespace-pre-wrap break-words rounded border bg-foreground/5 p-2 text-start font-normal text-lg">
                     {chatSummary?.trim()}
                   </div>
                 )}
@@ -147,13 +147,24 @@ export function ChatList({
       )}
 
       {messages.map((message, index) => (
-        <div key={index}>
+        <div key={message.id}>
           <ChatMessage
             message={{
               ...message,
               model:
                 message.model || (message.role === 'user' ? undefined : model),
-              content: message.content.trim(),
+              parts: message.parts,
+              metadata: message.metadata as
+                | {
+                    response_types?: (
+                      | 'summary'
+                      | 'notes'
+                      | 'multi_choice_quiz'
+                      | 'paragraph_quiz'
+                      | 'flashcards'
+                    )[];
+                  }
+                | undefined,
             }}
             setInput={setInput}
             embeddedUrl={embeddedUrl}

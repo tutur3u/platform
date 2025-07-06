@@ -1,4 +1,4 @@
-import type { Message } from '@tuturuuu/ai/types';
+import type { UIMessage } from '@tuturuuu/ai/types';
 import {
   createAdminClient,
   createClient,
@@ -173,7 +173,7 @@ const formatMessages = (messages: any[], userMap: Map<string, any>) => {
     ...rest,
     role: role.toLowerCase(),
     user: creator_id ? userMap.get(creator_id) : undefined,
-  })) as Message[];
+  })) as UIMessage[];
 };
 
 const getChat = async (chatId: string) => {
