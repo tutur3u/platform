@@ -5,7 +5,7 @@ import { Project, projects } from './data';
 import ProjectCard from './project-card';
 import ProjectDetail from './project-detail';
 import { AnimatePresence, PanInfo, motion } from 'framer-motion';
-import { Bot, Layers, LayoutGrid, Search, Smile } from 'lucide-react';
+import { Bot, Layers, LayoutGrid, Rocket, Search, Smile } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 
 type ProjectType = 'web' | 'software' | 'hardware' | undefined;
@@ -234,16 +234,29 @@ export default function Projects() {
               <motion.div
                 className="absolute -top-2 -right-6 text-2xl md:-top-3 md:-right-8 md:text-3xl lg:-top-4 lg:-right-10 lg:text-4xl"
                 animate={{
-                  rotate: [0, 15, -15, 0],
-                  scale: [1, 1.1, 1],
+                  rotate: [0, 360],
                 }}
                 transition={{
-                  duration: 2,
+                  duration: 6,
                   repeat: Infinity,
-                  ease: 'easeInOut',
+                  ease: 'linear',
+                }}
+                style={{
+                  transformOrigin: '50px 50px',
                 }}
               >
-                ✨
+                <motion.div
+                  animate={{
+                    rotate: [0, -360],
+                  }}
+                  transition={{
+                    duration: 6,
+                    repeat: Infinity,
+                    ease: 'linear',
+                  }}
+                >
+                  <Rocket className="h-6 w-6 text-yellow-400 md:h-8 md:w-8 lg:h-10 lg:w-10" />
+                </motion.div>
               </motion.div>
             </span>{' '}
             <span className="text-white">Sites</span>
