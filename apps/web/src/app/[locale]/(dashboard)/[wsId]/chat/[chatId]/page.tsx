@@ -76,7 +76,7 @@ const getMessages = async (chatId: string) => {
   return data.map(({ role, ...rest }) => ({
     ...rest,
     role: role.toLowerCase(),
-    parts: [{ type: 'text', text: rest.content }],
+    parts: [{ type: 'text', text: rest.content || '' }],
   })) as UIMessage[];
 };
 

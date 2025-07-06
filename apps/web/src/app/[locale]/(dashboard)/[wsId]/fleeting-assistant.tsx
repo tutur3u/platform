@@ -90,7 +90,6 @@ export default function FleetingAssistant({
     }
 
     await sendMessage({
-      id: currentChat.id,
       role: 'user',
       parts: [{ type: 'text', text: data.prompt }],
     });
@@ -183,13 +182,7 @@ export default function FleetingAssistant({
                     form.setValue('prompt', value);
                     form.trigger('prompt');
                   }}
-                  message={{
-                    ...message,
-                    content:
-                      message.parts[0]?.type === 'text'
-                        ? message.parts[0].text
-                        : '',
-                  }}
+                  message={message}
                   model={chat?.model}
                 />
               ))}

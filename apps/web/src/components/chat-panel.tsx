@@ -104,7 +104,7 @@ export function ChatPanel({
   useEffect(() => {
     const chatInput = document.getElementById('chat-input');
     if (chatInput) setChatInputHeight(chatInput.clientHeight);
-  });
+  }, []);
 
   const [files, setFiles] = useState<StatedFile[]>([]);
 
@@ -314,7 +314,6 @@ export function ChatPanel({
 
                   // If there is an id, append the message to the chat
                   await sendMessage({
-                    id,
                     role: 'user',
                     parts: [{ type: 'text', text: value }],
                   });

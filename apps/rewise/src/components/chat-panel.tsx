@@ -154,8 +154,8 @@ export function ChatPanel({
                 if (!id) return await handleCreateChat(value);
 
                 await sendMessage({
-                  messageId: id,
-                  text: value,
+                  role: 'user',
+                  parts: [{ type: 'text', text: value }],
                 });
               }}
               files={files}

@@ -287,7 +287,6 @@ const Chat = ({
   useEffect(() => {
     if (!pendingPrompt || !chat?.id || !wsId) return;
     sendMessage({
-      id: chat?.id,
       role: 'user',
       parts: [{ type: 'text', text: pendingPrompt }],
     });
