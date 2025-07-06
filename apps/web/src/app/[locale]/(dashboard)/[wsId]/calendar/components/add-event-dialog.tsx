@@ -61,6 +61,8 @@ export default function AddEventModal({
   const [errors, setErrors] = React.useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = React.useState(false);
   const [user, setUser] = React.useState<any>(null);
+  const [isDragging, setIsDragging] = React.useState(false);
+  const sliderRef = React.useRef<HTMLDivElement>(null);
   const supabase = createClient();
 
   React.useEffect(() => {
@@ -129,12 +131,102 @@ export default function AddEventModal({
     return Object.keys(newErrors).length === 0;
   };
 
-  const updateFormData = (field: string, value: string | number | boolean) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-    if (errors[field]) {
-      setErrors((prev) => ({ ...prev, [field]: '' }));
-    }
+  const updateFormData = React.useCallback(
+    (field: string, value: string | number | boolean) => {
+      setFormData((prev) => ({ ...prev, [field]: value }));
+      if (errors[field]) {
+        setErrors((prev) => ({ ...prev, [field]: '' }));
+      }
+    },
+    [errors]
+  );
+
+  const prioritySliderOptions = [
+    {
+      value: 'critical',
+      label: 'Critical',
+      color: 'bg-red-500',
+      icon: '😡',
+    },
+    {
+      value: 'high',
+      label: 'High',
+      color: 'bg-orange-400',
+      icon: '😞',
+    },
+    {
+      value: 'medium',
+      label: 'Medium',
+      color: 'bg-yellow-400',
+      icon: '😐',
+    },
+    {
+      value: 'low',
+      label: 'Low',
+      color: 'bg-green-500',
+      icon: '😊',
+    },
+  ];
+
+  const getPriorityFromPosition = React.useCallback((clientX: number) => {
+    if (!sliderRef.current) return 'medium';
+
+    const rect = sliderRef.current.getBoundingClientRect();
+    const position = (clientX - rect.left) / rect.width;
+
+    if (position <= 0.25) return 'critical';
+    if (position <= 0.5) return 'high';
+    if (position <= 0.75) return 'medium';
+    return 'low';
+  }, []);
+
+  const getCurrentPriorityIndex = () => {
+    return prioritySliderOptions.findIndex(
+      (opt) => opt.value === formData.priority
+    );
   };
+
+  const getSliderPosition = () => {
+    const index = getCurrentPriorityIndex();
+    return (index / (prioritySliderOptions.length - 1)) * 100;
+  };
+
+  const handleSliderMouseDown = (e: React.MouseEvent) => {
+    setIsDragging(true);
+    const newPriority = getPriorityFromPosition(e.clientX);
+    updateFormData('priority', newPriority);
+  };
+
+  const handleSliderMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging) return;
+    const newPriority = getPriorityFromPosition(e.clientX);
+    updateFormData('priority', newPriority);
+  };
+
+  const handleSliderMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  React.useEffect(() => {
+    if (isDragging) {
+      const handleGlobalMouseMove = (e: MouseEvent) => {
+        const newPriority = getPriorityFromPosition(e.clientX);
+        updateFormData('priority', newPriority);
+      };
+
+      const handleGlobalMouseUp = () => {
+        setIsDragging(false);
+      };
+
+      document.addEventListener('mousemove', handleGlobalMouseMove);
+      document.addEventListener('mouseup', handleGlobalMouseUp);
+
+      return () => {
+        document.removeEventListener('mousemove', handleGlobalMouseMove);
+        document.removeEventListener('mouseup', handleGlobalMouseUp);
+      };
+    }
+  }, [isDragging, getPriorityFromPosition, updateFormData]);
 
   const submitToDatabase = async () => {
     if (!wsId) {
@@ -250,12 +342,6 @@ export default function AddEventModal({
     },
   ];
 
-  const priorityOptions = [
-    { value: 'high', label: 'High', color: 'text-red-600', icon: '🔴' },
-    { value: 'medium', label: 'Medium', color: 'text-yellow-600', icon: '🟡' },
-    { value: 'low', label: 'Low', color: 'text-green-600', icon: '🟢' },
-  ];
-
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="max-h-[90vh] overflow-y-auto rounded-xl border border-zinc-200 bg-white p-6 shadow-lg sm:max-w-lg dark:border-zinc-800 dark:bg-zinc-900">
@@ -267,20 +353,104 @@ export default function AddEventModal({
                 Create Task
               </DialogTitle>
             </div>
-            {/* Priority icon selector */}
-            <div className="flex items-center gap-1">
-              {priorityOptions.map((opt) => (
-                <button
-                  key={opt.value}
-                  type="button"
-                  onClick={() => updateFormData('priority', opt.value)}
-                  aria-label={opt.label}
-                  title={opt.label}
-                  className={`rounded-full border px-1.5 py-1 text-xl transition-all focus:outline-none focus:ring-2 focus:ring-blue-300 ${formData.priority === opt.value ? `${opt.color} scale-110 border-blue-400 bg-zinc-100 dark:bg-zinc-800` : 'border-transparent text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800'}`}
+            {/* Compact Horizontal Priority Slider */}
+            <div className="flex w-56 flex-col items-center">
+              {/* Slider container */}
+              <div
+                className="relative flex w-full flex-col items-center"
+                style={{ height: 48 }}
+              >
+                {/* Track & Thumb (all in one draggable area) */}
+                <div
+                  ref={sliderRef}
+                  role="slider"
+                  aria-label="Priority level"
+                  aria-valuemin={0}
+                  aria-valuemax={3}
+                  aria-valuenow={getCurrentPriorityIndex()}
+                  aria-valuetext={
+                    prioritySliderOptions[getCurrentPriorityIndex()]?.label ||
+                    'Medium'
+                  }
+                  tabIndex={0}
+                  className="absolute top-3 right-0 left-0 z-30 h-7 cursor-pointer select-none rounded focus:outline-none focus:ring-2 focus:ring-blue-300 focus:ring-offset-2"
+                  style={{ height: 32 }}
+                  onMouseDown={handleSliderMouseDown}
+                  onMouseMove={handleSliderMouseMove}
+                  onMouseUp={handleSliderMouseUp}
+                  onTouchStart={(e) => {
+                    if (e.touches[0])
+                      handleSliderMouseDown({
+                        clientX: e.touches[0].clientX,
+                      } as any);
+                  }}
+                  onTouchMove={(e) => {
+                    if (e.touches[0])
+                      handleSliderMouseMove({
+                        clientX: e.touches[0].clientX,
+                      } as any);
+                  }}
+                  onTouchEnd={handleSliderMouseUp}
+                  onKeyDown={(e) => {
+                    const currentIndex = getCurrentPriorityIndex();
+                    if (
+                      currentIndex > 0 &&
+                      prioritySliderOptions[currentIndex - 1]?.value
+                    ) {
+                      updateFormData(
+                        'priority',
+                        prioritySliderOptions[currentIndex - 1]?.value ??
+                          'medium'
+                      );
+                    } else if (
+                      e.key === 'ArrowRight' &&
+                      currentIndex < prioritySliderOptions.length - 1 &&
+                      prioritySliderOptions[currentIndex + 1]?.value
+                    ) {
+                      updateFormData(
+                        'priority',
+                        prioritySliderOptions[currentIndex + 1]?.value ??
+                          'medium'
+                      );
+                    }
+                  }}
                 >
-                  <span>{opt.icon}</span>
-                </button>
-              ))}
+                  {/* Track */}
+                  <div className="absolute top-3 right-0 left-0 z-10 h-2 rounded-full bg-gradient-to-r from-red-500 via-orange-400 via-yellow-400 to-green-500 opacity-60" />
+                  {/* Thumb: selected icon in a styled circle */}
+                  <div
+                    style={{ left: `calc(${getSliderPosition()}% - 14px)` }}
+                    className="absolute top-1 z-20 flex flex-col items-center"
+                  >
+                    <div className="flex h-6 w-6 items-center justify-center rounded-full border-4 border-white bg-blue-500 shadow-lg ring-2 ring-blue-400">
+                      <span className="text-lg text-white drop-shadow-sm">
+                        {prioritySliderOptions[getCurrentPriorityIndex()]
+                          ?.icon ?? '❓'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                {/* Priority icons/labels row below track */}
+                <div className="absolute top-11 right-0 left-0 flex items-center justify-between px-1">
+                  {prioritySliderOptions.map((opt, idx) => (
+                    <div
+                      key={opt?.value ?? idx}
+                      className="flex w-10 flex-col items-center"
+                    >
+                      <span
+                        className={`transition-all ${formData.priority === opt?.value ? 'font-bold text-lg' : 'text-base opacity-40'}`}
+                      >
+                        {opt?.icon ?? '❓'}
+                      </span>
+                      <span
+                        className={`mt-0.5 text-xs transition-all ${formData.priority === opt?.value ? `${opt?.color ?? 'bg-zinc-400'} rounded px-1 font-bold text-white` : 'font-normal text-zinc-400 dark:text-zinc-500'}`}
+                      >
+                        {opt?.label ?? 'Unknown'}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
         </DialogHeader>
@@ -449,24 +619,53 @@ export default function AddEventModal({
               </SelectContent>
             </Select>
             <div className="grid grid-cols-2 gap-2">
-              <div className="w-48">
-                <Label htmlFor="start-date" className="mb-1 block text-xs">
-                  Start (optional)
-                </Label>
-                <div className="relative">
-                  <span className="-translate-y-1/2 pointer-events-none absolute top-1/2 left-3 flex items-center text-zinc-400">
-                    <CalendarIcon className="h-5 w-5" />
-                  </span>
-                  <Input
-                    id="start-date"
-                    type="datetime-local"
-                    value={formData.start_date}
-                    onChange={(e) =>
-                      updateFormData('start_date', e.target.value)
-                    }
-                    min={dayjs().format('YYYY-MM-DDTHH:mm')}
-                    className="h-10 w-full rounded-lg border-zinc-200 bg-zinc-50 pr-2 pl-10 text-sm shadow-sm transition-all focus:shadow-md focus:ring-2 focus:ring-blue-300 dark:border-zinc-700 dark:bg-zinc-800"
-                  />
+              <div className="flex w-full items-end gap-6">
+                {/* Start Date */}
+                <div className="w-48">
+                  <Label htmlFor="start-date" className="mb-1 block text-xs">
+                    Start (optional)
+                  </Label>
+                  <div className="relative">
+                    <span className="-translate-y-1/2 pointer-events-none absolute top-1/2 left-3 flex items-center text-zinc-400">
+                      <CalendarIcon className="h-5 w-5" />
+                    </span>
+                    <Input
+                      id="start-date"
+                      type="datetime-local"
+                      value={formData.start_date}
+                      onChange={(e) =>
+                        updateFormData('start_date', e.target.value)
+                      }
+                      min={dayjs().format('YYYY-MM-DDTHH:mm')}
+                      className="h-10 w-full rounded-lg border-zinc-200 bg-zinc-50 pr-2 pl-10 text-sm shadow-sm transition-all focus:shadow-md focus:ring-2 focus:ring-blue-300 dark:border-zinc-700 dark:bg-zinc-800"
+                    />
+                  </div>
+                </div>
+                {/* End Date */}
+                <div className="w-48">
+                  <Label htmlFor="end-date" className="mb-1 block text-xs">
+                    End (optional)
+                  </Label>
+                  <div className="relative">
+                    <span className="-translate-y-1/2 pointer-events-none absolute top-1/2 left-3 flex items-center text-zinc-400">
+                      <CalendarIcon className="h-5 w-5" />
+                    </span>
+                    <Input
+                      id="end-date"
+                      type="datetime-local"
+                      value={formData.end_date}
+                      onChange={(e) =>
+                        updateFormData('end_date', e.target.value)
+                      }
+                      min={dayjs().format('YYYY-MM-DDTHH:mm')}
+                      className={`h-10 w-full rounded-lg border-zinc-200 bg-zinc-50 pr-2 pl-10 text-sm shadow-sm transition-all focus:shadow-md focus:ring-2 focus:ring-blue-300 dark:border-zinc-700 dark:bg-zinc-800 ${errors.end_date ? 'border-destructive' : ''}`}
+                    />
+                  </div>
+                  {errors.end_date && (
+                    <p className="mt-0.5 text-destructive text-xs">
+                      {errors.end_date}
+                    </p>
+                  )}
                 </div>
               </div>
               {/* End Date */}

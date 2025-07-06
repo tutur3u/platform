@@ -9,6 +9,7 @@ import {
   verifyHasSecrets,
 } from '@tuturuuu/utils/workspace-helper';
 import { getChats } from '../../chat/helper';
+import type { ExtendedWorkspaceTask } from '../../time-tracker/types';
 import TasksSidebarContent from './tasks-sidebar-content';
 
 interface TasksSidebarProps {
@@ -84,6 +85,33 @@ async function getTaskBoardsWithDetails(
   return enrichedBoards;
 }
 
+// Transform task boards into a flat array of extended tasks
+function transformTaskBoardsToTasks(
+  taskBoards: Partial<WorkspaceTaskBoard>[]
+): ExtendedWorkspaceTask[] {
+  const tasks: ExtendedWorkspaceTask[] = [];
+
+  for (const board of taskBoards) {
+    if (!board.lists) continue;
+
+    for (const list of board.lists) {
+      if (!list.tasks) continue;
+
+      for (const task of list.tasks) {
+        if (!task.id) continue;
+
+        tasks.push({
+          ...task,
+          board_name: board.name,
+          list_name: list.name,
+        } as ExtendedWorkspaceTask);
+      }
+    }
+  }
+
+  return tasks;
+}
+
 const hasKey = (key: string) => {
   const keyEnv = process.env[key];
   return !!keyEnv && keyEnv.length > 0;
@@ -94,6 +122,9 @@ export default async function TasksSidebar({
   locale,
 }: TasksSidebarProps) {
   const taskBoardsWithDetails = await getTaskBoardsWithDetails(wsId);
+
+  // Transform task boards into a flat array of tasks
+  const tasks = transformTaskBoardsToTasks(taskBoardsWithDetails);
 
   // Check permissions and secrets for AI chat
   const { withoutPermission } = await getPermissions({ wsId });
@@ -128,7 +159,7 @@ export default async function TasksSidebar({
   return (
     <TasksSidebarContent
       wsId={wsId}
-      initialTaskBoards={taskBoardsWithDetails}
+      tasks={tasks}
       hasKeys={hasKeys}
       chats={chats}
       count={count}
