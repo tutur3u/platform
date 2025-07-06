@@ -25,9 +25,6 @@ const setupDayjsLocale = async (locale?: string) => {
   }
 };
 
-// Initialize with default locale
-setupDayjsLocale();
-
 // Define the sync result type
 type SyncResult = {
   ws_id: string;
