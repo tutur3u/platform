@@ -3868,12 +3868,9 @@ export type Database = {
           max_split_duration_minutes: number | null;
           min_split_duration_minutes: number | null;
           name: string;
-          priority: number | null;
+          priority: Database['public']['Enums']['task_priority'] | null;
           start_date: string | null;
           total_duration: number | null;
-          user_defined_priority:
-            | Database['public']['Enums']['task_priority']
-            | null;
         };
         Insert: {
           archived?: boolean | null;
@@ -3890,12 +3887,9 @@ export type Database = {
           max_split_duration_minutes?: number | null;
           min_split_duration_minutes?: number | null;
           name: string;
-          priority?: number | null;
+          priority?: Database['public']['Enums']['task_priority'] | null;
           start_date?: string | null;
           total_duration?: number | null;
-          user_defined_priority?:
-            | Database['public']['Enums']['task_priority']
-            | null;
         };
         Update: {
           archived?: boolean | null;
@@ -3912,12 +3906,9 @@ export type Database = {
           max_split_duration_minutes?: number | null;
           min_split_duration_minutes?: number | null;
           name?: string;
-          priority?: number | null;
+          priority?: Database['public']['Enums']['task_priority'] | null;
           start_date?: string | null;
           total_duration?: number | null;
-          user_defined_priority?:
-            | Database['public']['Enums']['task_priority']
-            | null;
         };
         Relationships: [
           {
@@ -8736,7 +8727,7 @@ export type Database = {
       platform_service: 'TUTURUUU' | 'REWISE' | 'NOVA' | 'UPSKII';
       subscription_status: 'trialing' | 'active' | 'canceled' | 'past_due';
       task_board_status: 'not_started' | 'active' | 'done' | 'closed';
-      task_priority: 'low' | 'medium' | 'high' | 'urgent';
+      task_priority: 'low' | 'normal' | 'high' | 'critical';
       workspace_role_permission:
         | 'view_infrastructure'
         | 'manage_workspace_secrets'
@@ -8899,7 +8890,7 @@ export const Constants = {
       platform_service: ['TUTURUUU', 'REWISE', 'NOVA', 'UPSKII'],
       subscription_status: ['trialing', 'active', 'canceled', 'past_due'],
       task_board_status: ['not_started', 'active', 'done', 'closed'],
-      task_priority: ['low', 'medium', 'high', 'urgent'],
+      task_priority: ['low', 'normal', 'high', 'critical'],
       workspace_role_permission: [
         'view_infrastructure',
         'manage_workspace_secrets',
