@@ -178,7 +178,20 @@ export default function Projects() {
             <span className="text-white">NEO Culture</span>{' '}
             <span className="border-b-4 border-[#FBC721] whitespace-nowrap text-[#5FC6E5]">
               PROJECTS{' '}
-              <Bot className="inline-block h-8 w-8 text-yellow-400 md:h-10 md:w-10 lg:h-12 lg:w-12" />
+              <motion.div
+                className="inline-block"
+                animate={{
+                  rotate: [0, 15, -15, 0],
+                  scale: [1, 1.1, 1],
+                }}
+                transition={{
+                  duration: 2,
+                  repeat: Infinity,
+                  ease: 'easeInOut',
+                }}
+              >
+                <Bot className="inline-block h-8 w-8 text-yellow-400 md:h-10 md:w-10 lg:h-12 lg:w-12" />
+              </motion.div>
             </span>
           </p>
           <div className="mt-1 w-2/3 md:w-full">
@@ -190,6 +203,134 @@ export default function Projects() {
         </div>
 
         {/* <Canvas className="absolute top-2/4 -z-10 aspect-square w-[120%] -translate-y-1/2" /> */}
+      </motion.div>
+
+      <motion.div
+        className="relative mt-16 flex flex-col items-center text-center md:mt-24"
+        initial={{ opacity: 0, y: 50 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.8, delay: 0.2 }}
+      >
+        <div className="relative">
+          <motion.div
+            className="absolute -inset-4 rounded-full bg-gradient-to-r from-[#F4B71A]/20 to-[#1AF4E6]/20 blur-xl"
+            animate={{
+              scale: [1, 1.1, 1],
+              opacity: [0.3, 0.6, 0.3],
+            }}
+            transition={{
+              duration: 4,
+              repeat: Infinity,
+              ease: 'easeInOut',
+            }}
+          />
+          <p className="relative text-3xl leading-normal font-extrabold md:text-4xl lg:text-5xl">
+            <span className="text-white">Welcome to our</span>{' '}
+            <span className="relative">
+              <span className="border-b-4 border-[#FBC721] whitespace-nowrap text-[#5FC6E5]">
+                Project Showcase
+              </span>
+              <motion.div
+                className="absolute -top-2 -right-6 text-2xl md:-top-3 md:-right-8 md:text-3xl lg:-top-4 lg:-right-10 lg:text-4xl"
+                animate={{
+                  rotate: [0, 15, -15, 0],
+                  scale: [1, 1.1, 1],
+                }}
+                transition={{
+                  duration: 2,
+                  repeat: Infinity,
+                  ease: 'easeInOut',
+                }}
+              >
+                ✨
+              </motion.div>
+            </span>{' '}
+            <span className="text-white">Sites</span>
+          </p>
+        </div>
+
+        <motion.div
+          className="mt-6 flex items-center justify-center gap-4"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.8, delay: 0.4 }}
+        >
+          <motion.div
+            className="h-px w-16 bg-gradient-to-r from-transparent to-[#F4B71A] md:w-24"
+            animate={{
+              opacity: [0.3, 1, 0.3],
+            }}
+            transition={{
+              duration: 2,
+              repeat: Infinity,
+              ease: 'easeInOut',
+            }}
+          />
+          <div className="flex items-center gap-2">
+            <motion.div
+              className="h-2 w-2 rounded-full bg-[#F4B71A]"
+              animate={{
+                scale: [1, 1.5, 1],
+                opacity: [0.5, 1, 0.5],
+              }}
+              transition={{
+                duration: 1.5,
+                repeat: Infinity,
+                ease: 'easeInOut',
+              }}
+            />
+            <motion.div
+              className="h-2 w-2 rounded-full bg-[#1AF4E6]"
+              animate={{
+                scale: [1, 1.5, 1],
+                opacity: [0.5, 1, 0.5],
+              }}
+              transition={{
+                duration: 1.5,
+                repeat: Infinity,
+                ease: 'easeInOut',
+                delay: 0.5,
+              }}
+            />
+            <motion.div
+              className="h-2 w-2 rounded-full bg-[#F4B71A]"
+              animate={{
+                scale: [1, 1.5, 1],
+                opacity: [0.5, 1, 0.5],
+              }}
+              transition={{
+                duration: 1.5,
+                repeat: Infinity,
+                ease: 'easeInOut',
+                delay: 1,
+              }}
+            />
+          </div>
+          <motion.div
+            className="h-px w-16 bg-gradient-to-l from-transparent to-[#1AF4E6] md:w-24"
+            animate={{
+              opacity: [0.3, 1, 0.3],
+            }}
+            transition={{
+              duration: 2,
+              repeat: Infinity,
+              ease: 'easeInOut',
+              delay: 1,
+            }}
+          />
+        </motion.div>
+
+        <motion.p
+          className="mt-4 text-lg leading-relaxed font-medium text-gray-300 md:text-xl"
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.8, delay: 0.6 }}
+        >
+          Discover the innovation and creativity behind our digital experiences
+        </motion.p>
       </motion.div>
 
       <motion.div
