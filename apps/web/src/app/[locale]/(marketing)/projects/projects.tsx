@@ -269,7 +269,7 @@ export default function Projects() {
           </div>
         </div>
 
-        <div className="mt-6 mb-4">
+        <div className="mt-8 mb-6">
           <div className="relative inline-flex rounded-xl border border-white/20 bg-white/5 p-1 backdrop-blur-sm">
             <motion.div
               className="absolute inset-y-1 rounded-lg bg-gradient-to-r from-[#F4B71A] to-[#1AF4E6]"
@@ -304,7 +304,7 @@ export default function Projects() {
           </div>
         </div>
 
-        <div className="mt-4 flex flex-col gap-4">
+        <div className="mt-6 flex flex-col gap-6">
           {/* Type Filters */}
           <div className="flex justify-center">
             <div className="relative flex rounded-2xl border border-white/10 bg-white/5 p-1">
@@ -386,16 +386,16 @@ export default function Projects() {
         {/* <Canvas className="absolute top-2/4 -z-10 aspect-square w-[120%] -translate-y-1/2" /> */}
       </motion.div>
 
-      <div className="mt-12 px-4 md:px-6 lg:px-8">
+      <div className="mt-8 px-4 md:px-6 lg:px-8">
         {filteredProjects.length > 0 ? (
           <>
             {viewMode === 'carousel' ? (
               /* Carousel Layout */
               <div className="relative mx-auto max-w-screen-2xl">
-                {/* Project Info */}
-                <div className="mb-8 text-center">
+              
+                <div className=" text-center">
                   <div className="mt-2 flex flex-col items-center justify-center gap-2">
-                    <div className="flex items-center gap-2"></div>
+              
                   </div>
                   {!isDragging && (
                     <motion.div
