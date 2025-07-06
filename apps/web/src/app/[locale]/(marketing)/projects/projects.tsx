@@ -1,8 +1,5 @@
 'use client';
 
-// ============================================================================
-// IMPORTS
-// ============================================================================
 // import Canvas from './canvas';
 import { Project, projects } from './data';
 import ProjectCard from './project-card';
@@ -11,96 +8,57 @@ import { AnimatePresence, PanInfo, motion } from 'framer-motion';
 import { Bot, Layers, LayoutGrid } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 
-// ============================================================================
-// TYPES
-// ============================================================================
 type ProjectType = 'web' | 'software' | 'hardware' | undefined;
 type ProjectStatus = 'planning' | 'ongoing' | 'completed' | undefined;
 type ViewMode = 'carousel' | 'grid';
 
-// ============================================================================
-// MAIN COMPONENT
-// ============================================================================
 export default function Projects() {
-  // --------------------------------------------------------------------------
-  // STATE - Filter State
-  // --------------------------------------------------------------------------
   const [type, setType] = useState<ProjectType>(undefined);
   const [status, setStatus] = useState<ProjectStatus>(undefined);
 
-  // --------------------------------------------------------------------------
-  // STATE - View Mode State
-  // --------------------------------------------------------------------------
   const [viewMode, setViewMode] = useState<ViewMode>('carousel');
 
-  // --------------------------------------------------------------------------
-  // STATE - Modal State
-  // --------------------------------------------------------------------------
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [projectDetail, setProjectDetail] = useState<Project | undefined>(
     undefined
   );
 
-  // --------------------------------------------------------------------------
-  // STATE - Carousel State
-  // --------------------------------------------------------------------------
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
 
-  // --------------------------------------------------------------------------
-  // STATE - Auto-scroll State
-  // --------------------------------------------------------------------------
   const [isAutoScrolling, setIsAutoScrolling] = useState(true);
   const [isUserInteracting, setIsUserInteracting] = useState(false);
-  const [autoScrollProgress, setAutoScrollProgress] = useState(0);
 
-  // --------------------------------------------------------------------------
-  // STATE - Drag State
-  // --------------------------------------------------------------------------
   const [dragOffset, setDragOffset] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
 
-  // --------------------------------------------------------------------------
-  // COMPUTED VALUES
-  // --------------------------------------------------------------------------
-  // Filter projects based on selected type and status
   const filteredProjects = projects.filter((project) => {
     const matchesType = !type || project.type === type;
     const matchesStatus = !status || project.status === status;
     return matchesType && matchesStatus;
   });
 
-  // --------------------------------------------------------------------------
-  // CAROUSEL NAVIGATION FUNCTIONS
-  // --------------------------------------------------------------------------
-
-  // Navigate to next slide with animation
   const nextSlide = useCallback(() => {
     if (isTransitioning || filteredProjects.length <= 1) return;
     setIsTransitioning(true);
-    setAutoScrollProgress(0);
     setCurrentIndex((prev) =>
       prev === filteredProjects.length - 1 ? 0 : prev + 1
     );
-    setTimeout(() => setIsTransitioning(false), 400); // Increased duration for smoother animation
+    setTimeout(() => setIsTransitioning(false), 400);
   }, [filteredProjects.length, isTransitioning]);
 
-  // Navigate to previous slide with animation
   const prevSlide = useCallback(() => {
     if (isTransitioning || filteredProjects.length <= 1) return;
     setIsTransitioning(true);
-    setAutoScrollProgress(0);
     setCurrentIndex((prev) =>
       prev === 0 ? filteredProjects.length - 1 : prev - 1
     );
     setTimeout(() => setIsTransitioning(false), 400);
   }, [filteredProjects.length, isTransitioning]);
 
-  // Navigate directly to a specific slide
   const goToSlide = (index: number) => {
     if (index === currentIndex || isTransitioning) return;
     setIsTransitioning(true);
-    setAutoScrollProgress(0);
     setIsUserInteracting(true);
     setCurrentIndex(index);
     setTimeout(() => {
@@ -108,10 +66,6 @@ export default function Projects() {
       setTimeout(() => setIsUserInteracting(false), 3000);
     }, 400);
   };
-
-  // --------------------------------------------------------------------------
-  // DRAG HANDLER
-  // --------------------------------------------------------------------------
 
   const handleDragStart = () => {
     setIsUserInteracting(true);
@@ -144,10 +98,6 @@ export default function Projects() {
     setTimeout(() => setIsUserInteracting(false), 3000);
   };
 
-  // --------------------------------------------------------------------------
-  // FILTER HANDLERS
-  // --------------------------------------------------------------------------
-
   const handleTypeFilter = (newType: ProjectType) => {
     setType(newType === type ? undefined : newType);
     setCurrentIndex(0);
@@ -164,10 +114,6 @@ export default function Projects() {
     setCurrentIndex(0);
   };
 
-  // --------------------------------------------------------------------------
-  // MODAL HANDLERS
-  // --------------------------------------------------------------------------
-
   const openProjectModal = (project: Project) => {
     setProjectDetail(project);
     setIsModalOpen(true);
@@ -175,26 +121,15 @@ export default function Projects() {
 
   const closeProjectModal = () => setIsModalOpen(false);
 
-  // --------------------------------------------------------------------------
-  // AUTO-SCROLL EFFECT
-  // --------------------------------------------------------------------------
   useEffect(() => {
     if (!isAutoScrolling || isUserInteracting || filteredProjects.length <= 1) {
-      setAutoScrollProgress(0);
       return;
     }
 
-    let progressInterval: NodeJS.Timeout;
     const autoScrollDuration = 4000;
-
-    progressInterval = setInterval(() => {
-      setAutoScrollProgress((prev) => prev + 100 / (autoScrollDuration / 50));
-    }, 50);
-
     const slideTimeout = setTimeout(nextSlide, autoScrollDuration);
 
     return () => {
-      clearInterval(progressInterval);
       clearTimeout(slideTimeout);
     };
   }, [
@@ -203,49 +138,35 @@ export default function Projects() {
     nextSlide,
     filteredProjects.length,
     currentIndex,
-  ]); // Added currentIndex to reset timeout on nav
+  ]);
 
-  // --------------------------------------------------------------------------
-  // HELPER FUNCTIONS
-  // --------------------------------------------------------------------------
-
-  // *** NEW: Helper function to calculate card styles based on position ***
   const calculateCardStyle = (position: number) => {
     const isCenter = position === 0;
-    const isVisible = Math.abs(position) <= 1; // Show only 3 cards
+    const isVisible = Math.abs(position) <= 1;
 
     let x = 0;
     if (position !== 0) {
-      // Tighter spacing for 3-card layout
-      x = position * 300; // Reduced spacing to prevent overflow
+      x = position * 300;
     }
 
     return {
       x: x,
-      y: isCenter ? 0 : 15, // Slight y offset
-      scale: isCenter ? 1 : 0.9, // Less dramatic scaling
-      zIndex: 5 - Math.abs(position), // Center card has highest zIndex
+      y: isCenter ? 0 : 15,
+      scale: isCenter ? 1 : 0.9,
+      zIndex: 5 - Math.abs(position),
       opacity: isVisible ? (isCenter ? 1 : 0.7) : 0,
     };
   };
 
-  // --------------------------------------------------------------------------
-  // VIEW MODE HANDLERS
-  // --------------------------------------------------------------------------
   const handleViewModeChange = (mode: ViewMode) => {
     setViewMode(mode);
-    // Reset auto-scroll when switching to grid
     if (mode === 'grid') {
       setIsAutoScrolling(false);
     }
   };
 
-  // --------------------------------------------------------------------------
-  // MAIN RENDER
-  // --------------------------------------------------------------------------
   return (
     <>
-      {/* Hero Section */}
       <motion.div
         className="relative mt-4 flex flex-col items-center text-center md:mt-28"
         initial={{ opacity: 0, y: 50 }}
@@ -305,7 +226,6 @@ export default function Projects() {
         </div>
 
         <div className="mt-6 flex flex-col gap-6">
-          {/* Type Filters */}
           <div className="flex justify-center">
             <div className="relative flex rounded-2xl border border-white/10 bg-white/5 p-1">
               <motion.div
@@ -344,7 +264,6 @@ export default function Projects() {
             </div>
           </div>
 
-          {/* Status Filters */}
           <div className="flex justify-center">
             <div className="relative flex rounded-2xl border border-white/10 bg-white/5 p-1">
               <motion.div
@@ -392,9 +311,7 @@ export default function Projects() {
         {filteredProjects.length > 0 ? (
           <>
             {viewMode === 'carousel' ? (
-              /* Carousel Layout */
               <div className="relative mx-auto max-w-screen-2xl">
-                {/* Carousel Container */}
                 <div className="relative cursor-grab active:cursor-grabbing">
                   <motion.div
                     className="flex items-center justify-center"
@@ -410,7 +327,6 @@ export default function Projects() {
                     transition={{ type: 'spring', stiffness: 300, damping: 30 }}
                     style={{ minHeight: '450px', userSelect: 'none' }}
                   >
-                    {/* Mobile Carousel */}
                     <div className="block w-full max-w-sm md:hidden">
                       {filteredProjects[currentIndex] && (
                         <motion.div
@@ -432,12 +348,11 @@ export default function Projects() {
                         </motion.div>
                       )}
                     </div>
-                    {/* Desktop Carousel */}
+
                     <div className="relative hidden h-[450px] w-full items-center justify-center px-16 md:flex">
                       {filteredProjects.map((project, index) => {
                         const position = index - currentIndex;
 
-                        // Only render 3 cards: left, center, right
                         if (Math.abs(position) > 1) return null;
 
                         return (
@@ -479,7 +394,6 @@ export default function Projects() {
                   </motion.div>
                 </div>
 
-                {/* Dot Indicators */}
                 {filteredProjects.length > 1 && (
                   <div className="mt-8 flex justify-center space-x-3">
                     {filteredProjects.map((_, index) => (
@@ -502,7 +416,6 @@ export default function Projects() {
                   </div>
                 )}
 
-                {/* Auto-scroll Controls */}
                 <div className="mt-6 flex justify-center">
                   <motion.button
                     onClick={() => setIsAutoScrolling(!isAutoScrolling)}
@@ -521,9 +434,7 @@ export default function Projects() {
                 </div>
               </div>
             ) : (
-              /* Grid Layout */
               <div className="mx-auto max-w-7xl">
-                {/* Grid Container */}
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -555,7 +466,6 @@ export default function Projects() {
             )}
           </>
         ) : (
-          /* Empty State */
           <div className="py-12 text-center">
             <div className="mb-4 text-6xl">🔍</div>
             <h3 className="mb-2 text-xl text-white md:text-2xl">
@@ -574,7 +484,6 @@ export default function Projects() {
         )}
       </div>
 
-      {/* Project Modal */}
       <AnimatePresence>
         {isModalOpen && (
           <ProjectDetail data={projectDetail} onClose={closeProjectModal} />
