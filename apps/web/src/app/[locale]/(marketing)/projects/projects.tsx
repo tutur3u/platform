@@ -170,9 +170,8 @@ export default function Projects() {
       <motion.div
         className="relative mt-4 flex flex-col items-center text-center md:mt-28"
         initial={{ opacity: 0, y: 50 }}
+        animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 1 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
       >
         <div className="flex flex-col items-center text-center">
           <p className="text-4xl leading-normal font-extrabold md:text-5xl lg:text-6xl">
@@ -191,18 +190,18 @@ export default function Projects() {
         </div>
 
         <div className="mt-8 mb-6">
-          <div className="relative inline-flex rounded-xl border border-white/20 bg-white/5 p-1 backdrop-blur-sm">
+          <div className="relative flex rounded-xl border border-white/20 bg-white/5 p-1 backdrop-blur-sm">
             <motion.div
               className="absolute inset-y-1 rounded-lg bg-gradient-to-r from-[#F4B71A] to-[#1AF4E6]"
               animate={{
-                x: viewMode === 'carousel' ? 0 : '100%',
-                width: viewMode === 'carousel' ? '50%' : '50%',
+                x: viewMode === 'carousel' ? '2px' : 'calc(100% + 2px)',
               }}
+              style={{ width: 'calc(50% - 4px)' }}
               transition={{ type: 'spring', stiffness: 300, damping: 30 }}
             />
             <button
               onClick={() => handleViewModeChange('carousel')}
-              className={`relative z-10 flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors duration-200 ${
+              className={`relative z-10 flex w-1/2 items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors duration-200 ${
                 viewMode === 'carousel'
                   ? 'text-slate-900'
                   : 'text-white/70 hover:text-white'
@@ -213,7 +212,7 @@ export default function Projects() {
             </button>
             <button
               onClick={() => handleViewModeChange('grid')}
-              className={`relative z-10 flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors duration-200 ${
+              className={`relative z-10 flex w-1/2 items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors duration-200 ${
                 viewMode === 'grid'
                   ? 'text-slate-900'
                   : 'text-white/70 hover:text-white'
@@ -311,7 +310,13 @@ export default function Projects() {
         {filteredProjects.length > 0 ? (
           <>
             {viewMode === 'carousel' ? (
-              <div className="relative mx-auto max-w-screen-2xl">
+              <motion.div
+                className="relative mx-auto max-w-screen-2xl"
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6, ease: 'easeOut' }}
+              >
                 <div className="relative cursor-grab active:cursor-grabbing">
                   <motion.div
                     className="flex items-center justify-center"
@@ -330,11 +335,13 @@ export default function Projects() {
                     <div className="block w-full max-w-sm md:hidden">
                       {filteredProjects[currentIndex] && (
                         <motion.div
+                          initial={{ opacity: 0, scale: 0.8 }}
                           animate={{
+                            opacity: 1,
                             scale: isDragging ? 0.95 : 1,
                             rotateY: isDragging ? dragOffset * 0.05 : 0,
                           }}
-                          transition={{ duration: 0.2 }}
+                          transition={{ duration: 0.5, ease: 'easeOut' }}
                         >
                           <ProjectCard
                             project={filteredProjects[currentIndex]!}
@@ -359,12 +366,13 @@ export default function Projects() {
                           <motion.div
                             key={project.name}
                             className="absolute h-[400px] w-80"
-                            initial={false}
+                            initial={{ opacity: 0, scale: 0.8 }}
                             animate={calculateCardStyle(position)}
                             transition={{
                               type: 'spring',
                               stiffness: 300,
                               damping: 30,
+                              duration: 0.6,
                             }}
                             style={{ cursor: 'pointer' }}
                             onClick={() => {
@@ -395,7 +403,13 @@ export default function Projects() {
                 </div>
 
                 {filteredProjects.length > 1 && (
-                  <div className="mt-8 flex justify-center space-x-3">
+                  <motion.div
+                    className="mt-8 flex justify-center space-x-3"
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.6, delay: 0.3 }}
+                  >
                     {filteredProjects.map((_, index) => (
                       <motion.button
                         key={index}
@@ -413,10 +427,16 @@ export default function Projects() {
                         />
                       </motion.button>
                     ))}
-                  </div>
+                  </motion.div>
                 )}
 
-                <div className="mt-6 flex justify-center">
+                <motion.div
+                  className="mt-6 flex justify-center"
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.6, delay: 0.4 }}
+                >
                   <motion.button
                     onClick={() => setIsAutoScrolling(!isAutoScrolling)}
                     whileHover={{ scale: 1.05 }}
@@ -431,23 +451,40 @@ export default function Projects() {
                       ? 'Pause Auto-scroll'
                       : 'Resume Auto-scroll'}
                   </motion.button>
-                </div>
-              </div>
+                </motion.div>
+              </motion.div>
             ) : (
-              <div className="mx-auto max-w-7xl">
+              <motion.div
+                className="mx-auto max-w-7xl"
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6, ease: 'easeOut' }}
+              >
                 <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5 }}
+                  initial={{ opacity: 0 }}
+                  whileInView={{ opacity: 1 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.8, delay: 0.2 }}
                   className="grid gap-6 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
                 >
                   {filteredProjects.map((project, index) => (
                     <motion.div
                       key={project.name}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.3, delay: index * 0.1 }}
-                      whileHover={{ scale: 1.05 }}
+                      initial={{ opacity: 0, y: 40, scale: 0.9 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      transition={{
+                        duration: 0.5,
+                        delay: index * 0.1,
+                        ease: 'easeOut',
+                        type: 'spring',
+                        stiffness: 100,
+                      }}
+                      whileHover={{
+                        scale: 1.05,
+                        y: -5,
+                        transition: { duration: 0.2 },
+                      }}
                       whileTap={{ scale: 0.95 }}
                       className="cursor-pointer"
                       onClick={() => openProjectModal(project)}
@@ -462,7 +499,7 @@ export default function Projects() {
                     </motion.div>
                   ))}
                 </motion.div>
-              </div>
+              </motion.div>
             )}
           </>
         ) : (
