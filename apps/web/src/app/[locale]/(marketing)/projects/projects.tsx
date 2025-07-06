@@ -246,7 +246,13 @@ export default function Projects() {
   return (
     <>
       {/* Hero Section */}
-      <div className="relative mt-16 flex flex-col items-center text-center md:mt-12">
+      <motion.div
+        className="relative mt-4 flex flex-col items-center text-center md:mt-28"
+        initial={{ opacity: 0, y: 50 }}
+        transition={{ duration: 1 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+      >
         <div className="flex flex-col items-center text-center">
           <p className="text-4xl leading-normal font-extrabold md:text-5xl lg:text-6xl">
             <span className="text-white">NEO Culture</span>{' '}
@@ -378,7 +384,7 @@ export default function Projects() {
           </div>
         </div>
         {/* <Canvas className="absolute top-2/4 -z-10 aspect-square w-[120%] -translate-y-1/2" /> */}
-      </div>
+      </motion.div>
 
       <div className="mt-12 px-4 md:px-6 lg:px-8">
         {filteredProjects.length > 0 ? (
