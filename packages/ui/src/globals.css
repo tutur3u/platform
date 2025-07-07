@@ -35,6 +35,28 @@
   .overflow-wrap-anywhere {
     overflow-wrap: anywhere;
   }
+  .perspective-1000 {
+    perspective: 1000px;
+  }
+  .transform-gpu {
+    transform-style: preserve-3d;
+    backface-visibility: hidden;
+    will-change: transform;
+  }
+  .scrollbar-thin {
+    scrollbar-width: thin;
+  }
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 4px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: linear-gradient(to bottom, #f4b71a, #1af4e6);
+    border-radius: 4px;
+  }
 }
 
 :root {

@@ -1,5 +1,6 @@
 import { Project } from './data';
 import { motion } from 'framer-motion';
+import { ExternalLink, Github, Play, Star, Users, Zap } from 'lucide-react';
 
 interface ProjectCardProps {
   project: Project;
@@ -9,18 +10,33 @@ interface ProjectCardProps {
   onClick: () => void;
 }
 
-// Status color mapping for visual indicators
+// Enhanced status color mapping with gradients
 const STATUS_COLORS = {
-  completed: 'bg-green-500',
-  ongoing: 'bg-blue-500',
-  planning: 'bg-yellow-500',
+  completed: 'from-green-500 to-emerald-600',
+  ongoing: 'from-blue-500 to-cyan-600',
+  planning: 'from-yellow-500 to-orange-500',
 } as const;
 
-// Type label mapping for display
-const TYPE_LABELS = {
-  web: 'Web Dev',
-  software: 'Software',
-  hardware: 'Hardware',
+// Enhanced type configurations with icons and colors
+const TYPE_CONFIG = {
+  web: {
+    label: 'Web Development',
+    icon: ExternalLink,
+    gradient: 'from-purple-500 to-pink-500',
+    bgGradient: 'from-purple-500/10 to-pink-500/10',
+  },
+  software: {
+    label: 'Software',
+    icon: Zap,
+    gradient: 'from-blue-500 to-cyan-500',
+    bgGradient: 'from-blue-500/10 to-cyan-500/10',
+  },
+  hardware: {
+    label: 'Hardware',
+    icon: Star,
+    gradient: 'from-orange-500 to-red-500',
+    bgGradient: 'from-orange-500/10 to-red-500/10',
+  },
 } as const;
 
 export default function ProjectCard({
@@ -43,119 +59,173 @@ export default function ProjectCard({
   };
 
   const isHighlighted = getHighlightStatus();
+  const typeConfig = TYPE_CONFIG[project.type];
+  const TypeIcon = typeConfig.icon;
 
-  // Get card container styles based on state
+  // Enhanced card container styles with modern glassmorphism
   const getCardContainerStyles = () => {
     const baseStyles = `
-      relative h-full min-h-[400px] rounded-2xl p-6 text-left transition-all duration-300
-      border-2 backdrop-blur-sm
+      relative h-full min-h-[480px] rounded-3xl p-6 pb-24 text-left transition-all duration-500
+      border backdrop-blur-md overflow-hidden group flex flex-col
     `;
 
     const centerStyles = isCenter
-      ? 'shadow-2xl shadow-[#1AF4E6]/30 border-[#1AF4E6]/40'
+      ? 'shadow-2xl shadow-[#1AF4E6]/20 border-[#1AF4E6]/30'
       : 'border-white/10';
 
     const highlightStyles = isHighlighted
-      ? 'bg-gradient-to-br from-[#F4B71A]/10 to-[#1AF4E6]/10 border-[#1AF4E6]/50 shadow-xl shadow-[#1AF4E6]/20'
+      ? `bg-gradient-to-br ${typeConfig.bgGradient} border-[#1AF4E6]/50 shadow-xl shadow-[#1AF4E6]/25`
       : isCenter
-        ? 'bg-white/10 hover:bg-white/15'
-        : 'bg-white/5 hover:bg-white/10 hover:border-white/20 hover:shadow-lg';
+        ? 'bg-white/[0.08] hover:bg-white/[0.12] border-white/20'
+        : 'bg-white/[0.03] hover:bg-white/[0.08] hover:border-white/20 hover:shadow-lg';
 
     return `${baseStyles} ${centerStyles} ${highlightStyles}`;
   };
 
-  // Get type badge styles
-  const getTypeBadgeStyles = () => {
-    if (isHighlighted) {
-      return 'bg-gradient-to-r from-[#F4B71A] to-[#1AF4E6] text-black';
-    } else if (isCenter) {
-      return 'bg-gradient-to-r from-[#F4B71A]/30 to-[#1AF4E6]/30 text-white border border-white/20';
-    } else {
-      return 'bg-gradient-to-r from-[#F4B71A]/20 to-[#1AF4E6]/20 text-white border border-white/10';
-    }
-  };
-
-  // Render the card header with title and status
-  const renderHeader = () => (
-    <div className="mb-6 flex items-start justify-between">
-      <div className="flex-1">
-        <h3
-          className={`mb-3 leading-tight font-bold ${isCenter ? 'text-2xl' : 'text-xl'} text-white`}
-        >
-          {project.name}
-        </h3>
-        {project.manager && (
-          <p className={`text-white/70 ${isCenter ? 'text-base' : 'text-sm'}`}>
-            Led by {project.manager}
-          </p>
-        )}
-      </div>
-
-      {/* Status Indicator Dot */}
+  // Enhanced floating status indicator
+  const renderStatusIndicator = () => (
+    <div className="absolute top-4 left-4">
       <div
-        className={`rounded-full ${STATUS_COLORS[project.status]} ${isCenter ? 'h-4 w-4' : 'h-3 w-3'}`}
-      />
+        className={`rounded-full bg-gradient-to-r px-3 py-1 text-xs font-bold text-white shadow-lg backdrop-blur-sm ${STATUS_COLORS[project.status]} `}
+      >
+        {project.status.charAt(0).toUpperCase() + project.status.slice(1)}
+      </div>
     </div>
   );
 
-  // Render project description
+  // Render the card header with enhanced typography
+  const renderHeader = () => (
+    <div className="mt-8 mb-6">
+      <div className="mb-3 flex items-start gap-3">
+        <div
+          className={`rounded-xl bg-gradient-to-r p-2 ${typeConfig.gradient}`}
+        >
+          <TypeIcon className="h-5 w-5 text-white" />
+        </div>
+        <div className="flex-1">
+          <h3
+            className={`leading-tight font-bold text-white ${isCenter ? 'text-2xl' : 'text-xl'}`}
+          >
+            {project.name}
+          </h3>
+          <div className="mt-1 flex items-center gap-2">
+            <span
+              className={`rounded-full bg-gradient-to-r px-2 py-1 text-xs font-medium ${typeConfig.gradient} text-white`}
+            >
+              {typeConfig.label}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {project.manager && (
+        <div className="flex items-center gap-2 text-white/60">
+          <Users className="h-4 w-4" />
+          <p className={`${isCenter ? 'text-sm' : 'text-xs'}`}>
+            Led by {project.manager}
+          </p>
+        </div>
+      )}
+    </div>
+  );
+
+  // Enhanced description with better truncation
   const renderDescription = () => (
-    <div className="mb-8">
+    <div className="mb-6">
       <p
-        className={`leading-relaxed text-white/80 ${isCenter ? 'text-base' : 'line-clamp-2 text-sm'}`}
+        className={`leading-relaxed text-white/80 ${
+          isCenter ? 'text-base' : 'line-clamp-3 text-sm'
+        }`}
       >
         {project.description || 'No description available.'}
       </p>
     </div>
   );
 
-  // Render technology stack preview
+  // Enhanced technology stack with better visual design
   const renderTechStack = () => {
     if (!project.techStack || project.techStack.length === 0) {
       return null;
     }
 
     return (
-      <div className="mb-8 flex flex-wrap gap-2">
-        {/* Show first 2 technologies */}
-        {project.techStack.slice(0, 2).map((tech, index) => (
-          <span
-            key={index}
-            className={`rounded-lg border border-white/10 bg-white/10 px-3 py-1 font-medium text-white/90 ${isCenter ? 'text-sm' : 'text-xs'}`}
-          >
-            {tech}
+      <div className="mb-6">
+        <div className="mb-2 flex items-center gap-2">
+          <div className="h-0.5 w-4 bg-gradient-to-r from-[#F4B71A] to-[#1AF4E6]" />
+          <span className="text-xs font-medium tracking-wider text-white/50 uppercase">
+            Tech Stack
           </span>
-        ))}
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {/* Show first 3 technologies with enhanced styling */}
+          {project.techStack.slice(0, 3).map((tech, index) => (
+            <motion.span
+              key={index}
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: index * 0.1 }}
+              className={`rounded-lg border border-white/20 bg-gradient-to-r from-white/10 to-white/5 px-3 py-1 font-medium text-white/90 backdrop-blur-sm ${isCenter ? 'text-sm' : 'text-xs'} `}
+            >
+              {tech}
+            </motion.span>
+          ))}
 
-        {/* Show count of remaining technologies */}
-        {project.techStack.length > 2 && (
-          <span
-            className={`rounded-lg border border-white/10 bg-white/10 px-3 py-1 font-medium text-white/60 ${isCenter ? 'text-sm' : 'text-xs'}`}
-          >
-            +{project.techStack.length - 2}
-          </span>
-        )}
+          {/* Show count of remaining technologies */}
+          {project.techStack.length > 3 && (
+            <span
+              className={`rounded-lg border border-white/10 bg-white/5 px-3 py-1 font-medium text-white/50 ${isCenter ? 'text-sm' : 'text-xs'} `}
+            >
+              +{project.techStack.length - 3}
+            </span>
+          )}
+        </div>
       </div>
     );
   };
 
-  // Render card footer with type badge and team info
+  // Enhanced footer with action buttons
   const renderFooter = () => (
     <div className="absolute right-6 bottom-6 left-6">
+      {/* Subtle divider */}
+      <div className="mb-4 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+
       <div className="flex items-center justify-between">
-        {/* Project Type Badge */}
-        <div
-          className={`rounded-xl px-4 py-2 text-sm font-medium ${getTypeBadgeStyles()}`}
-        >
-          {TYPE_LABELS[project.type]}
+        {/* Quick action buttons */}
+        <div className="flex gap-2">
+          {project.githubUrl && (
+            <motion.button
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              className="rounded-lg bg-white/10 p-2 text-white/70 backdrop-blur-sm transition-colors hover:bg-white/20 hover:text-white"
+              onClick={(e) => {
+                e.stopPropagation();
+                window.open(project.githubUrl, '_blank');
+              }}
+            >
+              <Github className="h-4 w-4" />
+            </motion.button>
+          )}
+          {project.demoUrl && (
+            <motion.button
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              className="rounded-lg bg-white/10 p-2 text-white/70 backdrop-blur-sm transition-colors hover:bg-white/20 hover:text-white"
+              onClick={(e) => {
+                e.stopPropagation();
+                window.open(project.demoUrl, '_blank');
+              }}
+            >
+              <Play className="h-4 w-4" />
+            </motion.button>
+          )}
         </div>
 
-        {/* Team Size Indicator */}
+        {/* Team Size Indicator with enhanced design */}
         {project.members && project.members.length > 0 && (
           <div
-            className={`flex items-center space-x-2 text-white/70 ${isCenter ? 'text-base' : 'text-sm'}`}
+            className={`flex items-center gap-2 rounded-lg bg-white/10 px-3 py-1 text-white/70 backdrop-blur-sm ${isCenter ? 'text-sm' : 'text-xs'}`}
           >
-            <span>👥</span>
+            <Users className="h-4 w-4" />
             <span>
               {project.members.length} member
               {project.members.length !== 1 ? 's' : ''}
@@ -166,16 +236,24 @@ export default function ProjectCard({
     </div>
   );
 
-  // Render visual effects
+  // Enhanced visual effects with animated gradients
   const renderEffects = () => (
     <>
-      {/* Center card highlight effect */}
-      {isCenter && (
-        <div className="pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-br from-[#F4B71A]/10 to-[#1AF4E6]/10 opacity-100 transition-opacity duration-300" />
-      )}
+      {/* Animated background gradient */}
+      <div className="pointer-events-none absolute inset-0 rounded-3xl opacity-0 transition-opacity duration-500 group-hover:opacity-100">
+        <div
+          className={`absolute inset-0 rounded-3xl bg-gradient-to-br ${typeConfig.bgGradient}`}
+        />
+        <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-[#F4B71A]/5 to-[#1AF4E6]/5" />
+      </div>
 
-      {/* Subtle glow effect on hover */}
-      <div className="pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-br from-[#F4B71A]/5 to-[#1AF4E6]/5 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+      {/* Shimmer effect on hover */}
+      <div className="pointer-events-none absolute inset-0 -translate-x-full rounded-3xl bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 transition-all duration-1000 group-hover:translate-x-full group-hover:opacity-100" />
+
+      {/* Border glow effect for center cards */}
+      {isCenter && (
+        <div className="pointer-events-none absolute inset-0 rounded-3xl bg-gradient-to-br from-[#F4B71A]/20 to-[#1AF4E6]/20 opacity-50 blur-xl" />
+      )}
     </>
   );
 
@@ -183,18 +261,31 @@ export default function ProjectCard({
     <motion.button
       onClick={onClick}
       whileHover={{
-        y: -4,
-        scale: isCenter ? 1.02 : 0.95,
+        y: -8,
+        scale: isCenter ? 1.03 : 1.02,
+        rotateY: 2,
       }}
       whileTap={{ scale: 0.98 }}
-      transition={{ duration: 0.2 }}
-      className="group relative h-full w-full"
+      transition={{
+        duration: 0.3,
+        type: 'spring',
+        stiffness: 400,
+        damping: 25,
+      }}
+      className="group perspective-1000 relative h-full w-full"
     >
       <div className={getCardContainerStyles()}>
-        {/* Card Content */}
-        {renderHeader()}
-        {renderDescription()}
-        {renderTechStack()}
+        {/* Status Indicator */}
+        {renderStatusIndicator()}
+
+        {/* Card Content - Flex grow to push footer down */}
+        <div className="flex flex-grow flex-col">
+          {renderHeader()}
+          {renderDescription()}
+          {renderTechStack()}
+        </div>
+
+        {/* Footer - Fixed at bottom */}
         {renderFooter()}
 
         {/* Visual Effects */}

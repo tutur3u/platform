@@ -43,7 +43,6 @@ export const projects: Project[] = [
       { name: 'Huynh Thai Duong', role: 'CAD Designer' },
     ],
     githubUrl: 'https://github.com/NCTHub/neo-micromouse',
-    image: '/media/projects/micromouse-prototype.jpg',
   },
   {
     name: 'Neo Chess',

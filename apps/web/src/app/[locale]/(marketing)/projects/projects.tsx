@@ -5,7 +5,7 @@ import { Project, projects } from './data';
 import ProjectCard from './project-card';
 import ProjectDetail from './project-detail';
 import { AnimatePresence, PanInfo, motion } from 'framer-motion';
-import { Bot, Layers, LayoutGrid, Rocket, Search, Smile } from 'lucide-react';
+import { Bot, Layers, LayoutGrid, Search, Smile } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 
 type ProjectType = 'web' | 'software' | 'hardware' | undefined;
@@ -151,7 +151,7 @@ export default function Projects() {
 
     return {
       x: x,
-      y: isCenter ? 0 : 15,
+      y: isCenter ? 0 : 20,
       scale: isCenter ? 1 : 0.9,
       zIndex: 5 - Math.abs(position),
       opacity: isVisible ? (isCenter ? 1 : 0.7) : 0,
@@ -206,148 +206,7 @@ export default function Projects() {
       </motion.div>
 
       <motion.div
-        className="relative mt-16 flex flex-col items-center text-center md:mt-24"
-        initial={{ opacity: 0, y: 50 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.8, delay: 0.2 }}
-      >
-        <div className="relative">
-          <motion.div
-            className="absolute -inset-4 rounded-full bg-gradient-to-r from-[#F4B71A]/20 to-[#1AF4E6]/20 blur-xl"
-            animate={{
-              scale: [1, 1.1, 1],
-              opacity: [0.3, 0.6, 0.3],
-            }}
-            transition={{
-              duration: 4,
-              repeat: Infinity,
-              ease: 'easeInOut',
-            }}
-          />
-          <p className="relative text-3xl leading-normal font-extrabold md:text-4xl lg:text-5xl">
-            <span className="text-white">Welcome to our</span>{' '}
-            <span className="relative">
-              <span className="border-b-4 border-[#FBC721] whitespace-nowrap text-[#5FC6E5]">
-                Project Showcase
-              </span>
-              <motion.div
-                className="absolute -top-2 -right-6 text-2xl md:-top-3 md:-right-8 md:text-3xl lg:-top-4 lg:-right-10 lg:text-4xl"
-                animate={{
-                  rotate: [0, 360],
-                }}
-                transition={{
-                  duration: 6,
-                  repeat: Infinity,
-                  ease: 'linear',
-                }}
-                style={{
-                  transformOrigin: '50px 50px',
-                }}
-              >
-                <motion.div
-                  animate={{
-                    rotate: [0, -360],
-                  }}
-                  transition={{
-                    duration: 6,
-                    repeat: Infinity,
-                    ease: 'linear',
-                  }}
-                >
-                  <Rocket className="h-6 w-6 text-yellow-400 md:h-8 md:w-8 lg:h-10 lg:w-10" />
-                </motion.div>
-              </motion.div>
-            </span>{' '}
-            <span className="text-white">Sites</span>
-          </p>
-        </div>
-
-        <motion.div
-          className="mt-6 flex items-center justify-center gap-4"
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.8, delay: 0.4 }}
-        >
-          <motion.div
-            className="h-px w-16 bg-gradient-to-r from-transparent to-[#F4B71A] md:w-24"
-            animate={{
-              opacity: [0.3, 1, 0.3],
-            }}
-            transition={{
-              duration: 2,
-              repeat: Infinity,
-              ease: 'easeInOut',
-            }}
-          />
-          <div className="flex items-center gap-2">
-            <motion.div
-              className="h-2 w-2 rounded-full bg-[#F4B71A]"
-              animate={{
-                scale: [1, 1.5, 1],
-                opacity: [0.5, 1, 0.5],
-              }}
-              transition={{
-                duration: 1.5,
-                repeat: Infinity,
-                ease: 'easeInOut',
-              }}
-            />
-            <motion.div
-              className="h-2 w-2 rounded-full bg-[#1AF4E6]"
-              animate={{
-                scale: [1, 1.5, 1],
-                opacity: [0.5, 1, 0.5],
-              }}
-              transition={{
-                duration: 1.5,
-                repeat: Infinity,
-                ease: 'easeInOut',
-                delay: 0.5,
-              }}
-            />
-            <motion.div
-              className="h-2 w-2 rounded-full bg-[#F4B71A]"
-              animate={{
-                scale: [1, 1.5, 1],
-                opacity: [0.5, 1, 0.5],
-              }}
-              transition={{
-                duration: 1.5,
-                repeat: Infinity,
-                ease: 'easeInOut',
-                delay: 1,
-              }}
-            />
-          </div>
-          <motion.div
-            className="h-px w-16 bg-gradient-to-l from-transparent to-[#1AF4E6] md:w-24"
-            animate={{
-              opacity: [0.3, 1, 0.3],
-            }}
-            transition={{
-              duration: 2,
-              repeat: Infinity,
-              ease: 'easeInOut',
-              delay: 1,
-            }}
-          />
-        </motion.div>
-
-        <motion.p
-          className="mt-4 text-lg leading-relaxed font-medium text-gray-300 md:text-xl"
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.8, delay: 0.6 }}
-        >
-          Discover the innovation and creativity behind our digital experiences
-        </motion.p>
-      </motion.div>
-
-      <motion.div
-        className="relative mt-16 flex flex-col items-center text-center md:mt-24"
+        className="relative mt-8 flex flex-col items-center text-center md:mt-12"
         initial={{ opacity: 0, y: 50 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
@@ -624,7 +483,7 @@ export default function Projects() {
                     onMouseLeave={() => setIsUserInteracting(false)}
                     animate={{ x: isDragging ? dragOffset : 0 }}
                     transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                    style={{ minHeight: '450px', userSelect: 'none' }}
+                    style={{ minHeight: '500px', userSelect: 'none' }}
                   >
                     <div className="block w-full max-w-sm md:hidden">
                       {filteredProjects[currentIndex] && (
@@ -650,7 +509,10 @@ export default function Projects() {
                       )}
                     </div>
 
-                    <div className="relative hidden h-[450px] w-full items-center justify-center px-16 md:flex">
+                    <div
+                      className="relative hidden w-full items-center justify-center px-16 md:flex"
+                      style={{ minHeight: '550px' }}
+                    >
                       {filteredProjects.map((project, index) => {
                         const position = index - currentIndex;
 
@@ -659,7 +521,7 @@ export default function Projects() {
                         return (
                           <motion.div
                             key={project.name}
-                            className="absolute h-[400px] w-80"
+                            className="absolute w-80"
                             initial={{ opacity: 0, scale: 0.8 }}
                             animate={calculateCardStyle(position)}
                             transition={{
