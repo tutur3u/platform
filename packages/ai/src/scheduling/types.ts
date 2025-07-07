@@ -21,6 +21,7 @@ export interface Event {
 export type TaskPriority = 'critical' | 'high' | 'normal' | 'low';
 
 export interface Task {
+  user_defined_priority?: string;
   id: string;
   name: string;
   duration: number;

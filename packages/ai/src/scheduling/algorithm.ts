@@ -70,6 +70,7 @@ export const prepareTaskChunks = (tasks: Task[]): Task[] => {
             : task.name,
         duration: partDuration,
         minDuration: partDuration,
+        priority: task.user_defined_priority || 'normal',
         maxDuration: partDuration,
         allowSplit: false,
         taskId: task.id,
@@ -92,7 +93,7 @@ function calculatePriorityScore(task: Task): number {
     normal: 500,
     low: 250,
   };
-  score += priorityScores[task.priority];
+  score += priorityScores[task.priority as TaskPriority];
 
   // Deadline urgency bonus
   if (task.deadline) {

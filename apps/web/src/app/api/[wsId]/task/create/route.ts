@@ -128,6 +128,7 @@ export async function POST(
         ws_id: wsId,
         task_id: event.taskId,
         title: event.name,
+        priority: dbTask.user_defined_priority || 'normal',
         start_at: event.range.start.toISOString(),
         end_at: event.range.end.toISOString(),
         locked: false,
