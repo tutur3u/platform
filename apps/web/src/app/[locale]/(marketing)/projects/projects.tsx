@@ -236,7 +236,7 @@ export default function Projects() {
               viewport={{ once: true }}
               transition={{ duration: 0.8, delay: 0.6 }}
             >
-              <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#F4B71A]/20 to-[#1AF4E6]/20 p-1">
+              <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-500/20 to-purple-600/20 p-1">
                 <div className="relative h-64 overflow-hidden rounded-xl md:h-80 lg:h-96">
                   <Image
                     src="/media/marketing/landing-page.jpg"
@@ -244,10 +244,10 @@ export default function Projects() {
                     fill
                     className="object-cover"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-tr from-[#F4B71A]/10 to-[#1AF4E6]/10"></div>
+                  <div className="absolute inset-0 bg-gradient-to-tr from-blue-500/10 to-purple-600/10"></div>
                 </div>
               </div>
-              <div className="absolute -inset-4 rounded-3xl bg-gradient-to-r from-[#F4B71A]/20 to-[#1AF4E6]/20 opacity-0 blur-xl transition-opacity duration-500 group-hover:opacity-100"></div>
+              <div className="absolute -inset-4 rounded-3xl bg-gradient-to-r from-blue-500/20 to-purple-600/20 opacity-0 blur-xl transition-opacity duration-500 group-hover:opacity-100"></div>
             </motion.div>
 
             <motion.div
@@ -273,19 +273,24 @@ export default function Projects() {
                 <div className="flex items-start gap-3">
                   <div className="mt-3 h-2 w-2 flex-shrink-0 rounded-full bg-[#F4B71A]"></div>
                   <p className="font-medium text-gray-400">
-                    Interactive games and entertainment features including Neo Chess, Neo Crush, and other engaging multiplayer experiences.
+                    Interactive games and entertainment features including Neo
+                    Chess, Neo Crush, and other engaging multiplayer
+                    experiences.
                   </p>
                 </div>
                 <div className="flex items-start gap-3">
                   <div className="mt-3 h-2 w-2 flex-shrink-0 rounded-full bg-[#1AF4E6]"></div>
                   <p className="font-medium text-gray-400">
-                    Practical utility applications like ID scanner, time tracking tools, and various productivity enhancing features.
+                    Practical utility applications like ID scanner, time
+                    tracking tools, and various productivity enhancing features.
                   </p>
                 </div>
                 <div className="flex items-start gap-3">
                   <div className="mt-3 h-2 w-2 flex-shrink-0 rounded-full bg-[#F4B71A]"></div>
                   <p className="font-medium text-gray-400">
-                    Comprehensive workspace management system for organizing projects, managing team members, and streamlining club operations.
+                    Comprehensive workspace management system for organizing
+                    projects, managing team members, and streamlining club
+                    operations.
                   </p>
                 </div>
               </div>
@@ -313,7 +318,7 @@ export default function Projects() {
           <div className="flex justify-center">
             <div className="relative flex rounded-xl border border-white/20 bg-white/5 p-1 backdrop-blur-sm">
               <motion.div
-                className="absolute inset-y-1 rounded-lg bg-gradient-to-r from-[#F4B71A] to-[#1AF4E6]"
+                className="absolute inset-y-1 rounded-lg bg-gradient-to-r from-blue-500 to-purple-600"
                 animate={{
                   x: viewMode === 'carousel' ? '2px' : 'calc(100% + 2px)',
                 }}
@@ -348,7 +353,7 @@ export default function Projects() {
           <div className="flex justify-center">
             <div className="relative flex rounded-2xl border border-white/10 bg-white/5 p-1">
               <motion.div
-                className="absolute inset-y-1 rounded-xl bg-gradient-to-r from-[#F4B71A] to-[#1AF4E6]"
+                className="absolute inset-y-1 rounded-xl bg-gradient-to-r from-blue-500 to-purple-600"
                 animate={{
                   x:
                     type === 'web'
@@ -386,7 +391,7 @@ export default function Projects() {
           <div className="flex justify-center">
             <div className="relative flex rounded-2xl border border-white/10 bg-white/5 p-1">
               <motion.div
-                className="absolute inset-y-1 rounded-xl bg-gradient-to-r from-[#F4B71A] to-[#1AF4E6]"
+                className="absolute inset-y-1 rounded-xl bg-gradient-to-r from-blue-500 to-purple-600"
                 animate={{
                   x:
                     status === 'planning'
@@ -543,7 +548,7 @@ export default function Projects() {
                         <div
                           className={`h-3 w-3 rounded-full transition-all duration-300 ${
                             index === currentIndex
-                              ? 'scale-125 bg-gradient-to-r from-[#F4B71A] to-[#1AF4E6]'
+                              ? 'scale-125 bg-gradient-to-r from-blue-500 to-purple-600'
                               : 'bg-white/30 hover:bg-white/50'
                           }`}
                         />
@@ -565,7 +570,7 @@ export default function Projects() {
                     whileTap={{ scale: 0.95 }}
                     className={`rounded-xl px-4 py-2 text-sm font-medium transition-all duration-200 ${
                       isAutoScrolling
-                        ? 'border border-white/20 bg-gradient-to-r from-[#F4B71A]/20 to-[#1AF4E6]/20 text-white'
+                        ? 'border border-white/20 bg-gradient-to-r from-blue-500/20 to-purple-600/20 text-white'
                         : 'border border-white/10 bg-white/10 text-white/70'
                     }`}
                   >
@@ -641,7 +646,7 @@ export default function Projects() {
             </p>
             <button
               onClick={clearAllFilters}
-              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#F4B71A] to-[#1AF4E6] px-6 py-3 text-lg font-bold text-slate-900 transition-all duration-300 hover:scale-105 hover:shadow-lg"
+              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 px-6 py-3 text-lg font-bold text-white transition-all duration-300 hover:scale-105 hover:shadow-lg"
             >
               Clear Filters
             </button>
