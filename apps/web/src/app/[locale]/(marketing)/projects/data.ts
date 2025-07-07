@@ -12,17 +12,40 @@ export type Project = {
   image?: string;
 };
 
+const NCT_REPO_URL = 'https://github.com/rmit-nct/hub';
+
 export const projects: Project[] = [
+  {
+    name: 'NCT Landing Page v2',
+    description:
+      'A completely redesigned landing page with modern UI/UX, enhanced user experience, and improved visual appeal.',
+    type: 'web',
+    techStack: ['Next.js', 'Typescript', 'Tailwind CSS'],
+    status: 'completed',
+    manager: 'Nguyen Gia Khang',
+    purpose:
+      "This project aims to create a more engaging and visually appealing landing page that better represents the club's identity and showcases our projects with improved design and user experience.",
+    demoUrl:
+      process.env.NODE_ENV === 'development'
+        ? 'http://localhost:7803'
+        : 'https://rmitnct.club/',
+    githubUrl: NCT_REPO_URL,
+  },
   {
     name: 'Neo Scanner',
     description:
       "An ID scanner used to retrieve student's name and ID in events.",
-    type: 'software',
+    type: 'web',
     techStack: ['Python', 'React.js'],
     status: 'completed',
     manager: 'Nguyen Gia Khang',
     purpose:
       "This project aims to save time for gathering participant's information.",
+    demoUrl:
+      process.env.NODE_ENV === 'development'
+        ? 'http://localhost:7803/scanner'
+        : 'https://rmitnct.club/scanner',
+    githubUrl: NCT_REPO_URL,
   },
   {
     name: 'Neo Micromouse',
@@ -30,7 +53,7 @@ export const projects: Project[] = [
       'A micromouse robot with manual control and automatic navigation.',
     type: 'hardware',
     techStack: ['Arduino', 'C++', 'PlatformIO'],
-    status: 'ongoing',
+    status: 'completed',
     manager: 'Huynh Hoang Duc',
     purpose:
       'This project aims to create a sophisticated micromouse capable of navigating mazes efficiently.',
@@ -42,7 +65,6 @@ export const projects: Project[] = [
       { name: 'Ngo Van Tai', role: 'CAD Designer' },
       { name: 'Huynh Thai Duong', role: 'CAD Designer' },
     ],
-    githubUrl: 'https://github.com/NCTHub/neo-micromouse',
   },
   {
     name: 'Neo Chess',
@@ -56,30 +78,16 @@ export const projects: Project[] = [
       'Supabase Realtime',
       'Shadcn UI',
     ],
-    status: 'ongoing',
+    status: 'completed',
     manager: 'Luong Ngoc Bao Tran',
     purpose:
       'A short-term project to demonstrate realtime multiplayer game development with cutting-edge technologies.',
     members: [{ name: 'Vo Hoang Phuc', role: 'Developer' }],
-    githubUrl: 'https://github.com/NCTHub/neo-chess',
-    demoUrl: 'https://chess.ncthub.org',
-    image: '/neo-chess/hero.jpg',
-  },
-  {
-    name: 'Neo Checker',
-    description: 'An in-house checkers game that is planning.',
-    type: 'web',
-    techStack: [
-      'Next.js',
-      'Typescript',
-      'Tailwind CSS',
-      'Supabase Realtime',
-      'Shadcn UI',
-    ],
-    status: 'planning',
-    manager: 'Vo Hoang Phuc',
-    purpose:
-      'A short-term project to demonstrate realtime multiplayer game development with cutting-edge technologies.',
+    githubUrl: NCT_REPO_URL,
+    demoUrl:
+      process.env.NODE_ENV === 'development'
+        ? 'http://localhost:7803/neo-chess'
+        : 'https://rmitnct.club/neo-chess',
   },
   {
     name: 'Neo Crush',
@@ -93,26 +101,21 @@ export const projects: Project[] = [
       'Supabase Realtime',
       'Shadcn UI',
     ],
-    status: 'planning',
+    status: 'completed',
     manager: 'Vo Hoang Phuc',
+    members: [
+      { name: 'Huynh Tan Phat', role: 'Developer' },
+      { name: 'Nguyen Gia Khang', role: 'Developer' },
+      { name: 'Luong Ngoc Bao Tran', role: 'Developer' },
+      { name: 'Nguyen Phuc Quynh Nhu', role: 'Designer' },
+    ],
     purpose:
       'A short-term project to demonstrate realtime multiplayer game development with cutting-edge technologies.',
-  },
-  {
-    name: 'Neo AI Chatbot',
-    description: 'An AI chatbot that is planning.',
-    type: 'web',
-    techStack: [
-      'Next.js',
-      'Typescript',
-      'Tailwind CSS',
-      'Supabase',
-      'Shadcn UI',
-    ],
-    status: 'planning',
-    manager: 'Vo Hoang Phuc',
-    purpose:
-      'A short-term project to demonstrate AI chatbot development with cutting-edge technologies.',
+    githubUrl: NCT_REPO_URL,
+    demoUrl:
+      process.env.NODE_ENV === 'development'
+        ? 'http://localhost:7803/neo-crush'
+        : 'https://rmitnct.club/neo-crush',
   },
   {
     name: 'NCT Hub Landing Page',
@@ -130,27 +133,14 @@ export const projects: Project[] = [
       { name: 'Luong Ngoc Bao Tran', role: 'Developer' },
       { name: 'Huynh Ngoc Nhat Mai', role: 'Developer' },
       { name: 'Nguyen Gia Khang', role: 'Developer' },
+      { name: 'Tran Minh Thuan', role: 'Designer' },
+      { name: 'Nguyen Phuc Quynh Nhu', role: 'Designer' },
     ],
-  },
-  {
-    name: 'Neo Crush Alpha',
-    description:
-      "An 4-day internal hackathon game that was planned for RMIT Sem B 2024's Club Day.",
-    type: 'web',
-    techStack: [
-      'Next.js',
-      'Typescript',
-      'Tailwind CSS',
-      'Supabase',
-      'Shadcn UI',
-    ],
-    status: 'completed',
-    manager: 'Vo Hoang Phuc',
-    purpose:
-      'A short-term project to demonstrate game development with short deadline.',
-    githubUrl: 'https://github.com/NCTHub/neo-crush-alpha',
-    demoUrl: 'https://crush.ncthub.org',
-    image: '/neo-crush/game-screenshot.jpg',
+    githubUrl: NCT_REPO_URL,
+    demoUrl:
+      process.env.NODE_ENV === 'development'
+        ? 'http://localhost:7803/'
+        : 'https://rmitnct.club/',
   },
   {
     name: 'NCT Hub',
@@ -170,25 +160,10 @@ export const projects: Project[] = [
     purpose:
       'An informative digital platform for visitors as well as all-in-one management platform for core team members.',
     githubUrl: 'https://github.com/rmit-nct/hub',
-    demoUrl: 'https://ncthub.org',
+    demoUrl:
+      process.env.NODE_ENV === 'development'
+        ? 'http://localhost:7803/'
+        : 'https://rmitnct.club/',
     image: '/media/marketing/nct-hub-dashboard.jpg',
-  },
-  {
-    name: 'NCT Event Scheduler',
-    description:
-      'A when2meet-like event scheduler for the club members to organize events.',
-    type: 'web',
-    techStack: [
-      'Next.js',
-      'Turborepo',
-      'Typescript',
-      'Tailwind CSS',
-      'Supabase',
-      'Shadcn UI',
-    ],
-    status: 'completed',
-    manager: 'Vo Hoang Phuc',
-    purpose:
-      'An alternative tool to When2meet with enhances UI/UX and additional features.',
   },
 ];
