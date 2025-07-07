@@ -21,15 +21,15 @@ export interface Event {
 export type TaskPriority = 'critical' | 'high' | 'normal' | 'low';
 
 export interface Task {
+  user_defined_priority?: string;
   id: string;
   name: string;
   duration: number;
   minDuration: number;
   maxDuration: number;
   category: 'work' | 'personal' | 'meeting';
-  priority: TaskPriority;
+  priority: TaskPriority | string;
   events: Event[];
-  
   deadline?: dayjs.Dayjs;
   taskId?: string;
   allowSplit?: boolean;
