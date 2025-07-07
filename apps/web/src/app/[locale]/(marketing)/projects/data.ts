@@ -7,6 +7,9 @@ export type Project = {
   purpose: string;
   status: 'planning' | 'ongoing' | 'completed';
   members?: { name: string; role: string }[];
+  githubUrl?: string;
+  demoUrl?: string;
+  image?: string;
 };
 
 export const projects: Project[] = [
@@ -39,6 +42,7 @@ export const projects: Project[] = [
       { name: 'Ngo Van Tai', role: 'CAD Designer' },
       { name: 'Huynh Thai Duong', role: 'CAD Designer' },
     ],
+    githubUrl: 'https://github.com/NCTHub/neo-micromouse',
   },
   {
     name: 'Neo Chess',
@@ -57,6 +61,9 @@ export const projects: Project[] = [
     purpose:
       'A short-term project to demonstrate realtime multiplayer game development with cutting-edge technologies.',
     members: [{ name: 'Vo Hoang Phuc', role: 'Developer' }],
+    githubUrl: 'https://github.com/NCTHub/neo-chess',
+    demoUrl: 'https://chess.ncthub.org',
+    image: '/neo-chess/hero.jpg',
   },
   {
     name: 'Neo Checker',
@@ -141,6 +148,9 @@ export const projects: Project[] = [
     manager: 'Vo Hoang Phuc',
     purpose:
       'A short-term project to demonstrate game development with short deadline.',
+    githubUrl: 'https://github.com/NCTHub/neo-crush-alpha',
+    demoUrl: 'https://crush.ncthub.org',
+    image: '/neo-crush/game-screenshot.jpg',
   },
   {
     name: 'NCT Hub',
@@ -159,6 +169,9 @@ export const projects: Project[] = [
     manager: 'Vo Hoang Phuc',
     purpose:
       'An informative digital platform for visitors as well as all-in-one management platform for core team members.',
+    githubUrl: 'https://github.com/rmit-nct/hub',
+    demoUrl: 'https://ncthub.org',
+    image: '/media/marketing/nct-hub-dashboard.jpg',
   },
   {
     name: 'NCT Event Scheduler',
@@ -177,81 +190,5 @@ export const projects: Project[] = [
     manager: 'Vo Hoang Phuc',
     purpose:
       'An alternative tool to When2meet with enhances UI/UX and additional features.',
-  },
-  {
-    name: 'Fingerprint Lock',
-    description: 'A fingerprint lock with sensors.',
-    type: 'hardware',
-    techStack: ['Arduino', 'C++', 'PlatformIO'],
-    status: 'completed',
-    manager: 'Cao Nguyen Viet Quang',
-    purpose:
-      'Hands on intermediate embedded project with hardware design and C programming.',
-  },
-  {
-    name: 'NCT Web Platform',
-    description: 'The first version of the club web platform.',
-    type: 'web',
-    techStack: ['React.js'],
-    status: 'completed',
-    manager: 'Seokyung Kim',
-    purpose:
-      'An informative digital platform for visitors as well as all-in-one management platform for core team members.',
-  },
-  {
-    name: 'Xiang Qi',
-    description: 'A Java-written Chinese chess game.',
-    type: 'software',
-    techStack: ['Java', 'JavaFX'],
-    status: 'completed',
-    manager: 'Tran Mach So Han',
-    purpose:
-      'Help newbies get acquainted with the object-oriented programming (OOP) concept using Java',
-  },
-  {
-    name: 'Flappy Bird',
-    description: 'A clone of the famous Flappy Bird game.',
-    type: 'software',
-    techStack: ['Python'],
-    status: 'completed',
-    purpose: 'Hands on game development using Python and its libraries.',
-  },
-  {
-    name: 'Advanced Wireless Keyboard',
-    description: 'A custom bluetooth keyboard.',
-    type: 'hardware',
-    techStack: ['C++', 'BLE'],
-    status: 'completed',
-    manager: 'Dinh Ngoc Minh',
-    purpose:
-      'Build a Multifunctional Bluetooth Keyboard for Calculation, Bluetooth Connectivity, and Application Resource Monitoring.',
-  },
-  {
-    name: 'Sudoku Game',
-    description: 'A Sudoku game in React.',
-    type: 'web',
-    techStack: ['React.js'],
-    status: 'completed',
-    manager: 'Nguyen Son Tung',
-    purpose: 'A simple game to practice React.js and its ecosystem.',
-  },
-  {
-    name: 'NCT Movie Website',
-    description: 'A website to watch movies with the club members.',
-    type: 'web',
-    techStack: ['HTML', 'CSS', 'Javascript'],
-    status: 'completed',
-    manager: 'Seokyung Kim',
-    purpose: 'A simple project to practice front-end development.',
-  },
-  {
-    name: 'NCT Text Converter',
-    description:
-      'A text converter for the club members to convert text to different formats.',
-    type: 'software',
-    techStack: ['Python', 'vcpkg'],
-    status: 'completed',
-    manager: 'Dinh Ngoc Minh',
-    purpose: 'A simple project to learn about OCR and text processing.',
   },
 ];
