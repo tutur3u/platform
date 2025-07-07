@@ -92,7 +92,6 @@ type CalendarCache = {
     googleEvents: WorkspaceCalendarEvent[];
     dbLastUpdated: number;
     googleLastUpdated: number;
-    isForced: boolean;
   };
 };
 
@@ -102,7 +101,6 @@ type CacheUpdate = {
   googleEvents?: WorkspaceCalendarEvent[];
   dbLastUpdated?: number;
   googleLastUpdated?: number;
-  isForced?: boolean;
 };
 
 export const CalendarSyncProvider = ({
@@ -132,6 +130,7 @@ export const CalendarSyncProvider = ({
   const [isSyncing, setIsSyncing] = useState(false);
   const prevGoogleDataRef = useRef<string>('');
   const prevDatesRef = useRef<string>('');
+  const isForcedRef = useRef<boolean>(false);
   const queryClient = useQueryClient();
 
   // Helper to generate cache key from dates
@@ -192,18 +191,15 @@ export const CalendarSyncProvider = ({
         googleEvents: [],
         dbLastUpdated: 0,
         googleLastUpdated: 0,
-        isForced: false,
       };
 
       return {
         ...prev,
         [cacheKey]: {
-          dbEvents: update.dbEvents || existing.dbEvents,
-          googleEvents: update.googleEvents || existing.googleEvents,
-          dbLastUpdated: update.dbLastUpdated || existing.dbLastUpdated,
-          googleLastUpdated:
-            update.googleLastUpdated || existing.googleLastUpdated,
-          isForced: update.isForced || existing.isForced,
+          dbEvents: update.dbEvents !== undefined ? update.dbEvents : existing.dbEvents,
+          googleEvents: update.googleEvents !== undefined ? update.googleEvents : existing.googleEvents,
+          dbLastUpdated: update.dbLastUpdated !== undefined ? update.dbLastUpdated : existing.dbLastUpdated,
+          googleLastUpdated: update.googleLastUpdated !== undefined ? update.googleLastUpdated : existing.googleLastUpdated,
         },
       };
     });
@@ -218,13 +214,14 @@ export const CalendarSyncProvider = ({
       if (!cacheKey) return null;
 
       const cachedData = calendarCache[cacheKey];
+      console.log('isForcedRef.current in useQuery', isForcedRef.current);
 
       // If we have cached data and it's not stale, return it immediately
       if (
         cachedData?.dbEvents &&
         cachedData.dbEvents.length > 0 &&
         !isCacheStaleEnhanced(cachedData.dbLastUpdated, dates) &&
-        !cachedData.isForced
+        !isForcedRef.current
       ) {
         setData(cachedData.dbEvents);
         return cachedData.dbEvents;
@@ -251,9 +248,11 @@ export const CalendarSyncProvider = ({
       // Update cache with new data and reset isForced flag
       updateCache(cacheKey, {
         dbEvents: fetchedData,
-        dbLastUpdated: Date.now(),
-        isForced: false, // Reset isForced after successful fetch
+        dbLastUpdated: Date.now()
       });
+      
+      // Reset the ref immediately (synchronous)
+      isForcedRef.current = false;
 
       setData(fetchedData);
       return fetchedData;
@@ -592,7 +591,7 @@ export const CalendarSyncProvider = ({
     const isCurrentWeek = includesCurrentWeek(dates);
 
     if (cacheData) {
-      cacheData.isForced = true;
+      isForcedRef.current = true;
       // For current week, also reset the cache timestamp to force refresh
       if (isCurrentWeek) {
         cacheData.dbLastUpdated = 0;
@@ -694,7 +693,8 @@ export const CalendarSyncProvider = ({
           // If events were deleted, refresh to get updated data
           if (deletionPerformed) {
             queryClient.invalidateQueries({
-              queryKey: ['calendarEvents', wsId],
+              queryKey: ['databaseCalendarEvents', wsId],
+              exact: false,
             });
           }
         } catch (err) {
@@ -725,10 +725,8 @@ export const CalendarSyncProvider = ({
 
 
     // Use updateCache instead of direct mutation
-    updateCache(cacheKey, {
-      isForced: true,
-      dbLastUpdated: 0,
-    });
+    isForcedRef.current = true;
+    console.log('isForced in refresh', isForcedRef.current);
 
     queryClient.invalidateQueries({
       queryKey: ['databaseCalendarEvents', wsId, getCacheKey(dates)],
