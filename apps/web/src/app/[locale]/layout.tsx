@@ -11,7 +11,6 @@ import { cn } from '@ncthub/utils/format';
 import { Analytics as VercelAnalytics } from '@vercel/analytics/react';
 import { SpeedInsights as VercelInsights } from '@vercel/speed-insights/next';
 import { Metadata, Viewport } from 'next';
-import { NextIntlClientProvider } from 'next-intl';
 import { setRequestLocale } from 'next-intl/server';
 import { Noto_Sans } from 'next/font/google';
 import { notFound } from 'next/navigation';
@@ -120,15 +119,13 @@ export default async function RootLayout({ children, params }: Props) {
     <html lang={locale} suppressHydrationWarning>
       <body
         className={cn(
-          'overflow-y-scroll bg-background antialiased',
+          'bg-root-background overflow-y-auto antialiased',
           font.className
         )}
       >
         <VercelAnalytics />
         <VercelInsights />
-        <Providers>
-          <NextIntlClientProvider>{children}</NextIntlClientProvider>
-        </Providers>
+        <Providers>{children}</Providers>
         <TailwindIndicator />
         <ProductionIndicator />
         <StaffToolbar />

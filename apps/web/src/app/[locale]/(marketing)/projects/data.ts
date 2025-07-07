@@ -7,19 +7,154 @@ export type Project = {
   purpose: string;
   status: 'planning' | 'ongoing' | 'completed';
   members?: { name: string; role: string }[];
+  githubUrl?: string;
+  demoUrl?: string;
+  image?: string;
 };
+
+const NCT_REPO_URL = 'https://github.com/rmit-nct/hub';
 
 export const projects: Project[] = [
   {
-    name: 'Neo ID Scanner',
+    name: '[Ga] Remote-Controlled Car',
+    description:
+      'A remote-controlled car project featuring wireless control, real-time video streaming, and autonomous navigation capabilities.',
+    type: 'hardware',
+    techStack: ['Arduino', 'C++', 'Solid Work'],
+    status: 'completed',
+    manager: 'Le Van Chi Hoang',
+    members: [
+      {
+        name: 'Nguyen Ngoc Thien Ngan',
+        role: 'Hardware Developer',
+      },
+      {
+        name: 'Duong The Vong',
+        role: 'Software Engineer',
+      },
+      {
+        name: 'Vo Dang Khoa',
+        role: 'Software Developer',
+      },
+    ],
+    purpose:
+      'This project aims to create an advanced remote-controlled vehicle with wireless control capabilities, demonstrating embedded systems programming and hardware integration skills.',
+    githubUrl: 'https://github.com/rmit-nct/remote-car-ga',
+    image: '/media/projects/remote-car-3.jpeg',
+  },
+  {
+    name: '[minhmoi] Remote-Controlled Car',
+    description:
+      'A remote-controlled car project featuring wireless control, real-time video streaming, and autonomous navigation capabilities.',
+    type: 'hardware',
+    techStack: ['Arduino', 'C++', 'Solid Work'],
+    status: 'completed',
+    manager: 'Cu Dinh Bach',
+    members: [
+      {
+        name: 'Nguyen Do Tuong Van',
+        role: 'Hardware Developer',
+      },
+      {
+        name: 'Tran Hoang Minh',
+        role: 'Software Engineer',
+      },
+      {
+        name: 'Nguyen Nghia Hiep',
+        role: 'Software Developer',
+      },
+    ],
+    purpose:
+      'This project aims to create an advanced remote-controlled vehicle with wireless control capabilities, demonstrating embedded systems programming and hardware integration skills.',
+    githubUrl: 'https://github.com/rmit-nct/remote-car-minhmoi',
+    image: '/media/projects/remote-car-2.jpg',
+  },
+  {
+    name: '[TDOC] Remote-Controlled Car',
+    description:
+      'A remote-controlled car project featuring wireless control, real-time video streaming, and autonomous navigation capabilities.',
+    type: 'hardware',
+    techStack: ['Arduino', 'C++', 'Solid Work'],
+    status: 'completed',
+    manager: 'Truong Duc Qui',
+    members: [
+      {
+        name: 'Mai Dang Khoa',
+        role: 'Hardware Engineer',
+      },
+      {
+        name: 'Pham Le Hoang Phu',
+        role: 'Software Developer',
+      },
+    ],
+    purpose:
+      'This project aims to create an advanced remote-controlled vehicle with wireless control capabilities, demonstrating embedded systems programming and hardware integration skills.',
+    githubUrl: 'https://github.com/rmit-nct/remote-car-three-dudes-one-car',
+    demoUrl: 'https://www.youtube.com/watch?v=myx7Zmuy4rU',
+    image: '/media/projects/remote-car-1.jpg',
+  },
+  {
+    name: 'NCT Krypto',
+    description:
+      'A real-time cryptocurrency price tracking application that displays live market data, price charts, and market trends for various cryptocurrencies.',
+    type: 'web',
+    techStack: ['Next.js', 'Typescript', 'Tailwind CSS'],
+    status: 'completed',
+    manager: 'Nguyen An Nhien',
+    members: [
+      {
+        name: 'Chau Tung Nguyen',
+        role: 'Developer',
+      },
+      {
+        name: 'Nguyen Don Gia Phat',
+        role: 'Web Designer',
+      },
+      {
+        name: 'Nguyen Phuong Anh',
+        role: 'Web Designer',
+      },
+      {
+        name: 'Tran Dang Phuc',
+        role: 'Web Designer',
+      },
+    ],
+    purpose:
+      'This project aims to provide users with up-to-date cryptocurrency market information, enabling them to monitor price movements, analyze trends, and make informed decisions about digital assets.',
+    githubUrl: 'https://github.com/rmit-nct/nct-krypto',
+    image: '/media/projects/nct-krypto.png',
+  },
+  {
+    name: 'NCT Landing Page v2',
+    description:
+      'A completely redesigned landing page with modern UI/UX, enhanced user experience, and improved visual appeal.',
+    type: 'web',
+    techStack: ['Next.js', 'Typescript', 'Tailwind CSS'],
+    status: 'completed',
+    manager: 'Nguyen Gia Khang',
+    purpose:
+      "This project aims to create a more engaging and visually appealing landing page that better represents the club's identity and showcases our projects with improved design and user experience.",
+    demoUrl:
+      process.env.NODE_ENV === 'development'
+        ? 'http://localhost:7803'
+        : 'https://rmitnct.club/',
+    githubUrl: NCT_REPO_URL,
+  },
+  {
+    name: 'Neo Scanner',
     description:
       "An ID scanner used to retrieve student's name and ID in events.",
-    type: 'software',
+    type: 'web',
     techStack: ['Python', 'React.js'],
-    status: 'ongoing',
-    manager: 'Nguyen Ngoc Luong',
+    status: 'completed',
+    manager: 'Nguyen Gia Khang',
     purpose:
       "This project aims to save time for gathering participant's information.",
+    demoUrl:
+      process.env.NODE_ENV === 'development'
+        ? 'http://localhost:7803/scanner'
+        : 'https://rmitnct.club/scanner',
+    githubUrl: NCT_REPO_URL,
   },
   {
     name: 'Neo Micromouse',
@@ -27,7 +162,7 @@ export const projects: Project[] = [
       'A micromouse robot with manual control and automatic navigation.',
     type: 'hardware',
     techStack: ['Arduino', 'C++', 'PlatformIO'],
-    status: 'ongoing',
+    status: 'completed',
     manager: 'Huynh Hoang Duc',
     purpose:
       'This project aims to create a sophisticated micromouse capable of navigating mazes efficiently.',
@@ -52,27 +187,16 @@ export const projects: Project[] = [
       'Supabase Realtime',
       'Shadcn UI',
     ],
-    status: 'ongoing',
+    status: 'completed',
     manager: 'Luong Ngoc Bao Tran',
     purpose:
       'A short-term project to demonstrate realtime multiplayer game development with cutting-edge technologies.',
     members: [{ name: 'Vo Hoang Phuc', role: 'Developer' }],
-  },
-  {
-    name: 'Neo Checker',
-    description: 'An in-house checkers game that is planning.',
-    type: 'web',
-    techStack: [
-      'Next.js',
-      'Typescript',
-      'Tailwind CSS',
-      'Supabase Realtime',
-      'Shadcn UI',
-    ],
-    status: 'planning',
-    manager: 'Vo Hoang Phuc',
-    purpose:
-      'A short-term project to demonstrate realtime multiplayer game development with cutting-edge technologies.',
+    githubUrl: NCT_REPO_URL,
+    demoUrl:
+      process.env.NODE_ENV === 'development'
+        ? 'http://localhost:7803/neo-chess'
+        : 'https://rmitnct.club/neo-chess',
   },
   {
     name: 'Neo Crush',
@@ -86,26 +210,21 @@ export const projects: Project[] = [
       'Supabase Realtime',
       'Shadcn UI',
     ],
-    status: 'planning',
+    status: 'completed',
     manager: 'Vo Hoang Phuc',
+    members: [
+      { name: 'Huynh Tan Phat', role: 'Developer' },
+      { name: 'Nguyen Gia Khang', role: 'Developer' },
+      { name: 'Luong Ngoc Bao Tran', role: 'Developer' },
+      { name: 'Nguyen Phuc Quynh Nhu', role: 'Designer' },
+    ],
     purpose:
       'A short-term project to demonstrate realtime multiplayer game development with cutting-edge technologies.',
-  },
-  {
-    name: 'Neo AI Chatbot',
-    description: 'An AI chatbot that is planning.',
-    type: 'web',
-    techStack: [
-      'Next.js',
-      'Typescript',
-      'Tailwind CSS',
-      'Supabase',
-      'Shadcn UI',
-    ],
-    status: 'planning',
-    manager: 'Vo Hoang Phuc',
-    purpose:
-      'A short-term project to demonstrate AI chatbot development with cutting-edge technologies.',
+    githubUrl: NCT_REPO_URL,
+    demoUrl:
+      process.env.NODE_ENV === 'development'
+        ? 'http://localhost:7803/neo-crush'
+        : 'https://rmitnct.club/neo-crush',
   },
   {
     name: 'NCT Hub Landing Page',
@@ -123,24 +242,14 @@ export const projects: Project[] = [
       { name: 'Luong Ngoc Bao Tran', role: 'Developer' },
       { name: 'Huynh Ngoc Nhat Mai', role: 'Developer' },
       { name: 'Nguyen Gia Khang', role: 'Developer' },
+      { name: 'Tran Minh Thuan', role: 'Designer' },
+      { name: 'Nguyen Phuc Quynh Nhu', role: 'Designer' },
     ],
-  },
-  {
-    name: 'Neo Crush Alpha',
-    description:
-      "An 4-day internal hackathon game that was planned for RMIT Sem B 2024's Club Day.",
-    type: 'web',
-    techStack: [
-      'Next.js',
-      'Typescript',
-      'Tailwind CSS',
-      'Supabase',
-      'Shadcn UI',
-    ],
-    status: 'completed',
-    manager: 'Vo Hoang Phuc',
-    purpose:
-      'A short-term project to demonstrate game development with short deadline.',
+    githubUrl: NCT_REPO_URL,
+    demoUrl:
+      process.env.NODE_ENV === 'development'
+        ? 'http://localhost:7803/'
+        : 'https://rmitnct.club/',
   },
   {
     name: 'NCT Hub',
@@ -159,99 +268,11 @@ export const projects: Project[] = [
     manager: 'Vo Hoang Phuc',
     purpose:
       'An informative digital platform for visitors as well as all-in-one management platform for core team members.',
-  },
-  {
-    name: 'NCT Event Scheduler',
-    description:
-      'A when2meet-like event scheduler for the club members to organize events.',
-    type: 'web',
-    techStack: [
-      'Next.js',
-      'Turborepo',
-      'Typescript',
-      'Tailwind CSS',
-      'Supabase',
-      'Shadcn UI',
-    ],
-    status: 'completed',
-    manager: 'Vo Hoang Phuc',
-    purpose:
-      'An alternative tool to When2meet with enhances UI/UX and additional features.',
-  },
-  {
-    name: 'Fingerprint Lock',
-    description: 'A fingerprint lock with sensors.',
-    type: 'hardware',
-    techStack: ['Arduino', 'C++', 'PlatformIO'],
-    status: 'completed',
-    manager: 'Cao Nguyen Viet Quang',
-    purpose:
-      'Hands on intermediate embedded project with hardware design and C programming.',
-  },
-  {
-    name: 'NCT Web Platform',
-    description: 'The first version of the club web platform.',
-    type: 'web',
-    techStack: ['React.js'],
-    status: 'completed',
-    manager: 'Seokyung Kim',
-    purpose:
-      'An informative digital platform for visitors as well as all-in-one management platform for core team members.',
-  },
-  {
-    name: 'Xiang Qi',
-    description: 'A Java-written Chinese chess game.',
-    type: 'software',
-    techStack: ['Java', 'JavaFX'],
-    status: 'completed',
-    manager: 'Tran Mach So Han',
-    purpose:
-      'Help newbies get acquainted with the object-oriented programming (OOP) concept using Java',
-  },
-  {
-    name: 'Flappy Bird',
-    description: 'A clone of the famous Flappy Bird game.',
-    type: 'software',
-    techStack: ['Python'],
-    status: 'completed',
-    purpose: 'Hands on game development using Python and its libraries.',
-  },
-  {
-    name: 'Advanced Wireless Keyboard',
-    description: 'A custom bluetooth keyboard.',
-    type: 'hardware',
-    techStack: ['C++', 'BLE'],
-    status: 'completed',
-    manager: 'Dinh Ngoc Minh',
-    purpose:
-      'Build a Multifunctional Bluetooth Keyboard for Calculation, Bluetooth Connectivity, and Application Resource Monitoring.',
-  },
-  {
-    name: 'Sudoku Game',
-    description: 'A Sudoku game in React.',
-    type: 'web',
-    techStack: ['React.js'],
-    status: 'completed',
-    manager: 'Nguyen Son Tung',
-    purpose: 'A simple game to practice React.js and its ecosystem.',
-  },
-  {
-    name: 'NCT Movie Website',
-    description: 'A website to watch movies with the club members.',
-    type: 'web',
-    techStack: ['HTML', 'CSS', 'Javascript'],
-    status: 'completed',
-    manager: 'Seokyung Kim',
-    purpose: 'A simple project to practice front-end development.',
-  },
-  {
-    name: 'NCT Text Converter',
-    description:
-      'A text converter for the club members to convert text to different formats.',
-    type: 'software',
-    techStack: ['Python', 'vcpkg'],
-    status: 'completed',
-    manager: 'Dinh Ngoc Minh',
-    purpose: 'A simple project to learn about OCR and text processing.',
+    githubUrl: 'https://github.com/rmit-nct/hub',
+    demoUrl:
+      process.env.NODE_ENV === 'development'
+        ? 'http://localhost:7803/'
+        : 'https://rmitnct.club/',
+    image: '/media/marketing/nct-hub-dashboard.jpg',
   },
 ];

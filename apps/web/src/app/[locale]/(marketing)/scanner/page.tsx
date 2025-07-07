@@ -276,7 +276,7 @@ export default function Page() {
       <div className="px-4 py-16">
         <div className="space-y-4 text-center">
           <h1 className="bg-gradient-to-r from-dynamic-light-blue to-dynamic-blue bg-clip-text text-4xl font-bold text-transparent md:text-6xl">
-            Student ID Scanner
+            NEO Scanner
           </h1>
           <p className="mx-auto max-w-2xl text-xl text-dynamic-light-sky">
             Effortlessly capture and manage student information with our
