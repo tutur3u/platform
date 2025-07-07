@@ -370,7 +370,7 @@ export default function AddEventModal({
                   aria-valuenow={getCurrentPriorityIndex()}
                   aria-valuetext={
                     prioritySliderOptions[getCurrentPriorityIndex()]?.label ||
-                    'normal'
+                    'Normal'
                   }
                   tabIndex={0}
                   className="absolute top-3 right-0 left-0 z-30 h-7 cursor-pointer select-none rounded focus:outline-none focus:ring-2 focus:ring-blue-300 focus:ring-offset-2"
