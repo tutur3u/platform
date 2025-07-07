@@ -7,7 +7,6 @@ import {
   Building2,
   Code,
   Sparkles,
-  Target,
   TrendingUp,
   Users,
 } from '@ncthub/ui/icons';
@@ -110,7 +109,7 @@ export default function WhatIsNeo() {
             {' '}
             SSET students{' '}
             <motion.span
-              className="absolute right-0 -bottom-1 left-0 block h-0.5 bg-gradient-to-r from-[#5FC6E5] to-[#FBC721]"
+              className="absolute right-0 -bottom-0.5 left-0 block h-0.5 bg-gradient-to-r from-[#5FC6E5] to-[#FBC721]"
               initial={{ scaleX: 0 }}
               whileInView={{ scaleX: 1 }}
               transition={{ duration: 1, delay: 1 }}
@@ -198,35 +197,6 @@ export default function WhatIsNeo() {
             </motion.div>
           ))}
         </div>
-      </motion.div>
-
-      {/* Enhanced CTA Section */}
-      <motion.div
-        initial={{ opacity: 0, y: 30 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8, delay: 1.4 }}
-        viewport={{ once: true }}
-        className="mt-8"
-      >
-        <Card className="mx-auto mb-8 max-w-md border-[#5FC6E5]/20 bg-gradient-to-r from-[#5FC6E5]/10 to-[#FBC721]/10">
-          <CardContent className="p-6 text-center">
-            <Target className="mx-auto mb-3 h-8 w-8 text-[#5FC6E5]" />
-            <h3 className="mb-2 text-lg font-semibold">
-              Ready to Start Your Journey?
-            </h3>
-            <p className="mb-4 text-sm text-muted-foreground">
-              Join hundreds of students already building their tech careers with
-              us
-            </p>
-            <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
-              <span>✨ Free to join</span>
-              <span>•</span>
-              <span>🚀 Instant access</span>
-              <span>•</span>
-              <span>🎯 Career focused</span>
-            </div>
-          </CardContent>
-        </Card>
       </motion.div>
     </motion.div>
   );

@@ -76,7 +76,7 @@ export default function Events() {
   return (
     <motion.div
       id="events"
-      className="relative w-full py-12"
+      className="relative w-full py-8"
       initial={{ opacity: 0 }}
       whileInView={{ opacity: 1 }}
       transition={{ duration: 1 }}
