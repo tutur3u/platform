@@ -214,7 +214,6 @@ export const CalendarSyncProvider = ({
       if (!cacheKey) return null;
 
       const cachedData = calendarCache[cacheKey];
-      console.log('isForcedRef.current in useQuery', isForcedRef.current);
 
       // If we have cached data and it's not stale, return it immediately
       if (
@@ -726,7 +725,6 @@ export const CalendarSyncProvider = ({
 
     // Use updateCache instead of direct mutation
     isForcedRef.current = true;
-    console.log('isForced in refresh', isForcedRef.current);
 
     queryClient.invalidateQueries({
       queryKey: ['databaseCalendarEvents', wsId, getCacheKey(dates)],
