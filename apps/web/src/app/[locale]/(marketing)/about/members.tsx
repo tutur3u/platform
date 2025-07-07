@@ -1,16 +1,9 @@
 'use client';
 
-import { members } from './data';
+import { DepartmentName, members } from './data';
 import MemberCard from './member-card';
 import { motion } from 'framer-motion';
 import { useState } from 'react';
-
-type DepartmentName =
-  | 'FinLog'
-  | 'Technology'
-  | 'Human Resources'
-  | 'Marketing'
-  | 'Executive Board';
 
 const cardVariants = {
   hidden: { y: 20, opacity: 0 },
@@ -28,25 +21,20 @@ const departments: { name: DepartmentName; color: string }[] = [
 ];
 
 export default function Members() {
-  const [hoveredDepartment, setHoveredDepartment] = useState<string | null>(
-    null
-  );
-  const [lockedDepartment, setLockedDepartment] = useState<string | null>(null);
+  const [hoveredDepartment, setHoveredDepartment] =
+    useState<DepartmentName | null>(null);
+  const [lockedDepartment, setLockedDepartment] =
+    useState<DepartmentName | null>(null);
 
   const activeDepartment = lockedDepartment || hoveredDepartment;
 
-  const isHidden = (memberDepartments: string[]) => {
+  const isHidden = (memberDepartments: DepartmentName[]) => {
     if (!activeDepartment) return false;
-
-    // Special case for Executive Board - show all executive board members
-    if (activeDepartment === 'Executive Board') {
-      return !memberDepartments.includes('Executive Board');
-    }
 
     return !memberDepartments.includes(activeDepartment);
   };
 
-  const handleDepartmentClick = (departmentName: string) => {
+  const handleDepartmentClick = (departmentName: DepartmentName) => {
     if (lockedDepartment === departmentName) {
       setLockedDepartment(null); // Unlock if clicking the same department
     } else {

@@ -1,19 +1,20 @@
+export type DepartmentName =
+  | 'FinLog'
+  | 'Technology'
+  | 'Human Resources'
+  | 'Marketing'
+  | 'Executive Board';
+
 export const members: {
   name: string;
   role: string;
-  departments: (
-    | 'Executive Board'
-    | 'Technology'
-    | 'Marketing'
-    | 'Human Resources'
-    | 'FinLog'
-  )[];
+  departments: DepartmentName[];
   image: string;
   bio: string;
   quote: string;
   socials: {
-    facebook: string;
-    linkedin: string;
+    facebook?: string;
+    linkedin?: string;
   };
 }[] = [
   {
@@ -61,7 +62,7 @@ export const members: {
     quote: 'Strive not to be a success, but rather to be of value.',
     socials: {
       facebook: 'https://www.facebook.com/share/12MY7CjvZmb/?mibextid=wwXIfr',
-      linkedin: '#',
+      linkedin: undefined,
     },
   },
   {
