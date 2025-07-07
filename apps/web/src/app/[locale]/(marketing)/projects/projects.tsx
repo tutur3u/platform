@@ -273,19 +273,24 @@ export default function Projects() {
                 <div className="flex items-start gap-3">
                   <div className="mt-3 h-2 w-2 flex-shrink-0 rounded-full bg-[#F4B71A]"></div>
                   <p className="font-medium text-gray-400">
-                    Interactive games and entertainment features including Neo Chess, Neo Crush, and other engaging multiplayer experiences.
+                    Interactive games and entertainment features including Neo
+                    Chess, Neo Crush, and other engaging multiplayer
+                    experiences.
                   </p>
                 </div>
                 <div className="flex items-start gap-3">
                   <div className="mt-3 h-2 w-2 flex-shrink-0 rounded-full bg-[#1AF4E6]"></div>
                   <p className="font-medium text-gray-400">
-                    Practical utility applications like ID scanner, time tracking tools, and various productivity enhancing features.
+                    Practical utility applications like ID scanner, time
+                    tracking tools, and various productivity enhancing features.
                   </p>
                 </div>
                 <div className="flex items-start gap-3">
                   <div className="mt-3 h-2 w-2 flex-shrink-0 rounded-full bg-[#F4B71A]"></div>
                   <p className="font-medium text-gray-400">
-                    Comprehensive workspace management system for organizing projects, managing team members, and streamlining club operations.
+                    Comprehensive workspace management system for organizing
+                    projects, managing team members, and streamlining club
+                    operations.
                   </p>
                 </div>
               </div>
