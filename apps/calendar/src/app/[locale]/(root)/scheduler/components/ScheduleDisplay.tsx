@@ -407,10 +407,12 @@ export function ScheduleDisplay({ events, tasks }: ScheduleDisplayProps) {
 
                                     {task && (
                                       <Badge
-                                        className={`${getPriorityColor(task.priority)} px-2 py-1 font-semibold text-xs`}
+                                        className={`${getPriorityColor(task.priority as TaskPriority)} px-2 py-1 font-semibold text-xs`}
                                       >
                                         <span className="mr-1">
-                                          {getPriorityIcon(task.priority)}
+                                          {getPriorityIcon(
+                                            task.priority as TaskPriority
+                                          )}
                                         </span>
                                         {task.priority}
                                       </Badge>
