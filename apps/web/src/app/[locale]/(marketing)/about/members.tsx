@@ -1,108 +1,174 @@
 'use client';
 
-import { members } from './data';
+import { DepartmentName, members } from './data';
 import MemberCard from './member-card';
+import { motion } from 'framer-motion';
 import { useState } from 'react';
 
-type DepartmentName =
-  | 'Finance'
-  | 'Technology'
-  | 'Human Resources'
-  | 'Marketing'
-  | 'External Relations'
-  | 'Executive Board';
+const cardVariants = {
+  hidden: { y: 20, opacity: 0 },
+  visible: {
+    y: 0,
+    opacity: 1,
+  },
+};
 
 const departments: { name: DepartmentName; color: string }[] = [
-  { name: 'Finance', color: 'text-green-500 dark:text-green-300' },
-  { name: 'Technology', color: 'text-blue-500 dark:text-blue-300' },
-  { name: 'Human Resources', color: 'text-purple-500 dark:text-purple-300' },
-  { name: 'Marketing', color: 'text-orange-500 dark:text-orange-300' },
-  { name: 'External Relations', color: 'text-red-500 dark:text-red-300' },
+  { name: 'FinLog', color: 'text-dynamic-green' },
+  { name: 'Technology', color: 'text-dynamic-blue' },
+  { name: 'Human Resources', color: 'text-dynamic-purple' },
+  { name: 'Marketing', color: 'text-dynamic-orange' },
 ];
 
 export default function Members() {
-  const [highlightedDepartment, setHighlightedDepartment] = useState<
-    DepartmentName | undefined
-  >(undefined);
+  const [hoveredDepartment, setHoveredDepartment] =
+    useState<DepartmentName | null>(null);
+  const [lockedDepartment, setLockedDepartment] =
+    useState<DepartmentName | null>(null);
 
-  const [pinState, setPinState] = useState<boolean>(false);
+  const activeDepartment = lockedDepartment || hoveredDepartment;
+
+  const isHidden = (memberDepartments: DepartmentName[]) => {
+    if (!activeDepartment) return false;
+
+    return !memberDepartments.includes(activeDepartment);
+  };
+
+  const handleDepartmentClick = (departmentName: DepartmentName) => {
+    if (lockedDepartment === departmentName) {
+      setLockedDepartment(null); // Unlock if clicking the same department
+    } else {
+      setLockedDepartment(departmentName);
+    }
+  };
 
   return (
-    <div className="flex flex-col items-center px-2">
-      <p className="mt-8 w-full bg-gradient-to-r from-[#F4B71A] to-[#1AF4E6] bg-clip-text p-3 text-center text-3xl font-black tracking-normal text-transparent md:text-5xl lg:text-6xl lg:tracking-wide">
-        The Team
+    <div className="flex flex-col items-center px-2 py-4">
+      <p className="mt-8 w-full bg-gradient-to-r from-yellow-400 via-red-500 to-pink-500 bg-clip-text p-3 text-center text-4xl font-black tracking-tight text-transparent md:text-5xl lg:text-6xl dark:from-yellow-300 dark:via-red-400 dark:to-pink-400">
+        Meet Our Team
       </p>
-      <div className="relative mx-auto mt-4 mb-4 max-w-4xl rounded-lg border border-foreground/10 bg-foreground/5 p-2 text-center text-base font-semibold tracking-wide text-foreground md:p-6 md:text-xl">
+      <div className="relative mx-auto mt-4 mb-8 max-w-4xl rounded-lg border border-border bg-card p-4 text-center text-base tracking-wide text-foreground/80 md:p-6 md:text-lg">
         RMIT Neo Culture Tech Club mostly operates technical events, workshops,
         trainings, etc… related to technology. Our target students are from the
         house of{' '}
-        <span className="font-bold text-brand-light-red underline underline-offset-4">
-          SSET
-        </span>
-        .
+        <span className="font-bold text-red-500 dark:text-red-400">SSET</span>.
       </div>
 
       <div className="my-4">
-        <div className="w-full px-2 text-center text-base font-semibold md:px-40 md:text-lg">
-          Our club has 6 core teams:{' '}
+        <div className="w-full px-2 text-center text-base font-medium text-muted-foreground md:px-40 md:text-lg">
+          Our club has 4 core teams:{' '}
           {departments.map((department, index) => (
             <span key={department.name}>
-              <button
-                className={`font-semibold underline underline-offset-2 transition duration-300 ${department.color} ${
-                  highlightedDepartment !== undefined &&
-                  highlightedDepartment !== department.name
-                    ? 'opacity-30'
+              <span
+                className={`font-semibold ${department.color} cursor-pointer transition-all duration-200 hover:underline ${
+                  lockedDepartment === department.name
+                    ? 'rounded px-1 underline ring-2 ring-current'
                     : ''
                 }`}
-                onMouseEnter={() => {
-                  if (!pinState) setHighlightedDepartment(department.name);
-                }}
-                onMouseLeave={() => {
-                  if (!pinState) setHighlightedDepartment(undefined);
-                }}
-                onClick={() => setPinState(!pinState)}
+                onMouseEnter={() => setHoveredDepartment(department.name)}
+                onMouseLeave={() => setHoveredDepartment(null)}
+                onClick={() => handleDepartmentClick(department.name)}
               >
                 {department.name}
-              </button>
+              </span>
               {index < departments.length - 1 && ', '}
             </span>
           ))}
           , with a dedicated{' '}
-          <button
-            className={`font-semibold text-pink-500 underline underline-offset-2 dark:text-pink-300 ${
-              highlightedDepartment !== undefined &&
-              highlightedDepartment !== 'Executive Board'
-                ? 'opacity-30'
+          <span
+            className={`cursor-pointer font-semibold text-dynamic-pink transition-all duration-200 hover:underline ${
+              lockedDepartment === 'Executive Board'
+                ? 'rounded px-1 underline ring-2 ring-current'
                 : ''
             }`}
-            onMouseEnter={() => {
-              if (!pinState) setHighlightedDepartment('Executive Board');
-            }}
-            onMouseLeave={() => {
-              if (!pinState) setHighlightedDepartment(undefined);
-            }}
-            onClick={() => setPinState(!pinState)}
+            onMouseEnter={() => setHoveredDepartment('Executive Board')}
+            onMouseLeave={() => setHoveredDepartment(null)}
+            onClick={() => handleDepartmentClick('Executive Board')}
           >
             Executive Board
-          </button>{' '}
+          </span>{' '}
           to oversee the operations of the club.
         </div>
       </div>
-      <div className="mt-4 grid grid-cols-1 gap-0 px-16 sm:grid-cols-2 md:gap-4 lg:grid-cols-3">
-        {members.map((p, index) => (
-          <div
+
+      <motion.div
+        className="mt-8 grid grid-cols-1 justify-items-center gap-8 px-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-4"
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, amount: 0.2 }}
+        variants={{
+          visible: {
+            transition: {
+              staggerChildren: 0.2,
+            },
+          },
+        }}
+      >
+        {/* First row - 4 members */}
+        {members.slice(0, 4).map((p, index) => (
+          <motion.div
             key={index}
-            className={`flex justify-center p-4 transition duration-300 ${
-              highlightedDepartment &&
-              !p.departments.includes(highlightedDepartment)
-                ? 'opacity-30'
-                : 'opacity-100'
+            className={`relative flex justify-center transition-all duration-300 ${
+              isHidden(p.departments)
+                ? 'scale-95 opacity-20'
+                : 'scale-100 opacity-100'
             }`}
+            variants={cardVariants}
           >
-            <MemberCard name={p.name} role={p.role} image={p.image} />
-          </div>
+            {isHidden(p.departments) && (
+              <div className="absolute inset-0 z-10 rounded-lg bg-black/20 backdrop-blur-[1px]" />
+            )}
+            <MemberCard
+              name={p.name}
+              role={p.role}
+              image={p.image}
+              bio={p.bio}
+              quote={p.quote}
+              socials={p.socials}
+            />
+          </motion.div>
         ))}
-      </div>
+      </motion.div>
+
+      {/* Second row - 3 members centered */}
+      <motion.div
+        className="mt-8 grid grid-cols-1 justify-items-center gap-8 px-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3"
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, amount: 0.2 }}
+        variants={{
+          visible: {
+            transition: {
+              staggerChildren: 0.2,
+              delayChildren: 0.6, // Delay second row
+            },
+          },
+        }}
+      >
+        {members.slice(4, 7).map((p, index) => (
+          <motion.div
+            key={index + 4}
+            className={`relative flex justify-center transition-all duration-300 ${
+              isHidden(p.departments)
+                ? 'scale-95 opacity-20'
+                : 'scale-100 opacity-100'
+            }`}
+            variants={cardVariants}
+          >
+            {isHidden(p.departments) && (
+              <div className="absolute inset-0 z-10 rounded-lg bg-black/20 backdrop-blur-[1px]" />
+            )}
+            <MemberCard
+              name={p.name}
+              role={p.role}
+              image={p.image}
+              bio={p.bio}
+              quote={p.quote}
+              socials={p.socials}
+            />
+          </motion.div>
+        ))}
+      </motion.div>
     </div>
   );
 }

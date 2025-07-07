@@ -1,85 +1,202 @@
 'use client';
 
+import { Badge } from '@ncthub/ui/badge';
+import { Button } from '@ncthub/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@ncthub/ui/card';
+import {
+  ArrowRight,
+  Briefcase,
+  ExternalLink,
+  Heart,
+  Sparkles,
+  Star,
+  Users,
+} from '@ncthub/ui/icons';
 import { motion } from 'framer-motion';
+import Link from 'next/link';
+
+const reasons = [
+  {
+    title: 'CLUB DEPARTMENTS',
+    icon: Briefcase,
+    description:
+      'Explore detailed job descriptions for all 4 departments in our comprehensive JD booklet. Find the perfect role that matches your skills, interests, and career goals within NEO Culture Tech.',
+    gradient: 'from-yellow-400 to-orange-500',
+    features: [
+      'Technology Department',
+      'Finance and Logistic Department',
+      'Human Resources Department',
+      'Marketing & Communications Department',
+    ],
+    buttonText: 'View JD Booklet',
+    link: 'https://www.canva.com/design/DAGrKe_Nafs/3vsd818ULI9XUEDdJitdFA/view?utlId=hbef356c036#3',
+    isExternal: true,
+    badgeText: 'Find Your Role',
+  },
+  {
+    title: 'NETWORKING',
+    icon: Users,
+    description:
+      'Build meaningful connections with industry professionals, experienced alumni, and passionate peers. Our network opens doors to internships, mentorships, and career opportunities.',
+    gradient: 'from-blue-400 to-cyan-500',
+    features: [
+      'Industry Mentor Matching',
+      'Peer Study Groups',
+      'Professional Development',
+      '24/7 Community Support',
+    ],
+    buttonText: 'Meet Our Team',
+    link: '/about',
+    isExternal: false,
+    badgeText: 'Career Growth',
+  },
+  {
+    title: 'MEMBERSHIP',
+    icon: Heart,
+    description:
+      'Be part of a community that believes in inclusive growth and continuous learning. We welcome all students passionate about technology, regardless of their background or experience level.',
+    gradient: 'from-purple-400 to-pink-500',
+    features: [
+      'Inclusive Learning Environment',
+      'Knowledge Sharing Sessions',
+      'Fun Tech Challenges',
+      'Continuous Skill Development',
+    ],
+    buttonText: 'Join Neo Tech',
+    link: 'https://forms.office.com/pages/responsepage.aspx?id=cTYy0b7NF0S01L2yS1Exa1l0v6gHzHhDlalTMeW3rV9UQVYxMUJSN0hISFhSQ0g2MU9VRjhIRUhOOC4u&route=shorturl',
+    isExternal: true,
+    badgeText: 'Inclusive Community',
+  },
+];
 
 export default function WhyUs() {
   return (
     <motion.div
+      id="why-us"
       className="flex flex-col"
       initial={{ opacity: 0, y: 50 }}
       transition={{ duration: 1 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
     >
-      <p className="mt-3 mb-12 bg-gradient-to-r from-yellow-400 to-yellow-900/80 bg-clip-text px-10 py-2 text-4xl font-bold text-transparent md:px-32 md:text-5xl lg:text-8xl">
-        Why us?
-      </p>
-      <div className="flex flex-col justify-between gap-8 text-center md:flex-row">
-        <div className="flex aspect-square flex-1 flex-col md:aspect-[3/4]">
-          <div
-            className="flex h-1/5 items-center justify-center rounded-t-2xl py-3"
-            style={{
-              background:
-                'linear-gradient(95.85deg, rgba(251, 200, 33, 0.7) -13.27%, rgba(94, 193, 224, 0.7) 100%)',
-            }}
+      {/* Hero Title */}
+      <div className="mb-16 text-center">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.8 }}
+          whileInView={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.8, delay: 0.2 }}
+          viewport={{ once: true }}
+          className="mb-6 inline-flex items-center gap-2"
+        >
+          <Sparkles className="h-8 w-8 text-yellow-400" />
+          <Badge
+            variant="outline"
+            className="border-yellow-400/50 px-4 py-2 text-lg text-yellow-400"
           >
-            <p className="text-xl font-semibold text-foreground md:text-2xl lg:text-3xl">
-              SPECIAL EVENTS
-            </p>
-          </div>
-          <div className="flex flex-1 items-center justify-center bg-slate-400/30 p-4 text-foreground dark:bg-slate-700/50">
-            <p className="text-center text-base md:text-sm lg:text-xl">
-              Events organized to support you in finding career paths in
-              technology, gaining deeper insights from company trips and alumni,
-              and joining coding competitions.
-            </p>
-          </div>
-          <div className="h-1/5 rounded-b-2xl bg-slate-400/30 md:[clip-path:polygon(0_0,90%_0,73%_80%,73%_100%,0_100%)] dark:bg-slate-700/50"></div>
-        </div>
-        <div className="flex aspect-square flex-1 flex-col md:aspect-[3/4]">
-          <div
-            className="flex h-1/5 items-center justify-center rounded-t-2xl py-3"
-            style={{
-              background:
-                'linear-gradient(95.85deg, rgba(251, 200, 33, 0.7) -13.27%, rgba(94, 193, 224, 0.7) 100%)',
-            }}
+            Why Choose Us
+          </Badge>
+          <Sparkles className="h-8 w-8 text-yellow-400" />
+        </motion.div>
+
+        <h2 className="mb-4 bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 bg-clip-text pb-4 text-4xl font-bold text-transparent drop-shadow-sm md:text-6xl lg:text-8xl">
+          Why us?
+        </h2>
+
+        <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
+          Discover what makes NEO Culture Tech the perfect choice for your
+          technology journey
+        </p>
+      </div>
+
+      {/* Cards Grid */}
+      <div className="mx-auto grid w-full max-w-7xl grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
+        {reasons.map((reason, index) => (
+          <motion.div
+            key={reason.title}
+            initial={{ opacity: 0, y: 50 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: index * 0.2 }}
+            viewport={{ once: true }}
+            whileHover={{ scale: 1.02 }}
+            className="group"
           >
-            <p className="text-xl font-semibold text-foreground md:text-2xl lg:text-3xl">
-              NETWORKING
-            </p>
-          </div>
-          <div className="flex flex-1 items-center justify-center bg-slate-400/30 p-4 text-foreground dark:bg-slate-700/50">
-            <p className="text-base md:text-sm lg:text-xl">
-              Our network is the most valuable asset for our members. We connect
-              you with the right people to help you achieve your goals.
-            </p>
-          </div>
-          <div className="relative h-1/5 rounded-b-2xl bg-slate-400/30 md:rounded-b-none dark:bg-slate-700/50">
-            <div className="absolute bottom-0 left-0 hidden h-4/5 w-1/6 -translate-x-full bg-slate-400/30 [clip-path:polygon(50%_0%,100%_0,100%_100%,0_100%,0_50%)] md:block dark:bg-slate-700/50"></div>
-            <div className="absolute right-0 bottom-0 hidden h-4/5 w-1/12 translate-x-full bg-slate-400/30 [clip-path:polygon(0_0,100%_30%,100%_100%,0%_100%)] md:block dark:bg-slate-700/50"></div>
-          </div>
-        </div>
-        <div className="flex aspect-square flex-1 flex-col md:aspect-[3/4]">
-          <div
-            className="flex h-1/5 items-center justify-center rounded-t-2xl py-3"
-            style={{
-              background:
-                'linear-gradient(95.85deg, rgba(251, 200, 33, 0.7) -13.27%, rgba(94, 193, 224, 0.7) 100%)',
-            }}
-          >
-            <p className="text-xl font-semibold text-foreground md:text-2xl lg:text-3xl">
-              VISIONS
-            </p>
-          </div>
-          <div className="flex flex-1 items-center justify-center bg-slate-400/30 p-4 text-foreground dark:bg-slate-700/50">
-            <p className="text-base md:text-sm lg:text-xl">
-              We create an environment not only for students from SSET students
-              but also others to learn new knowledge, have fun, and expand their
-              network.
-            </p>
-          </div>
-          <div className="h-1/5 rounded-b-2xl bg-slate-400/30 md:[clip-path:polygon(0_0,100%_0,100%_100%,15%_100%,10%_100%,10%_30%)] dark:bg-slate-700/50"></div>
-        </div>
+            <Card className="h-full border-2 bg-gradient-to-br from-background/50 to-background shadow-lg backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:border-primary/50 hover:shadow-xl">
+              <CardHeader className="pb-4 text-center">
+                {/* Icon with gradient background */}
+                <div
+                  className={`mx-auto mb-4 h-16 w-16 rounded-full bg-gradient-to-r ${reason.gradient} p-0.5 transition-transform duration-300 group-hover:scale-105`}
+                >
+                  <div className="flex h-full w-full items-center justify-center rounded-full bg-background">
+                    <reason.icon className="h-8 w-8 text-foreground transition-transform duration-300 group-hover:scale-110" />
+                  </div>
+                </div>
+
+                <CardTitle className="mb-2 text-xl font-bold md:text-2xl">
+                  {reason.title}
+                </CardTitle>
+
+                <Badge
+                  variant="secondary"
+                  className={`bg-gradient-to-r ${reason.gradient} mb-4 border-0 text-white shadow-sm`}
+                >
+                  {reason.badgeText}
+                </Badge>
+              </CardHeader>
+
+              <CardContent className="pt-0">
+                <CardDescription className="mb-6 text-base leading-relaxed">
+                  {reason.description}
+                </CardDescription>
+
+                {/* Feature list */}
+                <div className="mb-6 space-y-2">
+                  {reason.features.map((feature, featureIndex) => (
+                    <div key={featureIndex} className="flex items-center gap-2">
+                      <Star className="h-4 w-4 fill-current text-yellow-400" />
+                      <span className="text-sm text-muted-foreground">
+                        {feature}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Call to action */}
+                {reason.isExternal ? (
+                  <Link
+                    href={reason.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={`${reason.buttonText} - Opens in new tab`}
+                  >
+                    <Button
+                      variant="outline"
+                      className="w-full transition-all duration-300 group-hover:bg-primary group-hover:text-primary-foreground group-hover:shadow-lg"
+                    >
+                      {reason.buttonText}
+                      <ExternalLink className="ml-2 h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
+                    </Button>
+                  </Link>
+                ) : (
+                  <Link href={reason.link} aria-label={reason.buttonText}>
+                    <Button
+                      variant="outline"
+                      className="w-full transition-all duration-300 group-hover:bg-primary group-hover:text-primary-foreground group-hover:shadow-lg"
+                    >
+                      {reason.buttonText}
+                      <ArrowRight className="ml-2 h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
+                    </Button>
+                  </Link>
+                )}
+              </CardContent>
+            </Card>
+          </motion.div>
+        ))}
       </div>
     </motion.div>
   );
