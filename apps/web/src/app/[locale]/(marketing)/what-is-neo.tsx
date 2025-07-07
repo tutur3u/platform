@@ -104,7 +104,7 @@ export default function WhatIsNeo() {
         viewport={{ once: true }}
       >
         <p className="mt-6 text-lg font-semibold tracking-wide md:text-xl lg:mt-10 lg:text-3xl">
-          Founded in 2019, we are the best club for
+          Founded in 2020, we are the best club for
           <span className="relative text-[#5FC6E5]">
             {' '}
             SSET students{' '}
