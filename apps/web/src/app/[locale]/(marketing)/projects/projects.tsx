@@ -6,6 +6,7 @@ import ProjectCard from './project-card';
 import ProjectDetail from './project-detail';
 import { AnimatePresence, PanInfo, motion } from 'framer-motion';
 import { Bot, Layers, LayoutGrid, Search, Smile } from 'lucide-react';
+import Image from 'next/image';
 import { useCallback, useEffect, useState } from 'react';
 
 type ProjectType = 'web' | 'software' | 'hardware' | undefined;
@@ -215,7 +216,7 @@ export default function Projects() {
         <p className="text-2xl leading-normal font-extrabold md:text-3xl lg:text-4xl">
           <span className="text-white">Our</span>{' '}
           <span className="border-b-4 border-[#FBC721] whitespace-nowrap text-[#5FC6E5]">
-            FlagShip
+            Flagship
           </span>{' '}
           <span className="text-white">Project</span>
         </p>
@@ -236,20 +237,14 @@ export default function Projects() {
               transition={{ duration: 0.8, delay: 0.6 }}
             >
               <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#F4B71A]/20 to-[#1AF4E6]/20 p-1">
-                <div className="relative h-64 overflow-hidden rounded-xl bg-gradient-to-br from-slate-800 to-slate-900 md:h-80 lg:h-96">
+                <div className="relative h-64 overflow-hidden rounded-xl md:h-80 lg:h-96">
+                  <Image
+                    src="/media/marketing/landing-page.jpg"
+                    alt="NCT Landing Page v2 Screenshot"
+                    fill
+                    className="object-cover"
+                  />
                   <div className="absolute inset-0 bg-gradient-to-tr from-[#F4B71A]/10 to-[#1AF4E6]/10"></div>
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="text-6xl opacity-20 md:text-8xl lg:text-9xl">
-                      🚀
-                    </div>
-                  </div>
-                  <div className="absolute right-4 bottom-4 left-4">
-                    <div className="rounded-lg bg-black/40 px-4 py-2 backdrop-blur-sm">
-                      <p className="text-sm font-medium text-white/90">
-                        Project Screenshot
-                      </p>
-                    </div>
-                  </div>
                 </div>
               </div>
               <div className="absolute -inset-4 rounded-3xl bg-gradient-to-r from-[#F4B71A]/20 to-[#1AF4E6]/20 opacity-0 blur-xl transition-opacity duration-500 group-hover:opacity-100"></div>
@@ -264,14 +259,13 @@ export default function Projects() {
             >
               <div>
                 <h3 className="mb-4 text-2xl font-extrabold text-white md:text-3xl lg:text-4xl">
-                  NeoCulture{' '}
-                  <span className="text-[#5FC6E5]">Hub Platform</span>
+                  NCT <span className="text-[#5FC6E5]">Hub Platform</span>
                 </h3>
-                <p className="text-lg leading-relaxed font-medium text-gray-300 md:text-xl">
-                  Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed
-                  do eiusmod tempor incididunt ut labore et dolore magna aliqua.
-                  Ut enim ad minim veniam, quis nostrud exercitation ullamco
-                  laboris.
+                <p className="text-md leading-relaxed font-medium text-gray-300 md:text-lg">
+                  The official web-based platform for RMIT Neo Culture Tech
+                  based on Tuturuuu, serving as both an informative digital
+                  showcase for visitors and a comprehensive management platform
+                  for core team members.
                 </p>
               </div>
 
@@ -279,50 +273,22 @@ export default function Projects() {
                 <div className="flex items-start gap-3">
                   <div className="mt-3 h-2 w-2 flex-shrink-0 rounded-full bg-[#F4B71A]"></div>
                   <p className="font-medium text-gray-400">
-                    Duis aute irure dolor in reprehenderit in voluptate velit
-                    esse cillum dolore eu fugiat nulla pariatur.
+                    Interactive games and entertainment features including Neo Chess, Neo Crush, and other engaging multiplayer experiences.
                   </p>
                 </div>
                 <div className="flex items-start gap-3">
                   <div className="mt-3 h-2 w-2 flex-shrink-0 rounded-full bg-[#1AF4E6]"></div>
                   <p className="font-medium text-gray-400">
-                    Excepteur sint occaecat cupidatat non proident, sunt in
-                    culpa qui officia deserunt mollit anim.
+                    Practical utility applications like ID scanner, time tracking tools, and various productivity enhancing features.
                   </p>
                 </div>
                 <div className="flex items-start gap-3">
                   <div className="mt-3 h-2 w-2 flex-shrink-0 rounded-full bg-[#F4B71A]"></div>
                   <p className="font-medium text-gray-400">
-                    Sed ut perspiciatis unde omnis iste natus error sit
-                    voluptatem accusantium doloremque laudantium.
+                    Comprehensive workspace management system for organizing projects, managing team members, and streamlining club operations.
                   </p>
                 </div>
               </div>
-
-              <div className="flex flex-wrap gap-3 pt-4">
-                {[
-                  'React',
-                  'TypeScript',
-                  'Next.js',
-                  'Tailwind CSS',
-                  'Framer Motion',
-                ].map((tech) => (
-                  <span
-                    key={tech}
-                    className="rounded-full border border-white/10 bg-gradient-to-r from-[#F4B71A]/20 to-[#1AF4E6]/20 px-3 py-1 text-sm font-medium text-white/90"
-                  >
-                    {tech}
-                  </span>
-                ))}
-              </div>
-
-              <motion.button
-                className="mt-6 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#F4B71A] to-[#1AF4E6] px-6 py-3 text-lg font-bold text-slate-900 transition-all duration-300 hover:scale-105 hover:shadow-lg"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                Learn More <Bot className="h-5 w-5" />
-              </motion.button>
             </motion.div>
           </div>
         </motion.div>
