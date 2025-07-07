@@ -14,13 +14,13 @@ export type Project = {
 
 export const projects: Project[] = [
   {
-    name: 'Neo ID Scanner',
+    name: 'Neo Scanner',
     description:
       "An ID scanner used to retrieve student's name and ID in events.",
     type: 'software',
     techStack: ['Python', 'React.js'],
-    status: 'ongoing',
-    manager: 'Nguyen Ngoc Luong',
+    status: 'completed',
+    manager: 'Nguyen Gia Khang',
     purpose:
       "This project aims to save time for gathering participant's information.",
   },
