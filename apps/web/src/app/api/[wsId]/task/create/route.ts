@@ -34,6 +34,7 @@ export async function POST(
       calendar_hours,
       start_date,
       end_date,
+      priority,
     } = body;
 
     if (!name || typeof name !== 'string' || name.trim().length === 0) {
@@ -75,6 +76,7 @@ export async function POST(
       calendar_hours,
       start_date: start_date || null,
       end_date: end_date || null,
+      user_defined_priority: priority || 'normal',
     };
 
     // 4. Insert task into Supabase
@@ -110,8 +112,7 @@ export async function POST(
       minDuration: dbTask.min_split_duration_minutes
         ? dbTask.min_split_duration_minutes / 60
         : 0.5,
-      priority:
-        typeof dbTask.priority === 'string' ? dbTask.priority : 'normal',
+      priority: dbTask.user_defined_priority || 'normal',
       category: 'work',
       events: [],
     };
@@ -122,7 +123,7 @@ export async function POST(
       events,
       defaultActiveHours
     );
-if (newScheduledEvents.length > 0) {
+    if (newScheduledEvents.length > 0) {
       const insertData = newScheduledEvents.map((event) => ({
         ws_id: wsId,
         task_id: event.taskId,

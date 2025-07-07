@@ -55,7 +55,7 @@ export default function AddEventModal({
     calendar_hours: 'work_hours',
     start_date: '',
     end_date: '',
-    priority: 'medium',
+    priority: 'normal',
   });
 
   const [errors, setErrors] = React.useState<Record<string, string>>({});
@@ -155,8 +155,8 @@ export default function AddEventModal({
       icon: '😞',
     },
     {
-      value: 'medium',
-      label: 'Medium',
+      value: 'normal',
+      label: 'Normal',
       color: 'bg-yellow-400',
       icon: '😐',
     },
@@ -169,14 +169,14 @@ export default function AddEventModal({
   ];
 
   const getPriorityFromPosition = React.useCallback((clientX: number) => {
-    if (!sliderRef.current) return 'medium';
+    if (!sliderRef.current) return 'normal';
 
     const rect = sliderRef.current.getBoundingClientRect();
     const position = (clientX - rect.left) / rect.width;
 
     if (position <= 0.25) return 'critical';
     if (position <= 0.5) return 'high';
-    if (position <= 0.75) return 'medium';
+    if (position <= 0.75) return 'normal';
     return 'low';
   }, []);
 
@@ -315,7 +315,7 @@ export default function AddEventModal({
       calendar_hours: 'work_hours',
       start_date: '',
       end_date: '',
-      priority: 'medium',
+      priority: 'normal',
     });
     setErrors({});
     onClose?.();
@@ -370,7 +370,7 @@ export default function AddEventModal({
                   aria-valuenow={getCurrentPriorityIndex()}
                   aria-valuetext={
                     prioritySliderOptions[getCurrentPriorityIndex()]?.label ||
-                    'Medium'
+                    'normal'
                   }
                   tabIndex={0}
                   className="absolute top-3 right-0 left-0 z-30 h-7 cursor-pointer select-none rounded focus:outline-none focus:ring-2 focus:ring-blue-300 focus:ring-offset-2"
@@ -400,7 +400,7 @@ export default function AddEventModal({
                       updateFormData(
                         'priority',
                         prioritySliderOptions[currentIndex - 1]?.value ??
-                          'medium'
+                          'normal'
                       );
                     } else if (
                       e.key === 'ArrowRight' &&
@@ -410,13 +410,13 @@ export default function AddEventModal({
                       updateFormData(
                         'priority',
                         prioritySliderOptions[currentIndex + 1]?.value ??
-                          'medium'
+                          'normal'
                       );
                     }
                   }}
                 >
                   {/* Track */}
-                  <div className="absolute top-3 right-0 left-0 z-10 h-2 rounded-full bg-gradient-to-r from-red-500 via-orange-400 via-yellow-400 to-green-500 opacity-60" />
+                  <div className="absolute top-3 right-0 left-0 z-10 h-2 rounded-full bg-gradient-to-r from-red-500 via-orange-400 to-green-500 opacity-60" />
                   {/* Thumb: selected icon in a styled circle */}
                   <div
                     style={{ left: `calc(${getSliderPosition()}% - 14px)` }}
@@ -667,30 +667,6 @@ export default function AddEventModal({
                     </p>
                   )}
                 </div>
-              </div>
-              {/* End Date */}
-              <div className="w-48">
-                <Label htmlFor="end-date" className="mb-1 block text-xs">
-                  End (optional)
-                </Label>
-                <div className="relative">
-                  <span className="-translate-y-1/2 pointer-events-none absolute top-1/2 left-3 flex items-center text-zinc-400">
-                    <CalendarIcon className="h-5 w-5" />
-                  </span>
-                  <Input
-                    id="end-date"
-                    type="datetime-local"
-                    value={formData.end_date}
-                    onChange={(e) => updateFormData('end_date', e.target.value)}
-                    min={dayjs().format('YYYY-MM-DDTHH:mm')}
-                    className={`h-10 w-full rounded-lg border-zinc-200 bg-zinc-50 pr-2 pl-10 text-sm shadow-sm transition-all focus:shadow-md focus:ring-2 focus:ring-blue-300 dark:border-zinc-700 dark:bg-zinc-800 ${errors.end_date ? 'border-destructive' : ''}`}
-                  />
-                </div>
-                {errors.end_date && (
-                  <p className="mt-0.5 text-destructive text-xs">
-                    {errors.end_date}
-                  </p>
-                )}
               </div>
             </div>
             <div className="mt-1 flex items-center gap-2 rounded-md bg-blue-50 p-2 text-blue-800 text-xs dark:bg-blue-950 dark:text-blue-200">
