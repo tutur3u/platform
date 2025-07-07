@@ -16,6 +16,114 @@ const NCT_REPO_URL = 'https://github.com/rmit-nct/hub';
 
 export const projects: Project[] = [
   {
+    name: '[Ga] Remote-Controlled Car',
+    description:
+      'A remote-controlled car project featuring wireless control, real-time video streaming, and autonomous navigation capabilities.',
+    type: 'hardware',
+    techStack: ['Arduino', 'C++', 'Solid Work'],
+    status: 'completed',
+    manager: 'Le Van Chi Hoang',
+    members: [
+      {
+        name: 'Nguyen Ngoc Thien Ngan',
+        role: 'Hardware Developer',
+      },
+      {
+        name: 'Duong The Vong',
+        role: 'Software Engineer',
+      },
+      {
+        name: 'Vo Dang Khoa',
+        role: 'Software Developer',
+      },
+    ],
+    purpose:
+      'This project aims to create an advanced remote-controlled vehicle with wireless control capabilities, demonstrating embedded systems programming and hardware integration skills.',
+    githubUrl: 'https://github.com/rmit-nct/remote-car-ga',
+    image: '/media/projects/remote-car-3.jpg',
+  },
+  {
+    name: '[minhmoi] Remote-Controlled Car',
+    description:
+      'A remote-controlled car project featuring wireless control, real-time video streaming, and autonomous navigation capabilities.',
+    type: 'hardware',
+    techStack: ['Arduino', 'C++', 'Solid Work'],
+    status: 'completed',
+    manager: 'Cu Dinh Bach',
+    members: [
+      {
+        name: 'Nguyen Do Tuong Van',
+        role: 'Hardware Developer',
+      },
+      {
+        name: 'Tran Hoang Minh',
+        role: 'Software Engineer',
+      },
+      {
+        name: 'Nguyen Nghia Hiep',
+        role: 'Software Developer',
+      },
+    ],
+    purpose:
+      'This project aims to create an advanced remote-controlled vehicle with wireless control capabilities, demonstrating embedded systems programming and hardware integration skills.',
+    githubUrl: 'https://github.com/rmit-nct/remote-car-minhmoi',
+    image: '/media/projects/remote-car-2.jpg',
+  },
+  {
+    name: '[TDOC] Remote-Controlled Car',
+    description:
+      'A remote-controlled car project featuring wireless control, real-time video streaming, and autonomous navigation capabilities.',
+    type: 'hardware',
+    techStack: ['Arduino', 'C++', 'Solid Work'],
+    status: 'completed',
+    manager: 'Truong Duc Qui',
+    members: [
+      {
+        name: 'Mai Dang Khoa',
+        role: 'Hardware Engineer',
+      },
+      {
+        name: 'Pham Le Hoang Phu',
+        role: 'Software Developer',
+      },
+    ],
+    purpose:
+      'This project aims to create an advanced remote-controlled vehicle with wireless control capabilities, demonstrating embedded systems programming and hardware integration skills.',
+    githubUrl: 'https://github.com/rmit-nct/remote-car-three-dudes-one-car',
+    demoUrl: 'https://www.youtube.com/watch?v=myx7Zmuy4rU',
+    image: '/media/projects/remote-car-1.jpg',
+  },
+  {
+    name: 'NCT Krypto',
+    description:
+      'A real-time cryptocurrency price tracking application that displays live market data, price charts, and market trends for various cryptocurrencies.',
+    type: 'web',
+    techStack: ['Next.js', 'Typescript', 'Tailwind CSS'],
+    status: 'completed',
+    manager: 'Nguyen An Nhien',
+    members: [
+      {
+        name: 'Chau Tung Nguyen',
+        role: 'Developer',
+      },
+      {
+        name: 'Nguyen Don Gia Phat',
+        role: 'Web Designer',
+      },
+      {
+        name: 'Nguyen Phuong Anh',
+        role: 'Web Designer',
+      },
+      {
+        name: 'Tran Dang Phuc',
+        role: 'Web Designer',
+      },
+    ],
+    purpose:
+      'This project aims to provide users with up-to-date cryptocurrency market information, enabling them to monitor price movements, analyze trends, and make informed decisions about digital assets.',
+    githubUrl: 'https://github.com/rmit-nct/nct-krypto',
+  },
+  {
     name: 'NCT Landing Page v2',
     description:
       'A completely redesigned landing page with modern UI/UX, enhanced user experience, and improved visual appeal.',

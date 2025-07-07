@@ -150,7 +150,7 @@ export default function ProjectDetail({ onClose, data }: ProjectDetailProps) {
                     className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#F4B71A] to-[#1AF4E6] px-6 py-3 font-medium text-black transition-all duration-200 hover:shadow-lg hover:shadow-[#F4B71A]/30"
                   >
                     <Play size={20} />
-                    <span>Try Demo</span>
+                    <span>View Demo</span>
                   </motion.a>
                 )}
               </div>
