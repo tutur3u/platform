@@ -1,6 +1,6 @@
 import { Project } from './data';
 import { motion } from 'framer-motion';
-import { ExternalLink, Github, Play, Star, Users, Zap } from 'lucide-react';
+import { Github, Globe, Monitor, Play, Users, Wrench } from 'lucide-react';
 
 interface ProjectCardProps {
   project: Project;
@@ -21,19 +21,19 @@ const STATUS_COLORS = {
 const TYPE_CONFIG = {
   web: {
     label: 'Web Development',
-    icon: ExternalLink,
+    icon: Globe,
     gradient: 'from-purple-500 to-pink-500',
     bgGradient: 'from-purple-500/10 to-pink-500/10',
   },
   software: {
     label: 'Software',
-    icon: Zap,
+    icon: Monitor,
     gradient: 'from-blue-500 to-cyan-500',
     bgGradient: 'from-blue-500/10 to-cyan-500/10',
   },
   hardware: {
     label: 'Hardware',
-    icon: Star,
+    icon: Wrench,
     gradient: 'from-orange-500 to-red-500',
     bgGradient: 'from-orange-500/10 to-red-500/10',
   },
@@ -93,6 +93,18 @@ export default function ProjectCard({
     </div>
   );
 
+  // Enhanced floating type indicator
+  const renderTypeIndicator = () => (
+    <div className="absolute top-4 right-4">
+      <div
+        className={`flex items-center gap-2 rounded-full bg-gradient-to-r px-3 py-1 text-xs font-medium text-white ${typeConfig.gradient}`}
+      >
+        <TypeIcon className="h-3 w-3" />
+        <span>{typeConfig.label}</span>
+      </div>
+    </div>
+  );
+
   // Render the card header with enhanced typography
   const renderHeader = () => (
     <div className="mt-8 mb-6">
@@ -108,13 +120,6 @@ export default function ProjectCard({
           >
             {project.name}
           </h3>
-          <div className="mt-1 flex items-center gap-2">
-            <span
-              className={`rounded-full bg-gradient-to-r px-2 py-1 text-xs font-medium ${typeConfig.gradient} text-white`}
-            >
-              {typeConfig.label}
-            </span>
-          </div>
         </div>
       </div>
 
@@ -277,6 +282,9 @@ export default function ProjectCard({
       <div className={getCardContainerStyles()}>
         {/* Status Indicator */}
         {renderStatusIndicator()}
+
+        {/* Type Indicator */}
+        {renderTypeIndicator()}
 
         {/* Card Content - Flex grow to push footer down */}
         <div className="flex flex-grow flex-col">

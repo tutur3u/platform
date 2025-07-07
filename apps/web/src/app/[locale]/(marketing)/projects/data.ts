@@ -40,7 +40,7 @@ export const projects: Project[] = [
     purpose:
       'This project aims to create an advanced remote-controlled vehicle with wireless control capabilities, demonstrating embedded systems programming and hardware integration skills.',
     githubUrl: 'https://github.com/rmit-nct/remote-car-ga',
-    image: '/media/projects/remote-car-3.jpg',
+    image: '/media/projects/remote-car-3.jpeg',
   },
   {
     name: '[minhmoi] Remote-Controlled Car',
@@ -122,6 +122,7 @@ export const projects: Project[] = [
     purpose:
       'This project aims to provide users with up-to-date cryptocurrency market information, enabling them to monitor price movements, analyze trends, and make informed decisions about digital assets.',
     githubUrl: 'https://github.com/rmit-nct/nct-krypto',
+    image: '/media/projects/nct-krypto.png',
   },
   {
     name: 'NCT Landing Page v2',
