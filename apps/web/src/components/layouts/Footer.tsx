@@ -15,14 +15,10 @@ export default async function Footer() {
 
       <Separator className="mt-8 h-1 bg-gradient-to-r from-[#5FC6E5] to-[#FBC821] blur-sm" />
 
-      <div className="flex flex-col items-center gap-8 px-4 py-8 md:items-start md:gap-12 md:px-32 md:py-24">
-        <div className="flex w-fit flex-col items-center gap-2">
-          <Link
-            href="/"
-            className="flex items-center justify-center transition md:flex-col md:items-start md:justify-start dark:hover:text-blue-200"
-            aria-label="Neo Culture Tech"
-          >
-            <div className="aspect-square w-24 items-start md:mb-4 md:w-28 lg:w-32">
+      <div className="flex flex-col items-center justify-between gap-12 px-4 py-8 md:px-32 md:py-24 lg:flex-row">
+        <div className="flex w-fit flex-col items-center gap-6">
+          <Link href="/" aria-label="Neo Culture Tech">
+            <div className="aspect-square w-20 items-start md:w-24 lg:w-28">
               <svg
                 width="100%"
                 height="100%"
@@ -100,15 +96,15 @@ export default async function Footer() {
         </div>
 
         <div className="flex flex-col flex-wrap items-center gap-8 md:flex-row md:items-start md:gap-16">
-          <div className="flex flex-col gap-1">
-            <div className="text-lg font-semibold uppercase md:w-fit lg:text-xl">
+          <div className="flex flex-col items-start gap-1">
+            <div className="text-lg font-semibold uppercase lg:text-xl">
               {t('common.legal')}
             </div>
 
             <Link
               href="/terms"
               target="_blank"
-              className="text-foreground/50 hover:text-foreground hover:underline md:w-fit"
+              className="text-foreground/50 hover:text-foreground/80"
             >
               {t('common.terms')}
             </Link>
@@ -116,38 +112,38 @@ export default async function Footer() {
             <Link
               href="/privacy"
               target="_blank"
-              className="text-foreground/50 hover:text-foreground hover:underline md:w-fit"
+              className="text-foreground/50 hover:text-foreground/80"
             >
               {t('common.privacy')}
             </Link>
           </div>
-          <div className="flex flex-col gap-1">
-            <div className="text-lg font-semibold uppercase md:w-fit md:text-xl">
+          <div className="flex flex-col items-start gap-1">
+            <div className="text-lg font-semibold uppercase md:text-xl">
               {t('common.resources')}
             </div>
 
             <Link
               href="/meet-together"
-              className="text-foreground/50 hover:text-foreground hover:underline md:w-fit"
+              className="text-foreground/50 hover:text-foreground/80"
             >
               {t('common.meet-together')}
             </Link>
 
             <Link
               href="/qr-generator"
-              className="text-foreground/50 hover:text-foreground hover:underline md:w-fit"
+              className="text-foreground/50 hover:text-foreground/80"
             >
               {t('common.qr_generator')}
             </Link>
           </div>
-          <div className="flex flex-col gap-1">
-            <div className="text-lg font-semibold uppercase md:w-fit md:text-xl">
+          <div className="flex flex-col items-start gap-1">
+            <div className="text-lg font-semibold uppercase md:text-xl">
               {t('common.developers')}
             </div>
             <Link
               href="https://github.com/rmit-nct/hub"
               target="_blank"
-              className="text-foreground/50 hover:text-foreground hover:underline md:w-fit"
+              className="text-foreground/50 hover:text-foreground/80 hover:underline"
             >
               {t('common.open-source')}
             </Link>
@@ -155,17 +151,17 @@ export default async function Footer() {
             <Link
               href="https://tuturuuu.com"
               target="_blank"
-              className="text-foreground/50 hover:text-foreground hover:underline md:w-fit"
+              className="text-foreground/50 hover:text-foreground/80"
             >
               Tuturuuu
             </Link>
           </div>
-          <div className="flex flex-col gap-1">
-            <div className="text-lg font-semibold uppercase md:w-fit md:text-xl">
+          <div className="flex flex-col items-start gap-1">
+            <div className="text-lg font-semibold uppercase md:text-xl">
               Our Address:
             </div>
 
-            <div className="text-foreground/50 hover:text-foreground hover:underline md:w-fit md:text-left">
+            <div className="text-left text-foreground/50 hover:text-foreground/80">
               702 Nguyen Van Linh, Tan Hung Ward, <br /> Ho Chi Minh City,
               Vietnam
             </div>
