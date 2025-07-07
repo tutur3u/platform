@@ -593,8 +593,10 @@ export const CalendarSyncProvider = ({
       isForcedRef.current = true;
       // For current week, also reset the cache timestamp to force refresh
       if (isCurrentWeek) {
-        cacheData.dbLastUpdated = 0;
-        cacheData.googleLastUpdated = 0;
+        updateCache(cacheKey, {
+          dbLastUpdated: 0,
+          googleLastUpdated: 0,
+        });
       }
     }
 
@@ -722,14 +724,12 @@ export const CalendarSyncProvider = ({
     const cacheKey = getCacheKey(dates);
     if (!cacheKey) return null;
 
-
-    // Use updateCache instead of direct mutation
     isForcedRef.current = true;
 
     queryClient.invalidateQueries({
       queryKey: ['databaseCalendarEvents', wsId, getCacheKey(dates)],
     });
-  }, [queryClient, wsId, calendarCache, dates, updateCache]);
+  }, [queryClient, wsId, dates]);
 
   const eventsWithoutAllDays = useMemo(() => {
     // Process events immediately when they change
