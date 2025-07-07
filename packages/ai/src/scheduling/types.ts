@@ -28,7 +28,7 @@ export interface Task {
   minDuration: number;
   maxDuration: number;
   category: 'work' | 'personal' | 'meeting';
-  priority: any;
+  priority: TaskPriority | string;
   events: Event[];
   deadline?: dayjs.Dayjs;
   taskId?: string;
