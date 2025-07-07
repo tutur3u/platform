@@ -637,7 +637,6 @@ export default function AddEventModal({
                         updateFormData('start_date', e.target.value)
                       }
                       min={dayjs().format('YYYY-MM-DDTHH:mm')}
-                      className="h-10 w-full rounded-lg border-zinc-200 bg-zinc-50 pr-2 pl-10 text-sm shadow-sm transition-all focus:shadow-md focus:ring-2 focus:ring-blue-300 dark:border-zinc-700 dark:bg-zinc-800"
                     />
                   </div>
                 </div>
@@ -658,7 +657,6 @@ export default function AddEventModal({
                         updateFormData('end_date', e.target.value)
                       }
                       min={dayjs().format('YYYY-MM-DDTHH:mm')}
-                      className={`h-10 w-full rounded-lg border-zinc-200 bg-zinc-50 pr-2 pl-10 text-sm shadow-sm transition-all focus:shadow-md focus:ring-2 focus:ring-blue-300 dark:border-zinc-700 dark:bg-zinc-800 ${errors.end_date ? 'border-destructive' : ''}`}
                     />
                   </div>
                   {errors.end_date && (
