@@ -2,8 +2,22 @@
 
 import { Button } from '@ncthub/ui/button';
 import { LoadingIndicator } from '@ncthub/ui/custom/loading-indicator';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@ncthub/ui/dropdown-menu';
 import { useToast } from '@ncthub/ui/hooks/use-toast';
-import { AlertCircle, Camera, CameraOff, Scan, Zap } from '@ncthub/ui/icons';
+import {
+  AlertCircle,
+  Camera,
+  CameraOff,
+  ChevronDown,
+  Scan,
+  Video,
+  Zap,
+} from '@ncthub/ui/icons';
 import { cn } from '@ncthub/utils/format';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
@@ -11,64 +25,129 @@ interface VideoCaptureProps {
   onNewStudent: (name: string, studentNumber: string) => void;
 }
 
+interface CameraDevice {
+  deviceId: string;
+  label: string;
+}
+
 export default function VideoCapture({ onNewStudent }: VideoCaptureProps) {
-  const [cameraOn, setCameraOn] = useState<boolean>(false);
-  const [capturing, setCapturing] = useState<boolean>(false);
-  const [isReady, setIsReady] = useState<boolean>(false);
+  const [availableDevices, setAvailableDevices] = useState<CameraDevice[]>([]);
+  const [selectedDevice, setSelectedDevice] = useState<string | null>(null);
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
+  const [cameraOn, setCameraOn] = useState<boolean>(false);
+  const [capturing, setCapturing] = useState<boolean>(false);
+  const [isReady, setIsReady] = useState<boolean>(false);
+
   const { toast } = useToast();
+
+  const getSelectedDeviceLabel = () => {
+    const device = availableDevices.find((d) => d.deviceId === selectedDevice);
+    return device?.label || 'Select Camera';
+  };
+
+  // Enumerate available camera devices
+  const enumerateDevices = useCallback(async () => {
+    try {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const videoDevices = devices
+        .filter((device) => device.kind === 'videoinput')
+        .map((device) => ({
+          deviceId: device.deviceId,
+          label: device.label || `Camera ${device.deviceId.slice(0, 8)}...`,
+        }));
+
+      setAvailableDevices(videoDevices);
+
+      if (videoDevices.length > 0 && !selectedDevice) {
+        setSelectedDevice(videoDevices[0]?.deviceId || null);
+      }
+    } catch (error) {
+      console.error('Error enumerating devices:', error);
+    }
+  }, [selectedDevice]);
+
+  const startCamera = async (deviceId: string) => {
+    setCameraOn(true);
+
+    try {
+      const devices = navigator.mediaDevices;
+      if (!devices) {
+        throw new Error('No media devices found');
+      }
+
+      const constraints: MediaStreamConstraints = {
+        video: {
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+        },
+      };
+
+      // Use selected device if available, otherwise use facingMode
+      if (deviceId) {
+        (constraints.video as MediaTrackConstraints).deviceId = {
+          exact: deviceId,
+        };
+      } else {
+        (constraints.video as MediaTrackConstraints).facingMode = 'environment';
+      }
+
+      const stream = await devices.getUserMedia(constraints);
+
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        streamRef.current = stream;
+
+        videoRef.current.onloadedmetadata = () => {
+          setIsReady(true);
+        };
+      }
+    } catch (error) {
+      console.error(error);
+      setCameraOn(false);
+
+      toast({
+        title: 'Could not access the webcam',
+        description: 'Could not access the webcam.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const stopCamera = () => {
+    setCameraOn(false);
+
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+    }
+  };
 
   const toggleCamera = async () => {
     if (!cameraOn) {
-      try {
-        const devices = navigator.mediaDevices;
-        if (!devices) {
-          throw new Error('No media devices found');
-        }
-
-        const stream = await devices.getUserMedia({
-          video: {
-            facingMode: 'environment',
-            width: { ideal: 1280 },
-            height: { ideal: 720 },
-          },
-        });
-
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-          streamRef.current = stream;
-
-          videoRef.current.onloadedmetadata = () => {
-            setIsReady(true);
-          };
-        }
-
-        setCameraOn(true);
-      } catch (error) {
-        console.error(error);
-
-        toast({
-          title: 'Could not access the webcam',
-          description: 'Could not access the webcam.',
-          variant: 'destructive',
-        });
-        setCameraOn(false);
-      }
+      await startCamera(selectedDevice || '');
     } else {
-      if (videoRef.current) {
-        videoRef.current.srcObject = null;
-      }
+      stopCamera();
+    }
+  };
 
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach((track) => track.stop());
-      }
+  const handleDeviceChange = async (deviceId: string) => {
+    setSelectedDevice(deviceId);
 
-      setCameraOn(false);
-      setIsReady(false);
+    // If camera is currently on, restart with new device
+    if (cameraOn) {
+      stopCamera();
+
+      // Small delay to ensure cleanup, then restart with new device
+      setTimeout(() => {
+        startCamera(deviceId);
+      }, 100);
     }
   };
 
@@ -83,7 +162,7 @@ export default function VideoCapture({ onNewStudent }: VideoCaptureProps) {
     }
   };
 
-  const captureFrame = useCallback(async () => {
+  const captureFrame = async () => {
     if (canvasRef.current && videoRef.current) {
       const context = canvasRef.current.getContext('2d');
       if (context) {
@@ -139,7 +218,12 @@ export default function VideoCapture({ onNewStudent }: VideoCaptureProps) {
         }
       }
     }
-  }, [onNewStudent, toast]);
+  };
+
+  // Initialize devices on component mount
+  useEffect(() => {
+    enumerateDevices();
+  }, [enumerateDevices]);
 
   useEffect(() => {
     if (!cameraOn) {
@@ -150,6 +234,37 @@ export default function VideoCapture({ onNewStudent }: VideoCaptureProps) {
 
   return (
     <div className="space-y-6">
+      {/* Camera Device Selection */}
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-medium">Camera Selection</h3>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" className="w-64 justify-between">
+              <div className="flex min-w-0 items-center gap-2">
+                <Video className="h-4 w-4" />
+                <span className="truncate">{getSelectedDeviceLabel()}</span>
+              </div>
+              <ChevronDown className="h-4 w-4 opacity-50" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-64">
+            {availableDevices.map((device) => (
+              <DropdownMenuItem
+                key={device.deviceId}
+                onClick={() => handleDeviceChange(device.deviceId)}
+                className={cn(
+                  'cursor-pointer',
+                  selectedDevice === device.deviceId && 'bg-accent'
+                )}
+              >
+                <Video className="mr-2 h-4 w-4" />
+                <span className="truncate">{device.label}</span>
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
       {/* Video Container */}
       <div
         className={cn(
