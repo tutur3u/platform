@@ -279,10 +279,18 @@ export const storeSyncToken = async (ws_id: string, syncToken: string, lastSynce
   const supabase = await createAdminClient({ noCookie: true });
   const { error } = await supabase
     .from('calendar_sync_states')
-    .upsert({ ws_id, calendar_id: 'primary', sync_token: syncToken, last_synced_at: lastSyncedAt.toISOString() });
+    .upsert({ 
+      ws_id, 
+      calendar_id: 'primary', 
+      sync_token: syncToken, 
+      last_synced_at: lastSyncedAt.toISOString() 
+    },
+    {
+      onConflict: 'ws_id,calendar_id'
+    });
   
   if (error) {
-    console.log('Error storing sync token:', error);
+    console.error(`[${ws_id}] Error storing sync token for calendar primary:`, error);
     throw error;
   }
 };
@@ -297,7 +305,7 @@ export const getSyncToken = async (ws_id: string) => {
     .eq('calendar_id', 'primary');
 
   if (error) {
-    console.log('Error fetching sync token:', error);
+    console.error(`[${ws_id}] Error fetching sync token for calendar primary:`, error);
     throw error;
   }
 
