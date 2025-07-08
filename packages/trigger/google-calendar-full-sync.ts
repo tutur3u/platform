@@ -1,25 +1,32 @@
 import { task } from '@trigger.dev/sdk/v3';
 import { getGoogleAuthClient, getWorkspacesForSync, storeSyncToken, syncWorkspaceExtended } from './google-calendar-sync';
 import { google } from 'googleapis';
+import dayjs from 'dayjs';
 
 export async function performFullSyncForWorkspace(calendarId = "primary", ws_id: string,
     access_token: string,
     refresh_token: string) {
     const auth = getGoogleAuthClient({ access_token, refresh_token: refresh_token || undefined });
     const calendar = google.calendar({ version: "v3", auth });
+
+    const now = dayjs();
+    const timeMin = now; // Start from now
+    const timeMax = now.add(28, 'day'); // 4 weeks from now (1 week + 3 weeks)
   
     const res = await calendar.events.list({
       calendarId,
       showDeleted: true,
       singleEvents: true,
       maxResults: 2500,
+      timeMin: timeMin.toISOString(),
+      timeMax: timeMax.toISOString(),
     });
   
     const events = res.data.items || [];
     const syncToken = res.data.nextSyncToken;
   
     if (events.length > 0) {
-        syncWorkspaceExtended({ ws_id, access_token, refresh_token });
+        syncWorkspaceExtended({ ws_id, access_token, refresh_token, events_to_sync: events });
     }
   
     if (syncToken) {

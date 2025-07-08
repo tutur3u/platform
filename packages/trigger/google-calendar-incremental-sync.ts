@@ -1,6 +1,7 @@
 import { getGoogleAuthClient, getSyncToken, getWorkspacesForSync, storeSyncToken, syncWorkspaceExtended } from "./google-calendar-sync";
 import { google } from "googleapis";
 import { schedules, task } from "@trigger.dev/sdk/v3";
+import dayjs from "dayjs";
 
 async function performIncrementalSyncForWorkspace(
   calendarId = "primary",
@@ -10,6 +11,10 @@ async function performIncrementalSyncForWorkspace(
 ) {
   const auth = getGoogleAuthClient({ access_token, refresh_token: refresh_token || undefined });
   const calendar = google.calendar({ version: "v3", auth });
+
+  const now = dayjs();
+  const timeMin = now; // Start from now
+  const timeMax = now.add(28, 'day'); // 4 weeks from now (1 week + 3 weeks)
   
   try {
     const syncToken = await getSyncToken(ws_id);
@@ -32,7 +37,7 @@ async function performIncrementalSyncForWorkspace(
     } while (pageToken);
 
     if (allEvents.length > 0) {
-      syncWorkspaceExtended({ ws_id, access_token, refresh_token });
+      syncWorkspaceExtended({ ws_id, access_token, refresh_token, events_to_sync: allEvents });
     }   
     
     if (nextSyncToken) {
