@@ -334,7 +334,7 @@ export default function Projects() {
                 }`}
               >
                 <Layers size={18} />
-                Swipe View
+                Swipe
               </button>
               <button
                 onClick={() => handleViewModeChange('grid')}
@@ -345,7 +345,7 @@ export default function Projects() {
                 }`}
               >
                 <LayoutGrid size={18} />
-                Grid View
+                Grid
               </button>
             </div>
           </div>
