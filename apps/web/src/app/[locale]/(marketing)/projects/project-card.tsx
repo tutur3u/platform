@@ -71,13 +71,13 @@ export default function ProjectCard({
 
     const centerStyles = isCenter
       ? 'shadow-2xl shadow-[#1AF4E6]/20 border-[#1AF4E6]/30'
-      : 'border-white/10';
+      : 'border-border';
 
     const highlightStyles = isHighlighted
       ? `bg-gradient-to-br ${typeConfig.bgGradient} border-[#1AF4E6]/50 shadow-xl shadow-[#1AF4E6]/25`
       : isCenter
-        ? 'bg-white/[0.08] hover:bg-white/[0.12] border-white/20'
-        : 'bg-white/[0.03] hover:bg-white/[0.08] hover:border-white/20 hover:shadow-lg';
+        ? 'bg-card/80 hover:bg-card border-border'
+        : 'bg-card/40 hover:bg-card/60 hover:border-border hover:shadow-lg';
 
     return `${baseStyles} ${centerStyles} ${highlightStyles}`;
   };
@@ -86,7 +86,7 @@ export default function ProjectCard({
   const renderStatusIndicator = () => (
     <div className="absolute top-4 left-4">
       <div
-        className={`rounded-full bg-gradient-to-r px-3 py-1 text-xs font-bold text-white shadow-lg backdrop-blur-sm ${STATUS_COLORS[project.status]} `}
+        className={`rounded-full bg-gradient-to-r px-3 py-1 text-xs font-bold text-primary-foreground shadow-lg backdrop-blur-sm ${STATUS_COLORS[project.status]} `}
       >
         {project.status.charAt(0).toUpperCase() + project.status.slice(1)}
       </div>
@@ -97,7 +97,7 @@ export default function ProjectCard({
   const renderTypeIndicator = () => (
     <div className="absolute top-4 right-4">
       <div
-        className={`flex items-center gap-2 rounded-full bg-gradient-to-r px-3 py-1 text-xs font-medium text-white ${typeConfig.gradient}`}
+        className={`flex items-center gap-2 rounded-full bg-gradient-to-r px-3 py-1 text-xs font-medium text-primary-foreground ${typeConfig.gradient}`}
       >
         <TypeIcon className="h-3 w-3" />
         <span>{typeConfig.label}</span>
@@ -112,11 +112,11 @@ export default function ProjectCard({
         <div
           className={`rounded-xl bg-gradient-to-r p-2 ${typeConfig.gradient}`}
         >
-          <TypeIcon className="h-5 w-5 text-white" />
+          <TypeIcon className="h-5 w-5 text-primary-foreground" />
         </div>
         <div className="flex-1">
           <h3
-            className={`leading-tight font-bold text-white ${isCenter ? 'text-2xl' : 'text-xl'}`}
+            className={`leading-tight font-bold text-foreground ${isCenter ? 'text-2xl' : 'text-xl'}`}
           >
             {project.name}
           </h3>
@@ -124,7 +124,7 @@ export default function ProjectCard({
       </div>
 
       {project.manager && (
-        <div className="flex items-center gap-2 text-white/60">
+        <div className="flex items-center gap-2 text-muted-foreground">
           <Users className="h-4 w-4" />
           <p className={`${isCenter ? 'text-sm' : 'text-xs'}`}>
             Led by {project.manager}
@@ -138,7 +138,7 @@ export default function ProjectCard({
   const renderDescription = () => (
     <div className="mb-6">
       <p
-        className={`leading-relaxed text-white/80 ${
+        className={`leading-relaxed text-muted-foreground ${
           isCenter ? 'text-base' : 'line-clamp-3 text-sm'
         }`}
       >
@@ -157,7 +157,7 @@ export default function ProjectCard({
       <div className="mb-6">
         <div className="mb-2 flex items-center gap-2">
           <div className="h-0.5 w-4 bg-gradient-to-r from-[#F4B71A] to-[#1AF4E6]" />
-          <span className="text-xs font-medium tracking-wider text-white/50 uppercase">
+          <span className="text-xs font-medium tracking-wider text-muted-foreground uppercase">
             Tech Stack
           </span>
         </div>
@@ -169,7 +169,7 @@ export default function ProjectCard({
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: index * 0.1 }}
-              className={`rounded-lg border border-white/20 bg-gradient-to-r from-white/10 to-white/5 px-3 py-1 font-medium text-white/90 backdrop-blur-sm ${isCenter ? 'text-sm' : 'text-xs'} `}
+              className={`rounded-lg border border-border bg-muted/50 px-3 py-1 font-medium text-foreground backdrop-blur-sm ${isCenter ? 'text-sm' : 'text-xs'} `}
             >
               {tech}
             </motion.span>
@@ -178,7 +178,7 @@ export default function ProjectCard({
           {/* Show count of remaining technologies */}
           {project.techStack.length > 3 && (
             <span
-              className={`rounded-lg border border-white/10 bg-white/5 px-3 py-1 font-medium text-white/50 ${isCenter ? 'text-sm' : 'text-xs'} `}
+              className={`rounded-lg border border-border bg-muted/30 px-3 py-1 font-medium text-muted-foreground ${isCenter ? 'text-sm' : 'text-xs'} `}
             >
               +{project.techStack.length - 3}
             </span>
@@ -192,7 +192,7 @@ export default function ProjectCard({
   const renderFooter = () => (
     <div className="absolute right-6 bottom-6 left-6">
       {/* Subtle divider */}
-      <div className="mb-4 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+      <div className="mb-4 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
 
       <div className="flex items-center justify-between">
         {/* Quick action buttons */}
@@ -201,7 +201,7 @@ export default function ProjectCard({
             <motion.button
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
-              className="rounded-lg bg-white/10 p-2 text-white/70 backdrop-blur-sm transition-colors hover:bg-white/20 hover:text-white"
+              className="rounded-lg bg-muted/50 p-2 text-muted-foreground backdrop-blur-sm transition-colors hover:bg-muted hover:text-foreground"
               onClick={(e) => {
                 e.stopPropagation();
                 window.open(project.githubUrl, '_blank');
@@ -214,7 +214,7 @@ export default function ProjectCard({
             <motion.button
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
-              className="rounded-lg bg-white/10 p-2 text-white/70 backdrop-blur-sm transition-colors hover:bg-white/20 hover:text-white"
+              className="rounded-lg bg-muted/50 p-2 text-muted-foreground backdrop-blur-sm transition-colors hover:bg-muted hover:text-foreground"
               onClick={(e) => {
                 e.stopPropagation();
                 window.open(project.demoUrl, '_blank');
@@ -228,7 +228,7 @@ export default function ProjectCard({
         {/* Team Size Indicator with enhanced design */}
         {project.members && project.members.length > 0 && (
           <div
-            className={`flex items-center gap-2 rounded-lg bg-white/10 px-3 py-1 text-white/70 backdrop-blur-sm ${isCenter ? 'text-sm' : 'text-xs'}`}
+            className={`flex items-center gap-2 rounded-lg bg-muted/50 px-3 py-1 text-muted-foreground backdrop-blur-sm ${isCenter ? 'text-sm' : 'text-xs'}`}
           >
             <Users className="h-4 w-4" />
             <span>
