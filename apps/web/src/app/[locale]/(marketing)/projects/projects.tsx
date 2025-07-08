@@ -176,7 +176,7 @@ export default function Projects() {
       >
         <div className="flex flex-col items-center text-center">
           <p className="text-4xl leading-normal font-extrabold md:text-5xl lg:text-6xl">
-            <span className="text-white">NEO Culture</span>{' '}
+            <span className="text-foreground">NEO Culture</span>{' '}
             <span className="border-b-4 border-[#FBC721] whitespace-nowrap text-[#5FC6E5]">
               PROJECTS{' '}
               <motion.div
@@ -196,7 +196,7 @@ export default function Projects() {
             </span>
           </p>
           <div className="mt-1 w-2/3 md:w-full">
-            <p className="text-lg leading-normal font-bold text-white md:mt-4 md:max-w-2xl md:text-xl lg:text-2xl">
+            <p className="text-lg leading-normal font-bold text-foreground md:mt-4 md:max-w-2xl md:text-xl lg:text-2xl">
               The place where you can learn, grow and have fun with technology,
               by building projects.
             </p>
@@ -214,11 +214,11 @@ export default function Projects() {
         transition={{ duration: 0.8, delay: 0.2 }}
       >
         <p className="text-2xl leading-normal font-extrabold md:text-3xl lg:text-4xl">
-          <span className="text-white">Our</span>{' '}
+          <span className="text-foreground">Our</span>{' '}
           <span className="border-b-4 border-[#FBC721] whitespace-nowrap text-[#5FC6E5]">
             Flagship
           </span>{' '}
-          <span className="text-white">Project</span>
+          <span className="text-foreground">Project</span>
         </p>
 
         <motion.div
@@ -258,10 +258,10 @@ export default function Projects() {
               transition={{ duration: 0.8, delay: 0.8 }}
             >
               <div>
-                <h3 className="mb-4 text-2xl font-extrabold text-white md:text-3xl lg:text-4xl">
+                <h3 className="mb-4 text-2xl font-extrabold text-foreground md:text-3xl lg:text-4xl">
                   NCT <span className="text-[#5FC6E5]">Hub Platform</span>
                 </h3>
-                <p className="text-md leading-relaxed font-medium text-gray-300 md:text-lg">
+                <p className="text-md leading-relaxed font-medium text-muted-foreground md:text-lg">
                   The official web-based platform for RMIT Neo Culture Tech
                   based on Tuturuuu, serving as both an informative digital
                   showcase for visitors and a comprehensive management platform
@@ -272,7 +272,7 @@ export default function Projects() {
               <div className="space-y-4">
                 <div className="flex items-start gap-3">
                   <div className="mt-3 h-2 w-2 flex-shrink-0 rounded-full bg-[#F4B71A]"></div>
-                  <p className="font-medium text-gray-400">
+                  <p className="font-medium text-muted-foreground">
                     Interactive games and entertainment features including Neo
                     Chess, Neo Crush, and other engaging multiplayer
                     experiences.
@@ -280,14 +280,14 @@ export default function Projects() {
                 </div>
                 <div className="flex items-start gap-3">
                   <div className="mt-3 h-2 w-2 flex-shrink-0 rounded-full bg-[#1AF4E6]"></div>
-                  <p className="font-medium text-gray-400">
+                  <p className="font-medium text-muted-foreground">
                     Practical utility applications like ID scanner, time
                     tracking tools, and various productivity enhancing features.
                   </p>
                 </div>
                 <div className="flex items-start gap-3">
                   <div className="mt-3 h-2 w-2 flex-shrink-0 rounded-full bg-[#F4B71A]"></div>
-                  <p className="font-medium text-gray-400">
+                  <p className="font-medium text-muted-foreground">
                     Comprehensive workspace management system for organizing
                     projects, managing team members, and streamlining club
                     operations.
@@ -307,53 +307,53 @@ export default function Projects() {
         transition={{ duration: 0.6, delay: 0.2 }}
       >
         <p className="text-2xl leading-normal font-extrabold md:text-3xl lg:text-4xl">
-          <span className="text-white">Don't miss our</span>{' '}
+          <span className="text-foreground">Don't miss our</span>{' '}
           <span className="border-b-4 border-[#FBC721] whitespace-nowrap text-[#5FC6E5]">
             other projects
           </span>
-          <span className="text-white">!</span>
+          <span className="text-foreground">!</span>
         </p>
 
         <div className="mt-8 flex flex-col gap-6">
           <div className="flex justify-center">
-            <div className="relative flex rounded-xl border border-white/20 bg-white/5 p-1 backdrop-blur-sm">
+            <div className="relative flex rounded-2xl border-2 border-border/50 bg-card/80 p-1.5 shadow-lg backdrop-blur-md">
               <motion.div
-                className="absolute inset-y-1 rounded-lg bg-gradient-to-r from-blue-500 to-purple-600"
+                className="absolute inset-y-1.5 rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 shadow-md"
                 animate={{
-                  x: viewMode === 'carousel' ? '2px' : 'calc(100% + 2px)',
+                  x: viewMode === 'carousel' ? '3px' : 'calc(100% + 3px)',
                 }}
-                style={{ width: 'calc(50% - 4px)' }}
+                style={{ width: 'calc(50% - 6px)' }}
                 transition={{ type: 'spring', stiffness: 300, damping: 30 }}
               />
               <button
                 onClick={() => handleViewModeChange('carousel')}
-                className={`relative z-10 flex w-1/2 items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors duration-200 ${
+                className={`relative z-10 flex w-1/2 items-center justify-center gap-2.5 rounded-xl px-6 py-3 text-base font-bold transition-all duration-200 ${
                   viewMode === 'carousel'
-                    ? 'text-slate-900'
-                    : 'text-white/70 hover:text-white'
+                    ? 'text-primary-foreground shadow-sm'
+                    : 'text-muted-foreground hover:scale-105 hover:text-foreground'
                 }`}
               >
-                <Layers size={16} />
+                <Layers size={18} />
                 Swipe
               </button>
               <button
                 onClick={() => handleViewModeChange('grid')}
-                className={`relative z-10 flex w-1/2 items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors duration-200 ${
+                className={`relative z-10 flex w-1/2 items-center justify-center gap-2.5 rounded-xl px-6 py-3 text-base font-bold transition-all duration-200 ${
                   viewMode === 'grid'
-                    ? 'text-slate-900'
-                    : 'text-white/70 hover:text-white'
+                    ? 'text-primary-foreground shadow-sm'
+                    : 'text-muted-foreground hover:scale-105 hover:text-foreground'
                 }`}
               >
-                <LayoutGrid size={16} />
+                <LayoutGrid size={18} />
                 Grid
               </button>
             </div>
           </div>
 
           <div className="flex justify-center">
-            <div className="relative flex rounded-2xl border border-white/10 bg-white/5 p-1">
+            <div className="relative flex rounded-2xl border border-border/30 bg-card/60 p-1 shadow-md backdrop-blur-sm">
               <motion.div
-                className="absolute inset-y-1 rounded-xl bg-gradient-to-r from-blue-500 to-purple-600"
+                className="absolute inset-y-1 rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 shadow-sm"
                 animate={{
                   x:
                     type === 'web'
@@ -376,10 +376,10 @@ export default function Projects() {
                 <button
                   key={p.key}
                   onClick={() => handleTypeFilter(p.key as ProjectType)}
-                  className={`relative z-10 w-28 px-5 py-3 text-base font-bold transition-colors duration-200 ${
+                  className={`relative z-10 w-28 px-5 py-3 text-base font-bold transition-all duration-200 ${
                     p.key === type
-                      ? 'text-slate-900'
-                      : 'text-white/80 hover:text-white'
+                      ? 'text-primary-foreground shadow-sm'
+                      : 'text-muted-foreground hover:scale-105 hover:text-foreground'
                   }`}
                 >
                   {p.label}
@@ -389,9 +389,9 @@ export default function Projects() {
           </div>
 
           <div className="flex justify-center">
-            <div className="relative flex rounded-2xl border border-white/10 bg-white/5 p-1">
+            <div className="relative flex rounded-2xl border border-border/30 bg-card/60 p-1 shadow-md backdrop-blur-sm">
               <motion.div
-                className="absolute inset-y-1 rounded-xl bg-gradient-to-r from-blue-500 to-purple-600"
+                className="absolute inset-y-1 rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 shadow-sm"
                 animate={{
                   x:
                     status === 'planning'
@@ -414,12 +414,12 @@ export default function Projects() {
                 <button
                   key={p.key}
                   onClick={() => handleStatusFilter(p.key as ProjectStatus)}
-                  className={`relative z-10 w-28 py-3 text-base font-bold transition-colors duration-200 ${
+                  className={`relative z-10 w-28 py-3 text-base font-bold transition-all duration-200 ${
                     p.key === 'completed' ? 'px-3' : 'px-5'
                   } ${
                     p.key === status
-                      ? 'text-slate-900'
-                      : 'text-white/80 hover:text-white'
+                      ? 'text-primary-foreground shadow-sm'
+                      : 'text-muted-foreground hover:scale-105 hover:text-foreground'
                   }`}
                 >
                   {p.label}
@@ -549,7 +549,7 @@ export default function Projects() {
                           className={`h-3 w-3 rounded-full transition-all duration-300 ${
                             index === currentIndex
                               ? 'scale-125 bg-gradient-to-r from-blue-500 to-purple-600'
-                              : 'bg-white/30 hover:bg-white/50'
+                              : 'bg-muted-foreground/30 hover:bg-muted-foreground/50'
                           }`}
                         />
                       </motion.button>
@@ -570,8 +570,8 @@ export default function Projects() {
                     whileTap={{ scale: 0.95 }}
                     className={`rounded-xl px-4 py-2 text-sm font-medium transition-all duration-200 ${
                       isAutoScrolling
-                        ? 'border border-white/20 bg-gradient-to-r from-blue-500/20 to-purple-600/20 text-white'
-                        : 'border border-white/10 bg-white/10 text-white/70'
+                        ? 'border border-white/20 bg-gradient-to-r from-blue-500/20 to-purple-600/20 text-foreground'
+                        : 'border border-white/10 bg-white/10 text-muted-foreground'
                     }`}
                   >
                     {isAutoScrolling
@@ -638,15 +638,15 @@ export default function Projects() {
               <span className="border-b-4 border-[#FBC721] whitespace-nowrap text-[#5FC6E5]">
                 NEOThing's
               </span>{' '}
-              <span className="text-white"> Here :(</span>
+              <span className="text-foreground"> Here :(</span>
             </h3>
-            <p className="mb-6 flex items-center justify-center gap-2 text-lg leading-normal font-bold text-gray-400 md:text-xl lg:text-2xl">
+            <p className="mb-6 flex items-center justify-center gap-2 text-lg leading-normal font-bold text-muted-foreground md:text-xl lg:text-2xl">
               Try Clearing the Filters u just click{' '}
               <Smile className="h-6 w-6 text-yellow-400 md:h-8 md:w-8" />
             </p>
             <button
               onClick={clearAllFilters}
-              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 px-6 py-3 text-lg font-bold text-white transition-all duration-300 hover:scale-105 hover:shadow-lg"
+              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 px-6 py-3 text-lg font-bold text-primary-foreground transition-all duration-300 hover:scale-105 hover:shadow-lg"
             >
               Clear Filters
             </button>
