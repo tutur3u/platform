@@ -75,11 +75,11 @@ export async function POST(req: Request) {
 
     if (error) return NextResponse.json(error.message, { status: 503 });
     return NextResponse.json({ id, title }, { status: 200 });
-  } catch (error: any) {
+  } catch (error) {
     console.log(error);
     return NextResponse.json(
       {
-        message: `## Edge API Failure\nCould not complete the request. Please view the **Stack trace** below.\n\`\`\`bash\n${error?.stack}`,
+        message: `## Edge API Failure\nCould not complete the request. Please view the **Stack trace** below.\n\`\`\`bash\n${(error as Error)?.stack || 'No stack trace available'}`,
       },
       {
         status: 500,

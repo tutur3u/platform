@@ -115,10 +115,10 @@ export async function PATCH(req: Request) {
     console.error(error);
     return NextResponse.json(
       {
-        message: `## Edge API Failure\nCould not complete the request. Please view the **Stack trace** below.\n\`\`\`bash\n${error?.stack}`,
+        message: `## Edge API Failure\nCould not complete the request. Please view the **Stack trace** below.\n\`\`\`bash\n${(error as Error)?.stack || 'No stack trace available'}`,
       },
       {
-        status: 200,
+        status: 500,
       }
     );
   }

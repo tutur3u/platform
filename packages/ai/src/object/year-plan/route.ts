@@ -180,7 +180,7 @@ export async function POST(req: Request) {
       console.error('Error generating plan:', error);
       return new Response('Failed to generate plan', { status: 500 });
     }
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error in year plan API:', error);
     return NextResponse.json(
       { error: 'Internal server error' },

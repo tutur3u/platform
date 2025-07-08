@@ -82,10 +82,13 @@ export async function PATCH(req: Request) {
 
     if (!completion) return new Response('No content found', { status: 404 });
 
+    if (!messages[messages.length - 1]?.id)
+      return new Response('Internal Server Error', { status: 500 });
+
     const { error } = await supabase
       .from('ai_chats')
       .update({
-        latest_summarized_message_id: messages[messages.length - 1]!.id,
+        latest_summarized_message_id: messages[messages.length - 1]?.id,
         summary: completion,
       })
       .eq('id', id);
@@ -95,11 +98,11 @@ export async function PATCH(req: Request) {
     return new Response(JSON.stringify({ response: completion.trim() }), {
       status: 200,
     });
-  } catch (error: any) {
+  } catch (error) {
     console.log(error);
     return NextResponse.json(
       {
-        message: `## Edge API Failure\nCould not complete the request. Please view the **Stack trace** below.\n\`\`\`bash\n${error?.stack}`,
+        message: `## Edge API Failure\nCould not complete the request. Please view the **Stack trace** below.\n\`\`\`bash\n${(error as Error)?.stack || 'No stack trace available'}`,
       },
       {
         status: 500,
