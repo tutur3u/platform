@@ -1,10 +1,6 @@
-import {
-  GoogleGenerativeAI,
-  HarmBlockThreshold,
-  HarmCategory,
-} from '@google/generative-ai';
+import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { createClient } from '@tuturuuu/supabase/next/server';
-import type { UIMessage } from 'ai';
+import { generateText, type UIMessage } from 'ai';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 
@@ -55,22 +51,38 @@ export function createPOST(
         },
       ]);
 
-      const genAI = new GoogleGenerativeAI(apiKey);
+      const google = createGoogleGenerativeAI({
+        apiKey,
+      });
 
-      const geminiRes = await genAI
-        .getGenerativeModel({ model, generationConfig, safetySettings })
-        .generateContent(prompt);
-
-      const title = geminiRes.response.candidates?.[0]?.content.parts[0]?.text;
-
-      if (!title) {
-        return NextResponse.json(
-          {
-            message: 'Internal server error.',
+      const result = await generateText({
+        model: google(model),
+        prompt,
+        providerOptions: {
+          google: {
+            safetySettings: [
+              {
+                category: 'HARM_CATEGORY_HARASSMENT',
+                threshold: 'BLOCK_NONE',
+              },
+              {
+                category: 'HARM_CATEGORY_HATE_SPEECH',
+                threshold: 'BLOCK_NONE',
+              },
+              {
+                category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
+                threshold: 'BLOCK_NONE',
+              },
+              {
+                category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
+                threshold: 'BLOCK_NONE',
+              },
+            ],
           },
-          { status: 500 }
-        );
-      }
+        },
+      });
+
+      const title = result.text;
 
       if (!title) {
         return NextResponse.json(
@@ -124,27 +136,6 @@ function buildPrompt(messages: UIMessage[]) {
   const normalizedMsgs = normalizeMessages(messages);
   return normalizedMsgs + AI_PROMPT;
 }
-
-const generationConfig = undefined;
-
-const safetySettings = [
-  {
-    category: HarmCategory.HARM_CATEGORY_HARASSMENT,
-    threshold: HarmBlockThreshold.BLOCK_NONE,
-  },
-  {
-    category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
-    threshold: HarmBlockThreshold.BLOCK_NONE,
-  },
-  {
-    category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
-    threshold: HarmBlockThreshold.BLOCK_NONE,
-  },
-  {
-    category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
-    threshold: HarmBlockThreshold.BLOCK_NONE,
-  },
-];
 
 const leadingMessages: UIMessage[] = [
   {
