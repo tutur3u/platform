@@ -350,13 +350,6 @@ export default function Projects() {
             </div>
           </div>
 
-          <div className="flex justify-center">
-            <p className="max-w-md text-center text-sm text-muted-foreground/80">
-              {viewMode === 'carousel'
-                ? '🖱️ Drag cards left/right or use dots to navigate • Auto-scrolls every 4 seconds'
-                : '📱 Browse all projects in a responsive grid layout'}
-            </p>
-          </div>
 
           <div className="flex justify-center">
             <div className="relative flex rounded-2xl border border-border/30 bg-card/60 p-1 shadow-md backdrop-blur-sm">
