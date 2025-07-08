@@ -16,6 +16,38 @@ const NCT_REPO_URL = 'https://github.com/rmit-nct/hub';
 
 export const projects: Project[] = [
   {
+    name: 'Blockchain Research',
+    description:
+      'A blockchain research project exploring distributed ledger technology through Python implementation, covering consensus mechanisms, smart contracts, and real-world applications.',
+    type: 'software',
+    techStack: ['Python'],
+    status: 'completed',
+    manager: 'Truong Gia Hy',
+    members: [
+      {
+        name: 'Nguyen Trong Tien',
+        role: 'Developer/Researcher',
+      },
+      {
+        name: 'Truong Tan Quang',
+        role: 'Developer/Researcher',
+      },
+      {
+        name: 'Do Le Minh Quan',
+        role: 'Developer/Researcher',
+      },
+      {
+        name: 'Phan Hoang Khang',
+        role: 'Developer/Researcher',
+      },
+    ],
+    purpose:
+      'This research project aims to demystify blockchain technology beyond buzzwords, covering consensus mechanisms (PoW), smart contracts, digital signatures, and real-world applications in healthcare and supply chains. Through practical Python implementation, it demonstrates how blockchain data is securely linked, verified, and made immutable.',
+    githubUrl: 'https://github.com/rmit-nct/blockchain-research',
+    demoUrl:
+      'https://www.linkedin.com/posts/rmit-nct_nct-research-unlocking-the-blockchain-blueprint-activity-7341333200109019138-lEd3?utm_source=share&utm_medium=member_desktop&rcm=ACoAAD1jrHcBcl7zQonu5cQd6QpLMvK6AS-LWyc',
+  },
+  {
     name: '[Ga] Remote-Controlled Car',
     description:
       'A remote-controlled car project featuring wireless control, real-time video streaming, and autonomous navigation capabilities.',
