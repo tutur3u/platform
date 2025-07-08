@@ -4,7 +4,6 @@ alter table "public"."workspace_quiz_attempt_answers" enable row level security;
 
 alter table "public"."workspace_quiz_attempts" enable row level security;
 
-
 set check_function_bodies = off;
 
 CREATE OR REPLACE FUNCTION public.get_user_tasks(_board_id uuid)
