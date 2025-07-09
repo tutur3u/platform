@@ -1,10 +1,7 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import type { WorkspaceCalendarEvent } from '@tuturuuu/types/db';
 import { updateLastUpsert } from '@tuturuuu/utils/calendar-sync-coordination';
-import dayjs from 'dayjs';
 import { OAuth2Client } from 'google-auth-library';
 import { convertGoogleAllDayEvent } from '@tuturuuu/ui/hooks/calendar-utils';
-import { google } from 'googleapis';
 import { calendar_v3 } from 'googleapis/build/src/apis/calendar';
 
 // Define the sync result type
@@ -15,6 +12,13 @@ type SyncResult = {
   eventsDeleted?: number;
   error?: string;
 };
+
+export type SyncOrchestratorResult = {
+  ws_id: string;
+  handle?: any;
+  error?: string;
+  status: string;
+}
 
 export const getGoogleAuthClient = (tokens: {
   access_token: string;
@@ -49,8 +53,6 @@ const getColorFromGoogleColorId = (colorId?: string): string => {
 // Core sync function for a single workspace
 const syncGoogleCalendarEventsForWorkspace = async (
   ws_id: string,
-  access_token: string,
-  refresh_token: string | null,
   events_to_sync: calendar_v3.Schema$Event[]
 ): Promise<SyncResult> => {
   console.log(`Syncing Google Calendar events for workspace ${ws_id}`);
@@ -58,7 +60,6 @@ const syncGoogleCalendarEventsForWorkspace = async (
 
   try {
     const supabase = await createAdminClient({ noCookie: true });
-    const auth = getGoogleAuthClient({ access_token, refresh_token: refresh_token || undefined });
 
     const rawEventsToUpsert: calendar_v3.Schema$Event[] = [];
     const rawEventsToDelete: calendar_v3.Schema$Event[] = [];
@@ -220,21 +221,12 @@ export const getWorkspacesForSync = async () => {
 // Sync a single workspace for 4 weeks (28 days) from now
 export const syncWorkspaceExtended = async (payload: {
   ws_id: string;
-  access_token: string;
-  refresh_token?: string;
   events_to_sync: calendar_v3.Schema$Event[];
 }) => {
-  const { ws_id, access_token, refresh_token, events_to_sync: events } = payload;
-  
-  if (!access_token) {
-    console.log('No access token provided for workspace:', ws_id);
-    return { ws_id, success: false, error: 'No access token provided' };
-  }
+  const { ws_id, events_to_sync: events } = payload;
   
   return syncGoogleCalendarEventsForWorkspace(
     ws_id,
-    access_token,
-    refresh_token || null,
     events
   );
 };
