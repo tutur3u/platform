@@ -1,59 +1,30 @@
 'use client';
 
-import type {
-  AIChat,
-  // WorkspaceTask,
-  // WorkspaceTaskBoard,
-} from '@tuturuuu/types/db';
-// import {
-//   Accordion,
-//   AccordionContent,
-//   AccordionItem,
-//   AccordionTrigger,
-// } from '@tuturuuu/ui/accordion';
-// import { Badge } from '@tuturuuu/ui/badge';
+import type { AIChat } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
-// import {
-//   Command,
-//   CommandEmpty,
-//   CommandInput,
-//   CommandItem,
-//   CommandList,
-//   CommandSeparator,
-// } from '@tuturuuu/ui/command';
+import { Dialog } from '@tuturuuu/ui/dialog';
 import {
-  Dialog,
-  // DialogContent,
-  // DialogHeader,
-  // DialogTitle,
-  // DialogTrigger,
-} from '@tuturuuu/ui/dialog';
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@tuturuuu/ui/dropdown-menu';
 import {
   Bot,
-  // CheckCircle2,
-  // ChevronDown,
-  // Clock,
-  // FilePlus2,
+  Calendar,
+  CheckCircle2,
+  Flag,
   LayoutDashboard,
-  // ListPlus,
+  MoreHorizontal,
   PanelLeftClose,
   PanelRightClose,
-  // Plus,
-  // PlusCircle,
+  Search,
+  Timer,
 } from '@tuturuuu/ui/icons';
-// import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
-// import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
-// import { cn } from '@tuturuuu/utils/format';
-// import Link from 'next/link';
-// import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import Chat from '../../chat/chat';
-// import { TaskBoardForm } from '../../tasks/boards/form';
 import type { ExtendedWorkspaceTask } from '../../time-tracker/types';
-// import QuickTaskTimer from './quick-task-timer';
-// import { TaskForm } from './task-form';
-// import { TaskListForm } from './task-list-form';
 import TimeTracker from './time-tracker';
 
 interface TasksSidebarContentProps {
@@ -65,40 +36,6 @@ interface TasksSidebarContentProps {
   locale?: string;
   hasAiChatAccess?: boolean;
 }
-
-// const PriorityIcon = ({ priority }: { priority?: string }) => {
-//   const size = 'h-3 w-3';
-//   switch (priority?.toLowerCase()) {
-//     case 'urgent':
-//       return <AlertCircle className={`${size} text-red-500`} />;
-//     case 'high':
-//       return <AlertCircle className={`${size} text-orange-500`} />;
-//     case 'medium':
-//       return <Circle className={`${size} text-yellow-500`} />;
-//     case 'low':
-//       return <Circle className={`${size} text-green-500`} />;
-//     default:
-//       return <Circle className={`${size} text-gray-400`} />;
-//   }
-// };
-
-// const StatusIcon = ({ status }: { status?: string }) => {
-//   const size = 'h-3 w-3';
-//   switch (status?.toLowerCase()) {
-//     case 'todo':
-//       return <Circle className={`${size} text-blue-500`} />;
-//     case 'in progress':
-//       return <Clock className={`${size} text-indigo-500`} />;
-//     case 'blocked':
-//       return <AlertCircle className={`${size} text-pink-500`} />;
-//     case 'done':
-//       return <CheckCircle2 className={`${size} text-teal-500`} />;
-//     case 'cancelled':
-//       return <AlertCircle className={`${size} text-slate-500`} />;
-//     default:
-//       return <Circle className={`${size} text-gray-400`} />;
-//   }
-// };
 
 export default function TasksSidebarContent({
   wsId,
@@ -115,15 +52,16 @@ export default function TasksSidebarContent({
 
   if (isCollapsed) {
     return (
-      <div className="ml-2 hidden h-full flex-col items-center rounded-lg border border-border bg-background/50 p-2 shadow-sm backdrop-blur-sm xl:flex">
+      <div className="ml-2 hidden h-full flex-col items-center rounded-lg border border-border bg-background/60 p-2 shadow-lg backdrop-blur-md transition-all duration-300 ease-in-out hover:bg-background/70 xl:flex">
         <Button
           variant="ghost"
           size="icon"
           onClick={() => setIsCollapsed(false)}
           aria-label="Expand sidebar"
-          className="hover:bg-accent/50"
+          className="group relative overflow-hidden rounded-lg transition-all duration-200 hover:scale-105 hover:bg-accent/60"
         >
-          <PanelLeftClose className="h-5 w-5 text-foreground" />
+          <PanelLeftClose className="h-5 w-5 text-foreground transition-transform duration-200 group-hover:rotate-12" />
+          <div className="-z-10 absolute inset-0 bg-gradient-to-r from-blue-500/20 to-purple-500/20 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
         </Button>
       </div>
     );
@@ -131,55 +69,80 @@ export default function TasksSidebarContent({
 
   return (
     <Dialog>
-      <div className="@container ml-2 hidden h-full w-1/3 flex-col rounded-lg border border-border bg-background/50 text-foreground shadow-lg backdrop-blur-sm xl:flex">
+      <div className="@container slide-in-from-right-5 ml-2 flex hidden h-full max-h-[100vh] w-1/3 flex-col rounded-lg border border-border bg-background/60 text-foreground shadow-xl backdrop-blur-md transition-all duration-500 ease-out xl:flex">
         {/* Header */}
-        <div className="@container flex items-center justify-between rounded-t-lg border-b bg-background/50 px-4 py-3">
+        <div className="@container flex items-center justify-between rounded-t-lg border-border/50 border-b bg-gradient-to-r from-background/80 to-background/60 px-4 py-3 backdrop-blur-sm">
           <div className="flex w-full items-center justify-between gap-1">
-            <TimeTracker wsId={wsId} tasks={tasks} />
+            <div className="transition-all duration-300 hover:scale-105">
+              <TimeTracker wsId={wsId} tasks={tasks} />
+            </div>
             <Button
               variant="ghost"
               size="icon"
               onClick={() => setIsCollapsed(true)}
               aria-label="Collapse sidebar"
-              className="hover:bg-accent/50"
+              className="group relative overflow-hidden rounded-lg transition-all duration-200 hover:scale-105 hover:bg-accent/60"
             >
-              <PanelRightClose className="h-5 w-5 text-foreground" />
+              <PanelRightClose className="group-hover:-rotate-12 h-5 w-5 text-foreground transition-transform duration-200" />
+              <div className="-z-10 absolute inset-0 bg-gradient-to-r from-red-500/20 to-orange-500/20 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
             </Button>
           </div>
         </div>
+
         {/* Tabs Navigation */}
         <Tabs
           value={activeTab}
           onValueChange={setActiveTab}
-          className="flex flex-1 flex-col gap-0"
+          className="flex min-h-0 flex-1 flex-col gap-0"
         >
-          <div className="border-b bg-muted/20 p-2">
+          <div className="border-border/50 border-b bg-muted/10 p-2">
             <TabsList className="grid h-auto w-full grid-cols-2 gap-2 bg-transparent p-0">
-              <TabsTrigger value="tasks" className="@container">
-                <LayoutDashboard className="h-4 w-4" />
-                <span className="@[80px]:inline hidden">Tasks</span>
-                <span className="@[80px]:hidden">T</span>
+              <TabsTrigger
+                value="tasks"
+                className="@container group relative overflow-hidden rounded-lg border border-transparent transition-all duration-300 hover:border-border/50 hover:bg-accent/60 data-[state=active]:border-border/50 data-[state=active]:bg-background data-[state=active]:shadow-md"
+              >
+                <div className="-z-10 absolute inset-0 bg-gradient-to-r from-blue-500/10 to-cyan-500/10 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                <LayoutDashboard className="h-4 w-4 transition-transform duration-200 group-hover:scale-110" />
+                <span className="@[80px]:inline hidden transition-all duration-200">
+                  Tasks
+                </span>
+                <span className="@[80px]:hidden transition-all duration-200">
+                  T
+                </span>
               </TabsTrigger>
-              <TabsTrigger value="ai-chat" className="@container">
-                <Bot className="h-4 w-4" />
-                <span className="@[80px]:inline hidden">AI Chat</span>
-                <span className="@[80px]:hidden">AI</span>
+              <TabsTrigger
+                value="ai-chat"
+                className="@container group relative overflow-hidden rounded-lg border border-transparent transition-all duration-300 hover:border-border/50 hover:bg-accent/60 data-[state=active]:border-border/50 data-[state=active]:bg-background data-[state=active]:shadow-md"
+              >
+                <div className="-z-10 absolute inset-0 bg-gradient-to-r from-purple-500/10 to-pink-500/10 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                <Bot className="h-4 w-4 transition-transform duration-200 group-hover:rotate-12 group-hover:scale-110" />
+                <span className="@[80px]:inline hidden transition-all duration-200">
+                  AI Chat
+                </span>
+                <span className="@[80px]:hidden transition-all duration-200">
+                  AI
+                </span>
               </TabsTrigger>
             </TabsList>
           </div>
+
           {/* Tasks Tab Content */}
           <TabsContent
             value="tasks"
-            className="m-0 flex flex-1 flex-col space-y-4 p-4"
+            className="fade-in-50 m-0 flex min-h-0 flex-1 animate-in flex-col space-y-4 overflow-y-auto p-4 pb-2 duration-300"
           >
-            <div className="mx-auto max-w-lg p-2">
+            <div className="mx-auto w-full max-w-lg p-0">
               <PriorityView allTasks={tasks} />
             </div>
           </TabsContent>
+
           {/* AI Chat Tab Content */}
           {hasAiChatAccess && (
-            <TabsContent value="ai-chat" className="m-0 px-2">
-              <div className="relative h-[calc(100vh-11.5rem)] overflow-y-auto py-2">
+            <TabsContent
+              value="ai-chat"
+              className="fade-in-50 m-0 min-h-0 flex-1 animate-in overflow-y-auto px-2 duration-300"
+            >
+              <div className="relative h-full min-h-0 overflow-y-auto py-2">
                 <Chat
                   wsId={wsId}
                   hasKeys={hasKeys}
@@ -201,27 +164,45 @@ export default function TasksSidebarContent({
 // Add PriorityView component for the new tab
 function PriorityView({ allTasks }: { allTasks: ExtendedWorkspaceTask[] }) {
   const [search, setSearch] = useState('');
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
+
   const PRIORITY_LABELS = {
-    critical: 'Critical',
-    high: 'High priority',
-    medium: 'Medium priority',
     low: 'Low priority',
+    normal: 'Normal priority',
+    high: 'High priority',
+    critical: 'Critical',
+  };
+
+  const PRIORITY_COLORS = {
+    low: 'from-green-500/20 to-green-600/20 border-green-200 dark:border-green-800',
+    normal:
+      'from-blue-500/20 to-blue-600/20 border-blue-200 dark:border-blue-800',
+    high: 'from-orange-500/20 to-orange-600/20 border-orange-200 dark:border-orange-800',
+    critical:
+      'from-red-500/20 to-red-600/20 border-red-200 dark:border-red-800',
+  };
+
+  const PRIORITY_ICONS = {
+    low: '😊',
+    normal: '😐',
+    high: '😠',
+    critical: '😡',
   };
 
   // Group tasks by priority
   const grouped: { [key: string]: ExtendedWorkspaceTask[] } = {
-    critical: [],
-    high: [],
-    medium: [],
     low: [],
+    normal: [],
+    high: [],
+    critical: [],
   };
+
   allTasks?.forEach((task) => {
-    const p = (task.user_defined_priority || 'low').toLowerCase();
-    if (grouped[p]) {
-      grouped[p].push(task);
+    const priority = task.user_defined_priority || 'normal';
+    if (grouped[priority]) {
+      grouped[priority].push(task);
     } else {
-      // Fallback to 'low' priority if the priority is not recognized
-      grouped.low?.push(task);
+      grouped.normal?.push(task);
     }
   });
 
@@ -238,68 +219,252 @@ function PriorityView({ allTasks }: { allTasks: ExtendedWorkspaceTask[] }) {
     ])
   );
 
+  const handlePriorityChange = async (taskId: string, newPriority: string) => {
+    // TODO: Implement API call to update task priority
+    console.log('Updating task priority:', taskId, newPriority);
+    // This would typically make an API call to update the task
+    // await updateTaskPriority(taskId, newPriority);
+  };
+
   return (
-    <>
-      <div
-        className="mb-4 flex items-center justify-start"
-        style={{ marginLeft: '-1rem' }}
-      >
-        <input
-          className="rounded border px-3 py-2 text-sm"
-          placeholder="Search task..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          style={{ width: 180, marginLeft: 0 }}
-        />
-        <button type="button" className="ml-2 p-2">
-          <span role="img" aria-label="filter">
-            🔍
-          </span>
-        </button>
+    <div className="space-y-4">
+      {/* Enhanced Search */}
+      <div className="relative mb-6" style={{ marginLeft: '-1rem' }}>
+        <div
+          className={`relative overflow-hidden rounded-xl border transition-all duration-300 ${
+            isSearchFocused
+              ? 'border-blue-400 bg-background shadow-lg ring-2 ring-blue-400/20'
+              : 'border-border bg-background/50 hover:bg-background/80'
+          }`}
+        >
+          <div className="flex items-center">
+            <Search
+              className={`ml-3 h-4 w-4 transition-colors duration-200 ${
+                isSearchFocused ? 'text-blue-500' : 'text-muted-foreground'
+              }`}
+            />
+            <input
+              className="w-full bg-transparent px-3 py-3 text-sm placeholder-muted-foreground outline-none"
+              placeholder="Search tasks..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              onFocus={() => setIsSearchFocused(true)}
+              onBlur={() => setIsSearchFocused(false)}
+            />
+          </div>
+          {isSearchFocused && (
+            <div className="-z-10 absolute inset-0 animate-pulse bg-gradient-to-r from-blue-500/5 to-purple-500/5" />
+          )}
+        </div>
       </div>
+
       {/* Priority Groups */}
-      {Object.entries(PRIORITY_LABELS).map(([key, label]) => {
-        const tasks = filteredGrouped[key] || [];
-        return (
-          <div key={key} className="mb-4">
-            <div className="mb-2 font-semibold text-gray-700 dark:text-gray-200">
-              {label}
-            </div>
-            {tasks.length === 0 ? (
-              <div className="text-gray-400 text-xs">No items</div>
-            ) : (
-              <div className="rounded bg-white p-3 shadow dark:bg-zinc-900">
-                <div className="mb-2 font-bold">
-                  Tasks{' '}
-                  <span className="text-gray-400 text-xs">{tasks.length}</span>
+      <div className="space-y-4">
+        {Object.entries(PRIORITY_LABELS).map(([key, label], index) => {
+          const tasks = filteredGrouped[key] || [];
+          const colorClasses =
+            PRIORITY_COLORS[key as keyof typeof PRIORITY_COLORS];
+          const icon = PRIORITY_ICONS[key as keyof typeof PRIORITY_ICONS];
+
+          return (
+            <div
+              key={key}
+              className="group slide-in-from-bottom-2 animate-in duration-300"
+              style={{ animationDelay: `${index * 100}ms` }}
+            >
+              <div className="mb-3 flex items-center gap-2">
+                <span className="text-lg">{icon}</span>
+                <h3 className="font-semibold text-foreground">{label}</h3>
+                <span className="rounded-full bg-muted px-2 py-1 text-muted-foreground text-xs transition-colors duration-200 group-hover:bg-accent">
+                  {tasks.length}
+                </span>
+              </div>
+
+              {tasks.length === 0 ? (
+                <div className="rounded-lg border border-border/50 border-dashed p-6 text-center transition-all duration-200 hover:border-border">
+                  <div className="text-muted-foreground text-sm">
+                    No tasks found
+                  </div>
                 </div>
-                {tasks.map((task) => (
-                  <div
-                    key={task.id}
-                    className="flex items-center border-zinc-100 border-b py-2 last:border-b-0 dark:border-zinc-800"
-                  >
-                    <div className="flex-1">
-                      <div className="font-medium">
-                        {task.name || (
-                          <span className="text-gray-400 italic">No name</span>
-                        )}
-                      </div>
-                      <div className="mb-1 text-green-600 text-xs">
-                        Done scheduling
-                      </div>
+              ) : (
+                <div
+                  className={`overflow-hidden rounded-xl border bg-gradient-to-br ${colorClasses} shadow-sm transition-all duration-300 hover:shadow-md`}
+                >
+                  <div className="bg-background/80 p-4 backdrop-blur-sm">
+                    <div className="mb-3 flex items-center justify-between">
+                      <div className="font-semibold">Tasks</div>
+                      <Timer className="h-4 w-4 text-muted-foreground" />
                     </div>
-                    <div className="ml-2 text-gray-500 text-xs">
-                      {task.total_duration
-                        ? `${Math.floor((task.total_duration || 0) / 60)} hrs ${(task.total_duration || 0) % 60} mins`
-                        : ''}
+
+                    <div className="space-y-2">
+                      {tasks.map((task, taskIndex) => (
+                        <div
+                          key={task.id}
+                          className="group/task relative overflow-hidden rounded-lg border border-border/50 bg-background/60 p-3 transition-all duration-200 hover:border-border hover:bg-background/80 hover:shadow-sm"
+                          style={{ animationDelay: `${taskIndex * 50}ms` }}
+                        >
+                          <div className="-z-10 absolute inset-0 bg-gradient-to-r from-accent/5 to-accent/10 opacity-0 transition-opacity duration-200 group-hover/task:opacity-100" />
+                          <div className="flex h-full min-h-[64px] flex-col">
+                            <div className="flex w-full items-start justify-between">
+                              <div className="min-w-0 flex-1">
+                                <div className="truncate font-medium text-foreground transition-colors duration-200 group-hover/task:text-blue-600">
+                                  {task.name || (
+                                    <span className="text-muted-foreground italic">
+                                      Untitled task
+                                    </span>
+                                  )}
+                                </div>
+                                {/* Due date (if present) */}
+                                {task.due_date && (
+                                  <div className="mt-1 inline-flex items-center gap-1 rounded bg-red-100 px-2 py-0.5 text-red-700 text-xs dark:bg-red-900/30 dark:text-red-300">
+                                    <Calendar className="h-3 w-3" />
+                                    Due {formatDueDate(task.due_date)}
+                                  </div>
+                                )}
+                              </div>
+                              {/* Top right icons */}
+                              <div className="ml-3 flex items-center gap-2">
+                                {/* Priority Edit Dropdown */}
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <button
+                                      type="button"
+                                      className="ml-1 rounded p-1 hover:bg-accent/30"
+                                      aria-label="Edit priority"
+                                    >
+                                      <Flag className="h-4 w-4 text-muted-foreground" />
+                                    </button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="start">
+                                    <DropdownMenuItem
+                                      onClick={() =>
+                                        handlePriorityChange(
+                                          task.id,
+                                          'critical'
+                                        )
+                                      }
+                                    >
+                                      😡 Critical
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      onClick={() =>
+                                        handlePriorityChange(task.id, 'high')
+                                      }
+                                    >
+                                      😠 High
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      onClick={() =>
+                                        handlePriorityChange(task.id, 'normal')
+                                      }
+                                    >
+                                      😐 Normal
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      onClick={() =>
+                                        handlePriorityChange(task.id, 'low')
+                                      }
+                                    >
+                                      😊 Low
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                                {/* More Actions Dropdown */}
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <button
+                                      type="button"
+                                      className="rounded p-1 hover:bg-accent/30"
+                                      aria-label="More actions"
+                                    >
+                                      <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
+                                    </button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end">
+                                    <DropdownMenuItem
+                                      onClick={() => {
+                                        /* handleEdit() */
+                                      }}
+                                    >
+                                      Edit
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      onClick={() => {
+                                        /* handleViewDetails() */
+                                      }}
+                                    >
+                                      View details
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      onClick={() => {
+                                        /* handleDueDate() */
+                                      }}
+                                    >
+                                      Due date
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      onClick={() => {
+                                        /* handleAddTime() */
+                                      }}
+                                    >
+                                      Add time
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      onClick={() => {
+                                        /* handleLogWork() */
+                                      }}
+                                    >
+                                      Log work
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      onClick={() => {
+                                        /* handleMarkDone() */
+                                      }}
+                                    >
+                                      Mark done
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      onClick={() => {
+                                        /* handleDelete() */
+                                      }}
+                                      className="text-red-600"
+                                    >
+                                      Delete
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              </div>
+                            </div>
+                            {/* Bottom row: Ready left, time right */}
+                            <div className="mt-2 flex items-center justify-between">
+                              <div className="inline-flex items-center gap-1 rounded-md bg-green-100 px-2 py-1 text-green-700 text-xs dark:bg-green-900/30 dark:text-green-400">
+                                <CheckCircle2 className="h-3 w-3" />
+                                Ready
+                              </div>
+                              {task.total_duration && (
+                                <div className="rounded-md bg-accent/50 px-2 py-1 font-mono text-muted-foreground text-xs transition-colors duration-200 group-hover/task:bg-accent">
+                                  {Math.floor((task.total_duration || 0) / 60)}h{' '}
+                                  {(task.total_duration || 0) % 60}m
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
-        );
-      })}
-    </>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
   );
+}
+
+function formatDueDate(date: string | Date) {
+  // expects date as string or Date, returns MM/DD or DD/MM as you prefer
+  const d = new Date(date);
+  return `${d.getMonth() + 1}/${d.getDate()}`;
 }

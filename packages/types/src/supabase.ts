@@ -8736,7 +8736,7 @@ export type Database = {
       platform_service: 'TUTURUUU' | 'REWISE' | 'NOVA' | 'UPSKII';
       subscription_status: 'trialing' | 'active' | 'canceled' | 'past_due';
       task_board_status: 'not_started' | 'active' | 'done' | 'closed';
-      task_priority: 'low' | 'medium' | 'high' | 'urgent';
+      task_priority: 'low' | 'normal' | 'high' | 'critical';
       workspace_role_permission:
         | 'view_infrastructure'
         | 'manage_workspace_secrets'
@@ -8899,7 +8899,7 @@ export const Constants = {
       platform_service: ['TUTURUUU', 'REWISE', 'NOVA', 'UPSKII'],
       subscription_status: ['trialing', 'active', 'canceled', 'past_due'],
       task_board_status: ['not_started', 'active', 'done', 'closed'],
-      task_priority: ['low', 'medium', 'high', 'urgent'],
+      task_priority: ['low', 'normal', 'high', 'critical'],
       workspace_role_permission: [
         'view_infrastructure',
         'manage_workspace_secrets',
