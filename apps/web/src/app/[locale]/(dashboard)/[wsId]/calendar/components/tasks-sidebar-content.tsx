@@ -4,11 +4,20 @@ import type { AIChat } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
 import { Dialog } from '@tuturuuu/ui/dialog';
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@tuturuuu/ui/dropdown-menu';
+import {
   AlertCircle,
   Bot,
+  Calendar,
   CheckCircle2,
   Clock,
+  Flag,
   LayoutDashboard,
+  MoreHorizontal,
   PanelLeftClose,
   PanelRightClose,
   Search,
@@ -62,7 +71,7 @@ export default function TasksSidebarContent({
 
   return (
     <Dialog>
-      <div className="@container slide-in-from-right-5 ml-2 hidden h-full w-1/3 animate-in flex-col rounded-lg border border-border bg-background/60 text-foreground shadow-xl backdrop-blur-md transition-all duration-500 ease-out xl:flex">
+      <div className="@container slide-in-from-right-5 ml-2 flex hidden h-full max-h-[100vh] w-1/3 flex-col rounded-lg border border-border bg-background/60 text-foreground shadow-xl backdrop-blur-md transition-all duration-500 ease-out xl:flex">
         {/* Header */}
         <div className="@container flex items-center justify-between rounded-t-lg border-border/50 border-b bg-gradient-to-r from-background/80 to-background/60 px-4 py-3 backdrop-blur-sm">
           <div className="flex w-full items-center justify-between gap-1">
@@ -86,7 +95,7 @@ export default function TasksSidebarContent({
         <Tabs
           value={activeTab}
           onValueChange={setActiveTab}
-          className="flex flex-1 flex-col gap-0"
+          className="flex min-h-0 flex-1 flex-col gap-0"
         >
           <div className="border-border/50 border-b bg-muted/10 p-2">
             <TabsList className="grid h-auto w-full grid-cols-2 gap-2 bg-transparent p-0">
@@ -122,9 +131,9 @@ export default function TasksSidebarContent({
           {/* Tasks Tab Content */}
           <TabsContent
             value="tasks"
-            className="fade-in-50 m-0 flex flex-1 animate-in flex-col space-y-4 p-4 duration-300"
+            className="fade-in-50 m-0 flex min-h-0 flex-1 animate-in flex-col space-y-4 overflow-y-auto p-4 pb-2 duration-300"
           >
-            <div className="mx-auto max-w-lg p-2">
+            <div className="mx-auto w-full max-w-lg p-0">
               <PriorityView allTasks={tasks} />
             </div>
           </TabsContent>
@@ -133,9 +142,9 @@ export default function TasksSidebarContent({
           {hasAiChatAccess && (
             <TabsContent
               value="ai-chat"
-              className="fade-in-50 m-0 animate-in px-2 duration-300"
+              className="fade-in-50 m-0 min-h-0 flex-1 animate-in overflow-y-auto px-2 duration-300"
             >
-              <div className="relative h-[calc(100vh-11.5rem)] overflow-y-auto py-2">
+              <div className="relative h-full min-h-0 overflow-y-auto py-2">
                 <Chat
                   wsId={wsId}
                   hasKeys={hasKeys}
@@ -176,10 +185,10 @@ function PriorityView({ allTasks }: { allTasks: ExtendedWorkspaceTask[] }) {
   };
 
   const PRIORITY_ICONS = {
-    critical: <AlertCircle className="h-4 w-4 text-red-500" />,
-    high: <AlertCircle className="h-4 w-4 text-orange-500" />,
-    medium: <Clock className="h-4 w-4 text-yellow-500" />,
-    low: <CheckCircle2 className="h-4 w-4 text-green-500" />,
+    critical: '😡',
+    high: '😠',
+    medium: '😐',
+    low: '😊',
   };
 
   // Group tasks by priority
@@ -190,7 +199,8 @@ function PriorityView({ allTasks }: { allTasks: ExtendedWorkspaceTask[] }) {
     low: [],
   };
   allTasks?.forEach((task) => {
-    const p = (task.user_defined_priority || 'low').toLowerCase();
+    let p = (task.user_defined_priority || 'low').toLowerCase();
+    if (p === 'normal') p = 'medium';
     if (grouped[p]) {
       grouped[p].push(task);
     } else {
@@ -258,7 +268,7 @@ function PriorityView({ allTasks }: { allTasks: ExtendedWorkspaceTask[] }) {
               style={{ animationDelay: `${index * 100}ms` }}
             >
               <div className="mb-3 flex items-center gap-2">
-                {icon}
+                <span className="text-lg">{icon}</span>
                 <h3 className="font-semibold text-foreground">{label}</h3>
                 <span className="rounded-full bg-muted px-2 py-1 text-muted-foreground text-xs transition-colors duration-200 group-hover:bg-accent">
                   {tasks.length}
@@ -289,30 +299,147 @@ function PriorityView({ allTasks }: { allTasks: ExtendedWorkspaceTask[] }) {
                           style={{ animationDelay: `${taskIndex * 50}ms` }}
                         >
                           <div className="-z-10 absolute inset-0 bg-gradient-to-r from-accent/5 to-accent/10 opacity-0 transition-opacity duration-200 group-hover/task:opacity-100" />
-
-                          <div className="flex items-start justify-between">
-                            <div className="min-w-0 flex-1">
-                              <div className="truncate font-medium text-foreground transition-colors duration-200 group-hover/task:text-blue-600">
-                                {task.name || (
-                                  <span className="text-muted-foreground italic">
-                                    Untitled task
-                                  </span>
+                          <div className="flex h-full min-h-[64px] flex-col">
+                            <div className="flex w-full items-start justify-between">
+                              <div className="min-w-0 flex-1">
+                                <div className="truncate font-medium text-foreground transition-colors duration-200 group-hover/task:text-blue-600">
+                                  {task.name || (
+                                    <span className="text-muted-foreground italic">
+                                      Untitled task
+                                    </span>
+                                  )}
+                                </div>
+                                {/* Due date (if present) */}
+                                {task.due_date && (
+                                  <div className="mt-1 inline-flex items-center gap-1 rounded bg-red-100 px-2 py-0.5 text-red-700 text-xs dark:bg-red-900/30 dark:text-red-300">
+                                    <Calendar className="h-3 w-3" />
+                                    Due {formatDueDate(task.due_date)}
+                                  </div>
                                 )}
                               </div>
-                              <div className="mt-1 flex items-center gap-2">
-                                <div className="inline-flex items-center gap-1 rounded-md bg-green-100 px-2 py-1 text-green-700 text-xs dark:bg-green-900/30 dark:text-green-400">
-                                  <CheckCircle2 className="h-3 w-3" />
-                                  Ready
-                                </div>
+                              {/* Top right icons */}
+                              <div className="ml-3 flex items-center gap-2">
+                                {/* Priority Edit Dropdown */}
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <button
+                                      type="button"
+                                      className="ml-1 rounded p-1 hover:bg-accent/30"
+                                      aria-label="Edit priority"
+                                    >
+                                      <Flag className="h-4 w-4 text-muted-foreground" />
+                                    </button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="start">
+                                    <DropdownMenuItem
+                                      onClick={() => {
+                                        /* handlePriorityChange('critical') */
+                                      }}
+                                    >
+                                      😡 Critical
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      onClick={() => {
+                                        /* handlePriorityChange('high') */
+                                      }}
+                                    >
+                                      😠 High
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      onClick={() => {
+                                        /* handlePriorityChange('medium') */
+                                      }}
+                                    >
+                                      😐 Medium
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      onClick={() => {
+                                        /* handlePriorityChange('low') */
+                                      }}
+                                    >
+                                      😊 Low
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                                {/* More Actions Dropdown */}
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <button
+                                      type="button"
+                                      className="rounded p-1 hover:bg-accent/30"
+                                      aria-label="More actions"
+                                    >
+                                      <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
+                                    </button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end">
+                                    <DropdownMenuItem
+                                      onClick={() => {
+                                        /* handleEdit() */
+                                      }}
+                                    >
+                                      Edit
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      onClick={() => {
+                                        /* handleViewDetails() */
+                                      }}
+                                    >
+                                      View details
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      onClick={() => {
+                                        /* handleDueDate() */
+                                      }}
+                                    >
+                                      Due date
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      onClick={() => {
+                                        /* handleAddTime() */
+                                      }}
+                                    >
+                                      Add time
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      onClick={() => {
+                                        /* handleLogWork() */
+                                      }}
+                                    >
+                                      Log work
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      onClick={() => {
+                                        /* handleMarkDone() */
+                                      }}
+                                    >
+                                      Mark done
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      onClick={() => {
+                                        /* handleDelete() */
+                                      }}
+                                      className="text-red-600"
+                                    >
+                                      Delete
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
                               </div>
                             </div>
-
-                            {task.total_duration && (
-                              <div className="ml-3 rounded-md bg-accent/50 px-2 py-1 font-mono text-muted-foreground text-xs transition-colors duration-200 group-hover/task:bg-accent">
-                                {Math.floor((task.total_duration || 0) / 60)}h{' '}
-                                {(task.total_duration || 0) % 60}m
+                            {/* Bottom row: Ready left, time right */}
+                            <div className="mt-2 flex items-center justify-between">
+                              <div className="inline-flex items-center gap-1 rounded-md bg-green-100 px-2 py-1 text-green-700 text-xs dark:bg-green-900/30 dark:text-green-400">
+                                <CheckCircle2 className="h-3 w-3" />
+                                Ready
                               </div>
-                            )}
+                              {task.total_duration && (
+                                <div className="rounded-md bg-accent/50 px-2 py-1 font-mono text-muted-foreground text-xs transition-colors duration-200 group-hover/task:bg-accent">
+                                  {Math.floor((task.total_duration || 0) / 60)}h{' '}
+                                  {(task.total_duration || 0) % 60}m
+                                </div>
+                              )}
+                            </div>
                           </div>
                         </div>
                       ))}
@@ -326,4 +453,10 @@ function PriorityView({ allTasks }: { allTasks: ExtendedWorkspaceTask[] }) {
       </div>
     </div>
   );
+}
+
+function formatDueDate(date) {
+  // expects date as string or Date, returns MM/DD or DD/MM as you prefer
+  const d = new Date(date);
+  return `${d.getMonth() + 1}/${d.getDate()}`;
 }
