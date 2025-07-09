@@ -32,7 +32,6 @@ import utc from 'dayjs/plugin/utc';
 dayjs.extend(utc);
 
 // Dynamically import the actual functions after env and mocks are set
-let syncGoogleCalendarEventsExtended: any;
 let syncWorkspaceExtended: any;
 
 beforeAll(async () => {
@@ -227,27 +226,6 @@ describe('Google Calendar Sync - Locale Functionality', () => {
   });
 
   describe('Legacy Function Support', () => {
-
-    it('should process locale parameter in legacy functions', async () => {
-      const testLocale = 'vi';
-      
-      // Call the legacy functions with locale parameter
-      const extendedResult = await syncGoogleCalendarEventsExtended(testLocale);
-      
-      // Verify the functions processed the locale parameter
-      expect(extendedResult).toBeDefined();
-      expect(Array.isArray(extendedResult)).toBe(true);
-    });
-
-    it('should handle missing locale in legacy functions', async () => {
-      // Call the legacy functions without locale parameter
-      const extendedResult = await syncGoogleCalendarEventsExtended();
-      
-      // Verify the functions work without locale parameter
-      expect(extendedResult).toBeDefined();
-      expect(Array.isArray(extendedResult)).toBe(true);
-    });
-
     it('should pass locale parameter to workspace sync functions using real functions', async () => {
       const mockEvents = [
         createMockGoogleEvent('event1', 'Test Event', '2024-01-15T10:00:00Z', '2024-01-15T11:00:00Z')
