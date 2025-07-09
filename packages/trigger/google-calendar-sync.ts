@@ -59,7 +59,7 @@ const syncGoogleCalendarEventsForWorkspace = async (
 
 
   try {
-    const supabase = await createAdminClient({ noCookie: true });
+    const sbAdmin = await createAdminClient({ noCookie: true });
 
     const rawEventsToUpsert: calendar_v3.Schema$Event[] = [];
     const rawEventsToDelete: calendar_v3.Schema$Event[] = [];
@@ -123,7 +123,7 @@ const syncGoogleCalendarEventsForWorkspace = async (
 
     // upsert the events in the database for this wsId
     
-    const { error } = await supabase
+    const { error } = await sbAdmin
       .from('workspace_calendar_events')
       .upsert(formattedEvents, {
         onConflict: 'ws_id,google_event_id',
@@ -136,7 +136,7 @@ const syncGoogleCalendarEventsForWorkspace = async (
     console.log(`Upserted ${formattedEvents.length} events:`, formattedEvents.map(e => e.title));
 
     // delete the events in the database for this wsId
-    const { error: deleteError } = await supabase
+    const { error: deleteError } = await sbAdmin
     .from('workspace_calendar_events')
     .delete()
     .or(
@@ -156,7 +156,7 @@ const syncGoogleCalendarEventsForWorkspace = async (
 
     // Update lastUpsert timestamp after successful upsert
     
-    await updateLastUpsert(ws_id, supabase);
+    await updateLastUpsert(ws_id, sbAdmin);
     
     
     return {
@@ -178,8 +178,8 @@ const syncGoogleCalendarEventsForWorkspace = async (
 // Get workspace by ws_id
 export const getWorkspaceTokensByWsId = async (ws_id: string) => {
   try {
-  const supabase = await createAdminClient({ noCookie: true });
-  const { data: tokens, error } = await supabase
+  const sbAdmin = await createAdminClient({ noCookie: true });
+  const { data: tokens, error } = await sbAdmin
     .from('workspaces')
     .select('ws_id, access_token, refresh_token')
     .eq('ws_id', ws_id);
@@ -199,9 +199,9 @@ export const getWorkspaceTokensByWsId = async (ws_id: string) => {
 // Get all workspaces that need sync
 export const getWorkspacesForSync = async () => {
   try {
-    const supabase = await createAdminClient({ noCookie: true });
+    const sbAdmin = await createAdminClient({ noCookie: true });
     
-    const { data: tokens, error } = await supabase
+    const { data: tokens, error } = await sbAdmin
       .from('calendar_auth_tokens')
       .select('ws_id, access_token, refresh_token')
       .not('access_token', 'is', null);
@@ -232,8 +232,8 @@ export const syncWorkspaceExtended = async (payload: {
 };
 
 export const storeSyncToken = async (ws_id: string, syncToken: string, lastSyncedAt: Date) => {
-  const supabase = await createAdminClient({ noCookie: true });
-  const { error } = await supabase
+  const sbAdmin = await createAdminClient({ noCookie: true });
+  const { error } = await sbAdmin
     .from('calendar_sync_states')
     .upsert({ 
       ws_id, 
@@ -253,8 +253,8 @@ export const storeSyncToken = async (ws_id: string, syncToken: string, lastSynce
 
 
 export const getSyncToken = async (ws_id: string) => {
-  const supabase = await createAdminClient({ noCookie: true });
-  const { data: syncToken, error } = await supabase
+  const sbAdmin = await createAdminClient({ noCookie: true });
+  const { data: syncToken, error } = await sbAdmin
     .from('calendar_sync_states')
     .select('sync_token')
     .eq('ws_id', ws_id)
