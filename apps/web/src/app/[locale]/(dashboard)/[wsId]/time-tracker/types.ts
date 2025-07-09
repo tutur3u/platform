@@ -46,7 +46,7 @@ export interface TimeTrackingGoal {
 
 // Extended task interface with additional properties
 export interface ExtendedWorkspaceTask extends WorkspaceTask {
-  due_date: any;
+  due_date?: any;
   board_name?: string;
   list_name?: string;
   assignee_name?: string;
