@@ -163,7 +163,7 @@ const Chat = ({
     // but the AI did not respond yet after 1 second
     const reloadTimeout = setTimeout(() => {
       if (messages[messages.length - 1]?.role !== 'user') return;
-      regenerate();
+      // regenerate();
     }, 1000);
 
     return () => {
@@ -345,7 +345,6 @@ const Chat = ({
         status={status}
         stop={stop}
         sendMessage={sendMessage}
-        regenerate={regenerate}
         input={input}
         inputRef={inputRef}
         setInput={setInput}

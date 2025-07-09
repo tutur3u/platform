@@ -169,9 +169,10 @@ const getMessageUsers = async (messages: any[]) => {
 
 // Helper function to format messages with user data
 const formatMessages = (messages: any[], userMap: Map<string, any>) => {
-  return messages.map(({ role, creator_id, ...rest }) => ({
+  return messages.map(({ role, creator_id, content, ...rest }) => ({
     ...rest,
     role: role.toLowerCase(),
+    parts: [{ type: 'text', text: content }],
     user: creator_id ? userMap.get(creator_id) : undefined,
   })) as UIMessage[];
 };

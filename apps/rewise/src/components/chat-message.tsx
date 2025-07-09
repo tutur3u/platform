@@ -813,7 +813,11 @@ export function ChatMessage({
             },
           }}
         >
-          {message.parts[0]?.type === 'text' ? message.parts[0].text : ''}
+          {message.parts?.map((part) => {
+            if (part.type === 'text') return part.text;
+            
+            return null;
+          }).filter(Boolean).join('') || ''}
         </MemoizedReactMarkdown>
       </div>
     </div>
