@@ -10,11 +10,9 @@ import {
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import {
-  AlertCircle,
   Bot,
   Calendar,
   CheckCircle2,
-  Clock,
   Flag,
   LayoutDashboard,
   MoreHorizontal,
@@ -169,42 +167,42 @@ function PriorityView({ allTasks }: { allTasks: ExtendedWorkspaceTask[] }) {
   const [isSearchFocused, setIsSearchFocused] = useState(false);
 
   const PRIORITY_LABELS = {
-    critical: 'Critical',
-    high: 'High priority',
-    medium: 'Medium priority',
     low: 'Low priority',
+    normal: 'Normal priority',
+    high: 'High priority',
+    critical: 'Critical',
   };
 
   const PRIORITY_COLORS = {
+    low: 'from-green-500/20 to-green-600/20 border-green-200 dark:border-green-800',
+    normal:
+      'from-blue-500/20 to-blue-600/20 border-blue-200 dark:border-blue-800',
+    high: 'from-orange-500/20 to-orange-600/20 border-orange-200 dark:border-orange-800',
     critical:
       'from-red-500/20 to-red-600/20 border-red-200 dark:border-red-800',
-    high: 'from-orange-500/20 to-orange-600/20 border-orange-200 dark:border-orange-800',
-    medium:
-      'from-yellow-500/20 to-yellow-600/20 border-yellow-200 dark:border-yellow-800',
-    low: 'from-green-500/20 to-green-600/20 border-green-200 dark:border-green-800',
   };
 
   const PRIORITY_ICONS = {
-    critical: '😡',
-    high: '😠',
-    medium: '😐',
     low: '😊',
+    normal: '😐',
+    high: '😠',
+    critical: '😡',
   };
 
   // Group tasks by priority
   const grouped: { [key: string]: ExtendedWorkspaceTask[] } = {
-    critical: [],
-    high: [],
-    medium: [],
     low: [],
+    normal: [],
+    high: [],
+    critical: [],
   };
+
   allTasks?.forEach((task) => {
-    let p = (task.user_defined_priority || 'low').toLowerCase();
-    if (p === 'normal') p = 'medium';
-    if (grouped[p]) {
-      grouped[p].push(task);
+    const priority = task.user_defined_priority || 'normal';
+    if (grouped[priority]) {
+      grouped[priority].push(task);
     } else {
-      grouped.low?.push(task);
+      grouped.normal?.push(task);
     }
   });
 
@@ -220,6 +218,13 @@ function PriorityView({ allTasks }: { allTasks: ExtendedWorkspaceTask[] }) {
       ),
     ])
   );
+
+  const handlePriorityChange = async (taskId: string, newPriority: string) => {
+    // TODO: Implement API call to update task priority
+    console.log('Updating task priority:', taskId, newPriority);
+    // This would typically make an API call to update the task
+    // await updateTaskPriority(taskId, newPriority);
+  };
 
   return (
     <div className="space-y-4">
@@ -332,30 +337,33 @@ function PriorityView({ allTasks }: { allTasks: ExtendedWorkspaceTask[] }) {
                                   </DropdownMenuTrigger>
                                   <DropdownMenuContent align="start">
                                     <DropdownMenuItem
-                                      onClick={() => {
-                                        /* handlePriorityChange('critical') */
-                                      }}
+                                      onClick={() =>
+                                        handlePriorityChange(
+                                          task.id,
+                                          'critical'
+                                        )
+                                      }
                                     >
                                       😡 Critical
                                     </DropdownMenuItem>
                                     <DropdownMenuItem
-                                      onClick={() => {
-                                        /* handlePriorityChange('high') */
-                                      }}
+                                      onClick={() =>
+                                        handlePriorityChange(task.id, 'high')
+                                      }
                                     >
                                       😠 High
                                     </DropdownMenuItem>
                                     <DropdownMenuItem
-                                      onClick={() => {
-                                        /* handlePriorityChange('medium') */
-                                      }}
+                                      onClick={() =>
+                                        handlePriorityChange(task.id, 'normal')
+                                      }
                                     >
-                                      😐 Medium
+                                      😐 Normal
                                     </DropdownMenuItem>
                                     <DropdownMenuItem
-                                      onClick={() => {
-                                        /* handlePriorityChange('low') */
-                                      }}
+                                      onClick={() =>
+                                        handlePriorityChange(task.id, 'low')
+                                      }
                                     >
                                       😊 Low
                                     </DropdownMenuItem>
@@ -455,7 +463,7 @@ function PriorityView({ allTasks }: { allTasks: ExtendedWorkspaceTask[] }) {
   );
 }
 
-function formatDueDate(date) {
+function formatDueDate(date: string | Date) {
   // expects date as string or Date, returns MM/DD or DD/MM as you prefer
   const d = new Date(date);
   return `${d.getMonth() + 1}/${d.getDate()}`;
