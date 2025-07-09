@@ -47,16 +47,16 @@
     "sb:typegen": "cd apps/db && bun sb:typegen",
     "ui:add": "bun --filter ui ui:add",
     "ui:diff": "bun --filter ui ui:diff",
-    "update-all": "(cd apps && for dir in */; do echo \"Updating apps/$dir...\" && cd \"$dir\" && bun update && cd ..; done) && (cd packages && for dir in */; do echo \"Updating packages/$dir...\" && cd \"$dir\" && bun update && cd ..; done)"
+    "update-all": "bun update && (cd apps && for dir in */; do echo \"Updating apps/$dir...\" && cd \"$dir\" && bun update && cd ..; done) && (cd packages && for dir in */; do echo \"Updating packages/$dir...\" && cd \"$dir\" && bun update && cd .. && bun i; done)"
   },
   "dependencies": {
     "react-scan": "^0.4.3"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.0.6",
+    "@biomejs/biome": "^2.1.1",
     "@vitest/coverage-v8": "^3.2.4",
     "turbo": "^2.5.4",
-    "vite": "^7.0.2",
+    "vite": "^7.0.3",
     "vitest": "^3.2.4"
   },
   "engines": {
