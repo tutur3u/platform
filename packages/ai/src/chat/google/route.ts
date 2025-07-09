@@ -5,9 +5,11 @@ import {
   createDynamicClient,
 } from '@tuturuuu/supabase/next/server';
 import {
+  convertToModelMessages,
   type FilePart,
   type ImagePart,
   type ModelMessage,
+  type UIMessage,
   smoothStream,
   streamText,
   type TextPart,
@@ -227,7 +229,7 @@ export function createPOST(
     } = (await req.json()) as {
       id?: string;
       model?: string;
-      messages?: ModelMessage[];
+      messages?: UIMessage[];
       wsId?: string;
     };
 
@@ -296,8 +298,6 @@ export function createPOST(
         return new Response(threadError.message, { status: 500 });
       }
 
-      console.log('Thread:', thread);
-
       const sbDynamic = await createDynamicClient();
 
       if (thread && thread.length === 1 && thread[0]?.role === 'USER') {
@@ -334,11 +334,14 @@ export function createPOST(
         }
       }
 
+      // Convert UIMessages to ModelMessages
+      const modelMessages = convertToModelMessages(messages);
+
       // Process messages and handle file attachments
       const processedMessages =
         wsId && chatId
-          ? await processMessagesWithFiles(messages, wsId, chatId)
-          : messages;
+          ? await processMessagesWithFiles(modelMessages, wsId, chatId)
+          : modelMessages;
 
       if (processedMessages.length !== 1) {
         const userMessages = processedMessages.filter(
@@ -443,7 +446,7 @@ export function createPOST(
         },
       });
 
-      return result.toTextStreamResponse();
+      return result.toUIMessageStreamResponse();
     } catch (error) {
       if (error instanceof Error) {
         console.log(error.message);
