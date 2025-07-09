@@ -17,7 +17,7 @@ vi.mock('../google-calendar-sync', async () => {
     syncWorkspaceExtended: vi.fn((payload) => Promise.resolve({
       ws_id: payload.ws_id,
       success: true,
-      eventsSynced: 10,
+      eventsSynced: payload.events_to_sync?.length || 10,
       eventsDeleted: 0,
       // Add locale-specific behavior simulation as additional properties for testing
       locale: payload.locale,
@@ -37,7 +37,6 @@ let syncWorkspaceExtended: any;
 
 beforeAll(async () => {
   const mod = await import('../google-calendar-sync');
-  syncGoogleCalendarEventsExtended = mod.syncGoogleCalendarEventsExtended;
   syncWorkspaceExtended = mod.syncWorkspaceExtended;
 });
 
@@ -80,6 +79,18 @@ const mockSetupDayjsLocale = async (locale?: string) => {
   }
 };
 
+// Mock Google Calendar events for testing
+const createMockGoogleEvent = (id: string, title: string, start: string, end: string) => ({
+  id,
+  summary: title,
+  description: '',
+  start: { dateTime: start },
+  end: { dateTime: end },
+  location: '',
+  colorId: '1',
+  status: 'confirmed'
+});
+
 describe('Google Calendar Sync - Locale Functionality', () => {
   beforeEach(() => {
     // Reset environment
@@ -115,11 +126,15 @@ describe('Google Calendar Sync - Locale Functionality', () => {
       const testLocales = ['en', 'vi', 'fr', 'de', 'es'];
       
       for (const locale of testLocales) {
+        const mockEvents = [
+          createMockGoogleEvent('event1', 'Test Event 1', '2024-01-15T10:00:00Z', '2024-01-15T11:00:00Z'),
+          createMockGoogleEvent('event2', 'Test Event 2', '2024-01-15T14:00:00Z', '2024-01-15T15:00:00Z')
+        ];
+
         const extendedPayload = {
           ws_id: 'test-workspace',
-          access_token: 'test-token',
-          refresh_token: 'test-refresh',
-          locale,
+          events_to_sync: mockEvents,
+          locale, // Additional property for testing locale behavior
         };
 
         // Call the actual function with the payload
@@ -147,10 +162,13 @@ describe('Google Calendar Sync - Locale Functionality', () => {
     });
 
     it('should process locale parameter in syncWorkspaceExtended', async () => {
+      const mockEvents = [
+        createMockGoogleEvent('event1', 'Test Event', '2024-01-15T10:00:00Z', '2024-01-15T11:00:00Z')
+      ];
+
       const extendedPayload = {
         ws_id: 'test-workspace',
-        access_token: 'test-token',
-        refresh_token: 'test-refresh',
+        events_to_sync: mockEvents,
         locale: 'fr',
       };
 
@@ -164,10 +182,13 @@ describe('Google Calendar Sync - Locale Functionality', () => {
     });
 
     it('should handle missing locale parameter gracefully', async () => {
+      const mockEvents = [
+        createMockGoogleEvent('event1', 'Test Event', '2024-01-15T10:00:00Z', '2024-01-15T11:00:00Z')
+      ];
+
       const payload = {
         ws_id: 'test-workspace',
-        access_token: 'test-token',
-        refresh_token: 'test-refresh',
+        events_to_sync: mockEvents,
         // locale is optional
       };
 
@@ -184,10 +205,13 @@ describe('Google Calendar Sync - Locale Functionality', () => {
       const locales = ['en', 'vi', 'fr', 'de', 'es', 'ja', 'ko', 'zh'];
       
       for (const locale of locales) {
+        const mockEvents = [
+          createMockGoogleEvent('event1', 'Test Event', '2024-01-15T10:00:00Z', '2024-01-15T11:00:00Z')
+        ];
+
         const payload = {
           ws_id: 'test-workspace',
-          access_token: 'test-token',
-          refresh_token: 'test-refresh',
+          events_to_sync: mockEvents,
           locale,
         };
         
@@ -225,12 +249,15 @@ describe('Google Calendar Sync - Locale Functionality', () => {
     });
 
     it('should pass locale parameter to workspace sync functions using real functions', async () => {
+      const mockEvents = [
+        createMockGoogleEvent('event1', 'Test Event', '2024-01-15T10:00:00Z', '2024-01-15T11:00:00Z')
+      ];
+      
       // Call the real workspace sync functions to verify locale parameter passing
       
       const extendedResult = await syncWorkspaceExtended({
         ws_id: 'test-ws',
-        access_token: 'token',
-        refresh_token: 'refresh',
+        events_to_sync: mockEvents,
         locale: 'fr'
       });
       
@@ -332,11 +359,15 @@ describe('Google Calendar Sync - Locale Functionality', () => {
 
   describe('Integration Scenarios', () => {
     it('should support complete sync workflow with locale', async () => {
+      const mockEvents = [
+        createMockGoogleEvent('event1', 'Test Event 1', '2024-01-15T10:00:00Z', '2024-01-15T11:00:00Z'),
+        createMockGoogleEvent('event2', 'Test Event 2', '2024-01-15T14:00:00Z', '2024-01-15T15:00:00Z')
+      ];
+
       const syncWorkflow = {
         workspace: {
           ws_id: 'test-workspace',
-          access_token: 'test-token',
-          refresh_token: 'test-refresh',
+          events_to_sync: mockEvents,
           locale: 'vi',
         },
         timeRange: {
@@ -372,10 +403,13 @@ describe('Google Calendar Sync - Locale Functionality', () => {
       // Perform real sync operations for each workspace
       const syncResults: any[] = [];
       for (const workspace of workspaces) {
+        const mockEvents = [
+          createMockGoogleEvent('event1', 'Test Event', '2024-01-15T10:00:00Z', '2024-01-15T11:00:00Z')
+        ];
+
         const syncPayload = {
           ws_id: workspace.ws_id,
-          access_token: 'test-token',
-          refresh_token: 'test-refresh',
+          events_to_sync: mockEvents,
           locale: workspace.locale,
         };
         
@@ -386,7 +420,7 @@ describe('Google Calendar Sync - Locale Functionality', () => {
         // Verify the sync operation reflects the correct locale handling
         expect(result.ws_id).toBe(workspace.ws_id);
         expect(result.success).toBe(true);
-        expect(result.eventsSynced).toBe(10);
+        expect(result.eventsSynced).toBe(1);
         
         // Verify locale-specific formatting is applied (using type assertion for mock properties)
         const mockResult = result as any;
