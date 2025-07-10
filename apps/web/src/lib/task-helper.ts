@@ -1,4 +1,9 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  type QueryClient,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
 import type { SupabaseClient } from '@tuturuuu/supabase/next/client';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
@@ -10,6 +15,7 @@ import type {
   TaskBoardStatusTemplate,
   TaskList,
 } from '@tuturuuu/types/primitives/TaskBoard';
+import type { User } from '@tuturuuu/types/primitives/User';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 
 export async function getTaskBoard(supabase: SupabaseClient, boardId: string) {
@@ -72,12 +78,10 @@ export async function getTasks(supabase: SupabaseClient, boardId: string) {
   const transformedTasks = data.map((task) => ({
     ...task,
     assignees: task.assignees
-      ?.map((a: any) => a.user)
+      ?.map((a) => a.user)
       .filter(
-        (user: any, index: number, self: any[]) =>
-          user &&
-          user.id &&
-          self.findIndex((u: any) => u.id === user.id) === index
+        (user: User, index: number, self: User[]) =>
+          user?.id && self.findIndex((u: User) => u.id === user.id) === index
       ),
   }));
 
@@ -119,7 +123,7 @@ export async function createTask(
 ) {
   const { data, error } = await supabase
     .from('tasks')
-    .insert({ ...task, list_id: listId })
+    .insert({ ...task, name: task.name || '', list_id: listId })
     .select()
     .single();
 
@@ -144,19 +148,24 @@ export async function updateTask(
 }
 
 // Utility function to transform and deduplicate assignees
-export function transformAssignees(assignees: any[]): any[] {
+export function transformAssignees(
+  assignees: (TaskAssignee & { user: User })[]
+): User[] {
   return (
     assignees
-      ?.map((a: any) => a.user)
+      ?.map((a) => a.user)
       .filter(
-        (user: any, index: number, self: any[]) =>
-          user?.id && self.findIndex((u: any) => u.id === user.id) === index
+        (user: User, index: number, self: User[]) =>
+          user?.id && self.findIndex((u: User) => u.id === user.id) === index
       ) || []
   );
 }
 
 // Utility function to invalidate all task-related caches consistently
-export function invalidateTaskCaches(queryClient: any, boardId?: string) {
+export function invalidateTaskCaches(
+  queryClient: QueryClient,
+  boardId?: string
+) {
   if (boardId) {
     queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
     queryClient.invalidateQueries({ queryKey: ['task_lists', boardId] });
@@ -217,7 +226,9 @@ export async function moveTask(
   // Transform the nested assignees data
   const transformedTask = {
     ...data,
-    assignees: transformAssignees(data.assignees),
+    assignees: transformAssignees(
+      data.assignees as (TaskAssignee & { user: User })[]
+    ),
   };
 
   return transformedTask as Task;
@@ -550,7 +561,7 @@ export async function getStatusTemplates(supabase: SupabaseClient) {
     .order('name');
 
   if (error) throw error;
-  return data as TaskBoardStatusTemplate[];
+  return data as unknown as TaskBoardStatusTemplate[];
 }
 
 export async function createBoardWithTemplate(
