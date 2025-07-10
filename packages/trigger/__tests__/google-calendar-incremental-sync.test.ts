@@ -70,9 +70,18 @@ vi.mock('googleapis', () => ({
 
 // Mock @trigger.dev/sdk/v3
 vi.mock('@trigger.dev/sdk/v3', () => ({
-  task: vi.fn(),
+  task: vi.fn((config) => ({
+    id: config.id,
+    trigger: vi.fn(),
+    run: config.run,
+    queue: config.queue
+  })),
   schedules: {
-    task: vi.fn()
+    task: vi.fn((config) => ({
+      id: config.id,
+      cron: config.cron,
+      run: config.run
+    }))
   }
 }));
 
