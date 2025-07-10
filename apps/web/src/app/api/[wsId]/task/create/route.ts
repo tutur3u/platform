@@ -118,51 +118,27 @@ export async function POST(
     };
 
     const events = prepareTaskChunks([taskToSplit]);
-
-    if (is_splittable) {
-      const { events: newScheduledEvents } = scheduleTasks(
-        events,
-        defaultActiveHours
-      );
-      if (newScheduledEvents.length > 0) {
-        const insertData = newScheduledEvents.map((event) => ({
-          ws_id: wsId,
-          task_id: event.taskId,
-          title: event.name,
-          priority: dbTask.user_defined_priority || 'normal',
-          start_at: event.range.start.toISOString(),
-          end_at: event.range.end.toISOString(),
-          locked: false,
-        }));
-
-        const { error: insertError } = await supabase
-          .from('workspace_calendar_events')
-          .upsert(insertData);
-
-        if (insertError) {
-          console.error('Error inserting event:', insertError);
-          return NextResponse.json(
-            { error: 'Failed to insert event into calendar.' },
-            { status: 500 }
-          );
-        }
-      }
-    } else {
-      const event = {
+    console.log(events, 'hello');
+    // console.log('Prepared task chunks:', events);
+    const { events: newScheduledEvents } = scheduleTasks(
+      events,
+      defaultActiveHours
+    );
+    console.log('Scheduled events:', newScheduledEvents);
+    if (newScheduledEvents.length > 0) {
+      const insertData = newScheduledEvents.map((event) => ({
         ws_id: wsId,
-        task_id: dbTask.id,
-        title: dbTask.name,
+        task_id: event.taskId,
+        title: event.name,
         priority: dbTask.user_defined_priority || 'normal',
-        start_at: dbTask.start_date || new Date().toISOString(),
-        end_at:
-          dbTask.end_date ||
-          new Date(Date.now() + total_duration * 60 * 1000).toISOString(),
+        start_at: event.range.start.toISOString(),
+        end_at: event.range.end.toISOString(),
         locked: false,
-      };
+      }));
 
       const { error: insertError } = await supabase
         .from('workspace_calendar_events')
-        .insert(event);
+        .upsert(insertData);
 
       if (insertError) {
         console.error('Error inserting event:', insertError);
