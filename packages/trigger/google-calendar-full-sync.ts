@@ -27,7 +27,7 @@ export async function performFullSyncForWorkspace(calendarId = "primary", ws_id:
     const syncToken = res.data.nextSyncToken;
   
     if (events.length > 0) {
-        syncWorkspaceExtended({ ws_id, events_to_sync: events });
+        await syncWorkspaceExtended({ ws_id, events_to_sync: events });
     }
   
     if (syncToken) {
