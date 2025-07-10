@@ -166,18 +166,20 @@ describe('Google Calendar Incremental Sync', () => {
   });
 
   describe('Sync Token Handling', () => {
-    it('should handle existing sync token', async () => {
+    it('should handle existing sync token correctly', async () => {
       const { getSyncToken } = await import('../google-calendar-sync');
       
-      // Test that getSyncToken is called (this would be tested in the actual task run)
-      expect(getSyncToken).toBeDefined();
+      const result = await getSyncToken('test-workspace-id');
+      expect(result).toBe('existing-sync-token-123');
+      expect(getSyncToken).toHaveBeenCalledWith('test-workspace-id');
     });
 
-    it('should store sync token when available', async () => {
+    it('should store sync token correctly', async () => {
       const { storeSyncToken } = await import('../google-calendar-sync');
+      const testDate = new Date('2024-01-15T10:00:00Z');
       
-      // Test that storeSyncToken is called (this would be tested in the actual task run)
-      expect(storeSyncToken).toBeDefined();
+      await storeSyncToken('test-workspace-id', 'new-sync-token', testDate);
++      expect(storeSyncToken).toHaveBeenCalledWith('test-workspace-id', 'new-sync-token', testDate);
     });
   });
 
