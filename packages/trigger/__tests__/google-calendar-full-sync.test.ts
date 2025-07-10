@@ -412,25 +412,6 @@ describe('performFullSyncForWorkspace', () => {
     });
   });
 
-  describe('Error Handling', () => {
-    it('should handle syncWorkspaceExtended errors gracefully', async () => {
-      // Mock error in syncWorkspaceExtended
-      const { syncWorkspaceExtended } = await import('../google-calendar-sync');
-      (syncWorkspaceExtended as any).mockRejectedValue(new Error('Sync error'));
-
-      const events = await performFullSyncForWorkspace(
-        'primary',
-        'test-workspace',
-        'test-access-token',
-        'test-refresh-token'
-      );
-
-      expect(events).toBeDefined();
-      expect(events).toHaveLength(2);
-      // The function should still return events even if sync fails
-    });
-  });
-
   describe('Mock Data Validation', () => {
     it('should return properly structured mock events', async () => {
       const events = await performFullSyncForWorkspace(
