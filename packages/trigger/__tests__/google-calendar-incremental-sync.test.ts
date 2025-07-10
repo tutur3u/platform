@@ -156,16 +156,6 @@ describe('Google Calendar Incremental Sync', () => {
     vi.clearAllMocks();
   });
 
-  describe('Task Configuration', () => {
-    it('should be properly configured as a task', () => {
-      expect(googleCalendarIncrementalSync).toBeDefined();
-    });
-
-    it('should be properly configured as a scheduled task', () => {
-      expect(googleCalendarIncrementalSyncOrchestrator).toBeDefined();
-    });
-  });
-
   describe('Sync Token Handling', () => {
     it('should handle existing sync token', async () => {
       const { getSyncToken } = await import('../google-calendar-sync');

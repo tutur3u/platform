@@ -320,13 +320,15 @@ describe('performFullSyncForWorkspace', () => {
             {
               id: 'event1',
               summary: 'Test Event 1',
+              description: 'Test Description 1',
               start: { dateTime: '2024-01-15T10:00:00Z' },
               end: { dateTime: '2024-01-15T11:00:00Z' },
+              location: 'Test Location 1',
+              colorId: '1',
               status: 'confirmed'
             }
           ]
-          // No nextSyncToken
-        }
+        } as any
       });
 
       const { storeSyncToken } = await import('../google-calendar-sync');
@@ -396,12 +398,17 @@ describe('performFullSyncForWorkspace', () => {
       );
 
       // Verify the time range is approximately 28 days
-      const callArgs = mockCalendarEventsList.mock.calls[0][0];
-      const timeMin = dayjs(callArgs.timeMin);
-      const timeMax = dayjs(callArgs.timeMax);
-      const dayDifference = timeMax.diff(timeMin, 'day');
-      
-      expect(dayDifference).toBe(28);
+      const calls = mockCalendarEventsList.mock.calls as any[];
+      expect(calls.length).toBeGreaterThan(0);
+      const callArgs = calls[0]?.[0];
+      expect(callArgs).toBeDefined();
+      if (callArgs) {
+        const timeMin = dayjs(callArgs.timeMin);
+        const timeMax = dayjs(callArgs.timeMax);
+        const dayDifference = timeMax.diff(timeMin, 'day');
+        
+        expect(dayDifference).toBe(28);
+      }
     });
   });
 
@@ -468,22 +475,31 @@ describe('performFullSyncForWorkspace', () => {
             {
               id: 'event1',
               summary: 'Confirmed Event',
+              description: 'Confirmed Event Description',
               start: { dateTime: '2024-01-15T10:00:00Z' },
               end: { dateTime: '2024-01-15T11:00:00Z' },
+              location: 'Confirmed Event Location',
+              colorId: '1',
               status: 'confirmed'
             },
             {
               id: 'event2',
               summary: 'Cancelled Event',
+              description: 'Cancelled Event Description',
               start: { dateTime: '2024-01-15T14:00:00Z' },
               end: { dateTime: '2024-01-15T15:00:00Z' },
+              location: 'Cancelled Event Location',
+              colorId: '2',
               status: 'cancelled'
             },
             {
               id: 'event3',
               summary: 'Tentative Event',
+              description: 'Tentative Event Description',
               start: { dateTime: '2024-01-15T16:00:00Z' },
               end: { dateTime: '2024-01-15T17:00:00Z' },
+              location: 'Tentative Event Location',
+              colorId: '3',
               status: 'tentative'
             }
           ],
