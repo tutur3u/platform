@@ -81,7 +81,7 @@ export default function SessionClient({ session }: SessionClientProps) {
 
     return (
       <span
-        className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${className}`}
+        className={`inline-flex items-center rounded-full px-2.5 py-0.5 font-medium text-xs ${className}`}
       >
         {status}
       </span>
@@ -126,7 +126,7 @@ export default function SessionClient({ session }: SessionClientProps) {
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back
         </Button>
-        <h1 className="text-2xl font-bold">Session Details</h1>
+        <h1 className="font-bold text-2xl">Session Details</h1>
       </div>
 
       <Tabs defaultValue="overview">
@@ -155,11 +155,11 @@ export default function SessionClient({ session }: SessionClientProps) {
                       {session.user.displayName.charAt(0)}
                     </AvatarFallback>
                   </Avatar>
-                  <h3 className="mt-4 text-xl font-semibold">
+                  <h3 className="mt-4 font-semibold text-xl">
                     {session.user.displayName}
                   </h3>
                   {session.user.email && (
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-muted-foreground text-sm">
                       {session.user.email}
                     </p>
                   )}
@@ -169,7 +169,7 @@ export default function SessionClient({ session }: SessionClientProps) {
 
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">
+                    <span className="text-muted-foreground text-sm">
                       User ID:
                     </span>
                     <span className="font-mono text-xs">{session.user.id}</span>
@@ -247,7 +247,7 @@ export default function SessionClient({ session }: SessionClientProps) {
                 <div className="space-y-4">
                   <div>
                     <h3 className="font-medium">Challenge</h3>
-                    <p className="mt-1 text-lg font-semibold">
+                    <p className="mt-1 font-semibold text-lg">
                       {session.challenge.title}
                     </p>
                   </div>
@@ -294,10 +294,10 @@ export default function SessionClient({ session }: SessionClientProps) {
               {session.submissions.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-8 text-center">
                   <FileText className="h-12 w-12 text-gray-300" />
-                  <h3 className="mt-4 text-lg font-medium">
+                  <h3 className="mt-4 font-medium text-lg">
                     No submissions found
                   </h3>
-                  <p className="mt-2 text-sm text-muted-foreground">
+                  <p className="mt-2 text-muted-foreground text-sm">
                     There are no submissions recorded during this session.
                   </p>
                 </div>

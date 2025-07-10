@@ -4,7 +4,7 @@ import { Box, Globe, Lock, Sparkle } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
-import { Fragment } from 'react';
+import { Fragment, useMemo } from 'react';
 import { ChatMessage } from '@/components/chat-message';
 import { OnlineUsers } from '@/components/online-users';
 
@@ -16,9 +16,9 @@ interface PresenceUser {
 }
 
 interface PresenceState {
+  presence_ref: string;
   user: PresenceUser;
   online_at: string;
-  presence_ref: string;
 }
 
 export interface ChatListProps {
@@ -61,12 +61,26 @@ export function ChatList({
   setInput,
 }: ChatListProps) {
   const t = useTranslations('ai_chat');
-  if (!messages.length) return null;
+
+  // Deduplicate messages to prevent React key conflicts
+  const uniqueMessages = useMemo(() => {
+    const seen = new Set<string>();
+    return messages.filter((message) => {
+      if (seen.has(message.id)) {
+        console.warn(`Duplicate message ID detected: ${message.id}`);
+        return false;
+      }
+      seen.add(message.id);
+      return true;
+    });
+  }, [messages]);
+
+  if (!uniqueMessages.length) return null;
 
   return (
     <div
       className={`relative ${
-        embeddedUrl ? 'w-full' : 'mx-auto lg:max-w-4xl xl:max-w-6xl'
+        embeddedUrl ? 'w-full' : 'mx-auto lg:max-w-3xl xl:max-w-4xl'
       }`}
     >
       {(!!chatTitle || !!chatId) && (
@@ -146,8 +160,8 @@ export function ChatList({
         </Fragment>
       )}
 
-      {messages.map((message, index) => (
-        <div key={message.id}>
+      {uniqueMessages.map((message, index) => (
+        <div key={`message-${message.id}-${index}`}>
           <ChatMessage
             message={{
               ...message,
@@ -171,9 +185,6 @@ export function ChatList({
             locale={locale}
             anonymize={anonymize}
           />
-          {index < messages.length - 1 && (
-            <Separator className="my-4 md:my-8" />
-          )}
         </div>
       ))}
     </div>
