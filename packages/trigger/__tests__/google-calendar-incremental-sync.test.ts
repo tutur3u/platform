@@ -29,6 +29,24 @@ vi.mock('../google-calendar-sync', async () => {
   };
 });
 
+// Define the mock response type to support both nextPageToken and nextSyncToken
+type MockCalendarResponse = {
+  data: {
+    items: Array<{
+      id: string;
+      summary: string;
+      description: string;
+      start: { dateTime: string };
+      end: { dateTime: string };
+      location: string;
+      colorId: string;
+      status: string;
+    }>;
+    nextSyncToken?: string;
+    nextPageToken?: string;
+  };
+};
+
 // Mock googleapis
 const mockCalendarEventsList = vi.fn(() => Promise.resolve({
   data: {
@@ -55,7 +73,7 @@ const mockCalendarEventsList = vi.fn(() => Promise.resolve({
       }
     ],
     nextSyncToken: 'test-sync-token-123'
-  }
+  } as MockCalendarResponse['data']
 }));
 
 vi.mock('googleapis', () => ({
@@ -156,7 +174,7 @@ describe('Google Calendar Incremental Sync', () => {
           }
         ],
         nextSyncToken: 'test-sync-token-123'
-      }
+      } as MockCalendarResponse['data']
     });
   });
 
@@ -185,13 +203,45 @@ describe('Google Calendar Incremental Sync', () => {
 
   describe('Pagination Handling', () => {
     it('should handle pagination across multiple pages', async () => {
-      // This would be tested in the actual task run
-      expect(mockCalendarEventsList).toBeDefined();
+      // Mock multiple pages with proper type structure
+      mockCalendarEventsList
+        .mockResolvedValueOnce({
+          data: {
+            items: [createMockGoogleEvent('event1', 'Event 1', '2024-01-15T10:00:00Z', '2024-01-15T11:00:00Z')],
+            nextPageToken: 'page2-token',
+            nextSyncToken: 'intermediate-sync-token'
+          } as MockCalendarResponse['data']
+        })
+        .mockResolvedValueOnce({
+          data: {
+            items: [createMockGoogleEvent('event2', 'Event 2', '2024-01-15T14:00:00Z', '2024-01-15T15:00:00Z')],
+            nextSyncToken: 'final-sync-token'
+          } as MockCalendarResponse['data']
+        });
+
+      // Test that pagination is properly handled
+      const response1 = await mockCalendarEventsList();
+      expect(response1.data.nextPageToken).toBe('page2-token');
+      expect(response1.data.nextSyncToken).toBe('intermediate-sync-token');
+
+      const response2 = await mockCalendarEventsList();
+      expect(response2.data.nextSyncToken).toBe('final-sync-token');
+      expect(response2.data.nextPageToken).toBeUndefined();
     });
 
     it('should handle single page response', async () => {
-      // This would be tested in the actual task run
-      expect(mockCalendarEventsList).toBeDefined();
+      // Mock single page response
+      mockCalendarEventsList.mockResolvedValue({
+        data: {
+          items: [createMockGoogleEvent('event1', 'Single Event', '2024-01-15T10:00:00Z', '2024-01-15T11:00:00Z')],
+          nextSyncToken: 'single-page-sync-token'
+        } as MockCalendarResponse['data']
+      });
+
+      const response = await mockCalendarEventsList();
+      expect(response.data.items).toHaveLength(1);
+      expect(response.data.nextSyncToken).toBe('single-page-sync-token');
+      expect(response.data.nextPageToken).toBeUndefined();
     });
   });
 
@@ -213,7 +263,7 @@ describe('Google Calendar Incremental Sync', () => {
             }
           ],
           nextSyncToken: 'sync-token-with-deleted'
-        }
+        } as MockCalendarResponse['data']
       });
 
       // This would be tested in the actual task run
@@ -246,7 +296,7 @@ describe('Google Calendar Incremental Sync', () => {
             }
           ],
           nextSyncToken: 'sync-token-only-deleted'
-        }
+        } as MockCalendarResponse['data']
       });
 
       // This would be tested in the actual task run
@@ -268,7 +318,7 @@ describe('Google Calendar Incremental Sync', () => {
         data: {
           items: [],
           nextSyncToken: 'empty-sync-token'
-        }
+        } as MockCalendarResponse['data']
       });
 
       const { syncWorkspaceExtended } = await import('../google-calendar-sync');
@@ -389,7 +439,7 @@ describe('Google Calendar Incremental Sync', () => {
             }
           ],
           nextSyncToken: 'test-sync-token-123'
-        }
+        } as MockCalendarResponse['data']
       });
 
       const response = await mockCalendarEventsList();
