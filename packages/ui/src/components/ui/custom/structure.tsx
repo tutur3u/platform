@@ -3,14 +3,7 @@
 import { Button } from '@tuturuuu/ui/button';
 import { TooltipProvider } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
-import {
-  ChevronLeft,
-  ChevronRight,
-  ChevronsLeft,
-  ChevronsRight,
-  Menu,
-  X,
-} from 'lucide-react';
+import { ChevronLeft, ChevronRight, Menu, X } from 'lucide-react';
 import type { ReactNode } from 'react';
 
 interface StructureProps {
@@ -72,7 +65,8 @@ export function Structure({
 
       <TooltipProvider delayDuration={0}>
         {!isCollapsed && (
-          <div
+          <button
+            type="button"
             className="fixed inset-0 z-40 bg-black/20 backdrop-blur-lg md:hidden"
             onClick={() => setIsCollapsed(true)}
           />
