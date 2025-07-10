@@ -34,7 +34,7 @@ async function performIncrementalSyncForWorkspace(
     } while (pageToken);
 
     if (allEvents.length > 0) {
-      syncWorkspaceExtended({ ws_id, events_to_sync: allEvents });
+      await syncWorkspaceExtended({ ws_id, events_to_sync: allEvents });
     }   
     
     if (nextSyncToken) {
