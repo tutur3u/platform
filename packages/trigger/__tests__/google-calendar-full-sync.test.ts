@@ -29,37 +29,39 @@ vi.mock('../google-calendar-sync', async () => {
 });
 
 // Mock googleapis
+const mockCalendarEventsList = vi.fn(() => Promise.resolve({
+  data: {
+    items: [
+      {
+        id: 'event1',
+        summary: 'Test Event 1',
+        description: 'Test Description 1',
+        start: { dateTime: '2024-01-15T10:00:00Z' },
+        end: { dateTime: '2024-01-15T11:00:00Z' },
+        location: 'Test Location 1',
+        colorId: '1',
+        status: 'confirmed'
+      },
+      {
+        id: 'event2',
+        summary: 'Test Event 2',
+        description: 'Test Description 2',
+        start: { dateTime: '2024-01-15T14:00:00Z' },
+        end: { dateTime: '2024-01-15T15:00:00Z' },
+        location: 'Test Location 2',
+        colorId: '2',
+        status: 'confirmed'
+      }
+    ],
+    nextSyncToken: 'test-sync-token-123'
+  }
+}));
+
 vi.mock('googleapis', () => ({
   google: {
     calendar: vi.fn(() => ({
       events: {
-        list: vi.fn(() => Promise.resolve({
-          data: {
-            items: [
-              {
-                id: 'event1',
-                summary: 'Test Event 1',
-                description: 'Test Description 1',
-                start: { dateTime: '2024-01-15T10:00:00Z' },
-                end: { dateTime: '2024-01-15T11:00:00Z' },
-                location: 'Test Location 1',
-                colorId: '1',
-                status: 'confirmed'
-              },
-              {
-                id: 'event2',
-                summary: 'Test Event 2',
-                description: 'Test Description 2',
-                start: { dateTime: '2024-01-15T14:00:00Z' },
-                end: { dateTime: '2024-01-15T15:00:00Z' },
-                location: 'Test Location 2',
-                colorId: '2',
-                status: 'confirmed'
-              }
-            ],
-            nextSyncToken: 'test-sync-token-123'
-          }
-        }))
+        list: mockCalendarEventsList
       }
     }))
   }
@@ -108,38 +110,32 @@ describe('performFullSyncForWorkspace', () => {
     // Clear all mocks
     vi.clearAllMocks();
     
-    // Reset Google Calendar mock to default state
-    const { google } = require('googleapis');
-    const mockCalendar = google.calendar as any;
-    mockCalendar.mockReturnValue({
-      events: {
-        list: vi.fn(() => Promise.resolve({
-          data: {
-            items: [
-              {
-                id: 'event1',
-                summary: 'Test Event 1',
-                description: 'Test Description 1',
-                start: { dateTime: '2024-01-15T10:00:00Z' },
-                end: { dateTime: '2024-01-15T11:00:00Z' },
-                location: 'Test Location 1',
-                colorId: '1',
-                status: 'confirmed'
-              },
-              {
-                id: 'event2',
-                summary: 'Test Event 2',
-                description: 'Test Description 2',
-                start: { dateTime: '2024-01-15T14:00:00Z' },
-                end: { dateTime: '2024-01-15T15:00:00Z' },
-                location: 'Test Location 2',
-                colorId: '2',
-                status: 'confirmed'
-              }
-            ],
-            nextSyncToken: 'test-sync-token-123'
+    // Reset the mock calendar events list to default state
+    mockCalendarEventsList.mockResolvedValue({
+      data: {
+        items: [
+          {
+            id: 'event1',
+            summary: 'Test Event 1',
+            description: 'Test Description 1',
+            start: { dateTime: '2024-01-15T10:00:00Z' },
+            end: { dateTime: '2024-01-15T11:00:00Z' },
+            location: 'Test Location 1',
+            colorId: '1',
+            status: 'confirmed'
+          },
+          {
+            id: 'event2',
+            summary: 'Test Event 2',
+            description: 'Test Description 2',
+            start: { dateTime: '2024-01-15T14:00:00Z' },
+            end: { dateTime: '2024-01-15T15:00:00Z' },
+            location: 'Test Location 2',
+            colorId: '2',
+            status: 'confirmed'
           }
-        }))
+        ],
+        nextSyncToken: 'test-sync-token-123'
       }
     });
   });
@@ -187,16 +183,10 @@ describe('performFullSyncForWorkspace', () => {
 
     it('should handle empty events list', async () => {
       // Mock empty response
-      const { google } = require('googleapis');
-      const mockCalendar = google.calendar as any;
-      mockCalendar.mockReturnValue({
-        events: {
-          list: vi.fn(() => Promise.resolve({
-            data: {
-              items: [],
-              nextSyncToken: 'empty-sync-token'
-            }
-          }))
+      mockCalendarEventsList.mockResolvedValue({
+        data: {
+          items: [],
+          nextSyncToken: 'empty-sync-token'
         }
       });
 
@@ -284,16 +274,10 @@ describe('performFullSyncForWorkspace', () => {
 
     it('should not call syncWorkspaceExtended when no events exist', async () => {
       // Mock empty response
-      const { google } = require('googleapis');
-      const mockCalendar = google.calendar as any;
-      mockCalendar.mockReturnValue({
-        events: {
-          list: vi.fn(() => Promise.resolve({
-            data: {
-              items: [],
-              nextSyncToken: 'empty-sync-token'
-            }
-          }))
+      mockCalendarEventsList.mockResolvedValue({
+        data: {
+          items: [],
+          nextSyncToken: 'empty-sync-token'
         }
       });
 
@@ -330,24 +314,18 @@ describe('performFullSyncForWorkspace', () => {
 
     it('should handle missing sync token gracefully', async () => {
       // Mock response without sync token
-      const { google } = require('googleapis');
-      const mockCalendar = google.calendar as any;
-      mockCalendar.mockReturnValue({
-        events: {
-          list: vi.fn(() => Promise.resolve({
-            data: {
-              items: [
-                {
-                  id: 'event1',
-                  summary: 'Test Event 1',
-                  start: { dateTime: '2024-01-15T10:00:00Z' },
-                  end: { dateTime: '2024-01-15T11:00:00Z' },
-                  status: 'confirmed'
-                }
-              ]
-              // No nextSyncToken
+      mockCalendarEventsList.mockResolvedValue({
+        data: {
+          items: [
+            {
+              id: 'event1',
+              summary: 'Test Event 1',
+              start: { dateTime: '2024-01-15T10:00:00Z' },
+              end: { dateTime: '2024-01-15T11:00:00Z' },
+              status: 'confirmed'
             }
-          }))
+          ]
+          // No nextSyncToken
         }
       });
 
@@ -366,15 +344,6 @@ describe('performFullSyncForWorkspace', () => {
 
   describe('Google Calendar API Integration', () => {
     it('should handle Google Calendar API parameters correctly', async () => {
-      const { google } = require('googleapis');
-      const mockCalendar = google.calendar as any;
-      const mockEventsList = vi.fn();
-      mockCalendar.mockReturnValue({
-        events: {
-          list: mockEventsList
-        }
-      });
-
       await performFullSyncForWorkspace(
         'primary',
         'test-workspace',
@@ -382,7 +351,7 @@ describe('performFullSyncForWorkspace', () => {
         'test-refresh-token'
       );
 
-      expect(mockEventsList).toHaveBeenCalledWith({
+      expect(mockCalendarEventsList).toHaveBeenCalledWith({
         calendarId: 'primary',
         showDeleted: true,
         singleEvents: true,
@@ -396,15 +365,6 @@ describe('performFullSyncForWorkspace', () => {
       const calendarIds = ['primary', 'custom-calendar-id', 'another-calendar'];
       
       for (const calendarId of calendarIds) {
-        const { google } = require('googleapis');
-        const mockCalendar = google.calendar as any;
-        const mockEventsList = vi.fn();
-        mockCalendar.mockReturnValue({
-          events: {
-            list: mockEventsList
-          }
-        });
-
         await performFullSyncForWorkspace(
           calendarId,
           'test-workspace',
@@ -412,7 +372,7 @@ describe('performFullSyncForWorkspace', () => {
           'test-refresh-token'
         );
 
-        expect(mockEventsList).toHaveBeenCalledWith(
+        expect(mockCalendarEventsList).toHaveBeenCalledWith(
           expect.objectContaining({
             calendarId: calendarId
           })
@@ -421,15 +381,6 @@ describe('performFullSyncForWorkspace', () => {
     });
 
     it('should handle time range calculations correctly', async () => {
-      const { google } = require('googleapis');
-      const mockCalendar = google.calendar as any;
-      const mockEventsList = vi.fn();
-      mockCalendar.mockReturnValue({
-        events: {
-          list: mockEventsList
-        }
-      });
-
       await performFullSyncForWorkspace(
         'primary',
         'test-workspace',
@@ -437,7 +388,7 @@ describe('performFullSyncForWorkspace', () => {
         'test-refresh-token'
       );
 
-      expect(mockEventsList).toHaveBeenCalledWith(
+      expect(mockCalendarEventsList).toHaveBeenCalledWith(
         expect.objectContaining({
           timeMin: expect.any(String),
           timeMax: expect.any(String),
@@ -445,7 +396,7 @@ describe('performFullSyncForWorkspace', () => {
       );
 
       // Verify the time range is approximately 28 days
-      const callArgs = mockEventsList.mock.calls[0][0];
+      const callArgs = mockCalendarEventsList.mock.calls[0][0];
       const timeMin = dayjs(callArgs.timeMin);
       const timeMax = dayjs(callArgs.timeMax);
       const dayDifference = timeMax.diff(timeMin, 'day');
@@ -511,38 +462,32 @@ describe('performFullSyncForWorkspace', () => {
 
     it('should handle events with different statuses', async () => {
       // Mock events with different statuses
-      const { google } = require('googleapis');
-      const mockCalendar = google.calendar as any;
-      mockCalendar.mockReturnValue({
-        events: {
-          list: vi.fn(() => Promise.resolve({
-            data: {
-              items: [
-                {
-                  id: 'event1',
-                  summary: 'Confirmed Event',
-                  start: { dateTime: '2024-01-15T10:00:00Z' },
-                  end: { dateTime: '2024-01-15T11:00:00Z' },
-                  status: 'confirmed'
-                },
-                {
-                  id: 'event2',
-                  summary: 'Cancelled Event',
-                  start: { dateTime: '2024-01-15T14:00:00Z' },
-                  end: { dateTime: '2024-01-15T15:00:00Z' },
-                  status: 'cancelled'
-                },
-                {
-                  id: 'event3',
-                  summary: 'Tentative Event',
-                  start: { dateTime: '2024-01-15T16:00:00Z' },
-                  end: { dateTime: '2024-01-15T17:00:00Z' },
-                  status: 'tentative'
-                }
-              ],
-              nextSyncToken: 'test-sync-token-123'
+      mockCalendarEventsList.mockResolvedValue({
+        data: {
+          items: [
+            {
+              id: 'event1',
+              summary: 'Confirmed Event',
+              start: { dateTime: '2024-01-15T10:00:00Z' },
+              end: { dateTime: '2024-01-15T11:00:00Z' },
+              status: 'confirmed'
+            },
+            {
+              id: 'event2',
+              summary: 'Cancelled Event',
+              start: { dateTime: '2024-01-15T14:00:00Z' },
+              end: { dateTime: '2024-01-15T15:00:00Z' },
+              status: 'cancelled'
+            },
+            {
+              id: 'event3',
+              summary: 'Tentative Event',
+              start: { dateTime: '2024-01-15T16:00:00Z' },
+              end: { dateTime: '2024-01-15T17:00:00Z' },
+              status: 'tentative'
             }
-          }))
+          ],
+          nextSyncToken: 'test-sync-token-123'
         }
       });
 
