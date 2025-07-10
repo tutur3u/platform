@@ -19,7 +19,7 @@ interface Props {
 }
 
 export default async function AIPage({ params, searchParams }: Props) {
-  const chatId = (await params).chatId;
+  const { chatId } = await params;
   if (!chatId) notFound();
 
   const { lang: locale } = await searchParams;

@@ -243,7 +243,6 @@ const Chat = ({
     if (id) {
       setCollapsed(true);
       setChat({ id, title, model: model.value, is_public: false });
-      router.refresh();
     }
   };
 
