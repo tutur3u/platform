@@ -433,7 +433,7 @@
       "version": "0.0.7",
       "dependencies": {
         "@supabase/ssr": "^0.6.1",
-        "@supabase/supabase-js": "^2.50.4",
+        "@supabase/supabase-js": "^2.50.3",
         "@tuturuuu/types": "workspace:*",
         "next": "^15.3.5",
         "react": "^19.1.0",
@@ -467,7 +467,7 @@
       "name": "@tuturuuu/trigger",
       "version": "0.1.0",
       "dependencies": {
-        "@supabase/supabase-js": "^2.50.4",
+        "@supabase/supabase-js": "^2.50.3",
         "@trigger.dev/sdk": "^3.3.17",
         "@tuturuuu/supabase": "workspace:*",
         "@tuturuuu/types": "workspace:*",
