@@ -46,12 +46,12 @@
     "next": "^15.3.5",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "zod": "^3.25.75"
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@tuturuuu/types": "workspace:*",
     "@tuturuuu/typescript-config": "workspace:*",
-    "@types/node": "^24.0.10",
+    "@types/node": "^24.0.12",
     "@types/react": "^19.1.8",
     "typescript": "^5.8.3",
     "vitest": "^3.2.4"

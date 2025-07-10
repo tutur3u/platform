@@ -6,7 +6,8 @@ import { redirect } from 'next/navigation';
 import { DEV_MODE } from '@/constants/common';
 import { CalendarActiveSyncDebugger } from './active-sync';
 import CalendarClientPage from './client';
-import TasksSidebar from './components/tasks-sidebar';
+// import TasksSidebar from './components/tasks-sidebar';
+import TaskSidebarServer from './components/tasks-sidebar-server';
 
 interface PageProps {
   params: Promise<{
@@ -16,7 +17,7 @@ interface PageProps {
 }
 
 export default async function CalendarPage({ params }: PageProps) {
-  const { wsId, locale } = await params;
+  const { wsId } = await params;
   const workspace = await getWorkspace(wsId);
 
   const { withoutPermission } = await getPermissions({
@@ -47,7 +48,8 @@ export default async function CalendarPage({ params }: PageProps) {
           experimentalGoogleToken={googleToken}
           workspace={workspace}
         />
-        <TasksSidebar wsId={wsId} locale={locale} />
+        {/* <TasksSidebar wsId={wsId} locale={locale} /> */}
+        <TaskSidebarServer wsId={wsId} />
       </div>
     </CalendarSyncProvider>
   );
