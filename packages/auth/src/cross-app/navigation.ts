@@ -1,5 +1,4 @@
-import type { SupabaseClient } from '@tuturuuu/supabase/next/client';
-import type { Database } from '@tuturuuu/types/supabase';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
 
 /**
  * Navigate to another app using cross-app authentication
@@ -11,7 +10,7 @@ import type { Database } from '@tuturuuu/types/supabase';
  * @param expirySeconds Token expiry in seconds (default: 300 seconds / 5 minutes)
  */
 export async function navigateToCrossApp(
-  supabase: SupabaseClient<Database>,
+  supabase: TypedSupabaseClient,
   targetAppUrl: string,
   targetPath: string,
   originApp: string,
@@ -70,7 +69,7 @@ export async function navigateToCrossApp(
  * @returns A promise that resolves to the URL with the token
  */
 export async function createCrossAppLink(
-  supabase: SupabaseClient<Database>,
+  supabase: TypedSupabaseClient,
   targetAppUrl: string,
   targetPath: string,
   originApp: string,

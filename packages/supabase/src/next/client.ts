@@ -1,5 +1,4 @@
 import { createBrowserClient } from '@supabase/ssr';
-import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@tuturuuu/types/supabase';
 import { checkEnvVariables } from './common';
 
@@ -14,5 +13,6 @@ export function createClient() {
 }
 
 type TypedSupabaseClient = ReturnType<typeof createClient>;
+type SupabaseClient = TypedSupabaseClient;
 
 export type { TypedSupabaseClient, SupabaseClient };
