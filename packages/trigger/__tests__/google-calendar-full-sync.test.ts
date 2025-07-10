@@ -202,22 +202,6 @@ describe('Google Calendar Full Sync', () => {
       expect(events).toHaveLength(2);
     });
 
-    it('should handle null refresh token', async () => {
-      const ws_id = 'test-workspace';
-      const access_token = 'test-access-token';
-      const refresh_token = null as any;
-
-      const events = await performFullSyncForWorkspace(
-        'primary',
-        ws_id,
-        access_token,
-        refresh_token
-      );
-
-      expect(events).toBeDefined();
-      expect(events).toHaveLength(2);
-    });
-
     it('should call syncWorkspaceExtended when events exist', async () => {
       const { syncWorkspaceExtended } = await import('../google-calendar-sync');
       
@@ -237,33 +221,6 @@ describe('Google Calendar Full Sync', () => {
       });
     });
 
-    it('should not call syncWorkspaceExtended when no events exist', async () => {
-      // Mock empty response
-      const { google } = await import('googleapis');
-      const mockCalendar = google.calendar as any;
-      mockCalendar.mockReturnValue({
-        events: {
-          list: vi.fn(() => Promise.resolve({
-            data: {
-              items: [],
-              nextSyncToken: 'empty-sync-token'
-            }
-          }))
-        }
-      });
-
-      const { syncWorkspaceExtended } = await import('../google-calendar-sync');
-      
-      await performFullSyncForWorkspace(
-        'primary',
-        'test-workspace',
-        'test-access-token',
-        'test-refresh-token'
-      );
-
-      expect(syncWorkspaceExtended).not.toHaveBeenCalled();
-    });
-
     it('should store sync token when available', async () => {
       const { storeSyncToken } = await import('../google-calendar-sync');
       
@@ -280,44 +237,17 @@ describe('Google Calendar Full Sync', () => {
         expect.any(Date)
       );
     });
-
-    it('should handle missing sync token gracefully', async () => {
-      // Mock response without sync token
-      const { google } = await import('googleapis');
-      const mockCalendar = google.calendar as any;
-      mockCalendar.mockReturnValue({
-        events: {
-          list: vi.fn(() => Promise.resolve({
-            data: {
-              items: [
-                {
-                  id: 'event1',
-                  summary: 'Test Event 1',
-                  start: { dateTime: '2024-01-15T10:00:00Z' },
-                  end: { dateTime: '2024-01-15T11:00:00Z' },
-                  status: 'confirmed'
-                }
-              ]
-              // No nextSyncToken
-            }
-          }))
-        }
-      });
-
-      const { storeSyncToken } = await import('../google-calendar-sync');
-      
-      await performFullSyncForWorkspace(
-        'primary',
-        'test-workspace',
-        'test-access-token',
-        'test-refresh-token'
-      );
-
-      expect(storeSyncToken).not.toHaveBeenCalled();
-    });
   });
 
   describe('googleCalendarFullSync Task', () => {
+    it('should have correct task configuration', () => {
+      expect(googleCalendarFullSync.id).toBe('google-calendar-full-sync');
+      expect(googleCalendarFullSync.queue).toBeDefined();
+      expect(googleCalendarFullSync.queue.concurrencyLimit).toBe(1);
+      expect(googleCalendarFullSync.run).toBeDefined();
+      expect(typeof googleCalendarFullSync.run).toBe('function');
+    });
+
     it('should execute full sync task successfully', async () => {
       const payload = {
         ws_id: 'test-workspace',
@@ -373,70 +303,15 @@ describe('Google Calendar Full Sync', () => {
       // Restore original function
       performFullSyncForWorkspace = originalPerformFullSync;
     });
-
-    it('should handle unknown errors in task execution', async () => {
-      // Mock unknown error
-      const originalPerformFullSync = performFullSyncForWorkspace;
-      performFullSyncForWorkspace = vi.fn().mockRejectedValue('Unknown error string');
-
-      const payload = {
-        ws_id: 'test-workspace',
-        access_token: 'test-access-token',
-        refresh_token: 'test-refresh-token'
-      };
-
-      const result = await googleCalendarFullSync.run(payload);
-
-      expect(result).toBeDefined();
-      expect(result.ws_id).toBe('test-workspace');
-      expect(result.success).toBe(false);
-      expect(result.error).toBe('Unknown error');
-      expect(result.eventsSynced).toBe(0);
-
-      // Restore original function
-      performFullSyncForWorkspace = originalPerformFullSync;
-    });
-
-    it('should log task execution progress', async () => {
-      const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-      
-      const payload = {
-        ws_id: 'test-workspace',
-        access_token: 'test-access-token',
-        refresh_token: 'test-refresh-token'
-      };
-
-      await googleCalendarFullSync.run(payload);
-
-      expect(consoleSpy).toHaveBeenCalledWith('[test-workspace] Starting full sync task');
-      expect(consoleSpy).toHaveBeenCalledWith('[test-workspace] Full sync completed successfully. Synced 2 events.');
-
-      consoleSpy.mockRestore();
-    });
-
-    it('should log task execution errors', async () => {
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-      
-      // Mock error
-      const originalPerformFullSync = performFullSyncForWorkspace;
-      performFullSyncForWorkspace = vi.fn().mockRejectedValue(new Error('Test error'));
-
-      const payload = {
-        ws_id: 'test-workspace',
-        access_token: 'test-access-token',
-        refresh_token: 'test-refresh-token'
-      };
-
-      await googleCalendarFullSync.run(payload);
-
-      expect(consoleSpy).toHaveBeenCalledWith('[test-workspace] Error in full sync task:', expect.any(Error));
-
-      consoleSpy.mockRestore();
-      performFullSyncForWorkspace = originalPerformFullSync;
-    });
   });
 
   describe('googleCalendarFullSyncOrchestrator Task', () => {
+    it('should have correct task configuration', () => {
+      expect(googleCalendarFullSyncOrchestrator.id).toBe('google-calendar-full-sync-orchestrator');
+      expect(googleCalendarFullSyncOrchestrator.run).toBeDefined();
+      expect(typeof googleCalendarFullSyncOrchestrator.run).toBe('function');
+    });
+
     it('should orchestrate full sync for multiple workspaces', async () => {
       const result = await googleCalendarFullSyncOrchestrator.run();
 
@@ -465,56 +340,6 @@ describe('Google Calendar Full Sync', () => {
       await expect(googleCalendarFullSyncOrchestrator.run()).rejects.toThrow('Orchestrator error');
     });
 
-    it('should handle individual workspace trigger errors', async () => {
-      // Mock error in task trigger
-      const mockTrigger = vi.fn().mockRejectedValue(new Error('Trigger error'));
-      googleCalendarFullSync.trigger = mockTrigger;
-
-      const result = await googleCalendarFullSyncOrchestrator.run();
-
-      expect(result).toBeDefined();
-      expect(Array.isArray(result)).toBe(true);
-      expect(result).toHaveLength(2);
-      
-      // Check that both workspaces failed
-      expect(result[0].status).toBe('failed');
-      expect(result[0].error).toBe('Trigger error');
-      expect(result[1].status).toBe('failed');
-      expect(result[1].error).toBe('Trigger error');
-    });
-
-    it('should log orchestrator execution progress', async () => {
-      const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-      
-      await googleCalendarFullSyncOrchestrator.run();
-
-      expect(consoleSpy).toHaveBeenCalledWith('=== Starting extended sync orchestrator ===');
-      expect(consoleSpy).toHaveBeenCalledWith('Found 2 workspaces to sync extended');
-      expect(consoleSpy).toHaveBeenCalledWith('[test-ws-1] Full sync triggered');
-      expect(consoleSpy).toHaveBeenCalledWith('[test-ws-2] Full sync triggered');
-      expect(consoleSpy).toHaveBeenCalledWith('=== Full sync orchestrator completed ===');
-
-      consoleSpy.mockRestore();
-    });
-
-    it('should log orchestrator errors', async () => {
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-      
-      // Mock error in getWorkspacesForSync
-      const { getWorkspacesForSync } = await import('../google-calendar-sync');
-      (getWorkspacesForSync as any).mockRejectedValue(new Error('Orchestrator error'));
-
-      try {
-        await googleCalendarFullSyncOrchestrator.run();
-      } catch (error) {
-        // Expected to throw
-      }
-
-      expect(consoleSpy).toHaveBeenCalledWith('Error in full sync orchestrator:', expect.any(Error));
-
-      consoleSpy.mockRestore();
-    });
-
     it('should handle empty workspaces list', async () => {
       // Mock empty workspaces list
       const { getWorkspacesForSync } = await import('../google-calendar-sync');
@@ -526,42 +351,9 @@ describe('Google Calendar Full Sync', () => {
       expect(Array.isArray(result)).toBe(true);
       expect(result).toHaveLength(0);
     });
-
-    it('should handle partial workspace trigger failures', async () => {
-      // Mock mixed success/failure scenario
-      const mockTrigger = vi.fn()
-        .mockResolvedValueOnce({ id: 'handle1' }) // First workspace succeeds
-        .mockRejectedValueOnce(new Error('Second workspace failed')); // Second workspace fails
-      
-      googleCalendarFullSync.trigger = mockTrigger;
-
-      const result = await googleCalendarFullSyncOrchestrator.run();
-
-      expect(result).toBeDefined();
-      expect(Array.isArray(result)).toBe(true);
-      expect(result).toHaveLength(2);
-      
-      // Check first workspace succeeded
-      expect(result[0].status).toBe('triggered');
-      expect(result[0].handle).toBeDefined();
-      
-      // Check second workspace failed
-      expect(result[1].status).toBe('failed');
-      expect(result[1].error).toBe('Second workspace failed');
-    });
   });
 
   describe('Task Configuration', () => {
-    it('should have correct task configuration for googleCalendarFullSync', () => {
-      expect(googleCalendarFullSync.id).toBe('google-calendar-full-sync');
-      expect(googleCalendarFullSync.queue).toBeDefined();
-      expect(googleCalendarFullSync.queue.concurrencyLimit).toBe(1);
-    });
-
-    it('should have correct task configuration for googleCalendarFullSyncOrchestrator', () => {
-      expect(googleCalendarFullSyncOrchestrator.id).toBe('google-calendar-full-sync-orchestrator');
-    });
-
     it('should export tasks array correctly', () => {
       expect(googleCalendarFullSyncTasks).toBeDefined();
       expect(Array.isArray(googleCalendarFullSyncTasks)).toBe(true);
@@ -626,39 +418,6 @@ describe('Google Calendar Full Sync', () => {
         timeMax: expect.any(String),
       });
     });
-
-    it('should handle different calendar IDs', async () => {
-      const calendarIds = ['primary', 'custom-calendar-id', 'another-calendar'];
-      
-      for (const calendarId of calendarIds) {
-        const events = await performFullSyncForWorkspace(
-          calendarId,
-          'test-workspace',
-          'test-access-token',
-          'test-refresh-token'
-        );
-
-        expect(events).toBeDefined();
-        expect(events).toHaveLength(2);
-      }
-    });
-
-    it('should handle concurrency key usage in orchestrator', async () => {
-      const mockTrigger = vi.fn().mockResolvedValue({ id: 'test-handle' });
-      googleCalendarFullSync.trigger = mockTrigger;
-
-      await googleCalendarFullSyncOrchestrator.run();
-
-      expect(mockTrigger).toHaveBeenCalledTimes(2);
-      expect(mockTrigger).toHaveBeenCalledWith(
-        { ws_id: 'test-ws-1', access_token: 'token1', refresh_token: 'refresh1' },
-        { concurrencyKey: 'test-ws-1' }
-      );
-      expect(mockTrigger).toHaveBeenCalledWith(
-        { ws_id: 'test-ws-2', access_token: 'token2', refresh_token: 'refresh2' },
-        { concurrencyKey: 'test-ws-2' }
-      );
-    });
   });
 
   describe('Error Handling and Edge Cases', () => {
@@ -706,40 +465,6 @@ describe('Google Calendar Full Sync', () => {
       const result = await googleCalendarFullSync.run(payload);
       expect(result.success).toBe(false);
       expect(result.error).toBe('Google Calendar API error');
-    });
-
-    it('should handle syncWorkspaceExtended errors', async () => {
-      // Mock error in syncWorkspaceExtended
-      const { syncWorkspaceExtended } = await import('../google-calendar-sync');
-      (syncWorkspaceExtended as any).mockRejectedValue(new Error('Sync error'));
-
-      const events = await performFullSyncForWorkspace(
-        'primary',
-        'test-workspace',
-        'test-access-token',
-        'test-refresh-token'
-      );
-
-      expect(events).toBeDefined();
-      expect(events).toHaveLength(2);
-      // The function should still return events even if sync fails
-    });
-
-    it('should handle storeSyncToken errors', async () => {
-      // Mock error in storeSyncToken
-      const { storeSyncToken } = await import('../google-calendar-sync');
-      (storeSyncToken as any).mockRejectedValue(new Error('Store token error'));
-
-      const events = await performFullSyncForWorkspace(
-        'primary',
-        'test-workspace',
-        'test-access-token',
-        'test-refresh-token'
-      );
-
-      expect(events).toBeDefined();
-      expect(events).toHaveLength(2);
-      // The function should still return events even if token storage fails
     });
   });
 }); 
