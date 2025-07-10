@@ -119,24 +119,50 @@ export async function POST(
 
     const events = prepareTaskChunks([taskToSplit]);
 
-    const { events: newScheduledEvents } = scheduleTasks(
-      events,
-      defaultActiveHours
-    );
-    if (newScheduledEvents.length > 0) {
-      const insertData = newScheduledEvents.map((event) => ({
+    if (is_splittable) {
+      const { events: newScheduledEvents } = scheduleTasks(
+        events,
+        defaultActiveHours
+      );
+      if (newScheduledEvents.length > 0) {
+        const insertData = newScheduledEvents.map((event) => ({
+          ws_id: wsId,
+          task_id: event.taskId,
+          title: event.name,
+          priority: dbTask.user_defined_priority || 'normal',
+          start_at: event.range.start.toISOString(),
+          end_at: event.range.end.toISOString(),
+          locked: false,
+        }));
+
+        const { error: insertError } = await supabase
+          .from('workspace_calendar_events')
+          .upsert(insertData);
+
+        if (insertError) {
+          console.error('Error inserting event:', insertError);
+          return NextResponse.json(
+            { error: 'Failed to insert event into calendar.' },
+            { status: 500 }
+          );
+        }
+      }
+    } else {
+      const event = {
         ws_id: wsId,
-        task_id: event.taskId,
-        title: event.name,
+        task_id: dbTask.id,
+        title: dbTask.name,
         priority: dbTask.user_defined_priority || 'normal',
-        start_at: event.range.start.toISOString(),
-        end_at: event.range.end.toISOString(),
+        start_at: dbTask.start_date || new Date().toISOString(),
+        end_at:
+          dbTask.end_date ||
+          new Date(Date.now() + total_duration * 60 * 1000).toISOString(),
         locked: false,
-      }));
+      };
 
       const { error: insertError } = await supabase
         .from('workspace_calendar_events')
-        .upsert(insertData);
+        .insert(event);
 
       if (insertError) {
         console.error('Error inserting event:', insertError);
@@ -147,7 +173,6 @@ export async function POST(
       }
     }
 
-    // 6. Success
     return NextResponse.json(dbTask, { status: 201 });
   } catch (e: any) {
     console.error('Error in task creation route:', e);
