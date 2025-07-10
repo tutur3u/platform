@@ -3,7 +3,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
-import { type ModelMessage, smoothStream, streamText } from 'ai';
+import { convertToModelMessages, type ModelMessage, smoothStream, streamText, type UIMessage } from 'ai';
 import { NextResponse } from 'next/server';
 
 export const runtime = 'edge';
@@ -16,7 +16,7 @@ export async function POST(req: Request) {
   const { id, model, messages, previewToken } = (await req.json()) as {
     id?: string;
     model?: string;
-    messages?: ModelMessage[];
+    messages?: UIMessage[];
     previewToken?: string;
   };
 
@@ -54,8 +54,10 @@ export async function POST(req: Request) {
       chatId = data.id;
     }
 
+    const modelMessages = convertToModelMessages(messages);
+
     if (messages.length !== 1) {
-      const userMessages = messages.filter(
+      const userMessages = modelMessages.filter(
         (msg: ModelMessage) => msg.role === 'user'
       );
 
@@ -86,7 +88,7 @@ export async function POST(req: Request) {
     const result = streamText({
       experimental_transform: smoothStream(),
       model: openai(model),
-      messages,
+      messages: modelMessages,
       system: systemInstruction,
       onFinish: async (response) => {
         console.log('AI Response:', response);
@@ -118,7 +120,7 @@ export async function POST(req: Request) {
       },
     });
 
-    return result.toTextStreamResponse();
+    return result.toUIMessageStreamResponse();
   } catch (error) {
     console.log(error);
     return NextResponse.json(

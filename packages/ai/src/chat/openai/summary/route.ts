@@ -1,6 +1,6 @@
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { generateText, type UIMessage } from 'ai';
+import { convertToModelMessages, generateText, type UIMessage } from 'ai';
 import { NextResponse } from 'next/server';
 
 export const runtime = 'edge';
@@ -57,7 +57,7 @@ export async function PATCH(req: Request) {
     if (messages[messages.length - 1]?.role === 'user')
       return new Response('Cannot summarize user message', { status: 400 });
 
-    const aiMessages = buildAIMessages(messages);
+    const modelMessages = convertToModelMessages(messages);
 
     const google = createGoogleGenerativeAI({
       apiKey,
@@ -65,7 +65,7 @@ export async function PATCH(req: Request) {
 
     const result = await generateText({
       model: google(model),
-      messages: aiMessages,
+      messages: modelMessages,
       system: systemInstruction,
       providerOptions: {
         google: {
@@ -120,21 +120,6 @@ export async function PATCH(req: Request) {
     );
   }
 }
-
-const buildAIMessages = (messages: UIMessage[]) => {
-  return messages
-    .filter(
-      (message) => message.role === 'user' || message.role === 'assistant'
-    )
-    .map((message) => ({
-      role:
-        message.role === 'user' ? ('user' as const) : ('assistant' as const),
-      content:
-        message.parts
-          ?.map((part) => (part.type === 'text' ? part.text : ''))
-          .join('') || '',
-    }));
-};
 
 const systemInstruction = `
   Here is a set of guidelines I MUST follow:

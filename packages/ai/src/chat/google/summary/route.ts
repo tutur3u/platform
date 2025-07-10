@@ -102,8 +102,6 @@ export function createPATCH(
 
       const completion = result.text;
 
-      console.log('Result:', result.text);
-
       if (!completion) return new Response('No content found', { status: 404 });
 
       if (!messages[messages.length - 1]?.id)

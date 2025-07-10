@@ -3,7 +3,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
-import { type ModelMessage, smoothStream, streamText } from 'ai';
+import { convertToModelMessages, type ModelMessage, smoothStream, streamText, type UIMessage } from 'ai';
 import { NextResponse } from 'next/server';
 
 const DEFAULT_MODEL_NAME = 'gemini-1.5-flash-002';
@@ -23,7 +23,7 @@ export async function POST(req: Request) {
   } = (await req.json()) as {
     id?: string;
     model?: string;
-    messages?: ModelMessage[];
+    messages?: UIMessage[];
   };
 
   try {
@@ -55,9 +55,11 @@ export async function POST(req: Request) {
       chatId = data.id;
     }
 
+    const modelMessages = convertToModelMessages(messages);
+
     // Filter user messages, and save message (prompt) to DB
     if (messages.length !== 1) {
-      const userMessages = messages.filter(
+      const userMessages = modelMessages.filter(
         (msg: ModelMessage) => msg.role === 'user'
       );
 
@@ -90,7 +92,7 @@ export async function POST(req: Request) {
     const result = streamText({
       experimental_transform: smoothStream(),
       model: vertexModel,
-      messages: messages,
+      messages: modelMessages,
       providerOptions: {
         vertex: {
           safetySettings: [
@@ -138,7 +140,7 @@ export async function POST(req: Request) {
       },
     });
 
-    return result.toTextStreamResponse();
+    return result.toUIMessageStreamResponse();
   } catch (error) {
     console.log(error);
     return NextResponse.json(
