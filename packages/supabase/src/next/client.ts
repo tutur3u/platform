@@ -5,15 +5,11 @@ import { checkEnvVariables } from './common';
 
 const { url, key } = checkEnvVariables({ useServiceKey: false });
 
-export function createDynamicClient(): SupabaseClient<any, 'public', any> {
+export function createDynamicClient() {
   return createBrowserClient(url, key);
 }
 
-export function createClient(): SupabaseClient<
-  Database,
-  'public',
-  Database['public']
-> {
+export function createClient() {
   return createBrowserClient<Database>(url, key);
 }
 
