@@ -107,6 +107,41 @@ describe('performFullSyncForWorkspace', () => {
     delete process.env.LOCALE;
     // Clear all mocks
     vi.clearAllMocks();
+    
+    // Reset Google Calendar mock to default state
+    const { google } = require('googleapis');
+    const mockCalendar = google.calendar as any;
+    mockCalendar.mockReturnValue({
+      events: {
+        list: vi.fn(() => Promise.resolve({
+          data: {
+            items: [
+              {
+                id: 'event1',
+                summary: 'Test Event 1',
+                description: 'Test Description 1',
+                start: { dateTime: '2024-01-15T10:00:00Z' },
+                end: { dateTime: '2024-01-15T11:00:00Z' },
+                location: 'Test Location 1',
+                colorId: '1',
+                status: 'confirmed'
+              },
+              {
+                id: 'event2',
+                summary: 'Test Event 2',
+                description: 'Test Description 2',
+                start: { dateTime: '2024-01-15T14:00:00Z' },
+                end: { dateTime: '2024-01-15T15:00:00Z' },
+                location: 'Test Location 2',
+                colorId: '2',
+                status: 'confirmed'
+              }
+            ],
+            nextSyncToken: 'test-sync-token-123'
+          }
+        }))
+      }
+    });
   });
 
   afterEach(() => {
@@ -152,7 +187,7 @@ describe('performFullSyncForWorkspace', () => {
 
     it('should handle empty events list', async () => {
       // Mock empty response
-      const { google } = await import('googleapis');
+      const { google } = require('googleapis');
       const mockCalendar = google.calendar as any;
       mockCalendar.mockReturnValue({
         events: {
@@ -249,7 +284,7 @@ describe('performFullSyncForWorkspace', () => {
 
     it('should not call syncWorkspaceExtended when no events exist', async () => {
       // Mock empty response
-      const { google } = await import('googleapis');
+      const { google } = require('googleapis');
       const mockCalendar = google.calendar as any;
       mockCalendar.mockReturnValue({
         events: {
@@ -295,7 +330,7 @@ describe('performFullSyncForWorkspace', () => {
 
     it('should handle missing sync token gracefully', async () => {
       // Mock response without sync token
-      const { google } = await import('googleapis');
+      const { google } = require('googleapis');
       const mockCalendar = google.calendar as any;
       mockCalendar.mockReturnValue({
         events: {
@@ -331,7 +366,7 @@ describe('performFullSyncForWorkspace', () => {
 
   describe('Google Calendar API Integration', () => {
     it('should handle Google Calendar API parameters correctly', async () => {
-      const { google } = await import('googleapis');
+      const { google } = require('googleapis');
       const mockCalendar = google.calendar as any;
       const mockEventsList = vi.fn();
       mockCalendar.mockReturnValue({
@@ -361,7 +396,7 @@ describe('performFullSyncForWorkspace', () => {
       const calendarIds = ['primary', 'custom-calendar-id', 'another-calendar'];
       
       for (const calendarId of calendarIds) {
-        const { google } = await import('googleapis');
+        const { google } = require('googleapis');
         const mockCalendar = google.calendar as any;
         const mockEventsList = vi.fn();
         mockCalendar.mockReturnValue({
@@ -386,7 +421,7 @@ describe('performFullSyncForWorkspace', () => {
     });
 
     it('should handle time range calculations correctly', async () => {
-      const { google } = await import('googleapis');
+      const { google } = require('googleapis');
       const mockCalendar = google.calendar as any;
       const mockEventsList = vi.fn();
       mockCalendar.mockReturnValue({
@@ -476,7 +511,7 @@ describe('performFullSyncForWorkspace', () => {
 
     it('should handle events with different statuses', async () => {
       // Mock events with different statuses
-      const { google } = await import('googleapis');
+      const { google } = require('googleapis');
       const mockCalendar = google.calendar as any;
       mockCalendar.mockReturnValue({
         events: {
