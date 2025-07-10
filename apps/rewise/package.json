@@ -56,7 +56,7 @@
     "remark-gfm": "^4.0.1",
     "remark-math": "^6.0.0",
     "sanitize-filename": "^1.6.3",
-    "sharp": "^0.34.2",
+    "sharp": "^0.34.3",
     "uuid": "^11.1.0",
     "zod": "^3.25.76"
   },
