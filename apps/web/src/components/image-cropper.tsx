@@ -93,7 +93,7 @@ const convertHeicToJpeg = async (file: File): Promise<File> => {
 
 interface ImageCropperProps {
   image: string;
-  originalFile?: File;
+  originalFile?: File | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onCropComplete: (croppedImage: Blob) => void;
