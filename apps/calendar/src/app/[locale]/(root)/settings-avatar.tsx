@@ -270,7 +270,7 @@ export default function UserAvatar({ user }: AvatarProps) {
                 <input
                   id="file-upload"
                   type="file"
-                  accept="image/png,image/jpeg,image/jpg,image/webp"
+                  accept="image/png,image/jpeg,image/jpg,image/webp,image/heic,image/heif"
                   onChange={(e) => {
                     if (e.target.files?.[0]) {
                       handleFileSelect(e.target.files[0]);

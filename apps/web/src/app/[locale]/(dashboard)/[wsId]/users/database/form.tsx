@@ -28,6 +28,7 @@ import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import * as z from 'zod';
+import { ImageCropper } from '@/components/image-cropper';
 import { DatePicker } from '@/components/row-actions/users/date-picker';
 
 interface Props {
@@ -53,6 +54,86 @@ const FormSchema = z.object({
   note: z.string().optional(),
 });
 
+const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
+const AVATAR_SIZE = 500;
+
+const isHeicFile = (file: File): boolean => {
+  return (
+    file.type === 'image/heic' ||
+    file.type === 'image/heif' ||
+    file.name.toLowerCase().endsWith('.heic') ||
+    file.name.toLowerCase().endsWith('.heif')
+  );
+};
+
+const convertHeicToJpeg = async (file: File): Promise<File> => {
+  try {
+    // Use heic-convert/browser for reliable HEIC conversion
+    const heicConvert = (await import('heic-convert/browser')).default;
+
+    // Convert File to ArrayBuffer
+    const arrayBuffer = await file.arrayBuffer();
+
+    // Create timeout to prevent hanging
+    const conversionPromise = heicConvert({
+      buffer: new Uint8Array(arrayBuffer),
+      format: 'JPEG',
+      quality: 0.9,
+    });
+
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(
+        () => reject(new Error('Conversion timed out after 30 seconds')),
+        30000
+      );
+    });
+
+    // Race between conversion and timeout
+    const outputBuffer = (await Promise.race([
+      conversionPromise,
+      timeoutPromise,
+    ])) as ArrayBuffer;
+
+    return new File(
+      [outputBuffer],
+      file.name.replace(/\.(heic|heif)$/i, '.jpg'),
+      {
+        type: 'image/jpeg',
+        lastModified: file.lastModified,
+      }
+    );
+  } catch (error) {
+    console.error('HEIC conversion failed:', error);
+
+    // Provide specific error types for proper translation
+    if (error instanceof Error) {
+      if (error.message.includes('timeout')) {
+        const timeoutError = new Error('HEIC_CONVERSION_TIMEOUT');
+        timeoutError.name = 'HEIC_CONVERSION_TIMEOUT';
+        throw timeoutError;
+      } else if (
+        error.message.includes('memory') ||
+        error.message.includes('heap')
+      ) {
+        const memoryError = new Error('HEIC_CONVERSION_MEMORY');
+        memoryError.name = 'HEIC_CONVERSION_MEMORY';
+        throw memoryError;
+      } else if (
+        error.message.includes('codec') ||
+        error.message.includes('unsupported')
+      ) {
+        const unsupportedError = new Error('HEIC_CONVERSION_UNSUPPORTED');
+        unsupportedError.name = 'HEIC_CONVERSION_UNSUPPORTED';
+        throw unsupportedError;
+      }
+    }
+
+    const conversionError = new Error('HEIC_CONVERSION_FAILED');
+    conversionError.name = 'HEIC_CONVERSION_FAILED';
+    throw conversionError;
+  }
+};
+
 export default function UserForm({ wsId, data, onFinish }: Props) {
   const t = useTranslations();
   const router = useRouter();
@@ -61,6 +142,10 @@ export default function UserForm({ wsId, data, onFinish }: Props) {
     data?.avatar_url || null
   );
   const [file, setFile] = useState<File | null>(null); // Track the file selected
+  const [cropperOpen, setCropperOpen] = useState(false);
+  const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isConverting, setIsConverting] = useState(false);
 
   const form = useForm({
     resolver: zodResolver(FormSchema),
@@ -84,10 +169,114 @@ export default function UserForm({ wsId, data, onFinish }: Props) {
     },
   });
 
-  const handleFileSelect = (file: File) => {
-    const fileURL = URL.createObjectURL(file);
-    setPreviewSrc(fileURL);
-    setFile(file);
+  const compressAndResizeImage = (blob: Blob): Promise<Blob> => {
+    return new Promise((resolve, reject) => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+
+      if (!ctx) {
+        reject(new Error('Canvas context is null'));
+        return;
+      }
+
+      const img = new Image();
+      img.onload = () => {
+        // Set canvas size to the desired avatar size
+        canvas.width = AVATAR_SIZE;
+        canvas.height = AVATAR_SIZE;
+
+        // Draw the cropped image (already square from cropper) to the canvas
+        ctx.drawImage(img, 0, 0, AVATAR_SIZE, AVATAR_SIZE);
+
+        canvas.toBlob(
+          (compressedBlob) => {
+            if (compressedBlob) {
+              resolve(compressedBlob);
+            } else {
+              reject(new Error('Blob creation failed'));
+            }
+          },
+          'image/jpeg',
+          0.8 // 80% quality for good balance of quality and file size
+        );
+      };
+
+      img.onerror = () => reject(new Error('Failed to load image'));
+      img.src = URL.createObjectURL(blob);
+    });
+  };
+
+  const handleFileSelect = async (file: File) => {
+    try {
+      setIsConverting(true);
+      let processedFile = file;
+
+      // Convert HEIC files to JPEG first for browser compatibility
+      if (isHeicFile(file)) {
+        console.log('Converting HEIC file to JPEG for display...');
+        processedFile = await convertHeicToJpeg(file);
+      }
+
+      // Create URL for the processed image to show in the cropper
+      const imageUrl = URL.createObjectURL(processedFile);
+      setSelectedImageUrl(imageUrl);
+      setSelectedFile(file); // Keep original file for reference
+      setCropperOpen(true);
+    } catch (error) {
+      console.error('Error processing file:', error);
+      toast({
+        title: t('settings-account.crop_failed'),
+        description:
+          error instanceof Error
+            ? error.message
+            : t('settings-account.crop_failed_description'),
+        variant: 'destructive',
+      });
+    } finally {
+      setIsConverting(false);
+    }
+  };
+
+  const handleCropComplete = async (croppedImageBlob: Blob) => {
+    try {
+      // Compress and resize the cropped image to the final avatar size
+      const finalBlob = await compressAndResizeImage(croppedImageBlob);
+
+      // Create preview URL
+      const previewUrl = URL.createObjectURL(finalBlob);
+      setPreviewSrc(previewUrl);
+
+      // Create file for upload
+      const finalFile = new File([finalBlob], 'avatar.jpg', {
+        type: 'image/jpeg',
+      });
+
+      setFile(finalFile);
+      setCropperOpen(false);
+
+      // Clean up the selected image URL
+      if (selectedImageUrl) {
+        URL.revokeObjectURL(selectedImageUrl);
+        setSelectedImageUrl(null);
+      }
+      setSelectedFile(null);
+    } catch (error) {
+      console.error('Error processing cropped image:', error);
+      toast({
+        title: t('settings-account.crop_failed'),
+        description: t('settings-account.crop_failed_description'),
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleCropCancel = () => {
+    setCropperOpen(false);
+    if (selectedImageUrl) {
+      URL.revokeObjectURL(selectedImageUrl);
+      setSelectedImageUrl(null);
+    }
+    setSelectedFile(null);
   };
 
   const removeAvatar = async () => {
@@ -106,6 +295,12 @@ export default function UserForm({ wsId, data, onFinish }: Props) {
 
   async function uploadImageToSupabase(file: File, wsId: string) {
     const supabase = createClient();
+
+    // Check file size
+    if (file.size > MAX_FILE_SIZE) {
+      throw new Error('File is too large (max 2MB)');
+    }
+
     const filePath = `${wsId}/users/${generateRandomUUID()}`;
 
     const { error } = await supabase.storage
@@ -166,6 +361,7 @@ export default function UserForm({ wsId, data, onFinish }: Props) {
       toast({
         title: `Failed to ${formData.id ? 'edit' : 'create'} user`,
         description: error instanceof Error ? error.message : String(error),
+        variant: 'destructive',
       });
     } finally {
       setSaving(false);
@@ -176,6 +372,20 @@ export default function UserForm({ wsId, data, onFinish }: Props) {
 
   return (
     <>
+      {/* Image Cropper Dialog */}
+      {selectedImageUrl && (
+        <ImageCropper
+          image={selectedImageUrl}
+          originalFile={selectedFile || undefined}
+          open={cropperOpen}
+          onOpenChange={setCropperOpen}
+          onCropComplete={handleCropComplete}
+          onCancel={handleCropCancel}
+          title={t('settings-account.crop_avatar')}
+          aspectRatio={1} // Square crop for avatars
+        />
+      )}
+
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-3">
           <ScrollArea className="grid h-[50vh] gap-3 border-b">
@@ -222,7 +432,7 @@ export default function UserForm({ wsId, data, onFinish }: Props) {
                 <input
                   id="file-upload"
                   type="file"
-                  accept="image/png,image/jpeg,image/jpg,image/webp"
+                  accept="image/png,image/jpeg,image/jpg,image/webp,image/heic,image/heif"
                   onChange={(e) => {
                     if (e.target.files?.[0]) {
                       handleFileSelect(e.target.files[0]);

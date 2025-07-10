@@ -19,12 +19,14 @@ import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Loader2, UserIcon } from '@tuturuuu/ui/icons';
 import { Label } from '@tuturuuu/ui/label';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
+import { cn } from '@tuturuuu/utils/format';
 import { getInitials } from '@tuturuuu/utils/name-helper';
 import { generateRandomUUID } from '@tuturuuu/utils/uuid-helper';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import * as z from 'zod';
+import { ImageCropper } from '@/components/image-cropper';
 
 interface AvatarProps {
   user: WorkspaceUser;
@@ -42,12 +44,93 @@ const FormSchema = z.object({
 const MAX_FILE_SIZE = 2 * 1024 * 1024;
 const AVATAR_SIZE = 500;
 
+const isHeicFile = (file: File): boolean => {
+  return (
+    file.type === 'image/heic' ||
+    file.type === 'image/heif' ||
+    file.name.toLowerCase().endsWith('.heic') ||
+    file.name.toLowerCase().endsWith('.heif')
+  );
+};
+
+const convertHeicToJpeg = async (file: File): Promise<File> => {
+  try {
+    // Use heic-convert/browser for reliable HEIC conversion
+    const heicConvert = (await import('heic-convert/browser')).default;
+
+    // Convert File to ArrayBuffer
+    const arrayBuffer = await file.arrayBuffer();
+
+    // Create timeout to prevent hanging
+    const conversionPromise = heicConvert({
+      buffer: new Uint8Array(arrayBuffer),
+      format: 'JPEG',
+      quality: 0.9,
+    });
+
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(
+        () => reject(new Error('Conversion timed out after 30 seconds')),
+        30000
+      );
+    });
+
+    // Race between conversion and timeout
+    const outputBuffer = (await Promise.race([
+      conversionPromise,
+      timeoutPromise,
+    ])) as ArrayBuffer;
+
+    return new File(
+      [outputBuffer],
+      file.name.replace(/\.(heic|heif)$/i, '.jpg'),
+      {
+        type: 'image/jpeg',
+        lastModified: file.lastModified,
+      }
+    );
+  } catch (error) {
+    console.error('HEIC conversion failed:', error);
+
+    // Provide specific error types for proper translation
+    if (error instanceof Error) {
+      if (error.message.includes('timeout')) {
+        const timeoutError = new Error('HEIC_CONVERSION_TIMEOUT');
+        timeoutError.name = 'HEIC_CONVERSION_TIMEOUT';
+        throw timeoutError;
+      } else if (
+        error.message.includes('memory') ||
+        error.message.includes('heap')
+      ) {
+        const memoryError = new Error('HEIC_CONVERSION_MEMORY');
+        memoryError.name = 'HEIC_CONVERSION_MEMORY';
+        throw memoryError;
+      } else if (
+        error.message.includes('codec') ||
+        error.message.includes('unsupported')
+      ) {
+        const unsupportedError = new Error('HEIC_CONVERSION_UNSUPPORTED');
+        unsupportedError.name = 'HEIC_CONVERSION_UNSUPPORTED';
+        throw unsupportedError;
+      }
+    }
+
+    const conversionError = new Error('HEIC_CONVERSION_FAILED');
+    conversionError.name = 'HEIC_CONVERSION_FAILED';
+    throw conversionError;
+  }
+};
+
 export default function UserAvatar({ user }: AvatarProps) {
   const t = useTranslations();
   const router = useRouter();
   const supabase = createClient();
 
   const [open, setOpen] = useState(false);
+  const [cropperOpen, setCropperOpen] = useState(false);
+  const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isConverting, setIsConverting] = useState(false);
 
   const [saving, setSaving] = useState(false);
   const [previewSrc, setPreviewSrc] = useState<string | null>(
@@ -58,38 +141,40 @@ export default function UserAvatar({ user }: AvatarProps) {
     resolver: zodResolver(FormSchema),
   });
 
-  const compressImage = (file: File): Promise<Blob> => {
+  const compressAndResizeImage = (blob: Blob): Promise<Blob> => {
     return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = (event) => {
-        const img = new Image();
-        img.src = event.target?.result as string;
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          const ctx = canvas.getContext('2d');
-          canvas.width = AVATAR_SIZE;
-          canvas.height = AVATAR_SIZE;
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
 
-          if (ctx) {
-            ctx.drawImage(img, 0, 0, AVATAR_SIZE, AVATAR_SIZE);
-            canvas.toBlob(
-              (blob) => {
-                if (blob) {
-                  resolve(blob);
-                } else {
-                  reject(new Error('Blob creation failed'));
-                }
-              },
-              file.type,
-              0.7 // 70% quality
-            );
-          } else {
-            reject(new Error('Canvas context is null'));
-          }
-        };
+      if (!ctx) {
+        reject(new Error('Canvas context is null'));
+        return;
+      }
+
+      const img = new Image();
+      img.onload = () => {
+        // Set canvas size to the desired avatar size
+        canvas.width = AVATAR_SIZE;
+        canvas.height = AVATAR_SIZE;
+
+        // Draw the cropped image (already square from cropper) to the canvas
+        ctx.drawImage(img, 0, 0, AVATAR_SIZE, AVATAR_SIZE);
+
+        canvas.toBlob(
+          (compressedBlob) => {
+            if (compressedBlob) {
+              resolve(compressedBlob);
+            } else {
+              reject(new Error('Blob creation failed'));
+            }
+          },
+          'image/jpeg',
+          0.8 // 80% quality for good balance of quality and file size
+        );
       };
-      reader.onerror = (error) => reject(error);
+
+      img.onerror = () => reject(new Error('Failed to load image'));
+      img.src = URL.createObjectURL(blob);
     });
   };
 
@@ -99,20 +184,18 @@ export default function UserAvatar({ user }: AvatarProps) {
     setSaving(true);
 
     try {
-      const compressedBlob = await compressImage(data.file);
-      const compressedFile = new File([compressedBlob], data.file.name, {
-        type: data.file.type,
-      });
+      // The file from the form is already the cropped and compressed blob
+      const finalFile = data.file;
 
-      if (compressedFile.size > MAX_FILE_SIZE) {
-        throw new Error('Compressed file is still too large');
+      if (finalFile.size > MAX_FILE_SIZE) {
+        throw new Error('File is too large (max 2MB)');
       }
 
       const filePath = `${generateRandomUUID()}`;
 
       const { error: uploadError } = await supabase.storage
         .from('avatars')
-        .upload(filePath, compressedFile);
+        .upload(filePath, finalFile);
 
       if (uploadError) throw uploadError;
 
@@ -128,17 +211,16 @@ export default function UserAvatar({ user }: AvatarProps) {
       if (updateError) throw updateError;
 
       toast({
-        title: 'Avatar updated',
-        description: 'Your avatar has been successfully updated.',
+        title: t('settings-account.avatar_updated'),
+        description: t('settings-account.avatar_updated_description'),
       });
       router.refresh();
       setOpen(false);
     } catch (error) {
       console.error('Error:', error);
       toast({
-        title: 'Update failed',
-        description:
-          'There was an error updating your avatar. Please try again.',
+        title: t('settings-account.update_failed'),
+        description: t('settings-account.avatar_update_error'),
         variant: 'destructive',
       });
     } finally {
@@ -163,15 +245,14 @@ export default function UserAvatar({ user }: AvatarProps) {
 
     if (updateError) {
       toast({
-        title: 'Remove failed',
-        description:
-          'There was an error removing your avatar. Please try again.',
+        title: t('settings-account.remove_failed'),
+        description: t('settings-account.avatar_remove_error'),
         variant: 'destructive',
       });
     } else {
       toast({
-        title: 'Avatar removed',
-        description: 'Your avatar has been successfully removed.',
+        title: t('settings-account.avatar_removed'),
+        description: t('settings-account.avatar_removed_description'),
       });
       router.refresh();
     }
@@ -181,121 +262,198 @@ export default function UserAvatar({ user }: AvatarProps) {
 
   const handleFileSelect = async (file: File) => {
     try {
-      const compressedBlob = await compressImage(file);
-      const fileURL = URL.createObjectURL(compressedBlob);
-      setPreviewSrc(fileURL);
-      form.setValue(
-        'file',
-        new File([compressedBlob], file.name, { type: file.type })
-      );
+      setIsConverting(true);
+      let processedFile = file;
+
+      // Convert HEIC files to JPEG first for browser compatibility
+      if (isHeicFile(file)) {
+        console.log('Converting HEIC file to JPEG for display...');
+        processedFile = await convertHeicToJpeg(file);
+      }
+
+      // Create URL for the processed image to show in the cropper
+      const imageUrl = URL.createObjectURL(processedFile);
+      setSelectedImageUrl(imageUrl);
+      setSelectedFile(file); // Keep original file for reference
+      setCropperOpen(true);
     } catch (error) {
-      console.error('Error compressing image:', error);
+      console.error('Error processing file:', error);
       toast({
-        title: 'Compression failed',
+        title: t('settings-account.crop_failed'),
         description:
-          'There was an error compressing your image. Please try again.',
+          error instanceof Error
+            ? error.message
+            : t('settings-account.crop_failed_description'),
+        variant: 'destructive',
+      });
+    } finally {
+      setIsConverting(false);
+    }
+  };
+
+  const handleCropComplete = async (croppedImageBlob: Blob) => {
+    try {
+      // Compress and resize the cropped image to the final avatar size
+      const finalBlob = await compressAndResizeImage(croppedImageBlob);
+
+      // Create preview URL
+      const previewUrl = URL.createObjectURL(finalBlob);
+      setPreviewSrc(previewUrl);
+
+      // Create file for form submission
+      const finalFile = new File([finalBlob], 'avatar.jpg', {
+        type: 'image/jpeg',
+      });
+
+      form.setValue('file', finalFile);
+      setCropperOpen(false);
+
+      // Clean up the selected image URL
+      if (selectedImageUrl) {
+        URL.revokeObjectURL(selectedImageUrl);
+        setSelectedImageUrl(null);
+      }
+      setSelectedFile(null);
+    } catch (error) {
+      console.error('Error processing cropped image:', error);
+      toast({
+        title: t('settings-account.crop_failed'),
+        description: t('settings-account.crop_failed_description'),
         variant: 'destructive',
       });
     }
   };
 
+  const handleCropCancel = () => {
+    setCropperOpen(false);
+    if (selectedImageUrl) {
+      URL.revokeObjectURL(selectedImageUrl);
+      setSelectedImageUrl(null);
+    }
+    setSelectedFile(null);
+  };
+
   return (
-    <Form {...form}>
-      <Dialog
-        open={open}
-        onOpenChange={(isOpen) => {
-          if (!isOpen) {
-            form.reset();
-            setPreviewSrc(user?.avatar_url || null);
-          }
-          setOpen(isOpen);
-        }}
-      >
-        <DialogTrigger asChild>
-          <div className="flex items-center justify-center">
-            <div className="relative flex w-fit flex-col items-center justify-center gap-4">
-              <Avatar className="h-32 w-32 cursor-pointer overflow-visible border border-foreground text-3xl font-semibold">
-                <AvatarImage
-                  src={previewSrc || undefined}
-                  alt="Avatar"
-                  className="rounded-full object-cover"
-                />
-                <AvatarFallback className="font-semibold">
-                  {getInitials(user?.display_name || user?.email) || (
-                    <UserIcon className="h-12 w-12" />
-                  )}
-                </AvatarFallback>
-              </Avatar>
-            </div>
-          </div>
-        </DialogTrigger>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{t('settings-account.avatar')}</DialogTitle>
-            <DialogDescription>
-              {t('settings-account.avatar-description')}
-            </DialogDescription>
-          </DialogHeader>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
-            <div className="flex flex-col items-center gap-4">
-              <Avatar className="h-32 w-32 overflow-visible text-3xl font-semibold">
-                <AvatarImage
-                  src={previewSrc || undefined}
-                  alt="Avatar"
-                  className="rounded-full object-cover"
-                />
-                <AvatarFallback className="font-semibold">
-                  {getInitials(user?.display_name || user?.email) || (
-                    <UserIcon className="h-12 w-12" />
-                  )}
-                </AvatarFallback>
-              </Avatar>
-            </div>
-            <DialogFooter className="flex-wrap max-sm:gap-2">
-              <div>
-                <Label
-                  htmlFor="file-upload"
-                  className="inline-block cursor-pointer rounded-md border p-3 px-4 text-center max-sm:w-full"
-                >
-                  {previewSrc
-                    ? t('settings-account.new_avatar')
-                    : t('settings-account.upload_avatar')}
-                </Label>
-                <input
-                  id="file-upload"
-                  type="file"
-                  accept="image/png,image/jpeg,image/jpg,image/webp"
-                  onChange={(e) => {
-                    if (e.target.files?.[0]) {
-                      handleFileSelect(e.target.files[0]);
-                    }
-                  }}
-                  className="hidden"
-                />
+    <>
+      {/* Image Cropper Dialog */}
+      {selectedImageUrl && (
+        <ImageCropper
+          image={selectedImageUrl}
+          originalFile={selectedFile}
+          open={cropperOpen}
+          onOpenChange={setCropperOpen}
+          onCropComplete={handleCropComplete}
+          onCancel={handleCropCancel}
+          title={t('settings-account.crop_avatar')}
+          aspectRatio={1} // Square crop for avatars
+        />
+      )}
+
+      <Form {...form}>
+        <Dialog
+          open={open}
+          onOpenChange={(isOpen) => {
+            if (!isOpen) {
+              form.reset();
+              setPreviewSrc(user?.avatar_url || null);
+            }
+            setOpen(isOpen);
+          }}
+        >
+          <DialogTrigger asChild>
+            <div className="flex items-center justify-center">
+              <div className="relative flex w-fit flex-col items-center justify-center gap-4">
+                <Avatar className="h-32 w-32 cursor-pointer overflow-visible border border-foreground font-semibold text-3xl">
+                  <AvatarImage
+                    src={previewSrc || undefined}
+                    alt="Avatar"
+                    className="rounded-full object-cover"
+                  />
+                  <AvatarFallback className="font-semibold">
+                    {getInitials(user?.display_name || user?.email) || (
+                      <UserIcon className="h-12 w-12" />
+                    )}
+                  </AvatarFallback>
+                </Avatar>
               </div>
-              {previewSrc && (
-                <Button variant="destructive" onClick={removeAvatar}>
+            </div>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>{t('settings-account.avatar')}</DialogTitle>
+              <DialogDescription>
+                {t('settings-account.avatar-description')}
+              </DialogDescription>
+            </DialogHeader>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
+              <div className="flex flex-col items-center gap-4">
+                <Avatar className="h-32 w-32 overflow-visible font-semibold text-3xl">
+                  <AvatarImage
+                    src={previewSrc || undefined}
+                    alt="Avatar"
+                    className="rounded-full object-cover"
+                  />
+                  <AvatarFallback className="font-semibold">
+                    {getInitials(user?.display_name || user?.email) || (
+                      <UserIcon className="h-12 w-12" />
+                    )}
+                  </AvatarFallback>
+                </Avatar>
+              </div>
+              <DialogFooter className="flex-wrap max-sm:gap-2">
+                <div>
+                  <Label
+                    htmlFor="file-upload"
+                    className={cn(
+                      'inline-block rounded-md border p-3 px-4 text-center max-sm:w-full',
+                      isConverting
+                        ? 'cursor-not-allowed opacity-50'
+                        : 'cursor-pointer'
+                    )}
+                  >
+                    {isConverting
+                      ? 'Converting HEIC...'
+                      : previewSrc
+                        ? t('settings-account.new_avatar')
+                        : t('settings-account.upload_avatar')}
+                  </Label>
+                  <input
+                    id="file-upload"
+                    type="file"
+                    accept="image/png,image/jpeg,image/jpg,image/webp,image/heic,image/heif"
+                    disabled={isConverting}
+                    onChange={(e) => {
+                      if (e.target.files?.[0] && !isConverting) {
+                        handleFileSelect(e.target.files[0]);
+                      }
+                    }}
+                    className="hidden"
+                  />
+                </div>
+                {previewSrc && (
+                  <Button variant="destructive" onClick={removeAvatar}>
+                    {saving ? (
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                    ) : (
+                      t('settings-account.remove_avatar')
+                    )}
+                  </Button>
+                )}
+                <Button
+                  type="submit"
+                  disabled={saving || !form.getValues('file')}
+                >
                   {saving ? (
                     <Loader2 className="h-5 w-5 animate-spin" />
                   ) : (
-                    t('settings-account.remove_avatar')
+                    t('settings-account.save_avatar')
                   )}
                 </Button>
-              )}
-              <Button
-                type="submit"
-                disabled={saving || !form.getValues('file')}
-              >
-                {saving ? (
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                ) : (
-                  t('settings-account.save_avatar')
-                )}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
-    </Form>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
+      </Form>
+    </>
   );
 }
