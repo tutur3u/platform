@@ -323,8 +323,17 @@ describe('Google Calendar Incremental Sync', () => {
 
   describe('Mock Data Validation', () => {
     it('should return properly structured mock events', async () => {
-      // This would be tested in the actual task run
-      expect(mockCalendarEventsList).toBeDefined();
+      const response = await mockCalendarEventsList();
+      const events = response.data.items;
+      
+      expect(events).toHaveLength(2);
+      expect(events[0]).toMatchObject({
+          id: 'event1',
+          summary: 'Test Event 1',
+          start: { dateTime: '2024-01-15T10:00:00Z' },
+          end: { dateTime: '2024-01-15T11:00:00Z' },
+          status: 'confirmed',
+      });
     });
 
     it('should handle events with different statuses', async () => {
@@ -367,8 +376,13 @@ describe('Google Calendar Incremental Sync', () => {
         }
       });
 
-      // This would be tested in the actual task run
-      expect(mockCalendarEventsList).toBeDefined();
+      const response = await mockCalendarEventsList();
+      const events = response.data.items;
+      
+      expect(events).toHaveLength(3);
+      expect(events[0].status).toBe('confirmed');
+      expect(events[1].status).toBe('cancelled');
+      expect(events[2].status).toBe('tentative');
     });
   });
 }); 
