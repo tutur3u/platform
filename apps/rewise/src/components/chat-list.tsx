@@ -4,7 +4,7 @@ import { Box, Globe, Lock, Sparkle } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
-import { Fragment, useMemo } from 'react';
+import { Fragment } from 'react';
 import { ChatMessage } from '@/components/chat-message';
 import { OnlineUsers } from '@/components/online-users';
 
@@ -62,20 +62,7 @@ export function ChatList({
 }: ChatListProps) {
   const t = useTranslations('ai_chat');
 
-  // Deduplicate messages to prevent React key conflicts
-  const uniqueMessages = useMemo(() => {
-    const seen = new Set<string>();
-    return messages.filter((message) => {
-      if (seen.has(message.id)) {
-        console.warn(`Duplicate message ID detected: ${message.id}`);
-        return false;
-      }
-      seen.add(message.id);
-      return true;
-    });
-  }, [messages]);
-
-  if (!uniqueMessages.length) return null;
+  if (!messages.length) return null;
 
   return (
     <div
@@ -160,8 +147,8 @@ export function ChatList({
         </Fragment>
       )}
 
-      {uniqueMessages.map((message, index) => (
-        <div key={`message-${message.id}-${index}`}>
+      {messages.map((message) => (
+        <div key={message.id}>
           <ChatMessage
             message={{
               ...message,
