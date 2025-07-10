@@ -13,4 +13,6 @@ export function createClient() {
   return createBrowserClient<Database>(url, key);
 }
 
-export type { SupabaseClient };
+type TypedSupabaseClient = ReturnType<typeof createClient>;
+
+export type { TypedSupabaseClient, SupabaseClient };
