@@ -145,7 +145,7 @@ export default function UserForm({ wsId, data, onFinish }: Props) {
   const [cropperOpen, setCropperOpen] = useState(false);
   const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [isConverting, setIsConverting] = useState(false);
+  const [, setIsConverting] = useState(false);
 
   const form = useForm({
     resolver: zodResolver(FormSchema),
