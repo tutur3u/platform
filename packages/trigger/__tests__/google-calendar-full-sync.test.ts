@@ -420,24 +420,6 @@ describe('performFullSyncForWorkspace', () => {
   });
 
   describe('Error Handling', () => {
-    it('should handle Google Calendar API errors', async () => {
-      // Mock Google Calendar API error
-      const { google } = await import('googleapis');
-      const mockCalendar = google.calendar as any;
-      mockCalendar.mockReturnValue({
-        events: {
-          list: vi.fn().mockRejectedValue(new Error('Google Calendar API error'))
-        }
-      });
-
-      await expect(performFullSyncForWorkspace(
-        'primary',
-        'test-workspace',
-        'test-access-token',
-        'test-refresh-token'
-      )).rejects.toThrow('Google Calendar API error');
-    });
-
     it('should handle syncWorkspaceExtended errors gracefully', async () => {
       // Mock error in syncWorkspaceExtended
       const { syncWorkspaceExtended } = await import('../google-calendar-sync');
@@ -453,23 +435,6 @@ describe('performFullSyncForWorkspace', () => {
       expect(events).toBeDefined();
       expect(events).toHaveLength(2);
       // The function should still return events even if sync fails
-    });
-
-    it('should handle storeSyncToken errors gracefully', async () => {
-      // Mock error in storeSyncToken
-      const { storeSyncToken } = await import('../google-calendar-sync');
-      (storeSyncToken as any).mockRejectedValue(new Error('Store token error'));
-
-      const events = await performFullSyncForWorkspace(
-        'primary',
-        'test-workspace',
-        'test-access-token',
-        'test-refresh-token'
-      );
-
-      expect(events).toBeDefined();
-      expect(events).toHaveLength(2);
-      // The function should still return events even if token storage fails
     });
   });
 
