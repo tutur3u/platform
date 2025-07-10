@@ -1,4 +1,5 @@
 import { Project } from './data';
+import { Card, CardContent } from '@ncthub/ui/card';
 import { motion } from 'framer-motion';
 import { Github, Globe, Monitor, Play, Users, Wrench } from 'lucide-react';
 
@@ -65,202 +66,22 @@ export default function ProjectCard({
   // Enhanced card container styles with modern glassmorphism
   const getCardContainerStyles = () => {
     const baseStyles = `
-      relative h-full min-h-[480px] rounded-3xl p-6 pb-24 text-left transition-all duration-500
-      border backdrop-blur-md overflow-hidden group flex flex-col
+      relative h-full min-h-[480px] text-left transition-all duration-500
+      backdrop-blur-md overflow-hidden group flex flex-col p-0
     `;
 
     const centerStyles = isCenter
       ? 'shadow-2xl shadow-[#1AF4E6]/20 border-[#1AF4E6]/30'
-      : 'border-border';
+      : '';
 
     const highlightStyles = isHighlighted
       ? `bg-gradient-to-br ${typeConfig.bgGradient} border-[#1AF4E6]/50 shadow-xl shadow-[#1AF4E6]/25`
       : isCenter
-        ? 'bg-card/80 hover:bg-card border-border'
+        ? 'bg-card/80 hover:bg-card'
         : 'bg-card/40 hover:bg-card/60 hover:border-border hover:shadow-lg';
 
     return `${baseStyles} ${centerStyles} ${highlightStyles}`;
   };
-
-  // Enhanced floating status indicator
-  const renderStatusIndicator = () => (
-    <div className="absolute top-4 left-4">
-      <div
-        className={`rounded-full bg-gradient-to-r px-3 py-1 text-xs font-bold text-primary-foreground shadow-lg backdrop-blur-sm ${STATUS_COLORS[project.status]} `}
-      >
-        {project.status.charAt(0).toUpperCase() + project.status.slice(1)}
-      </div>
-    </div>
-  );
-
-  // Enhanced floating type indicator
-  const renderTypeIndicator = () => (
-    <div className="absolute top-4 right-4">
-      <div
-        className={`flex items-center gap-2 rounded-full bg-gradient-to-r px-3 py-1 text-xs font-medium text-primary-foreground ${typeConfig.gradient}`}
-      >
-        <TypeIcon className="h-3 w-3" />
-        <span>{typeConfig.label}</span>
-      </div>
-    </div>
-  );
-
-  // Render the card header with enhanced typography
-  const renderHeader = () => (
-    <div className="mt-8 mb-6">
-      <div className="mb-3 flex items-start gap-3">
-        <div
-          className={`rounded-xl bg-gradient-to-r p-2 ${typeConfig.gradient}`}
-        >
-          <TypeIcon className="h-5 w-5 text-primary-foreground" />
-        </div>
-        <div className="flex-1">
-          <h3
-            className={`leading-tight font-bold text-foreground ${isCenter ? 'text-2xl' : 'text-xl'}`}
-          >
-            {project.name}
-          </h3>
-        </div>
-      </div>
-
-      {project.manager && (
-        <div className="flex items-center gap-2 text-muted-foreground">
-          <Users className="h-4 w-4" />
-          <p className={`${isCenter ? 'text-sm' : 'text-xs'}`}>
-            Led by {project.manager}
-          </p>
-        </div>
-      )}
-    </div>
-  );
-
-  // Enhanced description with better truncation
-  const renderDescription = () => (
-    <div className="mb-6">
-      <p
-        className={`leading-relaxed text-muted-foreground ${
-          isCenter ? 'text-base' : 'line-clamp-3 text-sm'
-        }`}
-      >
-        {project.description || 'No description available.'}
-      </p>
-    </div>
-  );
-
-  // Enhanced technology stack with better visual design
-  const renderTechStack = () => {
-    if (!project.techStack || project.techStack.length === 0) {
-      return null;
-    }
-
-    return (
-      <div className="mb-6">
-        <div className="mb-2 flex items-center gap-2">
-          <div className="h-0.5 w-4 bg-gradient-to-r from-[#F4B71A] to-[#1AF4E6]" />
-          <span className="text-xs font-medium tracking-wider text-muted-foreground uppercase">
-            Tech Stack
-          </span>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {/* Show first 3 technologies with enhanced styling */}
-          {project.techStack.slice(0, 3).map((tech, index) => (
-            <motion.span
-              key={index}
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: index * 0.1 }}
-              className={`rounded-lg border border-border bg-muted/50 px-3 py-1 font-medium text-foreground backdrop-blur-sm ${isCenter ? 'text-sm' : 'text-xs'} `}
-            >
-              {tech}
-            </motion.span>
-          ))}
-
-          {/* Show count of remaining technologies */}
-          {project.techStack.length > 3 && (
-            <span
-              className={`rounded-lg border border-border bg-muted/30 px-3 py-1 font-medium text-muted-foreground ${isCenter ? 'text-sm' : 'text-xs'} `}
-            >
-              +{project.techStack.length - 3}
-            </span>
-          )}
-        </div>
-      </div>
-    );
-  };
-
-  // Enhanced footer with action buttons
-  const renderFooter = () => (
-    <div className="absolute right-6 bottom-6 left-6">
-      {/* Subtle divider */}
-      <div className="mb-4 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
-
-      <div className="flex items-center justify-between">
-        {/* Quick action buttons */}
-        <div className="flex gap-2">
-          {project.githubUrl && (
-            <motion.button
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-              className="rounded-lg bg-muted/50 p-2 text-muted-foreground backdrop-blur-sm transition-colors hover:bg-muted hover:text-foreground"
-              onClick={(e) => {
-                e.stopPropagation();
-                window.open(project.githubUrl, '_blank');
-              }}
-            >
-              <Github className="h-4 w-4" />
-            </motion.button>
-          )}
-          {project.demoUrl && (
-            <motion.button
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-              className="rounded-lg bg-muted/50 p-2 text-muted-foreground backdrop-blur-sm transition-colors hover:bg-muted hover:text-foreground"
-              onClick={(e) => {
-                e.stopPropagation();
-                window.open(project.demoUrl, '_blank');
-              }}
-            >
-              <Play className="h-4 w-4" />
-            </motion.button>
-          )}
-        </div>
-
-        {/* Team Size Indicator with enhanced design */}
-        {project.members && project.members.length > 0 && (
-          <div
-            className={`flex items-center gap-2 rounded-lg bg-muted/50 px-3 py-1 text-muted-foreground backdrop-blur-sm ${isCenter ? 'text-sm' : 'text-xs'}`}
-          >
-            <Users className="h-4 w-4" />
-            <span>
-              {project.members.length} member
-              {project.members.length !== 1 ? 's' : ''}
-            </span>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-
-  // Enhanced visual effects with animated gradients
-  const renderEffects = () => (
-    <>
-      {/* Animated background gradient */}
-      <div className="pointer-events-none absolute inset-0 rounded-3xl opacity-0 transition-opacity duration-500 group-hover:opacity-100">
-        <div
-          className={`absolute inset-0 rounded-3xl bg-gradient-to-br ${typeConfig.bgGradient}`}
-        />
-        <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-[#F4B71A]/5 to-[#1AF4E6]/5" />
-      </div>
-
-      {/* Shimmer effect on hover */}
-      <div className="pointer-events-none absolute inset-0 -translate-x-full rounded-3xl bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 transition-all duration-1000 group-hover:translate-x-full group-hover:opacity-100" />
-
-      {/* Border glow effect for center cards */}
-      {isCenter && (
-        <div className="pointer-events-none absolute inset-0 rounded-3xl bg-gradient-to-br from-[#F4B71A]/20 to-[#1AF4E6]/20 opacity-50 blur-xl" />
-      )}
-    </>
-  );
 
   return (
     <motion.button
@@ -279,26 +100,172 @@ export default function ProjectCard({
       }}
       className="group perspective-1000 relative h-full w-full"
     >
-      <div className={getCardContainerStyles()}>
+      <Card className={getCardContainerStyles()}>
         {/* Status Indicator */}
-        {renderStatusIndicator()}
-
-        {/* Type Indicator */}
-        {renderTypeIndicator()}
-
-        {/* Card Content - Flex grow to push footer down */}
-        <div className="flex flex-grow flex-col">
-          {renderHeader()}
-          {renderDescription()}
-          {renderTechStack()}
+        <div className="absolute top-4 left-4">
+          <div
+            className={`rounded-full bg-gradient-to-r px-3 py-1 text-xs font-bold text-primary-foreground shadow-lg backdrop-blur-sm ${STATUS_COLORS[project.status as keyof typeof STATUS_COLORS]} `}
+          >
+            {project.status.charAt(0).toUpperCase() + project.status.slice(1)}
+          </div>
         </div>
 
+        {/* Type Indicator */}
+        <div className="absolute top-4 right-4">
+          <div
+            className={`flex items-center gap-2 rounded-full bg-gradient-to-r px-3 py-1 text-xs font-medium text-primary-foreground ${typeConfig.gradient}`}
+          >
+            <TypeIcon className="h-3 w-3" />
+            <span>{typeConfig.label}</span>
+          </div>
+        </div>
+
+        {/* Card Content - Flex grow to push footer down */}
+        <CardContent className="flex flex-grow flex-col p-6 pb-24">
+          {/* Card Header */}
+          <div className="mt-8 mb-6">
+            <div className="mb-3 flex items-start gap-3">
+              <div
+                className={`rounded-xl bg-gradient-to-r p-2 ${typeConfig.gradient}`}
+              >
+                <TypeIcon className="h-5 w-5 text-primary-foreground" />
+              </div>
+              <div className="flex-1">
+                <h3
+                  className={`leading-tight font-bold text-foreground ${isCenter ? 'text-2xl' : 'text-xl'}`}
+                >
+                  {project.name}
+                </h3>
+              </div>
+            </div>
+
+            {project.manager && (
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Users className="h-4 w-4" />
+                <p className={`${isCenter ? 'text-sm' : 'text-xs'}`}>
+                  Led by {project.manager}
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Card Description */}
+          <div className="mb-6">
+            <p
+              className={`leading-relaxed text-muted-foreground ${
+                isCenter ? 'text-base' : 'line-clamp-3 text-sm'
+              }`}
+            >
+              {project.description || 'No description available.'}
+            </p>
+          </div>
+
+          {/* Tech Stack */}
+          {project.techStack && project.techStack.length > 0 && (
+            <div className="mb-6">
+              <div className="mb-2 flex items-center gap-2">
+                <div className="h-0.5 w-4 bg-gradient-to-r from-[#F4B71A] to-[#1AF4E6]" />
+                <span className="text-xs font-medium tracking-wider text-muted-foreground uppercase">
+                  Tech Stack
+                </span>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {/* Show first 3 technologies with enhanced styling */}
+                {project.techStack.slice(0, 3).map((tech, index) => (
+                  <motion.span
+                    key={index}
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: index * 0.1 }}
+                    className={`rounded-lg border border-border bg-muted/50 px-3 py-1 font-medium text-foreground backdrop-blur-sm ${isCenter ? 'text-sm' : 'text-xs'} `}
+                  >
+                    {tech}
+                  </motion.span>
+                ))}
+
+                {/* Show count of remaining technologies */}
+                {project.techStack.length > 3 && (
+                  <span
+                    className={`rounded-lg border border-border bg-muted/30 px-3 py-1 font-medium text-muted-foreground ${isCenter ? 'text-sm' : 'text-xs'} `}
+                  >
+                    +{project.techStack.length - 3}
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
+        </CardContent>
+
         {/* Footer - Fixed at bottom */}
-        {renderFooter()}
+        <div className="absolute right-6 bottom-6 left-6">
+          {/* Subtle divider */}
+          <div className="mb-4 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
+
+          <div className="flex items-center justify-between">
+            {/* Quick action buttons */}
+            <div className="flex gap-2">
+              {project.githubUrl && (
+                <motion.button
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                  className="rounded-lg bg-muted/50 p-2 text-muted-foreground backdrop-blur-sm transition-colors hover:bg-muted hover:text-foreground"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    window.open(project.githubUrl, '_blank');
+                  }}
+                >
+                  <Github className="h-4 w-4" />
+                </motion.button>
+              )}
+              {project.demoUrl && (
+                <motion.button
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                  className="rounded-lg bg-muted/50 p-2 text-muted-foreground backdrop-blur-sm transition-colors hover:bg-muted hover:text-foreground"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    window.open(project.demoUrl, '_blank');
+                  }}
+                >
+                  <Play className="h-4 w-4" />
+                </motion.button>
+              )}
+            </div>
+
+            {/* Team Size Indicator with enhanced design */}
+            {project.members && project.members.length > 0 && (
+              <div
+                className={`flex items-center gap-2 rounded-lg bg-muted/50 px-3 py-1 text-muted-foreground backdrop-blur-sm ${isCenter ? 'text-sm' : 'text-xs'}`}
+              >
+                <Users className="h-4 w-4" />
+                <span>
+                  {project.members.length} member
+                  {project.members.length !== 1 ? 's' : ''}
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
 
         {/* Visual Effects */}
-        {renderEffects()}
-      </div>
+        <>
+          {/* Animated background gradient */}
+          <div className="pointer-events-none absolute inset-0 rounded-xl opacity-0 transition-opacity duration-500 group-hover:opacity-100">
+            <div
+              className={`absolute inset-0 rounded-xl bg-gradient-to-br ${typeConfig.bgGradient}`}
+            />
+            <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-[#F4B71A]/5 to-[#1AF4E6]/5" />
+          </div>
+
+          {/* Shimmer effect on hover */}
+          <div className="pointer-events-none absolute inset-0 -translate-x-full rounded-xl bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 transition-all duration-1000 group-hover:translate-x-full group-hover:opacity-100" />
+
+          {/* Border glow effect for center cards */}
+          {isCenter && (
+            <div className="pointer-events-none absolute inset-0 rounded-xl bg-gradient-to-br from-[#F4B71A]/20 to-[#1AF4E6]/20 opacity-50 blur-xl" />
+          )}
+        </>
+      </Card>
     </motion.button>
   );
 }
