@@ -8468,7 +8468,6 @@ export type Database = {
           included_tags: string[];
         };
         Returns: {
-          created_at: string;
           id: string;
           name: string;
           notes: string;
