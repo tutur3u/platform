@@ -147,8 +147,8 @@ export function ChatList({
         </Fragment>
       )}
 
-      {messages.map((message) => (
-        <div key={message.id}>
+      {messages.map((message, index) => (
+        <div key={`${message.role}-${message.id}-${index}`}>
           <ChatMessage
             message={{
               ...message,
