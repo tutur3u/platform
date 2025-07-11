@@ -5,9 +5,9 @@ ALTER TABLE public.workspace_calendar_events DROP CONSTRAINT IF EXISTS workspace
 DROP INDEX IF EXISTS workspace_calendar_events_google_event_id_key;
 
 -- Add unique index on workspace_calendar_events for ws_id and google_event_id
-CREATE UNIQUE INDEX workspace_calendar_events_google_event_id_key 
-ON public.workspace_calendar_events 
-USING btree (ws_id, google_event_id);
+-- Requires running outside a transaction block
+CREATE UNIQUE INDEX CONCURRENTLY workspace_calendar_events_google_event_id_key
+ON public.workspace_calendar_events (ws_id, google_event_id);
 
 -- Add the constraint back using the new index
 ALTER TABLE public.workspace_calendar_events 
