@@ -148,7 +148,7 @@ export async function POST(
       streamUpdate?.({ status: 'running', message: 'Analyzing schedule...' });
 
       const lockedEvents: Event[] = [];
-      const promotedTasks: any[] = [];
+      const promotedTasks: Task[] = [];
 
       for (const event of newFlexibleEvents) {
         if (event.locked) {
@@ -159,7 +159,7 @@ export async function POST(
         ) {
           const promoted = promoteEventToTask(event);
           if (promoted && promoted.duration > 0) {
-            promotedTasks.push(promoted);
+            promotedTasks.push(promoted as Task);
           }
         }
       }
