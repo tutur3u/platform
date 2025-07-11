@@ -12,7 +12,7 @@ export const runtime = 'edge';
 export const maxDuration = 60;
 export const preferredRegion = 'sin1';
 
-const model = 'gemini-2.0-flash-001';
+const model = 'gemini-2.5-flash';
 
 export function createPATCH(
   options: { serverAPIKeyFallback?: boolean } = {

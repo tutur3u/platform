@@ -23,11 +23,11 @@
     "ui:diff": "bunx shadcn-ui@latest diff"
   },
   "dependencies": {
-    "@deepgram/sdk": "^4.9.0",
+    "@deepgram/sdk": "^4.9.1",
     "@emotion/react": "^11.14.0",
     "@emotion/server": "^11.11.0",
     "@formatjs/intl-localematcher": "^0.6.1",
-    "@tanstack/react-query": "^5.81.5",
+    "@tanstack/react-query": "^5.82.0",
     "@tanstack/react-table": "^8.21.3",
     "@tuturuuu/ai": "workspace:*",
     "@tuturuuu/auth": "workspace:*",
@@ -56,13 +56,13 @@
     "remark-gfm": "^4.0.1",
     "remark-math": "^6.0.0",
     "sanitize-filename": "^1.6.3",
-    "sharp": "^0.34.2",
+    "sharp": "^0.34.3",
     "uuid": "^11.1.0",
     "zod": "^3.25.76"
   },
   "devDependencies": {
     "@next/bundle-analyzer": "^15.3.5",
-    "@tanstack/react-query-devtools": "^5.81.5",
+    "@tanstack/react-query-devtools": "^5.82.0",
     "@testing-library/react": "^16.3.0",
     "@tuturuuu/typescript-config": "workspace:*",
     "@types/js-cookie": "^3.0.6",

@@ -7,31 +7,31 @@ export const models: {
   disabled?: boolean;
 }[] = [
   {
-    value: 'gemini-2.5-pro-preview-05-06',
-    label: 'gemini-2.5-pro-preview-05-06',
+    value: 'gemini-2.5-pro',
+    label: 'gemini-2.5-pro',
     provider: 'Google',
     description:
-      'Gemini 2.5 Pro Preview 05-06 is a multimodal model that supports up to 1 million tokens and excels at long-context tasks.',
+      'Gemini 2.5 Pro is a multimodal model that supports up to 1 million tokens and excels at long-context tasks.',
     context: 1024 * 1024,
   },
   {
-    value: 'gemini-2.5-pro-exp-03-25',
-    label: 'gemini-2.5-pro-exp-03-25',
+    value: 'gemini-2.5-flash',
+    label: 'gemini-2.5-flash',
     provider: 'Google',
     description:
-      'Gemini 2.5 Pro Exp 03-25 is a multimodal model that supports up to 1 million tokens and excels at long-context tasks.',
+      'Gemini 2.5 Flash is a multimodal model that supports up to 1 million tokens and excels at long-context tasks.',
     context: 1024 * 1024,
   },
   {
-    value: 'gemini-2.0-pro-exp-02-05',
-    label: 'gemini-2.0-pro-exp-02-05',
+    value: 'gemini-2.0-pro',
+    label: 'gemini-2.0-pro',
     provider: 'Google',
     description:
-      'Gemini 2.0 Pro Exp 02-05 is a multimodal model that supports up to 1 million tokens and excels at long-context tasks.',
+      'Gemini 2.0 Pro is a multimodal model that supports up to 1 million tokens and excels at long-context tasks.',
     context: 1024 * 1024,
   },
   {
-    value: 'gemini-2.0-flash-001',
+    value: 'gemini-2.0-flash',
     label: 'gemini-2.0-flash',
     provider: 'Google',
     description:
@@ -39,19 +39,11 @@ export const models: {
     context: 1000000,
   },
   {
-    value: 'gemini-2.0-flash-thinking-exp-01-21',
-    label: 'gemini-2.0-flash-thinking-exp-01-21',
+    value: 'gemini-2.0-flash-lite',
+    label: 'gemini-2.0-flash-lite',
     provider: 'Google',
     description:
-      'Gemini 2.0 Flash Thinking Exp 01-21 is a multimodal model that supports up to 1 million tokens and excels at long-context tasks.',
-    context: 1000000,
-  },
-  {
-    value: 'gemini-2.0-flash-lite-preview-02-05',
-    label: 'gemini-2.0-flash-lite-preview-02-05',
-    provider: 'Google',
-    description:
-      'Gemini 2.0 Flash Lite Preview 02-05 is a multimodal model that supports up to 1 million tokens and excels at long-context tasks.',
+      'Gemini 2.0 Flash Lite is a multimodal model that supports up to 1 million tokens and excels at long-context tasks.',
     context: 1000000,
   },
 
@@ -72,15 +64,15 @@ export const models: {
     disabled: true,
   },
   {
-    value: 'gemini-2.0-pro-exp-02-05',
-    label: 'gemini-2.0-pro-exp-02-05',
+    value: 'gemini-2.0-pro',
+    label: 'gemini-2.0-pro',
     provider: 'Google Vertex',
     description:
-      'Gemini 2.0 Pro Exp 02-05 is a multimodal model that supports up to 1 million tokens and excels at long-context tasks.',
+      'Gemini 2.0 Pro is a multimodal model that supports up to 1 million tokens and excels at long-context tasks.',
     context: 2000000,
   },
   {
-    value: 'gemini-2.0-flash-001',
+    value: 'gemini-2.0-flash',
     label: 'gemini-2.0-flash',
     provider: 'Google Vertex',
     description:
@@ -88,19 +80,11 @@ export const models: {
     context: 1000000,
   },
   {
-    value: 'gemini-2.0-flash-thinking-exp-01-21',
-    label: 'gemini-2.0-flash-thinking-exp-01-21',
+    value: 'gemini-2.0-flash-lite',
+    label: 'gemini-2.0-flash-lite',
     provider: 'Google Vertex',
     description:
-      'Gemini 2.0 Flash Thinking Exp 01-21 is a multimodal model that supports up to 1 million tokens and excels at long-context tasks.',
-    context: 1000000,
-  },
-  {
-    value: 'gemini-2.0-flash-lite-preview-02-05',
-    label: 'gemini-2.0-flash-lite-preview-02-05',
-    provider: 'Google Vertex',
-    description:
-      'Gemini 2.0 Flash Lite Preview 02-05 is a multimodal model that supports up to 1 million tokens and excels at long-context tasks.',
+      'Gemini 2.0 Flash Lite is a multimodal model that supports up to 1 million tokens and excels at long-context tasks.',
     context: 1000000,
   },
 
@@ -210,8 +194,7 @@ export const models: {
 const fallbackModel = models.find((model) => !model.disabled);
 export const defaultModel: Model | undefined =
   models.find(
-    (model) =>
-      model.value === 'gemini-2.0-flash-001' && model.provider === 'Google'
+    (model) => model.value === 'gemini-2.5-flash' && model.provider === 'Google'
   ) || fallbackModel;
 
 export const providers: Provider[] = models.reduce((acc, model) => {
