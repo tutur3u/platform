@@ -162,10 +162,8 @@ export const scheduleTasks = (
     ...e,
     locked: true,
   }));
-  // console.log(scheduledEvents, ' scheduledEvents');
   const logs: Log[] = [];
   let taskPool: any[] = [];
-  // Prepare a working pool of tasks with remaining duration
   try {
     taskPool = tasks.map((task) => ({
       ...task,

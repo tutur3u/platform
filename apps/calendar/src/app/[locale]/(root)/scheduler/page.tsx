@@ -50,7 +50,6 @@ import { TaskList } from './components/TaskList';
 import { TaskModal } from './components/TaskModal';
 import { TemplateScenarios } from './components/TemplateScenarios';
 
-
 function SchedulerPage() {
   const [tasks, setTasks] = useState<Task[]>(defaultTasks);
   const [events, setEvents] = useState<Event[]>([]);
@@ -121,7 +120,6 @@ function SchedulerPage() {
   };
 
   const handleSchedule = async () => {
-    console.log(lockedEvents, 'lockedEvents');
     setIsScheduling(true);
     setTimeout(() => {
       const { events: scheduledEvents, logs: scheduleLogs } = scheduleTasks(

@@ -118,7 +118,6 @@ export async function POST(
     };
 
     const events = prepareTaskChunks([taskToSplit]);
-    console.log(events, 'hello');
     // console.log('Prepared task chunks:', events);
     const { events: newScheduledEvents } = scheduleTasks(
       events,

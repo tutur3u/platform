@@ -147,9 +147,6 @@ export async function POST(
     ) => {
       streamUpdate?.({ status: 'running', message: 'Analyzing schedule...' });
 
-      const dayjs = (await import('dayjs')).default;
-      const now = dayjs();
-
       const lockedEvents: Event[] = [];
       const promotedTasks: any[] = [];
 
@@ -168,8 +165,6 @@ export async function POST(
       }
 
       const tasksToSchedule = [...newTasks, ...promotedTasks];
-      console.log(tasksToSchedule, 'tasksToSchedule');
-      console.log(lockedEvents, 'lockedEvents');
       const activeHours = defaultActiveHours;
 
       streamUpdate?.({
@@ -191,7 +186,6 @@ export async function POST(
         (event) =>
           !newFlexibleEvents.some((existing) => existing.id === event.id)
       );
-      console.log(eventsToInsert, 'eventsToInsert');
       const eventsToUpsert = newScheduledEvents
         .filter((event) => !event.locked)
         .map((event) => ({
