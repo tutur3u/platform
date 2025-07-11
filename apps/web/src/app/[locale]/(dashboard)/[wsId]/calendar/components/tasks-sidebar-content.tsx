@@ -46,7 +46,6 @@ export default function TasksSidebarContent({
   locale = 'en',
   hasAiChatAccess = true,
 }: TasksSidebarContentProps) {
-  console.log('Sidebar tasks:', tasks);
   const [isCollapsed, setIsCollapsed] = useState(true);
   const [activeTab, setActiveTab] = useState('tasks');
 
