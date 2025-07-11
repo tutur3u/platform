@@ -1,5 +1,6 @@
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { Button } from '@tuturuuu/ui/button';
+import { Calendar } from '@tuturuuu/ui/calendar';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
 import {
   Dialog,
@@ -11,6 +12,7 @@ import {
 import { CalendarIcon, ClockIcon, PlusIcon } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
+import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import {
   Select,
   SelectContent,
@@ -19,9 +21,8 @@ import {
   SelectValue,
 } from '@tuturuuu/ui/select';
 import { Textarea } from '@tuturuuu/ui/textarea';
-
 import dayjs from 'dayjs';
-import React from 'react';
+import React, { useState } from 'react';
 
 interface AddEventModalProps {
   isOpen?: boolean;
@@ -64,6 +65,8 @@ export default function AddEventModal({
   const [isDragging, setIsDragging] = React.useState(false);
   const sliderRef = React.useRef<HTMLDivElement>(null);
   const supabase = createClient();
+  const [startDateOpen, setStartDateOpen] = useState(false);
+  const [endDateOpen, setEndDateOpen] = useState(false);
 
   React.useEffect(() => {
     const getUser = async () => {
@@ -619,45 +622,102 @@ export default function AddEventModal({
               </SelectContent>
             </Select>
             <div className="grid grid-cols-2 gap-2">
-              <div className="flex w-full items-end gap-6">
+              <div className="col-span-2 flex w-full flex-col items-end gap-4 sm:flex-row">
                 {/* Start Date */}
-                <div className="w-48">
-                  <Label htmlFor="start-date" className="mb-1 block text-xs">
-                    Start (optional)
-                  </Label>
-                  <div className="relative">
-                    <span className="-translate-y-1/2 pointer-events-none absolute top-1/2 left-3 flex items-center text-zinc-400">
+                <div className="w-full">
+                  <div className="flex">
+                    <Label
+                      htmlFor="start-date"
+                      className="mb-1 flex items-center gap-1 text-xs"
+                    >
+                      Start (optional)
                       <CalendarIcon className="h-5 w-5" />
-                    </span>
-                    <Input
-                      id="start-date"
-                      type="datetime-local"
-                      value={formData.start_date}
-                      onChange={(e) =>
-                        updateFormData('start_date', e.target.value)
-                      }
-                      min={dayjs().format('YYYY-MM-DDTHH:mm')}
-                    />
+                    </Label>
+                  </div>
+                  <div className="relative">
+                    <Popover
+                      open={startDateOpen}
+                      onOpenChange={setStartDateOpen}
+                    >
+                      <PopoverTrigger asChild>
+                        <Button className="w-full">
+                          {formData.start_date
+                            ? dayjs(formData.start_date).format('MMM DD, YYYY')
+                            : 'Select date'}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent
+                        className="w-auto overflow-hidden p-0"
+                        align="start"
+                      >
+                        <Calendar
+                          mode="single"
+                          selected={
+                            formData.start_date
+                              ? new Date(formData.start_date)
+                              : undefined
+                          }
+                          onSelect={(date) => {
+                            if (date) {
+                              const formattedDate =
+                                dayjs(date).format('YYYY-MM-DDTHH:mm');
+                              updateFormData('start_date', formattedDate);
+                            } else {
+                              updateFormData('start_date', '');
+                            }
+                            setStartDateOpen(false);
+                          }}
+                        />
+                      </PopoverContent>
+                    </Popover>
                   </div>
                 </div>
+
                 {/* End Date */}
-                <div className="w-48">
-                  <Label htmlFor="end-date" className="mb-1 block text-xs">
-                    End (optional)
-                  </Label>
-                  <div className="relative">
-                    <span className="-translate-y-1/2 pointer-events-none absolute top-1/2 left-3 flex items-center text-zinc-400">
+                <div className="w-full">
+                  <div className="flex">
+                    <Label
+                      htmlFor="end-date"
+                      className="mb-1 flex items-center gap-1 text-xs"
+                    >
+                      End (optional)
                       <CalendarIcon className="h-5 w-5" />
-                    </span>
-                    <Input
-                      id="end-date"
-                      type="datetime-local"
-                      value={formData.end_date}
-                      onChange={(e) =>
-                        updateFormData('end_date', e.target.value)
-                      }
-                      min={dayjs().format('YYYY-MM-DDTHH:mm')}
-                    />
+                    </Label>
+                  </div>
+
+                  <div className="relative">
+                    <Popover open={endDateOpen} onOpenChange={setEndDateOpen}>
+                      <PopoverTrigger asChild>
+                        <Button className="w-full">
+                          {formData.end_date
+                            ? dayjs(formData.end_date).format('MMM DD, YYYY')
+                            : 'Select date'}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent
+                        className="w-auto overflow-hidden p-0"
+                        align="start"
+                      >
+                        <Calendar
+                          mode="single"
+                          selected={
+                            formData.end_date
+                              ? new Date(formData.end_date)
+                              : undefined
+                          }
+                          onSelect={(date) => {
+                            if (date) {
+                              const formattedDate =
+                                dayjs(date).format('YYYY-MM-DDTHH:mm');
+                              updateFormData('end_date', formattedDate);
+                            } else {
+                              updateFormData('end_date', '');
+                            }
+                            setEndDateOpen(false);
+                          }}
+                        />
+                      </PopoverContent>
+                    </Popover>
                   </div>
                   {errors.end_date && (
                     <p className="mt-0.5 text-destructive text-xs">
@@ -667,6 +727,7 @@ export default function AddEventModal({
                 </div>
               </div>
             </div>
+
             <div className="mt-1 flex items-center gap-2 rounded-md bg-blue-50 p-2 text-blue-800 text-xs dark:bg-blue-950 dark:text-blue-200">
               <span>📧</span>
               <span>For {user?.email || 'your account'}</span>

@@ -34,8 +34,8 @@ export default function CalendarClientPage({
   const extras =
     workspace.id === ROOT_WORKSPACE_ID ? (
       <div className="grid w-full items-center gap-2 md:flex md:w-auto">
-        {DEV_MODE && <TestEventGeneratorButton wsId={workspace.id} />}
         <AddEventButton onOpenDialog={openAddEventDialog} />
+        {DEV_MODE && <TestEventGeneratorButton wsId={workspace.id} />}
         <AutoScheduleComprehensiveDialog wsId={workspace.id}>
           <Button
             variant="default"

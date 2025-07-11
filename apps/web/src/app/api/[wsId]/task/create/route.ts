@@ -118,7 +118,7 @@ export async function POST(
     };
 
     const events = prepareTaskChunks([taskToSplit]);
-
+    // console.log('Prepared task chunks:', events);
     const { events: newScheduledEvents } = scheduleTasks(
       events,
       defaultActiveHours
@@ -147,7 +147,6 @@ export async function POST(
       }
     }
 
-    // 6. Success
     return NextResponse.json(dbTask, { status: 201 });
   } catch (e: any) {
     console.error('Error in task creation route:', e);
