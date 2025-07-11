@@ -120,28 +120,36 @@ function calculatePriorityScore(task: Task): number {
   return score;
 }
 
-export const promoteEventToTask = (event: Event): Task => {
+export const promoteEventToTask = (event: Event): Task | null => {
   const start = dayjs(event.range.start);
   const end = dayjs(event.range.end);
 
-  // Now you can safely calculate the difference.
-  const durationInHours = end.diff(start, 'hour', true);
+  if (
+    !start.isValid() ||
+    !end.isValid() ||
+    end.isBefore(start) ||
+    !event.name
+  ) {
+    console.warn(`[Promote] Skipping invalid event: ${event.name}`);
+    return null;
+  }
 
-  // FIX 2: A promoted event is treated as a single, non-splittable block.
-  // We set its min/max duration to its actual duration.
-  const duration = hoursToQuarterHours(durationInHours);
+  const durationInHours = end.diff(start, 'minute') / 60;
+
+  // Ensure minimum scheduling duration (0.25h = 15 mins)
+  const duration = Math.max(0.25, parseFloat(durationInHours.toFixed(2)));
 
   return {
     id: event.id,
     name: event.name,
-    duration: hoursToQuarterHours(duration),
-    minDuration: ensureMinimumDuration(duration),
-    maxDuration: hoursToQuarterHours(duration),
-    category: event.category || 'work',
-    priority: event.priority || 'normal',
-    events: [],
-    deadline: event.range.end,
+    duration,
+    minDuration: duration,
+    maxDuration: duration,
     allowSplit: false,
+    category: event.category ?? 'work',
+    priority: event.priority ?? 'normal',
+    deadline: end,
+    events: [],
   };
 };
 
@@ -152,14 +160,14 @@ export const scheduleWithFlexibleEvents = (
   activeHours: ActiveHours
 ): ScheduleResult => {
   const now = dayjs();
-  const futureFlexibleEvents = flexibleEvents.filter((event) =>
-    dayjs(event.range.end).isAfter(now)
+  const futureFlexibleEvents = flexibleEvents.filter(
+    (event) => dayjs(event.range.end).isAfter(now) && !event.locked
   );
 
   const futureLockedEvents = lockedEvents.filter((event) =>
     dayjs(event.range.end).isAfter(now)
   );
-
+  // console.log(futureLockedEvents, 'futureFlexibleEvents');
   if (flexibleEvents.length !== futureFlexibleEvents.length) {
     console.log(
       `[Scheduler] Skipped ${flexibleEvents.length - futureFlexibleEvents.length} past flexible events.`
@@ -178,6 +186,10 @@ export const scheduleWithFlexibleEvents = (
     .map(promoteEventToTask)
     .filter((task): task is Task => task !== null);
 
+  // const promotedLockedTasks = futureLockedEvents
+  //   .map(promoteEventToTask)
+  //   .filter((task): task is Task => task !== null);
+
   console.log(
     `[Scheduler] Promoted ${promotedTasks.length} flexible events to tasks.`
   );
@@ -188,7 +200,6 @@ export const scheduleWithFlexibleEvents = (
     activeHours,
     futureLockedEvents
   );
-
   return result;
 };
 
@@ -201,6 +212,7 @@ export const scheduleTasks = (
     ...e,
     locked: true,
   }));
+  // console.log(scheduledEvents, ' scheduledEvents');
   const logs: Log[] = [];
   let taskPool: any[] = [];
   // Prepare a working pool of tasks with remaining duration
