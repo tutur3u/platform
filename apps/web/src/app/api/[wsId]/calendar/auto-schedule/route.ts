@@ -1,7 +1,6 @@
 import {
   promoteEventToTask,
   scheduleTasks,
-  scheduleWithFlexibleEvents,
 } from '@tuturuuu/ai/scheduling/algorithm';
 import { defaultActiveHours } from '@tuturuuu/ai/scheduling/default';
 import { createClient } from '@tuturuuu/supabase/next/server';
