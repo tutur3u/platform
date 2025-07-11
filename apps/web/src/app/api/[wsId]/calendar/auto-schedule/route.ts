@@ -1,6 +1,6 @@
 import {
   promoteEventToTask,
-  scheduleWithFlexibleEvents,
+  scheduleTasks,
 } from '@tuturuuu/ai/scheduling/algorithm';
 import { defaultActiveHours } from '@tuturuuu/ai/scheduling/default';
 import { createClient } from '@tuturuuu/supabase/next/server';
@@ -145,55 +145,58 @@ export async function POST(
     const runSchedulingLogic = async (
       streamUpdate?: (message: object) => void
     ) => {
-      // 3. PREPARE DATA FOR THE SCHEDULER
       streamUpdate?.({ status: 'running', message: 'Analyzing schedule...' });
+
       const lockedEvents: Event[] = [];
-      const tasksToProcess = [];
+      const promotedTasks: Task[] = [];
 
       for (const event of newFlexibleEvents) {
         if (event.locked) {
           lockedEvents.push(event);
-        } else {
-          // If a flexible event has no task or its task is not in our list,
-          // promote it to a low-priority task to be re-scheduled.
-          const taskExists = newTasks.some((t) => t.id === event.taskId);
-          if (!event.taskId || !taskExists) {
-            tasksToProcess.push(promoteEventToTask(event));
+        } else if (
+          !event.taskId || // Not linked to any real task
+          !newTasks.some((t) => t.id === event.taskId) // Or task not loaded
+        ) {
+          const promoted = promoteEventToTask(event);
+          if (promoted && promoted.duration > 0) {
+            promotedTasks.push(promoted as Task);
           }
         }
       }
 
+      const tasksToSchedule = [...newTasks, ...promotedTasks];
       const activeHours = defaultActiveHours;
 
-      // 4. RUN THE SCHEDULER TO GET THE OPTIMIZED ORDER
       streamUpdate?.({
         status: 'running',
-        message: `Optimizing ${tasksToProcess.length} items...`,
+        message: `Optimizing ${tasksToSchedule.length} items...`,
       });
-      const scheduleResult = scheduleWithFlexibleEvents(
-        newTasks,
-        newFlexibleEvents,
-        [],
-        activeHours
+
+      const scheduleResult = scheduleTasks(
+        tasksToSchedule,
+        activeHours,
+        lockedEvents
       );
+
       const { events: newScheduledEvents, logs } = scheduleResult;
 
-      // 5. SAVE THE NEW SCHEDULE TO SUPABASE
       streamUpdate?.({ status: 'running', message: 'Saving new schedule...' });
 
       const eventsToInsert = newScheduledEvents.filter(
         (event) =>
           !newFlexibleEvents.some((existing) => existing.id === event.id)
       );
-      const eventsToUpsert = newScheduledEvents.map((event) => ({
-        id: event.id,
-        ws_id: wsId,
-        task_id: event.taskId,
-        title: event.name,
-        start_at: event.range.start.toISOString(),
-        end_at: event.range.end.toISOString(),
-        locked: event.locked ?? false,
-      }));
+      const eventsToUpsert = newScheduledEvents
+        .filter((event) => !event.locked)
+        .map((event) => ({
+          id: event.id,
+          ws_id: wsId,
+          task_id: event.taskId,
+          title: event.name,
+          start_at: event.range.start.toISOString(),
+          end_at: event.range.end.toISOString(),
+          locked: false,
+        }));
 
       if (eventsToUpsert.length > 0) {
         const { error } = await (await supabase)
@@ -205,11 +208,9 @@ export async function POST(
         }
       }
 
-      // Prepare new events for insertion
-      if (newScheduledEvents.length > 0) {
+      if (eventsToInsert.length > 0) {
         const insertData = eventsToInsert.map((event) => ({
           ws_id: wsId,
-          // creator_id: user.id,
           task_id: event.taskId,
           title: event.name,
           start_at: event.range.start.toISOString(),
@@ -221,10 +222,11 @@ export async function POST(
           .from('workspace_calendar_events')
           .insert(insertData);
 
-        if (insertError)
+        if (insertError) {
           throw new Error(
             `Failed to save new schedule: ${insertError.message}`
           );
+        }
       }
 
       console.log(
