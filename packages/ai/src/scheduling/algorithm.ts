@@ -153,56 +153,6 @@ export const promoteEventToTask = (event: Event): Task | null => {
   };
 };
 
-export const scheduleWithFlexibleEvents = (
-  newTasks: Task[],
-  flexibleEvents: Event[],
-  lockedEvents: Event[],
-  activeHours: ActiveHours
-): ScheduleResult => {
-  const now = dayjs();
-  const futureFlexibleEvents = flexibleEvents.filter(
-    (event) => dayjs(event.range.end).isAfter(now) && !event.locked
-  );
-
-  const futureLockedEvents = lockedEvents.filter((event) =>
-    dayjs(event.range.end).isAfter(now)
-  );
-  // console.log(futureLockedEvents, 'futureFlexibleEvents');
-  if (flexibleEvents.length !== futureFlexibleEvents.length) {
-    console.log(
-      `[Scheduler] Skipped ${flexibleEvents.length - futureFlexibleEvents.length} past flexible events.`
-    );
-  }
-  if (lockedEvents.length !== futureLockedEvents.length) {
-    console.log(
-      `[Scheduler] Skipped ${lockedEvents.length - futureLockedEvents.length} past locked events.`
-    );
-  }
-
-  // Now, promote tasks ONLY from the filtered list of future flexible events.
-  // We add .filter(Boolean) as a safety measure to remove any potential `null`
-  // values if promoteEventToTask is updated to return them.
-  const promotedTasks = futureFlexibleEvents
-    .map(promoteEventToTask)
-    .filter((task): task is Task => task !== null);
-
-  // const promotedLockedTasks = futureLockedEvents
-  //   .map(promoteEventToTask)
-  //   .filter((task): task is Task => task !== null);
-
-  console.log(
-    `[Scheduler] Promoted ${promotedTasks.length} flexible events to tasks.`
-  );
-  const allTasksToProcess = [...newTasks, ...promotedTasks];
-
-  const result = scheduleTasks(
-    allTasksToProcess,
-    activeHours,
-    futureLockedEvents
-  );
-  return result;
-};
-
 export const scheduleTasks = (
   tasks: Task[],
   activeHours: ActiveHours = defaultActiveHours,
