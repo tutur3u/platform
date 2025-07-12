@@ -9,10 +9,10 @@
   "packageManager": "bun@1.2.18",
   "dependencies": {
     "@react-email/components": "^0.2.0",
-    "@react-email/tailwind": "^1.1.0",
+    "@react-email/tailwind": "^1.2.1",
     "@tuturuuu/typescript-config": "workspace:*",
     "react": "^19.1.0",
-    "react-email": "^4.1.1"
+    "react-email": "^4.1.3"
   },
   "devDependencies": {
     "@types/node": "^24.0.13",
