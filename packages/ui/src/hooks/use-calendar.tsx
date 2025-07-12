@@ -813,7 +813,11 @@ export const CalendarProvider = ({
     if (!ws?.id) {
       throw new Error('No workspace selected');
     }
-    const response = await fetch(`/api/v1/calendar/auth/fetch?wsId=${ws.id}`);
+    
+    // Get timezone from settings
+    const userTimezone = settings?.timezone?.timezone || 'auto';
+    
+    const response = await fetch(`/api/v1/calendar/auth/fetch?wsId=${ws.id}&timezone=${userTimezone}`);
     if (!response.ok) {
       throw new Error('Failed to fetch Google Calendar events');
     }
@@ -1239,8 +1243,11 @@ export const CalendarProvider = ({
 
         // Force fetch the latest events from Google with a cache-busting parameter
         try {
+          // Get timezone from settings
+          const userTimezone = settings?.timezone?.timezone || 'auto';
+          
           const response = await fetch(
-            `/api/v1/calendar/auth/fetch?wsId=${ws.id}&force=true&t=${Date.now()}`
+            `/api/v1/calendar/auth/fetch?wsId=${ws.id}&force=true&t=${Date.now()}&timezone=${userTimezone}`
           );
           const data = await response.json();
 

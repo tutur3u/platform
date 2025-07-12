@@ -1,7 +1,9 @@
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
+import utc from 'dayjs/plugin/utc';
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 
+dayjs.extend(utc);
 dayjs.extend(timezone);
 
 export function isAllDayEvent(event: Pick<CalendarEvent, 'start_at' | 'end_at'>, userTimezone?: string): boolean {
@@ -78,7 +80,7 @@ export function createAllDayEvent(
     : userTimezone;
   
   const startAtMidnight = tz 
-    ? dayjs(date).tz(tz).startOf('day')
+    ? dayjs.tz(date, tz).startOf('day')
     : dayjs(date).startOf('day');
   
   const endAtMidnight = startAtMidnight.add(durationDays, 'day');
