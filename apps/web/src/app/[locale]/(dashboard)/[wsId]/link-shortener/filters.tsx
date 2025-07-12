@@ -1,13 +1,20 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { Calendar, Globe, User } from '@tuturuuu/ui/icons';
+import { Building, Calendar, Globe, User } from '@tuturuuu/ui/icons';
+import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { getTranslations } from 'next-intl/server';
 import { Filter } from '../users/filters';
 
-export default async function LinkShortenerFilters() {
+interface Props {
+  wsId: string;
+}
+
+export default async function LinkShortenerFilters({ wsId }: Props) {
   const t = await getTranslations('link-shortener-data-table');
 
   const { data: creators } = await getCreators();
   const { data: domains } = await getDomains();
+  const { data: workspaces } =
+    wsId === ROOT_WORKSPACE_ID ? await getWorkspaces() : { data: [] };
 
   const dateRangeOptions = [
     { label: t('date_filters.today'), value: 'today' },
@@ -22,6 +29,20 @@ export default async function LinkShortenerFilters() {
 
   return (
     <>
+      {wsId === ROOT_WORKSPACE_ID && (
+        <Filter
+          key="workspace-filter"
+          tag="wsId"
+          title={t('workspace')}
+          icon={<Building className="mr-2 h-4 w-4" />}
+          options={workspaces.map((workspace) => ({
+            label: workspace.name || 'Unknown Workspace',
+            value: workspace.id || '',
+            count: workspace.link_count || 0,
+          }))}
+          multiple={true}
+        />
+      )}
       <Filter
         key="creator-filter"
         tag="creatorId"
@@ -167,6 +188,23 @@ async function getDomains() {
         last_created: null,
       }))
       .sort((a, b) => b.link_count - a.link_count);
+  }
+
+  return { data: data || [] };
+}
+
+async function getWorkspaces() {
+  const sbAdmin = await createAdminClient();
+
+  // Use the efficient workspace_link_counts view
+  const { data, error } = await sbAdmin
+    .from('workspace_link_counts')
+    .select('*')
+    .order('link_count', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching workspaces:', error);
+    return { data: [] };
   }
 
   return { data: data || [] };

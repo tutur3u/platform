@@ -1,2 +1,2 @@
 export * from '@react-email/components';
-export * from '@react-email/tailwind';
+export { Tailwind } from '@react-email/tailwind';

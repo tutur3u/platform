@@ -117,7 +117,7 @@
   --blue: hsl(220 80% 45%);       /* True blue, strong saturation */
   --sky: hsl(200 75% 40%);        /* Sky blue */
   --green: hsl(140 75% 35%);      /* True green, dark enough */
-  --yellow: hsl(50 90% 55%);      /* True yellow, brighter for better visibility */
+  --yellow: hsl(30 75% 35%);      /* True yellow, brighter for better visibility */
   --orange: hsl(25 85% 45%);      /* True orange */
   --red: hsl(0 80% 45%);          /* True red */
   --indigo: hsl(250 75% 45%);     /* True indigo */
@@ -130,7 +130,7 @@
   --light-blue: hsl(220 75% 55%);     /* Light blue */
   --light-sky: hsl(200 70% 50%);      /* Light sky blue */
   --light-green: hsl(140 70% 45%);    /* Light green */
-  --light-yellow: hsl(50 85% 65%);    /* Light yellow, brighter for better contrast */
+  --light-yellow: hsl(30 75% 45%);    /* Light yellow, brighter for better contrast */
   --light-orange: hsl(25 80% 55%);    /* Light orange */
   --light-red: hsl(0 75% 55%);        /* Light red */
   --light-indigo: hsl(250 70% 55%);   /* Light indigo */
