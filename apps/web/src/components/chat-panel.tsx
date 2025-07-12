@@ -42,7 +42,7 @@ import { ScrollToTopButton } from './scroll-to-top-button';
 export interface ChatPanelProps
   extends Pick<
     UseChatHelpers<UIMessage>,
-    'sendMessage' | 'status' | 'regenerate' | 'messages' | 'stop'
+    'sendMessage' | 'status' | 'messages' | 'stop'
   > {
   id?: string;
   wsId: string;

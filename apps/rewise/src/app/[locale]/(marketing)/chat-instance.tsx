@@ -163,7 +163,7 @@ const ChatInstance = ({
       lastMessage?.role !== 'user'
     )
       generateSummary(messages);
-  }, [summary, chat, status, messages, model, t, summarizing]);
+  }, [chat, messages, model, status, summarizing, summary, t]);
 
   const [initialScroll, setInitialScroll] = useState(true);
 

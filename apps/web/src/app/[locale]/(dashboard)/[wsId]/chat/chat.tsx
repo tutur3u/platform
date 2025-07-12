@@ -51,7 +51,7 @@ const Chat = ({
   const [model, setModel] = useState<Model | undefined>(defaultModel);
   const [input, setInput] = useState('');
 
-  const { messages, sendMessage, regenerate, stop, status } = useChat({
+  const { messages, sendMessage, stop, status } = useChat({
     id: chat?.id,
     messages: initialMessages,
     transport: new DefaultChatTransport({
@@ -136,40 +136,18 @@ const Chat = ({
 
     // Generate the chat summary if the chat's latest summarized message id
     // is not the same as the last message id in the chat
+    const lastMessage = messages[messages.length - 1];
+
     if (
       wsId &&
       status === 'ready' &&
       !summary &&
       !chat.latest_summarized_message_id &&
-      chat.latest_summarized_message_id !== messages[messages.length - 1]?.id &&
-      messages[messages.length - 1]?.role !== 'user'
+      chat.latest_summarized_message_id !== lastMessage?.id &&
+      lastMessage?.role !== 'user'
     )
       generateSummary(messages);
-
-    if (messages[messages.length - 1]?.role !== 'user') return;
-
-    // Reload the chat if the user sends a message
-    // but the AI did not respond yet after 1 second
-    const reloadTimeout = setTimeout(() => {
-      if (!wsId || messages[messages.length - 1]?.role !== 'user') return;
-      regenerate();
-    }, 1000);
-
-    return () => {
-      clearTimeout(reloadTimeout);
-    };
-  }, [
-    wsId,
-    t,
-    summary,
-    chat,
-    hasKeys,
-    status,
-    messages,
-    model,
-    summarizing,
-    regenerate,
-  ]);
+  }, [chat, hasKeys, messages, model, status, summarizing, summary, t, wsId]);
 
   const [initialScroll, setInitialScroll] = useState(true);
 
@@ -370,7 +348,6 @@ const Chat = ({
           count={count}
           status={status}
           sendMessage={sendMessage}
-          regenerate={regenerate}
           stop={stop}
           input={input}
           inputRef={inputRef}
