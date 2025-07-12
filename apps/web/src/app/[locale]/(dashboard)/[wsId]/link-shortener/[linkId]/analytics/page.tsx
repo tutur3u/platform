@@ -255,100 +255,67 @@ async function fetchAnalyticsData(
       console.error('Error fetching top countries:', topCountriesError);
     }
 
-    // Get analytics data by querying the link_analytics table directly
-    const { data: linkAnalytics, error: linkAnalyticsError } = await sbAdmin
-      .from('link_analytics')
-      .select('*')
-      .eq('link_id', linkId);
+    // Get top cities using RPC function
+    const { data: topCities, error: topCitiesError } = await sbAdmin.rpc(
+      'get_top_cities',
+      { p_link_id: linkId, p_limit: 10 }
+    );
 
-    if (linkAnalyticsError) {
-      console.error('Error fetching link analytics:', linkAnalyticsError);
+    if (topCitiesError) {
+      console.error('Error fetching top cities:', topCitiesError);
     }
 
-    // Process analytics data to create derived metrics
-    const rawAnalytics = linkAnalytics || [];
-
-    // Group by cities
-    const cityGroups = rawAnalytics.reduce(
-      (acc, item) => {
-        const key = `${item.city}-${item.country}`;
-        if (!acc[key]) {
-          acc[key] = {
-            city: item.city || '',
-            country: item.country || '',
-            count: 0,
-          };
-        }
-        acc[key].count++;
-        return acc;
-      },
-      {} as Record<string, { city: string; country: string; count: number }>
+    // Get device types using RPC function
+    const { data: deviceTypes, error: deviceTypesError } = await sbAdmin.rpc(
+      'get_device_types',
+      { p_link_id: linkId, p_limit: 10 }
     );
 
-    // Group by device types
-    const deviceGroups = rawAnalytics.reduce(
-      (acc, item) => {
-        const deviceType = item.device_type || 'Unknown';
-        if (!acc[deviceType]) {
-          acc[deviceType] = { device_type: deviceType, count: 0 };
-        }
-        acc[deviceType].count++;
-        return acc;
-      },
-      {} as Record<string, { device_type: string; count: number }>
+    if (deviceTypesError) {
+      console.error('Error fetching device types:', deviceTypesError);
+    }
+
+    // Get browsers using RPC function
+    const { data: browsers, error: browsersError } = await sbAdmin.rpc(
+      'get_browsers',
+      { p_link_id: linkId, p_limit: 10 }
     );
 
-    // Group by browsers
-    const browserGroups = rawAnalytics.reduce(
-      (acc, item) => {
-        const browser = item.browser || 'Unknown';
-        if (!acc[browser]) {
-          acc[browser] = { browser: browser, count: 0 };
-        }
-        acc[browser].count++;
-        return acc;
-      },
-      {} as Record<string, { browser: string; count: number }>
+    if (browsersError) {
+      console.error('Error fetching browsers:', browsersError);
+    }
+
+    // Get operating systems using RPC function
+    const { data: operatingSystems, error: operatingSystemsError } =
+      await sbAdmin.rpc('get_operating_systems', {
+        p_link_id: linkId,
+        p_limit: 10,
+      });
+
+    if (operatingSystemsError) {
+      console.error('Error fetching operating systems:', operatingSystemsError);
+    }
+
+    // Get clicks by hour using RPC function
+    const { data: clicksByHour, error: clicksByHourError } = await sbAdmin.rpc(
+      'get_clicks_by_hour',
+      { p_link_id: linkId }
     );
 
-    // Group by operating systems
-    const osGroups = rawAnalytics.reduce(
-      (acc, item) => {
-        const os = item.os || 'Unknown';
-        if (!acc[os]) {
-          acc[os] = { os: os, count: 0 };
-        }
-        acc[os].count++;
-        return acc;
-      },
-      {} as Record<string, { os: string; count: number }>
-    );
+    if (clicksByHourError) {
+      console.error('Error fetching clicks by hour:', clicksByHourError);
+    }
 
-    // Group by hour
-    const hourGroups = rawAnalytics.reduce(
-      (acc, item) => {
-        const hour = new Date(item.clicked_at).getHours();
-        if (!acc[hour]) {
-          acc[hour] = { hour: hour, clicks: 0 };
-        }
-        acc[hour].clicks++;
-        return acc;
-      },
-      {} as Record<number, { hour: number; clicks: number }>
-    );
+    // Get clicks by day of week using RPC function
+    const { data: clicksByDayOfWeek, error: clicksByDayOfWeekError } =
+      await sbAdmin.rpc('get_clicks_by_day_of_week', { p_link_id: linkId });
 
-    // Group by day of week
-    const dayGroups = rawAnalytics.reduce(
-      (acc, item) => {
-        const dayOfWeek = new Date(item.clicked_at).getDay();
-        if (!acc[dayOfWeek]) {
-          acc[dayOfWeek] = { day_of_week: dayOfWeek, clicks: 0 };
-        }
-        acc[dayOfWeek].clicks++;
-        return acc;
-      },
-      {} as Record<number, { day_of_week: number; clicks: number }>
-    );
+    if (clicksByDayOfWeekError) {
+      console.error(
+        'Error fetching clicks by day of week:',
+        clicksByDayOfWeekError
+      );
+    }
 
     // Format the data for the UI
     const clicksByDayProcessed = (clicksByDay || []).map((day) => ({
@@ -366,42 +333,36 @@ async function fetchAnalyticsData(
       count: Number(country.count),
     }));
 
-    const topCitiesProcessed = Object.values(cityGroups)
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 10);
-
-    const deviceTypesProcessed = Object.values(deviceGroups)
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 10);
-
-    const browsersProcessed = Object.values(browserGroups)
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 10);
-
-    const operatingSystemsProcessed = Object.values(osGroups)
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 10);
-
-    // Fill in all hours 0-23
-    const clicksByHourProcessed = Array.from({ length: 24 }, (_, i) => ({
-      hour: i,
-      clicks: hourGroups[i]?.clicks || 0,
+    const topCitiesProcessed = (topCities || []).map((city) => ({
+      city: city.city,
+      country: city.country,
+      count: Number(city.count),
     }));
 
-    // Fill in all days of week 0-6
-    const dayNames = [
-      'Sunday',
-      'Monday',
-      'Tuesday',
-      'Wednesday',
-      'Thursday',
-      'Friday',
-      'Saturday',
-    ];
-    const clicksByDayOfWeekProcessed = Array.from({ length: 7 }, (_, i) => ({
-      day_of_week: i,
-      day_name: dayNames[i],
-      clicks: dayGroups[i]?.clicks || 0,
+    const deviceTypesProcessed = (deviceTypes || []).map((device) => ({
+      device_type: device.device_type,
+      count: Number(device.count),
+    }));
+
+    const browsersProcessed = (browsers || []).map((browser) => ({
+      browser: browser.browser,
+      count: Number(browser.count),
+    }));
+
+    const operatingSystemsProcessed = (operatingSystems || []).map((os) => ({
+      os: os.os,
+      count: Number(os.count),
+    }));
+
+    const clicksByHourProcessed = (clicksByHour || []).map((hour) => ({
+      hour: hour.hour,
+      clicks: Number(hour.clicks),
+    }));
+
+    const clicksByDayOfWeekProcessed = (clicksByDayOfWeek || []).map((day) => ({
+      day_of_week: day.day_of_week,
+      day_name: day.day_name,
+      clicks: Number(day.clicks),
     }));
 
     return {
