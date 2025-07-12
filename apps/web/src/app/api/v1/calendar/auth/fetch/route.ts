@@ -180,13 +180,14 @@ export async function GET(request: Request) {
 
       // format the events to match the expected structure
       const formattedEvents = events.map((event) => {
+        // Get timezone from query parameters, fallback to 'auto' for backward compatibility
+        const userTimezone = url.searchParams.get('timezone') || 'auto';
+        
         // Use the new timezone-aware conversion for all-day events
         const { start_at, end_at } = convertGoogleAllDayEvent(
           event.start?.dateTime || event.start?.date || '',
           event.end?.dateTime || event.end?.date || '',
-          // Use the user's browser timezone which is available in the process.env.TZ or system default
-          // This will be enhanced later to use actual user preferences
-          'auto'
+          userTimezone
         );
 
         return {

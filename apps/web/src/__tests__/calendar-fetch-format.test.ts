@@ -1,7 +1,7 @@
 import { describe, test, expect } from 'vitest';
 import dayjs from 'dayjs';
-import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
+import utc from 'dayjs/plugin/utc';
 import { convertGoogleAllDayEvent } from '@tuturuuu/ui/hooks/calendar-utils';
 
 // Extend dayjs with required plugins for timezone handling
@@ -9,9 +9,9 @@ dayjs.extend(utc);
 dayjs.extend(timezone);
 
 describe('convertGoogleAllDayEvent', () => {
-  test('converts all-day (date-only) event to midnight in user timezone', () => {
+  test('converts all-day (date-only) event to local timezone midnight', () => {
     const result = convertGoogleAllDayEvent('2024-01-01', '2024-01-02', 'Asia/Ho_Chi_Minh');
-    // The function converts to user timezone midnight but returns in UTC
+    // The function now stores local timezone midnight times
     expect(result.start_at).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
     expect(result.end_at).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
     // Verify the dates are different (start and end dates)
@@ -32,7 +32,7 @@ describe('convertGoogleAllDayEvent', () => {
 
   test('handles auto timezone', () => {
     const result = convertGoogleAllDayEvent('2024-01-01', '2024-01-02', 'auto');
-    // The function converts to user timezone midnight but returns in UTC
+    // The function now stores local timezone midnight times
     expect(result.start_at).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
     expect(result.end_at).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
     // Verify the dates are different (start and end dates)
@@ -43,5 +43,23 @@ describe('convertGoogleAllDayEvent', () => {
     const result = convertGoogleAllDayEvent('invalid', 'invalid', 'Asia/Ho_Chi_Minh');
     expect(result.start_at).toBeDefined();
     expect(result.end_at).toBeDefined();
+  });
+
+  test('handles multi-day all-day events', () => {
+    const result = convertGoogleAllDayEvent('2024-01-01', '2024-01-05', 'Asia/Ho_Chi_Minh');
+    expect(result.start_at).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
+    expect(result.end_at).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
+    // Verify the dates are different (start and end dates)
+    expect(result.start_at).not.toBe(result.end_at);
+  });
+
+  test('timezone plugin is properly loaded', () => {
+    // Test that dayjs timezone functions work
+    expect(typeof dayjs.tz).toBe('function');
+    
+    // Test that we can create a timezone-aware date
+    const tzDate = dayjs.tz('2024-01-01T00:00:00', 'Asia/Ho_Chi_Minh');
+    expect(tzDate.isValid()).toBe(true);
+    expect(tzDate.toISOString()).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
   });
 }); 

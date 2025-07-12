@@ -133,6 +133,24 @@ export const CalendarSyncProvider = ({
   const isForcedRef = useRef<boolean>(false);
   const queryClient = useQueryClient();
 
+  // Get timezone from localStorage calendar settings - memoized to prevent infinite loops
+  const timezone = useMemo(() => {
+    if (typeof window === 'undefined' || typeof localStorage === 'undefined') {
+      return 'auto';
+    }
+    
+    try {
+      const storedSettings = localStorage.getItem('calendarSettings');
+      if (storedSettings) {
+        const settings = JSON.parse(storedSettings);
+        return settings?.timezone?.timezone || 'auto';
+      }
+    } catch (error) {
+      // Failed to load calendar settings from localStorage
+    }
+    return 'auto';
+  }, []); // Empty dependency array - only calculate once
+
   // Helper to generate cache key from dates
   const getCacheKey = (dateRange: Date[]) => {
     if (!dateRange || dateRange.length === 0) {
@@ -285,7 +303,7 @@ export const CalendarSyncProvider = ({
       const endDate = dayjs(dates[dates.length - 1]).endOf('day');
 
       const response = await fetch(
-        `/api/v1/calendar/auth/fetch?wsId=${wsId}&startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`
+        `/api/v1/calendar/auth/fetch?wsId=${wsId}&startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}&timezone=${timezone}`
       );
       const googleResponse = await response.json();
 
@@ -394,7 +412,7 @@ export const CalendarSyncProvider = ({
 
         // Fetch from Google Calendar
         const response = await fetch(
-          `/api/v1/calendar/auth/fetch?wsId=${wsId}&startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`
+          `/api/v1/calendar/auth/fetch?wsId=${wsId}&startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}&timezone=${timezone}`
         );
 
         const googleResponse = await response.json();
@@ -529,7 +547,7 @@ export const CalendarSyncProvider = ({
         setIsSyncing(false);
       }
     },
-    [wsId, dates, queryClient, isActiveSyncOn]
+    [wsId, dates, queryClient, isActiveSyncOn, timezone]
   );
 
   // Sync to Tuturuuu database when google data changes for current view
