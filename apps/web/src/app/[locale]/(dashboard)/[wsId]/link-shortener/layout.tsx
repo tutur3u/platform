@@ -13,6 +13,7 @@ export default async function LinkShortenerLayout({
   const { wsId } = await params;
 
   if (
+    wsId !== '00000000-0000-0000-0000-000000000000' &&
     !(await verifySecret({
       forceAdmin: true,
       wsId,
