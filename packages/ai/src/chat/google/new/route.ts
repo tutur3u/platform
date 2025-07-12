@@ -20,7 +20,8 @@ export function createPOST(
 ) {
   return async function handler(req: Request) {
     try {
-      const { model = DEFAULT_MODEL_NAME, message } = (await req.json()) as {
+      const { id, model = DEFAULT_MODEL_NAME, message } = (await req.json()) as {
+        id?: string;
         model?: string;
         message?: string;
       };
@@ -93,14 +94,30 @@ export function createPOST(
         );
       }
 
-      const { data: id, error } = await supabase.rpc('create_ai_chat', {
+      const { data: chat, error: chatError } = await supabase.from('ai_chats').insert({
+        id,
         title,
-        message,
+        creator_id: user.id,
         model: model.toLowerCase(),
+      }).select('id').single();
+
+      if (chatError) {
+        console.log(chatError);
+        return NextResponse.json(chatError.message, { status: 500 });
+      }
+
+      const { error: msgError } = await supabase.rpc('insert_ai_chat_message', {
+        message: message,
+        chat_id: chat.id,
+        source: 'Rewise',
       });
 
-      if (error) return NextResponse.json(error.message, { status: 500 });
-      return NextResponse.json({ id, title }, { status: 200 });
+      if (msgError) {
+        console.log(msgError);
+        return NextResponse.json(msgError.message, { status: 500 });
+      }
+
+      return NextResponse.json({ id: chat.id, title }, { status: 200 });
     } catch (error: unknown) {
       console.log(error);
       return NextResponse.json(

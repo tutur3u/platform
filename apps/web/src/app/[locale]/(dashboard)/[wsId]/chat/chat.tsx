@@ -16,6 +16,7 @@ import { ChatList } from '@/components/chat-list';
 import { ChatPanel } from '@/components/chat-panel';
 import { ChatScrollAnchor } from '@/components/chat-scroll-anchor';
 import { EmptyScreen } from '@/components/empty-screen';
+import { generateRandomUUID } from '@tuturuuu/utils/uuid-helper';
 
 export interface ChatProps extends React.ComponentProps<'div'> {
   defaultChat?: Partial<AIChat>;
@@ -29,7 +30,7 @@ export interface ChatProps extends React.ComponentProps<'div'> {
   disableScrollToBottom?: boolean;
 }
 
-const Chat = ({
+export default function Chat({
   defaultChat,
   wsId,
   initialMessages,
@@ -40,7 +41,7 @@ const Chat = ({
   locale,
   disableScrollToTop,
   disableScrollToBottom,
-}: ChatProps) => {
+}: ChatProps) {
   const t = useTranslations('ai_chat');
 
   const router = useRouter();
@@ -51,8 +52,9 @@ const Chat = ({
   const [model, setModel] = useState<Model | undefined>(defaultModel);
   const [input, setInput] = useState('');
 
-  const { messages, sendMessage, stop, status } = useChat({
+  const { id: chatId, messages, sendMessage, stop, status } = useChat({
     id: chat?.id,
+    generateId: generateRandomUUID,
     messages: initialMessages,
     transport: new DefaultChatTransport({
       api:
@@ -68,7 +70,7 @@ const Chat = ({
       credentials: 'include',
       headers: { 'Custom-Header': 'value' },
       body: {
-        id: chat?.id,
+        // DO NOT PUT ID HERE AS IT WILL BE OVERRIDDEN BY chatId IN useChat
         wsId,
         model: chat?.model || model?.value,
       },
@@ -112,8 +114,9 @@ const Chat = ({
       setSummarizing(true);
 
       const res = await fetch(
-        `/api/ai/chat/${model.provider.toLowerCase()}/summary`,
+        `/api/ai/chat/${model.provider.toLowerCase().replace(' ', '-')}/summary`,
         {
+          credentials: 'include',
           method: 'PATCH',
           body: JSON.stringify({
             id: chat.id,
@@ -222,10 +225,12 @@ const Chat = ({
     setPendingPrompt(input);
 
     const res = await fetch(
-      `/api/ai/chat/${model.provider.toLowerCase()}/new`,
+      `/api/ai/chat/${model.provider.toLowerCase().replace(' ', '-')}/new`,
       {
+        credentials: 'include',
         method: 'POST',
         body: JSON.stringify({
+          id: chatId,
           model: model.value,
           message: input,
         }),
@@ -245,7 +250,6 @@ const Chat = ({
       setCollapsed(true);
       setChat({ id, title, model: model.value, is_public: false });
       if (disableScrollToBottom && disableScrollToTop) return;
-      router.replace(`/${wsId}/chat?id=${id}`);
     }
   };
 
@@ -285,7 +289,6 @@ const Chat = ({
   }, [wsId, pendingPrompt, chat?.id, sendMessage]);
 
   useEffect(() => {
-    console.log(pathname);
     if (!pathname.includes('/chat/') && messages.length === 1) {
       window.history.replaceState({}, '', `/${wsId}/chat/${chat?.id}`);
     }
@@ -367,6 +370,4 @@ const Chat = ({
       )}
     </div>
   );
-};
-
-export default Chat;
+}
