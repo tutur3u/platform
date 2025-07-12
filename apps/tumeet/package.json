@@ -1,14 +1,14 @@
 {
-  "name": "@tuturuuu/playground",
+  "name": "@tuturuuu/tumeet",
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev -p 3003 --turbopack",
+    "dev": "next dev -p 7807 --turbopack",
     "devx": "bun sb:stop && bun sb:start && bun dev",
     "devrs": "bun sb:stop && bun sb:reset && bun sb:start && bun dev",
-    "build": "NODE_OPTIONS='--max-old-space-size=8192' next build",
+    "build": "next build",
     "start": "next start",
-    "preview": "next build && next start -p 3003 --turbopack",
+    "preview": "next build && next start -p 7807 --turbopack",
     "stop": "cd ../db && bun sb:stop",
     "sb:status": "cd ../db && bun sb:status",
     "sb:start": "cd ../db && bun sb:start",
@@ -29,7 +29,9 @@
     "@tuturuuu/typescript-config": "workspace:*",
     "@tuturuuu/ui": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
+    "@vercel/analytics": "^1.5.0",
     "dayjs": "^1.11.13",
+    "nanoid": "^5.1.5",
     "next": "^15.3.5",
     "react": "^19.1.0",
     "react-dom": "^19.1.0"
