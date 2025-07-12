@@ -5,9 +5,11 @@ import {
   createDynamicClient,
 } from '@tuturuuu/supabase/next/server';
 import {
-  type CoreMessage,
+  convertToModelMessages,
   type FilePart,
   type ImagePart,
+  type ModelMessage,
+  type UIMessage,
   smoothStream,
   streamText,
   type TextPart,
@@ -24,7 +26,7 @@ async function getAllChatFiles(
   wsId: string,
   chatId: string
 ): Promise<
-  Array<{ fileName: string; content: string | ArrayBuffer; mimeType: string }>
+  Array<{ fileName: string; content: string | ArrayBuffer; mediaType: string }>
 > {
   try {
     const sbDynamic = await createDynamicClient();
@@ -53,7 +55,7 @@ async function getAllChatFiles(
     const fileContents: Array<{
       fileName: string;
       content: string | ArrayBuffer;
-      mimeType: string;
+      mediaType: string;
     }> = [];
 
     const supabase = await createClient();
@@ -61,7 +63,7 @@ async function getAllChatFiles(
     // Process each file
     for (const file of files) {
       const fileName = file.name.split('/').pop() || 'unknown';
-      const mimeType = file.metadata?.mimetype || 'application/octet-stream';
+      const mediaType = file.metadata?.mediaType || 'application/octet-stream';
       let content: string | ArrayBuffer;
 
       const { data: fileData, error: downloadError } = await supabase.storage
@@ -78,7 +80,7 @@ async function getAllChatFiles(
         continue;
       }
 
-      if (mimeType.startsWith('text/') || mimeType === 'application/json') {
+      if (mediaType.startsWith('text/') || mediaType === 'application/json') {
         content = await fileData.text();
       } else {
         // For binary files (images, PDFs, etc.), get ArrayBuffer
@@ -88,7 +90,7 @@ async function getAllChatFiles(
       fileContents.push({
         fileName,
         content,
-        mimeType,
+        mediaType,
       });
     }
 
@@ -102,10 +104,10 @@ async function getAllChatFiles(
 }
 
 async function processMessagesWithFiles(
-  messages: CoreMessage[],
+  messages: ModelMessage[],
   wsId: string,
   chatId: string
-): Promise<CoreMessage[]> {
+): Promise<ModelMessage[]> {
   const chatFiles = await getAllChatFiles(wsId, chatId);
   if (chatFiles.length === 0) {
     return messages;
@@ -143,7 +145,7 @@ async function processMessagesWithFiles(
     if (lastPart?.type === 'file') {
       console.log('Last file part:', {
         type: 'file',
-        mimeType: lastPart.mimeType,
+        mediaType: lastPart.mediaType,
       });
     }
   }
@@ -154,11 +156,11 @@ async function processMessagesWithFiles(
 }
 
 function addFilesToContent(
-  existingContent: CoreMessage['content'],
+  existingContent: ModelMessage['content'],
   chatFiles: Array<{
     fileName: string;
     content: string | ArrayBuffer;
-    mimeType: string;
+    mediaType: string;
   }>
 ): (TextPart | ImagePart | FilePart)[] {
   const contentParts: Array<TextPart | ImagePart | FilePart> = [];
@@ -179,21 +181,21 @@ function addFilesToContent(
   }
 
   for (const file of chatFiles) {
-    const { content, mimeType } = file;
+    const { content, mediaType } = file;
 
-    if (mimeType.startsWith('image/')) {
+    if (mediaType.startsWith('image/')) {
       const imagePart: ImagePart = {
         type: 'image',
         image:
           content instanceof ArrayBuffer ? new Uint8Array(content) : content,
-        mimeType,
+        mediaType,
       };
       contentParts.push(imagePart);
     } else if (content instanceof ArrayBuffer && content.byteLength > 0) {
       const filePart: FilePart = {
         type: 'file',
         data: new Uint8Array(content),
-        mimeType,
+        mediaType,
       };
       contentParts.push(filePart);
     } else if (typeof content === 'string') {
@@ -201,7 +203,7 @@ function addFilesToContent(
       const filePart: FilePart = {
         type: 'file',
         data: new TextEncoder().encode(content),
-        mimeType,
+        mediaType,
       };
       contentParts.push(filePart);
     }
@@ -227,7 +229,7 @@ export function createPOST(
     } = (await req.json()) as {
       id?: string;
       model?: string;
-      messages?: CoreMessage[];
+      messages?: UIMessage[];
       wsId?: string;
     };
 
@@ -296,8 +298,6 @@ export function createPOST(
         return new Response(threadError.message, { status: 500 });
       }
 
-      console.log('Thread:', thread);
-
       const sbDynamic = await createDynamicClient();
 
       if (thread && thread.length === 1 && thread[0]?.role === 'USER') {
@@ -334,15 +334,18 @@ export function createPOST(
         }
       }
 
+      // Convert UIMessages to ModelMessages
+      const modelMessages = convertToModelMessages(messages);
+
       // Process messages and handle file attachments
       const processedMessages =
         wsId && chatId
-          ? await processMessagesWithFiles(messages, wsId, chatId)
-          : messages;
+          ? await processMessagesWithFiles(modelMessages, wsId, chatId)
+          : modelMessages;
 
       if (processedMessages.length !== 1) {
         const userMessages = processedMessages.filter(
-          (msg: CoreMessage) => msg.role === 'user'
+          (msg: ModelMessage) => msg.role === 'user'
         );
 
         const lastMessage = userMessages[userMessages.length - 1];
@@ -390,28 +393,31 @@ export function createPOST(
 
       const result = streamText({
         experimental_transform: smoothStream(),
-        model: google(model, {
-          safetySettings: [
-            {
-              category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
-              threshold: 'BLOCK_NONE',
-            },
-            {
-              category: 'HARM_CATEGORY_HATE_SPEECH',
-              threshold: 'BLOCK_NONE',
-            },
-            {
-              category: 'HARM_CATEGORY_HARASSMENT',
-              threshold: 'BLOCK_NONE',
-            },
-            {
-              category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
-              threshold: 'BLOCK_NONE',
-            },
-          ],
-        }),
+        model: google(model),
         messages: processedMessages,
         system: systemInstruction,
+        providerOptions: {
+          google: {
+            safetySettings: [
+              {
+                category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
+                threshold: 'BLOCK_NONE',
+              },
+              {
+                category: 'HARM_CATEGORY_HATE_SPEECH',
+                threshold: 'BLOCK_NONE',
+              },
+              {
+                category: 'HARM_CATEGORY_HARASSMENT',
+                threshold: 'BLOCK_NONE',
+              },
+              {
+                category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
+                threshold: 'BLOCK_NONE',
+              },
+            ],
+          },
+        },
         onFinish: async (response) => {
           if (!response.text) {
             console.log('No content found');
@@ -425,8 +431,8 @@ export function createPOST(
             role: 'ASSISTANT',
             model: model.toLowerCase(),
             finish_reason: response.finishReason,
-            prompt_tokens: response.usage.promptTokens,
-            completion_tokens: response.usage.completionTokens,
+            prompt_tokens: response.usage.inputTokens,
+            completion_tokens: response.usage.outputTokens,
             metadata: { source: 'Rewise' },
           });
 
@@ -440,7 +446,7 @@ export function createPOST(
         },
       });
 
-      return result.toDataStreamResponse();
+      return result.toUIMessageStreamResponse();
     } catch (error) {
       if (error instanceof Error) {
         console.log(error.message);

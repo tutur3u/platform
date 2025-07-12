@@ -1,6 +1,6 @@
 import { vertex } from '@ai-sdk/google-vertex/edge';
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { generateText, type Message } from 'ai';
+import { convertToModelMessages, generateText, type UIMessage } from 'ai';
 import { NextResponse } from 'next/server';
 
 const DEFAULT_MODEL_NAME = 'gemini-1.5-flash-002';
@@ -8,28 +8,7 @@ export const runtime = 'edge';
 export const maxDuration = 60;
 export const preferredRegion = 'sin1';
 
-const vertexModel = vertex(DEFAULT_MODEL_NAME, {
-  safetySettings: [
-    { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
-    { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
-    { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
-    { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
-  ],
-});
-
-async function generateChatSummaryPrompt(prompt: string) {
-  try {
-    const res = await generateText({
-      model: vertexModel,
-      prompt,
-      system: systemInstruction,
-    });
-    return res?.text || null;
-  } catch (error) {
-    console.log('Error generating chat summary:', error);
-    throw error;
-  }
-}
+const vertexModel = vertex(DEFAULT_MODEL_NAME);
 
 export async function PATCH(req: Request) {
   const { id } = (await req.json()) as {
@@ -65,7 +44,8 @@ export async function PATCH(req: Request) {
     const messages = rawMessages.map((msg) => ({
       ...msg,
       role: msg.role.toLowerCase(),
-    })) as Message[];
+      parts: [{ type: 'text', text: msg.content || '' }],
+    })) as UIMessage[];
 
     if (!messages[messages.length - 1]?.id)
       return new Response('Internal Server Error', { status: 500 });
@@ -73,21 +53,47 @@ export async function PATCH(req: Request) {
     if (messages[messages.length - 1]?.role === 'user')
       return new Response('Cannot summarize user message', { status: 400 });
 
-    let prompt = '';
-    for (const message of messages) {
-      prompt += message.content;
-    }
+    const aiMessages = convertToModelMessages(messages);
 
-    if (!prompt) return new Response('Internal Server Error', { status: 500 });
+    const result = await generateText({
+      model: vertexModel,
+      messages: aiMessages,
+      system: systemInstruction,
+      providerOptions: {
+        vertex: {
+          safetySettings: [
+            {
+              category: 'HARM_CATEGORY_HARASSMENT',
+              threshold: 'BLOCK_NONE',
+            },
+            {
+              category: 'HARM_CATEGORY_HATE_SPEECH',
+              threshold: 'BLOCK_NONE',
+            },
+            {
+              category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
+              threshold: 'BLOCK_NONE',
+            },
+            {
+              category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
+              threshold: 'BLOCK_NONE',
+            },
+          ],
+        },
+      },
+    });
 
-    const completion = await generateChatSummaryPrompt(prompt);
+    const completion = result.text;
 
     if (!completion) return new Response('No content found', { status: 404 });
+
+    if (!messages[messages.length - 1]?.id)
+      return new Response('Internal Server Error', { status: 500 });
 
     const { error } = await supabase
       .from('ai_chats')
       .update({
-        latest_summarized_message_id: messages[messages.length - 1]!.id,
+        latest_summarized_message_id: messages[messages.length - 1]?.id,
         summary: completion,
       })
       .eq('id', id);
@@ -97,11 +103,11 @@ export async function PATCH(req: Request) {
     return new Response(JSON.stringify({ response: completion.trim() }), {
       status: 200,
     });
-  } catch (error: any) {
+  } catch (error) {
     console.log(error);
     return NextResponse.json(
       {
-        message: `## Edge API Failure\nCould not complete the request. Please view the **Stack trace** below.\n\`\`\`bash\n${error?.stack}`,
+        message: `## Edge API Failure\nCould not complete the request. Please view the **Stack trace** below.\n\`\`\`bash\n${(error as Error)?.stack || 'No stack trace available'}`,
       },
       {
         status: 500,

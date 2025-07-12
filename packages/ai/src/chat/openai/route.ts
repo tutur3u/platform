@@ -3,7 +3,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
-import { type CoreMessage, smoothStream, streamText } from 'ai';
+import { convertToModelMessages, type ModelMessage, smoothStream, streamText, type UIMessage } from 'ai';
 import { NextResponse } from 'next/server';
 
 export const runtime = 'edge';
@@ -16,7 +16,7 @@ export async function POST(req: Request) {
   const { id, model, messages, previewToken } = (await req.json()) as {
     id?: string;
     model?: string;
-    messages?: CoreMessage[];
+    messages?: UIMessage[];
     previewToken?: string;
   };
 
@@ -54,9 +54,11 @@ export async function POST(req: Request) {
       chatId = data.id;
     }
 
+    const modelMessages = convertToModelMessages(messages);
+
     if (messages.length !== 1) {
-      const userMessages = messages.filter(
-        (msg: CoreMessage) => msg.role === 'user'
+      const userMessages = modelMessages.filter(
+        (msg: ModelMessage) => msg.role === 'user'
       );
 
       const message = userMessages[userMessages.length - 1]?.content;
@@ -86,7 +88,7 @@ export async function POST(req: Request) {
     const result = streamText({
       experimental_transform: smoothStream(),
       model: openai(model),
-      messages,
+      messages: modelMessages,
       system: systemInstruction,
       onFinish: async (response) => {
         console.log('AI Response:', response);
@@ -103,8 +105,8 @@ export async function POST(req: Request) {
           role: 'ASSISTANT',
           model: model.toLowerCase(),
           finish_reason: response.finishReason,
-          prompt_tokens: response.usage.promptTokens,
-          completion_tokens: response.usage.completionTokens,
+          prompt_tokens: response.usage.inputTokens,
+          completion_tokens: response.usage.outputTokens,
           metadata: { source: 'Rewise' },
         });
 
@@ -118,15 +120,15 @@ export async function POST(req: Request) {
       },
     });
 
-    return result.toDataStreamResponse();
-  } catch (error: any) {
+    return result.toUIMessageStreamResponse();
+  } catch (error) {
     console.log(error);
     return NextResponse.json(
       {
-        message: `## Edge API Failure\nCould not complete the request. Please view the **Stack trace** below.\n\`\`\`bash\n${error?.stack}`,
+        message: `## Edge API Failure\nCould not complete the request. Please view the **Stack trace** below.\n\`\`\`bash\n${(error as Error)?.stack || 'No stack trace available'}`,
       },
       {
-        status: 200,
+        status: 500,
       }
     );
   }

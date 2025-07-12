@@ -1,12 +1,14 @@
-import type { Message } from '@tuturuuu/ai/types';
+import type { UIMessage } from '@tuturuuu/ai/types';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { useCallback, useEffect, useState } from 'react';
 
 export function useMessages(
   chatId: string,
-  messages: Message[],
+  messages: UIMessage[],
   // eslint-disable-next-line no-unused-vars
-  setMessages: (messages: Message[] | ((prev: Message[]) => Message[])) => void
+  setMessages: (
+    messages: UIMessage[] | ((prev: UIMessage[]) => UIMessage[])
+  ) => void
 ) {
   const [hasAccess, setHasAccess] = useState(false);
 
@@ -44,8 +46,8 @@ export function useMessages(
 
   // Function to add a new message from realtime updates
   const addMessage = useCallback(
-    (message: Message) => {
-      setMessages((prev: Message[]) => {
+    (message: UIMessage) => {
+      setMessages((prev: UIMessage[]) => {
         // Don't add if message already exists
         if (prev.some((m) => m.id === message.id)) {
           return prev;
@@ -58,7 +60,7 @@ export function useMessages(
 
   // Function to update a message from realtime updates
   const updateMessage = useCallback(
-    (updatedMessage: Message) => {
+    (updatedMessage: UIMessage) => {
       setMessages((prev) =>
         prev.map((message) =>
           message.id === updatedMessage.id ? updatedMessage : message
@@ -116,7 +118,7 @@ export function useMessages(
                   email: userData.user_private_details?.email,
                   avatar_url: userData.avatar_url,
                 },
-              } as unknown as Message;
+              } as unknown as UIMessage;
 
               addMessage(messageWithUser);
             }
@@ -125,7 +127,7 @@ export function useMessages(
             addMessage({
               ...newMessage,
               role: newMessage.role.toLowerCase(),
-            } as Message);
+            } as UIMessage);
           }
         }
       )
@@ -161,7 +163,7 @@ export function useMessages(
                   email: userData.user_private_details?.email,
                   avatar_url: userData.avatar_url,
                 },
-              } as unknown as Message;
+              } as unknown as UIMessage;
 
               updateMessage(messageWithUser);
             }
@@ -170,7 +172,7 @@ export function useMessages(
             updateMessage({
               ...updatedMessage,
               role: updatedMessage.role.toLowerCase(),
-            } as Message);
+            } as UIMessage);
           }
         }
       );

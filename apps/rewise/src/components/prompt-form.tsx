@@ -1,4 +1,3 @@
-import type { UseChatHelpers } from '@tuturuuu/ai/types';
 import type { AIChat } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
 import type { StatedFile } from '@tuturuuu/ui/custom/file-uploader';
@@ -32,16 +31,16 @@ import { useEffect, useState } from 'react';
 import Textarea from 'react-textarea-autosize';
 import { useEnterSubmit } from '@/lib/hooks/use-enter-submit';
 
-export interface PromptProps
-  extends Pick<UseChatHelpers, 'input' | 'setInput'> {
+export interface PromptProps {
   id: string | undefined;
   provider: string | undefined;
   model?: string;
   chat: Partial<AIChat> | undefined;
   files: StatedFile[];
   setFiles: React.Dispatch<React.SetStateAction<StatedFile[]>>;
+  input: string;
   inputRef: React.RefObject<HTMLTextAreaElement | null>;
-  // eslint-disable-next-line no-unused-vars
+  setInput: (input: string) => void;
   onSubmit: (value: string) => Promise<void>;
   isLoading: boolean;
   showExtraOptions: boolean;
@@ -52,7 +51,6 @@ export interface PromptProps
 }
 
 export function PromptForm({
-  onSubmit,
   id,
   provider,
   model,
@@ -62,6 +60,7 @@ export function PromptForm({
   input,
   inputRef,
   setInput,
+  onSubmit,
   isLoading,
   showExtraOptions,
   setShowExtraOptions,
@@ -119,7 +118,7 @@ export function PromptForm({
           <div className="scrollbar-none flex w-full items-center gap-2 overflow-x-auto font-semibold">
             {model && (
               <>
-                <div className="flex shrink-0 items-center gap-1 rounded border border-dynamic-orange/20 bg-dynamic-orange/10 px-2 py-1 text-xs font-semibold text-dynamic-orange">
+                <div className="flex shrink-0 items-center gap-1 rounded border border-dynamic-orange/20 bg-dynamic-orange/10 px-2 py-1 font-semibold text-dynamic-orange text-xs">
                   <Sparkles className="h-3 w-3" />
                   <span>
                     {provider && (

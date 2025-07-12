@@ -1,6 +1,7 @@
 'use client';
 
 import { useClickOutside } from '@mantine/hooks';
+import { DefaultChatTransport } from '@tuturuuu/ai/core';
 import { useChat } from '@tuturuuu/ai/react';
 import type { AIChat } from '@tuturuuu/types/db';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
@@ -34,19 +35,15 @@ export default function FleetingNavigator({ wsId }: { wsId: string }) {
 
   const { messages, setMessages } = useChat({
     id: chat?.id,
-    //   initialMessages,
-    api: `/api/ai/chat/${defaultProvider}`,
-    body: {
-      id: chat?.id,
-      wsId,
-    },
-    onResponse(response) {
-      if (!response.ok)
-        toast({
-          title: t('ai_chat.something_went_wrong'),
-          description: t('ai_chat.try_again_later'),
-        });
-    },
+    transport: new DefaultChatTransport({
+      api: `/api/ai/chat/${defaultProvider}`,
+      credentials: 'include',
+      headers: { 'Custom-Header': 'value' },
+      body: {
+        id: chat?.id,
+        wsId,
+      },
+    }),
     onError() {
       toast({
         title: t('ai_chat.something_went_wrong'),
