@@ -27,6 +27,7 @@ import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import * as z from 'zod';
 import { ImageCropper } from '@/components/image-cropper';
+import { convertHeicToJpeg, isHeicFile } from '@/lib/heic-converter';
 
 interface AvatarProps {
   user: WorkspaceUser;
@@ -43,83 +44,6 @@ const FormSchema = z.object({
 
 const MAX_FILE_SIZE = 2 * 1024 * 1024;
 const AVATAR_SIZE = 500;
-
-const isHeicFile = (file: File): boolean => {
-  return (
-    file.type === 'image/heic' ||
-    file.type === 'image/heif' ||
-    file.name.toLowerCase().endsWith('.heic') ||
-    file.name.toLowerCase().endsWith('.heif')
-  );
-};
-
-const convertHeicToJpeg = async (file: File): Promise<File> => {
-  try {
-    // Use heic-convert/browser for reliable HEIC conversion
-    const heicConvert = (await import('heic-convert/browser')).default;
-
-    // Convert File to ArrayBuffer
-    const arrayBuffer = await file.arrayBuffer();
-
-    // Create timeout to prevent hanging
-    const conversionPromise = heicConvert({
-      buffer: new Uint8Array(arrayBuffer),
-      format: 'JPEG',
-      quality: 0.9,
-    });
-
-    const timeoutPromise = new Promise((_, reject) => {
-      setTimeout(
-        () => reject(new Error('Conversion timed out after 30 seconds')),
-        30000
-      );
-    });
-
-    // Race between conversion and timeout
-    const outputBuffer = (await Promise.race([
-      conversionPromise,
-      timeoutPromise,
-    ])) as ArrayBuffer;
-
-    return new File(
-      [outputBuffer],
-      file.name.replace(/\.(heic|heif)$/i, '.jpg'),
-      {
-        type: 'image/jpeg',
-        lastModified: file.lastModified,
-      }
-    );
-  } catch (error) {
-    console.error('HEIC conversion failed:', error);
-
-    // Provide specific error types for proper translation
-    if (error instanceof Error) {
-      if (error.message.includes('timeout')) {
-        const timeoutError = new Error('HEIC_CONVERSION_TIMEOUT');
-        timeoutError.name = 'HEIC_CONVERSION_TIMEOUT';
-        throw timeoutError;
-      } else if (
-        error.message.includes('memory') ||
-        error.message.includes('heap')
-      ) {
-        const memoryError = new Error('HEIC_CONVERSION_MEMORY');
-        memoryError.name = 'HEIC_CONVERSION_MEMORY';
-        throw memoryError;
-      } else if (
-        error.message.includes('codec') ||
-        error.message.includes('unsupported')
-      ) {
-        const unsupportedError = new Error('HEIC_CONVERSION_UNSUPPORTED');
-        unsupportedError.name = 'HEIC_CONVERSION_UNSUPPORTED';
-        throw unsupportedError;
-      }
-    }
-
-    const conversionError = new Error('HEIC_CONVERSION_FAILED');
-    conversionError.name = 'HEIC_CONVERSION_FAILED';
-    throw conversionError;
-  }
-};
 
 export default function UserAvatar({ user }: AvatarProps) {
   const t = useTranslations();
