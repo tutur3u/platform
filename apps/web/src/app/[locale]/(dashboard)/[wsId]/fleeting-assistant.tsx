@@ -127,14 +127,14 @@ export default function FleetingAssistant({
     if (messagesRef.current) {
       messagesRef.current.scrollTop = messagesRef.current.scrollHeight;
     }
-  }, [messagesRef, currentMessages]);
+  }, []);
 
   useEffect(() => {
     // only set focus when device is not mobile
     if (window.innerWidth > 768) {
       form.setFocus('prompt');
     }
-  }, [form, chat?.id]);
+  }, [form]);
 
   return (
     <div className="flex h-full flex-col">
@@ -175,9 +175,9 @@ export default function FleetingAssistant({
         >
           {currentMessages.length > 0 ? (
             <div className="grid h-fit w-full gap-2">
-              {currentMessages.map((message, i) => (
+              {currentMessages.map((message) => (
                 <FleetingAssistantMessage
-                  key={i}
+                  key={message.id}
                   setInput={(value: string) => {
                     form.setValue('prompt', value);
                     form.trigger('prompt');

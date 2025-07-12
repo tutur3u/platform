@@ -172,7 +172,7 @@ const ChatInstance = ({
     setSummary(undefined);
     setChat(undefined);
     setCollapsed(true);
-  }, [chat?.id]);
+  }, [chat?.id, setChat]);
 
   useEffect(() => {
     // if there is "input" in the query string, we will
@@ -289,7 +289,7 @@ const ChatInstance = ({
     });
     setPendingPrompt(null);
     hasRun.current = true;
-  }, []);
+  }, [chat?.id, pendingPrompt, sendMessage, setPendingPrompt]);
 
   useEffect(() => {
     if (!pathname.includes('/c/') && messages.length === 1) {

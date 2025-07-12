@@ -11,7 +11,7 @@ import { cn } from '@tuturuuu/utils/format';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import type React from 'react';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ChatList } from '@/components/chat-list';
 import { ChatPanel } from '@/components/chat-panel';
 import { ChatScrollAnchor } from '@/components/chat-scroll-anchor';
@@ -89,7 +89,7 @@ const Chat = ({
   useEffect(() => {
     setSummary(chat?.summary || '');
     setSummarizing(false);
-  }, [chat?.id, messages?.length, chat?.latest_summarized_message_id]);
+  }, [chat?.summary]);
 
   useEffect(() => {
     if (!chat || !hasKeys || status === 'streaming') return;
@@ -158,9 +158,27 @@ const Chat = ({
     return () => {
       clearTimeout(reloadTimeout);
     };
-  }, [wsId, summary, chat, hasKeys, status, messages, regenerate]);
+  }, [
+    wsId,
+    t,
+    summary,
+    chat,
+    hasKeys,
+    status,
+    messages,
+    model,
+    summarizing,
+    regenerate,
+  ]);
 
   const [initialScroll, setInitialScroll] = useState(true);
+
+  const clearChat = useCallback(() => {
+    if (defaultChat?.id) return;
+    setSummary(undefined);
+    setChat(undefined);
+    setCollapsed(true);
+  }, [defaultChat?.id]);
 
   useEffect(() => {
     // if there is "input" in the query string, we will
@@ -202,11 +220,13 @@ const Chat = ({
     chat?.id,
     searchParams,
     router,
-    setInput,
     wsId,
     chats,
     count,
     initialScroll,
+    disableScrollToBottom,
+    disableScrollToTop,
+    clearChat,
   ]);
 
   const [collapsed, setCollapsed] = useState(true);
@@ -214,7 +234,7 @@ const Chat = ({
 
   useEffect(() => {
     if (inputRef.current) inputRef.current.focus();
-  }, [input, inputRef]);
+  }, []);
 
   const [pendingPrompt, setPendingPrompt] = useState<string | null>(null);
 
@@ -277,13 +297,6 @@ const Chat = ({
     });
   };
 
-  const clearChat = () => {
-    if (defaultChat?.id) return;
-    setSummary(undefined);
-    setChat(undefined);
-    setCollapsed(true);
-  };
-
   useEffect(() => {
     if (!pendingPrompt || !chat?.id || !wsId) return;
     sendMessage({
@@ -298,7 +311,7 @@ const Chat = ({
     if (!pathname.includes('/chat/') && messages.length === 1) {
       window.history.replaceState({}, '', `/${wsId}/chat/${chat?.id}`);
     }
-  }, [chat?.id, pathname, messages]);
+  }, [wsId, chat?.id, pathname, messages]);
 
   return (
     <div className="@container relative h-full">
