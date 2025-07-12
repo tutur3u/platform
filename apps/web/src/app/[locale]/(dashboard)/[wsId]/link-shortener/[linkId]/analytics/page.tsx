@@ -254,7 +254,7 @@ export default async function LinkAnalyticsPage({ params }: Props) {
               <div className="space-y-4">
                 {topReferrers.length > 0 ? (
                   <div className="space-y-3">
-                    {topReferrers.slice(0, 8).map((referrer, index) => {
+                    {topReferrers.slice(0, 8).map((referrer, index: number) => {
                       const maxCount = Math.max(
                         ...topReferrers.map((r) => r.count)
                       );
@@ -316,7 +316,7 @@ export default async function LinkAnalyticsPage({ params }: Props) {
               <div className="space-y-4">
                 {topCountries.length > 0 ? (
                   <div className="space-y-3">
-                    {topCountries.slice(0, 8).map((country, index) => {
+                    {topCountries.slice(0, 8).map((country, index: number) => {
                       const maxCount = Math.max(
                         ...topCountries.map((c) => c.count)
                       );
@@ -440,39 +440,51 @@ async function fetchAnalyticsData(linkId: string) {
       return null;
     }
 
-    // Get clicks by day (last 30 days)
-    const { data: clicksByDay } = await sbAdmin
-      .from('link_analytics')
-      .select('clicked_at')
-      .eq('link_id', linkId)
-      .gte(
-        'clicked_at',
-        new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
-      )
-      .order('clicked_at', { ascending: false });
+    // Get clicks by day using RPC function (last 30 days)
+    const { data: clicksByDay, error: clicksByDayError } = await sbAdmin.rpc(
+      'get_clicks_by_day',
+      { p_link_id: linkId, p_days: 30 }
+    );
 
-    // Get top referrers
-    const { data: topReferrers } = await sbAdmin
-      .from('link_analytics')
-      .select('referrer_domain')
-      .eq('link_id', linkId)
-      .not('referrer_domain', 'is', null);
+    if (clicksByDayError) {
+      console.error('Error fetching clicks by day:', clicksByDayError);
+    }
 
-    // Get top countries
-    const { data: topCountries } = await sbAdmin
-      .from('link_analytics')
-      .select('country')
-      .eq('link_id', linkId)
-      .not('country', 'is', null);
+    // Get top referrers using RPC function
+    const { data: topReferrers, error: topReferrersError } = await sbAdmin.rpc(
+      'get_top_referrers',
+      { p_link_id: linkId, p_limit: 10 }
+    );
 
-    // Process clicks by day
-    const clicksByDayProcessed = processClicksByDay(clicksByDay || []);
+    if (topReferrersError) {
+      console.error('Error fetching top referrers:', topReferrersError);
+    }
 
-    // Process top referrers
-    const topReferrersProcessed = processTopReferrers(topReferrers || []);
+    // Get top countries using RPC function
+    const { data: topCountries, error: topCountriesError } = await sbAdmin.rpc(
+      'get_top_countries',
+      { p_link_id: linkId, p_limit: 10 }
+    );
 
-    // Process top countries
-    const topCountriesProcessed = processTopCountries(topCountries || []);
+    if (topCountriesError) {
+      console.error('Error fetching top countries:', topCountriesError);
+    }
+
+    // Format the data for the UI
+    const clicksByDayProcessed = (clicksByDay || []).map((day) => ({
+      date: day.click_date,
+      clicks: Number(day.clicks),
+    }));
+
+    const topReferrersProcessed = (topReferrers || []).map((ref) => ({
+      domain: ref.domain,
+      count: Number(ref.count),
+    }));
+
+    const topCountriesProcessed = (topCountries || []).map((country) => ({
+      country: country.country,
+      count: Number(country.count),
+    }));
 
     return {
       link,
@@ -492,49 +504,4 @@ async function fetchAnalyticsData(linkId: string) {
     console.error('Failed to fetch analytics data:', error);
     return null;
   }
-}
-
-function processClicksByDay(clicks: Array<{ clicked_at: string }>) {
-  const dayCountMap = new Map<string, number>();
-
-  clicks.forEach((click) => {
-    const date = new Date(click.clicked_at).toISOString().split('T')[0];
-    if (!date) return;
-    dayCountMap.set(date, (dayCountMap.get(date) || 0) + 1);
-  });
-
-  return Array.from(dayCountMap.entries())
-    .map(([date, clicks]) => ({ date, clicks }))
-    .sort((a, b) => b.date.localeCompare(a.date));
-}
-
-function processTopReferrers(
-  referrers: Array<{ referrer_domain: string | null }>
-) {
-  const referrerCountMap = new Map<string, number>();
-
-  referrers.forEach((ref) => {
-    const domain = ref.referrer_domain || 'Direct';
-    referrerCountMap.set(domain, (referrerCountMap.get(domain) || 0) + 1);
-  });
-
-  return Array.from(referrerCountMap.entries())
-    .map(([domain, count]) => ({ domain, count }))
-    .sort((a, b) => b.count - a.count);
-}
-
-function processTopCountries(countries: Array<{ country: string | null }>) {
-  const countryCountMap = new Map<string, number>();
-
-  countries.forEach((country) => {
-    const countryName = country.country || 'Unknown';
-    countryCountMap.set(
-      countryName,
-      (countryCountMap.get(countryName) || 0) + 1
-    );
-  });
-
-  return Array.from(countryCountMap.entries())
-    .map(([country, count]) => ({ country, count }))
-    .sort((a, b) => b.count - a.count);
 }

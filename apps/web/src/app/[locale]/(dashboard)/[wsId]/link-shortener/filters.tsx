@@ -196,47 +196,16 @@ async function getDomains() {
 async function getWorkspaces() {
   const sbAdmin = await createAdminClient();
 
-  // Get workspaces with link counts
-  const { data: rawData, error } = await sbAdmin
-    .from('shortened_links')
-    .select(`
-      ws_id,
-      workspaces!ws_id (
-        id,
-        name,
-        logo_url
-      )
-    `)
-    .not('ws_id', 'is', null);
+  // Use the efficient workspace_link_counts view
+  const { data, error } = await sbAdmin
+    .from('workspace_link_counts')
+    .select('*')
+    .order('link_count', { ascending: false });
 
   if (error) {
     console.error('Error fetching workspaces:', error);
     return { data: [] };
   }
 
-  // Aggregate workspaces with link counts
-  const workspaceCounts = new Map();
-
-  rawData?.forEach((link) => {
-    if (link.workspaces) {
-      const workspaceId = link.workspaces.id;
-      if (workspaceCounts.has(workspaceId)) {
-        workspaceCounts.set(workspaceId, {
-          ...workspaceCounts.get(workspaceId),
-          link_count: workspaceCounts.get(workspaceId).link_count + 1,
-        });
-      } else {
-        workspaceCounts.set(workspaceId, {
-          ...link.workspaces,
-          link_count: 1,
-        });
-      }
-    }
-  });
-
-  const data = Array.from(workspaceCounts.values()).sort(
-    (a, b) => b.link_count - a.link_count
-  );
-
-  return { data };
+  return { data: data || [] };
 }
