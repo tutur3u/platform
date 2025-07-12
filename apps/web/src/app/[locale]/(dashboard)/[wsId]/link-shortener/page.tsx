@@ -10,7 +10,14 @@ import {
   CardHeader,
   CardTitle,
 } from '@tuturuuu/ui/card';
-import { Clock, LinkIcon, TrendingUp, Users } from '@tuturuuu/ui/icons';
+import {
+  BarChart3,
+  Clock,
+  LinkIcon,
+  MousePointerClick,
+  TrendingUp,
+  Users,
+} from '@tuturuuu/ui/icons';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { getTranslations } from 'next-intl/server';
 import { CustomDataTable } from '@/components/custom-data-table';
@@ -26,6 +33,10 @@ type ShortenedLink = Tables<'shortened_links'> & {
     avatar_url: string | null;
   } | null;
   href?: string;
+  click_count?: number;
+  analytics?: {
+    total_clicks: number;
+  } | null;
 };
 
 interface Props {
@@ -50,11 +61,29 @@ export default async function LinkShortenerPage({
   const { wsId } = await params;
   const t = await getTranslations();
 
-  const { data: rawData, count } = await getData(wsId, await searchParams);
+  const [{ data: rawData, count }, analytics] = await Promise.all([
+    getData(wsId, await searchParams),
+    getAnalyticsData(wsId),
+  ]);
+
+  // Fetch analytics data separately
+  const sbAdmin = await createAdminClient();
+  const { data: analyticsData } = await sbAdmin
+    .from('link_analytics_summary')
+    .select('link_id, total_clicks')
+    .in(
+      'link_id',
+      rawData.map((d) => d.id)
+    );
+
+  const analyticsMap = new Map(
+    analyticsData?.map((a: any) => [a.link_id || '', a.total_clicks || 0]) || []
+  );
 
   const data = rawData.map((d) => ({
     ...d,
     href: `/${wsId}/link-shortener/${d.id}`,
+    click_count: analyticsMap.get(d.id) || 0,
   }));
 
   const linksThisMonth = data.filter((d) => {
@@ -93,7 +122,7 @@ export default async function LinkShortenerPage({
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-5">
           <Card className="group relative overflow-hidden border-0 bg-gradient-to-br from-dynamic-blue/5 via-dynamic-blue/10 to-dynamic-blue/5 shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-xl">
             <div className="absolute inset-0 bg-gradient-to-br from-dynamic-blue/10 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
             <CardHeader className="relative pb-3">
@@ -153,6 +182,46 @@ export default async function LinkShortenerPage({
               </p>
             </CardContent>
           </Card>
+
+          <Card className="group relative overflow-hidden border-0 bg-gradient-to-br from-dynamic-purple/5 via-dynamic-purple/10 to-dynamic-purple/5 shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-xl">
+            <div className="absolute inset-0 bg-gradient-to-br from-dynamic-purple/10 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+            <CardHeader className="relative pb-3">
+              <CardTitle className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
+                <div className="rounded-md bg-dynamic-purple/10 p-1.5 transition-colors group-hover:bg-dynamic-purple/20">
+                  <MousePointerClick className="h-4 w-4 text-dynamic-purple" />
+                </div>
+                {t('link-shortener.analytics.total_clicks')}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="relative">
+              <div className="mb-1 font-bold text-3xl text-dynamic-purple">
+                {analytics.totalClicks.toLocaleString()}
+              </div>
+              <p className="text-muted-foreground text-xs">
+                {t('link-shortener.analytics.all_links_combined')}
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="group relative overflow-hidden border-0 bg-gradient-to-br from-dynamic-pink/5 via-dynamic-pink/10 to-dynamic-pink/5 shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-xl">
+            <div className="absolute inset-0 bg-gradient-to-br from-dynamic-pink/10 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+            <CardHeader className="relative pb-3">
+              <CardTitle className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
+                <div className="rounded-md bg-dynamic-pink/10 p-1.5 transition-colors group-hover:bg-dynamic-pink/20">
+                  <BarChart3 className="h-4 w-4 text-dynamic-pink" />
+                </div>
+                {t('link-shortener.analytics.unique_visitors')}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="relative">
+              <div className="mb-1 font-bold text-3xl text-dynamic-pink">
+                {analytics.uniqueVisitors.toLocaleString()}
+              </div>
+              <p className="text-muted-foreground text-xs">
+                {t('link-shortener.analytics.unique_ip_addresses')}
+              </p>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Create Link Section */}
@@ -191,8 +260,8 @@ export default async function LinkShortenerPage({
           </CardHeader>
           <CardContent className="relative">
             <CustomDataTable
-              data={data}
-              columnGenerator={linkShortenerColumns}
+              data={data as any}
+              columnGenerator={linkShortenerColumns as any}
               namespace="link-shortener-data-table"
               count={count}
               filters={<LinkShortenerFilters wsId={wsId} />}
@@ -201,6 +270,8 @@ export default async function LinkShortenerPage({
                 creator: false,
                 creator_id: false,
                 created_at: false,
+                click_count: true,
+                href: true,
               }}
             />
           </CardContent>
@@ -208,6 +279,56 @@ export default async function LinkShortenerPage({
       </div>
     </div>
   );
+}
+
+async function getAnalyticsData(wsId: string) {
+  const supabase = await createClient();
+  const sbAdmin = await createAdminClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user?.id) {
+    return { totalClicks: 0, uniqueVisitors: 0 };
+  }
+
+  const { data: workspaceMember } = await supabase
+    .from('workspace_members')
+    .select('*')
+    .eq('ws_id', wsId)
+    .eq('user_id', user.id)
+    .maybeSingle();
+
+  if (!workspaceMember) {
+    return { totalClicks: 0, uniqueVisitors: 0 };
+  }
+
+  // Get analytics summary for all links in the workspace
+  let analyticsQuery = sbAdmin
+    .from('link_analytics_summary')
+    .select('total_clicks, unique_visitors');
+
+  if (wsId !== ROOT_WORKSPACE_ID) {
+    analyticsQuery = analyticsQuery.eq('ws_id', wsId);
+  }
+
+  const { data: analyticsData, error } = await analyticsQuery;
+
+  if (error || !analyticsData) {
+    return { totalClicks: 0, uniqueVisitors: 0 };
+  }
+
+  const totalClicks = analyticsData.reduce(
+    (sum, item) => sum + (item.total_clicks || 0),
+    0
+  );
+  const uniqueVisitors = analyticsData.reduce(
+    (sum, item) => sum + (item.unique_visitors || 0),
+    0
+  );
+
+  return { totalClicks, uniqueVisitors };
 }
 
 async function getData(

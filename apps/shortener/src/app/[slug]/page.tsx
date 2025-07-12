@@ -1,4 +1,5 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { isValidUrl } from '@/lib/utils';
 
@@ -13,7 +14,7 @@ export default async function RedirectPage({ params }: RedirectPageProps) {
 
   const { data: shortenedLink, error } = await sbAdmin
     .from('shortened_links')
-    .select('link')
+    .select('id, link')
     .eq('slug', slug)
     .single();
 
@@ -62,6 +63,30 @@ export default async function RedirectPage({ params }: RedirectPageProps) {
         </div>
       </div>
     );
+  }
+
+  // Track click analytics
+  try {
+    const headersList = await headers();
+    const userAgent = headersList.get('user-agent') || '';
+    const referrer =
+      headersList.get('referer') || headersList.get('referrer') || '';
+    const forwarded = headersList.get('x-forwarded-for');
+    const realIp = headersList.get('x-real-ip');
+
+    // Get IP address from various headers
+    const ipAddress = forwarded?.split(',')[0]?.trim() || realIp || '';
+
+    // Track the click
+    await sbAdmin.from('link_analytics').insert({
+      link_id: shortenedLink.id,
+      ip_address: ipAddress || null,
+      user_agent: userAgent || null,
+      referrer: referrer || null,
+    });
+  } catch (analyticsError) {
+    // Log analytics error but don't prevent redirect
+    console.error('Failed to track click analytics:', analyticsError);
   }
 
   redirect(shortenedLink.link);
