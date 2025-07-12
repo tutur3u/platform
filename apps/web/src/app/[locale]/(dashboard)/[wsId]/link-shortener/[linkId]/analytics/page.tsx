@@ -2,30 +2,50 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
-import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
-import {
-  Activity,
-  ArrowLeft,
-  BarChart3,
-  Calendar,
-  Globe,
-  MapPin,
-  MousePointerClick,
-  Share2,
-  TrendingUp,
-  Users,
-} from '@tuturuuu/ui/icons';
-import { Progress } from '@tuturuuu/ui/progress';
+import { Activity, ArrowLeft, Clock } from '@tuturuuu/ui/icons';
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
+import { AnalyticsCards } from './analytics-cards';
 import { AnalyticsHeader } from './analytics-header';
+import { AnalyticsSummary } from './analytics-summary';
+import { DailyActivityChart } from './daily-activity-chart';
+import { DeviceAnalytics } from './device-analytics';
+import { GeographicAnalytics } from './geographic-analytics';
+import { HourlyChart } from './hourly-chart';
+import { WeeklyActivity } from './weekly-activity';
 
 interface Props {
   params: Promise<{
     wsId: string;
     linkId: string;
+  }>;
+}
+
+interface AnalyticsData {
+  // biome-ignore lint/suspicious/noExplicitAny: <link can be anything>
+  link: any;
+  analytics: {
+    total_clicks: number | null;
+    unique_visitors: number | null;
+    unique_referrers: number | null;
+    unique_countries: number | null;
+    first_click_at: string | null;
+    last_click_at: string | null;
+  };
+  clicksByDay: Array<{ date: string; clicks: number }>;
+  topReferrers: Array<{ domain: string; count: number }>;
+  topCountries: Array<{ country: string; count: number }>;
+  topCities: Array<{ city: string; country: string; count: number }>;
+  deviceTypes: Array<{ device_type: string; count: number }>;
+  browsers: Array<{ browser: string; count: number }>;
+  operatingSystems: Array<{ os: string; count: number }>;
+  clicksByHour: Array<{ hour: number; clicks: number }>;
+  clicksByDayOfWeek: Array<{
+    day_of_week: number | null;
+    day_name: string | undefined;
+    clicks: number | null;
   }>;
 }
 
@@ -65,8 +85,19 @@ export default async function LinkAnalyticsPage({ params }: Props) {
     );
   }
 
-  const { link, analytics, clicksByDay, topReferrers, topCountries } =
-    analyticsData;
+  const {
+    link,
+    analytics,
+    clicksByDay,
+    topReferrers,
+    topCountries,
+    topCities,
+    deviceTypes,
+    browsers,
+    operatingSystems,
+    clicksByHour,
+    clicksByDayOfWeek,
+  } = analyticsData;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
@@ -85,312 +116,66 @@ export default async function LinkAnalyticsPage({ params }: Props) {
           <AnalyticsHeader link={link} />
         </div>
 
-        {/* Analytics Stats Cards */}
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
-          <Card className="group relative overflow-hidden border-0 bg-gradient-to-br from-dynamic-blue/5 via-dynamic-blue/10 to-dynamic-blue/5 shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-xl">
-            <div className="absolute inset-0 bg-gradient-to-br from-dynamic-blue/10 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-            <CardHeader className="relative pb-3">
-              <CardTitle className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
-                <div className="rounded-md bg-dynamic-blue/10 p-1.5 transition-colors group-hover:bg-dynamic-blue/20">
-                  <MousePointerClick className="h-4 w-4 text-dynamic-blue" />
-                </div>
-                {t('link-shortener.analytics.total_clicks')}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="relative">
-              <div className="mb-1 font-bold text-3xl text-dynamic-blue">
-                {(analytics.total_clicks || 0).toLocaleString()}
-              </div>
-              <p className="text-muted-foreground text-xs">
-                {t('link-shortener.analytics.all_time_clicks')}
-              </p>
-            </CardContent>
-          </Card>
+        {/* Main Analytics Stats Cards */}
+        <AnalyticsCards analytics={analytics} />
 
-          <Card className="group relative overflow-hidden border-0 bg-gradient-to-br from-dynamic-green/5 via-dynamic-green/10 to-dynamic-green/5 shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-xl">
-            <div className="absolute inset-0 bg-gradient-to-br from-dynamic-green/10 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-            <CardHeader className="relative pb-3">
-              <CardTitle className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
-                <div className="rounded-md bg-dynamic-green/10 p-1.5 transition-colors group-hover:bg-dynamic-green/20">
-                  <Users className="h-4 w-4 text-dynamic-green" />
-                </div>
-                {t('link-shortener.analytics.unique_visitors')}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="relative">
-              <div className="mb-1 font-bold text-3xl text-dynamic-green">
-                {(analytics.unique_visitors || 0).toLocaleString()}
-              </div>
-              <p className="text-muted-foreground text-xs">
-                {t('link-shortener.analytics.unique_ip_addresses')}
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="group relative overflow-hidden border-0 bg-gradient-to-br from-dynamic-orange/5 via-dynamic-orange/10 to-dynamic-orange/5 shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-xl">
-            <div className="absolute inset-0 bg-gradient-to-br from-dynamic-orange/10 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-            <CardHeader className="relative pb-3">
-              <CardTitle className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
-                <div className="rounded-md bg-dynamic-orange/10 p-1.5 transition-colors group-hover:bg-dynamic-orange/20">
-                  <TrendingUp className="h-4 w-4 text-dynamic-orange" />
-                </div>
-                {t('link-shortener.analytics.unique_referrers')}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="relative">
-              <div className="mb-1 font-bold text-3xl text-dynamic-orange">
-                {(analytics.unique_referrers || 0).toLocaleString()}
-              </div>
-              <p className="text-muted-foreground text-xs">
-                {t('link-shortener.analytics.traffic_sources')}
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="group relative overflow-hidden border-0 bg-gradient-to-br from-dynamic-purple/5 via-dynamic-purple/10 to-dynamic-purple/5 shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-xl">
-            <div className="absolute inset-0 bg-gradient-to-br from-dynamic-purple/10 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-            <CardHeader className="relative pb-3">
-              <CardTitle className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
-                <div className="rounded-md bg-dynamic-purple/10 p-1.5 transition-colors group-hover:bg-dynamic-purple/20">
-                  <Globe className="h-4 w-4 text-dynamic-purple" />
-                </div>
-                {t('link-shortener.analytics.unique_countries')}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="relative">
-              <div className="mb-1 font-bold text-3xl text-dynamic-purple">
-                {(analytics.unique_countries || 0).toLocaleString()}
-              </div>
-              <p className="text-muted-foreground text-xs">
-                {t('link-shortener.analytics.geographic_reach')}
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Charts and Data Section */}
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 xl:grid-cols-3">
-          {/* Clicks by Day */}
+        {/* Time-based Analytics */}
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          {/* Activity by Hour */}
           <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-card/80 via-card to-card/80 shadow-xl backdrop-blur-xl">
             <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent" />
             <CardHeader className="relative">
               <CardTitle className="flex items-center gap-3">
                 <div className="rounded-lg bg-dynamic-blue/10 p-2">
-                  <BarChart3 className="h-5 w-5 text-dynamic-blue" />
+                  <Clock className="h-5 w-5 text-dynamic-blue" />
                 </div>
                 <div>
                   <h3 className="font-semibold text-lg">
-                    {t('link-shortener.analytics.clicks_over_time')}
+                    {t('link-shortener.analytics.activity_by_hour')}
                   </h3>
                   <p className="text-muted-foreground text-sm">
-                    {t('link-shortener.analytics.last_30_days_activity')}
+                    {t('link-shortener.analytics.hourly_distribution')}
                   </p>
                 </div>
               </CardTitle>
             </CardHeader>
             <CardContent className="relative">
-              <div className="space-y-4">
-                {clicksByDay.length > 0 ? (
-                  <div className="space-y-3">
-                    {clicksByDay.slice(0, 10).map((day) => {
-                      const maxClicks = Math.max(
-                        ...clicksByDay.map((d) => d.clicks)
-                      );
-                      const percentage = (day.clicks / maxClicks) * 100;
-                      return (
-                        <div key={day.date} className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <span className="font-mono text-sm">
-                              {day.date}
-                            </span>
-                            <span className="font-semibold text-dynamic-blue">
-                              {day.clicks}{' '}
-                              {t('link-shortener.analytics.clicks')}
-                            </span>
-                          </div>
-                          <Progress value={percentage} className="h-2" />
-                        </div>
-                      );
-                    })}
-                    {clicksByDay.length > 10 && (
-                      <p className="text-center text-muted-foreground text-sm">
-                        {t('link-shortener.analytics.and_more_days', {
-                          count: clicksByDay.length - 10,
-                        })}
-                      </p>
-                    )}
-                  </div>
-                ) : (
-                  <div className="space-y-2 text-center">
-                    <Calendar className="mx-auto h-12 w-12 text-muted-foreground/50" />
-                    <p className="text-muted-foreground">
-                      {t('link-shortener.analytics.no_click_data')}
-                    </p>
-                  </div>
-                )}
-              </div>
+              <HourlyChart clicksByHour={clicksByHour} />
             </CardContent>
           </Card>
 
-          {/* Top Referrers */}
-          <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-card/80 via-card to-card/80 shadow-xl backdrop-blur-xl">
-            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent" />
-            <CardHeader className="relative">
-              <CardTitle className="flex items-center gap-3">
-                <div className="rounded-lg bg-dynamic-orange/10 p-2">
-                  <TrendingUp className="h-5 w-5 text-dynamic-orange" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-lg">
-                    {t('link-shortener.analytics.top_referrers')}
-                  </h3>
-                  <p className="text-muted-foreground text-sm">
-                    {t('link-shortener.analytics.traffic_sources')}
-                  </p>
-                </div>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="relative">
-              <div className="space-y-4">
-                {topReferrers.length > 0 ? (
-                  <div className="space-y-3">
-                    {topReferrers.slice(0, 8).map((referrer, index: number) => {
-                      const maxCount = Math.max(
-                        ...topReferrers.map((r) => r.count)
-                      );
-                      const percentage = (referrer.count / maxCount) * 100;
-                      return (
-                        <div key={referrer.domain} className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <Badge
-                                variant="outline"
-                                className="h-5 w-5 rounded-full p-0 text-xs"
-                              >
-                                {index + 1}
-                              </Badge>
-                              <span className="truncate font-medium text-sm">
-                                {referrer.domain}
-                              </span>
-                            </div>
-                            <span className="font-semibold text-dynamic-orange">
-                              {referrer.count}
-                            </span>
-                          </div>
-                          <Progress value={percentage} className="h-2" />
-                        </div>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <div className="space-y-2 text-center">
-                    <Share2 className="mx-auto h-12 w-12 text-muted-foreground/50" />
-                    <p className="text-muted-foreground">
-                      {t('link-shortener.analytics.no_referrer_data')}
-                    </p>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Top Countries */}
-          <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-card/80 via-card to-card/80 shadow-xl backdrop-blur-xl">
-            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent" />
-            <CardHeader className="relative">
-              <CardTitle className="flex items-center gap-3">
-                <div className="rounded-lg bg-dynamic-green/10 p-2">
-                  <MapPin className="h-5 w-5 text-dynamic-green" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-lg">
-                    {t('link-shortener.analytics.top_countries')}
-                  </h3>
-                  <p className="text-muted-foreground text-sm">
-                    {t('link-shortener.analytics.geographic_distribution')}
-                  </p>
-                </div>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="relative">
-              <div className="space-y-4">
-                {topCountries.length > 0 ? (
-                  <div className="space-y-3">
-                    {topCountries.slice(0, 8).map((country, index: number) => {
-                      const maxCount = Math.max(
-                        ...topCountries.map((c) => c.count)
-                      );
-                      const percentage = (country.count / maxCount) * 100;
-                      return (
-                        <div key={country.country} className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <Badge
-                                variant="outline"
-                                className="h-5 w-5 rounded-full p-0 text-xs"
-                              >
-                                {index + 1}
-                              </Badge>
-                              <span className="truncate font-medium text-sm">
-                                {country.country}
-                              </span>
-                            </div>
-                            <span className="font-semibold text-dynamic-green">
-                              {country.count}
-                            </span>
-                          </div>
-                          <Progress value={percentage} className="h-2" />
-                        </div>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <div className="space-y-2 text-center">
-                    <Globe className="mx-auto h-12 w-12 text-muted-foreground/50" />
-                    <p className="text-muted-foreground">
-                      {t('link-shortener.analytics.no_country_data')}
-                    </p>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+          {/* Activity by Day of Week */}
+          <WeeklyActivity clicksByDayOfWeek={clicksByDayOfWeek} />
         </div>
 
-        {/* Additional Info */}
-        {analytics.first_click_at && (
-          <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-card/80 via-card to-card/80 shadow-xl backdrop-blur-xl">
-            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent" />
-            <CardContent className="relative p-6">
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <div>
-                  <h4 className="font-semibold text-muted-foreground text-sm uppercase tracking-wide">
-                    {t('link-shortener.analytics.first_click')}
-                  </h4>
-                  <p className="text-lg">
-                    {new Date(analytics.first_click_at).toLocaleDateString()}
-                  </p>
-                </div>
-                <div>
-                  <h4 className="font-semibold text-muted-foreground text-sm uppercase tracking-wide">
-                    {t('link-shortener.analytics.last_click')}
-                  </h4>
-                  <p className="text-lg">
-                    {analytics.last_click_at
-                      ? new Date(analytics.last_click_at).toLocaleDateString()
-                      : t('link-shortener.analytics.never')}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+        {/* Device & Browser Analytics */}
+        <DeviceAnalytics
+          deviceTypes={deviceTypes}
+          browsers={browsers}
+          operatingSystems={operatingSystems}
+          totalClicks={analytics?.total_clicks || 0}
+        />
+
+        {/* Daily Activity Chart */}
+        <DailyActivityChart clicksByDay={clicksByDay} />
+
+        {/* Geographic & Traffic Data */}
+        <GeographicAnalytics
+          topReferrers={topReferrers}
+          topCountries={topCountries}
+          topCities={topCities}
+        />
+
+        {/* Analytics Summary */}
+        <AnalyticsSummary analytics={analytics} />
       </div>
     </div>
   );
 }
 
-async function fetchAnalyticsData(linkId: string) {
+async function fetchAnalyticsData(
+  linkId: string
+): Promise<AnalyticsData | null> {
   try {
     const supabase = await createClient();
     const sbAdmin = await createAdminClient();
@@ -470,6 +255,101 @@ async function fetchAnalyticsData(linkId: string) {
       console.error('Error fetching top countries:', topCountriesError);
     }
 
+    // Get analytics data by querying the link_analytics table directly
+    const { data: linkAnalytics, error: linkAnalyticsError } = await sbAdmin
+      .from('link_analytics')
+      .select('*')
+      .eq('link_id', linkId);
+
+    if (linkAnalyticsError) {
+      console.error('Error fetching link analytics:', linkAnalyticsError);
+    }
+
+    // Process analytics data to create derived metrics
+    const rawAnalytics = linkAnalytics || [];
+
+    // Group by cities
+    const cityGroups = rawAnalytics.reduce(
+      (acc, item) => {
+        const key = `${item.city}-${item.country}`;
+        if (!acc[key]) {
+          acc[key] = {
+            city: item.city || '',
+            country: item.country || '',
+            count: 0,
+          };
+        }
+        acc[key].count++;
+        return acc;
+      },
+      {} as Record<string, { city: string; country: string; count: number }>
+    );
+
+    // Group by device types
+    const deviceGroups = rawAnalytics.reduce(
+      (acc, item) => {
+        const deviceType = item.device_type || 'Unknown';
+        if (!acc[deviceType]) {
+          acc[deviceType] = { device_type: deviceType, count: 0 };
+        }
+        acc[deviceType].count++;
+        return acc;
+      },
+      {} as Record<string, { device_type: string; count: number }>
+    );
+
+    // Group by browsers
+    const browserGroups = rawAnalytics.reduce(
+      (acc, item) => {
+        const browser = item.browser || 'Unknown';
+        if (!acc[browser]) {
+          acc[browser] = { browser: browser, count: 0 };
+        }
+        acc[browser].count++;
+        return acc;
+      },
+      {} as Record<string, { browser: string; count: number }>
+    );
+
+    // Group by operating systems
+    const osGroups = rawAnalytics.reduce(
+      (acc, item) => {
+        const os = item.os || 'Unknown';
+        if (!acc[os]) {
+          acc[os] = { os: os, count: 0 };
+        }
+        acc[os].count++;
+        return acc;
+      },
+      {} as Record<string, { os: string; count: number }>
+    );
+
+    // Group by hour
+    const hourGroups = rawAnalytics.reduce(
+      (acc, item) => {
+        const hour = new Date(item.clicked_at).getHours();
+        if (!acc[hour]) {
+          acc[hour] = { hour: hour, clicks: 0 };
+        }
+        acc[hour].clicks++;
+        return acc;
+      },
+      {} as Record<number, { hour: number; clicks: number }>
+    );
+
+    // Group by day of week
+    const dayGroups = rawAnalytics.reduce(
+      (acc, item) => {
+        const dayOfWeek = new Date(item.clicked_at).getDay();
+        if (!acc[dayOfWeek]) {
+          acc[dayOfWeek] = { day_of_week: dayOfWeek, clicks: 0 };
+        }
+        acc[dayOfWeek].clicks++;
+        return acc;
+      },
+      {} as Record<number, { day_of_week: number; clicks: number }>
+    );
+
     // Format the data for the UI
     const clicksByDayProcessed = (clicksByDay || []).map((day) => ({
       date: day.click_date,
@@ -486,6 +366,44 @@ async function fetchAnalyticsData(linkId: string) {
       count: Number(country.count),
     }));
 
+    const topCitiesProcessed = Object.values(cityGroups)
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 10);
+
+    const deviceTypesProcessed = Object.values(deviceGroups)
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 10);
+
+    const browsersProcessed = Object.values(browserGroups)
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 10);
+
+    const operatingSystemsProcessed = Object.values(osGroups)
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 10);
+
+    // Fill in all hours 0-23
+    const clicksByHourProcessed = Array.from({ length: 24 }, (_, i) => ({
+      hour: i,
+      clicks: hourGroups[i]?.clicks || 0,
+    }));
+
+    // Fill in all days of week 0-6
+    const dayNames = [
+      'Sunday',
+      'Monday',
+      'Tuesday',
+      'Wednesday',
+      'Thursday',
+      'Friday',
+      'Saturday',
+    ];
+    const clicksByDayOfWeekProcessed = Array.from({ length: 7 }, (_, i) => ({
+      day_of_week: i,
+      day_name: dayNames[i],
+      clicks: dayGroups[i]?.clicks || 0,
+    }));
+
     return {
       link,
       analytics: analytics || {
@@ -499,6 +417,12 @@ async function fetchAnalyticsData(linkId: string) {
       clicksByDay: clicksByDayProcessed,
       topReferrers: topReferrersProcessed,
       topCountries: topCountriesProcessed,
+      topCities: topCitiesProcessed,
+      deviceTypes: deviceTypesProcessed,
+      browsers: browsersProcessed,
+      operatingSystems: operatingSystemsProcessed,
+      clicksByHour: clicksByHourProcessed,
+      clicksByDayOfWeek: clicksByDayOfWeekProcessed,
     };
   } catch (error) {
     console.error('Failed to fetch analytics data:', error);
