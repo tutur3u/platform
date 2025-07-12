@@ -13,12 +13,12 @@ export default async function LinkShortenerLayout({
   const { wsId } = await params;
 
   if (
-    !verifySecret({
+    !(await verifySecret({
       forceAdmin: true,
       wsId,
       name: 'ENABLE_LINK_SHORTENER',
       value: 'true',
-    })
+    }))
   )
     return notFound();
 
