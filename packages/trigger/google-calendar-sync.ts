@@ -1,32 +1,8 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import type { WorkspaceCalendarEvent } from '@tuturuuu/types/db';
 import { updateLastUpsert } from '@tuturuuu/utils/calendar-sync-coordination';
-import dayjs from 'dayjs';
 import { OAuth2Client } from 'google-auth-library';
-import { google } from 'googleapis';
 import { convertGoogleAllDayEvent } from '@tuturuuu/ui/hooks/calendar-utils';
-
-// Dynamic locale setup function
-const setupDayjsLocale = async (locale?: string) => {
-  const targetLocale = locale || process.env.LOCALE || 'en';
-  
-  try {
-    // Dynamically import the locale module
-    await import(`dayjs/locale/${targetLocale}`);
-    dayjs.locale(targetLocale);
-  } catch (error) {
-    console.warn(`Failed to load locale '${targetLocale}', falling back to 'en'`);
-    try {
-      await import('dayjs/locale/en');
-      dayjs.locale('en');
-    } catch (fallbackError) {
-      console.error('Failed to load even the fallback locale:', fallbackError);
-    }
-  }
-};
-
-// Initialize with default locale
-setupDayjsLocale();
+import { calendar_v3 } from 'googleapis/build/src/apis/calendar';
 
 // Define the sync result type
 type SyncResult = {
@@ -37,7 +13,14 @@ type SyncResult = {
   error?: string;
 };
 
-const getGoogleAuthClient = (tokens: {
+export type SyncOrchestratorResult = {
+  ws_id: string;
+  handle?: any;
+  error?: string;
+  status: string;
+}
+
+export const getGoogleAuthClient = (tokens: {
   access_token: string;
   refresh_token?: string;
 }) => {
@@ -70,42 +53,51 @@ const getColorFromGoogleColorId = (colorId?: string): string => {
 // Core sync function for a single workspace
 const syncGoogleCalendarEventsForWorkspace = async (
   ws_id: string,
-  access_token: string,
-  refresh_token: string | null,
-  timeMin: dayjs.Dayjs,
-  timeMax: dayjs.Dayjs,
-  syncType: 'immediate' | 'extended',
-  locale?: string
+  events_to_sync: calendar_v3.Schema$Event[]
 ): Promise<SyncResult> => {
-  console.log(`Syncing Google Calendar events for workspace ${ws_id} from ${timeMin.format('YYYY-MM-DD HH:mm')} to ${timeMax.format('YYYY-MM-DD HH:mm')}`);
+  console.log(`Syncing Google Calendar events for workspace ${ws_id}`);
 
-  // Setup locale for this sync operation
-  if (locale) {
-    await setupDayjsLocale(locale);
-  }
 
   try {
-    const supabase = await createAdminClient({ noCookie: true });
-    const auth = getGoogleAuthClient({ access_token, refresh_token: refresh_token || undefined });
+    const sbAdmin = await createAdminClient({ noCookie: true });
 
-    const calendar = google.calendar({ version: 'v3', auth });
+    const rawEventsToUpsert: calendar_v3.Schema$Event[] = [];
+    const rawEventsToDelete: calendar_v3.Schema$Event[] = [];
 
-    
-
-    const response = await calendar.events.list({
-      calendarId: 'primary',
-      timeMin: timeMin.toISOString(),
-      timeMax: timeMax.toISOString(),
-      singleEvents: true, // separate recurring events
-      orderBy: 'startTime',
-      maxResults: 1000,
-    });
-
-    const events = response.data.items || [];
-    
+    for (const event of events_to_sync) {
+      if (event.status === "cancelled") {
+        rawEventsToDelete.push(event);
+      } else {
+        rawEventsToUpsert.push(event);
+      }
+    }
 
     // format the events to match the expected structure
-    const formattedEvents = events.map((event) => {
+    const formattedEvents = rawEventsToUpsert.map((event) => {
+      // Use the new timezone-aware conversion for all-day events
+      const { start_at, end_at } = convertGoogleAllDayEvent(
+        event.start?.dateTime || event.start?.date || '',
+        event.end?.dateTime || event.end?.date || '',
+        // Use the user's browser timezone which is available in the process.env.TZ or system default
+        // This will be enhanced later to use actual user preferences
+        'auto'
+      );
+
+      return {
+        google_event_id: event.id,
+        title: event.summary || 'Untitled Event',
+        description: event.description || '',
+        start_at,
+        end_at,
+        location: event.location || '',
+        color: getColorFromGoogleColorId(event.colorId ?? undefined),
+        ws_id: ws_id,
+        locked: false,
+      };
+    });
+
+    // format the events to match the expected structure for deletion
+    const formattedEventsToDelete = rawEventsToDelete.map((event) => {
       // Use the new timezone-aware conversion for all-day events
       const { start_at, end_at } = convertGoogleAllDayEvent(
         event.start?.dateTime || event.start?.date || '',
@@ -131,10 +123,11 @@ const syncGoogleCalendarEventsForWorkspace = async (
 
     // upsert the events in the database for this wsId
     
-    const { error } = await supabase
+    const { error } = await sbAdmin
       .from('workspace_calendar_events')
       .upsert(formattedEvents, {
-        onConflict: 'google_event_id',
+        onConflict: 'ws_id,google_event_id',
+        ignoreDuplicates: true,
       });
     if (error) {
       console.log('Error upserting events:', error);
@@ -142,63 +135,35 @@ const syncGoogleCalendarEventsForWorkspace = async (
     }
     console.log(`Upserted ${formattedEvents.length} events:`, formattedEvents.map(e => e.title));
 
-    // Google calendar not null
-    
-    const { data: dbEventsAfterUpsert, error: dbError } = await supabase
-      .from('workspace_calendar_events')
-      .select('*')
-      .eq('ws_id', ws_id)
-      .not('google_event_id', 'is', null)
-      .gte('end_at', timeMin.toISOString())
-      .lte('start_at', timeMax.toISOString());
-
-    if (dbError) {
-      console.log('Error fetching database events:', dbError);
-      throw dbError;
-    }
-
-    console.log(`Found ${dbEventsAfterUpsert.length} existing events in database`);
-
-    const eventsToDelete: WorkspaceCalendarEvent[] = [];
-    for (const event of dbEventsAfterUpsert) {
-      if (
-        !formattedEvents.some(
-          (e) => e.google_event_id === event.google_event_id
+    // delete the events in the database for this wsId
+    const { error: deleteError } = await sbAdmin
+    .from('workspace_calendar_events')
+    .delete()
+    .or(
+      formattedEventsToDelete
+        .map(
+          (e) =>
+            `and(ws_id.eq.${ws_id},google_event_id.eq.${e.google_event_id ?? ''})`
         )
-      ) {
-        eventsToDelete.push(event);
-      }
-    }
-
+        .join(',')
+    );
     
-
-    if (eventsToDelete.length > 0) {
-      const { error: deleteError } = await supabase
-        .from('workspace_calendar_events')
-        .delete()
-        .in(
-          'id',
-          eventsToDelete.map((e) => e.id)
-        );
-
-      if (deleteError) {
-        console.log('Error deleting events:', deleteError);
-        throw deleteError;
-      }
-
-      console.log(`Deleted ${eventsToDelete.length} events:`, eventsToDelete.map(e => e.title));
+    if (deleteError) {
+      console.log('Error deleting events:', deleteError);
+      throw deleteError;
     }
+    console.log(`Deleted ${formattedEventsToDelete.length} events:`, formattedEventsToDelete.map(e => e.title));
 
     // Update lastUpsert timestamp after successful upsert
     
-    await updateLastUpsert(ws_id, supabase);
+    await updateLastUpsert(ws_id, sbAdmin);
     
     
     return {
       ws_id,
       success: true,
       eventsSynced: formattedEvents.length,
-      eventsDeleted: eventsToDelete.length,
+      eventsDeleted: formattedEventsToDelete.length,
     };
   } catch (error) {
     console.log('Error in syncGoogleCalendarEventsForWorkspace:', error);
@@ -213,8 +178,8 @@ const syncGoogleCalendarEventsForWorkspace = async (
 // Get workspace by ws_id
 export const getWorkspaceTokensByWsId = async (ws_id: string) => {
   try {
-  const supabase = await createAdminClient({ noCookie: true });
-  const { data: tokens, error } = await supabase
+  const sbAdmin = await createAdminClient({ noCookie: true });
+  const { data: tokens, error } = await sbAdmin
     .from('workspaces')
     .select('ws_id, access_token, refresh_token')
     .eq('ws_id', ws_id);
@@ -234,9 +199,9 @@ export const getWorkspaceTokensByWsId = async (ws_id: string) => {
 // Get all workspaces that need sync
 export const getWorkspacesForSync = async () => {
   try {
-    const supabase = await createAdminClient({ noCookie: true });
+    const sbAdmin = await createAdminClient({ noCookie: true });
     
-    const { data: tokens, error } = await supabase
+    const { data: tokens, error } = await sbAdmin
       .from('calendar_auth_tokens')
       .select('ws_id, access_token, refresh_token')
       .not('access_token', 'is', null);
@@ -253,112 +218,52 @@ export const getWorkspacesForSync = async () => {
   }
 };
 
-// Sync a single workspace for immediate range
-export const syncWorkspaceImmediate = async (payload: {
-  ws_id: string;
-  access_token: string;
-  refresh_token?: string;
-  locale?: string;
-}) => {
-  const { ws_id, access_token, refresh_token, locale } = payload;
-  
-  if (!access_token) {
-    console.log('No access token provided for workspace:', ws_id);
-    return { ws_id, success: false, error: 'No access token provided' };
-  }
-
-  const now = dayjs();
-  const timeMin = now;
-  const timeMax = now.add(7, 'day'); // 1 week from now
-  
-  return syncGoogleCalendarEventsForWorkspace(
-    ws_id,
-    access_token,
-    refresh_token || null,
-    timeMin,
-    timeMax,
-    'immediate',
-    locale
-  );
-};
-
-// Sync a single workspace for extended range
+// Sync a single workspace for 4 weeks (28 days) from now
 export const syncWorkspaceExtended = async (payload: {
   ws_id: string;
-  access_token: string;
-  refresh_token?: string;
-  locale?: string;
+  events_to_sync: calendar_v3.Schema$Event[];
 }) => {
-  const { ws_id, access_token, refresh_token, locale } = payload;
-  
-  if (!access_token) {
-    console.log('No access token provided for workspace:', ws_id);
-    return { ws_id, success: false, error: 'No access token provided' };
-  }
-
-  const now = dayjs();
-  const timeMin = now.add(7, 'day'); // Start from 1 week from now
-  const timeMax = now.add(28, 'day'); // 4 weeks from now (1 week + 3 weeks)
+  const { ws_id, events_to_sync: events } = payload;
   
   return syncGoogleCalendarEventsForWorkspace(
     ws_id,
-    access_token,
-    refresh_token || null,
-    timeMin,
-    timeMax,
-    'extended',
-    locale
+    events
   );
-  };
+};
 
-// Legacy functions for backward compatibility
-export const syncGoogleCalendarEventsImmediate = async (locale?: string) => {
-  console.log('Starting immediate Google Calendar sync for all workspaces');
-  const workspaces = await getWorkspacesForSync();
-  const results: SyncResult[] = [];
+export const storeSyncToken = async (ws_id: string, syncToken: string, lastSyncedAt: Date) => {
+  const sbAdmin = await createAdminClient({ noCookie: true });
+  const { error } = await sbAdmin
+    .from('calendar_sync_states')
+    .upsert({ 
+      ws_id, 
+      calendar_id: 'primary', 
+      sync_token: syncToken, 
+      last_synced_at: lastSyncedAt.toISOString() 
+    },
+    {
+      onConflict: 'ws_id,calendar_id'
+    });
+  
+  if (error) {
+    console.error(`[${ws_id}] Error storing sync token for calendar primary:`, error);
+    throw error;
+  }
+};
 
-  for (const workspace of workspaces) {
-    try {
-      const result = await syncWorkspaceImmediate({ ...workspace, locale });
-      results.push(result);
-    } catch (error) {
-      
-      results.push({
-        ws_id: workspace.ws_id,
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
-      });
-    }
+
+export const getSyncToken = async (ws_id: string) => {
+  const sbAdmin = await createAdminClient({ noCookie: true });
+  const { data: syncToken, error } = await sbAdmin
+    .from('calendar_sync_states')
+    .select('sync_token')
+    .eq('ws_id', ws_id)
+    .eq('calendar_id', 'primary');
+
+  if (error) {
+    console.error(`[${ws_id}] Error fetching sync token for calendar primary:`, error);
+    throw error;
   }
 
-  
-  return results;
+  return syncToken?.[0]?.sync_token || null;
 };
-
-export const syncGoogleCalendarEventsExtended = async (locale?: string) => {
-  
-  const workspaces = await getWorkspacesForSync();
-  const results: SyncResult[] = [];
-
-  for (const workspace of workspaces) {
-    try {
-      const result = await syncWorkspaceExtended({ ...workspace, locale });
-      results.push(result);
-    } catch (error) {
-      
-      results.push({
-        ws_id: workspace.ws_id,
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
-      });
-    }
-  }
-
-  
-  return results;
-};
-
-export const syncGoogleCalendarEvents = async (locale?: string) => {
-  return syncGoogleCalendarEventsImmediate(locale);
-};
-

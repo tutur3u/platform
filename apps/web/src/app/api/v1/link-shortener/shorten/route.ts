@@ -8,6 +8,7 @@ import { type NextRequest, NextResponse } from 'next/server';
 interface ShortenRequest {
   url: string;
   customSlug?: string;
+  wsId?: string;
 }
 
 // Validate URL format
@@ -34,22 +35,28 @@ export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient();
 
-    // Check if user is authenticated and has root workspace access
     const {
       data: { user },
     } = await supabase.auth.getUser();
 
-    if (!user?.email?.endsWith('@tuturuuu.com')) {
+    if (!user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const body: ShortenRequest = await request.json();
-    const { url, customSlug } = body;
+    const { url, customSlug, wsId } = body;
 
     // Validate required fields
     if (!url || typeof url !== 'string') {
       return NextResponse.json(
         { error: 'URL is required and must be a string' },
+        { status: 400 }
+      );
+    }
+
+    if (!wsId) {
+      return NextResponse.json(
+        { error: 'Workspace ID is required' },
         { status: 400 }
       );
     }
@@ -114,6 +121,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const { data: workspaceMember } = await supabase
+      .from('workspace_members')
+      .select('*')
+      .eq('ws_id', wsId)
+      .eq('user_id', user?.id)
+      .single();
+
+    if (!workspaceMember) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     // Insert the new shortened link
     const { data: newLink, error: insertError } = await sbAdmin
       .from('shortened_links')
@@ -121,6 +139,8 @@ export async function POST(request: NextRequest) {
         link: url.trim(),
         slug,
         creator_id: user.id,
+        ws_id: wsId,
+        domain: new URL(url.trim()).hostname,
       })
       .select()
       .single();

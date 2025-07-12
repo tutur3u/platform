@@ -6,7 +6,7 @@
     "dev": "next dev -p 3000 --turbopack",
     "devx": "bun sb:stop && bun sb:start && bun dev",
     "devrs": "bun sb:stop && bun sb:reset && bun sb:start && bun dev",
-    "build": "next build",
+    "build": "NODE_OPTIONS='--max-old-space-size=8192' next build",
     "start": "next start",
     "preview": "next build && next start -p 3000 --turbopack",
     "stop": "cd ../db && bun sb:stop",
@@ -34,7 +34,7 @@
     "react-dom": "^19.1.0"
   },
   "devDependencies": {
-    "@types/node": "^24.0.12",
+    "@types/node": "^24.0.13",
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
     "postcss": "^8.5.6",
