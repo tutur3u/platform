@@ -285,8 +285,14 @@ export default async function Layout({ children, params }: LayoutProps) {
           title: t('sidebar_tabs.link_shortener'),
           href: `/${wsId}/link-shortener`,
           icon: <Link className="h-5 w-5" />,
-          requireRootWorkspace: true,
-          requireRootMember: true,
+          disabled:
+            wsId !== '00000000-0000-0000-0000-000000000000' &&
+            !(await verifySecret({
+              forceAdmin: true,
+              wsId,
+              name: 'ENABLE_LINK_SHORTENER',
+              value: 'true',
+            })),
         },
       ],
     },

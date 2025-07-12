@@ -813,6 +813,7 @@
     "created_at": "Created At",
     "date_range": "Date Range",
     "domain": "Domain",
+    "workspace": "Workspace",
     "date_filters": {
       "today": "Today",
       "yesterday": "Yesterday",

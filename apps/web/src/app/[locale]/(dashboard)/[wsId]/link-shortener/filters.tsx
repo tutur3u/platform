@@ -1,13 +1,20 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { Calendar, Globe, User } from '@tuturuuu/ui/icons';
+import { Building, Calendar, Globe, User } from '@tuturuuu/ui/icons';
+import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { getTranslations } from 'next-intl/server';
 import { Filter } from '../users/filters';
 
-export default async function LinkShortenerFilters() {
+interface Props {
+  wsId: string;
+}
+
+export default async function LinkShortenerFilters({ wsId }: Props) {
   const t = await getTranslations('link-shortener-data-table');
 
   const { data: creators } = await getCreators();
   const { data: domains } = await getDomains();
+  const { data: workspaces } =
+    wsId === ROOT_WORKSPACE_ID ? await getWorkspaces() : { data: [] };
 
   const dateRangeOptions = [
     { label: t('date_filters.today'), value: 'today' },
@@ -22,6 +29,20 @@ export default async function LinkShortenerFilters() {
 
   return (
     <>
+      {wsId === ROOT_WORKSPACE_ID && (
+        <Filter
+          key="workspace-filter"
+          tag="wsId"
+          title={t('workspace')}
+          icon={<Building className="mr-2 h-4 w-4" />}
+          options={workspaces.map((workspace) => ({
+            label: workspace.name || 'Unknown Workspace',
+            value: workspace.id || '',
+            count: workspace.link_count || 0,
+          }))}
+          multiple={true}
+        />
+      )}
       <Filter
         key="creator-filter"
         tag="creatorId"
@@ -170,4 +191,52 @@ async function getDomains() {
   }
 
   return { data: data || [] };
+}
+
+async function getWorkspaces() {
+  const sbAdmin = await createAdminClient();
+
+  // Get workspaces with link counts
+  const { data: rawData, error } = await sbAdmin
+    .from('shortened_links')
+    .select(`
+      ws_id,
+      workspaces!ws_id (
+        id,
+        name,
+        logo_url
+      )
+    `)
+    .not('ws_id', 'is', null);
+
+  if (error) {
+    console.error('Error fetching workspaces:', error);
+    return { data: [] };
+  }
+
+  // Aggregate workspaces with link counts
+  const workspaceCounts = new Map();
+
+  rawData?.forEach((link) => {
+    if (link.workspaces) {
+      const workspaceId = link.workspaces.id;
+      if (workspaceCounts.has(workspaceId)) {
+        workspaceCounts.set(workspaceId, {
+          ...workspaceCounts.get(workspaceId),
+          link_count: workspaceCounts.get(workspaceId).link_count + 1,
+        });
+      } else {
+        workspaceCounts.set(workspaceId, {
+          ...link.workspaces,
+          link_count: 1,
+        });
+      }
+    }
+  });
+
+  const data = Array.from(workspaceCounts.values()).sort(
+    (a, b) => b.link_count - a.link_count
+  );
+
+  return { data };
 }

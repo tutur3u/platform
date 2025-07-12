@@ -824,6 +824,7 @@
     "created_at": "Ngày tạo",
     "date_range": "Khoảng thời gian",
     "domain": "Tên miền",
+    "workspace": "Không gian làm việc",
     "date_filters": {
       "today": "Hôm nay",
       "yesterday": "Hôm qua",
