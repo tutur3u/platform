@@ -66,6 +66,7 @@ export function GoogleCalendarSettings({
   const [isGoogleAuthenticating, setIsGoogleAuthenticating] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [isDisconnecting, setIsDisconnecting] = useState(false);
+  const [isFullSyncing, setIsFullSyncing] = useState(false);
   const [lastSyncTime, setLastSyncTime] = useState<string | null>(null);
   const [syncStatus, setSyncStatus] = useState<{
     status: 'idle' | 'success' | 'error' | 'no-changes';
@@ -275,6 +276,50 @@ export function GoogleCalendarSettings({
     }
   };
 
+  const handleFullSync = async () => {
+    if (!experimentalGoogleToken || !wsId) {
+      toast({
+        title: 'Error',
+        description: 'You need to connect Google Calendar first',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsFullSyncing(true);
+    try {
+      const response = await fetch('/api/v1/calendar/auth/full-sync', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ wsId }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to trigger full sync');
+      }
+
+      const result = await response.json();
+      
+      toast({
+        title: 'Full Sync Completed',
+        description: `Full sync completed successfully. Synced ${result.eventsSynced} events from Google Calendar.`,
+      });
+
+    } catch (error) {
+      console.error('Error triggering full sync:', error);
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to trigger full sync',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsFullSyncing(false);
+    }
+  };
+
   const handleDisconnect = async () => {
     if (!experimentalGoogleToken || !wsId) {
       return;
@@ -402,6 +447,21 @@ export function GoogleCalendarSettings({
                       <RefreshCw className="h-4 w-4" />
                     )}
                     {isSyncing ? 'Syncing...' : 'Sync Now'}
+                  </Button>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex items-center gap-2"
+                    onClick={handleFullSync}
+                    disabled={isFullSyncing}
+                  >
+                    {isFullSyncing ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <RefreshCw className="h-4 w-4" />
+                    )}
+                    {isFullSyncing ? 'Full Syncing...' : 'Full Sync'}
                   </Button>
 
                   <Button
