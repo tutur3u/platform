@@ -2,10 +2,14 @@ drop policy "Allow team members to insert shortened links" on "public"."shortene
 
 drop policy "Allow team members to select shortened links" on "public"."shortened_links";
 
-alter table "public"."shortened_links" add column "ws_id" uuid not null;
+-- First add the column without NOT NULL constraint
+alter table "public"."shortened_links" add column "ws_id" uuid;
 
 -- Update all legacy shortened links to have a ws_id of the default workspace
 update shortened_links set ws_id = '00000000-0000-0000-0000-000000000000' where ws_id is null;
+
+-- Now add the NOT NULL constraint
+alter table "public"."shortened_links" alter column "ws_id" set not null;
 
 alter table "public"."shortened_links" alter column "creator_id" set not null;
 
