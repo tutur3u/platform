@@ -3,12 +3,13 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "main": "./index.ts",
   "scripts": {
     "trigger:dev": "bunx trigger.dev@latest dev",
     "trigger:deploy": "bunx trigger.dev@latest deploy"
   },
   "dependencies": {
-    "@supabase/supabase-js": "2.50.3",
+    "@supabase/supabase-js": "2.50.5",
     "@trigger.dev/sdk": "^3.3.17",
     "@tuturuuu/supabase": "workspace:*",
     "@tuturuuu/types": "workspace:*",

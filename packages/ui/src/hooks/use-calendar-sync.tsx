@@ -499,7 +499,7 @@ export const CalendarSyncProvider = ({
         const { error: upsertError } = await supabase
           .from('workspace_calendar_events')
           .upsert(eventsToUpsert, {
-            onConflict: 'google_event_id',
+            onConflict: 'ws_id,google_event_id',
             ignoreDuplicates: true,
           });
 

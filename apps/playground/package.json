@@ -6,7 +6,7 @@
     "dev": "next dev -p 3003 --turbopack",
     "devx": "bun sb:stop && bun sb:start && bun dev",
     "devrs": "bun sb:stop && bun sb:reset && bun sb:start && bun dev",
-    "build": "next build",
+    "build": "NODE_OPTIONS='--max-old-space-size=8192' next build",
     "start": "next start",
     "preview": "next build && next start -p 3003 --turbopack",
     "stop": "cd ../db && bun sb:stop",

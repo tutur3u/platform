@@ -1,6 +1,7 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { OAuth2Client } from 'google-auth-library';
 import { NextResponse } from 'next/server';
+import { performFullSyncForWorkspace } from '@tuturuuu/trigger';
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
@@ -103,6 +104,20 @@ export async function GET(request: Request) {
           { status: 500 }
         );
       }
+    }
+
+    // Perform full sync after successful authentication
+    try {
+      const events = await performFullSyncForWorkspace(
+        'primary',
+        wsId,
+        tokens.access_token,
+        refreshToken
+      );
+      console.log(`[${wsId}] Full sync completed successfully after Google Calendar connection. Synced ${events.length} events.`);
+    } catch (syncError) {
+      console.warn(`[${wsId}] Error performing full sync after Google Calendar connection:`, syncError);
+      // Don't fail the authentication flow if sync fails
     }
 
     // Redirect to the calendar page without tokens in the URL
