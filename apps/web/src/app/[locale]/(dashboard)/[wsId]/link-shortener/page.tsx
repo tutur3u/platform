@@ -10,9 +10,15 @@ import {
   CardHeader,
   CardTitle,
 } from '@tuturuuu/ui/card';
-import { Clock, LinkIcon, TrendingUp, Users } from '@tuturuuu/ui/icons';
+import {
+  BarChart3,
+  Clock,
+  LinkIcon,
+  MousePointerClick,
+  TrendingUp,
+  Users,
+} from '@tuturuuu/ui/icons';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
-import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { linkShortenerColumns } from './columns';
@@ -27,6 +33,10 @@ type ShortenedLink = Tables<'shortened_links'> & {
     avatar_url: string | null;
   } | null;
   href?: string;
+  click_count?: number;
+  analytics?: {
+    total_clicks: number;
+  } | null;
 };
 
 interface Props {
@@ -40,6 +50,7 @@ interface Props {
     creatorId?: string | string[];
     dateRange?: string;
     domain?: string | string[];
+    wsId?: string | string[];
   }>;
 }
 
@@ -50,22 +61,29 @@ export default async function LinkShortenerPage({
   const { wsId } = await params;
   const t = await getTranslations();
 
-  // Get user and check permissions - only allow root workspace members
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const [{ data: rawData, count }, analytics] = await Promise.all([
+    getData(wsId, await searchParams),
+    getAnalyticsData(wsId),
+  ]);
 
-  // Check if user has root workspace access
-  if (wsId !== ROOT_WORKSPACE_ID || !user?.email?.endsWith('@tuturuuu.com')) {
-    redirect(`/${wsId}`);
-  }
+  // Fetch analytics data separately
+  const sbAdmin = await createAdminClient();
+  const { data: analyticsData } = await sbAdmin
+    .from('link_analytics_summary')
+    .select('link_id, total_clicks')
+    .in(
+      'link_id',
+      rawData.map((d) => d.id)
+    );
 
-  const { data: rawData, count } = await getData(await searchParams);
+  const analyticsMap = new Map(
+    analyticsData?.map((a: any) => [a.link_id || '', a.total_clicks || 0]) || []
+  );
 
   const data = rawData.map((d) => ({
     ...d,
     href: `/${wsId}/link-shortener/${d.id}`,
+    click_count: analyticsMap.get(d.id) || 0,
   }));
 
   const linksThisMonth = data.filter((d) => {
@@ -82,21 +100,21 @@ export default async function LinkShortenerPage({
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
-      <div className="container mx-auto px-4 py-8 space-y-8">
+      <div className="container mx-auto space-y-8 px-4 py-8">
         {/* Header Section */}
-        <div className="text-center space-y-6">
+        <div className="space-y-6 text-center">
           <div className="flex items-center justify-center space-x-4">
             <div className="relative">
-              <div className="absolute inset-0 bg-dynamic-blue/20 rounded-full blur-lg" />
-              <div className="relative p-4 bg-gradient-to-br from-dynamic-blue/10 to-dynamic-blue/5 rounded-full border border-dynamic-blue/20">
+              <div className="absolute inset-0 rounded-full bg-dynamic-blue/20 blur-lg" />
+              <div className="relative rounded-full border border-dynamic-blue/20 bg-gradient-to-br from-dynamic-blue/10 to-dynamic-blue/5 p-4">
                 <LinkIcon className="h-10 w-10 text-dynamic-blue" />
               </div>
             </div>
             <div className="space-y-2">
-              <h1 className="text-5xl font-bold tracking-tight bg-gradient-to-r from-foreground via-foreground to-foreground/60 bg-clip-text">
+              <h1 className="bg-gradient-to-r from-foreground via-foreground to-foreground/60 bg-clip-text font-bold text-5xl tracking-tight">
                 {t('link-shortener.plural')}
               </h1>
-              <p className="text-xl text-muted-foreground max-w-2xl">
+              <p className="max-w-2xl text-muted-foreground text-xl">
                 {t('link-shortener.description')}
               </p>
             </div>
@@ -104,90 +122,130 @@ export default async function LinkShortenerPage({
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card className="group relative overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-dynamic-blue/5 via-dynamic-blue/10 to-dynamic-blue/5 hover:scale-105">
-            <div className="absolute inset-0 bg-gradient-to-br from-dynamic-blue/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-5">
+          <Card className="group relative overflow-hidden border-0 bg-gradient-to-br from-dynamic-blue/5 via-dynamic-blue/10 to-dynamic-blue/5 shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-xl">
+            <div className="absolute inset-0 bg-gradient-to-br from-dynamic-blue/10 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
             <CardHeader className="relative pb-3">
-              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                <div className="p-1.5 bg-dynamic-blue/10 rounded-md group-hover:bg-dynamic-blue/20 transition-colors">
+              <CardTitle className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
+                <div className="rounded-md bg-dynamic-blue/10 p-1.5 transition-colors group-hover:bg-dynamic-blue/20">
                   <LinkIcon className="h-4 w-4 text-dynamic-blue" />
                 </div>
                 {t('link-shortener.total_links')}
               </CardTitle>
             </CardHeader>
             <CardContent className="relative">
-              <div className="text-3xl font-bold text-dynamic-blue mb-1">
+              <div className="mb-1 font-bold text-3xl text-dynamic-blue">
                 {count?.toLocaleString()}
               </div>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-muted-foreground text-xs">
                 {t('link-shortener.all_time')}
               </p>
             </CardContent>
           </Card>
 
-          <Card className="group relative overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-dynamic-green/5 via-dynamic-green/10 to-dynamic-green/5 hover:scale-105">
-            <div className="absolute inset-0 bg-gradient-to-br from-dynamic-green/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          <Card className="group relative overflow-hidden border-0 bg-gradient-to-br from-dynamic-green/5 via-dynamic-green/10 to-dynamic-green/5 shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-xl">
+            <div className="absolute inset-0 bg-gradient-to-br from-dynamic-green/10 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
             <CardHeader className="relative pb-3">
-              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                <div className="p-1.5 bg-dynamic-green/10 rounded-md group-hover:bg-dynamic-green/20 transition-colors">
+              <CardTitle className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
+                <div className="rounded-md bg-dynamic-green/10 p-1.5 transition-colors group-hover:bg-dynamic-green/20">
                   <Clock className="h-4 w-4 text-dynamic-green" />
                 </div>
                 {t('link-shortener.this_month')}
               </CardTitle>
             </CardHeader>
             <CardContent className="relative">
-              <div className="text-3xl font-bold text-dynamic-green mb-1">
+              <div className="mb-1 font-bold text-3xl text-dynamic-green">
                 {linksThisMonth.toLocaleString()}
               </div>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-muted-foreground text-xs">
                 {t('link-shortener.new_links')}
               </p>
             </CardContent>
           </Card>
 
-          <Card className="group relative overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-dynamic-orange/5 via-dynamic-orange/10 to-dynamic-orange/5 hover:scale-105">
-            <div className="absolute inset-0 bg-gradient-to-br from-dynamic-orange/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          <Card className="group relative overflow-hidden border-0 bg-gradient-to-br from-dynamic-orange/5 via-dynamic-orange/10 to-dynamic-orange/5 shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-xl">
+            <div className="absolute inset-0 bg-gradient-to-br from-dynamic-orange/10 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
             <CardHeader className="relative pb-3">
-              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                <div className="p-1.5 bg-dynamic-orange/10 rounded-md group-hover:bg-dynamic-orange/20 transition-colors">
+              <CardTitle className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
+                <div className="rounded-md bg-dynamic-orange/10 p-1.5 transition-colors group-hover:bg-dynamic-orange/20">
                   <Users className="h-4 w-4 text-dynamic-orange" />
                 </div>
                 {t('link-shortener.active_creators')}
               </CardTitle>
             </CardHeader>
             <CardContent className="relative">
-              <div className="text-3xl font-bold text-dynamic-orange mb-1">
+              <div className="mb-1 font-bold text-3xl text-dynamic-orange">
                 {uniqueCreators.toLocaleString()}
               </div>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-muted-foreground text-xs">
                 {t('link-shortener.unique_users')}
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="group relative overflow-hidden border-0 bg-gradient-to-br from-dynamic-purple/5 via-dynamic-purple/10 to-dynamic-purple/5 shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-xl">
+            <div className="absolute inset-0 bg-gradient-to-br from-dynamic-purple/10 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+            <CardHeader className="relative pb-3">
+              <CardTitle className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
+                <div className="rounded-md bg-dynamic-purple/10 p-1.5 transition-colors group-hover:bg-dynamic-purple/20">
+                  <MousePointerClick className="h-4 w-4 text-dynamic-purple" />
+                </div>
+                {t('link-shortener.analytics.total_clicks')}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="relative">
+              <div className="mb-1 font-bold text-3xl text-dynamic-purple">
+                {analytics.totalClicks.toLocaleString()}
+              </div>
+              <p className="text-muted-foreground text-xs">
+                {t('link-shortener.analytics.all_links_combined')}
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="group relative overflow-hidden border-0 bg-gradient-to-br from-dynamic-pink/5 via-dynamic-pink/10 to-dynamic-pink/5 shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-xl">
+            <div className="absolute inset-0 bg-gradient-to-br from-dynamic-pink/10 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+            <CardHeader className="relative pb-3">
+              <CardTitle className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
+                <div className="rounded-md bg-dynamic-pink/10 p-1.5 transition-colors group-hover:bg-dynamic-pink/20">
+                  <BarChart3 className="h-4 w-4 text-dynamic-pink" />
+                </div>
+                {t('link-shortener.analytics.unique_visitors')}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="relative">
+              <div className="mb-1 font-bold text-3xl text-dynamic-pink">
+                {analytics.uniqueVisitors.toLocaleString()}
+              </div>
+              <p className="text-muted-foreground text-xs">
+                {t('link-shortener.analytics.unique_ip_addresses')}
               </p>
             </CardContent>
           </Card>
         </div>
 
         {/* Create Link Section */}
-        <Card className="relative overflow-hidden border-0 shadow-xl bg-gradient-to-br from-card/80 via-card to-card/80 backdrop-blur-xl">
+        <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-card/80 via-card to-card/80 shadow-xl backdrop-blur-xl">
           <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent" />
           <CardContent className="relative p-0">
-            <InlineLinkShortenerForm />
+            <InlineLinkShortenerForm wsId={wsId} />
           </CardContent>
         </Card>
 
         {/* Links Table Section */}
-        <Card className="relative overflow-hidden border-0 shadow-xl bg-gradient-to-br from-card/80 via-card to-card/80 backdrop-blur-xl">
+        <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-card/80 via-card to-card/80 shadow-xl backdrop-blur-xl">
           <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-50" />
           <CardHeader className="relative">
             <CardTitle className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-dynamic-blue/10 rounded-lg">
+                <div className="rounded-lg bg-dynamic-blue/10 p-2">
                   <TrendingUp className="h-5 w-5 text-dynamic-blue" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold">
+                  <h3 className="font-semibold text-lg">
                     {t('link-shortener.recent_links')}
                   </h3>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-muted-foreground text-sm">
                     {count}{' '}
                     {count === 1
                       ? t('link-shortener.singular')
@@ -202,16 +260,18 @@ export default async function LinkShortenerPage({
           </CardHeader>
           <CardContent className="relative">
             <CustomDataTable
-              data={data}
-              columnGenerator={linkShortenerColumns}
+              data={data as any}
+              columnGenerator={linkShortenerColumns as any}
               namespace="link-shortener-data-table"
               count={count}
-              filters={<LinkShortenerFilters />}
+              filters={<LinkShortenerFilters wsId={wsId} />}
               defaultVisibility={{
                 id: false,
                 creator: false,
                 creator_id: false,
                 created_at: false,
+                click_count: true,
+                href: true,
               }}
             />
           </CardContent>
@@ -221,25 +281,100 @@ export default async function LinkShortenerPage({
   );
 }
 
-async function getData({
-  q,
-  page = '1',
-  pageSize = '10',
-  creatorId,
-  dateRange,
-  domain,
-}: {
-  q?: string;
-  page?: string;
-  pageSize?: string;
-  creatorId?: string | string[];
-  dateRange?: string;
-  domain?: string | string[];
-} = {}) {
+async function getAnalyticsData(wsId: string) {
+  const supabase = await createClient();
+  const sbAdmin = await createAdminClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user?.id) {
+    return { totalClicks: 0, uniqueVisitors: 0 };
+  }
+
+  const { data: workspaceMember } = await supabase
+    .from('workspace_members')
+    .select('*')
+    .eq('ws_id', wsId)
+    .eq('user_id', user.id)
+    .maybeSingle();
+
+  if (!workspaceMember) {
+    return { totalClicks: 0, uniqueVisitors: 0 };
+  }
+
+  // Get analytics summary for all links in the workspace
+  let analyticsQuery = sbAdmin
+    .from('link_analytics_summary')
+    .select('total_clicks, unique_visitors');
+
+  if (wsId !== ROOT_WORKSPACE_ID) {
+    analyticsQuery = analyticsQuery.eq('ws_id', wsId);
+  }
+
+  const { data: analyticsData, error } = await analyticsQuery;
+
+  if (error || !analyticsData) {
+    return { totalClicks: 0, uniqueVisitors: 0 };
+  }
+
+  const totalClicks = analyticsData.reduce(
+    (sum, item) => sum + (item.total_clicks || 0),
+    0
+  );
+  const uniqueVisitors = analyticsData.reduce(
+    (sum, item) => sum + (item.unique_visitors || 0),
+    0
+  );
+
+  return { totalClicks, uniqueVisitors };
+}
+
+async function getData(
+  wsId: string,
+  {
+    q,
+    page = '1',
+    pageSize = '10',
+    creatorId,
+    dateRange,
+    domain,
+    wsId: workspaceFilter,
+  }: {
+    q?: string;
+    page?: string;
+    pageSize?: string;
+    creatorId?: string | string[];
+    dateRange?: string;
+    domain?: string | string[];
+    wsId?: string | string[];
+  } = {}
+) {
+  const supabase = await createClient();
   const sbAdmin = await createAdminClient();
 
   const limit = parseInt(pageSize);
   const offset = (parseInt(page) - 1) * limit;
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user?.id) {
+    return { data: [], count: 0 };
+  }
+
+  const { data: workspaceMember } = await supabase
+    .from('workspace_members')
+    .select('*')
+    .eq('ws_id', wsId)
+    .eq('user_id', user.id)
+    .maybeSingle();
+
+  if (!workspaceMember) {
+    return { data: [], count: 0 };
+  }
 
   let query = sbAdmin
     .from('shortened_links')
@@ -256,6 +391,16 @@ async function getData({
       { count: 'exact' }
     )
     .order('created_at', { ascending: false });
+
+  if (wsId !== ROOT_WORKSPACE_ID) {
+    query = query.eq('ws_id', wsId);
+  } else if (workspaceFilter) {
+    // If in root workspace and workspace filter is applied
+    const workspaceIds = Array.isArray(workspaceFilter)
+      ? workspaceFilter
+      : [workspaceFilter];
+    query = query.in('ws_id', workspaceIds);
+  }
 
   // Apply search filter - supports URL, domain, and slug search
   if (q) {
