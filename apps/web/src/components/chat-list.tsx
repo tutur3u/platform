@@ -118,19 +118,11 @@ export function ChatList({
       )}
 
       {messages.map((message, index) => (
-        <div key={message.id}>
+        <div key={`${message.role}-${message.id}-${index}`}>
           <ChatMessage
             message={{
               ...message,
-              parts: [
-                {
-                  type: 'text',
-                  text:
-                    message.parts[0]?.type === 'text'
-                      ? message.parts[0].text
-                      : '',
-                },
-              ],
+              parts: message.parts,
               model:
                 message.model || (message.role === 'user' ? undefined : model),
               metadata: message.metadata as {
