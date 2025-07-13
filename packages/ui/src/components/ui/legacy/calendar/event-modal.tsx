@@ -123,7 +123,7 @@ export function EventModal() {
     title: '',
     description: '',
     start_at: new Date().toISOString(),
-    end_at: new Date(new Date().getTime() + 60 * 60 * 1000).toISOString(), // Default to 1 hour
+    end_at: new Date(Date.now() + 60 * 60 * 1000).toISOString(), // Default to 1 hour
     color: 'BLUE',
     location: '',
     priority: 'medium',
@@ -131,7 +131,7 @@ export function EventModal() {
   });
 
   // State for AI event generation
-  const [generatedEvents, setGeneratedEvents] = useState<any[]>([]);
+  const [generatedEvents, setGeneratedEvents] = useState<CalendarEvent[]>([]);
   const [currentEventIndex, setCurrentEventIndex] = useState(0);
   const [userTimezone] = useState(
     Intl.DateTimeFormat().resolvedOptions().timeZone
@@ -180,9 +180,39 @@ export function EventModal() {
     schema: calendarEventsSchema,
   });
 
-  // Add this near the top of the component, after tz is defined
-  const categoriesKey = JSON.stringify(
-    settings?.categoryColors?.categories ?? []
+  // Function to check for overlapping events
+  const checkForOverlaps = useCallback(
+    (eventToCheck: Partial<CalendarEvent>) => {
+      if (!eventToCheck.start_at || !eventToCheck.end_at) return;
+
+      const allEvents = getEvents();
+      const eventStart = new Date(eventToCheck.start_at);
+      const eventEnd = new Date(eventToCheck.end_at);
+
+      // Find events that overlap with this event
+      const overlaps = allEvents.filter((existingEvent) => {
+        // Skip comparing with the current event being edited
+        if (existingEvent.id === activeEvent?.id) return false;
+
+        const existingStart = new Date(existingEvent.start_at);
+        const existingEnd = new Date(existingEvent.end_at);
+
+        // Check if the events are on the same day
+        const isSameDay =
+          existingStart.getDate() === eventStart.getDate() &&
+          existingStart.getMonth() === eventStart.getMonth() &&
+          existingStart.getFullYear() === eventStart.getFullYear();
+
+        if (!isSameDay) return false;
+
+        // Check for time overlap
+        return !(existingEnd <= eventStart || existingStart >= eventEnd);
+      });
+
+      setOverlappingEvents(overlaps);
+      setShowOverlapWarning(overlaps.length > 0);
+    },
+    [activeEvent, getEvents]
   );
 
   // Handle AI-generated events
@@ -197,14 +227,14 @@ export function EventModal() {
       // Find overlapping events for the first event
       if (processedEvents.length > 0 && aiForm.getValues().smart_scheduling) {
         const firstEvent = processedEvents[0];
-        if (firstEvent && firstEvent.start_at && firstEvent.end_at) {
+        if (firstEvent?.start_at && firstEvent.end_at) {
           checkForOverlaps(firstEvent as Partial<CalendarEvent>);
         }
       }
 
       setActiveTab('preview');
     }
-  }, [object, isLoading, categoriesKey, tz]);
+  }, [object, isLoading, aiForm.getValues, checkForOverlaps]);
 
   // Reset form when modal opens/closes or active event changes
   useEffect(() => {
@@ -265,39 +295,7 @@ export function EventModal() {
 
     // Clear any error messages
     setDateError(null);
-  }, [activeEvent, isModalOpen, tz]);
-
-  // Function to check for overlapping events
-  const checkForOverlaps = (eventToCheck: Partial<CalendarEvent>) => {
-    if (!eventToCheck.start_at || !eventToCheck.end_at) return;
-
-    const allEvents = getEvents();
-    const eventStart = new Date(eventToCheck.start_at);
-    const eventEnd = new Date(eventToCheck.end_at);
-
-    // Find events that overlap with this event
-    const overlaps = allEvents.filter((existingEvent) => {
-      // Skip comparing with the current event being edited
-      if (existingEvent.id === activeEvent?.id) return false;
-
-      const existingStart = new Date(existingEvent.start_at);
-      const existingEnd = new Date(existingEvent.end_at);
-
-      // Check if the events are on the same day
-      const isSameDay =
-        existingStart.getDate() === eventStart.getDate() &&
-        existingStart.getMonth() === eventStart.getMonth() &&
-        existingStart.getFullYear() === eventStart.getFullYear();
-
-      if (!isSameDay) return false;
-
-      // Check for time overlap
-      return !(existingEnd <= eventStart || existingStart >= eventEnd);
-    });
-
-    setOverlappingEvents(overlaps);
-    setShowOverlapWarning(overlaps.length > 0);
-  };
+  }, [activeEvent, tz, checkForOverlaps, aiForm.reset]);
 
   // Handle manual event save
   const handleManualSave = async () => {
@@ -344,7 +342,7 @@ export function EventModal() {
       }
 
       closeModal();
-    } catch (error) {
+    } catch (_) {
       toast({
         title: 'Error',
         description: 'Failed to save or sync event. Please try again.',
@@ -399,7 +397,7 @@ export function EventModal() {
         existing_events: values.smart_scheduling ? existingEvents : undefined,
         categories: formattedCategories,
       });
-    } catch (error) {
+    } catch (_) {
       toast({
         title: 'Error generating events',
         description: 'Please try again with a different prompt',
@@ -416,7 +414,7 @@ export function EventModal() {
     try {
       const eventsToSave = generatedEvents;
       const savedEvents: CalendarEvent[] = [];
-      const failedEvents: Array<{ event: any; error: any }> = [];
+      const failedEvents: Array<{ event: CalendarEvent; error: unknown }> = [];
 
       // Save each event individually
       for (const eventData of eventsToSave) {
@@ -456,7 +454,7 @@ export function EventModal() {
           variant: 'destructive',
         });
       }
-    } catch (error) {
+    } catch (_) {
       toast({
         title: 'Error',
         description: 'Failed to save or sync AI-generated events.',
@@ -484,7 +482,7 @@ export function EventModal() {
         await deleteEvent(originalId);
       }
       closeModal();
-    } catch (error) {
+    } catch (_) {
       toast({
         title: 'Error',
         description: 'Failed to delete event. Please try again.',
@@ -694,7 +692,7 @@ export function EventModal() {
       };
 
       mediaRecorder.current.start();
-    } catch (error) {
+    } catch (_) {
       setIsRecording(false);
     }
   };
@@ -741,7 +739,7 @@ export function EventModal() {
           variant: 'destructive',
         });
       }
-    } catch (error) {
+    } catch (_) {
       toast({
         title: 'API Error',
         description: 'Failed to process audio recording',
@@ -786,7 +784,7 @@ export function EventModal() {
             variant: 'destructive',
           });
         }
-      } catch (error) {
+      } catch (_) {
         toast({
           title: 'API Error',
           description: 'Failed to process uploaded image',
@@ -808,7 +806,7 @@ export function EventModal() {
       setCurrentEventIndex(nextIndex);
       if (aiForm.getValues().smart_scheduling) {
         const nextEvent = generatedEvents[nextIndex];
-        if (nextEvent && nextEvent.start_at && nextEvent.end_at) {
+        if (nextEvent?.start_at && nextEvent.end_at) {
           checkForOverlaps(nextEvent as Partial<CalendarEvent>);
         }
       }
@@ -821,7 +819,7 @@ export function EventModal() {
       setCurrentEventIndex(prevIndex);
       if (aiForm.getValues().smart_scheduling) {
         const prevEvent = generatedEvents[prevIndex];
-        if (prevEvent && prevEvent.start_at && prevEvent.end_at) {
+        if (prevEvent?.start_at && prevEvent.end_at) {
           checkForOverlaps(prevEvent as Partial<CalendarEvent>);
         }
       }
@@ -861,7 +859,7 @@ export function EventModal() {
         title: 'Success',
         description: `Event ${checked ? 'locked' : 'unlocked'} successfully`,
       });
-    } catch (error) {
+    } catch (_) {
       toast({
         title: 'Error',
         description: 'Failed to update event lock status',
@@ -904,7 +902,7 @@ export function EventModal() {
 
         <Tabs
           value={activeTab}
-          onValueChange={(value) => setActiveTab(value as any)}
+          onValueChange={(value) => setActiveTab(value)}
           className="flex h-[calc(90vh-140px)] flex-col"
         >
           <TabsList className="justify-start gap-2 bg-transparent px-6 pt-4 pb-0">
@@ -1083,7 +1081,10 @@ export function EventModal() {
                                 disabled={event.locked}
                               />
                               <div className="flex flex-col space-y-3">
-                                <label className="font-medium text-sm">
+                                <label
+                                  htmlFor="locked"
+                                  className="font-medium text-sm"
+                                >
                                   Event Protection
                                 </label>
                                 <EventToggleSwitch
@@ -1441,6 +1442,7 @@ export function EventModal() {
                                   <div className="flex items-center gap-1">
                                     <MapPin className="h-3.5 w-3.5" />
                                     <button
+                                      type="button"
                                       onClick={() =>
                                         openGoogleMaps(generatedEvent.location)
                                       }
@@ -1540,9 +1542,9 @@ export function EventModal() {
                           AI Insights & Suggestions
                         </h3>
                         <ul className="space-y-2">
-                          {aiSuggestions.map((suggestion, index) => (
+                          {aiSuggestions.map((suggestion) => (
                             <li
-                              key={index}
+                              key={suggestion}
                               className="flex items-start gap-2 text-sm"
                             >
                               <div className="mt-0.5 text-primary">•</div>
