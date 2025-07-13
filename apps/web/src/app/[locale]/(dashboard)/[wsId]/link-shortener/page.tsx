@@ -77,7 +77,7 @@ export default async function LinkShortenerPage({
     );
 
   const analyticsMap = new Map(
-    analyticsData?.map((a: any) => [a.link_id || '', a.total_clicks || 0]) || []
+    analyticsData?.map((a) => [a.link_id || '', a.total_clicks || 0]) || []
   );
 
   const data = rawData.map((d) => ({
@@ -99,7 +99,7 @@ export default async function LinkShortenerPage({
     .size;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
+    <div className="min-h-screen">
       <div className="container mx-auto space-y-8 px-4 py-8">
         {/* Header Section */}
         <div className="space-y-6 text-center">
@@ -260,8 +260,8 @@ export default async function LinkShortenerPage({
           </CardHeader>
           <CardContent className="relative">
             <CustomDataTable
-              data={data as any}
-              columnGenerator={linkShortenerColumns as any}
+              data={data}
+              columnGenerator={linkShortenerColumns}
               namespace="link-shortener-data-table"
               count={count}
               filters={<LinkShortenerFilters wsId={wsId} />}
