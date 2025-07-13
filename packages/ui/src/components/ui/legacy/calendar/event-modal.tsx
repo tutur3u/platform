@@ -217,9 +217,9 @@ export function EventModal() {
 
   // Handle AI-generated events
   useEffect(() => {
-    if (object && !isLoading) {
+    if (object?.events && !isLoading) {
       // Process the generated events
-      const processedEvents = Array.isArray(object) ? object : [object];
+      const processedEvents = object.events;
 
       setGeneratedEvents(processedEvents);
       setCurrentEventIndex(0);

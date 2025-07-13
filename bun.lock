@@ -36,7 +36,7 @@
         "next-themes": "^0.4.6",
         "react": "^19.1.0",
         "react-dom": "^19.1.0",
-        "zod": "^4.0.2",
+        "zod": "^4.0.5",
       },
       "devDependencies": {
         "@types/negotiator": "^0.6.4",
@@ -114,7 +114,7 @@
         "sharp": "^0.34.3",
         "use-debounce": "^10.0.5",
         "uuid": "^11.1.0",
-        "zod": "^4.0.2",
+        "zod": "^4.0.5",
       },
       "devDependencies": {
         "@next/bundle-analyzer": "^15.3.5",
@@ -199,7 +199,7 @@
         "sanitize-filename": "^1.6.3",
         "sharp": "^0.34.3",
         "uuid": "^11.1.0",
-        "zod": "^4.0.2",
+        "zod": "^4.0.5",
       },
       "devDependencies": {
         "@next/bundle-analyzer": "^15.3.5",
@@ -264,7 +264,7 @@
         "qrcode.react": "^4.2.0",
         "react": "^19.1.0",
         "react-dom": "^19.1.0",
-        "zod": "^3.25.76",
+        "zod": "^4.0.5",
       },
       "devDependencies": {
         "@types/node": "^24.0.13",
@@ -355,7 +355,7 @@
         "use-debounce": "^10.0.5",
         "uuid": "^11.1.0",
         "xlsx": "file:vendor/xlsx-0.20.3.tgz",
-        "zod": "^4.0.2",
+        "zod": "^4.0.5",
       },
       "devDependencies": {
         "@next/bundle-analyzer": "^15.3.5",
@@ -419,7 +419,7 @@
         "next": "^15.3.5",
         "react": "^19.1.0",
         "react-dom": "^19.1.0",
-        "zod": "^4.0.2",
+        "zod": "^4.0.5",
       },
       "devDependencies": {
         "@tuturuuu/types": "workspace:*",
@@ -469,7 +469,7 @@
         "next": "^15.3.5",
         "react": "^19.1.0",
         "react-dom": "^19.1.0",
-        "zod": "^4.0.2",
+        "zod": "^4.0.5",
       },
       "devDependencies": {
         "@tuturuuu/typescript-config": "workspace:*",
@@ -517,7 +517,7 @@
       "dependencies": {
         "react": "^19.1.0",
         "react-dom": "^19.1.0",
-        "zod": "^4.0.2",
+        "zod": "^4.0.5",
       },
       "devDependencies": {
         "@tuturuuu/typescript-config": "workspace:*",
@@ -604,7 +604,7 @@
         "tailwind-scrollbar": "^4.0.2",
         "tailwindcss-animate": "^1.0.7",
         "vaul": "^1.1.2",
-        "zod": "^4.0.2",
+        "zod": "^4.0.5",
       },
       "devDependencies": {
         "@tailwindcss/postcss": "^4.1.11",
@@ -634,7 +634,7 @@
         "react-dom": "^19.1.0",
         "tailwind-merge": "^3.3.1",
         "uuid": "^11.1.0",
-        "zod": "^4.0.2",
+        "zod": "^4.0.5",
       },
       "devDependencies": {
         "@tuturuuu/types": "workspace:*",
@@ -3711,8 +3711,6 @@
     "@trigger.dev/sdk/uuid": ["uuid@9.0.1", "", { "bin": { "uuid": "dist/bin/uuid" } }, "sha512-b+1eJOlsR9K8HJpow9Ok3fiWOWSIcIzXodvv0rQjVoOVNpWMpxf1wZNpt4y9h10odCNrqnYp1OBzRktckBe3sA=="],
 
     "@trigger.dev/sdk/zod": ["zod@3.25.76", "", {}, "sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ=="],
-
-    "@tuturuuu/tumeet/zod": ["zod@3.25.76", "", {}, "sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ=="],
 
     "@tuturuuu/web/googleapis": ["googleapis@152.0.0", "", { "dependencies": { "google-auth-library": "^10.1.0", "googleapis-common": "^8.0.0" } }, "sha512-i/eo7ytwdWv9vONIY/MdUkSYOnGTtTMLP1y4eaTazGVArlmkH47Th07HLz8EYgIwsixqTR48bxAcdsGd9yoZqg=="],
 
