@@ -1,10 +1,6 @@
-import {
-  GoogleGenerativeAI,
-  HarmBlockThreshold,
-  HarmCategory,
-} from '@google/generative-ai';
+import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { createClient } from '@tuturuuu/supabase/next/server';
-import type { Message } from 'ai';
+import { convertToModelMessages, generateText, type UIMessage } from 'ai';
 import { cookies } from 'next/headers';
 import { type NextRequest, NextResponse } from 'next/server';
 
@@ -61,7 +57,8 @@ export function createPATCH(
       const messages = rawMessages.map((msg) => ({
         ...msg,
         role: msg.role.toLowerCase(),
-      })) as Message[];
+        parts: [{ type: 'text', text: msg.content || '' }],
+      })) as UIMessage[];
 
       if (!messages[messages.length - 1]?.id)
         return new Response('Internal Server Error', { status: 500 });
@@ -69,30 +66,51 @@ export function createPATCH(
       if (messages[messages.length - 1]?.role === 'user')
         return new Response('Cannot summarize user message', { status: 400 });
 
-      const prompt = buildGooglePrompt(messages);
+      const aiMessages = convertToModelMessages(messages);
 
-      if (!prompt)
-        return new Response('Internal Server Error', { status: 500 });
+      const google = createGoogleGenerativeAI({
+        apiKey,
+      });
 
-      const genAI = new GoogleGenerativeAI(apiKey);
+      const result = await generateText({
+        model: google(model),
+        messages: aiMessages,
+        system: systemInstruction,
+        providerOptions: {
+          google: {
+            safetySettings: [
+              {
+                category: 'HARM_CATEGORY_HARASSMENT',
+                threshold: 'BLOCK_NONE',
+              },
+              {
+                category: 'HARM_CATEGORY_HATE_SPEECH',
+                threshold: 'BLOCK_NONE',
+              },
+              {
+                category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
+                threshold: 'BLOCK_NONE',
+              },
+              {
+                category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
+                threshold: 'BLOCK_NONE',
+              },
+            ],
+          },
+        },
+      });
 
-      const geminiRes = await genAI
-        .getGenerativeModel({
-          model,
-          generationConfig,
-          safetySettings,
-        })
-        .generateContent(prompt);
-
-      const completion =
-        geminiRes.response.candidates?.[0]?.content.parts[0]?.text;
+      const completion = result.text;
 
       if (!completion) return new Response('No content found', { status: 404 });
+
+      if (!messages[messages.length - 1]?.id)
+        return new Response('Internal Server Error', { status: 500 });
 
       const { error } = await supabase
         .from('ai_chats')
         .update({
-          latest_summarized_message_id: messages[messages.length - 1]!.id,
+          latest_summarized_message_id: messages[messages.length - 1]?.id,
           summary: completion,
         })
         .eq('id', id);
@@ -102,11 +120,11 @@ export function createPATCH(
       return new Response(JSON.stringify({ response: completion }), {
         status: 200,
       });
-    } catch (error: any) {
-      console.log(error);
+    } catch (error) {
+      console.error(error);
       return NextResponse.json(
         {
-          message: `## Edge API Failure\nCould not complete the request. Please view the **Stack trace** below.\n\`\`\`bash\n${error?.stack}`,
+          message: `## Edge API Failure\nCould not complete the request. Please view the **Stack trace** below.\n\`\`\`bash\n${(error as Error)?.stack || 'No stack trace available'}`,
         },
         {
           status: 200,
@@ -115,59 +133,6 @@ export function createPATCH(
     }
   };
 }
-
-const normalizeGoogle = (message: Message) => ({
-  role:
-    message.role === 'user'
-      ? 'user'
-      : ('model' as 'user' | 'function' | 'model'),
-  parts: [{ text: message.content }],
-});
-
-const normalizeGoogleMessages = (messages: Message[]) =>
-  messages
-    .filter(
-      (message) => message.role === 'user' || message.role === 'assistant'
-    )
-    .map(normalizeGoogle);
-
-function buildGooglePrompt(messages: Message[]) {
-  const normalizedMsgs = normalizeGoogleMessages([
-    ...leadingMessages,
-    ...messages,
-    ...trailingMessages,
-  ]);
-
-  return { contents: normalizedMsgs };
-}
-
-const generationConfig = undefined;
-
-// const generationConfig = {
-//   temperature: 0.9,
-//   topK: 1,
-//   topP: 1,
-//   maxOutputTokens: 2048,
-// };
-
-const safetySettings = [
-  {
-    category: HarmCategory.HARM_CATEGORY_HARASSMENT,
-    threshold: HarmBlockThreshold.BLOCK_NONE,
-  },
-  {
-    category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
-    threshold: HarmBlockThreshold.BLOCK_NONE,
-  },
-  {
-    category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
-    threshold: HarmBlockThreshold.BLOCK_NONE,
-  },
-  {
-    category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
-    threshold: HarmBlockThreshold.BLOCK_NONE,
-  },
-];
 
 const systemInstruction = `
   Here is a set of guidelines I MUST follow:
@@ -188,13 +153,3 @@ const systemInstruction = `
   (This is the end of the note.)
   DO NOT SAY RESPONSE START OR SAYING THAT THE RESPONSE TO THE USER STARTS HERE. JUST START THE RESPONSE.
   `;
-
-const leadingMessages: Message[] = [];
-
-const trailingMessages: Message[] = [
-  {
-    id: 'system-instruction',
-    role: 'assistant',
-    content: `Note to self (this is private thoughts that are not sent to the chat participant): \n\n"""${systemInstruction}"""`,
-  },
-];

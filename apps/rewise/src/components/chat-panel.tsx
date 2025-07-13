@@ -1,7 +1,7 @@
 /* eslint-disable no-unused-vars */
 
 import type { Model } from '@tuturuuu/ai/models';
-import type { Message, UseChatHelpers } from '@tuturuuu/ai/types';
+import type { UIMessage, UseChatHelpers } from '@tuturuuu/ai/types';
 import {
   createClient,
   createDynamicClient,
@@ -44,26 +44,22 @@ interface PresenceState {
 
 export interface ChatPanelProps
   extends Pick<
-    UseChatHelpers,
-    | 'append'
-    | 'isLoading'
-    | 'reload'
-    | 'messages'
-    | 'stop'
-    | 'input'
-    | 'setInput'
+    UseChatHelpers<UIMessage>,
+    'sendMessage' | 'status' | 'messages' | 'stop'
   > {
   id?: string;
   chat: Partial<AIChat> | undefined;
   chats?: AIChat[];
   count?: number | null;
+  input: string;
   inputRef: React.RefObject<HTMLTextAreaElement | null>;
+  setInput: (input: string) => void;
   model?: Model;
   setModel: (model: Model) => void;
   createChat: (input: string) => Promise<void>;
   updateChat: (data: Partial<AIChat>) => Promise<void>;
   clearChat: () => void;
-  initialMessages?: Message[];
+  initialMessages?: UIMessage[];
   collapsed: boolean;
   setCollapsed: (collapsed: boolean) => void;
   disabled?: boolean;
@@ -77,8 +73,8 @@ export interface ChatPanelProps
 export function ChatPanel({
   id,
   chat,
-  isLoading,
-  append,
+  status,
+  sendMessage,
   input,
   inputRef,
   setInput,
@@ -137,7 +133,7 @@ export function ChatPanel({
 
   return (
     <Dialog open={showDialog} onOpenChange={setShowDialog}>
-      <div className="pointer-events-none fixed inset-x-0 bottom-0 bg-linear-to-b from-muted/30 from-0% to-muted/30 to-50% dark:from-background/0 dark:from-10% dark:to-background/80">
+      <div className="pointer-events-none fixed inset-x-0 bottom-0 bg-linear-to-b from-0% from-muted/30 to-50% to-muted/30 dark:from-10% dark:from-background/0 dark:to-background/80">
         <div className="pointer-events-auto mx-auto sm:max-w-2xl sm:px-4">
           <div className="space-y-4 border-t bg-background px-4 py-2 shadow-lg sm:rounded-t-xl sm:border md:py-4">
             {showExtraOptions && (
@@ -157,10 +153,9 @@ export function ChatPanel({
               onSubmit={async (value) => {
                 if (!id) return await handleCreateChat(value);
 
-                await append({
-                  id,
-                  content: value,
+                await sendMessage({
                   role: 'user',
+                  parts: [{ type: 'text', text: value }],
                 });
               }}
               files={files}
@@ -168,7 +163,7 @@ export function ChatPanel({
               input={input}
               inputRef={inputRef}
               setInput={setInput}
-              isLoading={isLoading}
+              isLoading={status === 'streaming'}
               showExtraOptions={showExtraOptions}
               setShowExtraOptions={setShowExtraOptions}
               toggleChatFileUpload={() => {

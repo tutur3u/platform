@@ -1,10 +1,10 @@
-import type { Message } from '@tuturuuu/ai/types';
+import type { UIMessage } from '@tuturuuu/ai/types';
 import type { RealtimePresenceState } from '@tuturuuu/supabase/next/realtime';
 import { Box, Globe, Lock, Sparkle } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
-import { Fragment, useMemo } from 'react';
+import { Fragment } from 'react';
 import { ChatMessage } from '@/components/chat-message';
 import { OnlineUsers } from '@/components/online-users';
 
@@ -28,7 +28,7 @@ export interface ChatListProps {
   chatModel?: string | null;
   chatSummary?: string | null;
   titleLoading?: boolean;
-  messages: (Message & {
+  messages: (UIMessage & {
     chat_id?: string;
     model?: string;
     created_at?: string;
@@ -62,20 +62,7 @@ export function ChatList({
 }: ChatListProps) {
   const t = useTranslations('ai_chat');
 
-  // Deduplicate messages to prevent React key conflicts
-  const uniqueMessages = useMemo(() => {
-    const seen = new Set<string>();
-    return messages.filter((message) => {
-      if (seen.has(message.id)) {
-        console.warn(`Duplicate message ID detected: ${message.id}`);
-        return false;
-      }
-      seen.add(message.id);
-      return true;
-    });
-  }, [messages]);
-
-  if (!uniqueMessages.length) return null;
+  if (!messages.length) return null;
 
   return (
     <div
@@ -160,14 +147,25 @@ export function ChatList({
         </Fragment>
       )}
 
-      {uniqueMessages.map((message, index) => (
-        <div key={`message-${message.id}-${index}`}>
+      {messages.map((message, index) => (
+        <div key={`${message.role}-${message.id}-${index}`}>
           <ChatMessage
             message={{
               ...message,
               model:
                 message.model || (message.role === 'user' ? undefined : model),
-              content: message.content.trim(),
+              parts: message.parts,
+              metadata: message.metadata as
+                | {
+                    response_types?: (
+                      | 'summary'
+                      | 'notes'
+                      | 'multi_choice_quiz'
+                      | 'paragraph_quiz'
+                      | 'flashcards'
+                    )[];
+                  }
+                | undefined,
             }}
             setInput={setInput}
             embeddedUrl={embeddedUrl}

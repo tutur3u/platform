@@ -1,6 +1,6 @@
 'use client';
 
-import type { Message } from '@tuturuuu/ai/types';
+import type { UIMessage } from '@tuturuuu/ai/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { CodeBlock } from '@tuturuuu/ui/codeblock';
 import { UserIcon } from '@tuturuuu/ui/icons';
@@ -315,7 +315,16 @@ const FollowupComponent = ({
 };
 
 export interface ChatMessageProps {
-  message: Message & {
+  message: UIMessage & {
+    metadata?: {
+      response_types?: (
+        | 'summary'
+        | 'notes'
+        | 'multi_choice_quiz'
+        | 'paragraph_quiz'
+        | 'flashcards'
+      )[];
+    };
     chat_id?: string;
     model?: string;
     prompt_tokens?: number;
@@ -696,7 +705,14 @@ export function ChatMessage({
           // biome-ignore lint/suspicious/noExplicitAny: <custom components>
           components={markdownComponents as any}
         >
-          {message.content}
+          {message.parts
+            ?.map((part) => {
+              if (part.type === 'text') return part.text;
+
+              return null;
+            })
+            .filter(Boolean)
+            .join('') || ''}
         </MemoizedReactMarkdown>
       </div>
     </div>
