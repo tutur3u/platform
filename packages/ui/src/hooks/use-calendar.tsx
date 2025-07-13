@@ -95,6 +95,12 @@ const CalendarContext = createContext<{
     targetDate: Date | null;
     sourceZone: 'timed' | 'all-day' | null;
     targetZone: 'timed' | 'all-day' | null;
+    mouseX: number;
+    mouseY: number;
+    targetTimeSlot: {
+      hour: number;
+      minute: number;
+    } | null;
   };
   setCrossZoneDragState: (state: {
     isActive: boolean;
@@ -102,6 +108,12 @@ const CalendarContext = createContext<{
     targetDate: Date | null;
     sourceZone: 'timed' | 'all-day' | null;
     targetZone: 'timed' | 'all-day' | null;
+    mouseX: number;
+    mouseY: number;
+    targetTimeSlot: {
+      hour: number;
+      minute: number;
+    } | null;
   }) => void;
 }>({
   getEvent: () => undefined,
@@ -140,6 +152,9 @@ const CalendarContext = createContext<{
     targetDate: null,
     sourceZone: null,
     targetZone: null,
+    mouseX: 0,
+    mouseY: 0,
+    targetTimeSlot: null,
   },
   setCrossZoneDragState: () => undefined,
 });
@@ -1411,12 +1426,21 @@ export const CalendarProvider = ({
     targetDate: Date | null;
     sourceZone: 'timed' | 'all-day' | null;
     targetZone: 'timed' | 'all-day' | null;
+    mouseX: number;
+    mouseY: number;
+    targetTimeSlot: {
+      hour: number;
+      minute: number;
+    } | null;
   }>({
     isActive: false,
     draggedEvent: null,
     targetDate: null,
     sourceZone: null,
     targetZone: null,
+    mouseX: 0,
+    mouseY: 0,
+    targetTimeSlot: null,
   });
 
   const values = {

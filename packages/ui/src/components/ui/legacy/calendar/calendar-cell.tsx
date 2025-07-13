@@ -120,6 +120,7 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
     settings,
     isDragging,
     setIsDragging,
+    crossZoneDragState,
   } = useCalendar();
   const [isHovering, setIsHovering] = useState(false);
   const cellRef = useRef<HTMLDivElement>(null);
@@ -488,6 +489,10 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
     slot: 'hour' | 'half-hour' | number
   ) => {
     if (isDragging) return;
+    
+    // Don't show tooltips during cross-zone drag operations
+    if (crossZoneDragState.isActive) return;
+    
     setIsHovering(true);
     // If slot is a number, it's a 15-minute cell
     if (typeof slot === 'number' && isQuarterHour(slot)) {
@@ -689,6 +694,16 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
     };
   }, []);
 
+  // Check if this cell is the target for cross-zone drag
+  const isCrossZoneTarget = crossZoneDragState.isActive && 
+    crossZoneDragState.targetZone === 'timed' && 
+    crossZoneDragState.targetDate && 
+    crossZoneDragState.targetTimeSlot &&
+    dayjs(date).isSame(crossZoneDragState.targetDate, 'day') &&
+    crossZoneDragState.targetTimeSlot.hour === hour;
+    
+
+
   return (
     <div
       id={id}
@@ -696,7 +711,8 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
       className={cn(
         'calendar-cell relative transition-colors',
         hour !== 0 && 'border-t border-border/30',
-        isHovering ? 'bg-muted/20' : 'hover:bg-muted/10'
+        isHovering ? 'bg-muted/20' : 'hover:bg-muted/10',
+        isCrossZoneTarget && 'bg-green-50/30 dark:bg-green-900/10'
       )}
       style={{
         height: `${HOUR_HEIGHT}px`,
@@ -709,8 +725,74 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
       data-hour={hour}
       data-date={date}
     >
+      {/* Cross-zone drag target with start/end time prediction */}
+      {isCrossZoneTarget && crossZoneDragState.targetTimeSlot && crossZoneDragState.draggedEvent && (() => {
+        const startTime = tz === 'auto' 
+          ? dayjs().hour(hour).minute(crossZoneDragState.targetTimeSlot.minute)
+          : dayjs().tz(tz).hour(hour).minute(crossZoneDragState.targetTimeSlot.minute);
+        
+        // Calculate duration based on original event or preserved metadata
+        let durationMinutes = 60; // Default 1 hour
+        const schedulingNote = crossZoneDragState.draggedEvent.scheduling_note || '';
+        const METADATA_MARKER = '__PRESERVED_METADATA__';
+        
+        if (schedulingNote.includes(METADATA_MARKER)) {
+          try {
+            const [, preservedJson] = schedulingNote.split(METADATA_MARKER);
+            const preservedData = JSON.parse(preservedJson || '{}');
+            if (preservedData.preserved_timed_start && preservedData.preserved_timed_end) {
+              const preservedStart = dayjs(preservedData.preserved_timed_start);
+              const preservedEnd = dayjs(preservedData.preserved_timed_end);
+              durationMinutes = preservedEnd.diff(preservedStart, 'minute');
+            }
+          } catch (e) {
+            durationMinutes = 60;
+          }
+        } else {
+          // Check if it was originally a timed event
+          const originalStart = dayjs(crossZoneDragState.draggedEvent.start_at);
+          const originalEnd = dayjs(crossZoneDragState.draggedEvent.end_at);
+          const originalDuration = originalEnd.diff(originalStart, 'minute');
+          if (originalDuration > 0 && originalDuration < 1440) {
+            durationMinutes = originalDuration;
+          }
+        }
+        
+        const endTime = startTime.add(durationMinutes, 'minute');
+        const durationText = durationMinutes < 60 
+          ? `${durationMinutes}m` 
+          : `${Math.floor(durationMinutes / 60)}h${durationMinutes % 60 ? ` ${durationMinutes % 60}m` : ''}`;
+        
+        return (
+          <div className="absolute inset-0 pointer-events-none">
+            {/* Subtle target line indicator */}
+            <div 
+              className="absolute left-0 right-0 bg-green-400/20 dark:bg-green-500/20 border-t border-green-500/40 dark:border-green-400/40"
+              style={{
+                top: `${(crossZoneDragState.targetTimeSlot.minute / 60) * 100}%`,
+              }}
+            />
+            
+            {/* Start time prediction */}
+            <div className="absolute top-1 left-1 text-xs font-semibold text-green-700 dark:text-green-300 bg-green-100/90 dark:bg-green-900/90 px-1.5 py-0.5 rounded shadow-sm">
+              ▶ {startTime.format(settings?.appearance?.timeFormat === '24h' ? 'HH:mm' : 'h:mm a')}
+            </div>
+            
+            {/* End time prediction */}
+            <div className="absolute bottom-1 right-1 text-xs font-semibold text-green-700 dark:text-green-300 bg-green-100/90 dark:bg-green-900/90 px-1.5 py-0.5 rounded shadow-sm">
+              {endTime.format(settings?.appearance?.timeFormat === '24h' ? 'HH:mm' : 'h:mm a')} ◀
+            </div>
+            
+            {/* Duration indicator */}
+            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-xs font-medium text-green-600 dark:text-green-400 bg-white/80 dark:bg-gray-800/80 px-2 py-1 rounded-full shadow-sm border border-green-200 dark:border-green-700">
+              {durationText}
+            </div>
+          </div>
+        );
+      })()}
+
       {/* Show only the hovered label before 1s, both after 1s */}
-      {!isDragging &&
+      {!isDragging && !isCrossZoneTarget &&
         (showBothLabels ? (
           <>
             <span className="absolute top-2 left-2 text-xs font-medium text-muted-foreground/70">

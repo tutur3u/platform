@@ -877,11 +877,13 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
             targetDate,
             sourceZone: 'timed',
             targetZone: 'all-day',
+            mouseX: e.clientX,
+            mouseY: e.clientY,
+            targetTimeSlot: null, // Not needed for all-day conversion
           });
           
-          // Seamless all-day conversion preview
-          eventCardEl.style.opacity = '0.6';
-          eventCardEl.style.transform = 'scale(0.9)';
+          // Make the original event semi-transparent during cross-zone drag
+          eventCardEl.style.opacity = '0.5';
           eventCardEl.style.cursor = 'grabbing';
           
           // Debug logging
@@ -898,11 +900,13 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
             targetDate: null,
             sourceZone: null,
             targetZone: null,
+            mouseX: 0,
+            mouseY: 0,
+            targetTimeSlot: null,
           });
           
           // Reset for normal dragging
           eventCardEl.style.opacity = '1';
-          eventCardEl.style.transform = 'scale(1)';
           eventCardEl.style.cursor = 'grabbing';
         }
 
@@ -1128,6 +1132,9 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
           targetDate: null,
           sourceZone: null,
           targetZone: null,
+          mouseX: 0,
+          mouseY: 0,
+          targetTimeSlot: null,
         });
 
         window.removeEventListener('mousemove', handleMouseMove);

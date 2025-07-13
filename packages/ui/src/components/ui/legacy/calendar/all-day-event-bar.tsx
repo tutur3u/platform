@@ -10,7 +10,7 @@ import timezone from 'dayjs/plugin/timezone';
 import { Calendar, ChevronDown, ChevronUp } from 'lucide-react';
 import React, { useMemo, useState, useRef, useCallback } from 'react';
 import { useCalendar } from '../../../../hooks/use-calendar';
-import { MIN_COLUMN_WIDTH } from './config';
+import { MIN_COLUMN_WIDTH, HOUR_HEIGHT } from './config';
 
 dayjs.extend(isBetween);
 dayjs.extend(isSameOrAfter);
@@ -97,7 +97,7 @@ const preserveTimestamps = (event: CalendarEvent): CalendarEvent => {
   return event;
 };
 
-const restoreTimestamps = (event: CalendarEvent, targetDate?: Date): CalendarEvent => {
+const restoreTimestamps = (event: CalendarEvent, targetDate?: Date, tz?: string): CalendarEvent => {
   // Restore preserved timestamps when converting back to timed
   const schedulingNote = event.scheduling_note || '';
   
@@ -116,8 +116,10 @@ const restoreTimestamps = (event: CalendarEvent, targetDate?: Date): CalendarEve
           const originalStart = dayjs(startAt);
           const originalEnd = dayjs(endAt);
           
-          // Use the target date but preserve the original time
-          const targetDayjs = dayjs(targetDate);
+          // Use the target date but preserve the original time (with timezone support)
+          const targetDayjs = tz === 'auto' || !tz 
+            ? dayjs(targetDate)
+            : dayjs(targetDate).tz(tz);
           
           startAt = targetDayjs
             .hour(originalStart.hour())
@@ -146,19 +148,40 @@ const restoreTimestamps = (event: CalendarEvent, targetDate?: Date): CalendarEve
   return event;
 };
 
-const createTimedEventFromAllDay = (event: CalendarEvent, targetDate: Date, hour: number = 9, minute: number = 0): CalendarEvent => {
-  // First check if we have preserved timestamps to restore
-  const restoredEvent = restoreTimestamps(event, targetDate);
-  
-  // If timestamps were successfully restored, use them
-  if (restoredEvent.start_at !== event.start_at || restoredEvent.end_at !== event.end_at) {
-    return restoredEvent;
+const createTimedEventFromAllDay = (event: CalendarEvent, targetDate: Date, hour: number = 9, minute: number = 0, tz?: string, forceTime: boolean = false): CalendarEvent => {
+  // When user explicitly drags to a specific time (forceTime = true), use that time
+  // Otherwise, try to restore preserved timestamps first
+  if (!forceTime) {
+    // First check if we have preserved timestamps to restore
+    const restoredEvent = restoreTimestamps(event, targetDate, tz);
+    
+    // If timestamps were successfully restored, use them
+    if (restoredEvent.start_at !== event.start_at || restoredEvent.end_at !== event.end_at) {
+      return restoredEvent;
+    }
   }
   
   // No preserved timestamps - this means it was originally an all-day event
   // Use the drop location time with default 1-hour duration
-  const startTime = dayjs(targetDate).hour(hour).minute(minute).second(0).millisecond(0);
+  // Handle timezone properly using the same logic as the component
+  const startTime = tz === 'auto' || !tz 
+    ? dayjs(targetDate).hour(hour).minute(minute).second(0).millisecond(0)
+    : dayjs(targetDate).tz(tz).hour(hour).minute(minute).second(0).millisecond(0);
   const endTime = startTime.add(1, 'hour'); // Default 1-hour duration
+  
+  // Debug logging for time conversion
+  if (process.env.NODE_ENV === 'development') {
+    console.log('🕐 Creating timed event from all-day:', {
+      originalEvent: event.title,
+      targetDate: targetDate.toISOString(),
+      inputTime: { hour, minute },
+      timezone: tz,
+      startTime: startTime.toISOString(),
+      endTime: endTime.toISOString(),
+      formattedStart: startTime.format('YYYY-MM-DD HH:mm:ss'),
+      formattedEnd: endTime.format('YYYY-MM-DD HH:mm:ss'),
+    });
+  }
   
   // Check if this event already has metadata (was converted before)
   const schedulingNote = event.scheduling_note || '';
@@ -244,7 +267,7 @@ const EventContent = ({ event }: { event: CalendarEvent }) => (
 );
 
 export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
-  const { settings, openModal, updateEvent, crossZoneDragState } = useCalendar();
+  const { settings, openModal, updateEvent, crossZoneDragState, setCrossZoneDragState } = useCalendar();
   const { allDayEvents } = useCalendarSync();
   const showWeekends = settings.appearance.showWeekends;
   const tz = settings?.timezone?.timezone;
@@ -315,37 +338,72 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
     return 'all-day';
   }, []);
 
-  // Helper to calculate time slot target
+    // Helper to calculate time slot target
   const calculateTimeSlotTarget = useCallback((clientX: number, clientY: number) => {
+    // Get the calendar view container
     const calendarView = document.getElementById('calendar-view');
     if (!calendarView) return null;
     
-    const calendarRect = calendarView.getBoundingClientRect();
-    const relativeX = clientX - calendarRect.left - 64; // Account for time trail width
-    const relativeY = clientY - calendarRect.top;
+    // Find the actual start of the timed calendar grid
+    // TimeTrail is the first child (with w-16 class), CalendarView is the second
+    const timeTrail = calendarView.children[0]; // First child is TimeTrail
+    const calendarViewDiv = calendarView.children[1]; // Second child is CalendarView
     
-    // Calculate target date
-    const columnWidth = (calendarRect.width - 64) / visibleDates.length; // Subtract time trail
+    if (!timeTrail || !calendarViewDiv) return null;
+    
+    // Find any visible calendar cell to understand the actual grid positioning
+    const anyVisibleCell = calendarViewDiv.querySelector('.calendar-cell');
+    if (!anyVisibleCell) return null;
+    
+    // Get its hour to understand what's currently visible
+    const cellHour = parseInt(anyVisibleCell.getAttribute('data-hour') || '0');
+    const cellRect = anyVisibleCell.getBoundingClientRect();
+    
+    const timeTrailRect = timeTrail.getBoundingClientRect();
+    
+    // Calculate mouse position relative to the actual timed calendar grid
+    const relativeX = clientX - timeTrailRect.right; // Position relative to right edge of time trail
+    
+    // CRITICAL FIX: Calculate based on actual visible cell position
+    // Find where the mouse is relative to the visible cell, then add the cell's hour offset
+    const mouseYFromCellTop = clientY - cellRect.top;
+    const mouseHourOffset = mouseYFromCellTop / HOUR_HEIGHT; // How many hours below the visible cell
+    const actualHour = cellHour + mouseHourOffset;
+    
+    // Convert back to pixel position for consistency with existing logic
+    const relativeY = actualHour * HOUR_HEIGHT;
+    
+    // Make sure we're actually in the timed area
+    if (relativeY < 0) return null; // Above the timed calendar
+    
+    // Calculate target date from column position  
+    const calendarViewRect = calendarViewDiv.getBoundingClientRect();
+    const availableWidth = calendarViewRect.width; // Width of the calendar view area  
+    const columnWidth = availableWidth / visibleDates.length;
     const dateIndex = Math.floor(relativeX / columnWidth);
     const clampedDateIndex = Math.max(0, Math.min(dateIndex, visibleDates.length - 1));
     const targetDate = visibleDates[clampedDateIndex];
     
     if (!targetDate) return null;
     
-    // Calculate target time (assuming 80px per hour)
-    const HOUR_HEIGHT = 80;
-    const hour = Math.floor(relativeY / HOUR_HEIGHT);
-    const minute = Math.floor(((relativeY % HOUR_HEIGHT) / HOUR_HEIGHT) * 60);
+    // Calculate target time with proper precision using the actual hour height
+    const hourFloat = relativeY / HOUR_HEIGHT;
+    const hour = Math.floor(hourFloat);
+    const minuteFloat = (hourFloat - hour) * 60;
     
-    // Round to nearest 15 minutes
-    const roundedMinute = Math.round(minute / 15) * 15;
+    // Round to nearest 15 minutes for better UX
+    const roundedMinute = Math.round(minuteFloat / 15) * 15;
     const finalMinute = roundedMinute === 60 ? 0 : roundedMinute;
     const finalHour = roundedMinute === 60 ? hour + 1 : hour;
     
+    // Ensure we stay within valid time bounds (0-23 hours)
+    const clampedHour = Math.max(0, Math.min(finalHour, 23));
+    const clampedMinute = clampedHour === 23 && finalMinute > 45 ? 45 : finalMinute; // Prevent going past 23:45
+    
     return {
       date: targetDate,
-      hour: Math.max(0, Math.min(finalHour, 23)),
-      minute: finalMinute,
+      hour: clampedHour,
+      minute: clampedMinute,
     };
   }, [visibleDates]);
 
@@ -409,6 +467,23 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
       timeSlotTarget = calculateTimeSlotTarget(e.clientX, e.clientY);
       // Hide the normal preview span when converting to timed
       previewSpan = null;
+      
+      // Update global cross-zone drag state for preview
+      if (currentDragState.draggedEvent && timeSlotTarget) {
+        setCrossZoneDragState({
+          isActive: true,
+          draggedEvent: currentDragState.draggedEvent,
+          targetDate: timeSlotTarget.date,
+          sourceZone: 'all-day',
+          targetZone: 'timed',
+          mouseX: e.clientX,
+          mouseY: e.clientY,
+          targetTimeSlot: {
+            hour: timeSlotTarget.hour,
+            minute: timeSlotTarget.minute,
+          },
+        });
+      }
     } else {
       // Calculate date column target for all-day area
       const columnWidth = rect.width / visibleDates.length;
@@ -426,6 +501,18 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
         span: adjustedSpan,
         row: currentDragState.draggedEventSpan.row,
       };
+      
+      // Clear cross-zone drag state when in all-day mode
+      setCrossZoneDragState({
+        isActive: false,
+        draggedEvent: null,
+        targetDate: null,
+        sourceZone: null,
+        targetZone: null,
+        mouseX: 0,
+        mouseY: 0,
+        targetTimeSlot: null,
+      });
     }
 
     setDragState(prev => ({
@@ -437,7 +524,7 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
       previewSpan,
       targetDateIndex: targetZone === 'all-day' ? Math.floor(relativeX / (rect.width / visibleDates.length)) : null,
     }));
-  }, [visibleDates.length, detectDropZone, calculateTimeSlotTarget]);
+  }, [visibleDates.length, detectDropZone, calculateTimeSlotTarget, setCrossZoneDragState]);
 
   // Enhanced drag end handler with seamless cross-zone conversion
   const handleDragEnd = useCallback(async () => {
@@ -467,6 +554,18 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
       timeSlotTarget: null,
     });
 
+    // Clear cross-zone drag state
+    setCrossZoneDragState({
+      isActive: false,
+      draggedEvent: null,
+      targetDate: null,
+      sourceZone: null,
+      targetZone: null,
+      mouseX: 0,
+      mouseY: 0,
+      targetTimeSlot: null,
+    });
+
     document.body.style.cursor = '';
     document.body.classList.remove('select-none');
 
@@ -478,7 +577,9 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
           currentDragState.draggedEvent,
           date,
           hour,
-          minute
+          minute,
+          tz,
+          true // forceTime: true - user explicitly dragged to this time
         );
 
         if (typeof updateEvent === 'function') {
@@ -512,7 +613,7 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
     } catch (error) {
       console.error('Failed to update event:', error);
     }
-  }, [visibleDates, tz, updateEvent]);
+  }, [visibleDates, tz, updateEvent, setCrossZoneDragState]);
 
   // Set up global mouse event listeners with stable handlers
   React.useEffect(() => {
@@ -730,7 +831,9 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
   // Enhanced mouse and touch handlers
   const handleEventMouseDown = (e: React.MouseEvent, eventSpan: EventSpan) => {
     if (eventSpan.event.locked) return;
-    if (visibleDates.length <= 1) return;
+    // Allow dragging even with single date for cross-zone conversion (all-day to timed)
+    // Only prevent dragging if there's literally no dates
+    if (visibleDates.length === 0) return;
     e.preventDefault();
     e.stopPropagation();
     dragStartPos.current = { x: e.clientX, y: e.clientY };
@@ -762,7 +865,9 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
 
   const handleEventTouchStart = (e: React.TouchEvent, eventSpan: EventSpan) => {
     if (eventSpan.event.locked) return;
-    if (visibleDates.length <= 1) return;
+    // Allow dragging even with single date for cross-zone conversion (all-day to timed)
+    // Only prevent dragging if there's literally no dates
+    if (visibleDates.length === 0) return;
     if (e.touches.length !== 1) return;
     const touch = e.touches[0];
     if (!touch) return;
@@ -873,7 +978,7 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
                   isDropTarget && !isOriginalColumn && "bg-blue-100 dark:bg-blue-900/30 border-blue-300 dark:border-blue-700",
                   isOriginalColumn && "bg-red-100 dark:bg-red-900/30 border-red-300 dark:border-red-700",
                   // Cross-zone drop target visual feedback
-                  isCrossZoneDropTarget && "bg-green-100 dark:bg-green-900/30 border-green-300 dark:border-green-700 ring-2 ring-green-400/50",
+                  isCrossZoneDropTarget && "bg-green-50/40 dark:bg-green-900/20 border-green-200/50 dark:border-green-800/50",
                   // Normal hover state (only when not dragging)
                   !dragState.isDragging && !crossZoneDragState.isActive && "hover:bg-muted/20"
                 )}
@@ -1041,8 +1146,8 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
         })}
       </div>
 
-      {/* Seamless drag preview with subtle feedback */}
-      {dragState.isDragging && dragState.draggedEvent && (
+      {/* Legacy drag preview - only show for all-day to all-day dragging */}
+      {dragState.isDragging && dragState.draggedEvent && dragState.targetZone === 'all-day' && (
         <div
           ref={dragPreviewRef}
           className={cn(

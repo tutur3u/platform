@@ -6,6 +6,7 @@ import { useCalendar } from '../../../../hooks/use-calendar';
 import { AllDayEventBar } from './all-day-event-bar';
 import { MIN_COLUMN_WIDTH } from './config';
 import { DayTitle } from './day-title';
+import { CrossZoneDragPreview } from './cross-zone-drag-preview';
 
 dayjs.extend(timezone);
 
@@ -18,7 +19,7 @@ export const WeekdayBar = ({
   view: 'day' | '4-days' | 'week' | 'month';
   dates: Date[];
 }) => {
-  const { settings } = useCalendar();
+  const { settings, crossZoneDragState } = useCalendar();
   const showWeekends = settings.appearance.showWeekends;
   const tz = settings?.timezone?.timezone;
 
@@ -71,6 +72,18 @@ export const WeekdayBar = ({
 
       {/* All-day events bar */}
       <AllDayEventBar dates={visibleDates} />
+
+      {/* Cross-zone drag preview */}
+      {crossZoneDragState.isActive && crossZoneDragState.draggedEvent && (
+        <CrossZoneDragPreview
+          draggedEvent={crossZoneDragState.draggedEvent}
+          mouseX={crossZoneDragState.mouseX}
+          mouseY={crossZoneDragState.mouseY}
+          targetZone={crossZoneDragState.targetZone || 'all-day'}
+          targetDate={crossZoneDragState.targetDate}
+          targetTimeSlot={crossZoneDragState.targetTimeSlot}
+        />
+      )}
     </div>
   );
 };
