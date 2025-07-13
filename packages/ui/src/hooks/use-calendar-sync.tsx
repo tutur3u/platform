@@ -231,12 +231,14 @@ export const CalendarSyncProvider = ({
       const startDate = dayjs(dates[0]).startOf('day');
       const endDate = dayjs(dates[dates.length - 1]).endOf('day');
 
+      // Fix: Use correct overlap condition for multi-day events
+      // Event overlaps with visible range if: event_start < visible_end AND event_end > visible_start
       const { data: fetchedData, error: dbError } = await supabase
         .from('workspace_calendar_events')
         .select('*')
         .eq('ws_id', wsId)
-        .gte('start_at', startDate.toISOString())
-        .lte('end_at', endDate.toISOString())
+        .lt('start_at', endDate.add(1, 'day').toISOString()) // Event starts before visible range ends
+        .gt('end_at', startDate.toISOString()) // Event ends after visible range starts
         .order('start_at', { ascending: true });
 
       if (dbError) {
@@ -369,8 +371,8 @@ export const CalendarSyncProvider = ({
           .from('workspace_calendar_events')
           .select('*')
           .eq('ws_id', wsId)
-          .gte('start_at', startDate.toISOString())
-          .lte('end_at', endDate.toISOString())
+          .lt('start_at', endDate.add(1, 'day').toISOString()) // Event starts before visible range ends
+          .gt('end_at', startDate.toISOString()) // Event ends after visible range starts
           .order('start_at', { ascending: true });
 
         if (dbError) {

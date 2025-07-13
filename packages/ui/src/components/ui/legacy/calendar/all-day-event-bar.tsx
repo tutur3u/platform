@@ -4,13 +4,17 @@ import { getEventStyles } from '@tuturuuu/utils/color-helper';
 import { cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
 import isBetween from 'dayjs/plugin/isBetween';
+import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
+import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
 import timezone from 'dayjs/plugin/timezone';
 import { Calendar, ChevronDown, ChevronUp } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import React, { useMemo, useState, useRef, useCallback } from 'react';
 import { useCalendar } from '../../../../hooks/use-calendar';
 import { MIN_COLUMN_WIDTH } from './config';
 
 dayjs.extend(isBetween);
+dayjs.extend(isSameOrAfter);
+dayjs.extend(isSameOrBefore);
 dayjs.extend(timezone);
 
 const MAX_EVENTS_DISPLAY = 2;
@@ -21,6 +25,12 @@ interface EventSpan {
   startIndex: number;
   endIndex: number;
   span: number;
+  // Add indicators for cut-off events
+  isCutOffStart: boolean; // Event starts before visible range
+  isCutOffEnd: boolean;   // Event ends after visible range
+  actualStartDate: dayjs.Dayjs; // Actual start date of the event
+  actualEndDate: dayjs.Dayjs;   // Actual end date of the event
+  row: number; // Add row property for proper stacking
 }
 
 interface EventLayout {
@@ -29,12 +39,80 @@ interface EventLayout {
   eventsByDay: EventSpan[][];
 }
 
+// Drag state interface
+interface DragState {
+  isDragging: boolean;
+  draggedEvent: CalendarEvent | null;
+  draggedEventSpan: EventSpan | null;
+  startX: number;
+  startY: number;
+  currentX: number;
+  currentY: number;
+  targetDateIndex: number | null;
+  originalDateIndex: number;
+  // Add preview span for better visual feedback
+  previewSpan: {
+    startIndex: number;
+    span: number;
+    row: number;
+  } | null;
+}
+
+// 1. Extract EventContent component for shared rendering
+const EventContent = ({ event }: { event: CalendarEvent }) => (
+  <>
+    {typeof event.google_event_id === 'string' &&
+      event.google_event_id.trim() !== '' && (
+        <img
+          src="/media/google-calendar-icon.png"
+          alt="Google Calendar"
+          className="mr-1 inline-block h-[1.25em] w-[1.25em] align-middle opacity-80 dark:opacity-90"
+          title="Synced from Google Calendar"
+          data-testid="google-calendar-logo"
+        />
+      )}
+    <span className="truncate">{event.title}</span>
+  </>
+);
+
 export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
-  const { settings, openModal } = useCalendar();
+  const { settings, openModal, updateEvent } = useCalendar();
   const { allDayEvents } = useCalendarSync();
   const showWeekends = settings.appearance.showWeekends;
   const tz = settings?.timezone?.timezone;
   const [expandedDates, setExpandedDates] = useState<string[]>([]);
+  
+  // Drag and drop state
+  const [dragState, setDragState] = useState<DragState>({
+    isDragging: false,
+    draggedEvent: null,
+    draggedEventSpan: null,
+    startX: 0,
+    startY: 0,
+    currentX: 0,
+    currentY: 0,
+    targetDateIndex: null,
+    originalDateIndex: -1,
+    previewSpan: null,
+  });
+
+  // Use ref to store the current drag state for stable handlers
+  const dragStateRef = useRef<DragState>(dragState);
+  dragStateRef.current = dragState;
+
+  // Refs for drag handling
+  const containerRef = useRef<HTMLDivElement>(null);
+  const dragPreviewRef = useRef<HTMLDivElement>(null);
+
+  // Add refs for drag threshold and timer
+  const dragStartPos = useRef<{ x: number; y: number } | null>(null);
+  const dragInitiated = useRef(false);
+  const longPressTimer = useRef<NodeJS.Timeout | null>(null);
+  const DRAG_THRESHOLD = 5; // px
+  const LONG_PRESS_DURATION = 250; // ms
+
+  // Constants for layout
+  const EVENT_LEFT_OFFSET = 4; // 4px offset from left edge
 
   // Filter out weekend days if showWeekends is false
   const visibleDates = showWeekends
@@ -45,12 +123,163 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
         return day !== 0 && day !== 6; // 0 = Sunday, 6 = Saturday
       });
 
+  // Stable drag event handlers using refs
+  const handleDragStart = useCallback((e: React.MouseEvent, eventSpan: EventSpan) => {
+    // Don't allow dragging locked events
+    if (eventSpan.event.locked) return;
+    
+    // Don't allow dragging if there are no visible dates or only one date
+    if (visibleDates.length <= 1) return;
+    
+    e.preventDefault();
+    e.stopPropagation();
+
+    const rect = containerRef.current?.getBoundingClientRect();
+    if (!rect) return;
+
+    // Calculate initial preview span
+    const previewSpan = {
+      startIndex: eventSpan.startIndex,
+      span: eventSpan.span,
+      row: eventSpan.row,
+    };
+
+    setDragState({
+      isDragging: true,
+      draggedEvent: eventSpan.event,
+      draggedEventSpan: eventSpan,
+      startX: e.clientX,
+      startY: e.clientY,
+      currentX: e.clientX,
+      currentY: e.clientY,
+      targetDateIndex: eventSpan.startIndex,
+      originalDateIndex: eventSpan.startIndex,
+      previewSpan,
+    });
+
+    // Set cursor and prevent text selection
+    document.body.style.cursor = 'grabbing';
+    document.body.classList.add('select-none');
+  }, [visibleDates.length]);
+
+  // Stable drag move handler
+  const handleDragMove = useCallback((e: MouseEvent) => {
+    const currentDragState = dragStateRef.current;
+    if (!currentDragState.isDragging || !containerRef.current || !currentDragState.draggedEventSpan) return;
+
+    const rect = containerRef.current.getBoundingClientRect();
+    const relativeX = e.clientX - rect.left;
+    
+    // Calculate which date column we're over
+    const columnWidth = rect.width / visibleDates.length;
+    const targetDateIndex = Math.floor(relativeX / columnWidth);
+    const clampedTargetIndex = Math.max(0, Math.min(targetDateIndex, visibleDates.length - 1));
+
+    // Calculate new preview span based on target position
+    const originalSpan = currentDragState.draggedEventSpan.span;
+    const newStartIndex = clampedTargetIndex;
+    const newEndIndex = Math.min(newStartIndex + originalSpan - 1, visibleDates.length - 1);
+    const adjustedSpan = newEndIndex - newStartIndex + 1;
+
+    const previewSpan = {
+      startIndex: newStartIndex,
+      span: adjustedSpan,
+      row: currentDragState.draggedEventSpan.row,
+    };
+
+    setDragState(prev => ({
+      ...prev,
+      currentX: e.clientX,
+      currentY: e.clientY,
+      targetDateIndex: clampedTargetIndex,
+      previewSpan,
+    }));
+  }, [visibleDates.length]);
+
+  // Stable drag end handler
+  const handleDragEnd = useCallback(async () => {
+    const currentDragState = dragStateRef.current;
+    if (!currentDragState.isDragging || !currentDragState.draggedEvent || !currentDragState.draggedEventSpan) return;
+
+    const targetDateIndex = currentDragState.targetDateIndex;
+    const originalDateIndex = currentDragState.originalDateIndex;
+
+    // Only validate originalDateIndex (targetDateIndex is always clamped)
+    if (originalDateIndex < 0 || originalDateIndex >= visibleDates.length) {
+      console.warn('Invalid original date index for drag operation');
+      return;
+    }
+
+    // Helper for dayjs + timezone
+    const getDayjsDate = (d: string | Date) => (tz === 'auto' ? dayjs(d) : dayjs(d).tz(tz));
+
+    // Reset drag state and cursor
+    setDragState({
+      isDragging: false,
+      draggedEvent: null,
+      draggedEventSpan: null,
+      startX: 0,
+      startY: 0,
+      currentX: 0,
+      currentY: 0,
+      targetDateIndex: null,
+      originalDateIndex: -1,
+      previewSpan: null,
+    });
+
+    document.body.style.cursor = '';
+    document.body.classList.remove('select-none');
+
+    // If dropped on the same date or invalid target, do nothing
+    if (targetDateIndex === null || targetDateIndex === originalDateIndex) {
+      return;
+    }
+
+    try {
+      // Use helper for all dayjs conversions
+      const originalStartDate = getDayjsDate(visibleDates[originalDateIndex] ?? new Date());
+      const targetStartDate = getDayjsDate(visibleDates[targetDateIndex] ?? new Date());
+      const daysDiff = targetStartDate.diff(originalStartDate, 'day');
+      const currentStart = getDayjsDate(currentDragState.draggedEvent.start_at);
+      const currentEnd = getDayjsDate(currentDragState.draggedEvent.end_at);
+      const newStart = currentStart.add(daysDiff, 'day');
+      const newEnd = currentEnd.add(daysDiff, 'day');
+
+      if (typeof updateEvent === 'function') {
+        await updateEvent(currentDragState.draggedEvent.id, {
+          start_at: newStart.toISOString(),
+          end_at: newEnd.toISOString(),
+        });
+      } else {
+        console.warn('updateEvent function not available');
+      }
+    } catch (error) {
+      console.error('Failed to update event:', error);
+    }
+  }, [visibleDates, tz, updateEvent]);
+
+  // Set up global mouse event listeners with stable handlers
+  React.useEffect(() => {
+    if (dragState.isDragging) {
+      document.addEventListener('mousemove', handleDragMove);
+      document.addEventListener('mouseup', handleDragEnd);
+      
+      return () => {
+        document.removeEventListener('mousemove', handleDragMove);
+        document.removeEventListener('mouseup', handleDragEnd);
+      };
+    }
+  }, [dragState.isDragging, handleDragMove, handleDragEnd]);
+
   // Process events to determine their spans across visible dates
   const eventLayout = useMemo((): EventLayout => {
     const spans: EventSpan[] = [];
     const eventsByDay: EventSpan[][] = Array(visibleDates.length)
       .fill(null)
       .map(() => []);
+
+    // First pass: create event spans without row assignment
+    const tempSpans: Omit<EventSpan, 'row'>[] = [];
 
     // Process each all-day event
     allDayEvents.forEach((event) => {
@@ -77,17 +306,20 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
         eventStart.isBefore(lastVisibleDate.add(1, 'day'), 'day') &&
         eventEnd.isAfter(firstVisibleDate, 'day');
 
-      // Debug logging for multi-week events
+      // Debug logging for multi-day events
       const eventDurationDays = eventEnd.diff(eventStart, 'day');
-      if (eventDurationDays > 7) {
-        console.log('Multi-week event detected:', {
+      if (eventDurationDays > 0) {
+        console.log('Multi-day event processing:', {
           title: event.title,
           eventStart: eventStart.format('YYYY-MM-DD'),
           eventEnd: eventEnd.format('YYYY-MM-DD'),
           durationDays: eventDurationDays,
+          isActuallyMultiDay: eventDurationDays > 1,
           firstVisibleDate: firstVisibleDate.format('YYYY-MM-DD'),
           lastVisibleDate: lastVisibleDate.format('YYYY-MM-DD'),
           eventOverlaps,
+          wouldShowCutOffStart: eventDurationDays > 1 && eventStart.isBefore(firstVisibleDate, 'day'),
+          wouldShowCutOffEnd: eventDurationDays > 1 && eventEnd.isAfter(lastVisibleDate.add(1, 'day'), 'day'),
         });
       }
 
@@ -95,62 +327,123 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
         return; // Skip this event if it doesn't overlap with visible dates
       }
 
-      // Find exact start and end indices
-      visibleDates.forEach((date, index) => {
-        const currentDate = tz === 'auto' ? dayjs(date) : dayjs(date).tz(tz);
-
-        // Start index: first visible date that the event overlaps with
-        if (
-          startIndex === -1 &&
-          (currentDate.isSame(eventStart, 'day') ||
-            currentDate.isAfter(eventStart, 'day')) &&
-          currentDate.isBefore(eventEnd, 'day')
-        ) {
-          startIndex = index;
-        }
-
-        // End index: last visible date that the event overlaps with
-        if (
-          currentDate.isBefore(eventEnd, 'day') &&
-          (currentDate.isSame(eventStart, 'day') ||
-            currentDate.isAfter(eventStart, 'day'))
-        ) {
-          endIndex = index;
-        }
-      });
-
-      // Handle edge cases where event starts before or ends after visible range
-      if (
-        startIndex === -1 &&
-        eventStart.isBefore(firstVisibleDate, 'day') &&
-        eventEnd.isAfter(firstVisibleDate, 'day')
-      ) {
+      // Improved logic for multi-day events
+      // Start index: first visible date that overlaps with the event
+      if (eventStart.isSameOrBefore(firstVisibleDate, 'day')) {
+        // Event starts before or on the first visible date
         startIndex = 0;
+      } else {
+        // Find the first visible date that matches the event start
+        for (let i = 0; i < visibleDates.length; i++) {
+          const currentDate = tz === 'auto' ? dayjs(visibleDates[i]) : dayjs(visibleDates[i]).tz(tz);
+          if (currentDate.isSameOrAfter(eventStart, 'day') && currentDate.isBefore(eventEnd, 'day')) {
+            startIndex = i;
+            break;
+          }
+        }
       }
-      if (
-        endIndex === -1 &&
-        eventEnd.isAfter(lastVisibleDate, 'day') &&
-        eventStart.isBefore(lastVisibleDate.add(1, 'day'), 'day')
-      ) {
+
+      // End index: last visible date that overlaps with the event
+      if (eventEnd.isAfter(lastVisibleDate.add(1, 'day'), 'day')) {
+        // Event ends after the last visible date
         endIndex = visibleDates.length - 1;
+      } else {
+        // Find the last visible date that the event covers
+        for (let i = visibleDates.length - 1; i >= 0; i--) {
+          const currentDate = tz === 'auto' ? dayjs(visibleDates[i]) : dayjs(visibleDates[i]).tz(tz);
+          if (currentDate.isBefore(eventEnd, 'day') && currentDate.isSameOrAfter(eventStart, 'day')) {
+            endIndex = i;
+            break;
+          }
+        }
       }
 
       // Include events that have at least one day visible in our date range
       if (startIndex !== -1 && endIndex !== -1) {
         const span = endIndex - startIndex + 1;
-        const eventSpan: EventSpan = {
+        
+        // Fix: Proper cut-off logic for all-day events
+        // For all-day events, end_at is typically start of next day (exclusive)
+        // So we need to check actual duration, not just date comparison
+        const actualDurationDays = eventEnd.diff(eventStart, 'day');
+        const isActuallyMultiDay = actualDurationDays > 1;
+        
+        // Only show cut-off indicators for events that actually span multiple days
+        // AND are cut off by the visible range
+        const isCutOffStart = isActuallyMultiDay && eventStart.isBefore(firstVisibleDate, 'day');
+        const isCutOffEnd = isActuallyMultiDay && eventEnd.isAfter(lastVisibleDate.add(1, 'day'), 'day');
+        
+        const eventSpan: Omit<EventSpan, 'row'> = {
           event,
           startIndex,
           endIndex,
           span,
+          // Add indicators for cut-off events
+          isCutOffStart,
+          isCutOffEnd,
+          actualStartDate: eventStart,
+          actualEndDate: eventEnd,
         };
 
-        spans.push(eventSpan);
+        tempSpans.push(eventSpan);
+      }
+    });
 
-        // Add this event to each day it spans
-        for (let i = startIndex; i <= endIndex; i++) {
-          eventsByDay[i]?.push(eventSpan);
+    // Second pass: assign rows using proper stacking algorithm
+    // Sort events by start date, then by duration (longer events first to minimize conflicts)
+    const sortedTempSpans = tempSpans.sort((a, b) => {
+      const startDiff = a.actualStartDate.diff(b.actualStartDate);
+      if (startDiff !== 0) return startDiff;
+      // If start dates are the same, longer events get priority (lower row numbers)
+      return b.span - a.span;
+    });
+
+    // Track occupied rows for each day
+    const occupiedRows: boolean[][] = Array(visibleDates.length)
+      .fill(null)
+      .map(() => []);
+
+    // Assign rows to events
+    sortedTempSpans.forEach((tempSpan) => {
+      // Find the first available row that works for all days this event spans
+      let row = 0;
+      let rowFound = false;
+
+      while (!rowFound) {
+        // Check if this row is available for all days the event spans
+        let canUseRow = true;
+        for (let dayIndex = tempSpan.startIndex; dayIndex <= tempSpan.endIndex; dayIndex++) {
+          if (occupiedRows[dayIndex]?.[row]) {
+            canUseRow = false;
+            break;
+          }
         }
+
+        if (canUseRow) {
+          // Mark this row as occupied for all days the event spans
+          for (let dayIndex = tempSpan.startIndex; dayIndex <= tempSpan.endIndex; dayIndex++) {
+            if (!occupiedRows[dayIndex]) {
+              occupiedRows[dayIndex] = [];
+            }
+            occupiedRows[dayIndex]![row] = true;
+          }
+          rowFound = true;
+        } else {
+          row++;
+        }
+      }
+
+      // Create the final event span with row assignment
+      const eventSpan: EventSpan = {
+        ...tempSpan,
+        row,
+      };
+
+      spans.push(eventSpan);
+
+      // Add this event to each day it spans
+      for (let i = tempSpan.startIndex; i <= tempSpan.endIndex; i++) {
+        eventsByDay[i]?.push(eventSpan);
       }
     });
 
@@ -195,6 +488,91 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
   // Calculate dynamic height based on visible events
   const barHeight = Math.max(1.9, eventLayout.maxVisibleEventsPerDay * 1.75);
 
+  // Enhanced mouse and touch handlers
+  const handleEventMouseDown = (e: React.MouseEvent, eventSpan: EventSpan) => {
+    if (eventSpan.event.locked) return;
+    if (visibleDates.length <= 1) return;
+    e.preventDefault();
+    e.stopPropagation();
+    dragStartPos.current = { x: e.clientX, y: e.clientY };
+    dragInitiated.current = false;
+
+    const onMouseMove = (moveEvent: MouseEvent) => {
+      if (!dragStartPos.current) return;
+      const dx = moveEvent.clientX - dragStartPos.current.x;
+      const dy = moveEvent.clientY - dragStartPos.current.y;
+      if (!dragInitiated.current && Math.sqrt(dx * dx + dy * dy) > DRAG_THRESHOLD) {
+        dragInitiated.current = true;
+        handleDragStart(e, eventSpan);
+      }
+      // If drag already started, let handleDragMove do its job
+    };
+    const onMouseUp = () => {
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+      if (!dragInitiated.current) {
+        // Treat as click (open modal)
+        openModal(eventSpan.event.id, 'all-day');
+      }
+      dragStartPos.current = null;
+      dragInitiated.current = false;
+    };
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
+  };
+
+  const handleEventTouchStart = (e: React.TouchEvent, eventSpan: EventSpan) => {
+    if (eventSpan.event.locked) return;
+    if (visibleDates.length <= 1) return;
+    if (e.touches.length !== 1) return;
+    const touch = e.touches[0];
+    if (!touch) return;
+    dragStartPos.current = { x: touch.clientX, y: touch.clientY };
+    dragInitiated.current = false;
+    // Start long-press timer
+    longPressTimer.current = setTimeout(() => {
+      dragInitiated.current = true;
+      handleDragStart({
+        ...e,
+        clientX: touch.clientX,
+        clientY: touch.clientY,
+        preventDefault: () => {},
+        stopPropagation: () => {},
+      } as any, eventSpan);
+    }, LONG_PRESS_DURATION);
+
+    const onTouchMove = (moveEvent: TouchEvent) => {
+      if (!dragStartPos.current) return;
+      const moveTouch = moveEvent.touches[0];
+      if (!moveTouch) return;
+      const dx = moveTouch.clientX - dragStartPos.current.x;
+      const dy = moveTouch.clientY - dragStartPos.current.y;
+      if (!dragInitiated.current && Math.sqrt(dx * dx + dy * dy) > DRAG_THRESHOLD) {
+        // Cancel long-press, treat as scroll
+        if (longPressTimer.current) clearTimeout(longPressTimer.current);
+        longPressTimer.current = null;
+        dragStartPos.current = null;
+        dragInitiated.current = false;
+        document.removeEventListener('touchmove', onTouchMove);
+        document.removeEventListener('touchend', onTouchEnd);
+      }
+    };
+    const onTouchEnd = () => {
+      if (longPressTimer.current) clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+      document.removeEventListener('touchmove', onTouchMove);
+      document.removeEventListener('touchend', onTouchEnd);
+      if (!dragInitiated.current) {
+        // Treat as tap (open modal)
+        openModal(eventSpan.event.id, 'all-day');
+      }
+      dragStartPos.current = null;
+      dragInitiated.current = false;
+    };
+    document.addEventListener('touchmove', onTouchMove);
+    document.addEventListener('touchend', onTouchEnd);
+  };
+
   return (
     <div className="flex">
       {/* Label column */}
@@ -204,6 +582,7 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
 
       {/* All-day event columns with relative positioning for spanning events */}
       <div
+        ref={containerRef}
         className={cn('relative flex-1 border-b')}
         style={{
           minWidth: `${visibleDates.length * MIN_COLUMN_WIDTH}px`,
@@ -231,10 +610,21 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
                 ? Math.max(0, dateEvents.length - MAX_EVENTS_DISPLAY)
                 : 0;
 
+            // Check if this column is a drop target
+            const isDropTarget = dragState.isDragging && dragState.targetDateIndex === dateIndex;
+            const isOriginalColumn = dragState.isDragging && dragState.originalDateIndex === dateIndex;
+
             return (
               <div
                 key={`all-day-column-${dateKey}`}
-                className="group flex h-full flex-col justify-start border-l last:border-r hover:bg-muted/20"
+                className={cn(
+                  "group flex h-full flex-col justify-start border-l last:border-r transition-colors duration-200",
+                  // Drop zone visual feedback
+                  isDropTarget && !isOriginalColumn && "bg-blue-100 dark:bg-blue-900/30 border-blue-300 dark:border-blue-700",
+                  isOriginalColumn && "bg-red-100 dark:bg-red-900/30 border-red-300 dark:border-red-700",
+                  // Normal hover state (only when not dragging)
+                  !dragState.isDragging && "hover:bg-muted/20"
+                )}
               >
                 {/* Show/hide expansion button */}
                 {hiddenCount > 0 && (
@@ -277,23 +667,31 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
           })}
         </div>
 
+        {/* Drag preview span - shows where the event will be placed */}
+        {dragState.isDragging && dragState.previewSpan && dragState.draggedEvent && (
+          <div
+            className={cn(
+              'absolute rounded-sm border-2 border-dashed transition-all duration-150',
+              'bg-blue-100/60 dark:bg-blue-900/30 border-blue-400 dark:border-blue-600',
+              'pointer-events-none'
+            )}
+            style={{
+              left: `calc(${(dragState.previewSpan.startIndex * 100) / visibleDates.length}% + ${EVENT_LEFT_OFFSET}px)`,
+              width: `calc(${(dragState.previewSpan.span * 100) / visibleDates.length}% - ${EVENT_LEFT_OFFSET * 2}px)`,
+              top: `${dragState.previewSpan.row * 1.6 + 0.25}rem`,
+              height: '1.35rem',
+              zIndex: 8,
+            }}
+          />
+        )}
+
         {/* Absolute positioned spanning events */}
         {eventLayout.spans.map((eventSpan) => {
-          const { event, startIndex, span } = eventSpan;
+          const { event, startIndex, span, row, isCutOffStart, isCutOffEnd } = eventSpan;
           const { bg, border, text } = getEventStyles(event.color || 'BLUE');
 
-          // Calculate which row this event should be in for each day it spans
-          let eventRow = 0;
-          for (
-            let dayIndex = startIndex;
-            dayIndex < startIndex + span;
-            dayIndex++
-          ) {
-            const dayEvents = eventLayout.eventsByDay[dayIndex];
-            const eventRowInDay =
-              dayEvents?.findIndex((e) => e.event.id === event.id) ?? -1;
-            eventRow = Math.max(eventRow, eventRowInDay);
-          }
+          // Use the assigned row directly instead of calculating it
+          const eventRow = row;
 
           // Check if this event should be visible based on expansion state
           const shouldHideEvent = visibleDates.some((date, dateIndex) => {
@@ -317,39 +715,89 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
 
           if (shouldHideEvent) return null;
 
+          // Check if this event is currently being dragged
+          const isDraggedEvent = dragState.isDragging && dragState.draggedEvent?.id === event.id;
+
           return (
             <div
               key={`spanning-event-${event.id}`}
               className={cn(
-                'absolute cursor-pointer truncate rounded-sm border-l-2 px-2 py-1 text-xs font-semibold',
+                'absolute flex items-center rounded-sm border-l-2 px-2 py-1 text-xs font-semibold transition-all duration-200',
+                // Cursor changes based on locked state and drag state
+                event.locked 
+                  ? 'cursor-not-allowed opacity-60' 
+                  : dragState.isDragging 
+                    ? 'cursor-grabbing' 
+                    : 'cursor-grab hover:cursor-grab',
+                // Visual feedback for dragging
+                isDraggedEvent && 'opacity-30 scale-95',
+                // Normal styling
                 bg,
                 border,
-                text
+                text,
+                // Special styling for cut-off events
+                (isCutOffStart || isCutOffEnd) && 'border-dashed'
               )}
               style={{
-                left: `${(startIndex * 100) / visibleDates.length}%`,
-                width: `calc(${(span * 100) / visibleDates.length}% - 0.75rem)`,
+                left: `calc(${(startIndex * 100) / visibleDates.length}% + ${EVENT_LEFT_OFFSET}px)`,
+                width: `calc(${(span * 100) / visibleDates.length}% - ${EVENT_LEFT_OFFSET * 2}px)`,
                 top: `${eventRow * 1.6 + 0.25}rem`,
                 height: '1.35rem',
-                zIndex: 5,
+                zIndex: isDraggedEvent ? 10 : 5,
               }}
-              onClick={() => openModal(event.id, 'all-day')}
+              onClick={() => {
+                // Only open modal if not dragging and not locked
+                if (!dragState.isDragging && !event.locked) {
+                  openModal(event.id, 'all-day');
+                }
+              }}
+              onMouseDown={(e) => handleEventMouseDown(e, eventSpan)}
+              onTouchStart={(e) => handleEventTouchStart(e, eventSpan)}
             >
-              {typeof event.google_event_id === 'string' &&
-                event.google_event_id.trim() !== '' && (
-                  <img
-                    src="/media/google-calendar-icon.png"
-                    alt="Google Calendar"
-                    className="mr-1 inline-block h-[1.25em] w-[1.25em] align-middle opacity-80 dark:opacity-90"
-                    title="Synced from Google Calendar"
-                    data-testid="google-calendar-logo"
-                  />
-                )}
-              {event.title}
+              {/* Cut-off indicator for events that start before visible range */}
+              {isCutOffStart && (
+                <span className="mr-1 text-xs opacity-75" title="Event continues from previous days">
+                  ←
+                </span>
+              )}
+              {/* Use shared EventContent component */}
+              <EventContent event={event} />
+              {/* Cut-off indicator for events that end after visible range */}
+              {isCutOffEnd && (
+                <span className="ml-1 text-xs opacity-75" title="Event continues to next days">
+                  →
+                </span>
+              )}
             </div>
           );
         })}
       </div>
+
+      {/* Enhanced drag preview with better positioning */}
+      {dragState.isDragging && dragState.draggedEvent && (
+        <div
+          ref={dragPreviewRef}
+          className={cn(
+            'fixed pointer-events-none z-50 truncate rounded-sm border-l-2 px-2 py-1 text-xs font-semibold shadow-xl',
+            'transform transition-none backdrop-blur-sm',
+            getEventStyles(dragState.draggedEvent.color || 'BLUE').bg,
+            getEventStyles(dragState.draggedEvent.color || 'BLUE').border,
+            getEventStyles(dragState.draggedEvent.color || 'BLUE').text,
+            'opacity-90'
+          )}
+          style={{
+            left: `${dragState.currentX + 15}px`,
+            top: `${dragState.currentY - 20}px`,
+            height: '1.35rem',
+            minWidth: '120px',
+            maxWidth: '250px',
+            transform: 'rotate(-2deg)',
+          }}
+        >
+          {/* Use shared EventContent component */}
+          <EventContent event={dragState.draggedEvent} />
+        </div>
+      )}
     </div>
   );
 };
