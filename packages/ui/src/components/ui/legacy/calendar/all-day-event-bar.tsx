@@ -11,6 +11,7 @@ import { Calendar, ChevronDown, ChevronUp } from 'lucide-react';
 import React, { useMemo, useState, useRef, useCallback } from 'react';
 import { useCalendar } from '../../../../hooks/use-calendar';
 import { MIN_COLUMN_WIDTH, HOUR_HEIGHT } from './config';
+import { useToast } from '@tuturuuu/ui/hooks/use-toast';
 
 dayjs.extend(isBetween);
 dayjs.extend(isSameOrAfter);
@@ -269,6 +270,7 @@ const EventContent = ({ event }: { event: CalendarEvent }) => (
 export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
   const { settings, openModal, updateEvent, crossZoneDragState, setCrossZoneDragState } = useCalendar();
   const { allDayEvents } = useCalendarSync();
+  const { toast } = useToast();
   const showWeekends = settings.appearance.showWeekends;
   const tz = settings?.timezone?.timezone;
   const [expandedDates, setExpandedDates] = useState<string[]>([]);
@@ -612,8 +614,13 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
       }
     } catch (error) {
       console.error('Failed to update event:', error);
+      toast({
+        title: 'Event Update Failed',
+        description: 'Could not update the event. Please try again.',
+        variant: 'destructive',
+      });
     }
-  }, [visibleDates, tz, updateEvent, setCrossZoneDragState]);
+  }, [visibleDates, tz, updateEvent, setCrossZoneDragState, toast]);
 
   // Set up global mouse event listeners with stable handlers
   React.useEffect(() => {
@@ -627,6 +634,15 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
       };
     }
   }, [dragState.isDragging, handleDragMove, handleDragEnd]);
+
+  // Add useEffect cleanup for longPressTimer
+  React.useEffect(() => {
+    return () => {
+      if (longPressTimer.current) {
+        clearTimeout(longPressTimer.current);
+      }
+    };
+  }, []);
 
   // Process events to determine their spans across visible dates
   const eventLayout = useMemo((): EventLayout => {

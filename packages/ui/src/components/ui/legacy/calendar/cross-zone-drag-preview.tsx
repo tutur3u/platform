@@ -132,7 +132,6 @@ export function CrossZoneDragPreview({
     const timeColumn = calendarView.querySelector('[class*="time-column"]') || calendarView.querySelector('[style*="grid-column: 1"]');
     
     let gridLeft = calendarRect.left;
-    let gridRight = calendarRect.right;
     let gridTop = calendarRect.top;
     
     // Adjust for time column if present
