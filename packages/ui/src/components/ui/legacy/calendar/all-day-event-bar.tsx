@@ -79,6 +79,7 @@ interface PreservedMetadata {
 const preserveTimestamps = (event: CalendarEvent): CalendarEvent => {
   // Store original timed timestamps in scheduling_note when converting to all-day
   const schedulingNote = event.scheduling_note || '';
+  
   if (!schedulingNote.includes(METADATA_MARKER)) {
     const preservedData: PreservedMetadata = {
       original_scheduling_note: schedulingNote,
@@ -86,17 +87,20 @@ const preserveTimestamps = (event: CalendarEvent): CalendarEvent => {
       preserved_timed_end: event.end_at,
       was_all_day: false,
     };
+    
     return {
       ...event,
       scheduling_note: `${schedulingNote}${METADATA_MARKER}${JSON.stringify(preservedData)}`,
     };
   }
+  
   return event;
 };
 
 const restoreTimestamps = (event: CalendarEvent, targetDate?: Date): CalendarEvent => {
   // Restore preserved timestamps when converting back to timed
   const schedulingNote = event.scheduling_note || '';
+  
   if (schedulingNote.includes(METADATA_MARKER)) {
     try {
       const [, preservedJson] = schedulingNote.split(METADATA_MARKER);
@@ -105,54 +109,57 @@ const restoreTimestamps = (event: CalendarEvent, targetDate?: Date): CalendarEve
       let startAt = preservedData.preserved_timed_start;
       let endAt = preservedData.preserved_timed_end;
       
-      // If dragged to a different date, adjust the date while preserving time
-      if (targetDate && startAt && endAt) {
-        const originalStart = dayjs(startAt);
-        const originalEnd = dayjs(endAt);
+      // If we have preserved timestamps, use them
+      if (startAt && endAt) {
+        // If dragged to a different date, adjust the date while preserving time
+        if (targetDate) {
+          const originalStart = dayjs(startAt);
+          const originalEnd = dayjs(endAt);
+          
+          // Use the target date but preserve the original time
+          const targetDayjs = dayjs(targetDate);
+          
+          startAt = targetDayjs
+            .hour(originalStart.hour())
+            .minute(originalStart.minute())
+            .second(originalStart.second())
+            .millisecond(originalStart.millisecond())
+            .toISOString();
+          
+          // Calculate duration to preserve event length
+          const duration = originalEnd.diff(originalStart, 'millisecond');
+          endAt = dayjs(startAt).add(duration, 'millisecond').toISOString();
+        }
         
-        // Use the target date but preserve the original time
-        // Handle timezone properly by using the same timezone context
-        const targetDayjs = dayjs(targetDate);
-        
-        startAt = targetDayjs
-          .hour(originalStart.hour())
-          .minute(originalStart.minute())
-          .second(originalStart.second())
-          .millisecond(originalStart.millisecond())
-          .toISOString();
-        
-        // Calculate duration to preserve event length
-        const duration = originalEnd.diff(originalStart, 'millisecond');
-        endAt = dayjs(startAt).add(duration, 'millisecond').toISOString();
+        return {
+          ...event,
+          start_at: startAt,
+          end_at: endAt,
+          scheduling_note: preservedData.original_scheduling_note || '',
+        };
       }
-      
-      return {
-        ...event,
-        start_at: startAt || event.start_at,
-        end_at: endAt || event.end_at,
-        scheduling_note: preservedData.original_scheduling_note || '',
-      };
     } catch (error) {
       console.error('Failed to restore timestamps:', error);
-      return event;
     }
   }
+  
   return event;
 };
 
 const createTimedEventFromAllDay = (event: CalendarEvent, targetDate: Date, hour: number = 9, minute: number = 0): CalendarEvent => {
-  // Convert all-day event to timed event with smart defaults
-  const startTime = dayjs(targetDate).hour(hour).minute(minute).second(0).millisecond(0);
-  const endTime = startTime.add(1, 'hour'); // Default 1-hour duration
-  
-  // Check if we have preserved timestamps to restore
+  // First check if we have preserved timestamps to restore
   const restoredEvent = restoreTimestamps(event, targetDate);
-  if (restoredEvent.start_at !== event.start_at) {
-    // We had preserved timestamps, use them
+  
+  // If timestamps were successfully restored, use them
+  if (restoredEvent.start_at !== event.start_at || restoredEvent.end_at !== event.end_at) {
     return restoredEvent;
   }
   
-  // No preserved timestamps, create new timed event
+  // No preserved timestamps - this means it was originally an all-day event
+  // Use the drop location time with default 1-hour duration
+  const startTime = dayjs(targetDate).hour(hour).minute(minute).second(0).millisecond(0);
+  const endTime = startTime.add(1, 'hour'); // Default 1-hour duration
+  
   // Check if this event already has metadata (was converted before)
   const schedulingNote = event.scheduling_note || '';
   if (schedulingNote.includes(METADATA_MARKER)) {

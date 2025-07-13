@@ -5559,6 +5559,7 @@ export type Database = {
           location: string | null;
           locked: boolean;
           priority: string | null;
+          scheduling_note: string | null;
           start_at: string;
           task_id: string | null;
           title: string;
@@ -5574,6 +5575,7 @@ export type Database = {
           location?: string | null;
           locked?: boolean;
           priority?: string | null;
+          scheduling_note?: string | null;
           start_at: string;
           task_id?: string | null;
           title?: string;
@@ -5589,6 +5591,7 @@ export type Database = {
           location?: string | null;
           locked?: boolean;
           priority?: string | null;
+          scheduling_note?: string | null;
           start_at?: string;
           task_id?: string | null;
           title?: string;

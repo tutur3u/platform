@@ -68,9 +68,12 @@ import Image from 'next/image';
 import { useEffect, useRef, useState } from 'react';
 import { z } from 'zod';
 import {
-  createAllDayEvent,
   isAllDayEvent,
 } from '../../../../hooks/calendar-utils';
+import {
+  restoreTimestamps,
+  createAllDayEventFromTimed,
+} from './all-day-event-bar';
 import { useCalendar } from '../../../../hooks/use-calendar';
 import { Alert, AlertDescription, AlertTitle } from '../../alert';
 import { AutosizeTextarea } from '../../custom/autosize-textarea';
@@ -157,11 +160,7 @@ export function EventModal() {
   const [showOverlapWarning, setShowOverlapWarning] = useState(false);
   const [aiSuggestions, setAiSuggestions] = useState<string[]>([]);
 
-  // Store previous time values for toggling all-day
-  const [prevTimes, setPrevTimes] = useState<{
-    timed: { start: string | null; end: string | null };
-    allday: { start: string | null; end: string | null };
-  }>({ timed: { start: null, end: null }, allday: { start: null, end: null } });
+
 
   // AI form
   const aiForm = useForm({
@@ -222,6 +221,7 @@ export function EventModal() {
         locked: activeEvent.locked || false,
         ws_id: activeEvent.ws_id,
         google_event_id: activeEvent.google_event_id,
+        scheduling_note: activeEvent.scheduling_note || '',
       };
 
       setEvent(cleanEventData);
@@ -325,6 +325,7 @@ export function EventModal() {
         location: event.location || '',
         priority: event.priority || 'medium',
         locked: event.locked || false,
+        scheduling_note: event.scheduling_note || '',
       };
 
       if (activeEvent?.id === 'new') {
@@ -583,51 +584,60 @@ export function EventModal() {
     });
   };
 
-  // Handle all-day toggle
+  // Handle all-day toggle using the same metadata preservation system as drag operations
   const handleAllDayChange = (checked: boolean) => {
     setEvent((prev) => {
+      const currentEvent = prev as CalendarEvent;
       const startDate =
         tz === 'auto' ? dayjs(prev.start_at) : dayjs(prev.start_at).tz(tz);
-      // Backup previous times before updating
-      const timedBackup = prevTimes.timed;
-      const alldayBackup = prevTimes.allday;
-      if (checked) {
-        setPrevTimes((old) => ({
-          ...old,
-          timed: { start: prev.start_at || null, end: prev.end_at || null },
-        }));
-        // Restore previous all-day range if it exists
-        if (alldayBackup.start && alldayBackup.end) {
-          return {
-            ...prev,
-            start_at: alldayBackup.start,
-            end_at: alldayBackup.end,
-          };
+      
+      console.log('Modal toggle - before conversion:', {
+        checked,
+        currentEvent: {
+          start_at: currentEvent.start_at,
+          end_at: currentEvent.end_at,
+          scheduling_note: currentEvent.scheduling_note
         }
-        // Use the new createAllDayEvent helper for proper timezone handling
-        const { start_at, end_at } = createAllDayEvent(
-          startDate.toDate(),
-          tz,
-          1 // 1 day duration
+      });
+      
+      if (checked) {
+        // Converting timed event to all-day event
+        const convertedEvent = createAllDayEventFromTimed(
+          currentEvent,
+          startDate.toDate()
         );
+        
+        console.log('Modal toggle - converted to all-day:', convertedEvent);
+        
         return {
           ...prev,
-          start_at,
-          end_at,
+          start_at: convertedEvent.start_at,
+          end_at: convertedEvent.end_at,
+          scheduling_note: convertedEvent.scheduling_note,
         };
       } else {
-        setPrevTimes((old) => ({
-          ...old,
-          allday: { start: prev.start_at || null, end: prev.end_at || null },
-        }));
-        // Restore previous timed range if it exists
-        if (timedBackup.start && timedBackup.end) {
+        // Converting all-day event back to timed event
+        const restoredEvent = restoreTimestamps(currentEvent);
+        
+        console.log('Modal toggle - restoration attempt:', {
+          original: currentEvent,
+          restored: restoredEvent,
+          wasRestored: restoredEvent.start_at !== currentEvent.start_at || restoredEvent.end_at !== currentEvent.end_at
+        });
+        
+        // If we successfully restored timestamps, use them
+        if (restoredEvent.start_at !== currentEvent.start_at || restoredEvent.end_at !== currentEvent.end_at) {
+          console.log('Modal toggle - using restored timestamps');
           return {
             ...prev,
-            start_at: timedBackup.start,
-            end_at: timedBackup.end,
+            start_at: restoredEvent.start_at,
+            end_at: restoredEvent.end_at,
+            scheduling_note: restoredEvent.scheduling_note,
           };
         }
+        
+        // Fallback: create a new 1-hour event (this should rarely happen now)
+        console.log('Modal toggle - using fallback 1-hour event');
         const newStart =
           tz === 'auto'
             ? dayjs().startOf('hour')

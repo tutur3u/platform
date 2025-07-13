@@ -592,6 +592,7 @@ export const CalendarProvider = ({
           ...(updateData.location !== undefined && { location: updateData.location }),
           ...(updateData.priority !== undefined && { priority: updateData.priority }),
           ...(updateData.locked !== undefined && { locked: updateData.locked }),
+          ...(updateData.scheduling_note !== undefined && { scheduling_note: updateData.scheduling_note }),
         };
         
         // Remove system fields that shouldn't be updated (just in case they're present)
@@ -649,7 +650,7 @@ export const CalendarProvider = ({
       // Clean and validate the event updates - only allow known CalendarEvent fields
       const allowedFields: (keyof CalendarEvent)[] = [
         'title', 'description', 'start_at', 'end_at', 'color', 
-        'location', 'priority', 'locked'
+        'location', 'priority', 'locked', 'scheduling_note'
       ];
 
       const cleanedUpdates: Partial<CalendarEvent> = {};
