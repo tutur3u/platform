@@ -176,9 +176,7 @@ export function EventModal() {
   });
 
   // AI generation
-  const { object, submit, error, isLoading } = useObject<
-    z.infer<typeof calendarEventsSchema>
-  >({
+  const { object, submit, error, isLoading } = useObject({
     api: '/api/v1/calendar/events/generate',
     schema: calendarEventsSchema,
   });

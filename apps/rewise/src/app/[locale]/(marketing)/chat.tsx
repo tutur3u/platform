@@ -7,7 +7,9 @@ import type { UIMessage } from '@tuturuuu/ai/types';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { AIChat } from '@tuturuuu/types/db';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
+import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { cn } from '@tuturuuu/utils/format';
+import { generateRandomUUID } from '@tuturuuu/utils/uuid-helper';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import type React from 'react';
@@ -16,8 +18,6 @@ import { ChatList } from '@/components/chat-list';
 import { ChatPanel } from '@/components/chat-panel';
 import { ChatScrollAnchor } from '@/components/chat-scroll-anchor';
 import { EmptyScreen } from '@/components/empty-screen';
-import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
-import { generateRandomUUID } from '@tuturuuu/utils/uuid-helper';
 
 export interface ChatProps extends React.ComponentProps<'div'> {
   inputModel?: Model;
@@ -52,7 +52,13 @@ export default function Chat({
   const [currentUserId, setCurrentUserId] = useState<string>();
   const [input, setInput] = useState('');
 
-  const { id: chatId, messages, sendMessage, stop, status } = useChat({
+  const {
+    id: chatId,
+    messages,
+    sendMessage,
+    stop,
+    status,
+  } = useChat({
     id: chat?.id,
     generateId: generateRandomUUID,
     messages: initialMessages,
@@ -169,7 +175,7 @@ export default function Chat({
     setSummary(undefined);
     setChat(undefined);
     setCollapsed(true);
-  }, [chat?.id, setChat]);
+  }, [chat?.id]);
 
   useEffect(() => {
     // if there is "input" in the query string, we will
@@ -281,7 +287,7 @@ export default function Chat({
       parts: [{ type: 'text', text: pendingPrompt }],
     });
     setPendingPrompt(null);
-  }, [chat?.id, pendingPrompt]);
+  }, [chat?.id, pendingPrompt, sendMessage]);
 
   useEffect(() => {
     if (!pathname.includes('/c/') && messages.length === 1) {
@@ -357,4 +363,4 @@ export default function Chat({
       />
     </div>
   );
-};
+}

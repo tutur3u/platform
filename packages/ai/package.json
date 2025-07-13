@@ -5,10 +5,6 @@
   "publishConfig": {
     "access": "public"
   },
-  "scripts": {
-    "test": "vitest run",
-    "test:watch": "vitest"
-  },
   "packageManager": "bun@1.2.18",
   "dependencies": {
     "@ai-sdk/amazon-bedrock": "^3.0.0-beta.3",
@@ -52,8 +48,7 @@
     "@tuturuuu/typescript-config": "workspace:*",
     "@types/node": "^24.0.13",
     "@types/react": "^19.1.8",
-    "typescript": "^5.8.3",
-    "vitest": "^3.2.4"
+    "typescript": "^5.8.3"
   },
   "exports": {
     "./*": "./src/*.ts"
