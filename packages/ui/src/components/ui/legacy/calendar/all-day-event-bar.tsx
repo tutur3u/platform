@@ -50,6 +50,12 @@ interface DragState {
   currentY: number;
   targetDateIndex: number | null;
   originalDateIndex: number;
+  // Add preview span for better visual feedback
+  previewSpan: {
+    startIndex: number;
+    span: number;
+    row: number;
+  } | null;
 }
 
 // 1. Extract EventContent component for shared rendering
@@ -87,6 +93,7 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
     currentY: 0,
     targetDateIndex: null,
     originalDateIndex: -1,
+    previewSpan: null,
   });
 
   // Use ref to store the current drag state for stable handlers
@@ -96,6 +103,16 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
   // Refs for drag handling
   const containerRef = useRef<HTMLDivElement>(null);
   const dragPreviewRef = useRef<HTMLDivElement>(null);
+
+  // Add refs for drag threshold and timer
+  const dragStartPos = useRef<{ x: number; y: number } | null>(null);
+  const dragInitiated = useRef(false);
+  const longPressTimer = useRef<NodeJS.Timeout | null>(null);
+  const DRAG_THRESHOLD = 5; // px
+  const LONG_PRESS_DURATION = 250; // ms
+
+  // Constants for layout
+  const EVENT_LEFT_OFFSET = 4; // 4px offset from left edge
 
   // Filter out weekend days if showWeekends is false
   const visibleDates = showWeekends
@@ -120,6 +137,13 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
     const rect = containerRef.current?.getBoundingClientRect();
     if (!rect) return;
 
+    // Calculate initial preview span
+    const previewSpan = {
+      startIndex: eventSpan.startIndex,
+      span: eventSpan.span,
+      row: eventSpan.row,
+    };
+
     setDragState({
       isDragging: true,
       draggedEvent: eventSpan.event,
@@ -128,8 +152,9 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
       startY: e.clientY,
       currentX: e.clientX,
       currentY: e.clientY,
-      targetDateIndex: null,
+      targetDateIndex: eventSpan.startIndex,
       originalDateIndex: eventSpan.startIndex,
+      previewSpan,
     });
 
     // Set cursor and prevent text selection
@@ -140,7 +165,7 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
   // Stable drag move handler
   const handleDragMove = useCallback((e: MouseEvent) => {
     const currentDragState = dragStateRef.current;
-    if (!currentDragState.isDragging || !containerRef.current) return;
+    if (!currentDragState.isDragging || !containerRef.current || !currentDragState.draggedEventSpan) return;
 
     const rect = containerRef.current.getBoundingClientRect();
     const relativeX = e.clientX - rect.left;
@@ -150,11 +175,24 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
     const targetDateIndex = Math.floor(relativeX / columnWidth);
     const clampedTargetIndex = Math.max(0, Math.min(targetDateIndex, visibleDates.length - 1));
 
+    // Calculate new preview span based on target position
+    const originalSpan = currentDragState.draggedEventSpan.span;
+    const newStartIndex = clampedTargetIndex;
+    const newEndIndex = Math.min(newStartIndex + originalSpan - 1, visibleDates.length - 1);
+    const adjustedSpan = newEndIndex - newStartIndex + 1;
+
+    const previewSpan = {
+      startIndex: newStartIndex,
+      span: adjustedSpan,
+      row: currentDragState.draggedEventSpan.row,
+    };
+
     setDragState(prev => ({
       ...prev,
       currentX: e.clientX,
       currentY: e.clientY,
       targetDateIndex: clampedTargetIndex,
+      previewSpan,
     }));
   }, [visibleDates.length]);
 
@@ -166,7 +204,7 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
     const targetDateIndex = currentDragState.targetDateIndex;
     const originalDateIndex = currentDragState.originalDateIndex;
 
-    // 2. Only validate originalDateIndex (targetDateIndex is always clamped)
+    // Only validate originalDateIndex (targetDateIndex is always clamped)
     if (originalDateIndex < 0 || originalDateIndex >= visibleDates.length) {
       console.warn('Invalid original date index for drag operation');
       return;
@@ -186,6 +224,7 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
       currentY: 0,
       targetDateIndex: null,
       originalDateIndex: -1,
+      previewSpan: null,
     });
 
     document.body.style.cursor = '';
@@ -449,6 +488,91 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
   // Calculate dynamic height based on visible events
   const barHeight = Math.max(1.9, eventLayout.maxVisibleEventsPerDay * 1.75);
 
+  // Enhanced mouse and touch handlers
+  const handleEventMouseDown = (e: React.MouseEvent, eventSpan: EventSpan) => {
+    if (eventSpan.event.locked) return;
+    if (visibleDates.length <= 1) return;
+    e.preventDefault();
+    e.stopPropagation();
+    dragStartPos.current = { x: e.clientX, y: e.clientY };
+    dragInitiated.current = false;
+
+    const onMouseMove = (moveEvent: MouseEvent) => {
+      if (!dragStartPos.current) return;
+      const dx = moveEvent.clientX - dragStartPos.current.x;
+      const dy = moveEvent.clientY - dragStartPos.current.y;
+      if (!dragInitiated.current && Math.sqrt(dx * dx + dy * dy) > DRAG_THRESHOLD) {
+        dragInitiated.current = true;
+        handleDragStart(e, eventSpan);
+      }
+      // If drag already started, let handleDragMove do its job
+    };
+    const onMouseUp = () => {
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+      if (!dragInitiated.current) {
+        // Treat as click (open modal)
+        openModal(eventSpan.event.id, 'all-day');
+      }
+      dragStartPos.current = null;
+      dragInitiated.current = false;
+    };
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
+  };
+
+  const handleEventTouchStart = (e: React.TouchEvent, eventSpan: EventSpan) => {
+    if (eventSpan.event.locked) return;
+    if (visibleDates.length <= 1) return;
+    if (e.touches.length !== 1) return;
+    const touch = e.touches[0];
+    if (!touch) return;
+    dragStartPos.current = { x: touch.clientX, y: touch.clientY };
+    dragInitiated.current = false;
+    // Start long-press timer
+    longPressTimer.current = setTimeout(() => {
+      dragInitiated.current = true;
+      handleDragStart({
+        ...e,
+        clientX: touch.clientX,
+        clientY: touch.clientY,
+        preventDefault: () => {},
+        stopPropagation: () => {},
+      } as any, eventSpan);
+    }, LONG_PRESS_DURATION);
+
+    const onTouchMove = (moveEvent: TouchEvent) => {
+      if (!dragStartPos.current) return;
+      const moveTouch = moveEvent.touches[0];
+      if (!moveTouch) return;
+      const dx = moveTouch.clientX - dragStartPos.current.x;
+      const dy = moveTouch.clientY - dragStartPos.current.y;
+      if (!dragInitiated.current && Math.sqrt(dx * dx + dy * dy) > DRAG_THRESHOLD) {
+        // Cancel long-press, treat as scroll
+        if (longPressTimer.current) clearTimeout(longPressTimer.current);
+        longPressTimer.current = null;
+        dragStartPos.current = null;
+        dragInitiated.current = false;
+        document.removeEventListener('touchmove', onTouchMove);
+        document.removeEventListener('touchend', onTouchEnd);
+      }
+    };
+    const onTouchEnd = () => {
+      if (longPressTimer.current) clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+      document.removeEventListener('touchmove', onTouchMove);
+      document.removeEventListener('touchend', onTouchEnd);
+      if (!dragInitiated.current) {
+        // Treat as tap (open modal)
+        openModal(eventSpan.event.id, 'all-day');
+      }
+      dragStartPos.current = null;
+      dragInitiated.current = false;
+    };
+    document.addEventListener('touchmove', onTouchMove);
+    document.addEventListener('touchend', onTouchEnd);
+  };
+
   return (
     <div className="flex">
       {/* Label column */}
@@ -543,6 +667,24 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
           })}
         </div>
 
+        {/* Drag preview span - shows where the event will be placed */}
+        {dragState.isDragging && dragState.previewSpan && dragState.draggedEvent && (
+          <div
+            className={cn(
+              'absolute rounded-sm border-2 border-dashed transition-all duration-150',
+              'bg-blue-100/60 dark:bg-blue-900/30 border-blue-400 dark:border-blue-600',
+              'pointer-events-none'
+            )}
+            style={{
+              left: `calc(${(dragState.previewSpan.startIndex * 100) / visibleDates.length}% + ${EVENT_LEFT_OFFSET}px)`,
+              width: `calc(${(dragState.previewSpan.span * 100) / visibleDates.length}% - ${EVENT_LEFT_OFFSET * 2}px)`,
+              top: `${dragState.previewSpan.row * 1.6 + 0.25}rem`,
+              height: '1.35rem',
+              zIndex: 8,
+            }}
+          />
+        )}
+
         {/* Absolute positioned spanning events */}
         {eventLayout.spans.map((eventSpan) => {
           const { event, startIndex, span, row, isCutOffStart, isCutOffEnd } = eventSpan;
@@ -588,7 +730,7 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
                     ? 'cursor-grabbing' 
                     : 'cursor-grab hover:cursor-grab',
                 // Visual feedback for dragging
-                isDraggedEvent && 'opacity-50 scale-105 shadow-lg',
+                isDraggedEvent && 'opacity-30 scale-95',
                 // Normal styling
                 bg,
                 border,
@@ -597,8 +739,8 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
                 (isCutOffStart || isCutOffEnd) && 'border-dashed'
               )}
               style={{
-                left: `${(startIndex * 100) / visibleDates.length}%`,
-                width: `calc(${(span * 100) / visibleDates.length}% - 0.75rem)`,
+                left: `calc(${(startIndex * 100) / visibleDates.length}% + ${EVENT_LEFT_OFFSET}px)`,
+                width: `calc(${(span * 100) / visibleDates.length}% - ${EVENT_LEFT_OFFSET * 2}px)`,
                 top: `${eventRow * 1.6 + 0.25}rem`,
                 height: '1.35rem',
                 zIndex: isDraggedEvent ? 10 : 5,
@@ -609,12 +751,8 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
                   openModal(event.id, 'all-day');
                 }
               }}
-              onMouseDown={(e) => {
-                // Only allow dragging if not locked
-                if (!event.locked) {
-                  handleDragStart(e, eventSpan);
-                }
-              }}
+              onMouseDown={(e) => handleEventMouseDown(e, eventSpan)}
+              onTouchStart={(e) => handleEventTouchStart(e, eventSpan)}
             >
               {/* Cut-off indicator for events that start before visible range */}
               {isCutOffStart && (
@@ -635,23 +773,25 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
         })}
       </div>
 
-      {/* Drag preview */}
+      {/* Enhanced drag preview with better positioning */}
       {dragState.isDragging && dragState.draggedEvent && (
         <div
           ref={dragPreviewRef}
           className={cn(
-            'fixed pointer-events-none z-50 truncate rounded-sm border-l-2 px-2 py-1 text-xs font-semibold shadow-lg',
-            'transform transition-none',
+            'fixed pointer-events-none z-50 truncate rounded-sm border-l-2 px-2 py-1 text-xs font-semibold shadow-xl',
+            'transform transition-none backdrop-blur-sm',
             getEventStyles(dragState.draggedEvent.color || 'BLUE').bg,
             getEventStyles(dragState.draggedEvent.color || 'BLUE').border,
-            getEventStyles(dragState.draggedEvent.color || 'BLUE').text
+            getEventStyles(dragState.draggedEvent.color || 'BLUE').text,
+            'opacity-90'
           )}
           style={{
-            left: `${dragState.currentX + 10}px`,
-            top: `${dragState.currentY - 10}px`,
+            left: `${dragState.currentX + 15}px`,
+            top: `${dragState.currentY - 20}px`,
             height: '1.35rem',
-            minWidth: '100px',
-            maxWidth: '200px',
+            minWidth: '120px',
+            maxWidth: '250px',
+            transform: 'rotate(-2deg)',
           }}
         >
           {/* Use shared EventContent component */}
