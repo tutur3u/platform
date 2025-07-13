@@ -65,7 +65,7 @@ import {
   X,
 } from 'lucide-react';
 import Image from 'next/image';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { z } from 'zod';
 import {
   createAllDayEvent,
@@ -131,14 +131,15 @@ export function EventModal() {
   });
 
   // State for AI event generation
-  const [generatedEvents, setGeneratedEvents] = useState<CalendarEvent[]>([]);
+  const [generatedEvents, setGeneratedEvents] =
+    useState<Partial<CalendarEvent>[]>();
   const [currentEventIndex, setCurrentEventIndex] = useState(0);
   const [userTimezone] = useState(
     Intl.DateTimeFormat().resolvedOptions().timeZone
   );
 
   // Get the current event being previewed
-  const generatedEvent = generatedEvents[currentEventIndex];
+  const generatedEvent = generatedEvents?.[currentEventIndex];
 
   // Determine if we're editing an existing event
   const isEditing = !!(activeEvent?.id && activeEvent.id !== 'new');
@@ -175,7 +176,9 @@ export function EventModal() {
   });
 
   // AI generation
-  const { object, submit, error, isLoading } = useObject({
+  const { object, submit, error, isLoading } = useObject<
+    z.infer<typeof calendarEventsSchema>
+  >({
     api: '/api/v1/calendar/events/generate',
     schema: calendarEventsSchema,
   });
@@ -219,7 +222,7 @@ export function EventModal() {
   useEffect(() => {
     if (object?.events && !isLoading) {
       // Process the generated events
-      const processedEvents = object.events;
+      const processedEvents = (object.events || []) as Partial<CalendarEvent>[];
 
       setGeneratedEvents(processedEvents);
       setCurrentEventIndex(0);
@@ -408,7 +411,7 @@ export function EventModal() {
 
   // Handle AI event save
   const handleAISave = async () => {
-    if (generatedEvents.length === 0) return;
+    if (generatedEvents?.length === 0) return;
 
     setIsSaving(true);
     try {
@@ -417,13 +420,13 @@ export function EventModal() {
       const failedEvents: Array<{ event: CalendarEvent; error: unknown }> = [];
 
       // Save each event individually
-      for (const eventData of eventsToSave) {
+      for (const eventData of eventsToSave || []) {
         try {
           const calendarEvent: Omit<CalendarEvent, 'id'> = {
             title: eventData.title || 'New Event',
             description: eventData.description || '',
-            start_at: eventData.start_at,
-            end_at: eventData.end_at,
+            start_at: eventData.start_at || '',
+            end_at: eventData.end_at || '',
             color: eventData.color || 'BLUE',
             location: eventData.location || '',
             priority: eventData.priority || 'medium',
@@ -433,7 +436,7 @@ export function EventModal() {
           const savedEvent = await addEvent(calendarEvent);
           if (savedEvent) savedEvents.push(savedEvent);
         } catch (error) {
-          failedEvents.push({ event: eventData, error });
+          failedEvents.push({ event: eventData as CalendarEvent, error });
         }
       }
 
@@ -441,7 +444,7 @@ export function EventModal() {
       if (savedEvents.length > 0) {
         toast({
           title: 'Success',
-          description: `${savedEvents.length}/${eventsToSave.length} event${savedEvents.length > 1 ? 's' : ''} saved`,
+          description: `${savedEvents.length}/${eventsToSave?.length || 0} event${savedEvents.length > 1 ? 's' : ''} saved`,
         });
         closeModal();
       }
@@ -801,11 +804,11 @@ export function EventModal() {
 
   // Handle navigation between multiple events in preview
   const goToNextEvent = () => {
-    if (currentEventIndex < generatedEvents.length - 1) {
+    if (currentEventIndex < (generatedEvents?.length || 0) - 1) {
       const nextIndex = currentEventIndex + 1;
       setCurrentEventIndex(nextIndex);
       if (aiForm.getValues().smart_scheduling) {
-        const nextEvent = generatedEvents[nextIndex];
+        const nextEvent = generatedEvents?.[nextIndex];
         if (nextEvent?.start_at && nextEvent.end_at) {
           checkForOverlaps(nextEvent as Partial<CalendarEvent>);
         }
@@ -818,7 +821,7 @@ export function EventModal() {
       const prevIndex = currentEventIndex - 1;
       setCurrentEventIndex(prevIndex);
       if (aiForm.getValues().smart_scheduling) {
-        const prevEvent = generatedEvents[prevIndex];
+        const prevEvent = generatedEvents?.[prevIndex];
         if (prevEvent?.start_at && prevEvent.end_at) {
           checkForOverlaps(prevEvent as Partial<CalendarEvent>);
         }
@@ -902,7 +905,7 @@ export function EventModal() {
 
         <Tabs
           value={activeTab}
-          onValueChange={(value) => setActiveTab(value)}
+          onValueChange={(value) => setActiveTab(value as 'manual' | 'ai')}
           className="flex h-[calc(90vh-140px)] flex-col"
         >
           <TabsList className="justify-start gap-2 bg-transparent px-6 pt-4 pb-0">
@@ -1391,14 +1394,14 @@ export function EventModal() {
                         <h3 className="flex items-center gap-2 font-medium text-base">
                           <Sparkles className="h-4 w-4 text-primary" />
                           AI Generated Event
-                          {generatedEvents.length > 1 ? 's' : ''}
+                          {(generatedEvents?.length || 0) > 1 ? 's' : ''}
                         </h3>
                         <div className="flex items-center gap-2">
-                          {generatedEvents.length > 1 && (
+                          {(generatedEvents?.length || 0) > 1 && (
                             <div className="flex items-center gap-1 text-muted-foreground text-xs">
                               <span>{currentEventIndex + 1}</span>
                               <span>/</span>
-                              <span>{generatedEvents.length}</span>
+                              <span>{generatedEvents?.length || 0}</span>
                             </div>
                           )}
                           <Badge variant="outline" className="text-xs">
@@ -1419,7 +1422,7 @@ export function EventModal() {
                                   <CalendarIcon className="h-3.5 w-3.5" />
                                   <span>
                                     {format(
-                                      new Date(generatedEvent.start_at),
+                                      new Date(generatedEvent.start_at || ''),
                                       'PPP'
                                     )}
                                   </span>
@@ -1428,12 +1431,12 @@ export function EventModal() {
                                   <Clock className="h-3.5 w-3.5" />
                                   <span>
                                     {format(
-                                      new Date(generatedEvent.start_at),
+                                      new Date(generatedEvent.start_at || ''),
                                       'h:mm a'
                                     )}{' '}
                                     -{' '}
                                     {format(
-                                      new Date(generatedEvent.end_at),
+                                      new Date(generatedEvent.end_at || ''),
                                       'h:mm a'
                                     )}
                                   </span>
@@ -1444,7 +1447,9 @@ export function EventModal() {
                                     <button
                                       type="button"
                                       onClick={() =>
-                                        openGoogleMaps(generatedEvent.location)
+                                        openGoogleMaps(
+                                          generatedEvent.location || ''
+                                        )
                                       }
                                       className="text-muted-foreground text-sm hover:text-primary hover:underline"
                                       title="Open in Google Maps"
@@ -1508,7 +1513,7 @@ export function EventModal() {
                       )}
 
                       {/* Navigation buttons for multiple events */}
-                      {generatedEvents.length > 1 && (
+                      {(generatedEvents?.length || 0) > 1 && (
                         <div className="mt-4 flex items-center justify-center gap-2">
                           <Button
                             variant="outline"
@@ -1524,7 +1529,8 @@ export function EventModal() {
                             size="sm"
                             onClick={goToNextEvent}
                             disabled={
-                              currentEventIndex === generatedEvents.length - 1
+                              currentEventIndex ===
+                              (generatedEvents?.length || 0) - 1
                             }
                             className="h-8 w-8 p-0"
                           >
@@ -1594,7 +1600,9 @@ export function EventModal() {
                     </div>
                     <Button
                       onClick={handleAISave}
-                      disabled={isSaving || generatedEvents.length === 0}
+                      disabled={
+                        isSaving || (generatedEvents?.length || 0) === 0
+                      }
                       className="flex items-center gap-2"
                     >
                       {isSaving ? (
@@ -1607,7 +1615,7 @@ export function EventModal() {
                           <Check className="h-4 w-4" />
                           <span>
                             Save{' '}
-                            {generatedEvents.length > 1
+                            {(generatedEvents?.length || 0) > 1
                               ? 'All Events'
                               : 'Event'}
                           </span>
