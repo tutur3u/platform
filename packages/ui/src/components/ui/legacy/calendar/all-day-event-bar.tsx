@@ -52,6 +52,23 @@ interface DragState {
   originalDateIndex: number;
 }
 
+// 1. Extract EventContent component for shared rendering
+const EventContent = ({ event }: { event: CalendarEvent }) => (
+  <>
+    {typeof event.google_event_id === 'string' &&
+      event.google_event_id.trim() !== '' && (
+        <img
+          src="/media/google-calendar-icon.png"
+          alt="Google Calendar"
+          className="mr-1 inline-block h-[1.25em] w-[1.25em] align-middle opacity-80 dark:opacity-90"
+          title="Synced from Google Calendar"
+          data-testid="google-calendar-logo"
+        />
+      )}
+    <span className="truncate">{event.title}</span>
+  </>
+);
+
 export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
   const { settings, openModal, updateEvent } = useCalendar();
   const { allDayEvents } = useCalendarSync();
@@ -149,6 +166,15 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
     const targetDateIndex = currentDragState.targetDateIndex;
     const originalDateIndex = currentDragState.originalDateIndex;
 
+    // 2. Only validate originalDateIndex (targetDateIndex is always clamped)
+    if (originalDateIndex < 0 || originalDateIndex >= visibleDates.length) {
+      console.warn('Invalid original date index for drag operation');
+      return;
+    }
+
+    // Helper for dayjs + timezone
+    const getDayjsDate = (d: string | Date) => (tz === 'auto' ? dayjs(d) : dayjs(d).tz(tz));
+
     // Reset drag state and cursor
     setDragState({
       isDragging: false,
@@ -170,49 +196,16 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
       return;
     }
 
-    // Validate indices
-    if (targetDateIndex < 0 || targetDateIndex >= visibleDates.length || 
-        originalDateIndex < 0 || originalDateIndex >= visibleDates.length) {
-      console.warn('Invalid date indices for drag operation');
-      return;
-    }
-
     try {
-      // For multi-day events, we need to be more careful about date calculations
-      const draggedEventSpan = currentDragState.draggedEventSpan;
-      if (!draggedEventSpan) {
-        console.warn('No dragged event span available');
-        return;
-      }
+      // Use helper for all dayjs conversions
+      const originalStartDate = getDayjsDate(visibleDates[originalDateIndex] ?? new Date());
+      const targetStartDate = getDayjsDate(visibleDates[targetDateIndex] ?? new Date());
+      const daysDiff = targetStartDate.diff(originalStartDate, 'day');
+      const currentStart = getDayjsDate(currentDragState.draggedEvent.start_at);
+      const currentEnd = getDayjsDate(currentDragState.draggedEvent.end_at);
+      const newStart = currentStart.add(daysDiff, 'day');
+      const newEnd = currentEnd.add(daysDiff, 'day');
 
-      // Use the actual event dates from the span
-      const actualStartDate = draggedEventSpan.actualStartDate;
-      const actualEndDate = draggedEventSpan.actualEndDate;
-      
-      // Calculate the target date based on the drop position
-      const targetDate = tz === 'auto' 
-        ? dayjs(visibleDates[targetDateIndex]) 
-        : dayjs(visibleDates[targetDateIndex]).tz(tz);
-      
-      // For cut-off events, we need to calculate the offset differently
-      let referenceDate: dayjs.Dayjs;
-      if (draggedEventSpan.isCutOffStart) {
-        // If event is cut off at start, use the first visible date as reference
-        referenceDate = tz === 'auto' 
-          ? dayjs(visibleDates[originalDateIndex]) 
-          : dayjs(visibleDates[originalDateIndex]).tz(tz);
-      } else {
-        // Use the actual start date
-        referenceDate = actualStartDate;
-      }
-      
-      const daysDiff = targetDate.diff(referenceDate, 'day');
-      
-      // Calculate new start and end dates
-      const newStart = actualStartDate.add(daysDiff, 'day');
-      const newEnd = actualEndDate.add(daysDiff, 'day');
-
-      // Ensure updateEvent function exists
       if (typeof updateEvent === 'function') {
         await updateEvent(currentDragState.draggedEvent.id, {
           start_at: newStart.toISOString(),
@@ -629,20 +622,8 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
                   ←
                 </span>
               )}
-              
-              {typeof event.google_event_id === 'string' &&
-                event.google_event_id.trim() !== '' && (
-                  <img
-                    src="/media/google-calendar-icon.png"
-                    alt="Google Calendar"
-                    className="mr-1 inline-block h-[1.25em] w-[1.25em] align-middle opacity-80 dark:opacity-90"
-                    title="Synced from Google Calendar"
-                    data-testid="google-calendar-logo"
-                  />
-                )}
-              
-              <span className="truncate">{event.title}</span>
-              
+              {/* Use shared EventContent component */}
+              <EventContent event={event} />
               {/* Cut-off indicator for events that end after visible range */}
               {isCutOffEnd && (
                 <span className="ml-1 text-xs opacity-75" title="Event continues to next days">
@@ -673,16 +654,8 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
             maxWidth: '200px',
           }}
         >
-          {typeof dragState.draggedEvent.google_event_id === 'string' &&
-            dragState.draggedEvent.google_event_id.trim() !== '' && (
-              <img
-                src="/media/google-calendar-icon.png"
-                alt="Google Calendar"
-                className="mr-1 inline-block h-[1.25em] w-[1.25em] align-middle opacity-80 dark:opacity-90"
-                title="Synced from Google Calendar"
-              />
-            )}
-          {dragState.draggedEvent.title}
+          {/* Use shared EventContent component */}
+          <EventContent event={dragState.draggedEvent} />
         </div>
       )}
     </div>
