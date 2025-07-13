@@ -87,6 +87,22 @@ const CalendarContext = createContext<{
   updateSettings: (settings: Partial<CalendarSettings>) => void;
   isDragging: boolean;
   setIsDragging: (v: boolean) => void;
+  
+  // Cross-zone drag state for visual feedback
+  crossZoneDragState: {
+    isActive: boolean;
+    draggedEvent: CalendarEvent | null;
+    targetDate: Date | null;
+    sourceZone: 'timed' | 'all-day' | null;
+    targetZone: 'timed' | 'all-day' | null;
+  };
+  setCrossZoneDragState: (state: {
+    isActive: boolean;
+    draggedEvent: CalendarEvent | null;
+    targetDate: Date | null;
+    sourceZone: 'timed' | 'all-day' | null;
+    targetZone: 'timed' | 'all-day' | null;
+  }) => void;
 }>({
   getEvent: () => undefined,
   getCurrentEvents: () => [],
@@ -116,6 +132,16 @@ const CalendarContext = createContext<{
   updateSettings: () => undefined,
   isDragging: false,
   setIsDragging: () => undefined,
+  
+  // Cross-zone drag state
+  crossZoneDragState: {
+    isActive: false,
+    draggedEvent: null,
+    targetDate: null,
+    sourceZone: null,
+    targetZone: null,
+  },
+  setCrossZoneDragState: () => undefined,
 });
 
 // Add this interface before the updateEvent function
@@ -1376,6 +1402,21 @@ export const CalendarProvider = ({
   );
 
   const [isDragging, setIsDragging] = useState(false);
+  
+  // Cross-zone drag state for visual feedback between components
+  const [crossZoneDragState, setCrossZoneDragState] = useState<{
+    isActive: boolean;
+    draggedEvent: CalendarEvent | null;
+    targetDate: Date | null;
+    sourceZone: 'timed' | 'all-day' | null;
+    targetZone: 'timed' | 'all-day' | null;
+  }>({
+    isActive: false,
+    draggedEvent: null,
+    targetDate: null,
+    sourceZone: null,
+    targetZone: null,
+  });
 
   const values = {
     getEvent,
@@ -1414,6 +1455,10 @@ export const CalendarProvider = ({
 
     isDragging,
     setIsDragging,
+    
+    // Cross-zone drag state
+    crossZoneDragState,
+    setCrossZoneDragState,
   };
 
   // Clean up any pending updates when component unmounts

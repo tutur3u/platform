@@ -39,7 +39,7 @@ interface EventLayout {
   eventsByDay: EventSpan[][];
 }
 
-// Drag state interface
+// Enhanced drag state interface with cross-zone support
 interface DragState {
   isDragging: boolean;
   draggedEvent: CalendarEvent | null;
@@ -56,7 +56,168 @@ interface DragState {
     span: number;
     row: number;
   } | null;
+  // Cross-zone dragging support
+  dragZone: 'all-day' | 'timed' | null; // Current drag zone
+  targetZone: 'all-day' | 'timed' | null; // Target drop zone
+  timeSlotTarget: {
+    date: Date;
+    hour: number;
+    minute: number;
+  } | null;
 }
+
+// Enhanced metadata storage using scheduling_note field (cleaner approach)
+const METADATA_MARKER = '__PRESERVED_METADATA__';
+
+interface PreservedMetadata {
+  original_scheduling_note?: string;
+  preserved_timed_start?: string;
+  preserved_timed_end?: string;
+  was_all_day?: boolean;
+}
+
+const preserveTimestamps = (event: CalendarEvent): CalendarEvent => {
+  // Store original timed timestamps in scheduling_note when converting to all-day
+  const schedulingNote = event.scheduling_note || '';
+  if (!schedulingNote.includes(METADATA_MARKER)) {
+    const preservedData: PreservedMetadata = {
+      original_scheduling_note: schedulingNote,
+      preserved_timed_start: event.start_at,
+      preserved_timed_end: event.end_at,
+      was_all_day: false,
+    };
+    return {
+      ...event,
+      scheduling_note: `${schedulingNote}${METADATA_MARKER}${JSON.stringify(preservedData)}`,
+    };
+  }
+  return event;
+};
+
+const restoreTimestamps = (event: CalendarEvent, targetDate?: Date): CalendarEvent => {
+  // Restore preserved timestamps when converting back to timed
+  const schedulingNote = event.scheduling_note || '';
+  if (schedulingNote.includes(METADATA_MARKER)) {
+    try {
+      const [, preservedJson] = schedulingNote.split(METADATA_MARKER);
+      const preservedData: PreservedMetadata = JSON.parse(preservedJson || '{}');
+      
+      let startAt = preservedData.preserved_timed_start;
+      let endAt = preservedData.preserved_timed_end;
+      
+      // If dragged to a different date, adjust the date while preserving time
+      if (targetDate && startAt && endAt) {
+        const originalStart = dayjs(startAt);
+        const originalEnd = dayjs(endAt);
+        
+        // Use the target date but preserve the original time
+        // Handle timezone properly by using the same timezone context
+        const targetDayjs = dayjs(targetDate);
+        
+        startAt = targetDayjs
+          .hour(originalStart.hour())
+          .minute(originalStart.minute())
+          .second(originalStart.second())
+          .millisecond(originalStart.millisecond())
+          .toISOString();
+        
+        // Calculate duration to preserve event length
+        const duration = originalEnd.diff(originalStart, 'millisecond');
+        endAt = dayjs(startAt).add(duration, 'millisecond').toISOString();
+      }
+      
+      return {
+        ...event,
+        start_at: startAt || event.start_at,
+        end_at: endAt || event.end_at,
+        scheduling_note: preservedData.original_scheduling_note || '',
+      };
+    } catch (error) {
+      console.error('Failed to restore timestamps:', error);
+      return event;
+    }
+  }
+  return event;
+};
+
+const createTimedEventFromAllDay = (event: CalendarEvent, targetDate: Date, hour: number = 9, minute: number = 0): CalendarEvent => {
+  // Convert all-day event to timed event with smart defaults
+  const startTime = dayjs(targetDate).hour(hour).minute(minute).second(0).millisecond(0);
+  const endTime = startTime.add(1, 'hour'); // Default 1-hour duration
+  
+  // Check if we have preserved timestamps to restore
+  const restoredEvent = restoreTimestamps(event, targetDate);
+  if (restoredEvent.start_at !== event.start_at) {
+    // We had preserved timestamps, use them
+    return restoredEvent;
+  }
+  
+  // No preserved timestamps, create new timed event
+  // Check if this event already has metadata (was converted before)
+  const schedulingNote = event.scheduling_note || '';
+  if (schedulingNote.includes(METADATA_MARKER)) {
+    // Event already has metadata, just update the timestamps
+    return {
+      ...event,
+      start_at: startTime.toISOString(),
+      end_at: endTime.toISOString(),
+    };
+  }
+  
+  // Fresh all-day event, preserve it as all-day in metadata
+  const preservedData: PreservedMetadata = {
+    original_scheduling_note: schedulingNote,
+    preserved_timed_start: startTime.toISOString(),
+    preserved_timed_end: endTime.toISOString(),
+    was_all_day: true,
+  };
+  
+  return {
+    ...event,
+    start_at: startTime.toISOString(),
+    end_at: endTime.toISOString(),
+    scheduling_note: `${schedulingNote}${METADATA_MARKER}${JSON.stringify(preservedData)}`,
+  };
+};
+
+const createAllDayEventFromTimed = (event: CalendarEvent, targetDate: Date): CalendarEvent => {
+  // Convert timed event to all-day event
+  const startOfDay = dayjs(targetDate).startOf('day');
+  const endOfDay = startOfDay.add(1, 'day');
+  
+  // Check if we have preserved all-day timestamps to restore
+  const schedulingNote = event.scheduling_note || '';
+  if (schedulingNote.includes(METADATA_MARKER)) {
+    try {
+      const [, preservedJson] = schedulingNote.split(METADATA_MARKER);
+      const preservedData: PreservedMetadata = JSON.parse(preservedJson || '{}');
+      
+      // If this was originally an all-day event, restore to all-day for the target date
+      if (preservedData.was_all_day) {
+        return {
+          ...event,
+          start_at: startOfDay.toISOString(),
+          end_at: endOfDay.toISOString(),
+          scheduling_note: preservedData.original_scheduling_note || '',
+        };
+      }
+    } catch (error) {
+      console.error('Failed to restore all-day timestamps:', error);
+    }
+  }
+  
+  // First preserve the timed timestamps
+  const preservedEvent = preserveTimestamps(event);
+  
+  return {
+    ...preservedEvent,
+    start_at: startOfDay.toISOString(),
+    end_at: endOfDay.toISOString(),
+  };
+};
+
+// Export for use in other components (like event modal toggle)
+export { preserveTimestamps, restoreTimestamps, createAllDayEventFromTimed, METADATA_MARKER };
 
 // 1. Extract EventContent component for shared rendering
 const EventContent = ({ event }: { event: CalendarEvent }) => (
@@ -76,13 +237,13 @@ const EventContent = ({ event }: { event: CalendarEvent }) => (
 );
 
 export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
-  const { settings, openModal, updateEvent } = useCalendar();
+  const { settings, openModal, updateEvent, crossZoneDragState } = useCalendar();
   const { allDayEvents } = useCalendarSync();
   const showWeekends = settings.appearance.showWeekends;
   const tz = settings?.timezone?.timezone;
   const [expandedDates, setExpandedDates] = useState<string[]>([]);
   
-  // Drag and drop state
+  // Enhanced drag and drop state with cross-zone support
   const [dragState, setDragState] = useState<DragState>({
     isDragging: false,
     draggedEvent: null,
@@ -94,6 +255,9 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
     targetDateIndex: null,
     originalDateIndex: -1,
     previewSpan: null,
+    dragZone: null,
+    targetZone: null,
+    timeSlotTarget: null,
   });
 
   // Use ref to store the current drag state for stable handlers
@@ -122,6 +286,61 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
           tz === 'auto' ? dayjs(date).day() : dayjs(date).tz(tz).day();
         return day !== 0 && day !== 6; // 0 = Sunday, 6 = Saturday
       });
+
+  // Helper to detect drop zone based on mouse position
+  const detectDropZone = useCallback((clientY: number) => {
+    // Get the calendar container to determine boundaries
+    const calendarView = document.getElementById('calendar-view');
+    if (!calendarView) return 'all-day';
+    
+    const calendarRect = calendarView.getBoundingClientRect();
+    const allDayContainer = containerRef.current;
+    
+    if (!allDayContainer) return 'all-day';
+    
+    const allDayRect = allDayContainer.getBoundingClientRect();
+    
+    // If mouse is below the all-day area and within calendar view, it's in timed area
+    if (clientY > allDayRect.bottom && clientY < calendarRect.bottom) {
+      return 'timed';
+    }
+    
+    return 'all-day';
+  }, []);
+
+  // Helper to calculate time slot target
+  const calculateTimeSlotTarget = useCallback((clientX: number, clientY: number) => {
+    const calendarView = document.getElementById('calendar-view');
+    if (!calendarView) return null;
+    
+    const calendarRect = calendarView.getBoundingClientRect();
+    const relativeX = clientX - calendarRect.left - 64; // Account for time trail width
+    const relativeY = clientY - calendarRect.top;
+    
+    // Calculate target date
+    const columnWidth = (calendarRect.width - 64) / visibleDates.length; // Subtract time trail
+    const dateIndex = Math.floor(relativeX / columnWidth);
+    const clampedDateIndex = Math.max(0, Math.min(dateIndex, visibleDates.length - 1));
+    const targetDate = visibleDates[clampedDateIndex];
+    
+    if (!targetDate) return null;
+    
+    // Calculate target time (assuming 80px per hour)
+    const HOUR_HEIGHT = 80;
+    const hour = Math.floor(relativeY / HOUR_HEIGHT);
+    const minute = Math.floor(((relativeY % HOUR_HEIGHT) / HOUR_HEIGHT) * 60);
+    
+    // Round to nearest 15 minutes
+    const roundedMinute = Math.round(minute / 15) * 15;
+    const finalMinute = roundedMinute === 60 ? 0 : roundedMinute;
+    const finalHour = roundedMinute === 60 ? hour + 1 : hour;
+    
+    return {
+      date: targetDate,
+      hour: Math.max(0, Math.min(finalHour, 23)),
+      minute: finalMinute,
+    };
+  }, [visibleDates]);
 
   // Stable drag event handlers using refs
   const handleDragStart = useCallback((e: React.MouseEvent, eventSpan: EventSpan) => {
@@ -155,6 +374,9 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
       targetDateIndex: eventSpan.startIndex,
       originalDateIndex: eventSpan.startIndex,
       previewSpan,
+      dragZone: 'all-day',
+      targetZone: 'all-day',
+      timeSlotTarget: null,
     });
 
     // Set cursor and prevent text selection
@@ -162,7 +384,7 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
     document.body.classList.add('select-none');
   }, [visibleDates.length]);
 
-  // Stable drag move handler
+  // Enhanced drag move handler with seamless cross-zone detection
   const handleDragMove = useCallback((e: MouseEvent) => {
     const currentDragState = dragStateRef.current;
     if (!currentDragState.isDragging || !containerRef.current || !currentDragState.draggedEventSpan) return;
@@ -170,45 +392,53 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
     const rect = containerRef.current.getBoundingClientRect();
     const relativeX = e.clientX - rect.left;
     
-    // Calculate which date column we're over
-    const columnWidth = rect.width / visibleDates.length;
-    const targetDateIndex = Math.floor(relativeX / columnWidth);
-    const clampedTargetIndex = Math.max(0, Math.min(targetDateIndex, visibleDates.length - 1));
+    // Seamless zone detection - no special indicators needed
+    const targetZone = detectDropZone(e.clientY);
+    let timeSlotTarget = null;
+    let previewSpan = null;
+    
+    if (targetZone === 'timed') {
+      // Calculate time slot target for seamless conversion
+      timeSlotTarget = calculateTimeSlotTarget(e.clientX, e.clientY);
+      // Hide the normal preview span when converting to timed
+      previewSpan = null;
+    } else {
+      // Calculate date column target for all-day area
+      const columnWidth = rect.width / visibleDates.length;
+      const targetDateIndex = Math.floor(relativeX / columnWidth);
+      const clampedTargetIndex = Math.max(0, Math.min(targetDateIndex, visibleDates.length - 1));
 
-    // Calculate new preview span based on target position
-    const originalSpan = currentDragState.draggedEventSpan.span;
-    const newStartIndex = clampedTargetIndex;
-    const newEndIndex = Math.min(newStartIndex + originalSpan - 1, visibleDates.length - 1);
-    const adjustedSpan = newEndIndex - newStartIndex + 1;
+      // Calculate new preview span based on target position
+      const originalSpan = currentDragState.draggedEventSpan.span;
+      const newStartIndex = clampedTargetIndex;
+      const newEndIndex = Math.min(newStartIndex + originalSpan - 1, visibleDates.length - 1);
+      const adjustedSpan = newEndIndex - newStartIndex + 1;
 
-    const previewSpan = {
-      startIndex: newStartIndex,
-      span: adjustedSpan,
-      row: currentDragState.draggedEventSpan.row,
-    };
+      previewSpan = {
+        startIndex: newStartIndex,
+        span: adjustedSpan,
+        row: currentDragState.draggedEventSpan.row,
+      };
+    }
 
     setDragState(prev => ({
       ...prev,
       currentX: e.clientX,
       currentY: e.clientY,
-      targetDateIndex: clampedTargetIndex,
+      targetZone,
+      timeSlotTarget,
       previewSpan,
+      targetDateIndex: targetZone === 'all-day' ? Math.floor(relativeX / (rect.width / visibleDates.length)) : null,
     }));
-  }, [visibleDates.length]);
+  }, [visibleDates.length, detectDropZone, calculateTimeSlotTarget]);
 
-  // Stable drag end handler
+  // Enhanced drag end handler with seamless cross-zone conversion
   const handleDragEnd = useCallback(async () => {
     const currentDragState = dragStateRef.current;
     if (!currentDragState.isDragging || !currentDragState.draggedEvent || !currentDragState.draggedEventSpan) return;
 
-    const targetDateIndex = currentDragState.targetDateIndex;
+    const targetZone = currentDragState.targetZone;
     const originalDateIndex = currentDragState.originalDateIndex;
-
-    // Only validate originalDateIndex (targetDateIndex is always clamped)
-    if (originalDateIndex < 0 || originalDateIndex >= visibleDates.length) {
-      console.warn('Invalid original date index for drag operation');
-      return;
-    }
 
     // Helper for dayjs + timezone
     const getDayjsDate = (d: string | Date) => (tz === 'auto' ? dayjs(d) : dayjs(d).tz(tz));
@@ -225,33 +455,52 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
       targetDateIndex: null,
       originalDateIndex: -1,
       previewSpan: null,
+      dragZone: null,
+      targetZone: null,
+      timeSlotTarget: null,
     });
 
     document.body.style.cursor = '';
     document.body.classList.remove('select-none');
 
-    // If dropped on the same date or invalid target, do nothing
-    if (targetDateIndex === null || targetDateIndex === originalDateIndex) {
-      return;
-    }
-
     try {
-      // Use helper for all dayjs conversions
-      const originalStartDate = getDayjsDate(visibleDates[originalDateIndex] ?? new Date());
-      const targetStartDate = getDayjsDate(visibleDates[targetDateIndex] ?? new Date());
-      const daysDiff = targetStartDate.diff(originalStartDate, 'day');
-      const currentStart = getDayjsDate(currentDragState.draggedEvent.start_at);
-      const currentEnd = getDayjsDate(currentDragState.draggedEvent.end_at);
-      const newStart = currentStart.add(daysDiff, 'day');
-      const newEnd = currentEnd.add(daysDiff, 'day');
+      if (targetZone === 'timed' && currentDragState.timeSlotTarget) {
+        // Seamless conversion to timed event
+        const { date, hour, minute } = currentDragState.timeSlotTarget;
+        const convertedEvent = createTimedEventFromAllDay(
+          currentDragState.draggedEvent,
+          date,
+          hour,
+          minute
+        );
 
-      if (typeof updateEvent === 'function') {
-        await updateEvent(currentDragState.draggedEvent.id, {
-          start_at: newStart.toISOString(),
-          end_at: newEnd.toISOString(),
-        });
-      } else {
-        console.warn('updateEvent function not available');
+        if (typeof updateEvent === 'function') {
+          await updateEvent(currentDragState.draggedEvent.id, {
+            start_at: convertedEvent.start_at,
+            end_at: convertedEvent.end_at,
+            scheduling_note: convertedEvent.scheduling_note,
+          });
+        }
+      } else if (targetZone === 'all-day' && currentDragState.targetDateIndex !== null) {
+        // Handle all-day to all-day movement (existing logic)
+        const targetDateIndex = currentDragState.targetDateIndex;
+        
+        if (targetDateIndex !== originalDateIndex) {
+          const originalStartDate = getDayjsDate(visibleDates[originalDateIndex] ?? new Date());
+          const targetStartDate = getDayjsDate(visibleDates[targetDateIndex] ?? new Date());
+          const daysDiff = targetStartDate.diff(originalStartDate, 'day');
+          const currentStart = getDayjsDate(currentDragState.draggedEvent.start_at);
+          const currentEnd = getDayjsDate(currentDragState.draggedEvent.end_at);
+          const newStart = currentStart.add(daysDiff, 'day');
+          const newEnd = currentEnd.add(daysDiff, 'day');
+
+          if (typeof updateEvent === 'function') {
+            await updateEvent(currentDragState.draggedEvent.id, {
+              start_at: newStart.toISOString(),
+              end_at: newEnd.toISOString(),
+            });
+          }
+        }
       }
     } catch (error) {
       console.error('Failed to update event:', error);
@@ -306,22 +555,11 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
         eventStart.isBefore(lastVisibleDate.add(1, 'day'), 'day') &&
         eventEnd.isAfter(firstVisibleDate, 'day');
 
-      // Debug logging for multi-day events
+      // Fix: For all-day events, end_at is exclusive (midnight of next day)
+      // So a single-day all-day event has durationDays = 1, not 0
+      // We need to check if it's actually more than 1 day
       const eventDurationDays = eventEnd.diff(eventStart, 'day');
-      if (eventDurationDays > 0) {
-        console.log('Multi-day event processing:', {
-          title: event.title,
-          eventStart: eventStart.format('YYYY-MM-DD'),
-          eventEnd: eventEnd.format('YYYY-MM-DD'),
-          durationDays: eventDurationDays,
-          isActuallyMultiDay: eventDurationDays > 1,
-          firstVisibleDate: firstVisibleDate.format('YYYY-MM-DD'),
-          lastVisibleDate: lastVisibleDate.format('YYYY-MM-DD'),
-          eventOverlaps,
-          wouldShowCutOffStart: eventDurationDays > 1 && eventStart.isBefore(firstVisibleDate, 'day'),
-          wouldShowCutOffEnd: eventDurationDays > 1 && eventEnd.isAfter(lastVisibleDate.add(1, 'day'), 'day'),
-        });
-      }
+      const isActuallyMultiDay = eventDurationDays > 1;
 
       if (!eventOverlaps) {
         return; // Skip this event if it doesn't overlap with visible dates
@@ -365,8 +603,7 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
         // Fix: Proper cut-off logic for all-day events
         // For all-day events, end_at is typically start of next day (exclusive)
         // So we need to check actual duration, not just date comparison
-        const actualDurationDays = eventEnd.diff(eventStart, 'day');
-        const isActuallyMultiDay = actualDurationDays > 1;
+        // Use the same isActuallyMultiDay calculation from above
         
         // Only show cut-off indicators for events that actually span multiple days
         // AND are cut off by the visible range
@@ -472,11 +709,6 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
     return eventLayout.eventsByDay[dateIndex] ?? [];
   };
 
-  // Check if we have any all-day events to display
-  if (eventLayout.spans.length === 0) {
-    return null;
-  }
-
   const toggleDateExpansion = (dateKey: string) => {
     setExpandedDates((prev) =>
       prev.includes(dateKey)
@@ -485,7 +717,7 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
     );
   };
 
-  // Calculate dynamic height based on visible events
+  // Calculate dynamic height based on visible events (minimum height for drop zone)
   const barHeight = Math.max(1.9, eventLayout.maxVisibleEventsPerDay * 1.75);
 
   // Enhanced mouse and touch handlers
@@ -583,7 +815,12 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
       {/* All-day event columns with relative positioning for spanning events */}
       <div
         ref={containerRef}
-        className={cn('relative flex-1 border-b')}
+        className={cn(
+          'relative flex-1 border-b',
+          // Add visual feedback for drop zone
+          'transition-colors duration-200'
+        )}
+        data-testid="all-day-container"
         style={{
           minWidth: `${visibleDates.length * MIN_COLUMN_WIDTH}px`,
           height: `${barHeight}rem`,
@@ -613,17 +850,25 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
             // Check if this column is a drop target
             const isDropTarget = dragState.isDragging && dragState.targetDateIndex === dateIndex;
             const isOriginalColumn = dragState.isDragging && dragState.originalDateIndex === dateIndex;
+            
+            // Check if this column is a cross-zone drop target
+            const isCrossZoneDropTarget = crossZoneDragState.isActive && 
+              crossZoneDragState.targetZone === 'all-day' && 
+              crossZoneDragState.targetDate &&
+              dayjs(date).isSame(crossZoneDragState.targetDate, 'day');
 
             return (
               <div
                 key={`all-day-column-${dateKey}`}
                 className={cn(
                   "group flex h-full flex-col justify-start border-l last:border-r transition-colors duration-200",
-                  // Drop zone visual feedback
+                  // Drop zone visual feedback for internal all-day dragging
                   isDropTarget && !isOriginalColumn && "bg-blue-100 dark:bg-blue-900/30 border-blue-300 dark:border-blue-700",
                   isOriginalColumn && "bg-red-100 dark:bg-red-900/30 border-red-300 dark:border-red-700",
+                  // Cross-zone drop target visual feedback
+                  isCrossZoneDropTarget && "bg-green-100 dark:bg-green-900/30 border-green-300 dark:border-green-700 ring-2 ring-green-400/50",
                   // Normal hover state (only when not dragging)
-                  !dragState.isDragging && "hover:bg-muted/20"
+                  !dragState.isDragging && !crossZoneDragState.isActive && "hover:bg-muted/20"
                 )}
               >
                 {/* Show/hide expansion button */}
@@ -662,13 +907,28 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
                       Show less
                     </div>
                   )}
+
+                {/* Cross-zone drop indicator */}
+                {isCrossZoneDropTarget && (
+                  <div
+                    className="absolute inset-0 flex items-center justify-center pointer-events-none"
+                    style={{ zIndex: 15 }}
+                  >
+                    <div className="flex items-center gap-2 px-3 py-1 bg-green-500 text-white text-xs font-medium rounded-full shadow-lg animate-pulse">
+                      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
+                      </svg>
+                      Drop here
+                    </div>
+                  </div>
+                )}
               </div>
             );
           })}
         </div>
 
-        {/* Drag preview span - shows where the event will be placed */}
-        {dragState.isDragging && dragState.previewSpan && dragState.draggedEvent && (
+        {/* Seamless drag preview - no special indicators needed */}
+        {dragState.isDragging && dragState.previewSpan && dragState.draggedEvent && dragState.targetZone === 'all-day' && (
           <div
             className={cn(
               'absolute rounded-sm border-2 border-dashed transition-all duration-150',
@@ -729,8 +989,9 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
                   : dragState.isDragging 
                     ? 'cursor-grabbing' 
                     : 'cursor-grab hover:cursor-grab',
-                // Visual feedback for dragging
-                isDraggedEvent && 'opacity-30 scale-95',
+                // Seamless visual feedback during cross-zone dragging
+                isDraggedEvent && dragState.targetZone === 'timed' && 'opacity-50 scale-95',
+                isDraggedEvent && dragState.targetZone === 'all-day' && 'opacity-30 scale-95',
                 // Normal styling
                 bg,
                 border,
@@ -773,7 +1034,7 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
         })}
       </div>
 
-      {/* Enhanced drag preview with better positioning */}
+      {/* Seamless drag preview with subtle feedback */}
       {dragState.isDragging && dragState.draggedEvent && (
         <div
           ref={dragPreviewRef}
@@ -794,7 +1055,6 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
             transform: 'rotate(-2deg)',
           }}
         >
-          {/* Use shared EventContent component */}
           <EventContent event={dragState.draggedEvent} />
         </div>
       )}

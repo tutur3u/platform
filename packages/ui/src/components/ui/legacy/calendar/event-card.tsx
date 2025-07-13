@@ -53,6 +53,137 @@ interface EventCardProps {
   level?: number; // Level for stacking events
 }
 
+// Enhanced metadata storage using scheduling_note field (consistent with all-day events)
+const METADATA_MARKER = '__PRESERVED_METADATA__';
+
+interface PreservedMetadata {
+  original_scheduling_note?: string;
+  preserved_timed_start?: string;
+  preserved_timed_end?: string;
+  was_all_day?: boolean;
+}
+
+// Helper functions for timestamp preservation
+const preserveTimestamps = (event: CalendarEvent): CalendarEvent => {
+  // Store original timed timestamps in scheduling_note when converting to all-day
+  const schedulingNote = event.scheduling_note || '';
+  if (!schedulingNote.includes(METADATA_MARKER)) {
+    const preservedData: PreservedMetadata = {
+      original_scheduling_note: schedulingNote,
+      preserved_timed_start: event.start_at,
+      preserved_timed_end: event.end_at,
+      was_all_day: false,
+    };
+    return {
+      ...event,
+      scheduling_note: `${schedulingNote}${METADATA_MARKER}${JSON.stringify(preservedData)}`,
+    };
+  }
+  return event;
+};
+
+const createAllDayEventFromTimed = (event: CalendarEvent, targetDate: Date): CalendarEvent => {
+  // Convert timed event to all-day event
+  const startOfDay = dayjs(targetDate).startOf('day');
+  const endOfDay = startOfDay.add(1, 'day');
+  
+  // Check if we have preserved all-day timestamps to restore
+  const schedulingNote = event.scheduling_note || '';
+  if (schedulingNote.includes(METADATA_MARKER)) {
+    try {
+      const [, preservedJson] = schedulingNote.split(METADATA_MARKER);
+      const preservedData: PreservedMetadata = JSON.parse(preservedJson || '{}');
+      
+      // If this was originally an all-day event, restore to all-day for the target date
+      if (preservedData.was_all_day) {
+        return {
+          ...event,
+          start_at: startOfDay.toISOString(),
+          end_at: endOfDay.toISOString(),
+          scheduling_note: preservedData.original_scheduling_note || '',
+        };
+      }
+    } catch (error) {
+      console.error('Failed to restore all-day timestamps:', error);
+    }
+  }
+  
+  // First preserve the timed timestamps
+  const preservedEvent = preserveTimestamps(event);
+  
+  return {
+    ...preservedEvent,
+    start_at: startOfDay.toISOString(),
+    end_at: endOfDay.toISOString(),
+  };
+};
+
+// Seamless all-day drop zone detection
+const detectAllDayDropZone = (clientY: number): boolean => {
+  // Try multiple selectors to find the all-day container
+  const allDayContainer = document.querySelector('[data-testid="all-day-container"]') || 
+                          document.querySelector('.all-day-event-bar') ||
+                          document.getElementById('all-day-event-bar') ||
+                          document.querySelector('[class*="all-day"]');
+  
+  if (!allDayContainer) {
+    console.warn('All-day container not found for drop zone detection');
+    return false;
+  }
+  
+  const allDayRect = allDayContainer.getBoundingClientRect();
+  
+  // Add some padding to make the drop zone more generous
+  const padding = 10;
+  const isInZone = clientY >= (allDayRect.top - padding) && clientY <= (allDayRect.bottom + padding);
+  
+  // Debug logging
+  if (process.env.NODE_ENV === 'development') {
+    console.log('Drop zone detection:', {
+      clientY,
+      allDayTop: allDayRect.top,
+      allDayBottom: allDayRect.bottom,
+      padding,
+      isInZone
+    });
+  }
+  
+  return isInZone;
+};
+
+// Calculate target date for all-day conversion
+const calculateAllDayTarget = (clientX: number, dates: Date[]): Date | null => {
+  // Try multiple selectors to find the calendar container
+  const calendarView = document.getElementById('calendar-view') ||
+                       document.querySelector('[data-testid="calendar-view"]') ||
+                       document.querySelector('.calendar-view') ||
+                       document.querySelector('[class*="calendar"]');
+  
+  if (!calendarView) {
+    console.warn('Calendar view not found for target calculation');
+    // Fallback: try to find the all-day container and calculate from there
+    const allDayContainer = document.querySelector('[data-testid="all-day-container"]');
+    if (allDayContainer) {
+      const allDayRect = allDayContainer.getBoundingClientRect();
+      const relativeX = clientX - allDayRect.left;
+      const columnWidth = allDayRect.width / dates.length;
+      const dateIndex = Math.floor(relativeX / columnWidth);
+      const clampedDateIndex = Math.max(0, Math.min(dateIndex, dates.length - 1));
+      
+      return dates[clampedDateIndex] || null;
+    }
+    return null;
+  }
+  
+  const calendarRect = calendarView.getBoundingClientRect();
+  const relativeX = clientX - calendarRect.left - 64; // Account for time trail
+  const columnWidth = (calendarRect.width - 64) / dates.length;
+  const dateIndex = Math.floor(relativeX / columnWidth);
+  const clampedDateIndex = Math.max(0, Math.min(dateIndex, dates.length - 1));
+  
+  return dates[clampedDateIndex] || null;
+};
+
 export function EventCard({ dates, event, level = 0 }: EventCardProps) {
   const {
     id,
@@ -72,7 +203,7 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
   const overlapCount = _overlapCount || 1;
   const overlapGroup = _overlapGroup || [id];
 
-  const { updateEvent, hideModal, openModal, deleteEvent, settings } =
+  const { updateEvent, hideModal, openModal, deleteEvent, settings, setCrossZoneDragState } =
     useCalendar();
   const tz = settings?.timezone?.timezone;
 
@@ -571,7 +702,24 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
     locked,
   ]);
 
-  // Event dragging - only enable for non-multi-day events
+  // Enhanced drag state for seamless cross-zone support
+  const [crossZoneDrag, setCrossZoneDrag] = useState<{
+    isInAllDayZone: boolean;
+    targetDate: Date | null;
+  }>({
+    isInAllDayZone: false,
+    targetDate: null,
+  });
+
+  // Ref to store current localEvent value for stable access in handlers
+  const localEventRef = useRef<CalendarEvent>(localEvent);
+  localEventRef.current = localEvent;
+
+  // Ref to store current crossZoneDrag state for stable access in handlers
+  const crossZoneDragRef = useRef(crossZoneDrag);
+  crossZoneDragRef.current = crossZoneDrag;
+
+  // Event dragging - enhanced with seamless cross-zone support
   useEffect(() => {
     // Disable dragging for multi-day events or locked events
     if (_isMultiDay || locked) return;
@@ -580,7 +728,12 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
     const eventCardEl = document.getElementById(`event-${id}`);
     const cellEl = document.querySelector('.calendar-cell') as HTMLDivElement;
 
-    if (!contentEl || !eventCardEl || !cellEl) return;
+    // Use calendar view container instead of specific cell for width calculation
+    const calendarContainer = document.getElementById('calendar-view') || 
+                              document.getElementById('calendar-event-matrix') ||
+                              cellEl;
+
+    if (!contentEl || !eventCardEl || !calendarContainer) return;
 
     let startX = 0;
     let startY = 0;
@@ -589,16 +742,34 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
     let hasMoved = false;
 
     const handleMouseDown = (e: MouseEvent) => {
+      // Debug logging
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Mouse down on event:', {
+          eventId: id,
+          button: e.button,
+          locked,
+          _isMultiDay,
+          clientX: e.clientX,
+          clientY: e.clientY
+        });
+      }
+      
       // Only handle primary mouse button (left click)
-      if (e.button !== 0) return;
+      if (e.button !== 0) {
+        return;
+      }
 
       // Don't allow interaction with locked events
-      if (locked) return;
+      if (locked) {
+        return;
+      }
 
       e.stopPropagation();
 
       // Don't allow multiple operations
-      if (isResizingRef.current || isDraggingRef.current) return;
+      if (isResizingRef.current || isDraggingRef.current) {
+        return;
+      }
 
       // Record initial positions
       startX = e.clientX;
@@ -611,7 +782,7 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
       };
 
       // Update cached dimensions
-      columnWidth = cellEl.offsetWidth;
+      columnWidth = calendarContainer.offsetWidth / dates.length;
 
       // Reset tracking state
       hasMoved = false;
@@ -619,6 +790,12 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
       initialPositionRef.current = { x: e.clientX, y: e.clientY };
       currentPositionRef.current = initialCardPosition;
       isDraggingRef.current = true;
+
+      // Reset cross-zone drag state
+      setCrossZoneDrag({
+        isInAllDayZone: false,
+        targetDate: null,
+      });
 
       // Update visual state for immediate feedback
       updateVisualState({ isDragging: true });
@@ -635,6 +812,16 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
         e.preventDefault();
 
         if (isResizingRef.current) return;
+        
+        // Debug logging (throttled) - commented out to reduce noise
+        // if (process.env.NODE_ENV === 'development' && Math.random() < 0.1) {
+        //   console.log('Mouse move during drag:', {
+        //     eventId: id,
+        //     clientX: e.clientX,
+        //     clientY: e.clientY,
+        //     hasMoved
+        //   });
+        // }
 
         // Calculate delta movement
         const dx = e.clientX - startX;
@@ -657,6 +844,69 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
           document.body.classList.add('select-none');
         }
 
+        // Seamless cross-zone detection
+        const isInAllDayZone = detectAllDayDropZone(e.clientY);
+        
+        // Calculate target date for all-day conversion
+        let targetDate: Date | null = null;
+        if (isInAllDayZone) {
+          targetDate = calculateAllDayTarget(e.clientX, dates);
+          
+          // Debug logging for development
+          if (process.env.NODE_ENV === 'development') {
+            console.log('Cross-zone drag detected:', {
+              isInAllDayZone,
+              targetDate,
+              clientX: e.clientX,
+              clientY: e.clientY
+            });
+          }
+        }
+
+        // Update cross-zone drag state
+        setCrossZoneDrag({
+          isInAllDayZone,
+          targetDate,
+        });
+
+        if (isInAllDayZone) {
+          // Update global cross-zone drag state for visual feedback
+          setCrossZoneDragState({
+            isActive: true,
+            draggedEvent: localEvent,
+            targetDate,
+            sourceZone: 'timed',
+            targetZone: 'all-day',
+          });
+          
+          // Seamless all-day conversion preview
+          eventCardEl.style.opacity = '0.6';
+          eventCardEl.style.transform = 'scale(0.9)';
+          eventCardEl.style.cursor = 'grabbing';
+          
+          // Debug logging
+          if (process.env.NODE_ENV === 'development') {
+            console.log('Visual feedback: Event in all-day zone');
+          }
+          
+          return; // Don't do normal positioning when in all-day zone
+        } else {
+          // Clear global cross-zone drag state
+          setCrossZoneDragState({
+            isActive: false,
+            draggedEvent: null,
+            targetDate: null,
+            sourceZone: null,
+            targetZone: null,
+          });
+          
+          // Reset for normal dragging
+          eventCardEl.style.opacity = '1';
+          eventCardEl.style.transform = 'scale(1)';
+          eventCardEl.style.cursor = 'grabbing';
+        }
+
+        // Normal timed event dragging logic
         // Snap to grid - ensure we move in whole units
         const snapToGrid = (value: number, gridSize: number) => {
           return Math.round(value / gridSize) * gridSize;
@@ -746,40 +996,107 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
         }
       };
 
-      const handleMouseUp = (e: MouseEvent) => {
+      const handleMouseUp = async (e: MouseEvent) => {
+        // Debug logging for mouse up
+        if (process.env.NODE_ENV === 'development') {
+          console.log('Mouse up event:', {
+            eventId: id,
+            hasMoved,
+            crossZoneDragState: crossZoneDragRef.current,
+            clientX: e.clientX,
+            clientY: e.clientY
+          });
+        }
+        
         if (hasMoved) {
-          // Reset drag state
-          isDraggingRef.current = false;
-          updateVisualState({ isDragging: false });
-          document.body.classList.remove('select-none');
-          document.body.style.cursor = '';
-
-          // Set flag to indicate this was a drag operation
-          wasDraggedRef.current = true;
-
-          // Need to update the actual position properties
-          // to match the transform we've been using
-          if (eventCardEl) {
-            const currentTop = currentPositionRef.current.top;
-            const currentLeft = currentPositionRef.current.left;
-
-            // Reset transform and set direct position
-            eventCardEl.style.transform = '';
-            eventCardEl.style.top = `${currentTop}px`;
-            eventCardEl.style.left = `${currentLeft}px`;
-
-            // Ensure final update is sent
-            if (pendingUpdateRef.current) {
-              setUpdateStatus('syncing'); // Start syncing animation immediately
-              updateEvent(event._originalId || id, pendingUpdateRef.current)
-                .then(() => {
-                  showStatusFeedback('success');
-                })
-                .catch((error) => {
-                  console.error('Failed to update event:', error);
-                  showStatusFeedback('error');
+          // Seamless cross-zone conversion
+          if (crossZoneDragRef.current.isInAllDayZone && crossZoneDragRef.current.targetDate) {
+            try {
+              // Debug logging
+              if (process.env.NODE_ENV === 'development') {
+                console.log('Converting timed event to all-day:', {
+                  eventId: event._originalId || id,
+                  originalEvent: localEventRef.current,
+                  targetDate: crossZoneDragRef.current.targetDate
                 });
-              pendingUpdateRef.current = null;
+              }
+              
+              // Convert timed event to all-day event
+              const convertedEvent = createAllDayEventFromTimed(
+                localEventRef.current,
+                crossZoneDragRef.current.targetDate as Date
+              );
+
+              if (process.env.NODE_ENV === 'development') {
+                console.log('Converted event:', convertedEvent);
+              }
+
+              // Update the event in the database
+              await updateEvent(event._originalId || id, {
+                start_at: convertedEvent.start_at,
+                end_at: convertedEvent.end_at,
+                scheduling_note: convertedEvent.scheduling_note,
+              });
+
+              // Show success feedback
+              setUpdateStatus('success');
+              showStatusFeedback('success');
+              
+              if (process.env.NODE_ENV === 'development') {
+                console.log('Successfully converted event to all-day');
+              }
+            } catch (error) {
+              console.error('Failed to convert to all-day event:', error);
+              setUpdateStatus('error');
+              showStatusFeedback('error');
+              
+              // Revert visual changes
+              eventCardEl.style.opacity = '1';
+              eventCardEl.style.transform = '';
+            }
+          } else if (crossZoneDragRef.current.isInAllDayZone && !crossZoneDragRef.current.targetDate) {
+            // Debug: User dragged to all-day zone but no target date was calculated
+            if (process.env.NODE_ENV === 'development') {
+              console.warn('Dragged to all-day zone but no target date calculated');
+            }
+            // Revert visual changes
+            eventCardEl.style.opacity = '1';
+            eventCardEl.style.transform = '';
+          } else {
+            // Normal timed event drag completion
+            // Reset drag state
+            isDraggingRef.current = false;
+            updateVisualState({ isDragging: false });
+            document.body.classList.remove('select-none');
+            document.body.style.cursor = '';
+
+            // Set flag to indicate this was a drag operation
+            wasDraggedRef.current = true;
+
+            // Need to update the actual position properties
+            // to match the transform we've been using
+            if (eventCardEl) {
+              const currentTop = currentPositionRef.current.top;
+              const currentLeft = currentPositionRef.current.left;
+
+              // Reset transform and set direct position
+              eventCardEl.style.transform = '';
+              eventCardEl.style.top = `${currentTop}px`;
+              eventCardEl.style.left = `${currentLeft}px`;
+
+              // Ensure final update is sent
+              if (pendingUpdateRef.current) {
+                setUpdateStatus('syncing'); // Start syncing animation immediately
+                updateEvent(event._originalId || id, pendingUpdateRef.current)
+                  .then(() => {
+                    showStatusFeedback('success');
+                  })
+                  .catch((error) => {
+                    console.error('Failed to update event:', error);
+                    showStatusFeedback('error');
+                  });
+                pendingUpdateRef.current = null;
+              }
             }
           }
         } else {
@@ -798,6 +1115,21 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
           }
         }
 
+        // Reset cross-zone drag state
+        setCrossZoneDrag({
+          isInAllDayZone: false,
+          targetDate: null,
+        });
+        
+        // Clear global cross-zone drag state
+        setCrossZoneDragState({
+          isActive: false,
+          draggedEvent: null,
+          targetDate: null,
+          sourceZone: null,
+          targetZone: null,
+        });
+
         window.removeEventListener('mousemove', handleMouseMove);
         window.removeEventListener('mouseup', handleMouseUp);
       };
@@ -806,8 +1138,23 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
       window.addEventListener('mouseup', handleMouseUp);
     };
 
+    // Debug logging for event listener setup (reduced to only show issues)
+    if (process.env.NODE_ENV === 'development' && (!contentEl || !eventCardEl || !calendarContainer)) {
+      console.warn('Missing elements for drag setup:', {
+        eventId: id,
+        contentEl: !!contentEl,
+        eventCardEl: !!eventCardEl,
+        calendarContainer: !!calendarContainer,
+        _isMultiDay,
+        locked
+      });
+    }
+    
     contentEl.addEventListener('mousedown', handleMouseDown);
-    return () => contentEl.removeEventListener('mousedown', handleMouseDown);
+    return () => {
+      // Removed debug logging to reduce console noise
+      contentEl.removeEventListener('mousedown', handleMouseDown);
+    };
   }, [
     id,
     startDate,
@@ -917,6 +1264,8 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
               'opacity-50': isPastEvent, // Lower opacity for past events
               'rounded-l-none border-l-4': showStartIndicator, // Special styling for continuation from previous day
               'rounded-r-none border-r-4': showEndIndicator, // Special styling for continuation to next day
+              // Seamless visual feedback for cross-zone dragging
+              'opacity-60 scale-90': crossZoneDrag.isInAllDayZone,
             },
             border,
             text,
