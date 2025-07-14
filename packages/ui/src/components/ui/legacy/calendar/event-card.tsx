@@ -17,7 +17,7 @@ import {
   Trash2,
   Unlock,
 } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useMemo } from 'react';
 import { useCalendar } from '../../../../hooks/use-calendar';
 import {
   ContextMenu,
@@ -56,71 +56,10 @@ interface EventCardProps {
 
 import { createAllDayEventFromTimed } from './calendar-utils';
 
-// Seamless all-day drop zone detection
-const detectAllDayDropZone = (clientY: number): boolean => {
-  // Try multiple selectors to find the all-day container
-  const allDayContainer = document.querySelector('[data-testid="all-day-container"]') || 
-                          document.querySelector('.all-day-event-bar') ||
-                          document.getElementById('all-day-event-bar') ||
-                          document.querySelector('[class*="all-day"]');
-  
-  if (!allDayContainer) {
-    console.warn('All-day container not found for drop zone detection');
-    return false;
-  }
-  
-  const allDayRect = allDayContainer.getBoundingClientRect();
-  
-  // Add some padding to make the drop zone more generous
-  const padding = 10;
-  const isInZone = clientY >= (allDayRect.top - padding) && clientY <= (allDayRect.bottom + padding);
-  
-  // Debug logging
-  if (process.env.NODE_ENV === 'development') {
-    console.log('Drop zone detection:', {
-      clientY,
-      allDayTop: allDayRect.top,
-      allDayBottom: allDayRect.bottom,
-      padding,
-      isInZone
-    });
-  }
-  
-  return isInZone;
-};
+// Cache refresh interval (refresh every 100ms during drag to handle resize)
+const CACHE_REFRESH_MS = 100;
 
-// Calculate target date for all-day conversion
-const calculateAllDayTarget = (clientX: number, dates: Date[]): Date | null => {
-  // Try multiple selectors to find the calendar container
-  const calendarView = document.getElementById('calendar-view') ||
-                       document.querySelector('[data-testid="calendar-view"]') ||
-                       document.querySelector('.calendar-view') ||
-                       document.querySelector('[class*="calendar"]');
-  
-  if (!calendarView) {
-    console.warn('Calendar view not found for target calculation');
-    // Fallback: try to find the all-day container and calculate from there
-    const allDayContainer = document.querySelector('[data-testid="all-day-container"]');
-    if (allDayContainer) {
-      const allDayRect = allDayContainer.getBoundingClientRect();
-      const relativeX = clientX - allDayRect.left;
-      const columnWidth = allDayRect.width / dates.length;
-      const dateIndex = Math.floor(relativeX / columnWidth);
-      const clampedDateIndex = Math.max(0, Math.min(dateIndex, dates.length - 1));
-      
-      return dates[clampedDateIndex] || null;
-    }
-    return null;
-  }
-  
-  const calendarRect = calendarView.getBoundingClientRect();
-  const relativeX = clientX - calendarRect.left - TIME_TRAIL_WIDTH; // Account for time trail
-  const columnWidth = (calendarRect.width - TIME_TRAIL_WIDTH) / dates.length;
-  const dateIndex = Math.floor(relativeX / columnWidth);
-  const clampedDateIndex = Math.max(0, Math.min(dateIndex, dates.length - 1));
-  
-  return dates[clampedDateIndex] || null;
-};
+
 
 export function EventCard({ dates, event, level = 0 }: EventCardProps) {
   const {
@@ -148,27 +87,37 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
   // Local state for immediate UI updates
   const [localEvent, setLocalEvent] = useState<CalendarEvent>(event);
 
-  // Parse dates properly using selected time zone
-  const startDate =
-    tz === 'auto'
+  // Parse dates properly using selected time zone - memoized to prevent infinite loops
+  const startDate = useMemo(() => {
+    return tz === 'auto'
       ? dayjs(localEvent.start_at)
       : dayjs(localEvent.start_at).tz(tz);
-  const endDate =
-    tz === 'auto' ? dayjs(localEvent.end_at) : dayjs(localEvent.end_at).tz(tz);
+  }, [localEvent.start_at, tz]);
+  
+  const endDate = useMemo(() => {
+    return tz === 'auto' 
+      ? dayjs(localEvent.end_at) 
+      : dayjs(localEvent.end_at).tz(tz);
+  }, [localEvent.end_at, tz]);
 
-  // Calculate hours with decimal minutes for positioning
-  const startHours = Math.min(
-    MAX_HOURS - 0.01,
-    startDate.hour() + startDate.minute() / 60
-  );
+  // Calculate hours with decimal minutes for positioning - memoized
+  const startHours = useMemo(() => {
+    return Math.min(
+      MAX_HOURS - 0.01,
+      startDate.hour() + startDate.minute() / 60
+    );
+  }, [startDate]);
 
-  const endHours = Math.min(MAX_HOURS, endDate.hour() + endDate.minute() / 60);
+  const endHours = useMemo(() => {
+    return Math.min(MAX_HOURS, endDate.hour() + endDate.minute() / 60);
+  }, [endDate]);
 
-  // Calculate duration, handling overnight events correctly
-  const duration =
-    endHours <= startHours && !_isMultiDay
+  // Calculate duration, handling overnight events correctly - memoized
+  const duration = useMemo(() => {
+    return endHours <= startHours && !_isMultiDay
       ? MAX_HOURS - startHours + endHours
       : endHours - startHours;
+  }, [endHours, startHours, _isMultiDay]);
 
   // Calculate duration in minutes
   // const durationMs = (dayjs(endDate).valueOf() - dayjs(startDate).valueOf());
@@ -187,6 +136,96 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
   const initialPositionRef = useRef({ x: 0, y: 0 });
   const currentPositionRef = useRef({ top: 0, left: 0 });
   const syncPendingRef = useRef(false);
+
+  // Performance optimization: Cache DOM elements and calculations
+  const cachedElements = useRef<{
+    allDayContainer: HTMLElement | null;
+    calendarView: HTMLElement | null;
+    allDayRect: DOMRect | null;
+    calendarRect: DOMRect | null;
+    lastCacheTime: number;
+  }>({
+    allDayContainer: null,
+    calendarView: null,
+    allDayRect: null,
+    calendarRect: null,
+    lastCacheTime: 0,
+  });
+
+  // Performance optimization: Cache expensive calculations
+  const calculationCache = useRef<{
+    lastPosition: { top: number; left: number };
+    lastTimeData: { start_at: string; end_at: string };
+    lastCrossZoneCheck: { clientY: number; result: boolean; timestamp: number };
+    lastTargetDateCheck: { clientX: number; result: Date | null; timestamp: number };
+  }>({
+    lastPosition: { top: -1, left: -1 },
+    lastTimeData: { start_at: '', end_at: '' },
+    lastCrossZoneCheck: { clientY: -1, result: false, timestamp: 0 },
+    lastTargetDateCheck: { clientX: -1, result: null, timestamp: 0 },
+  });
+
+  // Throttle expensive state updates
+  const lastStateUpdateRef = useRef(0);
+  const STATE_UPDATE_THROTTLE_MS = 16; // ~60fps
+
+  // Optimized all-day drop zone detection with caching
+  const detectAllDayDropZoneOptimized = (clientY: number): boolean => {
+    const now = Date.now();
+    
+    // Refresh cache if stale or not initialized
+    if (!cachedElements.current.allDayContainer || now - cachedElements.current.lastCacheTime > CACHE_REFRESH_MS) {
+      cachedElements.current.allDayContainer = document.querySelector('[data-testid="all-day-container"]') || 
+                                               document.querySelector('.all-day-event-bar') ||
+                                               document.getElementById('all-day-event-bar') ||
+                                               document.querySelector('[class*="all-day"]');
+      
+      if (cachedElements.current.allDayContainer) {
+        cachedElements.current.allDayRect = cachedElements.current.allDayContainer.getBoundingClientRect();
+      }
+      cachedElements.current.lastCacheTime = now;
+    }
+    
+    if (!cachedElements.current.allDayRect) {
+      return false;
+    }
+    
+    // Add some padding to make the drop zone more generous
+    const padding = 10;
+    return clientY >= (cachedElements.current.allDayRect.top - padding) && 
+           clientY <= (cachedElements.current.allDayRect.bottom + padding);
+  };
+
+  // Optimized target date calculation with caching
+  const calculateAllDayTargetOptimized = (clientX: number, dates: Date[]): Date | null => {
+    const now = Date.now();
+    
+    // Refresh cache if stale or not initialized
+    if (!cachedElements.current.calendarView || now - cachedElements.current.lastCacheTime > CACHE_REFRESH_MS) {
+      cachedElements.current.calendarView = document.getElementById('calendar-view') ||
+                                            document.querySelector('[data-testid="calendar-view"]') ||
+                                            document.querySelector('.calendar-view') ||
+                                            document.querySelector('[class*="calendar"]');
+      
+      if (cachedElements.current.calendarView) {
+        cachedElements.current.calendarRect = cachedElements.current.calendarView.getBoundingClientRect();
+      } else if (cachedElements.current.allDayContainer) {
+        cachedElements.current.calendarRect = cachedElements.current.allDayContainer.getBoundingClientRect();
+      }
+      cachedElements.current.lastCacheTime = now;
+    }
+    
+    if (!cachedElements.current.calendarRect) {
+      return null;
+    }
+    
+    const relativeX = clientX - cachedElements.current.calendarRect.left - TIME_TRAIL_WIDTH;
+    const columnWidth = (cachedElements.current.calendarRect.width - TIME_TRAIL_WIDTH) / dates.length;
+    const dateIndex = Math.floor(relativeX / columnWidth);
+    const clampedDateIndex = Math.max(0, Math.min(dateIndex, dates.length - 1));
+    
+    return dates[clampedDateIndex] || null;
+  };
 
   // Visual states that trigger renders
   const [isHovering, setIsHovering] = useState(false);
@@ -242,6 +281,10 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
   } | null>(null);
 
   // Schedule a throttled update
+  // Throttled schedule update to reduce React re-renders
+  const lastScheduleUpdateRef = useRef(0);
+  const SCHEDULE_UPDATE_THROTTLE_MS = 50; // Max 20 updates per second
+
   const scheduleUpdate = (updateData: { start_at: string; end_at: string }) => {
     // For multi-day events, we need to update the original event
     const eventId = event._originalId || id;
@@ -250,15 +293,24 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
     pendingUpdateRef.current = updateData;
     syncPendingRef.current = true;
 
-    // Immediately update local event data for UI rendering
-    setLocalEvent((prev) => ({
-      ...prev,
-      ...updateData,
-    }));
-
-    // Show syncing state immediately
-    setIsSyncing(true);
-    setUpdateStatus('syncing');
+    // Throttle React state updates to reduce re-renders during drag
+    const now = Date.now();
+    if (now - lastScheduleUpdateRef.current > SCHEDULE_UPDATE_THROTTLE_MS) {
+      // Batch all state updates together to prevent multiple re-renders
+      setLocalEvent((prev) => ({
+        ...prev,
+        ...updateData,
+      }));
+      setIsSyncing(true);
+      setUpdateStatus('syncing');
+      lastScheduleUpdateRef.current = now;
+    } else {
+      // Still update local event data even when throttling UI updates
+      setLocalEvent((prev) => ({
+        ...prev,
+        ...updateData,
+      }));
+    }
 
     // Only start a new timer if there isn't one already
     if (!updateTimeoutRef.current) {
@@ -272,8 +324,8 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
               console.error('Failed to update event:', error);
               showStatusFeedback('error');
 
-              // Revert to original data on error
-              setLocalEvent(event);
+              // Don't revert to original data on error to prevent infinite loops
+              // The user can manually refresh if needed
             })
             .finally(() => {
               syncPendingRef.current = false;
@@ -301,13 +353,20 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
     };
   }, []);
 
-  // Keep local state in sync with prop changes
+  // Keep local state in sync with prop changes - fixed to prevent infinite loops
   useEffect(() => {
     // Only update if we're not in the middle of a drag/resize operation
-    if (!isDraggingRef.current && !isResizingRef.current && !isSyncing) {
-      setLocalEvent(event);
+    // Don't depend on isSyncing to prevent infinite loops
+    // Add defensive check to ensure event has required properties
+    if (!isDraggingRef.current && !isResizingRef.current && !syncPendingRef.current && 
+        event && event.start_at && event.end_at) {
+      // Only update if the event data actually changed to prevent unnecessary re-renders
+      if (localEvent.start_at !== event.start_at || localEvent.end_at !== event.end_at || 
+          localEvent.title !== event.title || localEvent.color !== event.color) {
+        setLocalEvent(event);
+      }
     }
-  }, [event, isSyncing]);
+  }, [event, localEvent.start_at, localEvent.end_at, localEvent.title, localEvent.color]); // Removed isSyncing dependency to break infinite loop
 
   // Initial event positioning
   useEffect(() => {
@@ -425,7 +484,10 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
 
     // Track resize for responsive layout
     const observer = new ResizeObserver(() => {
-      requestAnimationFrame(updatePosition);
+      // Debounce position updates to prevent excessive calls
+      if (!isDraggingRef.current && !isResizingRef.current) {
+        requestAnimationFrame(updatePosition);
+      }
     });
 
     observer.observe(cellEl);
@@ -440,16 +502,15 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
     return () => observer.disconnect();
   }, [
     id,
-    startDate,
-    duration,
+    localEvent.start_at,    // Use primitive string instead of derived startDate
+    localEvent.end_at,      // Use primitive string instead of derived endDate  
     level,
     dates,
     _isMultiDay,
     _dayPosition,
-    startHours,
-    endHours,
     overlapCount,
     overlapGroup,
+    tz,                     // Add tz dependency since it affects calculations
   ]);
 
   // Event resizing - only enable for non-multi-day events or the start/end segments
@@ -469,8 +530,8 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
       e.stopPropagation();
       e.preventDefault();
 
-      // Don't allow interaction with locked events
-      if (locked) return;
+      // Don't allow interaction with locked events or during sync
+      if (locked || isSyncing) return;
 
       // Don't allow multiple operations
       if (isDraggingRef.current || isResizingRef.current) return;
@@ -579,11 +640,13 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
         const adjustedHeight = durationInHours * HOUR_HEIGHT;
         eventCardEl.style.height = `${Math.max(MIN_EVENT_HEIGHT, adjustedHeight)}px`;
 
-        // Schedule the update
-        scheduleUpdate({
-          start_at: startDate.toISOString(),
-          end_at: newEndAt.toISOString(),
-        });
+        // Schedule the update with safeguard
+        if (!syncPendingRef.current) {
+          scheduleUpdate({
+            start_at: startDate.toISOString(),
+            end_at: newEndAt.toISOString(),
+          });
+        }
 
         // Explicitly set local event end time for immediate UI update
         setLocalEvent((prev) => ({
@@ -697,8 +760,8 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
         return;
       }
 
-      // Don't allow interaction with locked events
-      if (locked) {
+      // Don't allow interaction with locked events or during sync
+      if (locked || isSyncing) {
         return;
       }
 
@@ -782,52 +845,67 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
           document.body.classList.add('select-none');
         }
 
-        // Seamless cross-zone detection
-        const isInAllDayZone = detectAllDayDropZone(e.clientY);
-        
-        // Calculate target date for all-day conversion
+        // Optimized cross-zone detection with caching
+        const now = Date.now();
+        let isInAllDayZone: boolean;
         let targetDate: Date | null = null;
+
+        // Cache cross-zone check (within 5px and 10ms for performance)
+        if (Math.abs(e.clientY - calculationCache.current.lastCrossZoneCheck.clientY) < 5 && 
+            now - calculationCache.current.lastCrossZoneCheck.timestamp < 10) {
+          isInAllDayZone = calculationCache.current.lastCrossZoneCheck.result;
+        } else {
+          isInAllDayZone = detectAllDayDropZoneOptimized(e.clientY);
+          calculationCache.current.lastCrossZoneCheck = {
+            clientY: e.clientY,
+            result: isInAllDayZone,
+            timestamp: now
+          };
+        }
+        
+        // Calculate target date only if in all-day zone and cache it
         if (isInAllDayZone) {
-          targetDate = calculateAllDayTarget(e.clientX, dates);
-          
-          // Debug logging for development
-          if (process.env.NODE_ENV === 'development') {
-            console.log('Cross-zone drag detected:', {
-              isInAllDayZone,
-              targetDate,
+          if (Math.abs(e.clientX - calculationCache.current.lastTargetDateCheck.clientX) < 10 && 
+              now - calculationCache.current.lastTargetDateCheck.timestamp < 10) {
+            targetDate = calculationCache.current.lastTargetDateCheck.result;
+          } else {
+            targetDate = calculateAllDayTargetOptimized(e.clientX, dates);
+            calculationCache.current.lastTargetDateCheck = {
               clientX: e.clientX,
-              clientY: e.clientY
-            });
+              result: targetDate,
+              timestamp: now
+            };
           }
         }
 
-        // Update cross-zone drag state
-        setCrossZoneDrag({
-          isInAllDayZone,
-          targetDate,
-        });
+        // Throttle cross-zone state updates
+        const crossZoneStateChanged = 
+          crossZoneDrag.isInAllDayZone !== isInAllDayZone || 
+          crossZoneDrag.targetDate !== targetDate;
+
+        if (crossZoneStateChanged && now - lastStateUpdateRef.current > STATE_UPDATE_THROTTLE_MS) {
+          setCrossZoneDrag({ isInAllDayZone, targetDate });
+          lastStateUpdateRef.current = now;
+        }
 
         if (isInAllDayZone) {
-          // Update global cross-zone drag state for visual feedback
-          setCrossZoneDragState({
-            isActive: true,
-            draggedEvent: localEvent,
-            targetDate,
-            sourceZone: 'timed',
-            targetZone: 'all-day',
-            mouseX: e.clientX,
-            mouseY: e.clientY,
-            targetTimeSlot: null, // Not needed for all-day conversion
-          });
+          // Update global cross-zone drag state for visual feedback (throttled)
+          if (now - lastStateUpdateRef.current > STATE_UPDATE_THROTTLE_MS) {
+            setCrossZoneDragState({
+              isActive: true,
+              draggedEvent: localEvent,
+              targetDate,
+              sourceZone: 'timed',
+              targetZone: 'all-day',
+              mouseX: e.clientX,
+              mouseY: e.clientY,
+              targetTimeSlot: null, // Not needed for all-day conversion
+            });
+          }
           
           // Make the original event semi-transparent during cross-zone drag
           eventCardEl.style.opacity = '0.5';
           eventCardEl.style.cursor = 'grabbing';
-          
-          // Debug logging
-          if (process.env.NODE_ENV === 'development') {
-            console.log('Visual feedback: Event in all-day zone');
-          }
           
           return; // Don't do normal positioning when in all-day zone
         } else {
@@ -901,80 +979,69 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
           // Store the current position for data calculation
           currentPositionRef.current = { top: constrainedTop, left: newLeft };
 
-          // Calculate new times based on position
-          // Calculate hours directly from pixels - improve precision
-          const newStartHour = constrainedTop / HOUR_HEIGHT;
-          const newStartHourFloor = Math.floor(newStartHour);
-          const newStartMinute = Math.round(
-            (newStartHour - newStartHourFloor) * 60
-          );
+          // Optimize: Only recalculate times if position actually changed significantly
+          const positionDelta = Math.abs(constrainedTop - calculationCache.current.lastPosition.top) + 
+                               Math.abs(newLeft - calculationCache.current.lastPosition.left);
 
-          const newStartAt = startDate.toDate();
-          newStartAt.setHours(newStartHourFloor);
-          newStartAt.setMinutes(newStartMinute);
+          if (positionDelta > 5) { // Only recalculate if moved more than 5px
+            // Calculate new times based on position
+            const newStartHour = constrainedTop / HOUR_HEIGHT;
+            const newStartHourFloor = Math.floor(newStartHour);
+            const newStartMinute = Math.round((newStartHour - newStartHourFloor) * 60);
 
-          // Snap start time to 15-minute intervals
-          const roundedStartAt = roundToNearest15Minutes(newStartAt);
+            const newStartAt = startDate.toDate();
+            newStartAt.setHours(newStartHourFloor);
+            newStartAt.setMinutes(newStartMinute);
 
-          // Don't transform the original event - it stays in place
+            // Snap start time to 15-minute intervals
+            const roundedStartAt = roundToNearest15Minutes(newStartAt);
 
-          // Update date if moved to different day
-          if (newDateIdx >= 0 && newDateIdx < dates.length) {
-            const newDate = dates[newDateIdx];
-            if (newDate) {
-              roundedStartAt.setFullYear(newDate.getFullYear());
-              roundedStartAt.setMonth(newDate.getMonth());
-              roundedStartAt.setDate(newDate.getDate());
+            // Update date if moved to different day
+            if (newDateIdx >= 0 && newDateIdx < dates.length) {
+              const newDate = dates[newDateIdx];
+              if (newDate) {
+                roundedStartAt.setFullYear(newDate.getFullYear());
+                roundedStartAt.setMonth(newDate.getMonth());
+                roundedStartAt.setDate(newDate.getDate());
+              }
+            }
+
+            // Calculate new end time maintaining original duration
+            const newEndAt = dayjs(roundedStartAt)
+              .add(endDate.valueOf() - startDate.valueOf(), 'millisecond')
+              .toDate();
+
+            const newTimeData = {
+              start_at: roundedStartAt.toISOString(),
+              end_at: newEndAt.toISOString(),
+            };
+
+            // Only update if times actually changed
+            if (newTimeData.start_at !== calculationCache.current.lastTimeData.start_at || 
+                newTimeData.end_at !== calculationCache.current.lastTimeData.end_at) {
+              calculationCache.current.lastTimeData = newTimeData;
+              calculationCache.current.lastPosition = { top: constrainedTop, left: newLeft };
+              
+              // Schedule update with additional safeguard
+              if (!syncPendingRef.current || now - lastScheduleUpdateRef.current > SCHEDULE_UPDATE_THROTTLE_MS) {
+                scheduleUpdate(newTimeData);
+              }
             }
           }
-
-          // Calculate new end time maintaining original duration
-          const newEndAt = dayjs(roundedStartAt)
-            .add(endDate.valueOf() - startDate.valueOf(), 'millisecond')
-            .toDate();
-
-          // Schedule update
-          scheduleUpdate({
-            start_at: roundedStartAt.toISOString(),
-            end_at: newEndAt.toISOString(),
-          });
         }
       };
 
       const handleMouseUp = async (e: MouseEvent) => {
-        // Debug logging for mouse up
-        if (process.env.NODE_ENV === 'development') {
-          console.log('Mouse up event:', {
-            eventId: id,
-            hasMoved,
-            crossZoneDragState: crossZoneDragRef.current,
-            clientX: e.clientX,
-            clientY: e.clientY
-          });
-        }
         
         if (hasMoved) {
           // Seamless cross-zone conversion
           if (crossZoneDragRef.current.isInAllDayZone && crossZoneDragRef.current.targetDate) {
             try {
-              // Debug logging
-              if (process.env.NODE_ENV === 'development') {
-                console.log('Converting timed event to all-day:', {
-                  eventId: event._originalId || id,
-                  originalEvent: localEventRef.current,
-                  targetDate: crossZoneDragRef.current.targetDate
-                });
-              }
-              
               // Convert timed event to all-day event
               const convertedEvent = createAllDayEventFromTimed(
                 localEventRef.current,
                 crossZoneDragRef.current.targetDate as Date
               );
-
-              if (process.env.NODE_ENV === 'development') {
-                console.log('Converted event:', convertedEvent);
-              }
 
               // Update the event in the database
               await updateEvent(event._originalId || id, {
@@ -986,10 +1053,6 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
               // Show success feedback
               setUpdateStatus('success');
               showStatusFeedback('success');
-              
-              if (process.env.NODE_ENV === 'development') {
-                console.log('Successfully converted event to all-day');
-              }
             } catch (error) {
               console.error('Failed to convert to all-day event:', {
                 error,
@@ -1009,10 +1072,6 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
               eventCardEl.style.zIndex = '10';
             }
           } else if (crossZoneDragRef.current.isInAllDayZone && !crossZoneDragRef.current.targetDate) {
-            // Debug: User dragged to all-day zone but no target date was calculated
-            if (process.env.NODE_ENV === 'development') {
-              console.warn('Dragged to all-day zone but no target date calculated');
-            }
             // Revert visual changes and cleanup
             eventCardEl.style.opacity = '1';
             eventCardEl.style.transform = '';
@@ -1117,6 +1176,15 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
           mouseY: 0,
           targetTimeSlot: null,
         });
+
+        // Performance cleanup: Clear caches after drag
+        calculationCache.current = {
+          lastPosition: { top: -1, left: -1 },
+          lastTimeData: { start_at: '', end_at: '' },
+          lastCrossZoneCheck: { clientY: -1, result: false, timestamp: 0 },
+          lastTargetDateCheck: { clientX: -1, result: null, timestamp: 0 },
+        };
+        cachedElements.current.lastCacheTime = 0; // Force DOM cache refresh on next drag
 
         window.removeEventListener('mousemove', handleMouseMove);
         window.removeEventListener('mouseup', handleMouseUp);
@@ -1256,13 +1324,14 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
             willChange:
               isDragging || isResizing ? 'transform, top, left' : 'auto', // GPU acceleration
             transform: isDragging || isResizing ? 'translateZ(0)' : 'none', // Force GPU acceleration during interaction
+            cursor: isSyncing ? 'wait' : 'pointer', // Show wait cursor during sync
           }}
           onMouseEnter={() => setIsHovering(true)}
           onMouseLeave={() => setIsHovering(false)}
           tabIndex={0}
           onClick={(e) => {
-            // Only open modal if we haven't just finished dragging or resizing
-            if (!wasDraggedRef.current && !wasResizedRef.current) {
+            // Only open modal if we haven't just finished dragging or resizing and not syncing
+            if (!wasDraggedRef.current && !wasResizedRef.current && !isSyncing) {
               e.stopPropagation();
               // Open the modal with the event, it will be read-only if locked
               openModal(event._originalId || id);
@@ -1419,17 +1488,20 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
         <ContextMenuItem
           onClick={() => openModal(event._originalId || id)}
           className={cn('flex items-center gap-2', {
-            'cursor-not-allowed opacity-50': locked,
+            'cursor-not-allowed opacity-50': locked || isSyncing,
           })}
-          disabled={locked}
+          disabled={locked || isSyncing}
         >
           <Edit className="h-4 w-4" />
-          <span>{locked ? 'View Event' : 'Edit Event'}</span>
+          <span>{locked ? 'View Event' : isSyncing ? 'Syncing...' : 'Edit Event'}</span>
         </ContextMenuItem>
 
         <ContextMenuItem
           onClick={handleLockToggle}
-          className="flex items-center gap-2"
+          className={cn('flex items-center gap-2', {
+            'cursor-not-allowed opacity-50': isSyncing,
+          })}
+          disabled={isSyncing}
         >
           {locked ? (
             <>
@@ -1447,9 +1519,9 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
         <ContextMenuSub>
           <ContextMenuSubTrigger
             className={cn('flex items-center gap-2', {
-              'cursor-not-allowed opacity-50': locked,
+              'cursor-not-allowed opacity-50': locked || isSyncing,
             })}
-            disabled={locked}
+            disabled={locked || isSyncing}
           >
             <Palette className="h-4 w-4" />
             <span className="text-foreground">Change Color</span>
@@ -1533,9 +1605,9 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
         <ContextMenuItem
           onClick={handleDelete}
           className={cn('flex items-center gap-2', {
-            'cursor-not-allowed opacity-50': locked,
+            'cursor-not-allowed opacity-50': locked || isSyncing,
           })}
-          disabled={locked}
+          disabled={locked || isSyncing}
         >
           <Trash2 className="h-4 w-4" />
           <span>Delete Event</span>
