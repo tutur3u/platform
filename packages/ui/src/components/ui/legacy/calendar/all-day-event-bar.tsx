@@ -12,7 +12,7 @@ import React, { useMemo, useState, useRef, useCallback } from 'react';
 import { useCalendar } from '../../../../hooks/use-calendar';
 import { MIN_COLUMN_WIDTH, HOUR_HEIGHT } from './config';
 import { useToast } from '@tuturuuu/ui/hooks/use-toast';
-import { findCalendarElements, METADATA_MARKER, preserveTimestamps, restoreTimestamps, createTimedEventFromAllDay, createAllDayEventFromTimed } from './calendar-utils';
+import { findCalendarElements, createTimedEventFromAllDay } from './calendar-utils';
 
 dayjs.extend(isBetween);
 dayjs.extend(isSameOrAfter);
