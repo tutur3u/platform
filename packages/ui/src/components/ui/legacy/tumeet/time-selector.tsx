@@ -23,7 +23,7 @@ export function TimeSelector({ value, onValueChange, disabledTime }: Props) {
       value={value?.toString()}
       onValueChange={(value) => onValueChange(parseInt(value))}
     >
-      <SelectTrigger>
+      <SelectTrigger className="bg-background/50 transition hover:bg-background/80">
         <SelectValue placeholder="Select a time" />
       </SelectTrigger>
       <SelectContent className="h-48">

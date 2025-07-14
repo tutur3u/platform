@@ -54,6 +54,7 @@ function Calendar({
         <div className="flex items-center justify-center border-b p-2">
           <DateInput
             value={props.selected as Date}
+            // biome-ignore lint/suspicious/noExplicitAny: <onSelect can be anything>
             onChange={props.onSelect as any}
             onSubmit={onSubmit}
           />
@@ -61,8 +62,9 @@ function Calendar({
       )}
 
       <div>
-        <div className="flex items-center justify-between gap-2 border-b px-2 pb-4">
+        <div className="mb-4 flex items-center justify-between gap-2 border-b px-2 pb-4">
           <button
+            type="button"
             onClick={() => {
               const prev = new Date(month);
               prev.setMonth(prev.getMonth() - 1);
@@ -70,7 +72,9 @@ function Calendar({
             }}
             className={cn(
               buttonVariants({ variant: 'ghost', size: 'icon' }),
-              'h-7 w-7 transition-colors hover:bg-accent/50'
+              'h-7 w-7 transition-colors hover:bg-accent/50',
+              className?.includes('bg-background/50') &&
+                'bg-background/50 hover:bg-background/80'
             )}
           >
             <ChevronLeft className="h-4 w-4" />
@@ -88,7 +92,9 @@ function Calendar({
               <SelectTrigger
                 className={cn(
                   'h-8 w-[90px] transition-colors',
-                  isCurrentYear && 'font-medium text-primary'
+                  isCurrentYear && 'font-medium text-primary',
+                  className?.includes('bg-background/50') &&
+                    'bg-background/50 hover:bg-background/80'
                 )}
               >
                 <SelectValue placeholder="Year" />
@@ -97,8 +103,8 @@ function Calendar({
                 position="popper"
                 className="h-[300px] overflow-y-auto"
               >
-                <div className="sticky top-0 -mx-1 flex items-center justify-center border-b bg-background py-1">
-                  <div className="px-2 text-sm font-medium text-muted-foreground">
+                <div className="-mx-1 sticky top-0 flex items-center justify-center border-b bg-background py-1">
+                  <div className="px-2 font-medium text-muted-foreground text-sm">
                     {currentYear}
                   </div>
                 </div>
@@ -129,7 +135,9 @@ function Calendar({
               <SelectTrigger
                 className={cn(
                   'h-8 w-[130px] transition-colors',
-                  isCurrentMonth && 'font-medium text-primary'
+                  isCurrentMonth && 'font-medium text-primary',
+                  className?.includes('bg-background/50') &&
+                    'bg-background/50 hover:bg-background/80'
                 )}
               >
                 <SelectValue placeholder="Month" />
@@ -149,6 +157,7 @@ function Calendar({
           </div>
 
           <button
+            type="button"
             onClick={() => {
               const next = new Date(month);
               next.setMonth(next.getMonth() + 1);
@@ -156,7 +165,9 @@ function Calendar({
             }}
             className={cn(
               buttonVariants({ variant: 'ghost', size: 'icon' }),
-              'h-7 w-7 transition-colors hover:bg-accent/50'
+              'h-7 w-7 transition-colors hover:bg-accent/50',
+              className?.includes('bg-background/50') &&
+                'bg-background/50 hover:bg-background/80'
             )}
           >
             <ChevronRight className="h-4 w-4" />
@@ -174,12 +185,16 @@ function Calendar({
             root: 'bg-transparent',
             months: 'flex flex-col',
             month:
-              'space-y-4 min-w-[276px] text-center p-2 font-semibold shrink-0',
+              'space-y-4 max-w-[calc(100vw-4rem)] text-center p-2 font-semibold shrink-0',
             caption: 'hidden',
             nav: 'hidden',
             nav_button: 'hidden',
             table: 'w-full border-collapse',
             head_row: 'grid grid-cols-7 gap-1',
+            weeks: 'flex flex-col gap-1',
+            week: 'flex justify-center gap-1',
+            weekdays:
+              'flex justify-evenly justify-center w-full mb-2 border-b pb-2',
             weekday:
               'text-muted-foreground rounded-md font-normal text-[0.8rem] text-center',
             row: 'grid grid-cols-7 gap-1 mt-2',
