@@ -1,8 +1,10 @@
 import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 
 dayjs.extend(timezone);
+dayjs.extend(utc);
 
 export function isAllDayEvent(event: Pick<CalendarEvent, 'start_at' | 'end_at'>, userTimezone?: string): boolean {
   const start = dayjs(event.start_at);
