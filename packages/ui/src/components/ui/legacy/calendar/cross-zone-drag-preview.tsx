@@ -7,6 +7,22 @@ import dayjs from 'dayjs';
 import { Clock, ArrowRight, Calendar } from 'lucide-react';
 import { calculateEventDuration } from './calendar-utils';
 
+// Utility function to adjust color opacity
+const adjustColorOpacity = (colorClass: string, fromOpacity: string, toOpacity: string): string => {
+  const opacityPattern = new RegExp(`/${fromOpacity}(?![0-9])`);
+  return opacityPattern.test(colorClass) ? colorClass.replace(opacityPattern, `/${toOpacity}`) : colorClass;
+};
+
+// Helper function to get slot position description
+const getSlotPositionDescription = (minute: number): string => {
+  switch (minute) {
+    case 0: return 'top';
+    case 15: return '1st quarter';
+    case 30: return 'middle';
+    default: return '3rd quarter';
+  }
+};
+
 // Preview dimensions and positioning constants
 const PREVIEW_DIMENSIONS = {
   WIDTH: 320,
@@ -87,7 +103,7 @@ const DurationVisualization = ({ conversionInfo, eventStyles, shortTimeFormat }:
             <div 
               className={cn(
                 "h-full rounded-full transition-all duration-300",
-                eventStyles.bg.includes('/60') ? eventStyles.bg.replace('/60', '/80') : eventStyles.bg
+                adjustColorOpacity(eventStyles.bg, '60', '80')
               )}
               style={{ width: `${progressWidth}%` }}
             />
@@ -119,7 +135,7 @@ const TargetSlotIndicator = ({ conversionInfo, targetTimeSlot, shortTimeFormat }
 
   const targetTime = format(conversionInfo.start, shortTimeFormat);
   const targetMinute = targetTimeSlot?.minute || 0;
-  const slotPosition = targetMinute === 0 ? 'top' : targetMinute === 15 ? '1st quarter' : targetMinute === 30 ? 'middle' : '3rd quarter';
+  const slotPosition = getSlotPositionDescription(targetMinute);
 
   return (
     <div className="flex items-center gap-2 px-3 py-2 bg-blue-100/60 dark:bg-blue-900/30 rounded-md border border-blue-200/50 dark:border-blue-800/50">
@@ -291,8 +307,6 @@ export function CrossZoneDragPreview({
     maxWidth: `${PREVIEW_DIMENSIONS.MAX_WIDTH}px`,
   };
 
-
-
   return (
     <div
       className={cn(
@@ -373,7 +387,6 @@ export function CrossZoneDragPreview({
       {/* Pointer arrow */}
       <div 
         className="absolute -bottom-1 left-6 w-3 h-3 rotate-45 bg-white dark:bg-gray-900 border-r border-b border-gray-200/50 dark:border-gray-700/50"
-        style={{ transform: 'rotate(45deg)' }}
       />
     </div>
   );

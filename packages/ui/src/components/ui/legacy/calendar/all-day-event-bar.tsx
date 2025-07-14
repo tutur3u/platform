@@ -69,7 +69,7 @@ interface DragState {
 }
 
 // Export for use in other components (like event modal toggle)
-export { preserveTimestamps, restoreTimestamps, createAllDayEventFromTimed, METADATA_MARKER };
+
 
 // 1. Extract EventContent component for shared rendering
 const EventContent = ({ event }: { event: CalendarEvent }) => (
