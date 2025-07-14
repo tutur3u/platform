@@ -34,4 +34,4 @@ on "public"."meet_together_plans"
 as permissive
 for select
 to public
-using (is_public); 
+using ((is_public AND (ws_id IS NULL))); 
