@@ -30,7 +30,6 @@ import {
   ContextMenuTrigger,
 } from '../../context-menu';
 import { GRID_SNAP, HOUR_HEIGHT, MAX_HOURS, MIN_EVENT_HEIGHT } from './config';
-import { TIME_TRAIL_WIDTH } from './calendar-utils';
 
 dayjs.extend(timezone);
 
@@ -167,7 +166,6 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
 
   // Throttle expensive state updates
   const lastStateUpdateRef = useRef(0);
-  const STATE_UPDATE_THROTTLE_MS = 16; // ~60fps
 
   // Enhanced auto-scroll functionality based on proven techniques
   const autoScrollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
