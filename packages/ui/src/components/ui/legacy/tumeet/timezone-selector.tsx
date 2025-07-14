@@ -28,8 +28,8 @@ export default function TimezoneSelector({ value, onValueChange }: Props) {
         <SelectValue placeholder={t('select-time-zone')} />
       </SelectTrigger>
       <SelectContent>
-        {timezones.map((timezone: Timezone) => (
-          <SelectItem key={timezone.value} value={timezone.value}>
+        {timezones.map((timezone: Timezone, idx) => (
+          <SelectItem key={`timezone-${idx + 1}`} value={timezone.value}>
             {timezone.text}
           </SelectItem>
         ))}

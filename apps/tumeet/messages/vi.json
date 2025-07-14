@@ -16,7 +16,8 @@
     "language": "Ngôn ngữ",
     "theme": "Giao diện",
     "settings": "Cài đặt",
-    "logout": "Đăng xuất"
+    "logout": "Đăng xuất",
+    "result(s)": "kết quả"
   },
   "meet-together": {
     "headline-p1": "Tìm khung giờ tốt nhất cho mọi người,",

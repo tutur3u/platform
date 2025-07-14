@@ -16,7 +16,8 @@
     "language": "Language",
     "theme": "Theme",
     "settings": "Settings",
-    "logout": "Logout"
+    "logout": "Logout",
+    "result(s)": "result(s)"
   },
   "meet-together": {
     "headline-p1": "Find the best time slot for everyone,",

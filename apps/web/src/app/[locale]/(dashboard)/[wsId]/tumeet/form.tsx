@@ -10,7 +10,11 @@ import DateSelector from './date-selector';
 import { TimeSelector } from './time-selector';
 import TimezoneSelector from './timezone-selector';
 
-export default function Form() {
+interface FormProps {
+  wsId: string;
+}
+
+export default function Form({ wsId }: FormProps) {
   const t = useTranslations('meet-together');
 
   const [dates, setDates] = useState<Date[] | undefined>([]);
@@ -34,6 +38,7 @@ export default function Form() {
     startTime,
     endTime,
     timezone,
+    wsId,
   };
 
   return (

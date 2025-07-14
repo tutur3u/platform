@@ -2550,6 +2550,7 @@ export type Database = {
           is_public: boolean;
           name: string | null;
           start_time: string;
+          ws_id: string | null;
         };
         Insert: {
           created_at?: string | null;
@@ -2561,6 +2562,7 @@ export type Database = {
           is_public?: boolean;
           name?: string | null;
           start_time: string;
+          ws_id?: string | null;
         };
         Update: {
           created_at?: string | null;
@@ -2572,6 +2574,7 @@ export type Database = {
           is_public?: boolean;
           name?: string | null;
           start_time?: string;
+          ws_id?: string | null;
         };
         Relationships: [
           {
@@ -2600,6 +2603,20 @@ export type Database = {
             columns: ['creator_id'];
             isOneToOne: false;
             referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'meet_together_plans_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'meet_together_plans_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
             referencedColumns: ['id'];
           },
         ];
