@@ -1,5 +1,6 @@
 import dayjs from 'dayjs';
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
+import { HOUR_HEIGHT } from './config';
 
 // Shared constants
 export const METADATA_MARKER = '__PRESERVED_METADATA__';
@@ -310,3 +311,93 @@ export const createTimedEventFromAllDay = (
     scheduling_note: `${schedulingNote}${METADATA_MARKER}${JSON.stringify(preservedData)}`,
   };
 }; 
+
+// Helper: Detect drop zone (all-day or timed)
+export function detectDropZone(clientY: number, calendarView: HTMLElement | null, allDayContainer: HTMLElement | null): 'all-day' | 'timed' {
+  if (!calendarView) return 'all-day';
+  const calendarRect = calendarView.getBoundingClientRect();
+  if (!allDayContainer) return 'all-day';
+  const allDayRect = allDayContainer.getBoundingClientRect();
+  if (clientY > allDayRect.bottom && clientY < calendarRect.bottom) {
+    return 'timed';
+  }
+  return 'all-day';
+}
+
+// Helper: Calculate visible hour offset
+export function calculateVisibleHourOffset(clientY: number, cellRect: DOMRect, cellHour: number): number {
+  const mouseYFromCellTop = clientY - cellRect.top;
+  const mouseHourOffset = mouseYFromCellTop / HOUR_HEIGHT;
+  return cellHour + mouseHourOffset;
+}
+
+// Helper: Calculate target date index
+export function calculateTargetDateIndex(clientX: number, timeTrailRect: DOMRect, calendarViewRect: DOMRect, visibleDatesLength: number): number {
+  const relativeX = clientX - timeTrailRect.right;
+  const columnWidth = calendarViewRect.width / visibleDatesLength;
+  const dateIndex = Math.floor(relativeX / columnWidth);
+  return Math.max(0, Math.min(dateIndex, visibleDatesLength - 1));
+}
+
+// Helper: Round to nearest quarter hour
+export function roundToNearestQuarterHour(hourFloat: number): { hour: number; minute: number } {
+  const hour = Math.floor(hourFloat);
+  const minuteFloat = (hourFloat - hour) * 60;
+  const roundedMinute = Math.round(minuteFloat / 15) * 15;
+  const finalMinute = roundedMinute === 60 ? 0 : roundedMinute;
+  const finalHour = roundedMinute === 60 ? hour + 1 : hour;
+  const clampedHour = Math.max(0, Math.min(finalHour, 23));
+  const clampedMinute = clampedHour === 23 && finalMinute > 45 ? 45 : finalMinute;
+  return { hour: clampedHour, minute: clampedMinute };
+} 
+
+/**
+ * Calculate the time slot target for a drag/drop event in the calendar grid.
+ * @param clientX Mouse X position
+ * @param clientY Mouse Y position
+ * @param visibleDates Array of visible dates in the calendar grid
+ * @returns { date: Date, hour: number, minute: number } or null if not in a valid slot
+ */
+export function calculateTimeSlotTarget(
+  clientX: number,
+  clientY: number,
+  visibleDates: Date[]
+): { date: Date; hour: number; minute: number } | null {
+  // Get the calendar view container
+  const calendarView = document.getElementById('calendar-view');
+  if (!calendarView) return null;
+
+  // Find the actual start of the timed calendar grid using robust selectors
+  const { timeTrail, calendarView: calendarViewDiv } = findCalendarElements();
+  if (!timeTrail || !calendarViewDiv) return null;
+
+  // Find any visible calendar cell to understand the actual grid positioning
+  const anyVisibleCell = calendarViewDiv.querySelector('.calendar-cell');
+  if (!anyVisibleCell) return null;
+
+  // Get its hour to understand what's currently visible
+  const cellHour = parseInt(anyVisibleCell.getAttribute('data-hour') || '0');
+  const cellRect = anyVisibleCell.getBoundingClientRect();
+  const timeTrailRect = timeTrail.getBoundingClientRect();
+
+  // Calculate based on actual visible cell position
+  const actualHour = calculateVisibleHourOffset(clientY, cellRect, cellHour);
+  const relativeY = actualHour * HOUR_HEIGHT;
+  if (relativeY < 0) return null; // Above the timed calendar
+
+  // Calculate target date from column position
+  const calendarViewRect = calendarViewDiv.getBoundingClientRect();
+  const clampedDateIndex = calculateTargetDateIndex(clientX, timeTrailRect, calendarViewRect, visibleDates.length);
+  const targetDate = visibleDates[clampedDateIndex];
+  if (!targetDate) return null;
+
+  // Calculate target time with proper precision using the actual hour height
+  const hourFloat = relativeY / HOUR_HEIGHT;
+  const { hour: clampedHour, minute: clampedMinute } = roundToNearestQuarterHour(hourFloat);
+
+  return {
+    date: targetDate,
+    hour: clampedHour,
+    minute: clampedMinute,
+  };
+} 

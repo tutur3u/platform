@@ -1,45 +1,14 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-
-// We'll define minimal versions of the helpers here for test purposes.
-// In your real codebase, you should extract these helpers to a separate file for easier testing.
-
-const HOUR_HEIGHT = 48;
-
-function detectDropZone(clientY: number, calendarView: HTMLElement | null, allDayContainer: HTMLElement | null): 'all-day' | 'timed' {
-  if (!calendarView) return 'all-day';
-  const calendarRect = calendarView.getBoundingClientRect();
-  if (!allDayContainer) return 'all-day';
-  const allDayRect = allDayContainer.getBoundingClientRect();
-  if (clientY > allDayRect.bottom && clientY < calendarRect.bottom) {
-    return 'timed';
-  }
-  return 'all-day';
-}
-
-function calculateVisibleHourOffset(clientY: number, cellRect: DOMRect, cellHour: number): number {
-  const mouseYFromCellTop = clientY - cellRect.top;
-  const mouseHourOffset = mouseYFromCellTop / HOUR_HEIGHT;
-  return cellHour + mouseHourOffset;
-}
-
-function calculateTargetDateIndex(clientX: number, timeTrailRect: DOMRect, calendarViewRect: DOMRect, visibleDatesLength: number): number {
-  const relativeX = clientX - timeTrailRect.right;
-  const columnWidth = calendarViewRect.width / visibleDatesLength;
-  const dateIndex = Math.floor(relativeX / columnWidth);
-  return Math.max(0, Math.min(dateIndex, visibleDatesLength - 1));
-}
-
-function roundToNearestQuarterHour(hourFloat: number): { hour: number; minute: number } {
-  const hour = Math.floor(hourFloat);
-  const minuteFloat = (hourFloat - hour) * 60;
-  const roundedMinute = Math.round(minuteFloat / 15) * 15;
-  const finalMinute = roundedMinute === 60 ? 0 : roundedMinute;
-  const finalHour = roundedMinute === 60 ? hour + 1 : hour;
-  const clampedHour = Math.max(0, Math.min(finalHour, 23));
-  const clampedMinute = clampedHour === 23 && finalMinute > 45 ? 45 : finalMinute;
-  return { hour: clampedHour, minute: clampedMinute };
-}
+import { HOUR_HEIGHT } from '../config';
+import {
+  detectDropZone,
+  calculateVisibleHourOffset,
+  calculateTargetDateIndex,
+  roundToNearestQuarterHour,
+  findCalendarElements,
+  calculateTimeSlotTarget,
+} from '../calendar-utils';
 
 describe('all-day-event-bar helpers', () => {
   describe('detectDropZone', () => {
@@ -74,12 +43,15 @@ describe('all-day-event-bar helpers', () => {
   describe('calculateVisibleHourOffset', () => {
     it('calculates correct hour offset', () => {
       const cellRect = { top: 100 } as DOMRect;
+      // clientY=148, cellRect.top=100, so mouseYFromCellTop=48
+      // With HOUR_HEIGHT=80, mouseHourOffset=48/80=0.6, so 8+0.6=8.6 ≈ 9
       expect(calculateVisibleHourOffset(148, cellRect, 8)).toBeCloseTo(9);
     });
     it('handles negative offset', () => {
       const cellRect = { top: 200 } as DOMRect;
-      // Actual value: (100-200)/48 + 8 = -2.083... + 8 = 5.916...
-      expect(calculateVisibleHourOffset(100, cellRect, 8)).toBeCloseTo(5.916, 2);
+      // clientY=100, cellRect.top=200, so mouseYFromCellTop=-100
+      // With HOUR_HEIGHT=80, mouseHourOffset=-100/80=-1.25, so 8-1.25=6.75
+      expect(calculateVisibleHourOffset(100, cellRect, 8)).toBeCloseTo(6.75, 2);
     });
   });
 
@@ -87,45 +59,85 @@ describe('all-day-event-bar helpers', () => {
     it('returns correct index within bounds', () => {
       const timeTrailRect = { right: 0 } as DOMRect;
       const calendarViewRect = { width: 700 } as DOMRect;
+      // clientX=350, timeTrailRect.right=0, columnWidth=100, so index=3
       expect(calculateTargetDateIndex(350, timeTrailRect, calendarViewRect, 7)).toBe(3);
     });
     it('clamps to 0 if negative', () => {
       const timeTrailRect = { right: 0 } as DOMRect;
       const calendarViewRect = { width: 700 } as DOMRect;
+      // clientX=-100, timeTrailRect.right=0, so index=-1, clamped to 0
       expect(calculateTargetDateIndex(-100, timeTrailRect, calendarViewRect, 7)).toBe(0);
     });
     it('clamps to max if out of bounds', () => {
       const timeTrailRect = { right: 0 } as DOMRect;
       const calendarViewRect = { width: 700 } as DOMRect;
+      // clientX=1000, timeTrailRect.right=0, so index=10, clamped to 6
       expect(calculateTargetDateIndex(1000, timeTrailRect, calendarViewRect, 7)).toBe(6);
     });
   });
 
   describe('roundToNearestQuarterHour', () => {
     it('rounds to nearest quarter hour', () => {
+      // 8.13 -> 8:15, 8.49 -> 8:30, 8.51 -> 8:30
       expect(roundToNearestQuarterHour(8.13)).toEqual({ hour: 8, minute: 15 });
       expect(roundToNearestQuarterHour(8.49)).toEqual({ hour: 8, minute: 30 });
-      expect(roundToNearestQuarterHour(8.51)).toEqual({ hour: 9, minute: 0 });
+      expect(roundToNearestQuarterHour(8.51)).toEqual({ hour: 8, minute: 30 });
     });
     it('clamps to 23:45 if overflows', () => {
+      // 23.99 -> 23:00 (clamped)
       expect(roundToNearestQuarterHour(23.99)).toEqual({ hour: 23, minute: 0 });
     });
     it('clamps to 0:00 if negative', () => {
+      // -1 -> 0:00
       expect(roundToNearestQuarterHour(-1)).toEqual({ hour: 0, minute: 0 });
     });
   });
 
-  describe.skip('calculateTimeSlotTarget', () => {
-    // This function is more complex and requires DOM mocking
-    it('returns null if calendarView is null', () => {
-      // Simulate document.getElementById returning null
-      const originalGetElementById = document.getElementById;
-      document.getElementById = vi.fn().mockReturnValue(null);
-      // The function under test would return null in this case
-      // Restore after test
-      document.getElementById = originalGetElementById;
+  describe('calculateTimeSlotTarget', () => {
+    let calendarView: HTMLDivElement;
+    let timeTrail: HTMLDivElement;
+    let calendarGrid: HTMLDivElement;
+    let cell: HTMLDivElement;
+    let visibleDates: Date[];
+    beforeEach(() => {
+      // Set up DOM structure
+      calendarView = document.createElement('div');
+      calendarView.id = 'calendar-view';
+      timeTrail = document.createElement('div');
+      timeTrail.className = 'time-trail';
+      calendarGrid = document.createElement('div');
+      calendarGrid.className = 'calendar-grid flex-1';
+      cell = document.createElement('div');
+      cell.className = 'calendar-cell';
+      cell.setAttribute('data-hour', '8');
+      calendarGrid.appendChild(cell);
+      calendarView.appendChild(timeTrail);
+      calendarView.appendChild(calendarGrid);
+      document.body.appendChild(calendarView);
+      // Mock getBoundingClientRect for all elements
+      vi.spyOn(timeTrail, 'getBoundingClientRect').mockReturnValue({ right: 0, width: 64, top: 0, bottom: 500, left: 0, height: 500, x: 0, y: 0, toJSON: () => {} });
+      vi.spyOn(calendarGrid, 'getBoundingClientRect').mockReturnValue({ width: 700, left: 0, right: 700, top: 0, bottom: 500, height: 500, x: 0, y: 0, toJSON: () => {} });
+      vi.spyOn(cell, 'getBoundingClientRect').mockReturnValue({ top: 100, height: 80, left: 0, right: 100, width: 100, bottom: 180, x: 0, y: 0, toJSON: () => {} });
+      visibleDates = [new Date('2024-01-01'), new Date('2024-01-02'), new Date('2024-01-03')];
     });
-    // For a full test, you would extract this function and inject dependencies for easier testing
-    // Here, we just show the approach
+    afterEach(() => {
+      document.body.innerHTML = '';
+      vi.restoreAllMocks();
+    });
+    it('returns null if calendarView is missing', () => {
+      document.getElementById = vi.fn().mockReturnValue(null);
+      // Should return null if calendarView is not found
+      expect(calculateTimeSlotTarget(150, 148, visibleDates)).toBeNull();
+    });
+    it('returns correct slot info for valid input', () => {
+      document.getElementById = vi.fn().mockReturnValue(calendarView);
+      // Should return correct slot info
+      // Example: clientX=150, clientY=148, cellHour=8, cellRect.top=100, HOUR_HEIGHT=80
+      // mouseYFromCellTop=48, mouseHourOffset=0.6, actualHour=8.6, relativeY=8.6*80=688
+      // hourFloat=688/80=8.6, rounded to {hour:9, minute:0}
+      // columnWidth=700/3=233.33, clientX=150, dateIndex=0
+      // Should return { date: visibleDates[0], hour: 9, minute: 0 }
+      expect(calculateTimeSlotTarget(150, 148, visibleDates)).toEqual({ date: visibleDates[0], hour: 9, minute: 0 });
+    });
   });
 }); 
