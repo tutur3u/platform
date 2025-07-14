@@ -54,21 +54,71 @@ export const calculateEventDuration = (event: CalendarEvent): number => {
 };
 
 /**
- * Find calendar view elements using robust selectors
- * @returns Object with timeTrail and calendarView elements
+ * Find calendar view elements using robust selectors with defensive programming
+ * @returns Object with timeTrail and calendarView elements, or null if not found
  */
 export const findCalendarElements = () => {
   const calendarView = document.getElementById('calendar-view');
-  if (!calendarView) return { timeTrail: null, calendarView: null };
+  if (!calendarView) {
+    console.warn('Calendar view container not found');
+    return { timeTrail: null, calendarView: null };
+  }
   
-  // Use more robust selectors instead of relying on child order
-  const timeTrail = calendarView.querySelector('[class*="w-16"]') || 
-                   calendarView.querySelector('[data-testid="time-trail"]') ||
-                   calendarView.querySelector('.time-trail');
+  // Use multiple fallback selectors for time trail with validation
+  let timeTrail: Element | null = null;
+  const timeTrailSelectors = [
+    '[data-testid="time-trail"]',
+    '.time-trail',
+    '[class*="w-16"]',
+    '[class*="time-trail"]'
+  ];
   
-  const calendarViewDiv = calendarView.querySelector('.flex-1') || 
-                         calendarView.querySelector('[data-testid="calendar-grid"]') ||
-                         calendarView.querySelector('.calendar-grid');
+  for (const selector of timeTrailSelectors) {
+    timeTrail = calendarView.querySelector(selector);
+    if (timeTrail) break;
+  }
+  
+  // Use multiple fallback selectors for calendar grid with validation
+  let calendarViewDiv: Element | null = null;
+  const calendarGridSelectors = [
+    '[data-testid="calendar-grid"]',
+    '.calendar-grid',
+    '.flex-1',
+    '[class*="calendar-grid"]'
+  ];
+  
+  for (const selector of calendarGridSelectors) {
+    calendarViewDiv = calendarView.querySelector(selector);
+    if (calendarViewDiv) break;
+  }
+  
+  // Additional validation - ensure elements have expected structure
+  if (timeTrail && !timeTrail.getBoundingClientRect) {
+    console.warn('Time trail element missing getBoundingClientRect method');
+    timeTrail = null;
+  }
+  
+  if (calendarViewDiv && !calendarViewDiv.getBoundingClientRect) {
+    console.warn('Calendar view div missing getBoundingClientRect method');
+    calendarViewDiv = null;
+  }
+  
+  // Validate that we found meaningful elements
+  if (timeTrail && calendarViewDiv) {
+    const timeTrailRect = timeTrail.getBoundingClientRect();
+    const calendarRect = calendarViewDiv.getBoundingClientRect();
+    
+    // Basic sanity checks for element dimensions
+    if (timeTrailRect.width === 0 || timeTrailRect.height === 0) {
+      console.warn('Time trail element has zero dimensions');
+      timeTrail = null;
+    }
+    
+    if (calendarRect.width === 0 || calendarRect.height === 0) {
+      console.warn('Calendar grid element has zero dimensions');
+      calendarViewDiv = null;
+    }
+  }
   
   return { timeTrail, calendarView: calendarViewDiv };
 };

@@ -359,6 +359,13 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
 
   // Helper to calculate time slot target - IMPROVED with better error handling
   const calculateTimeSlotTarget = useCallback((clientX: number, clientY: number) => {
+    // Validate input parameters
+    if (typeof clientX !== 'number' || typeof clientY !== 'number' || 
+        !isFinite(clientX) || !isFinite(clientY)) {
+      console.warn('CalculateTimeSlotTarget: Invalid input coordinates', { clientX, clientY });
+      return null;
+    }
+    
     // Get the calendar view container
     const calendarView = document.getElementById('calendar-view');
     if (!calendarView) {
@@ -381,9 +388,28 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
       return null;
     }
     
-    // Get its hour to understand what's currently visible
-    const cellHour = parseInt(anyVisibleCell.getAttribute('data-hour') || '0');
+    // Get its hour to understand what's currently visible with validation
+    const hourAttr = anyVisibleCell.getAttribute('data-hour');
+    if (!hourAttr || isNaN(parseInt(hourAttr))) {
+      console.log('CalculateTimeSlotTarget: invalid or missing data-hour attribute');
+      return null;
+    }
+    
+    const cellHour = parseInt(hourAttr);
+    
+    // Validate hour is in reasonable range (0-23)
+    if (cellHour < 0 || cellHour > 23) {
+      console.log('CalculateTimeSlotTarget: hour out of valid range', cellHour);
+      return null;
+    }
+    
     const cellRect = anyVisibleCell.getBoundingClientRect();
+    
+    // Validate cell rect dimensions
+    if (cellRect.width === 0 || cellRect.height === 0) {
+      console.log('CalculateTimeSlotTarget: calendar cell has zero dimensions');
+      return null;
+    }
     
     const timeTrailRect = timeTrail.getBoundingClientRect();
     
