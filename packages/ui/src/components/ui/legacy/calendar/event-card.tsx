@@ -140,7 +140,7 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
   // Default values for overlap properties if not provided
   const overlapCount = _overlapCount || 1;
   const overlapGroup = _overlapGroup || [id];
-
+  
   const { updateEvent, hideModal, openModal, deleteEvent, settings, setCrossZoneDragState } =
     useCalendar();
   const tz = settings?.timezone?.timezone;
@@ -383,7 +383,7 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
       const hasOverlaps = overlapCount > 1;
 
       // Width calculation based on overlap count
-      let eventWidth, eventLeft;
+      let eventWidth: number, eventLeft: number;
 
       if (hasOverlaps) {
         // Calculate the position of this event within its overlap group
@@ -635,7 +635,7 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
     hideModal,
     _isMultiDay,
     _dayPosition,
-    event._originalId,
+    event,
     startHours,
     locked,
   ]);
@@ -857,6 +857,9 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
         // Calculate new position with snapping
         const newTop = snapToGrid(initialCardPosition.top + dy, GRID_SNAP);
         const newLeft = snapToGrid(initialCardPosition.left + dx, columnWidth);
+        
+        // Calculate target date index early for use in snap indicator
+        const newDateIdx = Math.floor(newLeft / columnWidth);
 
         // Constrain vertical position to stay within the day (0-24h)
         const constrainedTop = Math.max(
@@ -870,16 +873,35 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
           newLeft !== currentPositionRef.current.left;
 
         if (positionChanged) {
-          // Update visual position immediately (with GPU acceleration)
-          eventCardEl.style.transform = `translate3d(${
-            newLeft - initialCardPosition.left
-          }px, ${constrainedTop - initialCardPosition.top}px, 0)`;
+          // Create static reference shadow at original position (only once)
+          let staticReference = document.getElementById(`static-ref-${id}`);
+          if (!staticReference) {
+            staticReference = eventCardEl.cloneNode(true) as HTMLElement;
+            staticReference.id = `static-ref-${id}`;
+            staticReference.style.position = 'absolute';
+            staticReference.style.top = `${initialCardPosition.top}px`;
+            staticReference.style.left = `${initialCardPosition.left}px`;
+            staticReference.style.width = `${eventCardEl.offsetWidth}px`;
+            staticReference.style.height = `${eventCardEl.offsetHeight}px`;
+            staticReference.style.opacity = '0.4';
+            staticReference.style.pointerEvents = 'none';
+            staticReference.style.cursor = 'default';
+            staticReference.style.border = '2px dashed rgba(59, 130, 246, 0.5)';
+            staticReference.style.zIndex = '1';
+            staticReference.style.transform = 'none';
+            
+            // Insert the static reference before the original in the DOM
+            eventCardEl.parentElement?.insertBefore(staticReference, eventCardEl);
+          }
+          
+          // Keep the original event visible but slightly transparent during drag
+          eventCardEl.style.opacity = '0.7';
+          eventCardEl.style.pointerEvents = 'none';
 
-          // Store the current position
+          // Store the current position for data calculation
           currentPositionRef.current = { top: constrainedTop, left: newLeft };
 
           // Calculate new times based on position
-          const newDateIdx = Math.floor(newLeft / columnWidth);
           // Calculate hours directly from pixels - improve precision
           const newStartHour = constrainedTop / HOUR_HEIGHT;
           const newStartHourFloor = Math.floor(newStartHour);
@@ -894,19 +916,7 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
           // Snap start time to 15-minute intervals
           const roundedStartAt = roundToNearest15Minutes(newStartAt);
 
-          // Adjust the visual position to match the snapped time
-          const roundedHours =
-            roundedStartAt.getHours() + roundedStartAt.getMinutes() / 60;
-          const roundedTop = roundedHours * HOUR_HEIGHT;
-
-          // Update the visual position to match the snapped time
-          eventCardEl.style.transform = `translate3d(${Math.max(
-            (newLeft - initialCardPosition.left) / 60 - 4,
-            0
-          )}px, ${Math.max((roundedTop - initialCardPosition.top) / 60 - 4, 0)}px, 0)`;
-
-          // Update the current position reference
-          currentPositionRef.current = { top: roundedTop, left: newLeft };
+          // Don't transform the original event - it stays in place
 
           // Update date if moved to different day
           if (newDateIdx >= 0 && newDateIdx < dates.length) {
@@ -928,13 +938,6 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
             start_at: roundedStartAt.toISOString(),
             end_at: newEndAt.toISOString(),
           });
-
-          // Explicitly update local event for immediate UI update
-          setLocalEvent((prev) => ({
-            ...prev,
-            start_at: roundedStartAt.toISOString(),
-            end_at: newEndAt.toISOString(),
-          }));
         }
       };
 
@@ -1000,15 +1003,27 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
               // Revert visual changes
               eventCardEl.style.opacity = '1';
               eventCardEl.style.transform = '';
+              eventCardEl.style.pointerEvents = 'auto';
+              eventCardEl.style.cursor = '';
+              eventCardEl.style.border = '';
+              eventCardEl.style.zIndex = '10';
             }
           } else if (crossZoneDragRef.current.isInAllDayZone && !crossZoneDragRef.current.targetDate) {
             // Debug: User dragged to all-day zone but no target date was calculated
             if (process.env.NODE_ENV === 'development') {
               console.warn('Dragged to all-day zone but no target date calculated');
             }
-            // Revert visual changes
+            // Revert visual changes and cleanup
             eventCardEl.style.opacity = '1';
             eventCardEl.style.transform = '';
+            eventCardEl.style.pointerEvents = 'auto';
+            eventCardEl.style.cursor = '';
+            eventCardEl.style.border = '';
+            eventCardEl.style.zIndex = '10';
+            
+            // Clean up static reference
+            const staticReference = document.getElementById(`static-ref-${id}`);
+            if (staticReference) staticReference.remove();
           } else {
             // Normal timed event drag completion
             // Reset drag state
@@ -1020,9 +1035,19 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
             // Set flag to indicate this was a drag operation
             wasDraggedRef.current = true;
 
-            // Need to update the actual position properties
-            // to match the transform we've been using
+            // Clean up static reference
+            const staticReference = document.getElementById(`static-ref-${id}`);
+            if (staticReference) staticReference.remove();
+
+            // Restore original event and update position
             if (eventCardEl) {
+              // Restore original event appearance
+              eventCardEl.style.opacity = '1';
+              eventCardEl.style.pointerEvents = 'auto';
+              eventCardEl.style.cursor = '';
+              eventCardEl.style.border = '';
+              eventCardEl.style.zIndex = '10';
+              
               const currentTop = currentPositionRef.current.top;
               const currentLeft = currentPositionRef.current.left;
 
@@ -1038,7 +1063,7 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
                   .then(() => {
                     showStatusFeedback('success');
                   })
-                  .catch((error) => {
+                  .catch((error: unknown) => {
                     console.error('Failed to update event:', error);
                     showStatusFeedback('error');
                   });
@@ -1052,6 +1077,19 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
           updateVisualState({ isDragging: false });
           document.body.classList.remove('select-none');
           document.body.style.cursor = '';
+
+          // Clean up static reference
+          const staticReference = document.getElementById(`static-ref-${id}`);
+          if (staticReference) staticReference.remove();
+          
+          // Restore original event to fully interactive state
+          if (eventCardEl) {
+            eventCardEl.style.opacity = '1';
+            eventCardEl.style.pointerEvents = 'auto';
+            eventCardEl.style.border = '';
+            eventCardEl.style.cursor = ''; // Restore grab cursor
+            eventCardEl.style.zIndex = '10'; // Restore original z-index
+          }
 
           // Check if this was just a click (no significant movement)
           const deltaX = Math.abs(e.clientX - initialPositionRef.current.x);
@@ -1105,18 +1143,7 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
       // Removed debug logging to reduce console noise
       contentEl.removeEventListener('mousedown', handleMouseDown);
     };
-  }, [
-    id,
-    startDate,
-    endDate,
-    dates,
-    updateEvent,
-    hideModal,
-    openModal,
-    _isMultiDay,
-    event._originalId,
-    locked,
-  ]);
+  }, [id, startDate, endDate, dates, updateEvent, hideModal, openModal, _isMultiDay, event, locked]);
 
   // Color styles based on event color
 

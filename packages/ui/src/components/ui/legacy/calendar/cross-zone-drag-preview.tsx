@@ -64,6 +64,7 @@ interface TargetSlotIndicatorProps {
   conversionInfo: {
     isAllDay: boolean;
     start: Date;
+    end: Date;
   };
   targetTimeSlot?: {
     hour: number;
@@ -136,13 +137,19 @@ const TargetSlotIndicator = ({ conversionInfo, targetTimeSlot, shortTimeFormat }
   const targetTime = format(conversionInfo.start, shortTimeFormat);
   const targetMinute = targetTimeSlot?.minute || 0;
   const slotPosition = getSlotPositionDescription(targetMinute);
+  const endTime = format(conversionInfo.end, shortTimeFormat);
 
   return (
-    <div className="flex items-center gap-2 px-3 py-2 bg-blue-100/60 dark:bg-blue-900/30 rounded-md border border-blue-200/50 dark:border-blue-800/50">
-      <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
-      <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
-        Target: {targetTime} slot ({slotPosition})
-      </span>
+    <div className="space-y-1">
+      <div className="flex items-center gap-2 px-3 py-2 bg-blue-100/60 dark:bg-blue-900/30 rounded-md border border-blue-200/50 dark:border-blue-800/50">
+        <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
+        <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
+          Target: {targetTime} slot ({slotPosition})
+        </span>
+      </div>
+      <div className="text-xs text-gray-600 dark:text-gray-400 px-3">
+        {targetTime} - {endTime}
+      </div>
     </div>
   );
 };
@@ -177,9 +184,13 @@ export function CrossZoneDragPreview({
         targetTimeDisplay: format(targetDay.toDate(), 'EEEE, MMM d'),
       };
     } else if (targetZone === 'timed' && targetDate && targetTimeSlot) {
+      // Ensure proper timezone handling for target date
+      const targetDateOnly = new Date(targetDate);
+      targetDateOnly.setHours(targetTimeSlot.hour, targetTimeSlot.minute, 0, 0);
+      
       const startTime = tz === 'auto'
-        ? dayjs(targetDate).hour(targetTimeSlot.hour).minute(targetTimeSlot.minute).second(0).millisecond(0)
-        : dayjs(targetDate).tz(tz).hour(targetTimeSlot.hour).minute(targetTimeSlot.minute).second(0).millisecond(0);
+        ? dayjs(targetDateOnly)
+        : dayjs(targetDateOnly).tz(tz);
       
       // Calculate duration using shared utility function
       const durationMinutes = calculateEventDuration(draggedEvent);

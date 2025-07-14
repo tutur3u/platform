@@ -3,7 +3,7 @@ import { cn } from '@tuturuuu/utils/format';
 import { format } from 'date-fns';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useCalendar } from '../../../../hooks/use-calendar';
 import { HOUR_HEIGHT } from './config';
 import { calculateEventDuration } from './calendar-utils';
@@ -161,6 +161,9 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
     y: 0,
     arrowDirection: 'right',
   });
+  
+  // Add a mounted ref to prevent state updates after unmount
+  const isMountedRef = useRef(true);
 
   const id = `cell-${date}-${hour}`;
   const tooltipId = `calendar-tooltip-${id}`;
@@ -435,6 +438,12 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
         midnight.setHours(23, 59, 59, 999);
         eventEnd = midnight;
         duration = eventEnd.getTime() - eventStart.getTime();
+        
+        // Ensure duration is still positive after capping
+        if (duration <= 0) {
+          eventEnd = new Date(eventStart.getTime() + 15 * 60 * 1000); // Fallback to 15 minutes
+          duration = 15 * 60 * 1000;
+        }
       }
       // Only create if duration >= 15 minutes
       if (duration >= 15 * 60 * 1000) {
@@ -455,14 +464,19 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
     ]
   );
 
-  // Helper to handle mouse enter for each slot
-  const handleSlotMouseEnter = (slot: 'hour' | 'half-hour' | number) => {
+  // Helper to handle mouse enter for each slot - stabilized with useCallback
+  const handleSlotMouseEnter = useCallback((slot: 'hour' | 'half-hour' | number) => {
+    // Prevent excessive state updates during rapid mouse events or after unmount
+    if (!isMountedRef.current || isDragging || crossZoneDragState.isActive) return;
+    
     setHoveredSlot(slot);
     if (!tooltipLocked) {
       setShowBothLabels(false);
       setShowTooltip(false);
       if (hoverTimeout.current) clearTimeout(hoverTimeout.current);
       hoverTimeout.current = setTimeout(() => {
+        // Check if still mounted before updating state
+        if (!isMountedRef.current) return;
         setShowBothLabels(true);
         setShowTooltip(true);
         setTooltipLocked(true);
@@ -470,29 +484,36 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
     } else {
       setShowTooltip(true);
     }
-  };
+  }, [isDragging, crossZoneDragState.isActive, tooltipLocked]);
 
-  // Helper to handle mouse leave for each slot
-  const handleSlotMouseLeave = () => {
+  // Helper to handle mouse leave for each slot - stabilized with useCallback
+  const handleSlotMouseLeave = useCallback(() => {
+    // Prevent excessive state updates during rapid mouse events or after unmount
+    if (!isMountedRef.current || isDragging || crossZoneDragState.isActive) return;
+    
     setHoveredSlot(null);
     // Do not reset tooltip/labels here; only reset on cell leave
     if (hoverTimeout.current) clearTimeout(hoverTimeout.current);
-  };
+  }, [isDragging, crossZoneDragState.isActive]);
 
   // Throttled tooltip position update
 
   // Helper to determine if a given minute is a 15-minute interval
   const isQuarterHour = (minute: number) => minute % 15 === 0;
 
-  // Update mouse move/hover logic to show tooltip for every 15-minute cell
-  const handleSlotMouseMove = (
+  // Update mouse move/hover logic to show tooltip for every 15-minute cell - stabilized with useCallback
+  const handleSlotMouseMove = useCallback((
     e: React.MouseEvent<HTMLDivElement, MouseEvent>,
     slot: 'hour' | 'half-hour' | number
   ) => {
-    if (isDragging) return;
+    // Prevent excessive state updates during rapid mouse events or after unmount
+    if (!isMountedRef.current || isDragging) return;
     
     // Don't show tooltips during cross-zone drag operations
     if (crossZoneDragState.isActive) return;
+    
+    // Throttle rapid mouse move events to prevent excessive updates
+    if (rafId.current) return;
     
     setIsHovering(true);
     // If slot is a number, it's a 15-minute cell
@@ -532,31 +553,38 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
     );
 
     tooltipPosRef.current = { x, y, arrowDirection };
-    if (!rafId.current) {
-      rafId.current = requestAnimationFrame(() => {
-        // Only update if position has changed significantly
-        const { x: prevX, y: prevY, arrowDirection: prevArrow } = tooltipPos;
-        const { x: newX, y: newY, arrowDirection } = tooltipPosRef.current;
-        const hasSignificantChange =
-          Math.abs(prevX - newX) > 5 || Math.abs(prevY - newY) > 5;
-        if (hasSignificantChange || prevArrow !== arrowDirection) {
-          setTooltipPos(tooltipPosRef.current);
-        }
+    rafId.current = requestAnimationFrame(() => {
+      // Check if still mounted before updating state
+      if (!isMountedRef.current) {
         rafId.current = null;
-      });
-    }
+        return;
+      }
+      
+      // Only update if position has changed significantly
+      const { x: prevX, y: prevY, arrowDirection: prevArrow } = tooltipPos;
+      const { x: newX, y: newY, arrowDirection } = tooltipPosRef.current;
+      const hasSignificantChange =
+        Math.abs(prevX - newX) > 5 || Math.abs(prevY - newY) > 5;
+      if (hasSignificantChange || prevArrow !== arrowDirection) {
+        setTooltipPos(tooltipPosRef.current);
+      }
+      rafId.current = null;
+    });
     if (tooltipLocked) setShowTooltip(true);
-  };
+  }, [isDragging, crossZoneDragState.isActive, isQuarterHour, tooltipPos, tooltipLocked]);
 
-  // Handle leaving the cell: reset everything
-  const handleCellMouseLeave = () => {
+  // Handle leaving the cell: reset everything - stabilized with useCallback
+  const handleCellMouseLeave = useCallback(() => {
+    // Prevent excessive state updates during rapid mouse events or after unmount
+    if (!isMountedRef.current || isDragging || crossZoneDragState.isActive) return;
+    
     setIsHovering(false);
     setHoveredSlot(null);
     setShowBothLabels(false);
     setShowTooltip(false);
     setTooltipLocked(false);
     if (hoverTimeout.current) clearTimeout(hoverTimeout.current);
-  };
+  }, [isDragging, crossZoneDragState.isActive]);
 
   const handleSlotFocus = (slot: 'hour' | 'half-hour') => {
     setHoveredSlot(slot);
@@ -601,6 +629,7 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
 
   useEffect(() => {
     return () => {
+      isMountedRef.current = false; // Mark as unmounted
       if (hoverTimeout.current) clearTimeout(hoverTimeout.current);
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
       if (autoScrollRef.current) {
@@ -695,13 +724,15 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
     };
   }, []);
 
-  // Check if this cell is the target for cross-zone drag
-  const isCrossZoneTarget = crossZoneDragState.isActive && 
-    crossZoneDragState.targetZone === 'timed' && 
-    crossZoneDragState.targetDate && 
-    crossZoneDragState.targetTimeSlot &&
-    dayjs(date).isSame(crossZoneDragState.targetDate, 'day') &&
-    crossZoneDragState.targetTimeSlot.hour === hour;
+  // Check if this cell is the target for cross-zone drag - memoized to prevent excessive calculations
+  const isCrossZoneTarget = useMemo(() => {
+    return crossZoneDragState.isActive && 
+      crossZoneDragState.targetZone === 'timed' && 
+      crossZoneDragState.targetDate && 
+      crossZoneDragState.targetTimeSlot &&
+      dayjs(date).isSame(crossZoneDragState.targetDate, 'day') &&
+      crossZoneDragState.targetTimeSlot.hour === hour;
+  }, [crossZoneDragState, date, hour]);
     
 
 

@@ -609,7 +609,8 @@ export function EventModal() {
         };
       } else {
         // Converting all-day event back to timed event
-        const restoredEvent = restoreTimestamps(currentEvent);
+        // CRITICAL FIX: Pass the current event's date as targetDate to preserve the moved date
+        const restoredEvent = restoreTimestamps(currentEvent, startDate.toDate(), tz);
         
 
         
