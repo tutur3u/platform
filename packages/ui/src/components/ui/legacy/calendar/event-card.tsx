@@ -30,7 +30,7 @@ import {
   ContextMenuTrigger,
 } from '../../context-menu';
 import { GRID_SNAP, HOUR_HEIGHT, MAX_HOURS, MIN_EVENT_HEIGHT } from './config';
-import { TIME_TRAIL_WIDTH, METADATA_MARKER } from './calendar-utils';
+import { TIME_TRAIL_WIDTH } from './calendar-utils';
 
 dayjs.extend(timezone);
 
@@ -54,70 +54,7 @@ interface EventCardProps {
   level?: number; // Level for stacking events
 }
 
-// Enhanced metadata storage using scheduling_note field (consistent with all-day events)
-
-interface PreservedMetadata {
-  original_scheduling_note?: string;
-  preserved_timed_start?: string;
-  preserved_timed_end?: string;
-  was_all_day?: boolean;
-}
-
-// Helper functions for timestamp preservation
-const preserveTimestamps = (event: CalendarEvent): CalendarEvent => {
-  // Store original timed timestamps in scheduling_note when converting to all-day
-  const schedulingNote = event.scheduling_note || '';
-  if (!schedulingNote.includes(METADATA_MARKER)) {
-    const preservedData: PreservedMetadata = {
-      original_scheduling_note: schedulingNote,
-      preserved_timed_start: event.start_at,
-      preserved_timed_end: event.end_at,
-      was_all_day: false,
-    };
-    return {
-      ...event,
-      scheduling_note: `${schedulingNote}${METADATA_MARKER}${JSON.stringify(preservedData)}`,
-    };
-  }
-  return event;
-};
-
-const createAllDayEventFromTimed = (event: CalendarEvent, targetDate: Date): CalendarEvent => {
-  // Convert timed event to all-day event
-  const startOfDay = dayjs(targetDate).startOf('day');
-  const endOfDay = startOfDay.add(1, 'day');
-  
-  // Check if we have preserved all-day timestamps to restore
-  const schedulingNote = event.scheduling_note || '';
-  if (schedulingNote.includes(METADATA_MARKER)) {
-    try {
-      const [, preservedJson] = schedulingNote.split(METADATA_MARKER);
-      const preservedData: PreservedMetadata = JSON.parse(preservedJson || '{}');
-      
-      // If this was originally an all-day event, restore to all-day for the target date
-      if (preservedData.was_all_day) {
-        return {
-          ...event,
-          start_at: startOfDay.toISOString(),
-          end_at: endOfDay.toISOString(),
-          scheduling_note: preservedData.original_scheduling_note || '',
-        };
-      }
-    } catch (error) {
-      console.error('Failed to restore all-day timestamps:', error);
-      // Continue with fallback behavior - preserve timestamps and create new all-day event
-    }
-  }
-  
-  // Fallback: preserve the timed timestamps and create new all-day event
-  const preservedEvent = preserveTimestamps(event);
-  
-  return {
-    ...preservedEvent,
-    start_at: startOfDay.toISOString(),
-    end_at: endOfDay.toISOString(),
-  };
-};
+import { createAllDayEventFromTimed } from './calendar-utils';
 
 // Seamless all-day drop zone detection
 const detectAllDayDropZone = (clientY: number): boolean => {

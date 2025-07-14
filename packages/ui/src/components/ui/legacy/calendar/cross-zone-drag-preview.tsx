@@ -193,6 +193,45 @@ export function CrossZoneDragPreview({
 
   const shortTimeFormat = settings?.appearance?.timeFormat === '24h' ? 'HH:mm' : 'h:mm a';
 
+  // Helper function to calculate available space around cursor
+  const calculateAvailableSpace = (mousePos: { x: number; y: number }, previewSize: { width: number; height: number }, gridTop: number, calendarRect: DOMRect) => {
+    return {
+      right: window.innerWidth - mousePos.x - PREVIEW_DIMENSIONS.VIEWPORT_PADDING,
+      left: mousePos.x - PREVIEW_DIMENSIONS.VIEWPORT_PADDING,
+      above: mousePos.y - gridTop - PREVIEW_DIMENSIONS.VIEWPORT_PADDING,
+      below: calendarRect.bottom - mousePos.y - PREVIEW_DIMENSIONS.VIEWPORT_PADDING,
+    };
+  };
+
+  // Helper function to determine optimal position based on available space
+  const determineOptimalPosition = (mousePos: { x: number; y: number }, previewSize: { width: number; height: number }, space: ReturnType<typeof calculateAvailableSpace>) => {
+    const spacing = PREVIEW_DIMENSIONS.SPACING;
+    
+    // Determine horizontal position
+    let left: number;
+    if (space.right >= previewSize.width + spacing) {
+      left = mousePos.x + spacing;
+    } else if (space.left >= previewSize.width + spacing) {
+      left = mousePos.x - previewSize.width - spacing;
+    } else {
+      left = space.right >= space.left 
+        ? mousePos.x + spacing 
+        : mousePos.x - previewSize.width - spacing;
+    }
+    
+    // Determine vertical position
+    let top: number;
+    if (space.above >= previewSize.height + spacing) {
+      top = mousePos.y - previewSize.height - spacing;
+    } else if (space.below >= previewSize.height + spacing) {
+      top = mousePos.y + spacing;
+    } else {
+      top = mousePos.y - previewSize.height / 2;
+    }
+    
+    return { left, top };
+  };
+
   // Grid-aligned positioning - align to calendar grid lines instead of cursor
   const getConstrainedPosition = () => {
     const calendarView = document.getElementById('calendar-view');
@@ -220,53 +259,27 @@ export function CrossZoneDragPreview({
       gridTop = dayHeadersRect.bottom;
     }
     
-    const spacing = PREVIEW_DIMENSIONS.SPACING;
+    // Calculate available space and optimal position
+    const space = calculateAvailableSpace(
+      { x: mouseX, y: mouseY },
+      { width: previewWidth, height: previewHeight },
+      gridTop,
+      calendarRect
+    );
     
-    let left: number;
-    let top: number;
-    
-    // Determine which side of cursor has more space
-    const spaceRightOfCursor = window.innerWidth - mouseX - PREVIEW_DIMENSIONS.VIEWPORT_PADDING;
-    const spaceLeftOfCursor = mouseX - PREVIEW_DIMENSIONS.VIEWPORT_PADDING;
-    
-    // Position based on cursor location and available space around it
-    if (spaceRightOfCursor >= previewWidth + spacing) {
-      // Position to the right of cursor
-      left = mouseX + spacing;
-    } else if (spaceLeftOfCursor >= previewWidth + spacing) {
-      // Position to the left of cursor
-      left = mouseX - previewWidth - spacing;
-    } else {
-      // Not enough space on either side of cursor, choose the side with more space
-      if (spaceRightOfCursor >= spaceLeftOfCursor) {
-        left = mouseX + spacing;
-      } else {
-        left = mouseX - previewWidth - spacing;
-      }
-    }
-    
-    // Position vertically: near cursor but avoid blocking the drop area
-    const spaceAboveCursor = mouseY - gridTop - PREVIEW_DIMENSIONS.VIEWPORT_PADDING;
-    const spaceBelowCursor = calendarRect.bottom - mouseY - PREVIEW_DIMENSIONS.VIEWPORT_PADDING;
-    
-    if (spaceAboveCursor >= previewHeight + spacing) {
-      // Position above cursor
-      top = mouseY - previewHeight - spacing;
-    } else if (spaceBelowCursor >= previewHeight + spacing) {
-      // Position below cursor
-      top = mouseY + spacing;
-    } else {
-      // Not enough space above or below, position to the side at cursor level
-      top = mouseY - previewHeight / 2;
-    }
+    const { left, top } = determineOptimalPosition(
+      { x: mouseX, y: mouseY },
+      { width: previewWidth, height: previewHeight },
+      space
+    );
     
     // Ensure the preview stays within viewport bounds
-    left = Math.max(PREVIEW_DIMENSIONS.VIEWPORT_PADDING, Math.min(left, window.innerWidth - previewWidth - PREVIEW_DIMENSIONS.VIEWPORT_PADDING));
-    top = Math.max(PREVIEW_DIMENSIONS.VIEWPORT_PADDING, Math.min(top, window.innerHeight - previewHeight - PREVIEW_DIMENSIONS.VIEWPORT_PADDING));
+    const constrainedLeft = Math.max(PREVIEW_DIMENSIONS.VIEWPORT_PADDING, Math.min(left, window.innerWidth - previewWidth - PREVIEW_DIMENSIONS.VIEWPORT_PADDING));
+    const constrainedTop = Math.max(PREVIEW_DIMENSIONS.VIEWPORT_PADDING, Math.min(top, window.innerHeight - previewHeight - PREVIEW_DIMENSIONS.VIEWPORT_PADDING));
     
     return {
-      left: `${left}px`,
-      top: `${top}px`,
+      left: `${constrainedLeft}px`,
+      top: `${constrainedTop}px`,
       transform: 'rotate(-0.5deg)',
       zIndex: 9999,
     };

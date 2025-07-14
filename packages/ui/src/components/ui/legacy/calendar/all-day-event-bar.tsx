@@ -12,7 +12,7 @@ import React, { useMemo, useState, useRef, useCallback } from 'react';
 import { useCalendar } from '../../../../hooks/use-calendar';
 import { MIN_COLUMN_WIDTH, HOUR_HEIGHT } from './config';
 import { useToast } from '@tuturuuu/ui/hooks/use-toast';
-import { findCalendarElements, METADATA_MARKER } from './calendar-utils';
+import { findCalendarElements, METADATA_MARKER, preserveTimestamps, restoreTimestamps, createTimedEventFromAllDay, createAllDayEventFromTimed } from './calendar-utils';
 
 dayjs.extend(isBetween);
 dayjs.extend(isSameOrAfter);
@@ -67,185 +67,6 @@ interface DragState {
     minute: number;
   } | null;
 }
-
-// Enhanced metadata storage using scheduling_note field (cleaner approach)
-
-interface PreservedMetadata {
-  original_scheduling_note?: string;
-  preserved_timed_start?: string;
-  preserved_timed_end?: string;
-  was_all_day?: boolean;
-}
-
-const preserveTimestamps = (event: CalendarEvent): CalendarEvent => {
-  // Store original timed timestamps in scheduling_note when converting to all-day
-  const schedulingNote = event.scheduling_note || '';
-  
-  if (!schedulingNote.includes(METADATA_MARKER)) {
-    const preservedData: PreservedMetadata = {
-      original_scheduling_note: schedulingNote,
-      preserved_timed_start: event.start_at,
-      preserved_timed_end: event.end_at,
-      was_all_day: false,
-    };
-    
-    return {
-      ...event,
-      scheduling_note: `${schedulingNote}${METADATA_MARKER}${JSON.stringify(preservedData)}`,
-    };
-  }
-  
-  return event;
-};
-
-const restoreTimestamps = (event: CalendarEvent, targetDate?: Date, tz?: string): CalendarEvent => {
-  // Restore preserved timestamps when converting back to timed
-  const schedulingNote = event.scheduling_note || '';
-  
-  if (schedulingNote.includes(METADATA_MARKER)) {
-    try {
-      const [, preservedJson] = schedulingNote.split(METADATA_MARKER);
-      const preservedData: PreservedMetadata = JSON.parse(preservedJson || '{}');
-      
-      let startAt = preservedData.preserved_timed_start;
-      let endAt = preservedData.preserved_timed_end;
-      
-      // If we have preserved timestamps, use them
-      if (startAt && endAt) {
-        // If dragged to a different date, adjust the date while preserving time
-        if (targetDate) {
-          const originalStart = dayjs(startAt);
-          const originalEnd = dayjs(endAt);
-          
-          // Use the target date but preserve the original time (with timezone support)
-          const targetDayjs = tz === 'auto' || !tz 
-            ? dayjs(targetDate)
-            : dayjs(targetDate).tz(tz);
-          
-          startAt = targetDayjs
-            .hour(originalStart.hour())
-            .minute(originalStart.minute())
-            .second(originalStart.second())
-            .millisecond(originalStart.millisecond())
-            .toISOString();
-          
-          // Calculate duration to preserve event length
-          const duration = originalEnd.diff(originalStart, 'millisecond');
-          endAt = dayjs(startAt).add(duration, 'millisecond').toISOString();
-        }
-        
-        return {
-          ...event,
-          start_at: startAt,
-          end_at: endAt,
-          scheduling_note: preservedData.original_scheduling_note || '',
-        };
-      }
-    } catch (error) {
-      console.error('Failed to restore timestamps:', error);
-    }
-  }
-  
-  return event;
-};
-
-const createTimedEventFromAllDay = (event: CalendarEvent, targetDate: Date, hour: number = 9, minute: number = 0, tz?: string, forceTime: boolean = false): CalendarEvent => {
-  // When user explicitly drags to a specific time (forceTime = true), use that time
-  // Otherwise, try to restore preserved timestamps first
-  if (!forceTime) {
-    // First check if we have preserved timestamps to restore
-    const restoredEvent = restoreTimestamps(event, targetDate, tz);
-    
-    // If timestamps were successfully restored, use them
-    if (restoredEvent.start_at !== event.start_at || restoredEvent.end_at !== event.end_at) {
-      return restoredEvent;
-    }
-  }
-  
-  // No preserved timestamps - this means it was originally an all-day event
-  // Use the drop location time with default 1-hour duration
-  // Handle timezone properly using the same logic as the component
-  const startTime = tz === 'auto' || !tz 
-    ? dayjs(targetDate).hour(hour).minute(minute).second(0).millisecond(0)
-    : dayjs(targetDate).tz(tz).hour(hour).minute(minute).second(0).millisecond(0);
-  const endTime = startTime.add(1, 'hour'); // Default 1-hour duration
-  
-  // Debug logging for time conversion
-  if (process.env.NODE_ENV === 'development') {
-    console.log('🕐 Creating timed event from all-day:', {
-      originalEvent: event.title,
-      targetDate: targetDate.toISOString(),
-      inputTime: { hour, minute },
-      timezone: tz,
-      startTime: startTime.toISOString(),
-      endTime: endTime.toISOString(),
-      formattedStart: startTime.format('YYYY-MM-DD HH:mm:ss'),
-      formattedEnd: endTime.format('YYYY-MM-DD HH:mm:ss'),
-    });
-  }
-  
-  // Check if this event already has metadata (was converted before)
-  const schedulingNote = event.scheduling_note || '';
-  if (schedulingNote.includes(METADATA_MARKER)) {
-    // Event already has metadata, just update the timestamps
-    return {
-      ...event,
-      start_at: startTime.toISOString(),
-      end_at: endTime.toISOString(),
-    };
-  }
-  
-  // Fresh all-day event, preserve it as all-day in metadata
-  const preservedData: PreservedMetadata = {
-    original_scheduling_note: schedulingNote,
-    preserved_timed_start: startTime.toISOString(),
-    preserved_timed_end: endTime.toISOString(),
-    was_all_day: true,
-  };
-  
-  return {
-    ...event,
-    start_at: startTime.toISOString(),
-    end_at: endTime.toISOString(),
-    scheduling_note: `${schedulingNote}${METADATA_MARKER}${JSON.stringify(preservedData)}`,
-  };
-};
-
-const createAllDayEventFromTimed = (event: CalendarEvent, targetDate: Date): CalendarEvent => {
-  // Convert timed event to all-day event
-  const startOfDay = dayjs(targetDate).startOf('day');
-  const endOfDay = startOfDay.add(1, 'day');
-  
-  // Check if we have preserved all-day timestamps to restore
-  const schedulingNote = event.scheduling_note || '';
-  if (schedulingNote.includes(METADATA_MARKER)) {
-    try {
-      const [, preservedJson] = schedulingNote.split(METADATA_MARKER);
-      const preservedData: PreservedMetadata = JSON.parse(preservedJson || '{}');
-      
-      // If this was originally an all-day event, restore to all-day for the target date
-      if (preservedData.was_all_day) {
-        return {
-          ...event,
-          start_at: startOfDay.toISOString(),
-          end_at: endOfDay.toISOString(),
-          scheduling_note: preservedData.original_scheduling_note || '',
-        };
-      }
-    } catch (error) {
-      console.error('Failed to restore all-day timestamps:', error);
-    }
-  }
-  
-  // First preserve the timed timestamps
-  const preservedEvent = preserveTimestamps(event);
-  
-  return {
-    ...preservedEvent,
-    start_at: startOfDay.toISOString(),
-    end_at: endOfDay.toISOString(),
-  };
-};
 
 // Export for use in other components (like event modal toggle)
 export { preserveTimestamps, restoreTimestamps, createAllDayEventFromTimed, METADATA_MARKER };
@@ -340,7 +161,34 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
     return 'all-day';
   }, []);
 
-    // Helper to calculate time slot target
+  // Helper function to calculate visible hour offset from mouse position
+  const calculateVisibleHourOffset = useCallback((clientY: number, cellRect: DOMRect, cellHour: number): number => {
+    const mouseYFromCellTop = clientY - cellRect.top;
+    const mouseHourOffset = mouseYFromCellTop / HOUR_HEIGHT;
+    return cellHour + mouseHourOffset;
+  }, []);
+
+  // Helper function to calculate target date index from mouse position
+  const calculateTargetDateIndex = useCallback((clientX: number, timeTrailRect: DOMRect, calendarViewRect: DOMRect): number => {
+    const relativeX = clientX - timeTrailRect.right;
+    const columnWidth = calendarViewRect.width / visibleDates.length;
+    const dateIndex = Math.floor(relativeX / columnWidth);
+    return Math.max(0, Math.min(dateIndex, visibleDates.length - 1));
+  }, [visibleDates.length]);
+
+  // Helper function to round time to nearest quarter hour with bounds checking
+  const roundToNearestQuarterHour = useCallback((hourFloat: number): { hour: number; minute: number } => {
+    const hour = Math.floor(hourFloat);
+    const minuteFloat = (hourFloat - hour) * 60;
+    const roundedMinute = Math.round(minuteFloat / 15) * 15;
+    const finalMinute = roundedMinute === 60 ? 0 : roundedMinute;
+    const finalHour = roundedMinute === 60 ? hour + 1 : hour;
+    const clampedHour = Math.max(0, Math.min(finalHour, 23));
+    const clampedMinute = clampedHour === 23 && finalMinute > 45 ? 45 : finalMinute;
+    return { hour: clampedHour, minute: clampedMinute };
+  }, []);
+
+  // Helper to calculate time slot target
   const calculateTimeSlotTarget = useCallback((clientX: number, clientY: number) => {
     // Get the calendar view container
     const calendarView = document.getElementById('calendar-view');
@@ -361,16 +209,8 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
     
     const timeTrailRect = timeTrail.getBoundingClientRect();
     
-    // Calculate mouse position relative to the actual timed calendar grid
-    const relativeX = clientX - timeTrailRect.right; // Position relative to right edge of time trail
-    
-    // CRITICAL FIX: Calculate based on actual visible cell position
-    // Find where the mouse is relative to the visible cell, then add the cell's hour offset
-    const mouseYFromCellTop = clientY - cellRect.top;
-    const mouseHourOffset = mouseYFromCellTop / HOUR_HEIGHT; // How many hours below the visible cell
-    const actualHour = cellHour + mouseHourOffset;
-    
-    // Convert back to pixel position for consistency with existing logic
+    // Calculate based on actual visible cell position
+    const actualHour = calculateVisibleHourOffset(clientY, cellRect, cellHour);
     const relativeY = actualHour * HOUR_HEIGHT;
     
     // Make sure we're actually in the timed area
@@ -378,34 +218,21 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
     
     // Calculate target date from column position  
     const calendarViewRect = calendarViewDiv.getBoundingClientRect();
-    const availableWidth = calendarViewRect.width; // Width of the calendar view area  
-    const columnWidth = availableWidth / visibleDates.length;
-    const dateIndex = Math.floor(relativeX / columnWidth);
-    const clampedDateIndex = Math.max(0, Math.min(dateIndex, visibleDates.length - 1));
+    const clampedDateIndex = calculateTargetDateIndex(clientX, timeTrailRect, calendarViewRect);
     const targetDate = visibleDates[clampedDateIndex];
     
     if (!targetDate) return null;
     
     // Calculate target time with proper precision using the actual hour height
     const hourFloat = relativeY / HOUR_HEIGHT;
-    const hour = Math.floor(hourFloat);
-    const minuteFloat = (hourFloat - hour) * 60;
-    
-    // Round to nearest 15 minutes for better UX
-    const roundedMinute = Math.round(minuteFloat / 15) * 15;
-    const finalMinute = roundedMinute === 60 ? 0 : roundedMinute;
-    const finalHour = roundedMinute === 60 ? hour + 1 : hour;
-    
-    // Ensure we stay within valid time bounds (0-23 hours)
-    const clampedHour = Math.max(0, Math.min(finalHour, 23));
-    const clampedMinute = clampedHour === 23 && finalMinute > 45 ? 45 : finalMinute; // Prevent going past 23:45
+    const { hour: clampedHour, minute: clampedMinute } = roundToNearestQuarterHour(hourFloat);
     
     return {
       date: targetDate,
       hour: clampedHour,
       minute: clampedMinute,
     };
-  }, [visibleDates]);
+  }, [visibleDates, calculateVisibleHourOffset, calculateTargetDateIndex, roundToNearestQuarterHour]);
 
   // Stable drag event handlers using refs
   const handleDragStart = useCallback((e: React.MouseEvent, eventSpan: EventSpan) => {
@@ -614,8 +441,8 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
     } catch (error) {
       console.error('Failed to update event:', error);
       toast({
-        title: 'Event Update Failed',
-        description: 'Could not update the event. Please try again.',
+        title: targetZone === 'timed' ? 'Conversion to Timed Event Failed' : 'Event Move Failed',
+        description: error instanceof Error ? error.message : 'Could not update the event. Please try again.',
         variant: 'destructive',
       });
     }
@@ -840,8 +667,12 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
     );
   };
 
+  // Named constants for height calculations
+  const MIN_BAR_HEIGHT_REM = 1.9;
+  const EVENT_HEIGHT_MULTIPLIER = 1.75;
+
   // Calculate dynamic height based on visible events (minimum height for drop zone)
-  const barHeight = Math.max(1.9, eventLayout.maxVisibleEventsPerDay * 1.75);
+  const barHeight = Math.max(MIN_BAR_HEIGHT_REM, eventLayout.maxVisibleEventsPerDay * EVENT_HEIGHT_MULTIPLIER);
 
   // Enhanced mouse and touch handlers
   const handleEventMouseDown = (e: React.MouseEvent, eventSpan: EventSpan) => {

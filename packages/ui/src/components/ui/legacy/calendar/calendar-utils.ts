@@ -217,3 +217,96 @@ export const parsePreservedMetadata = (schedulingNote: string): PreservedMetadat
     return null;
   }
 }; 
+
+/**
+ * Create a timed event from an all-day event
+ * @param event The all-day event to convert
+ * @param targetDate The target date for the timed event
+ * @param hour The hour for the timed event (default 9)
+ * @param minute The minute for the timed event (default 0)
+ * @param tz Optional timezone
+ * @param forceTime If true, always use the provided time but preserve duration
+ * @returns Timed event
+ */
+export const createTimedEventFromAllDay = (
+  event: CalendarEvent,
+  targetDate: Date,
+  hour: number = 9,
+  minute: number = 0,
+  tz?: string,
+  forceTime: boolean = false
+): CalendarEvent => {
+  if (!forceTime) {
+    // First check if we have preserved timestamps to restore
+    const restoredEvent = restoreTimestamps(event, targetDate, tz);
+    // If timestamps were successfully restored, use them
+    if (restoredEvent.start_at !== event.start_at || restoredEvent.end_at !== event.end_at) {
+      return restoredEvent;
+    }
+  } else {
+    // Even when forceTime is true, we should try to preserve the original duration
+    // but apply it to the target time
+    const schedulingNote = event.scheduling_note || '';
+    if (schedulingNote.includes(METADATA_MARKER)) {
+      try {
+        const [, preservedJson] = schedulingNote.split(METADATA_MARKER);
+        const preservedData: PreservedMetadata = JSON.parse(preservedJson || '{}');
+        
+        // If we have preserved timestamps, use the duration but apply to target time
+        if (preservedData.preserved_timed_start && preservedData.preserved_timed_end) {
+          const originalStart = dayjs(preservedData.preserved_timed_start);
+          const originalEnd = dayjs(preservedData.preserved_timed_end);
+          const preservedDuration = originalEnd.diff(originalStart, 'millisecond');
+          
+          // Create new start time at target date/time
+          const startTime = tz === 'auto' || !tz
+            ? dayjs(targetDate).hour(hour).minute(minute).second(0).millisecond(0)
+            : dayjs(targetDate).tz(tz).hour(hour).minute(minute).second(0).millisecond(0);
+          
+          // Apply preserved duration to get end time
+          const endTime = startTime.add(preservedDuration, 'millisecond');
+          
+          return {
+            ...event,
+            start_at: startTime.toISOString(),
+            end_at: endTime.toISOString(),
+            scheduling_note: preservedData.original_scheduling_note || '',
+          };
+        }
+      } catch (error) {
+        console.error('Failed to restore duration from preserved timestamps:', error);
+      }
+    }
+  }
+  
+  // No preserved timestamps - this means it was originally an all-day event
+  // Use the drop location time with default 1-hour duration
+  // Handle timezone properly using the same logic as the component
+  const startTime = tz === 'auto' || !tz
+    ? dayjs(targetDate).hour(hour).minute(minute).second(0).millisecond(0)
+    : dayjs(targetDate).tz(tz).hour(hour).minute(minute).second(0).millisecond(0);
+  const endTime = startTime.add(1, 'hour'); // Default 1-hour duration
+  // Check if this event already has metadata (was converted before)
+  const schedulingNote = event.scheduling_note || '';
+  if (schedulingNote.includes(METADATA_MARKER)) {
+    // Event already has metadata, just update the timestamps
+    return {
+      ...event,
+      start_at: startTime.toISOString(),
+      end_at: endTime.toISOString(),
+    };
+  }
+  // Fresh all-day event, preserve it as all-day in metadata
+  const preservedData: any = {
+    original_scheduling_note: schedulingNote,
+    preserved_timed_start: startTime.toISOString(),
+    preserved_timed_end: endTime.toISOString(),
+    was_all_day: true,
+  };
+  return {
+    ...event,
+    start_at: startTime.toISOString(),
+    end_at: endTime.toISOString(),
+    scheduling_note: `${schedulingNote}${METADATA_MARKER}${JSON.stringify(preservedData)}`,
+  };
+}; 
