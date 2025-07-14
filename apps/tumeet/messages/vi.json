@@ -43,7 +43,15 @@
     "cant_create_plan_right_now": "Chúng tôi không thể tạo kế hoạch của bạn lúc này. Vui lòng thử lại sau.",
     "local_time": "Giờ địa phương",
     "login_to_save_plans": "Đăng nhập hoặc đăng ký tài khoản Tuturuuu để lưu kế hoạch của bạn.",
-    "untitled_plan": "Kế hoạch chưa đặt tên"
+    "untitled_plan": "Kế hoạch chưa đặt tên",
+    "participants": "Người tham gia",
+    "guests": "Khách",
+    "registered_users": "Người dùng đã đăng ký",
+    "participant_count": "{count} người tham gia",
+    "guest_count": "{count} khách",
+    "user_count": "{count} người dùng",
+    "no_participants": "Chưa có người tham gia",
+    "anonymous": "Ẩn danh"
   },
   "meet-together-plan-details": {
     "copy_link": "Sao chép liên kết",

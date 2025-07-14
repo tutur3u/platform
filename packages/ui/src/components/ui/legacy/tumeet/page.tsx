@@ -15,6 +15,16 @@ import Link from 'next/link';
 import { getLocale, getTranslations } from 'next-intl/server';
 import { GradientHeadline } from '../../custom/gradient-headline';
 
+// Extended interface to include participants
+interface MeetTogetherPlanWithParticipants extends MeetTogetherPlan {
+  participants?: Array<{
+    user_id: string;
+    display_name: string | null;
+    is_guest: boolean;
+    timeblock_count: number;
+  }>;
+}
+
 // Server component props type
 interface MeetTogetherPageProps {
   wsId?: string;
@@ -57,7 +67,7 @@ function PlansGrid({
   locale,
   t,
 }: {
-  plans: MeetTogetherPlan[];
+  plans: MeetTogetherPlanWithParticipants[];
   locale: string;
   // biome-ignore lint/suspicious/noExplicitAny: <translations are not typed>
   t: any;
@@ -94,7 +104,7 @@ function PlansGrid({
 
   return (
     <div className="mt-4 grid w-full max-w-4xl grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-      {plans.map((plan: MeetTogetherPlan) => (
+      {plans.map((plan: MeetTogetherPlanWithParticipants) => (
         <Link
           href={`/meet-together/plans/${plan.id?.replace(/-/g, '')}`}
           key={plan.id}
@@ -134,6 +144,65 @@ function PlansGrid({
               </div>
             )}
           </div>
+
+          {plan.participants && plan.participants.length > 0 && (
+            <>
+              <Separator className="my-3" />
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <svg
+                    className="h-4 w-4 text-dynamic-blue"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                  >
+                    <title>Users icon</title>
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={1.5}
+                      d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2m18-7a4 4 0 11-8 0 4 4 0 018 0zM9 7a4 4 0 11-8 0 4 4 0 018 0z"
+                    />
+                  </svg>
+                  <span className="font-medium text-foreground text-sm">
+                    {t('participants')}
+                  </span>
+                  <span className="rounded-full bg-dynamic-blue/10 px-2 py-0.5 font-medium text-dynamic-blue text-xs">
+                    {plan.participants.length}
+                  </span>
+                </div>
+                <div className="flex flex-wrap gap-1">
+                  {plan.participants.slice(0, 3).map((participant) => (
+                    <div
+                      key={participant.user_id}
+                      className={`inline-flex items-center gap-1 rounded px-2 py-1 text-xs transition-colors group-hover:bg-foreground/20 ${
+                        participant.is_guest
+                          ? 'bg-dynamic-orange/10 text-dynamic-orange'
+                          : 'bg-dynamic-green/10 text-dynamic-green'
+                      }`}
+                    >
+                      <div
+                        className={`h-1.5 w-1.5 rounded-full ${
+                          participant.is_guest
+                            ? 'bg-dynamic-orange'
+                            : 'bg-dynamic-green'
+                        }`}
+                      />
+                      <span className="font-medium">
+                        {participant.display_name || t('anonymous')}
+                      </span>
+                    </div>
+                  ))}
+                  {plan.participants.length > 3 && (
+                    <div className="inline-flex items-center gap-1 rounded bg-foreground/10 px-2 py-1 text-foreground/70 text-xs group-hover:bg-foreground/20">
+                      +{plan.participants.length - 3}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </>
+          )}
 
           {plan.dates && plan.dates.length > 0 && (
             <>
@@ -345,8 +414,34 @@ async function getData({
   const to = from + pageSize;
   const paginatedPlans = allPlans.slice(from, to);
 
+  // Fetch participants for each plan
+  const planIds = paginatedPlans.map((plan) => plan.id).filter(Boolean);
+
+  if (planIds.length > 0) {
+    const { data: participantsData } = await sbAdmin
+      .from('meet_together_users')
+      .select('user_id, display_name, plan_id, is_guest, timeblock_count')
+      .in('plan_id', planIds);
+
+    // Add participants to each plan
+    const plansWithParticipants = paginatedPlans.map((plan) => ({
+      ...plan,
+      participants:
+        participantsData?.filter((p) => p.plan_id === plan.id) || [],
+    }));
+
+    return {
+      data: plansWithParticipants as MeetTogetherPlanWithParticipants[],
+      user,
+      totalCount,
+    };
+  }
+
   return {
-    data: paginatedPlans as MeetTogetherPlan[],
+    data: paginatedPlans.map((plan) => ({
+      ...plan,
+      participants: [],
+    })) as MeetTogetherPlanWithParticipants[],
     user,
     totalCount,
   };

@@ -43,7 +43,15 @@
     "cant_create_plan_right_now": "We can't create your plan right now. Please try again later.",
     "local_time": "Local time",
     "login_to_save_plans": "Sign up or login into Tuturuuu to save your created plans.",
-    "untitled_plan": "Untitled plan"
+    "untitled_plan": "Untitled plan",
+    "participants": "Participants",
+    "guests": "Guests",
+    "registered_users": "Registered users",
+    "participant_count": "{count} participant(s)",
+    "guest_count": "{count} guest(s)",
+    "user_count": "{count} user(s)",
+    "no_participants": "No participants yet",
+    "anonymous": "Anonymous"
   },
   "meet-together-plan-details": {
     "copy_link": "Copy link",
