@@ -84,8 +84,16 @@ export default function ProjectCard({
   };
 
   return (
-    <motion.button
+    <motion.div
       onClick={onClick}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onClick();
+        }
+      }}
+      role="button"
+      tabIndex={0}
       whileHover={{
         y: -8,
         scale: isCenter ? 1.03 : 1.02,
@@ -98,7 +106,7 @@ export default function ProjectCard({
         stiffness: 400,
         damping: 25,
       }}
-      className="group perspective-1000 relative h-full w-full"
+      className="group perspective-1000 relative h-full w-full cursor-pointer"
     >
       <Card className={getCardContainerStyles()}>
         {/* Status Indicator */}
@@ -266,6 +274,6 @@ export default function ProjectCard({
           )}
         </>
       </Card>
-    </motion.button>
+    </motion.div>
   );
 }

@@ -175,7 +175,7 @@ export default function Projects() {
         transition={{ duration: 1 }}
       >
         <div className="flex flex-col items-center text-center">
-          <p className="text-4xl leading-normal font-extrabold md:text-5xl lg:text-6xl">
+          <div className="text-4xl leading-normal font-extrabold md:text-5xl lg:text-6xl">
             <span className="text-foreground">NEO Culture</span>{' '}
             <span className="border-b-4 border-[#FBC721] whitespace-nowrap text-[#5FC6E5]">
               PROJECTS{' '}
@@ -194,7 +194,7 @@ export default function Projects() {
                 <Bot className="inline-block h-8 w-8 text-yellow-400 md:h-10 md:w-10 lg:h-12 lg:w-12" />
               </motion.div>
             </span>
-          </p>
+          </div>
           <div className="mt-1 w-2/3 md:w-full">
             <p className="text-lg leading-normal font-bold text-foreground md:mt-4 md:max-w-2xl md:text-xl lg:text-2xl">
               The place where you can learn, grow and have fun with technology,
