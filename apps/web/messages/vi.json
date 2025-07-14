@@ -774,7 +774,9 @@
     "media": "Phương tiện truyền thông",
     "ai_lab": "Phòng thí nghiệm AI",
     "management": "Quản lý tài nguyên",
-    "link_shortener": "Liên kết rút ngắn"
+    "link_shortener": "Liên kết rút ngắn",
+    "tumeet": "Tumeet",
+    "polls": "Bỏ phiếu"
   },
   "link-shortener": {
     "title": "Rút ngắn liên kết",

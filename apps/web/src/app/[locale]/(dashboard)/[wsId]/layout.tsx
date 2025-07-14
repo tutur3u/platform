@@ -31,8 +31,10 @@ import {
   ScrollText,
   ShieldUser,
   Sparkles,
+  SquaresIntersect,
   UserLock,
   Users,
+  Vote,
 } from '@tuturuuu/ui/icons';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import {
@@ -46,6 +48,7 @@ import { getTranslations } from 'next-intl/server';
 import { type ReactNode, Suspense } from 'react';
 import type { NavLink } from '@/components/navigation';
 import {
+  DEV_MODE,
   SIDEBAR_BEHAVIOR_COOKIE_NAME,
   SIDEBAR_COLLAPSED_COOKIE_NAME,
 } from '@/constants/common';
@@ -219,6 +222,18 @@ export default async function Layout({ children, params }: LayoutProps) {
           disabled: ENABLE_AI_ONLY || withoutPermission('manage_calendar'),
           shortcut: 'C',
           experimental: 'alpha',
+        },
+        {
+          title: t('sidebar_tabs.tumeet'),
+          href: `/${wsId}/tumeet`,
+          icon: <SquaresIntersect className="h-5 w-5" />,
+          disabled: !DEV_MODE,
+        },
+        {
+          title: t('sidebar_tabs.polls'),
+          href: `/${wsId}/polls`,
+          icon: <Vote className="h-5 w-5" />,
+          disabled: !DEV_MODE,
         },
         {
           title: t('sidebar_tabs.tasks'),

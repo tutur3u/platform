@@ -763,7 +763,9 @@
     "media": "Media",
     "ai_lab": "AI Lab",
     "management": "Management",
-    "link_shortener": "Link Shortener"
+    "link_shortener": "Link Shortener",
+    "tumeet": "Tumeet",
+    "polls": "Polls"
   },
   "link-shortener": {
     "title": "Link Shortener",
