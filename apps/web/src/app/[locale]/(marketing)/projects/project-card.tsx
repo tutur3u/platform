@@ -1,5 +1,6 @@
 import { Project } from './data';
 import { Card, CardContent, CardFooter, CardHeader } from '@ncthub/ui/card';
+import { cn } from '@ncthub/utils/format';
 import { motion } from 'framer-motion';
 import { Github, Globe, Monitor, Play, Users, Wrench } from 'lucide-react';
 
@@ -96,6 +97,12 @@ export default function ProjectCard({
       tabIndex={0}
       className={getCardContainerStyles()}
     >
+      <div
+        className={cn(
+          'absolute inset-0 z-10 transition-all duration-500',
+          isSelected ? 'bg-transparent' : 'bg-muted/60'
+        )}
+      />
       {/* Card Header with Status, Type, and Title */}
       <CardHeader className="flex flex-col gap-6 p-6">
         {/* Status and Type Indicators Row */}
