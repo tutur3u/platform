@@ -54,7 +54,7 @@ const convertToTimetz = (
   time: number | undefined,
   utcOffset: number | undefined
 ) => {
-  if (!time || !utcOffset) return undefined;
+  if (!time || utcOffset === undefined) return undefined;
   return `${time}:00${utcOffset < 0 ? '-' : '+'}${Math.abs(utcOffset)}`;
 };
 
