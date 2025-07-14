@@ -298,7 +298,7 @@ export const createTimedEventFromAllDay = (
     };
   }
   // Fresh all-day event, preserve it as all-day in metadata
-  const preservedData: any = {
+  const preservedData: PreservedMetadata = {
     original_scheduling_note: schedulingNote,
     preserved_timed_start: startTime.toISOString(),
     preserved_timed_end: endTime.toISOString(),
