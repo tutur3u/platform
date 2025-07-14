@@ -32,6 +32,7 @@
     "vitest": "^3.2.4"
   },
   "exports": {
+    "./timezones": "./src/timezones.json",
     "./*": "./src/*.ts",
     "./permissions": "./src/permissions.tsx"
   }

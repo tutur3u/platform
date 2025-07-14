@@ -6,8 +6,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@tuturuuu/ui/select';
+import timezones from '@tuturuuu/utils/timezones';
 import { useTranslations } from 'next-intl';
-import timezones from '../../data/timezones.json';
 
 interface Props {
   value: Timezone | undefined;

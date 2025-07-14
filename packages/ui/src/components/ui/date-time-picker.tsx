@@ -239,15 +239,15 @@ export function DateTimePicker({
   const noValidTimes = filteredTimeOptions.length === 0;
 
   return (
-    <div className="flex flex-col gap-2" ref={popoverRef}>
-      <div className="flex gap-2">
+    <div className="flex w-full max-w-full flex-col gap-2" ref={popoverRef}>
+      <div className="flex flex-col gap-2 sm:flex-row sm:gap-2">
         <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
           <PopoverTrigger asChild>
             <Button
               ref={pickerButtonRef}
               variant="outline"
               className={cn(
-                'w-full justify-start text-left font-normal',
+                'w-full min-w-0 justify-start text-left font-normal',
                 !date && 'text-muted-foreground'
               )}
             >
@@ -256,11 +256,12 @@ export function DateTimePicker({
             </Button>
           </PopoverTrigger>
           <PopoverContent
-            className="w-auto p-0"
+            className="w-auto max-w-[calc(100vw-2rem)] p-0"
             align="start"
             side="bottom"
             sideOffset={4}
-            avoidCollisions={false}
+            avoidCollisions={true}
+            collisionPadding={8}
           >
             <Calendar
               mode="single"
@@ -287,29 +288,29 @@ export function DateTimePicker({
         </Popover>
 
         {showTimeSelect && (
-          <div className="flex items-center gap-2">
-            <Clock className="h-4 w-4 text-muted-foreground" />
+          <div className="flex w-full min-w-0 items-center gap-2 sm:w-auto">
+            <Clock className="h-4 w-4 shrink-0 text-muted-foreground" />
 
             {isManualTimeEntry ? (
-              <div className="flex items-center gap-1">
+              <div className="flex min-w-0 flex-1 items-center gap-1">
                 <Input
                   value={manualTimeInput}
                   onChange={(e) => setManualTimeInput(e.target.value)}
                   onKeyDown={handleManualTimeKeyDown}
                   placeholder="HH:MM"
-                  className="w-[90px]"
+                  className="w-[90px] min-w-[90px]"
                 />
                 <Button
                   size="icon"
                   variant="ghost"
                   onClick={() => handleManualTimeSubmit()}
-                  className="h-8 w-8"
+                  className="h-8 w-8 shrink-0"
                 >
                   <Check className="h-4 w-4" />
                 </Button>
               </div>
             ) : (
-              <div className="flex items-center gap-1">
+              <div className="flex min-w-0 flex-1 items-center gap-1">
                 <Select
                   value={
                     noValidTimes
@@ -321,7 +322,7 @@ export function DateTimePicker({
                   onValueChange={handleTimeChange}
                   disabled={noValidTimes}
                 >
-                  <SelectTrigger className="w-[110px]">
+                  <SelectTrigger className="w-[110px] min-w-0">
                     <SelectValue
                       placeholder={
                         noValidTimes ? 'Invalid time selection' : 'Select time'
@@ -329,10 +330,12 @@ export function DateTimePicker({
                     />
                   </SelectTrigger>
                   <SelectContent
-                    className="max-h-[300px]"
+                    className="max-h-[300px] w-[var(--radix-select-trigger-width)] max-w-[calc(100vw-2rem)]"
                     position="popper"
                     side="bottom"
                     sideOffset={4}
+                    avoidCollisions={true}
+                    collisionPadding={8}
                   >
                     {filteredTimeOptions.map((time) => (
                       <SelectItem key={time.value} value={time.value}>
@@ -342,7 +345,7 @@ export function DateTimePicker({
                   </SelectContent>
                 </Select>
                 {noValidTimes && (
-                  <div className="mt-1 text-destructive text-xs">
+                  <div className="mt-1 break-words text-destructive text-xs">
                     No valid end times available. Please select an earlier start
                     time or check your time selection.
                   </div>
@@ -351,7 +354,7 @@ export function DateTimePicker({
                   size="icon"
                   variant="ghost"
                   onClick={() => setIsManualTimeEntry(true)}
-                  className="h-8 w-8"
+                  className="h-8 w-8 shrink-0"
                   title="Enter time manually"
                 >
                   <Edit className="h-3.5 w-3.5" />

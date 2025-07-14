@@ -1,23 +1,18 @@
 import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 
 dayjs.extend(timezone);
+dayjs.extend(utc);
 
 export function isAllDayEvent(event: Pick<CalendarEvent, 'start_at' | 'end_at'>, userTimezone?: string): boolean {
   const start = dayjs(event.start_at);
   const end = dayjs(event.end_at);
   
-  // Handle timezone-aware checking
-  const tz = userTimezone === 'auto' ? 
-    (typeof window !== 'undefined' ? Intl.DateTimeFormat().resolvedOptions().timeZone : undefined) 
-    : userTimezone;
-  const startInTz = tz ? start.tz(tz) : start;
-  const endInTz = tz ? end.tz(tz) : end;
-  
-  const isStartAtMidnight = startInTz.hour() === 0 && startInTz.minute() === 0 && startInTz.second() === 0;
-  const isEndAtMidnight = endInTz.hour() === 0 && endInTz.minute() === 0 && endInTz.second() === 0;
-  const durationHours = endInTz.diff(startInTz, 'hour');
+  const isStartAtMidnight = start.hour() === 0 && start.minute() === 0 && start.second() === 0 && start.millisecond() === 0;
+  const isEndAtMidnight = end.hour() === 0 && end.minute() === 0 && end.second() === 0 && end.millisecond() === 0;
+  const durationHours = end.diff(start, 'hour');
   const isMultipleOf24Hours = durationHours > 0 && durationHours % 24 === 0;
   
   return isStartAtMidnight && isEndAtMidnight && isMultipleOf24Hours;
@@ -78,7 +73,7 @@ export function createAllDayEvent(
     : userTimezone;
   
   const startAtMidnight = tz 
-    ? dayjs(date).tz(tz).startOf('day')
+    ? dayjs.tz(date, tz).startOf('day')
     : dayjs(date).startOf('day');
   
   const endAtMidnight = startAtMidnight.add(durationDays, 'day');

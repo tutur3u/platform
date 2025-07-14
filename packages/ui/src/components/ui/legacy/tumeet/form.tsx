@@ -2,15 +2,15 @@
 
 import type { Timezone } from '@tuturuuu/types/primitives/Timezone';
 import { Separator } from '@tuturuuu/ui/separator';
+import timezones from '@tuturuuu/utils/timezones';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
-import timezones from '@/data/timezones.json';
 import CreatePlanDialog from './create-plan-dialog';
 import DateSelector from './date-selector';
 import { TimeSelector } from './time-selector';
 import TimezoneSelector from './timezone-selector';
 
-export default function Form() {
+export default function Form({ wsId }: { wsId?: string }) {
   const t = useTranslations('meet-together');
 
   const [dates, setDates] = useState<Date[] | undefined>([]);
@@ -34,19 +34,21 @@ export default function Form() {
     startTime,
     endTime,
     timezone,
+    wsId,
   };
 
   return (
-    <div className="flex flex-col items-center gap-8 px-4 text-center md:mb-8 md:flex-row md:gap-16">
-      <div className="grid justify-center gap-2">
+    <div className="flex flex-col items-start gap-8 px-2 text-center md:mb-8 md:flex-row md:gap-16 md:px-4">
+      <div className="flex w-full max-w-sm flex-col items-center gap-2 md:w-auto md:max-w-none">
         <p className="font-semibold">{t('dates-to-meet-together')}</p>
-        <DateSelector value={dates} onSelect={setDates} />
+        <DateSelector
+          value={dates}
+          onSelect={setDates}
+          className="bg-background/50"
+        />
       </div>
 
-      <Separator className="hidden h-96 md:block" orientation="vertical" />
-      <Separator className="md:hidden" />
-
-      <div className="grid w-full justify-stretch gap-2 gap-x-4 lg:grid-cols-2">
+      <div className="grid w-full max-w-lg items-start justify-start gap-4 gap-x-4 md:max-w-none lg:grid-cols-2">
         <div className="grid gap-1">
           <p className="w-full font-semibold">{t('soonest-time-to-meet')}</p>
           <TimeSelector
