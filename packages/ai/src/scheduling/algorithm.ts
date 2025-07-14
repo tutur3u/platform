@@ -46,6 +46,53 @@ function ensureMinimumDuration(hours: number): number {
   return Math.max(0.25, hoursToQuarterHours(hours)); // Minimum 15 minutes
 }
 
+export const scheduleWithFlexibleEvents = (
+  newTasks: Task[],
+  flexibleEvents: Event[],
+  lockedEvents: Event[],
+  activeHours: ActiveHours
+): ScheduleResult => {
+  const now = dayjs();
+  const futureFlexibleEvents = flexibleEvents.filter((event) =>
+    dayjs(event.range.end).isAfter(now)
+  );
+
+  const futureLockedEvents = lockedEvents.filter((event) =>
+    dayjs(event.range.end).isAfter(now)
+  );
+
+  if (flexibleEvents.length !== futureFlexibleEvents.length) {
+    console.log(
+      `[Scheduler] Skipped ${flexibleEvents.length - futureFlexibleEvents.length} past flexible events.`
+    );
+  }
+  if (lockedEvents.length !== futureLockedEvents.length) {
+    console.log(
+      `[Scheduler] Skipped ${lockedEvents.length - futureLockedEvents.length} past locked events.`
+    );
+  }
+
+  // Now, promote tasks ONLY from the filtered list of future flexible events.
+  // We add .filter(Boolean) as a safety measure to remove any potential `null`
+  // values if promoteEventToTask is updated to return them.
+  const promotedTasks = futureFlexibleEvents
+    .map(promoteEventToTask)
+    .filter((task): task is Task => task !== null);
+
+  console.log(
+    `[Scheduler] Promoted ${promotedTasks.length} flexible events to tasks.`
+  );
+  const allTasksToProcess = [...newTasks, ...promotedTasks];
+
+  const result = scheduleTasks(
+    allTasksToProcess,
+    activeHours,
+    futureLockedEvents
+  );
+
+  return result;
+};
+
 export const prepareTaskChunks = (tasks: Task[]): Task[] => {
   const chunks: Task[] = [];
   for (const task of tasks) {
@@ -158,6 +205,7 @@ export const scheduleTasks = (
   activeHours: ActiveHours = defaultActiveHours,
   lockedEvents: Event[] = []
 ): ScheduleResult => {
+  // console.log(lockedEvents);
   const scheduledEvents: Event[] = lockedEvents.map((e) => ({
     ...e,
     locked: true,
@@ -217,6 +265,7 @@ export const scheduleTasks = (
       attempts++;
       let anyScheduled = false;
 
+      console.log(taskPool);
       for (const task of taskPool) {
         if (task.remaining <= 0) continue;
         const categoryHours =
@@ -274,6 +323,7 @@ export const scheduleTasks = (
                 name: task.name,
                 range: { start: partStart, end: partEnd },
                 isPastDeadline: false,
+                locked: task.locked || false,
                 taskId: task.id,
               };
               if (
@@ -442,7 +492,7 @@ export const scheduleTasks = (
     }
 
     // console.log('Scheduled Events:', scheduledEvents);
-    return { events: scheduledEvents, logs };
+    return { events: scheduledEvents.slice(1), logs };
   } catch (error) {
     console.error('Error sorting task pool:', error);
   }

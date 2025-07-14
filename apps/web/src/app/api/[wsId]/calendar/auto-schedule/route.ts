@@ -1,6 +1,6 @@
 import {
   promoteEventToTask,
-  scheduleTasks,
+  scheduleWithFlexibleEvents,
 } from '@tuturuuu/ai/scheduling/algorithm';
 import { defaultActiveHours } from '@tuturuuu/ai/scheduling/default';
 import { createClient } from '@tuturuuu/supabase/next/server';
@@ -75,55 +75,16 @@ export async function POST(
 
     console.log(`[AUTO-SCHEDULE-${requestId}] Fetching tasks and events...`);
 
-    // Fetch tasks for the current user
-    // const { data: currentTasks, error: tasksError } = await (await supabase)
-    //   .from('tasks')
-    //   .select('*')
-    //   .eq('creator_id', user.id)
-    //   .eq('archived', false)
-    //   .eq('completed', false);
-
-    // if (tasksError)
-    //   throw new Error(`Failed to fetch tasks: ${tasksError.message}`);
-
     const { data: flexibleEventsData, error: flexibleEventsError } = await (
       await supabase
     )
       .from('workspace_calendar_events')
       .select('*')
+      .neq('locked', true)
       .eq('ws_id', wsId);
 
     if (flexibleEventsError)
       throw new Error(`Failed to fetch events: ${flexibleEventsError.message}`);
-
-    // Map DB tasks to the format our scheduler understands
-    // const newTasks: Task[] = await Promise.all(
-    //   (currentTasks || []).map(async (task) => ({
-    //     id: task.id,
-    //     name: task.name,
-    //     duration: task.total_duration ?? 0,
-    //     minDuration: task.min_split_duration_minutes
-    //       ? task.min_split_duration_minutes / 60
-    //       : 0.5,
-    //     maxDuration: task.max_split_duration_minutes
-    //       ? task.max_split_duration_minutes / 60
-    //       : 2,
-    //     category:
-    //       task.calendar_hours === 'work_hours'
-    //         ? 'work'
-    //         : task.calendar_hours === 'personal_hours'
-    //           ? 'personal'
-    //           : task.calendar_hours === 'meeting_hours'
-    //             ? 'meeting'
-    //             : 'work',
-    //     events: [],
-    //     deadline: task.end_date
-    //       ? (await import('dayjs')).default(task.end_date)
-    //       : undefined,
-    //     priority: mapPriorityToTaskPriority(task.priority),
-    //     allowSplit: !!task.is_splittable,
-    //   }))
-    // );
 
     const newTasks: Task[] = [];
     const dayjs = (await import('dayjs')).default;
@@ -146,72 +107,75 @@ export async function POST(
       streamUpdate?: (message: object) => void
     ) => {
       streamUpdate?.({ status: 'running', message: 'Analyzing schedule...' });
-
       const lockedEvents: Event[] = [];
-      const promotedTasks: Task[] = [];
+      const tasksToProcess = [];
 
       for (const event of newFlexibleEvents) {
         if (event.locked) {
           lockedEvents.push(event);
-        } else if (
-          !event.taskId || // Not linked to any real task
-          !newTasks.some((t) => t.id === event.taskId) // Or task not loaded
-        ) {
-          const promoted = promoteEventToTask(event);
-          if (promoted && promoted.duration > 0) {
-            promotedTasks.push(promoted as Task);
+        } else {
+          const taskExists = newTasks.some((t) => t.id === event.taskId);
+          if (!event.taskId || !taskExists) {
+            tasksToProcess.push(promoteEventToTask(event));
           }
         }
       }
 
-      const tasksToSchedule = [...newTasks, ...promotedTasks];
       const activeHours = defaultActiveHours;
 
       streamUpdate?.({
         status: 'running',
-        message: `Optimizing ${tasksToSchedule.length} items...`,
+        message: `Optimizing ${tasksToProcess.length} items...`,
       });
 
-      const scheduleResult = scheduleTasks(
-        tasksToSchedule,
-        activeHours,
-        lockedEvents
+      const scheduleResult = scheduleWithFlexibleEvents(
+        newTasks,
+        newFlexibleEvents,
+        lockedEvents,
+        activeHours
       );
 
       const { events: newScheduledEvents, logs } = scheduleResult;
 
+      // console.log(newFlexibleEvents);
       streamUpdate?.({ status: 'running', message: 'Saving new schedule...' });
 
       const eventsToInsert = newScheduledEvents.filter(
         (event) =>
           !newFlexibleEvents.some((existing) => existing.id === event.id)
       );
-      const eventsToUpsert = newScheduledEvents
-        .filter((event) => !event.locked)
-        .map((event) => ({
-          id: event.id,
-          ws_id: wsId,
-          task_id: event.taskId,
-          title: event.name,
-          start_at: event.range.start.toISOString(),
-          end_at: event.range.end.toISOString(),
-          locked: false,
-        }));
 
-      if (eventsToUpsert.length > 0) {
-        const { error } = await (await supabase)
-          .from('workspace_calendar_events')
-          .upsert(eventsToUpsert);
+      const eventsToUpsert = newScheduledEvents.map((event) => ({
+        id: event.id,
+        ws_id: wsId,
+        // task_id: event.taskId ?? null,
+        title: event.name,
+        start_at: event.range.start.toISOString(),
+        end_at: event.range.end.toISOString(),
+        locked: event.locked ?? false,
+      }));
 
-        if (error) {
-          throw new Error(`Failed to save new schedule: ${error.message}`);
+      // console.log(eventsToUpsert);
+
+      try {
+        if (eventsToUpsert.length > 0) {
+          const { error } = await (await supabase)
+            .from('workspace_calendar_events')
+            .upsert(eventsToUpsert);
+
+          if (error) {
+            throw new Error(`Failed to save new schedule: ${error.message}`);
+          }
         }
+      } catch (error) {
+        console.log(error);
+        throw new Error(`Failed to save new schedule: ${error}`);
       }
 
-      if (eventsToInsert.length > 0) {
+      if (newScheduledEvents.length > 0) {
         const insertData = eventsToInsert.map((event) => ({
           ws_id: wsId,
-          task_id: event.taskId,
+          task_id: event.taskId ?? null,
           title: event.name,
           start_at: event.range.start.toISOString(),
           end_at: event.range.end.toISOString(),
@@ -220,13 +184,12 @@ export async function POST(
 
         const { error: insertError } = await (await supabase)
           .from('workspace_calendar_events')
-          .insert(insertData);
+          .upsert(insertData);
 
-        if (insertError) {
+        if (insertError)
           throw new Error(
             `Failed to save new schedule: ${insertError.message}`
           );
-        }
       }
 
       console.log(
@@ -281,6 +244,7 @@ export async function POST(
     return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ wsId: string }> }
