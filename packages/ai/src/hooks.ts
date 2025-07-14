@@ -1,8 +1,7 @@
 import {
-  useAssistant,
   useChat,
   useCompletion,
   experimental_useObject as useObject,
-} from 'ai/react';
+} from '@ai-sdk/react';
 
-export { useAssistant, useChat, useCompletion, useObject };
+export { useChat, useCompletion, useObject };

@@ -74,29 +74,32 @@ export async function POST(req: Request) {
     // }
 
     const result = streamObject({
-      model: google(DEFAULT_MODEL_NAME, {
-        safetySettings: [
-          {
-            category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
-            threshold: 'BLOCK_NONE',
-          },
-          {
-            category: 'HARM_CATEGORY_HATE_SPEECH',
-            threshold: 'BLOCK_NONE',
-          },
-          {
-            category: 'HARM_CATEGORY_HARASSMENT',
-            threshold: 'BLOCK_NONE',
-          },
-          {
-            category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
-            threshold: 'BLOCK_NONE',
-          },
-        ],
-      }),
+      model: google(DEFAULT_MODEL_NAME),
       // output: 'array',
       prompt: `Generate an explanation with the following context: \n\n"""Question: ${question}""" \n\n"""Option: ${option.value}"""\n\nIs this option correct? ${option.is_correct ? 'Yes' : 'No'}\n\nNOTE: Provide it in the same language as the question and option, be concise and clear.`,
       schema: quizOptionExplanationSchema,
+      providerOptions: {
+        google: {
+          safetySettings: [
+            {
+              category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
+              threshold: 'BLOCK_NONE',
+            },
+            {
+              category: 'HARM_CATEGORY_HATE_SPEECH',
+              threshold: 'BLOCK_NONE',
+            },
+            {
+              category: 'HARM_CATEGORY_HARASSMENT',
+              threshold: 'BLOCK_NONE',
+            },
+            {
+              category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
+              threshold: 'BLOCK_NONE',
+            },
+          ],
+        },
+      },
       // onFinish: async (response) => {
       //   console.log('AI Response:', response);
       // if (!response.object) {
@@ -124,14 +127,14 @@ export async function POST(req: Request) {
     });
 
     return result.toTextStreamResponse();
-  } catch (error: any) {
+  } catch (error) {
     console.log(error);
     return NextResponse.json(
       {
-        message: `## Edge API Failure\nCould not complete the request. Please view the **Stack trace** below.\n\`\`\`bash\n${error?.stack}`,
+        message: `## Edge API Failure\nCould not complete the request. Please view the **Stack trace** below.\n\`\`\`bash\n${(error as Error)?.stack || 'No stack trace available'}`,
       },
       {
-        status: 200,
+        status: 500,
       }
     );
   }

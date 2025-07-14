@@ -1,5 +1,5 @@
 import type { Model } from '@tuturuuu/ai/models';
-import type { Message, UseChatHelpers } from '@tuturuuu/ai/types';
+import type { UIMessage, UseChatHelpers } from '@tuturuuu/ai/types';
 import { createDynamicClient } from '@tuturuuu/supabase/next/client';
 import type { AIChat } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
@@ -41,14 +41,8 @@ import { ScrollToTopButton } from './scroll-to-top-button';
 
 export interface ChatPanelProps
   extends Pick<
-    UseChatHelpers,
-    | 'append'
-    | 'isLoading'
-    | 'reload'
-    | 'messages'
-    | 'stop'
-    | 'input'
-    | 'setInput'
+    UseChatHelpers<UIMessage>,
+    'sendMessage' | 'status' | 'messages' | 'stop'
   > {
   id?: string;
   wsId: string;
@@ -56,20 +50,18 @@ export interface ChatPanelProps
   chats?: AIChat[];
   count?: number | null;
   defaultRoute: string;
+  input: string;
   inputRef: React.RefObject<HTMLTextAreaElement | null>;
+  setInput: (input: string) => void;
   model?: Model;
-  // eslint-disable-next-line no-unused-vars
   setModel: (model: Model) => void;
-  // eslint-disable-next-line no-unused-vars
   createChat: (input: string) => Promise<void>;
-  // eslint-disable-next-line no-unused-vars
   updateChat: (data: Partial<AIChat>) => Promise<void>;
   clearChat: () => void;
-  initialMessages?: Message[];
+  initialMessages?: UIMessage[];
   collapsed: boolean;
   disableScrollToTop?: boolean;
   disableScrollToBottom?: boolean;
-  // eslint-disable-next-line no-unused-vars
   setCollapsed: (collapsed: boolean) => void;
 }
 
@@ -80,8 +72,8 @@ export function ChatPanel({
   chats,
   count,
   defaultRoute,
-  isLoading,
-  append,
+  status,
+  sendMessage,
   input,
   inputRef,
   setInput,
@@ -104,14 +96,15 @@ export function ChatPanel({
   const [dialogType, setDialogType] = useState<'files' | 'visibility'>();
   const [showExtraOptions, setShowExtraOptions] = useState(false);
 
-  const disablePublicLink = isLoading || updating || !id || !chat?.is_public;
+  const disablePublicLink =
+    status === 'streaming' || updating || !id || !chat?.is_public;
 
   const [chatInputHeight, setChatInputHeight] = useState(0);
 
   useEffect(() => {
     const chatInput = document.getElementById('chat-input');
     if (chatInput) setChatInputHeight(chatInput.clientHeight);
-  }, [input]);
+  }, []);
 
   const [files, setFiles] = useState<StatedFile[]>([]);
 
@@ -154,7 +147,7 @@ export function ChatPanel({
         <div
           className={cn(
             'absolute z-10 flex items-end gap-2 md:flex-col',
-            chats ? 'right-2 md:-right-2 lg:-right-6' : 'right-2 md:right-4'
+            chats ? 'md:-right-2 lg:-right-6 right-2' : 'right-2 md:right-4'
           )}
           style={{
             bottom: chatInputHeight ? chatInputHeight + 4 : '1rem',
@@ -193,7 +186,7 @@ export function ChatPanel({
             <div className="relative flex items-center justify-center gap-2">
               <div
                 id="chat-sidebar"
-                className={`absolute -bottom-1 z-20 w-full rounded-lg border-t p-2 transition-all duration-500 md:border ${
+                className={`-bottom-1 absolute z-20 w-full rounded-lg border-t p-2 transition-all duration-500 md:border ${
                   collapsed
                     ? 'pointer-events-none border-transparent bg-transparent'
                     : 'border-border bg-background shadow-lg'
@@ -320,10 +313,9 @@ export function ChatPanel({
                   if (!id) return await createChat(value);
 
                   // If there is an id, append the message to the chat
-                  await append({
-                    id,
-                    content: value,
+                  await sendMessage({
                     role: 'user',
+                    parts: [{ type: 'text', text: value }],
                   });
                 }}
                 files={files}
@@ -331,7 +323,7 @@ export function ChatPanel({
                 input={input}
                 inputRef={inputRef}
                 setInput={setInput}
-                isLoading={isLoading}
+                isLoading={status === 'streaming'}
                 showExtraOptions={showExtraOptions}
                 setShowExtraOptions={setShowExtraOptions}
                 toggleChatFileUpload={() => {

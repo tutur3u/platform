@@ -1,3 +1,1 @@
-import { useChat } from '@ai-sdk/react';
-
-export { useChat };
+export * from '@ai-sdk/react';

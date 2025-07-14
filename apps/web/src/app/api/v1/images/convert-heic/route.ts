@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
 
     // Create timeout to prevent hanging
     const conversionPromise = heicConvert({
-      buffer: new Uint8Array(arrayBuffer),
+      buffer: arrayBuffer,
       format: 'JPEG',
       quality: 0.9,
     });

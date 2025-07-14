@@ -1,8 +1,9 @@
 'use client';
 
+import { DefaultChatTransport } from '@tuturuuu/ai/core';
 import { defaultModel, type Model, models } from '@tuturuuu/ai/models';
 import { useChat } from '@tuturuuu/ai/react';
-import type { Message } from '@tuturuuu/ai/types';
+import type { UIMessage } from '@tuturuuu/ai/types';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { AIChat } from '@tuturuuu/types/db';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
@@ -10,16 +11,17 @@ import { cn } from '@tuturuuu/utils/format';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import type React from 'react';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ChatList } from '@/components/chat-list';
 import { ChatPanel } from '@/components/chat-panel';
 import { ChatScrollAnchor } from '@/components/chat-scroll-anchor';
 import { EmptyScreen } from '@/components/empty-screen';
+import { generateRandomUUID } from '@tuturuuu/utils/uuid-helper';
 
 export interface ChatProps extends React.ComponentProps<'div'> {
   defaultChat?: Partial<AIChat>;
   wsId?: string;
-  initialMessages?: Message[];
+  initialMessages?: UIMessage[];
   chats?: AIChat[];
   count?: number | null;
   hasKeys: { openAI: boolean; anthropic: boolean; google: boolean };
@@ -28,7 +30,7 @@ export interface ChatProps extends React.ComponentProps<'div'> {
   disableScrollToBottom?: boolean;
 }
 
-const Chat = ({
+export default function Chat({
   defaultChat,
   wsId,
   initialMessages,
@@ -39,7 +41,7 @@ const Chat = ({
   locale,
   disableScrollToTop,
   disableScrollToBottom,
-}: ChatProps) => {
+}: ChatProps) {
   const t = useTranslations('ai_chat');
 
   const router = useRouter();
@@ -48,11 +50,13 @@ const Chat = ({
 
   const [chat, setChat] = useState<Partial<AIChat> | undefined>(defaultChat);
   const [model, setModel] = useState<Model | undefined>(defaultModel);
+  const [input, setInput] = useState('');
 
-  const { messages, append, reload, stop, isLoading, input, setInput } =
-    useChat({
-      id: chat?.id,
-      initialMessages,
+  const { id: chatId, messages, sendMessage, stop, status } = useChat({
+    id: chat?.id,
+    generateId: generateRandomUUID,
+    messages: initialMessages,
+    transport: new DefaultChatTransport({
       api:
         chat?.model || model?.value
           ? `/api/ai/chat/${(
@@ -63,25 +67,21 @@ const Chat = ({
                 : model?.provider.toLowerCase()
             )?.replaceAll(' ', '-')}`
           : undefined,
+      credentials: 'include',
+      headers: { 'Custom-Header': 'value' },
       body: {
-        id: chat?.id,
+        // DO NOT PUT ID HERE AS IT WILL BE OVERRIDDEN BY chatId IN useChat
         wsId,
         model: chat?.model || model?.value,
       },
-      onResponse(response) {
-        if (!response.ok)
-          toast({
-            title: t('something_went_wrong'),
-            description: t('try_again_later'),
-          });
-      },
-      onError() {
-        toast({
-          title: t('something_went_wrong'),
-          description: t('try_again_later'),
-        });
-      },
-    });
+    }),
+    onError() {
+      toast({
+        title: t('something_went_wrong'),
+        description: t('try_again_later'),
+      });
+    },
+  });
 
   const [summarizing, setSummarizing] = useState(false);
   const [summary, setSummary] = useState<string | undefined>(
@@ -91,12 +91,12 @@ const Chat = ({
   useEffect(() => {
     setSummary(chat?.summary || '');
     setSummarizing(false);
-  }, [chat?.id, messages?.length, chat?.latest_summarized_message_id]);
+  }, [chat?.summary]);
 
   useEffect(() => {
-    if (!chat || !hasKeys || isLoading) return;
+    if (!chat || !hasKeys || status === 'streaming') return;
 
-    const generateSummary = async (messages: Message[] = []) => {
+    const generateSummary = async (messages: UIMessage[] = []) => {
       if (
         !wsId ||
         summary ||
@@ -114,8 +114,9 @@ const Chat = ({
       setSummarizing(true);
 
       const res = await fetch(
-        `/api/ai/chat/${model.provider.toLowerCase()}/summary`,
+        `/api/ai/chat/${model.provider.toLowerCase().replace(' ', '-')}/summary`,
         {
+          credentials: 'include',
           method: 'PATCH',
           body: JSON.stringify({
             id: chat.id,
@@ -138,31 +139,27 @@ const Chat = ({
 
     // Generate the chat summary if the chat's latest summarized message id
     // is not the same as the last message id in the chat
+    const lastMessage = messages[messages.length - 1];
+
     if (
       wsId &&
-      !isLoading &&
+      status === 'ready' &&
       !summary &&
       !chat.latest_summarized_message_id &&
-      chat.latest_summarized_message_id !== messages[messages.length - 1]?.id &&
-      messages[messages.length - 1]?.role !== 'user'
+      chat.latest_summarized_message_id !== lastMessage?.id &&
+      lastMessage?.role !== 'user'
     )
       generateSummary(messages);
-
-    if (messages[messages.length - 1]?.role !== 'user') return;
-
-    // Reload the chat if the user sends a message
-    // but the AI did not respond yet after 1 second
-    const reloadTimeout = setTimeout(() => {
-      if (!wsId || messages[messages.length - 1]?.role !== 'user') return;
-      reload();
-    }, 1000);
-
-    return () => {
-      clearTimeout(reloadTimeout);
-    };
-  }, [wsId, summary, chat, hasKeys, isLoading, messages, reload]);
+  }, [chat, hasKeys, messages, model, status, summarizing, summary, t, wsId]);
 
   const [initialScroll, setInitialScroll] = useState(true);
+
+  const clearChat = useCallback(() => {
+    if (defaultChat?.id) return;
+    setSummary(undefined);
+    setChat(undefined);
+    setCollapsed(true);
+  }, [defaultChat?.id]);
 
   useEffect(() => {
     // if there is "input" in the query string, we will
@@ -204,11 +201,13 @@ const Chat = ({
     chat?.id,
     searchParams,
     router,
-    setInput,
     wsId,
     chats,
     count,
     initialScroll,
+    disableScrollToBottom,
+    disableScrollToTop,
+    clearChat,
   ]);
 
   const [collapsed, setCollapsed] = useState(true);
@@ -216,7 +215,7 @@ const Chat = ({
 
   useEffect(() => {
     if (inputRef.current) inputRef.current.focus();
-  }, [input, inputRef]);
+  }, []);
 
   const [pendingPrompt, setPendingPrompt] = useState<string | null>(null);
 
@@ -226,10 +225,12 @@ const Chat = ({
     setPendingPrompt(input);
 
     const res = await fetch(
-      `/api/ai/chat/${model.provider.toLowerCase()}/new`,
+      `/api/ai/chat/${model.provider.toLowerCase().replace(' ', '-')}/new`,
       {
+        credentials: 'include',
         method: 'POST',
         body: JSON.stringify({
+          id: chatId,
           model: model.value,
           message: input,
         }),
@@ -249,7 +250,6 @@ const Chat = ({
       setCollapsed(true);
       setChat({ id, title, model: model.value, is_public: false });
       if (disableScrollToBottom && disableScrollToTop) return;
-      router.replace(`/${wsId}/chat?id=${id}`);
     }
   };
 
@@ -279,29 +279,20 @@ const Chat = ({
     });
   };
 
-  const clearChat = () => {
-    if (defaultChat?.id) return;
-    setSummary(undefined);
-    setChat(undefined);
-    setCollapsed(true);
-  };
-
   useEffect(() => {
     if (!pendingPrompt || !chat?.id || !wsId) return;
-    append({
-      id: chat?.id,
-      content: pendingPrompt,
+    sendMessage({
       role: 'user',
+      parts: [{ type: 'text', text: pendingPrompt }],
     });
     setPendingPrompt(null);
-  }, [wsId, pendingPrompt, chat?.id, append]);
+  }, [wsId, pendingPrompt, chat?.id, sendMessage]);
 
   useEffect(() => {
-    console.log(pathname);
     if (!pathname.includes('/chat/') && messages.length === 1) {
       window.history.replaceState({}, '', `/${wsId}/chat/${chat?.id}`);
     }
-  }, [chat?.id, pathname, messages]);
+  }, [wsId, chat?.id, pathname, messages]);
 
   return (
     <div className="@container relative h-full">
@@ -320,8 +311,8 @@ const Chat = ({
                   ? [
                       {
                         id: 'pending',
-                        content: pendingPrompt,
                         role: 'user',
+                        parts: [{ type: 'text', text: pendingPrompt }],
                       },
                     ]
                   : messages
@@ -331,10 +322,10 @@ const Chat = ({
               model={chat?.model ?? undefined}
               anonymize={!chats || count === undefined}
             />
-            <ChatScrollAnchor trackVisibility={isLoading} />
+            <ChatScrollAnchor trackVisibility={status === 'streaming'} />
           </>
         ) : disableScrollToTop && disableScrollToBottom ? (
-          <h1 className="mb-2 flex h-full w-full items-center justify-center text-center text-lg font-semibold">
+          <h1 className="mb-2 flex h-full w-full items-center justify-center text-center font-semibold text-lg">
             {t('welcome_to')}{' '}
             <span className="ml-1 overflow-hidden bg-linear-to-r from-dynamic-red via-dynamic-purple to-dynamic-sky bg-clip-text font-bold text-transparent">
               Rewise
@@ -358,10 +349,9 @@ const Chat = ({
           chat={chat}
           chats={chats}
           count={count}
-          isLoading={isLoading}
+          status={status}
+          sendMessage={sendMessage}
           stop={stop}
-          append={append}
-          reload={reload}
           input={input}
           inputRef={inputRef}
           setInput={setInput}
@@ -380,6 +370,4 @@ const Chat = ({
       )}
     </div>
   );
-};
-
-export default Chat;
+}

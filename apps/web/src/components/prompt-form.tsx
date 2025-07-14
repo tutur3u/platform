@@ -1,4 +1,3 @@
-import type { UseChatHelpers } from '@tuturuuu/ai/types';
 import type { AIChat } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
 import type { StatedFile } from '@tuturuuu/ui/custom/file-uploader';
@@ -31,15 +30,15 @@ import Textarea from 'react-textarea-autosize';
 import { DEV_MODE } from '@/constants/common';
 import { useEnterSubmit } from '@/lib/hooks/use-enter-submit';
 
-export interface PromptProps
-  extends Pick<UseChatHelpers, 'input' | 'setInput'> {
-  id: string | undefined;
+export interface PromptProps {
+  id?: string;
   chat: Partial<AIChat> | undefined;
   files: StatedFile[];
   setFiles: React.Dispatch<React.SetStateAction<StatedFile[]>>;
   inputRef: React.RefObject<HTMLTextAreaElement | null>;
-  // eslint-disable-next-line no-unused-vars
+  input: string;
   onSubmit: (value: string) => Promise<void>;
+  setInput: (input: string) => void;
   isLoading: boolean;
   showExtraOptions: boolean;
   setShowExtraOptions: React.Dispatch<React.SetStateAction<boolean>>;

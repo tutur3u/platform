@@ -1,4 +1,4 @@
-import type { Message } from '@tuturuuu/ai/types';
+import type { UIMessage } from '@tuturuuu/ai/types';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { AIChat } from '@tuturuuu/types/db';
 import {
@@ -76,7 +76,8 @@ const getMessages = async (chatId: string) => {
   return data.map(({ role, ...rest }) => ({
     ...rest,
     role: role.toLowerCase(),
-  })) as Message[];
+    parts: [{ type: 'text', text: rest.content || '' }],
+  })) as UIMessage[];
 };
 
 const getChat = async (chatId: string) => {

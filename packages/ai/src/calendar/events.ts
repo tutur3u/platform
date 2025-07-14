@@ -27,6 +27,8 @@ export const calendarEventSchema = z.object({
   location: z.string().optional().describe('Location of the event'),
 });
 
-export const calendarEventsSchema = z.array(calendarEventSchema);
+export const calendarEventsSchema = z.object({
+  events: z.array(calendarEventSchema),
+});
 
 export type CalendarEvent = z.infer<typeof calendarEventSchema>;
