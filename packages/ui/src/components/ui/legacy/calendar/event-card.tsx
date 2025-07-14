@@ -17,7 +17,7 @@ import {
   Trash2,
   Unlock,
 } from 'lucide-react';
-import { useEffect, useRef, useState, useMemo } from 'react';
+import { useEffect, useRef, useState, useMemo, useCallback } from 'react';
 import { useCalendar } from '../../../../hooks/use-calendar';
 import {
   ContextMenu,
@@ -169,61 +169,270 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
   const lastStateUpdateRef = useRef(0);
   const STATE_UPDATE_THROTTLE_MS = 16; // ~60fps
 
-  // Optimized all-day drop zone detection with caching
+  // Enhanced auto-scroll functionality based on proven techniques
+  const autoScrollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isAutoScrollingRef = useRef(false);
+  const scrollVelocityRef = useRef(0);
+  const scrollDirectionRef = useRef(0);
+  const targetSpeedRef = useRef(0);
+
+  const handleAutoScroll = useCallback((clientX: number, clientY: number) => {
+    // Find all potential scrollable containers
+    const calendarView = document.getElementById('calendar-view');
+    if (!calendarView) return;
+    
+    // Enhanced settings for better UX
+    const SCROLL_EDGE_SIZE = 100; // Increased edge size for more reliable triggering
+    const MAX_SCROLL_SPEED = 30; // Moderate scroll speed
+    const MIN_SCROLL_SPEED = 8; // Moderate minimum scroll speed  
+    const ACCELERATION = 0.2; // Moderate acceleration factor
+    const THROTTLE_DELAY = 16; // 60fps
+    
+    // Get scrollable element
+    const scrollableElements = [];
+    let element: HTMLElement | null = calendarView;
+    while (element && element !== document.body) {
+      const computedStyle = window.getComputedStyle(element);
+      const hasVerticalScroll = element.scrollHeight > element.clientHeight;
+      const canScroll = computedStyle.overflowY === 'auto' || computedStyle.overflowY === 'scroll';
+      
+      if (hasVerticalScroll && (canScroll || element === calendarView)) {
+        scrollableElements.push(element);
+      }
+      element = element.parentElement;
+    }
+    
+    const scrollElement = scrollableElements[0] || calendarView;
+    const rect = scrollElement.getBoundingClientRect();
+    const currentScrollTop = scrollElement.scrollTop;
+    const maxScrollTop = scrollElement.scrollHeight - scrollElement.clientHeight;
+    
+    // Calculate mouse position relative to scroll container - use VIEWPORT coordinates for stability
+    const relativeY = clientY - rect.top;
+    const distanceFromTop = Math.max(0, relativeY);
+    const distanceFromBottom = Math.max(0, rect.height - relativeY);
+    
+    // Determine scroll direction and calculate speed based on proximity to edge
+    let scrollDirection = 0;
+    let indicatorDirection: 'up' | 'down' | null = null;
+    let targetSpeed = 0;
+    
+    // Use viewport coordinates for more stable detection
+    if (relativeY <= SCROLL_EDGE_SIZE && currentScrollTop > 0) {
+      scrollDirection = -1;
+      indicatorDirection = 'up';
+      const proximityFactor = 1 - Math.min(1, distanceFromTop / SCROLL_EDGE_SIZE);
+      targetSpeed = MIN_SCROLL_SPEED + (MAX_SCROLL_SPEED - MIN_SCROLL_SPEED) * proximityFactor;
+    } else if (relativeY >= rect.height - SCROLL_EDGE_SIZE && currentScrollTop < maxScrollTop) {
+      scrollDirection = 1;
+      indicatorDirection = 'down';
+      const proximityFactor = 1 - Math.min(1, distanceFromBottom / SCROLL_EDGE_SIZE);
+      targetSpeed = MIN_SCROLL_SPEED + (MAX_SCROLL_SPEED - MIN_SCROLL_SPEED) * proximityFactor;
+    }
+    
+    // Show/hide scroll indicators - update position continuously
+    if (scrollDirection !== 0) {
+      setScrollIndicator({
+        show: true,
+        direction: indicatorDirection,
+        position: { x: clientX, y: clientY },
+      });
+    } else {
+      setScrollIndicator({
+        show: false,
+        direction: null,
+        position: { x: 0, y: 0 },
+      });
+    }
+    
+    // Store scroll parameters in refs
+    scrollDirectionRef.current = scrollDirection;
+    targetSpeedRef.current = targetSpeed;
+    
+    // Start auto-scroll if not already running and we have a valid direction
+    if (scrollDirection !== 0 && !isAutoScrollingRef.current) {
+      isAutoScrollingRef.current = true;
+      scrollVelocityRef.current = MIN_SCROLL_SPEED;
+      
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`Auto-scroll ${scrollDirection === -1 ? 'UP' : 'DOWN'} started`);
+      }
+      
+      const performScroll = () => {
+        // Get fresh scroll element state
+        const currentElement = document.getElementById('calendar-view');
+        if (!currentElement || !isDraggingRef.current) {
+          isAutoScrollingRef.current = false;
+          scrollVelocityRef.current = 0;
+          scrollDirectionRef.current = 0;
+          targetSpeedRef.current = 0;
+          setScrollIndicator({ show: false, direction: null, position: { x: 0, y: 0 } });
+          return;
+        }
+        
+        const currentScroll = currentElement.scrollTop;
+        const maxScroll = currentElement.scrollHeight - currentElement.clientHeight;
+        
+        // Stop if we've reached scroll limits
+        if ((scrollDirectionRef.current === -1 && currentScroll <= 0) ||
+            (scrollDirectionRef.current === 1 && currentScroll >= maxScroll)) {
+          isAutoScrollingRef.current = false;
+          scrollVelocityRef.current = 0;
+          scrollDirectionRef.current = 0;
+          targetSpeedRef.current = 0;
+          setScrollIndicator({ show: false, direction: null, position: { x: 0, y: 0 } });
+          return;
+        }
+        
+        // Accelerate smoothly
+        if (scrollVelocityRef.current < targetSpeedRef.current) {
+          scrollVelocityRef.current = Math.min(
+            targetSpeedRef.current, 
+            scrollVelocityRef.current + targetSpeedRef.current * ACCELERATION
+          );
+        }
+        
+        // Perform scroll
+        const scrollAmount = scrollDirectionRef.current * scrollVelocityRef.current;
+        const newScroll = Math.max(0, Math.min(currentScroll + scrollAmount, maxScroll));
+        currentElement.scrollTop = newScroll;
+        
+        // Continue scrolling
+        autoScrollTimerRef.current = setTimeout(performScroll, THROTTLE_DELAY);
+      };
+      
+      performScroll();
+    }
+    
+    // Stop auto-scroll if direction becomes 0
+    if (scrollDirection === 0 && isAutoScrollingRef.current) {
+      isAutoScrollingRef.current = false;
+      scrollVelocityRef.current = 0;
+      scrollDirectionRef.current = 0;
+      targetSpeedRef.current = 0;
+      if (autoScrollTimerRef.current) {
+        clearTimeout(autoScrollTimerRef.current);
+        autoScrollTimerRef.current = null;
+      }
+      setScrollIndicator({ show: false, direction: null, position: { x: 0, y: 0 } });
+    }
+  }, []);
+
+  // Optimized all-day drop zone detection with caching - PRECISE zone detection only
   const detectAllDayDropZoneOptimized = (clientY: number): boolean => {
     const now = Date.now();
     
     // Refresh cache if stale or not initialized
     if (!cachedElements.current.allDayContainer || now - cachedElements.current.lastCacheTime > CACHE_REFRESH_MS) {
-      cachedElements.current.allDayContainer = document.querySelector('[data-testid="all-day-container"]') || 
-                                               document.querySelector('.all-day-event-bar') ||
-                                               document.getElementById('all-day-event-bar') ||
-                                               document.querySelector('[class*="all-day"]');
+      // Be very specific about finding the actual all-day container
+      // Only use the official data-testid, don't fall back to generic selectors
+      cachedElements.current.allDayContainer = document.querySelector('[data-testid="all-day-container"]');
+      
+      if (cachedElements.current.allDayContainer) {
+        cachedElements.current.allDayRect = cachedElements.current.allDayContainer.getBoundingClientRect();
+      } else {
+        // If we can't find the all-day container, don't enable all-day conversion
+        cachedElements.current.allDayRect = null;
+      }
+      cachedElements.current.lastCacheTime = now;
+    }
+    
+    // If no all-day container found, never convert to all-day
+    if (!cachedElements.current.allDayRect) {
+      if (process.env.NODE_ENV === 'development') {
+        console.log('detectAllDayDropZoneOptimized: No all-day container found');
+      }
+      return false;
+    }
+    
+    // PRECISE DETECTION: Only trigger when EXACTLY within the all-day bar bounds
+    // Add small buffer to prevent edge cases, but don't allow triggering way above or below
+    const PRECISION_BUFFER = 5; // Small 5px buffer for edge precision
+    const isInZone = clientY >= (cachedElements.current.allDayRect.top - PRECISION_BUFFER) && 
+                     clientY <= (cachedElements.current.allDayRect.bottom + PRECISION_BUFFER);
+    
+    // Debug logging (throttled)
+    if (process.env.NODE_ENV === 'development' && Math.random() < 0.1) {
+      console.log('detectAllDayDropZoneOptimized:', {
+        clientY,
+        allDayRect: {
+          top: cachedElements.current.allDayRect.top,
+          bottom: cachedElements.current.allDayRect.bottom,
+          topWithBuffer: cachedElements.current.allDayRect.top - PRECISION_BUFFER,
+          bottomWithBuffer: cachedElements.current.allDayRect.bottom + PRECISION_BUFFER
+        },
+        isInZone,
+        aboveZone: clientY < (cachedElements.current.allDayRect.top - PRECISION_BUFFER),
+        belowZone: clientY > (cachedElements.current.allDayRect.bottom + PRECISION_BUFFER)
+      });
+    }
+    
+    return isInZone;
+  };
+
+  // Optimized target date calculation with caching - IMPROVED for precision
+  const calculateAllDayTargetOptimized = (clientX: number, dates: Date[]): Date | null => {
+    const now = Date.now();
+    
+    // First, try to get the all-day container for more accurate calculation
+    if (!cachedElements.current.allDayContainer || now - cachedElements.current.lastCacheTime > CACHE_REFRESH_MS) {
+      cachedElements.current.allDayContainer = document.querySelector('[data-testid="all-day-container"]');
       
       if (cachedElements.current.allDayContainer) {
         cachedElements.current.allDayRect = cachedElements.current.allDayContainer.getBoundingClientRect();
       }
-      cachedElements.current.lastCacheTime = now;
-    }
-    
-    if (!cachedElements.current.allDayRect) {
-      return false;
-    }
-    
-    // Add some padding to make the drop zone more generous
-    const padding = 10;
-    return clientY >= (cachedElements.current.allDayRect.top - padding) && 
-           clientY <= (cachedElements.current.allDayRect.bottom + padding);
-  };
-
-  // Optimized target date calculation with caching
-  const calculateAllDayTargetOptimized = (clientX: number, dates: Date[]): Date | null => {
-    const now = Date.now();
-    
-    // Refresh cache if stale or not initialized
-    if (!cachedElements.current.calendarView || now - cachedElements.current.lastCacheTime > CACHE_REFRESH_MS) {
+      
+      // Also try to find the calendar view container as fallback
       cachedElements.current.calendarView = document.getElementById('calendar-view') ||
                                             document.querySelector('[data-testid="calendar-view"]') ||
-                                            document.querySelector('.calendar-view') ||
-                                            document.querySelector('[class*="calendar"]');
+                                            document.querySelector('.calendar-view');
       
       if (cachedElements.current.calendarView) {
         cachedElements.current.calendarRect = cachedElements.current.calendarView.getBoundingClientRect();
-      } else if (cachedElements.current.allDayContainer) {
-        cachedElements.current.calendarRect = cachedElements.current.allDayContainer.getBoundingClientRect();
       }
+      
       cachedElements.current.lastCacheTime = now;
     }
     
-    if (!cachedElements.current.calendarRect) {
+    // Use all-day container if available, otherwise fallback to calendar view
+    const targetRect = cachedElements.current.allDayRect || cachedElements.current.calendarRect;
+    if (!targetRect) {
+      console.log('calculateAllDayTargetOptimized: No target rect available');
       return null;
     }
     
-    const relativeX = clientX - cachedElements.current.calendarRect.left - TIME_TRAIL_WIDTH;
-    const columnWidth = (cachedElements.current.calendarRect.width - TIME_TRAIL_WIDTH) / dates.length;
+    // Calculate relative position within the target area
+    // For all-day container, we don't need time trail offset since it doesn't include it
+    // For calendar view, we need to account for time trail offset
+    const isUsingAllDayContainer = !!cachedElements.current.allDayRect;
+    const TIME_TRAIL_OFFSET = isUsingAllDayContainer ? 0 : 64; // Only offset for calendar view
+    
+    const relativeX = clientX - targetRect.left - TIME_TRAIL_OFFSET;
+    const availableWidth = targetRect.width - TIME_TRAIL_OFFSET;
+    const columnWidth = availableWidth / dates.length;
+    
+    // Calculate which date column the mouse is over
     const dateIndex = Math.floor(relativeX / columnWidth);
     const clampedDateIndex = Math.max(0, Math.min(dateIndex, dates.length - 1));
     
+    // Debug logging
+    if (process.env.NODE_ENV === 'development') {
+      console.log('calculateAllDayTargetOptimized:', {
+        clientX,
+        targetRect: { left: targetRect.left, width: targetRect.width },
+        isUsingAllDayContainer,
+        TIME_TRAIL_OFFSET,
+        relativeX,
+        availableWidth,
+        columnWidth,
+        dateIndex,
+        clampedDateIndex,
+        datesLength: dates.length,
+        targetDate: dates[clampedDateIndex]
+      });
+    }
+    
+    // Return the target date, ensuring it's valid
     return dates[clampedDateIndex] || null;
   };
 
@@ -349,6 +558,9 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
     return () => {
       if (updateTimeoutRef.current) {
         clearTimeout(updateTimeoutRef.current);
+      }
+      if (autoScrollTimerRef.current) {
+        clearTimeout(autoScrollTimerRef.current);
       }
     };
   }, []);
@@ -712,6 +924,17 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
     targetDate: null,
   });
 
+  // Auto-scroll indicator state
+  const [scrollIndicator, setScrollIndicator] = useState<{
+    show: boolean;
+    direction: 'up' | 'down' | null;
+    position: { x: number; y: number };
+  }>({
+    show: false,
+    direction: null,
+    position: { x: 0, y: 0 },
+  });
+
   // Ref to store current localEvent value for stable access in handlers
   const localEventRef = useRef<CalendarEvent>(localEvent);
   localEventRef.current = localEvent;
@@ -743,16 +966,9 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
     let hasMoved = false;
 
     const handleMouseDown = (e: MouseEvent) => {
-      // Debug logging
-      if (process.env.NODE_ENV === 'development') {
-        console.log('Mouse down on event:', {
-          eventId: id,
-          button: e.button,
-          locked,
-          _isMultiDay,
-          clientX: e.clientX,
-          clientY: e.clientY
-        });
+      // Debug logging (minimal)
+      if (process.env.NODE_ENV === 'development' && e.button !== 0) {
+        console.log('Non-primary button clicked on event:', id);
       }
       
       // Only handle primary mouse button (left click)
@@ -837,12 +1053,22 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
           wasDraggedRef.current = true;
           hasMoved = true;
 
+          // Debug logging (reduced)
+          if (process.env.NODE_ENV === 'development') {
+            console.log('Drag initiated for event:', id);
+          }
+
           // Update visual state
           updateVisualState({ isDragging: true });
 
           // Other UI adjustments
           hideModal();
           document.body.classList.add('select-none');
+        }
+
+        // Handle auto-scroll FIRST for better UX - this should work regardless of zone
+        if (isDraggingRef.current) {
+          handleAutoScroll(e.clientX, e.clientY);
         }
 
         // Optimized cross-zone detection with caching
@@ -865,8 +1091,8 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
         
         // Calculate target date only if in all-day zone and cache it
         if (isInAllDayZone) {
-          if (Math.abs(e.clientX - calculationCache.current.lastTargetDateCheck.clientX) < 10 && 
-              now - calculationCache.current.lastTargetDateCheck.timestamp < 10) {
+          if (Math.abs(e.clientX - calculationCache.current.lastTargetDateCheck.clientX) < 5 && 
+              now - calculationCache.current.lastTargetDateCheck.timestamp < 50) {
             targetDate = calculationCache.current.lastTargetDateCheck.result;
           } else {
             targetDate = calculateAllDayTargetOptimized(e.clientX, dates);
@@ -875,22 +1101,39 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
               result: targetDate,
               timestamp: now
             };
+            
+            // Debug logging for target date calculation
+            if (process.env.NODE_ENV === 'development') {
+              console.log('Timed event drag - target date calculated:', {
+                clientX: e.clientX,
+                targetDate,
+                isInAllDayZone
+              });
+            }
           }
         }
 
-        // Throttle cross-zone state updates
+        // Update cross-zone state more responsively
         const crossZoneStateChanged = 
           crossZoneDrag.isInAllDayZone !== isInAllDayZone || 
           crossZoneDrag.targetDate !== targetDate;
 
-        if (crossZoneStateChanged && now - lastStateUpdateRef.current > STATE_UPDATE_THROTTLE_MS) {
+        if (crossZoneStateChanged) {
           setCrossZoneDrag({ isInAllDayZone, targetDate });
-          lastStateUpdateRef.current = now;
+          
+          // Debug logging for local cross-zone state change (throttled)
+          if (process.env.NODE_ENV === 'development' && Math.random() < 0.01) {
+            console.log('Local cross-zone state updated:', {
+              isInAllDayZone,
+              targetDate,
+              changed: crossZoneStateChanged
+            });
+          }
         }
 
         if (isInAllDayZone) {
-          // Update global cross-zone drag state for visual feedback (throttled)
-          if (now - lastStateUpdateRef.current > STATE_UPDATE_THROTTLE_MS) {
+          // Update global cross-zone drag state for visual feedback (more responsive throttling)
+          if (now - lastStateUpdateRef.current > 30 || !crossZoneDrag.isInAllDayZone) { // 30ms throttle, or immediately if entering zone
             setCrossZoneDragState({
               isActive: true,
               draggedEvent: localEvent,
@@ -901,15 +1144,49 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
               mouseY: e.clientY,
               targetTimeSlot: null, // Not needed for all-day conversion
             });
+            lastStateUpdateRef.current = now;
+            
+            // Debug logging for cross-zone state update (throttled)
+            if (process.env.NODE_ENV === 'development' && Math.random() < 0.02) {
+              console.log('Cross-zone drag state updated - IN all-day zone:', {
+                isActive: true,
+                targetDate,
+                sourceZone: 'timed',
+                targetZone: 'all-day',
+                mousePosition: { x: e.clientX, y: e.clientY }
+              });
+            }
           }
           
-          // Make the original event semi-transparent during cross-zone drag
-          eventCardEl.style.opacity = '0.5';
+          // Hide the original event completely during cross-zone drag (preview shows in all-day bar)
+          eventCardEl.style.opacity = '0';
+          eventCardEl.style.visibility = 'hidden'; // Completely hide from rendering
           eventCardEl.style.cursor = 'grabbing';
+          
+          // Still maintain the static reference during all-day preview
+          let staticReference = document.getElementById(`static-ref-${id}`);
+          if (!staticReference) {
+            staticReference = eventCardEl.cloneNode(true) as HTMLElement;
+            staticReference.id = `static-ref-${id}`;
+            staticReference.style.position = 'absolute';
+            staticReference.style.top = `${initialCardPosition.top}px`;
+            staticReference.style.left = `${initialCardPosition.left}px`;
+            staticReference.style.width = `${eventCardEl.offsetWidth}px`;
+            staticReference.style.height = `${eventCardEl.offsetHeight}px`;
+            staticReference.style.opacity = '0.4';
+            staticReference.style.pointerEvents = 'none';
+            staticReference.style.cursor = 'default';
+            staticReference.style.border = '2px dashed rgba(59, 130, 246, 0.5)';
+            staticReference.style.zIndex = '1';
+            staticReference.style.transform = 'none';
+            
+            // Insert the static reference before the original in the DOM
+            eventCardEl.parentElement?.insertBefore(staticReference, eventCardEl);
+          }
           
           return; // Don't do normal positioning when in all-day zone
         } else {
-          // Clear global cross-zone drag state
+          // CRITICAL: Always clear global state when not in all-day zone
           setCrossZoneDragState({
             isActive: false,
             draggedEvent: null,
@@ -921,9 +1198,30 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
             targetTimeSlot: null,
           });
           
-          // Reset for normal dragging
-          eventCardEl.style.opacity = '1';
+          // CRITICAL: Also clear the local cross-zone state immediately
+          setCrossZoneDrag({
+            isInAllDayZone: false,
+            targetDate: null,
+          });
+          
+                // Debug logging for cross-zone state clearing (throttled)
+      if (process.env.NODE_ENV === 'development' && Math.random() < 0.05) {
+        console.log('Cross-zone drag state cleared - NOT in all-day zone:', {
+          clientY: e.clientY,
+          wasInAllDayZone: crossZoneDrag.isInAllDayZone,
+          clearingBothStates: true
+        });
+      }
+          
+          // Reset for normal dragging when moving out of all-day zone
+          eventCardEl.style.opacity = '0.7'; // Keep it slightly transparent during normal drag
+          eventCardEl.style.visibility = 'visible'; // Restore visibility
           eventCardEl.style.cursor = 'grabbing';
+          eventCardEl.style.pointerEvents = 'none';
+          eventCardEl.style.transform = ''; // Reset any scaling applied during cross-zone drag
+          
+          // IMPORTANT: Continue with normal timed event positioning logic below
+          // Don't return here so the normal drag positioning can work
         }
 
         // Normal timed event dragging logic
@@ -1034,14 +1332,31 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
       const handleMouseUp = async (e: MouseEvent) => {
         
         if (hasMoved) {
-          // Seamless cross-zone conversion
-          if (crossZoneDragRef.current.isInAllDayZone && crossZoneDragRef.current.targetDate) {
-            try {
-              // Convert timed event to all-day event
-              const convertedEvent = createAllDayEventFromTimed(
-                localEventRef.current,
-                crossZoneDragRef.current.targetDate as Date
-              );
+          // Get current zone status at the time of mouse up (most accurate)
+          const currentlyInAllDayZone = detectAllDayDropZoneOptimized(e.clientY);
+          const currentTargetDate = currentlyInAllDayZone ? calculateAllDayTargetOptimized(e.clientX, dates) : null;
+          
+          // Debug logging for mouse up decision
+          if (process.env.NODE_ENV === 'development') {
+            console.log('Mouse up - conversion decision:', {
+              currentlyInAllDayZone,
+              currentTargetDate,
+              refState: {
+                isInAllDayZone: crossZoneDragRef.current.isInAllDayZone,
+                targetDate: crossZoneDragRef.current.targetDate
+              },
+              mousePosition: { x: e.clientX, y: e.clientY }
+            });
+          }
+          
+          // Seamless cross-zone conversion - use current state, not ref state
+          if (currentlyInAllDayZone && currentTargetDate) {
+                          try {
+                // Convert timed event to all-day event
+                const convertedEvent = createAllDayEventFromTimed(
+                  localEventRef.current,
+                  currentTargetDate as Date
+                );
 
               // Update the event in the database
               await updateEvent(event._originalId || id, {
@@ -1050,28 +1365,37 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
                 scheduling_note: convertedEvent.scheduling_note,
               });
 
+              // Clean up static reference after successful conversion
+              const staticReference = document.getElementById(`static-ref-${id}`);
+              if (staticReference) staticReference.remove();
+
               // Show success feedback
               setUpdateStatus('success');
               showStatusFeedback('success');
-            } catch (error) {
-              console.error('Failed to convert to all-day event:', {
-                error,
-                eventId: event._originalId || id,
-                targetDate: crossZoneDragRef.current.targetDate,
-                originalEvent: localEventRef.current
-              });
+                          } catch (error) {
+                console.error('Failed to convert to all-day event:', {
+                  error,
+                  eventId: event._originalId || id,
+                  targetDate: currentTargetDate,
+                  originalEvent: localEventRef.current
+                });
               setUpdateStatus('error');
               showStatusFeedback('error');
               
+              // Clean up static reference on error too
+              const staticReference = document.getElementById(`static-ref-${id}`);
+              if (staticReference) staticReference.remove();
+              
               // Revert visual changes
               eventCardEl.style.opacity = '1';
-              eventCardEl.style.transform = '';
+              eventCardEl.style.visibility = 'visible';
+              eventCardEl.style.transform = ''; // Reset any cross-zone transforms
               eventCardEl.style.pointerEvents = 'auto';
               eventCardEl.style.cursor = '';
               eventCardEl.style.border = '';
               eventCardEl.style.zIndex = '10';
             }
-          } else if (crossZoneDragRef.current.isInAllDayZone && !crossZoneDragRef.current.targetDate) {
+          } else if (currentlyInAllDayZone && !currentTargetDate) {
             // Revert visual changes and cleanup
             eventCardEl.style.opacity = '1';
             eventCardEl.style.transform = '';
@@ -1102,16 +1426,17 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
             if (eventCardEl) {
               // Restore original event appearance
               eventCardEl.style.opacity = '1';
+              eventCardEl.style.visibility = 'visible';
               eventCardEl.style.pointerEvents = 'auto';
               eventCardEl.style.cursor = '';
               eventCardEl.style.border = '';
               eventCardEl.style.zIndex = '10';
+              eventCardEl.style.transform = ''; // Reset any transforms from cross-zone dragging
               
               const currentTop = currentPositionRef.current.top;
               const currentLeft = currentPositionRef.current.left;
 
-              // Reset transform and set direct position
-              eventCardEl.style.transform = '';
+              // Set final position
               eventCardEl.style.top = `${currentTop}px`;
               eventCardEl.style.left = `${currentLeft}px`;
 
@@ -1144,10 +1469,12 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
           // Restore original event to fully interactive state
           if (eventCardEl) {
             eventCardEl.style.opacity = '1';
+            eventCardEl.style.visibility = 'visible';
             eventCardEl.style.pointerEvents = 'auto';
             eventCardEl.style.border = '';
-            eventCardEl.style.cursor = ''; // Restore grab cursor
-            eventCardEl.style.zIndex = '10'; // Restore original z-index
+            eventCardEl.style.cursor = ''; 
+            eventCardEl.style.zIndex = '10';
+            eventCardEl.style.transform = ''; // Reset any cross-zone transforms
           }
 
           // Check if this was just a click (no significant movement)
@@ -1158,6 +1485,20 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
             openModal(event._originalId || id);
           }
         }
+
+        // Final cleanup: Reset all drag-related states
+        isDraggingRef.current = false;
+        updateVisualState({ isDragging: false });
+        document.body.classList.remove('select-none');
+        document.body.style.cursor = '';
+
+        // Stop auto-scroll and hide indicators
+        if (autoScrollTimerRef.current) {
+          clearTimeout(autoScrollTimerRef.current);
+          autoScrollTimerRef.current = null;
+        }
+        isAutoScrollingRef.current = false;
+        setScrollIndicator({ show: false, direction: null, position: { x: 0, y: 0 } });
 
         // Reset cross-zone drag state
         setCrossZoneDrag({
@@ -1176,6 +1517,10 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
           mouseY: 0,
           targetTimeSlot: null,
         });
+
+        // Final static reference cleanup (safety net)
+        const staticReference = document.getElementById(`static-ref-${id}`);
+        if (staticReference) staticReference.remove();
 
         // Performance cleanup: Clear caches after drag
         calculationCache.current = {
@@ -1295,7 +1640,37 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
   };
 
   return (
-    <ContextMenu>
+    <>
+      {/* Auto-scroll visual indicators */}
+      {scrollIndicator.show && (
+        <div
+          className="fixed z-50 pointer-events-none"
+          style={{
+            left: `${scrollIndicator.position.x + 20}px`,
+            top: `${scrollIndicator.position.y - (scrollIndicator.direction === 'up' ? 40 : -10)}px`,
+          }}
+        >
+          <div className="flex items-center gap-2 px-3 py-2 bg-blue-500/90 text-white text-sm font-medium rounded-lg shadow-lg backdrop-blur-sm animate-pulse">
+            {scrollIndicator.direction === 'up' ? (
+              <>
+                <svg className="w-4 h-4 animate-bounce" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clipRule="evenodd" />
+                </svg>
+                <span>Scroll up</span>
+              </>
+            ) : (
+              <>
+                <svg className="w-4 h-4 animate-bounce" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                </svg>
+                <span>Scroll down</span>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+      
+      <ContextMenu>
       <ContextMenuTrigger asChild>
         <div
           ref={cardRef}
@@ -1614,5 +1989,6 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
         </ContextMenuItem>
       </ContextMenuContent>
     </ContextMenu>
+    </>
   );
 }

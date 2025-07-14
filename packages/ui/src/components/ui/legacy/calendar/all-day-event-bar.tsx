@@ -8,7 +8,7 @@ import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
 import timezone from 'dayjs/plugin/timezone';
 import { Calendar, ChevronDown, ChevronUp } from 'lucide-react';
-import React, { useMemo, useState, useRef, useCallback } from 'react';
+import React, { useMemo, useState, useRef, useCallback, useEffect } from 'react';
 import { useCalendar } from '../../../../hooks/use-calendar';
 import { MIN_COLUMN_WIDTH, HOUR_HEIGHT } from './config';
 import { useToast } from '@tuturuuu/ui/hooks/use-toast';
@@ -121,6 +121,121 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const dragPreviewRef = useRef<HTMLDivElement>(null);
 
+  // Auto-scroll functionality for all-day events
+  const autoScrollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isAutoScrollingRef = useRef(false);
+  const scrollDirectionRef = useRef(0);
+  const targetSpeedRef = useRef(0);
+
+  const handleAutoScroll = useCallback((clientX: number, clientY: number) => {
+    // Find all potential scrollable containers
+    const calendarView = document.getElementById('calendar-view');
+    if (!calendarView) return;
+    
+    // Enhanced settings for better UX
+    const SCROLL_EDGE_SIZE = 100; // Increased edge size for more reliable triggering
+    const MAX_SCROLL_SPEED = 30; // Moderate scroll speed
+    const MIN_SCROLL_SPEED = 8; // Moderate minimum scroll speed  
+    const ACCELERATION = 0.2; // Moderate acceleration factor
+    const THROTTLE_DELAY = 16; // 60fps
+    
+    // Get scrollable element
+    const scrollableElements = [];
+    let element: HTMLElement | null = calendarView;
+    while (element && element !== document.body) {
+      const computedStyle = window.getComputedStyle(element);
+      const hasVerticalScroll = element.scrollHeight > element.clientHeight;
+      const canScroll = computedStyle.overflowY === 'auto' || computedStyle.overflowY === 'scroll';
+      
+      if (hasVerticalScroll && (canScroll || element === calendarView)) {
+        scrollableElements.push(element);
+      }
+      element = element.parentElement;
+    }
+    
+    const scrollElement = scrollableElements[0] || calendarView;
+    const rect = scrollElement.getBoundingClientRect();
+    const currentScrollTop = scrollElement.scrollTop;
+    const maxScrollTop = scrollElement.scrollHeight - scrollElement.clientHeight;
+    
+    // Calculate mouse position relative to scroll container - use VIEWPORT coordinates for stability
+    const relativeY = clientY - rect.top;
+    const distanceFromTop = Math.max(0, relativeY);
+    const distanceFromBottom = Math.max(0, rect.height - relativeY);
+    
+    // Determine scroll direction and calculate speed based on proximity to edge
+    let scrollDirection = 0;
+    let targetSpeed = 0;
+    
+    // Use viewport coordinates for more stable detection
+    if (relativeY <= SCROLL_EDGE_SIZE && currentScrollTop > 0) {
+      scrollDirection = -1;
+      const proximityFactor = 1 - Math.min(1, distanceFromTop / SCROLL_EDGE_SIZE);
+      targetSpeed = MIN_SCROLL_SPEED + (MAX_SCROLL_SPEED - MIN_SCROLL_SPEED) * proximityFactor;
+    } else if (relativeY >= rect.height - SCROLL_EDGE_SIZE && currentScrollTop < maxScrollTop) {
+      scrollDirection = 1;
+      const proximityFactor = 1 - Math.min(1, distanceFromBottom / SCROLL_EDGE_SIZE);
+      targetSpeed = MIN_SCROLL_SPEED + (MAX_SCROLL_SPEED - MIN_SCROLL_SPEED) * proximityFactor;
+    }
+    
+    // Store scroll parameters in refs
+    scrollDirectionRef.current = scrollDirection;
+    targetSpeedRef.current = targetSpeed;
+    
+    // Start auto-scroll if not already running and we have a valid direction
+    if (scrollDirection !== 0 && !isAutoScrollingRef.current) {
+      isAutoScrollingRef.current = true;
+      
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`All-day auto-scroll ${scrollDirection === -1 ? 'UP' : 'DOWN'} started`);
+      }
+      
+      const performScroll = () => {
+        // Get fresh scroll element state
+        const currentElement = document.getElementById('calendar-view');
+        if (!currentElement || !dragState.isDragging) {
+          isAutoScrollingRef.current = false;
+          scrollDirectionRef.current = 0;
+          targetSpeedRef.current = 0;
+          return;
+        }
+        
+        const currentScroll = currentElement.scrollTop;
+        const maxScroll = currentElement.scrollHeight - currentElement.clientHeight;
+        
+        // Stop if we've reached scroll limits
+        if ((scrollDirectionRef.current === -1 && currentScroll <= 0) ||
+            (scrollDirectionRef.current === 1 && currentScroll >= maxScroll)) {
+          isAutoScrollingRef.current = false;
+          scrollDirectionRef.current = 0;
+          targetSpeedRef.current = 0;
+          return;
+        }
+        
+        // Perform scroll
+        const scrollAmount = scrollDirectionRef.current * MIN_SCROLL_SPEED;
+        const newScroll = Math.max(0, Math.min(currentScroll + scrollAmount, maxScroll));
+        currentElement.scrollTop = newScroll;
+        
+        // Continue scrolling
+        autoScrollTimerRef.current = setTimeout(performScroll, THROTTLE_DELAY);
+      };
+      
+      performScroll();
+    }
+    
+    // Stop auto-scroll if direction becomes 0
+    if (scrollDirection === 0 && isAutoScrollingRef.current) {
+      isAutoScrollingRef.current = false;
+      scrollDirectionRef.current = 0;
+      targetSpeedRef.current = 0;
+      if (autoScrollTimerRef.current) {
+        clearTimeout(autoScrollTimerRef.current);
+        autoScrollTimerRef.current = null;
+      }
+    }
+  }, [dragState.isDragging]);
+
   // Add refs for drag threshold and timer
   const dragStartPos = useRef<{ x: number; y: number } | null>(null);
   const dragInitiated = useRef(false);
@@ -140,25 +255,48 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
         return day !== 0 && day !== 6; // 0 = Sunday, 6 = Saturday
       });
 
-  // Helper to detect drop zone based on mouse position
+  // Helper to detect drop zone based on mouse position - IMPROVED for better detection
   const detectDropZone = useCallback((clientY: number) => {
     // Get the calendar container to determine boundaries
     const calendarView = document.getElementById('calendar-view');
-    if (!calendarView) return 'all-day';
+    if (!calendarView) {
+      console.log('DetectDropZone: calendar-view not found, defaulting to all-day');
+      return 'all-day';
+    }
     
     const calendarRect = calendarView.getBoundingClientRect();
     const allDayContainer = containerRef.current;
     
-    if (!allDayContainer) return 'all-day';
+    if (!allDayContainer) {
+      console.log('DetectDropZone: allDayContainer not found, defaulting to all-day');
+      return 'all-day';
+    }
     
     const allDayRect = allDayContainer.getBoundingClientRect();
     
+    // Add some buffer to make detection more reliable
+    const DETECTION_BUFFER = 5; // 5px buffer
+    
     // If mouse is below the all-day area and within calendar view, it's in timed area
-    if (clientY > allDayRect.bottom && clientY < calendarRect.bottom) {
-      return 'timed';
+    const isInTimedArea = clientY > (allDayRect.bottom + DETECTION_BUFFER) && 
+                         clientY < (calendarRect.bottom - DETECTION_BUFFER);
+    
+    const result = isInTimedArea ? 'timed' : 'all-day';
+    
+    // Debug logging for troubleshooting
+    if (process.env.NODE_ENV === 'development') {
+      console.log('DetectDropZone Debug:', {
+        clientY,
+        allDayBottom: allDayRect.bottom,
+        calendarBottom: calendarRect.bottom,
+        isInTimedArea,
+        result,
+        allDayRect: { top: allDayRect.top, bottom: allDayRect.bottom },
+        calendarRect: { top: calendarRect.top, bottom: calendarRect.bottom }
+      });
     }
     
-    return 'all-day';
+    return result;
   }, []);
 
   // Helper function to calculate visible hour offset from mouse position
@@ -188,20 +326,29 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
     return { hour: clampedHour, minute: clampedMinute };
   }, []);
 
-  // Helper to calculate time slot target
+  // Helper to calculate time slot target - IMPROVED with better error handling
   const calculateTimeSlotTarget = useCallback((clientX: number, clientY: number) => {
     // Get the calendar view container
     const calendarView = document.getElementById('calendar-view');
-    if (!calendarView) return null;
+    if (!calendarView) {
+      console.log('CalculateTimeSlotTarget: calendar-view not found');
+      return null;
+    }
     
     // Find the actual start of the timed calendar grid using robust selectors
     const { timeTrail, calendarView: calendarViewDiv } = findCalendarElements();
     
-    if (!timeTrail || !calendarViewDiv) return null;
+    if (!timeTrail || !calendarViewDiv) {
+      console.log('CalculateTimeSlotTarget: timeTrail or calendarViewDiv not found');
+      return null;
+    }
     
     // Find any visible calendar cell to understand the actual grid positioning
     const anyVisibleCell = calendarViewDiv.querySelector('.calendar-cell');
-    if (!anyVisibleCell) return null;
+    if (!anyVisibleCell) {
+      console.log('CalculateTimeSlotTarget: no visible calendar cell found');
+      return null;
+    }
     
     // Get its hour to understand what's currently visible
     const cellHour = parseInt(anyVisibleCell.getAttribute('data-hour') || '0');
@@ -214,24 +361,47 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
     const relativeY = actualHour * HOUR_HEIGHT;
     
     // Make sure we're actually in the timed area
-    if (relativeY < 0) return null; // Above the timed calendar
+    if (relativeY < 0) {
+      console.log('CalculateTimeSlotTarget: relativeY < 0, above timed calendar');
+      return null; // Above the timed calendar
+    }
     
     // Calculate target date from column position  
     const calendarViewRect = calendarViewDiv.getBoundingClientRect();
     const clampedDateIndex = calculateTargetDateIndex(clientX, timeTrailRect, calendarViewRect);
     const targetDate = visibleDates[clampedDateIndex];
     
-    if (!targetDate) return null;
+    if (!targetDate) {
+      console.log('CalculateTimeSlotTarget: no target date found for index', clampedDateIndex);
+      return null;
+    }
     
     // Calculate target time with proper precision using the actual hour height
     const hourFloat = relativeY / HOUR_HEIGHT;
     const { hour: clampedHour, minute: clampedMinute } = roundToNearestQuarterHour(hourFloat);
     
-    return {
+    const result = {
       date: targetDate,
       hour: clampedHour,
       minute: clampedMinute,
     };
+    
+    // Debug logging for troubleshooting
+    if (process.env.NODE_ENV === 'development') {
+      console.log('CalculateTimeSlotTarget Success:', {
+        clientX,
+        clientY,
+        cellHour,
+        actualHour,
+        relativeY,
+        hourFloat,
+        clampedDateIndex,
+        targetDate,
+        result
+      });
+    }
+    
+    return result;
   }, [visibleDates, calculateVisibleHourOffset, calculateTargetDateIndex, roundToNearestQuarterHour]);
 
   // Stable drag event handlers using refs
@@ -277,7 +447,7 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
     document.body.classList.add('select-none');
   }, [visibleDates.length]);
 
-  // Enhanced drag move handler with seamless cross-zone detection
+  // Enhanced drag move handler with seamless cross-zone detection - IMPROVED
   const handleDragMove = useCallback((e: MouseEvent) => {
     const currentDragState = dragStateRef.current;
     if (!currentDragState.isDragging || !containerRef.current || !currentDragState.draggedEventSpan) return;
@@ -296,6 +466,16 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
       // Hide the normal preview span when converting to timed
       previewSpan = null;
       
+      // Debug logging for troubleshooting conversion issues
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Drag Move - Timed Zone:', {
+          targetZone,
+          timeSlotTarget,
+          draggedEvent: currentDragState.draggedEvent?.title,
+          mousePosition: { x: e.clientX, y: e.clientY }
+        });
+      }
+      
       // Update global cross-zone drag state for preview
       if (currentDragState.draggedEvent && timeSlotTarget) {
         setCrossZoneDragState({
@@ -310,6 +490,19 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
             hour: timeSlotTarget.hour,
             minute: timeSlotTarget.minute,
           },
+        });
+      } else {
+        // If we're in timed zone but don't have a valid time slot target, clear the cross-zone state
+        console.log('Drag Move - Timed Zone but no valid timeSlotTarget, clearing cross-zone state');
+        setCrossZoneDragState({
+          isActive: false,
+          draggedEvent: null,
+          targetDate: null,
+          sourceZone: null,
+          targetZone: null,
+          mouseX: 0,
+          mouseY: 0,
+          targetTimeSlot: null,
         });
       }
     } else {
@@ -343,6 +536,10 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
       });
     }
 
+    // Handle auto-scroll for better UX (especially important for mobile and users without scroll wheels)
+    handleAutoScroll(e.clientX, e.clientY);
+
+    // Update drag state with new values
     setDragState(prev => ({
       ...prev,
       currentX: e.clientX,
@@ -397,8 +594,24 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
     document.body.style.cursor = '';
     document.body.classList.remove('select-none');
 
+    // Stop auto-scroll
+    if (autoScrollTimerRef.current) {
+      clearTimeout(autoScrollTimerRef.current);
+      autoScrollTimerRef.current = null;
+    }
+    isAutoScrollingRef.current = false;
+
     try {
       if (targetZone === 'timed' && currentDragState.timeSlotTarget) {
+        // Debug logging for conversion attempt
+        console.log('Attempting all-day to timed conversion:', {
+          eventId: currentDragState.draggedEvent.id,
+          eventTitle: currentDragState.draggedEvent.title,
+          targetZone,
+          timeSlotTarget: currentDragState.timeSlotTarget,
+          tz
+        });
+        
         // Seamless conversion to timed event
         const { date, hour, minute } = currentDragState.timeSlotTarget;
         const convertedEvent = createTimedEventFromAllDay(
@@ -410,13 +623,47 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
           true // forceTime: true - user explicitly dragged to this time
         );
 
+        console.log('Converted event data:', {
+          original: {
+            start_at: currentDragState.draggedEvent.start_at,
+            end_at: currentDragState.draggedEvent.end_at
+          },
+          converted: {
+            start_at: convertedEvent.start_at,
+            end_at: convertedEvent.end_at,
+            scheduling_note: convertedEvent.scheduling_note
+          }
+        });
+
         if (typeof updateEvent === 'function') {
           await updateEvent(currentDragState.draggedEvent.id, {
             start_at: convertedEvent.start_at,
             end_at: convertedEvent.end_at,
             scheduling_note: convertedEvent.scheduling_note,
           });
+          
+          console.log('Successfully updated event to timed');
+          
+          // Show success toast
+          toast({
+            title: 'Event Converted',
+            description: 'Successfully converted to timed event.',
+            variant: 'default',
+          });
         }
+      } else if (targetZone === 'timed' && !currentDragState.timeSlotTarget) {
+        // Debug case where we detected timed zone but no time slot target
+        console.error('Conversion failed: targetZone is timed but timeSlotTarget is null', {
+          targetZone,
+          timeSlotTarget: currentDragState.timeSlotTarget,
+          dragState: currentDragState
+        });
+        
+        toast({
+          title: 'Conversion Failed',
+          description: 'Could not determine target time slot. Please try again.',
+          variant: 'destructive',
+        });
       } else if (targetZone === 'all-day' && currentDragState.targetDateIndex !== null) {
         // Handle all-day to all-day movement (existing logic)
         const targetDateIndex = currentDragState.targetDateIndex;
@@ -461,11 +708,14 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
     }
   }, [dragState.isDragging, handleDragMove, handleDragEnd]);
 
-  // Add useEffect cleanup for longPressTimer
+  // Add useEffect cleanup for longPressTimer and autoScrollTimer
   React.useEffect(() => {
     return () => {
       if (longPressTimer.current) {
         clearTimeout(longPressTimer.current);
+      }
+      if (autoScrollTimerRef.current) {
+        clearTimeout(autoScrollTimerRef.current);
       }
     };
   }, []);
@@ -776,7 +1026,12 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
         className={cn(
           'relative flex-1 border-b',
           // Add visual feedback for drop zone
-          'transition-colors duration-200'
+          'transition-colors duration-200',
+          // Enhanced visual feedback for timed-to-all-day conversion
+          crossZoneDragState.isActive && crossZoneDragState.sourceZone === 'timed' && crossZoneDragState.targetZone === 'all-day' && 
+          'bg-green-50/20 dark:bg-green-900/10 border-green-300/50 dark:border-green-700/50 shadow-inner',
+          // Normal drag state within all-day area
+          dragState.isDragging && 'bg-blue-50/20 dark:bg-blue-900/10'
         )}
         data-testid="all-day-container"
         style={{
@@ -809,25 +1064,32 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
             const isDropTarget = dragState.isDragging && dragState.targetDateIndex === dateIndex;
             const isOriginalColumn = dragState.isDragging && dragState.originalDateIndex === dateIndex;
             
-            // Check if this column is a cross-zone drop target
-            const isCrossZoneDropTarget = crossZoneDragState.isActive && 
-              crossZoneDragState.targetZone === 'all-day' && 
-              crossZoneDragState.targetDate &&
-              dayjs(date).isSame(crossZoneDragState.targetDate, 'day');
+                            // Check if this column is a cross-zone drop target
+                const isCrossZoneDropTarget = crossZoneDragState.isActive && 
+                  crossZoneDragState.targetZone === 'all-day' && 
+                  crossZoneDragState.targetDate &&
+                  dayjs(date).isSame(crossZoneDragState.targetDate, 'day');
+                
+                // Check if we're in cross-zone mode (timed to all-day conversion)
+                const isTimedToAllDayConversion = crossZoneDragState.isActive && 
+                  crossZoneDragState.sourceZone === 'timed' && 
+                  crossZoneDragState.targetZone === 'all-day';
 
             return (
               <div
                 key={`all-day-column-${dateKey}`}
-                className={cn(
-                  "group flex h-full flex-col justify-start border-l last:border-r transition-colors duration-200",
-                  // Drop zone visual feedback for internal all-day dragging
-                  isDropTarget && !isOriginalColumn && "bg-blue-100 dark:bg-blue-900/30 border-blue-300 dark:border-blue-700",
-                  isOriginalColumn && "bg-red-100 dark:bg-red-900/30 border-red-300 dark:border-red-700",
-                  // Cross-zone drop target visual feedback
-                  isCrossZoneDropTarget && "bg-green-50/40 dark:bg-green-900/20 border-green-200/50 dark:border-green-800/50",
-                  // Normal hover state (only when not dragging)
-                  !dragState.isDragging && !crossZoneDragState.isActive && "hover:bg-muted/20"
-                )}
+                                  className={cn(
+                    "group flex h-full flex-col justify-start border-l last:border-r transition-colors duration-200",
+                    // Drop zone visual feedback for internal all-day dragging
+                    isDropTarget && !isOriginalColumn && "bg-blue-100 dark:bg-blue-900/30 border-blue-300 dark:border-blue-700",
+                    isOriginalColumn && "bg-red-100 dark:bg-red-900/30 border-red-300 dark:border-red-700",
+                    // Cross-zone drop target visual feedback (specific column)
+                    isCrossZoneDropTarget && "bg-green-50/60 dark:bg-green-900/40 border-green-300/70 dark:border-green-700/70",
+                    // General timed-to-all-day conversion visual feedback (entire bar)
+                    isTimedToAllDayConversion && !isCrossZoneDropTarget && "bg-green-50/30 dark:bg-green-900/20 border-green-200/40 dark:border-green-800/40",
+                    // Normal hover state (only when not dragging)
+                    !dragState.isDragging && !crossZoneDragState.isActive && "hover:bg-muted/20"
+                  )}
               >
                 {/* Show/hide expansion button */}
                 {hiddenCount > 0 && (
@@ -866,24 +1128,35 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
                     </div>
                   )}
 
-                {/* Cross-zone drop indicator */}
-                {isCrossZoneDropTarget && (
-                  <div
-                    className="absolute inset-0 flex items-center justify-center pointer-events-none"
-                    style={{ zIndex: 15 }}
-                  >
-                    <div className="flex items-center gap-2 px-3 py-1 bg-green-500 text-white text-xs font-medium rounded-full shadow-lg animate-pulse">
-                      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
-                      </svg>
-                      Drop here
-                    </div>
-                  </div>
-                )}
+
               </div>
             );
           })}
         </div>
+
+        {/* Cross-zone conversion preview - timed to all-day */}
+        {crossZoneDragState.isActive && crossZoneDragState.sourceZone === 'timed' && crossZoneDragState.targetZone === 'all-day' && crossZoneDragState.targetDate && (
+          <div
+            className={cn(
+              'absolute rounded-sm border-2 border-dashed transition-all duration-150 z-20',
+              'bg-green-100/80 dark:bg-green-900/60 border-green-500 dark:border-green-400',
+              'pointer-events-none flex items-center px-2 py-1'
+            )}
+            style={{
+              left: `calc(${(visibleDates.findIndex(date => dayjs(date).isSame(crossZoneDragState.targetDate, 'day')) * 100) / visibleDates.length}% + ${EVENT_LEFT_OFFSET}px)`,
+              width: `calc(${100 / visibleDates.length}% - ${EVENT_LEFT_OFFSET * 2}px)`,
+              top: '0.25rem',
+              height: '1.35rem',
+            }}
+          >
+            <div className="flex items-center gap-1 text-xs font-semibold text-green-800 dark:text-green-200 truncate">
+              <svg className="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
+              </svg>
+              <span className="truncate">{crossZoneDragState.draggedEvent?.title || 'Event'}</span>
+            </div>
+          </div>
+        )}
 
         {/* Seamless drag preview - no special indicators needed */}
         {dragState.isDragging && dragState.previewSpan && dragState.draggedEvent && dragState.targetZone === 'all-day' && (
