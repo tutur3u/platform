@@ -129,16 +129,8 @@ export function CrossZoneDragPreview({
     
     // Find the main calendar grid area (excluding headers)
     const dayHeaders = calendarView.querySelector('.grid.grid-cols-7');
-    const timeColumn = calendarView.querySelector('[class*="time-column"]') || calendarView.querySelector('[style*="grid-column: 1"]');
     
-    let gridLeft = calendarRect.left;
     let gridTop = calendarRect.top;
-    
-    // Adjust for time column if present
-    if (timeColumn) {
-      const timeColumnRect = timeColumn.getBoundingClientRect();
-      gridLeft = timeColumnRect.right;
-    }
     
     // Adjust for day headers if present
     if (dayHeaders) {
@@ -235,7 +227,7 @@ export function CrossZoneDragPreview({
               <div 
                 className={cn(
                   "h-full rounded-full transition-all duration-300",
-                  eventStyles.bg.replace('bg-', 'bg-').replace('/60', '/80')
+                  eventStyles.bg.replace('/60', '/80')
                 )}
                 style={{ width: `${progressWidth}%` }}
               />
