@@ -808,7 +808,17 @@
     "management": "Quản lý tài nguyên",
     "link_shortener": "Liên kết rút ngắn",
     "tumeet": "Tumeet",
-    "polls": "Bỏ phiếu"
+    "polls": "Bỏ phiếu",
+    "tuplan": "Tuplan",
+    "tuvote": "Tuvote",
+    "tudo": "Tudo",
+    "tumail": "Tumail",
+    "tudrive": "Tudrive",
+    "tudraw": "Tudraw",
+    "tutrack": "Tutrack",
+    "tulink": "Tulink",
+    "tulearn": "Tulearn",
+    "tunote": "Tunote"
   },
   "link-shortener": {
     "title": "Rút ngắn liên kết",

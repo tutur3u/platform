@@ -797,7 +797,17 @@
     "management": "Management",
     "link_shortener": "Link Shortener",
     "tumeet": "Tumeet",
-    "polls": "Polls"
+    "polls": "Polls",
+    "tuplan": "Tuplan",
+    "tuvote": "Tuvote",
+    "tudo": "Tudo",
+    "tumail": "Tumail",
+    "tudrive": "Tudrive",
+    "tudraw": "Tudraw",
+    "tutrack": "Tutrack",
+    "tulink": "Tulink",
+    "tulearn": "Tulearn",
+    "tunote": "Tunote"
   },
   "link-shortener": {
     "title": "Link Shortener",
