@@ -8,4 +8,6 @@ export interface MeetTogetherPlan {
   created_at?: string;
   updated_at?: string;
   creator_id?: string;
+  ws_id?: string;
+  is_public?: boolean;
 }
