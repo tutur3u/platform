@@ -45,7 +45,7 @@
     "@tiptap/extension-placeholder": "^2.26.1",
     "@tiptap/extension-text-align": "^2.26.1",
     "@tiptap/pm": "^2.26.1",
-    "@tiptap/react": "^2.26.1",
+    "@tiptap/react": "^3.0.1",
     "@tiptap/starter-kit": "^2.26.1",
     "@tuturuuu/ai": "workspace:*",
     "@tuturuuu/supabase": "workspace:*",
