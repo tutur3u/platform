@@ -47,15 +47,18 @@ const roundToNearest15Minutes = (date: Date): Date => {
 };
 
 interface EventCardProps {
-  event: CalendarEvent;
   dates: Date[];
-  level?: number;
+  wsId: string;
+  event: CalendarEvent;
+  level?: number; // Level for stacking events
 }
 
 import { createAllDayEventFromTimed } from './calendar-utils';
 
 // Cache refresh interval (refresh every 100ms during drag to handle resize)
 const CACHE_REFRESH_MS = 100;
+
+
 
 export function EventCard({ dates, event, level = 0 }: EventCardProps) {
   const {
@@ -79,13 +82,6 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
   const { updateEvent, hideModal, openModal, deleteEvent, settings, setCrossZoneDragState } =
     useCalendar();
   const tz = settings?.timezone?.timezone;
-
-  // Stabilize function references to prevent useEffect re-registration
-  const stableUpdateEvent = useCallback(updateEvent, []);
-  const stableHideModal = useCallback(hideModal, []);
-  const stableOpenModal = useCallback(openModal, []);
-  const stableDeleteEvent = useCallback(deleteEvent, []);
-  const stableSetCrossZoneDragState = useCallback(setCrossZoneDragState, []);
 
   // Local state for immediate UI updates
   const [localEvent, setLocalEvent] = useState<CalendarEvent>(event);
@@ -121,24 +117,6 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
       ? MAX_HOURS - startHours + endHours
       : endHours - startHours;
   }, [endHours, startHours, _isMultiDay]);
-
-  // Refs to access current values without including them in dependencies
-  const startDateRef = useRef(startDate);
-  const endDateRef = useRef(endDate);
-  const datesRef = useRef(dates);
-  const eventRef = useRef(event);
-  const startHoursRef = useRef(startHours);
-  const settingsRef = useRef(settings);
-  
-  // Update refs when values change
-  useEffect(() => {
-    startDateRef.current = startDate;
-    endDateRef.current = endDate;
-    datesRef.current = dates;
-    eventRef.current = event;
-    startHoursRef.current = startHours;
-    settingsRef.current = settings;
-  }, [startDate, endDate, dates, event, startHours, settings]);
 
   // Calculate duration in minutes
   // const durationMs = (dayjs(endDate).valueOf() - dayjs(startDate).valueOf());
@@ -189,6 +167,31 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
   // Throttle expensive state updates
   const lastStateUpdateRef = useRef(0);
 
+  // Stabilize function references to prevent useEffect re-registration
+  const stableUpdateEvent = useCallback(updateEvent, []);
+  const stableHideModal = useCallback(hideModal, []);
+  const stableOpenModal = useCallback(openModal, []);
+  const stableDeleteEvent = useCallback(deleteEvent, []);
+  const stableSetCrossZoneDragState = useCallback(setCrossZoneDragState, []);
+
+  // Refs to access current values without including them in dependencies
+  const startDateRef = useRef(startDate);
+  const endDateRef = useRef(endDate);
+  const datesRef = useRef(dates);
+  const eventRef = useRef(event);
+  const startHoursRef = useRef(startHours);
+  const settingsRef = useRef(settings);
+  
+  // Update refs when values change
+  useEffect(() => {
+    startDateRef.current = startDate;
+    endDateRef.current = endDate;
+    datesRef.current = dates;
+    eventRef.current = event;
+    startHoursRef.current = startHours;
+    settingsRef.current = settings;
+  }, [startDate, endDate, dates, event, startHours, settings]);
+
   // Enhanced auto-scroll functionality based on proven techniques
   const autoScrollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isAutoScrollingRef = useRef(false);
@@ -202,10 +205,10 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
     if (!calendarView) return;
     
     // Enhanced settings for better UX
-    const SCROLL_EDGE_SIZE = 100; // Increased edge size for more reliable triggering
-    const MAX_SCROLL_SPEED = 30; // Moderate scroll speed
-    const MIN_SCROLL_SPEED = 8; // Moderate minimum scroll speed  
-    const ACCELERATION = 0.2; // Moderate acceleration factor
+    const SCROLL_EDGE_SIZE = 200; // Increased edge size for more reliable triggering
+    const MAX_SCROLL_SPEED = 10; // Moderate scroll speed
+    const MIN_SCROLL_SPEED = 4; // Moderate minimum scroll speed  
+    const ACCELERATION = 0.1; // Moderate acceleration factor
     const THROTTLE_DELAY = 16; // 60fps
     
     // Get scrollable element
@@ -998,7 +1001,7 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
           pendingUpdateRef.current = null;
         }
 
-                // Clean up
+        // Clean up
         document.removeEventListener('mousemove', handleMouseMove);
         document.removeEventListener('mouseup', handleMouseUp);
       };
@@ -1018,7 +1021,7 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
     stableHideModal,
   ]);
 
-      // Enhanced drag state for seamless cross-zone support
+  // Enhanced drag state for seamless cross-zone support
   const [crossZoneDrag, setCrossZoneDrag] = useState<{
     isInAllDayZone: boolean;
     targetDate: Date | null;
@@ -1027,367 +1030,365 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
     targetDate: null,
   });
 
+  // Auto-scroll indicator state
+  const [scrollIndicator, setScrollIndicator] = useState<{
+    show: boolean;
+    direction: 'up' | 'down' | null;
+    position: { x: number; y: number };
+  }>({
+    show: false,
+    direction: null,
+    position: { x: 0, y: 0 },
+  });
 
+  // Ref to store current localEvent value for stable access in handlers
+  const localEventRef = useRef<CalendarEvent>(localEvent);
+  localEventRef.current = localEvent;
 
-    // Auto-scroll indicator state
-    const [scrollIndicator, setScrollIndicator] = useState<{
-      show: boolean;
-      direction: 'up' | 'down' | null;
-      position: { x: number; y: number };
-    }>({
-      show: false,
-      direction: null,
-      position: { x: 0, y: 0 },
-    });
+  // Ref to store current crossZoneDrag state for stable access in handlers
+  const crossZoneDragRef = useRef(crossZoneDrag);
+  crossZoneDragRef.current = crossZoneDrag;
 
-    // Ref to store current localEvent value for stable access in handlers
-    const localEventRef = useRef<CalendarEvent>(localEvent);
-    localEventRef.current = localEvent;
+  // Event dragging - enhanced with seamless cross-zone support
+  useEffect(() => {
+    // Disable dragging for multi-day events or locked events
+    if (_isMultiDay || locked) return;
 
-    // Ref to store current crossZoneDrag state for stable access in handlers
-    const crossZoneDragRef = useRef(crossZoneDrag);
-    crossZoneDragRef.current = crossZoneDrag;
+    const contentEl = contentRef.current;
+    const eventCardEl = document.getElementById(`event-${id}`);
+    const cellEl = document.querySelector('.calendar-cell') as HTMLDivElement;
 
-    // Event dragging - enhanced with seamless cross-zone support
-    useEffect(() => {
-      // Disable dragging for multi-day events or locked events
-      if (_isMultiDay || locked) return;
+    // Use calendar view container instead of specific cell for width calculation
+    const calendarContainer = document.getElementById('calendar-view') || 
+                              document.getElementById('calendar-event-matrix') ||
+                              cellEl;
 
-      const contentEl = contentRef.current;
-      const eventCardEl = document.getElementById(`event-${id}`);
-      const cellEl = document.querySelector('.calendar-cell') as HTMLDivElement;
+    if (!contentEl || !eventCardEl || !calendarContainer) return;
 
-      // Use calendar view container instead of specific cell for width calculation
-      const calendarContainer = document.getElementById('calendar-view') || 
-                                document.getElementById('calendar-event-matrix') ||
-                                cellEl;
+    let startX = 0;
+    let startY = 0;
+    let initialCardPosition = { top: 0, left: 0 };
+    let columnWidth = 0;
+    let hasMoved = false;
 
-      if (!contentEl || !eventCardEl || !calendarContainer) return;
+    const handleMouseDown = (e: MouseEvent) => {
+      // Debug logging (minimal)
+      if (process.env.NODE_ENV === 'development' && e.button !== 0) {
+        console.log('Non-primary button clicked on event:', id);
+      }
+      
+      // Only handle primary mouse button (left click)
+      if (e.button !== 0) {
+        return;
+      }
 
-      let startX = 0;
-      let startY = 0;
-      let initialCardPosition = { top: 0, left: 0 };
-      let columnWidth = 0;
-      let hasMoved = false;
+      // Don't allow interaction with locked events or during sync
+      if (locked || isSyncing) {
+        return;
+      }
 
-      const handleMouseDown = (e: MouseEvent) => {
-        // Debug logging (minimal)
-        if (process.env.NODE_ENV === 'development' && e.button !== 0) {
-          console.log('Non-primary button clicked on event:', id);
-        }
-        
-        // Only handle primary mouse button (left click)
-        if (e.button !== 0) {
-          return;
-        }
+      e.stopPropagation();
 
-        // Don't allow interaction with locked events or during sync
-        if (locked || isSyncing) {
-          return;
-        }
+      // Don't allow multiple operations
+      if (isResizingRef.current || isDraggingRef.current) {
+        return;
+      }
 
-        e.stopPropagation();
+      // Record initial positions
+      startX = e.clientX;
+      startY = e.clientY;
 
-        // Don't allow multiple operations
-        if (isResizingRef.current || isDraggingRef.current) {
-          return;
-        }
+      // Record initial card position
+      initialCardPosition = {
+        top: eventCardEl.offsetTop,
+        left: eventCardEl.offsetLeft,
+      };
 
-        // Record initial positions
-        startX = e.clientX;
-        startY = e.clientY;
-
-        // Record initial card position
-        initialCardPosition = {
-          top: eventCardEl.offsetTop,
-          left: eventCardEl.offsetLeft,
-        };
-
-              // Update cached dimensions
+      // Update cached dimensions
       columnWidth = calendarContainer.offsetWidth / datesRef.current.length;
 
-        // Reset tracking state
-        hasMoved = false;
-        wasDraggedRef.current = false;
-        initialPositionRef.current = { x: e.clientX, y: e.clientY };
-        currentPositionRef.current = initialCardPosition;
-        isDraggingRef.current = true;
+      // Reset tracking state
+      hasMoved = false;
+      wasDraggedRef.current = false;
+      initialPositionRef.current = { x: e.clientX, y: e.clientY };
+      currentPositionRef.current = initialCardPosition;
+      isDraggingRef.current = true;
 
-        // Reset cross-zone drag state
-        setCrossZoneDrag({
-          isInAllDayZone: false,
-          targetDate: null,
-        });
+      // Reset cross-zone drag state
+      setCrossZoneDrag({
+        isInAllDayZone: false,
+        targetDate: null,
+      });
 
-        // Update visual state for immediate feedback
-        updateVisualState({ isDragging: true });
-        setUpdateStatus('idle'); // Reset any previous status
+      // Update visual state for immediate feedback
+      updateVisualState({ isDragging: true });
+      setUpdateStatus('idle'); // Reset any previous status
 
-        // Prevent interaction with other events
-        stableHideModal();
+      // Prevent interaction with other events
+      stableHideModal();
 
-        // Apply drag styling
-        document.body.style.cursor = 'grabbing';
-        document.body.classList.add('select-none');
+      // Apply drag styling
+      document.body.style.cursor = 'grabbing';
+      document.body.classList.add('select-none');
 
-        const handleMouseMove = (e: MouseEvent) => {
-          e.preventDefault();
+      const handleMouseMove = (e: MouseEvent) => {
+        e.preventDefault();
 
-          if (isResizingRef.current) return;
-          
-          // Debug logging (throttled) - commented out to reduce noise
-          // if (process.env.NODE_ENV === 'development' && Math.random() < 0.1) {
-          //   console.log('Mouse move during drag:', {
-          //     eventId: id,
-          //     clientX: e.clientX,
-          //     clientY: e.clientY,
-          //     hasMoved
-          //   });
-          // }
+        if (isResizingRef.current) return;
+        
+        // Debug logging (throttled) - commented out to reduce noise
+        // if (process.env.NODE_ENV === 'development' && Math.random() < 0.1) {
+        //   console.log('Mouse move during drag:', {
+        //     eventId: id,
+        //     clientX: e.clientX,
+        //     clientY: e.clientY,
+        //     hasMoved
+        //   });
+        // }
 
-          // Calculate delta movement
-          const dx = e.clientX - startX;
-          const dy = e.clientY - startY;
+        // Calculate delta movement
+        const dx = e.clientX - startX;
+        const dy = e.clientY - startY;
 
-          // Only start dragging if moved beyond threshold
-          if (!hasMoved) {
-            if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
+        // Only start dragging if moved beyond threshold
+        if (!hasMoved) {
+          if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
 
-            // Start drag mode
-            isDraggingRef.current = true;
-            wasDraggedRef.current = true;
-            hasMoved = true;
+          // Start drag mode
+          isDraggingRef.current = true;
+          wasDraggedRef.current = true;
+          hasMoved = true;
 
-            // Debug logging (reduced)
-            if (process.env.NODE_ENV === 'development') {
-              console.log('Drag initiated for event:', id);
-            }
-
-            // Update visual state
-            updateVisualState({ isDragging: true });
-
-            // Other UI adjustments
-            stableHideModal();
-            document.body.classList.add('select-none');
+          // Debug logging (reduced)
+          if (process.env.NODE_ENV === 'development') {
+            console.log('Drag initiated for event:', id);
           }
 
-          // Handle auto-scroll FIRST for better UX - this should work regardless of zone
-          if (isDraggingRef.current) {
-            handleAutoScroll(e.clientX, e.clientY);
-          }
+          // Update visual state
+          updateVisualState({ isDragging: true });
 
-          // Optimized cross-zone detection with caching
-          const now = Date.now();
-          let isInAllDayZone: boolean;
-          let targetDate: Date | null = null;
+          // Other UI adjustments
+          stableHideModal();
+          document.body.classList.add('select-none');
+        }
 
-          // Cache cross-zone check (within 5px and 10ms for performance)
-          if (Math.abs(e.clientY - calculationCache.current.lastCrossZoneCheck.clientY) < 5 && 
-              now - calculationCache.current.lastCrossZoneCheck.timestamp < 10) {
-            isInAllDayZone = calculationCache.current.lastCrossZoneCheck.result;
+        // Handle auto-scroll FIRST for better UX - this should work regardless of zone
+        if (isDraggingRef.current) {
+          handleAutoScroll(e.clientX, e.clientY);
+        }
+
+        // Optimized cross-zone detection with caching
+        const now = Date.now();
+        let isInAllDayZone: boolean;
+        let targetDate: Date | null = null;
+
+        // Cache cross-zone check (within 5px and 10ms for performance)
+        if (Math.abs(e.clientY - calculationCache.current.lastCrossZoneCheck.clientY) < 5 && 
+            now - calculationCache.current.lastCrossZoneCheck.timestamp < 10) {
+          isInAllDayZone = calculationCache.current.lastCrossZoneCheck.result;
+        } else {
+          isInAllDayZone = detectAllDayDropZoneOptimized(e.clientY);
+          calculationCache.current.lastCrossZoneCheck = {
+            clientY: e.clientY,
+            result: isInAllDayZone,
+            timestamp: now
+          };
+        }
+        
+        // Calculate target date only if in all-day zone and cache it
+        if (isInAllDayZone) {
+          if (Math.abs(e.clientX - calculationCache.current.lastTargetDateCheck.clientX) < 5 && 
+              now - calculationCache.current.lastTargetDateCheck.timestamp < 50) {
+            targetDate = calculationCache.current.lastTargetDateCheck.result;
           } else {
-            isInAllDayZone = detectAllDayDropZoneOptimized(e.clientY);
-            calculationCache.current.lastCrossZoneCheck = {
-              clientY: e.clientY,
-              result: isInAllDayZone,
-              timestamp: now
-            };
-          }
-          
-          // Calculate target date only if in all-day zone and cache it
-          if (isInAllDayZone) {
-            if (Math.abs(e.clientX - calculationCache.current.lastTargetDateCheck.clientX) < 5 && 
-                now - calculationCache.current.lastTargetDateCheck.timestamp < 50) {
-              targetDate = calculationCache.current.lastTargetDateCheck.result;
-                      } else {
             targetDate = calculateAllDayTargetOptimized(e.clientX, datesRef.current);
             calculationCache.current.lastTargetDateCheck = {
               clientX: e.clientX,
               result: targetDate,
               timestamp: now
             };
-              
-              // Debug logging for target date calculation
-              if (process.env.NODE_ENV === 'development') {
-                console.log('Timed event drag - target date calculated:', {
-                  clientX: e.clientX,
-                  targetDate,
-                  isInAllDayZone
-                });
-              }
-            }
-          }
-
-          // Update cross-zone state more responsively
-          const crossZoneStateChanged = 
-            crossZoneDrag.isInAllDayZone !== isInAllDayZone || 
-            crossZoneDrag.targetDate !== targetDate;
-
-          if (crossZoneStateChanged) {
-            setCrossZoneDrag({ isInAllDayZone, targetDate });
             
-            // Debug logging for local cross-zone state change (throttled)
-            if (process.env.NODE_ENV === 'development' && Math.random() < 0.01) {
-              console.log('Local cross-zone state updated:', {
-                isInAllDayZone,
+            // Debug logging for target date calculation
+            if (process.env.NODE_ENV === 'development') {
+              console.log('Timed event drag - target date calculated:', {
+                clientX: e.clientX,
                 targetDate,
-                changed: crossZoneStateChanged
+                isInAllDayZone
               });
             }
           }
+        }
 
-          if (isInAllDayZone) {
-            // Update global cross-zone drag state for visual feedback (more responsive throttling)
-            if (now - lastStateUpdateRef.current > 30 || !crossZoneDrag.isInAllDayZone) { // 30ms throttle, or immediately if entering zone
-              stableSetCrossZoneDragState({
+        // Update cross-zone state more responsively
+        const crossZoneStateChanged = 
+          crossZoneDrag.isInAllDayZone !== isInAllDayZone || 
+          crossZoneDrag.targetDate !== targetDate;
+
+        if (crossZoneStateChanged) {
+          setCrossZoneDrag({ isInAllDayZone, targetDate });
+          
+          // Debug logging for local cross-zone state change (throttled)
+          if (process.env.NODE_ENV === 'development' && Math.random() < 0.01) {
+            console.log('Local cross-zone state updated:', {
+              isInAllDayZone,
+              targetDate,
+              changed: crossZoneStateChanged
+            });
+          }
+        }
+
+        if (isInAllDayZone) {
+          // Update global cross-zone drag state for visual feedback (more responsive throttling)
+          if (now - lastStateUpdateRef.current > 30 || !crossZoneDrag.isInAllDayZone) { // 30ms throttle, or immediately if entering zone
+            stableSetCrossZoneDragState({
+              isActive: true,
+              draggedEvent: localEventRef.current,
+              targetDate,
+              sourceZone: 'timed',
+              targetZone: 'all-day',
+              mouseX: e.clientX,
+              mouseY: e.clientY,
+              targetTimeSlot: null, // Not needed for all-day conversion
+            });
+            lastStateUpdateRef.current = now;
+            
+            // Debug logging for cross-zone state update (throttled)
+            if (process.env.NODE_ENV === 'development' && Math.random() < 0.02) {
+              console.log('Cross-zone drag state updated - IN all-day zone:', {
                 isActive: true,
-                draggedEvent: localEventRef.current,
                 targetDate,
                 sourceZone: 'timed',
                 targetZone: 'all-day',
-                mouseX: e.clientX,
-                mouseY: e.clientY,
-                targetTimeSlot: null, // Not needed for all-day conversion
+                mousePosition: { x: e.clientX, y: e.clientY }
               });
-              lastStateUpdateRef.current = now;
-              
-              // Debug logging for cross-zone state update (throttled)
-              if (process.env.NODE_ENV === 'development' && Math.random() < 0.02) {
-                console.log('Cross-zone drag state updated - IN all-day zone:', {
-                  isActive: true,
-                  targetDate,
-                  sourceZone: 'timed',
-                  targetZone: 'all-day',
-                  mousePosition: { x: e.clientX, y: e.clientY }
-                });
-              }
             }
+          }
+          
+          // Hide the original event completely during cross-zone drag (preview shows in all-day bar)
+          eventCardEl.style.opacity = '0';
+          eventCardEl.style.visibility = 'hidden'; // Completely hide from rendering
+          eventCardEl.style.cursor = 'grabbing';
+          
+          // Still maintain the static reference during all-day preview
+          let staticReference = document.getElementById(`static-ref-${id}`);
+          if (!staticReference) {
+            staticReference = eventCardEl.cloneNode(true) as HTMLElement;
+            staticReference.id = `static-ref-${id}`;
+            staticReference.style.position = 'absolute';
+            staticReference.style.top = `${initialCardPosition.top}px`;
+            staticReference.style.left = `${initialCardPosition.left}px`;
+            staticReference.style.width = `${eventCardEl.offsetWidth}px`;
+            staticReference.style.height = `${eventCardEl.offsetHeight}px`;
+            staticReference.style.opacity = '0.4';
+            staticReference.style.pointerEvents = 'none';
+            staticReference.style.cursor = 'default';
+            staticReference.style.border = '2px dashed rgba(59, 130, 246, 0.5)';
+            staticReference.style.zIndex = '1';
+            staticReference.style.transform = 'none';
             
-            // Hide the original event completely during cross-zone drag (preview shows in all-day bar)
-            eventCardEl.style.opacity = '0';
-            eventCardEl.style.visibility = 'hidden'; // Completely hide from rendering
-            eventCardEl.style.cursor = 'grabbing';
-            
-            // Still maintain the static reference during all-day preview
-            let staticReference = document.getElementById(`static-ref-${id}`);
-            if (!staticReference) {
-              staticReference = eventCardEl.cloneNode(true) as HTMLElement;
-              staticReference.id = `static-ref-${id}`;
-              staticReference.style.position = 'absolute';
-              staticReference.style.top = `${initialCardPosition.top}px`;
-              staticReference.style.left = `${initialCardPosition.left}px`;
-              staticReference.style.width = `${eventCardEl.offsetWidth}px`;
-              staticReference.style.height = `${eventCardEl.offsetHeight}px`;
-              staticReference.style.opacity = '0.4';
-              staticReference.style.pointerEvents = 'none';
-              staticReference.style.cursor = 'default';
-              staticReference.style.border = '2px dashed rgba(59, 130, 246, 0.5)';
-              staticReference.style.zIndex = '1';
-              staticReference.style.transform = 'none';
-              
-              // Insert the static reference before the original in the DOM
-              eventCardEl.parentElement?.insertBefore(staticReference, eventCardEl);
-            }
-            
-            return; // Don't do normal positioning when in all-day zone
-          } else {
-            // CRITICAL: Always clear global state when not in all-day zone
-            stableSetCrossZoneDragState({
-              isActive: false,
-              draggedEvent: null,
-              targetDate: null,
-              sourceZone: null,
-              targetZone: null,
-              mouseX: 0,
-              mouseY: 0,
-              targetTimeSlot: null,
-            });
-            
-            // CRITICAL: Also clear the local cross-zone state immediately
-            setCrossZoneDrag({
-              isInAllDayZone: false,
-              targetDate: null,
-            });
-            
-                    // Debug logging for cross-zone state clearing (throttled)
+            // Insert the static reference before the original in the DOM
+            eventCardEl.parentElement?.insertBefore(staticReference, eventCardEl);
+          }
+          
+          return; // Don't do normal positioning when in all-day zone
+        } else {
+          // CRITICAL: Always clear global state when not in all-day zone
+          stableSetCrossZoneDragState({
+            isActive: false,
+            draggedEvent: null,
+            targetDate: null,
+            sourceZone: null,
+            targetZone: null,
+            mouseX: 0,
+            mouseY: 0,
+            targetTimeSlot: null,
+          });
+          
+          // CRITICAL: Also clear the local cross-zone state immediately
+          setCrossZoneDrag({
+            isInAllDayZone: false,
+            targetDate: null,
+          });
+          
+                // Debug logging for cross-zone state clearing (throttled)
       if (process.env.NODE_ENV === 'development' && Math.random() < 0.05) {
         console.log('Cross-zone drag state cleared - NOT in all-day zone:', {
           clientY: e.clientY,
-          wasInAllDayZone: crossZoneDrag.isInAllDayZone,
+          wasInAllDayZone: crossZoneDragRef.current.isInAllDayZone,
           clearingBothStates: true
         });
       }
-            
-            // Reset for normal dragging when moving out of all-day zone
-            eventCardEl.style.opacity = '0.7'; // Keep it slightly transparent during normal drag
-            eventCardEl.style.visibility = 'visible'; // Restore visibility
-            eventCardEl.style.cursor = 'grabbing';
-            eventCardEl.style.pointerEvents = 'none';
-            eventCardEl.style.transform = ''; // Reset any scaling applied during cross-zone drag
-            
-            // IMPORTANT: Continue with normal timed event positioning logic below
-            // Don't return here so the normal drag positioning can work
-          }
-
-          // Normal timed event dragging logic
-          // Snap to grid - ensure we move in whole units
-          const snapToGrid = (value: number, gridSize: number) => {
-            return Math.round(value / gridSize) * gridSize;
-          };
-
-          // Calculate new position with snapping
-          const newTop = snapToGrid(initialCardPosition.top + dy, GRID_SNAP);
-          const newLeft = snapToGrid(initialCardPosition.left + dx, columnWidth);
           
-          // Calculate target date index early for use in snap indicator
-          const newDateIdx = Math.floor(newLeft / columnWidth);
+          // Reset for normal dragging when moving out of all-day zone
+          eventCardEl.style.opacity = '0.7'; // Keep it slightly transparent during normal drag
+          eventCardEl.style.visibility = 'visible'; // Restore visibility
+          eventCardEl.style.cursor = 'grabbing';
+          eventCardEl.style.pointerEvents = 'none';
+          eventCardEl.style.transform = ''; // Reset any scaling applied during cross-zone drag
+          
+          // IMPORTANT: Continue with normal timed event positioning logic below
+          // Don't return here so the normal drag positioning can work
+        }
 
-          // Constrain vertical position to stay within the day (0-24h)
-          const constrainedTop = Math.max(
-            0,
-            Math.min(newTop, MAX_HOURS * HOUR_HEIGHT - MIN_EVENT_HEIGHT)
-          );
+        // Normal timed event dragging logic
+        // Snap to grid - ensure we move in whole units
+        const snapToGrid = (value: number, gridSize: number) => {
+          return Math.round(value / gridSize) * gridSize;
+        };
 
-          // Keep track of the current position to avoid redundant updates
-          const positionChanged =
-            constrainedTop !== currentPositionRef.current.top ||
-            newLeft !== currentPositionRef.current.left;
+        // Calculate new position with snapping
+        const newTop = snapToGrid(initialCardPosition.top + dy, GRID_SNAP);
+        const newLeft = snapToGrid(initialCardPosition.left + dx, columnWidth);
+        
+        // Calculate target date index early for use in snap indicator
+        const newDateIdx = Math.floor(newLeft / columnWidth);
 
-          if (positionChanged) {
-            // Create static reference shadow at original position (only once)
-            let staticReference = document.getElementById(`static-ref-${id}`);
-            if (!staticReference) {
-              staticReference = eventCardEl.cloneNode(true) as HTMLElement;
-              staticReference.id = `static-ref-${id}`;
-              staticReference.style.position = 'absolute';
-              staticReference.style.top = `${initialCardPosition.top}px`;
-              staticReference.style.left = `${initialCardPosition.left}px`;
-              staticReference.style.width = `${eventCardEl.offsetWidth}px`;
-              staticReference.style.height = `${eventCardEl.offsetHeight}px`;
-              staticReference.style.opacity = '0.4';
-              staticReference.style.pointerEvents = 'none';
-              staticReference.style.cursor = 'default';
-              staticReference.style.border = '2px dashed rgba(59, 130, 246, 0.5)';
-              staticReference.style.zIndex = '1';
-              staticReference.style.transform = 'none';
-              
-              // Insert the static reference before the original in the DOM
-              eventCardEl.parentElement?.insertBefore(staticReference, eventCardEl);
-            }
+        // Constrain vertical position to stay within the day (0-24h)
+        const constrainedTop = Math.max(
+          0,
+          Math.min(newTop, MAX_HOURS * HOUR_HEIGHT - MIN_EVENT_HEIGHT)
+        );
+
+        // Keep track of the current position to avoid redundant updates
+        const positionChanged =
+          constrainedTop !== currentPositionRef.current.top ||
+          newLeft !== currentPositionRef.current.left;
+
+        if (positionChanged) {
+          // Create static reference shadow at original position (only once)
+          let staticReference = document.getElementById(`static-ref-${id}`);
+          if (!staticReference) {
+            staticReference = eventCardEl.cloneNode(true) as HTMLElement;
+            staticReference.id = `static-ref-${id}`;
+            staticReference.style.position = 'absolute';
+            staticReference.style.top = `${initialCardPosition.top}px`;
+            staticReference.style.left = `${initialCardPosition.left}px`;
+            staticReference.style.width = `${eventCardEl.offsetWidth}px`;
+            staticReference.style.height = `${eventCardEl.offsetHeight}px`;
+            staticReference.style.opacity = '0.4';
+            staticReference.style.pointerEvents = 'none';
+            staticReference.style.cursor = 'default';
+            staticReference.style.border = '2px dashed rgba(59, 130, 246, 0.5)';
+            staticReference.style.zIndex = '1';
+            staticReference.style.transform = 'none';
             
-            // Keep the original event visible but slightly transparent during drag
-            eventCardEl.style.opacity = '0.7';
-            eventCardEl.style.pointerEvents = 'none';
+            // Insert the static reference before the original in the DOM
+            eventCardEl.parentElement?.insertBefore(staticReference, eventCardEl);
+          }
+          
+          // Keep the original event visible but slightly transparent during drag
+          eventCardEl.style.opacity = '0.7';
+          eventCardEl.style.pointerEvents = 'none';
 
-            // Store the current position for data calculation
-            currentPositionRef.current = { top: constrainedTop, left: newLeft };
+          // Store the current position for data calculation
+          currentPositionRef.current = { top: constrainedTop, left: newLeft };
 
-            // Optimize: Only recalculate times if position actually changed significantly
-            const positionDelta = Math.abs(constrainedTop - calculationCache.current.lastPosition.top) + 
-                                 Math.abs(newLeft - calculationCache.current.lastPosition.left);
+          // Optimize: Only recalculate times if position actually changed significantly
+          const positionDelta = Math.abs(constrainedTop - calculationCache.current.lastPosition.top) + 
+                               Math.abs(newLeft - calculationCache.current.lastPosition.left);
 
-            if (positionDelta > 5) { // Only recalculate if moved more than 5px
-                          // Calculate new times based on position
+          if (positionDelta > 5) { // Only recalculate if moved more than 5px
+            // Calculate new times based on position
             const newStartHour = constrainedTop / HOUR_HEIGHT;
             const newStartHourFloor = Math.floor(newStartHour);
             const newStartMinute = Math.round((newStartHour - newStartHourFloor) * 60);
@@ -1414,252 +1415,252 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
               .add(endDateRef.current.valueOf() - startDateRef.current.valueOf(), 'millisecond')
               .toDate();
 
-              const newTimeData = {
-                start_at: roundedStartAt.toISOString(),
-                end_at: newEndAt.toISOString(),
-              };
+            const newTimeData = {
+              start_at: roundedStartAt.toISOString(),
+              end_at: newEndAt.toISOString(),
+            };
 
-              // Only update if times actually changed
-              if (newTimeData.start_at !== calculationCache.current.lastTimeData.start_at || 
-                  newTimeData.end_at !== calculationCache.current.lastTimeData.end_at) {
-                calculationCache.current.lastTimeData = newTimeData;
-                calculationCache.current.lastPosition = { top: constrainedTop, left: newLeft };
-                
-                // Schedule update with additional safeguard
-                if (!syncPendingRef.current || now - lastScheduleUpdateRef.current > SCHEDULE_UPDATE_THROTTLE_MS) {
-                  scheduleUpdate(newTimeData);
-                }
+            // Only update if times actually changed
+            if (newTimeData.start_at !== calculationCache.current.lastTimeData.start_at || 
+                newTimeData.end_at !== calculationCache.current.lastTimeData.end_at) {
+              calculationCache.current.lastTimeData = newTimeData;
+              calculationCache.current.lastPosition = { top: constrainedTop, left: newLeft };
+              
+              // Schedule update with additional safeguard
+              if (!syncPendingRef.current || now - lastScheduleUpdateRef.current > SCHEDULE_UPDATE_THROTTLE_MS) {
+                scheduleUpdate(newTimeData);
               }
             }
           }
-        };
+        }
+      };
 
-        const handleMouseUp = async (e: MouseEvent) => {
-          
-          if (hasMoved) {
-                      // Get current zone status at the time of mouse up (most accurate)
+      const handleMouseUp = async (e: MouseEvent) => {
+        
+        if (hasMoved) {
+          // Get current zone status at the time of mouse up (most accurate)
           const currentlyInAllDayZone = detectAllDayDropZoneOptimized(e.clientY);
           const currentTargetDate = currentlyInAllDayZone ? calculateAllDayTargetOptimized(e.clientX, datesRef.current) : null;
-            
-            // Debug logging for mouse up decision
-            if (process.env.NODE_ENV === 'development') {
-              console.log('Mouse up - conversion decision:', {
-                currentlyInAllDayZone,
-                currentTargetDate,
-                refState: {
-                  isInAllDayZone: crossZoneDragRef.current.isInAllDayZone,
-                  targetDate: crossZoneDragRef.current.targetDate
-                },
-                mousePosition: { x: e.clientX, y: e.clientY }
-              });
-            }
-            
-            // Seamless cross-zone conversion - use current state, not ref state
-            if (currentlyInAllDayZone && currentTargetDate) {
-                            try {
-                  // Convert timed event to all-day event
-                  const convertedEvent = createAllDayEventFromTimed(
-                    localEventRef.current,
-                    currentTargetDate as Date
-                  );
+          
+          // Debug logging for mouse up decision
+          if (process.env.NODE_ENV === 'development') {
+            console.log('Mouse up - conversion decision:', {
+              currentlyInAllDayZone,
+              currentTargetDate,
+              refState: {
+                isInAllDayZone: crossZoneDragRef.current.isInAllDayZone,
+                targetDate: crossZoneDragRef.current.targetDate
+              },
+              mousePosition: { x: e.clientX, y: e.clientY }
+            });
+          }
+          
+          // Seamless cross-zone conversion - use current state, not ref state
+          if (currentlyInAllDayZone && currentTargetDate) {
+                          try {
+                // Convert timed event to all-day event
+                const convertedEvent = createAllDayEventFromTimed(
+                  localEventRef.current,
+                  currentTargetDate as Date
+                );
 
-                              // Update the event in the database
+              // Update the event in the database
               await stableUpdateEvent(eventRef.current._originalId || id, {
                 start_at: convertedEvent.start_at,
                 end_at: convertedEvent.end_at,
                 scheduling_note: convertedEvent.scheduling_note,
               });
 
-                // Clean up static reference after successful conversion
-                const staticReference = document.getElementById(`static-ref-${id}`);
-                if (staticReference) staticReference.remove();
+              // Clean up static reference after successful conversion
+              const staticReference = document.getElementById(`static-ref-${id}`);
+              if (staticReference) staticReference.remove();
 
-                // Show success feedback
-                setUpdateStatus('success');
-                showStatusFeedback('success');
-                            } catch (error) {
-                                console.error('Failed to convert to all-day event:', {
+              // Show success feedback
+              setUpdateStatus('success');
+              showStatusFeedback('success');
+                          } catch (error) {
+                              console.error('Failed to convert to all-day event:', {
                 error,
                 eventId: eventRef.current._originalId || id,
                 targetDate: currentTargetDate,
                 originalEvent: localEventRef.current
               });
-                setUpdateStatus('error');
-                showStatusFeedback('error');
-                
-                // Clean up static reference on error too
-                const staticReference = document.getElementById(`static-ref-${id}`);
-                if (staticReference) staticReference.remove();
-                
-                // Revert visual changes
-                eventCardEl.style.opacity = '1';
-                eventCardEl.style.visibility = 'visible';
-                eventCardEl.style.transform = ''; // Reset any cross-zone transforms
-                eventCardEl.style.pointerEvents = 'auto';
-                eventCardEl.style.cursor = '';
-                eventCardEl.style.border = '';
-                eventCardEl.style.zIndex = '10';
-              }
-            } else if (currentlyInAllDayZone && !currentTargetDate) {
-              // Revert visual changes and cleanup
+              setUpdateStatus('error');
+              showStatusFeedback('error');
+              
+              // Clean up static reference on error too
+              const staticReference = document.getElementById(`static-ref-${id}`);
+              if (staticReference) staticReference.remove();
+              
+              // Revert visual changes
               eventCardEl.style.opacity = '1';
-              eventCardEl.style.transform = '';
+              eventCardEl.style.visibility = 'visible';
+              eventCardEl.style.transform = ''; // Reset any cross-zone transforms
               eventCardEl.style.pointerEvents = 'auto';
               eventCardEl.style.cursor = '';
               eventCardEl.style.border = '';
               eventCardEl.style.zIndex = '10';
-              
-              // Clean up static reference
-              const staticReference = document.getElementById(`static-ref-${id}`);
-              if (staticReference) staticReference.remove();
-            } else {
-              // Normal timed event drag completion
-              // Reset drag state
-              isDraggingRef.current = false;
-              updateVisualState({ isDragging: false });
-              document.body.classList.remove('select-none');
-              document.body.style.cursor = '';
-
-              // Set flag to indicate this was a drag operation
-              wasDraggedRef.current = true;
-
-              // Clean up static reference
-              const staticReference = document.getElementById(`static-ref-${id}`);
-              if (staticReference) staticReference.remove();
-
-              // Restore original event and update position
-              if (eventCardEl) {
-                // Restore original event appearance
-                eventCardEl.style.opacity = '1';
-                eventCardEl.style.visibility = 'visible';
-                eventCardEl.style.pointerEvents = 'auto';
-                eventCardEl.style.cursor = '';
-                eventCardEl.style.border = '';
-                eventCardEl.style.zIndex = '10';
-                eventCardEl.style.transform = ''; // Reset any transforms from cross-zone dragging
-                
-                const currentTop = currentPositionRef.current.top;
-                const currentLeft = currentPositionRef.current.left;
-
-                // Set final position
-                eventCardEl.style.top = `${currentTop}px`;
-                eventCardEl.style.left = `${currentLeft}px`;
-
-                              // Ensure final update is sent
-              if (pendingUpdateRef.current) {
-                setUpdateStatus('syncing'); // Start syncing animation immediately
-                stableUpdateEvent(eventRef.current._originalId || id, pendingUpdateRef.current)
-                    .then(() => {
-                      showStatusFeedback('success');
-                    })
-                    .catch((error: unknown) => {
-                      console.error('Failed to update event:', error);
-                      showStatusFeedback('error');
-                    });
-                  pendingUpdateRef.current = null;
-                }
-              }
             }
+          } else if (currentlyInAllDayZone && !currentTargetDate) {
+            // Revert visual changes and cleanup
+            eventCardEl.style.opacity = '1';
+            eventCardEl.style.transform = '';
+            eventCardEl.style.pointerEvents = 'auto';
+            eventCardEl.style.cursor = '';
+            eventCardEl.style.border = '';
+            eventCardEl.style.zIndex = '10';
+            
+            // Clean up static reference
+            const staticReference = document.getElementById(`static-ref-${id}`);
+            if (staticReference) staticReference.remove();
           } else {
-            // Reset state if no actual drag occurred
+            // Normal timed event drag completion
+            // Reset drag state
             isDraggingRef.current = false;
             updateVisualState({ isDragging: false });
             document.body.classList.remove('select-none');
             document.body.style.cursor = '';
 
+            // Set flag to indicate this was a drag operation
+            wasDraggedRef.current = true;
+
             // Clean up static reference
             const staticReference = document.getElementById(`static-ref-${id}`);
             if (staticReference) staticReference.remove();
-            
-            // Restore original event to fully interactive state
+
+            // Restore original event and update position
             if (eventCardEl) {
+              // Restore original event appearance
               eventCardEl.style.opacity = '1';
               eventCardEl.style.visibility = 'visible';
               eventCardEl.style.pointerEvents = 'auto';
+              eventCardEl.style.cursor = '';
               eventCardEl.style.border = '';
-              eventCardEl.style.cursor = ''; 
               eventCardEl.style.zIndex = '10';
-              eventCardEl.style.transform = ''; // Reset any cross-zone transforms
-            }
+              eventCardEl.style.transform = ''; // Reset any transforms from cross-zone dragging
+              
+              const currentTop = currentPositionRef.current.top;
+              const currentLeft = currentPositionRef.current.left;
 
-            // Check if this was just a click (no significant movement)
-            const deltaX = Math.abs(e.clientX - initialPositionRef.current.x);
-            const deltaY = Math.abs(e.clientY - initialPositionRef.current.y);
+              // Set final position
+              eventCardEl.style.top = `${currentTop}px`;
+              eventCardEl.style.left = `${currentLeft}px`;
 
-            if (deltaX < 5 && deltaY < 5) {
-              stableOpenModal(eventRef.current._originalId || id);
+              // Ensure final update is sent
+              if (pendingUpdateRef.current) {
+                setUpdateStatus('syncing'); // Start syncing animation immediately
+                stableUpdateEvent(eventRef.current._originalId || id, pendingUpdateRef.current)
+                  .then(() => {
+                    showStatusFeedback('success');
+                  })
+                  .catch((error: unknown) => {
+                    console.error('Failed to update event:', error);
+                    showStatusFeedback('error');
+                  });
+                pendingUpdateRef.current = null;
+              }
             }
           }
-
-          // Final cleanup: Reset all drag-related states
+        } else {
+          // Reset state if no actual drag occurred
           isDraggingRef.current = false;
           updateVisualState({ isDragging: false });
           document.body.classList.remove('select-none');
           document.body.style.cursor = '';
 
-          // Stop auto-scroll and hide indicators
-          if (autoScrollTimerRef.current) {
-            clearTimeout(autoScrollTimerRef.current);
-            autoScrollTimerRef.current = null;
-          }
-          isAutoScrollingRef.current = false;
-          setScrollIndicator({ show: false, direction: null, position: { x: 0, y: 0 } });
-
-          // Reset cross-zone drag state
-          setCrossZoneDrag({
-            isInAllDayZone: false,
-            targetDate: null,
-          });
-          
-          // Clear global cross-zone drag state
-          stableSetCrossZoneDragState({
-            isActive: false,
-            draggedEvent: null,
-            targetDate: null,
-            sourceZone: null,
-            targetZone: null,
-            mouseX: 0,
-            mouseY: 0,
-            targetTimeSlot: null,
-          });
-
-          // Final static reference cleanup (safety net)
+          // Clean up static reference
           const staticReference = document.getElementById(`static-ref-${id}`);
           if (staticReference) staticReference.remove();
+          
+          // Restore original event to fully interactive state
+          if (eventCardEl) {
+            eventCardEl.style.opacity = '1';
+            eventCardEl.style.visibility = 'visible';
+            eventCardEl.style.pointerEvents = 'auto';
+            eventCardEl.style.border = '';
+            eventCardEl.style.cursor = ''; 
+            eventCardEl.style.zIndex = '10';
+            eventCardEl.style.transform = ''; // Reset any cross-zone transforms
+          }
 
-          // Performance cleanup: Clear caches after drag
-          calculationCache.current = {
-            lastPosition: { top: -1, left: -1 },
-            lastTimeData: { start_at: '', end_at: '' },
-            lastCrossZoneCheck: { clientY: -1, result: false, timestamp: 0 },
-            lastTargetDateCheck: { clientX: -1, result: null, timestamp: 0 },
-          };
-          cachedElements.current.lastCacheTime = 0; // Force DOM cache refresh on next drag
+          // Check if this was just a click (no significant movement)
+          const deltaX = Math.abs(e.clientX - initialPositionRef.current.x);
+          const deltaY = Math.abs(e.clientY - initialPositionRef.current.y);
 
-          window.removeEventListener('mousemove', handleMouseMove);
-          window.removeEventListener('mouseup', handleMouseUp);
+                      if (deltaX < 5 && deltaY < 5) {
+              stableOpenModal(eventRef.current._originalId || id);
+            }
+        }
+
+        // Final cleanup: Reset all drag-related states
+        isDraggingRef.current = false;
+        updateVisualState({ isDragging: false });
+        document.body.classList.remove('select-none');
+        document.body.style.cursor = '';
+
+        // Stop auto-scroll and hide indicators
+        if (autoScrollTimerRef.current) {
+          clearTimeout(autoScrollTimerRef.current);
+          autoScrollTimerRef.current = null;
+        }
+        isAutoScrollingRef.current = false;
+        setScrollIndicator({ show: false, direction: null, position: { x: 0, y: 0 } });
+
+        // Reset cross-zone drag state
+        setCrossZoneDrag({
+          isInAllDayZone: false,
+          targetDate: null,
+        });
+        
+        // Clear global cross-zone drag state
+        stableSetCrossZoneDragState({
+          isActive: false,
+          draggedEvent: null,
+          targetDate: null,
+          sourceZone: null,
+          targetZone: null,
+          mouseX: 0,
+          mouseY: 0,
+          targetTimeSlot: null,
+        });
+
+        // Final static reference cleanup (safety net)
+        const staticReference = document.getElementById(`static-ref-${id}`);
+        if (staticReference) staticReference.remove();
+
+        // Performance cleanup: Clear caches after drag
+        calculationCache.current = {
+          lastPosition: { top: -1, left: -1 },
+          lastTimeData: { start_at: '', end_at: '' },
+          lastCrossZoneCheck: { clientY: -1, result: false, timestamp: 0 },
+          lastTargetDateCheck: { clientX: -1, result: null, timestamp: 0 },
         };
+        cachedElements.current.lastCacheTime = 0; // Force DOM cache refresh on next drag
 
-        window.addEventListener('mousemove', handleMouseMove, { passive: false });
-        window.addEventListener('mouseup', handleMouseUp);
+        window.removeEventListener('mousemove', handleMouseMove);
+        window.removeEventListener('mouseup', handleMouseUp);
       };
 
-      // Debug logging for event listener setup (reduced to only show issues)
-      if (process.env.NODE_ENV === 'development' && (!contentEl || !eventCardEl || !calendarContainer)) {
-        console.warn('Missing elements for drag setup:', {
-          eventId: id,
-          contentEl: !!contentEl,
-          eventCardEl: !!eventCardEl,
-          calendarContainer: !!calendarContainer,
-          _isMultiDay,
-          locked
-        });
-      }
-      
-      contentEl.addEventListener('mousedown', handleMouseDown);
-      return () => {
-        // Removed debug logging to reduce console noise
-              contentEl.removeEventListener('mousedown', handleMouseDown);
+      window.addEventListener('mousemove', handleMouseMove, { passive: false });
+      window.addEventListener('mouseup', handleMouseUp);
+    };
+
+    // Debug logging for event listener setup (reduced to only show issues)
+    if (process.env.NODE_ENV === 'development' && (!contentEl || !eventCardEl || !calendarContainer)) {
+      console.warn('Missing elements for drag setup:', {
+        eventId: id,
+        contentEl: !!contentEl,
+        eventCardEl: !!eventCardEl,
+        calendarContainer: !!calendarContainer,
+        _isMultiDay,
+        locked
+      });
+    }
+    
+    contentEl.addEventListener('mousedown', handleMouseDown);
+    return () => {
+      // Removed debug logging to reduce console noise
+      contentEl.removeEventListener('mousedown', handleMouseDown);
     };
   }, [id, _isMultiDay, locked, stableUpdateEvent, stableHideModal, stableOpenModal, stableSetCrossZoneDragState]);
 

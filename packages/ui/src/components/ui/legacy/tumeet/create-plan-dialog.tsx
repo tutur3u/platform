@@ -36,6 +36,7 @@ interface Props {
     startTime: number | undefined;
     endTime: number | undefined;
     timezone: Timezone | undefined;
+    wsId?: string;
   };
 }
 
@@ -46,13 +47,14 @@ const FormSchema = z.object({
   end_time: z.string().optional(),
   dates: z.array(z.string()).optional(),
   is_public: z.boolean().optional(),
+  ws_id: z.string().optional(),
 });
 
 const convertToTimetz = (
   time: number | undefined,
   utcOffset: number | undefined
 ) => {
-  if (!time || !utcOffset) return undefined;
+  if (!time || utcOffset === undefined) return undefined;
   return `${time}:00${utcOffset < 0 ? '-' : '+'}${Math.abs(utcOffset)}`;
 };
 
@@ -73,6 +75,7 @@ export default function CreatePlanDialog({ plan }: Props) {
         ?.sort((a, b) => a.getTime() - b.getTime())
         ?.map((date) => dayjs(date).format('YYYY-MM-DD')),
       is_public: true,
+      ws_id: plan.wsId,
     },
   });
 
@@ -148,6 +151,7 @@ export default function CreatePlanDialog({ plan }: Props) {
     >
       <DialogTrigger asChild>
         <button
+          type="button"
           className={cn(
             'group relative col-span-full mt-4 inline-flex w-full',
             missingFields || creating
@@ -159,7 +163,7 @@ export default function CreatePlanDialog({ plan }: Props) {
         >
           <div
             className={cn(
-              'animate-tilt absolute -inset-px rounded-lg bg-linear-to-r from-dynamic-light-red/80 via-dynamic-light-pink/80 to-dynamic-light-blue/80 opacity-70 blur-lg transition-all',
+              '-inset-px absolute animate-tilt rounded-lg bg-linear-to-r from-dynamic-light-red/80 via-dynamic-light-pink/80 to-dynamic-light-blue/80 opacity-70 blur-lg transition-all',
               missingFields ||
                 creating ||
                 'group-hover:-inset-1 group-hover:opacity-100 group-hover:duration-200'
