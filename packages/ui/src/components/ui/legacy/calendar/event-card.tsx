@@ -167,6 +167,31 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
   // Throttle expensive state updates
   const lastStateUpdateRef = useRef(0);
 
+  // Stabilize function references to prevent useEffect re-registration
+  const stableUpdateEvent = useCallback(updateEvent, []);
+  const stableHideModal = useCallback(hideModal, []);
+  const stableOpenModal = useCallback(openModal, []);
+  const stableDeleteEvent = useCallback(deleteEvent, []);
+  const stableSetCrossZoneDragState = useCallback(setCrossZoneDragState, []);
+
+  // Refs to access current values without including them in dependencies
+  const startDateRef = useRef(startDate);
+  const endDateRef = useRef(endDate);
+  const datesRef = useRef(dates);
+  const eventRef = useRef(event);
+  const startHoursRef = useRef(startHours);
+  const settingsRef = useRef(settings);
+  
+  // Update refs when values change
+  useEffect(() => {
+    startDateRef.current = startDate;
+    endDateRef.current = endDate;
+    datesRef.current = dates;
+    eventRef.current = event;
+    startHoursRef.current = startHours;
+    settingsRef.current = settings;
+  }, [startDate, endDate, dates, event, startHours, settings]);
+
   // Enhanced auto-scroll functionality based on proven techniques
   const autoScrollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isAutoScrollingRef = useRef(false);
@@ -494,7 +519,7 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
 
   const scheduleUpdate = (updateData: { start_at: string; end_at: string }) => {
     // For multi-day events, we need to update the original event
-    const eventId = event._originalId || id;
+    const eventId = eventRef.current._originalId || id;
 
     // Store the latest update data
     pendingUpdateRef.current = updateData;
@@ -523,7 +548,7 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
     if (!updateTimeoutRef.current) {
       updateTimeoutRef.current = setTimeout(() => {
         if (pendingUpdateRef.current) {
-          updateEvent(eventId, pendingUpdateRef.current)
+          stableUpdateEvent(eventId, pendingUpdateRef.current)
             .then(() => {
               showStatusFeedback('success');
             })
@@ -551,7 +576,7 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
     }
   };
 
-  // Clean up any pending updates
+  // Clean up any pending updates and drag state
   useEffect(() => {
     return () => {
       if (updateTimeoutRef.current) {
@@ -560,8 +585,94 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
       if (autoScrollTimerRef.current) {
         clearTimeout(autoScrollTimerRef.current);
       }
+      if (statusTimeoutRef.current) {
+        clearTimeout(statusTimeoutRef.current);
+      }
+      
+      // Clean up drag state if component unmounts during drag
+      if (isDraggingRef.current || isResizingRef.current) {
+        isDraggingRef.current = false;
+        isResizingRef.current = false;
+        
+        // Reset body styles
+        document.body.style.cursor = '';
+        document.body.classList.remove('select-none');
+        
+        // Clean up any static reference elements
+        const staticReference = document.getElementById(`static-ref-${id}`);
+        if (staticReference) {
+          staticReference.remove();
+        }
+        
+        // Reset global cross-zone state
+        stableSetCrossZoneDragState({
+          isActive: false,
+          draggedEvent: null,
+          targetDate: null,
+          sourceZone: null,
+          targetZone: null,
+          mouseX: 0,
+          mouseY: 0,
+          targetTimeSlot: null,
+        });
+      }
     };
-  }, []);
+  }, [id, stableSetCrossZoneDragState]);
+
+  // Handle window blur and visibility changes to prevent stuck drag states
+  useEffect(() => {
+    const handleWindowBlur = () => {
+      if (isDraggingRef.current || isResizingRef.current) {
+        isDraggingRef.current = false;
+        isResizingRef.current = false;
+        
+        // Reset body styles
+        document.body.style.cursor = '';
+        document.body.classList.remove('select-none');
+        
+        // Reset visual state
+        setVisualState({ isDragging: false, isResizing: false });
+        
+        // Clean up any static reference elements
+        const staticReference = document.getElementById(`static-ref-${id}`);
+        if (staticReference) {
+          staticReference.remove();
+        }
+        
+        // Reset cross-zone drag state
+        setCrossZoneDrag({
+          isInAllDayZone: false,
+          targetDate: null,
+        });
+        
+        // Reset global cross-zone state
+        stableSetCrossZoneDragState({
+          isActive: false,
+          draggedEvent: null,
+          targetDate: null,
+          sourceZone: null,
+          targetZone: null,
+          mouseX: 0,
+          mouseY: 0,
+          targetTimeSlot: null,
+        });
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        handleWindowBlur();
+      }
+    };
+
+    window.addEventListener('blur', handleWindowBlur);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener('blur', handleWindowBlur);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [id, stableSetCrossZoneDragState]);
 
   // Keep local state in sync with prop changes - fixed to prevent infinite loops
   useEffect(() => {
@@ -757,7 +868,7 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
       setUpdateStatus('idle'); // Reset any previous status
 
       // Prevent interaction with other events
-      hideModal();
+      stableHideModal();
 
       // Change cursor for better UX
       document.body.style.cursor = 'ns-resize';
@@ -799,9 +910,9 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
         if (_isMultiDay) {
           if (_dayPosition === 'start') {
             // For start segment, we're adjusting the end time of the first day
-            newEndAt = startDate.clone();
+            newEndAt = startDateRef.current.clone();
             // Calculate hours directly from pixels for better precision
-            const newEndHours = constrainedHeight / HOUR_HEIGHT + startHours;
+            const newEndHours = constrainedHeight / HOUR_HEIGHT + startHoursRef.current;
             const newEndHour = Math.min(23, Math.floor(newEndHours));
             const newEndMinute = Math.round(
               (newEndHours - Math.floor(newEndHours)) * 60
@@ -815,7 +926,7 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
             newEndAt = dayjs(roundToNearest15Minutes(newEndAt.toDate()));
           } else if (_dayPosition === 'end') {
             // For end segment, we're adjusting the end time of the last day
-            newEndAt = endDate.clone();
+            newEndAt = endDateRef.current.clone();
             const newDuration = constrainedHeight / HOUR_HEIGHT;
             const newEndHour = Math.min(23, Math.floor(newDuration));
             const newEndMinute = Math.round(
@@ -835,25 +946,25 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
           // Regular event
           const newDuration = constrainedHeight / HOUR_HEIGHT; // Convert pixels to hours
           // Calculate end time directly from start time + duration
-          newEndAt = startDate.clone().add(newDuration, 'hour');
+          newEndAt = startDateRef.current.clone().add(newDuration, 'hour');
           // Snap to 15-minute intervals
           newEndAt = dayjs(roundToNearest15Minutes(newEndAt.toDate()));
           // Ensure end time doesn't wrap to the next day
-          if (newEndAt.isBefore(startDate)) {
+          if (newEndAt.isBefore(startDateRef.current)) {
             newEndAt = newEndAt.add(1, 'day');
           }
         }
 
         // After calculating the rounded end time, adjust the visual height to match
         const durationInHours =
-          (dayjs(newEndAt).valueOf() - startDate.valueOf()) / (1000 * 60 * 60);
+          (dayjs(newEndAt).valueOf() - startDateRef.current.valueOf()) / (1000 * 60 * 60);
         const adjustedHeight = durationInHours * HOUR_HEIGHT;
         eventCardEl.style.height = `${Math.max(MIN_EVENT_HEIGHT, adjustedHeight)}px`;
 
         // Schedule the update with safeguard
         if (!syncPendingRef.current) {
           scheduleUpdate({
-            start_at: startDate.toISOString(),
+            start_at: startDateRef.current.toISOString(),
             end_at: newEndAt.toISOString(),
           });
         }
@@ -879,7 +990,7 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
         // Send a final update if needed
         if (pendingUpdateRef.current) {
           setUpdateStatus('syncing'); // Start syncing animation immediately
-          updateEvent(event._originalId || id, pendingUpdateRef.current)
+          stableUpdateEvent(eventRef.current._originalId || id, pendingUpdateRef.current)
             .then(() => {
               showStatusFeedback('success');
             })
@@ -903,14 +1014,11 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
     return () => handleEl.removeEventListener('mousedown', handleMouseDown);
   }, [
     id,
-    startDate,
-    updateEvent,
-    hideModal,
     _isMultiDay,
     _dayPosition,
-    event,
-    startHours,
     locked,
+    stableUpdateEvent,
+    stableHideModal,
   ]);
 
   // Enhanced drag state for seamless cross-zone support
@@ -997,7 +1105,7 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
       };
 
       // Update cached dimensions
-      columnWidth = calendarContainer.offsetWidth / dates.length;
+      columnWidth = calendarContainer.offsetWidth / datesRef.current.length;
 
       // Reset tracking state
       hasMoved = false;
@@ -1017,7 +1125,7 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
       setUpdateStatus('idle'); // Reset any previous status
 
       // Prevent interaction with other events
-      hideModal();
+      stableHideModal();
 
       // Apply drag styling
       document.body.style.cursor = 'grabbing';
@@ -1060,7 +1168,7 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
           updateVisualState({ isDragging: true });
 
           // Other UI adjustments
-          hideModal();
+          stableHideModal();
           document.body.classList.add('select-none');
         }
 
@@ -1093,7 +1201,7 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
               now - calculationCache.current.lastTargetDateCheck.timestamp < 50) {
             targetDate = calculationCache.current.lastTargetDateCheck.result;
           } else {
-            targetDate = calculateAllDayTargetOptimized(e.clientX, dates);
+            targetDate = calculateAllDayTargetOptimized(e.clientX, datesRef.current);
             calculationCache.current.lastTargetDateCheck = {
               clientX: e.clientX,
               result: targetDate,
@@ -1132,9 +1240,9 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
         if (isInAllDayZone) {
           // Update global cross-zone drag state for visual feedback (more responsive throttling)
           if (now - lastStateUpdateRef.current > 30 || !crossZoneDrag.isInAllDayZone) { // 30ms throttle, or immediately if entering zone
-            setCrossZoneDragState({
+            stableSetCrossZoneDragState({
               isActive: true,
-              draggedEvent: localEvent,
+              draggedEvent: localEventRef.current,
               targetDate,
               sourceZone: 'timed',
               targetZone: 'all-day',
@@ -1185,7 +1293,7 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
           return; // Don't do normal positioning when in all-day zone
         } else {
           // CRITICAL: Always clear global state when not in all-day zone
-          setCrossZoneDragState({
+          stableSetCrossZoneDragState({
             isActive: false,
             draggedEvent: null,
             targetDate: null,
@@ -1206,7 +1314,7 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
       if (process.env.NODE_ENV === 'development' && Math.random() < 0.05) {
         console.log('Cross-zone drag state cleared - NOT in all-day zone:', {
           clientY: e.clientY,
-          wasInAllDayZone: crossZoneDrag.isInAllDayZone,
+          wasInAllDayZone: crossZoneDragRef.current.isInAllDayZone,
           clearingBothStates: true
         });
       }
@@ -1285,7 +1393,7 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
             const newStartHourFloor = Math.floor(newStartHour);
             const newStartMinute = Math.round((newStartHour - newStartHourFloor) * 60);
 
-            const newStartAt = startDate.toDate();
+            const newStartAt = startDateRef.current.toDate();
             newStartAt.setHours(newStartHourFloor);
             newStartAt.setMinutes(newStartMinute);
 
@@ -1293,8 +1401,8 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
             const roundedStartAt = roundToNearest15Minutes(newStartAt);
 
             // Update date if moved to different day
-            if (newDateIdx >= 0 && newDateIdx < dates.length) {
-              const newDate = dates[newDateIdx];
+            if (newDateIdx >= 0 && newDateIdx < datesRef.current.length) {
+              const newDate = datesRef.current[newDateIdx];
               if (newDate) {
                 roundedStartAt.setFullYear(newDate.getFullYear());
                 roundedStartAt.setMonth(newDate.getMonth());
@@ -1304,7 +1412,7 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
 
             // Calculate new end time maintaining original duration
             const newEndAt = dayjs(roundedStartAt)
-              .add(endDate.valueOf() - startDate.valueOf(), 'millisecond')
+              .add(endDateRef.current.valueOf() - startDateRef.current.valueOf(), 'millisecond')
               .toDate();
 
             const newTimeData = {
@@ -1332,7 +1440,7 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
         if (hasMoved) {
           // Get current zone status at the time of mouse up (most accurate)
           const currentlyInAllDayZone = detectAllDayDropZoneOptimized(e.clientY);
-          const currentTargetDate = currentlyInAllDayZone ? calculateAllDayTargetOptimized(e.clientX, dates) : null;
+          const currentTargetDate = currentlyInAllDayZone ? calculateAllDayTargetOptimized(e.clientX, datesRef.current) : null;
           
           // Debug logging for mouse up decision
           if (process.env.NODE_ENV === 'development') {
@@ -1357,7 +1465,7 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
                 );
 
               // Update the event in the database
-              await updateEvent(event._originalId || id, {
+              await stableUpdateEvent(eventRef.current._originalId || id, {
                 start_at: convertedEvent.start_at,
                 end_at: convertedEvent.end_at,
                 scheduling_note: convertedEvent.scheduling_note,
@@ -1371,12 +1479,12 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
               setUpdateStatus('success');
               showStatusFeedback('success');
                           } catch (error) {
-                console.error('Failed to convert to all-day event:', {
-                  error,
-                  eventId: event._originalId || id,
-                  targetDate: currentTargetDate,
-                  originalEvent: localEventRef.current
-                });
+                              console.error('Failed to convert to all-day event:', {
+                error,
+                eventId: eventRef.current._originalId || id,
+                targetDate: currentTargetDate,
+                originalEvent: localEventRef.current
+              });
               setUpdateStatus('error');
               showStatusFeedback('error');
               
@@ -1441,7 +1549,7 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
               // Ensure final update is sent
               if (pendingUpdateRef.current) {
                 setUpdateStatus('syncing'); // Start syncing animation immediately
-                updateEvent(event._originalId || id, pendingUpdateRef.current)
+                stableUpdateEvent(eventRef.current._originalId || id, pendingUpdateRef.current)
                   .then(() => {
                     showStatusFeedback('success');
                   })
@@ -1479,9 +1587,9 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
           const deltaX = Math.abs(e.clientX - initialPositionRef.current.x);
           const deltaY = Math.abs(e.clientY - initialPositionRef.current.y);
 
-          if (deltaX < 5 && deltaY < 5) {
-            openModal(event._originalId || id);
-          }
+                      if (deltaX < 5 && deltaY < 5) {
+              stableOpenModal(eventRef.current._originalId || id);
+            }
         }
 
         // Final cleanup: Reset all drag-related states
@@ -1505,7 +1613,7 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
         });
         
         // Clear global cross-zone drag state
-        setCrossZoneDragState({
+        stableSetCrossZoneDragState({
           isActive: false,
           draggedEvent: null,
           targetDate: null,
@@ -1554,7 +1662,7 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
       // Removed debug logging to reduce console noise
       contentEl.removeEventListener('mousedown', handleMouseDown);
     };
-  }, [id, startDate, endDate, dates, updateEvent, hideModal, openModal, _isMultiDay, event, locked]);
+  }, [id, _isMultiDay, locked, stableUpdateEvent, stableHideModal, stableOpenModal, stableSetCrossZoneDragState]);
 
   // Color styles based on event color
 
@@ -1593,8 +1701,8 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
 
   // Handle color change
   const handleColorChange = (newColor: SupportedColor) => {
-    const eventId = event._originalId || id;
-    updateEvent(eventId, { color: newColor })
+    const eventId = eventRef.current._originalId || id;
+    stableUpdateEvent(eventId, { color: newColor })
       .then(() => {
         showStatusFeedback('success');
       })
@@ -1606,22 +1714,22 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
 
   // Handle delete
   const handleDelete = () => {
-    const eventId = event._originalId || id;
-    deleteEvent(eventId).catch((error) => {
+    const eventId = eventRef.current._originalId || id;
+    stableDeleteEvent(eventId).catch((error) => {
       console.error('Failed to delete event:', error);
     });
   };
 
   // Handle lock/unlock
   const handleLockToggle = () => {
-    const eventId = event._originalId || id;
+    const eventId = eventRef.current._originalId || id;
     const newLockedState = !locked;
 
     console.log(
       `Toggling lock status for event ${eventId} from ${locked} to ${newLockedState}`
     );
 
-    updateEvent(eventId, { locked: newLockedState })
+    stableUpdateEvent(eventId, { locked: newLockedState })
       .then(() => {
         console.log(`Successfully updated lock status to ${newLockedState}`);
         // Update local state immediately for better UX
@@ -1703,12 +1811,12 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
           onMouseLeave={() => setIsHovering(false)}
           tabIndex={0}
           onClick={(e) => {
-            // Only open modal if we haven't just finished dragging or resizing and not syncing
-            if (!wasDraggedRef.current && !wasResizedRef.current && !isSyncing) {
-              e.stopPropagation();
-              // Open the modal with the event, it will be read-only if locked
-              openModal(event._originalId || id);
-            }
+                          // Only open modal if we haven't just finished dragging or resizing and not syncing
+              if (!wasDraggedRef.current && !wasResizedRef.current && !isSyncing) {
+                e.stopPropagation();
+                // Open the modal with the event, it will be read-only if locked
+                stableOpenModal(eventRef.current._originalId || id);
+              }
 
             // Reset state flags
             wasDraggedRef.current = false;
@@ -1743,7 +1851,7 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
             onClick={(e) => {
               e.stopPropagation();
               e.preventDefault();
-              openModal(event._originalId || id);
+              stableOpenModal(eventRef.current._originalId || id);
             }}
           >
             <Pencil className="h-3 w-3" />
@@ -1858,13 +1966,13 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
         </div>
       </ContextMenuTrigger>
       <ContextMenuContent className="w-48">
-        <ContextMenuItem
-          onClick={() => openModal(event._originalId || id)}
-          className={cn('flex items-center gap-2', {
-            'cursor-not-allowed opacity-50': locked || isSyncing,
-          })}
-          disabled={locked || isSyncing}
-        >
+                  <ContextMenuItem
+            onClick={() => stableOpenModal(eventRef.current._originalId || id)}
+            className={cn('flex items-center gap-2', {
+              'cursor-not-allowed opacity-50': locked || isSyncing,
+            })}
+            disabled={locked || isSyncing}
+          >
           <Edit className="h-4 w-4" />
           <span>{locked ? 'View Event' : isSyncing ? 'Syncing...' : 'Edit Event'}</span>
         </ContextMenuItem>
