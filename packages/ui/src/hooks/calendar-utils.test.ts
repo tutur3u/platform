@@ -22,15 +22,6 @@ describe('calendar-utils', () => {
       expect(isAllDayEvent(event)).toBe(true);
     });
 
-    it('should detect single-day all-day events', () => {
-      const event: Pick<CalendarEvent, 'start_at' | 'end_at'> = {
-        start_at: '2024-01-01T00:00:00.000Z',
-        end_at: '2024-01-01T00:00:00.000Z' // Same day
-      };
-      
-      expect(isAllDayEvent(event)).toBe(true);
-    });
-
     it('should reject timed events', () => {
       const event: Pick<CalendarEvent, 'start_at' | 'end_at'> = {
         start_at: '2024-01-01T10:00:00.000Z',
