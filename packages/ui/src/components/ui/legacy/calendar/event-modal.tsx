@@ -73,7 +73,7 @@ import {
 import {
   restoreTimestamps,
   createAllDayEventFromTimed,
-} from './all-day-event-bar';
+} from './calendar-utils';
 import { useCalendar } from '../../../../hooks/use-calendar';
 import { Alert, AlertDescription, AlertTitle } from '../../alert';
 import { AutosizeTextarea } from '../../custom/autosize-textarea';
@@ -591,14 +591,7 @@ export function EventModal() {
       const startDate =
         tz === 'auto' ? dayjs(prev.start_at) : dayjs(prev.start_at).tz(tz);
       
-      console.log('Modal toggle - before conversion:', {
-        checked,
-        currentEvent: {
-          start_at: currentEvent.start_at,
-          end_at: currentEvent.end_at,
-          scheduling_note: currentEvent.scheduling_note
-        }
-      });
+
       
       if (checked) {
         // Converting timed event to all-day event
@@ -607,7 +600,7 @@ export function EventModal() {
           startDate.toDate()
         );
         
-        console.log('Modal toggle - converted to all-day:', convertedEvent);
+
         
         return {
           ...prev,
@@ -619,15 +612,11 @@ export function EventModal() {
         // Converting all-day event back to timed event
         const restoredEvent = restoreTimestamps(currentEvent);
         
-        console.log('Modal toggle - restoration attempt:', {
-          original: currentEvent,
-          restored: restoredEvent,
-          wasRestored: restoredEvent.start_at !== currentEvent.start_at || restoredEvent.end_at !== currentEvent.end_at
-        });
+
         
         // If we successfully restored timestamps, use them
         if (restoredEvent.start_at !== currentEvent.start_at || restoredEvent.end_at !== currentEvent.end_at) {
-          console.log('Modal toggle - using restored timestamps');
+
           return {
             ...prev,
             start_at: restoredEvent.start_at,
@@ -637,7 +626,7 @@ export function EventModal() {
         }
         
         // Fallback: create a new 1-hour event (this should rarely happen now)
-        console.log('Modal toggle - using fallback 1-hour event');
+
         const newStart =
           tz === 'auto'
             ? dayjs().startOf('hour')

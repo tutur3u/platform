@@ -80,7 +80,7 @@ export const WeekdayBar = ({
           mouseX={crossZoneDragState.mouseX}
           mouseY={crossZoneDragState.mouseY}
           targetZone={crossZoneDragState.targetZone || 'all-day'}
-          targetDate={crossZoneDragState.targetDate}
+          targetDate={crossZoneDragState.targetDate || new Date()}
           targetTimeSlot={crossZoneDragState.targetTimeSlot}
         />
       )}

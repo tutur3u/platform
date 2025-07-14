@@ -7,6 +7,17 @@ import dayjs from 'dayjs';
 import { Clock, ArrowRight, Calendar } from 'lucide-react';
 import { calculateEventDuration } from './calendar-utils';
 
+// Preview dimensions and positioning constants
+const PREVIEW_DIMENSIONS = {
+  WIDTH: 320,
+  HEIGHT: 180,
+  MIN_WIDTH: 280,
+  MAX_WIDTH: 350,
+  SPACING: 8,
+  VIEWPORT_PADDING: 10,
+  MAX_DURATION_MINUTES_FOR_FULL_BAR: 120,
+} as const;
+
 interface CrossZoneDragPreviewProps {
   draggedEvent: CalendarEvent;
   mouseX: number;
@@ -18,6 +29,107 @@ interface CrossZoneDragPreviewProps {
     minute: number;
   } | null;
 }
+
+interface DurationVisualizationProps {
+  conversionInfo: {
+    isAllDay: boolean;
+    durationMinutes?: number;
+    duration: string;
+    start: Date;
+    end: Date;
+  };
+  eventStyles: {
+    bg: string;
+  };
+  shortTimeFormat: string;
+}
+
+interface TargetSlotIndicatorProps {
+  conversionInfo: {
+    isAllDay: boolean;
+    start: Date;
+  };
+  targetTimeSlot?: {
+    hour: number;
+    minute: number;
+  } | null;
+  shortTimeFormat: string;
+}
+
+// Extracted DurationVisualization component
+const DurationVisualization = ({ conversionInfo, eventStyles, shortTimeFormat }: DurationVisualizationProps) => {
+  if (conversionInfo.isAllDay) {
+    return (
+      <div className="flex items-center gap-2 px-3 py-2 bg-black/5 dark:bg-white/5 rounded-md">
+        <Calendar className="w-4 h-4 opacity-70" />
+        <span className="text-sm font-medium">All day event</span>
+      </div>
+    );
+  }
+
+  const durationMinutes = conversionInfo.durationMinutes || 60;
+  const progressWidth = Math.min((durationMinutes / PREVIEW_DIMENSIONS.MAX_DURATION_MINUTES_FOR_FULL_BAR) * 100, 100);
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center gap-2 text-sm">
+        <Clock className="w-4 h-4 opacity-70" />
+        <span className="font-medium">Duration: {conversionInfo.duration}</span>
+      </div>
+      
+      {/* Visual duration bar */}
+      <div className="flex items-center gap-2 text-xs">
+        <span className="opacity-70">
+          {format(conversionInfo.start, shortTimeFormat)}
+        </span>
+        <div className="flex-1 relative">
+          <div className="h-2 bg-black/10 dark:bg-white/10 rounded-full overflow-hidden">
+            <div 
+              className={cn(
+                "h-full rounded-full transition-all duration-300",
+                eventStyles.bg.includes('/60') ? eventStyles.bg.replace('/60', '/80') : eventStyles.bg
+              )}
+              style={{ width: `${progressWidth}%` }}
+            />
+          </div>
+          <div className="absolute inset-0 flex items-center justify-center">
+            <ArrowRight className="w-3 h-3 opacity-50" />
+          </div>
+        </div>
+        <span className="opacity-70">
+          {format(conversionInfo.end, shortTimeFormat)}
+        </span>
+      </div>
+    </div>
+  );
+};
+
+// Extracted TargetSlotIndicator component
+const TargetSlotIndicator = ({ conversionInfo, targetTimeSlot, shortTimeFormat }: TargetSlotIndicatorProps) => {
+  if (conversionInfo.isAllDay) {
+    return (
+      <div className="flex items-center gap-2 px-3 py-2 bg-green-100/60 dark:bg-green-900/30 rounded-md border border-green-200/50 dark:border-green-800/50">
+        <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+        <span className="text-sm font-medium text-green-700 dark:text-green-300">
+          Target: All-day section
+        </span>
+      </div>
+    );
+  }
+
+  const targetTime = format(conversionInfo.start, shortTimeFormat);
+  const targetMinute = targetTimeSlot?.minute || 0;
+  const slotPosition = targetMinute === 0 ? 'top' : targetMinute === 15 ? '1st quarter' : targetMinute === 30 ? 'middle' : '3rd quarter';
+
+  return (
+    <div className="flex items-center gap-2 px-3 py-2 bg-blue-100/60 dark:bg-blue-900/30 rounded-md border border-blue-200/50 dark:border-blue-800/50">
+      <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
+      <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
+        Target: {targetTime} slot ({slotPosition})
+      </span>
+    </div>
+  );
+};
 
 export function CrossZoneDragPreview({
   draggedEvent,
@@ -85,16 +197,17 @@ export function CrossZoneDragPreview({
   const getConstrainedPosition = () => {
     const calendarView = document.getElementById('calendar-view');
     if (!calendarView) {
+      console.warn('Calendar view element not found, using fallback positioning');
       return {
-        left: `${mouseX + 20}px`,
-        top: `${mouseY - 120}px`,
+        left: `${mouseX + PREVIEW_DIMENSIONS.VIEWPORT_PADDING}px`,
+        top: `${mouseY - PREVIEW_DIMENSIONS.HEIGHT}px`,
         transform: 'rotate(-0.5deg)',
       };
     }
     
     const calendarRect = calendarView.getBoundingClientRect();
-    const previewWidth = 320; // Estimated width of preview
-    const previewHeight = 180; // Estimated height of preview
+    const previewWidth = PREVIEW_DIMENSIONS.WIDTH;
+    const previewHeight = PREVIEW_DIMENSIONS.HEIGHT;
     
     // Find the main calendar grid area (excluding headers)
     const dayHeaders = calendarView.querySelector('.grid.grid-cols-7');
@@ -107,14 +220,14 @@ export function CrossZoneDragPreview({
       gridTop = dayHeadersRect.bottom;
     }
     
-    const spacing = 8; // Reduced spacing for closer positioning
+    const spacing = PREVIEW_DIMENSIONS.SPACING;
     
     let left: number;
     let top: number;
     
     // Determine which side of cursor has more space
-    const spaceRightOfCursor = window.innerWidth - mouseX - 20;
-    const spaceLeftOfCursor = mouseX - 20;
+    const spaceRightOfCursor = window.innerWidth - mouseX - PREVIEW_DIMENSIONS.VIEWPORT_PADDING;
+    const spaceLeftOfCursor = mouseX - PREVIEW_DIMENSIONS.VIEWPORT_PADDING;
     
     // Position based on cursor location and available space around it
     if (spaceRightOfCursor >= previewWidth + spacing) {
@@ -133,8 +246,8 @@ export function CrossZoneDragPreview({
     }
     
     // Position vertically: near cursor but avoid blocking the drop area
-    const spaceAboveCursor = mouseY - gridTop - 20;
-    const spaceBelowCursor = calendarRect.bottom - mouseY - 20;
+    const spaceAboveCursor = mouseY - gridTop - PREVIEW_DIMENSIONS.VIEWPORT_PADDING;
+    const spaceBelowCursor = calendarRect.bottom - mouseY - PREVIEW_DIMENSIONS.VIEWPORT_PADDING;
     
     if (spaceAboveCursor >= previewHeight + spacing) {
       // Position above cursor
@@ -148,8 +261,8 @@ export function CrossZoneDragPreview({
     }
     
     // Ensure the preview stays within viewport bounds
-    left = Math.max(10, Math.min(left, window.innerWidth - previewWidth - 10));
-    top = Math.max(10, Math.min(top, window.innerHeight - previewHeight - 10));
+    left = Math.max(PREVIEW_DIMENSIONS.VIEWPORT_PADDING, Math.min(left, window.innerWidth - previewWidth - PREVIEW_DIMENSIONS.VIEWPORT_PADDING));
+    top = Math.max(PREVIEW_DIMENSIONS.VIEWPORT_PADDING, Math.min(top, window.innerHeight - previewHeight - PREVIEW_DIMENSIONS.VIEWPORT_PADDING));
     
     return {
       left: `${left}px`,
@@ -161,84 +274,11 @@ export function CrossZoneDragPreview({
 
   const previewStyle = {
     ...getConstrainedPosition(),
-    minWidth: '280px',
-    maxWidth: '350px',
+    minWidth: `${PREVIEW_DIMENSIONS.MIN_WIDTH}px`,
+    maxWidth: `${PREVIEW_DIMENSIONS.MAX_WIDTH}px`,
   };
 
-  // Duration visualization component
-  const DurationVisualization = () => {
-    if (conversionInfo.isAllDay) {
-      return (
-        <div className="flex items-center gap-2 px-3 py-2 bg-black/5 dark:bg-white/5 rounded-md">
-          <Calendar className="w-4 h-4 opacity-70" />
-          <span className="text-sm font-medium">All day event</span>
-        </div>
-      );
-    }
 
-    const durationMinutes = conversionInfo.durationMinutes || 60;
-    const progressWidth = Math.min((durationMinutes / 120) * 100, 100); // Max 2 hours for full bar
-
-    return (
-      <div className="space-y-2">
-        <div className="flex items-center gap-2 text-sm">
-          <Clock className="w-4 h-4 opacity-70" />
-          <span className="font-medium">Duration: {conversionInfo.duration}</span>
-        </div>
-        
-        {/* Visual duration bar */}
-        <div className="flex items-center gap-2 text-xs">
-          <span className="opacity-70">
-            {format(conversionInfo.start, shortTimeFormat)}
-          </span>
-          <div className="flex-1 relative">
-            <div className="h-2 bg-black/10 dark:bg-white/10 rounded-full overflow-hidden">
-              <div 
-                className={cn(
-                  "h-full rounded-full transition-all duration-300",
-                  eventStyles.bg.replace('/60', '/80')
-                )}
-                style={{ width: `${progressWidth}%` }}
-              />
-            </div>
-            <div className="absolute inset-0 flex items-center justify-center">
-              <ArrowRight className="w-3 h-3 opacity-50" />
-            </div>
-          </div>
-          <span className="opacity-70">
-            {format(conversionInfo.end, shortTimeFormat)}
-          </span>
-        </div>
-      </div>
-    );
-  };
-
-  // Target slot indicator
-  const TargetSlotIndicator = () => {
-    if (conversionInfo.isAllDay) {
-      return (
-        <div className="flex items-center gap-2 px-3 py-2 bg-green-100/60 dark:bg-green-900/30 rounded-md border border-green-200/50 dark:border-green-800/50">
-          <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-          <span className="text-sm font-medium text-green-700 dark:text-green-300">
-            Target: All-day section
-          </span>
-        </div>
-      );
-    }
-
-    const targetTime = format(conversionInfo.start, shortTimeFormat);
-    const targetMinute = targetTimeSlot?.minute || 0;
-    const slotPosition = targetMinute === 0 ? 'top' : targetMinute === 15 ? '1st quarter' : targetMinute === 30 ? 'middle' : '3rd quarter';
-
-    return (
-      <div className="flex items-center gap-2 px-3 py-2 bg-blue-100/60 dark:bg-blue-900/30 rounded-md border border-blue-200/50 dark:border-blue-800/50">
-        <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
-        <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
-          Target: {targetTime} slot ({slotPosition})
-        </span>
-      </div>
-    );
-  };
 
   return (
     <div
@@ -289,14 +329,22 @@ export function CrossZoneDragPreview({
         </div>
 
         {/* Target slot indicator */}
-        <TargetSlotIndicator />
+        <TargetSlotIndicator 
+          conversionInfo={conversionInfo}
+          targetTimeSlot={targetTimeSlot}
+          shortTimeFormat={shortTimeFormat}
+        />
 
         {/* Duration visualization */}
         <div className="space-y-1">
           <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
             Event Duration
           </p>
-          <DurationVisualization />
+          <DurationVisualization 
+            conversionInfo={conversionInfo}
+            eventStyles={eventStyles}
+            shortTimeFormat={shortTimeFormat}
+          />
         </div>
       </div>
 

@@ -412,8 +412,9 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
     // Don't allow dragging locked events
     if (eventSpan.event.locked) return;
     
-    // Don't allow dragging if there are no visible dates or only one date
-    if (visibleDates.length <= 1) return;
+    // Don't allow dragging if there are no visible dates
+    // Allow dragging with single date for cross-zone conversion (all-day to timed)
+    if (visibleDates.length === 0) return;
     
     e.preventDefault();
     e.stopPropagation();

@@ -105,10 +105,11 @@ const createAllDayEventFromTimed = (event: CalendarEvent, targetDate: Date): Cal
       }
     } catch (error) {
       console.error('Failed to restore all-day timestamps:', error);
+      // Continue with fallback behavior - preserve timestamps and create new all-day event
     }
   }
   
-  // First preserve the timed timestamps
+  // Fallback: preserve the timed timestamps and create new all-day event
   const preservedEvent = preserveTimestamps(event);
   
   return {
@@ -1050,7 +1051,12 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
                 console.log('Successfully converted event to all-day');
               }
             } catch (error) {
-              console.error('Failed to convert to all-day event:', error);
+              console.error('Failed to convert to all-day event:', {
+                error,
+                eventId: event._originalId || id,
+                targetDate: crossZoneDragRef.current.targetDate,
+                originalEvent: localEventRef.current
+              });
               setUpdateStatus('error');
               showStatusFeedback('error');
               
