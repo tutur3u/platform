@@ -5,6 +5,7 @@ import { getEventStyles } from '@tuturuuu/utils/color-helper';
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import dayjs from 'dayjs';
 import { Clock, ArrowRight, Calendar } from 'lucide-react';
+import { calculateEventDuration } from './calendar-utils';
 
 interface CrossZoneDragPreviewProps {
   draggedEvent: CalendarEvent;
@@ -52,40 +53,8 @@ export function CrossZoneDragPreview({
         ? dayjs(targetDate).hour(targetTimeSlot.hour).minute(targetTimeSlot.minute).second(0).millisecond(0)
         : dayjs(targetDate).tz(tz).hour(targetTimeSlot.hour).minute(targetTimeSlot.minute).second(0).millisecond(0);
       
-      // Check if event has preserved timestamps (was originally a timed event)
-      const schedulingNote = draggedEvent.scheduling_note || '';
-      const METADATA_MARKER = '__PRESERVED_METADATA__';
-      let durationMinutes = 60; // Default 1 hour
-      
-      if (schedulingNote.includes(METADATA_MARKER)) {
-        try {
-          const [, preservedJson] = schedulingNote.split(METADATA_MARKER);
-          const preservedData = JSON.parse(preservedJson || '{}');
-          
-          // Use preserved duration if available
-          if (preservedData.preserved_timed_start && preservedData.preserved_timed_end) {
-            const preservedStart = dayjs(preservedData.preserved_timed_start);
-            const preservedEnd = dayjs(preservedData.preserved_timed_end);
-            durationMinutes = preservedEnd.diff(preservedStart, 'minute');
-          }
-        } catch (e) {
-          // Fall back to default duration if parsing fails
-          durationMinutes = 60;
-        }
-      } else {
-        // No preserved data, calculate from original event if it was a timed event
-        const originalStart = dayjs(draggedEvent.start_at);
-        const originalEnd = dayjs(draggedEvent.end_at);
-        const originalDuration = originalEnd.diff(originalStart, 'minute');
-        
-        // Use original duration if reasonable, otherwise default to 1 hour
-        if (originalDuration > 0 && originalDuration < 1440) {
-          durationMinutes = originalDuration;
-        }
-      }
-      
-      // Ensure minimum duration of 15 minutes
-      durationMinutes = Math.max(durationMinutes, 15);
+      // Calculate duration using shared utility function
+      const durationMinutes = calculateEventDuration(draggedEvent);
       const endTime = startTime.add(durationMinutes, 'minute');
       
       return {

@@ -30,6 +30,7 @@ import {
   ContextMenuTrigger,
 } from '../../context-menu';
 import { GRID_SNAP, HOUR_HEIGHT, MAX_HOURS, MIN_EVENT_HEIGHT } from './config';
+import { TIME_TRAIL_WIDTH, METADATA_MARKER } from './calendar-utils';
 
 dayjs.extend(timezone);
 
@@ -54,7 +55,6 @@ interface EventCardProps {
 }
 
 // Enhanced metadata storage using scheduling_note field (consistent with all-day events)
-const METADATA_MARKER = '__PRESERVED_METADATA__';
 
 interface PreservedMetadata {
   original_scheduling_note?: string;
@@ -176,8 +176,8 @@ const calculateAllDayTarget = (clientX: number, dates: Date[]): Date | null => {
   }
   
   const calendarRect = calendarView.getBoundingClientRect();
-  const relativeX = clientX - calendarRect.left - 64; // Account for time trail
-  const columnWidth = (calendarRect.width - 64) / dates.length;
+  const relativeX = clientX - calendarRect.left - TIME_TRAIL_WIDTH; // Account for time trail
+  const columnWidth = (calendarRect.width - TIME_TRAIL_WIDTH) / dates.length;
   const dateIndex = Math.floor(relativeX / columnWidth);
   const clampedDateIndex = Math.max(0, Math.min(dateIndex, dates.length - 1));
   

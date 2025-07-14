@@ -6,6 +6,7 @@ import timezone from 'dayjs/plugin/timezone';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useCalendar } from '../../../../hooks/use-calendar';
 import { HOUR_HEIGHT } from './config';
+import { calculateEventDuration } from './calendar-utils';
 
 dayjs.extend(timezone);
 
@@ -731,32 +732,8 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
           ? dayjs().hour(hour).minute(crossZoneDragState.targetTimeSlot.minute)
           : dayjs().tz(tz).hour(hour).minute(crossZoneDragState.targetTimeSlot.minute);
         
-        // Calculate duration based on original event or preserved metadata
-        let durationMinutes = 60; // Default 1 hour
-        const schedulingNote = crossZoneDragState.draggedEvent.scheduling_note || '';
-        const METADATA_MARKER = '__PRESERVED_METADATA__';
-        
-        if (schedulingNote.includes(METADATA_MARKER)) {
-          try {
-            const [, preservedJson] = schedulingNote.split(METADATA_MARKER);
-            const preservedData = JSON.parse(preservedJson || '{}');
-            if (preservedData.preserved_timed_start && preservedData.preserved_timed_end) {
-              const preservedStart = dayjs(preservedData.preserved_timed_start);
-              const preservedEnd = dayjs(preservedData.preserved_timed_end);
-              durationMinutes = preservedEnd.diff(preservedStart, 'minute');
-            }
-          } catch (e) {
-            durationMinutes = 60;
-          }
-        } else {
-          // Check if it was originally a timed event
-          const originalStart = dayjs(crossZoneDragState.draggedEvent.start_at);
-          const originalEnd = dayjs(crossZoneDragState.draggedEvent.end_at);
-          const originalDuration = originalEnd.diff(originalStart, 'minute');
-          if (originalDuration > 0 && originalDuration < 1440) {
-            durationMinutes = originalDuration;
-          }
-        }
+        // Calculate duration using shared utility function
+        const durationMinutes = calculateEventDuration(crossZoneDragState.draggedEvent);
         
         const endTime = startTime.add(durationMinutes, 'minute');
         const durationText = durationMinutes < 60 

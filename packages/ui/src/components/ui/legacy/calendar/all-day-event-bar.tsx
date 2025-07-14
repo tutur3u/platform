@@ -12,6 +12,7 @@ import React, { useMemo, useState, useRef, useCallback } from 'react';
 import { useCalendar } from '../../../../hooks/use-calendar';
 import { MIN_COLUMN_WIDTH, HOUR_HEIGHT } from './config';
 import { useToast } from '@tuturuuu/ui/hooks/use-toast';
+import { findCalendarElements, METADATA_MARKER } from './calendar-utils';
 
 dayjs.extend(isBetween);
 dayjs.extend(isSameOrAfter);
@@ -68,7 +69,6 @@ interface DragState {
 }
 
 // Enhanced metadata storage using scheduling_note field (cleaner approach)
-const METADATA_MARKER = '__PRESERVED_METADATA__';
 
 interface PreservedMetadata {
   original_scheduling_note?: string;
@@ -346,10 +346,8 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
     const calendarView = document.getElementById('calendar-view');
     if (!calendarView) return null;
     
-    // Find the actual start of the timed calendar grid
-    // TimeTrail is the first child (with w-16 class), CalendarView is the second
-    const timeTrail = calendarView.children[0]; // First child is TimeTrail
-    const calendarViewDiv = calendarView.children[1]; // Second child is CalendarView
+    // Find the actual start of the timed calendar grid using robust selectors
+    const { timeTrail, calendarView: calendarViewDiv } = findCalendarElements();
     
     if (!timeTrail || !calendarViewDiv) return null;
     
