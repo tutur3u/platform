@@ -62,7 +62,7 @@
     "cronstrue": "^3.0.0",
     "date-fns": "^4.1.0",
     "dayjs": "^1.11.13",
-    "framer-motion": "^12.23.3",
+    "framer-motion": "^12.23.5",
     "google-auth-library": "^10.1.0",
     "googleapis": "^152.0.0",
     "heic-convert": "^2.1.0",
