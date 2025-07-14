@@ -93,11 +93,24 @@ describe('Calendar Utils - Defensive Programming', () => {
 
     it('should handle elements without getBoundingClientRect method', () => {
       const mockTimeTrail = document.createElement('div');
-      // Remove getBoundingClientRect method
-      delete (mockTimeTrail as any).getBoundingClientRect;
+      // Remove getBoundingClientRect method by setting it to undefined
+      Object.defineProperty(mockTimeTrail, 'getBoundingClientRect', {
+        value: undefined,
+        writable: true,
+        configurable: true
+      });
+      
+      const mockCalendarGrid = document.createElement('div');
+      Object.defineProperty(mockCalendarGrid, 'getBoundingClientRect', {
+        value: vi.fn().mockReturnValue({ width: 100, height: 100, top: 0, left: 0, bottom: 100, right: 100, x: 0, y: 0, toJSON: () => {} }),
+        writable: true,
+        configurable: true
+      });
       
       const mockCalendarView = createMockElement({ id: 'calendar-view' });
-      mockCalendarView.querySelector = vi.fn().mockReturnValue(mockTimeTrail);
+      mockCalendarView.querySelector = vi.fn()
+        .mockReturnValueOnce(mockTimeTrail) // First call for time trail
+        .mockReturnValueOnce(mockCalendarGrid); // Second call for calendar grid
       
       document.getElementById = vi.fn().mockReturnValue(mockCalendarView);
       

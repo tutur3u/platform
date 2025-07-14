@@ -13,6 +13,7 @@ import { useCalendar } from '../../../../hooks/use-calendar';
 import { MIN_COLUMN_WIDTH, HOUR_HEIGHT } from './config';
 import { useToast } from '@tuturuuu/ui/hooks/use-toast';
 import { findCalendarElements, createTimedEventFromAllDay } from './calendar-utils';
+import { useAutoScroll } from '../../../../hooks/use-auto-scroll';
 
 dayjs.extend(isBetween);
 dayjs.extend(isSameOrAfter);
@@ -121,151 +122,16 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const dragPreviewRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll functionality for all-day events
-  const autoScrollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const isAutoScrollingRef = useRef(false);
-  const scrollDirectionRef = useRef(0);
-  const targetSpeedRef = useRef(0);
-
-  // Auto-scroll indicator state
-  const [scrollIndicator, setScrollIndicator] = useState<{
-    show: boolean;
-    direction: 'up' | 'down' | null;
-    position: { x: number; y: number };
-  }>({
-    show: false,
-    direction: null,
-    position: { x: 0, y: 0 },
+  // REFACTORED: Use shared useAutoScroll hook to reduce code duplication
+  // Original auto-scroll implementation kept as legacy for reference but replaced with shared hook
+  const { handleAutoScroll, scrollIndicator, cleanup } = useAutoScroll({
+    isDragging: dragState.isDragging,
+    scrollEdgeSize: 80, // Edge zones for triggering scroll  
+    maxScrollSpeed: 20, // Maximum scroll speed
+    minScrollSpeed: 3, // Minimum scroll speed
+    throttleDelay: 16, // 60fps
+    acceleration: 0 // No acceleration for all-day events (instant speed)
   });
-
-  const handleAutoScroll = useCallback((clientX: number, clientY: number) => {
-    // Find all potential scrollable containers
-    const calendarView = document.getElementById('calendar-view');
-    if (!calendarView) return;
-    
-    // Enhanced settings for better UX
-    const SCROLL_EDGE_SIZE = 80; // Edge zones for triggering scroll
-    const MAX_SCROLL_SPEED = 20; // Maximum scroll speed
-    const MIN_SCROLL_SPEED = 3; // Minimum scroll speed
-    const THROTTLE_DELAY = 16; // 60fps
-    
-    // Get scrollable element
-    const scrollableElements = [];
-    let element: HTMLElement | null = calendarView;
-    while (element && element !== document.body) {
-      const computedStyle = window.getComputedStyle(element);
-      const hasVerticalScroll = element.scrollHeight > element.clientHeight;
-      const canScroll = computedStyle.overflowY === 'auto' || computedStyle.overflowY === 'scroll';
-      
-      if (hasVerticalScroll && (canScroll || element === calendarView)) {
-        scrollableElements.push(element);
-      }
-      element = element.parentElement;
-    }
-    
-    const scrollElement = scrollableElements[0] || calendarView;
-    const rect = scrollElement.getBoundingClientRect();
-    const currentScrollTop = scrollElement.scrollTop;
-    const maxScrollTop = scrollElement.scrollHeight - scrollElement.clientHeight;
-    
-    // Calculate mouse position relative to scroll container - use VIEWPORT coordinates for stability
-    const relativeY = clientY - rect.top;
-    const distanceFromTop = Math.max(0, relativeY);
-    const distanceFromBottom = Math.max(0, rect.height - relativeY);
-    
-    // Determine scroll direction and calculate speed based on proximity to edge
-    let scrollDirection = 0;
-    let indicatorDirection: 'up' | 'down' | null = null;
-    let targetSpeed = 0;
-    
-    // Use viewport coordinates for more stable detection
-    if (relativeY <= SCROLL_EDGE_SIZE && currentScrollTop > 0) {
-      scrollDirection = -1;
-      indicatorDirection = 'up';
-      const proximityFactor = 1 - Math.min(1, distanceFromTop / SCROLL_EDGE_SIZE);
-      targetSpeed = MIN_SCROLL_SPEED + (MAX_SCROLL_SPEED - MIN_SCROLL_SPEED) * proximityFactor;
-    } else if (relativeY >= rect.height - SCROLL_EDGE_SIZE && currentScrollTop < maxScrollTop) {
-      scrollDirection = 1;
-      indicatorDirection = 'down';
-      const proximityFactor = 1 - Math.min(1, distanceFromBottom / SCROLL_EDGE_SIZE);
-      targetSpeed = MIN_SCROLL_SPEED + (MAX_SCROLL_SPEED - MIN_SCROLL_SPEED) * proximityFactor;
-    }
-    
-    // Show/hide scroll indicators - update position continuously
-    if (scrollDirection !== 0) {
-      setScrollIndicator({
-        show: true,
-        direction: indicatorDirection,
-        position: { x: clientX, y: clientY },
-      });
-    } else {
-      setScrollIndicator({
-        show: false,
-        direction: null,
-        position: { x: 0, y: 0 },
-      });
-    }
-    
-    // Store scroll parameters in refs
-    scrollDirectionRef.current = scrollDirection;
-    targetSpeedRef.current = targetSpeed;
-    
-    // Start auto-scroll if not already running and we have a valid direction
-    if (scrollDirection !== 0 && !isAutoScrollingRef.current) {
-      isAutoScrollingRef.current = true;
-      
-      if (process.env.NODE_ENV === 'development') {
-        console.log(`Enhanced auto-scroll ${scrollDirection === -1 ? 'UP' : 'DOWN'} started`);
-      }
-      
-      const performScroll = () => {
-        // Get fresh scroll element state
-        const currentElement = document.getElementById('calendar-view');
-        if (!currentElement || !dragStateRef.current.isDragging) {
-          isAutoScrollingRef.current = false;
-          scrollDirectionRef.current = 0;
-          targetSpeedRef.current = 0;
-          setScrollIndicator({ show: false, direction: null, position: { x: 0, y: 0 } });
-          return;
-        }
-        
-        const currentScroll = currentElement.scrollTop;
-        const maxScroll = currentElement.scrollHeight - currentElement.clientHeight;
-        
-        // Stop if we've reached scroll limits
-        if ((scrollDirectionRef.current === -1 && currentScroll <= 0) ||
-            (scrollDirectionRef.current === 1 && currentScroll >= maxScroll)) {
-          isAutoScrollingRef.current = false;
-          scrollDirectionRef.current = 0;
-          targetSpeedRef.current = 0;
-          setScrollIndicator({ show: false, direction: null, position: { x: 0, y: 0 } });
-          return;
-        }
-        
-        // Perform scroll
-        const scrollAmount = scrollDirectionRef.current * targetSpeedRef.current;
-        const newScroll = Math.max(0, Math.min(currentScroll + scrollAmount, maxScroll));
-        currentElement.scrollTop = newScroll;
-        
-        // Continue scrolling
-        autoScrollTimerRef.current = setTimeout(performScroll, THROTTLE_DELAY);
-      };
-      
-      performScroll();
-    }
-    
-    // Stop auto-scroll if direction becomes 0 and update refs
-    if (scrollDirection === 0 && isAutoScrollingRef.current) {
-      isAutoScrollingRef.current = false;
-      scrollDirectionRef.current = 0;
-      targetSpeedRef.current = 0;
-      if (autoScrollTimerRef.current) {
-        clearTimeout(autoScrollTimerRef.current);
-        autoScrollTimerRef.current = null;
-      }
-      setScrollIndicator({ show: false, direction: null, position: { x: 0, y: 0 } });
-    }
-  }, []);
 
   // Add refs for drag threshold and timer
   const dragStartPos = useRef<{ x: number; y: number } | null>(null);
@@ -651,15 +517,8 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
     document.body.style.cursor = '';
     document.body.classList.remove('select-none');
 
-    // Stop auto-scroll and hide indicators
-    if (autoScrollTimerRef.current) {
-      clearTimeout(autoScrollTimerRef.current);
-      autoScrollTimerRef.current = null;
-    }
-    isAutoScrollingRef.current = false;
-    scrollDirectionRef.current = 0;
-    targetSpeedRef.current = 0;
-    setScrollIndicator({ show: false, direction: null, position: { x: 0, y: 0 } });
+    // Stop auto-scroll and hide indicators using shared hook cleanup
+    cleanup();
 
     try {
       if (targetZone === 'timed' && currentDragState.timeSlotTarget) {
@@ -774,14 +633,8 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
       if (longPressTimer.current) {
         clearTimeout(longPressTimer.current);
       }
-      if (autoScrollTimerRef.current) {
-        clearTimeout(autoScrollTimerRef.current);
-      }
-      // Reset scroll state
-      isAutoScrollingRef.current = false;
-      scrollDirectionRef.current = 0;
-      targetSpeedRef.current = 0;
-      setScrollIndicator({ show: false, direction: null, position: { x: 0, y: 0 } });
+      // Reset scroll state using shared hook cleanup
+      cleanup();
     };
   }, []);
 

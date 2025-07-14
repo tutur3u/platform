@@ -74,8 +74,13 @@ export const findCalendarElements = () => {
   ];
   
   for (const selector of timeTrailSelectors) {
-    timeTrail = calendarView.querySelector(selector);
-    if (timeTrail) break;
+    try {
+      timeTrail = calendarView.querySelector(selector);
+      if (timeTrail) break;
+    } catch (error) {
+      console.warn(`Failed to query selector ${selector}:`, error);
+      continue;
+    }
   }
   
   // Use multiple fallback selectors for calendar grid with validation
@@ -88,8 +93,13 @@ export const findCalendarElements = () => {
   ];
   
   for (const selector of calendarGridSelectors) {
-    calendarViewDiv = calendarView.querySelector(selector);
-    if (calendarViewDiv) break;
+    try {
+      calendarViewDiv = calendarView.querySelector(selector);
+      if (calendarViewDiv) break;
+    } catch (error) {
+      console.warn(`Failed to query calendar grid selector ${selector}:`, error);
+      continue;
+    }
   }
   
   // Additional validation - ensure elements have expected structure
@@ -105,18 +115,23 @@ export const findCalendarElements = () => {
   
   // Validate that we found meaningful elements
   if (timeTrail && calendarViewDiv) {
-    const timeTrailRect = timeTrail.getBoundingClientRect();
-    const calendarRect = calendarViewDiv.getBoundingClientRect();
-    
-    // Basic sanity checks for element dimensions
-    if (timeTrailRect.width === 0 || timeTrailRect.height === 0) {
-      console.warn('Time trail element has zero dimensions');
-      timeTrail = null;
-    }
-    
-    if (calendarRect.width === 0 || calendarRect.height === 0) {
-      console.warn('Calendar grid element has zero dimensions');
-      calendarViewDiv = null;
+    try {
+      const timeTrailRect = timeTrail.getBoundingClientRect();
+      const calendarRect = calendarViewDiv.getBoundingClientRect();
+      
+      // Basic sanity checks for element dimensions
+      if (timeTrailRect.width === 0 || timeTrailRect.height === 0) {
+        console.warn('Time trail element has zero dimensions');
+        timeTrail = null;
+      }
+      
+      if (calendarRect.width === 0 || calendarRect.height === 0) {
+        console.warn('Calendar grid element has zero dimensions');
+        calendarViewDiv = null;
+      }
+    } catch (error) {
+      console.warn('Failed to validate element dimensions:', error);
+      // Keep elements but note the error
     }
   }
   
