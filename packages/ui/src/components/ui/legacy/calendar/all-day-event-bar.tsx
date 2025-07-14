@@ -127,16 +127,27 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
   const scrollDirectionRef = useRef(0);
   const targetSpeedRef = useRef(0);
 
+  // Auto-scroll indicator state
+  const [scrollIndicator, setScrollIndicator] = useState<{
+    show: boolean;
+    direction: 'up' | 'down' | null;
+    position: { x: number; y: number };
+  }>({
+    show: false,
+    direction: null,
+    position: { x: 0, y: 0 },
+  });
+
   const handleAutoScroll = useCallback((clientX: number, clientY: number) => {
     // Find all potential scrollable containers
     const calendarView = document.getElementById('calendar-view');
     if (!calendarView) return;
     
     // Enhanced settings for better UX
-    const SCROLL_EDGE_SIZE = 100; // Increased edge size for more reliable triggering
-    const MAX_SCROLL_SPEED = 30; // Moderate scroll speed
-    const MIN_SCROLL_SPEED = 8; // Moderate minimum scroll speed  
-    const ACCELERATION = 0.2; // Moderate acceleration factor
+    const SCROLL_EDGE_SIZE = 80; // Edge zones for triggering scroll
+    const MAX_SCROLL_SPEED = 20; // Maximum scroll speed
+    const MIN_SCROLL_SPEED = 3; // Minimum scroll speed
+    const ACCELERATION = 0.1; // Acceleration factor
     const THROTTLE_DELAY = 16; // 60fps
     
     // Get scrollable element
@@ -165,17 +176,35 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
     
     // Determine scroll direction and calculate speed based on proximity to edge
     let scrollDirection = 0;
+    let indicatorDirection: 'up' | 'down' | null = null;
     let targetSpeed = 0;
     
     // Use viewport coordinates for more stable detection
     if (relativeY <= SCROLL_EDGE_SIZE && currentScrollTop > 0) {
       scrollDirection = -1;
+      indicatorDirection = 'up';
       const proximityFactor = 1 - Math.min(1, distanceFromTop / SCROLL_EDGE_SIZE);
       targetSpeed = MIN_SCROLL_SPEED + (MAX_SCROLL_SPEED - MIN_SCROLL_SPEED) * proximityFactor;
     } else if (relativeY >= rect.height - SCROLL_EDGE_SIZE && currentScrollTop < maxScrollTop) {
       scrollDirection = 1;
+      indicatorDirection = 'down';
       const proximityFactor = 1 - Math.min(1, distanceFromBottom / SCROLL_EDGE_SIZE);
       targetSpeed = MIN_SCROLL_SPEED + (MAX_SCROLL_SPEED - MIN_SCROLL_SPEED) * proximityFactor;
+    }
+    
+    // Show/hide scroll indicators - update position continuously
+    if (scrollDirection !== 0) {
+      setScrollIndicator({
+        show: true,
+        direction: indicatorDirection,
+        position: { x: clientX, y: clientY },
+      });
+    } else {
+      setScrollIndicator({
+        show: false,
+        direction: null,
+        position: { x: 0, y: 0 },
+      });
     }
     
     // Store scroll parameters in refs
@@ -187,16 +216,17 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
       isAutoScrollingRef.current = true;
       
       if (process.env.NODE_ENV === 'development') {
-        console.log(`All-day auto-scroll ${scrollDirection === -1 ? 'UP' : 'DOWN'} started`);
+        console.log(`Enhanced auto-scroll ${scrollDirection === -1 ? 'UP' : 'DOWN'} started`);
       }
       
       const performScroll = () => {
         // Get fresh scroll element state
         const currentElement = document.getElementById('calendar-view');
-        if (!currentElement || !dragState.isDragging) {
+        if (!currentElement || !dragStateRef.current.isDragging) {
           isAutoScrollingRef.current = false;
           scrollDirectionRef.current = 0;
           targetSpeedRef.current = 0;
+          setScrollIndicator({ show: false, direction: null, position: { x: 0, y: 0 } });
           return;
         }
         
@@ -209,11 +239,12 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
           isAutoScrollingRef.current = false;
           scrollDirectionRef.current = 0;
           targetSpeedRef.current = 0;
+          setScrollIndicator({ show: false, direction: null, position: { x: 0, y: 0 } });
           return;
         }
         
         // Perform scroll
-        const scrollAmount = scrollDirectionRef.current * MIN_SCROLL_SPEED;
+        const scrollAmount = scrollDirectionRef.current * targetSpeedRef.current;
         const newScroll = Math.max(0, Math.min(currentScroll + scrollAmount, maxScroll));
         currentElement.scrollTop = newScroll;
         
@@ -224,7 +255,7 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
       performScroll();
     }
     
-    // Stop auto-scroll if direction becomes 0
+    // Stop auto-scroll if direction becomes 0 and update refs
     if (scrollDirection === 0 && isAutoScrollingRef.current) {
       isAutoScrollingRef.current = false;
       scrollDirectionRef.current = 0;
@@ -233,8 +264,9 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
         clearTimeout(autoScrollTimerRef.current);
         autoScrollTimerRef.current = null;
       }
+      setScrollIndicator({ show: false, direction: null, position: { x: 0, y: 0 } });
     }
-  }, [dragState.isDragging]);
+  }, []);
 
   // Add refs for drag threshold and timer
   const dragStartPos = useRef<{ x: number; y: number } | null>(null);
@@ -594,12 +626,15 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
     document.body.style.cursor = '';
     document.body.classList.remove('select-none');
 
-    // Stop auto-scroll
+    // Stop auto-scroll and hide indicators
     if (autoScrollTimerRef.current) {
       clearTimeout(autoScrollTimerRef.current);
       autoScrollTimerRef.current = null;
     }
     isAutoScrollingRef.current = false;
+    scrollDirectionRef.current = 0;
+    targetSpeedRef.current = 0;
+    setScrollIndicator({ show: false, direction: null, position: { x: 0, y: 0 } });
 
     try {
       if (targetZone === 'timed' && currentDragState.timeSlotTarget) {
@@ -717,6 +752,11 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
       if (autoScrollTimerRef.current) {
         clearTimeout(autoScrollTimerRef.current);
       }
+      // Reset scroll state
+      isAutoScrollingRef.current = false;
+      scrollDirectionRef.current = 0;
+      targetSpeedRef.current = 0;
+      setScrollIndicator({ show: false, direction: null, position: { x: 0, y: 0 } });
     };
   }, []);
 
@@ -1265,25 +1305,55 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
         })}
       </div>
 
-      {/* Legacy drag preview - only show for all-day to all-day dragging */}
+      {/* Auto-scroll visual indicators */}
+      {scrollIndicator.show && (
+        <div
+          className="fixed z-50 pointer-events-none"
+          style={{
+            left: `${scrollIndicator.position.x + 20}px`,
+            top: `${scrollIndicator.position.y - (scrollIndicator.direction === 'up' ? 40 : -10)}px`,
+          }}
+        >
+          <div className="flex items-center gap-2 px-3 py-2 bg-blue-500/90 text-white text-sm font-medium rounded-lg shadow-lg backdrop-blur-sm animate-pulse">
+            {scrollIndicator.direction === 'up' ? (
+              <>
+                <svg className="w-4 h-4 animate-bounce" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clipRule="evenodd" />
+                </svg>
+                <span>Scroll up</span>
+              </>
+            ) : (
+              <>
+                <svg className="w-4 h-4 animate-bounce" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                </svg>
+                <span>Scroll down</span>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Improved drag preview - stays with cursor */}
       {dragState.isDragging && dragState.draggedEvent && dragState.targetZone === 'all-day' && (
         <div
           ref={dragPreviewRef}
           className={cn(
             'fixed pointer-events-none z-50 truncate rounded-sm border-l-2 px-2 py-1 text-xs font-semibold shadow-xl',
-            'transform transition-none backdrop-blur-sm',
+            'backdrop-blur-sm',
             getEventStyles(dragState.draggedEvent.color || 'BLUE').bg,
             getEventStyles(dragState.draggedEvent.color || 'BLUE').border,
             getEventStyles(dragState.draggedEvent.color || 'BLUE').text,
             'opacity-90'
           )}
           style={{
-            left: `${dragState.currentX + 15}px`,
-            top: `${dragState.currentY - 20}px`,
+            left: `${dragState.currentX + 10}px`,
+            top: `${dragState.currentY - 15}px`,
             height: '1.35rem',
             minWidth: '120px',
             maxWidth: '250px',
-            transform: 'rotate(-2deg)',
+            transform: 'none', // Remove rotation to keep it stable
+            transition: 'none', // Ensure no transition delays
           }}
         >
           <EventContent event={dragState.draggedEvent} />
