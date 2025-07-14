@@ -141,8 +141,12 @@ function SchedulerPage() {
   ) => {
     const newActiveHours = { ...activeHours };
     const [hour, minute] = value.split(':').map(Number);
-    newActiveHours[category][index][field] = dayjs().hour(hour).minute(minute);
-    setActiveHours(newActiveHours);
+    if (newActiveHours[category]?.[index]) {
+      newActiveHours[category][index][field] = dayjs()
+        .hour(hour ?? 0)
+        .minute(minute ?? 0);
+      setActiveHours(newActiveHours);
+    }
   };
 
   const getCategoryColor = (category: 'work' | 'personal' | 'meeting') => {
@@ -365,7 +369,10 @@ function SchedulerPage() {
                           </div>
                         </div>
                         {ranges.map((range, index) => (
-                          <div key={index} className="grid grid-cols-2 gap-4">
+                          <div
+                            key={`${range.start.toISOString()}-${range.end.toISOString()}`}
+                            className="grid grid-cols-2 gap-4"
+                          >
                             <div className="space-y-2">
                               <Label className="font-semibold text-muted-foreground text-xs uppercase tracking-wide">
                                 Start Time
