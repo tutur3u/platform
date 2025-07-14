@@ -1,5 +1,5 @@
 import { Project } from './data';
-import { Card, CardContent } from '@ncthub/ui/card';
+import { Card, CardContent, CardFooter, CardHeader } from '@ncthub/ui/card';
 import { motion } from 'framer-motion';
 import { Github, Globe, Monitor, Play, Users, Wrench } from 'lucide-react';
 
@@ -7,7 +7,7 @@ interface ProjectCardProps {
   project: Project;
   type?: string;
   status?: string;
-  isCenter?: boolean;
+  isSelected?: boolean;
   onClick: () => void;
 }
 
@@ -44,7 +44,7 @@ export default function ProjectCard({
   project,
   type,
   status,
-  isCenter = false,
+  isSelected = false,
   onClick,
 }: ProjectCardProps) {
   // Determine if this card should be highlighted based on current filters
@@ -70,13 +70,13 @@ export default function ProjectCard({
       backdrop-blur-md overflow-hidden group flex flex-col p-0
     `;
 
-    const centerStyles = isCenter
+    const centerStyles = isSelected
       ? 'shadow-2xl shadow-[#1AF4E6]/20 border-[#1AF4E6]/30'
       : '';
 
     const highlightStyles = isHighlighted
       ? `bg-gradient-to-br ${typeConfig.bgGradient} border-[#1AF4E6]/50 shadow-xl shadow-[#1AF4E6]/25`
-      : isCenter
+      : isSelected
         ? 'bg-card/80 hover:bg-card'
         : 'bg-card/40 hover:bg-card/60 hover:border-border hover:shadow-lg';
 
@@ -84,7 +84,7 @@ export default function ProjectCard({
   };
 
   return (
-    <motion.div
+    <Card
       onClick={onClick}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
@@ -94,32 +94,20 @@ export default function ProjectCard({
       }}
       role="button"
       tabIndex={0}
-      whileHover={{
-        y: -8,
-        scale: isCenter ? 1.03 : 1.02,
-        rotateY: 2,
-      }}
-      whileTap={{ scale: 0.98 }}
-      transition={{
-        duration: 0.3,
-        type: 'spring',
-        stiffness: 400,
-        damping: 25,
-      }}
-      className="group perspective-1000 relative h-full w-full cursor-pointer"
+      className={getCardContainerStyles()}
     >
-      <Card className={getCardContainerStyles()}>
-        {/* Status Indicator */}
-        <div className="absolute top-4 left-4">
+      {/* Card Header with Status, Type, and Title */}
+      <CardHeader className="flex flex-col gap-6 p-6">
+        {/* Status and Type Indicators Row */}
+        <div className="flex items-center justify-between">
+          {/* Status Indicator */}
           <div
             className={`rounded-full bg-gradient-to-r px-3 py-1 text-xs font-bold text-primary-foreground shadow-lg backdrop-blur-sm ${STATUS_COLORS[project.status as keyof typeof STATUS_COLORS]} `}
           >
             {project.status.charAt(0).toUpperCase() + project.status.slice(1)}
           </div>
-        </div>
 
-        {/* Type Indicator */}
-        <div className="absolute top-4 right-4">
+          {/* Type Indicator */}
           <div
             className={`flex items-center gap-2 rounded-full bg-gradient-to-r px-3 py-1 text-xs font-medium text-primary-foreground ${typeConfig.gradient}`}
           >
@@ -128,152 +116,149 @@ export default function ProjectCard({
           </div>
         </div>
 
-        {/* Card Content - Flex grow to push footer down */}
-        <CardContent className="flex flex-grow flex-col p-6 pb-24">
-          {/* Card Header */}
-          <div className="mt-8 mb-6">
-            <div className="mb-3 flex items-start gap-3">
-              <div
-                className={`rounded-xl bg-gradient-to-r p-2 ${typeConfig.gradient}`}
-              >
-                <TypeIcon className="h-5 w-5 text-primary-foreground" />
-              </div>
-              <div className="flex-1">
-                <h3
-                  className={`leading-tight font-bold text-foreground ${isCenter ? 'text-2xl' : 'text-xl'}`}
-                >
-                  {project.name}
-                </h3>
-              </div>
-            </div>
-
+        {/* Title and Manager Info */}
+        <div className="flex items-start gap-3">
+          <div
+            className={`rounded-xl bg-gradient-to-r p-2 ${typeConfig.gradient}`}
+          >
+            <TypeIcon className="h-5 w-5 text-primary-foreground" />
+          </div>
+          <div className="flex-1">
+            <h3
+              className={`leading-tight font-bold text-foreground ${isSelected ? 'text-2xl' : 'text-xl'}`}
+            >
+              {project.name}
+            </h3>
             {project.manager && (
-              <div className="flex items-center gap-2 text-muted-foreground">
+              <div className="mt-2 flex items-center gap-2 text-muted-foreground">
                 <Users className="h-4 w-4" />
-                <p className={`${isCenter ? 'text-sm' : 'text-xs'}`}>
+                <p className={`${isSelected ? 'text-sm' : 'text-xs'}`}>
                   Led by {project.manager}
                 </p>
               </div>
             )}
           </div>
+        </div>
+      </CardHeader>
 
-          {/* Card Description */}
-          <div className="mb-6">
-            <p
-              className={`leading-relaxed text-muted-foreground ${
-                isCenter ? 'text-base' : 'line-clamp-3 text-sm'
-              }`}
-            >
-              {project.description || 'No description available.'}
-            </p>
-          </div>
-
-          {/* Tech Stack */}
-          {project.techStack && project.techStack.length > 0 && (
-            <div className="mb-6">
-              <div className="mb-2 flex items-center gap-2">
-                <div className="h-0.5 w-4 bg-gradient-to-r from-[#F4B71A] to-[#1AF4E6]" />
-                <span className="text-xs font-medium tracking-wider text-muted-foreground uppercase">
-                  Tech Stack
-                </span>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {/* Show first 3 technologies with enhanced styling */}
-                {project.techStack.slice(0, 3).map((tech, index) => (
-                  <motion.span
-                    key={index}
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: index * 0.1 }}
-                    className={`rounded-lg border border-border bg-muted/50 px-3 py-1 font-medium text-foreground backdrop-blur-sm ${isCenter ? 'text-sm' : 'text-xs'} `}
-                  >
-                    {tech}
-                  </motion.span>
-                ))}
-
-                {/* Show count of remaining technologies */}
-                {project.techStack.length > 3 && (
-                  <span
-                    className={`rounded-lg border border-border bg-muted/30 px-3 py-1 font-medium text-muted-foreground ${isCenter ? 'text-sm' : 'text-xs'} `}
-                  >
-                    +{project.techStack.length - 3}
-                  </span>
-                )}
-              </div>
-            </div>
-          )}
-        </CardContent>
-
-        {/* Footer - Fixed at bottom */}
-        <div className="absolute right-6 bottom-6 left-6">
-          {/* Subtle divider */}
-          <div className="mb-4 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
-
-          <div className="flex items-center justify-between">
-            {/* Quick action buttons */}
-            <div className="flex gap-2">
-              {project.githubUrl && (
-                <motion.button
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
-                  className="rounded-lg bg-muted/50 p-2 text-muted-foreground backdrop-blur-sm transition-colors hover:bg-muted hover:text-foreground"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    window.open(project.githubUrl, '_blank');
-                  }}
-                >
-                  <Github className="h-4 w-4" />
-                </motion.button>
-              )}
-              {project.demoUrl && (
-                <motion.button
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
-                  className="rounded-lg bg-muted/50 p-2 text-muted-foreground backdrop-blur-sm transition-colors hover:bg-muted hover:text-foreground"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    window.open(project.demoUrl, '_blank');
-                  }}
-                >
-                  <Play className="h-4 w-4" />
-                </motion.button>
-              )}
-            </div>
-
-            {/* Team Size Indicator with enhanced design */}
-            {project.members && project.members.length > 0 && (
-              <div
-                className={`flex items-center gap-2 rounded-lg bg-muted/50 px-3 py-1 text-muted-foreground backdrop-blur-sm ${isCenter ? 'text-sm' : 'text-xs'}`}
-              >
-                <Users className="h-4 w-4" />
-                <span>
-                  {project.members.length} member
-                  {project.members.length !== 1 ? 's' : ''}
-                </span>
-              </div>
-            )}
-          </div>
+      {/* Card Content - Flex grow to push footer down */}
+      <CardContent className="flex flex-grow flex-col p-6 pt-0">
+        {/* Card Description */}
+        <div className="mb-6">
+          <p
+            className={`leading-relaxed text-muted-foreground ${
+              isSelected ? 'text-base' : 'line-clamp-3 text-sm'
+            }`}
+          >
+            {project.description || 'No description available.'}
+          </p>
         </div>
 
-        {/* Visual Effects */}
-        <>
-          {/* Animated background gradient */}
-          <div className="pointer-events-none absolute inset-0 rounded-xl opacity-0 transition-opacity duration-500 group-hover:opacity-100">
-            <div
-              className={`absolute inset-0 rounded-xl bg-gradient-to-br ${typeConfig.bgGradient}`}
-            />
-            <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-[#F4B71A]/5 to-[#1AF4E6]/5" />
+        {/* Tech Stack */}
+        {project.techStack && project.techStack.length > 0 && (
+          <div className="mb-6">
+            <div className="mb-2 flex items-center gap-2">
+              <div className="h-0.5 w-4 bg-gradient-to-r from-[#F4B71A] to-[#1AF4E6]" />
+              <span className="text-xs font-medium tracking-wider text-muted-foreground uppercase">
+                Tech Stack
+              </span>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {/* Show first 3 technologies with enhanced styling */}
+              {project.techStack.slice(0, 3).map((tech, index) => (
+                <motion.span
+                  key={index}
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: index * 0.1 }}
+                  className={`rounded-lg border border-border bg-muted/50 px-3 py-1 font-medium text-foreground backdrop-blur-sm ${isSelected ? 'text-sm' : 'text-xs'} `}
+                >
+                  {tech}
+                </motion.span>
+              ))}
+
+              {/* Show count of remaining technologies */}
+              {project.techStack.length > 3 && (
+                <span
+                  className={`rounded-lg border border-border bg-muted/30 px-3 py-1 font-medium text-muted-foreground ${isSelected ? 'text-sm' : 'text-xs'} `}
+                >
+                  +{project.techStack.length - 3}
+                </span>
+              )}
+            </div>
+          </div>
+        )}
+      </CardContent>
+
+      {/* Footer */}
+      <CardFooter className="p-6 pt-0">
+        {/* Subtle divider */}
+        <div className="mb-4 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
+
+        <div className="flex items-center justify-between">
+          {/* Quick action buttons */}
+          <div className="flex gap-2">
+            {project.githubUrl && (
+              <motion.button
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                className="rounded-lg bg-muted/50 p-2 text-muted-foreground backdrop-blur-sm transition-colors hover:bg-muted hover:text-foreground"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  window.open(project.githubUrl, '_blank');
+                }}
+              >
+                <Github className="h-4 w-4" />
+              </motion.button>
+            )}
+            {project.demoUrl && (
+              <motion.button
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                className="rounded-lg bg-muted/50 p-2 text-muted-foreground backdrop-blur-sm transition-colors hover:bg-muted hover:text-foreground"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  window.open(project.demoUrl, '_blank');
+                }}
+              >
+                <Play className="h-4 w-4" />
+              </motion.button>
+            )}
           </div>
 
-          {/* Shimmer effect on hover */}
-          <div className="pointer-events-none absolute inset-0 -translate-x-full rounded-xl bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 transition-all duration-1000 group-hover:translate-x-full group-hover:opacity-100" />
-
-          {/* Border glow effect for center cards */}
-          {isCenter && (
-            <div className="pointer-events-none absolute inset-0 rounded-xl bg-gradient-to-br from-[#F4B71A]/20 to-[#1AF4E6]/20 opacity-50 blur-xl" />
+          {/* Team Size Indicator with enhanced design */}
+          {project.members && project.members.length > 0 && (
+            <div
+              className={`flex items-center gap-2 rounded-lg bg-muted/50 px-3 py-1 text-muted-foreground backdrop-blur-sm ${isSelected ? 'text-sm' : 'text-xs'}`}
+            >
+              <Users className="h-4 w-4" />
+              <span>
+                {project.members.length} member
+                {project.members.length !== 1 ? 's' : ''}
+              </span>
+            </div>
           )}
-        </>
-      </Card>
-    </motion.div>
+        </div>
+      </CardFooter>
+
+      {/* Visual Effects */}
+      <>
+        {/* Animated background gradient */}
+        <div className="pointer-events-none absolute inset-0 rounded-xl opacity-0 transition-opacity duration-500 group-hover:opacity-100">
+          <div
+            className={`absolute inset-0 rounded-xl bg-gradient-to-br ${typeConfig.bgGradient}`}
+          />
+          <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-[#F4B71A]/5 to-[#1AF4E6]/5" />
+        </div>
+
+        {/* Shimmer effect on hover */}
+        <div className="pointer-events-none absolute inset-0 -translate-x-full rounded-xl bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 transition-all duration-1000 group-hover:translate-x-full group-hover:opacity-100" />
+
+        {/* Border glow effect for center cards */}
+        {isSelected && (
+          <div className="pointer-events-none absolute inset-0 rounded-xl bg-gradient-to-br from-[#F4B71A]/20 to-[#1AF4E6]/20 opacity-50 blur-xl" />
+        )}
+      </>
+    </Card>
   );
 }

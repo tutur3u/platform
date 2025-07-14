@@ -1,10 +1,18 @@
 'use client';
 
-// import Canvas from './canvas';
 import { Project, projects } from './data';
 import ProjectCard from './project-card';
 import ProjectDetail from './project-detail';
-import { AnimatePresence, PanInfo, motion } from 'framer-motion';
+import {
+  Carousel,
+  CarouselApi,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from '@ncthub/ui/carousel';
+import { cn } from '@ncthub/utils/format';
+import { AnimatePresence, motion } from 'framer-motion';
 import { Bot, Layers, LayoutGrid, Search, Smile } from 'lucide-react';
 import Image from 'next/image';
 import { useCallback, useEffect, useState } from 'react';
@@ -14,24 +22,18 @@ type ProjectStatus = 'planning' | 'ongoing' | 'completed' | undefined;
 type ViewMode = 'carousel' | 'grid';
 
 export default function Projects() {
+  const [viewMode, setViewMode] = useState<ViewMode>('carousel');
+  const [emblaApi, setEmblaApi] = useState<CarouselApi | null>(null);
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  const [isAutoScrolling, setIsAutoScrolling] = useState(true);
+
   const [type, setType] = useState<ProjectType>(undefined);
   const [status, setStatus] = useState<ProjectStatus>(undefined);
-
-  const [viewMode, setViewMode] = useState<ViewMode>('carousel');
 
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [projectDetail, setProjectDetail] = useState<Project | undefined>(
     undefined
   );
-
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [isTransitioning, setIsTransitioning] = useState(false);
-
-  const [isAutoScrolling, setIsAutoScrolling] = useState(true);
-  const [isUserInteracting, setIsUserInteracting] = useState(false);
-
-  const [dragOffset, setDragOffset] = useState(0);
-  const [isDragging, setIsDragging] = useState(false);
 
   const filteredProjects = projects.filter((project) => {
     const matchesType = !type || project.type === type;
@@ -39,80 +41,78 @@ export default function Projects() {
     return matchesType && matchesStatus;
   });
 
-  const nextSlide = useCallback(() => {
-    if (isTransitioning || filteredProjects.length <= 1) return;
-    setIsTransitioning(true);
-    setCurrentIndex((prev) =>
-      prev === filteredProjects.length - 1 ? 0 : prev + 1
-    );
-    setTimeout(() => setIsTransitioning(false), 400);
-  }, [filteredProjects.length, isTransitioning]);
+  const projectsWithNull = [null, ...filteredProjects, null];
 
-  const prevSlide = useCallback(() => {
-    if (isTransitioning || filteredProjects.length <= 1) return;
-    setIsTransitioning(true);
-    setCurrentIndex((prev) =>
-      prev === 0 ? filteredProjects.length - 1 : prev - 1
-    );
-    setTimeout(() => setIsTransitioning(false), 400);
-  }, [filteredProjects.length, isTransitioning]);
+  const onSelect = useCallback(() => {
+    if (!emblaApi) return;
 
-  const goToSlide = (index: number) => {
-    if (index === currentIndex || isTransitioning) return;
-    setIsTransitioning(true);
-    setIsUserInteracting(true);
-    setCurrentIndex(index);
-    setTimeout(() => {
-      setIsTransitioning(false);
-      setTimeout(() => setIsUserInteracting(false), 3000);
-    }, 400);
+    setSelectedIndex(emblaApi.selectedScrollSnap() + 1);
+  }, [emblaApi]);
+
+  const onScroll = () => {
+    if (!emblaApi) return;
+
+    const root = emblaApi.rootNode();
+    const slides = emblaApi.slideNodes();
+    const slidesInView = emblaApi.slidesInView();
+
+    if (slidesInView.length === 0) return;
+
+    const rootRect = root.getBoundingClientRect();
+    const rootCenter = rootRect.left + rootRect.width / 2;
+
+    let closestSlide = slidesInView[0] ?? 0;
+    let minDistance = Infinity;
+
+    slidesInView.forEach((slideIndex) => {
+      const slideRect = slides[slideIndex]?.getBoundingClientRect();
+      if (!slideRect) return;
+
+      const slideCenter = slideRect.left + slideRect.width / 2;
+      const distance = Math.abs(slideCenter - rootCenter);
+
+      if (distance < minDistance) {
+        minDistance = distance;
+        closestSlide = slideIndex;
+      }
+    });
+
+    const newSelectedIndex = closestSlide;
+
+    setSelectedIndex((selectedIndex) => {
+      if (
+        newSelectedIndex !== selectedIndex &&
+        newSelectedIndex !== 0 &&
+        newSelectedIndex !== slides.length - 1
+      ) {
+        return newSelectedIndex;
+      }
+
+      return selectedIndex;
+    });
   };
 
-  const handleDragStart = () => {
-    setIsUserInteracting(true);
-    setIsDragging(true);
-  };
+  const onReInit = () => {
+    if (!emblaApi) return;
 
-  const handleDrag = (_event: any, info: PanInfo) => {
-    setDragOffset(info.offset.x);
-  };
-
-  const handleDragEnd = (_event: any, info: PanInfo) => {
-    const swipeThreshold = 100;
-    const velocity = info.velocity.x;
-    let didSwipe = false;
-
-    if (Math.abs(velocity) > 500) {
-      velocity > 0 ? prevSlide() : nextSlide();
-      didSwipe = true;
-    } else if (Math.abs(info.offset.x) > swipeThreshold) {
-      info.offset.x > 0 ? prevSlide() : nextSlide();
-      didSwipe = true;
-    }
-
-    if (didSwipe && 'vibrate' in navigator) {
-      navigator.vibrate(50);
-    }
-
-    setDragOffset(0);
-    setIsDragging(false);
-    setTimeout(() => setIsUserInteracting(false), 3000);
+    emblaApi.scrollTo(0);
+    setSelectedIndex(1);
   };
 
   const handleTypeFilter = (newType: ProjectType) => {
     setType(newType === type ? undefined : newType);
-    setCurrentIndex(0);
+    onReInit();
   };
 
   const handleStatusFilter = (newStatus: ProjectStatus) => {
     setStatus(newStatus === status ? undefined : newStatus);
-    setCurrentIndex(0);
+    onReInit();
   };
 
   const clearAllFilters = () => {
     setType(undefined);
     setStatus(undefined);
-    setCurrentIndex(0);
+    onReInit();
   };
 
   const openProjectModal = (project: Project) => {
@@ -123,41 +123,32 @@ export default function Projects() {
   const closeProjectModal = () => setIsModalOpen(false);
 
   useEffect(() => {
-    if (!isAutoScrolling || isUserInteracting || filteredProjects.length <= 1) {
-      return;
-    }
+    if (!emblaApi) return;
 
-    const autoScrollDuration = 4000;
-    const slideTimeout = setTimeout(nextSlide, autoScrollDuration);
+    onSelect();
+    emblaApi.on('select', onSelect);
+    emblaApi.on('scroll', onScroll);
+    emblaApi.on('reInit', onReInit);
+
+    return () => {
+      emblaApi.off('select', onSelect);
+      emblaApi.off('scroll', onScroll);
+      emblaApi.off('reInit', onReInit);
+    };
+  }, [emblaApi, onSelect, onScroll, onReInit]);
+
+  useEffect(() => {
+    if (!isAutoScrolling || !emblaApi || filteredProjects.length <= 1) return;
+
+    const slideTimeout = setTimeout(() => {
+      const nextIndex = selectedIndex % filteredProjects.length;
+      emblaApi.scrollTo(nextIndex);
+    }, 5000);
 
     return () => {
       clearTimeout(slideTimeout);
     };
-  }, [
-    isAutoScrolling,
-    isUserInteracting,
-    nextSlide,
-    filteredProjects.length,
-    currentIndex,
-  ]);
-
-  const calculateCardStyle = (position: number) => {
-    const isCenter = position === 0;
-    const isVisible = Math.abs(position) <= 1;
-
-    let x = 0;
-    if (position !== 0) {
-      x = position * 300;
-    }
-
-    return {
-      x: x,
-      y: isCenter ? 0 : 20,
-      scale: isCenter ? 1 : 0.9,
-      zIndex: 5 - Math.abs(position),
-      opacity: isVisible ? (isCenter ? 1 : 0.7) : 0,
-    };
-  };
+  }, [isAutoScrolling, emblaApi, filteredProjects.length, selectedIndex]);
 
   const handleViewModeChange = (mode: ViewMode) => {
     setViewMode(mode);
@@ -202,8 +193,6 @@ export default function Projects() {
             </p>
           </div>
         </div>
-
-        {/* <Canvas className="absolute top-2/4 -z-10 aspect-square w-[120%] -translate-y-1/2" /> */}
       </motion.div>
 
       <motion.div
@@ -441,95 +430,57 @@ export default function Projects() {
                 viewport={{ once: true }}
                 transition={{ duration: 0.6, ease: 'easeOut' }}
               >
-                <div className="relative cursor-grab active:cursor-grabbing">
-                  <motion.div
-                    className="flex items-center justify-center"
-                    drag="x"
-                    dragConstraints={{ left: 0, right: 0 }}
-                    dragElastic={0.1}
-                    onDragStart={handleDragStart}
-                    onDrag={handleDrag}
-                    onDragEnd={handleDragEnd}
-                    onMouseEnter={() => setIsUserInteracting(true)}
-                    onMouseLeave={() => setIsUserInteracting(false)}
-                    animate={{ x: isDragging ? dragOffset : 0 }}
-                    transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                    style={{ minHeight: '500px', userSelect: 'none' }}
-                  >
-                    <div className="block w-full max-w-sm md:hidden">
-                      {filteredProjects[currentIndex] && (
-                        <motion.div
-                          initial={{ opacity: 0, scale: 0.8 }}
-                          animate={{
-                            opacity: 1,
-                            scale: isDragging ? 0.95 : 1,
-                            rotateY: isDragging ? dragOffset * 0.05 : 0,
-                          }}
-                          transition={{ duration: 0.5, ease: 'easeOut' }}
-                        >
-                          <ProjectCard
-                            project={filteredProjects[currentIndex]!}
-                            type={type}
-                            status={status}
-                            isCenter={true}
-                            onClick={() =>
-                              openProjectModal(filteredProjects[currentIndex]!)
-                            }
-                          />
-                        </motion.div>
-                      )}
-                    </div>
-
-                    <div
-                      className="relative hidden w-full items-center justify-center px-16 md:flex"
-                      style={{ minHeight: '550px' }}
-                    >
-                      {filteredProjects.map((project, index) => {
-                        const position = index - currentIndex;
-
-                        if (Math.abs(position) > 1) return null;
-
-                        return (
+                <Carousel
+                  setApi={setEmblaApi}
+                  className="mx-auto w-full max-w-5xl"
+                >
+                  <CarouselContent>
+                    {projectsWithNull.map((project, index) => (
+                      <CarouselItem
+                        key={index}
+                        className="basis-full md:basis-1/2 lg:basis-1/3"
+                      >
+                        {project && (
                           <motion.div
-                            key={project.name}
-                            className="absolute w-80"
-                            initial={{ opacity: 0, scale: 0.8 }}
-                            animate={calculateCardStyle(position)}
+                            key={index}
+                            initial={{ opacity: 0, y: 40, scale: 0.9 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
                             transition={{
+                              duration: 0.5,
+                              ease: 'easeOut',
                               type: 'spring',
-                              stiffness: 300,
-                              damping: 30,
-                              duration: 0.6,
+                              stiffness: 100,
                             }}
-                            style={{ cursor: 'pointer' }}
-                            onClick={() => {
-                              setIsUserInteracting(true);
-                              if (position === 0) {
-                                openProjectModal(project);
-                              } else {
-                                goToSlide(index);
-                              }
-                              setTimeout(
-                                () => setIsUserInteracting(false),
-                                3000
-                              );
+                            whileHover={{
+                              scale: 1.05,
+                              y: -5,
+                              transition: { duration: 0.2 },
                             }}
+                            whileTap={{ scale: 0.95 }}
+                            className={cn(
+                              'group relative h-full w-full cursor-pointer',
+                              index === selectedIndex
+                                ? 'scale-100 opacity-100'
+                                : 'scale-75 opacity-60'
+                            )}
                           >
                             <ProjectCard
                               project={project}
                               type={type}
                               status={status}
-                              isCenter={position === 0}
-                              onClick={() => {}}
+                              isSelected={index === selectedIndex}
+                              onClick={() => openProjectModal(project)}
                             />
                           </motion.div>
-                        );
-                      })}
-                    </div>
-                  </motion.div>
-                </div>
+                        )}
+                      </CarouselItem>
+                    ))}
+                  </CarouselContent>
+                  <CarouselPrevious className="hidden md:flex" />
+                  <CarouselNext className="hidden md:flex" />
+                </Carousel>
 
-                {filteredProjects.length > 1 && (
+                {filteredProjects.length > 0 && (
                   <motion.div
                     className="mt-8 flex justify-center space-x-3"
                     initial={{ opacity: 0, y: 20 }}
@@ -537,23 +488,23 @@ export default function Projects() {
                     viewport={{ once: true }}
                     transition={{ duration: 0.6, delay: 0.3 }}
                   >
-                    {filteredProjects.map((_, index) => (
-                      <motion.button
-                        key={index}
-                        onClick={() => goToSlide(index)}
-                        className="relative"
-                        whileHover={{ scale: 1.2 }}
-                        whileTap={{ scale: 0.9 }}
-                      >
-                        <div
-                          className={`h-3 w-3 rounded-full transition-all duration-300 ${
-                            index === currentIndex
-                              ? 'scale-125 bg-gradient-to-r from-blue-500 to-purple-600'
-                              : 'bg-muted-foreground/30 hover:bg-muted-foreground/50'
-                          }`}
-                        />
-                      </motion.button>
-                    ))}
+                    {projectsWithNull.map(
+                      (project, index) =>
+                        project && (
+                          <motion.button
+                            key={index}
+                            whileHover={{ scale: 1.05 }}
+                          >
+                            <div
+                              className={`h-3 w-3 rounded-full transition-all duration-300 ${
+                                index === selectedIndex
+                                  ? 'scale-125 bg-gradient-to-r from-blue-500 to-purple-600'
+                                  : 'bg-muted-foreground/30 hover:bg-muted-foreground/50'
+                              }`}
+                            />
+                          </motion.button>
+                        )
+                    )}
                   </motion.div>
                 )}
 
@@ -581,52 +532,39 @@ export default function Projects() {
                 </motion.div>
               </motion.div>
             ) : (
-              <motion.div
-                className="mx-auto max-w-7xl"
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6, ease: 'easeOut' }}
-              >
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  whileInView={{ opacity: 1 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.8, delay: 0.2 }}
-                  className="grid gap-6 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
-                >
-                  {filteredProjects.map((project, index) => (
-                    <motion.div
-                      key={project.name}
-                      initial={{ opacity: 0, y: 40, scale: 0.9 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      transition={{
-                        duration: 0.5,
-                        delay: index * 0.1,
-                        ease: 'easeOut',
-                        type: 'spring',
-                        stiffness: 100,
-                      }}
-                      whileHover={{
-                        scale: 1.05,
-                        y: -5,
-                        transition: { duration: 0.2 },
-                      }}
-                      whileTap={{ scale: 0.95 }}
-                      className="cursor-pointer"
+              <div className="mx-auto grid max-w-7xl gap-6 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+                {filteredProjects.map((project, index) => (
+                  <motion.div
+                    key={index}
+                    initial={{ opacity: 0, y: 40, scale: 0.9 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    transition={{
+                      duration: 0.5,
+                      delay: index * 0.1,
+                      ease: 'easeOut',
+                      type: 'spring',
+                      stiffness: 100,
+                    }}
+                    whileHover={{
+                      scale: 1.05,
+                      y: -5,
+                      transition: { duration: 0.2 },
+                    }}
+                    whileTap={{ scale: 0.95 }}
+                    className={cn(
+                      'group relative h-full w-full cursor-pointer'
+                    )}
+                  >
+                    <ProjectCard
+                      project={project}
+                      type={type}
+                      status={status}
+                      isSelected={true}
                       onClick={() => openProjectModal(project)}
-                    >
-                      <ProjectCard
-                        project={project}
-                        type={type}
-                        status={status}
-                        isCenter={true}
-                        onClick={() => {}}
-                      />
-                    </motion.div>
-                  ))}
-                </motion.div>
-              </motion.div>
+                    />
+                  </motion.div>
+                ))}
+              </div>
             )}
           </>
         ) : (
