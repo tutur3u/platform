@@ -44,8 +44,8 @@ describe('all-day-event-bar helpers', () => {
     it('calculates correct hour offset', () => {
       const cellRect = { top: 100 } as DOMRect;
       // clientY=148, cellRect.top=100, so mouseYFromCellTop=48
-      // With HOUR_HEIGHT=80, mouseHourOffset=48/80=0.6, so 8+0.6=8.6 ≈ 9
-      expect(calculateVisibleHourOffset(148, cellRect, 8)).toBeCloseTo(9);
+      // With HOUR_HEIGHT=80, mouseHourOffset=48/80=0.6, so 8+0.6=8.6
+      expect(calculateVisibleHourOffset(148, cellRect, 8)).toBeCloseTo(8.6);
     });
     it('handles negative offset', () => {
       const cellRect = { top: 200 } as DOMRect;
@@ -134,10 +134,10 @@ describe('all-day-event-bar helpers', () => {
       // Should return correct slot info
       // Example: clientX=150, clientY=148, cellHour=8, cellRect.top=100, HOUR_HEIGHT=80
       // mouseYFromCellTop=48, mouseHourOffset=0.6, actualHour=8.6, relativeY=8.6*80=688
-      // hourFloat=688/80=8.6, rounded to {hour:9, minute:0}
+      // hourFloat=688/80=8.6, rounded to {hour:8, minute:30} (8.6 rounds to 8:30)
       // columnWidth=700/3=233.33, clientX=150, dateIndex=0
-      // Should return { date: visibleDates[0], hour: 9, minute: 0 }
-      expect(calculateTimeSlotTarget(150, 148, visibleDates)).toEqual({ date: visibleDates[0], hour: 9, minute: 0 });
+      // Should return { date: visibleDates[0], hour: 8, minute: 30 }
+      expect(calculateTimeSlotTarget(150, 148, visibleDates)).toEqual({ date: visibleDates[0], hour: 8, minute: 30 });
     });
   });
 }); 
