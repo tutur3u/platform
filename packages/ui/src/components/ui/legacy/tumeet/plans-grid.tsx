@@ -38,6 +38,7 @@ export function PlansGrid({
     <div className="mt-8 grid w-full max-w-6xl grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
       {plans.map((plan: MeetTogetherPlanWithParticipants) => (
         <Link
+          target="_blank"
           href={`/meet-together/plans/${plan.id?.replace(/-/g, '')}`}
           key={plan.id}
           className="group hover:-translate-y-1 relative rounded-xl border border-foreground/10 bg-accent p-6 shadow-sm transition-all duration-300 hover:border-foreground/20 hover:shadow-lg"

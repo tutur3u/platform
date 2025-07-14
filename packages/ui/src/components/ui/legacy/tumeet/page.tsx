@@ -48,13 +48,12 @@ export async function MeetTogetherPage({
   const resolvedSearchParams = await searchParams;
   const page = parseInt(resolvedSearchParams?.page || '1');
   const pageSize = parseInt(resolvedSearchParams?.pageSize || '9');
-  const search = resolvedSearchParams?.search || '';
 
   const {
     data: plans,
     user,
     totalCount,
-  } = await getData({ wsId, page, pageSize, search });
+  } = await getData({ wsId, page, pageSize });
   const totalPages = Math.ceil(totalCount / pageSize);
 
   return (
@@ -209,12 +208,10 @@ async function getData({
   wsId,
   page = 1,
   pageSize = 9,
-  search = '',
 }: {
   wsId?: string;
   page?: number;
   pageSize?: number;
-  search?: string;
 } = {}) {
   const supabase = await createClient();
 
@@ -226,302 +223,91 @@ async function getData({
 
   const sbAdmin = await createAdminClient();
 
-  try {
-    // Get all plans without pagination to properly handle deduplication first
-    let createdPlansQuery = sbAdmin
-      .from('meet_together_plans')
-      .select('*')
-      .eq('creator_id', user.id)
-      .order('created_at', { ascending: false });
+  const createdPlansQuery = sbAdmin
+    .from('meet_together_plans')
+    .select('*')
+    .eq('creator_id', user.id)
+    .order('created_at', { ascending: false });
 
-    // First, get unique plan IDs from timeblocks (not the full plan data)
-    let joinedPlanIdsQuery = sbAdmin
-      .from('meet_together_user_timeblocks')
-      .select('plan_id')
-      .eq('user_id', user.id);
-
-    // Apply workspace filter
-    if (wsId) {
-      createdPlansQuery = createdPlansQuery.eq('ws_id', wsId);
-      joinedPlanIdsQuery = joinedPlanIdsQuery.eq(
-        'meet_together_plans.ws_id',
-        wsId
-      );
-    }
-
-    // Execute queries to get created plans and joined plan IDs
-    const [createdPlansResult, joinedPlanIdsResult] = await Promise.all([
-      createdPlansQuery,
-      joinedPlanIdsQuery,
-    ]);
-
-    const { data: createdPlanData, error: createdPlansError } =
-      createdPlansResult;
-    const { data: joinedPlanIdsData, error: joinedPlanIdsError } =
-      joinedPlanIdsResult;
-
-    if (createdPlansError) throw createdPlansError;
-    if (joinedPlanIdsError) throw joinedPlanIdsError;
-
-    // Get unique plan IDs that the user joined (excluding ones they created)
-    const createdPlanIds = new Set(createdPlanData?.map((p) => p.id) || []);
-    const uniqueJoinedPlanIds = [
-      ...new Set(
-        joinedPlanIdsData
-          ?.map((item) => item.plan_id)
-          .filter((planId) => planId && !createdPlanIds.has(planId)) || []
-      ),
-    ];
-
-    console.log('=== DEBUG: Plan count analysis ===');
-    console.log('Created plans count:', createdPlanData?.length || 0);
-    console.log('Unique joined plan IDs count:', uniqueJoinedPlanIds.length);
-    console.log('User ID:', user.id);
-    console.log('Workspace ID:', wsId);
-    console.log('Search term:', search);
-
-    let finalCreatedPlanData = createdPlanData;
-    let joinedPlanData: {
-      id: string;
-    }[] = [];
-
-    // Fetch the actual plan data for joined plans if there are any
-    if (uniqueJoinedPlanIds.length > 0) {
-      let joinedPlansQuery = sbAdmin
-        .from('meet_together_plans')
-        .select('*')
-        .in('id', uniqueJoinedPlanIds)
-        .order('created_at', { ascending: false });
-
-      // Apply workspace filter to joined plans query
-      if (wsId) {
-        joinedPlansQuery = joinedPlansQuery.eq('ws_id', wsId);
-      }
-
-      // Apply search filter to both queries
-      if (search) {
-        const searchPattern = `%${search}%`;
-        createdPlansQuery = sbAdmin
-          .from('meet_together_plans')
-          .select('*')
-          .eq('creator_id', user.id)
-          .or(`name.ilike.${searchPattern},description.ilike.${searchPattern}`)
-          .order('created_at', { ascending: false });
-
-        joinedPlansQuery = joinedPlansQuery.or(
-          `name.ilike.${searchPattern},description.ilike.${searchPattern}`
-        );
-
-        if (wsId) {
-          createdPlansQuery = createdPlansQuery.eq('ws_id', wsId);
-        }
-
-        // Re-execute with search filters
-        const [filteredCreatedResult, filteredJoinedResult] = await Promise.all(
-          [createdPlansQuery, joinedPlansQuery]
-        );
-
-        const { data: filteredCreatedData, error: filteredCreatedError } =
-          filteredCreatedResult;
-        const { data: filteredJoinedData, error: filteredJoinedError } =
-          filteredJoinedResult;
-
-        if (filteredCreatedError) throw filteredCreatedError;
-        if (filteredJoinedError) throw filteredJoinedError;
-
-        // Use filtered results
-        finalCreatedPlanData = filteredCreatedData;
-        joinedPlanData = filteredJoinedData || [];
-      } else {
-        const { data, error } = await joinedPlansQuery;
-        if (error) throw error;
-        joinedPlanData = data || [];
-      }
-    }
-
-    console.log(
-      'Joined plans count after fetching details:',
-      joinedPlanData.length
-    );
-
-    // Combine and deduplicate plans efficiently using Map
-    const planMap = new Map();
-
-    // Add created plans
-    finalCreatedPlanData?.forEach((plan) => {
-      if (!planMap.has(plan.id)) {
-        planMap.set(plan.id, plan);
-      }
+  const joinedPlansQuery = sbAdmin
+    .from('meet_together_user_timeblocks')
+    .select('...meet_together_plans!inner(*)')
+    .eq('user_id', user.id)
+    .neq('meet_together_plans.creator_id', user.id)
+    .order('created_at', {
+      ascending: false,
+      referencedTable: 'meet_together_plans',
     });
 
-    // Add joined plans (avoiding duplicates)
-    joinedPlanData?.forEach((plan) => {
-      if (!planMap.has(plan.id)) {
-        planMap.set(plan.id, plan);
-      }
-    });
-
-    const allPlans = Array.from(planMap.values()).sort(
-      (a, b) =>
-        new Date(b.created_at || 0).getTime() -
-        new Date(a.created_at || 0).getTime()
-    );
-
-    // Get the actual total count after deduplication
-    const actualTotalCount = allPlans.length;
-
-    console.log('Total after deduplication:', actualTotalCount);
-    console.log(
-      'Plans removed by deduplication:',
-      (finalCreatedPlanData?.length || 0) +
-        (joinedPlanData?.length || 0) -
-        actualTotalCount
-    );
-    console.log('=====================================');
-
-    // If no plans exist, return early
-    if (actualTotalCount === 0) {
-      return { data: [], totalCount: 0, user };
-    }
-
-    // Apply pagination to the combined and sorted results
-    const from = (page - 1) * pageSize;
-    const to = from + pageSize;
-    const paginatedPlans = allPlans.slice(from, to);
-
-    // Fetch participants for paginated plans only (single optimized query)
-    const planIds = paginatedPlans
-      .map((plan) => plan.id)
-      .filter((id): id is string => Boolean(id));
-
-    if (planIds.length > 0) {
-      const { data: participantsData, error: participantsError } = await sbAdmin
-        .from('meet_together_users')
-        .select('user_id, display_name, plan_id, is_guest, timeblock_count')
-        .in('plan_id', planIds);
-
-      if (participantsError) {
-        console.error('Error fetching participants:', participantsError);
-      }
-
-      // Group participants by plan_id for efficient lookup
-      const participantsByPlan = new Map<
-        string,
-        Array<{
-          user_id: string | null;
-        }>
-      >();
-      participantsData?.forEach((participant) => {
-        const planId = participant.plan_id;
-        if (planId && !participantsByPlan.has(planId)) {
-          participantsByPlan.set(planId, []);
-        }
-        if (planId) {
-          participantsByPlan.get(planId)?.push(participant);
-        }
-      });
-
-      const plansWithParticipants = paginatedPlans.map((plan) => ({
-        ...plan,
-        participants: plan.id ? participantsByPlan.get(plan.id) || [] : [],
-      }));
-
-      return {
-        data: plansWithParticipants as MeetTogetherPlanWithParticipants[],
-        user,
-        totalCount: actualTotalCount,
-      };
-    }
-
-    return {
-      data: paginatedPlans.map((plan) => ({
-        ...plan,
-        participants: [],
-      })) as MeetTogetherPlanWithParticipants[],
-      user,
-      totalCount: actualTotalCount,
-    };
-  } catch (error) {
-    console.error('Optimized query failed, using simplified approach:', error);
-
-    // Simplified fallback approach - get all created and joined plans
-    const [createdPlansResult, joinedPlansResult] = await Promise.all([
-      sbAdmin
-        .from('meet_together_plans')
-        .select('*')
-        .eq('creator_id', user.id)
-        .order('created_at', { ascending: false }),
-      sbAdmin
-        .from('meet_together_user_timeblocks')
-        .select('...meet_together_plans!inner(*)')
-        .eq('user_id', user.id)
-        .neq('meet_together_plans.creator_id', user.id)
-        .order('created_at', {
-          ascending: false,
-          referencedTable: 'meet_together_plans',
-        }),
-    ]);
-
-    const { data: createdPlans } = createdPlansResult;
-    const { data: joinedPlans } = joinedPlansResult;
-
-    // Combine and deduplicate
-    const planMap = new Map();
-    createdPlans?.forEach((plan) => {
-      if (!planMap.has(plan.id)) {
-        planMap.set(plan.id, plan);
-      }
-    });
-    joinedPlans?.forEach((plan) => {
-      if (!planMap.has(plan.id)) {
-        planMap.set(plan.id, plan);
-      }
-    });
-
-    const allPlans = Array.from(planMap.values()).sort(
-      (a, b) =>
-        new Date(b.created_at || 0).getTime() -
-        new Date(a.created_at || 0).getTime()
-    );
-
-    // Apply pagination
-    const from = (page - 1) * pageSize;
-    const to = from + pageSize;
-    const paginatedPlans = allPlans.slice(from, to);
-
-    const planIds =
-      paginatedPlans
-        ?.map((plan) => plan.id)
-        .filter((id): id is string => Boolean(id)) || [];
-
-    let participantsData: {
-      user_id: string | null;
-      display_name: string | null;
-      is_guest: boolean | null;
-      timeblock_count: number | null;
-      plan_id: string | null;
-    }[] = [];
-
-    if (planIds.length > 0) {
-      const { data } = await sbAdmin
-        .from('meet_together_users')
-        .select('user_id, display_name, plan_id, is_guest, timeblock_count')
-        .in('plan_id', planIds);
-
-      participantsData = data || [];
-    }
-
-    const plansWithParticipants = paginatedPlans.map((plan) => ({
-      ...plan,
-      participants: plan.id
-        ? participantsData.filter((p) => p.plan_id === plan.id)
-        : [],
-    }));
-
-    return {
-      data: plansWithParticipants as MeetTogetherPlanWithParticipants[],
-      user,
-      totalCount: allPlans.length, // Use actual count after deduplication
-    };
+  if (wsId) {
+    createdPlansQuery.eq('ws_id', wsId);
+    joinedPlansQuery.eq('ws_id', wsId);
   }
+
+  const [createdPlansResult, joinedPlansResult] = await Promise.all([
+    createdPlansQuery,
+    joinedPlansQuery,
+  ]);
+
+  const { data: createdPlans } = createdPlansResult;
+  const { data: joinedPlans } = joinedPlansResult;
+
+  // Combine and deduplicate
+  const planMap = new Map();
+  createdPlans?.forEach((plan) => {
+    if (!planMap.has(plan.id)) {
+      planMap.set(plan.id, plan);
+    }
+  });
+  joinedPlans?.forEach((plan) => {
+    if (!planMap.has(plan.id)) {
+      planMap.set(plan.id, plan);
+    }
+  });
+
+  const allPlans = Array.from(planMap.values()).sort(
+    (a, b) =>
+      new Date(b.created_at || 0).getTime() -
+      new Date(a.created_at || 0).getTime()
+  );
+
+  // Apply pagination
+  const from = (page - 1) * pageSize;
+  const to = from + pageSize;
+  const paginatedPlans = allPlans.slice(from, to);
+
+  const planIds =
+    paginatedPlans
+      ?.map((plan) => plan.id)
+      .filter((id): id is string => Boolean(id)) || [];
+
+  let participantsData: {
+    user_id: string | null;
+    display_name: string | null;
+    is_guest: boolean | null;
+    timeblock_count: number | null;
+    plan_id: string | null;
+  }[] = [];
+
+  if (planIds.length > 0) {
+    const { data } = await sbAdmin
+      .from('meet_together_users')
+      .select('user_id, display_name, plan_id, is_guest, timeblock_count')
+      .in('plan_id', planIds);
+
+    participantsData = data || [];
+  }
+
+  const plansWithParticipants = paginatedPlans.map((plan) => ({
+    ...plan,
+    participants: plan.id
+      ? participantsData.filter((p) => p.plan_id === plan.id)
+      : [],
+  }));
+
+  return {
+    data: plansWithParticipants as MeetTogetherPlanWithParticipants[],
+    user,
+    totalCount: allPlans.length, // Use actual count after deduplication
+  };
 }

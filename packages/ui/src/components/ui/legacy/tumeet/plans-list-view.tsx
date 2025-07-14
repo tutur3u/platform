@@ -43,6 +43,7 @@ export function PlansListView({
     <div className="mt-8 w-full max-w-6xl space-y-4">
       {plans.map((plan: MeetTogetherPlanWithParticipants) => (
         <Link
+          target="_blank"
           href={`/meet-together/plans/${plan.id?.replace(/-/g, '')}`}
           key={plan.id}
           className="group hover:-translate-y-0.5 flex items-center gap-6 rounded-xl border border-foreground/10 bg-accent p-6 shadow-sm transition-all duration-300 hover:border-foreground/20 hover:shadow-lg"

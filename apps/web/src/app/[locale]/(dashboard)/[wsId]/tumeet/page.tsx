@@ -16,5 +16,9 @@ export default async function TumeetPage({
   searchParams,
 }: TumeetPageProps) {
   const { wsId } = await params;
-  return <MeetTogetherPage wsId={wsId} searchParams={searchParams} />;
+  return (
+    <div className="-m-4">
+      <MeetTogetherPage wsId={wsId} searchParams={searchParams} />
+    </div>
+  );
 }
