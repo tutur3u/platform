@@ -3,25 +3,27 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import type { MeetTogetherPlan } from '@tuturuuu/types/primitives/MeetTogetherPlan';
+import { Badge } from '@tuturuuu/ui/badge';
+import { Button } from '@tuturuuu/ui/button';
+import { Card, CardContent } from '@tuturuuu/ui/card';
 import { Separator } from '@tuturuuu/ui/separator';
-import { Skeleton } from '@tuturuuu/ui/skeleton';
-import dayjs from 'dayjs';
-import { Suspense } from 'react';
 import Form from './form';
-import MeetTogetherPagination from './pagination';
-import UserTime from './user-time';
 import 'dayjs/locale/vi';
+import 'dayjs/plugin/relativeTime';
+import { Calendar, UserIcon, Users, Video, Zap } from 'lucide-react';
 import Link from 'next/link';
 import { getLocale, getTranslations } from 'next-intl/server';
 import { GradientHeadline } from '../../custom/gradient-headline';
+import { MeetTogetherClient } from './client-wrapper';
 
 // Extended interface to include participants
-interface MeetTogetherPlanWithParticipants extends MeetTogetherPlan {
+export interface MeetTogetherPlanWithParticipants extends MeetTogetherPlan {
   participants?: Array<{
-    user_id: string;
+    user_id: string | null;
     display_name: string | null;
-    is_guest: boolean;
-    timeblock_count: number;
+    is_guest: boolean | null;
+    timeblock_count: number | null;
+    plan_id: string | null;
   }>;
 }
 
@@ -33,205 +35,6 @@ interface MeetTogetherPageProps {
     pageSize?: string;
     search?: string;
   }>;
-}
-
-// Loading skeleton component for plans
-function PlansLoadingSkeleton() {
-  return (
-    <div className="mt-4 grid w-full max-w-4xl grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-      {Array.from({ length: 6 }, (_, i) => i).map((index) => (
-        <div
-          key={`skeleton-${Date.now()}-${index}`}
-          className="rounded-lg border border-foreground/20 p-4"
-        >
-          <div className="mb-4 flex w-full items-center justify-between gap-2">
-            <Skeleton className="h-6 w-3/4" />
-            <Skeleton className="h-6 w-16" />
-          </div>
-          <Skeleton className="mb-2 h-4 w-full" />
-          <Skeleton className="mb-4 h-4 w-2/3" />
-          <div className="flex gap-2">
-            <Skeleton className="h-6 w-20" />
-            <Skeleton className="h-6 w-20" />
-            <Skeleton className="h-6 w-20" />
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-// Plans grid component
-function PlansGrid({
-  plans,
-  locale,
-  t,
-}: {
-  plans: MeetTogetherPlanWithParticipants[];
-  locale: string;
-  // biome-ignore lint/suspicious/noExplicitAny: <translations are not typed>
-  t: any;
-}) {
-  if (plans.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center py-12">
-        <div className="mb-4 rounded-full bg-foreground/10 p-6">
-          <svg
-            className="h-8 w-8 text-foreground/60"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-            aria-hidden="true"
-          >
-            <title>Calendar icon</title>
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={1.5}
-              d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-            />
-          </svg>
-        </div>
-        <h3 className="mb-2 font-semibold text-foreground text-lg">
-          {t('no_plans_yet')}
-        </h3>
-        <p className="max-w-md text-center text-foreground/60 text-sm">
-          {t('new_plan_desc')}
-        </p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="mt-4 grid w-full max-w-4xl grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-      {plans.map((plan: MeetTogetherPlanWithParticipants) => (
-        <Link
-          href={`/meet-together/plans/${plan.id?.replace(/-/g, '')}`}
-          key={plan.id}
-          className="group grid w-full rounded-lg border border-foreground/20 p-4 transition-all duration-200 hover:border-foreground/40 hover:shadow-md"
-        >
-          <div className="flex w-full items-center justify-between gap-2">
-            <h3 className="line-clamp-1 w-full flex-1 font-bold text-foreground">
-              {plan.name || t('untitled_plan')}
-            </h3>
-            {plan.start_time && (
-              <div className="rounded bg-foreground px-2 py-0.5 font-semibold text-background text-sm">
-                GMT
-                {Intl.NumberFormat('en-US', {
-                  signDisplay: 'always',
-                }).format(
-                  parseInt(plan.start_time?.split(/[+-]/)?.[1] ?? '0') *
-                    (plan.start_time?.includes('-') ? -1 : 1)
-                )}
-              </div>
-            )}
-          </div>
-
-          <div className="flex grow flex-col justify-between gap-4">
-            {plan.description && (
-              <p className="line-clamp-2 text-foreground/70 text-sm">
-                {plan.description}
-              </p>
-            )}
-
-            {plan.start_time && plan.end_time && (
-              <div className="text-foreground/60 transition-colors group-hover:text-foreground/80">
-                <span className="font-semibold">
-                  <UserTime time={plan.start_time} /> -{' '}
-                  <UserTime time={plan.end_time} />
-                </span>{' '}
-                <span className="text-xs">({t('local_time')})</span>
-              </div>
-            )}
-          </div>
-
-          {plan.participants && plan.participants.length > 0 && (
-            <>
-              <Separator className="my-3" />
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <svg
-                    className="h-4 w-4 text-dynamic-blue"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    aria-hidden="true"
-                  >
-                    <title>Users icon</title>
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={1.5}
-                      d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2m18-7a4 4 0 11-8 0 4 4 0 018 0zM9 7a4 4 0 11-8 0 4 4 0 018 0z"
-                    />
-                  </svg>
-                  <span className="font-medium text-foreground text-sm">
-                    {t('participants')}
-                  </span>
-                  <span className="rounded-full bg-dynamic-blue/10 px-2 py-0.5 font-medium text-dynamic-blue text-xs">
-                    {plan.participants.length}
-                  </span>
-                </div>
-                <div className="flex flex-wrap gap-1">
-                  {plan.participants.slice(0, 3).map((participant) => (
-                    <div
-                      key={participant.user_id}
-                      className={`inline-flex items-center gap-1 rounded px-2 py-1 text-xs transition-colors group-hover:bg-foreground/20 ${
-                        participant.is_guest
-                          ? 'bg-dynamic-orange/10 text-dynamic-orange'
-                          : 'bg-dynamic-green/10 text-dynamic-green'
-                      }`}
-                    >
-                      <div
-                        className={`h-1.5 w-1.5 rounded-full ${
-                          participant.is_guest
-                            ? 'bg-dynamic-orange'
-                            : 'bg-dynamic-green'
-                        }`}
-                      />
-                      <span className="font-medium">
-                        {participant.display_name || t('anonymous')}
-                      </span>
-                    </div>
-                  ))}
-                  {plan.participants.length > 3 && (
-                    <div className="inline-flex items-center gap-1 rounded bg-foreground/10 px-2 py-1 text-foreground/70 text-xs group-hover:bg-foreground/20">
-                      +{plan.participants.length - 3}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </>
-          )}
-
-          {plan.dates && plan.dates.length > 0 && (
-            <>
-              <Separator className="my-3" />
-              <div className="flex h-full flex-wrap gap-2 text-center">
-                {plan.dates?.slice(0, 5).map((date) => (
-                  <div
-                    key={date}
-                    className={`flex items-center justify-center rounded bg-foreground/10 px-2 py-1 font-medium text-xs transition-colors group-hover:bg-foreground/20 ${(plan.dates?.length || 0) <= 2 && 'w-full'}`}
-                  >
-                    {dayjs(date)
-                      .locale(locale)
-                      .format(
-                        `${locale === 'vi' ? 'DD/MM (ddd)' : 'MMM D (ddd)'}`
-                      )}
-                  </div>
-                ))}
-                {plan.dates.length > 5 && (
-                  <div className="flex items-center justify-center rounded bg-foreground/10 px-2 py-1 font-medium text-xs group-hover:bg-foreground/20">
-                    +{plan.dates.length - 5}
-                  </div>
-                )}
-              </div>
-            </>
-          )}
-        </Link>
-      ))}
-    </div>
-  );
 }
 
 export async function MeetTogetherPage({
@@ -255,82 +58,146 @@ export async function MeetTogetherPage({
   const totalPages = Math.ceil(totalCount / pageSize);
 
   return (
-    <div className="flex w-full flex-col items-center">
-      <div className="container mx-auto mt-8 flex max-w-4xl flex-col gap-6 px-3 py-16 lg:gap-14 lg:py-24">
-        <div className="flex flex-col items-center">
-          <h1 className="mx-auto mb-2 text-balance text-center font-bold text-2xl text-foreground leading-tight! tracking-tight md:text-4xl lg:text-6xl">
+    <div className="relative flex w-full flex-col items-center overflow-hidden">
+      {/* Background decorative elements */}
+      <div className="-z-10 pointer-events-none absolute inset-0">
+        <div className="-left-32 absolute top-20 h-64 w-64 rounded-full bg-dynamic-blue/10 blur-3xl"></div>
+        <div className="-right-32 absolute top-32 h-64 w-64 rounded-full bg-dynamic-purple/10 blur-3xl"></div>
+        <div className="absolute bottom-1/3 left-1/4 h-40 w-40 rounded-full bg-dynamic-green/5 blur-2xl"></div>
+      </div>
+
+      {/* Hero section */}
+      <div className="container mx-auto mt-8 flex max-w-5xl flex-col gap-8 px-4 py-16 md:py-24 lg:gap-12">
+        <div className="flex flex-col items-center text-center">
+          {/* Badge */}
+          <Badge variant="secondary" className="mb-6 px-4 py-2">
+            <Video className="mr-2 h-4 w-4" />
+            {t('meeting_coordination')}
+          </Badge>
+
+          {/* Main heading */}
+          <h1 className="mb-6 text-balance text-center font-bold text-4xl text-foreground leading-tight tracking-tight md:text-5xl lg:text-6xl">
             {t('headline-p1')}{' '}
-            <GradientHeadline>{t('headline-p2')}</GradientHeadline>.
+            <GradientHeadline className="bg-gradient-to-r from-dynamic-blue via-dynamic-purple to-dynamic-green bg-clip-text">
+              {t('headline-p2')}
+            </GradientHeadline>
           </h1>
+
+          {/* Subtitle */}
+          <p className="mb-8 max-w-2xl text-center text-foreground/70 text-lg leading-relaxed md:text-xl">
+            {t('new_plan_desc')}
+          </p>
+
+          {/* Features highlights */}
+          <div className="mb-8 grid grid-cols-1 gap-4 md:grid-cols-3">
+            <div className="flex items-center gap-3 rounded-lg bg-dynamic-blue/5 p-4">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-dynamic-blue/10">
+                <Calendar className="h-5 w-5 text-dynamic-blue" />
+              </div>
+              <div className="text-left">
+                <p className="font-medium text-foreground text-sm">
+                  {t('smart_scheduling')}
+                </p>
+                <p className="text-foreground/60 text-xs">
+                  {t('automatic_coordination')}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 rounded-lg bg-dynamic-purple/5 p-4">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-dynamic-purple/10">
+                <Users className="h-5 w-5 text-dynamic-purple" />
+              </div>
+              <div className="text-left">
+                <p className="font-medium text-foreground text-sm">
+                  {t('group_availability')}
+                </p>
+                <p className="text-foreground/60 text-xs">
+                  {t('find_perfect_time')}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 rounded-lg bg-dynamic-green/5 p-4">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-dynamic-green/10">
+                <Zap className="h-5 w-5 text-dynamic-green" />
+              </div>
+              <div className="text-left">
+                <p className="font-medium text-foreground text-sm">
+                  {t('instant_setup')}
+                </p>
+                <p className="text-foreground/60 text-xs">
+                  {t('minutes_to_create')}
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div className="w-full max-w-4xl px-4">
-        <Form wsId={wsId} />
+      {/* Form section */}
+      <div className="w-full max-w-4xl px-2 md:px-4">
+        <Card className="border-border/50 bg-accent/50 backdrop-blur-sm">
+          <CardContent className="p-2 md:p-6">
+            <Form wsId={wsId} />
+          </CardContent>
+        </Card>
       </div>
 
-      <Separator className="mt-8 mb-6 md:mt-16" />
+      <Separator className="my-8 md:my-16" />
 
-      <div className="flex w-full flex-col items-center justify-center p-4 pb-8 text-foreground">
-        <div className="w-full max-w-4xl">
-          <div className="mb-6 flex flex-col gap-4">
+      {/* Plans section */}
+      <div className="flex w-full flex-col items-center justify-center px-4 pb-16">
+        <div className="w-full max-w-6xl">
+          <div className="mb-8 flex flex-col gap-4">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-              <h2 className="font-bold text-2xl">{t('your_plans')}</h2>
-
-              {totalCount > 0 && (
-                <div className="text-foreground/60 text-sm">
-                  <span className="font-medium text-foreground">
-                    {totalCount}
-                  </span>{' '}
-                  {tCommon('result(s)')}
-                </div>
-              )}
+              <div className="space-y-2 text-center sm:text-left">
+                <h2 className="font-bold text-2xl text-foreground md:text-3xl">
+                  {t('your_plans')}
+                </h2>
+                {totalCount > 0 && (
+                  <p className="text-foreground/60 text-sm">
+                    <span className="font-medium text-foreground">
+                      {totalCount}
+                    </span>{' '}
+                    {tCommon('result(s)')}
+                  </p>
+                )}
+              </div>
             </div>
           </div>
 
           {user?.id ? (
-            <>
-              <Suspense fallback={<PlansLoadingSkeleton />}>
-                <PlansGrid plans={plans} locale={locale} t={t} />
-              </Suspense>
-
-              {totalPages > 1 && (
-                <div className="mt-8 flex justify-center">
-                  <MeetTogetherPagination
-                    currentPage={page}
-                    totalPages={totalPages}
-                    totalCount={totalCount}
-                    pageSize={pageSize}
-                  />
-                </div>
-              )}
-            </>
+            <MeetTogetherClient
+              plans={plans}
+              locale={locale}
+              totalPages={totalPages}
+              totalCount={totalCount}
+              currentPage={page}
+              pageSize={pageSize}
+            />
           ) : (
-            <div className="flex flex-col items-center justify-center py-12">
-              <div className="mb-4 rounded-full bg-foreground/10 p-6">
-                <svg
-                  className="h-8 w-8 text-foreground/60"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                  aria-hidden="true"
-                >
-                  <title>User icon</title>
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={1.5}
-                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                  />
-                </svg>
-              </div>
-              <h3 className="mb-2 font-semibold text-foreground text-lg">
-                {t('login_to_save_plans')}
-              </h3>
-              <p className="max-w-md text-center text-foreground/60 text-sm">
-                {t('new_plan_desc')}
-              </p>
-            </div>
+            <Card className="border-border/50 bg-gradient-to-br from-dynamic-blue/5 to-dynamic-purple/5">
+              <CardContent className="flex flex-col items-center justify-center p-16">
+                <div className="mb-8 rounded-full bg-dynamic-blue/10 p-8 shadow-sm">
+                  <UserIcon className="h-8 w-8 text-dynamic-blue" />
+                </div>
+                <h3 className="mb-4 font-semibold text-foreground text-xl">
+                  {t('login_required')}
+                </h3>
+                <p className="mb-6 max-w-md text-center text-foreground/70 text-sm leading-relaxed">
+                  {t('login_required_desc')}
+                </p>
+                <div className="flex gap-4">
+                  <Button asChild>
+                    <Link href="/login">{tCommon('sign_in')}</Link>
+                  </Button>
+                  <Button variant="outline" asChild>
+                    <Link href="/register">{tCommon('create_account')}</Link>
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
           )}
         </div>
       </div>
@@ -359,90 +226,302 @@ async function getData({
 
   const sbAdmin = await createAdminClient();
 
-  // Get all plans (both created and joined) first
-  const createdPlansQuery = sbAdmin
-    .from('meet_together_plans')
-    .select('*')
-    .eq('creator_id', user.id)
-    .order('created_at', { ascending: false });
+  try {
+    // Get all plans without pagination to properly handle deduplication first
+    let createdPlansQuery = sbAdmin
+      .from('meet_together_plans')
+      .select('*')
+      .eq('creator_id', user.id)
+      .order('created_at', { ascending: false });
 
-  const joinedPlansQuery = sbAdmin
-    .from('meet_together_user_timeblocks')
-    .select('...meet_together_plans!inner(*)')
-    .eq('user_id', user.id)
-    .order('created_at', { ascending: false });
+    // First, get unique plan IDs from timeblocks (not the full plan data)
+    let joinedPlanIdsQuery = sbAdmin
+      .from('meet_together_user_timeblocks')
+      .select('plan_id')
+      .eq('user_id', user.id);
 
-  if (wsId) {
-    createdPlansQuery.eq('ws_id', wsId);
-    joinedPlansQuery.eq('meet_together_plans.ws_id', wsId);
-  }
+    // Apply workspace filter
+    if (wsId) {
+      createdPlansQuery = createdPlansQuery.eq('ws_id', wsId);
+      joinedPlanIdsQuery = joinedPlanIdsQuery.eq(
+        'meet_together_plans.ws_id',
+        wsId
+      );
+    }
 
-  const [createdPlans, joinedPlans] = await Promise.all([
-    createdPlansQuery,
-    joinedPlansQuery,
-  ]);
+    // Execute queries to get created plans and joined plan IDs
+    const [createdPlansResult, joinedPlanIdsResult] = await Promise.all([
+      createdPlansQuery,
+      joinedPlanIdsQuery,
+    ]);
 
-  const { data: createdPlanData, error: createdPlansError } = createdPlans;
-  const { data: joinedPlanData, error: joinedPlansError } = joinedPlans;
+    const { data: createdPlanData, error: createdPlansError } =
+      createdPlansResult;
+    const { data: joinedPlanIdsData, error: joinedPlanIdsError } =
+      joinedPlanIdsResult;
 
-  if (createdPlansError) throw createdPlansError;
-  if (joinedPlansError) throw joinedPlansError;
+    if (createdPlansError) throw createdPlansError;
+    if (joinedPlanIdsError) throw joinedPlanIdsError;
 
-  // Combine and deduplicate all plans
-  let allPlans = [...(createdPlanData || []), ...(joinedPlanData || [])]
-    .filter((v, i, a) => a.findIndex((t) => t.id === v.id) === i)
-    .sort(
+    // Get unique plan IDs that the user joined (excluding ones they created)
+    const createdPlanIds = new Set(createdPlanData?.map((p) => p.id) || []);
+    const uniqueJoinedPlanIds = [
+      ...new Set(
+        joinedPlanIdsData
+          ?.map((item) => item.plan_id)
+          .filter((planId) => planId && !createdPlanIds.has(planId)) || []
+      ),
+    ];
+
+    console.log('=== DEBUG: Plan count analysis ===');
+    console.log('Created plans count:', createdPlanData?.length || 0);
+    console.log('Unique joined plan IDs count:', uniqueJoinedPlanIds.length);
+    console.log('User ID:', user.id);
+    console.log('Workspace ID:', wsId);
+    console.log('Search term:', search);
+
+    let finalCreatedPlanData = createdPlanData;
+    let joinedPlanData: {
+      id: string;
+    }[] = [];
+
+    // Fetch the actual plan data for joined plans if there are any
+    if (uniqueJoinedPlanIds.length > 0) {
+      let joinedPlansQuery = sbAdmin
+        .from('meet_together_plans')
+        .select('*')
+        .in('id', uniqueJoinedPlanIds)
+        .order('created_at', { ascending: false });
+
+      // Apply workspace filter to joined plans query
+      if (wsId) {
+        joinedPlansQuery = joinedPlansQuery.eq('ws_id', wsId);
+      }
+
+      // Apply search filter to both queries
+      if (search) {
+        const searchPattern = `%${search}%`;
+        createdPlansQuery = sbAdmin
+          .from('meet_together_plans')
+          .select('*')
+          .eq('creator_id', user.id)
+          .or(`name.ilike.${searchPattern},description.ilike.${searchPattern}`)
+          .order('created_at', { ascending: false });
+
+        joinedPlansQuery = joinedPlansQuery.or(
+          `name.ilike.${searchPattern},description.ilike.${searchPattern}`
+        );
+
+        if (wsId) {
+          createdPlansQuery = createdPlansQuery.eq('ws_id', wsId);
+        }
+
+        // Re-execute with search filters
+        const [filteredCreatedResult, filteredJoinedResult] = await Promise.all(
+          [createdPlansQuery, joinedPlansQuery]
+        );
+
+        const { data: filteredCreatedData, error: filteredCreatedError } =
+          filteredCreatedResult;
+        const { data: filteredJoinedData, error: filteredJoinedError } =
+          filteredJoinedResult;
+
+        if (filteredCreatedError) throw filteredCreatedError;
+        if (filteredJoinedError) throw filteredJoinedError;
+
+        // Use filtered results
+        finalCreatedPlanData = filteredCreatedData;
+        joinedPlanData = filteredJoinedData || [];
+      } else {
+        const { data, error } = await joinedPlansQuery;
+        if (error) throw error;
+        joinedPlanData = data || [];
+      }
+    }
+
+    console.log(
+      'Joined plans count after fetching details:',
+      joinedPlanData.length
+    );
+
+    // Combine and deduplicate plans efficiently using Map
+    const planMap = new Map();
+
+    // Add created plans
+    finalCreatedPlanData?.forEach((plan) => {
+      if (!planMap.has(plan.id)) {
+        planMap.set(plan.id, plan);
+      }
+    });
+
+    // Add joined plans (avoiding duplicates)
+    joinedPlanData?.forEach((plan) => {
+      if (!planMap.has(plan.id)) {
+        planMap.set(plan.id, plan);
+      }
+    });
+
+    const allPlans = Array.from(planMap.values()).sort(
       (a, b) =>
         new Date(b.created_at || 0).getTime() -
         new Date(a.created_at || 0).getTime()
     );
 
-  // Apply search filter if provided
-  if (search) {
-    const searchLower = search.toLowerCase();
-    allPlans = allPlans.filter(
-      (plan) =>
-        plan.name?.toLowerCase().includes(searchLower) ||
-        plan.description?.toLowerCase().includes(searchLower)
+    // Get the actual total count after deduplication
+    const actualTotalCount = allPlans.length;
+
+    console.log('Total after deduplication:', actualTotalCount);
+    console.log(
+      'Plans removed by deduplication:',
+      (finalCreatedPlanData?.length || 0) +
+        (joinedPlanData?.length || 0) -
+        actualTotalCount
     );
-  }
+    console.log('=====================================');
 
-  const totalCount = allPlans.length;
+    // If no plans exist, return early
+    if (actualTotalCount === 0) {
+      return { data: [], totalCount: 0, user };
+    }
 
-  // Apply pagination in memory
-  const from = (page - 1) * pageSize;
-  const to = from + pageSize;
-  const paginatedPlans = allPlans.slice(from, to);
+    // Apply pagination to the combined and sorted results
+    const from = (page - 1) * pageSize;
+    const to = from + pageSize;
+    const paginatedPlans = allPlans.slice(from, to);
 
-  // Fetch participants for each plan
-  const planIds = paginatedPlans.map((plan) => plan.id).filter(Boolean);
+    // Fetch participants for paginated plans only (single optimized query)
+    const planIds = paginatedPlans
+      .map((plan) => plan.id)
+      .filter((id): id is string => Boolean(id));
 
-  if (planIds.length > 0) {
-    const { data: participantsData } = await sbAdmin
-      .from('meet_together_users')
-      .select('user_id, display_name, plan_id, is_guest, timeblock_count')
-      .in('plan_id', planIds);
+    if (planIds.length > 0) {
+      const { data: participantsData, error: participantsError } = await sbAdmin
+        .from('meet_together_users')
+        .select('user_id, display_name, plan_id, is_guest, timeblock_count')
+        .in('plan_id', planIds);
 
-    // Add participants to each plan
+      if (participantsError) {
+        console.error('Error fetching participants:', participantsError);
+      }
+
+      // Group participants by plan_id for efficient lookup
+      const participantsByPlan = new Map<
+        string,
+        Array<{
+          user_id: string | null;
+        }>
+      >();
+      participantsData?.forEach((participant) => {
+        const planId = participant.plan_id;
+        if (planId && !participantsByPlan.has(planId)) {
+          participantsByPlan.set(planId, []);
+        }
+        if (planId) {
+          participantsByPlan.get(planId)?.push(participant);
+        }
+      });
+
+      const plansWithParticipants = paginatedPlans.map((plan) => ({
+        ...plan,
+        participants: plan.id ? participantsByPlan.get(plan.id) || [] : [],
+      }));
+
+      return {
+        data: plansWithParticipants as MeetTogetherPlanWithParticipants[],
+        user,
+        totalCount: actualTotalCount,
+      };
+    }
+
+    return {
+      data: paginatedPlans.map((plan) => ({
+        ...plan,
+        participants: [],
+      })) as MeetTogetherPlanWithParticipants[],
+      user,
+      totalCount: actualTotalCount,
+    };
+  } catch (error) {
+    console.error('Optimized query failed, using simplified approach:', error);
+
+    // Simplified fallback approach - get all created and joined plans
+    const [createdPlansResult, joinedPlansResult] = await Promise.all([
+      sbAdmin
+        .from('meet_together_plans')
+        .select('*')
+        .eq('creator_id', user.id)
+        .order('created_at', { ascending: false }),
+      sbAdmin
+        .from('meet_together_user_timeblocks')
+        .select('...meet_together_plans!inner(*)')
+        .eq('user_id', user.id)
+        .neq('meet_together_plans.creator_id', user.id)
+        .order('created_at', {
+          ascending: false,
+          referencedTable: 'meet_together_plans',
+        }),
+    ]);
+
+    const { data: createdPlans } = createdPlansResult;
+    const { data: joinedPlans } = joinedPlansResult;
+
+    // Combine and deduplicate
+    const planMap = new Map();
+    createdPlans?.forEach((plan) => {
+      if (!planMap.has(plan.id)) {
+        planMap.set(plan.id, plan);
+      }
+    });
+    joinedPlans?.forEach((plan) => {
+      if (!planMap.has(plan.id)) {
+        planMap.set(plan.id, plan);
+      }
+    });
+
+    const allPlans = Array.from(planMap.values()).sort(
+      (a, b) =>
+        new Date(b.created_at || 0).getTime() -
+        new Date(a.created_at || 0).getTime()
+    );
+
+    // Apply pagination
+    const from = (page - 1) * pageSize;
+    const to = from + pageSize;
+    const paginatedPlans = allPlans.slice(from, to);
+
+    const planIds =
+      paginatedPlans
+        ?.map((plan) => plan.id)
+        .filter((id): id is string => Boolean(id)) || [];
+
+    let participantsData: {
+      user_id: string | null;
+      display_name: string | null;
+      is_guest: boolean | null;
+      timeblock_count: number | null;
+      plan_id: string | null;
+    }[] = [];
+
+    if (planIds.length > 0) {
+      const { data } = await sbAdmin
+        .from('meet_together_users')
+        .select('user_id, display_name, plan_id, is_guest, timeblock_count')
+        .in('plan_id', planIds);
+
+      participantsData = data || [];
+    }
+
     const plansWithParticipants = paginatedPlans.map((plan) => ({
       ...plan,
-      participants:
-        participantsData?.filter((p) => p.plan_id === plan.id) || [],
+      participants: plan.id
+        ? participantsData.filter((p) => p.plan_id === plan.id)
+        : [],
     }));
 
     return {
       data: plansWithParticipants as MeetTogetherPlanWithParticipants[],
       user,
-      totalCount,
+      totalCount: allPlans.length, // Use actual count after deduplication
     };
   }
-
-  return {
-    data: paginatedPlans.map((plan) => ({
-      ...plan,
-      participants: [],
-    })) as MeetTogetherPlanWithParticipants[],
-    user,
-    totalCount,
-  };
 }
