@@ -134,7 +134,7 @@ export function _experimentalAddTimeblocks(
     const currTB = sortedTimeblocks[i];
 
     // If nextTBs is empty, add the current timeblock
-    if (nextTBs.length === 0) {
+    if (nextTBs.length === 0 && currTB) {
       nextTBs.push(currTB);
       continue;
     }
@@ -187,126 +187,6 @@ export function _experimentalAddTimeblocks(
 
   return nextTBs;
 }
-
-export function _experimentalRemoveTimeblocks(
-  prevTimeblocks: Timeblock[],
-  dates: Date[],
-  forcedOffset?: number
-): Timeblock[] {
-  // Return the previous timeblocks if the dates are empty
-  if (!dates || dates.length === 0) {
-    return prevTimeblocks;
-  }
-
-  // Get the soonest and latest dates and hours
-  const { soonest: removalStartTime, latest: removalEndTime } =
-    datesToTimeMatrix(dates);
-
-  const { soonest: soonestDate, latest: latestDate } = datesToDateMatrix(dates);
-
-  const removalStart = soonestDate
-    .set('hour', removalStartTime.hour())
-    .set('minute', removalStartTime.minute())
-    .set('second', 0);
-
-  const removalEnd = latestDate
-    .set('hour', removalEndTime.hour())
-    .set('minute', removalEndTime.minute())
-    .set('second', 0);
-
-  const filteredTimeblocks: Timeblock[] = [];
-
-  // Iterate through each timeblock
-  for (const tb of prevTimeblocks) {
-    const tbStart = dayjs(`${tb.date} ${tb.start_time}`);
-    const tbEnd = dayjs(`${tb.date} ${tb.end_time}`);
-
-    // Check if the timeblock is completely outside the date range
-    if (
-      tbStart.isSameOrAfter(removalEnd, 'minutes') ||
-      tbEnd.isSameOrBefore(removalStart, 'minutes')
-    ) {
-      filteredTimeblocks.push(tb);
-      continue;
-    }
-
-    // Check if the timeblock is completely inside the date range
-    if (
-      tbStart.isSameOrAfter(removalStart, 'minutes') &&
-      tbEnd.isSameOrBefore(removalEnd, 'minutes')
-    ) {
-      continue;
-    }
-
-    const date = dayjs(tb.date);
-
-    const rmStart = dayjs(removalStart)
-      .set('year', date.year())
-      .set('month', date.month())
-      .set('date', date.date());
-
-    const rmEnd = dayjs(removalEnd)
-      .set('year', date.year())
-      .set('month', date.month())
-      .set('date', date.date());
-
-    // Check if the removal time is within the timeblock
-    // if (
-    //   tbStart.isBefore(rmStart, 'minutes') &&
-    //   tbEnd.isAfter(rmEnd, 'minutes')
-    // ) {
-    //   const newTimeblock = { ...tb };
-
-    //   newTimeblock.start_time = (dayjs.max(tbStart, rmStart) ?? tbStart)
-    //     .utcOffset(forcedOffset ?? rmStart.utcOffset(), true)
-    //     .format('HH:mm:ssZ');
-
-    //   newTimeblock.end_time = (dayjs.min(rmEnd, tbEnd) ?? tbEnd)
-    //     .add(15, 'minutes')
-    //     .utcOffset(forcedOffset ?? rmEnd.utcOffset(), true)
-    //     .format('HH:mm:ssZ');
-
-    //   filteredTimeblocks.push(newTimeblock);
-    //   continue;
-    // }
-
-    // Check if the timeblock ends after the removal time starts
-    // and before the removal time ends
-    if (
-      tbEnd.isSameOrAfter(rmStart, 'minutes') &&
-      tbEnd.isSameOrBefore(rmEnd, 'minutes')
-    ) {
-      const newTimeblock = { ...tb };
-
-      newTimeblock.end_time = (dayjs.min(rmStart, tbEnd) ?? tbEnd)
-        .utcOffset(forcedOffset ?? rmStart.utcOffset())
-        .format('HH:mm:ssZ');
-
-      filteredTimeblocks.push(newTimeblock);
-      continue;
-    }
-
-    // Check if the timeblock starts after the removal time starts
-    // and before the removal time ends
-    if (
-      tbStart.isSameOrAfter(rmStart, 'minutes') &&
-      tbStart.isSameOrBefore(rmEnd, 'minutes')
-    ) {
-      const newTimeblock = { ...tb };
-
-      newTimeblock.start_time = (dayjs.max(rmEnd, tbStart) ?? tbStart)
-        .utcOffset(forcedOffset ?? rmEnd.utcOffset())
-        .format('HH:mm:ssZ');
-
-      filteredTimeblocks.push(newTimeblock);
-    }
-  }
-
-  return filteredTimeblocks.filter(
-    (timeblock) => timeblock.start_time !== timeblock.end_time
-  );
-}
-
 export function addTimeblocks(
   prevTimeblocks: Timeblock[],
   newTimeblocks: Timeblock[]
@@ -328,7 +208,7 @@ export function addTimeblocks(
     const currTB = sortedTimeblocks[i];
 
     // If nextTBs is empty, add the current timeblock
-    if (nextTBs.length === 0) {
+    if (nextTBs.length === 0 && currTB) {
       nextTBs.push(currTB);
       continue;
     }

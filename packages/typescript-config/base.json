@@ -3,16 +3,16 @@
   "display": "Default",
   "compilerOptions": {
     "esModuleInterop": true,
-    "incremental": false,
+    "incremental": true,
     "isolatedModules": true,
     "forceConsistentCasingInFileNames": true,
     "inlineSources": false,
     "noUnusedLocals": true,
-    "noUnusedParameters": true,
+    "noUnusedParameters": false,
     "preserveWatchOutput": true,
     "strictNullChecks": true,
     "allowJs": false,
-    "lib": ["es2022", "DOM", "DOM.Iterable"],
+    "lib": ["esnext", "DOM", "DOM.Iterable"],
     "module": "NodeNext",
     "moduleDetection": "force",
     "moduleResolution": "NodeNext",
@@ -20,6 +20,6 @@
     "resolveJsonModule": true,
     "skipLibCheck": true,
     "strict": true,
-    "target": "ES2022"
+    "target": "esnext"
   }
 }

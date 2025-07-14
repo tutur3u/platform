@@ -65,7 +65,7 @@ import {
   X,
 } from 'lucide-react';
 import Image from 'next/image';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { z } from 'zod';
 import {
   isAllDayEvent,
@@ -126,7 +126,7 @@ export function EventModal() {
     title: '',
     description: '',
     start_at: new Date().toISOString(),
-    end_at: new Date(new Date().getTime() + 60 * 60 * 1000).toISOString(), // Default to 1 hour
+    end_at: new Date(Date.now() + 60 * 60 * 1000).toISOString(), // Default to 1 hour
     color: 'BLUE',
     location: '',
     priority: 'medium',
@@ -134,14 +134,15 @@ export function EventModal() {
   });
 
   // State for AI event generation
-  const [generatedEvents, setGeneratedEvents] = useState<any[]>([]);
+  const [generatedEvents, setGeneratedEvents] =
+    useState<Partial<CalendarEvent>[]>();
   const [currentEventIndex, setCurrentEventIndex] = useState(0);
   const [userTimezone] = useState(
     Intl.DateTimeFormat().resolvedOptions().timeZone
   );
 
   // Get the current event being previewed
-  const generatedEvent = generatedEvents[currentEventIndex];
+  const generatedEvent = generatedEvents?.[currentEventIndex];
 
   // Determine if we're editing an existing event
   const isEditing = !!(activeEvent?.id && activeEvent.id !== 'new');
@@ -179,16 +180,46 @@ export function EventModal() {
     schema: calendarEventsSchema,
   });
 
-  // Add this near the top of the component, after tz is defined
-  const categoriesKey = JSON.stringify(
-    settings?.categoryColors?.categories ?? []
+  // Function to check for overlapping events
+  const checkForOverlaps = useCallback(
+    (eventToCheck: Partial<CalendarEvent>) => {
+      if (!eventToCheck.start_at || !eventToCheck.end_at) return;
+
+      const allEvents = getEvents();
+      const eventStart = new Date(eventToCheck.start_at);
+      const eventEnd = new Date(eventToCheck.end_at);
+
+      // Find events that overlap with this event
+      const overlaps = allEvents.filter((existingEvent) => {
+        // Skip comparing with the current event being edited
+        if (existingEvent.id === activeEvent?.id) return false;
+
+        const existingStart = new Date(existingEvent.start_at);
+        const existingEnd = new Date(existingEvent.end_at);
+
+        // Check if the events are on the same day
+        const isSameDay =
+          existingStart.getDate() === eventStart.getDate() &&
+          existingStart.getMonth() === eventStart.getMonth() &&
+          existingStart.getFullYear() === eventStart.getFullYear();
+
+        if (!isSameDay) return false;
+
+        // Check for time overlap
+        return !(existingEnd <= eventStart || existingStart >= eventEnd);
+      });
+
+      setOverlappingEvents(overlaps);
+      setShowOverlapWarning(overlaps.length > 0);
+    },
+    [activeEvent, getEvents]
   );
 
   // Handle AI-generated events
   useEffect(() => {
-    if (object && !isLoading) {
+    if (object?.events && !isLoading) {
       // Process the generated events
-      const processedEvents = Array.isArray(object) ? object : [object];
+      const processedEvents = (object.events || []) as Partial<CalendarEvent>[];
 
       setGeneratedEvents(processedEvents);
       setCurrentEventIndex(0);
@@ -196,14 +227,14 @@ export function EventModal() {
       // Find overlapping events for the first event
       if (processedEvents.length > 0 && aiForm.getValues().smart_scheduling) {
         const firstEvent = processedEvents[0];
-        if (firstEvent && firstEvent.start_at && firstEvent.end_at) {
+        if (firstEvent?.start_at && firstEvent.end_at) {
           checkForOverlaps(firstEvent as Partial<CalendarEvent>);
         }
       }
 
       setActiveTab('preview');
     }
-  }, [object, isLoading, categoriesKey, tz]);
+  }, [object, isLoading, aiForm.getValues, checkForOverlaps]);
 
   // Reset form when modal opens/closes or active event changes
   useEffect(() => {
@@ -265,39 +296,7 @@ export function EventModal() {
 
     // Clear any error messages
     setDateError(null);
-  }, [activeEvent, isModalOpen, tz]);
-
-  // Function to check for overlapping events
-  const checkForOverlaps = (eventToCheck: Partial<CalendarEvent>) => {
-    if (!eventToCheck.start_at || !eventToCheck.end_at) return;
-
-    const allEvents = getEvents();
-    const eventStart = new Date(eventToCheck.start_at);
-    const eventEnd = new Date(eventToCheck.end_at);
-
-    // Find events that overlap with this event
-    const overlaps = allEvents.filter((existingEvent) => {
-      // Skip comparing with the current event being edited
-      if (existingEvent.id === activeEvent?.id) return false;
-
-      const existingStart = new Date(existingEvent.start_at);
-      const existingEnd = new Date(existingEvent.end_at);
-
-      // Check if the events are on the same day
-      const isSameDay =
-        existingStart.getDate() === eventStart.getDate() &&
-        existingStart.getMonth() === eventStart.getMonth() &&
-        existingStart.getFullYear() === eventStart.getFullYear();
-
-      if (!isSameDay) return false;
-
-      // Check for time overlap
-      return !(existingEnd <= eventStart || existingStart >= eventEnd);
-    });
-
-    setOverlappingEvents(overlaps);
-    setShowOverlapWarning(overlaps.length > 0);
-  };
+  }, [activeEvent, tz, checkForOverlaps, aiForm.reset]);
 
   // Handle manual event save
   const handleManualSave = async () => {
@@ -345,7 +344,7 @@ export function EventModal() {
       }
 
       closeModal();
-    } catch (error) {
+    } catch (_) {
       toast({
         title: 'Error',
         description: 'Failed to save or sync event. Please try again.',
@@ -400,7 +399,7 @@ export function EventModal() {
         existing_events: values.smart_scheduling ? existingEvents : undefined,
         categories: formattedCategories,
       });
-    } catch (error) {
+    } catch (_) {
       toast({
         title: 'Error generating events',
         description: 'Please try again with a different prompt',
@@ -411,22 +410,22 @@ export function EventModal() {
 
   // Handle AI event save
   const handleAISave = async () => {
-    if (generatedEvents.length === 0) return;
+    if (generatedEvents?.length === 0) return;
 
     setIsSaving(true);
     try {
       const eventsToSave = generatedEvents;
       const savedEvents: CalendarEvent[] = [];
-      const failedEvents: Array<{ event: any; error: any }> = [];
+      const failedEvents: Array<{ event: CalendarEvent; error: unknown }> = [];
 
       // Save each event individually
-      for (const eventData of eventsToSave) {
+      for (const eventData of eventsToSave || []) {
         try {
           const calendarEvent: Omit<CalendarEvent, 'id'> = {
             title: eventData.title || 'New Event',
             description: eventData.description || '',
-            start_at: eventData.start_at,
-            end_at: eventData.end_at,
+            start_at: eventData.start_at || '',
+            end_at: eventData.end_at || '',
             color: eventData.color || 'BLUE',
             location: eventData.location || '',
             priority: eventData.priority || 'medium',
@@ -436,7 +435,7 @@ export function EventModal() {
           const savedEvent = await addEvent(calendarEvent);
           if (savedEvent) savedEvents.push(savedEvent);
         } catch (error) {
-          failedEvents.push({ event: eventData, error });
+          failedEvents.push({ event: eventData as CalendarEvent, error });
         }
       }
 
@@ -444,7 +443,7 @@ export function EventModal() {
       if (savedEvents.length > 0) {
         toast({
           title: 'Success',
-          description: `${savedEvents.length}/${eventsToSave.length} event${savedEvents.length > 1 ? 's' : ''} saved`,
+          description: `${savedEvents.length}/${eventsToSave?.length || 0} event${savedEvents.length > 1 ? 's' : ''} saved`,
         });
         closeModal();
       }
@@ -457,7 +456,7 @@ export function EventModal() {
           variant: 'destructive',
         });
       }
-    } catch (error) {
+    } catch (_) {
       toast({
         title: 'Error',
         description: 'Failed to save or sync AI-generated events.',
@@ -485,7 +484,7 @@ export function EventModal() {
         await deleteEvent(originalId);
       }
       closeModal();
-    } catch (error) {
+    } catch (_) {
       toast({
         title: 'Error',
         description: 'Failed to delete event. Please try again.',
@@ -704,7 +703,7 @@ export function EventModal() {
       };
 
       mediaRecorder.current.start();
-    } catch (error) {
+    } catch (_) {
       setIsRecording(false);
     }
   };
@@ -751,7 +750,7 @@ export function EventModal() {
           variant: 'destructive',
         });
       }
-    } catch (error) {
+    } catch (_) {
       toast({
         title: 'API Error',
         description: 'Failed to process audio recording',
@@ -796,7 +795,7 @@ export function EventModal() {
             variant: 'destructive',
           });
         }
-      } catch (error) {
+      } catch (_) {
         toast({
           title: 'API Error',
           description: 'Failed to process uploaded image',
@@ -813,12 +812,12 @@ export function EventModal() {
 
   // Handle navigation between multiple events in preview
   const goToNextEvent = () => {
-    if (currentEventIndex < generatedEvents.length - 1) {
+    if (currentEventIndex < (generatedEvents?.length || 0) - 1) {
       const nextIndex = currentEventIndex + 1;
       setCurrentEventIndex(nextIndex);
       if (aiForm.getValues().smart_scheduling) {
-        const nextEvent = generatedEvents[nextIndex];
-        if (nextEvent && nextEvent.start_at && nextEvent.end_at) {
+        const nextEvent = generatedEvents?.[nextIndex];
+        if (nextEvent?.start_at && nextEvent.end_at) {
           checkForOverlaps(nextEvent as Partial<CalendarEvent>);
         }
       }
@@ -830,8 +829,8 @@ export function EventModal() {
       const prevIndex = currentEventIndex - 1;
       setCurrentEventIndex(prevIndex);
       if (aiForm.getValues().smart_scheduling) {
-        const prevEvent = generatedEvents[prevIndex];
-        if (prevEvent && prevEvent.start_at && prevEvent.end_at) {
+        const prevEvent = generatedEvents?.[prevIndex];
+        if (prevEvent?.start_at && prevEvent.end_at) {
           checkForOverlaps(prevEvent as Partial<CalendarEvent>);
         }
       }
@@ -871,7 +870,7 @@ export function EventModal() {
         title: 'Success',
         description: `Event ${checked ? 'locked' : 'unlocked'} successfully`,
       });
-    } catch (error) {
+    } catch (_) {
       toast({
         title: 'Error',
         description: 'Failed to update event lock status',
@@ -914,7 +913,7 @@ export function EventModal() {
 
         <Tabs
           value={activeTab}
-          onValueChange={(value) => setActiveTab(value as any)}
+          onValueChange={(value) => setActiveTab(value as 'manual' | 'ai')}
           className="flex h-[calc(90vh-140px)] flex-col"
         >
           <TabsList className="justify-start gap-2 bg-transparent px-6 pt-4 pb-0">
@@ -1093,7 +1092,10 @@ export function EventModal() {
                                 disabled={event.locked}
                               />
                               <div className="flex flex-col space-y-3">
-                                <label className="font-medium text-sm">
+                                <label
+                                  htmlFor="locked"
+                                  className="font-medium text-sm"
+                                >
                                   Event Protection
                                 </label>
                                 <EventToggleSwitch
@@ -1400,14 +1402,14 @@ export function EventModal() {
                         <h3 className="flex items-center gap-2 font-medium text-base">
                           <Sparkles className="h-4 w-4 text-primary" />
                           AI Generated Event
-                          {generatedEvents.length > 1 ? 's' : ''}
+                          {(generatedEvents?.length || 0) > 1 ? 's' : ''}
                         </h3>
                         <div className="flex items-center gap-2">
-                          {generatedEvents.length > 1 && (
+                          {(generatedEvents?.length || 0) > 1 && (
                             <div className="flex items-center gap-1 text-muted-foreground text-xs">
                               <span>{currentEventIndex + 1}</span>
                               <span>/</span>
-                              <span>{generatedEvents.length}</span>
+                              <span>{generatedEvents?.length || 0}</span>
                             </div>
                           )}
                           <Badge variant="outline" className="text-xs">
@@ -1428,7 +1430,7 @@ export function EventModal() {
                                   <CalendarIcon className="h-3.5 w-3.5" />
                                   <span>
                                     {format(
-                                      new Date(generatedEvent.start_at),
+                                      new Date(generatedEvent.start_at || ''),
                                       'PPP'
                                     )}
                                   </span>
@@ -1437,12 +1439,12 @@ export function EventModal() {
                                   <Clock className="h-3.5 w-3.5" />
                                   <span>
                                     {format(
-                                      new Date(generatedEvent.start_at),
+                                      new Date(generatedEvent.start_at || ''),
                                       'h:mm a'
                                     )}{' '}
                                     -{' '}
                                     {format(
-                                      new Date(generatedEvent.end_at),
+                                      new Date(generatedEvent.end_at || ''),
                                       'h:mm a'
                                     )}
                                   </span>
@@ -1451,8 +1453,11 @@ export function EventModal() {
                                   <div className="flex items-center gap-1">
                                     <MapPin className="h-3.5 w-3.5" />
                                     <button
+                                      type="button"
                                       onClick={() =>
-                                        openGoogleMaps(generatedEvent.location)
+                                        openGoogleMaps(
+                                          generatedEvent.location || ''
+                                        )
                                       }
                                       className="text-muted-foreground text-sm hover:text-primary hover:underline"
                                       title="Open in Google Maps"
@@ -1516,7 +1521,7 @@ export function EventModal() {
                       )}
 
                       {/* Navigation buttons for multiple events */}
-                      {generatedEvents.length > 1 && (
+                      {(generatedEvents?.length || 0) > 1 && (
                         <div className="mt-4 flex items-center justify-center gap-2">
                           <Button
                             variant="outline"
@@ -1532,7 +1537,8 @@ export function EventModal() {
                             size="sm"
                             onClick={goToNextEvent}
                             disabled={
-                              currentEventIndex === generatedEvents.length - 1
+                              currentEventIndex ===
+                              (generatedEvents?.length || 0) - 1
                             }
                             className="h-8 w-8 p-0"
                           >
@@ -1550,9 +1556,9 @@ export function EventModal() {
                           AI Insights & Suggestions
                         </h3>
                         <ul className="space-y-2">
-                          {aiSuggestions.map((suggestion, index) => (
+                          {aiSuggestions.map((suggestion) => (
                             <li
-                              key={index}
+                              key={suggestion}
                               className="flex items-start gap-2 text-sm"
                             >
                               <div className="mt-0.5 text-primary">•</div>
@@ -1602,7 +1608,9 @@ export function EventModal() {
                     </div>
                     <Button
                       onClick={handleAISave}
-                      disabled={isSaving || generatedEvents.length === 0}
+                      disabled={
+                        isSaving || (generatedEvents?.length || 0) === 0
+                      }
                       className="flex items-center gap-2"
                     >
                       {isSaving ? (
@@ -1615,7 +1623,7 @@ export function EventModal() {
                           <Check className="h-4 w-4" />
                           <span>
                             Save{' '}
-                            {generatedEvents.length > 1
+                            {(generatedEvents?.length || 0) > 1
                               ? 'All Events'
                               : 'Event'}
                           </span>
