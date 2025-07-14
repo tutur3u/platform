@@ -12,9 +12,9 @@ interface TumeetPageProps {
 }
 
 export default async function TumeetPage({
-  // params,
+  params,
   searchParams,
 }: TumeetPageProps) {
-  // const { wsId } = await params;
-  return <MeetTogetherPage searchParams={searchParams} />;
+  const { wsId } = await params;
+  return <MeetTogetherPage wsId={wsId} searchParams={searchParams} />;
 }

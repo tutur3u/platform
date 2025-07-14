@@ -17,6 +17,7 @@ import { GradientHeadline } from '../../custom/gradient-headline';
 
 // Server component props type
 interface MeetTogetherPageProps {
+  wsId?: string;
   searchParams?: Promise<{
     page?: string;
     pageSize?: string;
@@ -27,7 +28,7 @@ interface MeetTogetherPageProps {
 // Loading skeleton component for plans
 function PlansLoadingSkeleton() {
   return (
-    <div className="mt-4 grid w-full max-w-6xl grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+    <div className="mt-4 grid w-full max-w-4xl grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
       {Array.from({ length: 6 }, (_, i) => i).map((index) => (
         <div
           key={`skeleton-${Date.now()}-${index}`}
@@ -92,7 +93,7 @@ function PlansGrid({
   }
 
   return (
-    <div className="mt-4 grid w-full max-w-6xl grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+    <div className="mt-4 grid w-full max-w-4xl grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
       {plans.map((plan: MeetTogetherPlan) => (
         <Link
           href={`/meet-together/plans/${plan.id?.replace(/-/g, '')}`}
@@ -165,6 +166,7 @@ function PlansGrid({
 }
 
 export async function MeetTogetherPage({
+  wsId,
   searchParams,
 }: MeetTogetherPageProps) {
   const locale = await getLocale();
@@ -180,12 +182,12 @@ export async function MeetTogetherPage({
     data: plans,
     user,
     totalCount,
-  } = await getData({ page, pageSize, search });
+  } = await getData({ wsId, page, pageSize, search });
   const totalPages = Math.ceil(totalCount / pageSize);
 
   return (
     <div className="flex w-full flex-col items-center">
-      <div className="container mx-auto mt-8 flex max-w-6xl flex-col gap-6 px-3 py-16 lg:gap-14 lg:py-24">
+      <div className="container mx-auto mt-8 flex max-w-4xl flex-col gap-6 px-3 py-16 lg:gap-14 lg:py-24">
         <div className="flex flex-col items-center">
           <h1 className="mx-auto mb-2 text-balance text-center font-bold text-2xl text-foreground leading-tight! tracking-tight md:text-4xl lg:text-6xl">
             {t('headline-p1')}{' '}
@@ -194,14 +196,14 @@ export async function MeetTogetherPage({
         </div>
       </div>
 
-      <div className="w-full max-w-6xl px-4">
-        <Form />
+      <div className="w-full max-w-4xl px-4">
+        <Form wsId={wsId} />
       </div>
 
       <Separator className="mt-8 mb-6 md:mt-16" />
 
       <div className="flex w-full flex-col items-center justify-center p-4 pb-8 text-foreground">
-        <div className="w-full max-w-6xl">
+        <div className="w-full max-w-4xl">
           <div className="mb-6 flex flex-col gap-4">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <h2 className="font-bold text-2xl">{t('your_plans')}</h2>
@@ -268,10 +270,12 @@ export async function MeetTogetherPage({
 }
 
 async function getData({
+  wsId,
   page = 1,
   pageSize = 9,
   search = '',
 }: {
+  wsId?: string;
   page?: number;
   pageSize?: number;
   search?: string;
@@ -295,9 +299,14 @@ async function getData({
 
   const joinedPlansQuery = sbAdmin
     .from('meet_together_user_timeblocks')
-    .select('...meet_together_plans(*)')
+    .select('...meet_together_plans!inner(*)')
     .eq('user_id', user.id)
     .order('created_at', { ascending: false });
+
+  if (wsId) {
+    createdPlansQuery.eq('ws_id', wsId);
+    joinedPlansQuery.eq('meet_together_plans.ws_id', wsId);
+  }
 
   const [createdPlans, joinedPlans] = await Promise.all([
     createdPlansQuery,

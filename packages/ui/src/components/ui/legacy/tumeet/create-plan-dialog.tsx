@@ -36,6 +36,7 @@ interface Props {
     startTime: number | undefined;
     endTime: number | undefined;
     timezone: Timezone | undefined;
+    wsId?: string;
   };
 }
 
@@ -46,6 +47,7 @@ const FormSchema = z.object({
   end_time: z.string().optional(),
   dates: z.array(z.string()).optional(),
   is_public: z.boolean().optional(),
+  ws_id: z.string().optional(),
 });
 
 const convertToTimetz = (
@@ -73,6 +75,7 @@ export default function CreatePlanDialog({ plan }: Props) {
         ?.sort((a, b) => a.getTime() - b.getTime())
         ?.map((date) => dayjs(date).format('YYYY-MM-DD')),
       is_public: true,
+      ws_id: plan.wsId,
     },
   });
 
