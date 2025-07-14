@@ -71,7 +71,7 @@ export function createAllDayEvent(
     : userTimezone;
   
   const startAtMidnight = tz 
-    ? dayjs(date).tz(tz).startOf('day')
+    ? dayjs.tz(date, tz).startOf('day')
     : dayjs(date).startOf('day');
   
   const endAtMidnight = startAtMidnight.add(durationDays, 'day');
