@@ -1141,7 +1141,6 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
 
   // Format time for display
   const formatEventTime = (date: Date | dayjs.Dayjs) => {
-    const { settings } = useCalendar();
     const timeFormat = settings.appearance.timeFormat;
     const d = dayjs.isDayjs(date)
       ? date
