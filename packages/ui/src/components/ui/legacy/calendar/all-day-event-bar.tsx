@@ -8,7 +8,7 @@ import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
 import timezone from 'dayjs/plugin/timezone';
 import { Calendar, ChevronDown, ChevronUp } from 'lucide-react';
-import React, { useMemo, useState, useRef, useCallback, useEffect } from 'react';
+import React, { useMemo, useState, useRef, useCallback } from 'react';
 import { useCalendar } from '../../../../hooks/use-calendar';
 import { MIN_COLUMN_WIDTH, HOUR_HEIGHT } from './config';
 import { useToast } from '@tuturuuu/ui/hooks/use-toast';
@@ -147,7 +147,6 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
     const SCROLL_EDGE_SIZE = 80; // Edge zones for triggering scroll
     const MAX_SCROLL_SPEED = 20; // Maximum scroll speed
     const MIN_SCROLL_SPEED = 3; // Minimum scroll speed
-    const ACCELERATION = 0.1; // Acceleration factor
     const THROTTLE_DELAY = 16; // 60fps
     
     // Get scrollable element

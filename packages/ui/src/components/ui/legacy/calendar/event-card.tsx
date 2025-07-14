@@ -182,10 +182,10 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
     if (!calendarView) return;
     
     // Enhanced settings for better UX
-    const SCROLL_EDGE_SIZE = 100; // Increased edge size for more reliable triggering
-    const MAX_SCROLL_SPEED = 30; // Moderate scroll speed
-    const MIN_SCROLL_SPEED = 8; // Moderate minimum scroll speed  
-    const ACCELERATION = 0.2; // Moderate acceleration factor
+    const SCROLL_EDGE_SIZE = 200; // Increased edge size for more reliable triggering
+    const MAX_SCROLL_SPEED = 10; // Moderate scroll speed
+    const MIN_SCROLL_SPEED = 4; // Moderate minimum scroll speed  
+    const ACCELERATION = 0.1; // Moderate acceleration factor
     const THROTTLE_DELAY = 16; // 60fps
     
     // Get scrollable element
