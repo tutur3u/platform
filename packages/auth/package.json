@@ -18,7 +18,7 @@
     "@tuturuuu/types": "workspace:*",
     "@tuturuuu/ui": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
-    "next": "^15.3.5",
+    "next": "^15.4.1",
     "react": "^19.1.0"
   },
   "devDependencies": {

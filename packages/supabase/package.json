@@ -12,9 +12,9 @@
   "packageManager": "bun@1.2.18",
   "dependencies": {
     "@supabase/ssr": "^0.6.1",
-    "@supabase/supabase-js": "^2.50.5",
+    "@supabase/supabase-js": "^2.51.0",
     "@tuturuuu/types": "workspace:*",
-    "next": "^15.3.5",
+    "next": "^15.4.1",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "zod": "^3.25.76"
