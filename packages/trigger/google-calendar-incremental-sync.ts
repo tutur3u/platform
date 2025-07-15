@@ -1,4 +1,4 @@
-import { getGoogleAuthClient, getSyncToken, getWorkspacesForSync, storeSyncToken, syncWorkspaceExtended } from "./google-calendar-sync";
+import { getGoogleAuthClient, getSyncToken, getWorkspacesForSync, storeSyncToken, syncWorkspaceExtendedBatched } from "./google-calendar-sync";
 import { google } from "googleapis";
 import { schedules, task } from "@trigger.dev/sdk/v3";
 
@@ -34,7 +34,7 @@ async function performIncrementalSyncForWorkspace(
     } while (pageToken);
 
     if (allEvents.length > 0) {
-      await syncWorkspaceExtended({ ws_id, events_to_sync: allEvents });
+      await syncWorkspaceExtendedBatched({ ws_id, events_to_sync: allEvents });
     }   
     
     if (nextSyncToken) {
