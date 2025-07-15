@@ -52,7 +52,7 @@ export default async function ModuleFlashcardsPage({ params }: Props) {
       <FeatureSummary
         title={
           <div className="flex items-center justify-between gap-4">
-            <h1 className="flex w-full items-center gap-2 text-lg font-bold md:text-2xl">
+            <h1 className="flex w-full items-center gap-2 font-bold text-lg md:text-2xl">
               <SwatchBook className="h-5 w-5" />
               {t('ws-flashcards.plural')}
             </h1>
@@ -68,7 +68,15 @@ export default async function ModuleFlashcardsPage({ params }: Props) {
       <div className="grid gap-4 md:grid-cols-2">
         {flashcards && flashcards.length > 0 && (
           <>
-            <ClientFlashcards wsId={wsId} moduleId={moduleId} cards={cards} />
+            <ClientFlashcards
+              wsId={wsId}
+              moduleId={moduleId}
+              cards={cards.map(({ frontHTML, backHTML, ...rest }) => ({
+                ...rest,
+                frontHTML: frontHTML.toString(),
+                backHTML: backHTML.toString(),
+              }))}
+            />
             <Separator className="col-span-full my-2" />
           </>
         )}
