@@ -13,7 +13,7 @@ import { cn } from '@ncthub/utils/format';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Bot, Layers, LayoutGrid, Search, Smile } from 'lucide-react';
 import Image from 'next/image';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 type ProjectType = 'web' | 'software' | 'hardware' | undefined;
 type ProjectStatus = 'planning' | 'ongoing' | 'completed' | undefined;
@@ -44,13 +44,7 @@ export default function Projects() {
     [filteredProjects]
   );
 
-  const onSelect = useCallback(() => {
-    console.log('onSelect');
-    if (!emblaApi) return;
-  }, [emblaApi]);
-
   const onScroll = () => {
-    console.log('onScroll');
     if (!emblaApi) return;
 
     const root = emblaApi.rootNode();
@@ -126,17 +120,15 @@ export default function Projects() {
   useEffect(() => {
     if (!emblaApi) return;
 
-    onSelect();
-    emblaApi.on('select', onSelect);
+    onReInit();
+
     emblaApi.on('scroll', onScroll);
     emblaApi.on('reInit', onReInit);
-
     return () => {
-      emblaApi.off('select', onSelect);
       emblaApi.off('scroll', onScroll);
       emblaApi.off('reInit', onReInit);
     };
-  }, [emblaApi, onSelect, onScroll, onReInit]);
+  }, [emblaApi]);
 
   useEffect(() => {
     if (!isAutoScrolling || !emblaApi || filteredProjects.length <= 1) return;
