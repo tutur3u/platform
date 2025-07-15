@@ -39,12 +39,12 @@ vi.mock('@tuturuuu/ui/hooks/calendar-utils', () => ({
 
 // Dynamically import the actual functions after env and mocks are set
 let syncGoogleCalendarEventsForWorkspaceBatched: any;
-let syncWorkspaceExtendedBatched: any;
+let syncWorkspaceBatched: any;
 
 beforeAll(async () => {
   const mod = await import('../google-calendar-sync');
   syncGoogleCalendarEventsForWorkspaceBatched = mod.syncGoogleCalendarEventsForWorkspaceBatched;
-  syncWorkspaceExtendedBatched = mod.syncWorkspaceBatched;
+  syncWorkspaceBatched = mod.syncWorkspaceBatched;
 });
 
 // Test isolation utility to prevent environment contamination
@@ -284,7 +284,7 @@ describe('Google Calendar Batched Sync', () => {
     });
   });
 
-  describe('syncWorkspaceExtendedBatched', () => {
+  describe('syncWorkspaceBatched', () => {
     it('should call the batched sync function with correct payload', async () => {
       const payload = {
         ws_id: 'test-workspace',
@@ -294,7 +294,7 @@ describe('Google Calendar Batched Sync', () => {
         ]
       };
 
-      const result = await syncWorkspaceExtendedBatched(payload);
+      const result = await syncWorkspaceBatched(payload);
 
       expect(result).toEqual({
         ws_id: 'test-workspace',
@@ -310,7 +310,7 @@ describe('Google Calendar Batched Sync', () => {
         events_to_sync: []
       };
 
-      const result = await syncWorkspaceExtendedBatched(payload);
+      const result = await syncWorkspaceBatched(payload);
 
       expect(result).toEqual({
         ws_id: 'test-workspace',
@@ -336,7 +336,7 @@ describe('Google Calendar Batched Sync', () => {
         }))
       });
 
-      const result = await syncWorkspaceExtendedBatched(payload);
+      const result = await syncWorkspaceBatched(payload);
 
       expect(result).toEqual({
         ws_id: 'test-workspace',

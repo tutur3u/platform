@@ -353,19 +353,6 @@ export const getWorkspacesForSync = async () => {
   }
 };
 
-// Sync a single workspace for 4 weeks (28 days) from now
-export const syncWorkspaceExtended = async (payload: {
-  ws_id: string;
-  events_to_sync: calendar_v3.Schema$Event[];
-}) => {
-  const { ws_id, events_to_sync: events } = payload;
-  
-  return syncGoogleCalendarEventsForWorkspace(
-    ws_id,
-    events
-  );
-};
-
 // Sync a single workspace with batch processing
 export const syncWorkspaceBatched = async (payload: {
   ws_id: string;
