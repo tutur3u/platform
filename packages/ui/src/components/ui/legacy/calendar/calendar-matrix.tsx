@@ -4,8 +4,8 @@ import dayjs from 'dayjs';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
 import timezone from 'dayjs/plugin/timezone';
 import { useParams } from 'next/navigation';
-import { useCalendar } from '../../../../hooks/use-calendar';
 import { isAllDayEvent } from '../../../../hooks/calendar-utils';
+import { useCalendar } from '../../../../hooks/use-calendar';
 import { CalendarColumn } from './calendar-column';
 import { DAY_HEIGHT, MAX_LEVEL } from './config';
 import { EventCard } from './event-card';
@@ -66,13 +66,13 @@ export const CalendarEventMatrix = ({ dates }: { dates: Date[] }) => {
 
     // Fix: For all-day events, end_at is exclusive (midnight of next day)
     // So we need to check if it's actually a multi-day event
-    const isAllDay = isAllDayEvent(event, tz);
+    const isAllDay = isAllDayEvent(event);
     const actualDurationDays = endDayNormalized.diff(startDayNormalized, 'day');
-    
+
     // For all-day events: duration of 1 day means single-day event
     // For timed events: if start and end are on the same day, it's single-day
-    const isSingleDay = isAllDay 
-      ? actualDurationDays <= 1 
+    const isSingleDay = isAllDay
+      ? actualDurationDays <= 1
       : startDayNormalized.isSame(endDayNormalized);
 
     // If it's a single-day event, return the original event
