@@ -44,7 +44,6 @@ import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import * as z from 'zod';
 import { ImageCropper } from '@/components/image-cropper';
-import { convertHeicToJpeg, isHeicFile } from '@/lib/heic-converter';
 import { DatePicker } from '../../../../../../components/row-actions/users/date-picker';
 
 interface UserRowActionsProps {
@@ -155,16 +154,9 @@ export function UserRowActions({ row, href, extraData }: UserRowActionsProps) {
   const handleFileSelect = async (file: File) => {
     try {
       setIsConverting(true);
-      let processedFile = file;
-
-      // Convert HEIC files to JPEG first for browser compatibility
-      if (isHeicFile(file)) {
-        console.log('Converting HEIC file to JPEG for display...');
-        processedFile = await convertHeicToJpeg(file);
-      }
 
       // Create URL for the processed image to show in the cropper
-      const imageUrl = URL.createObjectURL(processedFile);
+      const imageUrl = URL.createObjectURL(file);
       setSelectedImageUrl(imageUrl);
       setSelectedFile(file); // Keep original file for reference
       setCropperOpen(true);
@@ -458,7 +450,7 @@ export function UserRowActions({ row, href, extraData }: UserRowActionsProps) {
               <input
                 id="file-upload"
                 type="file"
-                accept="image/png,image/jpeg,image/jpg,image/webp,image/heic,image/heif"
+                accept="image/png,image/jpeg,image/jpg,image/webp"
                 onChange={(e) => {
                   if (e.target.files?.[0]) {
                     handleFileSelect(e.target.files[0]);

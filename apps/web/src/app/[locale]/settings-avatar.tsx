@@ -27,7 +27,6 @@ import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import * as z from 'zod';
 import { ImageCropper } from '@/components/image-cropper';
-import { convertHeicToJpeg, isHeicFile } from '@/lib/heic-converter';
 
 interface AvatarProps {
   user: WorkspaceUser;
@@ -187,16 +186,9 @@ export default function UserAvatar({ user }: AvatarProps) {
   const handleFileSelect = async (file: File) => {
     try {
       setIsConverting(true);
-      let processedFile = file;
-
-      // Convert HEIC files to JPEG first for browser compatibility
-      if (isHeicFile(file)) {
-        console.log('Converting HEIC file to JPEG for display...');
-        processedFile = await convertHeicToJpeg(file);
-      }
 
       // Create URL for the processed image to show in the cropper
-      const imageUrl = URL.createObjectURL(processedFile);
+      const imageUrl = URL.createObjectURL(file);
       setSelectedImageUrl(imageUrl);
       setSelectedFile(file); // Keep original file for reference
       setCropperOpen(true);
@@ -336,7 +328,7 @@ export default function UserAvatar({ user }: AvatarProps) {
                     )}
                   >
                     {isConverting
-                      ? 'Converting HEIC...'
+                      ? 'Converting...'
                       : previewSrc
                         ? t('settings-account.new_avatar')
                         : t('settings-account.upload_avatar')}
@@ -344,7 +336,7 @@ export default function UserAvatar({ user }: AvatarProps) {
                   <input
                     id="file-upload"
                     type="file"
-                    accept="image/png,image/jpeg,image/jpg,image/webp,image/heic,image/heif"
+                    accept="image/png,image/jpeg,image/jpg,image/webp"
                     disabled={isConverting}
                     onChange={(e) => {
                       if (e.target.files?.[0] && !isConverting) {

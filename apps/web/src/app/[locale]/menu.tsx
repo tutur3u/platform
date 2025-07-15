@@ -27,6 +27,7 @@ import { type NavItem, useNavigation } from './shared/navigation-config';
 interface MenuProps {
   sbUser: SupabaseUser | null;
   user: WorkspaceUser | null;
+  // biome-ignore lint/suspicious/noExplicitAny: <translations are not typed>
   t?: any;
 }
 
@@ -57,7 +58,7 @@ const NavLink: React.FC<NavLinkProps> = ({ item, onClick, className }) => {
         {item.icon}
         {item.label}
         {item.badge && (
-          <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary">
+          <span className="rounded-full bg-primary/10 px-2 py-0.5 text-primary text-xs">
             {item.badge}
           </span>
         )}
@@ -131,7 +132,7 @@ const MobileMenu: React.FC<MenuProps> = ({ sbUser, user, t }) => {
                 {/* Products Section */}
                 <AccordionItem value="products" className="border-none px-4">
                   <AccordionTrigger className="rounded-lg px-4 py-3 transition-all hover:bg-accent active:bg-accent/80 data-[state=open]:bg-accent/50">
-                    <span className="text-sm font-semibold">
+                    <span className="font-semibold text-sm">
                       {t('common.products')}
                     </span>
                   </AccordionTrigger>
@@ -152,7 +153,7 @@ const MobileMenu: React.FC<MenuProps> = ({ sbUser, user, t }) => {
                 {/* Solutions Section */}
                 <AccordionItem value="solutions" className="border-none px-4">
                   <AccordionTrigger className="rounded-lg px-4 py-3 transition-all hover:bg-accent active:bg-accent/80 data-[state=open]:bg-accent/50">
-                    <span className="text-sm font-semibold">
+                    <span className="font-semibold text-sm">
                       {t('common.solutions')}
                     </span>
                   </AccordionTrigger>
@@ -173,7 +174,7 @@ const MobileMenu: React.FC<MenuProps> = ({ sbUser, user, t }) => {
                 {/* Resources Section */}
                 <AccordionItem value="resources" className="border-none px-4">
                   <AccordionTrigger className="rounded-lg px-4 py-3 transition-all hover:bg-accent active:bg-accent/80 data-[state=open]:bg-accent/50">
-                    <span className="text-sm font-semibold">
+                    <span className="font-semibold text-sm">
                       {t('common.resources')}
                     </span>
                   </AccordionTrigger>
@@ -194,7 +195,7 @@ const MobileMenu: React.FC<MenuProps> = ({ sbUser, user, t }) => {
                 {/* Company Section */}
                 <AccordionItem value="company" className="border-none px-4">
                   <AccordionTrigger className="rounded-lg px-4 py-3 transition-all hover:bg-accent active:bg-accent/80 data-[state=open]:bg-accent/50">
-                    <span className="text-sm font-semibold">
+                    <span className="font-semibold text-sm">
                       {t('common.company')}
                     </span>
                   </AccordionTrigger>
@@ -224,11 +225,9 @@ const Menu: React.FC<MenuProps> = ({ sbUser, user }) => {
   const t = useTranslations();
 
   return (
-    <>
-      <div className="flex gap-2 md:hidden">
-        <MobileMenu sbUser={sbUser} user={user} t={t} />
-      </div>
-    </>
+    <div className="flex gap-2 md:hidden">
+      <MobileMenu sbUser={sbUser} user={user} t={t} />
+    </div>
   );
 };
 

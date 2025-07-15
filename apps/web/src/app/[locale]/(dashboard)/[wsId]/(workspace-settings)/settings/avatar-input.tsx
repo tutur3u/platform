@@ -12,7 +12,6 @@ import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import { ImageCropper } from '@/components/image-cropper';
-import { convertHeicToJpeg, isHeicFile } from '@/lib/heic-converter';
 import { downloadPublicObject } from '@/lib/storage-helper';
 
 interface Props {
@@ -146,16 +145,9 @@ export default function AvatarInput({ workspace, disabled }: Props) {
 
     try {
       setIsConverting(true);
-      let processedFile = file;
-
-      // Convert HEIC files to JPEG first for browser compatibility
-      if (isHeicFile(file)) {
-        console.log('Converting HEIC file to JPEG for display...');
-        processedFile = await convertHeicToJpeg(file);
-      }
 
       // Create URL for the processed image to show in the cropper
-      const imageUrl = URL.createObjectURL(processedFile);
+      const imageUrl = URL.createObjectURL(file);
       setSelectedImageUrl(imageUrl);
       setSelectedFile(file); // Keep original file for reference
       setCropperOpen(true);
@@ -248,10 +240,10 @@ export default function AvatarInput({ workspace, disabled }: Props) {
         <Input
           type="file"
           id="workspace-avatar"
-          accept="image/png,image/jpeg,image/jpg,image/webp,image/heic,image/heif"
+          accept="image/png,image/jpeg,image/jpg,image/webp"
           onChange={(e) => handleFileSelect(e.target.files?.[0] ?? null)}
           disabled={disabled || isConverting}
-          placeholder={isConverting ? 'Converting HEIC...' : undefined}
+          placeholder={isConverting ? 'Converting...' : undefined}
         />
 
         <Button

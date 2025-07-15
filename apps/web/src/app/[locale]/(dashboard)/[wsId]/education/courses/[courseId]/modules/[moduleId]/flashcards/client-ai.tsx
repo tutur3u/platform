@@ -118,7 +118,11 @@ export function AIFlashcards({
             <ClientFlashcards
               wsId={wsId}
               moduleId="ai-generated"
-              cards={cards}
+              cards={cards.map(({ frontHTML, backHTML, ...rest }) => ({
+                ...rest,
+                frontHTML: frontHTML.toString(),
+                backHTML: backHTML.toString(),
+              }))}
             />
           </div>
         </>

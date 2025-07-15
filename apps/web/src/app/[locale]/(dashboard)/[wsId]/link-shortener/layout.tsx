@@ -1,3 +1,4 @@
+import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { verifySecret } from '@tuturuuu/utils/workspace-helper';
 import { notFound } from 'next/navigation';
 
@@ -13,7 +14,7 @@ export default async function LinkShortenerLayout({
   const { wsId } = await params;
 
   if (
-    wsId !== '00000000-0000-0000-0000-000000000000' &&
+    wsId !== ROOT_WORKSPACE_ID &&
     !(await verifySecret({
       forceAdmin: true,
       wsId,
