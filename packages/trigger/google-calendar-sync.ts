@@ -307,6 +307,9 @@ const syncGoogleCalendarEventsForWorkspaceBatched = async (
   }
 };
 
+// Export the batched sync function for testing
+export { syncGoogleCalendarEventsForWorkspaceBatched };
+
 // Get workspace by ws_id
 export const getWorkspaceTokensByWsId = async (ws_id: string) => {
   try {
@@ -364,7 +367,7 @@ export const syncWorkspaceExtended = async (payload: {
 };
 
 // Sync a single workspace with batch processing
-export const syncWorkspaceExtendedBatched = async (payload: {
+export const syncWorkspaceBatched = async (payload: {
   ws_id: string;
   events_to_sync: calendar_v3.Schema$Event[];
 }) => {
@@ -375,9 +378,6 @@ export const syncWorkspaceExtendedBatched = async (payload: {
     events
   );
 };
-
-// Export the batched sync function for direct use
-export { syncGoogleCalendarEventsForWorkspaceBatched };
 
 export const storeSyncToken = async (ws_id: string, syncToken: string, lastSyncedAt: Date) => {
   const sbAdmin = await createAdminClient({ noCookie: true });

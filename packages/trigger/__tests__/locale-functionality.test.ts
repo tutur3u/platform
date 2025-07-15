@@ -24,6 +24,16 @@ vi.mock('../google-calendar-sync', async () => {
       dateFormatted: payload.locale === 'vi' ? '15 tháng 1 2024' : 'January 15, 2024',
       timeFormatted: payload.locale === 'vi' ? '10:30 sáng' : '10:30 AM'
     })),
+    syncWorkspaceExtendedBatched: vi.fn((payload) => Promise.resolve({
+      ws_id: payload.ws_id,
+      success: true,
+      eventsSynced: payload.events_to_sync?.length || 10,
+      eventsDeleted: 0,
+      // Add locale-specific behavior simulation as additional properties for testing
+      locale: payload.locale,
+      dateFormatted: payload.locale === 'vi' ? '15 tháng 1 2024' : 'January 15, 2024',
+      timeFormatted: payload.locale === 'vi' ? '10:30 sáng' : '10:30 AM'
+    })),
   };
 });
 

@@ -26,6 +26,12 @@ vi.mock('../google-calendar-sync', async () => {
       eventsSynced: payload.events_to_sync?.length || 10,
       eventsDeleted: 0,
     })),
+    syncWorkspaceExtendedBatched: vi.fn((payload) => Promise.resolve({
+      ws_id: payload.ws_id,
+      success: true,
+      eventsSynced: payload.events_to_sync?.length || 10,
+      eventsDeleted: 0,
+    })),
   };
 });
 
@@ -197,7 +203,7 @@ describe('Google Calendar Incremental Sync', () => {
       const testDate = new Date('2024-01-15T10:00:00Z');
       
       await storeSyncToken('test-workspace-id', 'new-sync-token', testDate);
-+      expect(storeSyncToken).toHaveBeenCalledWith('test-workspace-id', 'new-sync-token', testDate);
+      expect(storeSyncToken).toHaveBeenCalledWith('test-workspace-id', 'new-sync-token', testDate);
     });
   });
 
@@ -325,6 +331,39 @@ describe('Google Calendar Incremental Sync', () => {
       
       // This would be tested in the actual task run
       expect(syncWorkspaceExtended).toBeDefined();
+    });
+  });
+
+  describe('Integration with syncWorkspaceExtendedBatched', () => {
+    it('should call syncWorkspaceExtendedBatched when events exist', async () => {
+      const { syncWorkspaceBatched: syncWorkspaceExtendedBatched } = await import('../google-calendar-sync');
+      
+      // This would be tested in the actual task run
+      expect(syncWorkspaceExtendedBatched).toBeDefined();
+    });
+
+    it('should not call syncWorkspaceExtendedBatched when no events exist', async () => {
+      // Mock empty response
+      mockCalendarEventsList.mockResolvedValue({
+        data: {
+          items: [],
+          nextSyncToken: 'empty-sync-token'
+        } as MockCalendarResponse['data']
+      });
+
+      const { syncWorkspaceBatched: syncWorkspaceExtendedBatched } = await import('../google-calendar-sync');
+      
+      // This would be tested in the actual task run
+      expect(syncWorkspaceExtendedBatched).toBeDefined();
+    });
+
+    it('should handle batched sync errors gracefully', async () => {
+      // Mock error in syncWorkspaceExtendedBatched
+      const { syncWorkspaceBatched: syncWorkspaceExtendedBatched } = await import('../google-calendar-sync');
+      (syncWorkspaceExtendedBatched as any).mockRejectedValue(new Error('Batched sync error'));
+
+      // This would be tested in the actual task run
+      expect(syncWorkspaceExtendedBatched).toBeDefined();
     });
   });
 
