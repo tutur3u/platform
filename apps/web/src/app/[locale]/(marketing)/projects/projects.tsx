@@ -15,7 +15,7 @@ import { cn } from '@ncthub/utils/format';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Bot, Layers, LayoutGrid, Search, Smile } from 'lucide-react';
 import Image from 'next/image';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 type ProjectType = 'web' | 'software' | 'hardware' | undefined;
 type ProjectStatus = 'planning' | 'ongoing' | 'completed' | undefined;
@@ -41,7 +41,10 @@ export default function Projects() {
     return matchesType && matchesStatus;
   });
 
-  const projectsWithNull = [null, ...filteredProjects, null];
+  const projectsWithNull = useMemo(
+    () => [null, ...filteredProjects, null],
+    [filteredProjects]
+  );
 
   const onSelect = useCallback(() => {
     if (!emblaApi) return;
@@ -263,8 +266,7 @@ export default function Projects() {
                   <div className="mt-3 h-2 w-2 flex-shrink-0 rounded-full bg-[#F4B71A]"></div>
                   <p className="font-medium text-muted-foreground">
                     Interactive games and entertainment features including Neo
-                    Chess, Neo Crush, and other engaging multiplayer
-                    experiences.
+                    Chess, Neo Crush, with engaging experiences for all players
                   </p>
                 </div>
                 <div className="flex items-start gap-3">
@@ -441,22 +443,8 @@ export default function Projects() {
                         className="basis-full md:basis-1/2 lg:basis-1/3"
                       >
                         {project && (
-                          <motion.div
+                          <div
                             key={index}
-                            initial={{ opacity: 0, y: 40, scale: 0.9 }}
-                            animate={{ opacity: 1, y: 0, scale: 1 }}
-                            transition={{
-                              duration: 0.5,
-                              ease: 'easeOut',
-                              type: 'spring',
-                              stiffness: 100,
-                            }}
-                            whileHover={{
-                              scale: 1.05,
-                              y: -5,
-                              transition: { duration: 0.2 },
-                            }}
-                            whileTap={{ scale: 0.95 }}
                             className={cn(
                               'group relative h-full w-full cursor-pointer',
                               index === selectedIndex
@@ -469,9 +457,15 @@ export default function Projects() {
                               type={type}
                               status={status}
                               isSelected={index === selectedIndex}
-                              onClick={() => openProjectModal(project)}
+                              onClick={() => {
+                                if (index === selectedIndex) {
+                                  openProjectModal(project);
+                                } else {
+                                  emblaApi?.scrollTo(index - 1);
+                                }
+                              }}
                             />
-                          </motion.div>
+                          </div>
                         )}
                       </CarouselItem>
                     ))}
@@ -480,45 +474,33 @@ export default function Projects() {
                   <CarouselNext className="hidden md:flex" />
                 </Carousel>
 
-                {filteredProjects.length > 0 && (
-                  <motion.div
-                    className="mt-8 flex justify-center space-x-3"
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.6, delay: 0.3 }}
-                  >
-                    {projectsWithNull.map(
-                      (project, index) =>
-                        project && (
-                          <motion.button
-                            key={index}
-                            whileHover={{ scale: 1.05 }}
-                          >
-                            <div
-                              className={`h-3 w-3 rounded-full transition-all duration-300 ${
-                                index === selectedIndex
-                                  ? 'scale-125 bg-gradient-to-r from-blue-500 to-purple-600'
-                                  : 'bg-muted-foreground/30 hover:bg-muted-foreground/50'
-                              }`}
-                            />
-                          </motion.button>
-                        )
-                    )}
-                  </motion.div>
-                )}
+                <div className="mt-8 flex justify-center space-x-3">
+                  {projectsWithNull.map(
+                    (project, index) =>
+                      project && (
+                        <motion.button
+                          key={index}
+                          whileHover={{ scale: 1.05 }}
+                          onClick={() => {
+                            emblaApi?.scrollTo(index - 1);
+                          }}
+                        >
+                          <div
+                            className={`h-3 w-3 rounded-full transition-all duration-300 ${
+                              index === selectedIndex
+                                ? 'scale-125 bg-gradient-to-r from-blue-500 to-purple-600'
+                                : 'bg-muted-foreground/30 hover:bg-muted-foreground/50'
+                            }`}
+                          />
+                        </motion.button>
+                      )
+                  )}
+                </div>
 
-                <motion.div
-                  className="mt-6 flex justify-center"
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.6, delay: 0.4 }}
-                >
+                <div className="mt-6 flex justify-center">
                   <motion.button
                     onClick={() => setIsAutoScrolling(!isAutoScrolling)}
                     whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
                     className={`rounded-xl px-4 py-2 text-sm font-medium transition-all duration-200 ${
                       isAutoScrolling
                         ? 'border border-white/20 bg-gradient-to-r from-blue-500/20 to-purple-600/20 text-foreground'
@@ -529,7 +511,7 @@ export default function Projects() {
                       ? 'Pause Auto-scroll'
                       : 'Resume Auto-scroll'}
                   </motion.button>
-                </motion.div>
+                </div>
               </motion.div>
             ) : (
               <div className="mx-auto grid max-w-7xl gap-6 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">

@@ -13,13 +13,16 @@ import {
 } from '@ncthub/ui/carousel';
 import { Award, Sparkles } from '@ncthub/ui/icons';
 import { motion } from 'framer-motion';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 export default function History() {
   const [emblaApi, setEmblaApi] = useState<CarouselApi | null>(null);
   const [selectedIndex, setSelectedIndex] = useState(1);
 
-  const timelineDataWithNull = [null, ...timelineData, null];
+  const timelineDataWithNull = useMemo(
+    () => [null, ...timelineData, null],
+    [timelineData]
+  );
 
   const onSelect = () => {
     if (!emblaApi) return;
