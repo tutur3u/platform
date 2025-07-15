@@ -3,7 +3,10 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 import { CalendarSyncProvider } from '@tuturuuu/ui/hooks/use-calendar-sync';
 import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { redirect } from 'next/navigation';
+import { DEV_MODE } from '@/constants/common';
+import { CalendarActiveSyncDebugger } from './active-sync';
 import CalendarClientPage from './client';
+// import TasksSidebar from './components/tasks-sidebar';
 import TaskSidebarServer from './components/tasks-sidebar-server';
 
 interface PageProps {
@@ -39,7 +42,7 @@ export default async function CalendarPage({ params }: PageProps) {
       useQuery={useQuery}
       useQueryClient={useQueryClient}
     >
-      {/* {DEV_MODE && <CalendarActiveSyncDebugger />} */}
+      {DEV_MODE && <CalendarActiveSyncDebugger />}
       <div className="flex h-[calc(100%-2rem-4px)]">
         <CalendarClientPage
           experimentalGoogleToken={googleToken}

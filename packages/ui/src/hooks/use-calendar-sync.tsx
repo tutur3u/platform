@@ -196,20 +196,10 @@ export const CalendarSyncProvider = ({
       return {
         ...prev,
         [cacheKey]: {
-          dbEvents:
-            update.dbEvents !== undefined ? update.dbEvents : existing.dbEvents,
-          googleEvents:
-            update.googleEvents !== undefined
-              ? update.googleEvents
-              : existing.googleEvents,
-          dbLastUpdated:
-            update.dbLastUpdated !== undefined
-              ? update.dbLastUpdated
-              : existing.dbLastUpdated,
-          googleLastUpdated:
-            update.googleLastUpdated !== undefined
-              ? update.googleLastUpdated
-              : existing.googleLastUpdated,
+          dbEvents: update.dbEvents !== undefined ? update.dbEvents : existing.dbEvents,
+          googleEvents: update.googleEvents !== undefined ? update.googleEvents : existing.googleEvents,
+          dbLastUpdated: update.dbLastUpdated !== undefined ? update.dbLastUpdated : existing.dbLastUpdated,
+          googleLastUpdated: update.googleLastUpdated !== undefined ? update.googleLastUpdated : existing.googleLastUpdated,
         },
       };
     });
@@ -259,9 +249,9 @@ export const CalendarSyncProvider = ({
       // Update cache with new data and reset isForced flag
       updateCache(cacheKey, {
         dbEvents: fetchedData,
-        dbLastUpdated: Date.now(),
+        dbLastUpdated: Date.now()
       });
-
+      
       // Reset the ref immediately (synchronous)
       isForcedRef.current = false;
 
@@ -390,6 +380,8 @@ export const CalendarSyncProvider = ({
           return;
         }
 
+
+
         setData(dbData);
 
         if (progressCallback) {
@@ -502,6 +494,8 @@ export const CalendarSyncProvider = ({
             };
           }
         );
+
+
 
         // Upsert using id as conflict target since we've properly assigned ids
         const { error: upsertError } = await supabase
@@ -655,6 +649,7 @@ export const CalendarSyncProvider = ({
 
       eventGroups.forEach((eventGroup) => {
         if (eventGroup.length > 1) {
+
           // Sort by creation time if available, otherwise by ID
           // Keep the first/oldest event, delete the rest
           const sortedEvents = [...eventGroup].sort((a, b) => {
@@ -743,7 +738,7 @@ export const CalendarSyncProvider = ({
     return events.filter((event) => {
       // Note: We can't access settings here easily, so we use default timezone detection
       // This is acceptable since this is used for layout purposes mainly
-      return !isAllDayEvent(event);
+      return !isAllDayEvent(event, 'auto');
     });
   }, [events]);
 
@@ -752,7 +747,7 @@ export const CalendarSyncProvider = ({
     return events.filter((event) => {
       // Note: We can't access settings here easily, so we use default timezone detection
       // This is acceptable since this is used for layout purposes mainly
-      return isAllDayEvent(event);
+      return isAllDayEvent(event, 'auto');
     });
   }, [events]);
 

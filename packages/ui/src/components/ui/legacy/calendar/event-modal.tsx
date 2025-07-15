@@ -67,14 +67,16 @@ import {
 import Image from 'next/image';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { z } from 'zod';
-import { isAllDayEvent } from '../../../../hooks/calendar-utils';
+import {
+  isAllDayEvent,
+} from '../../../../hooks/calendar-utils';
+import {
+  restoreTimestamps,
+  createAllDayEventFromTimed,
+} from './calendar-utils';
 import { useCalendar } from '../../../../hooks/use-calendar';
 import { Alert, AlertDescription, AlertTitle } from '../../alert';
 import { AutosizeTextarea } from '../../custom/autosize-textarea';
-import {
-  createAllDayEventFromTimed,
-  restoreTimestamps,
-} from './calendar-utils';
 import {
   COLOR_OPTIONS,
   DateError,
@@ -158,6 +160,8 @@ export function EventModal() {
   );
   const [showOverlapWarning, setShowOverlapWarning] = useState(false);
   const [aiSuggestions, setAiSuggestions] = useState<string[]>([]);
+
+
 
   // AI form
   const aiForm = useForm({
@@ -255,7 +259,7 @@ export function EventModal() {
 
       // Only check for all-day if this is an existing event (not a new one)
       if (activeEvent.id !== 'new') {
-        setIsAllDay(isAllDayEvent(cleanEventData as CalendarEvent));
+        setIsAllDay(isAllDayEvent(cleanEventData as CalendarEvent, tz));
       } else {
         // For new events, always start with isAllDay as false
         setIsAllDay(false);
@@ -292,7 +296,7 @@ export function EventModal() {
 
     // Clear any error messages
     setDateError(null);
-  }, [activeEvent, checkForOverlaps, aiForm.reset]);
+  }, [activeEvent, tz, checkForOverlaps, aiForm.reset]);
 
   // Handle manual event save
   const handleManualSave = async () => {
@@ -585,14 +589,18 @@ export function EventModal() {
       const currentEvent = prev as CalendarEvent;
       const startDate =
         tz === 'auto' ? dayjs(prev.start_at) : dayjs(prev.start_at).tz(tz);
+      
 
+      
       if (checked) {
         // Converting timed event to all-day event
         const convertedEvent = createAllDayEventFromTimed(
           currentEvent,
           startDate.toDate()
         );
+        
 
+        
         return {
           ...prev,
           start_at: convertedEvent.start_at,
@@ -602,17 +610,13 @@ export function EventModal() {
       } else {
         // Converting all-day event back to timed event
         // CRITICAL FIX: Pass the current event's date as targetDate to preserve the moved date
-        const restoredEvent = restoreTimestamps(
-          currentEvent,
-          startDate.toDate(),
-          tz
-        );
+        const restoredEvent = restoreTimestamps(currentEvent, startDate.toDate(), tz);
+        
 
+        
         // If we successfully restored timestamps, use them
-        if (
-          restoredEvent.start_at !== currentEvent.start_at ||
-          restoredEvent.end_at !== currentEvent.end_at
-        ) {
+        if (restoredEvent.start_at !== currentEvent.start_at || restoredEvent.end_at !== currentEvent.end_at) {
+
           return {
             ...prev,
             start_at: restoredEvent.start_at,
@@ -620,7 +624,7 @@ export function EventModal() {
             scheduling_note: restoredEvent.scheduling_note,
           };
         }
-
+        
         // Fallback: create a new 1-hour event (this should rarely happen now)
 
         const newStart =
@@ -879,7 +883,7 @@ export function EventModal() {
               typeof event.google_event_id === 'string' &&
               event.google_event_id.trim() !== '' && (
                 <div className="ml-3 flex items-center gap-2 rounded-md border bg-blue-50 px-3 py-1 text-sm dark:bg-blue-950/30">
-                  <img
+                  <Image
                     src="/media/google-calendar-icon.png"
                     alt="Google Calendar"
                     className="inline-block h-[18px] w-[18px] align-middle"

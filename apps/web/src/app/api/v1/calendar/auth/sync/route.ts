@@ -1,10 +1,10 @@
 import type { CalendarEvent as BaseCalendarEvent } from '@tuturuuu/ai/calendar/events';
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { isAllDayEvent } from '@tuturuuu/ui/hooks/calendar-utils';
-import dayjs from 'dayjs';
 import { OAuth2Client } from 'google-auth-library';
 import { google } from 'googleapis';
 import { NextResponse } from 'next/server';
+import { isAllDayEvent } from '@tuturuuu/ui/hooks/calendar-utils';
+import dayjs from 'dayjs';
 
 interface CalendarEvent extends BaseCalendarEvent {
   id?: string; // Add the optional 'id' property
@@ -83,8 +83,8 @@ export async function POST(request: Request) {
     const calendar = google.calendar({ version: 'v3', auth });
 
     // Check if this is an all-day event to format it correctly for Google Calendar
-    const isEventAllDay = isAllDayEvent(event);
-
+    const isEventAllDay = isAllDayEvent(event, 'auto');
+    
     const googleEvent: any = {
       summary: event.title || 'Untitled Event',
       description: event.description || '',
@@ -96,7 +96,7 @@ export async function POST(request: Request) {
       // For all-day events, use date format (not dateTime)
       const startDate = dayjs(event.start_at).format('YYYY-MM-DD');
       const endDate = dayjs(event.end_at).format('YYYY-MM-DD');
-
+      
       googleEvent.start = { date: startDate };
       googleEvent.end = { date: endDate };
     } else {
@@ -223,7 +223,7 @@ export async function PUT(request: Request) {
       googleEventUpdate.description = eventUpdates.description || '';
     if (eventUpdates.location !== undefined)
       googleEventUpdate.location = eventUpdates.location || ''; // Update location
-
+    
     // Handle date/time updates with all-day detection
     if (eventUpdates.start_at || eventUpdates.end_at) {
       // Fetch the existing event to get complete date information
@@ -238,22 +238,21 @@ export async function PUT(request: Request) {
         start_at: eventUpdates.start_at || existingEvent?.start_at || '',
         end_at: eventUpdates.end_at || existingEvent?.end_at || '',
       };
-
-      const isEventAllDay =
-        eventForCheck.start_at && eventForCheck.end_at
-          ? isAllDayEvent(eventForCheck)
-          : false;
-
+      
+      const isEventAllDay = eventForCheck.start_at && eventForCheck.end_at 
+        ? isAllDayEvent(eventForCheck, 'auto')
+        : false;
+      
       if (isEventAllDay) {
         // For all-day events, use date format
         if (eventUpdates.start_at) {
-          googleEventUpdate.start = {
-            date: dayjs(eventUpdates.start_at).format('YYYY-MM-DD'),
+          googleEventUpdate.start = { 
+            date: dayjs(eventUpdates.start_at).format('YYYY-MM-DD') 
           };
         }
         if (eventUpdates.end_at) {
-          googleEventUpdate.end = {
-            date: dayjs(eventUpdates.end_at).format('YYYY-MM-DD'),
+          googleEventUpdate.end = { 
+            date: dayjs(eventUpdates.end_at).format('YYYY-MM-DD') 
           };
         }
       } else {
@@ -272,7 +271,7 @@ export async function PUT(request: Request) {
         }
       }
     }
-
+    
     if (eventUpdates.color)
       googleEventUpdate.colorId = getGoogleColorId(eventUpdates.color);
 
