@@ -75,7 +75,7 @@ export default async function UserGroupDetailsPage({ params }: Props) {
         href={`/${wsId}/education/courses/${courseId}/modules/${moduleId}/content`}
         title={t('course-details-tabs.module_content')}
         icon={<Goal className="h-5 w-5" />}
-        rawContent={data.content as any | undefined}
+        rawContent={data.content}
         content={
           data.content ? (
             <div className="h-full max-h-[500px] overflow-y-auto">
@@ -122,8 +122,8 @@ export default async function UserGroupDetailsPage({ params }: Props) {
         content={
           data.youtube_links && data.youtube_links.length > 0 ? (
             <div className="grid gap-4">
-              {data.youtube_links.map((link: string, index: number) => (
-                <YoutubeEmbed key={index} embedId={extractYoutubeId(link)} />
+              {data.youtube_links.map((link: string) => (
+                <YoutubeEmbed key={link} embedId={extractYoutubeId(link)} />
               ))}
             </div>
           ) : undefined
@@ -173,7 +173,11 @@ export default async function UserGroupDetailsPage({ params }: Props) {
               <ClientFlashcards
                 wsId={wsId}
                 moduleId={moduleId}
-                cards={cards}
+                cards={cards.map(({ frontHTML, backHTML, ...rest }) => ({
+                  ...rest,
+                  frontHTML: frontHTML.toString(),
+                  backHTML: backHTML.toString(),
+                }))}
                 previewMode
               />
             </div>
@@ -184,7 +188,7 @@ export default async function UserGroupDetailsPage({ params }: Props) {
         href={`/${wsId}/education/courses/${courseId}/modules/${moduleId}/extra-content`}
         title={t('course-details-tabs.extra_reading')}
         icon={<BookText className="h-5 w-5" />}
-        rawContent={data.extra_content as any | undefined}
+        rawContent={data.extra_content}
         content={
           data.extra_content
             ? // <BlockEditor document={data.extra_content as any} />

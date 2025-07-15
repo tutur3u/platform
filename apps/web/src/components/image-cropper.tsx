@@ -13,7 +13,6 @@ import { useCallback, useState } from 'react';
 import type { Area, Point } from 'react-easy-crop';
 import Cropper from 'react-easy-crop';
 import 'react-easy-crop/react-easy-crop.css';
-import { convertHeicToJpeg, isHeicFile } from '@/lib/heic-converter';
 
 interface ImageCropperProps {
   image: string;
@@ -50,16 +49,7 @@ export function ImageCropper({
 
   const createCroppedImageFromFile = useCallback(
     async (file: File, pixelCrop: Area): Promise<Blob> => {
-      // Convert HEIC/HEIF files to JPEG first
-      let imageData: string;
-
-      if (isHeicFile(file)) {
-        console.log('Converting HEIC file to JPEG...');
-        const convertedFile = await convertHeicToJpeg(file);
-        imageData = URL.createObjectURL(convertedFile);
-      } else {
-        imageData = URL.createObjectURL(file);
-      }
+      const imageData = URL.createObjectURL(file);
 
       return new Promise((resolve, reject) => {
         const img = new Image();
@@ -286,11 +276,6 @@ export function ImageCropper({
           <div className="text-center text-dynamic-muted-foreground text-sm">
             Drag to reposition • Use slider to zoom •{' '}
             {aspectRatio === 1 ? 'Square' : 'Custom'} crop
-            {originalFile && isHeicFile(originalFile) && (
-              <div className="mt-1 text-blue-600 text-xs">
-                📱 HEIC image detected - converting for compatibility
-              </div>
-            )}
           </div>
         </div>
 
