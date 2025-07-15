@@ -144,7 +144,7 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json({ googleEventId: googleEventId }, { status: 200 });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Failed to sync with Google Calendar (POST):', error);
     if (error.response?.data?.error === 'invalid_grant') {
       return NextResponse.json(
