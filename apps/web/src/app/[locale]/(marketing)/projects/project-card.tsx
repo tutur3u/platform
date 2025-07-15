@@ -68,7 +68,7 @@ export default function ProjectCard({
   const getCardContainerStyles = () => {
     const baseStyles = `
       relative h-full min-h-[480px] text-left transition-all duration-500
-      backdrop-blur-md overflow-hidden group flex flex-col p-0
+      backdrop-blur-md overflow-hidden group flex flex-col p-0 cursor-pointer
     `;
 
     const centerStyles = isSelected

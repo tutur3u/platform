@@ -8,8 +8,6 @@ import {
   CarouselApi,
   CarouselContent,
   CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
 } from '@ncthub/ui/carousel';
 import { cn } from '@ncthub/utils/format';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -47,12 +45,12 @@ export default function Projects() {
   );
 
   const onSelect = useCallback(() => {
+    console.log('onSelect');
     if (!emblaApi) return;
-
-    setSelectedIndex(emblaApi.selectedScrollSnap() + 1);
   }, [emblaApi]);
 
   const onScroll = () => {
+    console.log('onScroll');
     if (!emblaApi) return;
 
     const root = emblaApi.rootNode();
@@ -426,27 +424,21 @@ export default function Projects() {
           <>
             {viewMode === 'carousel' ? (
               <motion.div
-                className="relative mx-auto max-w-screen-2xl"
+                className="max-w-5xl"
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.6, ease: 'easeOut' }}
               >
-                <Carousel
-                  setApi={setEmblaApi}
-                  className="mx-auto w-full max-w-5xl"
-                >
+                <Carousel setApi={setEmblaApi}>
                   <CarouselContent>
                     {projectsWithNull.map((project, index) => (
-                      <CarouselItem
-                        key={index}
-                        className="basis-full md:basis-1/2 lg:basis-1/3"
-                      >
+                      <CarouselItem key={index} className="basis-1/3">
                         {project && (
                           <div
                             key={index}
                             className={cn(
-                              'group relative h-full w-full cursor-pointer',
+                              'h-full transition-all duration-500 ease-in-out',
                               index === selectedIndex
                                 ? 'scale-100 opacity-100'
                                 : 'scale-75 opacity-60'
@@ -470,8 +462,6 @@ export default function Projects() {
                       </CarouselItem>
                     ))}
                   </CarouselContent>
-                  <CarouselPrevious className="hidden md:flex" />
-                  <CarouselNext className="hidden md:flex" />
                 </Carousel>
 
                 <div className="mt-8 flex justify-center space-x-3">
