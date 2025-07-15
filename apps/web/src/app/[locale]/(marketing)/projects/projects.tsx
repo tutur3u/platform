@@ -263,8 +263,7 @@ export default function Projects() {
                   <div className="mt-3 h-2 w-2 flex-shrink-0 rounded-full bg-[#F4B71A]"></div>
                   <p className="font-medium text-muted-foreground">
                     Interactive games and entertainment features including Neo
-                    Chess, Neo Crush, and other engaging multiplayer
-                    experiences.
+                    Chess, Neo Crush, with engaging experiences for all players
                   </p>
                 </div>
                 <div className="flex items-start gap-3">
