@@ -36,6 +36,7 @@ import {
   Users,
   Vote,
 } from '@tuturuuu/ui/icons';
+import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import {
   getPermissions,
@@ -301,7 +302,7 @@ export default async function Layout({ children, params }: LayoutProps) {
           href: `/${wsId}/link-shortener`,
           icon: <Link className="h-5 w-5" />,
           disabled:
-            wsId !== '00000000-0000-0000-0000-000000000000' &&
+            wsId !== ROOT_WORKSPACE_ID &&
             !(await verifySecret({
               forceAdmin: true,
               wsId,
