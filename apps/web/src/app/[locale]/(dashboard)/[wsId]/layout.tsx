@@ -26,6 +26,7 @@ import {
   MessageCircleIcon,
   PencilLine,
   Play,
+  Presentation,
   ScanSearch,
   ScrollText,
   ShieldUser,
@@ -215,7 +216,7 @@ export default async function Layout({ children, params }: LayoutProps) {
       icon: <BriefcaseBusiness className="h-5 w-5" />,
       children: [
         {
-          title: t('sidebar_tabs.tuplan'),
+          title: t('sidebar_tabs.calendar'),
           href: `/${wsId}/calendar`,
           icon: <Calendar className="h-5 w-5" />,
           disabled: ENABLE_AI_ONLY || withoutPermission('manage_calendar'),
@@ -229,13 +230,13 @@ export default async function Layout({ children, params }: LayoutProps) {
           disabled: withoutPermission('manage_calendar'),
         },
         {
-          title: t('sidebar_tabs.tuvote'),
+          title: t('sidebar_tabs.polls'),
           href: `/${wsId}/polls`,
           icon: <Vote className="h-5 w-5" />,
           disabled: !DEV_MODE,
         },
         {
-          title: t('sidebar_tabs.tudo'),
+          title: t('sidebar_tabs.tasks'),
           href: `/${wsId}/tasks/boards`,
           icon: <CircleCheck className="h-5 w-5" />,
           disabled: ENABLE_AI_ONLY || withoutPermission('manage_projects'),
@@ -243,7 +244,7 @@ export default async function Layout({ children, params }: LayoutProps) {
           experimental: 'beta',
         },
         {
-          title: t('sidebar_tabs.tumail'),
+          title: t('sidebar_tabs.mail'),
           href: `/${wsId}/mail`,
           icon: <Mail className="h-5 w-5" />,
           disabled:
@@ -259,7 +260,7 @@ export default async function Layout({ children, params }: LayoutProps) {
           experimental: 'beta',
         },
         {
-          title: t('sidebar_tabs.tudrive'),
+          title: t('sidebar_tabs.drive'),
           href: `/${wsId}/drive`,
           icon: <HardDrive className="h-5 w-5" />,
           disabled:
@@ -272,39 +273,7 @@ export default async function Layout({ children, params }: LayoutProps) {
           experimental: 'beta',
         },
         {
-          title: t('sidebar_tabs.tunote'),
-          href: `/${wsId}/documents`,
-          icon: <FileText className="h-5 w-5" />,
-          disabled:
-            ENABLE_AI_ONLY ||
-            !(await verifySecret({
-              forceAdmin: true,
-              wsId,
-              name: 'ENABLE_DOCS',
-              value: 'true',
-            })) ||
-            withoutPermission('manage_documents'),
-          shortcut: 'O',
-          experimental: 'beta',
-        },
-        {
-          title: t('sidebar_tabs.tulearn'),
-          href: `/${wsId}/education`,
-          icon: <GraduationCap className="h-5 w-5" />,
-          disabled:
-            ENABLE_AI_ONLY ||
-            !(await verifySecret({
-              forceAdmin: true,
-              wsId,
-              name: 'ENABLE_EDUCATION',
-              value: 'true',
-            })) ||
-            withoutPermission('ai_lab'),
-          shortcut: 'A',
-          experimental: 'beta',
-        },
-        {
-          title: t('sidebar_tabs.tudraw'),
+          title: t('sidebar_tabs.whiteboards'),
           href: `/${wsId}/whiteboards`,
           icon: <PencilLine className="h-5 w-5" />,
           disabled:
@@ -320,7 +289,7 @@ export default async function Layout({ children, params }: LayoutProps) {
           experimental: 'alpha',
         },
         {
-          title: t('sidebar_tabs.tutrack'),
+          title: t('sidebar_tabs.time_tracker'),
           href: `/${wsId}/time-tracker`,
           icon: <ClockFading className="h-5 w-5" />,
           disabled: ENABLE_AI_ONLY || withoutPermission('manage_projects'),
@@ -328,7 +297,7 @@ export default async function Layout({ children, params }: LayoutProps) {
           experimental: 'beta',
         },
         {
-          title: t('sidebar_tabs.tulink'),
+          title: t('sidebar_tabs.link_shortener'),
           href: `/${wsId}/link-shortener`,
           icon: <Link className="h-5 w-5" />,
           disabled:
@@ -339,6 +308,59 @@ export default async function Layout({ children, params }: LayoutProps) {
               name: 'ENABLE_LINK_SHORTENER',
               value: 'true',
             })),
+        },
+      ],
+    },
+    {
+      title: t('sidebar_tabs.media'),
+      icon: <FileText className="h-5 w-5" />,
+      children: [
+        {
+          title: t('sidebar_tabs.documents'),
+          href: `/${wsId}/documents`,
+          icon: <FileText className="h-5 w-5" />,
+          disabled:
+            ENABLE_AI_ONLY ||
+            !(await verifySecret({
+              forceAdmin: true,
+              wsId,
+              name: 'ENABLE_DOCS',
+              value: 'true',
+            })) ||
+            withoutPermission('manage_documents'),
+          shortcut: 'O',
+          experimental: 'beta',
+        },
+        {
+          title: t('sidebar_tabs.slides'),
+          href: `/${wsId}/slides`,
+          icon: <Presentation className="h-5 w-5" />,
+          disabled:
+            ENABLE_AI_ONLY ||
+            !(await verifySecret({
+              forceAdmin: true,
+              wsId,
+              name: 'ENABLE_SLIDES',
+              value: 'true',
+            })),
+          shortcut: 'S',
+          experimental: 'alpha',
+        },
+        {
+          title: t('sidebar_tabs.education'),
+          href: `/${wsId}/education`,
+          icon: <GraduationCap className="h-5 w-5" />,
+          disabled:
+            ENABLE_AI_ONLY ||
+            !(await verifySecret({
+              forceAdmin: true,
+              wsId,
+              name: 'ENABLE_EDUCATION',
+              value: 'true',
+            })) ||
+            withoutPermission('ai_lab'),
+          shortcut: 'A',
+          experimental: 'beta',
         },
       ],
     },
