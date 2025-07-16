@@ -116,7 +116,7 @@ export function CommonFooter({ t, devMode }: { t: any; devMode: boolean }) {
               href="https://www.linkedin.com/company/tuturuuu/"
               className="fill-foreground/50 transition duration-300 hover:fill-foreground"
               aria-label="LinkedIn"
-            >
+            >    
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 512 512"
