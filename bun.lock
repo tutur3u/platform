@@ -250,6 +250,7 @@
       "name": "@tuturuuu/tumeet",
       "version": "0.1.0",
       "dependencies": {
+        "@tanstack/react-query": "^5.83.0",
         "@tuturuuu/ai": "workspace:*",
         "@tuturuuu/supabase": "workspace:*",
         "@tuturuuu/types": "workspace:*",
