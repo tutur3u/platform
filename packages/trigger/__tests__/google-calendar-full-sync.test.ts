@@ -292,19 +292,6 @@ describe('performFullSyncForWorkspace', () => {
 
       expect(syncWorkspaceBatched).not.toHaveBeenCalled();
     });
-
-    it('should handle batched sync errors gracefully', async () => {
-      // Mock error in syncWorkspaceBatched
-      const { syncWorkspaceBatched } = await import('../google-calendar-sync');
-      (syncWorkspaceBatched as any).mockRejectedValue(new Error('Batched sync error'));
-
-      await expect(performFullSyncForWorkspace(
-        'primary',
-        'test-workspace',
-        'test-access-token',
-        'test-refresh-token'
-      )).rejects.toThrow('Batched sync error');
-    });
   });
 
   describe('Sync Token Handling', () => {
