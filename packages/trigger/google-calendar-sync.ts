@@ -68,7 +68,7 @@ const syncGoogleCalendarEventsForWorkspaceBatched = async (
     const rawEventsToDelete: calendar_v3.Schema$Event[] = [];
 
     for (const event of events_to_sync) {
-      if (event.status === "cancelled") {
+      if (event.status === "cancelled" && event.id) {
         rawEventsToDelete.push(event);
       } else {
         rawEventsToUpsert.push(event);
