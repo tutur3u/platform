@@ -47,18 +47,6 @@ beforeAll(async () => {
   syncWorkspaceBatched = mod.syncWorkspaceBatched;
 });
 
-// Test isolation utility to prevent environment contamination
-const isolateTest = (testFn: () => void | Promise<void>) => {
-  return async () => {
-    const originalEnv = { ...process.env };
-    try {
-      await testFn();
-    } finally {
-      process.env = originalEnv;
-    }
-  };
-};
-
 // Mock Google Calendar events for testing
 const createMockGoogleEvent = (id: string, title: string, start: string, end: string, status = 'confirmed') => ({
   id,
