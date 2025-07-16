@@ -82,13 +82,40 @@ Tests that verify proper error handling in batch operations:
 
 ```typescript
 it('should handle upsert errors gracefully', async () => {
-  // Tests that upsert errors are caught and reported
+  // Mock error as Error object (not string)
+  mockSupabaseClient.from.mockReturnValue({
+    upsert: vi.fn(() => Promise.resolve({ error: new Error('Upsert failed') })),
+    // ...
+  });
+  
+  const result = await syncGoogleCalendarEventsForWorkspaceBatched(ws_id, events);
+  
+  expect(result).toEqual({
+    ws_id: 'test-workspace',
+    success: false,
+    error: 'Upsert failed', // Error message extracted from Error object
+  });
 });
 
 it('should handle delete errors gracefully', async () => {
-  // Tests that delete errors are caught and reported
+  // Mock error as Error object (not string)
+  mockSupabaseClient.from.mockReturnValue({
+    delete: vi.fn(() => ({
+      or: vi.fn(() => Promise.resolve({ error: new Error('Delete failed') }))
+    }))
+  });
+  
+  const result = await syncGoogleCalendarEventsForWorkspaceBatched(ws_id, events);
+  
+  expect(result).toEqual({
+    ws_id: 'test-workspace',
+    success: false,
+    error: 'Delete failed', // Error message extracted from Error object
+  });
 });
 ```
+
+**Important Note**: The batched sync function expects Error objects, not strings. The error handling extracts the message from Error instances using `error.message`, otherwise it returns "Unknown error".
 
 ### **Performance Tests**
 Tests that verify batch processing works with large datasets:

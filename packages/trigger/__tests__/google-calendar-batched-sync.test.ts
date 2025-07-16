@@ -199,7 +199,7 @@ describe('Google Calendar Batched Sync', () => {
 
       // Mock upsert error
       mockSupabaseClient.from.mockReturnValue({
-        upsert: vi.fn(() => Promise.resolve({ error: 'Upsert failed' as any })),
+        upsert: vi.fn(() => Promise.resolve({ error: new Error('Upsert failed') })),
         delete: vi.fn(() => ({
           or: vi.fn(() => Promise.resolve({ error: null as any }))
         }))
@@ -224,7 +224,7 @@ describe('Google Calendar Batched Sync', () => {
       mockSupabaseClient.from.mockReturnValue({
         upsert: vi.fn(() => Promise.resolve({ error: null as any })),
         delete: vi.fn(() => ({
-          or: vi.fn(() => Promise.resolve({ error: 'Delete failed' as any }))
+          or: vi.fn(() => Promise.resolve({ error: new Error('Delete failed') }))
         }))
       });
 
@@ -330,7 +330,7 @@ describe('Google Calendar Batched Sync', () => {
 
       // Mock error in the underlying function
       mockSupabaseClient.from.mockReturnValue({
-        upsert: vi.fn(() => Promise.resolve({ error: 'Database error' as any })),
+        upsert: vi.fn(() => Promise.resolve({ error: new Error('Database error') })),
         delete: vi.fn(() => ({
           or: vi.fn(() => Promise.resolve({ error: null as any }))
         }))
