@@ -1,9 +1,9 @@
 import { ProductionIndicator } from '@tuturuuu/ui/custom/production-indicator';
+import { StaffToolbar } from '@tuturuuu/ui/custom/staff-toolbar';
 import { TailwindIndicator } from '@tuturuuu/ui/custom/tailwind-indicator';
 import { Providers } from '@/components/providers';
 import { siteConfig } from '@/constants/configs';
 import { type Locale, routing, supportedLocales } from '@/i18n/routing';
-import { StaffToolbar } from './staff-toolbar';
 import '@/style/prosemirror.css';
 import '@tuturuuu/ui/globals.css';
 import { Toaster } from '@tuturuuu/ui/toaster';
