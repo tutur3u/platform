@@ -54,6 +54,27 @@ const getColorFromGoogleColorId = (colorId?: string): string => {
   return colorId && colorMap[colorId] ? colorMap[colorId] : 'BLUE';
 };
 
+// Format event for database upsert and deletion
+const formatEventForDb = (event: calendar_v3.Schema$Event, ws_id: string) => {
+  const { start_at, end_at } = convertGoogleAllDayEvent(
+    event.start?.dateTime || event.start?.date || '',
+    event.end?.dateTime || event.end?.date || '',
+    'auto'
+  );
+
+  return {
+    google_event_id: event.id,
+    title: event.summary || 'Untitled Event',
+    description: event.description || '',
+    start_at,
+    end_at,
+    location: event.location || '',
+    color: getColorFromGoogleColorId(event.colorId ?? undefined),
+    ws_id: ws_id,
+    locked: false,
+  };
+};
+
 // Core sync function for a single workspace with batch processing
 const syncGoogleCalendarEventsForWorkspaceBatched = async (
   ws_id: string,
@@ -76,46 +97,10 @@ const syncGoogleCalendarEventsForWorkspaceBatched = async (
     }
 
     // Format events for upsert
-    const formattedEvents = rawEventsToUpsert.map((event) => {
-      const { start_at, end_at } = convertGoogleAllDayEvent(
-        event.start?.dateTime || event.start?.date || '',
-        event.end?.dateTime || event.end?.date || '',
-        'auto'
-      );
-
-      return {
-        google_event_id: event.id,
-        title: event.summary || 'Untitled Event',
-        description: event.description || '',
-        start_at,
-        end_at,
-        location: event.location || '',
-        color: getColorFromGoogleColorId(event.colorId ?? undefined),
-        ws_id: ws_id,
-        locked: false,
-      };
-    });
+    const formattedEvents = rawEventsToUpsert.map(event => formatEventForDb(event, ws_id));
 
     // Format events for deletion
-    const formattedEventsToDelete = rawEventsToDelete.map((event) => {
-      const { start_at, end_at } = convertGoogleAllDayEvent(
-        event.start?.dateTime || event.start?.date || '',
-        event.end?.dateTime || event.end?.date || '',
-        'auto'
-      );
-
-      return {
-        google_event_id: event.id,
-        title: event.summary || 'Untitled Event',
-        description: event.description || '',
-        start_at,
-        end_at,
-        location: event.location || '',
-        color: getColorFromGoogleColorId(event.colorId ?? undefined),
-        ws_id: ws_id,
-        locked: false,
-      };
-    });
+    const formattedEventsToDelete = rawEventsToDelete.map(event => formatEventForDb(event, ws_id));
 
     let totalUpserted = 0;
     let totalDeleted = 0;
