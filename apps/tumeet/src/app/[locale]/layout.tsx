@@ -1,5 +1,5 @@
+import { ProductionIndicator } from '@tuturuuu/ui/custom/production-indicator';
 import { TailwindIndicator } from '@tuturuuu/ui/custom/tailwind-indicator';
-// import { ProductionIndicator } from '@/components/production-indicator';
 // import { Providers } from '@/components/providers';
 import { siteConfig } from '@/constants/configs';
 import { type Locale, routing, supportedLocales } from '@/i18n/routing';
@@ -68,7 +68,7 @@ export default async function RootLayout({ children, params }: Props) {
         {children}
         {/* </Providers> */}
         <TailwindIndicator />
-        {/* <ProductionIndicator /> */}
+        <ProductionIndicator />
         {/* <StaffToolbar /> */}
         <Toaster />
       </body>

@@ -1,4 +1,7 @@
-import { IS_PRODUCTION_DB, PROD_MODE } from '@/constants/common';
+export const IS_PRODUCTION_DB =
+  process.env.NEXT_PUBLIC_SUPABASE_URL?.includes('.supabase.');
+
+export const PROD_MODE = process.env.NODE_ENV === 'production';
 
 export function ProductionIndicator() {
   if (!IS_PRODUCTION_DB || PROD_MODE) return null;
