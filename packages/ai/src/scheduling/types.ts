@@ -24,6 +24,7 @@ export interface Task {
   user_defined_priority?: string;
   id: string;
   name: string;
+  locked?: boolean;
   duration: number;
   minDuration: number;
   maxDuration: number;

@@ -193,6 +193,7 @@ export const promoteEventToTask = (event: Event): Task | null => {
     minDuration: duration,
     maxDuration: duration,
     allowSplit: false,
+    locked: event.locked ?? false,
     category: event.category ?? 'work',
     priority: event.priority ?? 'normal',
     deadline: end,
@@ -220,6 +221,7 @@ export const scheduleTasks = (
       maxDuration: hoursToQuarterHours(task.maxDuration),
       remaining: hoursToQuarterHours(task.duration),
       nextPart: 1,
+      locked: task.locked || false,
       scheduledParts: 0,
       priorityScore: calculatePriorityScore(task),
     }));
@@ -265,7 +267,6 @@ export const scheduleTasks = (
       attempts++;
       let anyScheduled = false;
 
-      console.log(taskPool);
       for (const task of taskPool) {
         if (task.remaining <= 0) continue;
         const categoryHours =
@@ -491,8 +492,10 @@ export const scheduleTasks = (
       }
     }
 
-    // console.log('Scheduled Events:', scheduledEvents);
-    return { events: scheduledEvents.slice(1), logs };
+    const uniqueScheduledEvents = Array.from(
+      new Map(scheduledEvents.map((event) => [event.id, event])).values()
+    );
+    return { events: uniqueScheduledEvents, logs };
   } catch (error) {
     console.error('Error sorting task pool:', error);
   }
