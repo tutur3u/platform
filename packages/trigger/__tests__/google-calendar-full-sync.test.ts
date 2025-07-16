@@ -254,7 +254,7 @@ describe('performFullSyncForWorkspace', () => {
 
   describe('Integration with syncWorkspaceBatched', () => {
     it('should call syncWorkspaceBatched when events exist', async () => {
-      const { syncWorkspaceBatched: syncWorkspaceBatched } = await import('../google-calendar-sync');
+      const { syncWorkspaceBatched } = await import('../google-calendar-sync');
       
       await performFullSyncForWorkspace(
         'primary',
