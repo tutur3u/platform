@@ -1,10 +1,8 @@
-import { PROD_MODE, SHOW_TAILWIND_INDICATOR } from '@/constants/common';
-
 export function TailwindIndicator() {
-  if (!SHOW_TAILWIND_INDICATOR || PROD_MODE) return null;
+  if (process.env.NODE_ENV === 'production') return null;
 
   return (
-    <div className="fixed bottom-2 left-2 z-1000 flex h-8 w-8 items-center justify-center rounded-lg bg-background/30 font-mono text-xs text-foreground backdrop-blur">
+    <div className="fixed right-2 bottom-2 z-1000 flex h-6 w-6 items-center justify-center rounded-lg border border-foreground/10 bg-foreground/10 font-mono text-foreground text-xs backdrop-blur transition duration-300 hover:opacity-0">
       <div className="block sm:hidden">xs</div>
       <div className="hidden sm:block md:hidden">sm</div>
       <div className="hidden md:block lg:hidden">md</div>
