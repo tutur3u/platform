@@ -259,7 +259,7 @@ export function EventModal() {
 
       // Only check for all-day if this is an existing event (not a new one)
       if (activeEvent.id !== 'new') {
-        setIsAllDay(isAllDayEvent(cleanEventData as CalendarEvent, tz));
+        setIsAllDay(isAllDayEvent(cleanEventData as CalendarEvent));
       } else {
         // For new events, always start with isAllDay as false
         setIsAllDay(false);
@@ -296,7 +296,7 @@ export function EventModal() {
 
     // Clear any error messages
     setDateError(null);
-  }, [activeEvent, tz, checkForOverlaps, aiForm.reset]);
+  }, [activeEvent, checkForOverlaps, aiForm.reset]);
 
   // Handle manual event save
   const handleManualSave = async () => {

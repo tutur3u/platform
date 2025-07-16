@@ -1,5 +1,5 @@
+import { TailwindIndicator } from '@tuturuuu/ui/custom/tailwind-indicator';
 import { Providers } from '@/components/providers';
-import { TailwindIndicator } from '@/components/tailwind-indicator';
 import { siteConfig } from '@/constants/configs';
 import { supportedLocales } from '@/i18n/routing';
 import '@tuturuuu/ui/globals.css';

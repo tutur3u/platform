@@ -10,10 +10,11 @@ import { Separator } from '@tuturuuu/ui/separator';
 import Form from './form';
 import 'dayjs/locale/vi';
 import 'dayjs/plugin/relativeTime';
+import { GradientHeadline } from '@tuturuuu/ui/custom/gradient-headline';
 import { Calendar, UserIcon, Users, Video, Zap } from 'lucide-react';
 import Link from 'next/link';
 import { getLocale, getTranslations } from 'next-intl/server';
-import { GradientHeadline } from '../../custom/gradient-headline';
+
 import { MeetTogetherClient } from './client-wrapper';
 
 // Extended interface to include participants
