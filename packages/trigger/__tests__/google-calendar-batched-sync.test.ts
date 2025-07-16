@@ -357,7 +357,7 @@ describe('Google Calendar Batched Sync', () => {
         eventsDeleted: 60,
       });
 
-      // Verify upsert was called twice (60 events / 100 batch size = 1 call, but we have 60 events)
+      // Verify upsert was called one (60 events / 100 batch size = 1 call)
       const upsertMock = mockSupabaseClient.from().upsert;
       expect(upsertMock).toHaveBeenCalledTimes(1);
 
