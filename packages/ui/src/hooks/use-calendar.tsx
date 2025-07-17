@@ -381,7 +381,7 @@ export const CalendarProvider = ({
           location: event.location || '',
           priority: event.priority || 'medium',
           ws_id: ws?.id ?? '',
-          locked: true,
+          locked: false,
         })
         .select()
         .single();
@@ -1359,23 +1359,19 @@ export const CalendarProvider = ({
 
         // Return success with indication if changes were made
         return changesMade || beforeGoogleCount !== googleEvents.length;
-        <<<<<<< HEAD
-      } catch (error) {
-        =======
-      }
-      catch (_)
-      >>>>>>> main
-      if (progressCallback) {
-        progressCallback({
-          phase: 'complete',
-          current: 1,
-          total: 1,
-          changesMade: false,
-          statusMessage: 'Sync failed. Please try again.',
-        });
-      }
+      } catch (_) {
+        if (progressCallback) {
+          progressCallback({
+            phase: 'complete',
+            current: 1,
+            total: 1,
+            changesMade: false,
+            statusMessage: 'Sync failed. Please try again.',
+          });
+        }
 
-      return false;
+        return false;
+      }
     },
     [
       experimentalGoogleToken,

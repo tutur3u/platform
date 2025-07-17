@@ -1,5 +1,6 @@
 'use client';
 
+import { DefaultChatTransport } from '@tuturuuu/ai/core';
 import { defaultModel, type Model, models } from '@tuturuuu/ai/models';
 import { useChat } from '@tuturuuu/ai/react';
 import type { UIMessage } from '@tuturuuu/ai/types';
