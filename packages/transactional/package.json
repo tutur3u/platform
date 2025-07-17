@@ -12,11 +12,10 @@
     "@react-email/tailwind": "^1.2.1",
     "@tuturuuu/typescript-config": "workspace:*",
     "react": "^19.1.0",
-    "react-email": "^4.1.3"
+    "react-email": "^4.2.1"
   },
   "devDependencies": {
-    "@react-email/preview-server": "4.1.3",
-    "@types/node": "^24.0.13",
+    "@types/node": "^24.0.14",
     "@types/react": "^19.1.8"
   }
 }

@@ -1,6 +1,7 @@
 'use client';
 
 import type { Workspace } from '@tuturuuu/types/db';
+import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import { Button } from '@tuturuuu/ui/button';
 import {
   HoverCard,
@@ -19,16 +20,15 @@ import {
   startOfMonth,
 } from 'date-fns';
 import dayjs from 'dayjs';
-import timezone from 'dayjs/plugin/timezone';
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
+import timezone from 'dayjs/plugin/timezone';
 import { Clock, Plus } from 'lucide-react';
-import { useEffect, useMemo, useState} from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { isAllDayEvent } from '../../../../hooks/calendar-utils';
 import { useCalendar } from '../../../../hooks/use-calendar';
 import { usePopoverManager } from '../../../../hooks/use-popover-manager';
+import { Popover, PopoverContent, PopoverTrigger } from '../../popover';
 import { getColorHighlight } from './color-highlights';
-import { Popover, PopoverTrigger, PopoverContent } from '../../popover';
-import { isAllDayEvent } from '../../../../hooks/calendar-utils';
-import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 
 dayjs.extend(timezone);
 dayjs.extend(isSameOrAfter);
@@ -52,10 +52,10 @@ interface EventSpan {
 const normalizeColor = (color: string): string => {
   if (!color) return 'primary';
   const normalized = color.trim().toLowerCase();
-  
+
   // Map specific values to standardized names
   if (normalized === '#6b7280' || normalized === 'grey') return 'gray';
-  
+
   return normalized;
 };
 
@@ -81,14 +81,22 @@ const getDominantEventColor = (events: any[]): string => {
 };
 
 // Utility function for scroll shadow classes
-const getScrollShadowClasses = (scrollState: { top: boolean; bottom: boolean } | undefined) => {
+const getScrollShadowClasses = (
+  scrollState: { top: boolean; bottom: boolean } | undefined
+) => {
   return cn(
-    scrollState?.top && 'before:absolute before:top-0 before:left-0 before:right-0 before:h-3 before:bg-gradient-to-b before:from-muted/80 before:to-transparent before:pointer-events-none',
-    scrollState?.bottom && 'after:absolute after:bottom-0 after:left-0 after:right-0 after:h-3 after:bg-gradient-to-t after:from-muted/80 after:to-transparent after:pointer-events-none'
+    scrollState?.top &&
+      'before:pointer-events-none before:absolute before:top-0 before:right-0 before:left-0 before:h-3 before:bg-gradient-to-b before:from-muted/80 before:to-transparent',
+    scrollState?.bottom &&
+      'after:pointer-events-none after:absolute after:right-0 after:bottom-0 after:left-0 after:h-3 after:bg-gradient-to-t after:from-muted/80 after:to-transparent'
   );
 };
 
-export const MonthCalendar = ({ date, visibleDates, viewedMonth }: MonthCalendarProps) => {
+export const MonthCalendar = ({
+  date,
+  visibleDates,
+  viewedMonth,
+}: MonthCalendarProps) => {
   const { getCurrentEvents, addEmptyEvent, openModal, settings } =
     useCalendar();
   const [currDate, setCurrDate] = useState(date);
@@ -115,14 +123,14 @@ export const MonthCalendar = ({ date, visibleDates, viewedMonth }: MonthCalendar
   // Update currDate when date prop changes
   useEffect(() => {
     setCurrDate(date);
-  }, [date, tz]);
+  }, [date]);
 
   // Get first day of week from settings
   const firstDayOfWeek = useMemo(() => {
     const settingValue = settings?.appearance?.firstDayOfWeek;
     console.log('Month calendar first day setting:', settingValue);
     return settingValue === 'sunday' ? 0 : settingValue === 'saturday' ? 6 : 1; // 0 = Sunday, 1 = Monday, 6 = Saturday
-  }, [settings?.appearance?.firstDayOfWeek, tz]);
+  }, [settings?.appearance?.firstDayOfWeek]);
 
   // Get weekday labels based on first day of week
   const weekdayLabels = useMemo(() => {
@@ -133,13 +141,14 @@ export const MonthCalendar = ({ date, visibleDates, viewedMonth }: MonthCalendar
 
     // Reorder days based on first day of week
     for (let i = 0; i < firstDayOfWeek; i++) {
-      reorderedDays.push(reorderedDays.shift()!);
+      const day = reorderedDays.shift();
+      if (day) reorderedDays.push(day);
     }
 
     console.log('Reordered days:', reorderedDays);
 
     return reorderedDays;
-  }, [firstDayOfWeek, tz]);
+  }, [firstDayOfWeek]);
 
   // Get days in month
   const monthStart = startOfMonth(currDate);
@@ -182,7 +191,11 @@ export const MonthCalendar = ({ date, visibleDates, viewedMonth }: MonthCalendar
   }
 
   // Use visibleDates if provided, otherwise fallback to old logic
-  const calendarDays = visibleDates ?? [...prevMonthDays, ...monthDays, ...nextMonthDays];
+  const calendarDays = visibleDates ?? [
+    ...prevMonthDays,
+    ...monthDays,
+    ...nextMonthDays,
+  ];
 
   // Create weeks (group by 7 days)
   const weeks: Date[][] = [];
@@ -198,16 +211,16 @@ export const MonthCalendar = ({ date, visibleDates, viewedMonth }: MonthCalendar
     weeks.forEach((week: Date[], weekIndex: number) => {
       week.forEach((day: Date) => {
         const dayEvents = getCurrentEvents(day);
-        
+
         dayEvents.forEach((event) => {
           // Skip if already processed or not an all-day event
-          if (processedEvents.has(event.id) || !isAllDayEvent(event, settings?.timezone?.timezone)) {
+          if (processedEvents.has(event.id) || !isAllDayEvent(event)) {
             return;
           }
 
           const eventStart = dayjs(event.start_at);
           const eventEnd = dayjs(event.end_at);
-          
+
           // Check if this is a multi-day event
           const durationDays = eventEnd.diff(eventStart, 'day');
           if (durationDays <= 1) {
@@ -220,7 +233,7 @@ export const MonthCalendar = ({ date, visibleDates, viewedMonth }: MonthCalendar
 
           week.forEach((weekDay: Date, weekDayIndex: number) => {
             const weekDayStart = dayjs(weekDay);
-            
+
             // Check if event overlaps with this day
             if (
               weekDayStart.isSameOrAfter(eventStart, 'day') &&
@@ -248,60 +261,68 @@ export const MonthCalendar = ({ date, visibleDates, viewedMonth }: MonthCalendar
     });
 
     return spans;
-  }, [weeks, getCurrentEvents]);
+  }, [getCurrentEvents]);
 
   // Get events for a day including placeholders for multi-day events
   const getEventsForDay = (day: Date) => {
     const dayEvents = getCurrentEvents(day);
-    const result: (CalendarEvent & { isPlaceholder?: boolean; _eventPriority?: number })[] = [];
-    
+    const result: (CalendarEvent & {
+      isPlaceholder?: boolean;
+      _eventPriority?: number;
+    })[] = [];
+
     // Add all events with priority for sorting
-    dayEvents.forEach(event => {
+    dayEvents.forEach((event) => {
       let eventPriority: number = EVENT_DISPLAY_PRIORITY.TIMED; // Default for timed events (lowest priority)
-      
-      if (isAllDayEvent(event, settings?.timezone?.timezone)) {
+
+      if (isAllDayEvent(event)) {
         // Check if it's part of a multi-day span
-        const isMultiDay = multiDayEventSpans.some(span => span.event.id === event.id);
-        
+        const isMultiDay = multiDayEventSpans.some(
+          (span) => span.event.id === event.id
+        );
+
         if (isMultiDay) {
           // Multi-day all-day event gets highest priority
           eventPriority = EVENT_DISPLAY_PRIORITY.ALL_DAY;
           result.push({
             ...event,
             isPlaceholder: true,
-            _eventPriority: eventPriority
+            _eventPriority: eventPriority,
           });
         } else {
           // Single-day all-day event gets medium priority
           eventPriority = EVENT_DISPLAY_PRIORITY.MULTI_DAY_FIRST;
           result.push({
             ...event,
-            _eventPriority: eventPriority
+            _eventPriority: eventPriority,
           });
         }
       } else {
         // Timed event gets lowest priority
         result.push({
           ...event,
-          _eventPriority: eventPriority
+          _eventPriority: eventPriority,
         });
       }
     });
-    
+
     // Sort by priority (1 = highest priority, 3 = lowest priority)
     // Then by start time for events with the same priority
     result.sort((a, b) => {
       // First sort by priority
       if (a._eventPriority !== b._eventPriority) {
-        return (a._eventPriority || EVENT_DISPLAY_PRIORITY.TIMED) - (b._eventPriority || EVENT_DISPLAY_PRIORITY.TIMED);
+        return (
+          (a._eventPriority || EVENT_DISPLAY_PRIORITY.TIMED) -
+          (b._eventPriority || EVENT_DISPLAY_PRIORITY.TIMED)
+        );
       }
-      
+
       // For events with same priority, sort by start time
       const aStart = new Date(a.start_at).getTime();
       const bStart = new Date(b.start_at).getTime();
       return aStart - bStart;
     });
-    
+
     return result;
   };
 
@@ -370,7 +391,11 @@ export const MonthCalendar = ({ date, visibleDates, viewedMonth }: MonthCalendar
       },
     };
     const normalizedColor = normalizeColor(event.color || 'blue');
-    return (normalizedColor && colorMap[normalizedColor] ? colorMap[normalizedColor] : colorMap.blue) as {
+    return (
+      normalizedColor && colorMap[normalizedColor]
+        ? colorMap[normalizedColor]
+        : colorMap.blue
+    ) as {
       bg: string;
       text: string;
     };
@@ -384,7 +409,14 @@ export const MonthCalendar = ({ date, visibleDates, viewedMonth }: MonthCalendar
       map[day.toISOString()] = getDominantEventColor(events);
     }
     return map;
-  }, [calendarDays, JSON.stringify(calendarDays.map(day => getCurrentEvents(day).map(e => e.id + e.color)))]);
+  }, [
+    calendarDays,
+    JSON.stringify(
+      calendarDays.map((day) =>
+        getCurrentEvents(day).map((e) => e.id + e.color)
+      )
+    ),
+  ]);
 
   // Use the custom popover manager hook
   const {
@@ -404,7 +436,7 @@ export const MonthCalendar = ({ date, visibleDates, viewedMonth }: MonthCalendar
           <div
             key={day}
             className={cn(
-              'py-2 text-sm font-medium',
+              'py-2 font-medium text-sm',
               (day === 'Sun' || day === 'Sat') &&
                 !settings.appearance.showWeekends
                 ? 'text-muted-foreground/50'
@@ -416,13 +448,16 @@ export const MonthCalendar = ({ date, visibleDates, viewedMonth }: MonthCalendar
         ))}
       </div>
 
-              <div className="relative">
+      <div className="relative">
         <div className="grid grid-cols-7 divide-x divide-y" id="calendar-grid">
-          {weeks.map((week, weekIndex) => 
+          {weeks.map((week, weekIndex) =>
             week.map((day, dayIdx) => {
               const globalDayIdx = weekIndex * 7 + dayIdx;
-              const dominantColor = dominantColorForDay[day.toISOString()] || 'primary';
-              const highlightClass = isToday(day) ? `${getColorHighlight(dominantColor)} z-10` : '';
+              const dominantColor =
+                dominantColorForDay[day.toISOString()] || 'primary';
+              const highlightClass = isToday(day)
+                ? `${getColorHighlight(dominantColor)} z-10`
+                : '';
 
               const isCurrentMonth = isSameMonth(day, viewedMonth ?? currDate);
               const isTodayDate = isToday(day);
@@ -465,7 +500,7 @@ export const MonthCalendar = ({ date, visibleDates, viewedMonth }: MonthCalendar
                           variant="ghost"
                           size="icon"
                           className={cn(
-                            'h-6 w-6 opacity-0 group-hover:opacity-100 hover:bg-primary/10 hover:opacity-100 focus:opacity-100',
+                            'h-6 w-6 opacity-0 hover:bg-primary/10 hover:opacity-100 focus:opacity-100 group-hover:opacity-100',
                             isHidden && 'opacity-0 group-hover:opacity-50'
                           )}
                           onClick={() => handleAddEvent(day)}
@@ -479,67 +514,83 @@ export const MonthCalendar = ({ date, visibleDates, viewedMonth }: MonthCalendar
                   </div>
 
                   <div className="mt-1 space-y-1">
-                    {getEventsForDay(day).slice(0, 3).map((event) => {
-                      // Skip rendering placeholder events (they're handled by the spanning elements)
-                      if (event.isPlaceholder) {
-                        return (
-                          <div
-                            key={event.id}
-                            className="opacity-0 pointer-events-none px-1.5 py-1 text-xs font-medium"
-                            style={{ height: `${LAYOUT_CONSTANTS.EVENT_HEIGHT}px` }}
-                            aria-hidden="true"
-                          />
-                        );
-                      }
-
-                      const { bg, text } = getEventStyles(event);
-
-                      return (
-                        <HoverCard key={event.id} openDelay={200} closeDelay={100}>
-                          <HoverCardTrigger asChild>
+                    {getEventsForDay(day)
+                      .slice(0, 3)
+                      .map((event) => {
+                        // Skip rendering placeholder events (they're handled by the spanning elements)
+                        if (event.isPlaceholder) {
+                          return (
                             <div
-                              className={cn(
-                                'cursor-pointer items-center gap-1 truncate rounded px-1.5 py-1 text-xs font-medium',
-                                bg,
-                                text,
-                                !isCurrentMonth && 'opacity-60'
-                              )}
-                              onClick={() => openModal(event.id)}
-                            >
-                              {event.title || 'Untitled event'}
-                            </div>
-                          </HoverCardTrigger>
-                          <HoverCardContent
-                            side="right"
-                            align="start"
-                            className="w-80"
+                              key={event.id}
+                              className="pointer-events-none px-1.5 py-1 font-medium text-xs opacity-0"
+                              style={{
+                                height: `${LAYOUT_CONSTANTS.EVENT_HEIGHT}px`,
+                              }}
+                              aria-hidden="true"
+                            />
+                          );
+                        }
+
+                        const { bg, text } = getEventStyles(event);
+
+                        return (
+                          <HoverCard
+                            key={event.id}
+                            openDelay={200}
+                            closeDelay={100}
                           >
-                            <div className="space-y-2">
-                              <h4 className="line-clamp-2 font-medium break-words">
+                            <HoverCardTrigger asChild>
+                              <div
+                                className={cn(
+                                  'cursor-pointer items-center gap-1 truncate rounded px-1.5 py-1 font-medium text-xs',
+                                  bg,
+                                  text,
+                                  !isCurrentMonth && 'opacity-60'
+                                )}
+                                onClick={() => openModal(event.id)}
+                              >
                                 {event.title || 'Untitled event'}
-                              </h4>
-                              {event.description && (
-                                <p className="text-sm text-muted-foreground">
-                                  {event.description}
-                                </p>
-                              )}
-                              <div className="flex items-center text-xs text-muted-foreground">
-                                <Clock className="mr-1 h-3 w-3" />
-                                <span>{formatEventTime(event)}</span>
                               </div>
-                            </div>
-                          </HoverCardContent>
-                        </HoverCard>
-                      );
-                    })}
+                            </HoverCardTrigger>
+                            <HoverCardContent
+                              side="right"
+                              align="start"
+                              className="w-80"
+                            >
+                              <div className="space-y-2">
+                                <h4 className="line-clamp-2 break-words font-medium">
+                                  {event.title || 'Untitled event'}
+                                </h4>
+                                {event.description && (
+                                  <p className="text-muted-foreground text-sm">
+                                    {event.description}
+                                  </p>
+                                )}
+                                <div className="flex items-center text-muted-foreground text-xs">
+                                  <Clock className="mr-1 h-3 w-3" />
+                                  <span>{formatEventTime(event)}</span>
+                                </div>
+                              </div>
+                            </HoverCardContent>
+                          </HoverCard>
+                        );
+                      })}
 
                     {getEventsForDay(day).length > 3 && (
-                      <Popover open={openPopoverIdx === globalDayIdx} onOpenChange={open => setOpenPopoverIdx(open ? globalDayIdx : null)}>
+                      <Popover
+                        open={openPopoverIdx === globalDayIdx}
+                        onOpenChange={(open) =>
+                          setOpenPopoverIdx(open ? globalDayIdx : null)
+                        }
+                      >
                         <PopoverTrigger asChild>
                           <button
-                            ref={el => { moreButtonRefs.current[globalDayIdx] = el; }}
+                            type="button"
+                            ref={(el) => {
+                              moreButtonRefs.current[globalDayIdx] = el;
+                            }}
                             className={cn(
-                              'w-full rounded-sm bg-muted px-1 py-0.5 text-xs font-medium text-muted-foreground hover:bg-muted/80',
+                              'w-full rounded-sm bg-muted px-1 py-0.5 font-medium text-muted-foreground text-xs hover:bg-muted/80',
                               !isCurrentMonth && 'opacity-60'
                             )}
                             onClick={() => setOpenPopoverIdx(globalDayIdx)}
@@ -550,40 +601,60 @@ export const MonthCalendar = ({ date, visibleDates, viewedMonth }: MonthCalendar
                         <PopoverContent
                           align="start"
                           className={cn(
-                            'p-2 max-h-60 overflow-y-auto relative !transition-none',
+                            '!transition-none relative max-h-60 overflow-y-auto p-2',
                             getScrollShadowClasses(scrollStates[globalDayIdx])
                           )}
-                          style={{ width: moreButtonRefs.current[globalDayIdx]?.offsetWidth || undefined }}
+                          style={{
+                            width:
+                              moreButtonRefs.current[globalDayIdx]
+                                ?.offsetWidth || undefined,
+                          }}
                         >
                           <div
                             className="flex flex-col gap-1"
-                            onScroll={e => handlePopoverScroll(e, globalDayIdx)}
-                            ref={el => { popoverContentRefs.current[globalDayIdx] = el; }}
-                            onMouseEnter={() => setPopoverHovered(prev => ({ ...prev, [globalDayIdx]: true }))}
-                            onMouseLeave={() => setPopoverHovered(prev => ({ ...prev, [globalDayIdx]: false }))}
+                            onScroll={(e) =>
+                              handlePopoverScroll(e, globalDayIdx)
+                            }
+                            ref={(el) => {
+                              popoverContentRefs.current[globalDayIdx] = el;
+                            }}
+                            onMouseEnter={() =>
+                              setPopoverHovered((prev) => ({
+                                ...prev,
+                                [globalDayIdx]: true,
+                              }))
+                            }
+                            onMouseLeave={() =>
+                              setPopoverHovered((prev) => ({
+                                ...prev,
+                                [globalDayIdx]: false,
+                              }))
+                            }
                           >
-                            {getEventsForDay(day).slice(3).map((event) => {
-                              // Skip rendering placeholder events in popover too
-                              if (event.isPlaceholder) {
-                                return null;
-                              }
+                            {getEventsForDay(day)
+                              .slice(3)
+                              .map((event) => {
+                                // Skip rendering placeholder events in popover too
+                                if (event.isPlaceholder) {
+                                  return null;
+                                }
 
-                              const { bg, text } = getEventStyles(event);
-                              return (
-                                <div
-                                  key={event.id}
-                                  className={cn(
-                                    'cursor-pointer items-center gap-1 truncate rounded px-1.5 py-1 text-xs font-medium',
-                                    bg,
-                                    text,
-                                    !isCurrentMonth && 'opacity-60'
-                                  )}
-                                  onClick={() => openModal(event.id)}
-                                >
-                                  {event.title || 'Untitled event'}
-                                </div>
-                              );
-                            })}
+                                const { bg, text } = getEventStyles(event);
+                                return (
+                                  <div
+                                    key={event.id}
+                                    className={cn(
+                                      'cursor-pointer items-center gap-1 truncate rounded px-1.5 py-1 font-medium text-xs',
+                                      bg,
+                                      text,
+                                      !isCurrentMonth && 'opacity-60'
+                                    )}
+                                    onClick={() => openModal(event.id)}
+                                  >
+                                    {event.title || 'Untitled event'}
+                                  </div>
+                                );
+                              })}
                           </div>
                         </PopoverContent>
                       </Popover>
@@ -599,79 +670,97 @@ export const MonthCalendar = ({ date, visibleDates, viewedMonth }: MonthCalendar
         {multiDayEventSpans.map((eventSpan) => {
           const { event, startIndex, span, weekIndex } = eventSpan;
           const { bg, text } = getEventStyles(event);
-          
+
           // Calculate position for the spanning event to align with day container events
           const dayHeaderHeight = LAYOUT_CONSTANTS.DAY_HEADER_HEIGHT; // Height of day number and plus button area (h-7 + padding)
           const containerPadding = LAYOUT_CONSTANTS.CONTAINER_PADDING; // p-1.5 = 6px padding
           const eventHeight = LAYOUT_CONSTANTS.EVENT_HEIGHT; // Height of each event (px-1.5 py-1 text-xs) - match exactly
           const eventSpacing = LAYOUT_CONSTANTS.EVENT_SPACING; // space-y-1 = 4px spacing between events
           const marginTop = LAYOUT_CONSTANTS.MARGIN_TOP; // mt-1 = 4px margin top for events container
-          
+
           // Find the position of this event in the first day it appears
           const firstDayIndex = weekIndex * 7 + startIndex;
           const firstDay = calendarDays[firstDayIndex];
-          
+
           let eventIndexInDay = 0;
           if (firstDay) {
             const eventsInFirstDay = getEventsForDay(firstDay);
             // Find the placeholder for this multi-day event in the sorted list
-            eventIndexInDay = eventsInFirstDay.findIndex(e => 
-              e.id === event.id && e.isPlaceholder
+            eventIndexInDay = eventsInFirstDay.findIndex(
+              (e) => e.id === event.id && e.isPlaceholder
             );
             if (eventIndexInDay === -1) {
               // Fallback: if not found as placeholder, check for any event with this ID
-              eventIndexInDay = eventsInFirstDay.findIndex(e => e.id === event.id);
+              eventIndexInDay = eventsInFirstDay.findIndex(
+                (e) => e.id === event.id
+              );
             }
             if (eventIndexInDay === -1) {
               // If still not found, put it at the top (should not happen with correct logic)
               eventIndexInDay = 0;
             }
           }
-          
+
           // Fixed positioning approach based on empirical observation
           // Use a more accurate measurement approach
           let rowTop = 0;
-          
+
           // Calculate the top position for each row more accurately
           for (let i = 0; i < weekIndex; i++) {
             const weekDays = weeks[i] || [];
             let maxEvents = 0;
             let hasMoreButton = false;
-            
+
             // Get the actual maximum events per day in this week
             weekDays.forEach((day: Date) => {
               const dayEvents = getEventsForDay(day);
               maxEvents = Math.max(maxEvents, Math.min(dayEvents.length, 3));
               if (dayEvents.length > 3) hasMoreButton = true;
             });
-            
+
             // More precise height calculation matching CSS behavior
             const dayHeaderHeight = LAYOUT_CONSTANTS.DAY_HEADER_HEIGHT; // Height of day number header
-            const containerPadding = LAYOUT_CONSTANTS.CONTAINER_PADDING; // p-1.5 = 6px padding 
-            const minContentHeight = LAYOUT_CONSTANTS.MIN_DAY_HEIGHT - dayHeaderHeight - (containerPadding * 2); // min-h-[120px] minus header and padding
-            
+            const containerPadding = LAYOUT_CONSTANTS.CONTAINER_PADDING; // p-1.5 = 6px padding
+            const minContentHeight =
+              LAYOUT_CONSTANTS.MIN_DAY_HEIGHT -
+              dayHeaderHeight -
+              containerPadding * 2; // min-h-[120px] minus header and padding
+
             let contentHeight = minContentHeight;
             if (maxEvents > 0) {
-              const eventsHeight = maxEvents * eventHeight + (maxEvents - 1) * eventSpacing; // 24px per event + 4px spacing between
+              const eventsHeight =
+                maxEvents * eventHeight + (maxEvents - 1) * eventSpacing; // 24px per event + 4px spacing between
               const moreButtonHeight = hasMoreButton ? eventHeight : 0;
               const marginAndPadding = 8; // Additional margin around events
-              contentHeight = Math.max(minContentHeight, eventsHeight + moreButtonHeight + marginAndPadding);
+              contentHeight = Math.max(
+                minContentHeight,
+                eventsHeight + moreButtonHeight + marginAndPadding
+              );
             }
-            
-            const totalRowHeight = dayHeaderHeight + (containerPadding * 2) + contentHeight;
+
+            const totalRowHeight =
+              dayHeaderHeight + containerPadding * 2 + contentHeight;
             rowTop += totalRowHeight;
           }
-          
+
           // Position within the current row
-          const positionInRow = dayHeaderHeight + containerPadding + marginTop + (eventIndexInDay * (eventHeight + eventSpacing));
+          const positionInRow =
+            dayHeaderHeight +
+            containerPadding +
+            marginTop +
+            eventIndexInDay * (eventHeight + eventSpacing);
           const eventTopPosition = rowTop + positionInRow;
-          
+
           return (
-            <HoverCard key={`span-${event.id}-${weekIndex}`} openDelay={200} closeDelay={100}>
+            <HoverCard
+              key={`span-${event.id}-${weekIndex}`}
+              openDelay={200}
+              closeDelay={100}
+            >
               <HoverCardTrigger asChild>
                 <div
                   className={cn(
-                    'absolute cursor-pointer truncate rounded px-1.5 py-1 text-xs font-medium z-20',
+                    'absolute z-20 cursor-pointer truncate rounded px-1.5 py-1 font-medium text-xs',
                     bg,
                     text,
                     'border-l-2 border-l-current'
@@ -688,23 +777,22 @@ export const MonthCalendar = ({ date, visibleDates, viewedMonth }: MonthCalendar
                   {event.title || 'Untitled event'}
                 </div>
               </HoverCardTrigger>
-              <HoverCardContent
-                side="right"
-                align="start"
-                className="w-80"
-              >
+              <HoverCardContent side="right" align="start" className="w-80">
                 <div className="space-y-2">
-                  <h4 className="line-clamp-2 font-medium break-words">
+                  <h4 className="line-clamp-2 break-words font-medium">
                     {event.title || 'Untitled event'}
                   </h4>
                   {event.description && (
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-muted-foreground text-sm">
                       {event.description}
                     </p>
                   )}
-                  <div className="flex items-center text-xs text-muted-foreground">
+                  <div className="flex items-center text-muted-foreground text-xs">
                     <Clock className="mr-1 h-3 w-3" />
-                    <span>All day • {dayjs(event.start_at).format('MMM D')} - {dayjs(event.end_at).subtract(1, 'day').format('MMM D')}</span>
+                    <span>
+                      All day • {dayjs(event.start_at).format('MMM D')} -{' '}
+                      {dayjs(event.end_at).subtract(1, 'day').format('MMM D')}
+                    </span>
                   </div>
                 </div>
               </HoverCardContent>

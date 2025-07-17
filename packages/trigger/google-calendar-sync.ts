@@ -4,6 +4,10 @@ import { OAuth2Client } from 'google-auth-library';
 import { convertGoogleAllDayEvent } from '@tuturuuu/ui/hooks/calendar-utils';
 import { calendar_v3 } from 'googleapis/build/src/apis/calendar';
 
+// Batch processing configuration
+const BATCH_SIZE = 100; // Process 100 events at a time for upserts
+const DELETE_BATCH_SIZE = 50; // Process 50 events at a time for deletes
+
 // Define the sync result type
 type SyncResult = {
   ws_id: string;
@@ -50,13 +54,33 @@ const getColorFromGoogleColorId = (colorId?: string): string => {
   return colorId && colorMap[colorId] ? colorMap[colorId] : 'BLUE';
 };
 
-// Core sync function for a single workspace
-const syncGoogleCalendarEventsForWorkspace = async (
+// Format event for database upsert and deletion
+const formatEventForDb = (event: calendar_v3.Schema$Event, ws_id: string) => {
+  const { start_at, end_at } = convertGoogleAllDayEvent(
+    event.start?.dateTime || event.start?.date || '',
+    event.end?.dateTime || event.end?.date || '',
+    'auto'
+  );
+
+  return {
+    google_event_id: event.id,
+    title: event.summary || 'Untitled Event',
+    description: event.description || '',
+    start_at,
+    end_at,
+    location: event.location || '',
+    color: getColorFromGoogleColorId(event.colorId ?? undefined),
+    ws_id: ws_id,
+    locked: false,
+  };
+};
+
+// Core sync function for a single workspace with batch processing
+const syncGoogleCalendarEventsForWorkspaceBatched = async (
   ws_id: string,
   events_to_sync: calendar_v3.Schema$Event[]
 ): Promise<SyncResult> => {
-  console.log(`Syncing Google Calendar events for workspace ${ws_id}`);
-
+  console.log(`Syncing Google Calendar events for workspace ${ws_id} with batching`);
 
   try {
     const sbAdmin = await createAdminClient({ noCookie: true });
@@ -65,108 +89,76 @@ const syncGoogleCalendarEventsForWorkspace = async (
     const rawEventsToDelete: calendar_v3.Schema$Event[] = [];
 
     for (const event of events_to_sync) {
-      if (event.status === "cancelled") {
+      if (event.status === "cancelled" && event.id) {
         rawEventsToDelete.push(event);
       } else {
         rawEventsToUpsert.push(event);
       }
     }
 
-    // format the events to match the expected structure
-    const formattedEvents = rawEventsToUpsert.map((event) => {
-      // Use the new timezone-aware conversion for all-day events
-      const { start_at, end_at } = convertGoogleAllDayEvent(
-        event.start?.dateTime || event.start?.date || '',
-        event.end?.dateTime || event.end?.date || '',
-        // Use the user's browser timezone which is available in the process.env.TZ or system default
-        // This will be enhanced later to use actual user preferences
-        'auto'
-      );
+    // Format events for upsert
+    const formattedEvents = rawEventsToUpsert.map(event => formatEventForDb(event, ws_id));
 
-      return {
-        google_event_id: event.id,
-        title: event.summary || 'Untitled Event',
-        description: event.description || '',
-        start_at,
-        end_at,
-        location: event.location || '',
-        color: getColorFromGoogleColorId(event.colorId ?? undefined),
-        ws_id: ws_id,
-        locked: false,
-      };
-    });
+    // Format events for deletion
+    const formattedEventsToDelete = rawEventsToDelete.map(event => formatEventForDb(event, ws_id));
 
-    // format the events to match the expected structure for deletion
-    const formattedEventsToDelete = rawEventsToDelete.map((event) => {
-      // Use the new timezone-aware conversion for all-day events
-      const { start_at, end_at } = convertGoogleAllDayEvent(
-        event.start?.dateTime || event.start?.date || '',
-        event.end?.dateTime || event.end?.date || '',
-        // Use the user's browser timezone which is available in the process.env.TZ or system default
-        // This will be enhanced later to use actual user preferences
-        'auto'
-      );
+    let totalUpserted = 0;
+    let totalDeleted = 0;
 
-      return {
-        google_event_id: event.id,
-        title: event.summary || 'Untitled Event',
-        description: event.description || '',
-        start_at,
-        end_at,
-        location: event.location || '',
-        color: getColorFromGoogleColorId(event.colorId ?? undefined),
-        ws_id: ws_id,
-        locked: false,
-      };
-    });
-    
-
-    // upsert the events in the database for this wsId
-    
-    const { error } = await sbAdmin
-      .from('workspace_calendar_events')
-      .upsert(formattedEvents, {
-        onConflict: 'ws_id,google_event_id',
-        ignoreDuplicates: true,
-      });
-    if (error) {
-      console.log('Error upserting events:', error);
-      throw error;
+    // Process upserts in batches
+    for (let i = 0; i < formattedEvents.length; i += BATCH_SIZE) {
+      const batch = formattedEvents.slice(i, i + BATCH_SIZE);
+      
+      const { error } = await sbAdmin
+        .from('workspace_calendar_events')
+        .upsert(batch, {
+          onConflict: 'ws_id,google_event_id',
+          ignoreDuplicates: true,
+        });
+      
+      if (error) {
+        console.log(`Error upserting batch ${Math.floor(i / BATCH_SIZE) + 1}:`, error);
+        throw error;
+      }
+      
+      totalUpserted += batch.length;
+      console.log(`Upserted batch ${Math.floor(i / BATCH_SIZE) + 1} (${batch.length} events)`);
     }
-    console.log(`Upserted ${formattedEvents.length} events:`, formattedEvents.map(e => e.title));
 
-    // delete the events in the database for this wsId
-    const { error: deleteError } = await sbAdmin
-    .from('workspace_calendar_events')
-    .delete()
-    .or(
-      formattedEventsToDelete
-        .map(
-          (e) =>
-            `and(ws_id.eq.${ws_id},google_event_id.eq.${e.google_event_id ?? ''})`
-        )
-        .join(',')
-    );
-    
-    if (deleteError) {
-      console.log('Error deleting events:', deleteError);
-      throw deleteError;
+    // Process deletes in batches
+    for (let i = 0; i < formattedEventsToDelete.length; i += DELETE_BATCH_SIZE) {
+      const batch = formattedEventsToDelete.slice(i, i + DELETE_BATCH_SIZE);
+      
+      // Create delete conditions for this batch
+      const deleteConditions = batch
+        .map((e) => `and(ws_id.eq.${ws_id},google_event_id.eq.${e.google_event_id ?? ''})`)
+        .join(',');
+      
+      const { error: deleteError } = await sbAdmin
+        .from('workspace_calendar_events')
+        .delete()
+        .or(deleteConditions);
+      
+      if (deleteError) {
+        console.log(`Error deleting batch ${Math.floor(i / DELETE_BATCH_SIZE) + 1}:`, deleteError);
+        throw deleteError;
+      }
+      
+      totalDeleted += batch.length;
+      console.log(`Deleted batch ${Math.floor(i / DELETE_BATCH_SIZE) + 1} (${batch.length} events)`);
     }
-    console.log(`Deleted ${formattedEventsToDelete.length} events:`, formattedEventsToDelete.map(e => e.title));
 
-    // Update lastUpsert timestamp after successful upsert
-    
+    // Update lastUpsert timestamp after successful sync
     await updateLastUpsert(ws_id, sbAdmin);
-    
     
     return {
       ws_id,
       success: true,
-      eventsSynced: formattedEvents.length,
-      eventsDeleted: formattedEventsToDelete.length,
+      eventsSynced: totalUpserted,
+      eventsDeleted: totalDeleted,
     };
   } catch (error) {
-    console.log('Error in syncGoogleCalendarEventsForWorkspace:', error);
+    console.log('Error in syncGoogleCalendarEventsForWorkspaceBatched:', error);
     return {
       ws_id,
       success: false,
@@ -174,6 +166,9 @@ const syncGoogleCalendarEventsForWorkspace = async (
     };
   }
 };
+
+// Export the batched sync function for testing
+export { syncGoogleCalendarEventsForWorkspaceBatched };
 
 // Get workspace by ws_id
 export const getWorkspaceTokensByWsId = async (ws_id: string) => {
@@ -218,14 +213,14 @@ export const getWorkspacesForSync = async () => {
   }
 };
 
-// Sync a single workspace for 4 weeks (28 days) from now
-export const syncWorkspaceExtended = async (payload: {
+// Sync a single workspace with batch processing
+export const syncWorkspaceBatched = async (payload: {
   ws_id: string;
   events_to_sync: calendar_v3.Schema$Event[];
 }) => {
   const { ws_id, events_to_sync: events } = payload;
   
-  return syncGoogleCalendarEventsForWorkspace(
+  return syncGoogleCalendarEventsForWorkspaceBatched(
     ws_id,
     events
   );

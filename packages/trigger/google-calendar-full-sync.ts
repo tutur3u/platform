@@ -1,5 +1,5 @@
 import { task } from '@trigger.dev/sdk/v3';
-import { getGoogleAuthClient, getWorkspacesForSync, storeSyncToken, syncWorkspaceExtended } from './google-calendar-sync';
+import { getGoogleAuthClient, getWorkspacesForSync, storeSyncToken, syncWorkspaceBatched } from './google-calendar-sync';
 import type { SyncOrchestratorResult } from './google-calendar-sync';
 import { google } from 'googleapis';
 import dayjs from 'dayjs';
@@ -27,7 +27,7 @@ export async function performFullSyncForWorkspace(calendarId = "primary", ws_id:
     const syncToken = res.data.nextSyncToken;
   
     if (events.length > 0) {
-        await syncWorkspaceExtended({ ws_id, events_to_sync: events });
+        await syncWorkspaceBatched({ ws_id, events_to_sync: events });
     }
   
     if (syncToken) {

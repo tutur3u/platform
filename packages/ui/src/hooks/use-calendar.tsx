@@ -166,7 +166,7 @@ export const CalendarProvider = ({
       if (storedSettings) {
         return JSON.parse(storedSettings) as CalendarSettings;
       }
-    } catch (error) {
+    } catch (_) {
       // Failed to load calendar settings from localStorage
     }
     return null;
@@ -191,7 +191,7 @@ export const CalendarProvider = ({
 
     try {
       localStorage.setItem('calendarSettings', JSON.stringify(settings));
-    } catch (error) {
+    } catch (_) {
       // Failed to save calendar settings to localStorage
     }
   }, [settings]);
@@ -254,7 +254,7 @@ export const CalendarProvider = ({
         );
 
         // Use only time-based logic for all-day detection
-        const isAllDay = isAllDayEvent(e, settings?.timezone?.timezone);
+        const isAllDay = isAllDayEvent(e);
 
         // For all-day events, treat end date as exclusive (consistent with week view)
         // For timed events, treat end date as inclusive
@@ -343,68 +343,63 @@ export const CalendarProvider = ({
   const addEvent = useCallback(
     async (event: Omit<CalendarEvent, 'id'>) => {
       if (!ws) throw new Error('No workspace selected');
+      const supabase = createClient();
 
-      try {
-        const supabase = createClient();
+      // Round start and end times to nearest 15-minute interval
+      const startDate = roundToNearest15Minutes(new Date(event.start_at));
+      const endDate = roundToNearest15Minutes(new Date(event.end_at));
 
-        // Round start and end times to nearest 15-minute interval
-        const startDate = roundToNearest15Minutes(new Date(event.start_at));
-        const endDate = roundToNearest15Minutes(new Date(event.end_at));
+      const eventColor = event.color || 'BLUE';
 
-        const eventColor = event.color || 'BLUE';
+      // Create an event signature to check for duplicates
+      const newEventSignature = `${event.title || ''}|${event.description || ''}|${startDate.toISOString()}|${endDate.toISOString()}`;
 
-        // Create an event signature to check for duplicates
-        const newEventSignature = `${event.title || ''}|${event.description || ''}|${startDate.toISOString()}|${endDate.toISOString()}`;
+      // Check existing events for potential duplicates to prevent race condition
+      const duplicates = events.filter((e: CalendarEvent) => {
+        const existingSignature = createEventSignature(e);
+        return existingSignature === newEventSignature;
+      });
 
-        // Check existing events for potential duplicates to prevent race condition
-        const duplicates = events.filter((e: CalendarEvent) => {
-          const existingSignature = createEventSignature(e);
-          return existingSignature === newEventSignature;
-        });
+      // If duplicates already exist, return the first one
+      if (duplicates.length > 0) {
+        // Clear any pending new event
+        setPendingNewEvent(null);
 
-        // If duplicates already exist, return the first one
-        if (duplicates.length > 0) {
-          // Clear any pending new event
-          setPendingNewEvent(null);
-
-          // Return the existing event
-          return duplicates[0];
-        }
-
-        // No duplicates, proceed with creating the event
-        const { data, error } = await supabase
-          .from('workspace_calendar_events')
-          .insert({
-            title: event.title || '',
-            description: event.description || '',
-            start_at: startDate.toISOString(),
-            end_at: endDate.toISOString(),
-            color: eventColor as SupportedColor,
-            location: event.location || '',
-            priority: event.priority || 'medium',
-            ws_id: ws?.id ?? '',
-            locked: true,
-          })
-          .select()
-          .single();
-
-        if (error) throw error;
-
-        // Refresh the query cache after adding an event
-        refresh();
-
-        if (data) {
-          // Clear any pending new event
-          setPendingNewEvent(null);
-          return data as CalendarEvent;
-        }
-
-        return {} as CalendarEvent;
-      } catch (err) {
-        throw err;
+        // Return the existing event
+        return duplicates[0];
       }
+
+      // No duplicates, proceed with creating the event
+      const { data, error } = await supabase
+        .from('workspace_calendar_events')
+        .insert({
+          title: event.title || '',
+          description: event.description || '',
+          start_at: startDate.toISOString(),
+          end_at: endDate.toISOString(),
+          color: eventColor as SupportedColor,
+          location: event.location || '',
+          priority: event.priority || 'medium',
+          ws_id: ws?.id ?? '',
+          locked: true,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Refresh the query cache after adding an event
+      refresh();
+
+      if (data) {
+        // Clear any pending new event
+        setPendingNewEvent(null);
+        return data as CalendarEvent;
+      }
+
+      return {} as CalendarEvent;
     },
-    [ws, refresh, settings.categoryColors, events]
+    [ws, refresh, events]
   );
 
   const addEmptyEvent = useCallback(
@@ -621,7 +616,7 @@ export const CalendarProvider = ({
         setTimeout(processUpdateQueue, 50); // Small delay to prevent blocking
       }
     }
-  }, [refresh, events]);
+  }, [refresh, events, ws?.id]);
 
   const updateEvent = useCallback(
     async (eventId: string, eventUpdates: Partial<CalendarEvent>) => {
@@ -666,43 +661,38 @@ export const CalendarProvider = ({
           ...pendingNewEvent,
           ...cleanedUpdates,
         };
-
-        try {
-          // Check for potential duplicates before creating a new event
-          if (cleanedUpdates.title || pendingNewEvent.title) {
-            const startDate = roundToNearest15Minutes(
-              new Date(newEventData.start_at || new Date())
-            );
-            const endDate = roundToNearest15Minutes(
-              new Date(newEventData.end_at || new Date())
-            );
-
-            const newEventSignature = `${newEventData.title || ''}|${newEventData.description || ''}|${startDate.toISOString()}|${endDate.toISOString()}`;
-
-            // Check existing events for potential duplicates
-            const duplicates = events.filter((e: CalendarEvent) => {
-              const existingSignature = createEventSignature(e);
-              return existingSignature === newEventSignature;
-            });
-
-            // If duplicates already exist, return the first one
-            if (duplicates.length > 0) {
-              // Clear any pending new event
-              setPendingNewEvent(null);
-
-              // Return the existing event
-              return duplicates[0];
-            }
-          }
-
-          // Create a new event instead of updating
-          const result = await addEvent(
-            newEventData as Omit<CalendarEvent, 'id'>
+        // Check for potential duplicates before creating a new event
+        if (cleanedUpdates.title || pendingNewEvent.title) {
+          const startDate = roundToNearest15Minutes(
+            new Date(newEventData.start_at || new Date())
           );
-          return result;
-        } catch (err) {
-          throw err;
+          const endDate = roundToNearest15Minutes(
+            new Date(newEventData.end_at || new Date())
+          );
+
+          const newEventSignature = `${newEventData.title || ''}|${newEventData.description || ''}|${startDate.toISOString()}|${endDate.toISOString()}`;
+
+          // Check existing events for potential duplicates
+          const duplicates = events.filter((e: CalendarEvent) => {
+            const existingSignature = createEventSignature(e);
+            return existingSignature === newEventSignature;
+          });
+
+          // If duplicates already exist, return the first one
+          if (duplicates.length > 0) {
+            // Clear any pending new event
+            setPendingNewEvent(null);
+
+            // Return the existing event
+            return duplicates[0];
+          }
         }
+
+        // Create a new event instead of updating
+        const result = await addEvent(
+          newEventData as Omit<CalendarEvent, 'id'>
+        );
+        return result;
       }
 
       // Generate a unique update ID to track this specific update request
@@ -803,7 +793,7 @@ export const CalendarProvider = ({
               );
             }
           }
-        } catch (syncError) {
+        } catch (_) {
           // Failed to sync delete with Google Calendar
         }
       } else if (experimentalGoogleToken && !googleCalendarEventId) {
@@ -934,7 +924,7 @@ export const CalendarProvider = ({
             if (error) {
               // Failed to delete events batch
             }
-          } catch (err) {
+          } catch (_) {
             // Failed to delete events batch
           }
         }
@@ -1080,7 +1070,7 @@ export const CalendarProvider = ({
                   }
                 }
               }
-            } catch (err) {
+            } catch (_) {
               // Failed to update event
             }
           }
@@ -1131,12 +1121,12 @@ export const CalendarProvider = ({
                   if (singleError) {
                     // Failed to insert single event
                   }
-                } catch (singleErr) {
+                } catch (_) {
                   // Failed to insert single event
                 }
               }
             }
-          } catch (err) {
+          } catch (_) {
             // Failed to insert events batch
           }
         }
@@ -1369,19 +1359,23 @@ export const CalendarProvider = ({
 
         // Return success with indication if changes were made
         return changesMade || beforeGoogleCount !== googleEvents.length;
+        <<<<<<< HEAD
       } catch (error) {
-        if (progressCallback) {
-          progressCallback({
-            phase: 'complete',
-            current: 1,
-            total: 1,
-            changesMade: false,
-            statusMessage: 'Sync failed. Please try again.',
-          });
-        }
-
-        return false;
+        =======
       }
+      catch (_)
+      >>>>>>> main
+      if (progressCallback) {
+        progressCallback({
+          phase: 'complete',
+          current: 1,
+          total: 1,
+          changesMade: false,
+          statusMessage: 'Sync failed. Please try again.',
+        });
+      }
+
+      return false;
     },
     [
       experimentalGoogleToken,

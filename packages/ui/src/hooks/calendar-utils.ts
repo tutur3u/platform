@@ -1,26 +1,21 @@
+import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
-import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
+import utc from 'dayjs/plugin/utc';
 
 dayjs.extend(timezone);
+dayjs.extend(utc);
 
-export function isAllDayEvent(event: Pick<CalendarEvent, 'start_at' | 'end_at'>, userTimezone?: string): boolean {
+export function isAllDayEvent(
+  event: Pick<CalendarEvent, 'start_at' | 'end_at'>
+): boolean {
   const start = dayjs(event.start_at);
   const end = dayjs(event.end_at);
-  
-  // Handle timezone-aware checking
-  const tz = userTimezone === 'auto' ? 
-    (typeof window !== 'undefined' ? Intl.DateTimeFormat().resolvedOptions().timeZone : undefined) 
-    : userTimezone;
-  const startInTz = tz ? start.tz(tz) : start;
-  const endInTz = tz ? end.tz(tz) : end;
-  
-  const isStartAtMidnight = startInTz.hour() === 0 && startInTz.minute() === 0 && startInTz.second() === 0;
-  const isEndAtMidnight = endInTz.hour() === 0 && endInTz.minute() === 0 && endInTz.second() === 0;
-  const durationHours = endInTz.diff(startInTz, 'hour');
-  const isMultipleOf24Hours = durationHours > 0 && durationHours % 24 === 0;
-  
-  return isStartAtMidnight && isEndAtMidnight && isMultipleOf24Hours;
+
+  const durationMs = end.diff(start, 'millisecond');
+  const isMultipleOf24Hours = durationMs % (24 * 60 * 60 * 1000) === 0;
+
+  return durationMs > 0 && isMultipleOf24Hours;
 }
 
 // Helper function to convert Google Calendar all-day events to proper timezone
@@ -31,7 +26,7 @@ export function convertGoogleAllDayEvent(
 ): { start_at: string; end_at: string } {
   // Check if this is a date-only format (all-day event from Google)
   const isDateOnly = (dateStr: string) => /^\d{4}-\d{2}-\d{2}$/.test(dateStr);
-  
+
   if (!startDate || !endDate) {
     const now = dayjs();
     return {
@@ -39,27 +34,30 @@ export function convertGoogleAllDayEvent(
       end_at: now.add(1, 'hour').toISOString(),
     };
   }
-  
+
   // If both are date-only (Google all-day event), convert to user's timezone midnight
   if (isDateOnly(startDate) && isDateOnly(endDate)) {
-    const tz = userTimezone === 'auto' ? 
-      (typeof window !== 'undefined' ? Intl.DateTimeFormat().resolvedOptions().timeZone : undefined) 
-      : userTimezone;
-    
-    const startAtMidnight = tz 
+    const tz =
+      userTimezone === 'auto'
+        ? typeof window !== 'undefined'
+          ? Intl.DateTimeFormat().resolvedOptions().timeZone
+          : undefined
+        : userTimezone;
+
+    const startAtMidnight = tz
       ? dayjs.tz(`${startDate}T00:00:00`, tz)
       : dayjs(`${startDate}T00:00:00`);
-    
+
     const endAtMidnight = tz
       ? dayjs.tz(`${endDate}T00:00:00`, tz)
       : dayjs(`${endDate}T00:00:00`);
-    
+
     return {
       start_at: startAtMidnight.toISOString(),
       end_at: endAtMidnight.toISOString(),
     };
   }
-  
+
   // Otherwise, use the dates as-is (they're already dateTime format)
   return {
     start_at: startDate,
@@ -73,18 +71,21 @@ export function createAllDayEvent(
   userTimezone?: string,
   durationDays: number = 1
 ): { start_at: string; end_at: string } {
-  const tz = userTimezone === 'auto' ? 
-    (typeof window !== 'undefined' ? Intl.DateTimeFormat().resolvedOptions().timeZone : undefined) 
-    : userTimezone;
-  
-  const startAtMidnight = tz 
-    ? dayjs(date).tz(tz).startOf('day')
+  const tz =
+    userTimezone === 'auto'
+      ? typeof window !== 'undefined'
+        ? Intl.DateTimeFormat().resolvedOptions().timeZone
+        : undefined
+      : userTimezone;
+
+  const startAtMidnight = tz
+    ? dayjs.tz(date, tz).startOf('day')
     : dayjs(date).startOf('day');
-  
+
   const endAtMidnight = startAtMidnight.add(durationDays, 'day');
-  
+
   return {
     start_at: startAtMidnight.toISOString(),
     end_at: endAtMidnight.toISOString(),
   };
-} 
+}

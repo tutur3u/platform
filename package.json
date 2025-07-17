@@ -2,8 +2,8 @@
   "name": "tutur3u",
   "private": true,
   "scripts": {
-    "build": "NODE_OPTIONS='--max-old-space-size=8192' turbo run build",
-    "buildx": "NODE_OPTIONS='--max-old-space-size=8192' && turbo test build",
+    "build": "turbo run build",
+    "buildx": "turbo test build",
     "dev": "turbo run dev --parallel",
     "dev:web": "turbo run dev -F @tuturuuu/web",
     "dev:calendar": "turbo run dev -F @tuturuuu/calendar -F @tuturuuu/web",

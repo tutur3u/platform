@@ -104,7 +104,7 @@ export default function ClientQuizzes({
           ) : (
             <>
               <div className="quiz-question">
-                <h3 className="text-lg font-semibold">
+                <h3 className="font-semibold text-lg">
                   {quiz?.question || '...'}
                 </h3>
                 <Separator className="my-2" />
@@ -143,6 +143,7 @@ export default function ClientQuizzes({
                   <Button
                     variant="outline"
                     onClick={
+                      // biome-ignore lint/style/noNonNullAssertion: <quiz id is defined>
                       quiz?.id ? () => setEditingQuizId(quiz.id!) : undefined
                     }
                   >
@@ -171,6 +172,7 @@ export default function ClientQuizzes({
                         </AlertDialogCancel>
                         <AlertDialogAction
                           onClick={
+                            // biome-ignore lint/style/noNonNullAssertion: <quiz id is defined>
                             quiz?.id ? () => onDelete(quiz.id!) : undefined
                           }
                         >

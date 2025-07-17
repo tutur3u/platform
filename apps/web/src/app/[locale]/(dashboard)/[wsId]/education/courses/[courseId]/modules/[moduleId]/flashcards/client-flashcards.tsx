@@ -35,8 +35,8 @@ export default function ClientFlashcards({
         id: string;
         front: string;
         back: string;
-        frontHTML: string | React.JSX.Element;
-        backHTML: string | React.JSX.Element;
+        frontHTML: string;
+        backHTML: string;
         frontCardStyle?: React.CSSProperties;
         frontContentStyle?: React.CSSProperties;
         backCardStyle?: React.CSSProperties;

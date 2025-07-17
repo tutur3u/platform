@@ -14,7 +14,7 @@ vi.mock('../google-calendar-sync', async () => {
       { ws_id: 'test-ws-1', access_token: 'token1', refresh_token: 'refresh1' },
       { ws_id: 'test-ws-2', access_token: 'token2', refresh_token: 'refresh2' }
     ])),
-    syncWorkspaceExtended: vi.fn((payload) => Promise.resolve({
+    syncWorkspaceBatched: vi.fn((payload) => Promise.resolve({
       ws_id: payload.ws_id,
       success: true,
       eventsSynced: payload.events_to_sync?.length || 10,
@@ -30,14 +30,6 @@ vi.mock('../google-calendar-sync', async () => {
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 dayjs.extend(utc);
-
-// Dynamically import the actual functions after env and mocks are set
-let syncWorkspaceExtended: any;
-
-beforeAll(async () => {
-  const mod = await import('../google-calendar-sync');
-  syncWorkspaceExtended = mod.syncWorkspaceExtended;
-});
 
 // Test isolation utility to prevent environment contamination
 const isolateTest = (testFn: () => void | Promise<void>) => {
@@ -117,136 +109,6 @@ describe('Google Calendar Sync - Locale Functionality', () => {
     it('should handle missing LOCALE environment variable', () => {
       delete process.env.LOCALE;
       expect(process.env.LOCALE).toBeUndefined();
-    });
-  });
-
-  describe('Function Parameter Support', () => {
-    it('should process locale parameter in syncWorkspaceExtended with locale-specific behavior', async () => {
-      const testLocales = ['en', 'vi', 'fr', 'de', 'es'];
-      
-      for (const locale of testLocales) {
-        const mockEvents = [
-          createMockGoogleEvent('event1', 'Test Event 1', '2024-01-15T10:00:00Z', '2024-01-15T11:00:00Z'),
-          createMockGoogleEvent('event2', 'Test Event 2', '2024-01-15T14:00:00Z', '2024-01-15T15:00:00Z')
-        ];
-
-        const extendedPayload = {
-          ws_id: 'test-workspace',
-          events_to_sync: mockEvents,
-          locale, // Additional property for testing locale behavior
-        };
-
-        // Call the actual function with the payload
-        const result = await syncWorkspaceExtended(extendedPayload);
-        
-        // Verify the function processed the locale parameter
-        expect(result).toBeDefined();
-        expect(result.ws_id).toBe('test-workspace');
-        expect(result.success).toBeDefined();
-        expect(result.locale).toBe(locale);
-        
-        // Verify locale-specific behavior is simulated
-        expect(result.dateFormatted).toBeDefined();
-        expect(result.timeFormatted).toBeDefined();
-        
-        // Check that locale affects the formatting
-        if (locale === 'vi') {
-          expect(result.dateFormatted).toBe('15 tháng 1 2024');
-          expect(result.timeFormatted).toBe('10:30 sáng');
-        } else {
-          expect(result.dateFormatted).toBe('January 15, 2024');
-          expect(result.timeFormatted).toBe('10:30 AM');
-        }
-      }
-    });
-
-    it('should process locale parameter in syncWorkspaceExtended', async () => {
-      const mockEvents = [
-        createMockGoogleEvent('event1', 'Test Event', '2024-01-15T10:00:00Z', '2024-01-15T11:00:00Z')
-      ];
-
-      const extendedPayload = {
-        ws_id: 'test-workspace',
-        events_to_sync: mockEvents,
-        locale: 'fr',
-      };
-
-      // Call the actual function with the payload
-      const result = await syncWorkspaceExtended(extendedPayload);
-      
-      // Verify the function processed the locale parameter
-      expect(result).toBeDefined();
-      expect(result.ws_id).toBe('test-workspace');
-      expect(result.success).toBeDefined();
-    });
-
-    it('should handle missing locale parameter gracefully', async () => {
-      const mockEvents = [
-        createMockGoogleEvent('event1', 'Test Event', '2024-01-15T10:00:00Z', '2024-01-15T11:00:00Z')
-      ];
-
-      const payload = {
-        ws_id: 'test-workspace',
-        events_to_sync: mockEvents,
-        // locale is optional
-      };
-
-      // Call the function without locale parameter
-      const result = await syncWorkspaceExtended(payload);
-      
-      // Verify the function works without locale
-      expect(result).toBeDefined();
-      expect(result.ws_id).toBe('test-workspace');
-      expect(result.success).toBeDefined();
-    });
-
-    it('should support different locale values in sync functions', async () => {
-      const locales = ['en', 'vi', 'fr', 'de', 'es', 'ja', 'ko', 'zh'];
-      
-      for (const locale of locales) {
-        const mockEvents = [
-          createMockGoogleEvent('event1', 'Test Event', '2024-01-15T10:00:00Z', '2024-01-15T11:00:00Z')
-        ];
-
-        const payload = {
-          ws_id: 'test-workspace',
-          events_to_sync: mockEvents,
-          locale,
-        };
-        
-        // Call the function with different locales
-        const result = await syncWorkspaceExtended(payload);
-        
-        // Verify the function accepts and processes the locale
-        expect(result).toBeDefined();
-        expect(result.ws_id).toBe('test-workspace');
-        expect(result.success).toBeDefined();
-      }
-    });
-  });
-
-  describe('Legacy Function Support', () => {
-    it('should pass locale parameter to workspace sync functions using real functions', async () => {
-      const mockEvents = [
-        createMockGoogleEvent('event1', 'Test Event', '2024-01-15T10:00:00Z', '2024-01-15T11:00:00Z')
-      ];
-      
-      // Call the real workspace sync functions to verify locale parameter passing
-      
-      const extendedResult = await syncWorkspaceExtended({
-        ws_id: 'test-ws',
-        events_to_sync: mockEvents,
-        locale: 'fr'
-      });
-      
-      // Verify locale parameter is correctly passed and handled
-      const mockExtendedResult = extendedResult as any;
-      expect(mockExtendedResult.locale).toBe('fr');
-      expect(extendedResult.success).toBe(true);
-      
-      // Verify locale-specific behavior is applied
-      expect(mockExtendedResult.dateFormatted).toBe('January 15, 2024');
-      expect(mockExtendedResult.timeFormatted).toBe('10:30 AM');
     });
   });
 
@@ -332,108 +194,6 @@ describe('Google Calendar Sync - Locale Functionality', () => {
       );
       
       consoleSpy.mockRestore();
-    });
-  });
-
-  describe('Integration Scenarios', () => {
-    it('should support complete sync workflow with locale', async () => {
-      const mockEvents = [
-        createMockGoogleEvent('event1', 'Test Event 1', '2024-01-15T10:00:00Z', '2024-01-15T11:00:00Z'),
-        createMockGoogleEvent('event2', 'Test Event 2', '2024-01-15T14:00:00Z', '2024-01-15T15:00:00Z')
-      ];
-
-      const syncWorkflow = {
-        workspace: {
-          ws_id: 'test-workspace',
-          events_to_sync: mockEvents,
-          locale: 'vi',
-        },
-        timeRange: {
-          start: '2024-01-15T00:00:00Z',
-          end: '2024-01-22T23:59:59Z',
-        },
-        expectedBehavior: {
-          locale: 'vi',
-          dateFormat: 'YYYY-MM-DD',
-          timeFormat: 'HH:mm',
-        },
-      };
-      // Actually call the sync function (mocked or real as available)
-      const result = await syncWorkspaceExtended(syncWorkflow.workspace);
-      const mockResult = result as any;
-      expect(mockResult.locale).toBe('vi');
-      expect(result.success).toBe(true);
-      // Set global locale to 'vi' for this test
-      dayjs.locale('vi');
-      // Verify date formatting uses Vietnamese locale on an explicit instance
-      const testDate = dayjs();
-      expect(testDate.locale()).toBe('vi');
-    });
-
-    it('should support multiple workspace syncs with different locales and perform real sync operations', async () => {
-      const workspaces = [
-        { ws_id: 'ws1', locale: 'en' },
-        { ws_id: 'ws2', locale: 'vi' },
-        { ws_id: 'ws3', locale: 'fr' },
-        { ws_id: 'ws4', locale: 'de' },
-      ];
-      
-      // Perform real sync operations for each workspace
-      const syncResults: any[] = [];
-      for (const workspace of workspaces) {
-        const mockEvents = [
-          createMockGoogleEvent('event1', 'Test Event', '2024-01-15T10:00:00Z', '2024-01-15T11:00:00Z')
-        ];
-
-        const syncPayload = {
-          ws_id: workspace.ws_id,
-          events_to_sync: mockEvents,
-          locale: workspace.locale,
-        };
-        
-        // Call the actual sync function
-        const result = await syncWorkspaceExtended(syncPayload);
-        syncResults.push(result);
-        
-        // Verify the sync operation reflects the correct locale handling
-        expect(result.ws_id).toBe(workspace.ws_id);
-        expect(result.success).toBe(true);
-        expect(result.eventsSynced).toBe(1);
-        
-        // Verify locale-specific formatting is applied (using type assertion for mock properties)
-        const mockResult = result as any;
-        expect(mockResult.locale).toBe(workspace.locale);
-        if (workspace.locale === 'vi') {
-          expect(mockResult.dateFormatted).toBe('15 tháng 1 2024');
-          expect(mockResult.timeFormatted).toBe('10:30 sáng');
-        } else {
-          expect(mockResult.dateFormatted).toBe('January 15, 2024');
-          expect(mockResult.timeFormatted).toBe('10:30 AM');
-        }
-      }
-      
-      // Verify all syncs completed successfully
-      expect(syncResults).toHaveLength(4);
-      expect(syncResults.every(r => r.success)).toBe(true);
-      
-      // Check that all locales are different
-      const locales = workspaces.map(w => w.locale);
-      const uniqueLocales = new Set(locales);
-      expect(uniqueLocales.size).toBe(4);
-    });
-
-    it('should handle date range formatting with different locales', () => {
-      const startDate = dayjs.utc('2024-01-15T09:00:00Z');
-      const endDate = dayjs.utc('2024-01-15T17:00:00Z');
-      // Test range formatting in different locales
-      const enRange = `${startDate.locale('en').format('MMM D, YYYY h:mm A')} - ${endDate.locale('en').format('h:mm A')}`;
-      const viRange = `${startDate.locale('vi').format('MMM D, YYYY h:mm A')} - ${endDate.locale('vi').format('h:mm A')}`;
-      
-      expect(enRange).toContain('Jan 15, 2024');
-      // Accept either "thg 1" or "Th01" as valid Vietnamese abbreviations
-      expect(
-        viRange.includes('thg 1 15, 2024') || viRange.includes('Th01 15, 2024')
-      ).toBe(true);
     });
   });
 

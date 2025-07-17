@@ -31,9 +31,12 @@ import {
   ScrollText,
   ShieldUser,
   Sparkles,
+  SquaresIntersect,
   UserLock,
   Users,
+  Vote,
 } from '@tuturuuu/ui/icons';
+import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import {
   getPermissions,
@@ -46,6 +49,7 @@ import { getTranslations } from 'next-intl/server';
 import { type ReactNode, Suspense } from 'react';
 import type { NavLink } from '@/components/navigation';
 import {
+  DEV_MODE,
   SIDEBAR_BEHAVIOR_COOKIE_NAME,
   SIDEBAR_COLLAPSED_COOKIE_NAME,
 } from '@/constants/common';
@@ -221,6 +225,18 @@ export default async function Layout({ children, params }: LayoutProps) {
           experimental: 'alpha',
         },
         {
+          title: t('sidebar_tabs.tumeet'),
+          href: `/${wsId}/tumeet`,
+          icon: <SquaresIntersect className="h-5 w-5" />,
+          disabled: withoutPermission('manage_calendar'),
+        },
+        {
+          title: t('sidebar_tabs.polls'),
+          href: `/${wsId}/polls`,
+          icon: <Vote className="h-5 w-5" />,
+          disabled: !DEV_MODE,
+        },
+        {
           title: t('sidebar_tabs.tasks'),
           href: `/${wsId}/tasks/boards`,
           icon: <CircleCheck className="h-5 w-5" />,
@@ -286,7 +302,7 @@ export default async function Layout({ children, params }: LayoutProps) {
           href: `/${wsId}/link-shortener`,
           icon: <Link className="h-5 w-5" />,
           disabled:
-            wsId !== '00000000-0000-0000-0000-000000000000' &&
+            wsId !== ROOT_WORKSPACE_ID &&
             !(await verifySecret({
               forceAdmin: true,
               wsId,
