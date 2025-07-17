@@ -206,7 +206,6 @@ export const scheduleTasks = (
   activeHours: ActiveHours = defaultActiveHours,
   lockedEvents: Event[] = []
 ): ScheduleResult => {
-  // console.log(lockedEvents);
   const scheduledEvents: Event[] = lockedEvents.map((e) => ({
     ...e,
     locked: true,
@@ -494,11 +493,6 @@ export const scheduleTasks = (
       }
     }
 
-    // console.log(scheduledEvents, 'uanie');
-    // const uniqueScheduledEvents = Array.from(
-    //   new Map(scheduledEvents.map((event) => [event.id, event])).values()
-    // );
-    console.log(scheduledEvents);
     return { events: scheduledEvents, logs };
   } catch (error) {
     console.error('Error sorting task pool:', error);
