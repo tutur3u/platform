@@ -319,25 +319,27 @@ export const scheduleTasks = (
             if (slot) {
               const partStart = roundToQuarterHour(slot.start, false);
               const partEnd = partStart.add(task.duration, 'hour');
-              const newEvent: Event = {
-                id: `${task.id}`,
-                name: task.name,
-                range: { start: partStart, end: partEnd },
-                isPastDeadline: false,
-                locked: task.locked || false,
-                taskId: task.id,
-              };
-              if (
-                (task.deadline && partEnd.isAfter(task.deadline)) ||
-                scheduledAfterDeadline
-              ) {
-                newEvent.isPastDeadline = true;
-                logs.push({
-                  type: 'warning',
-                  message: `Task "${task.name}" is scheduled past its deadline of ${task.deadline}.`,
-                });
+              if (!task.locked === true) {
+                const newEvent: Event = {
+                  id: `${task.id}`,
+                  name: task.name,
+                  range: { start: partStart, end: partEnd },
+                  isPastDeadline: false,
+                  locked: task.locked || false,
+                  taskId: task.id,
+                };
+                if (
+                  (task.deadline && partEnd.isAfter(task.deadline)) ||
+                  scheduledAfterDeadline
+                ) {
+                  newEvent.isPastDeadline = true;
+                  logs.push({
+                    type: 'warning',
+                    message: `Task "${task.name}" is scheduled past its deadline of ${task.deadline}.`,
+                  });
+                }
+                scheduledEvents.push(newEvent);
               }
-              scheduledEvents.push(newEvent);
               availableTimes[task.category as keyof ActiveHours] =
                 roundToQuarterHour(partEnd, true) ?? availableTimes.work;
               scheduled = true;
@@ -496,7 +498,7 @@ export const scheduleTasks = (
     // const uniqueScheduledEvents = Array.from(
     //   new Map(scheduledEvents.map((event) => [event.id, event])).values()
     // );
-    // console.log(uniqueScheduledEvents);
+    console.log(scheduledEvents);
     return { events: scheduledEvents, logs };
   } catch (error) {
     console.error('Error sorting task pool:', error);

@@ -127,7 +127,7 @@ export async function POST(
       )
         .from('workspace_calendar_events')
         .select('*')
-        .eq('locked', false)
+        // .eq('locked', false)
         .eq('ws_id', wsId);
 
       if (flexibleEventsError) {
