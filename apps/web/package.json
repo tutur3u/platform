@@ -64,7 +64,7 @@
     "dayjs": "^1.11.13",
     "framer-motion": "^12.23.6",
     "google-auth-library": "^10.1.0",
-    "googleapis": "^152.0.0",
+    "googleapis": "^153.0.0",
     "html2canvas": "^1.4.1",
     "jotai": "^2.12.5",
     "juice": "^11.0.1",
