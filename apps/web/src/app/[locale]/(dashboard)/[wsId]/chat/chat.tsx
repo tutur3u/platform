@@ -8,6 +8,7 @@ import { createClient } from '@tuturuuu/supabase/next/client';
 import type { AIChat } from '@tuturuuu/types/db';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { cn } from '@tuturuuu/utils/format';
+import { generateRandomUUID } from '@tuturuuu/utils/uuid-helper';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import type React from 'react';
@@ -16,7 +17,6 @@ import { ChatList } from '@/components/chat-list';
 import { ChatPanel } from '@/components/chat-panel';
 import { ChatScrollAnchor } from '@/components/chat-scroll-anchor';
 import { EmptyScreen } from '@/components/empty-screen';
-import { generateRandomUUID } from '@tuturuuu/utils/uuid-helper';
 
 export interface ChatProps extends React.ComponentProps<'div'> {
   defaultChat?: Partial<AIChat>;
@@ -52,7 +52,13 @@ export default function Chat({
   const [model, setModel] = useState<Model | undefined>(defaultModel);
   const [input, setInput] = useState('');
 
-  const { id: chatId, messages, sendMessage, stop, status } = useChat({
+  const {
+    id: chatId,
+    messages,
+    sendMessage,
+    stop,
+    status,
+  } = useChat({
     id: chat?.id,
     generateId: generateRandomUUID,
     messages: initialMessages,

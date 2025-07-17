@@ -46,6 +46,53 @@ function ensureMinimumDuration(hours: number): number {
   return Math.max(0.25, hoursToQuarterHours(hours)); // Minimum 15 minutes
 }
 
+export const scheduleWithFlexibleEvents = (
+  newTasks: Task[],
+  flexibleEvents: Event[],
+  lockedEvents: Event[],
+  activeHours: ActiveHours
+): ScheduleResult => {
+  const now = dayjs();
+  const futureFlexibleEvents = flexibleEvents.filter((event) =>
+    dayjs(event.range.end).isAfter(now)
+  );
+
+  const futureLockedEvents = lockedEvents.filter((event) =>
+    dayjs(event.range.end).isAfter(now)
+  );
+
+  if (flexibleEvents.length !== futureFlexibleEvents.length) {
+    console.log(
+      `[Scheduler] Skipped ${flexibleEvents.length - futureFlexibleEvents.length} past flexible events.`
+    );
+  }
+  if (lockedEvents.length !== futureLockedEvents.length) {
+    console.log(
+      `[Scheduler] Skipped ${lockedEvents.length - futureLockedEvents.length} past locked events.`
+    );
+  }
+
+  // Now, promote tasks ONLY from the filtered list of future flexible events.
+  // We add .filter(Boolean) as a safety measure to remove any potential `null`
+  // values if promoteEventToTask is updated to return them.
+  const promotedTasks = futureFlexibleEvents
+    .map(promoteEventToTask)
+    .filter((task): task is Task => task !== null);
+
+  console.log(
+    `[Scheduler] Promoted ${promotedTasks.length} flexible events to tasks.`
+  );
+  const allTasksToProcess = [...newTasks, ...promotedTasks];
+
+  const result = scheduleTasks(
+    allTasksToProcess,
+    activeHours,
+    futureLockedEvents
+  );
+
+  return result;
+};
+
 export const prepareTaskChunks = (tasks: Task[]): Task[] => {
   const chunks: Task[] = [];
   for (const task of tasks) {
@@ -146,6 +193,7 @@ export const promoteEventToTask = (event: Event): Task | null => {
     minDuration: duration,
     maxDuration: duration,
     allowSplit: false,
+    locked: event.locked ?? false,
     category: event.category ?? 'work',
     priority: event.priority ?? 'normal',
     deadline: end,
@@ -172,6 +220,7 @@ export const scheduleTasks = (
       maxDuration: hoursToQuarterHours(task.maxDuration),
       remaining: hoursToQuarterHours(task.duration),
       nextPart: 1,
+      locked: task.locked || false,
       scheduledParts: 0,
       priorityScore: calculatePriorityScore(task),
     }));
@@ -269,24 +318,27 @@ export const scheduleTasks = (
             if (slot) {
               const partStart = roundToQuarterHour(slot.start, false);
               const partEnd = partStart.add(task.duration, 'hour');
-              const newEvent: Event = {
-                id: `${task.id}`,
-                name: task.name,
-                range: { start: partStart, end: partEnd },
-                isPastDeadline: false,
-                taskId: task.id,
-              };
-              if (
-                (task.deadline && partEnd.isAfter(task.deadline)) ||
-                scheduledAfterDeadline
-              ) {
-                newEvent.isPastDeadline = true;
-                logs.push({
-                  type: 'warning',
-                  message: `Task "${task.name}" is scheduled past its deadline of ${task.deadline}.`,
-                });
+              if (!task.locked === true) {
+                const newEvent: Event = {
+                  id: `${task.id}`,
+                  name: task.name,
+                  range: { start: partStart, end: partEnd },
+                  isPastDeadline: false,
+                  locked: task.locked || false,
+                  taskId: task.id,
+                };
+                if (
+                  (task.deadline && partEnd.isAfter(task.deadline)) ||
+                  scheduledAfterDeadline
+                ) {
+                  newEvent.isPastDeadline = true;
+                  logs.push({
+                    type: 'warning',
+                    message: `Task "${task.name}" is scheduled past its deadline of ${task.deadline}.`,
+                  });
+                }
+                scheduledEvents.push(newEvent);
               }
-              scheduledEvents.push(newEvent);
               availableTimes[task.category as keyof ActiveHours] =
                 roundToQuarterHour(partEnd, true) ?? availableTimes.work;
               scheduled = true;
@@ -441,7 +493,6 @@ export const scheduleTasks = (
       }
     }
 
-    // console.log('Scheduled Events:', scheduledEvents);
     return { events: scheduledEvents, logs };
   } catch (error) {
     console.error('Error sorting task pool:', error);
