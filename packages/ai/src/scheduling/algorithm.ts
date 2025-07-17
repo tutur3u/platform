@@ -492,10 +492,12 @@ export const scheduleTasks = (
       }
     }
 
-    const uniqueScheduledEvents = Array.from(
-      new Map(scheduledEvents.map((event) => [event.id, event])).values()
-    );
-    return { events: uniqueScheduledEvents, logs };
+    // console.log(scheduledEvents, 'uanie');
+    // const uniqueScheduledEvents = Array.from(
+    //   new Map(scheduledEvents.map((event) => [event.id, event])).values()
+    // );
+    // console.log(uniqueScheduledEvents);
+    return { events: scheduledEvents, logs };
   } catch (error) {
     console.error('Error sorting task pool:', error);
   }
