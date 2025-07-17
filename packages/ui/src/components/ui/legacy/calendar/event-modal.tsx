@@ -428,7 +428,7 @@ export function EventModal() {
             color: eventData.color || 'BLUE',
             location: eventData.location || '',
             priority: eventData.priority || 'medium',
-            locked: false, // Default to unlocked for AI-generated events
+            locked: eventData.locked || false,
           };
 
           const savedEvent = await addEvent(calendarEvent);

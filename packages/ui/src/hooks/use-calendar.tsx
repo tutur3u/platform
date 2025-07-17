@@ -9,9 +9,9 @@ import {
   type CalendarSettings,
   defaultCalendarSettings,
 } from '@tuturuuu/ui/legacy/calendar/settings/settings-context';
-import { toast } from '../components/ui/sonner';
 import dayjs from 'dayjs';
 import moment from 'moment';
+import { toast } from '../components/ui/sonner';
 import { useCalendarSync } from './use-calendar-sync';
 import 'moment/locale/vi';
 import {
@@ -24,7 +24,7 @@ import {
   useRef,
   useState,
 } from 'react';
-import { isAllDayEvent, createAllDayEvent } from './calendar-utils';
+import { createAllDayEvent, isAllDayEvent } from './calendar-utils';
 
 // Utility function to round time to nearest 15-minute interval
 const roundToNearest15Minutes = (date: Date): Date => {
@@ -160,7 +160,7 @@ export const CalendarProvider = ({
     if (typeof window === 'undefined' || typeof localStorage === 'undefined') {
       return null;
     }
-    
+
     try {
       const storedSettings = localStorage.getItem('calendarSettings');
       if (storedSettings) {
@@ -188,7 +188,7 @@ export const CalendarProvider = ({
     if (typeof window === 'undefined' || typeof localStorage === 'undefined') {
       return;
     }
-    
+
     try {
       localStorage.setItem('calendarSettings', JSON.stringify(settings));
     } catch (error) {
@@ -344,8 +344,6 @@ export const CalendarProvider = ({
     async (event: Omit<CalendarEvent, 'id'>) => {
       if (!ws) throw new Error('No workspace selected');
 
-
-
       try {
         const supabase = createClient();
 
@@ -385,7 +383,7 @@ export const CalendarProvider = ({
             location: event.location || '',
             priority: event.priority || 'medium',
             ws_id: ws?.id ?? '',
-            locked: false,
+            locked: true,
           })
           .select()
           .single();
@@ -464,7 +462,12 @@ export const CalendarProvider = ({
       // Return the pending event object
       return newEvent as CalendarEvent;
     },
-    [ws?.id, settings.taskSettings, settings.categoryColors, settings?.timezone?.timezone]
+    [
+      ws?.id,
+      settings.taskSettings,
+      settings.categoryColors,
+      settings?.timezone?.timezone,
+    ]
   );
 
   const addEmptyEventWithDuration = useCallback(
@@ -531,8 +534,6 @@ export const CalendarProvider = ({
         ...updateData
       } = update;
 
-
-      
       // Check if the event exists before trying to update
       const existingEvent = events.find((e: CalendarEvent) => e.id === eventId);
       if (!existingEvent) {
@@ -555,26 +556,32 @@ export const CalendarProvider = ({
       try {
         // Perform the actual update
         const supabase = createClient();
-        
+
         // Clean up the update data to ensure no undefined values and exclude system fields
         const cleanUpdateData: any = {
           ...(updateData.title !== undefined && { title: updateData.title }),
-          ...(updateData.description !== undefined && { description: updateData.description }),
-          ...(updateData.start_at !== undefined && { start_at: updateData.start_at }),
+          ...(updateData.description !== undefined && {
+            description: updateData.description,
+          }),
+          ...(updateData.start_at !== undefined && {
+            start_at: updateData.start_at,
+          }),
           ...(updateData.end_at !== undefined && { end_at: updateData.end_at }),
           ...(updateData.color !== undefined && { color: updateData.color }),
-          ...(updateData.location !== undefined && { location: updateData.location }),
-          ...(updateData.priority !== undefined && { priority: updateData.priority }),
+          ...(updateData.location !== undefined && {
+            location: updateData.location,
+          }),
+          ...(updateData.priority !== undefined && {
+            priority: updateData.priority,
+          }),
           ...(updateData.locked !== undefined && { locked: updateData.locked }),
         };
-        
+
         // Remove system fields that shouldn't be updated (just in case they're present)
         delete cleanUpdateData.id;
         delete cleanUpdateData.ws_id;
         delete cleanUpdateData.google_event_id;
-        
 
-        
         const { data, error } = await supabase
           .from('workspace_calendar_events')
           .update(cleanUpdateData)
@@ -596,7 +603,9 @@ export const CalendarProvider = ({
           }
         } else {
           if (_reject) {
-            _reject(new Error(`Failed to update event ${eventId} - no data returned`));
+            _reject(
+              new Error(`Failed to update event ${eventId} - no data returned`)
+            );
           }
         }
       } catch (err) {
@@ -618,12 +627,16 @@ export const CalendarProvider = ({
     async (eventId: string, eventUpdates: Partial<CalendarEvent>) => {
       if (!ws) throw new Error('No workspace selected');
 
-
-
       // Clean and validate the event updates - only allow known CalendarEvent fields
       const allowedFields: (keyof CalendarEvent)[] = [
-        'title', 'description', 'start_at', 'end_at', 'color', 
-        'location', 'priority', 'locked'
+        'title',
+        'description',
+        'start_at',
+        'end_at',
+        'color',
+        'location',
+        'priority',
+        'locked',
       ];
 
       const cleanedUpdates: Partial<CalendarEvent> = {};
@@ -633,15 +646,17 @@ export const CalendarProvider = ({
         }
       }
 
-
-
       // Round start and end times to nearest 15-minute interval if they exist
       if (cleanedUpdates.start_at) {
-        const startDate = roundToNearest15Minutes(new Date(cleanedUpdates.start_at));
+        const startDate = roundToNearest15Minutes(
+          new Date(cleanedUpdates.start_at)
+        );
         cleanedUpdates.start_at = startDate.toISOString();
       }
       if (cleanedUpdates.end_at) {
-        const endDate = roundToNearest15Minutes(new Date(cleanedUpdates.end_at));
+        const endDate = roundToNearest15Minutes(
+          new Date(cleanedUpdates.end_at)
+        );
         cleanedUpdates.end_at = endDate.toISOString();
       }
 
@@ -763,18 +778,24 @@ export const CalendarProvider = ({
             } else if (errorData.needsReAuth) {
               // Notify user to re-authenticate with Google Calendar
               toast.error('Google Calendar authentication expired', {
-                description: 'Please re-authenticate your Google Calendar connection to continue syncing events.',
+                description:
+                  'Please re-authenticate your Google Calendar connection to continue syncing events.',
                 action: {
                   label: 'Re-authenticate',
                   onClick: () => {
                     // Redirect to Google Calendar auth page or open auth modal
                     // This could be enhanced to open a specific auth flow
-                    window.open('/api/v1/calendar/auth?wsId=' + ws?.id, '_blank');
+                    window.open(
+                      '/api/v1/calendar/auth?wsId=' + ws?.id,
+                      '_blank'
+                    );
                   },
                 },
               });
               // Continue with local delete - don't block user action
-              console.warn('Google Calendar re-authentication required, proceeding with local delete');
+              console.warn(
+                'Google Calendar re-authentication required, proceeding with local delete'
+              );
             } else {
               // Throw an error to potentially stop the local delete or notify user
               throw new Error(
@@ -1268,7 +1289,6 @@ export const CalendarProvider = ({
             });
           }
         } catch (fetchError) {
-
           if (progressCallback) {
             progressCallback({
               phase: 'fetch',
@@ -1350,7 +1370,6 @@ export const CalendarProvider = ({
         // Return success with indication if changes were made
         return changesMade || beforeGoogleCount !== googleEvents.length;
       } catch (error) {
-
         if (progressCallback) {
           progressCallback({
             phase: 'complete',
