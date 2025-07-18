@@ -109,7 +109,7 @@ export default function ClientComponent({ wsId }: ClientComponentProps) {
       <div className="container mx-auto max-w-6xl px-4 py-8">
         <div className="text-center">
           <div className="mx-auto mb-4 h-16 w-16 animate-spin rounded-full border-4 border-gray-300 border-t-blue-600"></div>
-          <p>{t('loading')}</p>
+          <p>Loading</p>
         </div>
       </div>
     );

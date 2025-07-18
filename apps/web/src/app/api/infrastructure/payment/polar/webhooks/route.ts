@@ -130,9 +130,9 @@ export const POST = Webhooks({
         });
       }
 
-      const sandbox =
-        subscriptionPayload.metadata?.sandbox === 'true' ||
-        process.env.NODE_ENV === 'development';
+      // const sandbox =
+      //   subscriptionPayload.metadata?.sandbox === 'true' ||
+      //   process.env.NODE_ENV === 'development';
 
       if (!ws_id || typeof ws_id !== 'string') {
         console.error(
@@ -159,45 +159,6 @@ export const POST = Webhooks({
       }
 
       console.log('Successfully updated subscription in DB:', dbResult);
-
-      // --- REPORT USAGE AFTER REVOCATION ---
-      try {
-        const { count: initialUserCount, error: countError } = await sbAdmin
-          .from('workspace_users')
-          .select('*', { count: 'exact', head: true })
-          .eq('ws_id', ws_id);
-
-        if (countError) throw countError;
-
-        const polarClient = createPolarClient({
-          sandbox:
-            // Always use sandbox for development
-            process.env.NODE_ENV === 'development'
-              ? true
-              : // If the workspace is the root workspace and the sandbox is true, use sandbox
-                ws_id === ROOT_WORKSPACE_ID && sandbox
-                ? true // Enable sandbox for root workspace
-                : false, // Otherwise, use production
-        });
-
-        await polarClient.events.ingest({
-          events: [
-            {
-              name: 'workspace.seats.sync',
-              customerId: payload.data.customer.id,
-              metadata: {
-                seat_count: initialUserCount ?? 0,
-              },
-            },
-          ],
-        });
-        console.log(
-          `Webhook: Successfully reported usage of ${initialUserCount} seats after revocation.`
-        );
-      } catch (e) {
-        // Log the error but don't fail the entire webhook, as the subscription is already updated
-        console.error('Webhook: Failed to report usage after revocation', e);
-      }
 
       console.log(`Webhook: Subscription revoked for workspace ${ws_id}.`);
       throw new Response('Revoked webhook handled successfully.', {
