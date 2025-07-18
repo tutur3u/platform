@@ -1,6 +1,6 @@
 'use client';
 
-import type { PostEmail } from '@tuturuuu/types/primitives/post-email';
+import type { InternalEmail } from '@tuturuuu/types/db';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Mail as MailIcon, MailWarning, Send } from '@tuturuuu/ui/icons';
 import {
@@ -44,7 +44,7 @@ interface MailProps {
   loading?: boolean;
   wsId: string;
   locale: string;
-  postsData: PostEmail[];
+  postsData: InternalEmail[];
   postsCount: number;
   postsStatus: { count: number | null };
   searchParams: SearchParams;

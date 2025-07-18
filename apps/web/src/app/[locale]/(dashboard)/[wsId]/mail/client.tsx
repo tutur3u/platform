@@ -1,7 +1,7 @@
 'use client';
 
 import { createClient } from '@tuturuuu/supabase/next/client';
-import type { PostEmail } from '@tuturuuu/types/primitives/post-email';
+import type { InternalEmail } from '@tuturuuu/types/db';
 import { useCallback, useEffect, useState } from 'react';
 import { MailClient } from './_components/mail';
 
@@ -18,7 +18,7 @@ interface MailClientWrapperProps {
   locale: string;
   defaultLayout?: number[];
   defaultCollapsed?: boolean;
-  postsData: PostEmail[];
+  postsData: InternalEmail[];
   postsCount: number;
   postsStatus: { count: number | null };
   searchParams: SearchParams;

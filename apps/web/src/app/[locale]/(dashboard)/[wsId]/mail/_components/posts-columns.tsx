@@ -1,13 +1,13 @@
 'use client';
 
 import type { ColumnDef } from '@tanstack/react-table';
-import type { PostEmail } from '@tuturuuu/types/primitives/post-email';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import { Check, X } from '@tuturuuu/ui/icons';
 import { cn } from '@tuturuuu/utils/format';
 import { createPostEmailKey, usePosts } from '../use-posts';
 import PostsRowActions from './posts-row-actions';
 import 'dayjs/locale/vi';
+import type { InternalEmail } from '@tuturuuu/types/db';
 import moment from 'moment';
 
 const CellWrapper = ({
@@ -25,7 +25,7 @@ const CellWrapper = ({
   return (
     <div
       className={cn(
-        'w-full h-full cursor-pointer px-2 py-1.5 rounded-md transition-colors',
+        'h-full w-full cursor-pointer rounded-md px-2 py-1.5 transition-colors',
         isSelected ? 'bg-primary/10 text-primary' : 'hover:bg-muted/50'
       )}
     >
@@ -38,7 +38,7 @@ export const getPostEmailColumns = (
   // biome-ignore lint/suspicious/noExplicitAny: <translations are not typed>
   t: any,
   namespace: string | undefined
-): ColumnDef<PostEmail>[] => [
+): ColumnDef<InternalEmail>[] => [
   {
     accessorKey: 'recipient',
     header: ({ column }) => (
