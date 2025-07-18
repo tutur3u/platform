@@ -1,8 +1,8 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { MailDisplay } from '../app/[locale]/(dashboard)/[wsId]/mail/_components/mail-display';
-import type { Mail } from '../app/[locale]/(dashboard)/[wsId]/mail/client';
 import '@testing-library/jest-dom/vitest';
+import type { InternalEmail } from '@tuturuuu/types/db';
 
 // Mock next-intl
 vi.mock('next-intl', () => ({
@@ -48,15 +48,21 @@ vi.mock('sanitize-html', () => ({
 }));
 
 describe('MailDisplay - HTML Sanitization', () => {
-  const createMockMail = (overrides: Partial<Mail> = {}): Mail => ({
+  const createMockMail = (
+    overrides: Partial<InternalEmail> = {}
+  ): InternalEmail => ({
     id: '1',
-    name: 'John Doe',
-    email: 'john@example.com',
-    recipient: 'jane@example.com',
+    user_id: '1',
+    ws_id: '1',
+    source_email: 'John Doe <john@example.com>',
+    to_addresses: ['jane@example.com'],
+    cc_addresses: [],
+    bcc_addresses: [],
+    reply_to_addresses: [],
+    payload: '<p>Test content</p>',
+    html_payload: true,
+    created_at: '2024-01-01T12:00:00Z',
     subject: 'Test Subject',
-    text: '<p>Test content</p>',
-    date: '2024-01-01T12:00:00Z',
-    read: false,
     ...overrides,
   });
 
@@ -69,7 +75,7 @@ describe('MailDisplay - HTML Sanitization', () => {
   describe('HTML Sanitization', () => {
     it('should sanitize HTML content using DOMPurify', async () => {
       const mailWithHtml = createMockMail({
-        text: '<p>Hello <script>alert("xss")</script>World</p>',
+        payload: '<p>Hello <script>alert("xss")</script>World</p>',
       });
 
       mockDOMPurify.sanitize.mockReturnValue('<p>Hello World</p>');
@@ -87,7 +93,7 @@ describe('MailDisplay - HTML Sanitization', () => {
 
     it('should fall back to sanitize-html when DOMPurify fails', async () => {
       const mailWithHtml = createMockMail({
-        text: '<p>Content with potential issues</p>',
+        payload: '<p>Content with potential issues</p>',
       });
 
       // Make DOMPurify throw an error
@@ -118,7 +124,7 @@ describe('MailDisplay - HTML Sanitization', () => {
       `;
 
       const mailWithMaliciousHtml = createMockMail({
-        text: maliciousHtml,
+        payload: maliciousHtml,
       });
 
       const sanitizedHtml = '<p>Normal content</p><a>Click me</a>';
@@ -142,10 +148,11 @@ describe('MailDisplay - HTML Sanitization', () => {
       `;
 
       const mailWithStyledHtml = createMockMail({
-        text: htmlWithStyles,
+        payload: htmlWithStyles,
       });
 
-      const sanitizedHtml = '<p style="color: red;">Styled text</p><span style="color: blue;">Safe styling</span>';
+      const sanitizedHtml =
+        '<p style="color: red;">Styled text</p><span style="color: blue;">Safe styling</span>';
       mockDOMPurify.sanitize.mockReturnValue(sanitizedHtml);
 
       render(<MailDisplay mail={mailWithStyledHtml} />);
@@ -157,7 +164,7 @@ describe('MailDisplay - HTML Sanitization', () => {
 
     it('should handle empty or null content gracefully', async () => {
       const mailWithEmptyText = createMockMail({
-        text: '',
+        payload: '',
       });
 
       render(<MailDisplay mail={mailWithEmptyText} />);
@@ -192,7 +199,7 @@ describe('MailDisplay - HTML Sanitization', () => {
       `;
 
       const mailWithSafeHtml = createMockMail({
-        text: safeHtml,
+        payload: safeHtml,
       });
 
       mockDOMPurify.sanitize.mockReturnValue(safeHtml);
@@ -221,7 +228,7 @@ describe('MailDisplay - HTML Sanitization', () => {
       `;
 
       const mailWithComplexHtml = createMockMail({
-        text: complexHtml,
+        payload: complexHtml,
       });
 
       const sanitizedComplexHtml = `
@@ -250,7 +257,7 @@ describe('MailDisplay - HTML Sanitization', () => {
 
     it('should display loading state while sanitizing', () => {
       const mailWithHtml = createMockMail({
-        text: '<p>Content being sanitized</p>',
+        payload: '<p>Content being sanitized</p>',
       });
 
       render(<MailDisplay mail={mailWithHtml} />);
@@ -270,16 +277,19 @@ describe('MailDisplay - HTML Sanitization', () => {
       `;
 
       const mailWithMaliciousUrls = createMockMail({
-        text: htmlWithMaliciousUrls,
+        payload: htmlWithMaliciousUrls,
       });
 
-      const sanitizedUrls = '<a>Malicious link</a><a>Data URL attack</a><a href="https://example.com">Safe link</a>';
+      const sanitizedUrls =
+        '<a>Malicious link</a><a>Data URL attack</a><a href="https://example.com">Safe link</a>';
       mockDOMPurify.sanitize.mockReturnValue(sanitizedUrls);
 
       render(<MailDisplay mail={mailWithMaliciousUrls} />);
 
       await waitFor(() => {
-        expect(mockDOMPurify.sanitize).toHaveBeenCalledWith(htmlWithMaliciousUrls);
+        expect(mockDOMPurify.sanitize).toHaveBeenCalledWith(
+          htmlWithMaliciousUrls
+        );
       });
     });
 
@@ -295,7 +305,7 @@ describe('MailDisplay - HTML Sanitization', () => {
       `;
 
       const mailWithSvg = createMockMail({
-        text: htmlWithSvg,
+        payload: htmlWithSvg,
       });
 
       const sanitizedSvg = `
@@ -317,7 +327,7 @@ describe('MailDisplay - HTML Sanitization', () => {
 
     it('should handle both DOMPurify and sanitize-html failures gracefully', async () => {
       const mailWithHtml = createMockMail({
-        text: '<p>Content that causes both sanitizers to fail</p>',
+        payload: '<p>Content that causes both sanitizers to fail</p>',
       });
 
       // Make both sanitizers fail
@@ -330,7 +340,9 @@ describe('MailDisplay - HTML Sanitization', () => {
       });
 
       // Suppress console.error for this test
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const consoleSpy = vi
+        .spyOn(console, 'error')
+        .mockImplementation(() => {});
 
       render(<MailDisplay mail={mailWithHtml} />);
 
@@ -345,7 +357,10 @@ describe('MailDisplay - HTML Sanitization', () => {
 
       // Should log the error
       await waitFor(() => {
-        expect(consoleSpy).toHaveBeenCalledWith('Failed to sanitize HTML:', expect.any(Error));
+        expect(consoleSpy).toHaveBeenCalledWith(
+          'Failed to sanitize HTML:',
+          expect.any(Error)
+        );
       });
 
       // Should not crash and should finish loading
@@ -367,7 +382,7 @@ describe('MailDisplay - HTML Sanitization', () => {
       `;
 
       const mailWithEntities = createMockMail({
-        text: htmlWithEntities,
+        payload: htmlWithEntities,
       });
 
       const sanitizedEntities = '<p>Normal &amp; safe content</p>';
@@ -390,7 +405,7 @@ describe('MailDisplay - HTML Sanitization', () => {
       `;
 
       const mailWithMetaRefresh = createMockMail({
-        text: htmlWithMetaRefresh,
+        payload: htmlWithMetaRefresh,
       });
 
       const sanitizedMeta = '<meta charset="utf-8">';
@@ -399,7 +414,9 @@ describe('MailDisplay - HTML Sanitization', () => {
       render(<MailDisplay mail={mailWithMetaRefresh} />);
 
       await waitFor(() => {
-        expect(mockDOMPurify.sanitize).toHaveBeenCalledWith(htmlWithMetaRefresh);
+        expect(mockDOMPurify.sanitize).toHaveBeenCalledWith(
+          htmlWithMetaRefresh
+        );
       });
     });
 
@@ -418,7 +435,7 @@ describe('MailDisplay - HTML Sanitization', () => {
       `;
 
       const mailWithEventHandlers = createMockMail({
-        text: htmlWithEventHandlers,
+        payload: htmlWithEventHandlers,
       });
 
       const sanitizedEventHandlers = `
@@ -437,7 +454,9 @@ describe('MailDisplay - HTML Sanitization', () => {
       render(<MailDisplay mail={mailWithEventHandlers} />);
 
       await waitFor(() => {
-        expect(mockDOMPurify.sanitize).toHaveBeenCalledWith(htmlWithEventHandlers);
+        expect(mockDOMPurify.sanitize).toHaveBeenCalledWith(
+          htmlWithEventHandlers
+        );
       });
     });
 
@@ -450,7 +469,7 @@ describe('MailDisplay - HTML Sanitization', () => {
       `;
 
       const mailWithBase64 = createMockMail({
-        text: htmlWithBase64,
+        payload: htmlWithBase64,
       });
 
       const sanitizedBase64 = '<a>Click</a>';
@@ -477,7 +496,7 @@ describe('MailDisplay - HTML Sanitization', () => {
       `;
 
       const mailWithCssInjection = createMockMail({
-        text: htmlWithCssInjection,
+        payload: htmlWithCssInjection,
       });
 
       const sanitizedCss = '<div><p>Text</p></div>';
@@ -486,7 +505,9 @@ describe('MailDisplay - HTML Sanitization', () => {
       render(<MailDisplay mail={mailWithCssInjection} />);
 
       await waitFor(() => {
-        expect(mockDOMPurify.sanitize).toHaveBeenCalledWith(htmlWithCssInjection);
+        expect(mockDOMPurify.sanitize).toHaveBeenCalledWith(
+          htmlWithCssInjection
+        );
       });
     });
 
@@ -502,7 +523,7 @@ describe('MailDisplay - HTML Sanitization', () => {
       `;
 
       const mailWithEmbeds = createMockMail({
-        text: htmlWithEmbeds,
+        payload: htmlWithEmbeds,
       });
 
       const sanitizedEmbeds = '';
@@ -528,7 +549,7 @@ describe('MailDisplay - HTML Sanitization', () => {
       `;
 
       const mailWithForms = createMockMail({
-        text: htmlWithForms,
+        payload: htmlWithForms,
       });
 
       const sanitizedForms = `
@@ -559,7 +580,7 @@ describe('MailDisplay - HTML Sanitization', () => {
       `;
 
       const mailWithUnicode = createMockMail({
-        text: htmlWithUnicode,
+        payload: htmlWithUnicode,
       });
 
       const sanitizedUnicode = '<a>Link</a>';
@@ -583,10 +604,14 @@ describe('MailDisplay - HTML Sanitization', () => {
       `;
 
       const mailWithLargeHtml = createMockMail({
-        text: largeHtml,
+        payload: largeHtml,
       });
 
-      const sanitizedLarge = '<div>' + '<p>Repeated content</p>'.repeat(1000) + '<span>More content</span>'.repeat(1000) + '</div>';
+      const sanitizedLarge =
+        '<div>' +
+        '<p>Repeated content</p>'.repeat(1000) +
+        '<span>More content</span>'.repeat(1000) +
+        '</div>';
       mockDOMPurify.sanitize.mockReturnValue(sanitizedLarge);
 
       render(<MailDisplay mail={mailWithLargeHtml} />);
@@ -628,7 +653,7 @@ describe('MailDisplay - HTML Sanitization', () => {
       `;
 
       const mailWithRealisticHtml = createMockMail({
-        text: realisticEmailHtml,
+        payload: realisticEmailHtml,
       });
 
       const sanitizedRealistic = `
@@ -674,7 +699,7 @@ describe('MailDisplay - HTML Sanitization', () => {
       `;
 
       const mailWithMutation = createMockMail({
-        text: htmlWithMutation,
+        payload: htmlWithMutation,
       });
 
       const sanitizedMutation = `
@@ -699,11 +724,13 @@ describe('MailDisplay - HTML Sanitization', () => {
   describe('Component Integration', () => {
     it('should render mail metadata correctly with sanitized content', async () => {
       const mail = createMockMail({
-        name: 'Jane Smith',
-        email: 'jane@example.com',
-        recipient: 'john@example.com',
+        source_email: 'Jane Smith <jane@example.com>',
+        to_addresses: ['john@example.com'],
+        cc_addresses: [],
+        bcc_addresses: [],
+        reply_to_addresses: [],
         subject: 'Important Message',
-        text: '<p>Hello <script>alert("xss")</script>there!</p>',
+        payload: '<p>Hello <script>alert("xss")</script>there!</p>',
       });
 
       mockDOMPurify.sanitize.mockReturnValue('<p>Hello there!</p>');
@@ -721,13 +748,15 @@ describe('MailDisplay - HTML Sanitization', () => {
 
     it('should handle mail text changes and re-sanitize', async () => {
       const initialMail = createMockMail({
-        text: '<p>Initial content</p>',
+        payload: '<p>Initial content</p>',
       });
 
       const { rerender } = render(<MailDisplay mail={initialMail} />);
 
       await waitFor(() => {
-        expect(mockDOMPurify.sanitize).toHaveBeenCalledWith('<p>Initial content</p>');
+        expect(mockDOMPurify.sanitize).toHaveBeenCalledWith(
+          '<p>Initial content</p>'
+        );
       });
 
       // Clear the mock calls
@@ -735,14 +764,16 @@ describe('MailDisplay - HTML Sanitization', () => {
 
       // Update with new content
       const updatedMail = createMockMail({
-        text: '<p>Updated content</p>',
+        payload: '<p>Updated content</p>',
       });
 
       rerender(<MailDisplay mail={updatedMail} />);
 
       await waitFor(() => {
-        expect(mockDOMPurify.sanitize).toHaveBeenCalledWith('<p>Updated content</p>');
+        expect(mockDOMPurify.sanitize).toHaveBeenCalledWith(
+          '<p>Updated content</p>'
+        );
       });
     });
   });
-}); 
+});

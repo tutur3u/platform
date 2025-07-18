@@ -77,6 +77,20 @@ export async function POST(
     );
   }
 
+  const { data: userData, error: userError } = await supabase
+    .from('users')
+    .select('*')
+    .eq('id', user.id)
+    .single();
+
+  if (userError) {
+    console.error('Error fetching user:', userError);
+    return NextResponse.json(
+      { message: 'Error fetching user' },
+      { status: 500 }
+    );
+  }
+
   // Create SES client
   const sesClient = new SESClient({
     region: credentials.region,
@@ -96,7 +110,7 @@ export async function POST(
         .insert({
           ws_id: wsId,
           user_id: user.id,
-          source_email: credentials.source_email,
+          source_email: `${userData.display_name || user.email} <${user.email}>`,
           subject: data.subject,
           to_addresses: [data.to],
           cc_addresses: [],

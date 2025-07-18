@@ -25,17 +25,6 @@ interface MailClientWrapperProps {
   hasCredential: boolean;
 }
 
-export interface Mail {
-  id: string;
-  name: string;
-  email: string;
-  recipient: string;
-  subject: string;
-  text: string;
-  date: string;
-  read: boolean;
-}
-
 const PAGE_SIZE = 20;
 
 export default function MailClientWrapper({
@@ -49,7 +38,7 @@ export default function MailClientWrapper({
   searchParams,
   hasCredential,
 }: MailClientWrapperProps) {
-  const [emails, setEmails] = useState<Mail[]>([]);
+  const [emails, setEmails] = useState<InternalEmail[]>([]);
   const [loading, setLoading] = useState(true);
   const [hasMore, setHasMore] = useState(true);
   const [page, setPage] = useState(0);
@@ -124,26 +113,16 @@ async function getWorkspaceMails(
   const end = start + pageSize - 1;
 
   const { data, error } = await supabase
-    .from('sent_emails')
+    .from('internal_emails')
     .select('*')
     .eq('ws_id', wsId)
     .order('created_at', { ascending: false })
     .range(start, end);
 
   if (error || !data) {
-    console.error('Failed to fetch sent_emails', error);
+    console.error('Failed to fetch internal_emails', error);
     return [];
   }
 
-  return data.map((row) => ({
-    id: row.id,
-    name: row.source_name ?? 'Unknown',
-    email: row.source_email ?? '',
-    recipient: row.email ?? '',
-    subject: row.subject ?? '',
-    text: row.content ?? '',
-    date: row.created_at ?? new Date().toISOString(),
-    read: true,
-    labels: [],
-  }));
+  return data;
 }
