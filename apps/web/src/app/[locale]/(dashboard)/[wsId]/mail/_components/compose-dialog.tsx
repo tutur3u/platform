@@ -62,10 +62,11 @@ export function ComposeDialog({
     setIsLoading(true);
 
     try {
-      const response = await fetch(`/api/v1/workspaces/${wsId}/mail/send`, {
+      const response = await fetch(`https://tuturuuu.com/api/v1/workspaces/${wsId}/mail/send`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('apiKey')}`,
         },
         body: JSON.stringify(values),
       });
@@ -90,7 +91,7 @@ export function ComposeDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-hidden flex flex-col">
+      <DialogContent className="flex max-h-[80vh] flex-col overflow-hidden sm:max-w-[600px]">
         <DialogHeader className="flex-shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <Send className="h-5 w-5" />
@@ -101,7 +102,7 @@ export function ComposeDialog({
         <Form {...form}>
           <form
             onSubmit={form.handleSubmit(onSubmit)}
-            className="flex-1 flex flex-col min-h-0"
+            className="flex min-h-0 flex-1 flex-col"
           >
             <div className="flex-1 space-y-4 overflow-y-auto pr-2">
               <FormField
@@ -144,12 +145,12 @@ export function ComposeDialog({
                 control={form.control}
                 name="content"
                 render={({ field }) => (
-                  <FormItem className="flex-1 flex flex-col">
+                  <FormItem className="flex flex-1 flex-col">
                     <FormLabel>{t('mail.message')}</FormLabel>
                     <FormControl>
                       <Textarea
                         placeholder={t('mail.message_placeholder')}
-                        className="min-h-[200px] resize-none flex-1"
+                        className="min-h-[200px] flex-1 resize-none"
                         {...field}
                         disabled={isLoading}
                       />
@@ -160,7 +161,7 @@ export function ComposeDialog({
               />
             </div>
 
-            <div className="flex-shrink-0 flex justify-end gap-2 pt-4 border-t">
+            <div className="flex flex-shrink-0 justify-end gap-2 border-t pt-4">
               <Button
                 type="button"
                 variant="outline"

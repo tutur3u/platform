@@ -3,7 +3,7 @@ create table "public"."internal_email_api_keys" (
     "creator_id" uuid not null,
     "user_id" uuid not null,
     "value" text not null,
-    "allowed_emails" text[] not null,
+    "allowed_emails" text[],
     "created_at" timestamp with time zone not null default now()
 );
 
@@ -73,4 +73,4 @@ on "public"."internal_email_api_keys"
 as permissive
 for select
 to authenticated
-using (user_id = auth.uid() AND is_org_member(auth.uid(), "00000000-0000-0000-0000-000000000000"));
+using (user_id = auth.uid() AND is_org_member(auth.uid(), '00000000-0000-0000-0000-000000000000'));

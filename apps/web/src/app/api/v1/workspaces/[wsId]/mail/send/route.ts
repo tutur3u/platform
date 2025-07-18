@@ -3,6 +3,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import juice from 'juice';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
@@ -19,7 +20,7 @@ export async function POST(
   }
 ) {
   const { wsId } = await params;
-  const sbAdmin = await createAdminClient();
+  const apiKey = req.headers.get('Authorization')?.split(' ')[1];
 
   const data: {
     to: string;
@@ -35,11 +36,69 @@ export async function POST(
     );
   }
 
+  // Get the current user
+  const supabase = await createClient();
+  const {
+    data: { user }
+  } = await supabase.auth.getUser();
+
+  // Get allowed emails from internal_email_api_keys
+  const { data: internalData, error: internalDataError } = await supabase
+    .from('internal_email_api_keys')
+    .select('*')
+    .or(`user_id.eq.${user?.id},value.eq.${apiKey}`)
+    .single();
+
+  if (internalDataError) {
+    console.error('Error fetching allowed emails:', internalDataError);
+    return NextResponse.json(
+      { message: 'Error fetching allowed emails' },
+      { status: 500 }
+    );
+  }
+
+  if (!internalData) {
+    return NextResponse.json(
+      { message: 'Unauthorized' },
+      { status: 401 }
+    );
+  }
+
+  if (
+    internalData.allowed_emails &&
+    !internalData.allowed_emails.includes(data.to)
+  ) {
+    return NextResponse.json({ message: 'Email not allowed' }, { status: 400 });
+  }
+
+  const { data: userProfile, error: userProfileError } = await supabase
+    .from('user_private_details')
+    .select('*')
+    .eq('user_id', internalData.user_id)
+    .single();
+
+  if (userProfileError) {
+    console.error('Error fetching user profile:', userProfileError);
+    return NextResponse.json(
+      { message: 'Error fetching user profile' },
+      { status: 500 }
+    );
+  }
+
+  if (!userProfile.full_name || !userProfile.email) {
+    return NextResponse.json(
+      { message: 'User profile is missing required fields' },
+      { status: 400 }
+    );
+  }
+
+  const sbAdmin = await createAdminClient();
+
   // Get workspace email credentials
   const { data: credentials, error: credentialsError } = await sbAdmin
     .from('workspace_email_credentials')
     .select('*')
-    .eq('ws_id', wsId)
+    .eq('ws_id', ROOT_WORKSPACE_ID)
     .maybeSingle();
 
   if (credentialsError) {
@@ -58,16 +117,6 @@ export async function POST(
     );
   }
 
-  // Get the current user
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-  }
-
   // Create SES client
   const sesClient = new SESClient({
     region: credentials.region,
@@ -81,9 +130,9 @@ export async function POST(
     // Send the email
     const result = await sendEmail({
       client: sesClient,
-      sourceName: credentials.source_name,
-      sourceEmail: credentials.source_email,
-      senderId: user.id,
+      sourceName: userProfile.full_name,
+      sourceEmail: userProfile.email,
+      senderId: internalData.user_id,
       recipient: data.to,
       subject: data.subject,
       content: data.content,
