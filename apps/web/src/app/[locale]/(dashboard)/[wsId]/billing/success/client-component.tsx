@@ -53,7 +53,6 @@ export default function ClientComponent({ wsId }: ClientComponentProps) {
           .eq('ws_id', wsId)
           .single();
 
-        console.log(subscription, 'Fetched subscription data');
         if (error) {
           console.error('Failed to fetch workspace subscription:', error);
           setSubscription(null);

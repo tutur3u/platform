@@ -143,13 +143,15 @@ export const POST = Webhooks({
         });
       }
 
-      const { data: dbResult, error: dbError } = await sbAdmin
+      const { error: dbError } = await sbAdmin
         .from('workspace_subscription')
         .update({
           status: 'past_due',
           polar_subscription_id: subscriptionPayload.id,
         })
-        .eq('ws_id', ws_id);
+        .eq('ws_id', ws_id)
+        .select()
+        .single();
 
       if (dbError) {
         console.error('Webhook: Supabase upsert error:', dbError.message);
@@ -158,7 +160,7 @@ export const POST = Webhooks({
         });
       }
 
-      console.log('Successfully updated subscription in DB:', dbResult);
+      // console.log('Successfully updated subscription in DB:', dbResult);
 
       console.log(`Webhook: Subscription revoked for workspace ${ws_id}.`);
       throw new Response('Revoked webhook handled successfully.', {
