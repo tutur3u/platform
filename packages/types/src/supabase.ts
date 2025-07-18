@@ -2110,6 +2110,90 @@ export type Database = {
           },
         ];
       };
+      internal_email_api_keys: {
+        Row: {
+          allowed_emails: string[];
+          created_at: string;
+          creator_id: string;
+          id: string;
+          user_id: string;
+          value: string;
+        };
+        Insert: {
+          allowed_emails: string[];
+          created_at?: string;
+          creator_id: string;
+          id?: string;
+          user_id: string;
+          value: string;
+        };
+        Update: {
+          allowed_emails?: string[];
+          created_at?: string;
+          creator_id?: string;
+          id?: string;
+          user_id?: string;
+          value?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'internal_email_api_keys_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'internal_email_api_keys_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'internal_email_api_keys_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'internal_email_api_keys_creator_id_fkey';
+            columns: ['creator_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'internal_email_api_keys_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: true;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'internal_email_api_keys_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: true;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'internal_email_api_keys_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: true;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'internal_email_api_keys_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: true;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       inventory_batch_products: {
         Row: {
           amount: number;
