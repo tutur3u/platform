@@ -180,10 +180,11 @@ export function ComposeDialog({
   async function onSubmit(values: ComposeFormValues) {
     setIsLoading(true);
     try {
-      const response = await fetch(`/api/v1/workspaces/${wsId}/mail/send`, {
+      const response = await fetch(`https://tuturuuu.com/api/v1/workspaces/${wsId}/mail/send`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('apiKey')}`,
         },
         body: JSON.stringify(values),
       });
