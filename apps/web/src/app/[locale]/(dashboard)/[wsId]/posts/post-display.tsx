@@ -22,7 +22,7 @@ import dayjs from 'dayjs';
 import Link from 'next/link';
 import { useLocale } from 'next-intl';
 import { useEffect } from 'react';
-import PostsRowActions from './posts-row-actions';
+import PostsRowActions from './row-actions';
 
 interface PostDisplayProps {
   postEmail: InternalEmail | null;
@@ -55,7 +55,7 @@ export function PostDisplay({ postEmail }: PostDisplayProps) {
       <div className="flex h-16 items-center justify-between border-b bg-background/80 px-4 backdrop-blur-sm">
         <div className="flex items-center gap-2">
           <h3 className="font-semibold text-lg">Post Email Details</h3>
-          <Badge variant={postEmail.is_completed ? 'default' : 'secondary'}>
+          {/* <Badge variant={postEmail.is_completed ? 'default' : 'secondary'}>
             {postEmail.is_completed ? (
               <>
                 <Check className="mr-1 h-3 w-3" />
@@ -67,7 +67,7 @@ export function PostDisplay({ postEmail }: PostDisplayProps) {
                 Pending
               </>
             )}
-          </Badge>
+          </Badge> */}
         </div>
 
         <div className="flex items-center gap-2">

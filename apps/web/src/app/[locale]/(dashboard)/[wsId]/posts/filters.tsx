@@ -6,7 +6,7 @@ import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { MinusCircle, PlusCircle, User } from '@tuturuuu/ui/icons';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
-import { Filter } from '../../users/filters';
+import { Filter } from '../users/filters';
 
 interface SearchParams {
   q?: string;

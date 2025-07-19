@@ -4,7 +4,7 @@ import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { type ReactNode, useEffect, useState } from 'react';
+import { type ReactNode, useCallback, useEffect, useState } from 'react';
 import { DEV_MODE, PROD_MODE } from '@/constants/common';
 
 export interface NavLink {
@@ -27,7 +27,6 @@ export interface NavLink {
   disableOnProduction?: boolean;
   allowedRoles?: string[];
   experimental?: 'alpha' | 'beta' | 'new';
-  shortcut?: string;
 }
 
 interface Props {
@@ -46,7 +45,7 @@ export function Navigation({
   const pathname = usePathname();
   const isRootWorkspace = currentWsId === ROOT_WORKSPACE_ID;
 
-  const scrollActiveLinksIntoView = () => {
+  const scrollActiveLinksIntoView = useCallback(() => {
     const activeWorkspaceLink = document.getElementById('active-ws-navlink');
     const activeLink = document.getElementById('active-navlink');
 
@@ -67,17 +66,17 @@ export function Navigation({
         })
       );
     }
-  };
+  }, []);
 
   const [urlToLoad, setUrlToLoad] = useState<string>();
 
   useEffect(() => {
     if (urlToLoad) setUrlToLoad(undefined);
     scrollActiveLinksIntoView();
-  }, [pathname]);
+  }, [urlToLoad, scrollActiveLinksIntoView]);
 
   return (
-    <div className="mb-4 scrollbar-none flex flex-none gap-1 overflow-x-auto font-semibold">
+    <div className="scrollbar-none mb-4 flex flex-none gap-1 overflow-x-auto font-semibold">
       {navLinks.map((link) => {
         // If the link is disabled, don't render it
         if (link?.disabled) return null;

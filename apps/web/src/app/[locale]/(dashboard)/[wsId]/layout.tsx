@@ -89,7 +89,6 @@ export default async function Layout({ children, params }: LayoutProps) {
       href: `/${wsId}`,
       icon: <ChartArea className="h-5 w-5" />,
       matchExact: true,
-      shortcut: 'D',
     },
     null,
     {
@@ -109,7 +108,6 @@ export default async function Layout({ children, params }: LayoutProps) {
               value: 'true',
             })) ||
             withoutPermission('ai_chat'),
-          shortcut: 'X',
           experimental: 'beta',
         },
         {
@@ -125,7 +123,6 @@ export default async function Layout({ children, params }: LayoutProps) {
               value: 'true',
             })) ||
             withoutPermission('manage_projects'),
-          shortcut: 'T',
           experimental: 'alpha',
         },
       ],
@@ -223,7 +220,6 @@ export default async function Layout({ children, params }: LayoutProps) {
           href: `/${wsId}/calendar`,
           icon: <Calendar className="h-5 w-5" />,
           disabled: ENABLE_AI_ONLY || withoutPermission('manage_calendar'),
-          shortcut: 'C',
           experimental: 'alpha',
         },
         {
@@ -242,7 +238,6 @@ export default async function Layout({ children, params }: LayoutProps) {
           href: `/${wsId}/tasks/boards`,
           icon: <CircleCheck className="h-5 w-5" />,
           disabled: ENABLE_AI_ONLY || withoutPermission('manage_projects'),
-          shortcut: 'T',
           experimental: 'beta',
         },
         {
@@ -259,7 +254,6 @@ export default async function Layout({ children, params }: LayoutProps) {
                 value: 'true',
               })) ||
               withoutPermission('send_user_group_post_emails')),
-          shortcut: 'M',
           experimental: 'beta',
         },
         {
@@ -276,7 +270,6 @@ export default async function Layout({ children, params }: LayoutProps) {
                 value: 'true',
               })) ||
               withoutPermission('send_user_group_post_emails')),
-          shortcut: 'M',
           experimental: 'beta',
         },
         {
@@ -305,7 +298,6 @@ export default async function Layout({ children, params }: LayoutProps) {
               value: 'true',
             })) ||
             withoutPermission('manage_documents'),
-          shortcut: 'O',
           experimental: 'beta',
         },
         {
@@ -320,7 +312,6 @@ export default async function Layout({ children, params }: LayoutProps) {
               name: 'ENABLE_SLIDES',
               value: 'true',
             })),
-          shortcut: 'S',
           experimental: 'alpha',
         },
         {
@@ -336,7 +327,6 @@ export default async function Layout({ children, params }: LayoutProps) {
               value: 'true',
             })) ||
             withoutPermission('ai_lab'),
-          shortcut: 'A',
           experimental: 'beta',
         },
         {
@@ -352,7 +342,6 @@ export default async function Layout({ children, params }: LayoutProps) {
               value: 'true',
             })) ||
             withoutPermission('manage_projects'),
-          shortcut: 'T',
           experimental: 'alpha',
         },
         {
@@ -360,7 +349,6 @@ export default async function Layout({ children, params }: LayoutProps) {
           href: `/${wsId}/time-tracker`,
           icon: <ClockFading className="h-5 w-5" />,
           disabled: ENABLE_AI_ONLY || withoutPermission('manage_projects'),
-          shortcut: 'T',
           experimental: 'beta',
         },
         {
@@ -401,7 +389,6 @@ export default async function Layout({ children, params }: LayoutProps) {
               value: 'true',
             })) ||
             withoutPermission('manage_users'),
-          shortcut: 'U',
         },
         {
           title: t('sidebar_tabs.finance'),
@@ -417,7 +404,6 @@ export default async function Layout({ children, params }: LayoutProps) {
               value: 'true',
             })) ||
             withoutPermission('manage_finance'),
-          shortcut: 'F',
         },
         {
           title: t('sidebar_tabs.inventory'),
@@ -432,7 +418,6 @@ export default async function Layout({ children, params }: LayoutProps) {
               value: 'true',
             })) ||
             withoutPermission('manage_inventory'),
-          shortcut: 'I',
         },
       ],
     },
@@ -452,7 +437,6 @@ export default async function Layout({ children, params }: LayoutProps) {
         `/${wsId}/migrations`,
         `/${wsId}/activities`,
       ],
-      shortcut: ',',
       children: [
         {
           title: t('workspace-settings-layout.workspace'),
