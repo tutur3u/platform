@@ -808,7 +808,8 @@
     "management": "Quản lý tài nguyên",
     "link_shortener": "Liên kết rút ngắn",
     "tumeet": "Tumeet",
-    "polls": "Bỏ phiếu"
+    "polls": "Bỏ phiếu",
+    "qr_generator": "Trình tạo QR"
   },
   "link-shortener": {
     "title": "Rút ngắn liên kết",

@@ -6,7 +6,7 @@
     "access": "public"
   },
   "scripts": {},
-  "packageManager": "bun@1.2.18",
+  "packageManager": "bun@1.2.19",
   "dependencies": {
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
@@ -14,7 +14,7 @@
   },
   "devDependencies": {
     "@tuturuuu/typescript-config": "workspace:*",
-    "@types/node": "^24.0.14",
+    "@types/node": "^24.0.15",
     "@types/react": "^19.1.8",
     "typescript": "^5.8.3"
   },

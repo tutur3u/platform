@@ -127,7 +127,7 @@ export function GeographicAnalytics({
                               {index + 1}
                             </Badge>
                             <span className="truncate font-medium text-sm">
-                              {country.country}
+                              {decodeURIComponent(country.country)}
                             </span>
                           </div>
                           <span className="font-semibold text-dynamic-green">
@@ -173,7 +173,7 @@ export function GeographicAnalytics({
           </CardHeader>
           <CardContent className="relative">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {topCities.slice(0, 8).map((city, index) => {
+              {topCities.slice(0, 12).map((city, index) => {
                 const maxCount = Math.max(...topCities.map((c) => c.count));
                 const percentage =
                   maxCount > 0 ? (city.count / maxCount) * 100 : 0;
@@ -193,10 +193,10 @@ export function GeographicAnalytics({
                         </Badge>
                         <div className="min-w-0 flex-1">
                           <div className="truncate font-medium text-sm">
-                            {city.city}
+                            {decodeURIComponent(city.city)}
                           </div>
                           <div className="truncate text-muted-foreground text-xs">
-                            {city.country}
+                            {decodeURIComponent(city.country)}
                           </div>
                         </div>
                       </div>
