@@ -9,7 +9,7 @@
     "test": "vitest run",
     "test:watch": "vitest"
   },
-  "packageManager": "bun@1.2.18",
+  "packageManager": "bun@1.2.19",
   "dependencies": {
     "@supabase/ssr": "^0.6.1",
     "@supabase/supabase-js": "^2.52.0",
