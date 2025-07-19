@@ -55,17 +55,24 @@ export async function POST(
     );
   }
 
-  const { data: userData, error: userError } = await supabase
-    .from('users')
+  const { data: userProfile, error: userProfileError } = await supabase
+    .from('user_private_details')
     .select('*')
-    .eq('id', user.id)
+    .eq('user_id', user.id)
     .single();
 
-  if (userError) {
-    console.error('Error fetching user:', userError);
+  if (userProfileError) {
+    console.error('Error fetching user profile:', userProfileError);
     return NextResponse.json(
-      { message: 'Error fetching user' },
+      { message: 'Error fetching user profile' },
       { status: 500 }
+    );
+  }
+
+  if (!userProfile.full_name || !userProfile.email) {
+    return NextResponse.json(
+      { message: 'User profile is missing required fields' },
+      { status: 400 }
     );
   }
 
@@ -93,27 +100,6 @@ export async function POST(
     !internalData.allowed_emails.includes(data.to)
   ) {
     return NextResponse.json({ message: 'Email not allowed' }, { status: 400 });
-  }
-
-  const { data: userProfile, error: userProfileError } = await supabase
-    .from('user_private_details')
-    .select('*')
-    .eq('user_id', internalData.user_id)
-    .single();
-
-  if (userProfileError) {
-    console.error('Error fetching user profile:', userProfileError);
-    return NextResponse.json(
-      { message: 'Error fetching user profile' },
-      { status: 500 }
-    );
-  }
-
-  if (!userProfile.full_name || !userProfile.email) {
-    return NextResponse.json(
-      { message: 'User profile is missing required fields' },
-      { status: 400 }
-    );
   }
 
   const sbAdmin = await createAdminClient();
@@ -150,65 +136,59 @@ export async function POST(
     },
   });
 
-  const payload = DOMPurify.sanitize(data.content);
-
   try {
-    // If DEV_MODE, skip sending email, only save to DB
-    if (DEV_MODE) {
-      const { error } = await sbAdmin
-        .from('internal_emails')
-        .insert({
-          ws_id: wsId,
-          user_id: user.id,
-          source_email: `${userData.display_name || user.email} <${user.email}>`,
-          subject: data.subject,
-          to_addresses: [data.to],
-          cc_addresses: [],
-          bcc_addresses: [],
-          reply_to_addresses: [],
-          payload,
-          html_payload: true,
-          created_at: new Date().toISOString(),
-        })
-        .select('id')
-        .single();
+    // Send the email via SES (unless in DEV_MODE or email sending is disabled)
+    if (!DEV_MODE) {
+      const emailSent = await sendEmail({
+        client: sesClient,
+        sourceName: userProfile.full_name,
+        sourceEmail: userProfile.email,
+        recipient: data.to,
+        subject: data.subject,
+        content: data.content,
+      });
 
-      if (error) {
+      if (!emailSent) {
         return NextResponse.json(
-          { message: 'Failed to save email in DEV_MODE' },
+          { message: 'Failed to send email' },
           { status: 500 }
         );
       }
-
-      return NextResponse.json(
-        { message: 'Email saved (DEV_MODE, not sent)' },
-        { status: 200 }
-      );
     }
 
-    // Send the email
-    const result = await sendEmail({
-      client: sesClient,
-      sourceName: userProfile.full_name,
-      sourceEmail: userProfile.email,
-      senderId: internalData.user_id,
-      recipient: data.to,
-      subject: data.subject,
-      content: data.content,
-      wsId,
-    });
+    const payload = DOMPurify.sanitize(data.content);
 
-    if (result) {
+    // Store the sent email in the database (always, regardless of DEV_MODE)
+    const { error } = await sbAdmin
+      .from('internal_emails')
+      .insert({
+        ws_id: wsId,
+        user_id: internalData.user_id,
+        source_email: userProfile.email,
+        subject: data.subject,
+        to_addresses: [data.to],
+        cc_addresses: [],
+        bcc_addresses: [],
+        reply_to_addresses: [],
+        payload,
+        html_payload: true,
+      })
+      .select('id')
+      .single();
+
+    if (error) {
+      console.error('Error logging sent email:', error);
       return NextResponse.json(
-        { message: 'Email sent successfully' },
-        { status: 200 }
-      );
-    } else {
-      return NextResponse.json(
-        { message: 'Failed to send email' },
+        { message: 'Failed to save email to database' },
         { status: 500 }
       );
     }
+
+    const message = DEV_MODE
+      ? 'Email saved (DEV_MODE, not sent)'
+      : 'Email sent successfully';
+
+    return NextResponse.json({ message }, { status: 200 });
   } catch (error) {
     console.error('Error sending email:', error);
     return NextResponse.json(
@@ -222,24 +202,18 @@ const sendEmail = async ({
   client,
   sourceName,
   sourceEmail,
-  senderId,
   recipient,
   subject,
   content,
-  wsId,
 }: {
   client: SESClient;
   sourceName: string;
   sourceEmail: string;
-  senderId: string;
   recipient: string;
   subject: string;
   content: string;
-  wsId: string;
 }) => {
   try {
-    const sbAdmin = await createAdminClient();
-
     // Check if email is blacklisted
     if (domainBlacklist.some((domain) => recipient.includes(domain))) {
       console.log('Email domain is blacklisted:', recipient);
@@ -281,30 +255,6 @@ const sendEmail = async ({
         to: recipient,
         subject,
       });
-    }
-
-    // Store the sent email in the database
-    const { error } = await sbAdmin
-      .from('internal_emails')
-      .insert({
-        ws_id: wsId,
-        user_id: senderId,
-        source_email: sourceEmail,
-        subject,
-        to_addresses: [recipient],
-        cc_addresses: [],
-        bcc_addresses: [],
-        reply_to_addresses: [],
-        payload: inlinedHtmlContent,
-        html_payload: true,
-        created_at: new Date().toISOString(),
-      })
-      .select('id')
-      .single();
-
-    if (error) {
-      console.error('Error logging sent email:', error);
-      return false;
     }
 
     return true;
