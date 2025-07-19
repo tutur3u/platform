@@ -98,8 +98,8 @@ export function PostDisplay({ postEmail }: PostDisplayProps) {
 
               <div className="min-w-0 flex-1 space-y-2">
                 {postEmail.to_addresses.length > 0 &&
-                  postEmail.to_addresses.map((toAddress, index) => (
-                    <div key={index}>
+                  postEmail.to_addresses.map((toAddress) => (
+                    <div key={toAddress}>
                       <h4 className="font-semibold text-base text-foreground">
                         {toAddress || 'Unknown Recipient'}
                       </h4>

@@ -41,6 +41,88 @@ interface MailDisplayProps {
 
 const DISABLE_MAIL_ACTIONS = true;
 
+function formatDisplayAddresses(
+  addresses: string | string[]
+): { name: string; email: string; raw: string }[] {
+  if (!addresses) return [];
+  const arr = Array.isArray(addresses) ? addresses : [addresses];
+  return arr
+    .filter((addr): addr is string => typeof addr === 'string')
+    .map((addr) => {
+      const match = addr.match(
+        /^(.+?)\s*<\s*([\w\-.+]+@[\w\-.]+\.[a-zA-Z]{2,})\s*>$/
+      );
+      if (match) {
+        return { name: match[1] ?? '', email: match[2] ?? '', raw: addr };
+      }
+      // If just an email
+      if (/^[\w\-.+]+@[\w\-.]+\.[a-zA-Z]{2,}$/.test(addr)) {
+        return { name: '', email: addr, raw: addr };
+      }
+      return { name: '', email: '', raw: addr };
+    });
+}
+
+import { UserIcon } from '@tuturuuu/ui/icons';
+
+function AvatarChip({ name, email }: { name: string; email: string }) {
+  const initial = name
+    ? name.charAt(0).toUpperCase()
+    : email.charAt(0).toUpperCase();
+  return (
+    <span className="flex items-center gap-1 rounded-full bg-accent px-2 py-0.5 font-medium text-accent-foreground text-xs shadow-sm">
+      <span className="mr-1 flex h-5 w-5 items-center justify-center rounded-full bg-muted font-bold text-muted-foreground text-xs">
+        {initial || <UserIcon className="h-4 w-4" />}
+      </span>
+      <span>{name || email}</span>
+      {name && email && (
+        <span className="ml-1 text-foreground/80">{`<${email}>`}</span>
+      )}
+    </span>
+  );
+}
+
+function AddressChips({
+  label,
+  addresses,
+  avatar,
+}: {
+  label: string;
+  addresses: string[];
+  avatar?: boolean;
+}) {
+  const parsed = formatDisplayAddresses(addresses).filter(
+    ({ email }) => !!email
+  );
+  return (
+    <div className="flex flex-wrap items-center gap-2 text-xs">
+      <span className="min-w-[40px] font-medium text-muted-foreground">
+        {label.replace(/:/g, '')}:
+      </span>
+      {parsed.length === 0 ? (
+        <span className="rounded-full bg-muted px-2 py-0.5 font-medium text-muted-foreground text-xs opacity-70 shadow-sm">
+          None
+        </span>
+      ) : (
+        parsed.map(({ name, email, raw }, idx) => {
+          const key = email ? `${email}-${name}` : raw || idx;
+          return avatar ? (
+            <AvatarChip key={key} name={name} email={email} />
+          ) : (
+            <span
+              key={key}
+              className="flex items-center gap-1 rounded-full bg-accent px-2 py-0.5 font-medium text-accent-foreground text-xs shadow-sm"
+            >
+              {name && <span>{name}</span>}
+              <span className="text-foreground/80">{email}</span>
+            </span>
+          );
+        })
+      )}
+    </div>
+  );
+}
+
 export function MailDisplay({ mail }: MailDisplayProps) {
   const [isHeaderCollapsed, setIsHeaderCollapsed] = useState(false);
   const [sanitizedHtml, setSanitizedHtml] = useState<string>('');
@@ -244,44 +326,28 @@ export function MailDisplay({ mail }: MailDisplayProps) {
               )}
             >
               <div className="flex flex-col items-start gap-1 text-muted-foreground text-xs">
-                <div className="flex items-center gap-1">
-                  <span className="font-medium">{t('from_label')}</span>
-                  <span className="text-foreground/70">
-                    {mail.to_addresses}
-                  </span>
-                </div>
+                <AddressChips
+                  label={t('from_label')}
+                  addresses={[mail.source_email]}
+                  avatar
+                />
                 {mail.to_addresses && mail.to_addresses.length > 0 && (
-                  <div className="flex items-center gap-1">
-                    <span className="font-medium">{t('to_label')}</span>
-                    <span className="text-foreground/70">
-                      {mail.to_addresses.join(', ')}
-                    </span>
-                  </div>
+                  <AddressChips
+                    label={t('to_label')}
+                    addresses={mail.to_addresses}
+                  />
                 )}
-                {mail.cc_addresses && mail.cc_addresses.length > 0 && (
-                  <div className="flex items-center gap-1">
-                    <span className="font-medium">CC:</span>
-                    <span className="text-foreground/70">
-                      {mail.cc_addresses.join(', ')}
-                    </span>
-                  </div>
-                )}
-                {mail.bcc_addresses && mail.bcc_addresses.length > 0 && (
-                  <div className="flex items-center gap-1">
-                    <span className="font-medium">BCC:</span>
-                    <span className="text-foreground/70">
-                      {mail.bcc_addresses.join(', ')}
-                    </span>
-                  </div>
-                )}
+                <AddressChips label="CC" addresses={mail.cc_addresses ?? []} />
+                <AddressChips
+                  label="BCC"
+                  addresses={mail.bcc_addresses ?? []}
+                />
                 {mail.reply_to_addresses &&
                   mail.reply_to_addresses.length > 0 && (
-                    <div className="flex items-center gap-1">
-                      <span className="font-medium">Reply-To:</span>
-                      <span className="text-foreground/70">
-                        {mail.reply_to_addresses.join(', ')}
-                      </span>
-                    </div>
+                    <AddressChips
+                      label="Reply-To"
+                      addresses={mail.reply_to_addresses}
+                    />
                   )}
               </div>
             </div>
@@ -295,13 +361,19 @@ export function MailDisplay({ mail }: MailDisplayProps) {
             ) : mail.html_payload ? (
               <div
                 className="prose max-w-full bg-background text-foreground"
+                style={{ padding: '1.5rem' }}
                 // biome-ignore lint/security/noDangerouslySetInnerHtml: <html content is sanitized>
                 dangerouslySetInnerHTML={{ __html: sanitizedHtml }}
               />
             ) : (
-              <pre className="whitespace-pre-wrap bg-background text-foreground text-sm">
-                {mail.payload}
-              </pre>
+              <div
+                className="bg-background text-foreground text-sm"
+                style={{ padding: '1.5rem' }}
+              >
+                <pre className="whitespace-pre-wrap" style={{ margin: 0 }}>
+                  {mail.payload}
+                </pre>
+              </div>
             )}
           </ScrollArea>
         </div>
