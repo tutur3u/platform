@@ -3,9 +3,12 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
+import DOMPurify from 'isomorphic-dompurify';
 import juice from 'juice';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
+import { DEV_MODE } from '@/constants/common';
 
 const domainBlacklist = ['@easy.com', '@easy'];
 const disableEmailSending = process.env.DISABLE_EMAIL_SENDING === 'true';
@@ -19,7 +22,7 @@ export async function POST(
   }
 ) {
   const { wsId } = await params;
-  const sbAdmin = await createAdminClient();
+  const apiKey = req.headers.get('Authorization')?.split(' ')[1];
 
   const data: {
     to: string;
@@ -35,11 +38,77 @@ export async function POST(
     );
   }
 
+  // Get the current user
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
+
+  if (!user.email?.endsWith('@tuturuuu.com')) {
+    return NextResponse.json(
+      { message: 'Only @tuturuuu.com emails are allowed' },
+      { status: 401 }
+    );
+  }
+
+  const { data: userProfile, error: userProfileError } = await supabase
+    .from('user_private_details')
+    .select('*')
+    .eq('user_id', user.id)
+    .single();
+
+  if (userProfileError) {
+    console.error('Error fetching user profile:', userProfileError);
+    return NextResponse.json(
+      { message: 'Error fetching user profile' },
+      { status: 500 }
+    );
+  }
+
+  if (!userProfile.full_name || !userProfile.email) {
+    return NextResponse.json(
+      { message: 'User profile is missing required fields' },
+      { status: 400 }
+    );
+  }
+
+  // Get allowed emails from internal_email_api_keys
+  const { data: internalData, error: internalDataError } = await supabase
+    .from('internal_email_api_keys')
+    .select('*')
+    .or(`user_id.eq.${user?.id},value.eq.${apiKey}`)
+    .single();
+
+  if (internalDataError) {
+    console.error('Error fetching allowed emails:', internalDataError);
+    return NextResponse.json(
+      { message: 'Error fetching allowed emails' },
+      { status: 500 }
+    );
+  }
+
+  if (!internalData) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
+
+  if (
+    internalData.allowed_emails &&
+    !internalData.allowed_emails.includes(data.to)
+  ) {
+    return NextResponse.json({ message: 'Email not allowed' }, { status: 400 });
+  }
+
+  const sbAdmin = await createAdminClient();
+
   // Get workspace email credentials
   const { data: credentials, error: credentialsError } = await sbAdmin
     .from('workspace_email_credentials')
     .select('*')
-    .eq('ws_id', wsId)
+    .eq('ws_id', ROOT_WORKSPACE_ID)
     .maybeSingle();
 
   if (credentialsError) {
@@ -58,16 +127,6 @@ export async function POST(
     );
   }
 
-  // Get the current user
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-  }
-
   // Create SES client
   const sesClient = new SESClient({
     region: credentials.region,
@@ -78,29 +137,58 @@ export async function POST(
   });
 
   try {
-    // Send the email
-    const result = await sendEmail({
-      client: sesClient,
-      sourceName: credentials.source_name,
-      sourceEmail: credentials.source_email,
-      senderId: user.id,
-      recipient: data.to,
-      subject: data.subject,
-      content: data.content,
-      wsId,
-    });
+    // Send the email via SES (unless in DEV_MODE or email sending is disabled)
+    if (!DEV_MODE) {
+      const emailSent = await sendEmail({
+        client: sesClient,
+        sourceName: userProfile.full_name,
+        sourceEmail: userProfile.email,
+        recipient: data.to,
+        subject: data.subject,
+        content: data.content,
+      });
 
-    if (result) {
+      if (!emailSent) {
+        return NextResponse.json(
+          { message: 'Failed to send email' },
+          { status: 500 }
+        );
+      }
+    }
+
+    const payload = DOMPurify.sanitize(data.content);
+
+    // Store the sent email in the database (always, regardless of DEV_MODE)
+    const { error } = await sbAdmin
+      .from('internal_emails')
+      .insert({
+        ws_id: wsId,
+        user_id: internalData.user_id,
+        source_email: userProfile.email,
+        subject: data.subject,
+        to_addresses: [data.to],
+        cc_addresses: [],
+        bcc_addresses: [],
+        reply_to_addresses: [],
+        payload,
+        html_payload: true,
+      })
+      .select('id')
+      .single();
+
+    if (error) {
+      console.error('Error logging sent email:', error);
       return NextResponse.json(
-        { message: 'Email sent successfully' },
-        { status: 200 }
-      );
-    } else {
-      return NextResponse.json(
-        { message: 'Failed to send email' },
+        { message: 'Failed to save email to database' },
         { status: 500 }
       );
     }
+
+    const message = DEV_MODE
+      ? 'Email saved (DEV_MODE, not sent)'
+      : 'Email sent successfully';
+
+    return NextResponse.json({ message }, { status: 200 });
   } catch (error) {
     console.error('Error sending email:', error);
     return NextResponse.json(
@@ -114,24 +202,18 @@ const sendEmail = async ({
   client,
   sourceName,
   sourceEmail,
-  senderId,
   recipient,
   subject,
   content,
-  wsId,
 }: {
   client: SESClient;
   sourceName: string;
   sourceEmail: string;
-  senderId: string;
   recipient: string;
   subject: string;
   content: string;
-  wsId: string;
 }) => {
   try {
-    const sbAdmin = await createAdminClient();
-
     // Check if email is blacklisted
     if (domainBlacklist.some((domain) => recipient.includes(domain))) {
       console.log('Email domain is blacklisted:', recipient);
@@ -139,7 +221,7 @@ const sendEmail = async ({
     }
 
     // Convert plain text content to HTML and inline CSS
-    const htmlContent = content.replace(/\n/g, '<br>');
+    const htmlContent = DOMPurify.sanitize(content);
     const inlinedHtmlContent = juice(htmlContent);
 
     const params = {
@@ -173,27 +255,6 @@ const sendEmail = async ({
         to: recipient,
         subject,
       });
-    }
-
-    // Store the sent email in the database
-    const { error } = await sbAdmin
-      .from('sent_emails')
-      .insert({
-        sender_id: senderId,
-        receiver_id: senderId, // For general emails, use sender as receiver
-        email: recipient,
-        subject,
-        content: inlinedHtmlContent,
-        source_name: sourceName,
-        source_email: sourceEmail,
-        ws_id: wsId,
-      })
-      .select('id')
-      .single();
-
-    if (error) {
-      console.error('Error logging sent email:', error);
-      return false;
     }
 
     return true;

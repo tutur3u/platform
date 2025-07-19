@@ -66,6 +66,7 @@
     "google-auth-library": "^10.1.0",
     "googleapis": "^153.0.0",
     "html2canvas": "^1.4.1",
+    "isomorphic-dompurify": "^2.26.0",
     "jotai": "^2.12.5",
     "juice": "^11.0.1",
     "lodash": "^4.17.21",

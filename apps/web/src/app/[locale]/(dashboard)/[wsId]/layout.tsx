@@ -249,14 +249,15 @@ export default async function Layout({ children, params }: LayoutProps) {
           href: `/${wsId}/mail`,
           icon: <Mail className="h-5 w-5" />,
           disabled:
-            ENABLE_AI_ONLY ||
-            !(await verifySecret({
-              forceAdmin: true,
-              wsId,
-              name: 'ENABLE_EMAIL_SENDING',
-              value: 'true',
-            })) ||
-            withoutPermission('send_user_group_post_emails'),
+            !DEV_MODE &&
+            (ENABLE_AI_ONLY ||
+              !(await verifySecret({
+                forceAdmin: true,
+                wsId,
+                name: 'ENABLE_EMAIL_SENDING',
+                value: 'true',
+              })) ||
+              withoutPermission('send_user_group_post_emails')),
           shortcut: 'M',
           experimental: 'beta',
         },

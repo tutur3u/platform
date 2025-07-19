@@ -1,6 +1,6 @@
 'use client';
 
-import type { PostEmail } from '@tuturuuu/types/primitives/post-email';
+import type { InternalEmail } from '@tuturuuu/types/db';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Mail as MailIcon, MailWarning, Send } from '@tuturuuu/ui/icons';
 import {
@@ -15,7 +15,6 @@ import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { CustomDataTable } from '@/components/custom-data-table';
-import type { Mail } from '../client';
 import { useMail } from '../use-mail';
 import { createPostEmailKey, usePosts } from '../use-posts';
 import { ComposeButton } from './compose-button';
@@ -35,7 +34,7 @@ interface SearchParams {
 }
 
 interface MailProps {
-  mails: Mail[];
+  mails: InternalEmail[];
   defaultLayout: number[] | undefined;
   defaultCollapsed?: boolean;
   navCollapsedSize: number;
@@ -44,7 +43,7 @@ interface MailProps {
   loading?: boolean;
   wsId: string;
   locale: string;
-  postsData: PostEmail[];
+  postsData: InternalEmail[];
   postsCount: number;
   postsStatus: { count: number | null };
   searchParams: SearchParams;
@@ -99,7 +98,7 @@ export function MailClient({
     null;
 
   const PostsContent = () => (
-    <div className="p-6 space-y-6">
+    <div className="space-y-6 p-6">
       <FeatureSummary
         pluralTitle={t('ws-post-emails.plural')}
         singularTitle={t('ws-post-emails.singular')}
@@ -108,23 +107,23 @@ export function MailClient({
 
       <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
         <div className="flex w-full flex-col items-center gap-1 rounded border border-dynamic-purple/15 bg-dynamic-purple/15 p-4 text-dynamic-purple">
-          <div className="flex items-center gap-2 text-xl font-bold">
+          <div className="flex items-center gap-2 font-bold text-xl">
             <Send />
             {t('ws-post-emails.sent_emails')}
           </div>
           <Separator className="my-1 bg-dynamic-purple/15" />
-          <div className="text-xl font-semibold md:text-3xl">
+          <div className="font-semibold text-xl md:text-3xl">
             {postsStatus.count || 0}
             <span className="opacity-50">/{postsCount || 0}</span>
           </div>
         </div>
         <div className="flex w-full flex-col items-center gap-1 rounded border border-dynamic-red/15 bg-dynamic-red/15 p-4 text-dynamic-red">
-          <div className="flex items-center gap-2 text-xl font-bold">
+          <div className="flex items-center gap-2 font-bold text-xl">
             <MailWarning />
             {t('ws-post-emails.pending_emails')}
           </div>
           <Separator className="my-1 bg-dynamic-red/15" />
-          <div className="text-3xl font-semibold">
+          <div className="font-semibold text-3xl">
             {(postsCount || 0) - (postsStatus.count || 0)}
             <span className="opacity-50">/{postsCount || 0}</span>
           </div>
@@ -171,7 +170,7 @@ export function MailClient({
             sizes
           )}`;
         }}
-        className="items-stretch h-full"
+        className="h-full items-stretch"
       >
         <ResizablePanel
           defaultSize={defaultLayout[1]}
@@ -180,14 +179,14 @@ export function MailClient({
         >
           <div
             ref={scrollContainerRef}
-            className="overflow-y-auto h-full w-full"
+            className="h-full w-full overflow-y-auto"
           >
             <Tabs
               value={activeTab}
               onValueChange={setActiveTab}
               defaultValue="inbox"
             >
-              <div className="flex items-center justify-between px-4 h-16 border-b bg-background/50 backdrop-blur-sm">
+              <div className="flex h-16 items-center justify-between border-b bg-background/50 px-4 backdrop-blur-sm">
                 <TabsList className="grid w-fit grid-cols-2">
                   <TabsTrigger
                     value="inbox"
