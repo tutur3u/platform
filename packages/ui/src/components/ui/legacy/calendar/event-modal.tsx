@@ -889,6 +889,8 @@ export function EventModal() {
                     className="inline-block h-[18px] w-[18px] align-middle"
                     title="Synced from Google Calendar"
                     data-testid="google-calendar-logo"
+                    width={18}
+                    height={18}
                   />
                   <span className="font-medium text-xs">Google Calendar</span>
                 </div>
