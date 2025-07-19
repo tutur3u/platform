@@ -1,4 +1,4 @@
-import type { PostEmail } from '@tuturuuu/types/primitives/post-email';
+import type { InternalEmail } from '@tuturuuu/types/db';
 import { atom, useAtom } from 'jotai';
 
 type PostConfig = {
@@ -14,6 +14,6 @@ export function usePosts() {
 }
 
 // Helper function to create a unique key for post email selection
-export function createPostEmailKey(postEmail: PostEmail): string {
-  return `${postEmail.user_id}-${postEmail.post_id}`;
+export function createPostEmailKey(postEmail: InternalEmail): string {
+  return `${postEmail.user_id}-${postEmail.id}`;
 }

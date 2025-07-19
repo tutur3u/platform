@@ -1,5 +1,6 @@
 'use client';
 
+import type { InternalEmail } from '@tuturuuu/types/db';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -27,18 +28,100 @@ import dayjs from 'dayjs';
 import 'dayjs/locale/vi';
 import localizedFormat from 'dayjs/plugin/localizedFormat';
 import relativeTime from 'dayjs/plugin/relativeTime';
+import DOMPurify from 'dompurify';
 import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
-import type { Mail } from '../client';
 
 dayjs.extend(relativeTime);
 dayjs.extend(localizedFormat);
 
 interface MailDisplayProps {
-  mail: Mail | null;
+  mail: InternalEmail | null;
 }
 
 const DISABLE_MAIL_ACTIONS = true;
+
+function formatDisplayAddresses(
+  addresses: string | string[]
+): { name: string; email: string; raw: string }[] {
+  if (!addresses) return [];
+  const arr = Array.isArray(addresses) ? addresses : [addresses];
+  return arr
+    .filter((addr): addr is string => typeof addr === 'string')
+    .map((addr) => {
+      const match = addr.match(
+        /^(.+?)\s*<\s*([\w\-.+]+@[\w\-.]+\.[a-zA-Z]{2,})\s*>$/
+      );
+      if (match) {
+        return { name: match[1] ?? '', email: match[2] ?? '', raw: addr };
+      }
+      // If just an email
+      if (/^[\w\-.+]+@[\w\-.]+\.[a-zA-Z]{2,}$/.test(addr)) {
+        return { name: '', email: addr, raw: addr };
+      }
+      return { name: '', email: '', raw: addr };
+    });
+}
+
+import { UserIcon } from '@tuturuuu/ui/icons';
+
+function AvatarChip({ name, email }: { name: string; email: string }) {
+  const initial = name
+    ? name.charAt(0).toUpperCase()
+    : email.charAt(0).toUpperCase();
+  return (
+    <span className="flex items-center gap-1 rounded-full bg-accent px-2 py-0.5 font-medium text-accent-foreground text-xs shadow-sm">
+      <span className="mr-1 flex h-5 w-5 items-center justify-center rounded-full bg-muted font-bold text-muted-foreground text-xs">
+        {initial || <UserIcon className="h-4 w-4" />}
+      </span>
+      <span>{name || email}</span>
+      {name && email && (
+        <span className="ml-1 text-foreground/80">{`<${email}>`}</span>
+      )}
+    </span>
+  );
+}
+
+function AddressChips({
+  label,
+  addresses,
+  avatar,
+}: {
+  label: string;
+  addresses: string[];
+  avatar?: boolean;
+}) {
+  const parsed = formatDisplayAddresses(addresses).filter(
+    ({ email }) => !!email
+  );
+  return (
+    <div className="flex flex-wrap items-center gap-2 text-xs">
+      <span className="min-w-[40px] font-medium text-muted-foreground">
+        {label.replace(/:/g, '')}:
+      </span>
+      {parsed.length === 0 ? (
+        <span className="rounded-full bg-muted px-2 py-0.5 font-medium text-muted-foreground text-xs opacity-70 shadow-sm">
+          None
+        </span>
+      ) : (
+        parsed.map(({ name, email, raw }, idx) => {
+          const key = email ? `${email}-${name}` : raw || idx;
+          return avatar ? (
+            <AvatarChip key={key} name={name} email={email} />
+          ) : (
+            <span
+              key={key}
+              className="flex items-center gap-1 rounded-full bg-accent px-2 py-0.5 font-medium text-accent-foreground text-xs shadow-sm"
+            >
+              {name && <span>{name}</span>}
+              <span className="text-foreground/80">{email}</span>
+            </span>
+          );
+        })
+      )}
+    </div>
+  );
+}
 
 export function MailDisplay({ mail }: MailDisplayProps) {
   const [isHeaderCollapsed, setIsHeaderCollapsed] = useState(false);
@@ -54,7 +137,7 @@ export function MailDisplay({ mail }: MailDisplayProps) {
 
   useEffect(() => {
     const sanitizeContent = async () => {
-      if (!mail?.text) {
+      if (!mail?.payload) {
         setSanitizedHtml('');
         setIsLoading(false);
         return;
@@ -62,20 +145,19 @@ export function MailDisplay({ mail }: MailDisplayProps) {
 
       try {
         // Dynamically import DOMPurify only on client-side
-        const DOMPurify = (await import('dompurify')).default;
-        const sanitized = DOMPurify.sanitize(mail.text);
+        const sanitized = DOMPurify.sanitize(mail.payload);
         setSanitizedHtml(sanitized);
       } catch (error) {
         console.error('Failed to sanitize HTML:', error);
         try {
           // Fallback to sanitize-html if DOMPurify fails
           const sanitizeHtml = (await import('sanitize-html')).default;
-          setSanitizedHtml(sanitizeHtml(mail.text));
+          setSanitizedHtml(sanitizeHtml(mail.payload));
         } catch (fallbackError) {
           console.error('Failed to sanitize HTML:', fallbackError);
           // If both sanitizers fail, show plain text
-          let sanitizedFallback = mail.text;
-          let previous;
+          let sanitizedFallback = mail.payload;
+          let previous: string;
           do {
             previous = sanitizedFallback;
             sanitizedFallback = sanitizedFallback.replace(/<[^>]*>?/g, '');
@@ -89,11 +171,11 @@ export function MailDisplay({ mail }: MailDisplayProps) {
 
     setIsLoading(true);
     sanitizeContent();
-  }, [mail?.text]);
+  }, [mail?.payload]);
 
   return (
     <div className="flex h-full flex-col bg-background">
-      <div className="flex items-center justify-between px-4 h-16 border-b bg-background/80 backdrop-blur-sm">
+      <div className="flex h-16 items-center justify-between border-b bg-background/80 px-4 backdrop-blur-sm">
         <div className="flex items-center gap-1">
           <Tooltip>
             <TooltipTrigger asChild>
@@ -191,14 +273,14 @@ export function MailDisplay({ mail }: MailDisplayProps) {
       </div>
 
       {mail ? (
-        <div className="flex flex-1 flex-col min-h-0">
-          <div className="p-4 bg-muted/20 border-b">
+        <div className="flex min-h-0 flex-1 flex-col">
+          <div className="border-b bg-muted/20 p-4">
             <div className="flex items-start justify-between gap-4">
               <div className="flex items-center gap-4">
-                <Avatar className="h-10 w-10 ring-2 ring-background shadow-sm">
-                  <AvatarImage alt={mail.name} />
-                  <AvatarFallback className="bg-primary/10 text-primary font-semibold text-sm">
-                    {mail.name
+                <Avatar className="h-10 w-10 shadow-sm ring-2 ring-background">
+                  <AvatarImage alt={mail.source_email} />
+                  <AvatarFallback className="bg-primary/10 font-semibold text-primary text-sm">
+                    {mail.source_email
                       .split(' ')
                       .map((chunk: string) => chunk[0])
                       .join('')
@@ -206,19 +288,19 @@ export function MailDisplay({ mail }: MailDisplayProps) {
                   </AvatarFallback>
                 </Avatar>
                 <div className="grid gap-0.5">
-                  <h2 className="font-semibold text-base text-foreground leading-tight truncate">
+                  <h2 className="truncate font-semibold text-base text-foreground leading-tight">
                     {mail.subject}
                   </h2>
-                  <p className="text-sm font-medium text-foreground/80">
-                    {mail.name}
+                  <p className="font-medium text-foreground/80 text-sm">
+                    {mail.source_email}
                   </p>
                 </div>
               </div>
 
               <div className="flex items-center gap-2">
-                {mail.date && (
-                  <time className="text-xs text-muted-foreground whitespace-nowrap font-medium">
-                    {dayjs(mail.date).format('LLLL')}
+                {mail.created_at && (
+                  <time className="whitespace-nowrap font-medium text-muted-foreground text-xs">
+                    {dayjs(mail.created_at).format('LLLL')}
                   </time>
                 )}
                 <Button
@@ -237,56 +319,74 @@ export function MailDisplay({ mail }: MailDisplayProps) {
             </div>
             <div
               className={cn(
-                'transition-all duration-300 ease-in-out overflow-hidden',
+                'overflow-hidden transition-all duration-300 ease-in-out',
                 isHeaderCollapsed
                   ? 'max-h-0 opacity-0'
-                  : 'max-h-24 opacity-100 pt-3'
+                  : 'max-h-24 pt-3 opacity-100'
               )}
             >
-              <div className="flex flex-col items-start gap-1 text-xs text-muted-foreground">
-                <div className="flex items-center gap-1">
-                  <span className="font-medium">{t('from_label')}</span>
-                  <span className="text-foreground/70">{mail.email}</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <span className="font-medium">{t('to_label')}</span>
-                  <span className="text-foreground/70">{mail.recipient}</span>
-                </div>
+              <div className="flex flex-col items-start gap-1 text-muted-foreground text-xs">
+                <AddressChips
+                  label={t('from_label')}
+                  addresses={[mail.source_email]}
+                  avatar
+                />
+                {mail.to_addresses && mail.to_addresses.length > 0 && (
+                  <AddressChips
+                    label={t('to_label')}
+                    addresses={mail.to_addresses}
+                  />
+                )}
+                <AddressChips label="CC" addresses={mail.cc_addresses ?? []} />
+                <AddressChips
+                  label="BCC"
+                  addresses={mail.bcc_addresses ?? []}
+                />
+                {mail.reply_to_addresses &&
+                  mail.reply_to_addresses.length > 0 && (
+                    <AddressChips
+                      label="Reply-To"
+                      addresses={mail.reply_to_addresses}
+                    />
+                  )}
               </div>
             </div>
           </div>
 
-          <ScrollArea className="flex-1 min-h-0">
-            <div className="p-6">
-              {isLoading ? (
-                <div className="flex items-center justify-center py-12">
-                  <div className="flex items-center gap-3 text-muted-foreground">
-                    <Loader2 className="h-5 w-5 animate-spin" />
-                    <span className="text-sm font-medium">
-                      {t('loading_email_content')}
-                    </span>
-                  </div>
-                </div>
-              ) : (
-                <div
-                  className="prose prose-sm max-w-none text-black/90 leading-relaxed [&>*]:text-inherit [&_p]:text-inherit [&_div]:text-inherit [&_span]:text-inherit [&_h1]:text-black [&_h2]:text-black [&_h3]:text-black [&_h4]:text-black [&_h5]:text-black [&_h6]:text-black [&_a]:text-primary [&_a:hover]:text-primary/80 [&_strong]:font-semibold [&_em]:italic [&_ul]:list-disc [&_ol]:list-decimal [&_li]:ml-4 [&_blockquote]:border-l-4 [&_blockquote]:border-border [&_blockquote]:pl-4 [&_blockquote]:italic [&_blockquote]:text-muted-black [&_code]:bg-muted [&_code]:text-muted-black [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_pre]:bg-muted [&_pre]:text-muted-black [&_pre]:p-4 [&_pre]:rounded-lg [&_table]:border-collapse [&_td]:border [&_th]:border [&_td]:p-2 [&_th]:p-2"
-                  // biome-ignore lint/security/noDangerouslySetInnerHtml: sanitized HTML output from DOMPurify
-                  dangerouslySetInnerHTML={{ __html: sanitizedHtml }}
-                />
-              )}
-            </div>
+          <ScrollArea className="min-h-0 flex-1">
+            {isLoading ? (
+              <div className="flex h-full items-center justify-center">
+                <Loader2 className="h-6 w-6 animate-spin" />
+              </div>
+            ) : mail.html_payload ? (
+              <div
+                className="prose max-w-full bg-background text-foreground"
+                style={{ padding: '1.5rem' }}
+                // biome-ignore lint/security/noDangerouslySetInnerHtml: <html content is sanitized>
+                dangerouslySetInnerHTML={{ __html: sanitizedHtml }}
+              />
+            ) : (
+              <div
+                className="bg-background text-foreground text-sm"
+                style={{ padding: '1.5rem' }}
+              >
+                <pre className="whitespace-pre-wrap" style={{ margin: 0 }}>
+                  {mail.payload}
+                </pre>
+              </div>
+            )}
           </ScrollArea>
         </div>
       ) : (
-        <div className="flex flex-1 flex-col h-full min-h-0 items-center justify-center p-8 text-center bg-background">
+        <div className="flex h-full min-h-0 flex-1 flex-col items-center justify-center bg-background p-8 text-center">
           <div className="flex flex-col items-center gap-2">
-            <div className="p-4 rounded-full bg-primary/10">
+            <div className="rounded-full bg-primary/10 p-4">
               <MoreVertical className="h-8 w-8 text-primary" />
             </div>
-            <p className="text-lg font-medium text-foreground mt-4">
+            <p className="mt-4 font-medium text-foreground text-lg">
               {t('no_email_selected')}
             </p>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-muted-foreground text-sm">
               {t('choose_email_message')}
             </p>
           </div>

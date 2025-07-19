@@ -1,6 +1,6 @@
 'use client';
 
-import type { PostEmail } from '@tuturuuu/types/primitives/post-email';
+import type { InternalEmail } from '@tuturuuu/types/db';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Mail as MailIcon, MailWarning, Send } from '@tuturuuu/ui/icons';
 import {
@@ -15,7 +15,6 @@ import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { CustomDataTable } from '@/components/custom-data-table';
-import type { Mail } from '../client';
 import { useMail } from '../use-mail';
 import { createPostEmailKey, usePosts } from '../use-posts';
 import { ComposeButton } from './compose-button';
@@ -35,7 +34,7 @@ interface SearchParams {
 }
 
 interface MailProps {
-  mails: Mail[];
+  mails: InternalEmail[];
   defaultLayout: number[] | undefined;
   defaultCollapsed?: boolean;
   navCollapsedSize: number;
@@ -44,7 +43,7 @@ interface MailProps {
   loading?: boolean;
   wsId: string;
   locale: string;
-  postsData: PostEmail[];
+  postsData: InternalEmail[];
   postsCount: number;
   postsStatus: { count: number | null };
   searchParams: SearchParams;

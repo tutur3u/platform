@@ -4,9 +4,11 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
+import DOMPurify from 'isomorphic-dompurify';
 import juice from 'juice';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
+import { DEV_MODE } from '@/constants/common';
 
 const domainBlacklist = ['@easy.com', '@easy'];
 const disableEmailSending = process.env.DISABLE_EMAIL_SENDING === 'true';
@@ -39,8 +41,33 @@ export async function POST(
   // Get the current user
   const supabase = await createClient();
   const {
-    data: { user }
+    data: { user },
   } = await supabase.auth.getUser();
+
+  if (!user) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
+
+  if (!user.email?.endsWith('@tuturuuu.com')) {
+    return NextResponse.json(
+      { message: 'Only @tuturuuu.com emails are allowed' },
+      { status: 401 }
+    );
+  }
+
+  const { data: userData, error: userError } = await supabase
+    .from('users')
+    .select('*')
+    .eq('id', user.id)
+    .single();
+
+  if (userError) {
+    console.error('Error fetching user:', userError);
+    return NextResponse.json(
+      { message: 'Error fetching user' },
+      { status: 500 }
+    );
+  }
 
   // Get allowed emails from internal_email_api_keys
   const { data: internalData, error: internalDataError } = await supabase
@@ -58,10 +85,7 @@ export async function POST(
   }
 
   if (!internalData) {
-    return NextResponse.json(
-      { message: 'Unauthorized' },
-      { status: 401 }
-    );
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
   if (
@@ -126,7 +150,42 @@ export async function POST(
     },
   });
 
+  const payload = DOMPurify.sanitize(data.content);
+
   try {
+    // If DEV_MODE, skip sending email, only save to DB
+    if (DEV_MODE) {
+      const { error } = await sbAdmin
+        .from('internal_emails')
+        .insert({
+          ws_id: wsId,
+          user_id: user.id,
+          source_email: `${userData.display_name || user.email} <${user.email}>`,
+          subject: data.subject,
+          to_addresses: [data.to],
+          cc_addresses: [],
+          bcc_addresses: [],
+          reply_to_addresses: [],
+          payload,
+          html_payload: true,
+          created_at: new Date().toISOString(),
+        })
+        .select('id')
+        .single();
+
+      if (error) {
+        return NextResponse.json(
+          { message: 'Failed to save email in DEV_MODE' },
+          { status: 500 }
+        );
+      }
+
+      return NextResponse.json(
+        { message: 'Email saved (DEV_MODE, not sent)' },
+        { status: 200 }
+      );
+    }
+
     // Send the email
     const result = await sendEmail({
       client: sesClient,
@@ -188,7 +247,7 @@ const sendEmail = async ({
     }
 
     // Convert plain text content to HTML and inline CSS
-    const htmlContent = content.replace(/\n/g, '<br>');
+    const htmlContent = DOMPurify.sanitize(content);
     const inlinedHtmlContent = juice(htmlContent);
 
     const params = {
@@ -226,16 +285,19 @@ const sendEmail = async ({
 
     // Store the sent email in the database
     const { error } = await sbAdmin
-      .from('sent_emails')
+      .from('internal_emails')
       .insert({
-        sender_id: senderId,
-        receiver_id: senderId, // For general emails, use sender as receiver
-        email: recipient,
-        subject,
-        content: inlinedHtmlContent,
-        source_name: sourceName,
-        source_email: sourceEmail,
         ws_id: wsId,
+        user_id: senderId,
+        source_email: sourceEmail,
+        subject,
+        to_addresses: [recipient],
+        cc_addresses: [],
+        bcc_addresses: [],
+        reply_to_addresses: [],
+        payload: inlinedHtmlContent,
+        html_payload: true,
+        created_at: new Date().toISOString(),
       })
       .select('id')
       .single();
