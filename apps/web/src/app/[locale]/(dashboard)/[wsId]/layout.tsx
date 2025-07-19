@@ -580,6 +580,7 @@ export default async function Layout({ children, params }: LayoutProps) {
         links={navLinks}
         actions={
           <Suspense
+            key={user.id}
             fallback={
               <div className="h-10 w-[88px] animate-pulse rounded-lg bg-foreground/5" />
             }
@@ -589,6 +590,7 @@ export default async function Layout({ children, params }: LayoutProps) {
         }
         userPopover={
           <Suspense
+            key={user.id}
             fallback={
               <div className="h-10 w-10 animate-pulse rounded-lg bg-foreground/5" />
             }
