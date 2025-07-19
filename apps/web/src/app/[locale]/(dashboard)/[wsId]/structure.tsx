@@ -245,6 +245,7 @@ export function Structure({
       )}
 
       <Suspense
+        key={user?.id}
         fallback={
           <div className="h-10 w-full animate-pulse rounded-lg bg-foreground/5" />
         }
@@ -267,12 +268,13 @@ export function Structure({
         className={cn(
           'absolute flex h-full w-full flex-col transition-transform duration-300 ease-in-out',
           navState.direction === 'forward'
-            ? 'animate-in slide-in-from-right'
-            : 'animate-in slide-in-from-left'
+            ? 'slide-in-from-right animate-in'
+            : 'slide-in-from-left animate-in'
         )}
       >
         {navState.history.length === 0 ? (
           <Nav
+            key={`${user?.id}-root`}
             wsId={wsId}
             isCollapsed={isCollapsed}
             links={filteredCurrentLinks}
@@ -286,6 +288,7 @@ export function Structure({
         ) : (
           <>
             <Nav
+              key={`${user?.id}-back`}
               wsId={wsId}
               isCollapsed={isCollapsed}
               links={[backButton]}
@@ -296,7 +299,7 @@ export function Structure({
             />
             {!isCollapsed && currentTitle && (
               <div className="p-2 pt-0">
-                <h2 className="line-clamp-1 px-2 text-sm font-semibold tracking-wide text-muted-foreground uppercase">
+                <h2 className="line-clamp-1 px-2 font-semibold text-muted-foreground text-sm uppercase tracking-wide">
                   {currentTitle}
                 </h2>
               </div>
@@ -305,6 +308,7 @@ export function Structure({
             {filteredCurrentLinks.length > 0 && (
               <div className="scrollbar-none flex-1 overflow-y-auto">
                 <Nav
+                  key={`${user?.id}-nav`}
                   wsId={wsId}
                   isCollapsed={isCollapsed}
                   links={filteredCurrentLinks}
@@ -339,7 +343,7 @@ export function Structure({
         </Link>
       </div>
       <div className="mx-2 h-4 w-px flex-none rotate-30 bg-foreground/20" />
-      <div className="flex items-center gap-2 text-lg font-semibold break-all">
+      <div className="flex items-center gap-2 break-all font-semibold text-lg">
         {currentLink?.icon && (
           <div className="flex-none">{currentLink.icon}</div>
         )}

@@ -275,54 +275,6 @@ export default async function Layout({ children, params }: LayoutProps) {
           experimental: 'beta',
         },
         {
-          title: t('sidebar_tabs.whiteboards'),
-          href: `/${wsId}/whiteboards`,
-          icon: <PencilLine className="h-5 w-5" />,
-          disabled:
-            ENABLE_AI_ONLY ||
-            !(await verifySecret({
-              forceAdmin: true,
-              wsId,
-              name: 'ENABLE_WHITEBOARDS',
-              value: 'true',
-            })) ||
-            withoutPermission('manage_projects'),
-          shortcut: 'T',
-          experimental: 'alpha',
-        },
-        {
-          title: t('sidebar_tabs.time_tracker'),
-          href: `/${wsId}/time-tracker`,
-          icon: <ClockFading className="h-5 w-5" />,
-          disabled: ENABLE_AI_ONLY || withoutPermission('manage_projects'),
-          shortcut: 'T',
-          experimental: 'beta',
-        },
-        {
-          title: t('sidebar_tabs.qr_generator'),
-          href: `/${wsId}/qr-generator`,
-          icon: <QrCodeIcon className="h-5 w-5" />,
-        },
-        {
-          title: t('sidebar_tabs.link_shortener'),
-          href: `/${wsId}/link-shortener`,
-          icon: <Link className="h-5 w-5" />,
-          disabled:
-            wsId !== ROOT_WORKSPACE_ID &&
-            !(await verifySecret({
-              forceAdmin: true,
-              wsId,
-              name: 'ENABLE_LINK_SHORTENER',
-              value: 'true',
-            })),
-        },
-      ],
-    },
-    {
-      title: t('sidebar_tabs.media'),
-      icon: <FileText className="h-5 w-5" />,
-      children: [
-        {
           title: t('sidebar_tabs.documents'),
           href: `/${wsId}/documents`,
           icon: <FileText className="h-5 w-5" />,
@@ -368,6 +320,48 @@ export default async function Layout({ children, params }: LayoutProps) {
             withoutPermission('ai_lab'),
           shortcut: 'A',
           experimental: 'beta',
+        },
+        {
+          title: t('sidebar_tabs.whiteboards'),
+          href: `/${wsId}/whiteboards`,
+          icon: <PencilLine className="h-5 w-5" />,
+          disabled:
+            ENABLE_AI_ONLY ||
+            !(await verifySecret({
+              forceAdmin: true,
+              wsId,
+              name: 'ENABLE_WHITEBOARDS',
+              value: 'true',
+            })) ||
+            withoutPermission('manage_projects'),
+          shortcut: 'T',
+          experimental: 'alpha',
+        },
+        {
+          title: t('sidebar_tabs.time_tracker'),
+          href: `/${wsId}/time-tracker`,
+          icon: <ClockFading className="h-5 w-5" />,
+          disabled: ENABLE_AI_ONLY || withoutPermission('manage_projects'),
+          shortcut: 'T',
+          experimental: 'beta',
+        },
+        {
+          title: t('sidebar_tabs.qr_generator'),
+          href: `/${wsId}/qr-generator`,
+          icon: <QrCodeIcon className="h-5 w-5" />,
+        },
+        {
+          title: t('sidebar_tabs.link_shortener'),
+          href: `/${wsId}/link-shortener`,
+          icon: <Link className="h-5 w-5" />,
+          disabled:
+            wsId !== ROOT_WORKSPACE_ID &&
+            !(await verifySecret({
+              forceAdmin: true,
+              wsId,
+              name: 'ENABLE_LINK_SHORTENER',
+              value: 'true',
+            })),
         },
       ],
     },
