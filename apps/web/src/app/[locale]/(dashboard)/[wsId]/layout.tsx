@@ -229,7 +229,6 @@ export default async function Layout({ children, params }: LayoutProps) {
           title: t('sidebar_tabs.tumeet'),
           href: `/${wsId}/tumeet`,
           icon: <SquaresIntersect className="h-5 w-5" />,
-          disabled: withoutPermission('manage_calendar'),
         },
         {
           title: t('sidebar_tabs.polls'),
