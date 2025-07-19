@@ -9102,7 +9102,6 @@ export type Database = {
         Returns: {
           hour: number;
           clicks: number;
-          clicks: number;
         }[];
       };
       get_daily_income_expense: {
