@@ -113,9 +113,66 @@ export const POST = Webhooks({
       throw new Response('Internal Server Error', { status: 500 });
     }
   },
+  onSubscriptionRevoked: async (payload) => {
+    console.log('Subscription revoked:', payload);
 
-  onSubscriptionCanceled: async (payload) => {
-    console.log('Subscription canceled:', payload);
-    throw new Response('Cancellation webhook received.', { status: 200 });
+    try {
+      const sbAdmin = await createAdminClient();
+      const subscriptionPayload = payload.data;
+      const ws_id = subscriptionPayload.metadata?.wsId;
+
+      if (subscriptionPayload.status !== 'incomplete') {
+        console.log(
+          `Ignoring subscription with status: '${subscriptionPayload.status}'.`
+        );
+        throw new Response('Webhook handled: Status not revoked.', {
+          status: 200,
+        });
+      }
+
+      // const sandbox =
+      //   subscriptionPayload.metadata?.sandbox === 'true' ||
+      //   process.env.NODE_ENV === 'development';
+
+      if (!ws_id || typeof ws_id !== 'string') {
+        console.error(
+          'Webhook Error: Workspace ID (wsId) not found in metadata.'
+        );
+        throw new Response('Webhook Error: Missing wsId in metadata', {
+          status: 400,
+        });
+      }
+
+      const { error: dbError } = await sbAdmin
+        .from('workspace_subscription')
+        .update({
+          status: 'past_due',
+          polar_subscription_id: subscriptionPayload.id,
+        })
+        .eq('ws_id', ws_id)
+        .select()
+        .single();
+
+      if (dbError) {
+        console.error('Webhook: Supabase upsert error:', dbError.message);
+        throw new Response(`Database Error: ${dbError.message}`, {
+          status: 500,
+        });
+      }
+
+      // console.log('Successfully updated subscription in DB:', dbResult);
+
+      console.log(`Webhook: Subscription revoked for workspace ${ws_id}.`);
+      throw new Response('Revoked webhook handled successfully.', {
+        status: 200,
+      });
+    } catch (e) {
+      const errorMessage = e instanceof Error ? e.message : 'Unknown error';
+      console.error(
+        'An unexpected error occurred in the revoked webhook handler:',
+        errorMessage
+      );
+      throw new Response('Internal Server Error', { status: 500 });
+    }
   },
 });
