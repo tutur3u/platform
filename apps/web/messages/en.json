@@ -798,7 +798,8 @@
     "link_shortener": "Link Shortener",
     "tumeet": "Tumeet",
     "polls": "Polls",
-    "qr_generator": "QR Generator"
+    "qr_generator": "QR Generator",
+    "posts": "Posts"
   },
   "link-shortener": {
     "title": "Link Shortener",
@@ -3763,7 +3764,12 @@
     "loading_email_content": "Loading email content...",
     "no_email_selected": "No email selected",
     "choose_email_message": "Choose an email from the list to view its content here.",
-    "no_emails_found": "No emails found"
+    "no_emails_found": "No emails found",
+    "sent": "Sent",
+    "starred": "Starred",
+    "drafts": "Drafts",
+    "spam": "Spam",
+    "trash": "Trash"
   },
   "ws-polls": {
     "plural": "Polls",

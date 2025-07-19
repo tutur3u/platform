@@ -2,7 +2,15 @@
 
 import type { InternalEmail } from '@tuturuuu/types/db';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
-import { Mail as MailIcon, MailWarning, Send } from '@tuturuuu/ui/icons';
+import {
+  Mail as MailIcon,
+  MailWarning,
+  Send,
+  Star,
+  TextSelect,
+  Trash,
+  TriangleAlert,
+} from '@tuturuuu/ui/icons';
 import {
   ResizableHandle,
   ResizablePanel,
@@ -52,7 +60,7 @@ interface MailProps {
 
 export function MailClient({
   mails,
-  defaultLayout = [20, 32, 48],
+  defaultLayout = [20, 80],
   onLoadMore,
   hasMore,
   loading,
@@ -67,7 +75,7 @@ export function MailClient({
   const [mail] = useMail();
   const [posts, setPosts] = usePosts();
   const [composeOpen, setComposeOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState('inbox');
+  const [activeTab, setActiveTab] = useState('sent');
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const t = useTranslations();
 
@@ -184,23 +192,53 @@ export function MailClient({
             <Tabs
               value={activeTab}
               onValueChange={setActiveTab}
-              defaultValue="inbox"
+              defaultValue="sent"
             >
               <div className="flex h-16 items-center justify-between border-b bg-background/50 px-4 backdrop-blur-sm">
-                <TabsList className="grid w-fit grid-cols-2">
+                <TabsList className="grid w-fit gap-1 md:flex">
                   <TabsTrigger
                     value="inbox"
                     className="flex items-center gap-2"
+                    disabled
                   >
                     <MailIcon className="h-4 w-4" />
                     {t('mail.inbox')}
                   </TabsTrigger>
                   <TabsTrigger
-                    value="posts"
+                    value="starred"
                     className="flex items-center gap-2"
+                    disabled
                   >
+                    <Star className="h-4 w-4" />
+                    {t('mail.starred')}
+                  </TabsTrigger>
+                  <TabsTrigger value="sent" className="flex items-center gap-2">
                     <Send className="h-4 w-4" />
-                    {t('ws-post-emails.plural')}
+                    {t('mail.sent')}
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="drafts"
+                    className="flex items-center gap-2"
+                    disabled
+                  >
+                    <TextSelect className="h-4 w-4" />
+                    {t('mail.drafts')}
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="spam"
+                    className="flex items-center gap-2"
+                    disabled
+                  >
+                    <TriangleAlert className="h-4 w-4" />
+                    {t('mail.spam')}
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="trash"
+                    className="flex items-center gap-2"
+                    disabled
+                  >
+                    <Trash className="h-4 w-4" />
+                    {t('mail.trash')}
                   </TabsTrigger>
                 </TabsList>
                 {wsId === ROOT_WORKSPACE_ID && (
@@ -210,7 +248,7 @@ export function MailClient({
                   />
                 )}
               </div>
-              <TabsContent value="inbox" className="m-0">
+              <TabsContent value="sent" className="m-0">
                 <MailList items={mails} hasMore={hasMore} loading={loading} />
               </TabsContent>
               <TabsContent value="posts" className="m-0">
@@ -225,7 +263,7 @@ export function MailClient({
           defaultSize={defaultLayout[2]}
           minSize={30}
         >
-          {activeTab === 'inbox' ? (
+          {activeTab === 'sent' ? (
             <MailDisplay
               mail={mails.find((item) => item.id === mail.selected) || null}
             />

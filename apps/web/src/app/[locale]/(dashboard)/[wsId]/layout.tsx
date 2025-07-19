@@ -17,6 +17,7 @@ import {
   Database,
   FileText,
   FolderSync,
+  GalleryVerticalEnd,
   GraduationCap,
   HardDrive,
   KeyRound,
@@ -248,6 +249,23 @@ export default async function Layout({ children, params }: LayoutProps) {
           title: t('sidebar_tabs.mail'),
           href: `/${wsId}/mail`,
           icon: <Mail className="h-5 w-5" />,
+          disabled:
+            !DEV_MODE &&
+            (ENABLE_AI_ONLY ||
+              !(await verifySecret({
+                forceAdmin: true,
+                wsId,
+                name: 'ENABLE_EMAIL_SENDING',
+                value: 'true',
+              })) ||
+              withoutPermission('send_user_group_post_emails')),
+          shortcut: 'M',
+          experimental: 'beta',
+        },
+        {
+          title: t('sidebar_tabs.posts'),
+          href: `/${wsId}/posts`,
+          icon: <GalleryVerticalEnd className="h-5 w-5" />,
           disabled:
             !DEV_MODE &&
             (ENABLE_AI_ONLY ||
