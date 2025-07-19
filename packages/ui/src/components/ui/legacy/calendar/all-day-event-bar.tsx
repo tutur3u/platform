@@ -69,6 +69,8 @@ const EventContent = ({ event }: { event: CalendarEvent }) => (
           className="mr-1 inline-block h-[1.25em] w-[1.25em] align-middle opacity-80 dark:opacity-90"
           title="Synced from Google Calendar"
           data-testid="google-calendar-logo"
+          width={16}
+          height={16}
         />
       )}
     <span className="truncate">{event.title}</span>
