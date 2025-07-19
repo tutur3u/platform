@@ -27,6 +27,7 @@ import {
   PencilLine,
   Play,
   Presentation,
+  QrCodeIcon,
   ScanSearch,
   ScrollText,
   ShieldUser,
@@ -296,6 +297,11 @@ export default async function Layout({ children, params }: LayoutProps) {
           disabled: ENABLE_AI_ONLY || withoutPermission('manage_projects'),
           shortcut: 'T',
           experimental: 'beta',
+        },
+        {
+          title: t('sidebar_tabs.qr_generator'),
+          href: `/${wsId}/qr-generator`,
+          icon: <QrCodeIcon className="h-5 w-5" />,
         },
         {
           title: t('sidebar_tabs.link_shortener'),

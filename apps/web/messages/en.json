@@ -797,7 +797,8 @@
     "management": "Management",
     "link_shortener": "Link Shortener",
     "tumeet": "Tumeet",
-    "polls": "Polls"
+    "polls": "Polls",
+    "qr_generator": "QR Generator"
   },
   "link-shortener": {
     "title": "Link Shortener",
