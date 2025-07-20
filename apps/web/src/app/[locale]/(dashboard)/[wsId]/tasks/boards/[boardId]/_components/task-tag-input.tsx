@@ -1,7 +1,5 @@
 'use client';
 
-import { getTagColor } from '@/lib/tag-utils';
-import { useBoardTaskTags } from '@/lib/task-helper';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
@@ -9,6 +7,8 @@ import { useToast } from '@tuturuuu/ui/hooks/use-toast';
 import { Plus, Tag, X } from '@tuturuuu/ui/icons';
 import { cn } from '@tuturuuu/utils/format';
 import { type KeyboardEvent, useEffect, useRef, useState } from 'react';
+import { getTagColorStyling } from '@/lib/tag-utils';
+import { useBoardTaskTags } from '@/lib/task-helper';
 
 interface TaskTagInputProps {
   value: string[];
@@ -60,7 +60,7 @@ export function TaskTagInput({
     const checkMigration = async () => {
       try {
         const supabase = createClient();
-        
+
         // Try to query the tags column to see if it exists
         const { error } = await supabase.from('tasks').select('tags').limit(1);
 
@@ -201,34 +201,38 @@ export function TaskTagInput({
       >
         {/* Tags Display */}
         <div className="flex flex-wrap items-center gap-1.5">
-          {value.map((tag) => (
-            <Badge
-              key={tag}
-              variant="outline"
-              className={cn(
-                'flex h-6 items-center gap-1 rounded-full border px-2 py-1 text-xs font-medium transition-all duration-200 hover:scale-105',
-                getTagColor(tag)
-              )}
-            >
-              <Tag className="h-3 w-3" />
-              <span className="max-w-20 truncate">{tag}</span>
-              {!isDisabled && (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="h-4 w-4 p-0 hover:bg-destructive/20 hover:text-destructive"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    removeTag(tag);
-                  }}
-                >
-                  <X className="h-3 w-3" />
-                </Button>
-              )}
-            </Badge>
-          ))}
+          {value.map((tag) => {
+            const { style, className: tagClassName } = getTagColorStyling(tag);
+            return (
+              <Badge
+                key={tag}
+                variant="outline"
+                className={cn(
+                  'flex h-6 items-center gap-1 rounded-full border px-2 py-1 font-medium text-xs transition-all duration-200 hover:scale-105',
+                  tagClassName
+                )}
+                style={style}
+              >
+                <Tag className="h-3 w-3" />
+                <span className="max-w-20 truncate">{tag}</span>
+                {!isDisabled && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-4 w-4 p-0 hover:bg-destructive/20 hover:text-destructive"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      removeTag(tag);
+                    }}
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                )}
+              </Badge>
+            );
+          })}
 
           {/* Input Field */}
           {canAddMore && !isDisabled && (
@@ -255,7 +259,7 @@ export function TaskTagInput({
 
           {/* Tag Count */}
           {value.length > 0 && (
-            <span className="ml-auto text-xs text-muted-foreground">
+            <span className="ml-auto text-muted-foreground text-xs">
               {value.length}/{maxTags}
             </span>
           )}
@@ -287,46 +291,51 @@ export function TaskTagInput({
         !isDisabled &&
         !isFocused && (
           <div className="mt-2">
-            <p className="mb-1.5 text-xs text-muted-foreground">
+            <p className="mb-1.5 text-muted-foreground text-xs">
               Popular tags:
             </p>
             <div className="flex flex-wrap gap-1.5">
-              {suggestions.slice(0, 5).map((suggestion) => (
-                <button
-                  key={suggestion}
-                  type="button"
-                  onClick={() => handleSuggestionClick(suggestion)}
-                  className={cn(
-                    'inline-flex cursor-pointer items-center rounded-full border px-2 py-1 text-xs font-medium transition-all duration-200 hover:scale-105',
-                    getTagColor(suggestion)
-                  )}
-                >
-                  <Tag className="mr-1 h-3 w-3" />
-                  {suggestion}
-                </button>
-              ))}
+              {suggestions.slice(0, 5).map((suggestion) => {
+                const { style, className: tagClassName } =
+                  getTagColorStyling(suggestion);
+                return (
+                  <button
+                    key={suggestion}
+                    type="button"
+                    onClick={() => handleSuggestionClick(suggestion)}
+                    className={cn(
+                      'inline-flex cursor-pointer items-center rounded-full border px-2 py-1 font-medium text-xs transition-all duration-200 hover:scale-105',
+                      tagClassName
+                    )}
+                    style={style}
+                  >
+                    <Tag className="mr-1 h-3 w-3" />
+                    {suggestion}
+                  </button>
+                );
+              })}
             </div>
           </div>
         )}
 
       {/* Status Messages */}
       {isLoading && (
-        <p className="mt-1 text-xs text-muted-foreground">
+        <p className="mt-1 text-muted-foreground text-xs">
           Loading tag suggestions...
         </p>
       )}
       {error && (
-        <p className="mt-1 text-xs text-red-500">
+        <p className="mt-1 text-red-500 text-xs">
           Error loading suggestions: {error.message || 'Unknown error'}
         </p>
       )}
       {migrationStatus === 'not-applied' && (
-        <p className="mt-1 text-xs text-amber-600">
+        <p className="mt-1 text-amber-600 text-xs">
           Tags feature not available yet. Database migration pending.
         </p>
       )}
       {value.length >= maxTags && (
-        <p className="mt-1 text-xs text-muted-foreground">
+        <p className="mt-1 text-muted-foreground text-xs">
           Maximum {maxTags} tags reached
         </p>
       )}

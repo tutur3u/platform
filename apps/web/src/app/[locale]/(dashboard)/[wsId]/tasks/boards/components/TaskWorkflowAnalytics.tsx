@@ -161,7 +161,7 @@ export function TaskWorkflowAnalytics({
     <Card className="p-4">
       <div className="mb-3 flex items-center justify-between">
         <h4 className="font-medium">Workflow & Efficiency</h4>
-        <span className="text-xs text-muted-foreground">
+        <span className="text-muted-foreground text-xs">
           {workflowAnalytics.totalTasks} total tasks
         </span>
       </div>
@@ -170,20 +170,20 @@ export function TaskWorkflowAnalytics({
         {/* Key Metrics */}
         <div className="grid grid-cols-2 gap-3">
           <div className="rounded-lg bg-gradient-to-br from-emerald-50 to-emerald-100 p-3 dark:from-emerald-900/20 dark:to-emerald-800/20">
-            <div className="text-lg font-bold text-emerald-600">
+            <div className="font-bold text-emerald-600 text-lg">
               {workflowAnalytics.completionRate.toFixed(0)}%
             </div>
-            <div className="text-xs text-emerald-700 dark:text-emerald-300">
+            <div className="text-emerald-700 text-xs dark:text-emerald-300">
               Completion Rate
             </div>
           </div>
           <div className="rounded-lg bg-gradient-to-br from-violet-50 to-violet-100 p-3 dark:from-violet-900/20 dark:to-violet-800/20">
-            <div className="text-lg font-bold text-violet-600">
+            <div className="font-bold text-lg text-violet-600">
               {workflowAnalytics.avgCycleTime > 0
                 ? `${workflowAnalytics.avgCycleTime.toFixed(1)}d`
                 : 'N/A'}
             </div>
-            <div className="text-xs text-violet-700 dark:text-violet-300">
+            <div className="text-violet-700 text-xs dark:text-violet-300">
               Avg. Cycle Time
             </div>
           </div>
@@ -191,7 +191,7 @@ export function TaskWorkflowAnalytics({
 
         {/* Status Breakdown */}
         <div className="space-y-2">
-          <div className="text-sm font-medium">Task Status</div>
+          <div className="font-medium text-sm">Task Status</div>
           <div className="grid grid-cols-3 gap-2 text-xs">
             <div className="rounded-lg bg-gray-50 p-2 text-center dark:bg-gray-800/50">
               <div className="font-medium text-green-600">
@@ -216,7 +216,7 @@ export function TaskWorkflowAnalytics({
 
         {/* Task Age Distribution */}
         <div className="space-y-2">
-          <div className="text-sm font-medium">Task Age</div>
+          <div className="font-medium text-sm">Task Age</div>
           <div className="space-y-1">
             {visibleAgeConfig.map((age) => (
               <div key={age.key} className="flex items-center justify-between">
@@ -224,7 +224,7 @@ export function TaskWorkflowAnalytics({
                   <div className={cn('h-2 w-2 rounded', age.color)}></div>
                   <span className="text-xs">{age.label}</span>
                 </div>
-                <span className="text-xs font-medium">{age.count}</span>
+                <span className="font-medium text-xs">{age.count}</span>
               </div>
             ))}
           </div>
@@ -232,7 +232,7 @@ export function TaskWorkflowAnalytics({
 
         {/* Efficiency Indicators */}
         <div className="space-y-2">
-          <div className="text-sm font-medium">Efficiency Metrics</div>
+          <div className="font-medium text-sm">Efficiency Metrics</div>
           <div className="grid grid-cols-2 gap-2 text-xs">
             <div className="rounded-lg bg-orange-50 p-2 dark:bg-orange-900/20">
               <div className="font-medium text-orange-600">
@@ -258,7 +258,7 @@ export function TaskWorkflowAnalytics({
           <div className="rounded-lg border border-red-200 bg-red-50 p-2 dark:border-red-800 dark:bg-red-900/20">
             <div className="flex items-center gap-2">
               <Clock className="h-3 w-3 text-red-600" />
-              <span className="text-xs font-medium text-red-700 dark:text-red-300">
+              <span className="font-medium text-red-700 text-xs dark:text-red-300">
                 {workflowAnalytics.ageDistribution.stale} stale tasks need
                 attention
               </span>

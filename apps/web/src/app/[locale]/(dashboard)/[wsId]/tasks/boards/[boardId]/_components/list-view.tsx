@@ -1,8 +1,5 @@
 'use client';
 
-import { TaskEditDialog } from './task-edit-dialog';
-import { getTagColor } from '@/lib/tag-utils';
-import { getTasks } from '@/lib/task-helper';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { Task, TaskList } from '@tuturuuu/types/primitives/TaskBoard';
@@ -77,6 +74,10 @@ import {
 } from 'date-fns';
 import { useParams } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
+import { getTagColorStyling } from '@/lib/tag-utils';
+import { getTasks } from '@/lib/task-helper';
+
+import { TaskEditDialog } from './task-edit-dialog';
 
 interface Props {
   board: { id: string; tasks: Task[]; lists?: TaskList[] };
@@ -222,10 +223,7 @@ export function ListView({
 
       if (Object.keys(updates).length > 0) {
         // Update all tasks in a single query
-        await supabase
-          .from('tasks')
-          .update(updates)
-          .in('id', taskIds);
+        await supabase.from('tasks').update(updates).in('id', taskIds);
       }
 
       // Refresh the task list and invalidate cache
@@ -724,27 +722,31 @@ export function ListView({
 
   function renderTags(tags: string[] | null) {
     if (!tags || tags.length === 0) {
-      return <span className="text-sm text-muted-foreground">—</span>;
+      return <span className="text-muted-foreground text-sm">—</span>;
     }
 
     return (
       <div className="flex flex-wrap gap-1">
-        {tags.slice(0, 3).map((tag) => (
-          <Badge
-            key={tag}
-            variant="outline"
-            className={cn(
-              'h-5 rounded-full border px-1.5 text-xs font-medium',
-              getTagColor(tag)
-            )}
-          >
-            {tag}
-          </Badge>
-        ))}
+        {tags.slice(0, 3).map((tag) => {
+          const { style, className: tagClassName } = getTagColorStyling(tag);
+          return (
+            <Badge
+              key={tag}
+              variant="outline"
+              className={cn(
+                'h-5 rounded-full border px-1.5 font-medium text-xs',
+                tagClassName
+              )}
+              style={style}
+            >
+              {tag}
+            </Badge>
+          );
+        })}
         {tags.length > 3 && (
           <Badge
             variant="outline"
-            className="h-5 rounded-full border px-1.5 text-xs font-medium"
+            className="h-5 rounded-full border px-1.5 font-medium text-xs"
           >
             +{tags.length - 3}
           </Badge>
@@ -789,11 +791,14 @@ export function ListView({
           <Skeleton className="h-10 flex-1" />
         </div>
         <div className="space-y-3">
-          {['skeleton-1', 'skeleton-2', 'skeleton-3', 'skeleton-4', 'skeleton-5'].map((key) => (
-            <Skeleton
-              key={key}
-              className="h-16 w-full"
-            />
+          {[
+            'skeleton-1',
+            'skeleton-2',
+            'skeleton-3',
+            'skeleton-4',
+            'skeleton-5',
+          ].map((key) => (
+            <Skeleton key={key} className="h-16 w-full" />
           ))}
         </div>
       </div>
@@ -812,7 +817,7 @@ export function ListView({
         {/* Search and Actions Row */}
         <div className="flex items-center gap-4">
           <div className="relative flex-1">
-            <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search tasks by name or description..."
               value={filters.search}
@@ -826,7 +831,7 @@ export function ListView({
                 variant="ghost"
                 size="sm"
                 onClick={() => setFilters({ ...filters, search: '' })}
-                className="absolute top-1/2 right-1 h-7 w-7 -translate-y-1/2 p-0 hover:bg-muted"
+                className="-translate-y-1/2 absolute top-1/2 right-1 h-7 w-7 p-0 hover:bg-muted"
               >
                 <X className="h-3 w-3" />
                 <span className="sr-only">Clear search</span>
@@ -882,7 +887,11 @@ export function ListView({
                       />
                       <Badge
                         variant="outline"
-                        className={cn('text-xs', getTagColor(tag))}
+                        className={cn(
+                          'text-xs',
+                          getTagColorStyling(tag).className
+                        )}
+                        style={getTagColorStyling(tag).style}
                       >
                         {tag}
                       </Badge>
@@ -1118,7 +1127,7 @@ export function ListView({
                           className="mr-2 h-3.5 w-3.5"
                         />
                         <div className="flex items-center gap-2">
-                          <div className="flex h-5 w-5 items-center justify-center rounded-full bg-muted text-xs font-medium">
+                          <div className="flex h-5 w-5 items-center justify-center rounded-full bg-muted font-medium text-xs">
                             {member.display_name?.[0]?.toUpperCase() ||
                               member.email?.[0]?.toUpperCase() ||
                               '?'}
@@ -1271,7 +1280,7 @@ export function ListView({
 
         {/* Results and Filter Summary */}
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <div className="flex items-center gap-2 text-muted-foreground text-sm">
             <span>
               {filteredAndSortedTasks.length} of {tasks.length} task
               {tasks.length !== 1 ? 's' : ''}
@@ -1288,7 +1297,7 @@ export function ListView({
 
           {/* Page Size */}
           <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">Rows per page</span>
+            <span className="text-muted-foreground text-sm">Rows per page</span>
             <Select
               value={pageSize.toString()}
               onValueChange={(value) => {
@@ -1316,12 +1325,12 @@ export function ListView({
             <Search className="h-8 w-8 text-muted-foreground" />
           </div>
           <div className="space-y-2">
-            <h3 className="text-lg font-semibold">
+            <h3 className="font-semibold text-lg">
               {filters.search || selectedTags.length > 0
                 ? 'No tasks found'
                 : 'No tasks yet'}
             </h3>
-            <p className="max-w-sm text-sm text-muted-foreground">
+            <p className="max-w-sm text-muted-foreground text-sm">
               {filters.search
                 ? `No tasks match "${filters.search}". Try adjusting your search terms.`
                 : selectedTags.length > 0
@@ -1356,7 +1365,7 @@ export function ListView({
                 {columnVisibility.status && (
                   <TableHead className="w-[50px] text-center">
                     <div className="flex items-center justify-center gap-1">
-                      <span className="text-xs font-medium text-muted-foreground">
+                      <span className="font-medium text-muted-foreground text-xs">
                         Status
                       </span>
                       <Popover>
@@ -1372,10 +1381,10 @@ export function ListView({
                         <PopoverContent className="w-80">
                           <div className="space-y-2">
                             <h4 className="font-medium">Task Completion</h4>
-                            <p className="text-sm text-muted-foreground">
+                            <p className="text-muted-foreground text-sm">
                               Tasks can be completed in two ways:
                             </p>
-                            <ul className="space-y-1 text-sm text-muted-foreground">
+                            <ul className="space-y-1 text-muted-foreground text-sm">
                               <li>
                                 • <strong>Individual checkbox:</strong> Mark
                                 task as done
@@ -1385,7 +1394,7 @@ export function ListView({
                                 Automatically marks task as done
                               </li>
                             </ul>
-                            <p className="text-xs text-muted-foreground">
+                            <p className="text-muted-foreground text-xs">
                               The amber dot indicates a task in a "Done" list
                               that hasn't been individually checked.
                             </p>
@@ -1517,14 +1526,14 @@ export function ListView({
                     <TableCell className="py-4">
                       <div className="space-y-1">
                         <div
-                          className={cn('leading-none font-medium', {
+                          className={cn('font-medium leading-none', {
                             'text-muted-foreground line-through': task.archived,
                           })}
                         >
                           {task.name}
                         </div>
                         {task.description && (
-                          <p className="line-clamp-2 text-sm leading-relaxed text-muted-foreground">
+                          <p className="line-clamp-2 text-muted-foreground text-sm leading-relaxed">
                             {task.description}
                           </p>
                         )}
@@ -1551,7 +1560,7 @@ export function ListView({
                       {task.assignees && task.assignees.length > 0 && (
                         <div className="flex items-center gap-1.5">
                           <Users className="h-3.5 w-3.5 text-muted-foreground" />
-                          <span className="text-sm font-medium">
+                          <span className="font-medium text-sm">
                             {task.assignees.length}
                           </span>
                         </div>
@@ -1596,7 +1605,7 @@ export function ListView({
       {/* Pagination */}
       {filteredAndSortedTasks.length > 0 && totalPages > 1 && (
         <div className="flex items-center justify-between border-t pt-4">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <div className="flex items-center gap-2 text-muted-foreground text-sm">
             <span>
               Showing {(currentPage - 1) * pageSize + 1}-
               {Math.min(currentPage * pageSize, filteredAndSortedTasks.length)}{' '}
@@ -1611,7 +1620,7 @@ export function ListView({
           </div>
 
           <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1 text-sm text-muted-foreground">
+            <div className="flex items-center gap-1 text-muted-foreground text-sm">
               <span>
                 Page {currentPage} of {totalPages}
               </span>
@@ -1662,8 +1671,8 @@ export function ListView({
 
       {/* Bulk Actions for Selected Tasks */}
       {selectedTasks.size > 0 && (
-        <div className="fixed bottom-6 left-1/2 z-50 flex -translate-x-1/2 transform items-center gap-3 rounded-lg border bg-background p-3 shadow-lg">
-          <span className="text-sm font-medium">
+        <div className="-translate-x-1/2 fixed bottom-6 left-1/2 z-50 flex transform items-center gap-3 rounded-lg border bg-background p-3 shadow-lg">
+          <span className="font-medium text-sm">
             {selectedTasks.size} task{selectedTasks.size !== 1 ? 's' : ''}{' '}
             selected
           </span>
@@ -1779,7 +1788,7 @@ export function ListView({
                   onClick={() =>
                     setBulkEditData((prev) => ({ ...prev, tags: [] }))
                   }
-                  className="h-7 text-xs text-muted-foreground"
+                  className="h-7 text-muted-foreground text-xs"
                 >
                   Clear all tags
                 </Button>

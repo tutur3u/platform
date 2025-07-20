@@ -1,7 +1,5 @@
 'use client';
 
-import { getTagColor } from '@/lib/tag-utils';
-import { useBoardTaskTags } from '@/lib/task-helper';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -17,6 +15,8 @@ import { useToast } from '@tuturuuu/ui/hooks/use-toast';
 import { Filter, Tag, X } from '@tuturuuu/ui/icons';
 import { cn } from '@tuturuuu/utils/format';
 import { useState } from 'react';
+import { getTagColorStyling } from '@/lib/tag-utils';
+import { useBoardTaskTags } from '@/lib/task-helper';
 
 interface TagFilterProps {
   boardId: string;
@@ -72,34 +72,38 @@ export function TagFilter({
       {/* Active Filters Display */}
       {hasActiveFilters && (
         <div className="flex items-center gap-1.5">
-          <span className="text-xs text-muted-foreground">Filtered by:</span>
-          {selectedTags.map((tag) => (
-            <Badge
-              key={tag}
-              variant="outline"
-              className={cn(
-                'flex h-6 items-center gap-1 rounded-full border px-2 py-1 text-xs font-medium',
-                getTagColor(tag)
-              )}
-            >
-              <Tag className="h-3 w-3" />
-              {tag}
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="h-4 w-4 p-0 hover:bg-destructive/20 hover:text-destructive"
-                onClick={() => handleTagToggle(tag)}
+          <span className="text-muted-foreground text-xs">Filtered by:</span>
+          {selectedTags.map((tag) => {
+            const { style, className: tagClassName } = getTagColorStyling(tag);
+            return (
+              <Badge
+                key={tag}
+                variant="outline"
+                className={cn(
+                  'flex h-6 items-center gap-1 rounded-full border px-2 py-1 font-medium text-xs',
+                  tagClassName
+                )}
+                style={style}
               >
-                <X className="h-3 w-3" />
-              </Button>
-            </Badge>
-          ))}
+                <Tag className="h-3 w-3" />
+                {tag}
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-4 w-4 p-0 hover:bg-destructive/20 hover:text-destructive"
+                  onClick={() => handleTagToggle(tag)}
+                >
+                  <X className="h-3 w-3" />
+                </Button>
+              </Badge>
+            );
+          })}
           <Button
             type="button"
             variant="ghost"
             size="sm"
-            className="h-6 px-2 text-xs text-muted-foreground hover:text-foreground"
+            className="h-6 px-2 text-muted-foreground text-xs hover:text-foreground"
             onClick={clearAllFilters}
           >
             Clear all
@@ -153,34 +157,40 @@ export function TagFilter({
 
           {!isLoading && !error && tags.length > 0 && (
             <DropdownMenuGroup>
-              {tags.map((tag: string) => (
-                <DropdownMenuItem
-                  key={tag}
-                  onClick={() => handleTagToggle(tag)}
-                  className="flex cursor-pointer items-center gap-2"
-                >
-                  <div
-                    className={cn(
-                      'h-3 w-3 rounded-full border',
-                      selectedTags.includes(tag)
-                        ? getTagColor(tag)
-                        : 'border-muted-foreground/30'
-                    )}
-                  />
-                  <span className="flex-1">{tag}</span>
-                  {selectedTags.includes(tag) && (
-                    <Badge
-                      variant="outline"
+              {tags.map((tag: string) => {
+                const { style, className: tagClassName } =
+                  getTagColorStyling(tag);
+                return (
+                  <DropdownMenuItem
+                    key={tag}
+                    onClick={() => handleTagToggle(tag)}
+                    className="flex cursor-pointer items-center gap-2"
+                  >
+                    <div
                       className={cn(
-                        'h-5 rounded-full border px-1.5 text-xs font-medium',
-                        getTagColor(tag)
+                        'h-3 w-3 rounded-full border',
+                        selectedTags.includes(tag)
+                          ? tagClassName
+                          : 'border-muted-foreground/30'
                       )}
-                    >
-                      Active
-                    </Badge>
-                  )}
-                </DropdownMenuItem>
-              ))}
+                      style={style}
+                    />
+                    <span className="flex-1">{tag}</span>
+                    {selectedTags.includes(tag) && (
+                      <Badge
+                        variant="outline"
+                        className={cn(
+                          'h-5 rounded-full border px-1.5 font-medium text-xs',
+                          tagClassName
+                        )}
+                        style={style}
+                      >
+                        Active
+                      </Badge>
+                    )}
+                  </DropdownMenuItem>
+                );
+              })}
             </DropdownMenuGroup>
           )}
 

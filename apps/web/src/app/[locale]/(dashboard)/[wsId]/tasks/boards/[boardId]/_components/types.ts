@@ -1,1 +1,1 @@
-export type ViewType = 'kanban' | 'status-grouped' | 'list'; 
+export type ViewType = 'kanban' | 'status-grouped' | 'list';

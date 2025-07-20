@@ -4,8 +4,14 @@ export interface Task {
   completed: boolean;
   description?: string;
   priority?: number | null;
-  assignees?: any[];
-  category?: any;
+  assignees?: Array<{
+    id: string;
+    display_name?: string;
+    email?: string;
+    avatar_url?: string;
+    handle?: string;
+  }>;
+  category?: string | null;
   is_assigned_to_current_user?: boolean;
   board_id?: string;
   board_name?: string;
