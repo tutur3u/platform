@@ -1,7 +1,3 @@
-
-import { AssigneeSelect } from './_components/assignee-select';
-import { TaskActions } from './task-actions';
-import { moveTask, useDeleteTask, useUpdateTask } from '@/lib/task-helper';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { createClient } from '@tuturuuu/supabase/next/client';
@@ -60,8 +56,11 @@ import {
   isYesterday,
 } from 'date-fns';
 import { useEffect, useRef, useState } from 'react';
+import { moveTask, useDeleteTask, useUpdateTask } from '@/lib/task-helper';
+import { AssigneeSelect } from './_components/assignee-select';
 import { TaskEditDialog } from './_components/task-edit-dialog';
 import { TaskTagsDisplay } from './_components/task-tags-display';
+import { TaskActions } from './task-actions';
 
 export interface Task extends TaskType {}
 
