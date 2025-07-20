@@ -1,5 +1,7 @@
 'use client';
 
+import { DEV_MODE, PORT } from '@/constants/common';
+import { trpc } from '@/trpc/client';
 import { generateCrossAppToken, mapUrlToApp } from '@tuturuuu/auth/cross-app';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
@@ -23,13 +25,11 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from '@tuturuuu/ui/input-otp';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { Separator } from '@tuturuuu/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
+import { useLocale, useTranslations } from 'next-intl';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useLocale, useTranslations } from 'next-intl';
 import { useCallback, useEffect, useState } from 'react';
 import * as z from 'zod';
-import { DEV_MODE, PORT } from '@/constants/common';
-import { trpc } from '@/trpc/client';
 
 // Constants
 const COOLDOWN_DURATION = 60;
@@ -794,7 +794,7 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
                             emailDisplay.otp &&
                             !emailDisplay.otp.includes('@') && (
                               <div className="absolute inset-y-0 right-3 flex items-center">
-                                <span className="text-xs text-dynamic-blue bg-dynamic-blue/10 px-2 py-1 rounded border border-dynamic-blue/30">
+                                <span className="rounded border border-dynamic-blue/30 bg-dynamic-blue/10 px-2 py-1 text-xs text-dynamic-blue">
                                   @tuturuuu.com
                                 </span>
                               </div>
@@ -805,7 +805,7 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
                       {showDomainPreview.otp &&
                         emailDisplay.otp &&
                         !emailDisplay.otp.includes('@') && (
-                          <p className="text-xs text-muted-foreground mt-1">
+                          <p className="mt-1 text-xs text-muted-foreground">
                             {t('login.will_send_to')}:{' '}
                             <span className="font-medium text-dynamic-blue">
                               {emailDisplay.otp}@tuturuuu.com
@@ -942,7 +942,7 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
                             emailDisplay.password &&
                             !emailDisplay.password.includes('@') && (
                               <div className="absolute inset-y-0 right-3 flex items-center">
-                                <span className="text-xs text-dynamic-blue bg-dynamic-blue/10 px-2 py-1 rounded border border-dynamic-blue/30">
+                                <span className="rounded border border-dynamic-blue/30 bg-dynamic-blue/10 px-2 py-1 text-xs text-dynamic-blue">
                                   @tuturuuu.com
                                 </span>
                               </div>
@@ -953,7 +953,7 @@ export default function LoginForm({ isExternal }: { isExternal: boolean }) {
                       {showDomainPreview.password &&
                         emailDisplay.password &&
                         !emailDisplay.password.includes('@') && (
-                          <p className="text-xs text-muted-foreground mt-1">
+                          <p className="mt-1 text-xs text-muted-foreground">
                             {t('login.will_sign_in_as')}:{' '}
                             <span className="font-medium text-dynamic-blue">
                               {emailDisplay.password}@tuturuuu.com

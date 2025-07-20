@@ -1,5 +1,6 @@
 'use client';
 
+import { RowActions } from './row-actions';
 import type { ColumnDef } from '@tanstack/react-table';
 import type { WorkspaceCronJob } from '@tuturuuu/types/db';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
@@ -8,7 +9,6 @@ import parser from 'cron-parser';
 import cronstrue from 'cronstrue';
 import moment from 'moment';
 import Link from 'next/link';
-import { RowActions } from './row-actions';
 
 function getNextRunTime(schedule: string, lastRun?: string | null) {
   try {

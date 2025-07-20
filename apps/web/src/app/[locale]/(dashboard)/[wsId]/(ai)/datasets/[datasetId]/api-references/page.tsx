@@ -1,3 +1,4 @@
+import EnvironmentSetup from './environment-setup';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import {
   Card,
@@ -9,7 +10,6 @@ import {
 import { CodeBlock } from '@tuturuuu/ui/codeblock';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { headers } from 'next/headers';
-import EnvironmentSetup from './environment-setup';
 
 interface Props {
   params: Promise<{

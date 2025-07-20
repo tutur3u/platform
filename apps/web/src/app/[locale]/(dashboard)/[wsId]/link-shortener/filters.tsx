@@ -1,8 +1,8 @@
+import { Filter } from '../users/filters';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { Building, Calendar, Globe, User } from '@tuturuuu/ui/icons';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { getTranslations } from 'next-intl/server';
-import { Filter } from '../users/filters';
 
 interface Props {
   wsId: string;
@@ -95,7 +95,8 @@ async function getCreators() {
     // Fallback: manual aggregation
     const { data: rawData, error: rawError } = await sbAdmin
       .from('shortened_links')
-      .select(`
+      .select(
+        `
         creator_id,
         creator:users!creator_id (
           id,
@@ -103,7 +104,8 @@ async function getCreators() {
           avatar_url,
           ...user_private_details(email)
         )
-      `)
+      `
+      )
       .not('creator_id', 'is', null);
 
     if (rawError) {

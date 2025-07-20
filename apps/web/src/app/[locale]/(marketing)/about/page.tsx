@@ -1,6 +1,5 @@
 'use client';
 
-import { motion } from 'framer-motion';
 import { AchievementsSection } from './components/achievements-section';
 import { FutureVisionSection } from './components/future-vision-section';
 import { HeroSection } from './components/hero-section';
@@ -9,6 +8,7 @@ import { JoinUsSection } from './components/join-us-section';
 import { JourneySection } from './components/journey-section';
 import { PurposeSection } from './components/purpose-section';
 import { VisionStatement } from './components/vision-statement';
+import { motion } from 'framer-motion';
 
 export default function AboutPage() {
   return (

@@ -1,6 +1,6 @@
+import TasksSidebarContent from './tasks-sidebar-content';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
-import TasksSidebarContent from './tasks-sidebar-content';
 
 export default async function TasksSidebarServer({
   wsId,

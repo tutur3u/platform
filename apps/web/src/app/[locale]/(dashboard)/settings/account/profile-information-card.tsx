@@ -1,3 +1,7 @@
+import UserAvatar from '../../../settings-avatar';
+import DisplayNameInput from '../../../settings-display-name-input';
+import FullNameInput from '../../../settings-full-name-input';
+import AccountStatusSection from './account-status-section';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import {
   Card,
@@ -11,10 +15,6 @@ import { Separator } from '@tuturuuu/ui/separator';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
-import UserAvatar from '../../../settings-avatar';
-import DisplayNameInput from '../../../settings-display-name-input';
-import FullNameInput from '../../../settings-full-name-input';
-import AccountStatusSection from './account-status-section';
 
 interface ProfileInformationCardProps {
   user: WorkspaceUser | null;

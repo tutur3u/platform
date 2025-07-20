@@ -18,8 +18,8 @@ import {
   Youtube,
 } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
-import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
+import { notFound } from 'next/navigation';
 import type { ReactNode } from 'react';
 
 interface Props {

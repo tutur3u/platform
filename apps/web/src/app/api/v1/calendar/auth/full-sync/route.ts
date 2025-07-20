@@ -1,16 +1,13 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { NextResponse } from 'next/server';
 import { performFullSyncForWorkspace } from '@tuturuuu/trigger/google-calendar-full-sync';
+import { NextResponse } from 'next/server';
 
 export async function POST(request: Request) {
   try {
     const { wsId } = await request.json();
 
     if (!wsId) {
-      return NextResponse.json(
-        { error: 'wsId is required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'wsId is required' }, { status: 400 });
     }
 
     // Initialize Supabase client
@@ -21,7 +18,7 @@ export async function POST(request: Request) {
       data: { user },
       error: userError,
     } = await supabase.auth.getUser();
-    
+
     if (userError || !user) {
       return NextResponse.json(
         { error: 'User not authenticated' },
@@ -55,17 +52,16 @@ export async function POST(request: Request) {
     return NextResponse.json({
       success: true,
       message: 'Full sync completed successfully',
-      eventsSynced: events.length
+      eventsSynced: events.length,
     });
-
   } catch (error) {
     console.error('Error performing full sync:', error);
     return NextResponse.json(
-      { 
+      {
         error: 'Failed to perform full sync',
-        details: error instanceof Error ? error.message : 'Unknown error'
+        details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }
     );
   }
-} 
+}

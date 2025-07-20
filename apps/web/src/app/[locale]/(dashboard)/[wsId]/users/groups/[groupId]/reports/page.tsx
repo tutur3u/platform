@@ -1,3 +1,6 @@
+import { Filter } from '../../../filters';
+import EditableReportPreview from '../../../reports/[reportId]/editable-report-preview';
+import { availableConfigs } from '@/constants/configs/reports';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { WorkspaceUserReport } from '@tuturuuu/types/db';
 import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
@@ -14,12 +17,9 @@ import {
 } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import { cn } from '@tuturuuu/utils/format';
+import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { getTranslations } from 'next-intl/server';
-import { availableConfigs } from '@/constants/configs/reports';
-import { Filter } from '../../../filters';
-import EditableReportPreview from '../../../reports/[reportId]/editable-report-preview';
 
 interface Props {
   params: Promise<{

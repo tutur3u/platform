@@ -1,6 +1,6 @@
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { convertToModelMessages, generateText, type UIMessage } from 'ai';
+import { type UIMessage, convertToModelMessages, generateText } from 'ai';
 import { cookies } from 'next/headers';
 import { type NextRequest, NextResponse } from 'next/server';
 

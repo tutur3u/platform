@@ -1,5 +1,8 @@
 'use client';
 
+import RoleFormDisplaySection from './role-display';
+import RoleFormMembersSection from './role-members';
+import RoleFormPermissionsSection from './role-permissions';
 import { useQuery } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
@@ -19,13 +22,10 @@ import {
   permissionGroups,
   totalPermissions,
 } from '@tuturuuu/utils/permissions';
-import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import * as z from 'zod';
-import RoleFormDisplaySection from './role-display';
-import RoleFormMembersSection from './role-members';
-import RoleFormPermissionsSection from './role-permissions';
 
 const FormSchema = z.object({
   id: z.string().optional(),

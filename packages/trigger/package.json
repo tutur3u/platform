@@ -19,6 +19,8 @@
     "googleapis": "^153.0.0"
   },
   "devDependencies": {
-    "@trigger.dev/build": "^3.3.17"
+    "@trigger.dev/build": "^3.3.17",
+    "@tuturuuu/eslint-config": "workspace:*",
+    "@tuturuuu/typescript-config": "workspace:*"
   }
 }

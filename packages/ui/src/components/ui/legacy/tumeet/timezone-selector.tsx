@@ -24,7 +24,7 @@ export default function TimezoneSelector({ value, onValueChange }: Props) {
 
   return (
     <Select value={value?.value} onValueChange={handleValueChange}>
-      <SelectTrigger className="w-full @lg:min-w-96 @md:min-w-72 bg-background/50 transition hover:bg-background/80">
+      <SelectTrigger className="w-full bg-background/50 transition hover:bg-background/80 @md:min-w-72 @lg:min-w-96">
         <SelectValue placeholder={t('select-time-zone')} />
       </SelectTrigger>
       <SelectContent>

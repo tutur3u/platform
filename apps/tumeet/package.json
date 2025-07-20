@@ -9,6 +9,7 @@
     "build": "NODE_OPTIONS='--max-old-space-size=8192' next build --turbo",
     "start": "next start",
     "preview": "NODE_OPTIONS='--max-old-space-size=8192' next build --turbo && next start -p 7807 --turbopack",
+    "lint": "next lint",
     "stop": "cd ../db && bun sb:stop",
     "sb:status": "cd ../db && bun sb:status",
     "sb:start": "cd ../db && bun sb:start",
@@ -27,7 +28,6 @@
     "@tuturuuu/ai": "workspace:*",
     "@tuturuuu/supabase": "workspace:*",
     "@tuturuuu/types": "workspace:*",
-    "@tuturuuu/typescript-config": "workspace:*",
     "@tuturuuu/ui": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
     "@vercel/analytics": "^1.5.0",
@@ -41,6 +41,8 @@
     "zod": "^3.25.76"
   },
   "devDependencies": {
+    "@tuturuuu/eslint-config": "workspace:*",
+    "@tuturuuu/typescript-config": "workspace:*",
     "@types/node": "^24.0.15",
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",

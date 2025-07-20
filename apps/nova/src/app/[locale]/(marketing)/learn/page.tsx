@@ -9,9 +9,9 @@ import {
   GraduationCap,
   Sparkles,
 } from '@tuturuuu/ui/icons';
-import { motion, type Variants } from 'framer-motion';
-import Link from 'next/link';
+import { type Variants, motion } from 'framer-motion';
 import { useTranslations } from 'next-intl';
+import Link from 'next/link';
 
 export default function LearnPage() {
   const t = useTranslations('nova');

@@ -5,17 +5,18 @@ import {
   createDynamicClient,
 } from '@tuturuuu/supabase/next/server';
 import {
-  convertToModelMessages,
   type FilePart,
   type ImagePart,
   type ModelMessage,
+  type TextPart,
   type UIMessage,
+  convertToModelMessages,
   smoothStream,
   streamText,
-  type TextPart,
 } from 'ai';
 import { cookies } from 'next/headers';
 import { type NextRequest, NextResponse } from 'next/server';
+
 export const runtime = 'edge';
 export const maxDuration = 60;
 export const preferredRegion = 'sin1';

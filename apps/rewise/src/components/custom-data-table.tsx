@@ -1,13 +1,13 @@
 'use client';
 
+import useSearchParams from '@/hooks/useSearchParams';
 import {
   DataTable,
   type DataTableProps,
 } from '@tuturuuu/ui/custom/tables/data-table';
-import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
 import { Suspense } from 'react';
-import useSearchParams from '@/hooks/useSearchParams';
 
 export function CustomDataTable<TData, TValue>({
   namespace,

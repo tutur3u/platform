@@ -1,3 +1,6 @@
+import ClientFlashcards from './flashcards/client-flashcards';
+import ClientQuizzes from './quizzes/client-quizzes';
+import { extractYoutubeId } from '@/utils/url-helper';
 import {
   createClient,
   createDynamicClient,
@@ -19,9 +22,6 @@ import { Separator } from '@tuturuuu/ui/separator';
 import { RichTextEditor } from '@tuturuuu/ui/text-editor/editor';
 import type { JSONContent } from '@tuturuuu/ui/tiptap';
 import { getTranslations } from 'next-intl/server';
-import { extractYoutubeId } from '@/utils/url-helper';
-import ClientFlashcards from './flashcards/client-flashcards';
-import ClientQuizzes from './quizzes/client-quizzes';
 
 interface Props {
   params: Promise<{
