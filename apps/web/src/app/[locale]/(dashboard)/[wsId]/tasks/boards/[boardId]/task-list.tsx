@@ -798,57 +798,54 @@ export function BoardColumn({
                               )}
 
                               {members.map((member: WorkspaceMember) => {
-                                  const isSelected = filters.assignees.has(
-                                    member.id
-                                  );
-                                  return (
-                                    <CommandItem
-                                      key={member.id}
-                                      onSelect={() => {
-                                        const newAssignees = new Set(
-                                          filters.assignees
-                                        );
-                                        if (isSelected) {
-                                          newAssignees.delete(member.id);
-                                        } else {
-                                          newAssignees.add(member.id);
-                                        }
-                                        setFilters((prev) => ({
-                                          ...prev,
-                                          assignees: newAssignees,
-                                        }));
-                                      }}
-                                    >
-                                      <Check
-                                        className={cn(
-                                          'mr-2 h-4 w-4',
-                                          isSelected
-                                            ? 'opacity-100'
-                                            : 'opacity-0'
-                                        )}
-                                      />
-                                      <div className="flex items-center gap-2">
-                                        {member.avatar_url && (
-                                          <Image
-                                            src={member.avatar_url}
-                                            alt={
-                                              member.display_name ||
-                                              member.email ||
-                                              'User avatar'
-                                            }
-                                            width={20}
-                                            height={20}
-                                            className="h-5 w-5 rounded-full"
-                                          />
-                                        )}
-                                        <div className="text-sm">
-                                          {member.display_name || member.email}
-                                        </div>
+                                const isSelected = filters.assignees.has(
+                                  member.id
+                                );
+                                return (
+                                  <CommandItem
+                                    key={member.id}
+                                    onSelect={() => {
+                                      const newAssignees = new Set(
+                                        filters.assignees
+                                      );
+                                      if (isSelected) {
+                                        newAssignees.delete(member.id);
+                                      } else {
+                                        newAssignees.add(member.id);
+                                      }
+                                      setFilters((prev) => ({
+                                        ...prev,
+                                        assignees: newAssignees,
+                                      }));
+                                    }}
+                                  >
+                                    <Check
+                                      className={cn(
+                                        'mr-2 h-4 w-4',
+                                        isSelected ? 'opacity-100' : 'opacity-0'
+                                      )}
+                                    />
+                                    <div className="flex items-center gap-2">
+                                      {member.avatar_url && (
+                                        <Image
+                                          src={member.avatar_url}
+                                          alt={
+                                            member.display_name ||
+                                            member.email ||
+                                            'User avatar'
+                                          }
+                                          width={20}
+                                          height={20}
+                                          className="h-5 w-5 rounded-full"
+                                        />
+                                      )}
+                                      <div className="text-sm">
+                                        {member.display_name || member.email}
                                       </div>
-                                    </CommandItem>
-                                  );
-                                }
-                              )}
+                                    </div>
+                                  </CommandItem>
+                                );
+                              })}
                             </CommandGroup>
                           </CommandList>
                         </Command>

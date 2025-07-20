@@ -31,17 +31,16 @@ export default function MigrationDashboard() {
     defaultValue: '',
   });
 
-  const [migrationData, setMigrationData] =
-    useState<{
-      [key in MigrationModule]?: {
-        externalData?: any[] | null;
-        internalData?: any[] | null;
-        externalTotal?: number | null;
-        internalTotal?: number | null;
-        loading?: boolean | null;
-        error?: any | null;
-      } | null;
-    }>();
+  const [migrationData, setMigrationData] = useState<{
+    [key in MigrationModule]?: {
+      externalData?: any[] | null;
+      internalData?: any[] | null;
+      externalTotal?: number | null;
+      internalTotal?: number | null;
+      loading?: boolean | null;
+      error?: any | null;
+    } | null;
+  }>();
 
   const loading = migrationData
     ? Object.values(migrationData).some((v) => v?.loading)

@@ -585,15 +585,12 @@ export function DatasetCrawler({
                   {processedData.length > 0 &&
                     `Showing ${processedData.length - 1} preview rows of ${
                       workbook && 'SheetNames' in workbook && workbook.Sheets
-                        ? (
-                            () => {
-                              const sheets = workbook.Sheets;
-                              const sheet = sheets[selectedSheet];
-                              if (!sheet || !sheet['!ref'])
-                                return sheetInfo.rows;
-                              return XLSX.utils.decode_range(sheet['!ref']).e.r;
-                            }
-                          )()
+                        ? (() => {
+                            const sheets = workbook.Sheets;
+                            const sheet = sheets[selectedSheet];
+                            if (!sheet || !sheet['!ref']) return sheetInfo.rows;
+                            return XLSX.utils.decode_range(sheet['!ref']).e.r;
+                          })()
                         : sheetInfo.rows
                     } total rows`}
                 </div>

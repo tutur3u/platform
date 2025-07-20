@@ -44,12 +44,12 @@ export function GanttControls({
           placeholder="Search tasks..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full rounded-md border border-gray-200 bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 dark:border-gray-700"
+          className="w-full rounded-md border border-gray-200 bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-primary/20 focus:outline-none dark:border-gray-700"
         />
         {searchQuery && (
           <button
             onClick={() => setSearchQuery('')}
-            className="-translate-y-1/2 absolute top-1/2 right-2 text-muted-foreground hover:text-foreground"
+            className="absolute top-1/2 right-2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
           >
             <X className="h-4 w-4" />
           </button>
@@ -77,7 +77,7 @@ export function GanttControls({
         </Select>
 
         {totalTasks > 0 && (
-          <div className="flex items-center gap-2 text-muted-foreground text-sm">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <span>
               Showing {startIndex + 1}-{Math.min(endIndex, totalTasks)} of{' '}
               {totalTasks} tasks
