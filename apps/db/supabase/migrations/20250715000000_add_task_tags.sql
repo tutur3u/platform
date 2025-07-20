@@ -17,14 +17,6 @@ ALTER TABLE "public"."tasks"
 ADD CONSTRAINT check_tags_not_empty_strings 
 CHECK (NOT (tags && ARRAY['']));
 
--- Add constraint to limit tag length (max 50 characters per tag)
-ALTER TABLE "public"."tasks" 
-ADD CONSTRAINT check_tag_length 
-CHECK (NOT EXISTS (
-  SELECT 1 FROM unnest(tags) AS tag 
-  WHERE length(tag) > 50
-));
-
 -- Add constraint to limit number of tags per task (max 20 tags)
 ALTER TABLE "public"."tasks" 
 ADD CONSTRAINT check_max_tags 

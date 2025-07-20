@@ -1,5 +1,6 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { useQuery } from '@tanstack/react-query';
 import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskBoard';
 import { Badge } from '@tuturuuu/ui/badge';
@@ -31,6 +32,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { cn } from '@tuturuuu/utils/format';
 import { debounce } from 'lodash';
 import Image from 'next/image';
+import { useParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { TaskTagInput } from './_components/task-tag-input';
@@ -94,6 +96,22 @@ export function BoardColumn({
   onTaskCreated,
   onListUpdated,
 }: Props) {
+  const params = useParams();
+  const wsId = params.wsId as string;
+
+  // Fetch workspace members
+  const { data: members = [] } = useQuery({
+    queryKey: ['workspace-members', wsId],
+    queryFn: async () => {
+      const response = await fetch(`/api/workspaces/${wsId}/members`);
+      if (!response.ok) throw new Error('Failed to fetch members');
+      const { members: fetchedMembers } = await response.json();
+      return fetchedMembers;
+    },
+    enabled: !!wsId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<SortOption>('none');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
@@ -151,17 +169,6 @@ export function BoardColumn({
     };
   }, [searchQuery, debouncedSearch]);
 
-  // Get all unique assignees from tasks in this column
-  const allAssignees = useMemo(() => {
-    const assigneeMap = new Map();
-    tasks.forEach((task) => {
-      task.assignees?.forEach((assignee) => {
-        assigneeMap.set(assignee.id, assignee);
-      });
-    });
-    return Array.from(assigneeMap.values());
-  }, [tasks]);
-
   // Filter and sort tasks for this column
   const filteredAndSortedTasks = useMemo(() => {
     const filtered = tasks.filter((task) => {
@@ -188,10 +195,21 @@ export function BoardColumn({
 
       // Assignees filter
       if (filters.assignees.size > 0) {
-        const hasMatchingAssignee = task.assignees?.some((assignee) =>
-          filters.assignees.has(assignee.id)
-        );
-        if (!hasMatchingAssignee) return false;
+        // Handle special filter options
+        if (filters.assignees.has('all')) {
+          // "All" option selected - show all tasks
+        } else if (filters.assignees.has('unassigned')) {
+          // "Unassigned" option selected - show tasks with no assignees
+          if (task.assignees && task.assignees.length > 0) {
+            return false;
+          }
+        } else {
+          // Specific assignees selected
+          const hasMatchingAssignee = task.assignees?.some((assignee) =>
+            filters.assignees.has(assignee.id)
+          );
+          if (!hasMatchingAssignee) return false;
+        }
       }
 
       // Tags filter
@@ -615,7 +633,10 @@ export function BoardColumn({
                   )}
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-72 p-3" align="start">
+              <PopoverContent
+                className="max-h-96 w-72 overflow-y-auto p-3"
+                align="start"
+              >
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <h4 className="font-medium text-sm">Filters</h4>
@@ -682,46 +703,115 @@ export function BoardColumn({
                   </div>
 
                   {/* Assignees Filter */}
-                  {allAssignees.length > 0 && (
-                    <div className="space-y-2">
-                      <div className="font-medium text-xs">Assignees</div>
-                      <Popover
-                        open={assigneesOpen}
-                        onOpenChange={setAssigneesOpen}
+                  <div className="space-y-2">
+                    <div className="font-medium text-xs">Assignees</div>
+                    <Popover
+                      open={assigneesOpen}
+                      onOpenChange={setAssigneesOpen}
+                    >
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-6 w-full justify-start text-xs"
+                        >
+                          <Users className="mr-2 h-3 w-3" />
+                          {filters.assignees.size === 0
+                            ? 'Select assignees...'
+                            : `${filters.assignees.size} selected`}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent
+                        className="max-h-64 w-56 p-0"
+                        align="start"
                       >
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-6 w-full justify-start text-xs"
-                          >
-                            <Users className="mr-2 h-3 w-3" />
-                            {filters.assignees.size === 0
-                              ? 'Select assignees...'
-                              : `${filters.assignees.size} selected`}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-56 p-0" align="start">
-                          <Command>
-                            <CommandInput placeholder="Search assignees..." />
-                            <CommandList>
-                              <CommandEmpty>No assignees found.</CommandEmpty>
-                              <CommandGroup>
-                                {allAssignees.map((assignee) => {
+                        <Command>
+                          <CommandInput placeholder="Search assignees..." />
+                          <CommandList className="max-h-48 overflow-y-auto">
+                            <CommandEmpty>No assignees found.</CommandEmpty>
+                            <CommandGroup>
+                              {/* All option */}
+                              <CommandItem
+                                onSelect={() => {
+                                  const newAssignees = new Set(
+                                    filters.assignees
+                                  );
+                                  if (newAssignees.has('all')) {
+                                    newAssignees.delete('all');
+                                  } else {
+                                    newAssignees.clear();
+                                    newAssignees.add('all');
+                                  }
+                                  setFilters((prev) => ({
+                                    ...prev,
+                                    assignees: newAssignees,
+                                  }));
+                                }}
+                              >
+                                <Check
+                                  className={cn(
+                                    'mr-2 h-4 w-4',
+                                    filters.assignees.has('all')
+                                      ? 'opacity-100'
+                                      : 'opacity-0'
+                                  )}
+                                />
+                                <span>All tasks</span>
+                              </CommandItem>
+
+                              {/* Unassigned option */}
+                              <CommandItem
+                                onSelect={() => {
+                                  const newAssignees = new Set(
+                                    filters.assignees
+                                  );
+                                  if (newAssignees.has('unassigned')) {
+                                    newAssignees.delete('unassigned');
+                                  } else {
+                                    newAssignees.add('unassigned');
+                                  }
+                                  setFilters((prev) => ({
+                                    ...prev,
+                                    assignees: newAssignees,
+                                  }));
+                                }}
+                              >
+                                <Check
+                                  className={cn(
+                                    'mr-2 h-4 w-4',
+                                    filters.assignees.has('unassigned')
+                                      ? 'opacity-100'
+                                      : 'opacity-0'
+                                  )}
+                                />
+                                <span>Unassigned</span>
+                              </CommandItem>
+
+                              {members.length > 0 && (
+                                <div className="my-1 border-border border-t" />
+                              )}
+
+                              {members.map(
+                                (member: {
+                                  id: string;
+                                  display_name?: string;
+                                  email?: string;
+                                  avatar_url?: string;
+                                }) => {
                                   const isSelected = filters.assignees.has(
-                                    assignee.id
+                                    member.id
                                   );
                                   return (
                                     <CommandItem
-                                      key={assignee.id}
+                                      key={member.id}
                                       onSelect={() => {
                                         const newAssignees = new Set(
                                           filters.assignees
                                         );
                                         if (isSelected) {
-                                          newAssignees.delete(assignee.id);
+                                          newAssignees.delete(member.id);
                                         } else {
-                                          newAssignees.add(assignee.id);
+                                          newAssignees.add(member.id);
                                         }
                                         setFilters((prev) => ({
                                           ...prev,
@@ -738,12 +828,13 @@ export function BoardColumn({
                                         )}
                                       />
                                       <div className="flex items-center gap-2">
-                                        {assignee.avatar_url && (
+                                        {member.avatar_url && (
                                           <Image
-                                            src={assignee.avatar_url}
+                                            src={member.avatar_url}
                                             alt={
-                                              assignee.display_name ||
-                                              assignee.email
+                                              member.display_name ||
+                                              member.email ||
+                                              'User avatar'
                                             }
                                             width={20}
                                             height={20}
@@ -751,20 +842,19 @@ export function BoardColumn({
                                           />
                                         )}
                                         <div className="text-sm">
-                                          {assignee.display_name ||
-                                            assignee.email}
+                                          {member.display_name || member.email}
                                         </div>
                                       </div>
                                     </CommandItem>
                                   );
-                                })}
-                              </CommandGroup>
-                            </CommandList>
-                          </Command>
-                        </PopoverContent>
-                      </Popover>
-                    </div>
-                  )}
+                                }
+                              )}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
+                  </div>
 
                   {/* Tags Filter */}
                   <div className="space-y-2">

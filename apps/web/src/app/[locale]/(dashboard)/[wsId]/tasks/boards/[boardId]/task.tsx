@@ -58,6 +58,7 @@ import {
 import { useEffect, useRef, useState } from 'react';
 import { moveTask, useDeleteTask, useUpdateTask } from '@/lib/task-helper';
 import { AssigneeSelect } from './_components/assignee-select';
+import { TaskEditDialog } from './_components/task-edit-dialog';
 import { TaskTagsDisplay } from './_components/task-tags-display';
 import { TaskActions } from './task-actions';
 
@@ -90,6 +91,7 @@ export function TaskCard({
   const [menuOpen, setMenuOpen] = useState(false);
   const [customDateOpen, setCustomDateOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [availableLists, setAvailableLists] = useState<TaskList[]>([]);
   const datePickerRef = useRef<HTMLButtonElement>(null);
   const updateTaskMutation = useUpdateTask(boardId);
@@ -617,7 +619,7 @@ export function TaskCard({
                         >
                           <DropdownMenuItem
                             onClick={() => {
-                              setIsEditing(true);
+                              setEditDialogOpen(true);
                               setMenuOpen(false);
                             }}
                             className="cursor-pointer"
@@ -809,9 +811,23 @@ export function TaskCard({
                     !task.archived &&
                     'border-dynamic-red/70 bg-dynamic-red/10 ring-1 ring-dynamic-red/20'
                 )}
+                style={
+                  !task.archived && taskList?.status === 'done'
+                    ? {
+                        animation: 'pulse 4s ease-in-out infinite',
+                        borderColor: 'rgb(245 158 11 / 0.3)',
+                        backgroundColor: 'rgb(245 158 11 / 0.6)',
+                      }
+                    : undefined
+                }
                 disabled={isLoading}
                 onCheckedChange={handleArchiveToggle}
                 onClick={(e) => e.stopPropagation()}
+                title={
+                  !task.archived && taskList?.status === 'done'
+                    ? 'Task is in Done list but not individually checked'
+                    : undefined
+                }
               />
             </div>
           </div>
@@ -865,6 +881,15 @@ export function TaskCard({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Task Edit Dialog */}
+      <TaskEditDialog
+        task={task}
+        isOpen={editDialogOpen}
+        onClose={() => setEditDialogOpen(false)}
+        onUpdate={onUpdate || (() => {})}
+        availableLists={availableLists}
+      />
 
       {!isOverlay && onUpdate && (
         <TaskActions taskId={task.id} boardId={boardId} onUpdate={onUpdate} />

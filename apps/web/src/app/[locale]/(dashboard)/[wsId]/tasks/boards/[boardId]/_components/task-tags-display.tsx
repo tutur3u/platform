@@ -1,7 +1,14 @@
 'use client';
 
 import { Badge } from '@tuturuuu/ui/badge';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
+import { getTagColor } from '@/lib/tag-utils';
 
 interface TaskTagsDisplayProps {
   tags: string[];
@@ -22,31 +29,58 @@ export function TaskTagsDisplay({
 
   const displayTags = tags.slice(0, maxDisplay);
   const remainingCount = tags.length - maxDisplay;
+  const hasHiddenTags = remainingCount > 0;
 
   return (
-    <div className={cn('flex flex-wrap gap-1', className)}>
-      {displayTags.map((tag) => (
-        <Badge
-          key={tag}
-          variant="secondary"
-          className={cn(
-            'h-auto px-1.5 py-0.5 text-xs',
-            clickable &&
-              'cursor-pointer transition-colors hover:bg-secondary/80'
-          )}
-          onClick={() => clickable && onTagClick?.(tag)}
-        >
-          {tag}
-        </Badge>
-      ))}
-      {remainingCount > 0 && (
-        <Badge
-          variant="outline"
-          className="h-auto px-1.5 py-0.5 text-muted-foreground text-xs"
-        >
-          +{remainingCount}
-        </Badge>
-      )}
-    </div>
+    <TooltipProvider>
+      <div className={cn('flex flex-wrap gap-1.5', className)}>
+        {displayTags.map((tag) => (
+          <Badge
+            key={tag}
+            variant="outline"
+            className={cn(
+              'h-auto rounded-full border px-2 py-0.5 font-medium text-xs',
+              'transition-all duration-200 hover:scale-105',
+              getTagColor(tag),
+              clickable && 'cursor-pointer hover:brightness-110'
+            )}
+            onClick={() => clickable && onTagClick?.(tag)}
+          >
+            #{tag}
+          </Badge>
+        ))}
+        {hasHiddenTags && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Badge
+                variant="outline"
+                className="h-auto cursor-help rounded-full border px-2 py-0.5 font-medium text-muted-foreground text-xs hover:bg-muted/50"
+              >
+                +{remainingCount}
+              </Badge>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="max-w-xs">
+              <div className="space-y-2">
+                <p className="font-medium text-xs">All tags:</p>
+                <div className="flex flex-wrap gap-1">
+                  {tags.map((tag) => (
+                    <Badge
+                      key={tag}
+                      variant="outline"
+                      className={cn(
+                        'h-auto rounded-full border px-2 py-0.5 font-medium text-xs',
+                        getTagColor(tag)
+                      )}
+                    >
+                      #{tag}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            </TooltipContent>
+          </Tooltip>
+        )}
+      </div>
+    </TooltipProvider>
   );
 }

@@ -4,9 +4,10 @@ import { createClient } from '@tuturuuu/supabase/next/client';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { useToast } from '@tuturuuu/ui/hooks/use-toast';
-import { Plus, X } from '@tuturuuu/ui/icons';
+import { Plus, Tag, X } from '@tuturuuu/ui/icons';
 import { cn } from '@tuturuuu/utils/format';
 import { type KeyboardEvent, useEffect, useRef, useState } from 'react';
+import { getTagColor } from '@/lib/tag-utils';
 import { useBoardTaskTags } from '@/lib/task-helper';
 
 interface TaskTagInputProps {
@@ -31,6 +32,8 @@ export function TaskTagInput({
   const [inputValue, setInputValue] = useState('');
   const [isFocused, setIsFocused] = useState(false);
   const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [filteredSuggestions, setFilteredSuggestions] = useState<string[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const [migrationStatus, setMigrationStatus] = useState<
     'checking' | 'applied' | 'not-applied'
   >('checking');
@@ -38,8 +41,19 @@ export function TaskTagInput({
   const { data: boardTags, isLoading, error } = useBoardTaskTags(boardId);
   const { toast } = useToast();
 
-  // Default suggestions for common task tags (just 3 cute ones)
-  const defaultSuggestions = ['urgent', 'bug', 'feature'];
+  // Enhanced default suggestions for common task tags
+  const defaultSuggestions = [
+    'urgent',
+    'bug',
+    'feature',
+    'frontend',
+    'backend',
+    'design',
+    'testing',
+    'documentation',
+    'review',
+    'deployment',
+  ];
 
   // Check if the tags column exists (migration applied)
   useEffect(() => {
@@ -67,13 +81,32 @@ export function TaskTagInput({
   // Update suggestions when board tags change
   useEffect(() => {
     if (boardTags && Array.isArray(boardTags) && boardTags.length > 0) {
-      // Use board tags if available
-      setSuggestions(boardTags);
+      // Use board tags if available, combine with defaults
+      const allSuggestions = [
+        ...new Set([...boardTags, ...defaultSuggestions]),
+      ];
+      setSuggestions(allSuggestions);
     } else {
       // Use default suggestions if no board tags exist yet
       setSuggestions(defaultSuggestions);
     }
   }, [boardTags]);
+
+  // Filter suggestions based on input
+  useEffect(() => {
+    if (inputValue.trim()) {
+      const filtered = suggestions.filter(
+        (suggestion) =>
+          suggestion.toLowerCase().includes(inputValue.toLowerCase()) &&
+          !value.includes(suggestion)
+      );
+      setFilteredSuggestions(filtered.slice(0, 5)); // Show max 5 suggestions
+      setShowSuggestions(filtered.length > 0);
+    } else {
+      setFilteredSuggestions([]);
+      setShowSuggestions(false);
+    }
+  }, [inputValue, suggestions, value]);
 
   const addTag = (tag: string) => {
     const trimmedTag = tag.trim().toLowerCase();
@@ -110,6 +143,7 @@ export function TaskTagInput({
 
     onChange([...value, trimmedTag]);
     setInputValue('');
+    setShowSuggestions(false);
   };
 
   const removeTag = (tagToRemove: string) => {
@@ -125,14 +159,21 @@ export function TaskTagInput({
       if (lastTag) {
         removeTag(lastTag);
       }
+    } else if (e.key === 'Escape') {
+      setShowSuggestions(false);
+      inputRef.current?.blur();
     }
   };
 
   const handleInputBlur = () => {
-    setIsFocused(false);
-    if (inputValue.trim()) {
-      addTag(inputValue);
-    }
+    // Delay hiding suggestions to allow for clicks
+    setTimeout(() => {
+      setIsFocused(false);
+      setShowSuggestions(false);
+      if (inputValue.trim()) {
+        addTag(inputValue);
+      }
+    }, 150);
   };
 
   const handleSuggestionClick = (suggestion: string) => {
@@ -147,11 +188,11 @@ export function TaskTagInput({
     value.length === 0 ? (placeholder ?? 'Type to add tags...') : '';
 
   return (
-    <div className={className || ''}>
+    <div className={cn('relative', className || '')}>
       {/* Main Tag Input Container */}
       <div
         className={cn(
-          'relative min-h-9 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background transition-all duration-200',
+          'relative min-h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background transition-all duration-200',
           isFocused && 'ring-2 ring-ring ring-offset-2',
           isDisabled && 'cursor-not-allowed opacity-50',
           value.length === 0 && !isFocused && 'border-dashed'
@@ -162,16 +203,20 @@ export function TaskTagInput({
           {value.map((tag) => (
             <Badge
               key={tag}
-              variant="secondary"
-              className="flex h-6 items-center gap-1 px-2 py-1 text-xs"
+              variant="outline"
+              className={cn(
+                'flex h-6 items-center gap-1 rounded-full border px-2 py-1 font-medium text-xs transition-all duration-200 hover:scale-105',
+                getTagColor(tag)
+              )}
             >
-              <span className="max-w-20 truncate">#{tag}</span>
+              <Tag className="h-3 w-3" />
+              <span className="max-w-20 truncate">{tag}</span>
               {!isDisabled && (
                 <Button
                   type="button"
                   variant="ghost"
                   size="sm"
-                  className="h-4 w-4 p-0 hover:bg-destructive hover:text-destructive-foreground"
+                  className="h-4 w-4 p-0 hover:bg-destructive/20 hover:text-destructive"
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
@@ -216,24 +261,52 @@ export function TaskTagInput({
         </div>
       </div>
 
-      {/* Quick Tag Suggestions */}
-      {suggestions.length > 0 && value.length === 0 && !isDisabled && (
-        <div className="mt-2">
-          <p className="mb-1.5 text-muted-foreground text-xs">Quick tags:</p>
-          <div className="flex flex-wrap gap-1.5">
-            {suggestions.slice(0, 3).map((suggestion) => (
+      {/* Suggestions Dropdown */}
+      {showSuggestions && filteredSuggestions.length > 0 && !isDisabled && (
+        <div className="absolute z-50 mt-1 w-full rounded-md border border-border bg-popover shadow-lg">
+          <div className="p-1">
+            {filteredSuggestions.map((suggestion) => (
               <button
                 key={suggestion}
                 type="button"
                 onClick={() => handleSuggestionClick(suggestion)}
-                className="inline-flex cursor-pointer items-center rounded-md border border-gray-300 border-dashed bg-gray-50 px-2 py-1 font-medium text-gray-700 text-xs transition-all duration-200 hover:border-gray-400 hover:bg-gray-100"
+                className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-xs hover:bg-accent hover:text-accent-foreground"
               >
-                #{suggestion}
+                <Tag className="h-3 w-3" />
+                <span>{suggestion}</span>
               </button>
             ))}
           </div>
         </div>
       )}
+
+      {/* Quick Tag Suggestions */}
+      {suggestions.length > 0 &&
+        value.length === 0 &&
+        !isDisabled &&
+        !isFocused && (
+          <div className="mt-2">
+            <p className="mb-1.5 text-muted-foreground text-xs">
+              Popular tags:
+            </p>
+            <div className="flex flex-wrap gap-1.5">
+              {suggestions.slice(0, 5).map((suggestion) => (
+                <button
+                  key={suggestion}
+                  type="button"
+                  onClick={() => handleSuggestionClick(suggestion)}
+                  className={cn(
+                    'inline-flex cursor-pointer items-center rounded-full border px-2 py-1 font-medium text-xs transition-all duration-200 hover:scale-105',
+                    getTagColor(suggestion)
+                  )}
+                >
+                  <Tag className="mr-1 h-3 w-3" />
+                  {suggestion}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
       {/* Status Messages */}
       {isLoading && (

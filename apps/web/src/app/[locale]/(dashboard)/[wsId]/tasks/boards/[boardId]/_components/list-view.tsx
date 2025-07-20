@@ -1,16 +1,19 @@
+'use client';
+
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
-import type { Task } from '@tuturuuu/types/primitives/TaskBoard';
+import type { Task, TaskList } from '@tuturuuu/types/primitives/TaskBoard';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
 import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from '@tuturuuu/ui/command';
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@tuturuuu/ui/dialog';
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -29,17 +32,19 @@ import {
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
-  Circle,
   Clock,
   Flag,
+  HelpCircle,
   MoreHorizontal,
   RefreshCw,
   Search,
   Settings2,
+  Tag,
   Users,
   X,
 } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
+import { Label } from '@tuturuuu/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import {
   Select,
@@ -67,12 +72,16 @@ import {
   isTomorrow,
   isWithinInterval,
 } from 'date-fns';
+import { useParams } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
+import { getTagColor } from '@/lib/tag-utils';
 import { getTasks } from '@/lib/task-helper';
-import { TaskActions } from '../task-actions';
+import { TaskEditDialog } from './task-edit-dialog';
 
 interface Props {
-  board: { id: string; tasks: Task[] };
+  board: { id: string; tasks: Task[]; lists?: TaskList[] };
+  selectedTags?: string[];
+  onTagsChange?: (tags: string[]) => void;
 }
 
 type SortField =
@@ -82,7 +91,8 @@ type SortField =
   | 'end_date'
   | 'assignees'
   | 'created_at'
-  | 'status';
+  | 'status'
+  | 'tags';
 type SortOrder = 'asc' | 'desc';
 
 interface TableFilters {
@@ -100,17 +110,39 @@ interface ColumnVisibility {
   start_date: boolean;
   end_date: boolean;
   assignees: boolean;
+  tags: boolean;
   actions: boolean;
 }
 
 // Priority labels constant - defined once outside component for performance
 const priorityLabels = {
+  0: 'No Priority',
   1: 'High',
   2: 'Medium',
   3: 'Low',
 };
 
-export function ListView({ board }: Props) {
+export function ListView({
+  board,
+  selectedTags = [],
+  onTagsChange = () => {},
+}: Props) {
+  const queryClient = useQueryClient();
+  const params = useParams();
+  const wsId = params.wsId as string;
+
+  // Fetch workspace members
+  const { data: members = [] } = useQuery({
+    queryKey: ['workspace-members', wsId],
+    queryFn: async () => {
+      const response = await fetch(`/api/workspaces/${wsId}/members`);
+      if (!response.ok) throw new Error('Failed to fetch members');
+      const { members: fetchedMembers } = await response.json();
+      return fetchedMembers;
+    },
+    enabled: !!wsId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
   const [tasks, setTasks] = useState<Task[]>(board.tasks);
   const [isLoading, setIsLoading] = useState(false);
   const [sortField, setSortField] = useState<SortField>('created_at');
@@ -139,12 +171,105 @@ export function ListView({ board }: Props) {
     start_date: true,
     end_date: true,
     assignees: true,
+    tags: true,
     actions: true,
   });
 
-  // Filter panel states
-  const [priorityFilterOpen, setPriorityFilterOpen] = useState(false);
-  const [statusFilterOpen, setStatusFilterOpen] = useState(false);
+  // Bulk actions state
+  const [isBulkEditing, setIsBulkEditing] = useState(false);
+  const [bulkEditData, setBulkEditData] = useState({
+    priority: 'keep',
+    status: 'keep',
+    tags: [] as string[],
+  });
+
+  // Bulk edit functions
+  const handleBulkEdit = async () => {
+    if (selectedTasks.size === 0) return;
+
+    setIsBulkEditing(true);
+  };
+
+  const handleBulkEditSave = async () => {
+    if (selectedTasks.size === 0) return;
+
+    setIsLoading(true);
+    try {
+      const supabase = createClient();
+      const taskIds = Array.from(selectedTasks);
+
+      // Update tasks in batches
+      for (const taskId of taskIds) {
+        const updates: {
+          priority?: number | null;
+          archived?: boolean;
+          tags?: string[];
+        } = {};
+
+        if (bulkEditData.priority !== 'keep') {
+          updates.priority =
+            bulkEditData.priority === '0'
+              ? null
+              : parseInt(bulkEditData.priority);
+        }
+
+        if (bulkEditData.status !== 'keep') {
+          updates.archived = bulkEditData.status === 'completed';
+        }
+
+        if (bulkEditData.tags.length > 0) {
+          updates.tags = bulkEditData.tags;
+        }
+
+        if (Object.keys(updates).length > 0) {
+          await supabase.from('tasks').update(updates).eq('id', taskId);
+        }
+      }
+
+      // Refresh the task list and invalidate cache
+      const updatedTasks = await getTasks(supabase, board.id);
+      setTasks(updatedTasks);
+      queryClient.invalidateQueries({ queryKey: ['tasks', board.id] });
+      setSelectedTasks(new Set());
+      setIsBulkEditing(false);
+      setBulkEditData({ priority: 'keep', status: 'keep', tags: [] });
+    } catch (error) {
+      console.error('Error updating tasks:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedTasks.size === 0) return;
+
+    const confirmed = window.confirm(
+      `Are you sure you want to delete ${selectedTasks.size} selected task${selectedTasks.size !== 1 ? 's' : ''}? This action cannot be undone.`
+    );
+
+    if (confirmed) {
+      setIsLoading(true);
+      try {
+        const supabase = createClient();
+        const taskIds = Array.from(selectedTasks);
+
+        // Delete tasks in batches
+        for (const taskId of taskIds) {
+          await supabase.from('tasks').delete().eq('id', taskId);
+        }
+
+        // Refresh the task list and invalidate cache
+        const updatedTasks = await getTasks(supabase, board.id);
+        setTasks(updatedTasks);
+        queryClient.invalidateQueries({ queryKey: ['tasks', board.id] });
+        setSelectedTasks(new Set());
+      } catch (error) {
+        console.error('Error deleting tasks:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+  };
 
   // Update local state when props change
   useEffect(() => {
@@ -180,7 +305,10 @@ export function ListView({ board }: Props) {
         },
         async () => {
           const tasks = await getTasks(supabase, board.id);
-          if (mounted) setTasks(tasks);
+          if (mounted) {
+            setTasks(tasks);
+            queryClient.invalidateQueries({ queryKey: ['tasks', board.id] });
+          }
         }
       )
       .on(
@@ -192,7 +320,10 @@ export function ListView({ board }: Props) {
         },
         async () => {
           const tasks = await getTasks(supabase, board.id);
-          if (mounted) setTasks(tasks);
+          if (mounted) {
+            setTasks(tasks);
+            queryClient.invalidateQueries({ queryKey: ['tasks', board.id] });
+          }
         }
       )
       .subscribe();
@@ -203,7 +334,7 @@ export function ListView({ board }: Props) {
       mounted = false;
       tasksSubscription.unsubscribe();
     };
-  }, [board.id]);
+  }, [board.id, queryClient]);
 
   // Get unique values for filters
   const filterOptions = useMemo(() => {
@@ -211,16 +342,17 @@ export function ListView({ board }: Props) {
     const statuses = new Set<string>();
     const assignees = new Set<{ id: string; name: string; email: string }>();
 
+    // Always include all possible priorities (0 = No Priority, 1 = High, 2 = Medium, 3 = Low)
+    priorities.add(0);
+    priorities.add(1);
+    priorities.add(2);
+    priorities.add(3);
+
+    // Always include all possible statuses
+    statuses.add('active');
+    statuses.add('completed');
+
     tasks.forEach((task) => {
-      if (task.priority) priorities.add(task.priority);
-
-      // Map archived status
-      if (task.archived) {
-        statuses.add('completed');
-      } else {
-        statuses.add('active');
-      }
-
       task.assignees?.forEach((assignee) => {
         assignees.add({
           id: assignee.id,
@@ -235,6 +367,21 @@ export function ListView({ board }: Props) {
       statuses: Array.from(statuses),
       assignees: Array.from(assignees),
     };
+  }, [tasks]);
+
+  // Extract unique tags from tasks
+  const availableTags = useMemo(() => {
+    const tagSet = new Set<string>();
+    tasks.forEach((task) => {
+      if (task.tags && Array.isArray(task.tags)) {
+        task.tags.forEach((tag) => {
+          if (tag && typeof tag === 'string') {
+            tagSet.add(tag);
+          }
+        });
+      }
+    });
+    return Array.from(tagSet).sort();
   }, [tasks]);
 
   // Apply filters and sorting
@@ -254,9 +401,22 @@ export function ListView({ board }: Props) {
         if (!matches) return false;
       }
 
+      // Tag filter
+      if (selectedTags.length > 0) {
+        if (!task.tags || task.tags.length === 0) {
+          return false;
+        }
+        // Check if task has any of the selected tags
+        const hasMatchingTag = selectedTags.some(
+          (selectedTag) => task.tags?.includes(selectedTag) ?? false
+        );
+        if (!hasMatchingTag) return false;
+      }
+
       // Priority filter
       if (filters.priorities.size > 0) {
-        if (!task.priority || !filters.priorities.has(task.priority)) {
+        const taskPriority = task.priority ?? 0; // Treat null/undefined as 0 (No Priority)
+        if (!filters.priorities.has(taskPriority)) {
           return false;
         }
       }
@@ -271,10 +431,21 @@ export function ListView({ board }: Props) {
 
       // Assignees filter
       if (filters.assignees.size > 0) {
-        const hasMatchingAssignee = task.assignees?.some((assignee) =>
-          filters.assignees.has(assignee.id)
-        );
-        if (!hasMatchingAssignee) return false;
+        // Handle special filter options
+        if (filters.assignees.has('all')) {
+          // "All" option selected - show all tasks
+        } else if (filters.assignees.has('unassigned')) {
+          // "Unassigned" option selected - show tasks with no assignees
+          if (task.assignees && task.assignees.length > 0) {
+            return false;
+          }
+        } else {
+          // Specific assignees selected
+          const hasMatchingAssignee = task.assignees?.some((assignee) =>
+            filters.assignees.has(assignee.id)
+          );
+          if (!hasMatchingAssignee) return false;
+        }
       }
 
       // Date filter
@@ -369,13 +540,19 @@ export function ListView({ board }: Props) {
           comparison = aStatus.localeCompare(bStatus);
           break;
         }
+        case 'tags': {
+          const aLength = a.tags?.length || 0;
+          const bLength = b.tags?.length || 0;
+          comparison = aLength - bLength;
+          break;
+        }
       }
 
       return sortOrder === 'desc' ? -comparison : comparison;
     });
 
     return filtered;
-  }, [tasks, filters, sortField, sortOrder]);
+  }, [tasks, filters, sortField, sortOrder, selectedTags]);
 
   // Paginated tasks
   const paginatedTasks = useMemo(() => {
@@ -417,6 +594,7 @@ export function ListView({ board }: Props) {
       assignees: new Set(),
       dateFilter: 'all',
     });
+    onTagsChange([]); // Clear tag filters
     setCurrentPage(1);
   }
 
@@ -449,12 +627,10 @@ export function ListView({ board }: Props) {
     filters.priorities.size > 0 ||
     filters.statuses.size > 0 ||
     filters.assignees.size > 0 ||
-    filters.dateFilter !== 'all';
+    filters.dateFilter !== 'all' ||
+    selectedTags.length > 0;
 
-  // Reset page when filters change
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [filters]);
+  // Reset page when filters change - handled in individual filter setters
 
   function formatDate(date: string) {
     const dateObj = new Date(date);
@@ -495,51 +671,85 @@ export function ListView({ board }: Props) {
       );
     }
 
+    // Check if task is in a "done" list but not individually archived
+    const isInDoneList =
+      task.list_id &&
+      board.lists?.some(
+        (list) => list.id === task.list_id && list.status === 'done'
+      );
+
     return (
       <div className="flex items-center justify-center">
-        <Circle className="h-4 w-4 cursor-pointer text-muted-foreground transition-colors hover:text-dynamic-blue/80" />
+        <div
+          className={cn(
+            'h-4 w-4 rounded-full border-2',
+            isInDoneList
+              ? 'animate-pulse border-amber-500/30 bg-amber-500/60 [animation-duration:4s]'
+              : 'border-muted-foreground/30'
+          )}
+          title={
+            isInDoneList
+              ? 'Task is in Done list but not individually checked'
+              : undefined
+          }
+        />
       </div>
     );
   }
 
   function renderPriority(priority: number) {
-    const priorityConfig = {
-      1: {
-        label: 'High',
-        color: 'text-dynamic-red/80',
-        bgColor: 'bg-dynamic-red/10',
-        borderColor: 'border-dynamic-red/30',
-      },
-      2: {
-        label: 'Medium',
-        color: 'text-dynamic-yellow/80',
-        bgColor: 'bg-dynamic-yellow/10',
-        borderColor: 'border-dynamic-yellow/30',
-      },
-      3: {
-        label: 'Low',
-        color: 'text-dynamic-green/80',
-        bgColor: 'bg-dynamic-green/10',
-        borderColor: 'border-dynamic-green/30',
-      },
+    const labels = {
+      0: 'No Priority',
+      1: 'High',
+      2: 'Medium',
+      3: 'Low',
     };
 
-    const config = priorityConfig[priority as keyof typeof priorityConfig];
-    if (!config) return null;
+    const colors = {
+      0: 'border-gray-300 bg-gray-50 text-gray-700 dark:bg-gray-800 dark:text-gray-300',
+      1: 'border-red-500 bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300',
+      2: 'border-yellow-500 bg-yellow-50 text-yellow-700 dark:bg-yellow-950 dark:text-yellow-300',
+      3: 'border-green-500 bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300',
+    };
 
     return (
       <Badge
         variant="outline"
-        className={cn(
-          'text-xs font-medium',
-          config.color,
-          config.bgColor,
-          config.borderColor
-        )}
+        className={cn('font-medium', colors[priority as keyof typeof colors])}
       >
-        <Flag className="mr-1 h-2.5 w-2.5" />
-        {config.label}
+        {labels[priority as keyof typeof labels]}
       </Badge>
+    );
+  }
+
+  function renderTags(tags: string[] | null) {
+    if (!tags || tags.length === 0) {
+      return <span className="text-muted-foreground text-sm">—</span>;
+    }
+
+    return (
+      <div className="flex flex-wrap gap-1">
+        {tags.slice(0, 3).map((tag) => (
+          <Badge
+            key={tag}
+            variant="outline"
+            className={cn(
+              'h-5 rounded-full border px-1.5 font-medium text-xs',
+              getTagColor(tag)
+            )}
+          >
+            {tag}
+          </Badge>
+        ))}
+        {tags.length > 3 && (
+          <Badge
+            variant="outline"
+            className="h-5 rounded-full border px-1.5 font-medium text-xs"
+          >
+            +{tags.length - 3}
+          </Badge>
+        )}
+      </div>
     );
   }
 
@@ -579,13 +789,21 @@ export function ListView({ board }: Props) {
           <Skeleton className="h-10 flex-1" />
         </div>
         <div className="space-y-3">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <Skeleton key={i} className="h-16 w-full" />
+          {Array.from({ length: 5 }, (_, i) => (
+            <Skeleton
+              key={`loading-skeleton-${i}-${Date.now()}`}
+              className="h-16 w-full"
+            />
           ))}
         </div>
       </div>
     );
   }
+
+  // Find the selected task for editing
+  const selectedTask = selectedTaskId
+    ? tasks.find((task) => task.id === selectedTaskId)
+    : null;
 
   return (
     <div className="mt-2 flex h-full flex-col gap-4">
@@ -594,7 +812,7 @@ export function ListView({ board }: Props) {
         {/* Search and Actions Row */}
         <div className="flex items-center gap-4">
           <div className="relative flex-1">
-            <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search tasks by name or description..."
               value={filters.search}
@@ -608,7 +826,7 @@ export function ListView({ board }: Props) {
                 variant="ghost"
                 size="sm"
                 onClick={() => setFilters({ ...filters, search: '' })}
-                className="absolute top-1/2 right-1 h-7 w-7 -translate-y-1/2 p-0 hover:bg-muted"
+                className="-translate-y-1/2 absolute top-1/2 right-1 h-7 w-7 p-0 hover:bg-muted"
               >
                 <X className="h-3 w-3" />
                 <span className="sr-only">Clear search</span>
@@ -618,143 +836,332 @@ export function ListView({ board }: Props) {
 
           {/* Table Actions */}
           <div className="flex items-center gap-2">
-            {/* Priority Filter */}
-            <Popover
-              open={priorityFilterOpen}
-              onOpenChange={setPriorityFilterOpen}
-            >
-              <PopoverTrigger asChild>
+            {/* Tag Filter */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
                 <Button
                   variant="outline"
                   size="sm"
                   className={cn(
-                    'h-8 border-dashed',
-                    filters.priorities.size > 0 && 'border-solid bg-accent'
+                    'h-8 gap-1.5 px-3 text-xs',
+                    selectedTags.length > 0 &&
+                      'border-primary bg-primary/5 text-primary hover:bg-primary/10'
                   )}
                 >
-                  <Flag className="mr-2 h-4 w-4" />
+                  <Tag className="h-3.5 w-3.5" />
+                  Tags
+                  {selectedTags.length > 0 && (
+                    <Badge
+                      variant="secondary"
+                      className="ml-1 h-4 w-4 rounded-full p-0 text-xs"
+                    >
+                      {selectedTags.length}
+                    </Badge>
+                  )}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                align="start"
+                className="max-h-64 w-56 overflow-y-auto"
+              >
+                <div className="max-h-48 overflow-y-auto">
+                  {availableTags.map((tag) => (
+                    <DropdownMenuItem
+                      key={tag}
+                      onClick={() => {
+                        const newTags = selectedTags.includes(tag)
+                          ? selectedTags.filter((t) => t !== tag)
+                          : [...selectedTags, tag];
+                        onTagsChange(newTags);
+                      }}
+                      className="cursor-pointer"
+                    >
+                      <Checkbox
+                        checked={selectedTags.includes(tag)}
+                        className="mr-2 h-3.5 w-3.5"
+                      />
+                      <Badge
+                        variant="outline"
+                        className={cn('text-xs', getTagColor(tag))}
+                      >
+                        {tag}
+                      </Badge>
+                    </DropdownMenuItem>
+                  ))}
+                </div>
+                {selectedTags.length > 0 && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={() => onTagsChange([])}
+                      className="cursor-pointer text-muted-foreground"
+                    >
+                      Clear all tags
+                    </DropdownMenuItem>
+                  </>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* Priority Filter */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className={cn(
+                    'h-8 gap-1.5 px-3 text-xs',
+                    filters.priorities.size > 0 &&
+                      'border-primary bg-primary/5 text-primary hover:bg-primary/10'
+                  )}
+                >
+                  <Flag className="h-3.5 w-3.5" />
                   Priority
                   {filters.priorities.size > 0 && (
                     <Badge
                       variant="secondary"
-                      className="ml-2 h-5 w-5 p-0 text-xs"
+                      className="ml-1 h-4 w-4 rounded-full p-0 text-xs"
                     >
                       {filters.priorities.size}
                     </Badge>
                   )}
                 </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-[200px] p-0" align="start">
-                <Command>
-                  <CommandInput placeholder="Search priorities..." />
-                  <CommandList>
-                    <CommandEmpty>No priorities found.</CommandEmpty>
-                    <CommandGroup>
-                      {filterOptions.priorities.map((priority) => {
-                        const isSelected = filters.priorities.has(priority);
-                        return (
-                          <CommandItem
-                            key={priority}
-                            onSelect={() => {
-                              const newPriorities = new Set(filters.priorities);
-                              if (isSelected) {
-                                newPriorities.delete(priority);
-                              } else {
-                                newPriorities.add(priority);
-                              }
-                              setFilters({
-                                ...filters,
-                                priorities: newPriorities,
-                              });
-                            }}
-                          >
-                            <div className="flex items-center space-x-2">
-                              <Checkbox checked={isSelected} />
-                              <Flag className="mr-2 h-4 w-4" />
-                              <span>
-                                {
-                                  priorityLabels[
-                                    priority as keyof typeof priorityLabels
-                                  ]
-                                }
-                              </span>
-                            </div>
-                          </CommandItem>
-                        );
-                      })}
-                    </CommandGroup>
-                  </CommandList>
-                </Command>
-              </PopoverContent>
-            </Popover>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                align="start"
+                className="max-h-64 w-48 overflow-y-auto"
+              >
+                {filterOptions.priorities.map((priority) => (
+                  <DropdownMenuItem
+                    key={priority}
+                    onClick={() => {
+                      const newPriorities = new Set(filters.priorities);
+                      if (newPriorities.has(priority)) {
+                        newPriorities.delete(priority);
+                      } else {
+                        newPriorities.add(priority);
+                      }
+                      setFilters((prev) => ({
+                        ...prev,
+                        priorities: newPriorities,
+                      }));
+                    }}
+                    className="cursor-pointer"
+                  >
+                    <Checkbox
+                      checked={filters.priorities.has(priority)}
+                      className="mr-2 h-3.5 w-3.5"
+                    />
+                    <Flag className="mr-2 h-3.5 w-3.5" />
+                    {priorityLabels[priority as keyof typeof priorityLabels]}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
 
             {/* Status Filter */}
-            <Popover open={statusFilterOpen} onOpenChange={setStatusFilterOpen}>
-              <PopoverTrigger asChild>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
                 <Button
                   variant="outline"
                   size="sm"
                   className={cn(
-                    'h-8 border-dashed',
-                    filters.statuses.size > 0 && 'border-solid bg-accent'
+                    'h-8 gap-1.5 px-3 text-xs',
+                    filters.statuses.size > 0 &&
+                      'border-primary bg-primary/5 text-primary hover:bg-primary/10'
                   )}
                 >
-                  <Circle className="mr-2 h-4 w-4" />
+                  <CheckCircle2 className="h-3.5 w-3.5" />
                   Status
                   {filters.statuses.size > 0 && (
                     <Badge
                       variant="secondary"
-                      className="ml-2 h-5 w-5 p-0 text-xs"
+                      className="ml-1 h-4 w-4 rounded-full p-0 text-xs"
                     >
                       {filters.statuses.size}
                     </Badge>
                   )}
                 </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-[200px] p-0" align="start">
-                <Command>
-                  <CommandList>
-                    <CommandGroup>
-                      {filterOptions.statuses.map((status) => {
-                        const isSelected = filters.statuses.has(status);
-                        return (
-                          <CommandItem
-                            key={status}
-                            onSelect={() => {
-                              const newStatuses = new Set(filters.statuses);
-                              if (isSelected) {
-                                newStatuses.delete(status);
-                              } else {
-                                newStatuses.add(status);
-                              }
-                              setFilters({ ...filters, statuses: newStatuses });
-                            }}
-                          >
-                            <div className="flex items-center space-x-2">
-                              <Checkbox checked={isSelected} />
-                              <span className="capitalize">{status}</span>
-                            </div>
-                          </CommandItem>
-                        );
-                      })}
-                    </CommandGroup>
-                  </CommandList>
-                </Command>
-              </PopoverContent>
-            </Popover>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                align="start"
+                className="max-h-64 w-48 overflow-y-auto"
+              >
+                {filterOptions.statuses.map((status) => (
+                  <DropdownMenuItem
+                    key={status}
+                    onClick={() => {
+                      const newStatuses = new Set(filters.statuses);
+                      if (newStatuses.has(status)) {
+                        newStatuses.delete(status);
+                      } else {
+                        newStatuses.add(status);
+                      }
+                      setFilters((prev) => ({
+                        ...prev,
+                        statuses: newStatuses,
+                      }));
+                    }}
+                    className="cursor-pointer"
+                  >
+                    <Checkbox
+                      checked={filters.statuses.has(status)}
+                      className="mr-2 h-3.5 w-3.5"
+                    />
+                    <span className="capitalize">{status}</span>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* Assignee Filter */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className={cn(
+                    'h-8 gap-1.5 px-3 text-xs',
+                    filters.assignees.size > 0 &&
+                      'border-primary bg-primary/5 text-primary hover:bg-primary/10'
+                  )}
+                >
+                  <Users className="h-3.5 w-3.5" />
+                  Assignees
+                  {filters.assignees.size > 0 && (
+                    <Badge
+                      variant="secondary"
+                      className="ml-1 h-4 w-4 rounded-full p-0 text-xs"
+                    >
+                      {filters.assignees.size}
+                    </Badge>
+                  )}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="max-h-64 w-56">
+                <div className="max-h-48 overflow-y-auto">
+                  {/* All option */}
+                  <DropdownMenuItem
+                    onClick={() => {
+                      const newAssignees = new Set(filters.assignees);
+                      if (newAssignees.has('all')) {
+                        newAssignees.delete('all');
+                      } else {
+                        newAssignees.clear();
+                        newAssignees.add('all');
+                      }
+                      setFilters((prev) => ({
+                        ...prev,
+                        assignees: newAssignees,
+                      }));
+                    }}
+                    className="cursor-pointer"
+                  >
+                    <Checkbox
+                      checked={filters.assignees.has('all')}
+                      className="mr-2 h-3.5 w-3.5"
+                    />
+                    <span>All tasks</span>
+                  </DropdownMenuItem>
+
+                  {/* Unassigned option */}
+                  <DropdownMenuItem
+                    onClick={() => {
+                      const newAssignees = new Set(filters.assignees);
+                      if (newAssignees.has('unassigned')) {
+                        newAssignees.delete('unassigned');
+                      } else {
+                        newAssignees.add('unassigned');
+                      }
+                      setFilters((prev) => ({
+                        ...prev,
+                        assignees: newAssignees,
+                      }));
+                    }}
+                    className="cursor-pointer"
+                  >
+                    <Checkbox
+                      checked={filters.assignees.has('unassigned')}
+                      className="mr-2 h-3.5 w-3.5"
+                    />
+                    <span>Unassigned</span>
+                  </DropdownMenuItem>
+
+                  <DropdownMenuSeparator />
+
+                  {/* Individual members */}
+                  {members.map(
+                    (member: {
+                      id: string;
+                      display_name?: string;
+                      email?: string;
+                      avatar_url?: string;
+                    }) => (
+                      <DropdownMenuItem
+                        key={member.id}
+                        onClick={() => {
+                          const newAssignees = new Set(filters.assignees);
+                          if (newAssignees.has(member.id)) {
+                            newAssignees.delete(member.id);
+                          } else {
+                            newAssignees.add(member.id);
+                          }
+                          setFilters((prev) => ({
+                            ...prev,
+                            assignees: newAssignees,
+                          }));
+                        }}
+                        className="cursor-pointer"
+                      >
+                        <Checkbox
+                          checked={filters.assignees.has(member.id)}
+                          className="mr-2 h-3.5 w-3.5"
+                        />
+                        <div className="flex items-center gap-2">
+                          <div className="flex h-5 w-5 items-center justify-center rounded-full bg-muted font-medium text-xs">
+                            {member.display_name?.[0]?.toUpperCase() ||
+                              member.email?.[0]?.toUpperCase() ||
+                              '?'}
+                          </div>
+                          <span className="truncate">
+                            {member.display_name || member.email || 'Unknown'}
+                          </span>
+                        </div>
+                      </DropdownMenuItem>
+                    )
+                  )}
+                </div>
+                {filters.assignees.size > 0 && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={() =>
+                        setFilters((prev) => ({
+                          ...prev,
+                          assignees: new Set(),
+                        }))
+                      }
+                      className="cursor-pointer text-muted-foreground"
+                    >
+                      Clear assignee filters
+                    </DropdownMenuItem>
+                  </>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
 
             {/* Date Filter */}
             <Select
               value={filters.dateFilter}
-              onValueChange={(value: any) =>
-                setFilters({ ...filters, dateFilter: value })
-              }
+              onValueChange={(
+                value: 'all' | 'overdue' | 'today' | 'this_week' | 'no_date'
+              ) => setFilters({ ...filters, dateFilter: value })}
             >
               <SelectTrigger className="h-8 w-[130px]">
                 <Calendar className="mr-2 h-4 w-4" />
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="max-h-64 overflow-y-auto">
                 <SelectItem value="all">All dates</SelectItem>
                 <SelectItem value="overdue">Overdue</SelectItem>
                 <SelectItem value="today">Due today</SelectItem>
@@ -828,6 +1235,17 @@ export function ListView({ board }: Props) {
                 >
                   Assignees
                 </DropdownMenuCheckboxItem>
+                <DropdownMenuCheckboxItem
+                  checked={columnVisibility.tags}
+                  onCheckedChange={(checked) =>
+                    setColumnVisibility({
+                      ...columnVisibility,
+                      tags: checked,
+                    })
+                  }
+                >
+                  Tags
+                </DropdownMenuCheckboxItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={refreshData}>
                   <RefreshCw className="mr-2 h-4 w-4" />
@@ -853,7 +1271,7 @@ export function ListView({ board }: Props) {
 
         {/* Results and Filter Summary */}
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <div className="flex items-center gap-2 text-muted-foreground text-sm">
             <span>
               {filteredAndSortedTasks.length} of {tasks.length} task
               {tasks.length !== 1 ? 's' : ''}
@@ -870,7 +1288,7 @@ export function ListView({ board }: Props) {
 
           {/* Page Size */}
           <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">Rows per page</span>
+            <span className="text-muted-foreground text-sm">Rows per page</span>
             <Select
               value={pageSize.toString()}
               onValueChange={(value) => {
@@ -881,7 +1299,7 @@ export function ListView({ board }: Props) {
               <SelectTrigger className="h-8 w-[70px]">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="max-h-64 overflow-y-auto">
                 <SelectItem value="5">5</SelectItem>
                 <SelectItem value="10">10</SelectItem>
                 <SelectItem value="25">25</SelectItem>
@@ -898,13 +1316,17 @@ export function ListView({ board }: Props) {
             <Search className="h-8 w-8 text-muted-foreground" />
           </div>
           <div className="space-y-2">
-            <h3 className="text-lg font-semibold">
-              {filters.search ? 'No tasks found' : 'No tasks yet'}
+            <h3 className="font-semibold text-lg">
+              {filters.search || selectedTags.length > 0
+                ? 'No tasks found'
+                : 'No tasks yet'}
             </h3>
-            <p className="max-w-sm text-sm text-muted-foreground">
+            <p className="max-w-sm text-muted-foreground text-sm">
               {filters.search
                 ? `No tasks match "${filters.search}". Try adjusting your search terms.`
-                : 'Get started by creating your first task.'}
+                : selectedTags.length > 0
+                  ? `No tasks match the selected tags. Try adjusting your filters.`
+                  : 'Get started by creating your first task.'}
             </p>
           </div>
           {filters.search && (
@@ -933,9 +1355,44 @@ export function ListView({ board }: Props) {
                 </TableHead>
                 {columnVisibility.status && (
                   <TableHead className="w-[50px] text-center">
-                    <span className="text-xs font-medium text-muted-foreground">
-                      Status
-                    </span>
+                    <div className="flex items-center justify-center gap-1">
+                      <span className="font-medium text-muted-foreground text-xs">
+                        Status
+                      </span>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-4 w-4 p-0 hover:bg-muted"
+                          >
+                            <HelpCircle className="h-3 w-3" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-80">
+                          <div className="space-y-2">
+                            <h4 className="font-medium">Task Completion</h4>
+                            <p className="text-muted-foreground text-sm">
+                              Tasks can be completed in two ways:
+                            </p>
+                            <ul className="space-y-1 text-muted-foreground text-sm">
+                              <li>
+                                • <strong>Individual checkbox:</strong> Mark
+                                task as done
+                              </li>
+                              <li>
+                                • <strong>Move to Done list:</strong>{' '}
+                                Automatically marks task as done
+                              </li>
+                            </ul>
+                            <p className="text-muted-foreground text-xs">
+                              The amber dot indicates a task in a "Done" list
+                              that hasn't been individually checked.
+                            </p>
+                          </div>
+                        </PopoverContent>
+                      </Popover>
+                    </div>
                   </TableHead>
                 )}
                 {columnVisibility.name && (
@@ -1013,6 +1470,22 @@ export function ListView({ board }: Props) {
                     </Button>
                   </TableHead>
                 )}
+                {columnVisibility.tags && (
+                  <TableHead className="w-[100px]">
+                    <Button
+                      variant="ghost"
+                      className={cn(
+                        '-ml-4 h-8 justify-start hover:bg-transparent',
+                        sortField === 'tags' && 'text-foreground'
+                      )}
+                      onClick={() => handleSort('tags')}
+                    >
+                      <Tag className="h-4 w-4" />
+                      <span className="font-medium">Tags</span>
+                      {getSortIcon('tags')}
+                    </Button>
+                  </TableHead>
+                )}
                 {columnVisibility.actions && <TableHead className="w-[50px]" />}
               </TableRow>
             </TableHeader>
@@ -1044,14 +1517,14 @@ export function ListView({ board }: Props) {
                     <TableCell className="py-4">
                       <div className="space-y-1">
                         <div
-                          className={cn('leading-none font-medium', {
+                          className={cn('font-medium leading-none', {
                             'text-muted-foreground line-through': task.archived,
                           })}
                         >
                           {task.name}
                         </div>
                         {task.description && (
-                          <p className="line-clamp-2 text-sm leading-relaxed text-muted-foreground">
+                          <p className="line-clamp-2 text-muted-foreground text-sm leading-relaxed">
                             {task.description}
                           </p>
                         )}
@@ -1059,9 +1532,7 @@ export function ListView({ board }: Props) {
                     </TableCell>
                   )}
                   {columnVisibility.priority && (
-                    <TableCell>
-                      {task.priority ? renderPriority(task.priority) : null}
-                    </TableCell>
+                    <TableCell>{renderPriority(task.priority ?? 0)}</TableCell>
                   )}
                   {columnVisibility.start_date && (
                     <TableCell>
@@ -1080,12 +1551,15 @@ export function ListView({ board }: Props) {
                       {task.assignees && task.assignees.length > 0 && (
                         <div className="flex items-center gap-1.5">
                           <Users className="h-3.5 w-3.5 text-muted-foreground" />
-                          <span className="text-sm font-medium">
+                          <span className="font-medium text-sm">
                             {task.assignees.length}
                           </span>
                         </div>
                       )}
                     </TableCell>
+                  )}
+                  {columnVisibility.tags && (
+                    <TableCell>{renderTags(task.tags || null)}</TableCell>
                   )}
                   {columnVisibility.actions && (
                     <TableCell>
@@ -1122,7 +1596,7 @@ export function ListView({ board }: Props) {
       {/* Pagination */}
       {filteredAndSortedTasks.length > 0 && totalPages > 1 && (
         <div className="flex items-center justify-between border-t pt-4">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <div className="flex items-center gap-2 text-muted-foreground text-sm">
             <span>
               Showing {(currentPage - 1) * pageSize + 1}-
               {Math.min(currentPage * pageSize, filteredAndSortedTasks.length)}{' '}
@@ -1137,7 +1611,7 @@ export function ListView({ board }: Props) {
           </div>
 
           <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1 text-sm text-muted-foreground">
+            <div className="flex items-center gap-1 text-muted-foreground text-sm">
               <span>
                 Page {currentPage} of {totalPages}
               </span>
@@ -1188,8 +1662,8 @@ export function ListView({ board }: Props) {
 
       {/* Bulk Actions for Selected Tasks */}
       {selectedTasks.size > 0 && (
-        <div className="fixed bottom-6 left-1/2 z-50 flex -translate-x-1/2 transform items-center gap-3 rounded-lg border bg-background p-3 shadow-lg">
-          <span className="text-sm font-medium">
+        <div className="-translate-x-1/2 fixed bottom-6 left-1/2 z-50 flex transform items-center gap-3 rounded-lg border bg-background p-3 shadow-lg">
+          <span className="font-medium text-sm">
             {selectedTasks.size} task{selectedTasks.size !== 1 ? 's' : ''}{' '}
             selected
           </span>
@@ -1202,34 +1676,22 @@ export function ListView({ board }: Props) {
             >
               Cancel
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                // TODO: Implement bulk edit
-                console.log('Bulk edit:', Array.from(selectedTasks));
-              }}
-            >
+            <Button variant="outline" size="sm" onClick={handleBulkEdit}>
               Edit
             </Button>
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={() => {
-                // TODO: Implement bulk delete
-                console.log('Bulk delete:', Array.from(selectedTasks));
-              }}
-            >
+            <Button variant="destructive" size="sm" onClick={handleBulkDelete}>
               Delete
             </Button>
           </div>
         </div>
       )}
 
-      {selectedTaskId && (
-        <TaskActions
-          taskId={selectedTaskId}
-          boardId={board.id}
+      {/* Task Edit Dialog */}
+      {selectedTask && (
+        <TaskEditDialog
+          task={selectedTask}
+          isOpen={!!selectedTaskId}
+          onClose={() => setSelectedTaskId(null)}
           onUpdate={() => {
             setSelectedTaskId(null);
             const supabase = createClient();
@@ -1237,6 +1699,125 @@ export function ListView({ board }: Props) {
           }}
         />
       )}
+
+      {/* Bulk Edit Dialog */}
+      <Dialog open={isBulkEditing} onOpenChange={setIsBulkEditing}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Bulk Edit Tasks</DialogTitle>
+            <DialogDescription>
+              Update {selectedTasks.size} selected task
+              {selectedTasks.size !== 1 ? 's' : ''}. Leave fields empty to keep
+              current values.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="bulk-priority">Priority</Label>
+              <Select
+                value={bulkEditData.priority}
+                onValueChange={(value) =>
+                  setBulkEditData((prev) => ({ ...prev, priority: value }))
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Keep current priority" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="keep">Keep current</SelectItem>
+                  <SelectItem value="0">No Priority</SelectItem>
+                  <SelectItem value="1">High</SelectItem>
+                  <SelectItem value="2">Medium</SelectItem>
+                  <SelectItem value="3">Low</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="bulk-status">Status</Label>
+              <Select
+                value={bulkEditData.status}
+                onValueChange={(value) =>
+                  setBulkEditData((prev) => ({ ...prev, status: value }))
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Keep current status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="keep">Keep current</SelectItem>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="bulk-tags">Tags</Label>
+              <div className="flex flex-wrap gap-2">
+                {availableTags.map((tag) => (
+                  <Button
+                    key={tag}
+                    variant={
+                      bulkEditData.tags.includes(tag) ? 'default' : 'outline'
+                    }
+                    size="sm"
+                    onClick={() => {
+                      const newTags = bulkEditData.tags.includes(tag)
+                        ? bulkEditData.tags.filter((t) => t !== tag)
+                        : [...bulkEditData.tags, tag];
+                      setBulkEditData((prev) => ({ ...prev, tags: newTags }));
+                    }}
+                    className="h-7 text-xs"
+                  >
+                    {tag}
+                  </Button>
+                ))}
+              </div>
+              {bulkEditData.tags.length > 0 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() =>
+                    setBulkEditData((prev) => ({ ...prev, tags: [] }))
+                  }
+                  className="h-7 text-muted-foreground text-xs"
+                >
+                  Clear all tags
+                </Button>
+              )}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsBulkEditing(false);
+                setBulkEditData({ priority: 'keep', status: 'keep', tags: [] });
+              }}
+              disabled={isLoading}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleBulkEditSave}
+              disabled={
+                isLoading ||
+                (bulkEditData.priority === 'keep' &&
+                  bulkEditData.status === 'keep' &&
+                  bulkEditData.tags.length === 0)
+              }
+            >
+              {isLoading ? (
+                <>
+                  <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                  Updating...
+                </>
+              ) : (
+                'Update Tasks'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

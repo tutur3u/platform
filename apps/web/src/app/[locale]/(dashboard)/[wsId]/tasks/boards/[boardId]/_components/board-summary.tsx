@@ -95,7 +95,14 @@ export function BoardSummary({ board }: Props) {
   }, [boardId, queryClient, tasks, lists]);
 
   const totalTasks = tasks.length;
-  const completedTasks = tasks.filter((task) => task.archived).length;
+  const completedTasks = tasks.filter((task) => {
+    const taskList = lists.find((list) => list.id === task.list_id);
+    return (
+      task.archived ||
+      taskList?.status === 'done' ||
+      taskList?.status === 'closed'
+    );
+  }).length;
   const completionRate = totalTasks ? (completedTasks / totalTasks) * 100 : 0;
 
   const overdueTasks = tasks.filter(
@@ -123,10 +130,12 @@ export function BoardSummary({ board }: Props) {
       (task) =>
         !task.archived && task.end_date && new Date(task.end_date) > new Date()
     )
-    .sort(
-      (a, b) =>
-        new Date(a.end_date!).getTime() - new Date(b.end_date!).getTime()
-    )[0];
+    .sort((a, b) => {
+      // Since we filtered for tasks with end_date, we can safely assume they exist
+      const aDate = a.end_date ? new Date(a.end_date).getTime() : 0;
+      const bDate = b.end_date ? new Date(b.end_date).getTime() : 0;
+      return aDate - bDate;
+    })[0];
 
   if (isLoading) {
     return <div>Loading...</div>;
@@ -150,11 +159,11 @@ export function BoardSummary({ board }: Props) {
               <div className="flex-1">
                 <Progress value={completionRate} className="h-3" />
               </div>
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              <span className="font-medium text-gray-700 text-sm dark:text-gray-300">
                 {Math.round(completionRate)}%
               </span>
             </div>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
+            <p className="text-gray-600 text-sm dark:text-gray-400">
               {completedTasks} of {totalTasks} tasks completed
             </p>
           </div>
@@ -267,19 +276,21 @@ export function BoardSummary({ board }: Props) {
           {nextDueTask ? (
             <div className="space-y-2">
               <p
-                className={cn('line-clamp-2 text-sm font-medium', {
+                className={cn('line-clamp-2 font-medium text-sm', {
                   'text-muted-foreground line-through': nextDueTask.archived,
                 })}
               >
                 {nextDueTask.name}
               </p>
-              <div className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-400">
+              <div className="flex items-center gap-1 text-gray-600 text-xs dark:text-gray-400">
                 <Calendar className="h-3 w-3" />
-                {format(new Date(nextDueTask.end_date!), 'MMM d, yyyy')}
+                {nextDueTask.end_date
+                  ? format(new Date(nextDueTask.end_date), 'MMM d, yyyy')
+                  : 'No date'}
               </div>
             </div>
           ) : (
-            <p className="text-sm text-gray-500 dark:text-gray-400">
+            <p className="text-gray-500 text-sm dark:text-gray-400">
               No upcoming deadlines
             </p>
           )}

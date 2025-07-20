@@ -23,10 +23,10 @@ export async function getTaskBoard(supabase: SupabaseClient, boardId: string) {
     .from('workspace_boards')
     .select('*')
     .eq('id', boardId)
-    .single();
+    .maybeSingle(); // Use maybeSingle instead of single to return null if no rows
 
   if (error) throw error;
-  return data as TaskBoard;
+  return data as TaskBoard | null;
 }
 
 export async function getTaskLists(supabase: SupabaseClient, boardId: string) {
@@ -43,46 +43,55 @@ export async function getTaskLists(supabase: SupabaseClient, boardId: string) {
 }
 
 export async function getTasks(supabase: SupabaseClient, boardId: string) {
-  const { data: lists } = await supabase
-    .from('task_lists')
-    .select('id')
-    .eq('board_id', boardId)
-    .eq('deleted', false);
+  try {
+    const { data: lists } = await supabase
+      .from('task_lists')
+      .select('id')
+      .eq('board_id', boardId)
+      .eq('deleted', false);
 
-  if (!lists?.length) return [];
+    if (!lists?.length) return [];
 
-  const { data, error } = await supabase
-    .from('tasks')
-    .select(
-      `
-      *,
-      assignees:task_assignees(
-        user:users(
-          id,
-          display_name,
-          avatar_url
+    const { data, error } = await supabase
+      .from('tasks')
+      .select(
+        `
+        *,
+        assignees:task_assignees(
+          user:users(
+            id,
+            display_name,
+            avatar_url
+          )
         )
+      `
       )
-    `
-    )
-    .in(
-      'list_id',
-      lists.map((list) => list.id)
-    )
-    .eq('deleted', false)
-    .order('created_at');
+      .in(
+        'list_id',
+        lists.map((list) => list.id)
+      )
+      .eq('deleted', false)
+      .order('created_at');
 
-  if (error) throw error;
+    if (error) {
+      console.error('Error fetching tasks:', error);
+      throw error;
+    }
 
-  // Transform the nested assignees data
-  const transformedTasks = data.map((task) => ({
-    ...task,
-    assignees: transformAssignees(
-      task.assignees as (TaskAssignee & { user: User })[]
-    ),
-  }));
+    // Transform the nested assignees data and ensure tags field exists
+    const transformedTasks = data.map((task) => ({
+      ...task,
+      tags: task.tags || [], // Ensure tags field exists
+      assignees: transformAssignees(
+        task.assignees as (TaskAssignee & { user: User })[]
+      ),
+    }));
 
-  return transformedTasks as Task[];
+    return transformedTasks as Task[];
+  } catch (error) {
+    console.error('Error in getTasks:', error);
+    throw error;
+  }
 }
 
 export async function getTaskAssignees(
@@ -169,6 +178,52 @@ export function invalidateTaskCaches(
   }
   // Always invalidate time tracker since task availability affects it
   queryClient.invalidateQueries({ queryKey: ['time-tracking-data'] });
+}
+
+// Utility function to sync task archived status with list status
+export async function syncTaskArchivedStatus(
+  supabase: SupabaseClient,
+  taskId: string,
+  listId: string
+) {
+  // Get the list status
+  const { data: list, error: listError } = await supabase
+    .from('task_lists')
+    .select('status')
+    .eq('id', listId)
+    .single();
+
+  if (listError) {
+    console.error('Error fetching list status:', listError);
+    return;
+  }
+
+  // Determine if task should be archived based on list status
+  const shouldArchive = list.status === 'done' || list.status === 'closed';
+
+  // Get current task status
+  const { data: task, error: taskError } = await supabase
+    .from('tasks')
+    .select('archived')
+    .eq('id', taskId)
+    .single();
+
+  if (taskError) {
+    console.error('Error fetching task status:', taskError);
+    return;
+  }
+
+  // Only update if there's a mismatch
+  if (task.archived !== shouldArchive) {
+    const { error: updateError } = await supabase
+      .from('tasks')
+      .update({ archived: shouldArchive })
+      .eq('id', taskId);
+
+    if (updateError) {
+      console.error('Error syncing task archived status:', updateError);
+    }
+  }
 }
 
 export async function moveTask(
