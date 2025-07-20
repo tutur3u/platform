@@ -1,7 +1,6 @@
 'use client';
 
 import type { Row } from '@tanstack/react-table';
-import type { TaskBoard } from '@tuturuuu/types/primitives/TaskBoard';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -28,9 +27,10 @@ import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { TaskBoardForm } from './form';
+import type { EnhancedTaskBoard } from './types';
 
 interface ProjectRowActionsProps {
-  row: Row<TaskBoard>;
+  row: Row<EnhancedTaskBoard>;
 }
 
 export function ProjectRowActions({ row }: ProjectRowActionsProps) {
@@ -62,10 +62,21 @@ export function ProjectRowActions({ row }: ProjectRowActionsProps) {
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
+
+
   if (!data.id || !data.ws_id) return null;
 
   return (
     <>
+      <div 
+        onClick={(e) => {
+          // Only prevent propagation if clicking on actual interactive elements
+          const target = e.target as HTMLElement;
+          if (target.closest('button') || target.closest('a') || target.closest('[role="menuitem"]')) {
+            e.stopPropagation();
+          }
+        }}
+      >
       <div className="flex items-center justify-end gap-2">
         {data.href && (
           <Link href={data.href}>
@@ -128,6 +139,7 @@ export function ProjectRowActions({ row }: ProjectRowActionsProps) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      </div>
     </>
   );
 }

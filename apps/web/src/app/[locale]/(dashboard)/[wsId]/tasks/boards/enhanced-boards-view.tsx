@@ -1,13 +1,9 @@
 'use client';
 
-import type {
-  Task,
-  TaskBoard,
-  TaskList,
-} from '@tuturuuu/types/primitives/TaskBoard';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card } from '@tuturuuu/ui/card';
+import type { EnhancedTaskBoard } from './types';
 import {
   Dialog,
   DialogContent,
@@ -78,18 +74,7 @@ const CARD_LAYOUT_OPTIONS = [
 type CardLayout = (typeof CARD_LAYOUT_OPTIONS)[number]['value'];
 
 interface EnhancedBoardsViewProps {
-  data: (TaskBoard & {
-    href: string;
-    totalTasks: number;
-    completedTasks: number;
-    activeTasks: number;
-    overdueTasks: number;
-    progressPercentage: number;
-    highPriorityTasks: number;
-    mediumPriorityTasks: number;
-    lowPriorityTasks: number;
-    task_lists?: (TaskList & { tasks: Task[] })[];
-  })[];
+  data: EnhancedTaskBoard[];
   count: number;
 }
 
@@ -286,11 +271,23 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
 
   const handleBoardClick = (
     board: (typeof safeData)[0],
-    e: React.MouseEvent
+    e?: React.MouseEvent
   ) => {
-    e.preventDefault();
+    if (e) {
+      e.preventDefault();
+    }
     setSelectedBoard(board.id);
     setSidebarOpen(true);
+  };
+
+  // Handler for table row clicks
+  const handleTableRowClick = (board: (typeof safeData)[0]) => {
+    // Check if any dialogs are currently open by looking for dialog elements
+    const hasOpenDialogs = document.querySelector('[role="dialog"]') !== null;
+    if (hasOpenDialogs) {
+      return; // Don't trigger row click if dialogs are open
+    }
+    handleBoardClick(board);
   };
 
   const closeSidebar = () => {
@@ -877,6 +874,7 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                   id: false,
                   created_at: false,
                 }}
+                onRowClick={handleTableRowClick}
               />
             </TabsContent>
 
