@@ -1,12 +1,12 @@
 'use client';
 
+import { Filter } from '../users/filters';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { MinusCircle, PlusCircle, User } from '@tuturuuu/ui/icons';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
-import { Filter } from '../users/filters';
 
 interface SearchParams {
   q?: string;

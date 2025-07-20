@@ -1,5 +1,15 @@
 'use client';
 
+import {
+  CATEGORY_CONFIG,
+  type ProgressUpdate,
+  STEP_CONFIG,
+  calculateOverallProgress,
+  getActiveSteps,
+  getCategoryStatus,
+  getCurrentStepInfo,
+  getStepsByCategory,
+} from '@/lib/streaming';
 import { Badge } from '@tuturuuu/ui/badge';
 import {
   Card,
@@ -26,16 +36,6 @@ import { Progress } from '@tuturuuu/ui/progress';
 import { Separator } from '@tuturuuu/ui/separator';
 import { cn } from '@tuturuuu/utils/format';
 import { useEffect, useState } from 'react';
-import {
-  CATEGORY_CONFIG,
-  calculateOverallProgress,
-  getActiveSteps,
-  getCategoryStatus,
-  getCurrentStepInfo,
-  getStepsByCategory,
-  type ProgressUpdate,
-  STEP_CONFIG,
-} from '@/lib/streaming';
 
 interface EvaluationPreview {
   criteriaEvaluation?: any[];

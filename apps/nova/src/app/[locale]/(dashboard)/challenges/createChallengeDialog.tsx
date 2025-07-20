@@ -1,5 +1,6 @@
 'use client';
 
+import ChallengeForm, { type ChallengeFormValues } from './challengeForm';
 import {
   Dialog,
   DialogContent,
@@ -9,10 +10,9 @@ import {
   DialogTrigger,
 } from '@tuturuuu/ui/dialog';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
-import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import ChallengeForm, { type ChallengeFormValues } from './challengeForm';
 
 interface CreateChallengeDialogProps {
   trigger: React.ReactNode;

@@ -1,12 +1,12 @@
 'use client';
 
+import useEmail from '@/hooks/useEmail';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { InternalEmail } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
 import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
 import { CircleAlert, CircleSlash, MailCheck, Send } from '@tuturuuu/ui/icons';
 import { useTranslations } from 'next-intl';
-import useEmail from '@/hooks/useEmail';
 
 export default function PostsRowActions({ data }: { data: InternalEmail }) {
   const t = useTranslations();

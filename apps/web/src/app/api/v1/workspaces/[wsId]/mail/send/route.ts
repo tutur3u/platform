@@ -1,3 +1,4 @@
+import { DEV_MODE } from '@/constants/common';
 import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses';
 import {
   createAdminClient,
@@ -8,7 +9,6 @@ import DOMPurify from 'isomorphic-dompurify';
 import juice from 'juice';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
-import { DEV_MODE } from '@/constants/common';
 
 const domainBlacklist = ['@easy.com', '@easy'];
 const disableEmailSending = process.env.DISABLE_EMAIL_SENDING === 'true';

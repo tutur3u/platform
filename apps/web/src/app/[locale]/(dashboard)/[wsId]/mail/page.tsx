@@ -4,8 +4,6 @@ import {
 } from '@tuturuuu/supabase/next/server';
 import type { InternalEmail } from '@tuturuuu/types/db';
 import { cookies } from 'next/headers';
-import { SIDEBAR_COLLAPSED_COOKIE_NAME } from '@/constants/common';
-import MailClientWrapper from './client';
 
 interface SearchParams {
   page?: string;

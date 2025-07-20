@@ -1,11 +1,10 @@
 'use client';
 
-import { cn } from '@tuturuuu/utils/format';
-import { usePathname, useRouter } from 'next/navigation';
-import { useCallback, useEffect, useState } from 'react';
-import type { NavLink as NavLinkType } from '@/components/navigation';
-import { ENABLE_KEYBOARD_SHORTCUTS } from '@/constants/common';
 import { NavLink } from './nav-link';
+import type { NavLink as NavLinkType } from '@/components/navigation';
+import { cn } from '@tuturuuu/utils/format';
+import { usePathname } from 'next/navigation';
+import { useEffect, useState } from 'react';
 
 interface NavProps {
   wsId: string;
@@ -25,7 +24,6 @@ export function Nav({
   onClick,
   className,
 }: NavProps) {
-  const router = useRouter();
   const pathname = usePathname();
 
   const [urlToLoad, setUrlToLoad] = useState<string>();
@@ -33,48 +31,6 @@ export function Nav({
   useEffect(() => {
     if (urlToLoad && urlToLoad === pathname) setUrlToLoad(undefined);
   }, [pathname, urlToLoad]);
-
-  const hasFocus = useCallback((selector: string) => {
-    return Array.from(document.querySelectorAll(selector)).some(
-      (el) => el === document.activeElement
-    );
-  }, []);
-
-  const parseShortcut = useCallback((shortcut: string) => {
-    const parts = shortcut.split('+');
-    return {
-      ctrl: parts.includes('CTRL'),
-      shift: parts.includes('SHIFT'),
-      key: parts.find((part) => part.length === 1),
-    };
-  }, []);
-
-  useEffect(() => {
-    function down(e: KeyboardEvent) {
-      links.forEach((link) => {
-        if (!link || !link.shortcut || !link.href) return;
-        const { ctrl, shift, key } = parseShortcut(link.shortcut);
-        if (
-          !hasFocus('input, select, textarea') &&
-          e.key.toUpperCase() === key?.toUpperCase() &&
-          ctrl === e.ctrlKey &&
-          shift === e.shiftKey
-        ) {
-          e.preventDefault();
-          if (link.href.split('?')[0] !== pathname)
-            setUrlToLoad(link.href.split('?')[0]);
-          router.push(link.href);
-        }
-      });
-    }
-
-    if (ENABLE_KEYBOARD_SHORTCUTS) document.addEventListener('keydown', down);
-
-    return () => {
-      if (ENABLE_KEYBOARD_SHORTCUTS)
-        document.removeEventListener('keydown', down);
-    };
-  }, [links, pathname, hasFocus, parseShortcut, router]);
 
   if (!links?.length) {
     return null;

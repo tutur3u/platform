@@ -20,7 +20,12 @@ import {
 import { Send, X } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { Textarea } from '@tuturuuu/ui/textarea';
+import { useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
 import { useRef } from 'react';
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
 
 function EmailChips({
   label,
@@ -66,12 +71,12 @@ function EmailChips({
         {value.map((email) => (
           <span
             key={email}
-            className="flex items-center gap-1 rounded-full bg-accent px-2 py-0.5 font-medium text-accent-foreground text-xs"
+            className="flex items-center gap-1 rounded-full bg-accent px-2 py-0.5 text-xs font-medium text-accent-foreground"
           >
             {email}
             <button
               type="button"
-              className="ml-1 text-muted-foreground text-xs hover:text-destructive"
+              className="ml-1 text-xs text-muted-foreground hover:text-destructive"
               onClick={() => onChange(value.filter((e) => e !== email))}
               disabled={disabled}
               aria-label={`Remove ${email}`}
@@ -97,12 +102,6 @@ function EmailChips({
     </div>
   );
 }
-
-import { useTranslations } from 'next-intl';
-import { useRouter } from 'next/navigation';
-import { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { z } from 'zod';
 
 const addressArraySchema = z
   .array(z.string().min(1))
@@ -180,14 +179,17 @@ export function ComposeDialog({
   async function onSubmit(values: ComposeFormValues) {
     setIsLoading(true);
     try {
-      const response = await fetch(`https://tuturuuu.com/api/v1/workspaces/${wsId}/mail/send`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('apiKey')}`,
-        },
-        body: JSON.stringify(values),
-      });
+      const response = await fetch(
+        `https://tuturuuu.com/api/v1/workspaces/${wsId}/mail/send`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${localStorage.getItem('apiKey')}`,
+          },
+          body: JSON.stringify(values),
+        }
+      );
 
       if (!response.ok) {
         throw new Error('Failed to send email');
@@ -227,7 +229,7 @@ export function ComposeDialog({
               <div className="mb-2">
                 <label
                   htmlFor="template-select"
-                  className="mb-1 block font-medium text-xs"
+                  className="mb-1 block text-xs font-medium"
                 >
                   Template
                 </label>
@@ -279,7 +281,7 @@ export function ComposeDialog({
                   </div>
                   <button
                     type="button"
-                    className="px-1 text-muted-foreground text-xs underline hover:text-foreground"
+                    className="px-1 text-xs text-muted-foreground underline hover:text-foreground"
                     onClick={() => setShowCc((v) => !v)}
                     tabIndex={-1}
                   >
@@ -287,7 +289,7 @@ export function ComposeDialog({
                   </button>
                   <button
                     type="button"
-                    className="px-1 text-muted-foreground text-xs underline hover:text-foreground"
+                    className="px-1 text-xs text-muted-foreground underline hover:text-foreground"
                     onClick={() => setShowBcc((v) => !v)}
                     tabIndex={-1}
                   >

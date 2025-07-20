@@ -1,5 +1,10 @@
 'use client';
 
+import { useMail } from '../use-mail';
+import { ComposeButton } from './compose-button';
+import { ComposeDialog } from './compose-dialog';
+import { MailDisplay } from './mail-display';
+import { MailList } from './mail-list';
 import type { InternalEmail } from '@tuturuuu/types/db';
 import {
   Mail as MailIcon,
@@ -19,11 +24,6 @@ import { TooltipProvider } from '@tuturuuu/ui/tooltip';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useMail } from '../use-mail';
-import { ComposeButton } from './compose-button';
-import { ComposeDialog } from './compose-dialog';
-import { MailDisplay } from './mail-display';
-import { MailList } from './mail-list';
 
 interface MailProps {
   mails: InternalEmail[];

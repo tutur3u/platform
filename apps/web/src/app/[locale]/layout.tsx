@@ -1,10 +1,10 @@
-import { ProductionIndicator } from '@tuturuuu/ui/custom/production-indicator';
-import { StaffToolbar } from '@tuturuuu/ui/custom/staff-toolbar';
-import { TailwindIndicator } from '@tuturuuu/ui/custom/tailwind-indicator';
 import { Providers } from '@/components/providers';
 import { siteConfig } from '@/constants/configs';
 import { type Locale, routing, supportedLocales } from '@/i18n/routing';
 import '@/style/prosemirror.css';
+import { ProductionIndicator } from '@tuturuuu/ui/custom/production-indicator';
+import { StaffToolbar } from '@tuturuuu/ui/custom/staff-toolbar';
+import { TailwindIndicator } from '@tuturuuu/ui/custom/tailwind-indicator';
 import '@tuturuuu/ui/globals.css';
 import { Toaster } from '@tuturuuu/ui/toaster';
 import { font, generateCommonMetadata } from '@tuturuuu/utils/common/nextjs';
@@ -12,8 +12,8 @@ import { cn } from '@tuturuuu/utils/format';
 import { Analytics as VercelAnalytics } from '@vercel/analytics/react';
 import { SpeedInsights as VercelInsights } from '@vercel/speed-insights/next';
 import type { Metadata } from 'next';
-import { notFound } from 'next/navigation';
 import { setRequestLocale } from 'next-intl/server';
+import { notFound } from 'next/navigation';
 import type { ReactNode } from 'react';
 
 export { viewport } from '@tuturuuu/utils/common/nextjs';

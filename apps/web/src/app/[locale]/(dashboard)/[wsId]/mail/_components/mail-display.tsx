@@ -20,6 +20,7 @@ import {
   ReplyAll,
   Trash2,
 } from '@tuturuuu/ui/icons';
+import { UserIcon } from '@tuturuuu/ui/icons';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { Separator } from '@tuturuuu/ui/separator';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
@@ -63,15 +64,13 @@ function formatDisplayAddresses(
     });
 }
 
-import { UserIcon } from '@tuturuuu/ui/icons';
-
 function AvatarChip({ name, email }: { name: string; email: string }) {
   const initial = name
     ? name.charAt(0).toUpperCase()
     : email.charAt(0).toUpperCase();
   return (
-    <span className="flex items-center gap-1 rounded-full bg-accent px-2 py-0.5 font-medium text-accent-foreground text-xs shadow-sm">
-      <span className="mr-1 flex h-5 w-5 items-center justify-center rounded-full bg-muted font-bold text-muted-foreground text-xs">
+    <span className="flex items-center gap-1 rounded-full bg-accent px-2 py-0.5 text-xs font-medium text-accent-foreground shadow-sm">
+      <span className="mr-1 flex h-5 w-5 items-center justify-center rounded-full bg-muted text-xs font-bold text-muted-foreground">
         {initial || <UserIcon className="h-4 w-4" />}
       </span>
       <span>{name || email}</span>
@@ -100,7 +99,7 @@ function AddressChips({
         {label.replace(/:/g, '')}:
       </span>
       {parsed.length === 0 ? (
-        <span className="rounded-full bg-muted px-2 py-0.5 font-medium text-muted-foreground text-xs opacity-70 shadow-sm">
+        <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground opacity-70 shadow-sm">
           None
         </span>
       ) : (
@@ -111,7 +110,7 @@ function AddressChips({
           ) : (
             <span
               key={key}
-              className="flex items-center gap-1 rounded-full bg-accent px-2 py-0.5 font-medium text-accent-foreground text-xs shadow-sm"
+              className="flex items-center gap-1 rounded-full bg-accent px-2 py-0.5 text-xs font-medium text-accent-foreground shadow-sm"
             >
               {name && <span>{name}</span>}
               <span className="text-foreground/80">{email}</span>
@@ -279,7 +278,7 @@ export function MailDisplay({ mail }: MailDisplayProps) {
               <div className="flex items-center gap-4">
                 <Avatar className="h-10 w-10 shadow-sm ring-2 ring-background">
                   <AvatarImage alt={mail.source_email} />
-                  <AvatarFallback className="bg-primary/10 font-semibold text-primary text-sm">
+                  <AvatarFallback className="bg-primary/10 text-sm font-semibold text-primary">
                     {mail.source_email
                       .split(' ')
                       .map((chunk: string) => chunk[0])
@@ -288,10 +287,10 @@ export function MailDisplay({ mail }: MailDisplayProps) {
                   </AvatarFallback>
                 </Avatar>
                 <div className="grid gap-0.5">
-                  <h2 className="truncate font-semibold text-base text-foreground leading-tight">
+                  <h2 className="truncate text-base leading-tight font-semibold text-foreground">
                     {mail.subject}
                   </h2>
-                  <p className="font-medium text-foreground/80 text-sm">
+                  <p className="text-sm font-medium text-foreground/80">
                     {mail.source_email}
                   </p>
                 </div>
@@ -299,7 +298,7 @@ export function MailDisplay({ mail }: MailDisplayProps) {
 
               <div className="flex items-center gap-2">
                 {mail.created_at && (
-                  <time className="whitespace-nowrap font-medium text-muted-foreground text-xs">
+                  <time className="text-xs font-medium whitespace-nowrap text-muted-foreground">
                     {dayjs(mail.created_at).format('LLLL')}
                   </time>
                 )}
@@ -325,7 +324,7 @@ export function MailDisplay({ mail }: MailDisplayProps) {
                   : 'max-h-24 pt-3 opacity-100'
               )}
             >
-              <div className="flex flex-col items-start gap-1 text-muted-foreground text-xs">
+              <div className="flex flex-col items-start gap-1 text-xs text-muted-foreground">
                 <AddressChips
                   label={t('from_label')}
                   addresses={[mail.source_email]}
@@ -367,7 +366,7 @@ export function MailDisplay({ mail }: MailDisplayProps) {
               />
             ) : (
               <div
-                className="bg-background text-foreground text-sm"
+                className="bg-background text-sm text-foreground"
                 style={{ padding: '1.5rem' }}
               >
                 <pre className="whitespace-pre-wrap" style={{ margin: 0 }}>
@@ -383,10 +382,10 @@ export function MailDisplay({ mail }: MailDisplayProps) {
             <div className="rounded-full bg-primary/10 p-4">
               <MoreVertical className="h-8 w-8 text-primary" />
             </div>
-            <p className="mt-4 font-medium text-foreground text-lg">
+            <p className="mt-4 text-lg font-medium text-foreground">
               {t('no_email_selected')}
             </p>
-            <p className="text-muted-foreground text-sm">
+            <p className="text-sm text-muted-foreground">
               {t('choose_email_message')}
             </p>
           </div>

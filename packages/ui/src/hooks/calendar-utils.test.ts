@@ -1,10 +1,10 @@
-import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
-import { describe, expect, it } from 'vitest';
 import {
   convertGoogleAllDayEvent,
   createAllDayEvent,
   isAllDayEvent,
 } from './calendar-utils';
+import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
+import { describe, expect, it } from 'vitest';
 
 describe('calendar-utils', () => {
   describe('isAllDayEvent', () => {

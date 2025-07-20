@@ -1,3 +1,4 @@
+import { DEV_MODE } from '@/constants/common';
 import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses';
 import {
   createAdminClient,
@@ -7,7 +8,6 @@ import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import dayjs from 'dayjs';
 import juice from 'juice';
 import { type NextRequest, NextResponse } from 'next/server';
-import { DEV_MODE } from '@/constants/common';
 
 const forceEnableEmailSending = false;
 const disableEmailSending = DEV_MODE && !forceEnableEmailSending;

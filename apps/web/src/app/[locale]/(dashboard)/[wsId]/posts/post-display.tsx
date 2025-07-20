@@ -1,5 +1,6 @@
 'use client';
 
+import PostsRowActions from './row-actions';
 import type { InternalEmail } from '@tuturuuu/types/db';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
@@ -19,10 +20,9 @@ import {
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { Separator } from '@tuturuuu/ui/separator';
 import dayjs from 'dayjs';
-import Link from 'next/link';
 import { useLocale } from 'next-intl';
+import Link from 'next/link';
 import { useEffect } from 'react';
-import PostsRowActions from './row-actions';
 
 interface PostDisplayProps {
   postEmail: InternalEmail | null;
@@ -41,7 +41,7 @@ export function PostDisplay({ postEmail }: PostDisplayProps) {
       <div className="flex h-full items-center justify-center bg-muted/20">
         <div className="text-center text-muted-foreground">
           <Send className="mx-auto mb-4 h-12 w-12 opacity-50" />
-          <p className="font-medium text-lg">Post Email Details</p>
+          <p className="text-lg font-medium">Post Email Details</p>
           <p className="text-sm">
             Select a post email to view its details and manage actions
           </p>
@@ -54,7 +54,7 @@ export function PostDisplay({ postEmail }: PostDisplayProps) {
     <div className="flex h-full flex-col bg-background">
       <div className="flex h-16 items-center justify-between border-b bg-background/80 px-4 backdrop-blur-sm">
         <div className="flex items-center gap-2">
-          <h3 className="font-semibold text-lg">Post Email Details</h3>
+          <h3 className="text-lg font-semibold">Post Email Details</h3>
           {/* <Badge variant={postEmail.is_completed ? 'default' : 'secondary'}>
             {postEmail.is_completed ? (
               <>
@@ -86,7 +86,7 @@ export function PostDisplay({ postEmail }: PostDisplayProps) {
                     postEmail.to_addresses[0] || postEmail.source_email || ''
                   }
                 />
-                <AvatarFallback className="bg-primary/10 font-semibold text-primary text-sm">
+                <AvatarFallback className="bg-primary/10 text-sm font-semibold text-primary">
                   {(postEmail.to_addresses[0] || postEmail.source_email || 'U')
                     .split(' ')
                     .map((chunk: string) => chunk[0])
@@ -100,17 +100,17 @@ export function PostDisplay({ postEmail }: PostDisplayProps) {
                 {postEmail.to_addresses.length > 0 &&
                   postEmail.to_addresses.map((toAddress) => (
                     <div key={toAddress}>
-                      <h4 className="font-semibold text-base text-foreground">
+                      <h4 className="text-base font-semibold text-foreground">
                         {toAddress || 'Unknown Recipient'}
                       </h4>
-                      <p className="flex items-center gap-1 text-muted-foreground text-sm">
+                      <p className="flex items-center gap-1 text-sm text-muted-foreground">
                         <Mail className="h-3 w-3" />
                         {toAddress}
                       </p>
                     </div>
                   ))}
 
-                <div className="flex flex-wrap gap-3 text-muted-foreground text-xs">
+                <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
                   <div className="flex items-center gap-1">
                     <Users className="h-3 w-3" />
                     <Link
@@ -134,7 +134,7 @@ export function PostDisplay({ postEmail }: PostDisplayProps) {
           {/* Post Information */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h5 className="flex items-center gap-2 font-semibold text-base">
+              <h5 className="flex items-center gap-2 text-base font-semibold">
                 <Send className="h-4 w-4" />
                 Post Details
               </h5>
@@ -153,20 +153,20 @@ export function PostDisplay({ postEmail }: PostDisplayProps) {
 
             <div className="space-y-3">
               <div>
-                <span className="font-medium text-muted-foreground text-sm">
+                <span className="text-sm font-medium text-muted-foreground">
                   Title
                 </span>
-                <p className="mt-1 font-medium text-sm">
+                <p className="mt-1 text-sm font-medium">
                   {postEmail.post_title || 'No title'}
                 </p>
               </div>
 
               <div>
-                <span className="font-medium text-muted-foreground text-sm">
+                <span className="text-sm font-medium text-muted-foreground">
                   Content
                 </span>
                 <div className="mt-1 rounded-lg border bg-muted/30 p-3">
-                  <p className="whitespace-pre-wrap text-sm leading-relaxed">
+                  <p className="text-sm leading-relaxed whitespace-pre-wrap">
                     {postEmail.post_content || 'No content'}
                   </p>
                 </div>
@@ -174,10 +174,10 @@ export function PostDisplay({ postEmail }: PostDisplayProps) {
 
               {postEmail.subject && (
                 <div>
-                  <span className="font-medium text-muted-foreground text-sm">
+                  <span className="text-sm font-medium text-muted-foreground">
                     Email Subject
                   </span>
-                  <p className="mt-1 font-medium text-sm">
+                  <p className="mt-1 text-sm font-medium">
                     {postEmail.subject}
                   </p>
                 </div>
@@ -189,14 +189,14 @@ export function PostDisplay({ postEmail }: PostDisplayProps) {
 
           {/* Email Status */}
           <div className="space-y-4">
-            <h5 className="flex items-center gap-2 font-semibold text-base">
+            <h5 className="flex items-center gap-2 text-base font-semibold">
               <MailCheck className="h-4 w-4" />
               Email Status
             </h5>
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <span className="font-medium text-muted-foreground text-sm">
+                <span className="text-sm font-medium text-muted-foreground">
                   Status
                 </span>
                 <div className="flex items-center gap-2">
@@ -221,7 +221,7 @@ export function PostDisplay({ postEmail }: PostDisplayProps) {
               </div>
 
               <div className="space-y-2">
-                <span className="font-medium text-muted-foreground text-sm">
+                <span className="text-sm font-medium text-muted-foreground">
                   Completion
                 </span>
                 <div className="flex items-center gap-2">
@@ -252,12 +252,12 @@ export function PostDisplay({ postEmail }: PostDisplayProps) {
             <>
               <Separator />
               <div className="space-y-3">
-                <h5 className="flex items-center gap-2 font-semibold text-base">
+                <h5 className="flex items-center gap-2 text-base font-semibold">
                   <User className="h-4 w-4" />
                   Notes
                 </h5>
                 <div className="rounded-lg border bg-muted/30 p-3">
-                  <p className="whitespace-pre-wrap text-sm leading-relaxed">
+                  <p className="text-sm leading-relaxed whitespace-pre-wrap">
                     {postEmail.notes}
                   </p>
                 </div>

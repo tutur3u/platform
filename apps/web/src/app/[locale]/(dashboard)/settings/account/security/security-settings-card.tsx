@@ -1,3 +1,5 @@
+import MFAMethodList from './mfa-method-list';
+import ResetPasswordDialog from './reset-password-dialog';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
@@ -22,10 +24,8 @@ import {
   UserCheck,
 } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
-import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
-import MFAMethodList from './mfa-method-list';
-import ResetPasswordDialog from './reset-password-dialog';
+import Link from 'next/link';
 
 interface SecuritySettingsCardProps {
   user: SupabaseUser | null;

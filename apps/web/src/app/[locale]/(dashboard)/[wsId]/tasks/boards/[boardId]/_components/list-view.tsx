@@ -1,3 +1,5 @@
+import { TaskActions } from '../task-actions';
+import { getTasks } from '@/lib/task-helper';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { Task } from '@tuturuuu/types/primitives/TaskBoard';
 import { Badge } from '@tuturuuu/ui/badge';
@@ -68,8 +70,6 @@ import {
   isWithinInterval,
 } from 'date-fns';
 import { useEffect, useMemo, useState } from 'react';
-import { getTasks } from '@/lib/task-helper';
-import { TaskActions } from '../task-actions';
 
 interface Props {
   board: { id: string; tasks: Task[] };

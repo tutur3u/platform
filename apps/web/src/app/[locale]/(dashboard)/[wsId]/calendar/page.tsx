@@ -1,13 +1,13 @@
+import { CalendarActiveSyncDebugger } from './active-sync';
+import CalendarClientPage from './client';
+// import TasksSidebar from './components/tasks-sidebar';
+import TaskSidebarServer from './components/tasks-sidebar-server';
+import { DEV_MODE } from '@/constants/common';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { CalendarSyncProvider } from '@tuturuuu/ui/hooks/use-calendar-sync';
 import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { redirect } from 'next/navigation';
-import { DEV_MODE } from '@/constants/common';
-import { CalendarActiveSyncDebugger } from './active-sync';
-import CalendarClientPage from './client';
-// import TasksSidebar from './components/tasks-sidebar';
-import TaskSidebarServer from './components/tasks-sidebar-server';
 
 interface PageProps {
   params: Promise<{

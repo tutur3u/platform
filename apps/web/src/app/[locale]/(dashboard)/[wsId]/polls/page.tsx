@@ -151,14 +151,14 @@ function PollCard({ poll, t }: PollCardProps) {
       <CardHeader className="pb-4">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
-            <CardTitle className="line-clamp-2 font-semibold text-foreground text-lg leading-tight">
+            <CardTitle className="line-clamp-2 text-lg leading-tight font-semibold text-foreground">
               {poll.title}
             </CardTitle>
             <div className="mt-3 flex flex-wrap items-center gap-2">
               <Badge
                 variant="secondary"
                 className={cn(
-                  'font-medium text-xs',
+                  'text-xs font-medium',
                   getStatusColor(poll.status)
                 )}
               >
@@ -188,10 +188,10 @@ function PollCard({ poll, t }: PollCardProps) {
         <div className="mb-4 space-y-3">
           {poll.type === 'rating' && poll.averageRating && (
             <div className="flex items-center gap-2 rounded-lg border border-dynamic-yellow/20 bg-dynamic-yellow/10 p-3">
-              <span className="font-medium text-foreground/80 text-sm">
+              <span className="text-sm font-medium text-foreground/80">
                 {t('ws-polls.average_rating')}:
               </span>
-              <span className="font-bold text-dynamic-yellow text-lg">
+              <span className="text-lg font-bold text-dynamic-yellow">
                 {poll.averageRating}/5 ⭐
               </span>
             </div>
@@ -219,7 +219,7 @@ function PollCard({ poll, t }: PollCardProps) {
           ))}
 
           {poll.options.length > 3 && (
-            <div className="text-center font-medium text-foreground/60 text-sm">
+            <div className="text-center text-sm font-medium text-foreground/60">
               +{poll.options.length - 3} {t('ws-polls.more_options')}
             </div>
           )}
@@ -248,7 +248,7 @@ function PollCard({ poll, t }: PollCardProps) {
               </span>
             </div>
           </div>
-          <div className="text-foreground/60 text-xs">
+          <div className="text-xs text-foreground/60">
             {t('ws-polls.created_by')} {poll.createdBy}
           </div>
         </div>
@@ -313,10 +313,10 @@ function QuickStats({ t }: QuickStatsProps) {
                 <stat.icon className={cn('h-5 w-5', stat.color)} />
               </div>
               <div className="flex-1">
-                <div className={cn('font-bold text-2xl', stat.color)}>
+                <div className={cn('text-2xl font-bold', stat.color)}>
                   {stat.value}
                 </div>
-                <p className="font-medium text-foreground/70 text-sm">
+                <p className="text-sm font-medium text-foreground/70">
                   {stat.title}
                 </p>
               </div>
@@ -386,7 +386,7 @@ export default async function PollsPage() {
       {/* Polls Section */}
       <div className="space-y-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <h2 className="font-semibold text-foreground text-xl">
+          <h2 className="text-xl font-semibold text-foreground">
             {t('ws-polls.recent_polls')}
           </h2>
           <div className="flex items-center gap-2">
@@ -418,15 +418,15 @@ export default async function PollsPage() {
         </Suspense>
 
         {/* Enhanced Empty State */}
-        <Card className="border-2 border-border/50 border-dashed bg-foreground/5">
+        <Card className="border-2 border-dashed border-border/50 bg-foreground/5">
           <CardContent className="flex flex-col items-center justify-center p-12 text-center">
             <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-dynamic-blue/10">
               <Vote className="h-10 w-10 text-dynamic-blue" />
             </div>
-            <h3 className="mb-2 font-semibold text-foreground text-lg">
+            <h3 className="mb-2 text-lg font-semibold text-foreground">
               {t('ws-polls.no_more_polls')}
             </h3>
-            <p className="mb-6 max-w-sm text-foreground/60 text-sm">
+            <p className="mb-6 max-w-sm text-sm text-foreground/60">
               {t('ws-polls.no_more_polls_desc')}
             </p>
             <Button>

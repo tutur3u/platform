@@ -1,8 +1,8 @@
-import type { Workspace } from '@tuturuuu/types/db';
-import type { AuditLog } from '@tuturuuu/types/primitives/audit-log';
-import type { User } from '@tuturuuu/types/primitives/User';
-import moment from 'moment';
 import { getLabel } from '@/utils/audit-helper';
+import type { Workspace } from '@tuturuuu/types/db';
+import type { User } from '@tuturuuu/types/primitives/User';
+import type { AuditLog } from '@tuturuuu/types/primitives/audit-log';
+import moment from 'moment';
 import 'moment/locale/vi';
 import { useLocale, useTranslations } from 'next-intl';
 import useSWR from 'swr';

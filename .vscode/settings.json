@@ -1,36 +1,35 @@
 {
-  "biome.enabled": true,
   "editor.codeActionsOnSave": {
-    "source.fixAll.biome": "always",
-    "source.organizeImports.biome": "always"
+    "source.fixAll.eslint": "explicit",
+    "source.organizeImports.eslint": "explicit"
   },
   "editor.formatOnPaste": false,
   "editor.formatOnSave": true,
   "editor.formatOnSaveMode": "file",
-  "editor.defaultFormatter": "biomejs.biome",
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
   "[xml]": {
-    "editor.defaultFormatter": "biomejs.biome"
+    "editor.defaultFormatter": "redhat.vscode-xml"
   },
   "[css]": {
-    "editor.defaultFormatter": "biomejs.biome"
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
   "[json]": {
-    "editor.defaultFormatter": "biomejs.biome"
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
   "[jsonc]": {
-    "editor.defaultFormatter": "biomejs.biome"
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
   "[javascript]": {
-    "editor.defaultFormatter": "biomejs.biome"
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
   "[typescript]": {
-    "editor.defaultFormatter": "biomejs.biome"
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
   "[javascriptreact]": {
-    "editor.defaultFormatter": "biomejs.biome"
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
   "[typescriptreact]": {
-    "editor.defaultFormatter": "biomejs.biome"
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
   "typescript.tsdk": "node_modules/typescript/lib",
   "workbench.editor.customLabels.patterns": {

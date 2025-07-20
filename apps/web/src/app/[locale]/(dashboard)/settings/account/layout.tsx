@@ -1,5 +1,5 @@
-import { getTranslations } from 'next-intl/server';
 import SettingsNav from './settings-nav';
+import { getTranslations } from 'next-intl/server';
 
 interface AccountLayoutProps {
   children: React.ReactNode;

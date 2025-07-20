@@ -1,9 +1,9 @@
 'use client';
 
+import { MailClient } from './_components/mail';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { InternalEmail } from '@tuturuuu/types/db';
 import { useCallback, useEffect, useState } from 'react';
-import { MailClient } from './_components/mail';
 
 interface SearchParams {
   page?: string;

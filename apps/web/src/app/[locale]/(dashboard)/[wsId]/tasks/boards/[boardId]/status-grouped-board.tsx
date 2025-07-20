@@ -1,7 +1,10 @@
 'use client';
 
+import { EnhancedTaskList } from './enhanced-task-list';
+import { StatusSection } from './status-section';
+import { TaskCard } from './task';
+import { useMoveTask } from '@/lib/task-helper';
 import {
-  closestCorners,
   DndContext,
   type DragEndEvent,
   type DragOverEvent,
@@ -11,6 +14,7 @@ import {
   MouseSensor,
   PointerSensor,
   TouchSensor,
+  closestCorners,
   useSensor,
   useSensors,
 } from '@dnd-kit/core';
@@ -28,10 +32,6 @@ import type {
 import { cn } from '@tuturuuu/utils/format';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { useMoveTask } from '@/lib/task-helper';
-import { EnhancedTaskList } from './enhanced-task-list';
-import { StatusSection } from './status-section';
-import { TaskCard } from './task';
 
 interface Props {
   lists: TaskList[];

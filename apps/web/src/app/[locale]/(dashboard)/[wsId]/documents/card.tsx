@@ -2,8 +2,8 @@ import type { WorkspaceDocument } from '@tuturuuu/types/db';
 import { FilePlus } from '@tuturuuu/ui/icons';
 import moment from 'moment';
 import 'moment/locale/vi';
-import Link from 'next/link';
 import { useLocale } from 'next-intl';
+import Link from 'next/link';
 
 interface Props {
   wsId: string;

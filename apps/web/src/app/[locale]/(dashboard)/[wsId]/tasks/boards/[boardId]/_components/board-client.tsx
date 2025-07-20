@@ -1,5 +1,7 @@
 'use client';
 
+import { BoardViews } from './board-views';
+import { getTaskBoard, getTaskLists, getTasks } from '@/lib/task-helper';
 import { useQuery } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type {
@@ -9,8 +11,6 @@ import type {
 } from '@tuturuuu/types/primitives/TaskBoard';
 import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { getTaskBoard, getTaskLists, getTasks } from '@/lib/task-helper';
-import { BoardViews } from './board-views';
 
 interface Props {
   initialBoard: TaskBoard;

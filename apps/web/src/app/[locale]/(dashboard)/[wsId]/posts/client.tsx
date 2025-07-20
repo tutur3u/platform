@@ -1,14 +1,14 @@
 'use client';
 
+import { getPostEmailColumns } from './columns';
+import PostsFilters from './filters';
+import { createPostEmailKey, usePosts } from './use-posts';
+import { CustomDataTable } from '@/components/custom-data-table';
 import type { InternalEmail } from '@tuturuuu/types/db';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { MailWarning, Send } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import { useTranslations } from 'next-intl';
-import { CustomDataTable } from '@/components/custom-data-table';
-import { getPostEmailColumns } from './columns';
-import PostsFilters from './filters';
-import { createPostEmailKey, usePosts } from './use-posts';
 
 interface SearchParams {
   page?: string;
@@ -46,23 +46,23 @@ export default function PostsClient({
 
       <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
         <div className="flex w-full flex-col items-center gap-1 rounded border border-dynamic-purple/15 bg-dynamic-purple/15 p-4 text-dynamic-purple">
-          <div className="flex items-center gap-2 font-bold text-xl">
+          <div className="flex items-center gap-2 text-xl font-bold">
             <Send />
             {t('ws-post-emails.sent_emails')}
           </div>
           <Separator className="my-1 bg-dynamic-purple/15" />
-          <div className="font-semibold text-xl md:text-3xl">
+          <div className="text-xl font-semibold md:text-3xl">
             {postsStatus.count || 0}
             <span className="opacity-50">/{postsCount || 0}</span>
           </div>
         </div>
         <div className="flex w-full flex-col items-center gap-1 rounded border border-dynamic-red/15 bg-dynamic-red/15 p-4 text-dynamic-red">
-          <div className="flex items-center gap-2 font-bold text-xl">
+          <div className="flex items-center gap-2 text-xl font-bold">
             <MailWarning />
             {t('ws-post-emails.pending_emails')}
           </div>
           <Separator className="my-1 bg-dynamic-red/15" />
-          <div className="font-semibold text-3xl">
+          <div className="text-3xl font-semibold">
             {(postsCount || 0) - (postsStatus.count || 0)}
             <span className="opacity-50">/{postsCount || 0}</span>
           </div>

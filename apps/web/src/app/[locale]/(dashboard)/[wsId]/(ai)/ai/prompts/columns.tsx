@@ -1,10 +1,10 @@
 'use client';
 
+import { AIPromptRowActions } from './row-actions';
 import type { ColumnDef } from '@tanstack/react-table';
 import type { AIPrompt } from '@tuturuuu/types/db';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import moment from 'moment';
-import { AIPromptRowActions } from './row-actions';
 
 export const aiPromptsColumns = (
   t: any,

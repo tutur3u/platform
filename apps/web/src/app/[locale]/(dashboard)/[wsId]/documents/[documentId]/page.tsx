@@ -1,5 +1,6 @@
 'use client';
 
+import DocumentShareDialog from '../document-share-dialog';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { WorkspaceDocument } from '@tuturuuu/types/db';
 import {
@@ -27,10 +28,9 @@ import { Input } from '@tuturuuu/ui/input';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
 import debounce from 'lodash/debounce';
-import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
 import { use, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import DocumentShareDialog from '../document-share-dialog';
 
 interface Props {
   params: Promise<{

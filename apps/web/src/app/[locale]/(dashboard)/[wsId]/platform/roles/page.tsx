@@ -1,3 +1,5 @@
+import { getPlatformRoleColumns } from './columns';
+import { CustomDataTable } from '@/components/custom-data-table';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type {
   PlatformUser,
@@ -16,10 +18,8 @@ import {
 import { Separator } from '@tuturuuu/ui/separator';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
-import { notFound, redirect } from 'next/navigation';
 import { getLocale, getTranslations } from 'next-intl/server';
-import { CustomDataTable } from '@/components/custom-data-table';
-import { getPlatformRoleColumns } from './columns';
+import { notFound, redirect } from 'next/navigation';
 
 // Define a type that matches what the search_users RPC function actually returns
 type SearchUserResult = {
@@ -148,7 +148,7 @@ export default async function PlatformRolesPage({
               {roleStats.active}
             </div>
           </div>
-          <p className="text-xs text-dynamic-muted-foreground">Active Users</p>
+          <p className="text-dynamic-muted-foreground text-xs">Active Users</p>
         </div>
 
         <div className="rounded-lg border bg-card p-3 shadow-sm">
@@ -158,7 +158,7 @@ export default async function PlatformRolesPage({
               {roleStats.admins}
             </div>
           </div>
-          <p className="text-xs text-dynamic-muted-foreground">Admins</p>
+          <p className="text-dynamic-muted-foreground text-xs">Admins</p>
         </div>
 
         <div className="rounded-lg border bg-card p-3 shadow-sm">
@@ -168,7 +168,7 @@ export default async function PlatformRolesPage({
               {roleStats.globalManagers}
             </div>
           </div>
-          <p className="text-xs text-dynamic-muted-foreground">
+          <p className="text-dynamic-muted-foreground text-xs">
             Global Managers
           </p>
         </div>
@@ -180,7 +180,7 @@ export default async function PlatformRolesPage({
               {roleStats.challengeManagers}
             </div>
           </div>
-          <p className="text-xs text-dynamic-muted-foreground">
+          <p className="text-dynamic-muted-foreground text-xs">
             Challenge Managers
           </p>
         </div>
@@ -192,27 +192,27 @@ export default async function PlatformRolesPage({
               {roleStats.workspaceCreators}
             </div>
           </div>
-          <p className="text-xs text-dynamic-muted-foreground">
+          <p className="text-dynamic-muted-foreground text-xs">
             Workspace Creators
           </p>
         </div>
 
         <div className="rounded-lg border bg-card p-3 shadow-sm">
           <div className="flex items-center gap-2">
-            <Users className="h-4 w-4 text-dynamic-muted-foreground" />
+            <Users className="text-dynamic-muted-foreground h-4 w-4" />
             <div className="text-2xl font-bold">{roleStats.members}</div>
           </div>
-          <p className="text-xs text-dynamic-muted-foreground">Members</p>
+          <p className="text-dynamic-muted-foreground text-xs">Members</p>
         </div>
 
         <div className="rounded-lg border bg-card p-3 shadow-sm">
           <div className="flex items-center gap-2">
-            <div className="h-4 w-4 bg-dynamic-muted rounded-full" />
-            <div className="text-2xl font-bold text-dynamic-muted-foreground">
+            <div className="bg-dynamic-muted h-4 w-4 rounded-full" />
+            <div className="text-dynamic-muted-foreground text-2xl font-bold">
               {roleStats.inactive}
             </div>
           </div>
-          <p className="text-xs text-dynamic-muted-foreground">Inactive</p>
+          <p className="text-dynamic-muted-foreground text-xs">Inactive</p>
         </div>
       </div>
 

@@ -1,5 +1,3 @@
-import { render, screen, waitFor } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { MailDisplay } from '../app/[locale]/(dashboard)/[wsId]/mail/_components/mail-display';
 import '@testing-library/jest-dom/vitest';
 import type { InternalEmail } from '@tuturuuu/types/db';

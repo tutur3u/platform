@@ -1,5 +1,17 @@
 'use client';
 
+import { LanguageWrapper } from './(dashboard)/_components/language-wrapper';
+import { LogoutDropdownItem } from './(dashboard)/_components/logout-dropdown-item';
+import { SystemLanguageWrapper } from './(dashboard)/_components/system-language-wrapper';
+import { ThemeDropdownItems } from './(dashboard)/_components/theme-dropdown-items';
+import DashboardMenuItem from './dashboard-menu-item';
+import InviteMembersMenuItem from './invite-members-menu-item';
+import MeetTogetherMenuItem from './meet-together-menu-item';
+import RewiseMenuItem from './rewise-menu-item';
+import UserSettingsDialog from './settings-dialog';
+import UserPresenceIndicator from './user-presence-indicator';
+import { CommandPalette } from '@/components/command';
+import { SidebarContext } from '@/context/sidebar-context';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Dialog } from '@tuturuuu/ui/dialog';
@@ -31,22 +43,10 @@ import {
 } from '@tuturuuu/ui/icons';
 import { cn } from '@tuturuuu/utils/format';
 import { getInitials } from '@tuturuuu/utils/name-helper';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { useTranslations } from 'next-intl';
 import { useContext, useState } from 'react';
-import { CommandPalette } from '@/components/command';
-import { SidebarContext } from '@/context/sidebar-context';
-import { LanguageWrapper } from './(dashboard)/_components/language-wrapper';
-import { LogoutDropdownItem } from './(dashboard)/_components/logout-dropdown-item';
-import { SystemLanguageWrapper } from './(dashboard)/_components/system-language-wrapper';
-import { ThemeDropdownItems } from './(dashboard)/_components/theme-dropdown-items';
-import DashboardMenuItem from './dashboard-menu-item';
-import InviteMembersMenuItem from './invite-members-menu-item';
-import MeetTogetherMenuItem from './meet-together-menu-item';
-import RewiseMenuItem from './rewise-menu-item';
-import UserSettingsDialog from './settings-dialog';
-import UserPresenceIndicator from './user-presence-indicator';
 
 export default function UserNavClient({
   user,
@@ -105,10 +105,10 @@ export default function UserNavClient({
             </Avatar>
             {hideMetadata || (
               <div className="flex w-full flex-col items-start justify-center">
-                <div className="line-clamp-1 break-all font-semibold text-sm">
+                <div className="line-clamp-1 text-sm font-semibold break-all">
                   {user?.display_name || user?.handle || t('common.unnamed')}
                 </div>
-                <div className="line-clamp-1 break-all text-xs opacity-70">
+                <div className="line-clamp-1 text-xs break-all opacity-70">
                   {user?.email}
                 </div>
               </div>
@@ -125,11 +125,11 @@ export default function UserNavClient({
             <div className="flex flex-col">
               <Link
                 href="/settings/account"
-                className="line-clamp-1 w-fit break-all font-medium text-sm hover:underline"
+                className="line-clamp-1 w-fit text-sm font-medium break-all hover:underline"
               >
                 {user?.display_name || user?.handle || t('common.unnamed')}
               </Link>
-              <p className="line-clamp-1 break-all text-muted-foreground text-xs">
+              <p className="line-clamp-1 text-xs break-all text-muted-foreground">
                 {user?.email}
               </p>
             </div>

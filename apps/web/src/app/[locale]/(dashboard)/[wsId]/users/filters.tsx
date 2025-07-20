@@ -1,5 +1,6 @@
 'use client';
 
+import useSearchParams from '@/hooks/useSearchParams';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -16,10 +17,9 @@ import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { Separator } from '@tuturuuu/ui/separator';
 import { cn } from '@tuturuuu/utils/format';
-import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
 import { type ReactNode, useEffect, useMemo, useState } from 'react';
-import useSearchParams from '@/hooks/useSearchParams';
 
 interface FilterProps {
   tag?: string;
