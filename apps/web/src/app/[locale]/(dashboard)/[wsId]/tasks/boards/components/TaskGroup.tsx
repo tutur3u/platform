@@ -31,7 +31,6 @@ interface TaskItem {
   end_date?: string | null;
   boardId: string;
   boardName: string;
-  list_id: string;
   listId: string;
   listName: string;
   boardHref: string;

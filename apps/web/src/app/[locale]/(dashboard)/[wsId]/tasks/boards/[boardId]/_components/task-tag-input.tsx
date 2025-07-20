@@ -60,6 +60,7 @@ export function TaskTagInput({
     const checkMigration = async () => {
       try {
         const supabase = createClient();
+        
         // Try to query the tags column to see if it exists
         const { error } = await supabase.from('tasks').select('tags').limit(1);
 

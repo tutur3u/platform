@@ -1,16 +1,10 @@
-/* stylelint-disable-next-line at-rule-no-unknown */
 @import 'tailwindcss';
-/* stylelint-disable-next-line at-rule-no-unknown */
 @source "components";
 
-/* stylelint-disable-next-line at-rule-no-unknown */
 @plugin '@tailwindcss/typography';
-/* stylelint-disable-next-line at-rule-no-unknown */
 @plugin 'tailwindcss-animate';
-/* stylelint-disable-next-line at-rule-no-unknown */
 @plugin 'tailwind-scrollbar';
 
-/* stylelint-disable-next-line at-rule-no-unknown */
 @custom-variant dark (&:is(.dark *));
 
 /*
@@ -36,7 +30,6 @@
     font-family: Arial, Helvetica, sans-serif;
   }
   button {
-    /* stylelint-disable-next-line at-rule-no-unknown */
     @apply cursor-pointer;
   }
   .overflow-wrap-anywhere {
@@ -144,17 +137,6 @@
   --light-cyan: hsl(180 70% 45%); /* Light cyan */
   --light-gray: hsl(0 0% 50%); /* Light gray */
 
-  /* Custom animations */
-  @keyframes slow-pulse {
-    0%,
-    100% {
-      opacity: 0.8;
-    }
-    50% {
-      opacity: 0.2;
-    }
-  }
-
   /* Colors for calendar events */
   --calendar-bg-blue: hsl(220 64% 95%);
   --calendar-bg-red: hsl(0 64% 95%);
@@ -256,7 +238,6 @@
   --calendar-bg-gray: hsl(0 0% 11%);
 }
 
-/* stylelint-disable-next-line at-rule-no-unknown */
 @theme inline {
   --color-root-background: var(--root-background);
 
@@ -346,27 +327,32 @@
 
   --animate-accordion-down: accordion-down 0.2s ease-out;
   --animate-accordion-up: accordion-up 0.2s ease-out;
+}
 
-  @keyframes accordion-down {
-    from {
-      height: 0;
-    }
-    to {
-      height: var(--radix-accordion-content-height);
-    }
+/* Custom animations */
+@keyframes slow-pulse {
+  0%, 100% { opacity: 0.8; }
+  50%       { opacity: 0.2; }
+}
+
+@keyframes accordion-down {
+  from {
+    height: 0;
   }
-
-  @keyframes accordion-up {
-    from {
-      height: var(--radix-accordion-content-height);
-    }
-    to {
-      height: 0;
-    }
+  to {
+    height: var(--radix-accordion-content-height);
   }
 }
 
-/* stylelint-disable-next-line at-rule-no-unknown */
+@keyframes accordion-up {
+  from {
+    height: var(--radix-accordion-content-height);
+  }
+  to {
+    height: 0;
+  }
+}
+
 @utility container {
   margin-inline: auto;
   padding-inline: 2rem;
@@ -374,11 +360,9 @@
 
 @layer base {
   * {
-    /* stylelint-disable-next-line at-rule-no-unknown */
     @apply border-border outline-ring/50;
   }
   body {
-    /* stylelint-disable-next-line at-rule-no-unknown */
     @apply bg-background text-foreground;
   }
 }

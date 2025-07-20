@@ -12,8 +12,7 @@ import { StatusGroupedBoard } from '../status-grouped-board';
 import { BoardHeader } from './board-header';
 import { BoardSummary } from './board-summary';
 import { ListView } from './list-view';
-
-type ViewType = 'kanban' | 'status-grouped' | 'list';
+import type { ViewType } from './types';
 
 interface Props {
   board: TaskBoard & { tasks: Task[]; lists: TaskList[] };
@@ -23,6 +22,15 @@ export function BoardViews({ board }: Props) {
   const [currentView, setCurrentView] = useState<ViewType>('kanban');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const queryClient = useQueryClient();
+
+  // Helper function to create board with filtered tasks
+  const createBoardWithFilteredTasks = (
+    board: TaskBoard & { tasks: Task[]; lists: TaskList[] },
+    filteredTasks: Task[]
+  ) => ({
+    ...board,
+    tasks: filteredTasks,
+  }) as TaskBoard & { tasks: Task[]; lists: TaskList[] };
 
   // Filter tasks based on selected tags
   const filteredTasks = useMemo(() => {
@@ -36,8 +44,8 @@ export function BoardViews({ board }: Props) {
       }
 
       // Check if task has any of the selected tags
-      return selectedTags.some(
-        (selectedTag) => task.tags?.includes(selectedTag) ?? false
+      return selectedTags.some((selectedTag) => 
+        task.tags?.includes(selectedTag)
       );
     });
   }, [board.tasks, selectedTags]);
@@ -75,12 +83,7 @@ export function BoardViews({ board }: Props) {
       case 'list':
         return (
           <ListView
-            board={
-              { ...board, tasks: filteredTasks } as TaskBoard & {
-                tasks: Task[];
-                lists: TaskList[];
-              }
-            }
+            board={createBoardWithFilteredTasks(board, filteredTasks)}
             selectedTags={selectedTags}
             onTagsChange={setSelectedTags}
           />
@@ -106,12 +109,7 @@ export function BoardViews({ board }: Props) {
         onViewChange={setCurrentView}
       />
       <BoardSummary
-        board={
-          { ...board, tasks: filteredTasks } as TaskBoard & {
-            tasks: Task[];
-            lists: TaskList[];
-          }
-        }
+        board={createBoardWithFilteredTasks(board, filteredTasks)}
       />
       <div className="flex-1 overflow-hidden">{renderView()}</div>
     </div>

@@ -47,8 +47,7 @@ import { Separator } from '@tuturuuu/ui/separator';
 import { cn } from '@tuturuuu/utils/format';
 import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
-
-type ViewType = 'kanban' | 'status-grouped' | 'list';
+import type { ViewType } from './types';
 
 interface Props {
   board: TaskBoard & { tasks: Task[]; lists: TaskList[] };

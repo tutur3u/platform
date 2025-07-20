@@ -1,7 +1,5 @@
 'use client';
 
-import { BoardViews } from './board-views';
-import { getTaskBoard, getTaskLists, getTasks } from '@/lib/task-helper';
 import { useQuery } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type {
@@ -11,6 +9,10 @@ import type {
 } from '@tuturuuu/types/primitives/TaskBoard';
 import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
+
+import { getTaskBoard, getTaskLists, getTasks } from '@/lib/task-helper';
+
+import { BoardViews } from './board-views';
 
 interface Props {
   initialBoard: TaskBoard;
@@ -69,8 +71,8 @@ export function BoardClient({
     enabled: isClient, // Only enable after hydration
   });
 
-  // Ensure board is not null before rendering
-  if (!board) {
+  // Ensure board is not null and has required properties before rendering
+  if (!board || !board.id) {
     return (
       <div className="flex flex-col">
         <div className="p-4 text-center text-muted-foreground">
@@ -82,12 +84,14 @@ export function BoardClient({
 
   return (
     <div className="flex flex-col">
-      <BoardViews 
-        board={{ 
-          ...board, 
-          tasks, 
-          lists 
-        } as TaskBoard & { tasks: Task[]; lists: TaskList[] }} 
+      <BoardViews
+        board={
+          {
+            ...board,
+            tasks,
+            lists,
+          } as TaskBoard & { tasks: Task[]; lists: TaskList[] }
+        }
       />
     </div>
   );

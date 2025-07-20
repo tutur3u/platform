@@ -63,6 +63,13 @@ type SortOption =
   | 'priority_desc';
 type SortDirection = 'asc' | 'desc';
 
+interface WorkspaceMember {
+  id: string;
+  display_name?: string;
+  email?: string;
+  avatar_url?: string;
+}
+
 interface TaskListFilters {
   search: string;
   priorities: Set<number>;
@@ -790,13 +797,7 @@ export function BoardColumn({
                                 <div className="my-1 border-border border-t" />
                               )}
 
-                              {members.map(
-                                (member: {
-                                  id: string;
-                                  display_name?: string;
-                                  email?: string;
-                                  avatar_url?: string;
-                                }) => {
+                              {members.map((member: WorkspaceMember) => {
                                   const isSelected = filters.assignees.has(
                                     member.id
                                   );

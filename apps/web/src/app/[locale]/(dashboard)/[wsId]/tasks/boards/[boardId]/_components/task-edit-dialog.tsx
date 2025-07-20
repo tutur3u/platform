@@ -19,6 +19,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
+import { useToast } from '@tuturuuu/ui/hooks/use-toast';
 import {
   Calendar as CalendarIcon,
   Clock,
@@ -52,6 +53,7 @@ export function TaskEditDialog({
   onUpdate,
   availableLists: propAvailableLists,
 }: TaskEditDialogProps) {
+  const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [name, setName] = useState(task.name);
   const [description, setDescription] = useState(task.description || '');
@@ -120,10 +122,8 @@ export function TaskEditDialog({
         list_id: selectedListId,
       };
 
-      // Only add tags if we have them
-      if (tags.length > 0) {
-        taskUpdates.tags = tags;
-      }
+      // Always include tags to allow clearing
+      taskUpdates.tags = tags;
 
       await updateTask(supabase, task.id, taskUpdates);
 
@@ -131,6 +131,11 @@ export function TaskEditDialog({
       onClose();
     } catch (error) {
       console.error('Error updating task:', error);
+      toast({
+        title: 'Error updating task',
+        description: 'Please try again later',
+        variant: 'destructive',
+      });
     } finally {
       setIsLoading(false);
     }

@@ -198,32 +198,34 @@ export function ListView({
       const supabase = createClient();
       const taskIds = Array.from(selectedTasks);
 
-      // Update tasks in batches
-      for (const taskId of taskIds) {
-        const updates: {
-          priority?: number | null;
-          archived?: boolean;
-          tags?: string[];
-        } = {};
+      // Prepare updates object
+      const updates: {
+        priority?: number | null;
+        archived?: boolean;
+        tags?: string[];
+      } = {};
 
-        if (bulkEditData.priority !== 'keep') {
-          updates.priority =
-            bulkEditData.priority === '0'
-              ? null
-              : parseInt(bulkEditData.priority);
-        }
+      if (bulkEditData.priority !== 'keep') {
+        updates.priority =
+          bulkEditData.priority === '0'
+            ? null
+            : parseInt(bulkEditData.priority);
+      }
 
-        if (bulkEditData.status !== 'keep') {
-          updates.archived = bulkEditData.status === 'completed';
-        }
+      if (bulkEditData.status !== 'keep') {
+        updates.archived = bulkEditData.status === 'completed';
+      }
 
-        if (bulkEditData.tags.length > 0) {
-          updates.tags = bulkEditData.tags;
-        }
+      if (bulkEditData.tags.length > 0) {
+        updates.tags = bulkEditData.tags;
+      }
 
-        if (Object.keys(updates).length > 0) {
-          await supabase.from('tasks').update(updates).eq('id', taskId);
-        }
+      if (Object.keys(updates).length > 0) {
+        // Update all tasks in a single query
+        await supabase
+          .from('tasks')
+          .update(updates)
+          .in('id', taskIds);
       }
 
       // Refresh the task list and invalidate cache
@@ -253,10 +255,8 @@ export function ListView({
         const supabase = createClient();
         const taskIds = Array.from(selectedTasks);
 
-        // Delete tasks in batches
-        for (const taskId of taskIds) {
-          await supabase.from('tasks').delete().eq('id', taskId);
-        }
+        // Delete all tasks in a single query
+        await supabase.from('tasks').delete().in('id', taskIds);
 
         // Refresh the task list and invalidate cache
         const updatedTasks = await getTasks(supabase, board.id);
@@ -789,9 +789,9 @@ export function ListView({
           <Skeleton className="h-10 flex-1" />
         </div>
         <div className="space-y-3">
-          {Array.from({ length: 5 }, (_, i) => (
+          {['skeleton-1', 'skeleton-2', 'skeleton-3', 'skeleton-4', 'skeleton-5'].map((key) => (
             <Skeleton
-              key={`loading-skeleton-${i}-${Date.now()}`}
+              key={key}
               className="h-16 w-full"
             />
           ))}
