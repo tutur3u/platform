@@ -83,7 +83,7 @@ export function TaskForm({ listId, onTaskCreated }: Props) {
     try {
       const supabase = createClient();
 
-      // Create the task - handle tags safely in case migration hasn't been applied
+      // Create the task data
       const taskData: {
         name: string;
         description?: string;
@@ -99,19 +99,12 @@ export function TaskForm({ listId, onTaskCreated }: Props) {
         end_date: endDate?.toISOString(),
       };
 
-      // Only add tags if we have them and the migration is applied
+      // Only add tags if we have them
       if (tags.length > 0) {
-        try {
-          taskData.tags = tags;
-        } catch (err) {
-          console.warn('Tags not supported yet, skipping tags:', err);
-          // Continue without tags if the migration hasn't been applied
-        }
+        taskData.tags = tags;
       }
 
-      console.log('Creating task with data:', taskData);
       const newTask = await createTask(supabase, listId, taskData);
-      console.log('Task created successfully:', newTask);
 
       // Add assignees if any selected
       if (selectedAssignees.length > 0) {
