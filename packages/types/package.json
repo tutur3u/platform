@@ -6,7 +6,7 @@
     "access": "public"
   },
   "scripts": {},
-  "packageManager": "bun@1.2.18",
+  "packageManager": "bun@1.2.19",
   "dependencies": {
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
