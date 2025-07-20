@@ -1,5 +1,7 @@
 'use client';
 
+import { getTagColor } from '@/lib/tag-utils';
+import { useBoardTaskTags } from '@/lib/task-helper';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -15,8 +17,6 @@ import { useToast } from '@tuturuuu/ui/hooks/use-toast';
 import { Filter, Tag, X } from '@tuturuuu/ui/icons';
 import { cn } from '@tuturuuu/utils/format';
 import { useState } from 'react';
-import { getTagColor } from '@/lib/tag-utils';
-import { useBoardTaskTags } from '@/lib/task-helper';
 
 interface TagFilterProps {
   boardId: string;
@@ -72,13 +72,13 @@ export function TagFilter({
       {/* Active Filters Display */}
       {hasActiveFilters && (
         <div className="flex items-center gap-1.5">
-          <span className="text-muted-foreground text-xs">Filtered by:</span>
+          <span className="text-xs text-muted-foreground">Filtered by:</span>
           {selectedTags.map((tag) => (
             <Badge
               key={tag}
               variant="outline"
               className={cn(
-                'flex h-6 items-center gap-1 rounded-full border px-2 py-1 font-medium text-xs',
+                'flex h-6 items-center gap-1 rounded-full border px-2 py-1 text-xs font-medium',
                 getTagColor(tag)
               )}
             >
@@ -99,7 +99,7 @@ export function TagFilter({
             type="button"
             variant="ghost"
             size="sm"
-            className="h-6 px-2 text-muted-foreground text-xs hover:text-foreground"
+            className="h-6 px-2 text-xs text-muted-foreground hover:text-foreground"
             onClick={clearAllFilters}
           >
             Clear all
@@ -172,7 +172,7 @@ export function TagFilter({
                     <Badge
                       variant="outline"
                       className={cn(
-                        'h-5 rounded-full border px-1.5 font-medium text-xs',
+                        'h-5 rounded-full border px-1.5 text-xs font-medium',
                         getTagColor(tag)
                       )}
                     >
