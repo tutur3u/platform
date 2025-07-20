@@ -470,15 +470,6 @@ export const CalendarSyncProvider = ({
         // Prepare events for upsert by matching with existing events
         const eventsToUpsert = googleResponse.events.map(
           (event: WorkspaceCalendarEvent) => {
-            // Only try to match if we have google_event_id
-            if (!event.google_event_id) {
-              return {
-                ...event,
-                id: crypto.randomUUID(),
-                ws_id: wsId,
-              };
-            }
-
             // Find existing event with same google_event_id
             const existingEvent = dbData?.find((e) => {
               const matches =
@@ -508,7 +499,7 @@ export const CalendarSyncProvider = ({
           .from('workspace_calendar_events')
           .upsert(eventsToUpsert, {
             onConflict: 'ws_id,google_event_id',
-            ignoreDuplicates: true,
+            ignoreDuplicates: false,
           });
 
         if (upsertError) {
