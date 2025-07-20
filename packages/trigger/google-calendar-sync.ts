@@ -113,7 +113,7 @@ const syncGoogleCalendarEventsForWorkspaceBatched = async (
         .from('workspace_calendar_events')
         .upsert(batch, {
           onConflict: 'ws_id,google_event_id',
-          ignoreDuplicates: true,
+          ignoreDuplicates: false,
         });
       
       if (error) {
