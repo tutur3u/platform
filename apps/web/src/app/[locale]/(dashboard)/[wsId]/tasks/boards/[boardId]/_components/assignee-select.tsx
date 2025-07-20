@@ -3,7 +3,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
-import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Command,
@@ -12,11 +11,9 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-  CommandSeparator,
 } from '@tuturuuu/ui/command';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import {
-  Check,
   ChevronsUpDown,
   Crown,
   Loader2,
@@ -37,6 +34,11 @@ interface Member {
   role_title?: string;
 }
 
+interface Task {
+  id: string;
+  assignees?: Member[];
+}
+
 interface Props {
   taskId: string;
   assignees?: Member[];
@@ -54,9 +56,7 @@ export function AssigneeSelect({ taskId, assignees = [], onUpdate }: Props) {
   // Deduplicate assignees by ID
   const uniqueAssignees = assignees.filter(
     (assignee, index, self) =>
-      assignee &&
-      assignee.id &&
-      self.findIndex((a) => a && a.id === assignee.id) === index
+      assignee?.id && self.findIndex((a) => a && a.id === assignee.id) === index
   );
 
   // Fetch workspace members with React Query
@@ -124,34 +124,37 @@ export function AssigneeSelect({ taskId, assignees = [], onUpdate }: Props) {
       const previousTasks = queryClient.getQueryData(['tasks', boardId]);
 
       // Optimistically update the cache
-      queryClient.setQueryData(['tasks', boardId], (old: any) => {
-        if (!old) return old;
+      queryClient.setQueryData(
+        ['tasks', boardId],
+        (old: Task[] | undefined) => {
+          if (!old) return old;
 
-        return old.map((task: any) => {
-          if (task.id !== taskId) return task;
+          return old.map((task: Task) => {
+            if (task.id !== taskId) return task;
 
-          const currentAssignees = task.assignees || [];
-          let newAssignees;
+            const currentAssignees = task.assignees || [];
+            let newAssignees: Member[];
 
-          if (action === 'add') {
-            const member = members.find((m) => m.id === memberId);
-            if (
-              member &&
-              !currentAssignees.some((a: any) => a.id === memberId)
-            ) {
-              newAssignees = [...currentAssignees, member];
+            if (action === 'add') {
+              const member = members.find((m) => m.id === memberId);
+              if (
+                member &&
+                !currentAssignees.some((a: Member) => a.id === memberId)
+              ) {
+                newAssignees = [...currentAssignees, member];
+              } else {
+                newAssignees = currentAssignees;
+              }
             } else {
-              newAssignees = currentAssignees;
+              newAssignees = currentAssignees.filter(
+                (a: Member) => a.id !== memberId
+              );
             }
-          } else {
-            newAssignees = currentAssignees.filter(
-              (a: any) => a.id !== memberId
-            );
-          }
 
-          return { ...task, assignees: newAssignees };
-        });
-      });
+            return { ...task, assignees: newAssignees };
+          });
+        }
+      );
 
       return { previousTasks };
     },
@@ -194,16 +197,14 @@ export function AssigneeSelect({ taskId, assignees = [], onUpdate }: Props) {
   // Filter assigned and unassigned members with additional safety checks
   const assignedMembers = members.filter(
     (member) =>
-      member &&
-      member.id &&
-      uniqueAssignees.some((assignee) => assignee && assignee.id === member.id)
+      member?.id &&
+      uniqueAssignees.some((assignee) => assignee?.id === member.id)
   );
 
   const unassignedMembers = members.filter(
     (member) =>
-      member &&
-      member.id &&
-      !uniqueAssignees.some((assignee) => assignee && assignee.id === member.id)
+      member?.id &&
+      !uniqueAssignees.some((assignee) => assignee?.id === member.id)
   );
 
   // Additional deduplication just to be safe
@@ -243,7 +244,6 @@ export function AssigneeSelect({ taskId, assignees = [], onUpdate }: Props) {
       <PopoverTrigger asChild>
         <Button
           variant="ghost"
-          role="combobox"
           aria-expanded={open}
           disabled={isLoading}
           className={cn(
@@ -338,37 +338,44 @@ export function AssigneeSelect({ taskId, assignees = [], onUpdate }: Props) {
                           {member.display_name?.[0] || member.email?.[0] || '?'}
                         </AvatarFallback>
                       </Avatar>
-                      <div className="min-w-0 flex-1">
-                        <div className="truncate font-medium text-gray-900 text-sm dark:text-gray-100">
-                          {member.display_name || member.email}
+                      <div className="flex min-w-0 flex-1 flex-col">
+                        <div className="flex items-center gap-2">
+                          <span className="truncate font-medium text-gray-900 text-sm dark:text-gray-100">
+                            {member.display_name ||
+                              member.email?.split('@')[0] ||
+                              'Unknown User'}
+                          </span>
+                          {getRoleIcon(member.role)}
                         </div>
-                        {member.role_title && (
-                          <div className="mt-1 flex items-center gap-1.5">
-                            {getRoleIcon(member.role)}
-                            <Badge
-                              variant="outline"
-                              className={cn(
-                                'h-5 border-0 px-2 font-medium text-[10px]',
-                                getRoleColor(member.role)
-                              )}
-                            >
-                              {member.role_title}
-                            </Badge>
-                          </div>
+                        {member.email && (
+                          <span className="truncate text-gray-500 text-xs dark:text-gray-400">
+                            {member.email}
+                          </span>
+                        )}
+                        {member.role && (
+                          <span
+                            className={cn(
+                              'mt-1 inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-medium text-xs',
+                              getRoleColor(member.role)
+                            )}
+                          >
+                            {member.role_title || member.role}
+                          </span>
                         )}
                       </div>
-                      <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
+                      <div className="flex items-center gap-1">
+                        <div className="h-2 w-2 rounded-full bg-green-500"></div>
+                        <span className="text-green-600 text-xs dark:text-green-400">
+                          Assigned
+                        </span>
+                      </div>
                     </CommandItem>
                   ))}
                 </CommandGroup>
               )}
-              {uniqueAssignedMembers.length > 0 &&
-                uniqueUnassignedMembers.length > 0 && (
-                  <CommandSeparator className="my-1" />
-                )}
               {uniqueUnassignedMembers.length > 0 && (
                 <CommandGroup
-                  heading="Available Members"
+                  heading="Available"
                   className="bg-gradient-to-r from-blue-50 to-indigo-50 px-2 py-2 font-semibold text-blue-700 text-xs dark:from-blue-950/20 dark:to-indigo-950/20 dark:text-blue-400"
                 >
                   {uniqueUnassignedMembers.map((member) => (
@@ -379,30 +386,42 @@ export function AssigneeSelect({ taskId, assignees = [], onUpdate }: Props) {
                       disabled={assigneeMutation.isPending}
                       className="mx-1 my-1 gap-3 rounded-lg px-3 py-3 transition-all duration-200 hover:bg-gradient-to-r hover:from-blue-100 hover:to-indigo-100 disabled:opacity-50 dark:hover:from-blue-900/20 dark:hover:to-indigo-900/20"
                     >
-                      <Avatar className="h-8 w-8 shadow-sm ring-2 ring-gray-200 dark:ring-gray-700">
+                      <Avatar className="h-8 w-8 shadow-sm ring-2 ring-blue-200 dark:ring-blue-800">
                         <AvatarImage src={member.avatar_url} />
-                        <AvatarFallback className="bg-gradient-to-br from-gray-100 to-slate-100 text-gray-700 dark:from-gray-800 dark:to-slate-800 dark:text-gray-300">
+                        <AvatarFallback className="bg-gradient-to-br from-blue-100 to-indigo-100 text-blue-700 dark:from-blue-900 dark:to-indigo-900 dark:text-blue-300">
                           {member.display_name?.[0] || member.email?.[0] || '?'}
                         </AvatarFallback>
                       </Avatar>
-                      <div className="min-w-0 flex-1">
-                        <div className="truncate font-medium text-gray-900 text-sm dark:text-gray-100">
-                          {member.display_name || member.email}
+                      <div className="flex min-w-0 flex-1 flex-col">
+                        <div className="flex items-center gap-2">
+                          <span className="truncate font-medium text-gray-900 text-sm dark:text-gray-100">
+                            {member.display_name ||
+                              member.email?.split('@')[0] ||
+                              'Unknown User'}
+                          </span>
+                          {getRoleIcon(member.role)}
                         </div>
-                        {member.role_title && (
-                          <div className="mt-1 flex items-center gap-1.5">
-                            {getRoleIcon(member.role)}
-                            <Badge
-                              variant="outline"
-                              className={cn(
-                                'h-5 border-0 px-2 font-medium text-[10px]',
-                                getRoleColor(member.role)
-                              )}
-                            >
-                              {member.role_title}
-                            </Badge>
-                          </div>
+                        {member.email && (
+                          <span className="truncate text-gray-500 text-xs dark:text-gray-400">
+                            {member.email}
+                          </span>
                         )}
+                        {member.role && (
+                          <span
+                            className={cn(
+                              'mt-1 inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-medium text-xs',
+                              getRoleColor(member.role)
+                            )}
+                          >
+                            {member.role_title || member.role}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <div className="h-2 w-2 rounded-full bg-gray-300 dark:bg-gray-600"></div>
+                        <span className="text-gray-500 text-xs dark:text-gray-400">
+                          Available
+                        </span>
                       </div>
                     </CommandItem>
                   ))}

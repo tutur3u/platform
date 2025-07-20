@@ -1,7 +1,7 @@
 'use client';
 
 import { Card } from '@tuturuuu/ui/card';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { getTaskCompletionDate } from '../utils/taskHelpers';
 import { GanttControls } from './GanttControls';
 import { GanttHeader } from './GanttHeader';
@@ -26,6 +26,15 @@ export function GanttChart({ allTasks, filters }: GanttChartProps) {
   const [clickCardVisible, setClickCardVisible] = useState(false);
   const [clickCardPosition, setClickCardPosition] = useState({ x: 0, y: 0 });
   const [clickedTask, setClickedTask] = useState<any | null>(null);
+
+  // Track previous filter values to detect changes
+  const prevFiltersRef = useRef({ selectedBoard: filters.selectedBoard, statusFilter: filters.statusFilter, searchQuery });
+
+  // Memoize the close handler to prevent unnecessary re-renders
+  const handleCloseClick = useCallback(() => {
+    setClickCardVisible(false);
+    setClickedTask(null);
+  }, []);
 
   // Filter tasks based on selected board, status, and search
   const filteredTasks = useMemo(() => {
@@ -59,7 +68,7 @@ export function GanttChart({ allTasks, filters }: GanttChartProps) {
   }, [allTasks, filters.selectedBoard, filters.statusFilter, searchQuery]);
 
   // Get time range based on filter
-  const getTimeRange = () => {
+  const getTimeRange = useCallback(() => {
     const now = new Date();
     switch (filters.timeView) {
       case 'week': {
@@ -80,13 +89,13 @@ export function GanttChart({ allTasks, filters }: GanttChartProps) {
         return { start: yearStart, end: yearEnd };
       }
     }
-  };
+  }, [filters.timeView]);
 
-  const timeRange = getTimeRange();
-  const totalDays = Math.ceil(
+  const timeRange = useMemo(() => getTimeRange(), [getTimeRange]);
+  const totalDays = useMemo(() => Math.ceil(
     (timeRange.end.getTime() - timeRange.start.getTime()) /
       (1000 * 60 * 60 * 24)
-  );
+  ), [timeRange]);
 
   // Calculate productivity stats
   const productivityStats = useMemo(() => {
@@ -266,13 +275,23 @@ export function GanttChart({ allTasks, filters }: GanttChartProps) {
     }
   }, [clickedTask]);
 
-  // Reset to first page when filters change
+  // Reset to first page when filters change - optimized dependencies
   useEffect(() => {
-    setCurrentPage(1);
+    const currentFilters = { selectedBoard: filters.selectedBoard, statusFilter: filters.statusFilter, searchQuery };
+    const prevFilters = prevFiltersRef.current;
+    
+    if (
+      currentFilters.selectedBoard !== prevFilters.selectedBoard ||
+      currentFilters.statusFilter !== prevFilters.statusFilter ||
+      currentFilters.searchQuery !== prevFilters.searchQuery
+    ) {
+      setCurrentPage(1);
+      prevFiltersRef.current = currentFilters;
+    }
   }, [filters.selectedBoard, filters.statusFilter, searchQuery]);
 
   // Add the click handlers to the GanttChart component
-  const handleTaskClick = (e: React.MouseEvent, task: any) => {
+  const handleTaskClick = useCallback((e: React.MouseEvent, task: any) => {
     e.stopPropagation();
 
     const mouseX = e.clientX;
@@ -294,14 +313,9 @@ export function GanttChart({ allTasks, filters }: GanttChartProps) {
     }
 
     setClickCardPosition({ x: newX, y: newY });
-  };
+  }, []);
 
-  const handleCloseClick = () => {
-    setClickCardVisible(false);
-    setClickedTask(null);
-  };
-
-  // Add click outside to close
+  // Add click outside to close - fixed dependency
   useEffect(() => {
     const handleScroll = () => {
       handleCloseClick();
@@ -333,7 +347,7 @@ export function GanttChart({ allTasks, filters }: GanttChartProps) {
         ganttContainer.removeEventListener('scroll', handleScroll);
       }
     };
-  }, [clickCardVisible]);
+  }, [clickCardVisible, handleCloseClick]);
 
   return (
     <>

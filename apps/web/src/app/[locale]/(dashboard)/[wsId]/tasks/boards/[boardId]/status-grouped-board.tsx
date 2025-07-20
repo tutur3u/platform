@@ -1,10 +1,7 @@
 'use client';
 
-import { EnhancedTaskList } from './enhanced-task-list';
-import { StatusSection } from './status-section';
-import { TaskCard } from './task';
-import { useMoveTask } from '@/lib/task-helper';
 import {
+  closestCorners,
   DndContext,
   type DragEndEvent,
   type DragOverEvent,
@@ -14,7 +11,6 @@ import {
   MouseSensor,
   PointerSensor,
   TouchSensor,
-  closestCorners,
   useSensor,
   useSensors,
 } from '@dnd-kit/core';
@@ -32,6 +28,10 @@ import type {
 import { cn } from '@tuturuuu/utils/format';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { useMoveTask } from '@/lib/task-helper';
+import { EnhancedTaskList } from './enhanced-task-list';
+import { StatusSection } from './status-section';
+import { TaskCard } from './task';
 
 interface Props {
   lists: TaskList[];
@@ -348,7 +348,10 @@ export function StatusGroupedBoard({
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
+                  role="img"
+                  aria-label="Board structure view icon"
                 >
+                  <title>Board Structure View</title>
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -358,15 +361,15 @@ export function StatusGroupedBoard({
                 </svg>
               </div>
               <div>
-                <h2 className="text-lg font-semibold text-foreground">
+                <h2 className="font-semibold text-foreground text-lg">
                   Board Structure View
                 </h2>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-muted-foreground text-sm">
                   Viewing task lists and organization without individual tasks
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <div className="flex items-center gap-2 text-muted-foreground text-sm">
               <span className="rounded-full bg-dynamic-gray/20 px-3 py-1">
                 {lists.length} lists
               </span>
