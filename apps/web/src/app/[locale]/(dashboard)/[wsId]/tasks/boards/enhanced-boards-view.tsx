@@ -1,10 +1,5 @@
 'use client';
 
-import type {
-  Task,
-  TaskBoard,
-  TaskList,
-} from '@tuturuuu/types/primitives/TaskBoard';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card } from '@tuturuuu/ui/card';
@@ -60,6 +55,7 @@ import {
   useOnTimeRate,
   useTaskVelocity,
 } from './hooks/useTaskAnalytics';
+import type { EnhancedTaskBoard } from './types';
 // Import helper functions
 import { getFilteredMetrics } from './utils/taskHelpers';
 
@@ -78,18 +74,7 @@ const CARD_LAYOUT_OPTIONS = [
 type CardLayout = (typeof CARD_LAYOUT_OPTIONS)[number]['value'];
 
 interface EnhancedBoardsViewProps {
-  data: (TaskBoard & {
-    href: string;
-    totalTasks: number;
-    completedTasks: number;
-    activeTasks: number;
-    overdueTasks: number;
-    progressPercentage: number;
-    highPriorityTasks: number;
-    mediumPriorityTasks: number;
-    lowPriorityTasks: number;
-    task_lists?: (TaskList & { tasks: Task[] })[];
-  })[];
+  data: EnhancedTaskBoard[];
   count: number;
 }
 
@@ -286,11 +271,25 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
 
   const handleBoardClick = (
     board: (typeof safeData)[0],
-    e: React.MouseEvent
+    e?: React.MouseEvent
   ) => {
-    e.preventDefault();
+    if (e) {
+      e.preventDefault();
+    }
     setSelectedBoard(board.id);
     setSidebarOpen(true);
+  };
+
+  // Handler for table row clicks
+  const handleTableRowClick = (board: (typeof safeData)[0]) => {
+    // Check if any dialogs or alert dialogs are currently open
+    const hasOpenDialogs = document.querySelector('[role="dialog"]') !== null;
+    const hasOpenAlertDialogs =
+      document.querySelector('[role="alertdialog"]') !== null;
+    if (hasOpenDialogs || hasOpenAlertDialogs) {
+      return; // Don't trigger row click if dialogs are open
+    }
+    handleBoardClick(board);
   };
 
   const closeSidebar = () => {
@@ -877,6 +876,7 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                   id: false,
                   created_at: false,
                 }}
+                onRowClick={handleTableRowClick}
               />
             </TabsContent>
 

@@ -103,24 +103,42 @@ describe('Google Calendar Batched Sync', () => {
       expect(upsertMock).toHaveBeenCalledWith(
         expect.arrayContaining([
           expect.objectContaining({
-            google_event_id: 'event1',
-            title: 'Test Event 1',
-            ws_id: 'test-workspace'
+            color: "RED",
+            description: "Description for Test Event 1",
+            end_at: "2024-01-15T11:00:00Z",
+            google_event_id: "event1",
+            start_at: "2024-01-15T10:00:00Z",
+            title: "Test Event 1",
+            ws_id: "test-workspace",
+            location: "Location for Test Event 1",
+            locked: false,
           }),
           expect.objectContaining({
+            color: "RED",
+            description: "Description for Test Event 2",
+            end_at: "2024-01-15T15:00:00Z", 
             google_event_id: 'event2',
             title: 'Test Event 2',
-            ws_id: 'test-workspace'
+            ws_id: 'test-workspace',
+            location: "Location for Test Event 2",
+            locked: false,
+            start_at: "2024-01-15T14:00:00Z",
           }),
           expect.objectContaining({
+            color: "RED",
+            description: "Description for Test Event 3",
+            end_at: "2024-01-15T17:00:00Z",
             google_event_id: 'event3',
+            start_at: "2024-01-15T16:00:00Z",
             title: 'Test Event 3',
-            ws_id: 'test-workspace'
+            ws_id: 'test-workspace',
+            location: "Location for Test Event 3",
+            locked: false,
           })
         ]),
         {
           onConflict: 'ws_id,google_event_id',
-          ignoreDuplicates: true,
+          ignoreDuplicates: false,
         }
       );
     });

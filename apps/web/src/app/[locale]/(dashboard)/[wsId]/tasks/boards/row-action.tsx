@@ -1,7 +1,6 @@
 'use client';
 
 import type { Row } from '@tanstack/react-table';
-import type { TaskBoard } from '@tuturuuu/types/primitives/TaskBoard';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -28,9 +27,10 @@ import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { TaskBoardForm } from './form';
+import type { EnhancedTaskBoard } from './types';
 
 interface ProjectRowActionsProps {
-  row: Row<TaskBoard>;
+  row: Row<EnhancedTaskBoard>;
 }
 
 export function ProjectRowActions({ row }: ProjectRowActionsProps) {
@@ -68,7 +68,7 @@ export function ProjectRowActions({ row }: ProjectRowActionsProps) {
     <>
       <div className="flex items-center justify-end gap-2">
         {data.href && (
-          <Link href={data.href}>
+          <Link href={data.href} onClick={(e) => e.stopPropagation()}>
             <Button>
               <Eye className="mr-1 h-5 w-5" />
               {t('common.view')}
@@ -81,17 +81,28 @@ export function ProjectRowActions({ row }: ProjectRowActionsProps) {
             <Button
               variant="ghost"
               className="flex h-8 w-8 p-0 data-[state=open]:bg-muted"
+              onClick={(e) => e.stopPropagation()}
             >
               <Ellipsis className="h-4 w-4" />
               <span className="sr-only">Open menu</span>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-[160px]">
-            <DropdownMenuItem onClick={() => setShowEditDialog(true)}>
+            <DropdownMenuItem
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowEditDialog(true);
+              }}
+            >
               {t('common.edit')}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => setShowDeleteDialog(true)}>
+            <DropdownMenuItem
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowDeleteDialog(true);
+              }}
+            >
               {t('common.delete')}
             </DropdownMenuItem>
           </DropdownMenuContent>
@@ -112,9 +123,9 @@ export function ProjectRowActions({ row }: ProjectRowActionsProps) {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Task Board</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete "{data.name}"? This action cannot
-              be undone and will permanently delete the task board and all its
-              tasks.
+              Are you sure you want to delete "{data.name.slice(0, 20)}..."?
+              This action cannot be undone and will permanently delete the task
+              board and all its tasks.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
