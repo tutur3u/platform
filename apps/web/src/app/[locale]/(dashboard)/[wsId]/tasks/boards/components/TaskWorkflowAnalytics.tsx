@@ -56,10 +56,13 @@ export function TaskWorkflowAnalytics({
 
     // Cycle time calculation (creation to completion)
     const cycleTimeData = completedTasks
-      .filter((task) => task.created_at && task.updated_at)
+      .filter(
+        (task): task is Task & { created_at: string; updated_at: string } =>
+          Boolean(task.created_at && task.updated_at)
+      )
       .map((task) => {
-        const created = new Date(task.created_at!);
-        const completed = new Date(task.updated_at!);
+        const created = new Date(task.created_at);
+        const completed = new Date(task.updated_at);
         return (
           (completed.getTime() - created.getTime()) / (1000 * 60 * 60 * 24)
         );
@@ -73,9 +76,11 @@ export function TaskWorkflowAnalytics({
 
     // Task age distribution
     const taskAges = filteredTasks
-      .filter((task) => task.created_at)
+      .filter((task): task is Task & { created_at: string } =>
+        Boolean(task.created_at)
+      )
       .map((task) => {
-        const created = new Date(task.created_at!);
+        const created = new Date(task.created_at);
         return (now.getTime() - created.getTime()) / (1000 * 60 * 60 * 24);
       });
 
@@ -124,37 +129,40 @@ export function TaskWorkflowAnalytics({
     };
   }, [filteredTasks]);
 
-  const ageConfig = [
-    {
-      key: 'new',
-      label: '🆕 New (0-3d)',
-      count: workflowAnalytics.ageDistribution.new,
-      color: 'bg-green-500',
-    },
-    {
-      key: 'recent',
-      label: '📅 Recent (4-7d)',
-      count: workflowAnalytics.ageDistribution.recent,
-      color: 'bg-blue-500',
-    },
-    {
-      key: 'old',
-      label: '📚 Old (1-4w)',
-      count: workflowAnalytics.ageDistribution.old,
-      color: 'bg-yellow-500',
-    },
-    {
-      key: 'stale',
-      label: '⏰ Stale (>1m)',
-      count: workflowAnalytics.ageDistribution.stale,
-      color: 'bg-red-500',
-    },
-  ];
+  const ageConfig = useMemo(
+    () => [
+      {
+        key: 'new',
+        label: '🆕 New (0-3d)',
+        count: workflowAnalytics.ageDistribution.new,
+        color: 'bg-green-500',
+      },
+      {
+        key: 'recent',
+        label: '📅 Recent (4-7d)',
+        count: workflowAnalytics.ageDistribution.recent,
+        color: 'bg-blue-500',
+      },
+      {
+        key: 'old',
+        label: '📚 Old (1-4w)',
+        count: workflowAnalytics.ageDistribution.old,
+        color: 'bg-yellow-500',
+      },
+      {
+        key: 'stale',
+        label: '⏰ Stale (>1m)',
+        count: workflowAnalytics.ageDistribution.stale,
+        color: 'bg-red-500',
+      },
+    ],
+    [workflowAnalytics.ageDistribution]
+  );
 
   // Optimize filtering for large datasets
   const visibleAgeConfig = useMemo(
     () => ageConfig.filter((age) => age.count > 0),
-    [workflowAnalytics.ageDistribution]
+    [ageConfig]
   );
 
   return (

@@ -48,6 +48,7 @@ export function GanttControls({
         />
         {searchQuery && (
           <button
+            type="button"
             onClick={() => setSearchQuery('')}
             className="-translate-y-1/2 absolute top-1/2 right-2 text-muted-foreground hover:text-foreground"
           >
