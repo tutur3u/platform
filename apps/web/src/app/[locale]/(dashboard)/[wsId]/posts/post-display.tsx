@@ -1,7 +1,7 @@
 'use client';
 
 import PostsRowActions from './row-actions';
-import type { InternalEmail } from '@tuturuuu/types/db';
+import type { PostEmail } from './types';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
@@ -23,9 +23,10 @@ import dayjs from 'dayjs';
 import { useLocale } from 'next-intl';
 import Link from 'next/link';
 import { useEffect } from 'react';
+import { mutate } from 'swr';
 
 interface PostDisplayProps {
-  postEmail: InternalEmail | null;
+  postEmail: PostEmail | null;
 }
 
 export function PostDisplay({ postEmail }: PostDisplayProps) {
@@ -35,6 +36,14 @@ export function PostDisplay({ postEmail }: PostDisplayProps) {
   useEffect(() => {
     dayjs.locale(locale);
   }, [locale]);
+
+  // Refresh posts and status after sending
+  const handleRefresh = () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    mutate((key: any) => Array.isArray(key) && key[0] === 'posts');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    mutate((key: any) => Array.isArray(key) && key[0] === 'postsStatus');
+  };
 
   if (!postEmail) {
     return (
@@ -71,7 +80,7 @@ export function PostDisplay({ postEmail }: PostDisplayProps) {
         </div>
 
         <div className="flex items-center gap-2">
-          <PostsRowActions data={postEmail} />
+          <PostsRowActions data={postEmail} onSuccess={handleRefresh} />
         </div>
       </div>
 
@@ -82,12 +91,10 @@ export function PostDisplay({ postEmail }: PostDisplayProps) {
             <div className="flex items-start gap-4">
               <Avatar className="h-12 w-12 shadow-sm ring-2 ring-background">
                 <AvatarImage
-                  alt={
-                    postEmail.to_addresses[0] || postEmail.source_email || ''
-                  }
+                  alt={postEmail.recipient ?? postEmail.email ?? ''}
                 />
                 <AvatarFallback className="bg-primary/10 text-sm font-semibold text-primary">
-                  {(postEmail.to_addresses[0] || postEmail.source_email || 'U')
+                  {(postEmail.recipient ?? postEmail.email ?? 'U')
                     .split(' ')
                     .map((chunk: string) => chunk[0])
                     .join('')
@@ -97,18 +104,15 @@ export function PostDisplay({ postEmail }: PostDisplayProps) {
               </Avatar>
 
               <div className="min-w-0 flex-1 space-y-2">
-                {postEmail.to_addresses.length > 0 &&
-                  postEmail.to_addresses.map((toAddress) => (
-                    <div key={toAddress}>
-                      <h4 className="text-base font-semibold text-foreground">
-                        {toAddress || 'Unknown Recipient'}
-                      </h4>
-                      <p className="flex items-center gap-1 text-sm text-muted-foreground">
-                        <Mail className="h-3 w-3" />
-                        {toAddress}
-                      </p>
-                    </div>
-                  ))}
+                <div>
+                  <h4 className="text-base font-semibold text-foreground">
+                    {postEmail.recipient || 'Unknown Recipient'}
+                  </h4>
+                  <p className="flex items-center gap-1 text-sm text-muted-foreground">
+                    <Mail className="h-3 w-3" />
+                    {postEmail.email}
+                  </p>
+                </div>
 
                 <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
                   <div className="flex items-center gap-1">
@@ -122,7 +126,10 @@ export function PostDisplay({ postEmail }: PostDisplayProps) {
                   </div>
                   <div className="flex items-center gap-1">
                     <Calendar className="h-3 w-3" />
-                    {dayjs(postEmail.created_at).format('LLLL')}
+                    {/* Fix date formatting here */}
+                    {postEmail.created_at
+                      ? dayjs(postEmail.created_at).format('YYYY-MM-DD HH:mm')
+                      : ''}
                   </div>
                 </div>
               </div>
@@ -200,7 +207,7 @@ export function PostDisplay({ postEmail }: PostDisplayProps) {
                   Status
                 </span>
                 <div className="flex items-center gap-2">
-                  {postEmail.id ? (
+                  {postEmail.email_id ? (
                     <Badge
                       variant="default"
                       className="border-dynamic-green/30 bg-dynamic-green/10 text-dynamic-green"

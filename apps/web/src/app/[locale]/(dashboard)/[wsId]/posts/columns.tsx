@@ -1,44 +1,19 @@
 'use client';
 
 import PostsRowActions from './row-actions';
-import { createPostEmailKey, usePosts } from './use-posts';
+import type { PostEmail } from './types';
 import type { ColumnDef } from '@tanstack/react-table';
-import type { InternalEmail } from '@tuturuuu/types/db';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import { Check, X } from '@tuturuuu/ui/icons';
-import { cn } from '@tuturuuu/utils/format';
 import 'dayjs/locale/vi';
 import moment from 'moment';
 
-const CellWrapper = ({
-  row,
-  children,
-}: {
-  // biome-ignore lint/suspicious/noExplicitAny: <>
-  row: any;
-  children: React.ReactNode;
-}) => {
-  const [posts, _setPosts] = usePosts();
-  const postKey = createPostEmailKey(row.original);
-  const isSelected = posts.selected === postKey;
-
-  return (
-    <div
-      className={cn(
-        'h-full w-full cursor-pointer rounded-md px-2 py-1.5 transition-colors',
-        isSelected ? 'bg-primary/10 text-primary' : 'hover:bg-muted/50'
-      )}
-    >
-      {children}
-    </div>
-  );
-};
-
 export const getPostEmailColumns = (
   // biome-ignore lint/suspicious/noExplicitAny: <translations are not typed>
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   t: any,
   namespace: string | undefined
-): ColumnDef<InternalEmail>[] => [
+): ColumnDef<PostEmail>[] => [
   {
     accessorKey: 'recipient',
     header: ({ column }) => (
@@ -48,9 +23,7 @@ export const getPostEmailColumns = (
         title={t(`${namespace}.recipient`)}
       />
     ),
-    cell: ({ row }) => (
-      <CellWrapper row={row}>{row.getValue('recipient') || '-'}</CellWrapper>
-    ),
+    cell: ({ row }) => <div>{row.getValue('recipient') || '-'}</div>,
   },
   {
     accessorKey: 'email',
@@ -61,9 +34,7 @@ export const getPostEmailColumns = (
         title={t(`${namespace}.email`)}
       />
     ),
-    cell: ({ row }) => (
-      <CellWrapper row={row}>{row.getValue('email') || '-'}</CellWrapper>
-    ),
+    cell: ({ row }) => <div>{row.getValue('email') || '-'}</div>,
   },
   {
     accessorKey: 'group_name',
@@ -75,11 +46,9 @@ export const getPostEmailColumns = (
       />
     ),
     cell: ({ row }) => (
-      <CellWrapper row={row}>
-        <span className="line-clamp-1 min-w-32 text-primary">
-          {row.getValue('group_name') || '-'}
-        </span>
-      </CellWrapper>
+      <div className="line-clamp-1 min-w-32 text-primary">
+        {row.getValue('group_name') || '-'}
+      </div>
     ),
   },
   {
@@ -92,11 +61,9 @@ export const getPostEmailColumns = (
       />
     ),
     cell: ({ row }) => (
-      <CellWrapper row={row}>
-        <span className="line-clamp-1 min-w-32 text-primary">
-          {row.getValue('post_title') || '-'}
-        </span>
-      </CellWrapper>
+      <div className="line-clamp-1 min-w-32 text-primary">
+        {row.getValue('post_title') || '-'}
+      </div>
     ),
   },
   {
@@ -108,9 +75,7 @@ export const getPostEmailColumns = (
         title={t(`${namespace}.subject`)}
       />
     ),
-    cell: ({ row }) => (
-      <CellWrapper row={row}>{row.getValue('subject') || '-'}</CellWrapper>
-    ),
+    cell: ({ row }) => <div>{row.getValue('subject') || '-'}</div>,
   },
   {
     accessorKey: 'post_content',
@@ -122,11 +87,9 @@ export const getPostEmailColumns = (
       />
     ),
     cell: ({ row }) => (
-      <CellWrapper row={row}>
-        <div className="line-clamp-3 max-w-40 whitespace-pre-line">
-          {row.getValue('post_content') || '-'}
-        </div>
-      </CellWrapper>
+      <div className="line-clamp-3 max-w-40 whitespace-pre-line">
+        {row.getValue('post_content') || '-'}
+      </div>
     ),
   },
   {
@@ -139,11 +102,9 @@ export const getPostEmailColumns = (
       />
     ),
     cell: ({ row }) => (
-      <CellWrapper row={row}>
-        <div className="flex items-center justify-center">
-          {row.getValue('is_completed') ? <Check /> : <X />}
-        </div>
-      </CellWrapper>
+      <div className="flex items-center justify-center">
+        {row.getValue('is_completed') ? <Check /> : <X />}
+      </div>
     ),
   },
   {
@@ -156,11 +117,9 @@ export const getPostEmailColumns = (
       />
     ),
     cell: ({ row }) => (
-      <CellWrapper row={row}>
-        <div className="line-clamp-1 min-w-32">
-          {row.getValue('notes') || '-'}
-        </div>
-      </CellWrapper>
+      <div className="line-clamp-1 min-w-32">
+        {row.getValue('notes') || '-'}
+      </div>
     ),
   },
   {
@@ -173,11 +132,9 @@ export const getPostEmailColumns = (
       />
     ),
     cell: ({ row }) => (
-      <CellWrapper row={row}>
-        <div className="min-w-32">
-          {moment(row.getValue('created_at')).format('DD/MM/YYYY')}
-        </div>
-      </CellWrapper>
+      <div className="min-w-32">
+        {moment(row.getValue('created_at')).format('DD/MM/YYYY')}
+      </div>
     ),
   },
   {

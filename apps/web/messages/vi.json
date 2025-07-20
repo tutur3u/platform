@@ -1109,7 +1109,11 @@
     "send_email": "Gửi email",
     "preview": "Xem trước",
     "notes": "Ghi chú",
-    "created_at": "Ngày tạo"
+    "created_at": "Ngày tạo",
+    "error": "Lỗi",
+    "sending": "Đang gửi",
+    "sent": "Đã gửi",
+    "pending": "Chờ gửi"
   },
   "course-data-table": {
     "id": "Mã số",

@@ -1098,7 +1098,11 @@
     "send_email": "Send Email",
     "preview": "Preview",
     "notes": "Notes",
-    "created_at": "Created At"
+    "created_at": "Created At",
+    "error": "Error",
+    "sending": "Sending",
+    "sent": "Sent",
+    "pending": "Pending"
   },
   "course-data-table": {
     "id": "ID",

@@ -1,85 +1,72 @@
-'use client';
-
+import type { PostEmail } from './types';
 import useEmail from '@/hooks/useEmail';
-import { createClient } from '@tuturuuu/supabase/next/client';
-import type { InternalEmail } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
 import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
 import { CircleAlert, CircleSlash, MailCheck, Send } from '@tuturuuu/ui/icons';
+import dayjs from 'dayjs';
 import { useTranslations } from 'next-intl';
+import { useEffect } from 'react';
 
-export default function PostsRowActions({ data }: { data: InternalEmail }) {
+export default function PostsRowActions({
+  data,
+  onSuccess,
+}: {
+  data: PostEmail;
+  onSuccess?: () => void;
+}) {
   const t = useTranslations();
   const { sendEmail, loading, error, success } = useEmail();
 
+  useEffect(() => {
+    if (success && onSuccess) {
+      onSuccess();
+    }
+  }, [success, onSuccess]);
+
   const sendable =
+    !!data.email &&
     !!data.ws_id &&
-    !!data.to_addresses.length &&
-    !!data.to_addresses[0] &&
-    !!data.subject &&
-    !!data.payload;
+    !!data.user_id &&
+    !!data.post_id &&
+    !!data.group_id &&
+    !!data.group_name &&
+    !!data.post_title &&
+    !!data.post_content &&
+    !!data?.is_completed;
 
   const handleSendEmail = async () => {
     if (
+      !!data.email &&
       !!data.ws_id &&
-      !!data.to_addresses.length &&
-      !!data.to_addresses[0] &&
-      !!data.subject &&
-      !!data.payload
+      !!data.user_id &&
+      !!data.post_id &&
+      !!data.group_id &&
+      !!data.group_name &&
+      !!data.post_title &&
+      !!data.post_content &&
+      !!data?.is_completed
     ) {
-      const supabase = createClient();
-      // 1. Fetch user_group_post_checks by email_id and user_id
-      const { data: check, error: checkError } = await supabase
-        .from('user_group_post_checks')
-        .select('*')
-        .eq('email_id', data.id)
-        .eq('user_id', data.user_id)
-        .maybeSingle();
-      if (checkError || !check) {
-        alert('Could not find post check for this email/user.');
-        return;
-      }
-      // 2. Fetch post from user_group_posts
-      const { data: post, error: postError } = await supabase
-        .from('user_group_posts')
-        .select('*')
-        .eq('id', check.post_id)
-        .maybeSingle();
-      if (postError || !post || !post.group_id || !post.id) {
-        alert('Could not find post or group for this email.');
-        return;
-      }
-      // 3. Fetch user from workspace_users
-      const { data: user, error: userError } = await supabase
-        .from('workspace_users')
-        .select('*')
-        .eq('id', check.user_id)
-        .maybeSingle();
-      if (userError || !user || !user.email) {
-        alert('Could not find user or user email for this email.');
-        return;
-      }
-      // 4. Call sendEmail with the required structure
       await sendEmail({
         wsId: data.ws_id,
-        groupId: post.group_id,
-        postId: post.id,
+        postId: data.post_id,
+        groupId: data.group_id,
         post: {
-          id: post.id,
-          title: post.title,
-          content: post.content,
-          notes: post.notes || '',
-          group_name: '', // Optionally fetch group name if needed
-          created_at: post.created_at,
+          id: data.post_id,
+          title: data.post_title,
+          content: data.post_content,
+          notes: data.notes || '',
+          group_name: data.group_name,
+          created_at:
+            dayjs(data.post_created_at || data.created_at)?.toISOString() ||
+            undefined,
         },
         users: [
           {
-            id: user.id,
-            email: user.email,
-            username:
-              user.display_name || user.full_name || user.email || '<No Name>',
-            notes: check.notes || '',
-            is_completed: check.is_completed,
+            id: data.user_id,
+            email: data.email,
+            username: data.recipient || data.email || '<Chưa có tên>',
+            notes: data?.notes || '',
+            is_completed: data?.is_completed,
           },
         ],
       });
@@ -94,24 +81,40 @@ export default function PostsRowActions({ data }: { data: InternalEmail }) {
         disabled={
           !!error ||
           loading ||
-          !data.to_addresses.length ||
-          !!data.id ||
+          !data.email ||
+          !!data.email_id ||
           !sendable ||
-          !data.to_addresses.some((address) => address.includes('@easy')) ||
+          data.email.includes('@easy') ||
           success
         }
         variant={
-          error ? 'destructive' : !success && !loading ? undefined : 'outline'
+          error
+            ? 'destructive'
+            : loading
+              ? 'secondary'
+              : success || data.email_id
+                ? 'outline'
+                : undefined
         }
+        className="flex min-w-[90px] items-center gap-2"
       >
-        {data?.to_addresses.some((address) => address.includes('@easy')) ? (
+        {data?.email?.includes('@easy') ? (
           <CircleSlash className="h-4 w-4" />
         ) : error ? (
-          <CircleAlert className="h-4 w-4" />
+          <>
+            <CircleAlert className="h-4 w-4" />
+            <span>{t('post-email-data-table.error')}</span>
+          </>
         ) : loading ? (
-          <LoadingIndicator />
-        ) : success || data.id ? (
-          <MailCheck className="h-4 w-4" />
+          <>
+            <LoadingIndicator />
+            <span>{t('post-email-data-table.sending')}</span>
+          </>
+        ) : success || data.email_id ? (
+          <>
+            <MailCheck className="h-4 w-4" />
+            <span>{t('post-email-data-table.sent')}</span>
+          </>
         ) : (
           <>
             <Send className="mr-1.5 h-4 w-4" />
