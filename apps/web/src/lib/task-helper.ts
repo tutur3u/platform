@@ -77,12 +77,9 @@ export async function getTasks(supabase: SupabaseClient, boardId: string) {
   // Transform the nested assignees data
   const transformedTasks = data.map((task) => ({
     ...task,
-    assignees: task.assignees
-      ?.map((a) => a.user)
-      .filter(
-        (user: User, index: number, self: User[]) =>
-          user?.id && self.findIndex((u: User) => u.id === user.id) === index
-      ),
+    assignees: transformAssignees(
+      task.assignees as (TaskAssignee & { user: User })[]
+    ),
   }));
 
   return transformedTasks as Task[];
@@ -896,16 +893,5 @@ export function useBoardTaskTags(boardId: string) {
       return getBoardTaskTags(supabase, boardId);
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
-  });
-}
-
-export function useTasksWithTagFilter(boardId: string) {
-  return useQuery({
-    queryKey: ['tasks-with-tag-filter', boardId],
-    queryFn: async () => {
-      // This would need to be called with specific tags
-      return [];
-    },
-    enabled: false, // Disabled by default, enable when needed
   });
 }
