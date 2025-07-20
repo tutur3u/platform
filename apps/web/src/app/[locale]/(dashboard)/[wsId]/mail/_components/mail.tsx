@@ -1,5 +1,16 @@
 'use client';
 
+import type { Mail } from '../client';
+import { useMail } from '../use-mail';
+import { createPostEmailKey, usePosts } from '../use-posts';
+import { ComposeButton } from './compose-button';
+import { ComposeDialog } from './compose-dialog';
+import { MailDisplay } from './mail-display';
+import { MailList } from './mail-list';
+import { PostDisplay } from './post-display';
+import { getPostEmailColumns } from './posts-columns';
+import PostsFilters from './posts-filters';
+import { CustomDataTable } from '@/components/custom-data-table';
 import type { PostEmail } from '@tuturuuu/types/primitives/post-email';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Mail as MailIcon, MailWarning, Send } from '@tuturuuu/ui/icons';
@@ -14,17 +25,6 @@ import { TooltipProvider } from '@tuturuuu/ui/tooltip';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { CustomDataTable } from '@/components/custom-data-table';
-import type { Mail } from '../client';
-import { useMail } from '../use-mail';
-import { createPostEmailKey, usePosts } from '../use-posts';
-import { ComposeButton } from './compose-button';
-import { ComposeDialog } from './compose-dialog';
-import { MailDisplay } from './mail-display';
-import { MailList } from './mail-list';
-import { PostDisplay } from './post-display';
-import { getPostEmailColumns } from './posts-columns';
-import PostsFilters from './posts-filters';
 
 interface SearchParams {
   page?: string;
@@ -99,7 +99,7 @@ export function MailClient({
     null;
 
   const PostsContent = () => (
-    <div className="p-6 space-y-6">
+    <div className="space-y-6 p-6">
       <FeatureSummary
         pluralTitle={t('ws-post-emails.plural')}
         singularTitle={t('ws-post-emails.singular')}
@@ -171,7 +171,7 @@ export function MailClient({
             sizes
           )}`;
         }}
-        className="items-stretch h-full"
+        className="h-full items-stretch"
       >
         <ResizablePanel
           defaultSize={defaultLayout[1]}
@@ -180,14 +180,14 @@ export function MailClient({
         >
           <div
             ref={scrollContainerRef}
-            className="overflow-y-auto h-full w-full"
+            className="h-full w-full overflow-y-auto"
           >
             <Tabs
               value={activeTab}
               onValueChange={setActiveTab}
               defaultValue="inbox"
             >
-              <div className="flex items-center justify-between px-4 h-16 border-b bg-background/50 backdrop-blur-sm">
+              <div className="flex h-16 items-center justify-between border-b bg-background/50 px-4 backdrop-blur-sm">
                 <TabsList className="grid w-fit grid-cols-2">
                   <TabsTrigger
                     value="inbox"

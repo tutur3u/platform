@@ -1,7 +1,7 @@
 'use client';
 
-import { Badge } from '@tuturuuu/ui/badge';
 import type { Task } from '../../types';
+import { Badge } from '@tuturuuu/ui/badge';
 
 interface TaskCardProps {
   task: Task;

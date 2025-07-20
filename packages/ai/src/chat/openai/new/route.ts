@@ -1,6 +1,6 @@
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { generateText, type UIMessage } from 'ai';
+import { type UIMessage, generateText } from 'ai';
 import { NextResponse } from 'next/server';
 
 export const runtime = 'edge';

@@ -1,10 +1,10 @@
 'use client';
 
+import { Filter } from '../../../../users/filters';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { WorkspaceCourseModule } from '@tuturuuu/types/db';
-import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { Filter } from '../../../../users/filters';
+import { useRouter } from 'next/navigation';
 
 export function QuizsetModuleLinker({
   setId,

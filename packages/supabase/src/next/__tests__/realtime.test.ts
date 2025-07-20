@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import type { RealtimePresenceState } from '../realtime';
+import { describe, expect, it } from 'vitest';
 
 describe('realtime', () => {
   it('should export RealtimePresenceState type', () => {

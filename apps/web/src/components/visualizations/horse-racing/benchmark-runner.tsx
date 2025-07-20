@@ -1,5 +1,13 @@
 'use client';
 
+import {
+  type HorseRacingBenchmark,
+  benchmarks,
+  exportBenchmarksAsCSV,
+  exportBenchmarksAsJSON,
+  runBenchmark,
+  runStandardBenchmarks,
+} from '@/utils/horseRacingBenchmarks';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -58,14 +66,6 @@ import {
   TooltipTrigger,
 } from '@tuturuuu/ui/tooltip';
 import { useEffect, useState } from 'react';
-import {
-  benchmarks,
-  exportBenchmarksAsCSV,
-  exportBenchmarksAsJSON,
-  type HorseRacingBenchmark,
-  runBenchmark,
-  runStandardBenchmarks,
-} from '@/utils/horseRacingBenchmarks';
 
 interface BenchmarkRunnerProps {
   onBenchmarksUpdated?: (benchmarks: HorseRacingBenchmark[]) => void;

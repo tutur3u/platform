@@ -1,5 +1,9 @@
 'use client';
 
+import { useControllableState } from '../../../hooks/use-controllable-state';
+import { Button } from '../button';
+import { ScrollArea } from '../scroll-area';
+import { Separator } from '../separator';
 import { cn, formatBytes } from '@tuturuuu/utils/format';
 import { File, FileText, Upload, X } from 'lucide-react';
 import { type HTMLAttributes, useCallback, useState } from 'react';
@@ -8,10 +12,6 @@ import Dropzone, {
   type FileRejection,
 } from 'react-dropzone';
 import { toast } from 'sonner';
-import { useControllableState } from '../../../hooks/use-controllable-state';
-import { Button } from '../button';
-import { ScrollArea } from '../scroll-area';
-import { Separator } from '../separator';
 
 export interface StatedFile {
   rawFile: File;

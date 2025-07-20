@@ -1,8 +1,8 @@
+import MailClientWrapper from './client';
+import { SIDEBAR_COLLAPSED_COOKIE_NAME } from '@/constants/common';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { PostEmail } from '@tuturuuu/types/primitives/post-email';
 import { cookies } from 'next/headers';
-import { SIDEBAR_COLLAPSED_COOKIE_NAME } from '@/constants/common';
-import MailClientWrapper from './client';
 
 interface SearchParams {
   page?: string;

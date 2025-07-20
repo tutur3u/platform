@@ -1,3 +1,16 @@
+// Mocks must come next, before any imports that use them!
+import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
+import {
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vitest';
+
 // Set required env vars for Supabase at the VERY TOP
 process.env.NEXT_PUBLIC_SUPABASE_URL = 'http://localhost:54321';
 process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'dummy-anon-key';
@@ -7,9 +20,6 @@ process.env.GOOGLE_CLIENT_ID = 'dummy-client-id';
 process.env.GOOGLE_CLIENT_SECRET = 'dummy-client-secret';
 process.env.GOOGLE_REDIRECT_URI = 'http://localhost:3000/auth/callback';
 
-// Mocks must come next, before any imports that use them!
-import { vi, describe, it, expect, beforeEach, afterEach, beforeAll } from 'vitest';
-
 // Mock the google-calendar-sync module
 vi.mock('../google-calendar-sync', async () => {
   const actual = await vi.importActual('../google-calendar-sync');
@@ -18,57 +28,59 @@ vi.mock('../google-calendar-sync', async () => {
     getGoogleAuthClient: vi.fn(() => ({
       setCredentials: vi.fn(),
     })),
-    syncWorkspaceBatched: vi.fn((payload) => Promise.resolve({
-      ws_id: payload.ws_id,
-      success: true,
-      eventsSynced: payload.events_to_sync?.length || 10,
-      eventsDeleted: 0,
-    })),
+    syncWorkspaceBatched: vi.fn((payload) =>
+      Promise.resolve({
+        ws_id: payload.ws_id,
+        success: true,
+        eventsSynced: payload.events_to_sync?.length || 10,
+        eventsDeleted: 0,
+      })
+    ),
     storeSyncToken: vi.fn(() => Promise.resolve()),
   };
 });
 
 // Mock googleapis
-const mockCalendarEventsList = vi.fn(() => Promise.resolve({
-  data: {
-    items: [
-      {
-        id: 'event1',
-        summary: 'Test Event 1',
-        description: 'Test Description 1',
-        start: { dateTime: '2024-01-15T10:00:00Z' },
-        end: { dateTime: '2024-01-15T11:00:00Z' },
-        location: 'Test Location 1',
-        colorId: '1',
-        status: 'confirmed'
-      },
-      {
-        id: 'event2',
-        summary: 'Test Event 2',
-        description: 'Test Description 2',
-        start: { dateTime: '2024-01-15T14:00:00Z' },
-        end: { dateTime: '2024-01-15T15:00:00Z' },
-        location: 'Test Location 2',
-        colorId: '2',
-        status: 'confirmed'
-      }
-    ],
-    nextSyncToken: 'test-sync-token-123'
-  }
-}));
+const mockCalendarEventsList = vi.fn(() =>
+  Promise.resolve({
+    data: {
+      items: [
+        {
+          id: 'event1',
+          summary: 'Test Event 1',
+          description: 'Test Description 1',
+          start: { dateTime: '2024-01-15T10:00:00Z' },
+          end: { dateTime: '2024-01-15T11:00:00Z' },
+          location: 'Test Location 1',
+          colorId: '1',
+          status: 'confirmed',
+        },
+        {
+          id: 'event2',
+          summary: 'Test Event 2',
+          description: 'Test Description 2',
+          start: { dateTime: '2024-01-15T14:00:00Z' },
+          end: { dateTime: '2024-01-15T15:00:00Z' },
+          location: 'Test Location 2',
+          colorId: '2',
+          status: 'confirmed',
+        },
+      ],
+      nextSyncToken: 'test-sync-token-123',
+    },
+  })
+);
 
 vi.mock('googleapis', () => ({
   google: {
     calendar: vi.fn(() => ({
       events: {
-        list: mockCalendarEventsList
-      }
-    }))
-  }
+        list: mockCalendarEventsList,
+      },
+    })),
+  },
 }));
 
-import dayjs from 'dayjs';
-import utc from 'dayjs/plugin/utc';
 dayjs.extend(utc);
 
 // Dynamically import the actual function after env and mocks are set
@@ -92,7 +104,13 @@ const isolateTest = (testFn: () => void | Promise<void>) => {
 };
 
 // Mock Google Calendar events for testing
-const createMockGoogleEvent = (id: string, title: string, start: string, end: string, status = 'confirmed') => ({
+const createMockGoogleEvent = (
+  id: string,
+  title: string,
+  start: string,
+  end: string,
+  status = 'confirmed'
+) => ({
   id,
   summary: title,
   description: `Description for ${title}`,
@@ -100,7 +118,7 @@ const createMockGoogleEvent = (id: string, title: string, start: string, end: st
   end: { dateTime: end },
   location: `Location for ${title}`,
   colorId: '1',
-  status
+  status,
 });
 
 describe('performFullSyncForWorkspace', () => {
@@ -109,7 +127,7 @@ describe('performFullSyncForWorkspace', () => {
     delete process.env.LOCALE;
     // Clear all mocks
     vi.clearAllMocks();
-    
+
     // Reset the mock calendar events list to default state
     mockCalendarEventsList.mockResolvedValue({
       data: {
@@ -122,7 +140,7 @@ describe('performFullSyncForWorkspace', () => {
             end: { dateTime: '2024-01-15T11:00:00Z' },
             location: 'Test Location 1',
             colorId: '1',
-            status: 'confirmed'
+            status: 'confirmed',
           },
           {
             id: 'event2',
@@ -132,11 +150,11 @@ describe('performFullSyncForWorkspace', () => {
             end: { dateTime: '2024-01-15T15:00:00Z' },
             location: 'Test Location 2',
             colorId: '2',
-            status: 'confirmed'
-          }
+            status: 'confirmed',
+          },
         ],
-        nextSyncToken: 'test-sync-token-123'
-      }
+        nextSyncToken: 'test-sync-token-123',
+      },
     });
   });
 
@@ -186,8 +204,8 @@ describe('performFullSyncForWorkspace', () => {
       mockCalendarEventsList.mockResolvedValue({
         data: {
           items: [],
-          nextSyncToken: 'empty-sync-token'
-        }
+          nextSyncToken: 'empty-sync-token',
+        },
       });
 
       const events = await performFullSyncForWorkspace(
@@ -255,7 +273,7 @@ describe('performFullSyncForWorkspace', () => {
   describe('Integration with syncWorkspaceBatched', () => {
     it('should call syncWorkspaceBatched when events exist', async () => {
       const { syncWorkspaceBatched } = await import('../google-calendar-sync');
-      
+
       await performFullSyncForWorkspace(
         'primary',
         'test-workspace',
@@ -267,8 +285,8 @@ describe('performFullSyncForWorkspace', () => {
         ws_id: 'test-workspace',
         events_to_sync: expect.arrayContaining([
           expect.objectContaining({ id: 'event1' }),
-          expect.objectContaining({ id: 'event2' })
-        ])
+          expect.objectContaining({ id: 'event2' }),
+        ]),
       });
     });
 
@@ -277,12 +295,12 @@ describe('performFullSyncForWorkspace', () => {
       mockCalendarEventsList.mockResolvedValue({
         data: {
           items: [],
-          nextSyncToken: 'empty-sync-token'
-        }
+          nextSyncToken: 'empty-sync-token',
+        },
       });
 
       const { syncWorkspaceBatched } = await import('../google-calendar-sync');
-      
+
       await performFullSyncForWorkspace(
         'primary',
         'test-workspace',
@@ -297,7 +315,7 @@ describe('performFullSyncForWorkspace', () => {
   describe('Sync Token Handling', () => {
     it('should store sync token when available', async () => {
       const { storeSyncToken } = await import('../google-calendar-sync');
-      
+
       await performFullSyncForWorkspace(
         'primary',
         'test-workspace',
@@ -325,14 +343,14 @@ describe('performFullSyncForWorkspace', () => {
               end: { dateTime: '2024-01-15T11:00:00Z' },
               location: 'Test Location 1',
               colorId: '1',
-              status: 'confirmed'
-            }
-          ]
-        } as any
+              status: 'confirmed',
+            },
+          ],
+        } as any,
       });
 
       const { storeSyncToken } = await import('../google-calendar-sync');
-      
+
       await performFullSyncForWorkspace(
         'primary',
         'test-workspace',
@@ -365,7 +383,7 @@ describe('performFullSyncForWorkspace', () => {
 
     it('should handle different calendar IDs', async () => {
       const calendarIds = ['primary', 'custom-calendar-id', 'another-calendar'];
-      
+
       for (const calendarId of calendarIds) {
         await performFullSyncForWorkspace(
           calendarId,
@@ -376,7 +394,7 @@ describe('performFullSyncForWorkspace', () => {
 
         expect(mockCalendarEventsList).toHaveBeenCalledWith(
           expect.objectContaining({
-            calendarId: calendarId
+            calendarId: calendarId,
           })
         );
       }
@@ -406,7 +424,7 @@ describe('performFullSyncForWorkspace', () => {
         const timeMin = dayjs(callArgs.timeMin);
         const timeMax = dayjs(callArgs.timeMax);
         const dayDifference = timeMax.diff(timeMin, 'day');
-        
+
         expect(dayDifference).toBe(28);
       }
     });
@@ -422,7 +440,7 @@ describe('performFullSyncForWorkspace', () => {
       );
 
       expect(events).toHaveLength(2);
-      
+
       // Check first event structure
       expect(events[0]).toMatchObject({
         id: 'event1',
@@ -432,7 +450,7 @@ describe('performFullSyncForWorkspace', () => {
         end: { dateTime: '2024-01-15T11:00:00Z' },
         location: 'Test Location 1',
         colorId: '1',
-        status: 'confirmed'
+        status: 'confirmed',
       });
 
       // Check second event structure
@@ -444,7 +462,7 @@ describe('performFullSyncForWorkspace', () => {
         end: { dateTime: '2024-01-15T15:00:00Z' },
         location: 'Test Location 2',
         colorId: '2',
-        status: 'confirmed'
+        status: 'confirmed',
       });
     });
 
@@ -461,7 +479,7 @@ describe('performFullSyncForWorkspace', () => {
               end: { dateTime: '2024-01-15T11:00:00Z' },
               location: 'Confirmed Event Location',
               colorId: '1',
-              status: 'confirmed'
+              status: 'confirmed',
             },
             {
               id: 'event2',
@@ -471,7 +489,7 @@ describe('performFullSyncForWorkspace', () => {
               end: { dateTime: '2024-01-15T15:00:00Z' },
               location: 'Cancelled Event Location',
               colorId: '2',
-              status: 'cancelled'
+              status: 'cancelled',
             },
             {
               id: 'event3',
@@ -481,11 +499,11 @@ describe('performFullSyncForWorkspace', () => {
               end: { dateTime: '2024-01-15T17:00:00Z' },
               location: 'Tentative Event Location',
               colorId: '3',
-              status: 'tentative'
-            }
+              status: 'tentative',
+            },
           ],
-          nextSyncToken: 'test-sync-token-123'
-        }
+          nextSyncToken: 'test-sync-token-123',
+        },
       });
 
       const events = await performFullSyncForWorkspace(
@@ -501,4 +519,4 @@ describe('performFullSyncForWorkspace', () => {
       expect(events[2].status).toBe('tentative');
     });
   });
-}); 
+});

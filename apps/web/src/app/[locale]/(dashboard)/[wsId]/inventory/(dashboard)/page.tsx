@@ -1,5 +1,3 @@
-import { Suspense } from 'react';
-import LoadingStatisticCard from '@/components/loading-statistic-card';
 import {
   BatchesStatistics,
   InventoryProductsStatistics,
@@ -10,6 +8,8 @@ import {
   UnitsStatistics,
   WarehousesStatistics,
 } from '../../(dashboard)/statistics';
+import LoadingStatisticCard from '@/components/loading-statistic-card';
+import { Suspense } from 'react';
 
 interface Props {
   params: Promise<{

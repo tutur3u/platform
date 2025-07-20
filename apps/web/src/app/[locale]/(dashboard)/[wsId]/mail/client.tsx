@@ -1,9 +1,9 @@
 'use client';
 
+import { MailClient } from './_components/mail';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { PostEmail } from '@tuturuuu/types/primitives/post-email';
 import { useCallback, useEffect, useState } from 'react';
-import { MailClient } from './_components/mail';
 
 interface SearchParams {
   page?: string;
@@ -90,8 +90,8 @@ export default function MailClientWrapper({
   const mailsToShow = emails.length > 0 ? emails : [];
 
   return (
-    <div className="h-[calc(100vh-2rem)] flex flex-col">
-      <div className="flex-1 rounded-xl border bg-background/80 backdrop-blur-sm shadow-lg overflow-hidden">
+    <div className="flex h-[calc(100vh-2rem)] flex-col">
+      <div className="flex-1 overflow-hidden rounded-xl border bg-background/80 shadow-lg backdrop-blur-sm">
         <MailClient
           mails={mailsToShow}
           defaultLayout={defaultLayout}

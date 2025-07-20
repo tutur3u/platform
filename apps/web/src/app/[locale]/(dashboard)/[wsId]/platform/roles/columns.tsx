@@ -1,5 +1,6 @@
 'use client';
 
+import type { PlatformUserWithDetails } from './page';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { ColumnDef } from '@tanstack/react-table';
 import type {
@@ -41,7 +42,6 @@ import {
 import { generateFunName, getInitials } from '@tuturuuu/utils/name-helper';
 import moment from 'moment';
 import { useRouter } from 'next/navigation';
-import type { PlatformUserWithDetails } from './page';
 
 export const getPlatformRoleColumns = (
   t: any,
@@ -204,7 +204,7 @@ export const getPlatformRoleColumns = (
         const isActive = user.enabled;
 
         return (
-          <div className="flex items-center gap-3 min-w-0">
+          <div className="flex min-w-0 items-center gap-3">
             <div className="relative">
               <Avatar
                 className={`h-9 w-9 border-2 transition-all ${
@@ -222,14 +222,14 @@ export const getPlatformRoleColumns = (
                 </AvatarFallback>
               </Avatar>
               <div
-                className={`absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-background ${
+                className={`absolute -right-0.5 -bottom-0.5 h-3 w-3 rounded-full border-2 border-background ${
                   isActive ? 'bg-dynamic-green' : 'bg-dynamic-muted'
                 }`}
               />
             </div>
             <div className="min-w-0 flex-1">
               <div
-                className={`font-medium truncate transition-opacity ${
+                className={`truncate font-medium transition-opacity ${
                   isActive ? 'opacity-100' : 'opacity-60'
                 }`}
               >
@@ -238,7 +238,7 @@ export const getPlatformRoleColumns = (
               </div>
               {user?.email && (
                 <div
-                  className={`text-sm truncate transition-opacity ${
+                  className={`truncate text-sm transition-opacity ${
                     isActive
                       ? 'text-dynamic-muted-foreground'
                       : 'text-dynamic-muted-foreground/60'
@@ -292,22 +292,22 @@ export const getPlatformRoleColumns = (
               />
               {isLoading && (
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <Loader2 className="h-3 w-3 animate-spin text-dynamic-muted-foreground" />
+                  <Loader2 className="text-dynamic-muted-foreground h-3 w-3 animate-spin" />
                 </div>
               )}
             </div>
             <div className="flex items-center gap-2">
               {enabled ? (
                 <div className="flex items-center gap-1.5">
-                  <div className="h-2 w-2 bg-dynamic-green rounded-full animate-pulse" />
+                  <div className="h-2 w-2 animate-pulse rounded-full bg-dynamic-green" />
                   <span className="text-xs font-medium text-dynamic-green">
                     Active
                   </span>
                 </div>
               ) : (
                 <div className="flex items-center gap-1.5">
-                  <div className="h-2 w-2 bg-dynamic-muted rounded-full" />
-                  <span className="text-xs font-medium text-dynamic-muted-foreground">
+                  <div className="bg-dynamic-muted h-2 w-2 rounded-full" />
+                  <span className="text-dynamic-muted-foreground text-xs font-medium">
                     Inactive
                   </span>
                 </div>
@@ -344,7 +344,7 @@ export const getPlatformRoleColumns = (
                         <span className="hidden sm:inline">
                           {permission.label}
                         </span>
-                        <span className="sm:hidden font-mono text-[10px]">
+                        <span className="font-mono text-[10px] sm:hidden">
                           {permission.shortLabel}
                         </span>
                       </Badge>
@@ -352,7 +352,7 @@ export const getPlatformRoleColumns = (
                     <TooltipContent side="top" className="max-w-xs">
                       <div className="space-y-1">
                         <p className="font-medium">{permission.label}</p>
-                        <p className="text-xs text-dynamic-muted-foreground">
+                        <p className="text-dynamic-muted-foreground text-xs">
                           {permission.description}
                         </p>
                       </div>
@@ -362,7 +362,7 @@ export const getPlatformRoleColumns = (
               ))}
             </div>
             {!isActive && (
-              <div className="flex items-center gap-1 text-xs text-dynamic-muted-foreground">
+              <div className="text-dynamic-muted-foreground flex items-center gap-1 text-xs">
                 <EyeOff className="h-3 w-3" />
                 <span>User inactive</span>
               </div>
@@ -431,17 +431,17 @@ export const getPlatformRoleColumns = (
                 </TooltipTrigger>
                 <TooltipContent side="top" className="max-w-xs">
                   <div className="space-y-1">
-                    <p className="font-medium flex items-center gap-1.5">
+                    <p className="flex items-center gap-1.5 font-medium">
                       <Crown className="h-3 w-3 text-dynamic-red" />
                       Admin Permission
                     </p>
-                    <p className="text-xs text-dynamic-muted-foreground">
+                    <p className="text-dynamic-muted-foreground text-xs">
                       {user.allow_role_management
                         ? 'User has full platform administration access'
                         : 'Grant complete platform control and user management'}
                     </p>
                     {!isActive && (
-                      <p className="text-xs text-dynamic-orange flex items-center gap-1">
+                      <p className="flex items-center gap-1 text-xs text-dynamic-orange">
                         <AlertTriangle className="h-3 w-3" />
                         User must be active first
                       </p>
@@ -503,17 +503,17 @@ export const getPlatformRoleColumns = (
                 </TooltipTrigger>
                 <TooltipContent side="top" className="max-w-xs">
                   <div className="space-y-1">
-                    <p className="font-medium flex items-center gap-1.5">
+                    <p className="flex items-center gap-1.5 font-medium">
                       <Globe className="h-3 w-3 text-dynamic-blue" />
                       Global Manager
                     </p>
-                    <p className="text-xs text-dynamic-muted-foreground">
+                    <p className="text-dynamic-muted-foreground text-xs">
                       {user.allow_manage_all_challenges
                         ? 'Can manage all platform challenges globally'
                         : 'Grant access to manage all challenges across the platform'}
                     </p>
                     {!isActive && (
-                      <p className="text-xs text-dynamic-orange flex items-center gap-1">
+                      <p className="flex items-center gap-1 text-xs text-dynamic-orange">
                         <AlertTriangle className="h-3 w-3" />
                         User must be active first
                       </p>
@@ -575,17 +575,17 @@ export const getPlatformRoleColumns = (
                 </TooltipTrigger>
                 <TooltipContent side="top" className="max-w-xs">
                   <div className="space-y-1">
-                    <p className="font-medium flex items-center gap-1.5">
+                    <p className="flex items-center gap-1.5 font-medium">
                       <Shield className="h-3 w-3 text-dynamic-purple" />
                       Challenge Manager
                     </p>
-                    <p className="text-xs text-dynamic-muted-foreground">
+                    <p className="text-dynamic-muted-foreground text-xs">
                       {user.allow_challenge_management
                         ? 'Can manage specific challenges and competitions'
                         : 'Grant access to manage challenges and competitions'}
                     </p>
                     {!isActive && (
-                      <p className="text-xs text-dynamic-orange flex items-center gap-1">
+                      <p className="flex items-center gap-1 text-xs text-dynamic-orange">
                         <AlertTriangle className="h-3 w-3" />
                         User must be active first
                       </p>
@@ -647,17 +647,17 @@ export const getPlatformRoleColumns = (
                 </TooltipTrigger>
                 <TooltipContent side="top" className="max-w-xs">
                   <div className="space-y-1">
-                    <p className="font-medium flex items-center gap-1.5">
+                    <p className="flex items-center gap-1.5 font-medium">
                       <Building className="h-3 w-3 text-dynamic-green" />
                       Workspace Creator
                     </p>
-                    <p className="text-xs text-dynamic-muted-foreground">
+                    <p className="text-dynamic-muted-foreground text-xs">
                       {user.allow_workspace_creation
                         ? 'Can create and initialize new workspaces'
                         : 'Grant ability to create new workspaces'}
                     </p>
                     {!isActive && (
-                      <p className="text-xs text-dynamic-orange flex items-center gap-1">
+                      <p className="flex items-center gap-1 text-xs text-dynamic-orange">
                         <AlertTriangle className="h-3 w-3" />
                         User must be active first
                       </p>
@@ -681,7 +681,7 @@ export const getPlatformRoleColumns = (
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <div className="flex items-center gap-2 text-sm text-dynamic-muted-foreground">
+                <div className="text-dynamic-muted-foreground flex items-center gap-2 text-sm">
                   <Clock className="h-3 w-3" />
                   <span>{moment(createdAt).fromNow()}</span>
                 </div>
@@ -797,7 +797,7 @@ export const getPlatformRoleColumns = (
             <DropdownMenuTrigger asChild>
               <Button
                 variant="ghost"
-                className="h-8 w-8 p-0 hover:bg-dynamic-accent"
+                className="hover:bg-dynamic-accent h-8 w-8 p-0"
                 disabled={isLoading}
               >
                 <span className="sr-only">Manage user permissions</span>
@@ -817,13 +817,13 @@ export const getPlatformRoleColumns = (
               {/* Admin Permission */}
               <DropdownMenuItem
                 onClick={() => togglePermission('admin', allowRoleManagement)}
-                className="flex items-center justify-between p-3 focus:bg-dynamic-accent/50"
+                className="focus:bg-dynamic-accent/50 flex items-center justify-between p-3"
               >
                 <div className="flex items-center gap-3">
                   <Crown className="h-4 w-4 text-dynamic-red" />
                   <div>
                     <div className="font-medium">Admin</div>
-                    <div className="text-xs text-dynamic-muted-foreground">
+                    <div className="text-dynamic-muted-foreground text-xs">
                       Full platform administration access
                     </div>
                   </div>
@@ -846,13 +846,13 @@ export const getPlatformRoleColumns = (
                 onClick={() =>
                   togglePermission('global_manager', allowManageAllChallenges)
                 }
-                className="flex items-center justify-between p-3 focus:bg-dynamic-accent/50"
+                className="focus:bg-dynamic-accent/50 flex items-center justify-between p-3"
               >
                 <div className="flex items-center gap-3">
                   <Globe className="h-4 w-4 text-dynamic-blue" />
                   <div>
                     <div className="font-medium">Global Manager</div>
-                    <div className="text-xs text-dynamic-muted-foreground">
+                    <div className="text-dynamic-muted-foreground text-xs">
                       Can manage all platform challenges
                     </div>
                   </div>
@@ -881,13 +881,13 @@ export const getPlatformRoleColumns = (
                     allowChallengeManagement
                   )
                 }
-                className="flex items-center justify-between p-3 focus:bg-dynamic-accent/50"
+                className="focus:bg-dynamic-accent/50 flex items-center justify-between p-3"
               >
                 <div className="flex items-center gap-3">
                   <Shield className="h-4 w-4 text-dynamic-purple" />
                   <div>
                     <div className="font-medium">Challenge Manager</div>
-                    <div className="text-xs text-dynamic-muted-foreground">
+                    <div className="text-dynamic-muted-foreground text-xs">
                       Can manage specific challenges
                     </div>
                   </div>
@@ -913,13 +913,13 @@ export const getPlatformRoleColumns = (
                 onClick={() =>
                   togglePermission('workspace_creator', allowWorkspaceCreation)
                 }
-                className="flex items-center justify-between p-3 focus:bg-dynamic-accent/50"
+                className="focus:bg-dynamic-accent/50 flex items-center justify-between p-3"
               >
                 <div className="flex items-center gap-3">
                   <Building className="h-4 w-4 text-dynamic-green" />
                   <div>
                     <div className="font-medium">Workspace Creator</div>
-                    <div className="text-xs text-dynamic-muted-foreground">
+                    <div className="text-dynamic-muted-foreground text-xs">
                       Can create new workspaces
                     </div>
                   </div>
@@ -945,7 +945,7 @@ export const getPlatformRoleColumns = (
               {/* Quick Actions */}
               <DropdownMenuItem
                 onClick={clearAllPermissions}
-                className="flex items-center gap-3 p-3 text-dynamic-muted-foreground hover:text-dynamic-foreground focus:bg-dynamic-accent/50"
+                className="text-dynamic-muted-foreground hover:text-dynamic-foreground focus:bg-dynamic-accent/50 flex items-center gap-3 p-3"
                 disabled={
                   !allowRoleManagement &&
                   !allowManageAllChallenges &&
@@ -956,7 +956,7 @@ export const getPlatformRoleColumns = (
                 <Users className="h-4 w-4" />
                 <div>
                   <div className="font-medium">Clear All Permissions</div>
-                  <div className="text-xs text-dynamic-muted-foreground">
+                  <div className="text-dynamic-muted-foreground text-xs">
                     Remove all permissions (Member only)
                   </div>
                 </div>

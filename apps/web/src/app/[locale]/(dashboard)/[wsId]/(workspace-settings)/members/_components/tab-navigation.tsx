@@ -1,7 +1,7 @@
 'use client';
 
-import { TabsTrigger } from '@tuturuuu/ui/tabs';
 import useSearchParams from '@/hooks/useSearchParams';
+import { TabsTrigger } from '@tuturuuu/ui/tabs';
 
 interface Props {
   value: string;

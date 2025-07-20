@@ -1,3 +1,5 @@
+import { DEV_MODE } from '@/constants/common';
+import { useEnterSubmit } from '@/lib/hooks/use-enter-submit';
 import type { AIChat } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
 import type { StatedFile } from '@tuturuuu/ui/custom/file-uploader';
@@ -22,13 +24,11 @@ import {
   TooltipTrigger,
 } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
-import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
 import type React from 'react';
 import { useEffect, useState } from 'react';
 import Textarea from 'react-textarea-autosize';
-import { DEV_MODE } from '@/constants/common';
-import { useEnterSubmit } from '@/lib/hooks/use-enter-submit';
 
 export interface PromptProps {
   id?: string;

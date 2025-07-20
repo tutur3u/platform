@@ -1,5 +1,10 @@
 'use client';
 
+import {
+  addTimeblocks,
+  durationToTimeblocks,
+  removeTimeblocks,
+} from '@/utils/timeblock-helper';
 import type { MeetTogetherPlan } from '@tuturuuu/types/primitives/MeetTogetherPlan';
 import type { Timeblock } from '@tuturuuu/types/primitives/Timeblock';
 import type { User as PlatformUser } from '@tuturuuu/types/primitives/User';
@@ -7,19 +12,14 @@ import dayjs from 'dayjs';
 import isBetween from 'dayjs/plugin/isBetween';
 import minMax from 'dayjs/plugin/minMax';
 import {
-  createContext,
   type ReactNode,
   type Touch,
+  createContext,
   useCallback,
   useContext,
   useEffect,
   useState,
 } from 'react';
-import {
-  addTimeblocks,
-  durationToTimeblocks,
-  removeTimeblocks,
-} from '@/utils/timeblock-helper';
 
 dayjs.extend(isBetween);
 dayjs.extend(minMax);

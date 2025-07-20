@@ -1,3 +1,6 @@
+import CriteriaEvaluation from '@/components/common/CriteriaEvaluation';
+import ScoreBadge from '@/components/common/ScoreBadge';
+import TestCaseEvaluation from '@/components/common/TestCaseEvaluation';
 import type { NovaSubmissionData } from '@tuturuuu/types/db';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
@@ -14,9 +17,6 @@ import {
 import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { useEffect, useState } from 'react';
-import CriteriaEvaluation from '@/components/common/CriteriaEvaluation';
-import ScoreBadge from '@/components/common/ScoreBadge';
-import TestCaseEvaluation from '@/components/common/TestCaseEvaluation';
 
 interface SubmissionCardProps {
   submission: Partial<NovaSubmissionData>;

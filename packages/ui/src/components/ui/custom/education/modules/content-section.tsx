@@ -4,8 +4,8 @@ import {
   AccordionTrigger,
 } from '@tuturuuu/ui/accordion';
 import { Separator } from '@tuturuuu/ui/separator';
-import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
+import Link from 'next/link';
 import type { ReactNode } from 'react';
 
 export async function CourseSection({

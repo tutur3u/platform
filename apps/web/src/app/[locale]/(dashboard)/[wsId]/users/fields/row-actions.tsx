@@ -1,5 +1,6 @@
 'use client';
 
+import UserFieldEditDialog from './edit-dialog';
 import type { Row } from '@tanstack/react-table';
 import type { WorkspaceUserField } from '@tuturuuu/types/primitives/WorkspaceUserField';
 import { Button } from '@tuturuuu/ui/button';
@@ -12,10 +13,9 @@ import {
 } from '@tuturuuu/ui/dropdown-menu';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Ellipsis } from '@tuturuuu/ui/icons';
-import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import UserFieldEditDialog from './edit-dialog';
 
 interface UserFieldRowActionsProps {
   row: Row<WorkspaceUserField>;

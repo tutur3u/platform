@@ -1,9 +1,9 @@
 'use client';
 
-import { useToast } from '@tuturuuu/ui/hooks/use-toast';
-import { useTranslations } from 'next-intl';
 import { addWhitelistDomain } from '../emails/actions';
 import WhitelistDomainForm from './domain-form';
+import { useToast } from '@tuturuuu/ui/hooks/use-toast';
+import { useTranslations } from 'next-intl';
 
 interface Props {
   wsId: string;

@@ -1,5 +1,5 @@
-import { useEffect } from 'react';
 import { YearPicker } from './year-picker';
+import { useEffect } from 'react';
 
 interface Props {
   startYear?: Date;

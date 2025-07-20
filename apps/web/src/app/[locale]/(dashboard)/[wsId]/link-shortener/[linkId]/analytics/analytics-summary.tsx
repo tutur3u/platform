@@ -25,31 +25,31 @@ export function AnalyticsSummary({ analytics }: AnalyticsSummaryProps) {
       <CardContent className="relative p-6">
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
           <div className="space-y-2">
-            <h4 className="font-semibold text-muted-foreground text-sm uppercase tracking-wide">
+            <h4 className="text-sm font-semibold tracking-wide text-muted-foreground uppercase">
               {t('link-shortener.analytics.first_click')}
             </h4>
             <div className="space-y-1">
-              <p className="font-semibold text-lg">
+              <p className="text-lg font-semibold">
                 {new Date(analytics.first_click_at).toLocaleDateString()}
               </p>
-              <p className="text-muted-foreground text-sm">
+              <p className="text-sm text-muted-foreground">
                 {new Date(analytics.first_click_at).toLocaleTimeString()}
               </p>
             </div>
           </div>
 
           <div className="space-y-2">
-            <h4 className="font-semibold text-muted-foreground text-sm uppercase tracking-wide">
+            <h4 className="text-sm font-semibold tracking-wide text-muted-foreground uppercase">
               {t('link-shortener.analytics.last_click')}
             </h4>
             <div className="space-y-1">
-              <p className="font-semibold text-lg">
+              <p className="text-lg font-semibold">
                 {analytics.last_click_at
                   ? new Date(analytics.last_click_at).toLocaleDateString()
                   : t('link-shortener.analytics.never')}
               </p>
               {analytics.last_click_at && (
-                <p className="text-muted-foreground text-sm">
+                <p className="text-sm text-muted-foreground">
                   {new Date(analytics.last_click_at).toLocaleTimeString()}
                 </p>
               )}
@@ -57,11 +57,11 @@ export function AnalyticsSummary({ analytics }: AnalyticsSummaryProps) {
           </div>
 
           <div className="space-y-2">
-            <h4 className="font-semibold text-muted-foreground text-sm uppercase tracking-wide">
+            <h4 className="text-sm font-semibold tracking-wide text-muted-foreground uppercase">
               {t('link-shortener.analytics.avg_clicks_per_day')}
             </h4>
             <div className="space-y-1">
-              <p className="font-semibold text-lg">
+              <p className="text-lg font-semibold">
                 {analytics.first_click_at
                   ? Math.round(
                       (analytics?.total_clicks || 0) /
@@ -76,16 +76,16 @@ export function AnalyticsSummary({ analytics }: AnalyticsSummaryProps) {
                     )
                   : 0}
               </p>
-              <p className="text-muted-foreground text-sm">Daily average</p>
+              <p className="text-sm text-muted-foreground">Daily average</p>
             </div>
           </div>
 
           <div className="space-y-2">
-            <h4 className="font-semibold text-muted-foreground text-sm uppercase tracking-wide">
+            <h4 className="text-sm font-semibold tracking-wide text-muted-foreground uppercase">
               {t('link-shortener.analytics.click_through_rate')}
             </h4>
             <div className="space-y-1">
-              <p className="font-semibold text-lg">
+              <p className="text-lg font-semibold">
                 {analytics?.total_clicks &&
                 analytics?.unique_visitors &&
                 analytics.total_clicks > 0 &&
@@ -97,7 +97,7 @@ export function AnalyticsSummary({ analytics }: AnalyticsSummaryProps) {
                   : 0}
                 %
               </p>
-              <p className="text-muted-foreground text-sm">
+              <p className="text-sm text-muted-foreground">
                 Clicks per visitor
               </p>
             </div>

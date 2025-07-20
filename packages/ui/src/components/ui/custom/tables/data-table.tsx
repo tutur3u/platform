@@ -1,21 +1,6 @@
 'use client';
 
 import {
-  type ColumnDef,
-  type ColumnFiltersState,
-  flexRender,
-  getCoreRowModel,
-  getFacetedRowModel,
-  getFacetedUniqueValues,
-  getFilteredRowModel,
-  getSortedRowModel,
-  type SortingState,
-  useReactTable,
-  type VisibilityState,
-} from '@tanstack/react-table';
-import { cn } from '@tuturuuu/utils/format';
-import { type ReactNode, useState } from 'react';
-import {
   Table,
   TableBody,
   TableCell,
@@ -25,6 +10,21 @@ import {
 } from '../../table';
 import { DataTablePagination } from './data-table-pagination';
 import { DataTableToolbar } from './data-table-toolbar';
+import {
+  type ColumnDef,
+  type ColumnFiltersState,
+  type SortingState,
+  type VisibilityState,
+  flexRender,
+  getCoreRowModel,
+  getFacetedRowModel,
+  getFacetedUniqueValues,
+  getFilteredRowModel,
+  getSortedRowModel,
+  useReactTable,
+} from '@tanstack/react-table';
+import { cn } from '@tuturuuu/utils/format';
+import { type ReactNode, useState } from 'react';
 
 export interface DataTableProps<TData, TValue> {
   hideToolbar?: boolean;

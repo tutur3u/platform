@@ -10,8 +10,8 @@ import {
 } from '@tuturuuu/ui/dropdown-menu';
 import { Ellipsis, Settings } from '@tuturuuu/ui/icons';
 import { toast } from '@tuturuuu/ui/sonner';
-import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
 
 interface Team {
   id: string;

@@ -1,5 +1,8 @@
 'use client';
 
+import Chat from '../../chat/chat';
+import type { ExtendedWorkspaceTask } from '../../time-tracker/types';
+import TimeTracker from './time-tracker';
 import type { AIChat } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
 import { Dialog } from '@tuturuuu/ui/dialog';
@@ -23,9 +26,6 @@ import {
 } from '@tuturuuu/ui/icons';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { useState } from 'react';
-import Chat from '../../chat/chat';
-import type { ExtendedWorkspaceTask } from '../../time-tracker/types';
-import TimeTracker from './time-tracker';
 
 interface TasksSidebarContentProps {
   wsId: string;
@@ -60,7 +60,7 @@ export default function TasksSidebarContent({
           className="group relative overflow-hidden rounded-lg transition-all duration-200 hover:scale-105 hover:bg-accent/60"
         >
           <PanelLeftClose className="h-5 w-5 text-foreground transition-transform duration-200 group-hover:rotate-12" />
-          <div className="-z-10 absolute inset-0 bg-gradient-to-r from-blue-500/20 to-purple-500/20 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
+          <div className="absolute inset-0 -z-10 bg-gradient-to-r from-blue-500/20 to-purple-500/20 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
         </Button>
       </div>
     );
@@ -68,9 +68,9 @@ export default function TasksSidebarContent({
 
   return (
     <Dialog>
-      <div className="@container slide-in-from-right-5 ml-2 flex hidden h-full max-h-[100vh] w-1/3 flex-col rounded-lg border border-border bg-background/60 text-foreground shadow-xl backdrop-blur-md transition-all duration-500 ease-out xl:flex">
+      <div className="@container ml-2 flex hidden h-full max-h-[100vh] w-1/3 flex-col rounded-lg border border-border bg-background/60 text-foreground shadow-xl backdrop-blur-md transition-all duration-500 ease-out slide-in-from-right-5 xl:flex">
         {/* Header */}
-        <div className="@container flex items-center justify-between rounded-t-lg border-border/50 border-b bg-gradient-to-r from-background/80 to-background/60 px-4 py-3 backdrop-blur-sm">
+        <div className="@container flex items-center justify-between rounded-t-lg border-b border-border/50 bg-gradient-to-r from-background/80 to-background/60 px-4 py-3 backdrop-blur-sm">
           <div className="flex w-full items-center justify-between gap-1">
             <div className="transition-all duration-300 hover:scale-105">
               <TimeTracker wsId={wsId} tasks={tasks} />
@@ -82,8 +82,8 @@ export default function TasksSidebarContent({
               aria-label="Collapse sidebar"
               className="group relative overflow-hidden rounded-lg transition-all duration-200 hover:scale-105 hover:bg-accent/60"
             >
-              <PanelRightClose className="group-hover:-rotate-12 h-5 w-5 text-foreground transition-transform duration-200" />
-              <div className="-z-10 absolute inset-0 bg-gradient-to-r from-red-500/20 to-orange-500/20 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
+              <PanelRightClose className="h-5 w-5 text-foreground transition-transform duration-200 group-hover:-rotate-12" />
+              <div className="absolute inset-0 -z-10 bg-gradient-to-r from-red-500/20 to-orange-500/20 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
             </Button>
           </div>
         </div>
@@ -94,31 +94,31 @@ export default function TasksSidebarContent({
           onValueChange={setActiveTab}
           className="flex min-h-0 flex-1 flex-col gap-0"
         >
-          <div className="border-border/50 border-b bg-muted/10 p-2">
+          <div className="border-b border-border/50 bg-muted/10 p-2">
             <TabsList className="grid h-auto w-full grid-cols-2 gap-2 bg-transparent p-0">
               <TabsTrigger
                 value="tasks"
-                className="@container group relative overflow-hidden rounded-lg border border-transparent transition-all duration-300 hover:border-border/50 hover:bg-accent/60 data-[state=active]:border-border/50 data-[state=active]:bg-background data-[state=active]:shadow-md"
+                className="group @container relative overflow-hidden rounded-lg border border-transparent transition-all duration-300 hover:border-border/50 hover:bg-accent/60 data-[state=active]:border-border/50 data-[state=active]:bg-background data-[state=active]:shadow-md"
               >
-                <div className="-z-10 absolute inset-0 bg-gradient-to-r from-blue-500/10 to-cyan-500/10 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                <div className="absolute inset-0 -z-10 bg-gradient-to-r from-blue-500/10 to-cyan-500/10 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
                 <LayoutDashboard className="h-4 w-4 transition-transform duration-200 group-hover:scale-110" />
-                <span className="@[80px]:inline hidden transition-all duration-200">
+                <span className="hidden transition-all duration-200 @[80px]:inline">
                   Tasks
                 </span>
-                <span className="@[80px]:hidden transition-all duration-200">
+                <span className="transition-all duration-200 @[80px]:hidden">
                   T
                 </span>
               </TabsTrigger>
               <TabsTrigger
                 value="ai-chat"
-                className="@container group relative overflow-hidden rounded-lg border border-transparent transition-all duration-300 hover:border-border/50 hover:bg-accent/60 data-[state=active]:border-border/50 data-[state=active]:bg-background data-[state=active]:shadow-md"
+                className="group @container relative overflow-hidden rounded-lg border border-transparent transition-all duration-300 hover:border-border/50 hover:bg-accent/60 data-[state=active]:border-border/50 data-[state=active]:bg-background data-[state=active]:shadow-md"
               >
-                <div className="-z-10 absolute inset-0 bg-gradient-to-r from-purple-500/10 to-pink-500/10 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-                <Bot className="h-4 w-4 transition-transform duration-200 group-hover:rotate-12 group-hover:scale-110" />
-                <span className="@[80px]:inline hidden transition-all duration-200">
+                <div className="absolute inset-0 -z-10 bg-gradient-to-r from-purple-500/10 to-pink-500/10 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                <Bot className="h-4 w-4 transition-transform duration-200 group-hover:scale-110 group-hover:rotate-12" />
+                <span className="hidden transition-all duration-200 @[80px]:inline">
                   AI Chat
                 </span>
-                <span className="@[80px]:hidden transition-all duration-200">
+                <span className="transition-all duration-200 @[80px]:hidden">
                   AI
                 </span>
               </TabsTrigger>
@@ -128,7 +128,7 @@ export default function TasksSidebarContent({
           {/* Tasks Tab Content */}
           <TabsContent
             value="tasks"
-            className="fade-in-50 m-0 flex min-h-0 flex-1 animate-in flex-col space-y-4 overflow-y-auto p-4 pb-2 duration-300"
+            className="m-0 flex min-h-0 flex-1 flex-col space-y-4 overflow-y-auto p-4 pb-2 duration-300 animate-in fade-in-50"
           >
             <div className="mx-auto w-full max-w-lg p-0">
               <PriorityView allTasks={tasks} />
@@ -139,7 +139,7 @@ export default function TasksSidebarContent({
           {hasAiChatAccess && (
             <TabsContent
               value="ai-chat"
-              className="fade-in-50 m-0 min-h-0 flex-1 animate-in overflow-y-auto px-2 duration-300"
+              className="m-0 min-h-0 flex-1 overflow-y-auto px-2 duration-300 animate-in fade-in-50"
             >
               <div className="relative h-full min-h-0 overflow-y-auto py-2">
                 <Chat
@@ -252,7 +252,7 @@ function PriorityView({ allTasks }: { allTasks: ExtendedWorkspaceTask[] }) {
             />
           </div>
           {isSearchFocused && (
-            <div className="-z-10 absolute inset-0 animate-pulse bg-gradient-to-r from-blue-500/5 to-purple-500/5" />
+            <div className="absolute inset-0 -z-10 animate-pulse bg-gradient-to-r from-blue-500/5 to-purple-500/5" />
           )}
         </div>
       </div>
@@ -268,20 +268,20 @@ function PriorityView({ allTasks }: { allTasks: ExtendedWorkspaceTask[] }) {
           return (
             <div
               key={key}
-              className="group slide-in-from-bottom-2 animate-in duration-300"
+              className="group duration-300 animate-in slide-in-from-bottom-2"
               style={{ animationDelay: `${index * 100}ms` }}
             >
               <div className="mb-3 flex items-center gap-2">
                 <span className="text-lg">{icon}</span>
                 <h3 className="font-semibold text-foreground">{label}</h3>
-                <span className="rounded-full bg-muted px-2 py-1 text-muted-foreground text-xs transition-colors duration-200 group-hover:bg-accent">
+                <span className="rounded-full bg-muted px-2 py-1 text-xs text-muted-foreground transition-colors duration-200 group-hover:bg-accent">
                   {tasks.length}
                 </span>
               </div>
 
               {tasks.length === 0 ? (
-                <div className="rounded-lg border border-border/50 border-dashed p-6 text-center transition-all duration-200 hover:border-border">
-                  <div className="text-muted-foreground text-sm">
+                <div className="rounded-lg border border-dashed border-border/50 p-6 text-center transition-all duration-200 hover:border-border">
+                  <div className="text-sm text-muted-foreground">
                     No tasks found
                   </div>
                 </div>
@@ -302,7 +302,7 @@ function PriorityView({ allTasks }: { allTasks: ExtendedWorkspaceTask[] }) {
                           className="group/task relative overflow-hidden rounded-lg border border-border/50 bg-background/60 p-3 transition-all duration-200 hover:border-border hover:bg-background/80 hover:shadow-sm"
                           style={{ animationDelay: `${taskIndex * 50}ms` }}
                         >
-                          <div className="-z-10 absolute inset-0 bg-gradient-to-r from-accent/5 to-accent/10 opacity-0 transition-opacity duration-200 group-hover/task:opacity-100" />
+                          <div className="absolute inset-0 -z-10 bg-gradient-to-r from-accent/5 to-accent/10 opacity-0 transition-opacity duration-200 group-hover/task:opacity-100" />
                           <div className="flex h-full min-h-[64px] flex-col">
                             <div className="flex w-full items-start justify-between">
                               <div className="min-w-0 flex-1">
@@ -315,7 +315,7 @@ function PriorityView({ allTasks }: { allTasks: ExtendedWorkspaceTask[] }) {
                                 </div>
                                 {/* Due date (if present) */}
                                 {task.due_date && (
-                                  <div className="mt-1 inline-flex items-center gap-1 rounded bg-red-100 px-2 py-0.5 text-red-700 text-xs dark:bg-red-900/30 dark:text-red-300">
+                                  <div className="mt-1 inline-flex items-center gap-1 rounded bg-red-100 px-2 py-0.5 text-xs text-red-700 dark:bg-red-900/30 dark:text-red-300">
                                     <Calendar className="h-3 w-3" />
                                     Due {formatDueDate(task.due_date)}
                                   </div>
@@ -436,12 +436,12 @@ function PriorityView({ allTasks }: { allTasks: ExtendedWorkspaceTask[] }) {
                             </div>
                             {/* Bottom row: Ready left, time right */}
                             <div className="mt-2 flex items-center justify-between">
-                              <div className="inline-flex items-center gap-1 rounded-md bg-green-100 px-2 py-1 text-green-700 text-xs dark:bg-green-900/30 dark:text-green-400">
+                              <div className="inline-flex items-center gap-1 rounded-md bg-green-100 px-2 py-1 text-xs text-green-700 dark:bg-green-900/30 dark:text-green-400">
                                 <CheckCircle2 className="h-3 w-3" />
                                 Ready
                               </div>
                               {task.total_duration && (
-                                <div className="rounded-md bg-accent/50 px-2 py-1 font-mono text-muted-foreground text-xs transition-colors duration-200 group-hover/task:bg-accent">
+                                <div className="rounded-md bg-accent/50 px-2 py-1 font-mono text-xs text-muted-foreground transition-colors duration-200 group-hover/task:bg-accent">
                                   {Math.floor((task.total_duration || 0) / 60)}h{' '}
                                   {(task.total_duration || 0) % 60}m
                                 </div>

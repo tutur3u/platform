@@ -74,7 +74,10 @@
     "node": ">=22"
   },
   "packageManager": "bun@1.2.19",
-  "workspaces": ["apps/*", "packages/*"],
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "trustedDependencies": [
     "@tailwindcss/oxide",
     "@vercel/speed-insights",
