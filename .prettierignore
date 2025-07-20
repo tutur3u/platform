@@ -19,3 +19,4 @@ build/
 
 # Next.js build output
 .next
+.turbo
