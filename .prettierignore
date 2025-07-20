@@ -1,19 +1,21 @@
-# Node
-node_modules
-pnpm-lock.yaml
-pnpm-workspace.yaml
+# GitHub workflows
+.github/workflows/
 
-# Yarn
-yarn-error.log
-yarn.lock
+# Dependencies
+node_modules/
 
-# Next.js
+# Build outputs
+.next/
+out/
+dist/
+build/
+
+# Environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Next.js build output
 .next
-out
-target
-
-# Jest
-coverage
-
-#turbo
-.turbo
