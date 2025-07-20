@@ -8,9 +8,6 @@ ADD COLUMN "tags" text[] DEFAULT '{}';
 -- Create index for efficient tag-based queries
 CREATE INDEX idx_tasks_tags ON "public"."tasks" USING GIN (tags);
 
--- Create index for tasks with specific tags (for filtering)
-CREATE INDEX idx_tasks_tags_contains ON "public"."tasks" USING GIN (tags) WHERE tags IS NOT NULL AND array_length(tags, 1) > 0;
-
 -- Add constraint to ensure tags are not null (empty array is fine)
 ALTER TABLE "public"."tasks" 
 ALTER COLUMN "tags" SET NOT NULL;
@@ -49,40 +46,6 @@ BEGIN
 END;
 $$;
 
--- Create function to validate task tags
-CREATE OR REPLACE FUNCTION validate_task_tags(tags text[])
-RETURNS boolean
-LANGUAGE plpgsql
-IMMUTABLE
-AS $$
-BEGIN
-  -- Check if tags array is not null
-  IF tags IS NULL THEN
-    RETURN false;
-  END IF;
-  
-  -- Check if any tag is empty string
-  IF tags && ARRAY[''] THEN
-    RETURN false;
-  END IF;
-  
-  -- Check tag length
-  IF EXISTS (
-    SELECT 1 FROM unnest(tags) AS tag 
-    WHERE length(tag) > 50
-  ) THEN
-    RETURN false;
-  END IF;
-  
-  -- Check max number of tags
-  IF array_length(tags, 1) > 20 THEN
-    RETURN false;
-  END IF;
-  
-  RETURN true;
-END;
-$$;
-
 -- Create trigger function to normalize tags before insert/update
 CREATE OR REPLACE FUNCTION normalize_task_tags_trigger()
 RETURNS trigger
@@ -91,11 +54,6 @@ AS $$
 BEGIN
   -- Normalize tags before insert/update
   NEW.tags = normalize_task_tags(NEW.tags);
-  
-  -- Validate tags
-  IF NOT validate_task_tags(NEW.tags) THEN
-    RAISE EXCEPTION 'Invalid task tags';
-  END IF;
   
   RETURN NEW;
 END;
@@ -121,7 +79,7 @@ RETURNS TABLE(
   created_at timestamp with time zone
 )
 LANGUAGE plpgsql
-SECURITY DEFINER
+SECURITY INVOKER
 AS $$
 BEGIN
   RETURN QUERY
@@ -145,7 +103,7 @@ $$;
 CREATE OR REPLACE FUNCTION get_board_task_tags(board_id uuid)
 RETURNS text[]
 LANGUAGE plpgsql
-SECURITY DEFINER
+SECURITY INVOKER
 AS $$
 DECLARE
   all_tags text[];
@@ -168,7 +126,6 @@ $$;
 GRANT EXECUTE ON FUNCTION search_tasks_by_tags(text[]) TO authenticated;
 GRANT EXECUTE ON FUNCTION get_board_task_tags(uuid) TO authenticated;
 GRANT EXECUTE ON FUNCTION normalize_task_tags(text[]) TO authenticated;
-GRANT EXECUTE ON FUNCTION validate_task_tags(text[]) TO authenticated;
 
 -- Add comment to the column
 COMMENT ON COLUMN "public"."tasks"."tags" IS 'Array of tags for task categorization and filtering. Tags are automatically normalized (trimmed, lowercase) and validated.'; 
