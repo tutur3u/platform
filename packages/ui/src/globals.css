@@ -1,10 +1,16 @@
+/* stylelint-disable-next-line at-rule-no-unknown */
 @import 'tailwindcss';
+/* stylelint-disable-next-line at-rule-no-unknown */
 @source "components";
 
+/* stylelint-disable-next-line at-rule-no-unknown */
 @plugin '@tailwindcss/typography';
+/* stylelint-disable-next-line at-rule-no-unknown */
 @plugin 'tailwindcss-animate';
+/* stylelint-disable-next-line at-rule-no-unknown */
 @plugin 'tailwind-scrollbar';
 
+/* stylelint-disable-next-line at-rule-no-unknown */
 @custom-variant dark (&:is(.dark *));
 
 /*
@@ -30,6 +36,7 @@
     font-family: Arial, Helvetica, sans-serif;
   }
   button {
+    /* stylelint-disable-next-line at-rule-no-unknown */
     @apply cursor-pointer;
   }
   .overflow-wrap-anywhere {
@@ -249,6 +256,7 @@
   --calendar-bg-gray: hsl(0 0% 11%);
 }
 
+/* stylelint-disable-next-line at-rule-no-unknown */
 @theme inline {
   --color-root-background: var(--root-background);
 
@@ -358,6 +366,7 @@
   }
 }
 
+/* stylelint-disable-next-line at-rule-no-unknown */
 @utility container {
   margin-inline: auto;
   padding-inline: 2rem;
@@ -365,9 +374,11 @@
 
 @layer base {
   * {
+    /* stylelint-disable-next-line at-rule-no-unknown */
     @apply border-border outline-ring/50;
   }
   body {
+    /* stylelint-disable-next-line at-rule-no-unknown */
     @apply bg-background text-foreground;
   }
 }
