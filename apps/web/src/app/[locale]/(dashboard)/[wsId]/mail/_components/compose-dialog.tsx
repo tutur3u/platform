@@ -22,8 +22,7 @@ import { Input } from '@tuturuuu/ui/input';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
-import { useRef } from 'react';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
@@ -180,7 +179,8 @@ export function ComposeDialog({
     setIsLoading(true);
     try {
       const response = await fetch(
-        `https://tuturuuu.com/api/v1/workspaces/${wsId}/mail/send`,
+        // switch to https://tuturuuu.com endpoint once the mail service PR is merged
+        `/api/v1/workspaces/${wsId}/mail/send`,
         {
           method: 'POST',
           headers: {

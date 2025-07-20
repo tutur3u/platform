@@ -38,45 +38,34 @@ export default function MailClientWrapper({
   searchParams,
   hasCredential,
 }: MailClientWrapperProps) {
-  const [emails, setEmails] = useState<InternalEmail[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [emails, setEmails] = useState<InternalEmail[]>(postsData);
+  const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
-  const [page, setPage] = useState(0);
-
-  const loadEmails = useCallback(
-    async (pageNum: number = 0, reset: boolean = false) => {
-      try {
-        setLoading(true);
-        const newEmails = await getWorkspaceMails(wsId, pageNum, PAGE_SIZE);
-
-        if (reset) {
-          setEmails(newEmails);
-        } else {
-          setEmails((prev) => [...prev, ...newEmails]);
-        }
-
-        setHasMore(newEmails.length === PAGE_SIZE);
-        setPage(pageNum);
-      } catch (error) {
-        console.error('Failed to load emails:', error);
-      } finally {
-        setLoading(false);
-      }
-    },
-    [wsId]
-  );
-
-  const loadMore = useCallback(() => {
-    if (!loading && hasMore) {
-      loadEmails(page + 1, false);
-    }
-  }, [loading, hasMore, page, loadEmails]);
+  const [page, setPage] = useState(1);
 
   useEffect(() => {
-    loadEmails(0, true);
-  }, [loadEmails]);
+    setEmails(postsData);
+    setPage(1);
+    setHasMore(true);
+  }, [postsData]);
 
-  const mailsToShow = emails.length > 0 ? emails : [];
+  const loadMore = useCallback(async () => {
+    if (loading || !hasMore) return;
+
+    setLoading(true);
+    try {
+      const newEmails = await getWorkspaceMails(wsId, page, PAGE_SIZE);
+      setEmails((prev) => [...prev, ...newEmails]);
+      setHasMore(newEmails.length === PAGE_SIZE);
+      setPage((prev) => prev + 1);
+    } catch (error) {
+      console.error('Failed to load emails:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [loading, hasMore, page, wsId]);
+
+  const mailsToShow = emails;
 
   return (
     <div className="flex h-[calc(100vh-2rem)] flex-col">
@@ -90,11 +79,6 @@ export default function MailClientWrapper({
           hasMore={hasMore}
           loading={loading}
           wsId={wsId}
-          locale={locale}
-          postsData={postsData}
-          postsCount={postsCount}
-          postsStatus={postsStatus}
-          searchParams={searchParams}
           hasCredential={hasCredential}
         />
       </div>

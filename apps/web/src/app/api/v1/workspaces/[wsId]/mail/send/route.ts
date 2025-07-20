@@ -7,11 +7,11 @@ import {
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import DOMPurify from 'isomorphic-dompurify';
 import juice from 'juice';
+import { difference } from 'lodash';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
 const domainBlacklist = ['@easy.com', '@easy'];
-const disableEmailSending = process.env.DISABLE_EMAIL_SENDING === 'true';
 
 export async function POST(
   req: NextRequest,
@@ -25,7 +25,9 @@ export async function POST(
   const apiKey = req.headers.get('Authorization')?.split(' ')[1];
 
   const data: {
-    to: string;
+    to: string[];
+    cc?: string[];
+    bcc?: string[];
     subject: string;
     content: string;
   } = await req.json();
@@ -45,10 +47,12 @@ export async function POST(
   } = await supabase.auth.getUser();
 
   if (!user) {
+    console.error('User is unauthenticated');
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
   if (!user.email?.endsWith('@tuturuuu.com')) {
+    console.error('User is not a @tuturuuu.com email');
     return NextResponse.json(
       { message: 'Only @tuturuuu.com emails are allowed' },
       { status: 401 }
@@ -56,9 +60,9 @@ export async function POST(
   }
 
   const { data: userProfile, error: userProfileError } = await supabase
-    .from('user_private_details')
+    .from('users')
     .select('*')
-    .eq('user_id', user.id)
+    .eq('id', user.id)
     .single();
 
   if (userProfileError) {
@@ -69,7 +73,8 @@ export async function POST(
     );
   }
 
-  if (!userProfile.full_name || !userProfile.email) {
+  if (!userProfile.display_name || !user.email) {
+    console.error('User profile is missing required fields');
     return NextResponse.json(
       { message: 'User profile is missing required fields' },
       { status: 400 }
@@ -97,8 +102,14 @@ export async function POST(
 
   if (
     internalData.allowed_emails &&
-    !internalData.allowed_emails.includes(data.to)
+    difference(data.to, internalData.allowed_emails).length > 0
   ) {
+    console.error(
+      'Email not allowed',
+      data.to,
+      internalData.allowed_emails,
+      difference(data.to, internalData.allowed_emails)
+    );
     return NextResponse.json({ message: 'Email not allowed' }, { status: 400 });
   }
 
@@ -141,9 +152,11 @@ export async function POST(
     if (!DEV_MODE) {
       const emailSent = await sendEmail({
         client: sesClient,
-        sourceName: userProfile.full_name,
-        sourceEmail: userProfile.email,
-        recipient: data.to,
+        sourceName: userProfile.display_name,
+        sourceEmail: user.email,
+        toAddresses: data.to,
+        ccAddresses: data.cc,
+        bccAddresses: data.bcc,
         subject: data.subject,
         content: data.content,
       });
@@ -163,12 +176,12 @@ export async function POST(
       .from('internal_emails')
       .insert({
         ws_id: wsId,
-        user_id: internalData.user_id,
-        source_email: userProfile.email,
+        user_id: user.id,
+        source_email: user.email,
         subject: data.subject,
-        to_addresses: [data.to],
-        cc_addresses: [],
-        bcc_addresses: [],
+        to_addresses: data.to,
+        cc_addresses: data.cc || [],
+        bcc_addresses: data.bcc || [],
         reply_to_addresses: [],
         payload,
         html_payload: true,
@@ -202,21 +215,32 @@ const sendEmail = async ({
   client,
   sourceName,
   sourceEmail,
-  recipient,
+  toAddresses,
+  ccAddresses,
+  bccAddresses,
   subject,
   content,
 }: {
   client: SESClient;
   sourceName: string;
   sourceEmail: string;
-  recipient: string;
+  toAddresses: string[];
+  ccAddresses?: string[];
+  bccAddresses?: string[];
   subject: string;
   content: string;
 }) => {
   try {
     // Check if email is blacklisted
-    if (domainBlacklist.some((domain) => recipient.includes(domain))) {
-      console.log('Email domain is blacklisted:', recipient);
+    if (
+      domainBlacklist.some(
+        (domain) =>
+          toAddresses.some((addr) => addr.includes(domain)) ||
+          ccAddresses?.some((addr) => addr.includes(domain)) ||
+          bccAddresses?.some((addr) => addr.includes(domain))
+      )
+    ) {
+      console.log('Email domain is blacklisted:', toAddresses);
       return false;
     }
 
@@ -227,7 +251,9 @@ const sendEmail = async ({
     const params = {
       Source: `${sourceName} <${sourceEmail}>`,
       Destination: {
-        ToAddresses: [recipient],
+        ToAddresses: toAddresses,
+        CcAddresses: ccAddresses,
+        BccAddresses: bccAddresses,
       },
       Message: {
         Subject: { Data: subject },
@@ -239,23 +265,16 @@ const sendEmail = async ({
     };
 
     // Send email via SES (unless disabled)
-    if (!disableEmailSending) {
-      console.log('Sending email:', { to: recipient, subject });
-      const command = new SendEmailCommand(params);
-      const sesResponse = await client.send(command);
+    console.log('Sending email:', { to: toAddresses, subject });
+    const command = new SendEmailCommand(params);
+    const sesResponse = await client.send(command);
 
-      if (sesResponse.$metadata.httpStatusCode !== 200) {
-        console.error('Error sending email:', sesResponse);
-        return false;
-      }
-
-      console.log('Email sent successfully:', { to: recipient, subject });
-    } else {
-      console.log('Email sending disabled, skipping SES:', {
-        to: recipient,
-        subject,
-      });
+    if (sesResponse.$metadata.httpStatusCode !== 200) {
+      console.error('Error sending email:', sesResponse);
+      return false;
     }
+
+    console.log('Email sent successfully:', { to: toAddresses, subject });
 
     return true;
   } catch (err) {

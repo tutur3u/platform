@@ -68,7 +68,7 @@ export function MailList({ items, hasMore, loading }: MailListProps) {
                 </time>
               </div>
 
-              <div className="text-xs font-medium text-muted-foreground/80">
+              <div className="truncate text-xs font-medium text-muted-foreground/80">
                 <span className="text-muted-foreground">{t('to_label')}</span>{' '}
                 <span className="text-foreground/60">{item.to_addresses}</span>
               </div>

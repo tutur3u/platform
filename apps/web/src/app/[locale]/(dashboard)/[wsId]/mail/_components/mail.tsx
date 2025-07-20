@@ -5,21 +5,14 @@ import { ComposeButton } from './compose-button';
 import { ComposeDialog } from './compose-dialog';
 import { MailDisplay } from './mail-display';
 import { MailList } from './mail-list';
+import { Nav } from './nav';
+import { SIDEBAR_COLLAPSED_COOKIE_NAME } from '@/constants/common';
 import type { InternalEmail } from '@tuturuuu/types/db';
-import {
-  Mail as MailIcon,
-  Send,
-  Star,
-  TextSelect,
-  Trash,
-  TriangleAlert,
-} from '@tuturuuu/ui/icons';
 import {
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
 } from '@tuturuuu/ui/resizable';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { TooltipProvider } from '@tuturuuu/ui/tooltip';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { useTranslations } from 'next-intl';
@@ -40,6 +33,8 @@ interface MailProps {
 export function MailClient({
   mails,
   defaultLayout = [20, 80],
+  defaultCollapsed = false,
+  navCollapsedSize,
   onLoadMore,
   hasMore,
   loading,
@@ -47,8 +42,9 @@ export function MailClient({
   hasCredential,
 }: MailProps) {
   const [mail] = useMail();
+  const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed);
+
   const [composeOpen, setComposeOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState('sent');
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const t = useTranslations();
 
@@ -86,85 +82,50 @@ export function MailClient({
         className="h-full items-stretch"
       >
         <ResizablePanel
-          defaultSize={defaultLayout[1]}
-          minSize={30}
-          className="flex flex-col"
+          defaultSize={defaultLayout[0]}
+          collapsedSize={navCollapsedSize}
+          collapsible={true}
+          minSize={12}
+          maxSize={16}
+          onCollapse={() => {
+            setIsCollapsed(true);
+            // biome-ignore lint/suspicious/noDocumentCookie: <>
+            document.cookie = `${SIDEBAR_COLLAPSED_COOKIE_NAME}=true`;
+          }}
+          onExpand={() => {
+            setIsCollapsed(false);
+            // biome-ignore lint/suspicious/noDocumentCookie: <>
+            document.cookie = `${SIDEBAR_COLLAPSED_COOKIE_NAME}=false`;
+          }}
+          className={
+            isCollapsed ? 'min-w-[56px] transition-all duration-300' : ''
+          }
         >
+          <Nav
+            isCollapsed={isCollapsed}
+            onCollapse={() => setIsCollapsed(!isCollapsed)}
+          />
+        </ResizablePanel>
+        <ResizableHandle />
+        <ResizablePanel defaultSize={defaultLayout[1]} minSize={30}>
+          <div className="flex h-16 items-center justify-between border-b bg-background/50 px-4 backdrop-blur-sm">
+            <h1 className="text-xl font-bold">{t('mail.sent')}</h1>
+            {wsId === ROOT_WORKSPACE_ID && (
+              <ComposeButton
+                onClick={() => setComposeOpen(true)}
+                disabled={!hasCredential}
+              />
+            )}
+          </div>
           <div
             ref={scrollContainerRef}
-            className="h-full w-full overflow-y-auto"
+            className="h-full w-full overflow-y-auto p-2"
           >
-            <Tabs
-              value={activeTab}
-              onValueChange={setActiveTab}
-              defaultValue="sent"
-            >
-              <div className="flex h-16 items-center justify-between border-b bg-background/50 px-4 backdrop-blur-sm">
-                <TabsList className="grid w-fit gap-1 md:flex">
-                  <TabsTrigger
-                    value="inbox"
-                    className="flex items-center gap-2"
-                    disabled
-                  >
-                    <MailIcon className="h-4 w-4" />
-                    {t('mail.inbox')}
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="starred"
-                    className="flex items-center gap-2"
-                    disabled
-                  >
-                    <Star className="h-4 w-4" />
-                    {t('mail.starred')}
-                  </TabsTrigger>
-                  <TabsTrigger value="sent" className="flex items-center gap-2">
-                    <Send className="h-4 w-4" />
-                    {t('mail.sent')}
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="drafts"
-                    className="flex items-center gap-2"
-                    disabled
-                  >
-                    <TextSelect className="h-4 w-4" />
-                    {t('mail.drafts')}
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="spam"
-                    className="flex items-center gap-2"
-                    disabled
-                  >
-                    <TriangleAlert className="h-4 w-4" />
-                    {t('mail.spam')}
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="trash"
-                    className="flex items-center gap-2"
-                    disabled
-                  >
-                    <Trash className="h-4 w-4" />
-                    {t('mail.trash')}
-                  </TabsTrigger>
-                </TabsList>
-                {wsId === ROOT_WORKSPACE_ID && (
-                  <ComposeButton
-                    onClick={() => setComposeOpen(true)}
-                    disabled={!hasCredential}
-                  />
-                )}
-              </div>
-              <TabsContent value="sent" className="m-0">
-                <MailList items={mails} hasMore={hasMore} loading={loading} />
-              </TabsContent>
-            </Tabs>
+            <MailList items={mails} hasMore={hasMore} loading={loading} />
           </div>
         </ResizablePanel>
-        <ResizableHandle className="hidden md:block" />
-        <ResizablePanel
-          className="hidden md:block"
-          defaultSize={defaultLayout[2]}
-          minSize={30}
-        >
+        <ResizableHandle />
+        <ResizablePanel defaultSize={defaultLayout[2]} minSize={30}>
           <MailDisplay
             mail={mails.find((item) => item.id === mail.selected) || null}
           />

@@ -113,7 +113,7 @@ function AddressChips({
               className="flex items-center gap-1 rounded-full bg-accent px-2 py-0.5 text-xs font-medium text-accent-foreground shadow-sm"
             >
               {name && <span>{name}</span>}
-              <span className="text-foreground/80">{email}</span>
+              <span className="break-words text-foreground/80">{email}</span>
             </span>
           );
         })
@@ -290,7 +290,7 @@ export function MailDisplay({ mail }: MailDisplayProps) {
                   <h2 className="truncate text-base leading-tight font-semibold text-foreground">
                     {mail.subject}
                   </h2>
-                  <p className="text-sm font-medium text-foreground/80">
+                  <p className="truncate text-sm font-medium text-foreground/80">
                     {mail.source_email}
                   </p>
                 </div>
@@ -321,7 +321,7 @@ export function MailDisplay({ mail }: MailDisplayProps) {
                 'overflow-hidden transition-all duration-300 ease-in-out',
                 isHeaderCollapsed
                   ? 'max-h-0 opacity-0'
-                  : 'max-h-24 pt-3 opacity-100'
+                  : 'max-h-96 pt-3 opacity-100'
               )}
             >
               <div className="flex flex-col items-start gap-1 text-xs text-muted-foreground">
@@ -359,7 +359,7 @@ export function MailDisplay({ mail }: MailDisplayProps) {
               </div>
             ) : mail.html_payload ? (
               <div
-                className="prose max-w-full bg-background text-foreground"
+                className="prose max-w-full break-all bg-background text-foreground"
                 style={{ padding: '1.5rem' }}
                 // biome-ignore lint/security/noDangerouslySetInnerHtml: <html content is sanitized>
                 dangerouslySetInnerHTML={{ __html: sanitizedHtml }}

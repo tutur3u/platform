@@ -1,3 +1,5 @@
+import MailClientWrapper from './client';
+import { SIDEBAR_COLLAPSED_COOKIE_NAME } from '@/constants/common';
 import {
   createAdminClient,
   createClient,
