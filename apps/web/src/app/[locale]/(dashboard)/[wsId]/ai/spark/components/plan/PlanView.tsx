@@ -1,9 +1,5 @@
 'use client';
 
-import type { Task, YearPlan } from '../../types';
-import { MonthPicker } from '../MonthPicker';
-import { MonthlyOverview } from '../overview/MonthlyOverview';
-import { TaskList } from '../tasks/TaskList';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -31,6 +27,10 @@ import { Separator } from '@tuturuuu/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { format, isValid, isWithinInterval, parseISO } from 'date-fns';
 import { useCallback, useMemo, useState } from 'react';
+import type { Task, YearPlan } from '../../types';
+import { MonthPicker } from '../MonthPicker';
+import { MonthlyOverview } from '../overview/MonthlyOverview';
+import { TaskList } from '../tasks/TaskList';
 
 interface PlanViewProps {
   yearPlan: Partial<YearPlan>;
@@ -204,14 +204,14 @@ export function PlanView({ yearPlan, isLoading }: PlanViewProps) {
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">
+            <CardTitle className="font-medium text-sm">
               Learning Details
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">
+                <span className="text-muted-foreground text-sm">
                   Skill Level
                 </span>
                 <Badge variant="secondary">
@@ -219,7 +219,7 @@ export function PlanView({ yearPlan, isLoading }: PlanViewProps) {
                 </Badge>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">
+                <span className="text-muted-foreground text-sm">
                   Weekly Hours
                 </span>
                 <Badge variant="secondary">
@@ -227,7 +227,7 @@ export function PlanView({ yearPlan, isLoading }: PlanViewProps) {
                 </Badge>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">
+                <span className="text-muted-foreground text-sm">
                   Total Hours
                 </span>
                 <Badge variant="secondary">
@@ -241,7 +241,7 @@ export function PlanView({ yearPlan, isLoading }: PlanViewProps) {
         {yearPlan.metadata.preferredSchedule && (
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Schedule</CardTitle>
+              <CardTitle className="font-medium text-sm">Schedule</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
@@ -268,23 +268,21 @@ export function PlanView({ yearPlan, isLoading }: PlanViewProps) {
           yearPlan.metadata.prerequisites.length > 0 && (
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">
+                <CardTitle className="font-medium text-sm">
                   Prerequisites
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
-                  {yearPlan.metadata.prerequisites.map(
-                    (prereq: string, idx: number) => (
-                      <Badge
-                        key={`prereq-${idx}`}
-                        variant="outline"
-                        className="mr-2"
-                      >
-                        {prereq}
-                      </Badge>
-                    )
-                  )}
+                  {yearPlan.metadata.prerequisites.map((prereq: string) => (
+                    <Badge
+                      key={`prereq-${prereq}`}
+                      variant="outline"
+                      className="mr-2"
+                    >
+                      {prereq}
+                    </Badge>
+                  ))}
                 </div>
               </CardContent>
             </Card>
@@ -328,11 +326,11 @@ export function PlanView({ yearPlan, isLoading }: PlanViewProps) {
                 )}
               </div>
               {task.description && (
-                <p className="text-sm text-muted-foreground">
+                <p className="text-muted-foreground text-sm">
                   {task.description}
                 </p>
               )}
-              <div className="mt-2 flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
+              <div className="mt-2 flex flex-wrap items-center gap-4 text-muted-foreground text-xs">
                 {task.estimatedHours && (
                   <div className="flex items-center gap-1">
                     <Timer className="h-3 w-3" />
@@ -351,7 +349,7 @@ export function PlanView({ yearPlan, isLoading }: PlanViewProps) {
                 <div className="mt-2 flex flex-wrap gap-2">
                   {task.resources.map((resource, resourceIdx) => (
                     <Button
-                      key={`resource-${uniqueKey}-${resourceIdx}`}
+                      key={`resource-${resource.title}-${resource.url}-${resourceIdx}`}
                       variant="ghost"
                       size="sm"
                       className="h-6 gap-1 text-xs"
@@ -386,8 +384,8 @@ export function PlanView({ yearPlan, isLoading }: PlanViewProps) {
             <div className="flex items-center gap-2">
               <Target className="h-4 w-4 text-primary" />
               <div className="flex flex-col">
-                <span className="text-2xl font-bold">{stats.totalTasks}</span>
-                <span className="text-xs text-muted-foreground">
+                <span className="font-bold text-2xl">{stats.totalTasks}</span>
+                <span className="text-muted-foreground text-xs">
                   Total Tasks
                 </span>
               </div>
@@ -400,10 +398,10 @@ export function PlanView({ yearPlan, isLoading }: PlanViewProps) {
             <div className="flex items-center gap-2">
               <Calendar className="h-4 w-4 text-primary" />
               <div className="flex flex-col">
-                <span className="text-2xl font-bold">
+                <span className="font-bold text-2xl">
                   {stats.tasksThisMonth}
                 </span>
-                <span className="text-xs text-muted-foreground">
+                <span className="text-muted-foreground text-xs">
                   Tasks This Month
                 </span>
               </div>
@@ -416,10 +414,10 @@ export function PlanView({ yearPlan, isLoading }: PlanViewProps) {
             <div className="flex items-center gap-2">
               <Timer className="h-4 w-4 text-primary" />
               <div className="flex flex-col">
-                <span className="text-2xl font-bold">
+                <span className="font-bold text-2xl">
                   {stats.estimatedHours}h
                 </span>
-                <span className="text-xs text-muted-foreground">
+                <span className="text-muted-foreground text-xs">
                   Total Hours
                 </span>
               </div>
@@ -433,9 +431,9 @@ export function PlanView({ yearPlan, isLoading }: PlanViewProps) {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <BarChart className="h-4 w-4 text-primary" />
-                  <span className="text-sm font-medium">Completion</span>
+                  <span className="font-medium text-sm">Completion</span>
                 </div>
-                <span className="text-sm font-medium">{stats.completion}%</span>
+                <span className="font-medium text-sm">{stats.completion}%</span>
               </div>
               <Progress value={stats.completion} className="h-2" />
             </div>
@@ -509,7 +507,7 @@ export function PlanView({ yearPlan, isLoading }: PlanViewProps) {
         {/* Overview Section */}
         {yearPlan?.overview ? (
           <div className="rounded-lg border bg-card p-6">
-            <h3 className="mb-2 flex items-center gap-2 text-lg font-semibold">
+            <h3 className="mb-2 flex items-center gap-2 font-semibold text-lg">
               <Target className="h-5 w-5 text-primary" />
               Overview
             </h3>
@@ -527,9 +525,12 @@ export function PlanView({ yearPlan, isLoading }: PlanViewProps) {
             Math.ceil(new Date().getMonth() / 3) === quarter.quarter;
 
           return (
-            <div key={`quarter-${quarterIdx}`} className="space-y-6">
+            <div
+              key={`quarter-${quarter.quarter}-${quarter.focus}`}
+              className="space-y-6"
+            >
               <div className="rounded-lg border bg-card p-6">
-                <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold">
+                <h3 className="mb-4 flex items-center gap-2 font-semibold text-lg">
                   <CheckCircle2 className="h-5 w-5 text-primary" />Q
                   {quarter.quarter}: {quarter.focus}
                   {isCurrentQuarter && (
@@ -548,7 +549,7 @@ export function PlanView({ yearPlan, isLoading }: PlanViewProps) {
 
                     return (
                       <Card
-                        key={`milestone-${quarterIdx}-${milestoneIdx}`}
+                        key={`milestone-${quarter.quarter}-${milestone.title}`}
                         className="border-muted/50"
                       >
                         <CardHeader className="pb-3">
@@ -594,17 +595,17 @@ export function PlanView({ yearPlan, isLoading }: PlanViewProps) {
         {/* Recommendations Section */}
         {yearPlan?.recommendations && yearPlan.recommendations.length > 0 && (
           <div className="rounded-lg border bg-card p-6">
-            <h3 className="mb-3 flex items-center gap-2 text-lg font-semibold">
+            <h3 className="mb-3 flex items-center gap-2 font-semibold text-lg">
               <Target className="h-5 w-5 text-primary" />
               Key Recommendations
             </h3>
             <ul className="grid gap-3 sm:grid-cols-2">
               {yearPlan.recommendations.map((recommendation, idx) => (
                 <li
-                  key={`recommendation-${idx}`}
-                  className="flex items-start gap-2 rounded-md border bg-card/50 p-3 text-sm text-muted-foreground"
+                  key={`recommendation-${recommendation.substring(0, 20)}-${idx}`}
+                  className="flex items-start gap-2 rounded-md border bg-card/50 p-3 text-muted-foreground text-sm"
                 >
-                  <span className="mt-1 text-sm text-primary">•</span>
+                  <span className="mt-1 text-primary text-sm">•</span>
                   {recommendation}
                 </li>
               ))}
@@ -615,9 +616,9 @@ export function PlanView({ yearPlan, isLoading }: PlanViewProps) {
         {/* Loading placeholders */}
         {isLoading && !yearPlan?.quarters?.length && (
           <div className="space-y-4">
-            {Array.from({ length: 3 }).map((_, idx) => (
+            {Array.from({ length: 3 }).map(() => (
               <div
-                key={`loading-${idx}`}
+                key={`loading-skeleton-${crypto.randomUUID()}`}
                 className="h-32 animate-pulse rounded-lg bg-muted"
               />
             ))}
@@ -636,7 +637,7 @@ export function PlanView({ yearPlan, isLoading }: PlanViewProps) {
           </div>
         )}
 
-        <pre className="rounded-lg bg-muted/50 p-4 text-sm whitespace-pre-wrap">
+        <pre className="whitespace-pre-wrap rounded-lg bg-muted/50 p-4 text-sm">
           {JSON.stringify(yearPlan, null, 2)}
         </pre>
       </div>
