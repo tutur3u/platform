@@ -1,5 +1,6 @@
 'use client';
 
+import type { TaskBoardStatus } from '@tuturuuu/types/primitives/TaskBoard';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card } from '@tuturuuu/ui/card';
@@ -28,11 +29,22 @@ interface TaskItem {
   description?: string;
   priority?: number | null;
   end_date?: string | null;
+  boardId: string;
   boardName: string;
+  list_id: string;
+  listId: string;
   listName: string;
-  boardHref?: string;
-  archived?: boolean;
-  listStatus?: string;
+  boardHref: string;
+  archived: boolean;
+  listStatus: TaskBoardStatus;
+  created_at: string;
+  assignees?: {
+    id: string;
+    display_name?: string;
+    email?: string;
+    avatar_url?: string;
+    handle?: string;
+  }[];
 }
 
 interface TaskGroupProps {

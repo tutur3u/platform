@@ -69,9 +69,26 @@ export function BoardClient({
     enabled: isClient, // Only enable after hydration
   });
 
+  // Ensure board is not null before rendering
+  if (!board) {
+    return (
+      <div className="flex flex-col">
+        <div className="p-4 text-center text-muted-foreground">
+          Board not found
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col">
-      <BoardViews board={{ ...board, tasks, lists }} />
+      <BoardViews 
+        board={{ 
+          ...board, 
+          tasks, 
+          lists 
+        } as TaskBoard & { tasks: Task[]; lists: TaskList[] }} 
+      />
     </div>
   );
 }
