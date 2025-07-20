@@ -1,17 +1,17 @@
 'use client';
 
 import type { ColumnDef } from '@tanstack/react-table';
-import type { TaskBoard } from '@tuturuuu/types/primitives/TaskBoard';
 import { Badge } from '@tuturuuu/ui/badge';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import moment from 'moment';
 import Link from 'next/link';
 import { ProjectRowActions } from './row-action';
+import type { EnhancedTaskBoard } from './types';
 
 export const projectColumns = (
   t: any,
   namespace: string | undefined
-): ColumnDef<TaskBoard>[] => [
+): ColumnDef<EnhancedTaskBoard>[] => [
   // {
   //   id: 'select',
   //   header: ({ table }) => (
@@ -62,6 +62,7 @@ export const projectColumns = (
         <Link
           href={`/${row.original.ws_id}/tasks/boards/${row.getValue('id')}`}
           className="line-clamp-1 max-w-32 font-semibold break-all hover:underline"
+          onClick={(e) => e.stopPropagation()}
         >
           {row.getValue('name') || '-'}
         </Link>
