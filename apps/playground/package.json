@@ -9,6 +9,7 @@
     "build": "NODE_OPTIONS='--max-old-space-size=8192' next build --turbo",
     "start": "next start",
     "preview": "NODE_OPTIONS='--max-old-space-size=8192' next build --turbo && next start -p 3003 --turbopack",
+    "lint": "next lint",
     "stop": "cd ../db && bun sb:stop",
     "sb:status": "cd ../db && bun sb:status",
     "sb:start": "cd ../db && bun sb:start",
