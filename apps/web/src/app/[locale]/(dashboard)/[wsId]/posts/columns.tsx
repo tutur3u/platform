@@ -139,6 +139,15 @@ export const getPostEmailColumns = (
   },
   {
     id: 'actions',
-    cell: ({ row }) => <PostsRowActions data={row.original} />,
+    cell: ({ row, table }) => {
+      // Pass onEmailSent from extraData if available
+      const extraData = table.options.meta?.extraData || {};
+      return (
+        <PostsRowActions
+          data={row.original}
+          onEmailSent={extraData.onEmailSent}
+        />
+      );
+    },
   },
 ];

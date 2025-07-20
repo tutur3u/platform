@@ -4,13 +4,21 @@ import { getPostEmailColumns } from './columns';
 import PostsFilters from './filters';
 import { PostDisplay } from './post-display';
 import type { PostEmail } from './types';
-import { createPostEmailKey, usePosts } from './use-posts';
+import {
+  createPostEmailKey,
+  isOptimisticallyLoading,
+  isOptimisticallySent,
+  useOptimisticLoadingEmails,
+  useOptimisticSentEmails,
+  usePosts,
+} from './use-posts';
 import { CustomDataTable } from '@/components/custom-data-table';
 import useEmail from '@/hooks/useEmail';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { MailWarning, Send } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import { useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 interface SearchParams {
@@ -39,9 +47,31 @@ export default function PostsClient({
   postsStatus,
 }: PostsClientProps) {
   const t = useTranslations();
+  const router = useRouter();
   const [posts, setPosts] = usePosts();
+  const [optimisticSentEmails] = useOptimisticSentEmails();
+  const [optimisticLoadingEmails] = useOptimisticLoadingEmails();
   const { globalState, setGlobalState } = useEmail();
   const [selectedPost, setSelectedPost] = useState<PostEmail | null>(null);
+
+  // Calculate optimistic counts
+  const optimisticSentCount =
+    postsData?.data?.filter(
+      (post) =>
+        isOptimisticallySent(post, optimisticSentEmails) && !post.email_id
+    ).length || 0;
+
+  // Count emails currently being sent (loading)
+  const optimisticLoadingCount =
+    postsData?.data?.filter((post) =>
+      isOptimisticallyLoading(post, optimisticLoadingEmails)
+    ).length || 0;
+
+  const actualSentCount = postsStatus?.count || 0;
+  const totalSentCount = actualSentCount + optimisticSentCount;
+  const totalCount = postsData?.count || 0;
+  // Pending count excludes both sent and currently loading emails
+  const pendingCount = totalCount - totalSentCount - optimisticLoadingCount;
 
   // Remove React Query and client-side fetches for initial data
   // Keep invalidate logic for client-side updates if needed
@@ -80,8 +110,8 @@ export default function PostsClient({
           </div>
           <Separator className="my-1 bg-dynamic-purple/15" />
           <div className="text-xl font-semibold md:text-3xl">
-            {postsStatus?.count || 0}
-            <span className="opacity-50">/{postsData?.count || 0}</span>
+            {totalSentCount}
+            <span className="opacity-50">/{totalCount}</span>
           </div>
         </div>
         <div className="flex w-full flex-col items-center gap-1 rounded border border-dynamic-red/15 bg-dynamic-red/15 p-4 text-dynamic-red">
@@ -91,8 +121,8 @@ export default function PostsClient({
           </div>
           <Separator className="my-1 bg-dynamic-red/15" />
           <div className="text-3xl font-semibold">
-            {(postsData?.count || 0) - (postsStatus?.count || 0)}
-            <span className="opacity-50">/{postsData?.count || 0}</span>
+            {pendingCount}
+            <span className="opacity-50">/{totalCount}</span>
           </div>
         </div>
       </div>
@@ -106,7 +136,7 @@ export default function PostsClient({
             extraData={{
               locale,
               onEmailSent: () => {
-                // Optionally, trigger a client-side refresh if you have mutation logic
+                router.refresh();
               },
             }}
             count={postsData?.count || 0}
@@ -130,9 +160,7 @@ export default function PostsClient({
             }}
           />
         </div>
-        <div className="h-full overflow-y-auto">
-          <PostDisplay postEmail={selectedPost} />
-        </div>
+        <PostDisplay postEmail={selectedPost} />
       </div>
     </div>
   );

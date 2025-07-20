@@ -2,9 +2,16 @@
 
 import PostsRowActions from './row-actions';
 import type { PostEmail } from './types';
+import {
+  isOptimisticallyLoading,
+  isOptimisticallySent,
+  useOptimisticLoadingEmails,
+  useOptimisticSentEmails,
+} from './use-posts';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
+import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
 import {
   Calendar,
   Check,
@@ -30,11 +37,23 @@ interface PostDisplayProps {
 
 export function PostDisplay({ postEmail }: PostDisplayProps) {
   const locale = useLocale();
+  const [optimisticSentEmails] = useOptimisticSentEmails();
+  const [optimisticLoadingEmails] = useOptimisticLoadingEmails();
 
   // Set dayjs locale
   useEffect(() => {
     dayjs.locale(locale);
   }, [locale]);
+
+  // Check if email is sent (either from server data or optimistically)
+  const isSent = postEmail
+    ? !!postEmail.email_id ||
+      isOptimisticallySent(postEmail, optimisticSentEmails)
+    : false;
+  // Check if email is loading (either from local state or optimistically)
+  const isLoading = postEmail
+    ? isOptimisticallyLoading(postEmail, optimisticLoadingEmails)
+    : false;
 
   if (!postEmail) {
     return (
@@ -51,7 +70,7 @@ export function PostDisplay({ postEmail }: PostDisplayProps) {
   }
 
   return (
-    <div className="flex h-full flex-col rounded-lg border">
+    <div className="flex h-fit flex-col rounded-lg border">
       <div className="flex h-16 items-center justify-between rounded-t-lg border-b px-4 backdrop-blur-sm">
         <div className="flex items-center gap-2">
           <h3 className="text-lg font-semibold">Post Email Details</h3>
@@ -184,7 +203,15 @@ export function PostDisplay({ postEmail }: PostDisplayProps) {
                   Status
                 </span>
                 <div className="flex items-center gap-2">
-                  {postEmail.email_id ? (
+                  {isLoading ? (
+                    <Badge
+                      variant="secondary"
+                      className="border-dynamic-blue/30 bg-dynamic-blue/10 text-dynamic-blue"
+                    >
+                      <LoadingIndicator className="mr-1 h-3 w-3" />
+                      Sending...
+                    </Badge>
+                  ) : isSent ? (
                     <Badge
                       variant="default"
                       className="border-dynamic-green/30 bg-dynamic-green/10 text-dynamic-green"

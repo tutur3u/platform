@@ -40,7 +40,7 @@ const useEmail = () => {
       notes: string;
       is_completed: boolean;
     }[];
-  }): Promise<void> => {
+  }): Promise<boolean> => {
     setLocalLoading(true);
     setLocalError(null);
     setLocalSuccess(false);
@@ -75,16 +75,28 @@ const useEmail = () => {
     if (!res.ok) {
       setLocalError('Failed to send email');
       setLocalLoading(false);
-      setGlobalState({ loading: false, error: 'Failed to send email', success: false });
-      return;
+      setGlobalState({
+        loading: false,
+        error: 'Failed to send email',
+        success: false,
+      });
+      return false;
     }
 
     setLocalSuccess(true);
     setLocalLoading(false);
     setGlobalState({ loading: false, error: null, success: true });
+    return true;
   };
 
-  return { sendEmail, localLoading, localError, localSuccess, globalState, setGlobalState };
+  return {
+    sendEmail,
+    localLoading,
+    localError,
+    localSuccess,
+    globalState,
+    setGlobalState,
+  };
 };
 
 export default useEmail;

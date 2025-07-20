@@ -1,10 +1,20 @@
 import type { PostEmail } from './types';
+import {
+  isOptimisticallyLoading,
+  isOptimisticallySent,
+  markAsOptimisticallyLoading,
+  markAsOptimisticallySent,
+  removeFromOptimisticLoading,
+  useOptimisticLoadingEmails,
+  useOptimisticSentEmails,
+} from './use-posts';
 import useEmail from '@/hooks/useEmail';
 import { Button } from '@tuturuuu/ui/button';
 import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
 import { CircleAlert, CircleSlash, MailCheck, Send } from '@tuturuuu/ui/icons';
 import dayjs from 'dayjs';
 import { useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
 
 export default function PostsRowActions({
   data,
@@ -14,7 +24,12 @@ export default function PostsRowActions({
   onEmailSent?: () => void;
 }) {
   const t = useTranslations();
+  const router = useRouter();
   const { sendEmail, localLoading, localError, localSuccess } = useEmail();
+  const [optimisticSentEmails, setOptimisticSentEmails] =
+    useOptimisticSentEmails();
+  const [optimisticLoadingEmails, setOptimisticLoadingEmails] =
+    useOptimisticLoadingEmails();
 
   const sendable =
     !!data.email &&
@@ -26,6 +41,13 @@ export default function PostsRowActions({
     !!data.post_title &&
     !!data.post_content &&
     !!data?.is_completed;
+
+  // Check if email is sent (either from server data or optimistically)
+  const isSent =
+    !!data.email_id || isOptimisticallySent(data, optimisticSentEmails);
+  // Check if email is loading (either from local state or optimistically)
+  const isLoading =
+    localLoading || isOptimisticallyLoading(data, optimisticLoadingEmails);
 
   const handleSendEmail = async () => {
     // The local loading, error, and success states are now managed by useEmail hook
@@ -41,7 +63,14 @@ export default function PostsRowActions({
       !!data.post_content &&
       !!data?.is_completed
     ) {
-      await sendEmail({
+      // Mark as optimistically loading immediately
+      markAsOptimisticallyLoading(
+        data,
+        optimisticLoadingEmails,
+        setOptimisticLoadingEmails
+      );
+
+      const success = await sendEmail({
         wsId: data.ws_id,
         postId: data.post_id,
         groupId: data.group_id,
@@ -66,7 +95,25 @@ export default function PostsRowActions({
         ],
       });
 
+      // Remove from optimistic loading
+      removeFromOptimisticLoading(
+        data,
+        optimisticLoadingEmails,
+        setOptimisticLoadingEmails
+      );
+
+      // Only mark as optimistically sent if the email was sent successfully
+      if (success) {
+        markAsOptimisticallySent(
+          data,
+          optimisticSentEmails,
+          setOptimisticSentEmails
+        );
+      }
+
       if (onEmailSent) onEmailSent();
+      // Always refresh router after sending email
+      router.refresh();
     }
   };
 
@@ -77,9 +124,9 @@ export default function PostsRowActions({
         onClick={handleSendEmail}
         disabled={
           !!localError ||
-          localLoading ||
+          isLoading ||
           !data.email ||
-          !!data.email_id ||
+          isSent ||
           !sendable ||
           data.email.includes('@easy') ||
           localSuccess
@@ -87,9 +134,9 @@ export default function PostsRowActions({
         variant={
           localError
             ? 'destructive'
-            : localLoading
+            : isLoading
               ? 'secondary'
-              : localSuccess || data.email_id
+              : localSuccess || isSent
                 ? 'outline'
                 : undefined
         }
@@ -97,7 +144,7 @@ export default function PostsRowActions({
       >
         {data?.email?.includes('@easy') ? (
           <CircleSlash className="h-4 w-4" />
-        ) : localLoading ? (
+        ) : isLoading ? (
           <>
             <LoadingIndicator />
             <span>{t('post-email-data-table.sending')}</span>
@@ -107,7 +154,7 @@ export default function PostsRowActions({
             <CircleAlert className="h-4 w-4" />
             <span>{t('post-email-data-table.error')}</span>
           </>
-        ) : localSuccess || data.email_id ? (
+        ) : localSuccess || isSent ? (
           <>
             <MailCheck className="h-4 w-4" />
             <span>{t('post-email-data-table.sent')}</span>

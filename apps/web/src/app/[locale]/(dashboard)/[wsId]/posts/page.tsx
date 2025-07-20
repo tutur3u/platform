@@ -20,7 +20,6 @@ export default async function PostsPage({
   const { wsId, locale } = await params;
   const searchParamsData = await searchParams;
 
-  // SSR: Fetch all data on the server
   const postsData = await getPostsData(wsId, searchParamsData);
   const postsStatus = await getSentEmails(wsId, searchParamsData);
 
@@ -95,12 +94,12 @@ async function getPostsData(
     const parsedPage = Number.parseInt(page);
     const parsedSize = Number.parseInt(pageSize);
     const start = (parsedPage - 1) * parsedSize;
-    const end = parsedPage * parsedSize;
+    const end = start + parsedSize - 1; // Fix: end should be start + size - 1
     queryBuilder.range(start, end).limit(parsedSize);
   }
 
+  // Order by created_at (actual post creation date in user_group_posts), latest first
   const { data, error, count } = await queryBuilder.order('created_at', {
-    referencedTable: 'user_group_posts',
     ascending: false, // descending order: latest first
   });
 
@@ -166,6 +165,6 @@ async function getSentEmails(
   const { count } = await queryBuilder;
 
   return {
-    count,
+    count: count || 0,
   };
 }
