@@ -5,14 +5,14 @@ const COLOR_PALETTE = [
   { hue: 210, saturation: 70, lightness: 60 }, // Blue
   { hue: 120, saturation: 70, lightness: 60 }, // Green
   { hue: 270, saturation: 70, lightness: 60 }, // Purple
-  { hue: 30, saturation: 70, lightness: 60 },  // Orange
+  { hue: 30, saturation: 70, lightness: 60 }, // Orange
   { hue: 330, saturation: 70, lightness: 60 }, // Pink
   { hue: 180, saturation: 70, lightness: 60 }, // Cyan
-  { hue: 60, saturation: 70, lightness: 60 },  // Yellow
-  { hue: 0, saturation: 70, lightness: 60 },   // Red
+  { hue: 60, saturation: 70, lightness: 60 }, // Yellow
+  { hue: 0, saturation: 70, lightness: 60 }, // Red
   { hue: 150, saturation: 70, lightness: 60 }, // Teal
   { hue: 300, saturation: 70, lightness: 60 }, // Magenta
-  { hue: 90, saturation: 70, lightness: 60 },  // Lime
+  { hue: 90, saturation: 70, lightness: 60 }, // Lime
   { hue: 240, saturation: 70, lightness: 60 }, // Indigo
 ] as const;
 
@@ -25,14 +25,17 @@ export const DEFAULT_TAG_COLOR =
  * @returns HSL color object
  */
 function generateTagHSL(tag: string) {
-  if (!tag || typeof tag !== 'string') {
+  if (!tag || typeof tag !== 'string' || tag.trim().length === 0) {
     return { hue: 0, saturation: 0, lightness: 50 }; // Gray
   }
 
+  // Sanitize the tag for consistent hashing
+  const sanitizedTag = tag.trim().toLowerCase();
+
   // Enhanced hash function for better distribution
   let hash = 0;
-  for (let i = 0; i < tag.length; i++) {
-    const charCode = tag.charCodeAt(i);
+  for (let i = 0; i < sanitizedTag.length; i++) {
+    const charCode = sanitizedTag.charCodeAt(i);
     if (charCode !== undefined) {
       hash = (hash << 5) - hash + charCode;
       hash = hash & hash; // Convert to 32-bit integer
@@ -41,20 +44,26 @@ function generateTagHSL(tag: string) {
 
   const index = Math.abs(hash) % COLOR_PALETTE.length;
   const baseColor = COLOR_PALETTE[index]; // Safe since index is within bounds
-  
+
   if (!baseColor) {
     return { hue: 0, saturation: 0, lightness: 50 }; // Fallback to gray
   }
-  
+
   // Add some variation based on the hash to create more unique colors
   const hueVariation = (hash % 30) - 15; // ±15 degrees
   const saturationVariation = (hash % 20) - 10; // ±10%
   const lightnessVariation = (hash % 16) - 8; // ±8%
-  
+
   return {
     hue: (baseColor.hue + hueVariation + 360) % 360,
-    saturation: Math.max(50, Math.min(90, baseColor.saturation + saturationVariation)),
-    lightness: Math.max(45, Math.min(75, baseColor.lightness + lightnessVariation)),
+    saturation: Math.max(
+      50,
+      Math.min(90, baseColor.saturation + saturationVariation)
+    ),
+    lightness: Math.max(
+      45,
+      Math.min(75, baseColor.lightness + lightnessVariation)
+    ),
   };
 }
 
@@ -63,7 +72,11 @@ function generateTagHSL(tag: string) {
  * @param hsl - HSL color object
  * @returns CSS color string
  */
-function hslToCSS(hsl: { hue: number; saturation: number; lightness: number }): string {
+function hslToCSS(hsl: {
+  hue: number;
+  saturation: number;
+  lightness: number;
+}): string {
   return `hsl(${hsl.hue}, ${hsl.saturation}%, ${hsl.lightness}%)`;
 }
 
@@ -86,14 +99,14 @@ export function getTagColor(tag: string): {
   }
 
   const hsl = generateTagHSL(tag);
-  
+
   // Generate darker version for text
   const textHSL = { ...hsl, lightness: Math.max(20, hsl.lightness - 30) };
   const textColor = hslToCSS(textHSL);
-  
+
   // Generate border color (slightly darker than background)
   const borderHSL = { ...hsl, lightness: Math.max(15, hsl.lightness - 15) };
-  
+
   return {
     '--tag-bg-color': `hsl(${hsl.hue} ${hsl.saturation}% ${hsl.lightness}% / 0.2)`,
     '--tag-text-color': textColor,

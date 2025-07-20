@@ -720,6 +720,8 @@ export function ListView({
     );
   }
 
+  const MAX_VISIBLE_TAGS = 3;
+
   function renderTags(tags: string[] | null) {
     if (!tags || tags.length === 0) {
       return <span className="text-muted-foreground text-sm">—</span>;
@@ -727,7 +729,7 @@ export function ListView({
 
     return (
       <div className="flex flex-wrap gap-1">
-        {tags.slice(0, 3).map((tag) => {
+        {tags.slice(0, MAX_VISIBLE_TAGS).map((tag) => {
           const { style, className: tagClassName } = getTagColorStyling(tag);
           return (
             <Badge
@@ -743,12 +745,12 @@ export function ListView({
             </Badge>
           );
         })}
-        {tags.length > 3 && (
+        {tags.length > MAX_VISIBLE_TAGS && (
           <Badge
             variant="outline"
             className="h-5 rounded-full border px-1.5 font-medium text-xs"
           >
-            +{tags.length - 3}
+            +{tags.length - MAX_VISIBLE_TAGS}
           </Badge>
         )}
       </div>
