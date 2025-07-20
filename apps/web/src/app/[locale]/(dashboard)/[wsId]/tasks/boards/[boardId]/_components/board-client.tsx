@@ -82,12 +82,14 @@ export function BoardClient({
 
   return (
     <div className="flex flex-col">
-      <BoardViews 
-        board={{ 
-          ...board, 
-          tasks, 
-          lists 
-        } as TaskBoard & { tasks: Task[]; lists: TaskList[] }} 
+      <BoardViews
+        board={
+          {
+            ...board,
+            tasks,
+            lists,
+          } as TaskBoard & { tasks: Task[]; lists: TaskList[] }
+        }
       />
     </div>
   );
