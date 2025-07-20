@@ -1286,8 +1286,8 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
               <div className="flex-1 space-y-6 overflow-y-auto p-6">
                 {/* Board Info */}
                 <div>
-                  <h3 className="mb-2 font-semibold text-lg">
-                    {selectedBoard}
+                  <h3 className="mb-2 line-clamp-2 font-semibold text-lg">
+                    {selectedBoardData?.name || 'N/A'}
                   </h3>
 
                   {/* Tags */}
