@@ -1,8 +1,10 @@
 import { MailDisplay } from '../app/[locale]/(dashboard)/[wsId]/mail/_components/mail-display';
 import '@testing-library/jest-dom/vitest';
+import { render, screen, waitFor } from '@testing-library/react';
 import type { InternalEmail } from '@tuturuuu/types/db';
 import DOMPurify from 'dompurify';
 import sanitizeHtml from 'sanitize-html';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock next-intl
 vi.mock('next-intl', () => ({
