@@ -33,7 +33,7 @@
     "@vercel/analytics": "^1.5.0",
     "dayjs": "^1.11.13",
     "nanoid": "^5.1.5",
-    "next": "^15.4.2",
+    "next": "^15.4.2-canary.10",
     "next-intl": "^4.3.4",
     "qrcode.react": "^4.2.0",
     "react": "^19.1.0",
