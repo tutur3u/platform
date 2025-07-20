@@ -635,11 +635,11 @@ export function GoalManager({
           </DialogHeader>
           <div className="space-y-6">
             <div className="space-y-2">
-              <Label htmlFor="goal-category" className="text-sm font-medium">
+              <Label htmlFor="goal-category" className="flex items-center">
                 Goal Type
               </Label>
               <Select value={categoryId} onValueChange={setCategoryId}>
-                <SelectTrigger>
+                <SelectTrigger className="py-6">
                   <SelectValue placeholder="Select goal type" />
                 </SelectTrigger>
                 <SelectContent>
