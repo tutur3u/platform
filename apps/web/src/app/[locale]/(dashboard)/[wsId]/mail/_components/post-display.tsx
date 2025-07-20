@@ -1,5 +1,6 @@
 'use client';
 
+import PostsRowActions from './posts-row-actions';
 import type { PostEmail } from '@tuturuuu/types/primitives/post-email';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
@@ -19,10 +20,9 @@ import {
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { Separator } from '@tuturuuu/ui/separator';
 import dayjs from 'dayjs';
-import Link from 'next/link';
 import { useLocale } from 'next-intl';
+import Link from 'next/link';
 import { useEffect } from 'react';
-import PostsRowActions from './posts-row-actions';
 
 interface PostDisplayProps {
   postEmail: PostEmail | null;
@@ -40,7 +40,7 @@ export function PostDisplay({ postEmail }: PostDisplayProps) {
     return (
       <div className="flex h-full items-center justify-center bg-muted/20">
         <div className="text-center text-muted-foreground">
-          <Send className="mx-auto h-12 w-12 mb-4 opacity-50" />
+          <Send className="mx-auto mb-4 h-12 w-12 opacity-50" />
           <p className="text-lg font-medium">Post Email Details</p>
           <p className="text-sm">
             Select a post email to view its details and manage actions
@@ -52,18 +52,18 @@ export function PostDisplay({ postEmail }: PostDisplayProps) {
 
   return (
     <div className="flex h-full flex-col bg-background">
-      <div className="flex items-center justify-between px-4 h-16 border-b bg-background/80 backdrop-blur-sm">
+      <div className="flex h-16 items-center justify-between border-b bg-background/80 px-4 backdrop-blur-sm">
         <div className="flex items-center gap-2">
-          <h3 className="font-semibold text-lg">Post Email Details</h3>
+          <h3 className="text-lg font-semibold">Post Email Details</h3>
           <Badge variant={postEmail.is_completed ? 'default' : 'secondary'}>
             {postEmail.is_completed ? (
               <>
-                <Check className="h-3 w-3 mr-1" />
+                <Check className="mr-1 h-3 w-3" />
                 Completed
               </>
             ) : (
               <>
-                <Clock className="h-3 w-3 mr-1" />
+                <Clock className="mr-1 h-3 w-3" />
                 Pending
               </>
             )}
@@ -75,16 +75,16 @@ export function PostDisplay({ postEmail }: PostDisplayProps) {
         </div>
       </div>
 
-      <ScrollArea className="flex-1 min-h-0">
-        <div className="p-6 space-y-6">
+      <ScrollArea className="min-h-0 flex-1">
+        <div className="space-y-6 p-6">
           {/* Recipient Information */}
           <div className="space-y-4">
             <div className="flex items-start gap-4">
-              <Avatar className="h-12 w-12 ring-2 ring-background shadow-sm">
+              <Avatar className="h-12 w-12 shadow-sm ring-2 ring-background">
                 <AvatarImage
                   alt={postEmail.recipient || postEmail.email || ''}
                 />
-                <AvatarFallback className="bg-primary/10 text-primary font-semibold text-sm">
+                <AvatarFallback className="bg-primary/10 text-sm font-semibold text-primary">
                   {(postEmail.recipient || postEmail.email || 'U')
                     .split(' ')
                     .map((chunk: string) => chunk[0])
@@ -94,12 +94,12 @@ export function PostDisplay({ postEmail }: PostDisplayProps) {
                 </AvatarFallback>
               </Avatar>
 
-              <div className="flex-1 min-w-0 space-y-2">
+              <div className="min-w-0 flex-1 space-y-2">
                 <div>
-                  <h4 className="font-semibold text-base text-foreground">
+                  <h4 className="text-base font-semibold text-foreground">
                     {postEmail.recipient || 'Unknown Recipient'}
                   </h4>
-                  <p className="text-sm text-muted-foreground flex items-center gap-1">
+                  <p className="flex items-center gap-1 text-sm text-muted-foreground">
                     <Mail className="h-3 w-3" />
                     {postEmail.email}
                   </p>
@@ -110,7 +110,7 @@ export function PostDisplay({ postEmail }: PostDisplayProps) {
                     <Users className="h-3 w-3" />
                     <Link
                       href={`/${postEmail.ws_id}/users/groups/${postEmail.group_id}`}
-                      className="hover:underline text-primary"
+                      className="text-primary hover:underline"
                     >
                       {postEmail.group_name || 'Unknown Group'}
                     </Link>
@@ -129,7 +129,7 @@ export function PostDisplay({ postEmail }: PostDisplayProps) {
           {/* Post Information */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h5 className="font-semibold text-base flex items-center gap-2">
+              <h5 className="flex items-center gap-2 text-base font-semibold">
                 <Send className="h-4 w-4" />
                 Post Details
               </h5>
@@ -151,7 +151,7 @@ export function PostDisplay({ postEmail }: PostDisplayProps) {
                 <span className="text-sm font-medium text-muted-foreground">
                   Title
                 </span>
-                <p className="text-sm font-medium mt-1">
+                <p className="mt-1 text-sm font-medium">
                   {postEmail.post_title || 'No title'}
                 </p>
               </div>
@@ -160,8 +160,8 @@ export function PostDisplay({ postEmail }: PostDisplayProps) {
                 <span className="text-sm font-medium text-muted-foreground">
                   Content
                 </span>
-                <div className="mt-1 p-3 bg-muted/30 rounded-lg border">
-                  <p className="text-sm whitespace-pre-wrap leading-relaxed">
+                <div className="mt-1 rounded-lg border bg-muted/30 p-3">
+                  <p className="text-sm leading-relaxed whitespace-pre-wrap">
                     {postEmail.post_content || 'No content'}
                   </p>
                 </div>
@@ -172,7 +172,7 @@ export function PostDisplay({ postEmail }: PostDisplayProps) {
                   <span className="text-sm font-medium text-muted-foreground">
                     Email Subject
                   </span>
-                  <p className="text-sm font-medium mt-1">
+                  <p className="mt-1 text-sm font-medium">
                     {postEmail.subject}
                   </p>
                 </div>
@@ -184,7 +184,7 @@ export function PostDisplay({ postEmail }: PostDisplayProps) {
 
           {/* Email Status */}
           <div className="space-y-4">
-            <h5 className="font-semibold text-base flex items-center gap-2">
+            <h5 className="flex items-center gap-2 text-base font-semibold">
               <MailCheck className="h-4 w-4" />
               Email Status
             </h5>
@@ -198,17 +198,17 @@ export function PostDisplay({ postEmail }: PostDisplayProps) {
                   {postEmail.email_id ? (
                     <Badge
                       variant="default"
-                      className="bg-dynamic-green/10 text-dynamic-green border-dynamic-green/30"
+                      className="border-dynamic-green/30 bg-dynamic-green/10 text-dynamic-green"
                     >
-                      <MailCheck className="h-3 w-3 mr-1" />
+                      <MailCheck className="mr-1 h-3 w-3" />
                       Sent
                     </Badge>
                   ) : (
                     <Badge
                       variant="secondary"
-                      className="bg-dynamic-orange/10 text-dynamic-orange border-dynamic-orange/30"
+                      className="border-dynamic-orange/30 bg-dynamic-orange/10 text-dynamic-orange"
                     >
-                      <Clock className="h-3 w-3 mr-1" />
+                      <Clock className="mr-1 h-3 w-3" />
                       Pending
                     </Badge>
                   )}
@@ -223,9 +223,9 @@ export function PostDisplay({ postEmail }: PostDisplayProps) {
                   {postEmail.is_completed ? (
                     <Badge
                       variant="default"
-                      className="bg-dynamic-blue/10 text-dynamic-blue border-dynamic-blue/30"
+                      className="border-dynamic-blue/30 bg-dynamic-blue/10 text-dynamic-blue"
                     >
-                      <Check className="h-3 w-3 mr-1" />
+                      <Check className="mr-1 h-3 w-3" />
                       Completed
                     </Badge>
                   ) : (
@@ -233,7 +233,7 @@ export function PostDisplay({ postEmail }: PostDisplayProps) {
                       variant="outline"
                       className="border-dynamic-red/30 text-dynamic-red"
                     >
-                      <X className="h-3 w-3 mr-1" />
+                      <X className="mr-1 h-3 w-3" />
                       Incomplete
                     </Badge>
                   )}
@@ -247,12 +247,12 @@ export function PostDisplay({ postEmail }: PostDisplayProps) {
             <>
               <Separator />
               <div className="space-y-3">
-                <h5 className="font-semibold text-base flex items-center gap-2">
+                <h5 className="flex items-center gap-2 text-base font-semibold">
                   <User className="h-4 w-4" />
                   Notes
                 </h5>
-                <div className="p-3 bg-muted/30 rounded-lg border">
-                  <p className="text-sm whitespace-pre-wrap leading-relaxed">
+                <div className="rounded-lg border bg-muted/30 p-3">
+                  <p className="text-sm leading-relaxed whitespace-pre-wrap">
                     {postEmail.notes}
                   </p>
                 </div>

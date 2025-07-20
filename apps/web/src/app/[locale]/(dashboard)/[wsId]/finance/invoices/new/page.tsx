@@ -1,3 +1,4 @@
+import { Filter } from '../../../users/filters';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { Invoice } from '@tuturuuu/types/primitives/Invoice';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
@@ -13,7 +14,6 @@ import { Package, TicketPercent, User } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { getTranslations } from 'next-intl/server';
-import { Filter } from '../../../users/filters';
 
 interface Props {
   params: Promise<{

@@ -1,3 +1,11 @@
+import { CalendarHeader } from './calendar-header';
+import { CalendarViewWithTrail } from './calendar-view-with-trail';
+import { CreateEventButton } from './create-event-button';
+import { EventModal } from './event-modal';
+import { MonthCalendar } from './month-calendar';
+import { SettingsButton } from './settings-button';
+import type { CalendarSettings } from './settings/settings-context';
+import { WeekdayBar } from './weekday-bar';
 import type {
   Workspace,
   WorkspaceCalendarGoogleToken,
@@ -8,14 +16,6 @@ import type { CalendarView } from '@tuturuuu/ui/hooks/use-view-transition';
 import { useViewTransition } from '@tuturuuu/ui/hooks/use-view-transition';
 import { cn } from '@tuturuuu/utils/format';
 import { useCallback, useEffect, useState } from 'react';
-import { CalendarHeader } from './calendar-header';
-import { CalendarViewWithTrail } from './calendar-view-with-trail';
-import { CreateEventButton } from './create-event-button';
-import { EventModal } from './event-modal';
-import { MonthCalendar } from './month-calendar';
-import type { CalendarSettings } from './settings/settings-context';
-import { SettingsButton } from './settings-button';
-import { WeekdayBar } from './weekday-bar';
 
 function getMonthGridDates(date: Date, firstDayOfWeek: number): Date[] {
   const newDate = new Date(date);
@@ -353,7 +353,8 @@ export const CalendarContent = ({
     } else if (view === 'month') {
       let firstDayNumber = 1; // Monday
       if (settings?.appearance?.firstDayOfWeek === 'sunday') firstDayNumber = 0;
-      if (settings?.appearance?.firstDayOfWeek === 'saturday') firstDayNumber = 6;
+      if (settings?.appearance?.firstDayOfWeek === 'saturday')
+        firstDayNumber = 6;
       const gridDates = getMonthGridDates(date, firstDayNumber);
       setDates(gridDates);
     }
@@ -444,7 +445,12 @@ export const CalendarContent = ({
 
       <div className="relative scrollbar-none flex-1 overflow-auto bg-background/50">
         {view === 'month' && dates?.[0] ? (
-          <MonthCalendar date={dates[0]} workspace={workspace} visibleDates={dates} viewedMonth={date} />
+          <MonthCalendar
+            date={dates[0]}
+            workspace={workspace}
+            visibleDates={dates}
+            viewedMonth={date}
+          />
         ) : (
           <CalendarViewWithTrail dates={dates} />
         )}

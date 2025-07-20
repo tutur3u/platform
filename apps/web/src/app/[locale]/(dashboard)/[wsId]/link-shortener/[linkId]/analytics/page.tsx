@@ -1,12 +1,3 @@
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
-import { Button } from '@tuturuuu/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
-import { Activity, ArrowLeft, Clock } from '@tuturuuu/ui/icons';
-import Link from 'next/link';
-import { getTranslations } from 'next-intl/server';
 import { AnalyticsCards } from './analytics-cards';
 import { AnalyticsHeader } from './analytics-header';
 import { AnalyticsSummary } from './analytics-summary';
@@ -15,6 +6,15 @@ import { DeviceAnalytics } from './device-analytics';
 import { GeographicAnalytics } from './geographic-analytics';
 import { HourlyChart } from './hourly-chart';
 import { WeeklyActivity } from './weekly-activity';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
+import { Button } from '@tuturuuu/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
+import { Activity, ArrowLeft, Clock } from '@tuturuuu/ui/icons';
+import { getTranslations } from 'next-intl/server';
+import Link from 'next/link';
 
 interface Props {
   params: Promise<{
@@ -67,7 +67,7 @@ export default async function LinkAnalyticsPage({ params }: Props) {
                 <Activity className="h-12 w-12 text-dynamic-red" />
               </div>
             </div>
-            <h1 className="font-bold text-2xl text-dynamic-red">
+            <h1 className="text-2xl font-bold text-dynamic-red">
               {t('link-shortener.analytics.not_found')}
             </h1>
             <p className="mb-6 text-dynamic-red/80">
@@ -130,10 +130,10 @@ export default async function LinkAnalyticsPage({ params }: Props) {
                   <Clock className="h-5 w-5 text-dynamic-blue" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-lg">
+                  <h3 className="text-lg font-semibold">
                     {t('link-shortener.analytics.activity_by_hour')}
                   </h3>
-                  <p className="text-muted-foreground text-sm">
+                  <p className="text-sm text-muted-foreground">
                     {t('link-shortener.analytics.hourly_distribution')}
                   </p>
                 </div>

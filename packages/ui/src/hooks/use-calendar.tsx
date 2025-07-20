@@ -1,22 +1,23 @@
+import { toast } from '../components/ui/sonner';
+import { createAllDayEvent, isAllDayEvent } from './calendar-utils';
+import { useCalendarSync } from './use-calendar-sync';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type {
   Workspace,
   WorkspaceCalendarGoogleToken,
 } from '@tuturuuu/types/db';
-import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
+import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import {
   type CalendarSettings,
   defaultCalendarSettings,
 } from '@tuturuuu/ui/legacy/calendar/settings/settings-context';
 import dayjs from 'dayjs';
 import moment from 'moment';
-import { toast } from '../components/ui/sonner';
-import { useCalendarSync } from './use-calendar-sync';
 import 'moment/locale/vi';
 import {
-  createContext,
   type ReactNode,
+  createContext,
   useCallback,
   useContext,
   useEffect,
@@ -24,7 +25,6 @@ import {
   useRef,
   useState,
 } from 'react';
-import { createAllDayEvent, isAllDayEvent } from './calendar-utils';
 
 // Utility function to round time to nearest 15-minute interval
 const roundToNearest15Minutes = (date: Date): Date => {

@@ -1,5 +1,6 @@
 'use client';
 
+import { useCalendar } from '../../../../../hooks/use-calendar';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { WorkspaceCalendarGoogleToken } from '@tuturuuu/types/db';
 import { Alert, AlertDescription } from '@tuturuuu/ui/alert';
@@ -18,7 +19,6 @@ import { Switch } from '@tuturuuu/ui/switch';
 import { Check, ExternalLink, Link, Loader2, RefreshCw } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { useCalendar } from '../../../../../hooks/use-calendar';
 
 export type SmartSchedulingData = {
   enableSmartScheduling: boolean;
@@ -302,17 +302,19 @@ export function GoogleCalendarSettings({
       }
 
       const result = await response.json();
-      
+
       toast({
         title: 'Full Sync Completed',
         description: `Full sync completed successfully. Synced ${result.eventsSynced} events from Google Calendar.`,
       });
-
     } catch (error) {
       console.error('Error triggering full sync:', error);
       toast({
         title: 'Error',
-        description: error instanceof Error ? error.message : 'Failed to trigger full sync',
+        description:
+          error instanceof Error
+            ? error.message
+            : 'Failed to trigger full sync',
         variant: 'destructive',
       });
     } finally {

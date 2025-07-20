@@ -1,5 +1,5 @@
-import Papa from 'papaparse';
 import { BaseCrawler } from './base-crawler';
+import Papa from 'papaparse';
 
 interface CsvCrawlerProps {
   url: string;

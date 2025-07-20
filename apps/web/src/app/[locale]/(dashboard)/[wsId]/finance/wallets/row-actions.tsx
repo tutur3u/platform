@@ -1,5 +1,6 @@
 'use client';
 
+import { WalletForm } from './form';
 import type { Row } from '@tanstack/react-table';
 import type { Wallet } from '@tuturuuu/types/primitives/Wallet';
 import { Button } from '@tuturuuu/ui/button';
@@ -13,11 +14,10 @@ import {
 } from '@tuturuuu/ui/dropdown-menu';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Ellipsis, Eye } from '@tuturuuu/ui/icons';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useTranslations } from 'next-intl';
 import { useState } from 'react';
-import { WalletForm } from './form';
 
 interface WalletRowActionsProps {
   row: Row<Wallet>;

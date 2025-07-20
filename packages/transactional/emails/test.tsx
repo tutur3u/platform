@@ -5,7 +5,7 @@ const Email = () => {
     <Tailwind>
       <Button
         href="https://example.com"
-        className="rounded bg-black px-3 py-2 font-medium text-white leading-4"
+        className="rounded bg-black px-3 py-2 leading-4 font-medium text-white"
       >
         Click me
       </Button>

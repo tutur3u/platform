@@ -1,5 +1,25 @@
 'use client';
 
+import { ActivityHeatmap } from './components/activity-heatmap';
+import { CategoryManager } from './components/category-manager';
+import { GoalManager } from './components/goal-manager';
+import { SessionHistory } from './components/session-history';
+import { TimerControls } from './components/timer-controls';
+import { UserSelector } from './components/user-selector';
+import { useCurrentUser } from './hooks/use-current-user';
+import type {
+  ExtendedWorkspaceTask,
+  SessionWithRelations,
+  TaskSidebarFilters,
+  TimeTrackerData,
+  TimeTrackingGoal,
+  TimerStats,
+} from './types';
+import {
+  generateAssigneeInitials,
+  getFilteredAndSortedSidebarTasks,
+  useTaskCounts,
+} from './utils';
 import { useQuery } from '@tanstack/react-query';
 import type { TimeTrackingCategory } from '@tuturuuu/types/db';
 import { Alert, AlertDescription } from '@tuturuuu/ui/alert';
@@ -43,26 +63,6 @@ import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityHeatmap } from './components/activity-heatmap';
-import { CategoryManager } from './components/category-manager';
-import { GoalManager } from './components/goal-manager';
-import { SessionHistory } from './components/session-history';
-import { TimerControls } from './components/timer-controls';
-import { UserSelector } from './components/user-selector';
-import { useCurrentUser } from './hooks/use-current-user';
-import type {
-  ExtendedWorkspaceTask,
-  SessionWithRelations,
-  TaskSidebarFilters,
-  TimerStats,
-  TimeTrackerData,
-  TimeTrackingGoal,
-} from './types';
-import {
-  generateAssigneeInitials,
-  getFilteredAndSortedSidebarTasks,
-  useTaskCounts,
-} from './utils';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -1979,7 +1979,9 @@ export default function TimeTrackerContent({
                             <div className="mb-3 flex items-center justify-between px-1 text-xs text-muted-foreground">
                               <span>
                                 {filteredSidebarTasks.length} task
-                                {filteredSidebarTasks.length !== 1 ? 's' : ''}{' '}
+                                {filteredSidebarTasks.length !== 1
+                                  ? 's'
+                                  : ''}{' '}
                                 available
                                 {(tasksSidebarSearch ||
                                   tasksSidebarFilters.board !== 'all' ||

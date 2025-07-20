@@ -1,4 +1,8 @@
-import type { TaskBoard, TaskList, Task } from '@tuturuuu/types/primitives/TaskBoard';
+import type {
+  Task,
+  TaskBoard,
+  TaskList,
+} from '@tuturuuu/types/primitives/TaskBoard';
 
 export type EnhancedTaskBoard = TaskBoard & {
   href: string;
@@ -11,4 +15,4 @@ export type EnhancedTaskBoard = TaskBoard & {
   mediumPriorityTasks: number;
   lowPriorityTasks: number;
   task_lists?: (TaskList & { tasks: Task[] })[];
-}; 
+};

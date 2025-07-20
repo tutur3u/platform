@@ -1,9 +1,9 @@
 import {
-  closestCorners,
   type DroppableContainer,
-  getFirstCollision,
   KeyboardCode,
   type KeyboardCoordinateGetter,
+  closestCorners,
+  getFirstCollision,
 } from '@dnd-kit/core';
 
 const directions: string[] = [

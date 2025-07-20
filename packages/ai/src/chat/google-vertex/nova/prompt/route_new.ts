@@ -1,3 +1,9 @@
+import {
+  MAIN_EVALUATION_PROMPT,
+  OUTPUT_COMPARISON_PROMPT,
+  PLAGIARISM_DETECTION_PROMPT,
+  TEST_CASE_EVALUATION_PROMPT,
+} from './prompts';
 import { google } from '@ai-sdk/google';
 import type {
   NovaSubmissionCriteria,
@@ -12,12 +18,6 @@ import { checkPermission } from '@tuturuuu/utils/nova/submissions/check-permissi
 import { generateObject } from 'ai';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import {
-  MAIN_EVALUATION_PROMPT,
-  OUTPUT_COMPARISON_PROMPT,
-  PLAGIARISM_DETECTION_PROMPT,
-  TEST_CASE_EVALUATION_PROMPT,
-} from './prompts';
 
 export const runtime = 'edge';
 export const maxDuration = 60;

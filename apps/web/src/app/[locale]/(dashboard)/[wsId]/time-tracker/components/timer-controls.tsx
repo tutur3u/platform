@@ -1,5 +1,15 @@
 'use client';
 
+import type {
+  ExtendedWorkspaceTask,
+  SessionWithRelations,
+  TaskFilters,
+} from '../types';
+import {
+  generateAssigneeInitials,
+  getFilteredAndSortedTasks,
+  useTaskCounts,
+} from '../utils';
 import type { TimeTrackingCategory, WorkspaceTask } from '@tuturuuu/types/db';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
@@ -39,16 +49,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { cn } from '@tuturuuu/utils/format';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type {
-  ExtendedWorkspaceTask,
-  SessionWithRelations,
-  TaskFilters,
-} from '../types';
-import {
-  generateAssigneeInitials,
-  getFilteredAndSortedTasks,
-  useTaskCounts,
-} from '../utils';
 
 interface SessionTemplate {
   title: string;
@@ -765,9 +765,8 @@ export function TimerControls({
       try {
         // Lazily create a singleton AudioContext to prevent resource leaks
         if (!audioContextRef.current) {
-          audioContextRef.current = new (
-            window.AudioContext || (window as any).webkitAudioContext
-          )();
+          audioContextRef.current = new (window.AudioContext ||
+            (window as any).webkitAudioContext)();
         }
 
         const audioContext = audioContextRef.current;

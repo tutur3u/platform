@@ -1,6 +1,6 @@
 import {
-  createClient,
   type TypedSupabaseClient,
+  createClient,
 } from '@tuturuuu/supabase/next/client';
 import { APP_DOMAIN_MAP } from '@tuturuuu/utils/internal-domains';
 import type { useRouter } from 'next/navigation';

@@ -1,3 +1,6 @@
+import UserCard from './card';
+import { CheckAll } from './check-all';
+import { EmailList } from './email-list';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
@@ -11,12 +14,9 @@ import {
 } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import { format } from 'date-fns';
+import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { getTranslations } from 'next-intl/server';
-import UserCard from './card';
-import { CheckAll } from './check-all';
-import { EmailList } from './email-list';
 
 interface SearchParams {
   q?: string;

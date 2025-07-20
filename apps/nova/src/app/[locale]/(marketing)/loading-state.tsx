@@ -1,5 +1,5 @@
-import { motion } from 'framer-motion';
 import LoadingIndicator from './loading-indicator';
+import { motion } from 'framer-motion';
 
 interface LoadingStateProps {
   message?: string;

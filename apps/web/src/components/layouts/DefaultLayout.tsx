@@ -1,6 +1,6 @@
+import Footer from './Footer';
 import type React from 'react';
 import type { FC } from 'react';
-import Footer from './Footer';
 
 interface DefaultLayoutProps {
   children: React.ReactNode;

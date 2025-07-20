@@ -1,5 +1,6 @@
 'use client';
 
+import ProblemForm, { type ProblemFormValues } from './problem-form';
 import type { ExtendedNovaProblem } from '@tuturuuu/types/db';
 import {
   Dialog,
@@ -12,7 +13,6 @@ import {
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
-import ProblemForm, { type ProblemFormValues } from './problem-form';
 
 interface EditProblemDialogProps {
   problem: ExtendedNovaProblem;

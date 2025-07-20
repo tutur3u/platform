@@ -1,11 +1,11 @@
 'use client';
 
+import { NavLink } from './nav-link';
+import type { NavLink as NavLinkType } from '@/components/navigation';
+import { ENABLE_KEYBOARD_SHORTCUTS } from '@/constants/common';
 import { cn } from '@tuturuuu/utils/format';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import type { NavLink as NavLinkType } from '@/components/navigation';
-import { ENABLE_KEYBOARD_SHORTCUTS } from '@/constants/common';
-import { NavLink } from './nav-link';
 
 interface NavProps {
   wsId: string;

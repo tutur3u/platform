@@ -352,7 +352,7 @@ export default function AddEventModal({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <PlusIcon className="h-5 w-5 text-blue-500" />
-              <DialogTitle className="font-semibold text-lg">
+              <DialogTitle className="text-lg font-semibold">
                 Create Task
               </DialogTitle>
             </div>
@@ -376,7 +376,7 @@ export default function AddEventModal({
                     'Normal'
                   }
                   tabIndex={0}
-                  className="absolute top-3 right-0 left-0 z-30 h-7 cursor-pointer select-none rounded focus:outline-none focus:ring-2 focus:ring-blue-300 focus:ring-offset-2"
+                  className="absolute top-3 right-0 left-0 z-30 h-7 cursor-pointer rounded select-none focus:ring-2 focus:ring-blue-300 focus:ring-offset-2 focus:outline-none"
                   style={{ height: 32 }}
                   onMouseDown={handleSliderMouseDown}
                   onMouseMove={handleSliderMouseMove}
@@ -441,7 +441,7 @@ export default function AddEventModal({
                       className="flex w-10 flex-col items-center"
                     >
                       <span
-                        className={`transition-all ${formData.priority === opt?.value ? 'font-bold text-lg' : 'text-base opacity-40'}`}
+                        className={`transition-all ${formData.priority === opt?.value ? 'text-lg font-bold' : 'text-base opacity-40'}`}
                       >
                         {opt?.icon ?? '❓'}
                       </span>
@@ -464,7 +464,7 @@ export default function AddEventModal({
             <div className="space-y-1">
               <Label
                 htmlFor="task-title"
-                className="font-medium text-xs text-zinc-600 dark:text-zinc-300"
+                className="text-xs font-medium text-zinc-600 dark:text-zinc-300"
               >
                 Task Name <span className="text-destructive">*</span>
               </Label>
@@ -476,14 +476,14 @@ export default function AddEventModal({
                 className={`h-9 rounded-lg border-zinc-200 text-sm transition-all focus:ring-2 focus:ring-blue-300 dark:border-zinc-700 ${errors.name ? 'border-destructive' : ''}`}
               />
               {errors.name && (
-                <p className="mt-0.5 text-destructive text-xs">{errors.name}</p>
+                <p className="mt-0.5 text-xs text-destructive">{errors.name}</p>
               )}
             </div>
 
             <div className="space-y-1">
               <Label
                 htmlFor="task-description"
-                className="font-medium text-xs text-zinc-600 dark:text-zinc-300"
+                className="text-xs font-medium text-zinc-600 dark:text-zinc-300"
               >
                 Description
               </Label>
@@ -517,7 +517,7 @@ export default function AddEventModal({
                   className={`h-9 rounded-lg border-zinc-200 text-sm transition-all focus:ring-2 focus:ring-blue-300 dark:border-zinc-700 ${errors.total_duration ? 'border-destructive' : ''}`}
                 />
                 {errors.total_duration && (
-                  <p className="mt-0.5 text-destructive text-xs">
+                  <p className="mt-0.5 text-xs text-destructive">
                     {errors.total_duration}
                   </p>
                 )}
@@ -530,7 +530,7 @@ export default function AddEventModal({
                     updateFormData('is_splittable', checked)
                   }
                 />
-                <Label htmlFor="split-up" className="font-normal text-xs">
+                <Label htmlFor="split-up" className="text-xs font-normal">
                   Splittable
                 </Label>
               </div>
@@ -557,7 +557,7 @@ export default function AddEventModal({
                     className={`h-9 rounded-lg border-zinc-200 text-sm transition-all focus:ring-2 focus:ring-blue-300 dark:border-zinc-700 ${errors.min_split_duration_minutes ? 'border-destructive' : ''}`}
                   />
                   {errors.min_split_duration_minutes && (
-                    <p className="mt-0.5 text-destructive text-xs">
+                    <p className="mt-0.5 text-xs text-destructive">
                       {errors.min_split_duration_minutes}
                     </p>
                   )}
@@ -582,7 +582,7 @@ export default function AddEventModal({
                     className={`h-9 rounded-lg border-zinc-200 text-sm transition-all focus:ring-2 focus:ring-blue-300 dark:border-zinc-700 ${errors.max_split_duration_minutes ? 'border-destructive' : ''}`}
                   />
                   {errors.max_split_duration_minutes && (
-                    <p className="mt-0.5 text-destructive text-xs">
+                    <p className="mt-0.5 text-xs text-destructive">
                       {errors.max_split_duration_minutes}
                     </p>
                   )}
@@ -595,7 +595,7 @@ export default function AddEventModal({
           <div className="space-y-3 rounded-xl border border-zinc-100 bg-white p-4 shadow-md transition-shadow hover:shadow-lg dark:border-zinc-800 dark:bg-zinc-900">
             <div className="mb-1 flex items-center gap-2">
               <ClockIcon className="h-4 w-4 text-blue-400" />
-              <Label className="font-semibold text-xs text-zinc-700 dark:text-zinc-200">
+              <Label className="text-xs font-semibold text-zinc-700 dark:text-zinc-200">
                 Working Hours
               </Label>
             </div>
@@ -720,7 +720,7 @@ export default function AddEventModal({
                     </Popover>
                   </div>
                   {errors.end_date && (
-                    <p className="mt-0.5 text-destructive text-xs">
+                    <p className="mt-0.5 text-xs text-destructive">
                       {errors.end_date}
                     </p>
                   )}
@@ -728,14 +728,14 @@ export default function AddEventModal({
               </div>
             </div>
 
-            <div className="mt-1 flex items-center gap-2 rounded-md bg-blue-50 p-2 text-blue-800 text-xs dark:bg-blue-950 dark:text-blue-200">
+            <div className="mt-1 flex items-center gap-2 rounded-md bg-blue-50 p-2 text-xs text-blue-800 dark:bg-blue-950 dark:text-blue-200">
               <span>📧</span>
               <span>For {user?.email || 'your account'}</span>
             </div>
           </div>
 
           {errors.submit && (
-            <div className="rounded-lg bg-destructive/10 p-2 text-destructive text-xs">
+            <div className="rounded-lg bg-destructive/10 p-2 text-xs text-destructive">
               {errors.submit}
             </div>
           )}
@@ -752,7 +752,7 @@ export default function AddEventModal({
             </Button>
             <Button
               type="submit"
-              className="h-9 rounded-lg bg-blue-500 px-5 font-semibold text-sm text-white shadow-md transition-all hover:bg-blue-600 focus:ring-2 focus:ring-blue-300"
+              className="h-9 rounded-lg bg-blue-500 px-5 text-sm font-semibold text-white shadow-md transition-all hover:bg-blue-600 focus:ring-2 focus:ring-blue-300"
               disabled={isLoading}
             >
               {isLoading ? (

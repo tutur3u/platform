@@ -1,3 +1,5 @@
+import { MeetTogetherClient } from './client-wrapper';
+import Form from './form';
 import {
   createAdminClient,
   createClient,
@@ -6,16 +8,13 @@ import type { MeetTogetherPlan } from '@tuturuuu/types/primitives/MeetTogetherPl
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent } from '@tuturuuu/ui/card';
+import { GradientHeadline } from '@tuturuuu/ui/custom/gradient-headline';
 import { Separator } from '@tuturuuu/ui/separator';
-import Form from './form';
 import 'dayjs/locale/vi';
 import 'dayjs/plugin/relativeTime';
-import { GradientHeadline } from '@tuturuuu/ui/custom/gradient-headline';
 import { Calendar, UserIcon, Users, Video, Zap } from 'lucide-react';
-import Link from 'next/link';
 import { getLocale, getTranslations } from 'next-intl/server';
-
-import { MeetTogetherClient } from './client-wrapper';
+import Link from 'next/link';
 
 // Extended interface to include participants
 export interface MeetTogetherPlanWithParticipants extends MeetTogetherPlan {
@@ -60,9 +59,9 @@ export async function MeetTogetherPage({
   return (
     <div className="relative flex w-full flex-col items-center overflow-hidden">
       {/* Background decorative elements */}
-      <div className="-z-10 pointer-events-none absolute inset-0">
-        <div className="-left-32 absolute top-20 h-64 w-64 rounded-full bg-dynamic-blue/10 blur-3xl"></div>
-        <div className="-right-32 absolute top-32 h-64 w-64 rounded-full bg-dynamic-purple/10 blur-3xl"></div>
+      <div className="pointer-events-none absolute inset-0 -z-10">
+        <div className="absolute top-20 -left-32 h-64 w-64 rounded-full bg-dynamic-blue/10 blur-3xl"></div>
+        <div className="absolute top-32 -right-32 h-64 w-64 rounded-full bg-dynamic-purple/10 blur-3xl"></div>
         <div className="absolute bottom-1/3 left-1/4 h-40 w-40 rounded-full bg-dynamic-green/5 blur-2xl"></div>
       </div>
 
@@ -76,7 +75,7 @@ export async function MeetTogetherPage({
           </Badge>
 
           {/* Main heading */}
-          <h1 className="mb-6 text-balance text-center font-bold text-4xl text-foreground leading-tight tracking-tight md:text-5xl lg:text-6xl">
+          <h1 className="mb-6 text-center text-4xl leading-tight font-bold tracking-tight text-balance text-foreground md:text-5xl lg:text-6xl">
             {t('headline-p1')}{' '}
             <GradientHeadline className="bg-gradient-to-r from-dynamic-blue via-dynamic-purple to-dynamic-green bg-clip-text">
               {t('headline-p2')}
@@ -84,7 +83,7 @@ export async function MeetTogetherPage({
           </h1>
 
           {/* Subtitle */}
-          <p className="mb-8 max-w-2xl text-center text-foreground/70 text-lg leading-relaxed md:text-xl">
+          <p className="mb-8 max-w-2xl text-center text-lg leading-relaxed text-foreground/70 md:text-xl">
             {t('new_plan_desc')}
           </p>
 
@@ -95,10 +94,10 @@ export async function MeetTogetherPage({
                 <Calendar className="h-5 w-5 text-dynamic-blue" />
               </div>
               <div className="text-left">
-                <p className="font-medium text-foreground text-sm">
+                <p className="text-sm font-medium text-foreground">
                   {t('smart_scheduling')}
                 </p>
-                <p className="text-foreground/60 text-xs">
+                <p className="text-xs text-foreground/60">
                   {t('automatic_coordination')}
                 </p>
               </div>
@@ -109,10 +108,10 @@ export async function MeetTogetherPage({
                 <Users className="h-5 w-5 text-dynamic-purple" />
               </div>
               <div className="text-left">
-                <p className="font-medium text-foreground text-sm">
+                <p className="text-sm font-medium text-foreground">
                   {t('group_availability')}
                 </p>
-                <p className="text-foreground/60 text-xs">
+                <p className="text-xs text-foreground/60">
                   {t('find_perfect_time')}
                 </p>
               </div>
@@ -123,10 +122,10 @@ export async function MeetTogetherPage({
                 <Zap className="h-5 w-5 text-dynamic-green" />
               </div>
               <div className="text-left">
-                <p className="font-medium text-foreground text-sm">
+                <p className="text-sm font-medium text-foreground">
                   {t('instant_setup')}
                 </p>
-                <p className="text-foreground/60 text-xs">
+                <p className="text-xs text-foreground/60">
                   {t('minutes_to_create')}
                 </p>
               </div>
@@ -152,11 +151,11 @@ export async function MeetTogetherPage({
           <div className="mb-8 flex flex-col gap-4">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="space-y-2 text-center sm:text-left">
-                <h2 className="font-bold text-2xl text-foreground md:text-3xl">
+                <h2 className="text-2xl font-bold text-foreground md:text-3xl">
                   {t('your_plans')}
                 </h2>
                 {totalCount > 0 && (
-                  <p className="text-foreground/60 text-sm">
+                  <p className="text-sm text-foreground/60">
                     <span className="font-medium text-foreground">
                       {totalCount}
                     </span>{' '}
@@ -182,10 +181,10 @@ export async function MeetTogetherPage({
                 <div className="mb-8 rounded-full bg-dynamic-blue/10 p-8 shadow-sm">
                   <UserIcon className="h-8 w-8 text-dynamic-blue" />
                 </div>
-                <h3 className="mb-4 font-semibold text-foreground text-xl">
+                <h3 className="mb-4 text-xl font-semibold text-foreground">
                   {t('login_required')}
                 </h3>
-                <p className="mb-6 max-w-md text-center text-foreground/70 text-sm leading-relaxed">
+                <p className="mb-6 max-w-md text-center text-sm leading-relaxed text-foreground/70">
                   {t('login_required_desc')}
                 </p>
                 <div className="flex gap-4">

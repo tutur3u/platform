@@ -1,3 +1,5 @@
+import Chat from '../chat';
+import { getChats } from '../helper';
 import type { UIMessage } from '@tuturuuu/ai/types';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { AIChat } from '@tuturuuu/types/db';
@@ -6,8 +8,6 @@ import {
   verifyHasSecrets,
 } from '@tuturuuu/utils/workspace-helper';
 import { notFound } from 'next/navigation';
-import Chat from '../chat';
-import { getChats } from '../helper';
 
 interface Props {
   params: Promise<{

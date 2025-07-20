@@ -21,7 +21,7 @@ function QRDisplay({
   return (
     <div
       className={cn(
-        'rounded-lg border p-2 text-center font-bold text-2xl text-white uppercase',
+        'rounded-lg border p-2 text-center text-2xl font-bold text-white uppercase',
         style === 'brand' || style === 'scan-me' ? 'bg-black' : ''
       )}
     >

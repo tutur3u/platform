@@ -1,8 +1,8 @@
 'use client';
 
+import { Tabs, TabsList, TabsTrigger } from '../../tabs';
 import { Grid3x3, Rows3 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { Tabs, TabsList, TabsTrigger } from '../../tabs';
 
 interface ViewToggleProps {
   currentView: 'grid' | 'list';

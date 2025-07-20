@@ -1,5 +1,6 @@
 'use client';
 
+import { EditColumnDialog } from './edit-column-dialog';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -14,7 +15,6 @@ import { Input } from '@tuturuuu/ui/input';
 import { cn } from '@tuturuuu/utils/format';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { EditColumnDialog } from './edit-column-dialog';
 
 interface Column {
   id: string;

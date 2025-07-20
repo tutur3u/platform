@@ -3,7 +3,13 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
-import { convertToModelMessages, type ModelMessage, smoothStream, streamText, type UIMessage } from 'ai';
+import {
+  type ModelMessage,
+  type UIMessage,
+  convertToModelMessages,
+  smoothStream,
+  streamText,
+} from 'ai';
 import { NextResponse } from 'next/server';
 
 export const runtime = 'edge';

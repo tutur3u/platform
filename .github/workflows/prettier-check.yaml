@@ -48,11 +48,11 @@ jobs:
 
       - name: Check Prettier formatting
         id: check-format
-        run: bun format:check || echo "format_failed=true" >> $GITHUB_OUTPUT
+        run: bun format:check --ignore-path .prettierignore || echo "format_failed=true" >> $GITHUB_OUTPUT
 
       - name: Apply Prettier fixes
         if: steps.check-format.outputs.format_failed == 'true'
-        run: bun format
+        run: bun format --ignore-path .prettierignore
 
       - name: Check for changes
         if: steps.check-format.outputs.format_failed == 'true'
