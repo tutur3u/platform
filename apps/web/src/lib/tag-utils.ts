@@ -1,19 +1,20 @@
 // Tag color utilities for consistent styling across components
 
 // Dynamic color generation using HSL for better control and consistency
+// Optimized for dark mode with excellent contrast ratios
 const COLOR_PALETTE = [
-  { hue: 210, saturation: 70, lightness: 60 }, // Blue
-  { hue: 120, saturation: 70, lightness: 60 }, // Green
-  { hue: 270, saturation: 70, lightness: 60 }, // Purple
-  { hue: 30, saturation: 70, lightness: 60 }, // Orange
-  { hue: 330, saturation: 70, lightness: 60 }, // Pink
-  { hue: 180, saturation: 70, lightness: 60 }, // Cyan
-  { hue: 60, saturation: 70, lightness: 60 }, // Yellow
-  { hue: 0, saturation: 70, lightness: 60 }, // Red
-  { hue: 150, saturation: 70, lightness: 60 }, // Teal
-  { hue: 300, saturation: 70, lightness: 60 }, // Magenta
-  { hue: 90, saturation: 70, lightness: 60 }, // Lime
-  { hue: 240, saturation: 70, lightness: 60 }, // Indigo
+  { hue: 210, saturation: 80, lightness: 50 }, // Blue
+  { hue: 120, saturation: 80, lightness: 50 }, // Green
+  { hue: 270, saturation: 80, lightness: 50 }, // Purple
+  { hue: 30, saturation: 80, lightness: 50 }, // Orange
+  { hue: 330, saturation: 80, lightness: 50 }, // Pink
+  { hue: 180, saturation: 80, lightness: 50 }, // Cyan
+  { hue: 60, saturation: 80, lightness: 50 }, // Yellow
+  { hue: 0, saturation: 80, lightness: 50 }, // Red
+  { hue: 150, saturation: 80, lightness: 50 }, // Teal
+  { hue: 300, saturation: 80, lightness: 50 }, // Magenta
+  { hue: 90, saturation: 80, lightness: 50 }, // Lime
+  { hue: 240, saturation: 80, lightness: 50 }, // Indigo
 ] as const;
 
 export const DEFAULT_TAG_COLOR =
@@ -50,38 +51,27 @@ function generateTagHSL(tag: string) {
   }
 
   // Add some variation based on the hash to create more unique colors
-  const hueVariation = (hash % 30) - 15; // ±15 degrees
-  const saturationVariation = (hash % 20) - 10; // ±10%
-  const lightnessVariation = (hash % 16) - 8; // ±8%
+  // Reduced variation for more consistent and readable colors
+  const hueVariation = (hash % 20) - 10; // ±10 degrees (reduced from ±15)
+  const saturationVariation = (hash % 15) - 7; // ±7% (reduced from ±10%)
+  const lightnessVariation = (hash % 12) - 6; // ±6% (reduced from ±8%)
 
   return {
     hue: (baseColor.hue + hueVariation + 360) % 360,
     saturation: Math.max(
-      50,
-      Math.min(90, baseColor.saturation + saturationVariation)
+      60,
+      Math.min(85, baseColor.saturation + saturationVariation)
     ),
     lightness: Math.max(
-      45,
-      Math.min(75, baseColor.lightness + lightnessVariation)
+      50,
+      Math.min(70, baseColor.lightness + lightnessVariation)
     ),
   };
 }
 
 /**
- * Convert HSL to CSS color string
- * @param hsl - HSL color object
- * @returns CSS color string
- */
-function hslToCSS(hsl: {
-  hue: number;
-  saturation: number;
-  lightness: number;
-}): string {
-  return `hsl(${hsl.hue}, ${hsl.saturation}%, ${hsl.lightness}%)`;
-}
-
-/**
  * Generate a consistent color for a tag based on its text
+ * Optimized for both light and dark modes with excellent contrast
  * @param tag - The tag string
  * @returns CSS variables object for the tag color styling
  */
@@ -92,25 +82,31 @@ export function getTagColor(tag: string): {
 } {
   if (!tag || typeof tag !== 'string') {
     return {
-      '--tag-bg-color': 'rgb(107 114 128 / 0.2)',
+      '--tag-bg-color': 'rgb(75 85 99 / 0.2)',
       '--tag-text-color': 'rgb(209 213 219)',
-      '--tag-border-color': 'rgb(107 114 128 / 0.3)',
+      '--tag-border-color': 'rgb(75 85 99 / 0.4)',
     };
   }
 
   const hsl = generateTagHSL(tag);
 
-  // Generate darker version for text
-  const textHSL = { ...hsl, lightness: Math.max(20, hsl.lightness - 30) };
-  const textColor = hslToCSS(textHSL);
+  // Dark mode optimized color generation
+  // Background: Dark but visible (15-25% lightness)
+  const bgLightness = Math.max(12, Math.min(25, hsl.lightness - 40));
+  const bgSaturation = Math.max(40, Math.min(80, hsl.saturation - 10));
 
-  // Generate border color (slightly darker than background)
-  const borderHSL = { ...hsl, lightness: Math.max(15, hsl.lightness - 15) };
+  // Text: Bright and highly visible (85-95% lightness)
+  const textLightness = Math.max(80, Math.min(95, hsl.lightness + 30));
+  const textSaturation = Math.max(60, Math.min(90, hsl.saturation + 15));
+
+  // Border: Medium brightness for definition (30-50% lightness)
+  const borderLightness = Math.max(25, Math.min(50, hsl.lightness - 25));
+  const borderSaturation = Math.max(50, Math.min(85, hsl.saturation));
 
   return {
-    '--tag-bg-color': `hsl(${hsl.hue} ${hsl.saturation}% ${hsl.lightness}% / 0.2)`,
-    '--tag-text-color': textColor,
-    '--tag-border-color': `hsl(${borderHSL.hue} ${borderHSL.saturation}% ${borderHSL.lightness}% / 0.3)`,
+    '--tag-bg-color': `hsl(${hsl.hue} ${bgSaturation}% ${bgLightness}% / 0.9)`,
+    '--tag-text-color': `hsl(${hsl.hue} ${textSaturation}% ${textLightness}%)`,
+    '--tag-border-color': `hsl(${hsl.hue} ${borderSaturation}% ${borderLightness}% / 0.6)`,
   };
 }
 
@@ -140,23 +136,24 @@ export function getTagColorStyling(tag: string): {
 
 /**
  * Get a list of available tag colors
+ * Optimized for dark mode with better contrast
  * @returns Array of tag color classes
  */
 export function getAvailableTagColors(): readonly string[] {
-  // Use predefined Tailwind classes instead of dynamic arbitrary values
-  // to ensure proper JIT compilation
+  // Use predefined Tailwind classes optimized for dark mode
+  // These provide better contrast ratios in dark themes
   return [
-    'bg-blue-500/20 text-blue-700 border-blue-500/30',
-    'bg-green-500/20 text-green-700 border-green-500/30',
-    'bg-purple-500/20 text-purple-700 border-purple-500/30',
-    'bg-orange-500/20 text-orange-700 border-orange-500/30',
-    'bg-pink-500/20 text-pink-700 border-pink-500/30',
-    'bg-cyan-500/20 text-cyan-700 border-cyan-500/30',
-    'bg-yellow-500/20 text-yellow-700 border-yellow-500/30',
-    'bg-red-500/20 text-red-700 border-red-500/30',
-    'bg-teal-500/20 text-teal-700 border-teal-500/30',
-    'bg-fuchsia-500/20 text-fuchsia-700 border-fuchsia-500/30',
-    'bg-lime-500/20 text-lime-700 border-lime-500/30',
-    'bg-indigo-500/20 text-indigo-700 border-indigo-500/30',
+    'bg-blue-600/20 text-blue-300 border-blue-600/40',
+    'bg-green-600/20 text-green-300 border-green-600/40',
+    'bg-purple-600/20 text-purple-300 border-purple-600/40',
+    'bg-orange-600/20 text-orange-300 border-orange-600/40',
+    'bg-pink-600/20 text-pink-300 border-pink-600/40',
+    'bg-cyan-600/20 text-cyan-300 border-cyan-600/40',
+    'bg-yellow-600/20 text-yellow-300 border-yellow-600/40',
+    'bg-red-600/20 text-red-300 border-red-600/40',
+    'bg-teal-600/20 text-teal-300 border-teal-600/40',
+    'bg-fuchsia-600/20 text-fuchsia-300 border-fuchsia-600/40',
+    'bg-lime-600/20 text-lime-300 border-lime-600/40',
+    'bg-indigo-600/20 text-indigo-300 border-indigo-600/40',
   ] as const;
 }

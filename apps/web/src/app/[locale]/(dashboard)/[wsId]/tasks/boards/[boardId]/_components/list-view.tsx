@@ -63,6 +63,12 @@ import {
   TableHeader,
   TableRow,
 } from '@tuturuuu/ui/table';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
 import {
   addDays,
@@ -727,6 +733,8 @@ export function ListView({
       return <span className="text-muted-foreground text-sm">—</span>;
     }
 
+    const needsScroll = tags.length >= 10;
+
     return (
       <div className="flex flex-wrap gap-1">
         {tags.slice(0, MAX_VISIBLE_TAGS).map((tag) => {
@@ -737,21 +745,64 @@ export function ListView({
               variant="outline"
               className={cn(
                 'h-5 rounded-full border px-1.5 font-medium text-xs',
+                'max-w-[100px] truncate transition-all duration-200',
+                'hover:scale-105 hover:brightness-110',
                 tagClassName
               )}
               style={style}
+              title={tag.length > 12 ? tag : undefined}
             >
               {tag}
             </Badge>
           );
         })}
         {tags.length > MAX_VISIBLE_TAGS && (
-          <Badge
-            variant="outline"
-            className="h-5 rounded-full border px-1.5 font-medium text-xs"
-          >
-            +{tags.length - MAX_VISIBLE_TAGS}
-          </Badge>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Badge
+                variant="outline"
+                className="h-5 cursor-help rounded-full border px-1.5 font-medium text-xs transition-all duration-200 hover:scale-105 hover:bg-muted/50"
+              >
+                +{tags.length - MAX_VISIBLE_TAGS}
+              </Badge>
+            </TooltipTrigger>
+            <TooltipContent
+              side="top"
+              className={cn('max-w-sm p-0', needsScroll && 'max-h-64')}
+              sideOffset={8}
+            >
+              <div className="space-y-3 p-4">
+                <p className="font-medium text-foreground text-sm">All tags:</p>
+                <div
+                  className={cn(
+                    'flex flex-wrap gap-1.5',
+                    needsScroll && 'max-h-48 overflow-y-auto pr-2'
+                  )}
+                >
+                  {tags.map((tag) => {
+                    const { style, className: tagClassName } =
+                      getTagColorStyling(tag);
+                    return (
+                      <Badge
+                        key={tag}
+                        variant="outline"
+                        className={cn(
+                          'h-auto rounded-full border px-2 py-0.5 font-medium text-xs',
+                          'max-w-[140px] truncate transition-all duration-200',
+                          'hover:scale-105 hover:brightness-110',
+                          tagClassName
+                        )}
+                        style={style}
+                        title={tag.length > 18 ? tag : undefined}
+                      >
+                        {tag}
+                      </Badge>
+                    );
+                  })}
+                </div>
+              </div>
+            </TooltipContent>
+          </Tooltip>
         )}
       </div>
     );
@@ -1351,256 +1402,265 @@ export function ListView({
         </div>
       ) : (
         <div className="relative flex-1 overflow-auto rounded-lg border bg-card">
-          <Table>
-            <TableHeader className="sticky top-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-              <TableRow className="border-b">
-                <TableHead className="w-[40px] text-center">
-                  <Checkbox
-                    checked={
-                      selectedTasks.size === paginatedTasks.length &&
-                      paginatedTasks.length > 0
-                    }
-                    onCheckedChange={(checked) => handleSelectAll(!!checked)}
-                    aria-label="Select all tasks"
-                  />
-                </TableHead>
-                {columnVisibility.status && (
-                  <TableHead className="w-[50px] text-center">
-                    <div className="flex items-center justify-center gap-1">
-                      <span className="font-medium text-muted-foreground text-xs">
-                        Status
-                      </span>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-4 w-4 p-0 hover:bg-muted"
-                          >
-                            <HelpCircle className="h-3 w-3" />
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-80">
-                          <div className="space-y-2">
-                            <h4 className="font-medium">Task Completion</h4>
-                            <p className="text-muted-foreground text-sm">
-                              Tasks can be completed in two ways:
-                            </p>
-                            <ul className="space-y-1 text-muted-foreground text-sm">
-                              <li>
-                                • <strong>Individual checkbox:</strong> Mark
-                                task as done
-                              </li>
-                              <li>
-                                • <strong>Move to Done list:</strong>{' '}
-                                Automatically marks task as done
-                              </li>
-                            </ul>
-                            <p className="text-muted-foreground text-xs">
-                              The amber dot indicates a task in a "Done" list
-                              that hasn't been individually checked.
-                            </p>
-                          </div>
-                        </PopoverContent>
-                      </Popover>
-                    </div>
-                  </TableHead>
-                )}
-                {columnVisibility.name && (
-                  <TableHead className="min-w-[200px]">
-                    <Button
-                      variant="ghost"
-                      className={cn(
-                        '-ml-4 h-8 justify-start hover:bg-transparent',
-                        sortField === 'name' && 'text-foreground'
-                      )}
-                      onClick={() => handleSort('name')}
-                    >
-                      <span className="font-medium">Task</span>
-                      {getSortIcon('name')}
-                    </Button>
-                  </TableHead>
-                )}
-                {columnVisibility.priority && (
-                  <TableHead className="w-[120px]">
-                    <Button
-                      variant="ghost"
-                      className={cn(
-                        '-ml-4 h-8 justify-start hover:bg-transparent',
-                        sortField === 'priority' && 'text-foreground'
-                      )}
-                      onClick={() => handleSort('priority')}
-                    >
-                      <span className="font-medium">Priority</span>
-                      {getSortIcon('priority')}
-                    </Button>
-                  </TableHead>
-                )}
-                {columnVisibility.start_date && (
-                  <TableHead className="w-[140px]">
-                    <Button
-                      variant="ghost"
-                      className={cn(
-                        '-ml-4 h-8 justify-start hover:bg-transparent',
-                        sortField === 'start_date' && 'text-foreground'
-                      )}
-                      onClick={() => handleSort('start_date')}
-                    >
-                      <span className="font-medium">Start Date</span>
-                      {getSortIcon('start_date')}
-                    </Button>
-                  </TableHead>
-                )}
-                {columnVisibility.end_date && (
-                  <TableHead className="w-[140px]">
-                    <Button
-                      variant="ghost"
-                      className={cn(
-                        '-ml-4 h-8 justify-start hover:bg-transparent',
-                        sortField === 'end_date' && 'text-foreground'
-                      )}
-                      onClick={() => handleSort('end_date')}
-                    >
-                      <span className="font-medium">Due Date</span>
-                      {getSortIcon('end_date')}
-                    </Button>
-                  </TableHead>
-                )}
-                {columnVisibility.assignees && (
-                  <TableHead className="w-[100px]">
-                    <Button
-                      variant="ghost"
-                      className={cn(
-                        '-ml-4 h-8 justify-start hover:bg-transparent',
-                        sortField === 'assignees' && 'text-foreground'
-                      )}
-                      onClick={() => handleSort('assignees')}
-                    >
-                      <span className="font-medium">Team</span>
-                      {getSortIcon('assignees')}
-                    </Button>
-                  </TableHead>
-                )}
-                {columnVisibility.tags && (
-                  <TableHead className="w-[100px]">
-                    <Button
-                      variant="ghost"
-                      className={cn(
-                        '-ml-4 h-8 justify-start hover:bg-transparent',
-                        sortField === 'tags' && 'text-foreground'
-                      )}
-                      onClick={() => handleSort('tags')}
-                    >
-                      <Tag className="h-4 w-4" />
-                      <span className="font-medium">Tags</span>
-                      {getSortIcon('tags')}
-                    </Button>
-                  </TableHead>
-                )}
-                {columnVisibility.actions && <TableHead className="w-[50px]" />}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {paginatedTasks.map((task) => (
-                <TableRow
-                  key={task.id}
-                  className={cn(
-                    'group transition-colors hover:bg-muted/50',
-                    task.archived && 'opacity-75',
-                    selectedTasks.has(task.id) && 'bg-muted/50'
-                  )}
-                >
-                  <TableCell className="text-center">
+          <TooltipProvider>
+            <Table>
+              <TableHeader className="sticky top-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+                <TableRow className="border-b">
+                  <TableHead className="w-[40px] text-center">
                     <Checkbox
-                      checked={selectedTasks.has(task.id)}
-                      onCheckedChange={(checked) =>
-                        handleSelectTask(task.id, !!checked)
+                      checked={
+                        selectedTasks.size === paginatedTasks.length &&
+                        paginatedTasks.length > 0
                       }
-                      aria-label={`Select task ${task.name}`}
+                      onCheckedChange={(checked) => handleSelectAll(!!checked)}
+                      aria-label="Select all tasks"
                     />
-                  </TableCell>
+                  </TableHead>
                   {columnVisibility.status && (
-                    <TableCell className="text-center">
-                      {renderTaskStatus(task)}
-                    </TableCell>
+                    <TableHead className="w-[50px] text-center">
+                      <div className="flex items-center justify-center gap-1">
+                        <span className="font-medium text-muted-foreground text-xs">
+                          Status
+                        </span>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-4 w-4 p-0 hover:bg-muted"
+                            >
+                              <HelpCircle className="h-3 w-3" />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-80">
+                            <div className="space-y-2">
+                              <h4 className="font-medium">Task Completion</h4>
+                              <p className="text-muted-foreground text-sm">
+                                Tasks can be completed in two ways:
+                              </p>
+                              <ul className="space-y-1 text-muted-foreground text-sm">
+                                <li>
+                                  • <strong>Individual checkbox:</strong> Mark
+                                  task as done
+                                </li>
+                                <li>
+                                  • <strong>Move to Done list:</strong>{' '}
+                                  Automatically marks task as done
+                                </li>
+                              </ul>
+                              <p className="text-muted-foreground text-xs">
+                                The amber dot indicates a task in a "Done" list
+                                that hasn't been individually checked.
+                              </p>
+                            </div>
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+                    </TableHead>
                   )}
                   {columnVisibility.name && (
-                    <TableCell className="py-4">
-                      <div className="space-y-1">
-                        <div
-                          className={cn('font-medium leading-none', {
-                            'text-muted-foreground line-through': task.archived,
-                          })}
-                        >
-                          {task.name}
-                        </div>
-                        {task.description && (
-                          <p className="line-clamp-2 text-muted-foreground text-sm leading-relaxed">
-                            {task.description}
-                          </p>
+                    <TableHead className="min-w-[200px]">
+                      <Button
+                        variant="ghost"
+                        className={cn(
+                          '-ml-4 h-8 justify-start hover:bg-transparent',
+                          sortField === 'name' && 'text-foreground'
                         )}
-                      </div>
-                    </TableCell>
+                        onClick={() => handleSort('name')}
+                      >
+                        <span className="font-medium">Task</span>
+                        {getSortIcon('name')}
+                      </Button>
+                    </TableHead>
                   )}
                   {columnVisibility.priority && (
-                    <TableCell>{renderPriority(task.priority ?? 0)}</TableCell>
+                    <TableHead className="w-[120px]">
+                      <Button
+                        variant="ghost"
+                        className={cn(
+                          '-ml-4 h-8 justify-start hover:bg-transparent',
+                          sortField === 'priority' && 'text-foreground'
+                        )}
+                        onClick={() => handleSort('priority')}
+                      >
+                        <span className="font-medium">Priority</span>
+                        {getSortIcon('priority')}
+                      </Button>
+                    </TableHead>
                   )}
                   {columnVisibility.start_date && (
-                    <TableCell>
-                      {task.start_date ? renderDateCell(task.start_date) : null}
-                    </TableCell>
+                    <TableHead className="w-[140px]">
+                      <Button
+                        variant="ghost"
+                        className={cn(
+                          '-ml-4 h-8 justify-start hover:bg-transparent',
+                          sortField === 'start_date' && 'text-foreground'
+                        )}
+                        onClick={() => handleSort('start_date')}
+                      >
+                        <span className="font-medium">Start Date</span>
+                        {getSortIcon('start_date')}
+                      </Button>
+                    </TableHead>
                   )}
                   {columnVisibility.end_date && (
-                    <TableCell>
-                      {task.end_date
-                        ? renderDateCell(task.end_date, true)
-                        : null}
-                    </TableCell>
+                    <TableHead className="w-[140px]">
+                      <Button
+                        variant="ghost"
+                        className={cn(
+                          '-ml-4 h-8 justify-start hover:bg-transparent',
+                          sortField === 'end_date' && 'text-foreground'
+                        )}
+                        onClick={() => handleSort('end_date')}
+                      >
+                        <span className="font-medium">Due Date</span>
+                        {getSortIcon('end_date')}
+                      </Button>
+                    </TableHead>
                   )}
                   {columnVisibility.assignees && (
-                    <TableCell>
-                      {task.assignees && task.assignees.length > 0 && (
-                        <div className="flex items-center gap-1.5">
-                          <Users className="h-3.5 w-3.5 text-muted-foreground" />
-                          <span className="font-medium text-sm">
-                            {task.assignees.length}
-                          </span>
-                        </div>
-                      )}
-                    </TableCell>
+                    <TableHead className="w-[100px]">
+                      <Button
+                        variant="ghost"
+                        className={cn(
+                          '-ml-4 h-8 justify-start hover:bg-transparent',
+                          sortField === 'assignees' && 'text-foreground'
+                        )}
+                        onClick={() => handleSort('assignees')}
+                      >
+                        <span className="font-medium">Team</span>
+                        {getSortIcon('assignees')}
+                      </Button>
+                    </TableHead>
                   )}
                   {columnVisibility.tags && (
-                    <TableCell>{renderTags(task.tags || null)}</TableCell>
+                    <TableHead className="w-[100px]">
+                      <Button
+                        variant="ghost"
+                        className={cn(
+                          '-ml-4 h-8 justify-start hover:bg-transparent',
+                          sortField === 'tags' && 'text-foreground'
+                        )}
+                        onClick={() => handleSort('tags')}
+                      >
+                        <Tag className="h-4 w-4" />
+                        <span className="font-medium">Tags</span>
+                        {getSortIcon('tags')}
+                      </Button>
+                    </TableHead>
                   )}
                   {columnVisibility.actions && (
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 opacity-0 transition-opacity group-hover:opacity-100"
-                          >
-                            <MoreHorizontal className="h-4 w-4" />
-                            <span className="sr-only">
-                              Open task menu for {task.name}
-                            </span>
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem
-                            onClick={() => setSelectedTaskId(task.id)}
-                          >
-                            Edit task
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
+                    <TableHead className="w-[50px]" />
                   )}
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {paginatedTasks.map((task) => (
+                  <TableRow
+                    key={task.id}
+                    className={cn(
+                      'group transition-colors hover:bg-muted/50',
+                      task.archived && 'opacity-75',
+                      selectedTasks.has(task.id) && 'bg-muted/50'
+                    )}
+                  >
+                    <TableCell className="text-center">
+                      <Checkbox
+                        checked={selectedTasks.has(task.id)}
+                        onCheckedChange={(checked) =>
+                          handleSelectTask(task.id, !!checked)
+                        }
+                        aria-label={`Select task ${task.name}`}
+                      />
+                    </TableCell>
+                    {columnVisibility.status && (
+                      <TableCell className="text-center">
+                        {renderTaskStatus(task)}
+                      </TableCell>
+                    )}
+                    {columnVisibility.name && (
+                      <TableCell className="py-4">
+                        <div className="space-y-1">
+                          <div
+                            className={cn('font-medium leading-none', {
+                              'text-muted-foreground line-through':
+                                task.archived,
+                            })}
+                          >
+                            {task.name}
+                          </div>
+                          {task.description && (
+                            <p className="line-clamp-2 text-muted-foreground text-sm leading-relaxed">
+                              {task.description}
+                            </p>
+                          )}
+                        </div>
+                      </TableCell>
+                    )}
+                    {columnVisibility.priority && (
+                      <TableCell>
+                        {renderPriority(task.priority ?? 0)}
+                      </TableCell>
+                    )}
+                    {columnVisibility.start_date && (
+                      <TableCell>
+                        {task.start_date
+                          ? renderDateCell(task.start_date)
+                          : null}
+                      </TableCell>
+                    )}
+                    {columnVisibility.end_date && (
+                      <TableCell>
+                        {task.end_date
+                          ? renderDateCell(task.end_date, true)
+                          : null}
+                      </TableCell>
+                    )}
+                    {columnVisibility.assignees && (
+                      <TableCell>
+                        {task.assignees && task.assignees.length > 0 && (
+                          <div className="flex items-center gap-1.5">
+                            <Users className="h-3.5 w-3.5 text-muted-foreground" />
+                            <span className="font-medium text-sm">
+                              {task.assignees.length}
+                            </span>
+                          </div>
+                        )}
+                      </TableCell>
+                    )}
+                    {columnVisibility.tags && (
+                      <TableCell>{renderTags(task.tags || null)}</TableCell>
+                    )}
+                    {columnVisibility.actions && (
+                      <TableCell>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 opacity-0 transition-opacity group-hover:opacity-100"
+                            >
+                              <MoreHorizontal className="h-4 w-4" />
+                              <span className="sr-only">
+                                Open task menu for {task.name}
+                              </span>
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem
+                              onClick={() => setSelectedTaskId(task.id)}
+                            >
+                              Edit task
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    )}
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TooltipProvider>
         </div>
       )}
 

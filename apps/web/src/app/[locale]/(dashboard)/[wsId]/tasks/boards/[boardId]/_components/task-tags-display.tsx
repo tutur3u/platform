@@ -30,6 +30,7 @@ export function TaskTagsDisplay({
   const displayTags = tags.slice(0, maxDisplay);
   const remainingCount = tags.length - maxDisplay;
   const hasHiddenTags = remainingCount > 0;
+  const needsScroll = tags.length >= 10;
 
   return (
     <TooltipProvider>
@@ -43,11 +44,13 @@ export function TaskTagsDisplay({
               className={cn(
                 'h-auto rounded-full border px-2 py-0.5 font-medium text-xs',
                 'transition-all duration-200 hover:scale-105',
+                'max-w-[120px] truncate',
                 tagClassName,
                 clickable && 'cursor-pointer hover:brightness-110'
               )}
               style={style}
               onClick={() => clickable && onTagClick?.(tag)}
+              title={tag.length > 15 ? `#${tag}` : undefined}
             >
               #{tag}
             </Badge>
@@ -58,15 +61,24 @@ export function TaskTagsDisplay({
             <TooltipTrigger asChild>
               <Badge
                 variant="outline"
-                className="h-auto cursor-help rounded-full border px-2 py-0.5 font-medium text-muted-foreground text-xs hover:bg-muted/50"
+                className="h-auto cursor-help rounded-full border px-2 py-0.5 font-medium text-muted-foreground text-xs transition-all duration-200 hover:scale-105 hover:bg-muted/50"
               >
                 +{remainingCount}
               </Badge>
             </TooltipTrigger>
-            <TooltipContent side="top" className="max-w-xs">
-              <div className="space-y-2">
-                <p className="font-medium text-xs">All tags:</p>
-                <div className="flex flex-wrap gap-1">
+            <TooltipContent
+              side="top"
+              className={cn('max-w-sm p-0', needsScroll && 'max-h-64')}
+              sideOffset={8}
+            >
+              <div className="space-y-3 p-4">
+                <p className="font-medium text-foreground text-sm">All tags:</p>
+                <div
+                  className={cn(
+                    'flex flex-wrap gap-1.5',
+                    needsScroll && 'max-h-48 overflow-y-auto pr-2'
+                  )}
+                >
                   {tags.map((tag) => {
                     const { style, className: tagClassName } =
                       getTagColorStyling(tag);
@@ -76,9 +88,12 @@ export function TaskTagsDisplay({
                         variant="outline"
                         className={cn(
                           'h-auto rounded-full border px-2 py-0.5 font-medium text-xs',
+                          'max-w-[140px] truncate transition-all duration-200',
+                          'hover:scale-105 hover:brightness-110',
                           tagClassName
                         )}
                         style={style}
+                        title={tag.length > 18 ? `#${tag}` : undefined}
                       >
                         #{tag}
                       </Badge>
