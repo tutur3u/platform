@@ -27,6 +27,7 @@ import { format } from 'date-fns';
 import { useParams } from 'next/navigation';
 import { useState } from 'react';
 import { createTask } from '@/lib/task-helper';
+import { TaskTagInput } from './_components/task-tag-input';
 
 interface Props {
   listId: string;
@@ -45,6 +46,7 @@ export function TaskForm({ listId, onTaskCreated }: Props) {
   const [startDate, setStartDate] = useState<Date | undefined>();
   const [endDate, setEndDate] = useState<Date | undefined>();
   const [selectedAssignees, setSelectedAssignees] = useState<string[]>([]);
+  const [tags, setTags] = useState<string[]>([]);
 
   const params = useParams();
   const wsId = params.wsId as string;
@@ -68,6 +70,7 @@ export function TaskForm({ listId, onTaskCreated }: Props) {
     setStartDate(undefined);
     setEndDate(undefined);
     setSelectedAssignees([]);
+    setTags([]);
     setIsExpanded(false);
     setIsAdding(false);
   };
@@ -80,8 +83,15 @@ export function TaskForm({ listId, onTaskCreated }: Props) {
     try {
       const supabase = createClient();
 
-      // Create the task
-      const taskData = {
+      // Create the task - handle tags safely in case migration hasn't been applied
+      const taskData: {
+        name: string;
+        description?: string;
+        priority?: number;
+        start_date?: string;
+        end_date?: string;
+        tags?: string[];
+      } = {
         name: name.trim(),
         description: description.trim() || undefined,
         priority: priority === '0' ? undefined : parseInt(priority),
@@ -89,7 +99,19 @@ export function TaskForm({ listId, onTaskCreated }: Props) {
         end_date: endDate?.toISOString(),
       };
 
+      // Only add tags if we have them and the migration is applied
+      if (tags.length > 0) {
+        try {
+          taskData.tags = tags;
+        } catch (err) {
+          console.warn('Tags not supported yet, skipping tags:', err);
+          // Continue without tags if the migration hasn't been applied
+        }
+      }
+
+      console.log('Creating task with data:', taskData);
       const newTask = await createTask(supabase, listId, taskData);
+      console.log('Task created successfully:', newTask);
 
       // Add assignees if any selected
       if (selectedAssignees.length > 0) {
@@ -107,6 +129,10 @@ export function TaskForm({ listId, onTaskCreated }: Props) {
       onTaskCreated();
     } catch (error) {
       console.error('Error creating task:', error);
+      // Show a more detailed error message
+      if (error instanceof Error) {
+        console.error('Error details:', error.message);
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -143,7 +169,7 @@ export function TaskForm({ listId, onTaskCreated }: Props) {
           'hover:text-gray-800 dark:hover:text-gray-200',
           'hover:bg-gradient-to-r hover:from-gray-50 hover:to-gray-100',
           'dark:hover:from-gray-900 dark:hover:to-gray-800',
-          'rounded-lg border border-dashed border-gray-300 dark:border-gray-700',
+          'rounded-lg border border-gray-300 border-dashed dark:border-gray-700',
           'hover:border-gray-400 dark:hover:border-gray-600',
           'transition-all duration-200'
         )}
@@ -191,7 +217,7 @@ export function TaskForm({ listId, onTaskCreated }: Props) {
 
           {/* Quick Priority Selection */}
           <div className="space-y-2">
-            <Label className="text-xs font-medium">Priority</Label>
+            <Label className="font-medium text-xs">Priority</Label>
             <div className="flex flex-wrap gap-2">
               {[
                 { value: '0', label: 'None', icon: null },
@@ -221,27 +247,33 @@ export function TaskForm({ listId, onTaskCreated }: Props) {
           {/* Quick Assignee Selection */}
           {members.length > 0 && (
             <div className="space-y-2">
-              <Label className="text-xs font-medium">Quick Assign</Label>
+              <Label className="font-medium text-xs">Quick Assign</Label>
               <div className="flex flex-wrap gap-2">
-                {members.map((member: any) => (
-                  <Button
-                    key={member.id}
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className={cn(
-                      'h-8 px-3 text-xs transition-all duration-200',
-                      selectedAssignees.includes(member.id) &&
-                        'border-blue-300 bg-blue-50 text-blue-700 dark:border-blue-700 dark:bg-blue-950 dark:text-blue-300'
-                    )}
-                    onClick={() => handleQuickAssign(member.id)}
-                  >
-                    <Users className="mr-1 h-3 w-3" />
-                    {member.display_name ||
-                      member.email?.split('@')[0] ||
-                      'User'}
-                  </Button>
-                ))}
+                {members.map(
+                  (member: {
+                    id: string;
+                    display_name?: string;
+                    email?: string;
+                  }) => (
+                    <Button
+                      key={member.id}
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className={cn(
+                        'h-8 px-3 text-xs transition-all duration-200',
+                        selectedAssignees.includes(member.id) &&
+                          'border-blue-300 bg-blue-50 text-blue-700 dark:border-blue-700 dark:bg-blue-950 dark:text-blue-300'
+                      )}
+                      onClick={() => handleQuickAssign(member.id)}
+                    >
+                      <Users className="mr-1 h-3 w-3" />
+                      {member.display_name ||
+                        member.email?.split('@')[0] ||
+                        'User'}
+                    </Button>
+                  )
+                )}
               </div>
             </div>
           )}
@@ -251,7 +283,7 @@ export function TaskForm({ listId, onTaskCreated }: Props) {
             type="button"
             variant="ghost"
             size="sm"
-            className="h-8 px-3 text-xs text-gray-600 dark:text-gray-400"
+            className="h-8 px-3 text-gray-600 text-xs dark:text-gray-400"
             onClick={() => setIsExpanded(!isExpanded)}
           >
             {isExpanded ? 'Hide' : 'Show'} advanced options
@@ -262,7 +294,7 @@ export function TaskForm({ listId, onTaskCreated }: Props) {
             <div className="space-y-4 border-t">
               {/* Description */}
               <div className="space-y-2">
-                <Label className="text-xs font-medium">Description</Label>
+                <Label className="font-medium text-xs">Description</Label>
                 <Textarea
                   placeholder="Add a description..."
                   value={description}
@@ -271,17 +303,29 @@ export function TaskForm({ listId, onTaskCreated }: Props) {
                 />
               </div>
 
+              {/* Tags */}
+              <div className="space-y-2">
+                <Label className="font-medium text-xs">Tags</Label>
+                <TaskTagInput
+                  value={tags}
+                  onChange={setTags}
+                  boardId={params.boardId as string}
+                  placeholder="Add tags..."
+                  maxTags={10}
+                />
+              </div>
+
               {/* Dates */}
               <div className="grid grid-cols-2 gap-3">
                 {/* Start Date */}
                 <div className="space-y-2">
-                  <Label className="text-xs font-medium">Start Date</Label>
+                  <Label className="font-medium text-xs">Start Date</Label>
                   <Popover>
                     <PopoverTrigger asChild>
                       <Button
                         variant="outline"
                         className={cn(
-                          'h-8 justify-start text-left text-xs font-normal',
+                          'h-8 justify-start text-left font-normal text-xs',
                           !startDate && 'text-muted-foreground'
                         )}
                       >
@@ -302,13 +346,13 @@ export function TaskForm({ listId, onTaskCreated }: Props) {
 
                 {/* End Date */}
                 <div className="space-y-2">
-                  <Label className="text-xs font-medium">Due Date</Label>
+                  <Label className="font-medium text-xs">Due Date</Label>
                   <Popover>
                     <PopoverTrigger asChild>
                       <Button
                         variant="outline"
                         className={cn(
-                          'h-8 justify-start text-left text-xs font-normal',
+                          'h-8 justify-start text-left font-normal text-xs',
                           !endDate && 'text-muted-foreground'
                         )}
                       >

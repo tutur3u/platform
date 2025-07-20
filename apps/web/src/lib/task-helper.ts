@@ -758,3 +758,154 @@ export function useUpdateTaskListStatus(boardId: string) {
     },
   });
 }
+
+// Tag-related helper functions
+export async function getBoardTaskTags(
+  supabase: SupabaseClient,
+  boardId: string
+) {
+  try {
+    const { data, error } = await (
+      supabase as SupabaseClient & {
+        rpc: (
+          functionName: string,
+          params: Record<string, unknown>
+        ) => Promise<{
+          data: unknown;
+          error: { message: string } | null;
+        }>;
+      }
+    ).rpc('get_board_task_tags', {
+      board_id: boardId,
+    });
+
+    if (error) {
+      // If the RPC function doesn't exist (migration not applied), return empty array
+      if (
+        error.message.includes('function "get_board_task_tags" does not exist')
+      ) {
+        console.warn(
+          'Tags migration not applied yet, returning empty tags array'
+        );
+        return [];
+      }
+      throw error;
+    }
+    return data || [];
+  } catch (err) {
+    console.warn('Error getting board task tags:', err);
+    return [];
+  }
+}
+
+export async function searchTasksByTags(
+  supabase: SupabaseClient,
+  searchTags: string[]
+) {
+  try {
+    const { data, error } = await (
+      supabase as SupabaseClient & {
+        rpc: (
+          functionName: string,
+          params: Record<string, unknown>
+        ) => Promise<{
+          data: unknown;
+          error: { message: string } | null;
+        }>;
+      }
+    ).rpc('search_tasks_by_tags', {
+      search_tags: searchTags,
+    });
+
+    if (error) {
+      // If the RPC function doesn't exist (migration not applied), return empty array
+      if (
+        error.message.includes('function "search_tasks_by_tags" does not exist')
+      ) {
+        console.warn(
+          'Tags migration not applied yet, returning empty search results'
+        );
+        return [];
+      }
+      throw error;
+    }
+    return data || [];
+  } catch (err) {
+    console.warn('Error searching tasks by tags:', err);
+    return [];
+  }
+}
+
+export async function getTasksWithTagFilter(
+  supabase: SupabaseClient,
+  boardId: string,
+  tags: string[]
+) {
+  const { data: lists } = await supabase
+    .from('task_lists')
+    .select('id')
+    .eq('board_id', boardId)
+    .eq('deleted', false);
+
+  if (!lists?.length) return [];
+
+  const { data, error } = await supabase
+    .from('tasks')
+    .select(
+      `
+      *,
+      assignees:task_assignees(
+        user:users(
+          id,
+          display_name,
+          avatar_url
+        )
+      )
+    `
+    )
+    .in(
+      'list_id',
+      lists.map((list) => list.id)
+    )
+    .eq('deleted', false)
+    .overlaps('tags', tags) // Filter tasks that have any of the specified tags
+    .order('created_at');
+
+  if (error) throw error;
+
+  // Transform the nested assignees data
+  const transformedTasks = data.map((task) => ({
+    ...task,
+    assignees: task.assignees
+      ?.map((a) => a.user)
+      .filter(
+        (user: User, index: number, self: User[]) =>
+          user?.id && self.findIndex((u: User) => u.id === user.id) === index
+      ),
+  }));
+
+  return transformedTasks as Task[];
+}
+
+// React hooks for tag management
+export function useBoardTaskTags(boardId: string) {
+  return useQuery({
+    queryKey: ['board-task-tags', boardId],
+    queryFn: async () => {
+      const supabase = createClient();
+      return getBoardTaskTags(supabase, boardId);
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+}
+
+export function useTasksWithTagFilter(boardId: string) {
+  return useQuery({
+    queryKey: ['tasks-with-tag-filter', boardId],
+    queryFn: async () => {
+      // This would need to be called with specific tags
+      return [];
+    },
+    enabled: false, // Disabled by default, enable when needed
+  });
+}

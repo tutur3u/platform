@@ -58,6 +58,7 @@ import {
 import { useEffect, useRef, useState } from 'react';
 import { moveTask, useDeleteTask, useUpdateTask } from '@/lib/task-helper';
 import { AssigneeSelect } from './_components/assignee-select';
+import { TaskTagsDisplay } from './_components/task-tags-display';
 import { TaskActions } from './task-actions';
 
 export interface Task extends TaskType {}
@@ -384,8 +385,8 @@ export function TaskCard({
     >
       {/* Overdue indicator */}
       {isOverdue && !task.archived && (
-        <div className="absolute top-0 right-0 h-0 w-0 border-t-[20px] border-l-[20px] border-t-dynamic-red/80 border-l-transparent">
-          <AlertCircle className="absolute -top-4 -right-[18px] h-3 w-3" />
+        <div className="absolute top-0 right-0 h-0 w-0 border-t-[20px] border-t-dynamic-red/80 border-l-[20px] border-l-transparent">
+          <AlertCircle className="-top-4 -right-[18px] absolute h-3 w-3" />
         </div>
       )}
 
@@ -420,7 +421,7 @@ export function TaskCard({
                       setEditDescription(task.description || '');
                     }
                   }}
-                  className="text-sm font-semibold"
+                  className="font-semibold text-sm"
                   autoFocus
                 />
                 <Input
@@ -455,17 +456,19 @@ export function TaskCard({
             ) : (
               <>
                 <div className="flex items-start justify-between gap-1">
-                  <h3
+                  <button
+                    type="button"
                     className={cn(
-                      'mb-2 cursor-pointer text-left text-xs leading-tight font-semibold transition-colors',
+                      'mb-2 w-full cursor-pointer text-left font-semibold text-xs leading-tight transition-colors',
                       task.archived
                         ? 'text-muted-foreground line-through'
-                        : 'text-foreground group-hover:text-foreground/90 hover:text-primary'
+                        : 'text-foreground hover:text-primary group-hover:text-foreground/90'
                     )}
                     onClick={() => setIsEditing(true)}
+                    aria-label={`Edit task: ${task.name}`}
                   >
                     {task.name}
-                  </h3>
+                  </button>
 
                   <div className="flex items-center justify-end gap-1">
                     {/* Custom Date Picker - Separate from Dropdown */}
@@ -501,7 +504,7 @@ export function TaskCard({
                         >
                           <div className="min-w-[320px] space-y-4 p-4">
                             <div className="flex items-center justify-between">
-                              <Label className="text-sm font-semibold">
+                              <Label className="font-semibold text-sm">
                                 Set Due Date
                               </Label>
                               <Button
@@ -555,7 +558,7 @@ export function TaskCard({
                             </div>
 
                             <div className="border-t pt-3">
-                              <Label className="mb-2 block text-xs text-muted-foreground">
+                              <Label className="mb-2 block text-muted-foreground text-xs">
                                 Or pick a specific date:
                               </Label>
                               <DateTimePicker
@@ -716,12 +719,26 @@ export function TaskCard({
                 </div>
 
                 {task.description && (
-                  <p
-                    className="mb-2 line-clamp-2 cursor-pointer text-xs leading-relaxed text-muted-foreground transition-colors hover:text-foreground/80"
+                  <button
+                    type="button"
+                    className="mb-2 line-clamp-2 w-full cursor-pointer text-left text-muted-foreground text-xs leading-relaxed transition-colors hover:text-foreground/80"
                     onClick={() => setIsEditing(true)}
+                    aria-label={`Edit task description: ${task.description}`}
                   >
                     {task.description}
-                  </p>
+                  </button>
+                )}
+
+                {/* Tags Display */}
+                {task.tags && task.tags.length > 0 && (
+                  <div className="mb-2">
+                    <TaskTagsDisplay
+                      tags={task.tags}
+                      maxDisplay={3}
+                      className="mt-1"
+                      clickable={false}
+                    />
+                  </div>
                 )}
               </>
             )}
@@ -741,7 +758,7 @@ export function TaskCard({
           {(startDate || endDate) && (
             <div className="space-y-1.5">
               {startDate && (
-                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <div className="flex items-center gap-1.5 text-muted-foreground text-xs">
                   <Clock className="h-3 w-3 shrink-0" />
                   <span>Starts {formatSmartDate(startDate)}</span>
                 </div>
@@ -802,10 +819,10 @@ export function TaskCard({
 
         {/* Footer - Enhanced priority indicator */}
         {!task.archived && task.priority === 1 && (
-          <div className="mt-3 flex items-center justify-center border-t border-dynamic-red/20 pt-2">
+          <div className="mt-3 flex items-center justify-center border-dynamic-red/20 border-t pt-2">
             <div className="flex items-center gap-1 text-dynamic-red/80">
               <Sparkles className="h-3 w-3 animate-pulse" />
-              <span className="text-[10px] font-medium">Urgent Priority</span>
+              <span className="font-medium text-[10px]">Urgent Priority</span>
             </div>
           </div>
         )}

@@ -4143,6 +4143,7 @@ export type Database = {
           name: string;
           priority: number | null;
           start_date: string | null;
+          tags: string[] | null;
           total_duration: number | null;
           user_defined_priority:
             | Database['public']['Enums']['task_priority']
@@ -4165,6 +4166,7 @@ export type Database = {
           name: string;
           priority?: number | null;
           start_date?: string | null;
+          tags?: string[] | null;
           total_duration?: number | null;
           user_defined_priority?:
             | Database['public']['Enums']['task_priority']
@@ -4187,6 +4189,7 @@ export type Database = {
           name?: string;
           priority?: number | null;
           start_date?: string | null;
+          tags?: string[] | null;
           total_duration?: number | null;
           user_defined_priority?:
             | Database['public']['Enums']['task_priority']
