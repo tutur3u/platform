@@ -1287,7 +1287,7 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                 {/* Board Info */}
                 <div>
                   <h3 className="mb-2 text-lg font-semibold">
-                    {selectedBoard}
+                    {selectedBoardData?.name || 'N/A'}
                   </h3>
 
                   {/* Tags */}
