@@ -26,7 +26,7 @@
     "@tuturuuu/ai": "workspace:*",
     "@tuturuuu/supabase": "workspace:*",
     "@tuturuuu/types": "workspace:*",
-    "@tuturuuu/typescript-config": "workspace:*",
+    
     "@tuturuuu/ui": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
     "next": "^15.4.2-canary.10",
@@ -34,6 +34,8 @@
     "react-dom": "^19.1.0"
   },
   "devDependencies": {
+    "@tuturuuu/eslint-config": "workspace:*",
+    "@tuturuuu/typescript-config": "workspace:*",
     "@types/node": "^24.0.15",
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",

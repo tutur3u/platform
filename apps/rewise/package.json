@@ -64,6 +64,7 @@
     "@next/bundle-analyzer": "^15.4.2-canary.10",
     "@tanstack/react-query-devtools": "^5.83.0",
     "@testing-library/react": "^16.3.0",
+    "@tuturuuu/eslint-config": "workspace:*",
     "@tuturuuu/typescript-config": "workspace:*",
     "@types/js-cookie": "^3.0.6",
     "@types/lodash": "^4.17.20",
