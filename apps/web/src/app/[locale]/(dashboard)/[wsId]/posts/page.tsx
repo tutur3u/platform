@@ -20,24 +20,17 @@ export default async function PostsPage({
   const { wsId, locale } = await params;
   const searchParamsData = await searchParams;
 
-  const { data: postsData, count: postsCount } = await getPostsData(
-    wsId,
-    searchParamsData
-  );
-
+  // SSR: Fetch all data on the server
+  const postsData = await getPostsData(wsId, searchParamsData);
   const postsStatus = await getSentEmails(wsId, searchParamsData);
-  // If you need credential, you can fetch it here as in the legacy code
-  // const credential = await getWorkspaceMailCredential(wsId);
 
   return (
     <PostsClient
       wsId={wsId}
       locale={locale}
-      postsData={postsData}
-      postsCount={postsCount}
-      postsStatus={postsStatus}
       searchParams={searchParamsData}
-      // hasCredential={!!credential} // Uncomment if needed
+      postsData={postsData}
+      postsStatus={postsStatus}
     />
   );
 }
@@ -69,7 +62,7 @@ async function getPostsData(
     .select(
       `notes, user_id, email_id, is_completed, user:workspace_users!inner(email, display_name, full_name, ws_id), ...user_group_posts${
         hasFilters ? '!inner' : ''
-      }(post_id:id, post_title:title, post_content:content, ...workspace_user_groups(group_id:id, group_name:name)), ...sent_emails(subject)`,
+      }(post_id:id, post_title:title, post_content:content, post_created_at:created_at, ...workspace_user_groups(group_id:id, group_name:name)), ...sent_emails(subject)`,
       {
         count: 'exact',
       }
@@ -108,7 +101,7 @@ async function getPostsData(
 
   const { data, error, count } = await queryBuilder.order('created_at', {
     referencedTable: 'user_group_posts',
-    ascending: false,
+    ascending: false, // descending order: latest first
   });
 
   if (error) {
@@ -176,16 +169,3 @@ async function getSentEmails(
     count,
   };
 }
-
-// Uncomment if you need credential fetching for the client
-// async function getWorkspaceMailCredential(wsId: string) {
-//   const supabase = await createClient();
-//   const { data, error } = await supabase
-//     .from('workspace_email_credentials')
-//     .select('*')
-//     .eq('ws_id', wsId)
-//     .limit(1)
-//     .maybeSingle();
-//   if (error) throw error;
-//   return data;
-// }

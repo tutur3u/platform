@@ -5,23 +5,16 @@ import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
 import { CircleAlert, CircleSlash, MailCheck, Send } from '@tuturuuu/ui/icons';
 import dayjs from 'dayjs';
 import { useTranslations } from 'next-intl';
-import { useEffect } from 'react';
 
 export default function PostsRowActions({
   data,
-  onSuccess,
+  onEmailSent,
 }: {
   data: PostEmail;
-  onSuccess?: () => void;
+  onEmailSent?: () => void;
 }) {
   const t = useTranslations();
-  const { sendEmail, loading, error, success } = useEmail();
-
-  useEffect(() => {
-    if (success && onSuccess) {
-      onSuccess();
-    }
-  }, [success, onSuccess]);
+  const { sendEmail, localLoading, localError, localSuccess } = useEmail();
 
   const sendable =
     !!data.email &&
@@ -35,6 +28,8 @@ export default function PostsRowActions({
     !!data?.is_completed;
 
   const handleSendEmail = async () => {
+    // The local loading, error, and success states are now managed by useEmail hook
+
     if (
       !!data.email &&
       !!data.ws_id &&
@@ -70,6 +65,8 @@ export default function PostsRowActions({
           },
         ],
       });
+
+      if (onEmailSent) onEmailSent();
     }
   };
 
@@ -79,20 +76,20 @@ export default function PostsRowActions({
         size="xs"
         onClick={handleSendEmail}
         disabled={
-          !!error ||
-          loading ||
+          !!localError ||
+          localLoading ||
           !data.email ||
           !!data.email_id ||
           !sendable ||
           data.email.includes('@easy') ||
-          success
+          localSuccess
         }
         variant={
-          error
+          localError
             ? 'destructive'
-            : loading
+            : localLoading
               ? 'secondary'
-              : success || data.email_id
+              : localSuccess || data.email_id
                 ? 'outline'
                 : undefined
         }
@@ -100,17 +97,17 @@ export default function PostsRowActions({
       >
         {data?.email?.includes('@easy') ? (
           <CircleSlash className="h-4 w-4" />
-        ) : error ? (
-          <>
-            <CircleAlert className="h-4 w-4" />
-            <span>{t('post-email-data-table.error')}</span>
-          </>
-        ) : loading ? (
+        ) : localLoading ? (
           <>
             <LoadingIndicator />
             <span>{t('post-email-data-table.sending')}</span>
           </>
-        ) : success || data.email_id ? (
+        ) : localError ? (
+          <>
+            <CircleAlert className="h-4 w-4" />
+            <span>{t('post-email-data-table.error')}</span>
+          </>
+        ) : localSuccess || data.email_id ? (
           <>
             <MailCheck className="h-4 w-4" />
             <span>{t('post-email-data-table.sent')}</span>

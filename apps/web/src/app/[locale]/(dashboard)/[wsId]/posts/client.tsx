@@ -12,7 +12,6 @@ import { MailWarning, Send } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
-import useSWR from 'swr';
 
 interface SearchParams {
   page?: string;
@@ -20,66 +19,40 @@ interface SearchParams {
   includedGroups?: string | string[];
   excludedGroups?: string | string[];
   userId?: string;
+  orderBy?: string;
+  orderDirection?: 'asc' | 'desc';
+}
+
+interface PostsClientProps {
+  wsId: string;
+  locale: string;
+  searchParams: SearchParams;
+  postsData: { data: PostEmail[]; count: number };
+  postsStatus: { count: number };
 }
 
 export default function PostsClient({
   wsId,
   locale,
-  postsData: initialPostsData,
-  postsCount: initialPostsCount,
-  postsStatus: initialPostsStatus,
   searchParams,
-}: {
-  wsId: string;
-  locale: string;
-  postsData: PostEmail[];
-  postsCount: number;
-  postsStatus: { count: number | null };
-  searchParams: SearchParams;
-}) {
+  postsData,
+  postsStatus,
+}: PostsClientProps) {
   const t = useTranslations();
   const [posts, setPosts] = usePosts();
-  const { success } = useEmail();
+  const { globalState, setGlobalState } = useEmail();
   const [selectedPost, setSelectedPost] = useState<PostEmail | null>(null);
 
-  // SWR fetchers
-  const fetchPosts = async () => {
-    const res = await fetch(
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      `/api/v1/workspaces/${wsId}/posts?${new URLSearchParams(searchParams as any)}`
-    );
-    if (!res.ok) throw new Error('Failed to fetch posts');
-    return res.json();
-  };
-  const fetchStatus = async () => {
-    const res = await fetch(
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      `/api/v1/workspaces/${wsId}/posts/status?${new URLSearchParams(searchParams as any)}`
-    );
-    if (!res.ok) throw new Error('Failed to fetch status');
-    return res.json();
-  };
+  // Remove React Query and client-side fetches for initial data
+  // Keep invalidate logic for client-side updates if needed
 
-  const { data: postsData, mutate: mutatePosts } = useSWR(
-    ['posts', wsId, searchParams],
-    fetchPosts,
-    { fallbackData: { data: initialPostsData, count: initialPostsCount } }
-  );
-  const { data: postsStatus, mutate: mutateStatus } = useSWR(
-    ['postsStatus', wsId, searchParams],
-    fetchStatus,
-    { fallbackData: initialPostsStatus }
-  );
-
-  // Auto-refresh after email sent
   useEffect(() => {
-    if (success) {
-      mutatePosts();
-      mutateStatus();
+    if (globalState.success) {
+      // Invalidate logic for client-side updates (if you have mutation logic)
+      setGlobalState((prev) => ({ ...prev, success: false }));
     }
-  }, [success, mutatePosts, mutateStatus]);
+  }, [globalState.success, setGlobalState]);
 
-  // Update selected post when postsData changes
   useEffect(() => {
     if (posts.selected && postsData?.data) {
       const found = postsData.data.find(
@@ -125,12 +98,17 @@ export default function PostsClient({
       </div>
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-        <div>
+        <div className="h-screen overflow-y-auto">
           <CustomDataTable
             data={postsData?.data || []}
             namespace="post-email-data-table"
             columnGenerator={getPostEmailColumns}
-            extraData={{ locale }}
+            extraData={{
+              locale,
+              onEmailSent: () => {
+                // Optionally, trigger a client-side refresh if you have mutation logic
+              },
+            }}
             count={postsData?.count || 0}
             filters={<PostsFilters wsId={wsId} searchParams={searchParams} />}
             defaultVisibility={{
@@ -152,7 +130,7 @@ export default function PostsClient({
             }}
           />
         </div>
-        <div className="min-h-[500px]">
+        <div className="h-full overflow-y-auto">
           <PostDisplay postEmail={selectedPost} />
         </div>
       </div>

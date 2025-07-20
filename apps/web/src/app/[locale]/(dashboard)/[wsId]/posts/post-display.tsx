@@ -23,7 +23,6 @@ import dayjs from 'dayjs';
 import { useLocale } from 'next-intl';
 import Link from 'next/link';
 import { useEffect } from 'react';
-import { mutate } from 'swr';
 
 interface PostDisplayProps {
   postEmail: PostEmail | null;
@@ -36,14 +35,6 @@ export function PostDisplay({ postEmail }: PostDisplayProps) {
   useEffect(() => {
     dayjs.locale(locale);
   }, [locale]);
-
-  // Refresh posts and status after sending
-  const handleRefresh = () => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    mutate((key: any) => Array.isArray(key) && key[0] === 'posts');
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    mutate((key: any) => Array.isArray(key) && key[0] === 'postsStatus');
-  };
 
   if (!postEmail) {
     return (
@@ -60,27 +51,14 @@ export function PostDisplay({ postEmail }: PostDisplayProps) {
   }
 
   return (
-    <div className="flex h-full flex-col bg-background">
-      <div className="flex h-16 items-center justify-between border-b bg-background/80 px-4 backdrop-blur-sm">
+    <div className="flex h-full flex-col rounded-lg border">
+      <div className="flex h-16 items-center justify-between rounded-t-lg border-b px-4 backdrop-blur-sm">
         <div className="flex items-center gap-2">
           <h3 className="text-lg font-semibold">Post Email Details</h3>
-          {/* <Badge variant={postEmail.is_completed ? 'default' : 'secondary'}>
-            {postEmail.is_completed ? (
-              <>
-                <Check className="mr-1 h-3 w-3" />
-                Completed
-              </>
-            ) : (
-              <>
-                <Clock className="mr-1 h-3 w-3" />
-                Pending
-              </>
-            )}
-          </Badge> */}
         </div>
 
         <div className="flex items-center gap-2">
-          <PostsRowActions data={postEmail} onSuccess={handleRefresh} />
+          <PostsRowActions data={postEmail} />
         </div>
       </div>
 
@@ -126,10 +104,9 @@ export function PostDisplay({ postEmail }: PostDisplayProps) {
                   </div>
                   <div className="flex items-center gap-1">
                     <Calendar className="h-3 w-3" />
-                    {/* Fix date formatting here */}
-                    {postEmail.created_at
-                      ? dayjs(postEmail.created_at).format('YYYY-MM-DD HH:mm')
-                      : ''}
+                    {dayjs(postEmail.post_created_at).format(
+                      'YYYY-MM-DD HH:mm'
+                    )}
                   </div>
                 </div>
               </div>

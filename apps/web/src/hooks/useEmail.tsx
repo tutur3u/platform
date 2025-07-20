@@ -1,12 +1,26 @@
 import PostEmailTemplate from '@/app/[locale]/(dashboard)/[wsId]/mail/default-email-template';
 import type { UserGroupPost } from '@/app/[locale]/(dashboard)/[wsId]/users/groups/[groupId]/posts';
+import { atom, useAtom } from 'jotai';
 import { useState } from 'react';
 import ReactDOMServer from 'react-dom/server';
 
+interface EmailState {
+  loading: boolean;
+  error: string | null;
+  success: boolean;
+}
+
+const emailGlobalStateAtom = atom<EmailState>({
+  loading: false,
+  error: null,
+  success: false,
+});
+
 const useEmail = () => {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
+  const [globalState, setGlobalState] = useAtom(emailGlobalStateAtom);
+  const [localLoading, setLocalLoading] = useState(false);
+  const [localError, setLocalError] = useState<string | null>(null);
+  const [localSuccess, setLocalSuccess] = useState(false);
 
   const sendEmail = async ({
     wsId,
@@ -27,9 +41,10 @@ const useEmail = () => {
       is_completed: boolean;
     }[];
   }): Promise<void> => {
-    setLoading(true);
-    setError(null);
-    setSuccess(false);
+    setLocalLoading(true);
+    setLocalError(null);
+    setLocalSuccess(false);
+    setGlobalState({ loading: true, error: null, success: false });
 
     const users = rawUsers.map((user) => ({
       ...user,
@@ -58,16 +73,18 @@ const useEmail = () => {
     );
 
     if (!res.ok) {
-      setError('Failed to send email');
-      setLoading(false);
+      setLocalError('Failed to send email');
+      setLocalLoading(false);
+      setGlobalState({ loading: false, error: 'Failed to send email', success: false });
       return;
     }
 
-    setSuccess(true);
-    setLoading(false);
+    setLocalSuccess(true);
+    setLocalLoading(false);
+    setGlobalState({ loading: false, error: null, success: true });
   };
 
-  return { sendEmail, loading, error, success };
+  return { sendEmail, localLoading, localError, localSuccess, globalState, setGlobalState };
 };
 
 export default useEmail;
