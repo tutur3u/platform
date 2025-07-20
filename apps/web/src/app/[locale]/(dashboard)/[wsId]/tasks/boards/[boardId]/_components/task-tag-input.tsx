@@ -3,6 +3,7 @@
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
+import { useToast } from '@tuturuuu/ui/hooks/use-toast';
 import { Plus, X } from '@tuturuuu/ui/icons';
 import { cn } from '@tuturuuu/utils/format';
 import { type KeyboardEvent, useEffect, useRef, useState } from 'react';
@@ -35,6 +36,7 @@ export function TaskTagInput({
   >('checking');
   const inputRef = useRef<HTMLInputElement>(null);
   const { data: boardTags, isLoading, error } = useBoardTaskTags(boardId);
+  const { toast } = useToast();
 
   // Default suggestions for common task tags (just 3 cute ones)
   const defaultSuggestions = ['urgent', 'bug', 'feature'];
@@ -47,7 +49,7 @@ export function TaskTagInput({
         // Try to query the tags column to see if it exists
         const { error } = await supabase.from('tasks').select('tags').limit(1);
 
-        if (error?.message.includes('column "tags" does not exist')) {
+        if (error?.message?.includes('column "tags" does not exist')) {
           setMigrationStatus('not-applied');
           console.warn('Tags migration not applied yet');
         } else {
@@ -75,17 +77,34 @@ export function TaskTagInput({
 
   const addTag = (tag: string) => {
     const trimmedTag = tag.trim().toLowerCase();
-    if (!trimmedTag) return;
+    if (!trimmedTag) {
+      toast({
+        title: 'Empty tag',
+        description: 'Please enter a valid tag',
+        variant: 'destructive',
+      });
+      return;
+    }
 
     // Check for duplicates
     if (value.includes(trimmedTag)) {
       setInputValue('');
+      toast({
+        title: 'Duplicate tag',
+        description: `Tag "${trimmedTag}" already exists`,
+        variant: 'destructive',
+      });
       return;
     }
 
     // Check max tags limit
     if (value.length >= maxTags) {
       setInputValue('');
+      toast({
+        title: 'Too many tags',
+        description: `Maximum ${maxTags} tags allowed`,
+        variant: 'destructive',
+      });
       return;
     }
 
@@ -123,10 +142,9 @@ export function TaskTagInput({
   const isDisabled = disabled || migrationStatus === 'not-applied';
   const canAddMore = value.length < maxTags;
 
-  // Compute placeholder text to avoid TypeScript issues
-  const placeholderText = String(
-    value.length === 0 ? (placeholder ?? 'Type to add tags...') : ''
-  );
+  // Compute placeholder text
+  const placeholderText =
+    value.length === 0 ? (placeholder ?? 'Type to add tags...') : '';
 
   return (
     <div className={className || ''}>
