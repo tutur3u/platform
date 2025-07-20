@@ -1042,6 +1042,8 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
                       className="mr-1 inline-block h-4 w-4 align-text-bottom"
                       title="Synced from Google Calendar"
                       data-testid="google-calendar-logo"
+                      width={18}
+                      height={18}
                     />
                   )}
                 <span className="min-w-0 overflow-hidden text-ellipsis">
