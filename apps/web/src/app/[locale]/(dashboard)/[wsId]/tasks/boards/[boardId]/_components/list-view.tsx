@@ -122,6 +122,20 @@ interface ColumnVisibility {
   actions: boolean;
 }
 
+interface Member {
+  id: string;
+  display_name?: string | null;
+  email?: string | null;
+  avatar_url?: string | null;
+}
+
+interface TaskBulkUpdate {
+  id: string;
+  priority?: number | null;
+  archived?: boolean;
+  tags?: string[];
+}
+
 // Priority labels constant - defined once outside component for performance
 const priorityLabels = {
   0: 'No Priority',
@@ -129,6 +143,14 @@ const priorityLabels = {
   2: 'High',
   3: 'Medium',
   4: 'Low',
+};
+
+const priorityColors = {
+  0: 'border-gray-300 bg-gray-50 text-gray-700 dark:bg-gray-800 dark:text-gray-300',
+  1: 'border-pink-600 bg-pink-50 text-pink-700 dark:bg-pink-950 dark:text-pink-300',
+  2: 'border-red-500 bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300',
+  3: 'border-yellow-500 bg-yellow-50 text-yellow-700 dark:bg-yellow-950 dark:text-yellow-300',
+  4: 'border-green-500 bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300',
 };
 
 export function ListView({
@@ -208,31 +230,25 @@ export function ListView({
       const supabase = createClient();
       const taskIds = Array.from(selectedTasks);
 
-      // Prepare updates object
-      const updates: {
-        priority?: number | null;
-        archived?: boolean;
-        tags?: string[];
-      } = {};
+      // Prepare updates array for RPC
+      const updates: TaskBulkUpdate[] = taskIds.map((id) => {
+        const updateObj: TaskBulkUpdate = { id };
+        if (bulkEditData.priority !== 'keep') {
+          updateObj.priority = bulkEditData.priority === '0' ? null : parseInt(bulkEditData.priority);
+        }
+        if (bulkEditData.status !== 'keep') {
+          updateObj.archived = bulkEditData.status === 'completed';
+        }
+        if (bulkEditData.tags.length > 0) {
+          updateObj.tags = bulkEditData.tags;
+        }
+        return updateObj;
+      });
 
-      if (bulkEditData.priority !== 'keep') {
-        updates.priority =
-          bulkEditData.priority === '0'
-            ? null
-            : parseInt(bulkEditData.priority);
-      }
-
-      if (bulkEditData.status !== 'keep') {
-        updates.archived = bulkEditData.status === 'completed';
-      }
-
-      if (bulkEditData.tags.length > 0) {
-        updates.tags = bulkEditData.tags;
-      }
-
-      if (Object.keys(updates).length > 0) {
-        // Update all tasks in a single query
-        await supabase.from('tasks').update(updates).in('id', taskIds);
+      if (updates.some(obj => Object.keys(obj).length > 1)) {
+        // Only call RPC if at least one field is being updated
+        const { error } = await supabase.rpc('update_many_tasks', { updates });
+        if (error) throw error;
       }
 
       // Refresh the task list and invalidate cache
@@ -721,28 +737,12 @@ export function ListView({
   }
 
   function renderPriority(priority: number) {
-    const labels = {
-      0: 'No Priority',
-      1: 'Urgent',
-      2: 'High',
-      3: 'Medium',
-      4: 'Low',
-    };
-
-    const colors = {
-      0: 'border-gray-300 bg-gray-50 text-gray-700 dark:bg-gray-800 dark:text-gray-300',
-      1: 'border-pink-600 bg-pink-50 text-pink-700 dark:bg-pink-950 dark:text-pink-300',
-      2: 'border-red-500 bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300',
-      3: 'border-yellow-500 bg-yellow-50 text-yellow-700 dark:bg-yellow-950 dark:text-yellow-300',
-      4: 'border-green-500 bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300',
-    };
-
     return (
       <Badge
         variant="outline"
-        className={cn('font-medium', colors[priority as keyof typeof colors])}
+        className={cn('font-medium', priorityColors[priority as keyof typeof priorityColors])}
       >
-        {labels[priority as keyof typeof labels]}
+        {priorityLabels[priority as keyof typeof priorityLabels]}
       </Badge>
     );
   }
@@ -865,14 +865,8 @@ export function ListView({
           <Skeleton className="h-10 flex-1" />
         </div>
         <div className="space-y-3">
-          {[
-            'skeleton-1',
-            'skeleton-2',
-            'skeleton-3',
-            'skeleton-4',
-            'skeleton-5',
-          ].map((key) => (
-            <Skeleton key={key} className="h-16 w-full" />
+          {Array.from({ length: 5 }, (_, i) => (
+            <Skeleton key={`loading-skeleton-${Date.now()}-${i}`} className="h-16 w-full" />
           ))}
         </div>
       </div>
@@ -1173,46 +1167,39 @@ export function ListView({
                   <DropdownMenuSeparator />
 
                   {/* Individual members */}
-                  {members.map(
-                    (member: {
-                      id: string;
-                      display_name?: string;
-                      email?: string;
-                      avatar_url?: string;
-                    }) => (
-                      <DropdownMenuItem
-                        key={member.id}
-                        onClick={() => {
-                          const newAssignees = new Set(filters.assignees);
-                          if (newAssignees.has(member.id)) {
-                            newAssignees.delete(member.id);
-                          } else {
-                            newAssignees.add(member.id);
-                          }
-                          setFilters((prev) => ({
-                            ...prev,
-                            assignees: newAssignees,
-                          }));
-                        }}
-                        className="cursor-pointer"
-                      >
-                        <Checkbox
-                          checked={filters.assignees.has(member.id)}
-                          className="mr-2 h-3.5 w-3.5"
-                        />
-                        <div className="flex items-center gap-2">
-                          <div className="flex h-5 w-5 items-center justify-center rounded-full bg-muted font-medium text-xs">
-                            {member.display_name?.[0]?.toUpperCase() ||
-                              member.email?.[0]?.toUpperCase() ||
-                              '?'}
-                          </div>
-                          <span className="truncate">
-                            {member.display_name || member.email || 'Unknown'}
-                          </span>
+                  {members.map((member: Member) => (
+                    <DropdownMenuItem
+                      key={member.id}
+                      onClick={() => {
+                        const newAssignees = new Set(filters.assignees);
+                        if (newAssignees.has(member.id)) {
+                          newAssignees.delete(member.id);
+                        } else {
+                          newAssignees.add(member.id);
+                        }
+                        setFilters((prev) => ({
+                          ...prev,
+                          assignees: newAssignees,
+                        }));
+                      }}
+                      className="cursor-pointer"
+                    >
+                      <Checkbox
+                        checked={filters.assignees.has(member.id)}
+                        className="mr-2 h-3.5 w-3.5"
+                      />
+                      <div className="flex items-center gap-2">
+                        <div className="flex h-5 w-5 items-center justify-center rounded-full bg-muted font-medium text-xs">
+                          {member.display_name?.trim()?.[0]?.toUpperCase() ||
+                            member.email?.trim()?.[0]?.toUpperCase() ||
+                            '?'}
                         </div>
-                      </DropdownMenuItem>
-                    )
-                  )}
+                        <span className="truncate">
+                          {member.display_name?.trim() || member.email?.trim() || 'Unknown'}
+                        </span>
+                      </div>
+                    </DropdownMenuItem>
+                  ))}
                 </div>
                 {filters.assignees.size > 0 && (
                   <>
