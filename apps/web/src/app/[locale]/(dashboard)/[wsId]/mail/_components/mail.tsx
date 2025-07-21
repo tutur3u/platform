@@ -7,7 +7,12 @@ import { MailDisplay } from './mail-display';
 import { MailList } from './mail-list';
 import { Nav } from './nav';
 import { SIDEBAR_COLLAPSED_COOKIE_NAME } from '@/constants/common';
-import type { InternalEmail } from '@tuturuuu/types/db';
+import type {
+  InternalEmail,
+  User,
+  UserPrivateDetails,
+} from '@tuturuuu/types/db';
+import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import {
   ResizableHandle,
   ResizablePanel,
@@ -28,6 +33,7 @@ interface MailProps {
   loading?: boolean;
   wsId: string;
   hasCredential: boolean;
+  user: (User & UserPrivateDetails) | WorkspaceUser | null;
 }
 
 export function MailClient({
@@ -40,6 +46,7 @@ export function MailClient({
   loading,
   wsId,
   hasCredential,
+  user,
 }: MailProps) {
   const [mail] = useMail();
   const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed);
@@ -127,6 +134,7 @@ export function MailClient({
         <ResizableHandle />
         <ResizablePanel defaultSize={defaultLayout[2]} minSize={30}>
           <MailDisplay
+            user={user}
             mail={mails.find((item) => item.id === mail.selected) || null}
           />
         </ResizablePanel>
