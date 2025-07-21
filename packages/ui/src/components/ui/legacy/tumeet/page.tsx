@@ -66,7 +66,7 @@ export async function MeetTogetherPage({
       </div>
 
       {/* Hero + Form side-by-side on desktop, stacked on mobile */}
-      <div className="container mx-auto mt-8 flex max-w-6xl flex-col gap-8 px-4 py-10 lg:flex-row lg:items-start lg:gap-12">
+      <div className="container mx-auto mt-8 flex max-w-6xl flex-col gap-8 px-4 py-10 lg:flex-row lg:items-center lg:gap-12">
         {/* Hero section */}
         <div className="flex flex-1 flex-col items-center text-center lg:items-start lg:text-left">
           {/* Badge */}
