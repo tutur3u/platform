@@ -127,6 +127,7 @@ export default async function Layout({ children, params }: LayoutProps) {
         },
       ],
     },
+
     {
       title: t('sidebar_tabs.ai_lab'),
       icon: <Box className="h-5 w-5" />,
@@ -418,6 +419,19 @@ export default async function Layout({ children, params }: LayoutProps) {
               value: 'true',
             })) ||
             withoutPermission('manage_inventory'),
+        },
+        {
+          title: 'Guest User',
+          href: `/${wsId}/inventory`,
+          icon: <Database className="h-5 w-5" />,
+          disabled:
+            ENABLE_AI_ONLY ||
+            !(await verifySecret({
+              forceAdmin: true,
+              wsId,
+              name: 'ENABLE_GUEST_USER',
+              value: 'true',
+            })),
         },
       ],
     },
