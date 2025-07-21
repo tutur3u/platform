@@ -12,6 +12,7 @@ import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
 const domainBlacklist = ['@easy.com', '@easy'];
+const ENABLE_MAIL_ON_DEV = true;
 
 export async function POST(
   req: NextRequest,
@@ -149,7 +150,7 @@ export async function POST(
 
   try {
     // Send the email via SES (unless in DEV_MODE or email sending is disabled)
-    if (!DEV_MODE) {
+    if (!DEV_MODE || ENABLE_MAIL_ON_DEV) {
       const emailSent = await sendEmail({
         client: sesClient,
         sourceName: userProfile.display_name,

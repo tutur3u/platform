@@ -135,9 +135,7 @@ export default function PostsClient({
             columnGenerator={getPostEmailColumns}
             extraData={{
               locale,
-              onEmailSent: () => {
-                router.refresh();
-              },
+              onEmailSent: () => router.refresh(),
             }}
             count={postsData?.count || 0}
             filters={<PostsFilters wsId={wsId} searchParams={searchParams} />}

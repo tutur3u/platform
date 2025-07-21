@@ -12,7 +12,10 @@ export const getPostEmailColumns = (
   // biome-ignore lint/suspicious/noExplicitAny: <translations are not typed>
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   t: any,
-  namespace: string | undefined
+  namespace: string | undefined,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  _: any,
+  extraData: { locale?: string; onEmailSent: () => void }
 ): ColumnDef<PostEmail>[] => [
   {
     accessorKey: 'recipient',
@@ -139,9 +142,7 @@ export const getPostEmailColumns = (
   },
   {
     id: 'actions',
-    cell: ({ row, table }) => {
-      // Pass onEmailSent from extraData if available
-      const extraData = table.options.meta?.extraData || {};
+    cell: ({ row }) => {
       return (
         <PostsRowActions
           data={row.original}
