@@ -4,7 +4,6 @@ import {
   scheduleWithFlexibleEvents,
 } from '@tuturuuu/ai/scheduling/algorithm';
 import { defaultActiveHours } from '@tuturuuu/ai/scheduling/default';
-import { createClient } from '@tuturuuu/supabase/next/server';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type dayjs from 'dayjs';
