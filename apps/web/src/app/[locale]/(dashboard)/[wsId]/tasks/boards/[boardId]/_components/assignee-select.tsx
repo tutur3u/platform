@@ -3,6 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
+import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Command,
@@ -24,7 +25,6 @@ import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { cn } from '@tuturuuu/utils/format';
 import { useParams } from 'next/navigation';
 import { useState } from 'react';
-import { Badge } from '@tuturuuu/ui/badge';
 
 interface Member {
   id: string;
@@ -360,7 +360,7 @@ export function AssigneeSelect({ taskId, assignees = [], onUpdate }: Props) {
                       </div>
                       <div className="flex items-center gap-1">
                         <div className="h-2 w-2 rounded-full bg-green-500"></div>
-                        <span className="text-green-600 text-xs dark:text-green-400">
+                        <span className="text-xs text-green-600 dark:text-green-400">
                           Assigned
                         </span>
                       </div>
@@ -408,7 +408,7 @@ export function AssigneeSelect({ taskId, assignees = [], onUpdate }: Props) {
                       </div>
                       <div className="flex items-center gap-1">
                         <div className="h-2 w-2 rounded-full bg-gray-300 dark:bg-gray-600"></div>
-                        <span className="text-gray-500 text-xs dark:text-gray-400">
+                        <span className="text-xs text-gray-500 dark:text-gray-400">
                           Available
                         </span>
                       </div>

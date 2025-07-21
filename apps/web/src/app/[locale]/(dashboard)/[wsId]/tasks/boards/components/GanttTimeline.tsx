@@ -1,5 +1,6 @@
 'use client';
 
+import type { GanttTask } from '../types';
 import { Badge } from '@tuturuuu/ui/badge';
 import {
   Collapsible,
@@ -8,7 +9,6 @@ import {
 } from '@tuturuuu/ui/collapsible';
 import { ChevronDown } from '@tuturuuu/ui/icons';
 import { cn } from '@tuturuuu/utils/format';
-import type { GanttTask } from '../types';
 
 interface AnalyticsFilters {
   timeView: 'week' | 'month' | 'year';
@@ -137,8 +137,8 @@ export function GanttTimeline({
                         task.status === 'active'
                           ? 'bg-blue-500'
                           : task.status === 'done' || task.status === 'closed'
-                          ? 'bg-green-500'
-                          : 'bg-gray-400'
+                            ? 'bg-green-500'
+                            : 'bg-gray-400'
                       )}
                       style={{
                         left: `${task.startOffset}%`,

@@ -1,9 +1,9 @@
 'use client';
 
+import type { GanttTask } from '../types';
 import { Card } from '@tuturuuu/ui/card';
 import { cn } from '@tuturuuu/utils/format';
 import { useMemo } from 'react';
-import type { GanttTask } from '../types';
 
 interface StatusDistributionProps {
   allTasks: GanttTask[];

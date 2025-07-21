@@ -3,35 +3,46 @@
 import { cn } from '@tuturuuu/utils/format';
 import { forwardRef } from 'react';
 
-interface AccessibleButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+interface AccessibleButtonProps
+  extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'default' | 'ghost' | 'outline';
   size?: 'sm' | 'md' | 'lg';
   children: React.ReactNode;
   className?: string;
 }
 
-export const AccessibleButton = forwardRef<HTMLButtonElement, AccessibleButtonProps>(
-  ({ 
-    variant = 'default', 
-    size = 'md', 
-    className, 
-    children, 
-    onClick,
-    ...props 
-  }, ref) => {
+export const AccessibleButton = forwardRef<
+  HTMLButtonElement,
+  AccessibleButtonProps
+>(
+  (
+    {
+      variant = 'default',
+      size = 'md',
+      className,
+      children,
+      onClick,
+      ...props
+    },
+    ref
+  ) => {
     const handleKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>) => {
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
-        onClick?.(e as unknown as React.MouseEvent<HTMLButtonElement, MouseEvent>);
+        onClick?.(
+          e as unknown as React.MouseEvent<HTMLButtonElement, MouseEvent>
+        );
       }
     };
 
-    const baseClasses = 'inline-flex items-center justify-center rounded-md font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-background';
+    const baseClasses =
+      'inline-flex items-center justify-center rounded-md font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-background';
 
     const variantClasses = {
       default: 'bg-primary text-primary-foreground hover:bg-primary/90',
       ghost: 'hover:bg-accent hover:text-accent-foreground',
-      outline: 'border border-input hover:bg-accent hover:text-accent-foreground',
+      outline:
+        'border border-input hover:bg-accent hover:text-accent-foreground',
     };
 
     const sizeClasses = {
@@ -60,4 +71,4 @@ export const AccessibleButton = forwardRef<HTMLButtonElement, AccessibleButtonPr
   }
 );
 
-AccessibleButton.displayName = 'AccessibleButton'; 
+AccessibleButton.displayName = 'AccessibleButton';
