@@ -433,7 +433,10 @@ export function MailDisplay({ mail, user }: MailDisplayProps) {
 
           <ScrollArea className="min-h-0 flex-1">
             {isLoading ? (
-              <div className="flex h-full items-center justify-center">
+              <div
+                className="flex h-full items-center justify-center"
+                data-testid="loading-indicator"
+              >
                 <Loader2 className="h-6 w-6 animate-spin" />
               </div>
             ) : mail.html_payload ? (
@@ -450,6 +453,7 @@ export function MailDisplay({ mail, user }: MailDisplayProps) {
               <div
                 className="bg-background text-sm text-foreground"
                 style={{ padding: '1.5rem' }}
+                data-testid="mail-plain-content"
               >
                 <pre className="whitespace-pre-wrap" style={{ margin: 0 }}>
                   {mail.payload}
