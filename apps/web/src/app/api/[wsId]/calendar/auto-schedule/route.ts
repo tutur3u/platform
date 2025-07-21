@@ -8,6 +8,7 @@ import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type dayjs from 'dayjs';
 import { type NextRequest, NextResponse } from 'next/server';
 import { createCalendarOptimizer } from './tools';
+import {createAdminClient} from '@tuturuuu/supabase/next/server';
 export interface DateRange {
   start: dayjs.Dayjs;
   end: dayjs.Dayjs;
@@ -49,7 +50,7 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ wsId: string }> }
 ) {
-  const supabase = createClient();
+  const supabase = createAdminClient();
   const requestId = Math.random().toString(36).substring(7);
 
   try {
@@ -71,52 +72,12 @@ export async function POST(
       );
     }
 
-    // Check permissions
-    try {
-      const { withoutPermission } = await getPermissions({ wsId });
-      if (withoutPermission('manage_calendar')) {
-        console.log(`[AUTO-SCHEDULE-${requestId}] Permission denied`);
-        return NextResponse.json(
-          { error: 'Permission denied' },
-          { status: 403 }
-        );
-      }
-    } catch (error) {
-      console.error(
-        `[AUTO-SCHEDULE-${requestId}] Permission check failed:`,
-        error
-      );
-      return NextResponse.json(
-        { error: 'Failed to check permissions' },
-        { status: 500 }
-      );
-    }
+    
 
     const { searchParams } = new URL(request.url);
     const streamMode = searchParams.get('stream') !== 'false';
 
-    // Authenticate user
-    try {
-      const {
-        data: { user },
-      } = await (await supabase).auth.getUser();
-      if (!user) {
-        console.log(`[AUTO-SCHEDULE-${requestId}] User not authenticated`);
-        return NextResponse.json(
-          { error: 'Authentication required' },
-          { status: 401 }
-        );
-      }
-    } catch (error) {
-      console.error(
-        `[AUTO-SCHEDULE-${requestId}] Authentication failed:`,
-        error
-      );
-      return NextResponse.json(
-        { error: 'Authentication failed' },
-        { status: 401 }
-      );
-    }
+   
 
     console.log(`[AUTO-SCHEDULE-${requestId}] Fetching tasks and events...`);
 

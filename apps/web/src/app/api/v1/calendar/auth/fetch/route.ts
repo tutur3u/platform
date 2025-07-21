@@ -1,13 +1,19 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { convertGoogleAllDayEvent } from '@tuturuuu/ui/hooks/calendar-utils';
 import { OAuth2Client } from 'google-auth-library';
 import { google } from 'googleapis';
 import { NextResponse } from 'next/server';
-import { convertGoogleAllDayEvent } from '@tuturuuu/ui/hooks/calendar-utils';
 
 const getGoogleAuthClient = (tokens: {
   access_token: string;
   refresh_token?: string;
 }) => {
+  console.log(
+    process.env.GOOGLE_CLIENT_ID,
+    process.env.GOOGLE_CLIENT_SECRET,
+    process.env.GOOGLE_REDIRECT_URI,
+    'ahelhaelkdlk'
+  );
   const oauth2Client = new OAuth2Client({
     clientId: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
