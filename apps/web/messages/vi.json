@@ -3731,6 +3731,12 @@
     "starred": "Đã gắn sao",
     "drafts": "Bản nháp",
     "spam": "Thư rác",
-    "trash": "Rác"
+    "trash": "Rác",
+    "send_as": "Gửi như",
+    "display_name_required": "Tên hiển thị được yêu cầu.",
+    "display_name_required_message": "Bạn phải đặt tên hiển thị trước khi gửi thư.",
+    "edit": "Biên tập",
+    "preview": "Xem trước",
+    "none": "Không có"
   }
 }

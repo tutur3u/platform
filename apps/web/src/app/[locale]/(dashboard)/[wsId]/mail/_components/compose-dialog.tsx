@@ -19,10 +19,13 @@ import {
 } from '@tuturuuu/ui/form';
 import { Send, X } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
+import { toast } from '@tuturuuu/ui/sonner';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { Textarea } from '@tuturuuu/ui/textarea';
+import DOMPurify from 'dompurify';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
@@ -143,6 +146,53 @@ export function ComposeDialog({
   const [showCc, setShowCc] = useState(false);
   const [showBcc, setShowBcc] = useState(false);
 
+  // User info state
+  const [user, setUser] = useState<{
+    email: string | undefined;
+    display_name: string | null | undefined;
+  } | null>(null);
+  const [userLoading, setUserLoading] = useState(true);
+
+  // Preview state
+  const [previewMode, setPreviewMode] = useState<'edit' | 'preview'>('edit');
+  const [sanitizedHtml, setSanitizedHtml] = useState('');
+  const [previewLoading, setPreviewLoading] = useState(false);
+
+  // Fetch user info on mount
+  useEffect(() => {
+    async function fetchUser() {
+      setUserLoading(true);
+      try {
+        const { createClient } = await import('@tuturuuu/supabase/next/client');
+        const supabase = createClient();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+
+        if (user?.id) {
+          const { data: profile } = await supabase
+            .from('users')
+            .select('display_name')
+            .eq('id', user.id)
+            .single();
+
+          setUser({
+            email: user.email,
+            display_name: profile?.display_name,
+          });
+        } else {
+          setUser(null);
+        }
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      } catch (_) {
+        setUser(null);
+      } finally {
+        setUserLoading(false);
+      }
+    }
+    if (open) fetchUser();
+  }, [open]);
+
   const templates = [
     {
       label: 'Blank',
@@ -175,6 +225,43 @@ export function ComposeDialog({
     },
   });
 
+  // Preview sanitization logic
+  const contentValue = form.watch('content');
+  useEffect(() => {
+    if (previewMode !== 'preview') return;
+    let cancelled = false;
+    async function sanitizeContent() {
+      setPreviewLoading(true);
+      try {
+        if (!contentValue) {
+          setSanitizedHtml('');
+          setPreviewLoading(false);
+          return;
+        }
+        let sanitized = '';
+        try {
+          sanitized = DOMPurify.sanitize(contentValue);
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        } catch (_) {
+          try {
+            const sanitizeHtml = (await import('sanitize-html')).default;
+            sanitized = sanitizeHtml(contentValue);
+          } catch {
+            // fallback: strip tags
+            sanitized = contentValue.replace(/<[^>]*>?/g, '');
+          }
+        }
+        if (!cancelled) setSanitizedHtml(sanitized);
+      } finally {
+        if (!cancelled) setPreviewLoading(false);
+      }
+    }
+    sanitizeContent();
+    return () => {
+      cancelled = true;
+    };
+  }, [contentValue, previewMode]);
+
   async function onSubmit(values: ComposeFormValues) {
     setIsLoading(true);
     try {
@@ -201,23 +288,58 @@ export function ComposeDialog({
 
       // Refresh the page to show the new sent email
       router.refresh();
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error sending email:', error);
-      // TODO: Add toast notification for error
+      toast.error(error instanceof Error ? error.message : 'Unknown error');
     } finally {
       setIsLoading(false);
     }
   }
 
+  const toValue = form.watch('to');
+  const subjectValue = form.watch('subject');
+
+  const disableSend =
+    isLoading ||
+    userLoading ||
+    !user?.display_name ||
+    !subjectValue ||
+    subjectValue.trim().length === 0 ||
+    !Array.isArray(toValue) ||
+    toValue.length === 0;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex max-h-[80vh] flex-col overflow-hidden sm:max-w-[600px]">
+      <DialogContent className="flex max-h-[80vh] flex-col overflow-hidden sm:max-w-4xl">
         <DialogHeader className="flex-shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <Send className="h-5 w-5" />
             {t('mail.compose_email')}
           </DialogTitle>
         </DialogHeader>
+
+        {/* User info and warning */}
+        <div className="mb-2 flex flex-col gap-1">
+          {userLoading ? (
+            <div className="text-xs text-muted-foreground">
+              {t('common.loading')}
+            </div>
+          ) : user?.display_name && user?.email ? (
+            <div className="text-xs text-muted-foreground">
+              {t('mail.send_as')}:{' '}
+              <span className="font-semibold text-foreground">
+                {user.display_name}{' '}
+                <span className="opacity-70">&lt;{user.email}&gt;</span>
+              </span>
+            </div>
+          ) : (
+            <div className="text-xs font-semibold text-destructive">
+              {t('mail.display_name_required', {
+                default: t('mail.display_name_required_message'),
+              })}
+            </div>
+          )}
+        </div>
 
         <Form {...form}>
           <form
@@ -357,25 +479,58 @@ export function ComposeDialog({
                 )}
               />
 
-              {/* Content */}
-              <FormField
-                control={form.control}
-                name="content"
-                render={({ field }) => (
-                  <FormItem className="flex flex-1 flex-col">
-                    <FormLabel>{t('mail.message')}</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder={t('mail.message_placeholder')}
-                        className="min-h-[200px] flex-1 resize-none"
-                        {...field}
-                        disabled={isLoading}
+              {/* Content + Preview Tabs */}
+              <Tabs
+                value={previewMode}
+                onValueChange={(v) => setPreviewMode(v as 'edit' | 'preview')}
+                className="w-full"
+              >
+                <TabsList className="mb-2 w-fit">
+                  <TabsTrigger value="edit">{t('mail.edit')}</TabsTrigger>
+                  <TabsTrigger value="preview">{t('mail.preview')}</TabsTrigger>
+                </TabsList>
+                <TabsContent value="edit">
+                  <FormField
+                    control={form.control}
+                    name="content"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-1 flex-col">
+                        <FormControl>
+                          <Textarea
+                            placeholder={t('mail.message_placeholder')}
+                            className="min-h-[200px] flex-1 resize-none"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </TabsContent>
+                <TabsContent value="preview">
+                  <div className="min-h-[200px] flex-1 rounded border bg-background p-4">
+                    {previewLoading ? (
+                      <div className="text-xs text-muted-foreground">
+                        {t('common.loading')}
+                      </div>
+                    ) : sanitizedHtml.trim().length > 0 &&
+                      /<[^>]+>/.test(contentValue) ? (
+                      <div
+                        className="prose max-w-full break-words text-foreground prose-a:text-dynamic-blue prose-a:underline prose-strong:text-foreground"
+                        // biome-ignore lint/security/noDangerouslySetInnerHtml: <html content is sanitized>
+                        dangerouslySetInnerHTML={{ __html: sanitizedHtml }}
                       />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                    ) : (
+                      <pre
+                        className="text-sm whitespace-pre-wrap text-foreground"
+                        style={{ margin: 0 }}
+                      >
+                        {contentValue}
+                      </pre>
+                    )}
+                  </div>
+                </TabsContent>
+              </Tabs>
             </div>
 
             <div className="flex flex-shrink-0 justify-end gap-2 border-t pt-4">
@@ -383,12 +538,12 @@ export function ComposeDialog({
                 type="button"
                 variant="outline"
                 onClick={() => onOpenChange(false)}
-                disabled={isLoading}
+                disabled={disableSend}
               >
                 <X className="mr-2 h-4 w-4" />
                 {t('common.cancel')}
               </Button>
-              <Button type="submit" disabled={isLoading}>
+              <Button type="submit" disabled={disableSend}>
                 {isLoading ? (
                   <LoadingIndicator className="mr-2" />
                 ) : (

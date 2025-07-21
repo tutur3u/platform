@@ -5,6 +5,7 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import type { InternalEmail } from '@tuturuuu/types/db';
+import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { cookies } from 'next/headers';
 
 interface SearchParams {
@@ -22,7 +23,7 @@ interface Props {
 }
 
 export default async function MailPage({ params, searchParams }: Props) {
-  const { locale, wsId } = await params;
+  const { wsId } = await params;
   const searchParamsData = searchParams ? await searchParams : {};
 
   const layoutCookie = (await cookies()).get(
@@ -37,25 +38,19 @@ export default async function MailPage({ params, searchParams }: Props) {
     ? JSON.parse(collapsedCookie.value)
     : undefined;
 
-  // Only fetch internal_emails, no post-related data
-  const { data: mailsData, count: mailsCount } = await getMailsData(
-    wsId,
-    searchParamsData
-  );
-
+  const { data } = await getMailsData(wsId, searchParamsData);
   const credential = await getWorkspaceMailCredential(wsId);
+  const user = await getCurrentUser();
 
   return (
     <MailClientWrapper
       wsId={wsId}
-      locale={locale}
       defaultLayout={defaultLayout}
       defaultCollapsed={defaultCollapsed}
-      postsData={mailsData}
-      postsCount={mailsCount}
-      postsStatus={{ count: null }}
+      data={data}
       searchParams={searchParamsData}
       hasCredential={!!credential}
+      user={user}
     />
   );
 }

@@ -2,7 +2,12 @@
 
 import { MailClient } from './_components/mail';
 import { createClient } from '@tuturuuu/supabase/next/client';
-import type { InternalEmail } from '@tuturuuu/types/db';
+import type {
+  InternalEmail,
+  User,
+  UserPrivateDetails,
+} from '@tuturuuu/types/db';
+import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { useCallback, useEffect, useState } from 'react';
 
 interface SearchParams {
@@ -15,39 +20,34 @@ interface SearchParams {
 
 interface MailClientWrapperProps {
   wsId: string;
-  locale: string;
   defaultLayout?: number[];
   defaultCollapsed?: boolean;
-  postsData: InternalEmail[];
-  postsCount: number;
-  postsStatus: { count: number | null };
+  data: InternalEmail[];
   searchParams: SearchParams;
   hasCredential: boolean;
+  user: (User & UserPrivateDetails) | WorkspaceUser | null;
 }
 
 const PAGE_SIZE = 20;
 
 export default function MailClientWrapper({
   wsId,
-  locale,
   defaultLayout,
   defaultCollapsed,
-  postsData,
-  postsCount,
-  postsStatus,
-  searchParams,
+  data,
   hasCredential,
+  user,
 }: MailClientWrapperProps) {
-  const [emails, setEmails] = useState<InternalEmail[]>(postsData);
+  const [emails, setEmails] = useState<InternalEmail[]>(data);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [page, setPage] = useState(1);
 
   useEffect(() => {
-    setEmails(postsData);
+    setEmails(data);
     setPage(1);
     setHasMore(true);
-  }, [postsData]);
+  }, [data]);
 
   const loadMore = useCallback(async () => {
     if (loading || !hasMore) return;
@@ -80,6 +80,7 @@ export default function MailClientWrapper({
           loading={loading}
           wsId={wsId}
           hasCredential={hasCredential}
+          user={user}
         />
       </div>
     </div>
