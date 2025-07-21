@@ -42,7 +42,7 @@ export function TaskTagsDisplay({
               key={tag}
               variant="outline"
               className={cn(
-                'h-auto min-w-0 max-w-[80px] overflow-hidden rounded-full border px-1.5 py-0.5 font-medium text-[10px] truncate transition-all duration-200 hover:scale-105',
+                'block border font-medium h-auto max-w-[80px] min-w-0 overflow-hidden px-1.5 py-0.5 rounded-full text-[10px] transition-all truncate duration-200 hover:scale-105',
                 tagClassName,
                 clickable && 'cursor-pointer hover:brightness-110'
               )}
@@ -50,7 +50,7 @@ export function TaskTagsDisplay({
               onClick={() => clickable && onTagClick?.(tag)}
               title={tag.length > 15 ? `#${tag}` : undefined}
             >
-              <span className="truncate overflow-hidden whitespace-nowrap w-full block">#{tag}</span>
+              <span className="block overflow-hidden truncate whitespace-nowrap w-full">#{tag}</span>
             </Badge>
           );
         })}
@@ -59,14 +59,14 @@ export function TaskTagsDisplay({
             <TooltipTrigger asChild>
               <Badge
                 variant="outline"
-                className="border border-primary/30 bg-primary/10 px-2 py-0.5 rounded-full font-semibold text-primary transition-all duration-200 hover:bg-primary/20"
+                className="bg-primary/10 border border-primary/30 font-semibold px-2 py-0.5 rounded-full text-primary transition-all duration-200 hover:bg-primary/20"
               >
                 +{remainingCount}
               </Badge>
             </TooltipTrigger>
             <TooltipContent
               side="top"
-              className={cn('bg-gray-900/80 text-white rounded-2xl p-5 shadow-2xl border border-white/10 backdrop-blur-lg transition-all duration-200', needsScroll && 'max-h-64')}
+              className={cn('backdrop-blur-lg bg-gray-900/80 border border-white/10 p-5 rounded-2xl shadow-2xl text-white transition-all duration-200', needsScroll && 'max-h-64')}
               sideOffset={8}
             >
               <div className="space-y-3 p-4">
@@ -86,13 +86,13 @@ export function TaskTagsDisplay({
                         key={tag}
                         variant="outline"
                         className={cn(
-                          'h-auto max-w-[110px] rounded-full border px-2 py-0.5 font-medium text-xs transition-all duration-200 hover:scale-105 hover:brightness-110',
+                          'block border font-medium h-auto max-w-[110px] rounded-full px-2 py-0.5 text-xs transition-all duration-200 hover:brightness-110 hover:scale-105',
                           tagClassName
                         )}
                         style={style}
                         title={tag.length > 18 ? `#${tag}` : undefined}
                       >
-                        <span className="truncate overflow-hidden whitespace-nowrap w-full block">#{tag}</span>
+                        <span className="block overflow-hidden truncate whitespace-nowrap w-full">#{tag}</span>
                       </Badge>
                     );
                   })}

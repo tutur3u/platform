@@ -22,7 +22,9 @@ export const AccessibleButton = forwardRef<HTMLButtonElement, AccessibleButtonPr
     const handleKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>) => {
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
-        onClick?.(e as unknown as React.MouseEvent<HTMLButtonElement, MouseEvent>);
+        // For accessibility, trigger onClick with undefined when activated by keyboard
+        // Consumers should handle the possibility of undefined event
+        onClick?.(undefined as unknown as React.MouseEvent<HTMLButtonElement, MouseEvent>);
       }
     };
 

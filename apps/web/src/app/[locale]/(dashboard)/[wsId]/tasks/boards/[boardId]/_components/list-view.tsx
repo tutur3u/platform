@@ -83,6 +83,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { getTagColorStyling } from '@/lib/tag-utils';
 import { getTasks } from '@/lib/task-helper';
 import { TaskEditDialog } from './task-edit-dialog';
+import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogFooter, AlertDialogTitle, AlertDialogDescription, AlertDialogCancel, AlertDialogAction } from '@tuturuuu/ui/alert-dialog';
+import { toast } from '@tuturuuu/ui/hooks/use-toast';
 
 interface Props {
   board: { id: string; tasks: Task[]; lists?: TaskList[] };
@@ -189,6 +191,7 @@ export function ListView({
     status: 'keep',
     tags: [] as string[],
   });
+  const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
 
   // Bulk edit functions
   const handleBulkEdit = async () => {
@@ -239,8 +242,18 @@ export function ListView({
       setSelectedTasks(new Set());
       setIsBulkEditing(false);
       setBulkEditData({ priority: 'keep', status: 'keep', tags: [] });
+      toast({
+        title: 'Tasks updated',
+        description: `${taskIds.length} task${taskIds.length !== 1 ? 's' : ''} updated successfully.`,
+        variant: 'default',
+      });
     } catch (error) {
       console.error('Error updating tasks:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to update tasks.',
+        variant: 'destructive',
+      });
     } finally {
       setIsLoading(false);
     }
@@ -248,30 +261,35 @@ export function ListView({
 
   const handleBulkDelete = async () => {
     if (selectedTasks.size === 0) return;
+    setShowBulkDeleteDialog(true);
+  };
 
-    const confirmed = window.confirm(
-      `Are you sure you want to delete ${selectedTasks.size} selected task${selectedTasks.size !== 1 ? 's' : ''}? This action cannot be undone.`
-    );
-
-    if (confirmed) {
-      setIsLoading(true);
-      try {
-        const supabase = createClient();
-        const taskIds = Array.from(selectedTasks);
-
-        // Delete all tasks in a single query
-        await supabase.from('tasks').delete().in('id', taskIds);
-
-        // Refresh the task list and invalidate cache
-        const updatedTasks = await getTasks(supabase, board.id);
-        setTasks(updatedTasks);
-        queryClient.invalidateQueries({ queryKey: ['tasks', board.id] });
-        setSelectedTasks(new Set());
-      } catch (error) {
-        console.error('Error deleting tasks:', error);
-      } finally {
-        setIsLoading(false);
-      }
+  const handleBulkDeleteConfirmed = async () => {
+    setShowBulkDeleteDialog(false);
+    setIsLoading(true);
+    try {
+      const supabase = createClient();
+      const taskIds = Array.from(selectedTasks);
+      await supabase.from('tasks').delete().in('id', taskIds);
+      // Refresh the task list and invalidate cache
+      const updatedTasks = await getTasks(supabase, board.id);
+      setTasks(updatedTasks);
+      queryClient.invalidateQueries({ queryKey: ['tasks', board.id] });
+      setSelectedTasks(new Set());
+      toast({
+        title: 'Tasks deleted',
+        description: `${taskIds.length} task${taskIds.length !== 1 ? 's' : ''} deleted successfully.`,
+        variant: 'default',
+      });
+    } catch (error) {
+      console.error('Error deleting tasks:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to delete tasks.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -1893,6 +1911,28 @@ export function ListView({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Bulk Delete Confirmation Dialog */}
+      <AlertDialog open={showBulkDeleteDialog} onOpenChange={setShowBulkDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete selected tasks?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete {selectedTasks.size} selected task{selectedTasks.size !== 1 ? 's' : ''}? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel asChild>
+              <Button variant="outline">Cancel</Button>
+            </AlertDialogCancel>
+            <AlertDialogAction asChild>
+              <Button variant="destructive" onClick={handleBulkDeleteConfirmed} disabled={isLoading}>
+                {isLoading ? 'Deleting...' : 'Delete'}
+              </Button>
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
