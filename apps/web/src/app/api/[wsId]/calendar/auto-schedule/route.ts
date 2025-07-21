@@ -5,11 +5,10 @@ import {
 } from '@tuturuuu/ai/scheduling/algorithm';
 import { defaultActiveHours } from '@tuturuuu/ai/scheduling/default';
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type dayjs from 'dayjs';
 import { type NextRequest, NextResponse } from 'next/server';
-import { createCalendarOptimizer } from './tools';
-import {createAdminClient} from '@tuturuuu/supabase/next/server';
 
 export interface DateRange {
   start: dayjs.Dayjs;
@@ -74,12 +73,8 @@ export async function POST(
       );
     }
 
-    
-
     const { searchParams } = new URL(request.url);
     const streamMode = searchParams.get('stream') !== 'false';
-
-   
 
     console.log(`[AUTO-SCHEDULE-${requestId}] Fetching tasks and events...`);
 
