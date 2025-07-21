@@ -38,7 +38,7 @@ export default function Form({ wsId }: { wsId?: string }) {
   };
 
   return (
-    <div className="flex flex-col items-start gap-8 px-2 text-center md:mb-8 md:flex-row md:gap-16 md:px-4">
+    <div className="flex flex-col items-center gap-8 px-2 text-center md:mb-8 md:flex-row md:items-start md:gap-16 md:px-4">
       <div className="flex w-full max-w-sm flex-col items-center gap-2 md:w-auto md:max-w-none">
         <p className="font-semibold">{t('dates-to-meet-together')}</p>
         <DateSelector
@@ -48,7 +48,7 @@ export default function Form({ wsId }: { wsId?: string }) {
         />
       </div>
 
-      <div className="grid w-full max-w-lg items-start justify-start gap-4 gap-x-4 md:max-w-none lg:grid-cols-2">
+      <div className="grid w-full max-w-lg items-start justify-center gap-4 gap-x-4 md:max-w-none md:justify-start lg:grid-cols-2">
         <div className="grid gap-1">
           <p className="w-full font-semibold">{t('soonest-time-to-meet')}</p>
           <TimeSelector
