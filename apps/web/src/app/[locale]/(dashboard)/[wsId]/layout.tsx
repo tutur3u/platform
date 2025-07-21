@@ -91,7 +91,6 @@ export default async function Layout({ children, params }: LayoutProps) {
       icon: <ChartArea className="h-5 w-5" />,
       matchExact: true,
     },
-    null,
     {
       title: t('sidebar_tabs.ai_tools'),
       icon: <Sparkles className="h-5 w-5" />,
@@ -433,7 +432,6 @@ export default async function Layout({ children, params }: LayoutProps) {
         },
       ],
     },
-    null,
     {
       title: t('common.settings'),
       icon: <Cog className="h-5 w-5" />,
