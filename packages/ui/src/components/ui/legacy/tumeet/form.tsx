@@ -38,8 +38,9 @@ export default function Form({ wsId }: { wsId?: string }) {
   };
 
   return (
-    <div className="flex flex-col items-start gap-8 px-2 text-center md:mb-8 md:flex-row md:gap-16 md:px-4">
-      <div className="flex w-full max-w-sm flex-col items-center gap-2 md:w-auto md:max-w-none">
+    <div className="grid grid-cols-1 gap-8 px-2 text-center md:mb-8 md:px-4 lg:text-left">
+      {/* Date Selector */}
+      <div className="flex flex-col items-center justify-center gap-2">
         <p className="font-semibold">{t('dates-to-meet-together')}</p>
         <DateSelector
           value={dates}
@@ -48,35 +49,34 @@ export default function Form({ wsId }: { wsId?: string }) {
         />
       </div>
 
-      <div className="grid w-full max-w-lg items-start justify-start gap-4 gap-x-4 md:max-w-none lg:grid-cols-2">
-        <div className="grid gap-1">
-          <p className="w-full font-semibold">{t('soonest-time-to-meet')}</p>
-          <TimeSelector
-            value={startTime}
-            onValueChange={setStartTime}
-            disabledTime={endTime}
-          />
+      {/* Time and Timezone Controls */}
+      <div className="flex flex-col items-center gap-4 lg:items-start">
+        <div className="grid w-full grid-cols-1 gap-4 md:grid-cols-2">
+          <div className="grid gap-1">
+            <p className="w-full font-semibold">{t('soonest-time-to-meet')}</p>
+            <TimeSelector
+              value={startTime}
+              onValueChange={setStartTime}
+              disabledTime={endTime}
+            />
+          </div>
+          <div className="grid gap-1">
+            <p className="w-full font-semibold">{t('latest-time-to-meet')}</p>
+            <TimeSelector
+              value={endTime}
+              onValueChange={setEndTime}
+              disabledTime={startTime}
+            />
+          </div>
         </div>
-
-        <div className="grid gap-1">
-          <p className="w-full font-semibold max-lg:mt-4">
-            {t('latest-time-to-meet')}
-          </p>
-          <TimeSelector
-            value={endTime}
-            onValueChange={setEndTime}
-            disabledTime={startTime}
-          />
-        </div>
-
-        <Separator className="col-span-full my-4" />
-
-        <div className="col-span-full grid gap-1">
+        <Separator className="my-2" />
+        <div className="grid w-full gap-1">
           <p className="w-full font-semibold">{t('time-zone')}</p>
           <TimezoneSelector value={timezone} onValueChange={setTimezone} />
         </div>
-
-        <CreatePlanDialog plan={plan} />
+        <div className="flex w-full justify-center lg:justify-start">
+          <CreatePlanDialog plan={plan} />
+        </div>
       </div>
     </div>
   );
