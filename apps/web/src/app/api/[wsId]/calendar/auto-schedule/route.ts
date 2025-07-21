@@ -7,6 +7,7 @@ import { defaultActiveHours } from '@tuturuuu/ai/scheduling/default';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type dayjs from 'dayjs';
+import { headers } from 'next/headers';
 import { type NextRequest, NextResponse } from 'next/server';
 
 export interface DateRange {
@@ -50,6 +51,17 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ wsId: string }> }
 ) {
+  const vercelKey = process.env.VERCEL_TRIGGER_API_KEY;
+  const triggerApiKey = process.env.TRIGGER_API_PROD;
+
+  if (vercelKey && triggerApiKey) {
+    return NextResponse.json(
+      {
+        error: 'Both Vercel and Trigger API keys are set. Please use only one.',
+      },
+      { status: 400 }
+    );
+  }
   const supabase = createAdminClient();
   const requestId = Math.random().toString(36).substring(7);
 
