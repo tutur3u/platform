@@ -1,10 +1,10 @@
-import { startOfDay } from 'date-fns';
-import { useMemo } from 'react';
 import { Separator } from '../../separator';
 import { TooltipProvider } from '../../tooltip';
 import { DayCell } from './day-cell';
 import { MonthHeader } from './month-header';
 import type { WorkspaceUserAttendance } from './utils';
+import { startOfDay } from 'date-fns';
+import { useMemo } from 'react';
 
 export const MonthView: React.FC<{
   locale: string;

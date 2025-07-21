@@ -1,5 +1,6 @@
 'use client';
 
+import EditWhiteboardDialog from './editWhiteboardDialog';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import {
   AlertDialog,
@@ -40,7 +41,6 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import EditWhiteboardDialog from './editWhiteboardDialog';
 
 type SortOption = 'alphabetical' | 'dateCreated' | 'lastModified';
 type ViewMode = 'grid' | 'list';

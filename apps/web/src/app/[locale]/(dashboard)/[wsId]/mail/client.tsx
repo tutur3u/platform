@@ -1,9 +1,14 @@
 'use client';
 
-import { createClient } from '@tuturuuu/supabase/next/client';
-import type { PostEmail } from '@tuturuuu/types/primitives/post-email';
-import { useCallback, useEffect, useState } from 'react';
 import { MailClient } from './_components/mail';
+import { createClient } from '@tuturuuu/supabase/next/client';
+import type {
+  InternalEmail,
+  User,
+  UserPrivateDetails,
+} from '@tuturuuu/types/db';
+import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
+import { useCallback, useEffect, useState } from 'react';
 
 interface SearchParams {
   page?: string;
@@ -15,83 +20,56 @@ interface SearchParams {
 
 interface MailClientWrapperProps {
   wsId: string;
-  locale: string;
   defaultLayout?: number[];
   defaultCollapsed?: boolean;
-  postsData: PostEmail[];
-  postsCount: number;
-  postsStatus: { count: number | null };
+  data: InternalEmail[];
   searchParams: SearchParams;
   hasCredential: boolean;
-}
-
-export interface Mail {
-  id: string;
-  name: string;
-  email: string;
-  recipient: string;
-  subject: string;
-  text: string;
-  date: string;
-  read: boolean;
+  user: (User & UserPrivateDetails) | WorkspaceUser | null;
 }
 
 const PAGE_SIZE = 20;
 
 export default function MailClientWrapper({
   wsId,
-  locale,
   defaultLayout,
   defaultCollapsed,
-  postsData,
-  postsCount,
-  postsStatus,
-  searchParams,
+  data,
   hasCredential,
+  user,
 }: MailClientWrapperProps) {
-  const [emails, setEmails] = useState<Mail[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [emails, setEmails] = useState<InternalEmail[]>(data);
+  const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
-  const [page, setPage] = useState(0);
-
-  const loadEmails = useCallback(
-    async (pageNum: number = 0, reset: boolean = false) => {
-      try {
-        setLoading(true);
-        const newEmails = await getWorkspaceMails(wsId, pageNum, PAGE_SIZE);
-
-        if (reset) {
-          setEmails(newEmails);
-        } else {
-          setEmails((prev) => [...prev, ...newEmails]);
-        }
-
-        setHasMore(newEmails.length === PAGE_SIZE);
-        setPage(pageNum);
-      } catch (error) {
-        console.error('Failed to load emails:', error);
-      } finally {
-        setLoading(false);
-      }
-    },
-    [wsId]
-  );
-
-  const loadMore = useCallback(() => {
-    if (!loading && hasMore) {
-      loadEmails(page + 1, false);
-    }
-  }, [loading, hasMore, page, loadEmails]);
+  const [page, setPage] = useState(1);
 
   useEffect(() => {
-    loadEmails(0, true);
-  }, [loadEmails]);
+    setEmails(data);
+    setPage(1);
+    setHasMore(true);
+  }, [data]);
 
-  const mailsToShow = emails.length > 0 ? emails : [];
+  const loadMore = useCallback(async () => {
+    if (loading || !hasMore) return;
+
+    setLoading(true);
+    try {
+      const newEmails = await getWorkspaceMails(wsId, page, PAGE_SIZE);
+      setEmails((prev) => [...prev, ...newEmails]);
+      setHasMore(newEmails.length === PAGE_SIZE);
+      setPage((prev) => prev + 1);
+    } catch (error) {
+      console.error('Failed to load emails:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [loading, hasMore, page, wsId]);
+
+  const mailsToShow = emails;
 
   return (
-    <div className="h-[calc(100vh-2rem)] flex flex-col">
-      <div className="flex-1 rounded-xl border bg-background/80 backdrop-blur-sm shadow-lg overflow-hidden">
+    <div className="flex h-[calc(100vh-2rem)] flex-col">
+      <div className="flex-1 overflow-hidden rounded-xl border bg-background/80 shadow-lg backdrop-blur-sm">
         <MailClient
           mails={mailsToShow}
           defaultLayout={defaultLayout}
@@ -101,12 +79,8 @@ export default function MailClientWrapper({
           hasMore={hasMore}
           loading={loading}
           wsId={wsId}
-          locale={locale}
-          postsData={postsData}
-          postsCount={postsCount}
-          postsStatus={postsStatus}
-          searchParams={searchParams}
           hasCredential={hasCredential}
+          user={user}
         />
       </div>
     </div>
@@ -124,26 +98,16 @@ async function getWorkspaceMails(
   const end = start + pageSize - 1;
 
   const { data, error } = await supabase
-    .from('sent_emails')
+    .from('internal_emails')
     .select('*')
     .eq('ws_id', wsId)
     .order('created_at', { ascending: false })
     .range(start, end);
 
   if (error || !data) {
-    console.error('Failed to fetch sent_emails', error);
+    console.error('Failed to fetch internal_emails', error);
     return [];
   }
 
-  return data.map((row) => ({
-    id: row.id,
-    name: row.source_name ?? 'Unknown',
-    email: row.source_email ?? '',
-    recipient: row.email ?? '',
-    subject: row.subject ?? '',
-    text: row.content ?? '',
-    date: row.created_at ?? new Date().toISOString(),
-    read: true,
-    labels: [],
-  }));
+  return data;
 }

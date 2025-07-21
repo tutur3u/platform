@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import { isEmail } from '@/utils/email-helper';
+import { describe, expect, it } from 'vitest';
 
 describe('isEmail', () => {
   it('should return true for valid email addresses', () => {

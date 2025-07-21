@@ -1,5 +1,6 @@
 'use client';
 
+import { Alert, AlertDescription, AlertTitle } from '../../../alert';
 import type { WorkspaceCourse } from '@tuturuuu/types/db';
 import { Constants } from '@tuturuuu/types/supabase';
 import { Button } from '@tuturuuu/ui/button';
@@ -24,12 +25,11 @@ import {
   SelectValue,
 } from '@tuturuuu/ui/select';
 import { cn } from '@tuturuuu/utils/format';
+import { useLocale, useTranslations } from 'next-intl';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import * as z from 'zod';
-import { Alert, AlertDescription, AlertTitle } from '../../../alert';
 
 interface Props {
   enableCerts?: boolean;

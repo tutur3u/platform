@@ -1,3 +1,4 @@
+import ChallengeClient from './client';
 import {
   createAdminClient,
   createClient,
@@ -12,7 +13,6 @@ import type {
 } from '@tuturuuu/types/db';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import ChallengeClient from './client';
 
 type ExtendedNovaChallenge = NovaChallenge & {
   criteria: NovaChallengeCriteria[];

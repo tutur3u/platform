@@ -1,11 +1,11 @@
+import WorkspaceInviteSnippet from '@/components/notifications/WorkspaceInviteSnippet';
 import { getUserDefaultWorkspace } from '@tuturuuu/utils/user-helper';
 import {
   getWorkspaceInvites,
   getWorkspaces,
 } from '@tuturuuu/utils/workspace-helper';
-import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
-import WorkspaceInviteSnippet from '@/components/notifications/WorkspaceInviteSnippet';
+import { redirect } from 'next/navigation';
 
 export default async function WorkspaceInvites() {
   const t = await getTranslations('onboarding');

@@ -1,7 +1,7 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { convertGoogleAllDayEvent } from '@tuturuuu/ui/hooks/calendar-utils';
 import { updateLastUpsert } from '@tuturuuu/utils/calendar-sync-coordination';
 import { OAuth2Client } from 'google-auth-library';
-import { convertGoogleAllDayEvent } from '@tuturuuu/ui/hooks/calendar-utils';
 import { calendar_v3 } from 'googleapis/build/src/apis/calendar';
 
 // Batch processing configuration
@@ -22,7 +22,7 @@ export type SyncOrchestratorResult = {
   handle?: any;
   error?: string;
   status: string;
-}
+};
 
 export const getGoogleAuthClient = (tokens: {
   access_token: string;
@@ -80,7 +80,9 @@ const syncGoogleCalendarEventsForWorkspaceBatched = async (
   ws_id: string,
   events_to_sync: calendar_v3.Schema$Event[]
 ): Promise<SyncResult> => {
-  console.log(`Syncing Google Calendar events for workspace ${ws_id} with batching`);
+  console.log(
+    `Syncing Google Calendar events for workspace ${ws_id} with batching`
+  );
 
   try {
     const sbAdmin = await createAdminClient({ noCookie: true });
@@ -89,7 +91,7 @@ const syncGoogleCalendarEventsForWorkspaceBatched = async (
     const rawEventsToDelete: calendar_v3.Schema$Event[] = [];
 
     for (const event of events_to_sync) {
-      if (event.status === "cancelled" && event.id) {
+      if (event.status === 'cancelled' && event.id) {
         rawEventsToDelete.push(event);
       } else {
         rawEventsToUpsert.push(event);
@@ -97,10 +99,14 @@ const syncGoogleCalendarEventsForWorkspaceBatched = async (
     }
 
     // Format events for upsert
-    const formattedEvents = rawEventsToUpsert.map(event => formatEventForDb(event, ws_id));
+    const formattedEvents = rawEventsToUpsert.map((event) =>
+      formatEventForDb(event, ws_id)
+    );
 
     // Format events for deletion
-    const formattedEventsToDelete = rawEventsToDelete.map(event => formatEventForDb(event, ws_id));
+    const formattedEventsToDelete = rawEventsToDelete.map((event) =>
+      formatEventForDb(event, ws_id)
+    );
 
     let totalUpserted = 0;
     let totalDeleted = 0;
@@ -108,49 +114,66 @@ const syncGoogleCalendarEventsForWorkspaceBatched = async (
     // Process upserts in batches
     for (let i = 0; i < formattedEvents.length; i += BATCH_SIZE) {
       const batch = formattedEvents.slice(i, i + BATCH_SIZE);
-      
+
       const { error } = await sbAdmin
         .from('workspace_calendar_events')
         .upsert(batch, {
           onConflict: 'ws_id,google_event_id',
-          ignoreDuplicates: true,
+          ignoreDuplicates: false,
         });
-      
+
       if (error) {
-        console.log(`Error upserting batch ${Math.floor(i / BATCH_SIZE) + 1}:`, error);
+        console.log(
+          `Error upserting batch ${Math.floor(i / BATCH_SIZE) + 1}:`,
+          error
+        );
         throw error;
       }
-      
+
       totalUpserted += batch.length;
-      console.log(`Upserted batch ${Math.floor(i / BATCH_SIZE) + 1} (${batch.length} events)`);
+      console.log(
+        `Upserted batch ${Math.floor(i / BATCH_SIZE) + 1} (${batch.length} events)`
+      );
     }
 
     // Process deletes in batches
-    for (let i = 0; i < formattedEventsToDelete.length; i += DELETE_BATCH_SIZE) {
+    for (
+      let i = 0;
+      i < formattedEventsToDelete.length;
+      i += DELETE_BATCH_SIZE
+    ) {
       const batch = formattedEventsToDelete.slice(i, i + DELETE_BATCH_SIZE);
-      
+
       // Create delete conditions for this batch
       const deleteConditions = batch
-        .map((e) => `and(ws_id.eq.${ws_id},google_event_id.eq.${e.google_event_id ?? ''})`)
+        .map(
+          (e) =>
+            `and(ws_id.eq.${ws_id},google_event_id.eq.${e.google_event_id ?? ''})`
+        )
         .join(',');
-      
+
       const { error: deleteError } = await sbAdmin
         .from('workspace_calendar_events')
         .delete()
         .or(deleteConditions);
-      
+
       if (deleteError) {
-        console.log(`Error deleting batch ${Math.floor(i / DELETE_BATCH_SIZE) + 1}:`, deleteError);
+        console.log(
+          `Error deleting batch ${Math.floor(i / DELETE_BATCH_SIZE) + 1}:`,
+          deleteError
+        );
         throw deleteError;
       }
-      
+
       totalDeleted += batch.length;
-      console.log(`Deleted batch ${Math.floor(i / DELETE_BATCH_SIZE) + 1} (${batch.length} events)`);
+      console.log(
+        `Deleted batch ${Math.floor(i / DELETE_BATCH_SIZE) + 1} (${batch.length} events)`
+      );
     }
 
     // Update lastUpsert timestamp after successful sync
     await updateLastUpsert(ws_id, sbAdmin);
-    
+
     return {
       ws_id,
       success: true,
@@ -173,16 +196,16 @@ export { syncGoogleCalendarEventsForWorkspaceBatched };
 // Get workspace by ws_id
 export const getWorkspaceTokensByWsId = async (ws_id: string) => {
   try {
-  const sbAdmin = await createAdminClient({ noCookie: true });
-  const { data: tokens, error } = await sbAdmin
-    .from('workspaces')
-    .select('ws_id, access_token, refresh_token')
-    .eq('ws_id', ws_id);
+    const sbAdmin = await createAdminClient({ noCookie: true });
+    const { data: tokens, error } = await sbAdmin
+      .from('workspaces')
+      .select('ws_id, access_token, refresh_token')
+      .eq('ws_id', ws_id);
 
-  if (error) {
-    console.log('Error fetching workspace tokens:', error);
-    return null;
-  }
+    if (error) {
+      console.log('Error fetching workspace tokens:', error);
+      return null;
+    }
 
     return tokens?.[0] || null;
   } catch (error) {
@@ -195,7 +218,7 @@ export const getWorkspaceTokensByWsId = async (ws_id: string) => {
 export const getWorkspacesForSync = async () => {
   try {
     const sbAdmin = await createAdminClient({ noCookie: true });
-    
+
     const { data: tokens, error } = await sbAdmin
       .from('calendar_auth_tokens')
       .select('ws_id, access_token, refresh_token')
@@ -219,33 +242,36 @@ export const syncWorkspaceBatched = async (payload: {
   events_to_sync: calendar_v3.Schema$Event[];
 }) => {
   const { ws_id, events_to_sync: events } = payload;
-  
-  return syncGoogleCalendarEventsForWorkspaceBatched(
-    ws_id,
-    events
-  );
+
+  return syncGoogleCalendarEventsForWorkspaceBatched(ws_id, events);
 };
 
-export const storeSyncToken = async (ws_id: string, syncToken: string, lastSyncedAt: Date) => {
+export const storeSyncToken = async (
+  ws_id: string,
+  syncToken: string,
+  lastSyncedAt: Date
+) => {
   const sbAdmin = await createAdminClient({ noCookie: true });
-  const { error } = await sbAdmin
-    .from('calendar_sync_states')
-    .upsert({ 
-      ws_id, 
-      calendar_id: 'primary', 
-      sync_token: syncToken, 
-      last_synced_at: lastSyncedAt.toISOString() 
+  const { error } = await sbAdmin.from('calendar_sync_states').upsert(
+    {
+      ws_id,
+      calendar_id: 'primary',
+      sync_token: syncToken,
+      last_synced_at: lastSyncedAt.toISOString(),
     },
     {
-      onConflict: 'ws_id,calendar_id'
-    });
-  
+      onConflict: 'ws_id,calendar_id',
+    }
+  );
+
   if (error) {
-    console.error(`[${ws_id}] Error storing sync token for calendar primary:`, error);
+    console.error(
+      `[${ws_id}] Error storing sync token for calendar primary:`,
+      error
+    );
     throw error;
   }
 };
-
 
 export const getSyncToken = async (ws_id: string) => {
   const sbAdmin = await createAdminClient({ noCookie: true });
@@ -256,7 +282,10 @@ export const getSyncToken = async (ws_id: string) => {
     .eq('calendar_id', 'primary');
 
   if (error) {
-    console.error(`[${ws_id}] Error fetching sync token for calendar primary:`, error);
+    console.error(
+      `[${ws_id}] Error fetching sync token for calendar primary:`,
+      error
+    );
     throw error;
   }
 

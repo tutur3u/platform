@@ -1,3 +1,4 @@
+import EmailInput from '../../../settings-email-input';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Badge } from '@tuturuuu/ui/badge';
 import {
@@ -11,7 +12,6 @@ import { Mail } from '@tuturuuu/ui/icons';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
-import EmailInput from '../../../settings-email-input';
 
 interface ContactInformationCardProps {
   user: WorkspaceUser | null;

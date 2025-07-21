@@ -1,3 +1,7 @@
+import ProblemComponent from '../../../../shared/problem-component';
+import PromptComponent from '../../../../shared/prompt-component';
+import PromptForm from '../../../../shared/prompt-form';
+import TestCaseComponent from '../../../../shared/test-case-component';
 import {
   createAdminClient,
   createClient,
@@ -12,10 +16,6 @@ import { Card, CardContent } from '@tuturuuu/ui/card';
 import { ArrowLeft } from '@tuturuuu/ui/icons';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import Link from 'next/link';
-import ProblemComponent from '../../../../shared/problem-component';
-import PromptComponent from '../../../../shared/prompt-component';
-import PromptForm from '../../../../shared/prompt-form';
-import TestCaseComponent from '../../../../shared/test-case-component';
 
 type ExtendedNovaProblem = NovaProblem & {
   test_cases: NovaProblemTestCase[];

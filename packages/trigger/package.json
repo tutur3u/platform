@@ -5,6 +5,7 @@
   "type": "module",
   "main": "./index.ts",
   "scripts": {
+    "lint": "eslint .",
     "trigger:dev": "bunx trigger.dev@latest dev",
     "trigger:deploy": "bunx trigger.dev@latest deploy"
   },
@@ -19,6 +20,9 @@
     "googleapis": "^153.0.0"
   },
   "devDependencies": {
-    "@trigger.dev/build": "^3.3.17"
-  }
+    "@trigger.dev/build": "^3.3.17",
+    "@tuturuuu/eslint-config": "workspace:*",
+    "@tuturuuu/typescript-config": "workspace:*"
+  },
+  "packageManager": "bun@1.2.19"
 }

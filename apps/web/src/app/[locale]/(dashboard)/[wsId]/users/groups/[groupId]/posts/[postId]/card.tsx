@@ -1,5 +1,7 @@
 'use client';
 
+import useEmail from '@/hooks/useEmail';
+import { isEmail } from '@/utils/email-helper';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { GroupPostCheck } from '@tuturuuu/types/db';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
@@ -22,8 +24,6 @@ import { cn } from '@tuturuuu/utils/format';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import useEmail from '@/hooks/useEmail';
-import { isEmail } from '@/utils/email-helper';
 
 interface Props {
   user: WorkspaceUser;
@@ -58,11 +58,11 @@ function UserCard({
   const [notes, setNotes] = useState('');
   const [saving, setSaving] = useState(false);
 
-  const { sendEmail, loading, error, success } = useEmail();
+  const { sendEmail, localLoading, localError, localSuccess } = useEmail();
 
   useEffect(() => {
-    if (success) router.refresh();
-  }, [success]);
+    if (localSuccess) router.refresh();
+  }, [router, localSuccess]);
 
   const supabase = createClient();
 
@@ -305,7 +305,7 @@ function UserCard({
         {hideEmailSending ? (
           <div>
             <Button variant="secondary" disabled>
-              {disableEmailSending || success ? (
+              {disableEmailSending || localSuccess ? (
                 <MailCheck className="h-6 w-6" />
               ) : (
                 <Send className="h-6 w-6" />
@@ -318,8 +318,8 @@ function UserCard({
               onClick={handleSendEmail}
               disabled={
                 disableEmailSending ||
-                success ||
-                loading ||
+                localSuccess ||
+                localLoading ||
                 !user.email ||
                 !isEmail(user.email) ||
                 user.email.endsWith('@easy.com') ||
@@ -329,7 +329,7 @@ function UserCard({
                 (check?.notes != null && check?.notes !== notes)
               }
               variant={
-                loading || disableEmailSending || success
+                localLoading || disableEmailSending || localSuccess
                   ? 'secondary'
                   : undefined
               }
@@ -337,9 +337,9 @@ function UserCard({
             >
               <Mail className="mr-2" />
               <span className="flex items-center justify-center opacity-70">
-                {loading ? (
+                {localLoading ? (
                   <LoadingIndicator />
-                ) : disableEmailSending || success ? (
+                ) : disableEmailSending || localSuccess ? (
                   'Email sent'
                 ) : (
                   'Send email'
@@ -354,7 +354,7 @@ function UserCard({
                 </>
               )}
             </Button>
-            {error && <p>Error: {error}</p>}
+            {localError && <p>Error: {localError}</p>}
           </div>
         )}
       </div>

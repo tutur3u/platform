@@ -25,8 +25,8 @@ import {
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import { Ellipsis, ExternalLink } from '@tuturuuu/ui/icons';
-import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 interface NovaUserRowActionsProps {

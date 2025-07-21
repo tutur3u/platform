@@ -1,5 +1,6 @@
 'use client';
 
+import { useNavigation } from './shared/navigation-config';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Card } from '@tuturuuu/ui/card';
 import { BookText } from '@tuturuuu/ui/icons';
@@ -15,7 +16,6 @@ import {
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import * as React from 'react';
-import { useNavigation } from './shared/navigation-config';
 
 export function MainNavigationMenu() {
   const t = useTranslations();

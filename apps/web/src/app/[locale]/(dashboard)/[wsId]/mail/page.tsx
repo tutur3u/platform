@@ -1,14 +1,16 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
-import type { PostEmail } from '@tuturuuu/types/primitives/post-email';
-import { cookies } from 'next/headers';
-import { SIDEBAR_COLLAPSED_COOKIE_NAME } from '@/constants/common';
 import MailClientWrapper from './client';
+import { SIDEBAR_COLLAPSED_COOKIE_NAME } from '@/constants/common';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
+import type { InternalEmail } from '@tuturuuu/types/db';
+import { getCurrentUser } from '@tuturuuu/utils/user-helper';
+import { cookies } from 'next/headers';
 
 interface SearchParams {
   page?: string;
   pageSize?: string;
-  includedGroups?: string | string[];
-  excludedGroups?: string | string[];
   userId?: string;
 }
 
@@ -21,7 +23,7 @@ interface Props {
 }
 
 export default async function MailPage({ params, searchParams }: Props) {
-  const { locale, wsId } = await params;
+  const { wsId } = await params;
   const searchParamsData = searchParams ? await searchParams : {};
 
   const layoutCookie = (await cookies()).get(
@@ -36,148 +38,70 @@ export default async function MailPage({ params, searchParams }: Props) {
     ? JSON.parse(collapsedCookie.value)
     : undefined;
 
-  const { data: postsData, count: postsCount } = await getPostsData(
-    wsId,
-    searchParamsData
-  );
-
-  const postsStatus = await getSentEmails(wsId, searchParamsData);
+  const { data } = await getMailsData(wsId, searchParamsData);
   const credential = await getWorkspaceMailCredential(wsId);
+  const user = await getCurrentUser();
 
   return (
     <MailClientWrapper
       wsId={wsId}
-      locale={locale}
       defaultLayout={defaultLayout}
       defaultCollapsed={defaultCollapsed}
-      postsData={postsData}
-      postsCount={postsCount}
-      postsStatus={postsStatus}
+      data={data}
       searchParams={searchParamsData}
       hasCredential={!!credential}
+      user={user}
     />
   );
 }
 
-async function getPostsData(
+async function getMailsData(
   wsId: string,
   {
     page = '1',
     pageSize = '10',
-    includedGroups = [],
-    excludedGroups = [],
     userId,
     retry = true,
   }: SearchParams & { retry?: boolean } = {}
 ) {
   const supabase = await createClient();
 
-  const hasFilters =
-    includedGroups.length > 0 || excludedGroups.length > 0 || userId;
-
-  const queryBuilder = supabase
-    .from('user_group_post_checks')
-    .select(
-      `notes, user_id, email_id, is_completed, user:workspace_users!inner(email, display_name, full_name, ws_id), ...user_group_posts${
-        hasFilters ? '!inner' : ''
-      }(post_id:id, post_title:title, post_content:content, ...workspace_user_groups(group_id:id, group_name:name)), ...sent_emails(subject)`,
-      {
-        count: 'exact',
-      }
-    )
-    .eq('workspace_users.ws_id', wsId)
-    .not('workspace_users.email', 'ilike', '%@easy%');
-
-  if (includedGroups.length > 0) {
-    queryBuilder.in(
-      'user_group_posts.group_id',
-      Array.isArray(includedGroups) ? includedGroups : [includedGroups]
-    );
-  }
-
-  if (excludedGroups.length > 0) {
-    queryBuilder.not('user_group_posts.group_id', 'in', excludedGroups);
-  }
+  let queryBuilder = supabase
+    .from('internal_emails')
+    .select(`*`, {
+      count: 'exact',
+    })
+    .eq('ws_id', wsId);
 
   if (userId) {
-    queryBuilder.eq('user_id', userId);
+    queryBuilder = queryBuilder.eq('user_id', userId);
   }
 
   if (page && pageSize) {
     const parsedPage = Number.parseInt(page);
     const parsedSize = Number.parseInt(pageSize);
     const start = (parsedPage - 1) * parsedSize;
-    const end = parsedPage * parsedSize;
-    queryBuilder.range(start, end).limit(parsedSize);
+    const end = parsedPage * parsedSize - 1;
+    queryBuilder = queryBuilder.range(start, end).limit(parsedSize);
   }
 
   const { data, error, count } = await queryBuilder.order('created_at', {
-    referencedTable: 'user_group_posts',
     ascending: false,
   });
 
   if (error) {
     if (!retry) throw error;
-    return getPostsData(wsId, { pageSize, retry: false });
+    return getMailsData(wsId, { pageSize, retry: false });
   }
 
   return {
-    data: data.map(({ user, ...rest }) => ({
-      ...rest,
-      ws_id: user?.ws_id,
-      email: user?.email,
-      recipient: user?.full_name || user?.display_name,
-    })),
+    data,
     count: count || 0,
-  } as { data: PostEmail[]; count: number };
-}
-
-async function getSentEmails(
-  wsId: string,
-  {
-    includedGroups = [],
-    excludedGroups = [],
-    userId,
-  }: SearchParams & { retry?: boolean } = {}
-) {
-  const supabase = await createClient();
-
-  const queryBuilder = supabase
-    .from('user_group_post_checks')
-    .select(
-      'workspace_users!inner(ws_id), sent_emails!inner(*), user_group_posts!inner(group_id)',
-      {
-        head: true,
-        count: 'exact',
-      }
-    )
-    .eq('workspace_users.ws_id', wsId)
-    .not('workspace_users.email', 'ilike', '%@easy%');
-
-  if (includedGroups.length > 0) {
-    queryBuilder.in(
-      'user_group_posts.group_id',
-      Array.isArray(includedGroups) ? includedGroups : [includedGroups]
-    );
-  }
-
-  if (excludedGroups.length > 0) {
-    queryBuilder.not('user_group_posts.group_id', 'in', excludedGroups);
-  }
-
-  if (userId) {
-    queryBuilder.eq('user_id', userId);
-  }
-
-  const { count } = await queryBuilder;
-
-  return {
-    count,
-  };
+  } as { data: InternalEmail[]; count: number };
 }
 
 async function getWorkspaceMailCredential(wsId: string) {
-  const supabase = await createClient();
+  const supabase = await createAdminClient();
 
   const { data, error } = await supabase
     .from('workspace_email_credentials')

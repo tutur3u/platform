@@ -1,3 +1,4 @@
+import { baseProcedure, createTRPCRouter } from '../init';
 import {
   createAdminClient,
   createClient,
@@ -9,7 +10,6 @@ import {
   validateOtp,
 } from '@tuturuuu/utils/email';
 import { z } from 'zod';
-import { baseProcedure, createTRPCRouter } from '../init';
 
 export const appRouter = createTRPCRouter({
   sendOtp: baseProcedure

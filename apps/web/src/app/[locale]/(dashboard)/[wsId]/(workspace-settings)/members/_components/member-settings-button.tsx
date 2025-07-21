@@ -27,8 +27,8 @@ import { Settings, User as UserIcon } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { getInitials } from '@tuturuuu/utils/name-helper';
-import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import * as z from 'zod';
 

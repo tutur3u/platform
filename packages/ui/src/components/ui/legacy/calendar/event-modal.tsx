@@ -1,13 +1,32 @@
 'use client';
 
+import {
+  createAllDayEvent,
+  isAllDayEvent,
+} from '../../../../hooks/calendar-utils';
+import { useCalendar } from '../../../../hooks/use-calendar';
+import { Alert, AlertDescription, AlertTitle } from '../../alert';
+import { AutosizeTextarea } from '../../custom/autosize-textarea';
+import {
+  COLOR_OPTIONS,
+  DateError,
+  EventColorPicker,
+  EventDateTimePicker,
+  EventDescriptionInput,
+  EventLocationInput,
+  EventPriorityPicker,
+  EventTitleInput,
+  EventToggleSwitch,
+  OverlapWarning,
+} from './event-form-components';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { calendarEventsSchema } from '@tuturuuu/ai/calendar/events';
 import { useObject } from '@tuturuuu/ai/object/core';
+import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import type {
   CalendarEvent,
   EventPriority,
 } from '@tuturuuu/types/primitives/calendar-event';
-import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import {
   Accordion,
   AccordionContent,
@@ -67,25 +86,6 @@ import {
 import Image from 'next/image';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { z } from 'zod';
-import {
-  createAllDayEvent,
-  isAllDayEvent,
-} from '../../../../hooks/calendar-utils';
-import { useCalendar } from '../../../../hooks/use-calendar';
-import { Alert, AlertDescription, AlertTitle } from '../../alert';
-import { AutosizeTextarea } from '../../custom/autosize-textarea';
-import {
-  COLOR_OPTIONS,
-  DateError,
-  EventColorPicker,
-  EventDateTimePicker,
-  EventDescriptionInput,
-  EventLocationInput,
-  EventPriorityPicker,
-  EventTitleInput,
-  EventToggleSwitch,
-  OverlapWarning,
-} from './event-form-components';
 
 dayjs.extend(ts);
 dayjs.extend(utc);
@@ -877,7 +877,7 @@ export function EventModal() {
     <Dialog open={isModalOpen} onOpenChange={(open) => !open && closeModal()}>
       <DialogContent className="max-h-[90vh] max-w-3xl overflow-hidden p-0">
         <DialogHeader className="border-b px-6 pt-6 pb-4">
-          <DialogTitle className="flex items-center gap-2 font-semibold text-xl">
+          <DialogTitle className="flex items-center gap-2 text-xl font-semibold">
             <span>{isEditing ? 'Edit Event' : 'Create Event'}</span>
             {event.google_event_id &&
               typeof event.google_event_id === 'string' &&
@@ -889,8 +889,10 @@ export function EventModal() {
                     className="inline-block h-[18px] w-[18px] align-middle"
                     title="Synced from Google Calendar"
                     data-testid="google-calendar-logo"
+                    width={18}
+                    height={18}
                   />
-                  <span className="font-medium text-xs">Google Calendar</span>
+                  <span className="text-xs font-medium">Google Calendar</span>
                 </div>
               )}
           </DialogTitle>
@@ -928,7 +930,7 @@ export function EventModal() {
             {/* Manual Event Creation Tab */}
             <TabsContent
               value="manual"
-              className="h-full p-0 focus-visible:outline-none focus-visible:ring-0 data-[state=active]:flex data-[state=active]:flex-col"
+              className="h-full p-0 focus-visible:ring-0 focus-visible:outline-none data-[state=active]:flex data-[state=active]:flex-col"
               style={{ display: activeTab === 'manual' ? 'flex' : 'none' }}
             >
               <div className="flex flex-1 flex-col overflow-hidden">
@@ -959,7 +961,7 @@ export function EventModal() {
                     {/* Date and Time Selection */}
                     <div className="space-y-4">
                       <div className="flex items-center justify-between">
-                        <h3 className="font-medium text-sm">Date & Time</h3>
+                        <h3 className="text-sm font-medium">Date & Time</h3>
                         <div className="flex items-center gap-4">
                           <EventToggleSwitch
                             id="all-day"
@@ -1063,14 +1065,14 @@ export function EventModal() {
                         className="border-none"
                       >
                         <AccordionTrigger className="py-2 hover:no-underline">
-                          <div className="flex items-center gap-2 font-medium text-sm">
+                          <div className="flex items-center gap-2 text-sm font-medium">
                             <Settings className="h-4 w-4" />
                             Advanced Settings
                           </div>
                         </AccordionTrigger>
                         <AccordionContent className="pt-2 pb-0">
                           <div className="space-y-4 rounded-lg bg-muted/30 p-4">
-                            <h3 className="font-medium text-sm">
+                            <h3 className="text-sm font-medium">
                               Event Properties
                             </h3>
                             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
@@ -1084,7 +1086,7 @@ export function EventModal() {
                               <div className="flex flex-col space-y-3">
                                 <label
                                   htmlFor="locked"
-                                  className="font-medium text-sm"
+                                  className="text-sm font-medium"
                                 >
                                   Event Protection
                                 </label>
@@ -1110,7 +1112,7 @@ export function EventModal() {
                                   ) : (
                                     <Unlock className="h-3.5 w-3.5 text-muted-foreground" />
                                   )}
-                                  <p className="text-muted-foreground text-xs">
+                                  <p className="text-xs text-muted-foreground">
                                     {event.locked
                                       ? 'Event is locked'
                                       : 'Event is unlocked'}
@@ -1118,7 +1120,7 @@ export function EventModal() {
                                 </div>
                               </div>
                             </div>
-                            <div className="mt-2 text-muted-foreground text-xs">
+                            <div className="mt-2 text-xs text-muted-foreground">
                               <p className="flex items-center gap-1">
                                 <Info className="h-3 w-3" />
                                 Color and protection settings help organize and
@@ -1217,7 +1219,7 @@ export function EventModal() {
             {/* AI Event Generation Tab */}
             <TabsContent
               value="ai"
-              className="h-full p-0 focus-visible:outline-none focus-visible:ring-0 data-[state=active]:flex data-[state=active]:flex-col"
+              className="h-full p-0 focus-visible:ring-0 focus-visible:outline-none data-[state=active]:flex data-[state=active]:flex-col"
               style={{ display: activeTab === 'ai' ? 'flex' : 'none' }}
             >
               <Form {...aiForm}>
@@ -1233,7 +1235,7 @@ export function EventModal() {
                           name="prompt"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel className="font-medium text-base">
+                              <FormLabel className="text-base font-medium">
                                 Describe your event
                               </FormLabel>
                               <FormControl>
@@ -1242,7 +1244,7 @@ export function EventModal() {
                                     {...field}
                                     autoFocus
                                     placeholder="E.g., Schedule a team meeting next Monday at 2pm for 1 hour..."
-                                    className="min-h-[200px] w-full resize-none rounded-md border border-input bg-background p-4 pr-20 text-base focus:outline-none focus:ring-1 focus:ring-ring"
+                                    className="min-h-[200px] w-full resize-none rounded-md border border-input bg-background p-4 pr-20 text-base focus:ring-1 focus:ring-ring focus:outline-none"
                                     disabled={
                                       isLoading ||
                                       isRecording ||
@@ -1322,7 +1324,7 @@ export function EventModal() {
                           <div className="flex items-center justify-center py-8">
                             <div className="flex flex-col items-center gap-2">
                               <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                              <p className="text-muted-foreground text-sm">
+                              <p className="text-sm text-muted-foreground">
                                 Creating your event...
                               </p>
                             </div>
@@ -1380,7 +1382,7 @@ export function EventModal() {
             {/* Preview Tab */}
             <TabsContent
               value="preview"
-              className="h-full p-0 focus-visible:outline-none focus-visible:ring-0 data-[state=active]:flex data-[state=active]:flex-col"
+              className="h-full p-0 focus-visible:ring-0 focus-visible:outline-none data-[state=active]:flex data-[state=active]:flex-col"
               style={{ display: activeTab === 'preview' ? 'flex' : 'none' }}
             >
               <div className="flex flex-1 flex-col overflow-hidden">
@@ -1389,14 +1391,14 @@ export function EventModal() {
                     {/* AI Generated Event Preview */}
                     <div className="rounded-lg border bg-muted/10 p-4">
                       <div className="mb-3 flex items-center justify-between">
-                        <h3 className="flex items-center gap-2 font-medium text-base">
+                        <h3 className="flex items-center gap-2 text-base font-medium">
                           <Sparkles className="h-4 w-4 text-primary" />
                           AI Generated Event
                           {(generatedEvents?.length || 0) > 1 ? 's' : ''}
                         </h3>
                         <div className="flex items-center gap-2">
                           {(generatedEvents?.length || 0) > 1 && (
-                            <div className="flex items-center gap-1 text-muted-foreground text-xs">
+                            <div className="flex items-center gap-1 text-xs text-muted-foreground">
                               <span>{currentEventIndex + 1}</span>
                               <span>/</span>
                               <span>{generatedEvents?.length || 0}</span>
@@ -1412,10 +1414,10 @@ export function EventModal() {
                         <div className="space-y-4">
                           <div className="mt-3 space-y-3 rounded-md border p-3">
                             <div className="space-y-2">
-                              <h4 className="font-medium text-lg">
+                              <h4 className="text-lg font-medium">
                                 {generatedEvent.title}
                               </h4>
-                              <div className="flex flex-wrap gap-2 text-muted-foreground text-sm">
+                              <div className="flex flex-wrap gap-2 text-sm text-muted-foreground">
                                 <div className="flex items-center gap-1">
                                   <CalendarIcon className="h-3.5 w-3.5" />
                                   <span>
@@ -1449,7 +1451,7 @@ export function EventModal() {
                                           generatedEvent.location || ''
                                         )
                                       }
-                                      className="text-muted-foreground text-sm hover:text-primary hover:underline"
+                                      className="text-sm text-muted-foreground hover:text-primary hover:underline"
                                       title="Open in Google Maps"
                                     >
                                       {generatedEvent.location}
@@ -1461,10 +1463,10 @@ export function EventModal() {
 
                             {generatedEvent.description && (
                               <div className="space-y-1">
-                                <h5 className="font-medium text-sm">
+                                <h5 className="text-sm font-medium">
                                   Description
                                 </h5>
-                                <p className="text-muted-foreground text-sm">
+                                <p className="text-sm text-muted-foreground">
                                   {generatedEvent.description}
                                 </p>
                               </div>
@@ -1484,7 +1486,7 @@ export function EventModal() {
                                       className={`flex items-center gap-2 rounded-full border px-2 py-1 text-center ${bg} ${border}`}
                                     >
                                       <span
-                                        className={`font-medium text-xs ${text}`}
+                                        className={`text-xs font-medium ${text}`}
                                       >
                                         {COLOR_OPTIONS.find(
                                           (c) =>
@@ -1502,7 +1504,7 @@ export function EventModal() {
                             {/* Event protection status */}
                             <div className="flex items-center gap-2">
                               <Unlock className="h-3.5 w-3.5 text-muted-foreground" />
-                              <span className="text-muted-foreground text-xs">
+                              <span className="text-xs text-muted-foreground">
                                 Event will be created unlocked
                               </span>
                             </div>
@@ -1541,7 +1543,7 @@ export function EventModal() {
                     {/* AI Insights and Suggestions */}
                     {aiSuggestions.length > 0 && (
                       <div className="rounded-lg border bg-muted/10 p-4">
-                        <h3 className="mb-3 flex items-center gap-2 font-medium text-sm">
+                        <h3 className="mb-3 flex items-center gap-2 text-sm font-medium">
                           <Brain className="h-4 w-4 text-primary" />
                           AI Insights & Suggestions
                         </h3>

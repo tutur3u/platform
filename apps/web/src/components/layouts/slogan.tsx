@@ -1,8 +1,8 @@
 'use client';
 
 import { Button } from '@tuturuuu/ui/button';
-import Link from 'next/link';
 import { useTranslations } from 'next-intl';
+import Link from 'next/link';
 
 export default function Slogan() {
   const t = useTranslations();

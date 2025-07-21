@@ -1,7 +1,7 @@
-import { getTranslations } from 'next-intl/server';
-import { Suspense } from 'react';
 import SessionsListFallback from './fallback';
 import SessionsList from './server-component';
+import { getTranslations } from 'next-intl/server';
+import { Suspense } from 'react';
 
 export default async function Page({
   searchParams,

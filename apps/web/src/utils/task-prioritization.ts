@@ -20,7 +20,7 @@ export interface PrioritizedTasksResult {
 /**
  * Prioritizes tasks based on urgency and assignment
  * 1. Urgent tasks assigned to current user
- * 2. Urgent unassigned tasks  
+ * 2. Urgent unassigned tasks
  * 3. Other tasks assigned to current user
  */
 export function prioritizeTasks(tasks: Task[]): PrioritizedTasksResult {
@@ -50,13 +50,19 @@ export function prioritizeTasks(tasks: Task[]): PrioritizedTasksResult {
 
   // Combine and sort by priority
   const prioritizedTasks = [
-    ...myUrgentTasks.sort((a: Task, b: Task) => (a.priority || 99) - (b.priority || 99)),
-    ...urgentUnassigned.sort((a: Task, b: Task) => (a.priority || 99) - (b.priority || 99)),
-    ...myOtherTasks.sort((a: Task, b: Task) => (a.priority || 99) - (b.priority || 99)),
+    ...myUrgentTasks.sort(
+      (a: Task, b: Task) => (a.priority || 99) - (b.priority || 99)
+    ),
+    ...urgentUnassigned.sort(
+      (a: Task, b: Task) => (a.priority || 99) - (b.priority || 99)
+    ),
+    ...myOtherTasks.sort(
+      (a: Task, b: Task) => (a.priority || 99) - (b.priority || 99)
+    ),
   ];
 
   return {
     nextTask: prioritizedTasks[0] || null,
     availableTasks: prioritizedTasks,
   };
-} 
+}

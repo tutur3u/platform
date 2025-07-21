@@ -10,8 +10,8 @@ import {
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import { Ellipsis, Eye } from '@tuturuuu/ui/icons';
-import Link from 'next/link';
 import { useTranslations } from 'next-intl';
+import Link from 'next/link';
 
 interface UserReportRowActionsProps {
   row: Row<WorkspaceUserReport>;

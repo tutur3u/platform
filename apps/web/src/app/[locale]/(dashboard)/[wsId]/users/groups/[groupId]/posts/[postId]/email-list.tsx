@@ -2,8 +2,8 @@
 
 import { Button } from '@tuturuuu/ui/button';
 import { Mail } from '@tuturuuu/ui/icons';
-import Link from 'next/link';
 import { useTranslations } from 'next-intl';
+import Link from 'next/link';
 
 export function EmailList({
   wsId,
@@ -15,7 +15,7 @@ export function EmailList({
   const t = useTranslations();
 
   return (
-    <Link href={`/${wsId}/mail?includedGroups=${groupId}`}>
+    <Link href={`/${wsId}/posts?includedGroups=${groupId}`}>
       <Button>
         <Mail className="mr-1" />
         {t('post-email-data-table.send_email')}

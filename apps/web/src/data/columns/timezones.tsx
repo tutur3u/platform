@@ -1,5 +1,6 @@
 'use client';
 
+import { TimezoneRowActions } from '@/components/row-actions/timezones';
 import type { ColumnDef } from '@tanstack/react-table';
 import type {
   Timezone,
@@ -8,7 +9,6 @@ import type {
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import { Check, Clock, RefreshCw, RefreshCwOff, X } from '@tuturuuu/ui/icons';
 import moment from 'moment';
-import { TimezoneRowActions } from '@/components/row-actions/timezones';
 
 export const timezoneColumns = (
   t: any,

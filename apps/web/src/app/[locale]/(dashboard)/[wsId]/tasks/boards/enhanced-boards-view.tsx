@@ -1,10 +1,22 @@
 'use client';
 
-import type {
-  Task,
-  TaskBoard,
-  TaskList,
-} from '@tuturuuu/types/primitives/TaskBoard';
+import { projectColumns } from './columns';
+// Import new components
+import { GanttChart } from './components/GanttChart';
+import { StatusDistribution } from './components/StatusDistribution';
+import { TaskCreationAnalytics } from './components/TaskCreationAnalytics';
+import { TaskGroup } from './components/TaskGroup';
+import { TaskWorkflowAnalytics } from './components/TaskWorkflowAnalytics';
+// Import analytics hooks
+import {
+  useAvgDuration,
+  useOnTimeRate,
+  useTaskVelocity,
+} from './hooks/useTaskAnalytics';
+import type { EnhancedTaskBoard } from './types';
+// Import helper functions
+import { getFilteredMetrics } from './utils/taskHelpers';
+import { CustomDataTable } from '@/components/custom-data-table';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card } from '@tuturuuu/ui/card';
@@ -46,22 +58,6 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { cn } from '@tuturuuu/utils/format';
 import { useMemo, useState } from 'react';
-import { CustomDataTable } from '@/components/custom-data-table';
-import { projectColumns } from './columns';
-// Import new components
-import { GanttChart } from './components/GanttChart';
-import { StatusDistribution } from './components/StatusDistribution';
-import { TaskCreationAnalytics } from './components/TaskCreationAnalytics';
-import { TaskGroup } from './components/TaskGroup';
-import { TaskWorkflowAnalytics } from './components/TaskWorkflowAnalytics';
-// Import analytics hooks
-import {
-  useAvgDuration,
-  useOnTimeRate,
-  useTaskVelocity,
-} from './hooks/useTaskAnalytics';
-// Import helper functions
-import { getFilteredMetrics } from './utils/taskHelpers';
 
 interface AnalyticsFilters {
   timeView: 'week' | 'month' | 'year';
@@ -78,18 +74,7 @@ const CARD_LAYOUT_OPTIONS = [
 type CardLayout = (typeof CARD_LAYOUT_OPTIONS)[number]['value'];
 
 interface EnhancedBoardsViewProps {
-  data: (TaskBoard & {
-    href: string;
-    totalTasks: number;
-    completedTasks: number;
-    activeTasks: number;
-    overdueTasks: number;
-    progressPercentage: number;
-    highPriorityTasks: number;
-    mediumPriorityTasks: number;
-    lowPriorityTasks: number;
-    task_lists?: (TaskList & { tasks: Task[] })[];
-  })[];
+  data: EnhancedTaskBoard[];
   count: number;
 }
 
@@ -286,11 +271,25 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
 
   const handleBoardClick = (
     board: (typeof safeData)[0],
-    e: React.MouseEvent
+    e?: React.MouseEvent
   ) => {
-    e.preventDefault();
+    if (e) {
+      e.preventDefault();
+    }
     setSelectedBoard(board.id);
     setSidebarOpen(true);
+  };
+
+  // Handler for table row clicks
+  const handleTableRowClick = (board: (typeof safeData)[0]) => {
+    // Check if any dialogs or alert dialogs are currently open
+    const hasOpenDialogs = document.querySelector('[role="dialog"]') !== null;
+    const hasOpenAlertDialogs =
+      document.querySelector('[role="alertdialog"]') !== null;
+    if (hasOpenDialogs || hasOpenAlertDialogs) {
+      return; // Don't trigger row click if dialogs are open
+    }
+    handleBoardClick(board);
   };
 
   const closeSidebar = () => {
@@ -877,6 +876,7 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                   id: false,
                   created_at: false,
                 }}
+                onRowClick={handleTableRowClick}
               />
             </TabsContent>
 
@@ -1286,8 +1286,8 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
               <div className="flex-1 space-y-6 overflow-y-auto p-6">
                 {/* Board Info */}
                 <div>
-                  <h3 className="mb-2 text-lg font-semibold">
-                    {selectedBoard}
+                  <h3 className="mb-2 line-clamp-2 text-lg font-semibold">
+                    {selectedBoardData?.name || 'N/A'}
                   </h3>
 
                   {/* Tags */}

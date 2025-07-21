@@ -1,3 +1,6 @@
+import { getChats } from '../../chat/helper';
+import type { ExtendedWorkspaceTask } from '../../time-tracker/types';
+import TasksSidebarContent from './tasks-sidebar-content';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type {
   WorkspaceTask,
@@ -8,9 +11,6 @@ import {
   getPermissions,
   verifyHasSecrets,
 } from '@tuturuuu/utils/workspace-helper';
-import { getChats } from '../../chat/helper';
-import type { ExtendedWorkspaceTask } from '../../time-tracker/types';
-import TasksSidebarContent from './tasks-sidebar-content';
 
 interface TasksSidebarProps {
   wsId: string;

@@ -1,3 +1,5 @@
+import { ChatMessage } from '@/components/chat-message';
+import { OnlineUsers } from '@/components/online-users';
 import type { UIMessage } from '@tuturuuu/ai/types';
 import type { RealtimePresenceState } from '@tuturuuu/supabase/next/realtime';
 import { Box, Globe, Lock, Sparkle } from '@tuturuuu/ui/icons';
@@ -5,8 +7,6 @@ import { Separator } from '@tuturuuu/ui/separator';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { Fragment } from 'react';
-import { ChatMessage } from '@/components/chat-message';
-import { OnlineUsers } from '@/components/online-users';
 
 interface PresenceUser {
   id: string;
@@ -75,7 +75,7 @@ export function ChatList({
           key={`chat-${chatId}-${chatTitle}-${chatIsPublic}-${chatModel}-${chatSummary}`}
         >
           <div
-            className={`rounded-lg border bg-foreground/5 p-4 text-center font-semibold text-2xl ${
+            className={`rounded-lg border bg-foreground/5 p-4 text-center text-2xl font-semibold ${
               chatTitle === undefined && !!chatId
                 ? 'animate-pulse text-transparent'
                 : ''
@@ -130,13 +130,13 @@ export function ChatList({
             {(chatSummary || summarizing) && (
               <Fragment key={`chat-${chatId}-${chatSummary}`}>
                 <Separator className="my-2" />
-                <div className="mb-2 font-bold text-base uppercase tracking-widest">
+                <div className="mb-2 text-base font-bold tracking-widest uppercase">
                   {t('summary')}
                 </div>
                 {!chatSummary && summarizing ? (
                   <div className="h-32 w-full animate-pulse rounded border bg-foreground/5" />
                 ) : (
-                  <div className="w-full whitespace-pre-wrap break-words rounded border bg-foreground/5 p-2 text-start font-normal text-lg">
+                  <div className="w-full rounded border bg-foreground/5 p-2 text-start text-lg font-normal break-words whitespace-pre-wrap">
                     {chatSummary?.trim()}
                   </div>
                 )}

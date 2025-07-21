@@ -1,7 +1,7 @@
 'use client';
 
-import { cn } from '@tuturuuu/utils/format';
 import type { Priority, Task } from '../../types';
+import { cn } from '@tuturuuu/utils/format';
 
 interface PriorityDistributionProps {
   tasks: Task[];

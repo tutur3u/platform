@@ -6,10 +6,10 @@
     "access": "public"
   },
   "scripts": {
+    "lint": "eslint .",
     "test": "vitest run",
     "test:watch": "vitest"
   },
-  "packageManager": "bun@1.2.19",
   "dependencies": {
     "@tuturuuu/supabase": "workspace:*",
     "clsx": "^2.1.1",
@@ -21,6 +21,7 @@
     "zod": "^3.25.76"
   },
   "devDependencies": {
+    "@tuturuuu/eslint-config": "workspace:*",
     "@tuturuuu/types": "workspace:*",
     "@tuturuuu/typescript-config": "workspace:*",
     "@types/node": "^24.0.15",
@@ -36,5 +37,6 @@
     "./*": "./src/*.ts",
     "./common/nextjs": "./src/common/nextjs.tsx",
     "./permissions": "./src/permissions.tsx"
-  }
+  },
+  "packageManager": "bun@1.2.19"
 }

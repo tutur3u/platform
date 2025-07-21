@@ -1,8 +1,8 @@
+import { ClientProviders } from './client-providers';
+import { TRPCProvider } from '@/trpc/client';
 import { NextIntlClientProvider } from 'next-intl';
 import { ThemeProvider } from 'next-themes';
 import type { ReactNode } from 'react';
-import { TRPCProvider } from '@/trpc/client';
-import { ClientProviders } from './client-providers';
 
 export function Providers({ children }: { children: ReactNode }) {
   return (

@@ -13,8 +13,8 @@ import {
 } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
-import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 interface ShortenedLinkResult {
@@ -144,10 +144,10 @@ export function InlineLinkShortenerForm({ wsId }: { wsId: string }) {
             <LinkIcon className="h-5 w-5 text-dynamic-blue" />
           </div>
           <div>
-            <h3 className="font-semibold text-xl">
+            <h3 className="text-xl font-semibold">
               {t('link-shortener.create')}
             </h3>
-            <p className="mt-1 font-normal text-muted-foreground text-sm">
+            <p className="mt-1 text-sm font-normal text-muted-foreground">
               {t('link-shortener.create_description')}
             </p>
           </div>
@@ -159,7 +159,7 @@ export function InlineLinkShortenerForm({ wsId }: { wsId: string }) {
             <div className="space-y-3">
               <Label
                 htmlFor="url"
-                className="font-semibold text-foreground text-sm"
+                className="text-sm font-semibold text-foreground"
               >
                 {t('link-shortener.url_to_shorten')} *
               </Label>
@@ -179,7 +179,7 @@ export function InlineLinkShortenerForm({ wsId }: { wsId: string }) {
               <div className="space-y-3 rounded-lg border border-border/40 bg-muted/30 p-4">
                 <Label
                   htmlFor="customSlug"
-                  className="font-semibold text-foreground text-sm"
+                  className="text-sm font-semibold text-foreground"
                 >
                   {t('link-shortener.custom_slug')}
                 </Label>
@@ -194,7 +194,7 @@ export function InlineLinkShortenerForm({ wsId }: { wsId: string }) {
                   disabled={loading}
                   className="h-11 border-border/60 transition-all duration-200 focus:border-dynamic-blue focus:ring-2 focus:ring-dynamic-blue/20"
                 />
-                <p className="text-muted-foreground text-xs">
+                <p className="text-xs text-muted-foreground">
                   {t('link-shortener.custom_slug_description')}
                 </p>
               </div>
@@ -241,11 +241,11 @@ export function InlineLinkShortenerForm({ wsId }: { wsId: string }) {
 
             <div className="space-y-4 rounded-lg border border-border/40 bg-muted/40 p-5">
               <div className="space-y-2">
-                <Label className="font-semibold text-muted-foreground text-xs uppercase tracking-wide">
+                <Label className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
                   {t('link-shortener.original_url')}
                 </Label>
                 <div className="group flex items-center gap-3">
-                  <p className="flex-1 truncate font-medium text-foreground text-sm">
+                  <p className="flex-1 truncate text-sm font-medium text-foreground">
                     {result.link}
                   </p>
                   <Button
@@ -260,11 +260,11 @@ export function InlineLinkShortenerForm({ wsId }: { wsId: string }) {
               </div>
 
               <div className="space-y-2">
-                <Label className="font-semibold text-muted-foreground text-xs uppercase tracking-wide">
+                <Label className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
                   {t('link-shortener.short_url')}
                 </Label>
                 <div className="group flex items-center gap-3 rounded-md border border-border/60 bg-background p-3">
-                  <code className="flex-1 font-mono font-semibold text-dynamic-blue text-sm">
+                  <code className="flex-1 font-mono text-sm font-semibold text-dynamic-blue">
                     {getShortUrl(result.slug)}
                   </code>
                   <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">

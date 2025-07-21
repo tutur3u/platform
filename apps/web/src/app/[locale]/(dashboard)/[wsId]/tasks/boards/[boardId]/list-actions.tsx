@@ -1,3 +1,4 @@
+import { deleteTaskList } from '@/lib/task-helper';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -17,7 +18,6 @@ import {
 import { MoreHorizontal, Pencil, Trash } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { useState } from 'react';
-import { deleteTaskList } from '@/lib/task-helper';
 
 interface Props {
   listId: string;

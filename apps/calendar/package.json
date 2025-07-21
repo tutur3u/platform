@@ -15,7 +15,6 @@
     "@tuturuuu/auth": "workspace:*",
     "@tuturuuu/supabase": "workspace:*",
     "@tuturuuu/types": "workspace:*",
-    "@tuturuuu/typescript-config": "workspace:*",
     "@tuturuuu/ui": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
     "@vercel/analytics": "^1.5.0",
@@ -30,6 +29,8 @@
     "zod": "^3.25.76"
   },
   "devDependencies": {
+    "@tuturuuu/eslint-config": "workspace:*",
+    "@tuturuuu/typescript-config": "workspace:*",
     "@types/negotiator": "^0.6.4",
     "@types/node": "^24.0.15",
     "@types/react": "^19.1.8",

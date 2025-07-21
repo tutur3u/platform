@@ -2,8 +2,8 @@ import { Button } from '@tuturuuu/ui/button';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Bot } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
-import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
+import Link from 'next/link';
 
 interface Props {
   params: Promise<{

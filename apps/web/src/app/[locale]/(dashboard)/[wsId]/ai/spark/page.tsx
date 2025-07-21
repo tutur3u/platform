@@ -1,9 +1,9 @@
+import SparkClientPage from './client-page';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { GradientHeadline } from '@tuturuuu/ui/custom/gradient-headline';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
-import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
-import SparkClientPage from './client-page';
+import { redirect } from 'next/navigation';
 
 export default async function SparkPage({
   params,
@@ -25,7 +25,7 @@ export default async function SparkPage({
 
   if (error || !whitelisted?.enabled)
     return (
-      <div className="flex h-screen w-full items-center justify-center font-bold text-2xl lg:text-4xl xl:text-5xl">
+      <div className="flex h-screen w-full items-center justify-center text-2xl font-bold lg:text-4xl xl:text-5xl">
         <GradientHeadline>{t('not_whitelisted')}.</GradientHeadline>
       </div>
     );

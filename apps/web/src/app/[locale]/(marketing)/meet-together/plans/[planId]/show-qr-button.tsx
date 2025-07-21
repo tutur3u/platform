@@ -1,5 +1,6 @@
 'use client';
 
+import CopyLinkButton from './copy-link-button';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,
@@ -13,7 +14,6 @@ import {
 import { QrCode } from '@tuturuuu/ui/icons';
 import { useTranslations } from 'next-intl';
 import { QRCodeCanvas } from 'qrcode.react';
-import CopyLinkButton from './copy-link-button';
 
 export default function ShowQRButton({ url }: { url: string }) {
   const t = useTranslations();

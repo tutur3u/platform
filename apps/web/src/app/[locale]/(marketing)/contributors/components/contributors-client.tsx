@@ -1,5 +1,6 @@
 'use client';
 
+import { GITHUB_OWNER, GITHUB_REPO } from '@/constants/common';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card } from '@tuturuuu/ui/card';
@@ -9,8 +10,8 @@ import {
   FileText,
   GitCommit,
   GitFork,
-  GithubIcon,
   GitPullRequest,
+  GithubIcon,
   Heart,
   Mail,
   MessageSquare,
@@ -18,7 +19,7 @@ import {
   Users,
 } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
-import { motion, type Variants } from 'framer-motion';
+import { type Variants, motion } from 'framer-motion';
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
@@ -37,7 +38,6 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-import { GITHUB_OWNER, GITHUB_REPO } from '@/constants/common';
 
 // Types imported from server component
 interface GithubUser {

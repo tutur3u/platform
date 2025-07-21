@@ -1,11 +1,11 @@
-import { Suspense } from 'react';
-import LoadingStatisticCard from '@/components/loading-statistic-card';
 import {
-  UserGroupsStatistics,
   UserGroupTagsStatistics,
+  UserGroupsStatistics,
   UserReportsStatistics,
   UsersStatistics,
 } from '../../(dashboard)/statistics';
+import LoadingStatisticCard from '@/components/loading-statistic-card';
+import { Suspense } from 'react';
 
 interface Props {
   params: Promise<{
