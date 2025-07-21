@@ -234,7 +234,7 @@ const eventTypeData = [
   { period: "20:00", added: 15, updated: 10, deleted: 2 },
 ]
 
-export default function Component() {
+export function CalendarSyncDashboard() {
   const [filterType, setFilterType] = useState("all")
   const [filterWorkspace, setFilterWorkspace] = useState("all")
   const [searchTerm, setSearchTerm] = useState("")

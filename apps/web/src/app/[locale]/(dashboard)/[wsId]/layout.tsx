@@ -1,5 +1,6 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import {
+  Activity,
   Archive,
   Banknote,
   Blocks,
@@ -219,11 +220,22 @@ export default async function Layout({ children, params }: LayoutProps) {
       children: [
         {
           title: t('sidebar_tabs.calendar'),
-          href: `/${wsId}/calendar`,
           icon: <Calendar className="h-5 w-5" />,
           disabled: ENABLE_AI_ONLY || withoutPermission('manage_calendar'),
           shortcut: 'C',
           experimental: 'alpha',
+          children: [
+            {
+              title: t('calendar-tabs.calendar'),
+              href: `/${wsId}/calendar`,
+              icon: <Calendar className="h-4 w-4" />,
+            },
+            {
+              title: t('calendar-tabs.sync-dashboard'),
+              href: `/${wsId}/calendar/sync-dashboard`,
+              icon: <Activity className="h-4 w-4" />,
+            },
+          ],
         },
         {
           title: t('sidebar_tabs.tumeet'),

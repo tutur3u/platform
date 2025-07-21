@@ -980,7 +980,8 @@
   "calendar-tabs": {
     "calendar": "Lịch",
     "overview": "Tổng quan",
-    "events": "Sự kiện"
+    "events": "Sự kiện",
+    "sync-dashboard": "Bảng điều khiển đồng bộ"
   },
   "workspace-finance-tabs": {
     "overview": "Tổng quan",

@@ -969,7 +969,8 @@
   "calendar-tabs": {
     "calendar": "Calendar",
     "overview": "Overview",
-    "events": "Events"
+    "events": "Events",
+    "sync-dashboard": "Sync Dashboard"
   },
   "workspace-finance-tabs": {
     "overview": "Overview",
