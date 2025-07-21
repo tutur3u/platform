@@ -24,6 +24,7 @@ import { UserIcon } from '@tuturuuu/ui/icons';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { Separator } from '@tuturuuu/ui/separator';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
+import { formatEmailAddresses } from '@tuturuuu/utils/email/client';
 import { cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
 import 'dayjs/locale/vi';
@@ -41,28 +42,6 @@ interface MailDisplayProps {
 }
 
 const DISABLE_MAIL_ACTIONS = true;
-
-function formatDisplayAddresses(
-  addresses: string | string[]
-): { name: string; email: string; raw: string }[] {
-  if (!addresses) return [];
-  const arr = Array.isArray(addresses) ? addresses : [addresses];
-  return arr
-    .filter((addr): addr is string => typeof addr === 'string')
-    .map((addr) => {
-      const match = addr.match(
-        /^(.+?)\s*<\s*([\w\-.+]+@[\w\-.]+\.[a-zA-Z]{2,})\s*>$/
-      );
-      if (match) {
-        return { name: match[1] ?? '', email: match[2] ?? '', raw: addr };
-      }
-      // If just an email
-      if (/^[\w\-.+]+@[\w\-.]+\.[a-zA-Z]{2,}$/.test(addr)) {
-        return { name: '', email: addr, raw: addr };
-      }
-      return { name: '', email: '', raw: addr };
-    });
-}
 
 function AvatarChip({ name, email }: { name: string; email: string }) {
   const initial = name
@@ -90,9 +69,8 @@ function AddressChips({
   addresses: string[];
   avatar?: boolean;
 }) {
-  const parsed = formatDisplayAddresses(addresses).filter(
-    ({ email }) => !!email
-  );
+  const parsed = formatEmailAddresses(addresses).filter(({ email }) => !!email);
+
   return (
     <div className="flex flex-wrap items-center gap-2 text-xs">
       <span className="min-w-[40px] font-medium text-muted-foreground">
