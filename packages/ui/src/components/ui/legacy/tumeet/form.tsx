@@ -42,11 +42,13 @@ export default function Form({ wsId }: { wsId?: string }) {
       {/* Date Selector */}
       <div className="flex flex-col items-center justify-center gap-2">
         <p className="font-semibold">{t('dates-to-meet-together')}</p>
-        <DateSelector
-          value={dates}
-          onSelect={setDates}
-          className="bg-background/50"
-        />
+        <div>
+          <DateSelector
+            value={dates}
+            onSelect={setDates}
+            className="bg-background/50"
+          />
+        </div>
       </div>
 
       {/* Time and Timezone Controls */}
