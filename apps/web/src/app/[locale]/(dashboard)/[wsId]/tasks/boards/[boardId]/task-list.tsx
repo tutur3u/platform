@@ -1,8 +1,3 @@
-import { TaskTagInput } from './_components/task-tag-input';
-import { ListActions } from './list-actions';
-import { statusIcons } from './status-section';
-import { type Task, TaskCard } from './task';
-import { TaskForm } from './task-form';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useQuery } from '@tanstack/react-query';
@@ -39,6 +34,11 @@ import { debounce } from 'lodash';
 import Image from 'next/image';
 import { useParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { TaskTagInput } from './_components/task-tag-input';
+import { ListActions } from './list-actions';
+import { statusIcons } from './status-section';
+import { type Task, TaskCard } from './task';
+import { TaskForm } from './task-form';
 
 export interface Column extends TaskList {
   // This extends TaskList to include color, status, position
@@ -381,10 +381,10 @@ export function BoardColumn({
       style={style}
       className={cn(
         'group flex h-full w-[350px] flex-col rounded-xl transition-all duration-200',
-        'touch-none border-l-4 select-none',
+        'touch-none select-none border-l-4',
         colorClass,
         isDragging &&
-          'scale-[1.02] rotate-1 opacity-90 shadow-xl ring-2 ring-primary/20',
+          'rotate-1 scale-[1.02] opacity-90 shadow-xl ring-2 ring-primary/20',
         isOverlay && 'shadow-2xl ring-2 ring-primary/30',
         'hover:shadow-md'
       )}
@@ -395,7 +395,7 @@ export function BoardColumn({
           {...listeners}
           className={cn(
             '-ml-2 h-auto cursor-grab p-1 opacity-40 transition-all',
-            'group-hover:opacity-70 hover:bg-black/5',
+            'hover:bg-black/5 group-hover:opacity-70',
             isDragging && 'opacity-100',
             isOverlay && 'cursor-grabbing'
           )}
@@ -405,13 +405,13 @@ export function BoardColumn({
         </div>
         <div className="flex flex-1 items-center gap-2">
           <span className="text-sm">{statusIcon}</span>
-          <h3 className="text-sm font-semibold text-foreground/90">
+          <h3 className="font-semibold text-foreground/90 text-sm">
             {column.name}
           </h3>
           <Badge
             variant="secondary"
             className={cn(
-              'px-2 py-0.5 text-xs font-medium',
+              'px-2 py-0.5 font-medium text-xs',
               filteredAndSortedTasks.length === 0
                 ? 'text-muted-foreground'
                 : 'text-foreground'
@@ -645,7 +645,7 @@ export function BoardColumn({
               >
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <h4 className="text-sm font-medium">Filters</h4>
+                    <h4 className="font-medium text-sm">Filters</h4>
                     {hasActiveFilters && (
                       <Button
                         variant="ghost"
@@ -660,7 +660,7 @@ export function BoardColumn({
 
                   {/* Priority Filter */}
                   <div className="space-y-2">
-                    <div className="text-xs font-medium">Priority</div>
+                    <div className="font-medium text-xs">Priority</div>
                     <div className="flex flex-wrap gap-1">
                       {[1, 2, 3, 4].map((priority) => {
                         const isSelected = filters.priorities.has(priority);
@@ -710,7 +710,7 @@ export function BoardColumn({
 
                   {/* Assignees Filter */}
                   <div className="space-y-2">
-                    <div className="text-xs font-medium">Assignees</div>
+                    <div className="font-medium text-xs">Assignees</div>
                     <Popover
                       open={assigneesOpen}
                       onOpenChange={setAssigneesOpen}
@@ -794,61 +794,58 @@ export function BoardColumn({
                               </CommandItem>
 
                               {members.length > 0 && (
-                                <div className="my-1 border-t border-border" />
+                                <div className="my-1 border-border border-t" />
                               )}
 
                               {members.map((member: WorkspaceMember) => {
-                                  const isSelected = filters.assignees.has(
-                                    member.id
-                                  );
-                                  return (
-                                    <CommandItem
-                                      key={member.id}
-                                      onSelect={() => {
-                                        const newAssignees = new Set(
-                                          filters.assignees
-                                        );
-                                        if (isSelected) {
-                                          newAssignees.delete(member.id);
-                                        } else {
-                                          newAssignees.add(member.id);
-                                        }
-                                        setFilters((prev) => ({
-                                          ...prev,
-                                          assignees: newAssignees,
-                                        }));
-                                      }}
-                                    >
-                                      <Check
-                                        className={cn(
-                                          'mr-2 h-4 w-4',
-                                          isSelected
-                                            ? 'opacity-100'
-                                            : 'opacity-0'
-                                        )}
-                                      />
-                                      <div className="flex items-center gap-2">
-                                        {member.avatar_url && (
-                                          <Image
-                                            src={member.avatar_url}
-                                            alt={
-                                              member.display_name ||
-                                              member.email ||
-                                              'User avatar'
-                                            }
-                                            width={20}
-                                            height={20}
-                                            className="h-5 w-5 rounded-full"
-                                          />
-                                        )}
-                                        <div className="text-sm">
-                                          {member.display_name || member.email}
-                                        </div>
+                                const isSelected = filters.assignees.has(
+                                  member.id
+                                );
+                                return (
+                                  <CommandItem
+                                    key={member.id}
+                                    onSelect={() => {
+                                      const newAssignees = new Set(
+                                        filters.assignees
+                                      );
+                                      if (isSelected) {
+                                        newAssignees.delete(member.id);
+                                      } else {
+                                        newAssignees.add(member.id);
+                                      }
+                                      setFilters((prev) => ({
+                                        ...prev,
+                                        assignees: newAssignees,
+                                      }));
+                                    }}
+                                  >
+                                    <Check
+                                      className={cn(
+                                        'mr-2 h-4 w-4',
+                                        isSelected ? 'opacity-100' : 'opacity-0'
+                                      )}
+                                    />
+                                    <div className="flex items-center gap-2">
+                                      {member.avatar_url && (
+                                        <Image
+                                          src={member.avatar_url}
+                                          alt={
+                                            member.display_name ||
+                                            member.email ||
+                                            'User avatar'
+                                          }
+                                          width={20}
+                                          height={20}
+                                          className="h-5 w-5 rounded-full"
+                                        />
+                                      )}
+                                      <div className="text-sm">
+                                        {member.display_name || member.email}
                                       </div>
-                                    </CommandItem>
-                                  );
-                                }
-                              )}
+                                    </div>
+                                  </CommandItem>
+                                );
+                              })}
                             </CommandGroup>
                           </CommandList>
                         </Command>
@@ -858,7 +855,7 @@ export function BoardColumn({
 
                   {/* Tags Filter */}
                   <div className="space-y-2">
-                    <div className="text-xs font-medium">Tags</div>
+                    <div className="font-medium text-xs">Tags</div>
                     <TaskTagInput
                       value={Array.from(filters.tags)}
                       onChange={(tags) => {
@@ -875,7 +872,7 @@ export function BoardColumn({
 
                   {/* Quick Filters */}
                   <div className="space-y-2">
-                    <div className="text-xs font-medium">Quick Filters</div>
+                    <div className="font-medium text-xs">Quick Filters</div>
                     <div className="flex flex-wrap gap-1">
                       <Button
                         variant={filters.overdue ? 'default' : 'outline'}
@@ -986,7 +983,7 @@ export function BoardColumn({
 
 export function BoardContainer({ children }: { children: React.ReactNode }) {
   return (
-    <div className="relative scrollbar-none flex h-full w-full gap-4 overflow-x-auto pb-6">
+    <div className="scrollbar-none relative flex h-full w-full gap-4 overflow-x-auto pb-6">
       {children}
     </div>
   );

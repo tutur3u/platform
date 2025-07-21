@@ -1,15 +1,15 @@
 'use client';
 
-import { ProjectRowActions } from './row-action';
-import type { EnhancedTaskBoard } from './types';
 import type { ColumnDef } from '@tanstack/react-table';
 import { Badge } from '@tuturuuu/ui/badge';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import moment from 'moment';
 import Link from 'next/link';
+import { ProjectRowActions } from './row-action';
+import type { EnhancedTaskBoard } from './types';
 
 export const projectColumns = (
-  t: any,
+  t: (key: string) => string,
   namespace: string | undefined
 ): ColumnDef<EnhancedTaskBoard>[] => [
   // {
@@ -61,7 +61,7 @@ export const projectColumns = (
       <div className="space-y-1">
         <Link
           href={`/${row.original.ws_id}/tasks/boards/${row.getValue('id')}`}
-          className="line-clamp-1 max-w-32 font-semibold break-all hover:underline"
+          className="line-clamp-1 max-w-32 break-all font-semibold hover:underline"
           onClick={(e) => e.stopPropagation()}
         >
           {row.getValue('name') || '-'}
@@ -80,7 +80,7 @@ export const projectColumns = (
             {row.original.tags.length > 3 && (
               <Badge
                 variant="outline"
-                className="px-1.5 py-0.5 text-xs text-muted-foreground"
+                className="px-1.5 py-0.5 text-muted-foreground text-xs"
               >
                 +{row.original.tags.length - 3}
               </Badge>

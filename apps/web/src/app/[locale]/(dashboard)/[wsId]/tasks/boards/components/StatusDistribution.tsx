@@ -3,9 +3,10 @@
 import { Card } from '@tuturuuu/ui/card';
 import { cn } from '@tuturuuu/utils/format';
 import { useMemo } from 'react';
+import type { GanttTask } from '../types';
 
 interface StatusDistributionProps {
-  allTasks: any[];
+  allTasks: GanttTask[];
   selectedBoard: string | null;
 }
 

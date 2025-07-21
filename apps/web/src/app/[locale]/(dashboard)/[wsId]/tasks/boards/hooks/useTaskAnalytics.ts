@@ -14,6 +14,7 @@ interface Task {
   listName: string;
   listStatus?: string;
   archived?: boolean;
+  [key: string]: unknown;
 }
 
 interface DurationResult {

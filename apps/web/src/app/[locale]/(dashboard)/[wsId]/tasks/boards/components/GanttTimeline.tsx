@@ -8,6 +8,7 @@ import {
 } from '@tuturuuu/ui/collapsible';
 import { ChevronDown } from '@tuturuuu/ui/icons';
 import { cn } from '@tuturuuu/utils/format';
+import type { GanttTask } from '../types';
 import { getStatusColor } from '../utils/taskHelpers';
 
 interface AnalyticsFilters {
@@ -21,24 +22,26 @@ interface TimeMarker {
   label: string;
 }
 
-interface GanttTask {
-  id: string;
-  name: string;
-  status: string;
-  startOffset: number;
-  width: number;
-  createdDate: Date;
-  updated_at?: string;
-  created_at: string;
-  end_date?: string;
-  [key: string]: unknown;
-}
-
 interface GanttTimelineProps {
   filters: AnalyticsFilters;
   timeMarkers: TimeMarker[];
-  ganttTasks: GanttTask[];
-  handleTaskClick: (e: React.MouseEvent, task: GanttTask) => void;
+  ganttTasks: Array<
+    GanttTask & {
+      startOffset: number;
+      width: number;
+      createdDate: Date;
+      endDate: Date;
+    }
+  >;
+  handleTaskClick: (
+    e: React.MouseEvent,
+    task: GanttTask & {
+      startOffset: number;
+      width: number;
+      createdDate: Date;
+      endDate: Date;
+    }
+  ) => void;
 }
 
 export function GanttTimeline({
@@ -132,7 +135,7 @@ export function GanttTimeline({
                     <div
                       className={cn(
                         'absolute h-full cursor-pointer rounded transition-all hover:opacity-90',
-                        getStatusColor(task.status)
+                        getStatusColor(task.status || '')
                       )}
                       style={{
                         left: `${task.startOffset}%`,
