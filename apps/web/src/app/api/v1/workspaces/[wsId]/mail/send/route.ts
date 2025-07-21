@@ -11,7 +11,7 @@ import { difference } from 'lodash';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
-const domainBlacklist = ['@easy.com', '@easy'];
+const domainBlacklist = ['@easy.com'];
 const ENABLE_MAIL_ON_DEV = true;
 
 export async function POST(
@@ -103,13 +103,19 @@ export async function POST(
 
   if (
     internalData.allowed_emails &&
-    difference(data.to, internalData.allowed_emails).length > 0
+    difference(
+      [...data.to, ...(data.cc || []), ...(data.bcc || [])],
+      internalData.allowed_emails
+    ).length > 0
   ) {
     console.error(
       'Email not allowed',
-      data.to,
+      { to: data.to, cc: data.cc, bcc: data.bcc },
       internalData.allowed_emails,
-      difference(data.to, internalData.allowed_emails)
+      difference(
+        [...data.to, ...(data.cc || []), ...(data.bcc || [])],
+        internalData.allowed_emails
+      )
     );
     return NextResponse.json({ message: 'Email not allowed' }, { status: 400 });
   }
