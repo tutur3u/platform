@@ -1,10 +1,10 @@
 'use client';
 
-import type { Mail } from './data';
+import type { InternalEmail } from '@tuturuuu/types/db';
 import { atom, useAtom } from 'jotai';
 
 type Config = {
-  selected: Mail['id'] | null;
+  selected: InternalEmail['id'] | null;
 };
 
 const configAtom = atom<Config>({
