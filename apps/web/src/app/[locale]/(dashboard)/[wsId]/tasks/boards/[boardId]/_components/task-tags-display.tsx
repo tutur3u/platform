@@ -42,8 +42,7 @@ export function TaskTagsDisplay({
               key={tag}
               variant="outline"
               className={cn(
-                'h-auto rounded-full border px-1.5 py-0.5 font-medium text-[10px] min-w-0 overflow-hidden max-w-[80px] truncate',
-                'transition-all duration-200 hover:scale-105',
+                'h-auto min-w-0 max-w-[80px] overflow-hidden rounded-full border px-1.5 py-0.5 font-medium text-[10px] truncate transition-all duration-200 hover:scale-105',
                 tagClassName,
                 clickable && 'cursor-pointer hover:brightness-110'
               )}
@@ -60,21 +59,22 @@ export function TaskTagsDisplay({
             <TooltipTrigger asChild>
               <Badge
                 variant="outline"
-                className="h-auto cursor-help rounded-full border px-2 py-0.5 font-medium text-muted-foreground text-xs transition-all duration-200 hover:scale-105 hover:bg-muted/50"
+                className="border border-primary/30 bg-primary/10 px-2 py-0.5 rounded-full font-semibold text-primary transition-all duration-200 hover:bg-primary/20"
               >
                 +{remainingCount}
               </Badge>
             </TooltipTrigger>
             <TooltipContent
               side="top"
-              className={cn('max-w-sm p-0', needsScroll && 'max-h-64')}
+              className={cn('bg-gray-900/80 text-white rounded-2xl p-5 shadow-2xl border border-white/10 backdrop-blur-lg transition-all duration-200', needsScroll && 'max-h-64')}
               sideOffset={8}
             >
               <div className="space-y-3 p-4">
-                <p className="font-medium text-foreground text-sm">All tags:</p>
+                <p className="text-sm font-semibold text-gray-200">All tags:</p>
+                <hr className="my-3 border-white/10" />
                 <div
                   className={cn(
-                    'flex flex-wrap gap-1.5',
+                    'flex flex-wrap gap-2 justify-start',
                     needsScroll && 'max-h-48 overflow-y-auto pr-2'
                   )}
                 >
@@ -86,9 +86,7 @@ export function TaskTagsDisplay({
                         key={tag}
                         variant="outline"
                         className={cn(
-                          'h-auto rounded-full border px-2 py-0.5 font-medium text-xs',
-                          'transition-all duration-200 hover:scale-105 hover:brightness-110',
-                          'max-w-[110px]',
+                          'h-auto max-w-[110px] rounded-full border px-2 py-0.5 font-medium text-xs transition-all duration-200 hover:scale-105 hover:brightness-110',
                           tagClassName
                         )}
                         style={style}

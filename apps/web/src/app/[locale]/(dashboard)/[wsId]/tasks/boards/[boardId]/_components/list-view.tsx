@@ -123,9 +123,10 @@ interface ColumnVisibility {
 // Priority labels constant - defined once outside component for performance
 const priorityLabels = {
   0: 'No Priority',
-  1: 'High',
-  2: 'Medium',
-  3: 'Low',
+  1: 'Urgent',
+  2: 'High',
+  3: 'Medium',
+  4: 'Low',
 };
 
 export function ListView({
@@ -345,11 +346,12 @@ export function ListView({
     const statuses = new Set<string>();
     const assignees = new Set<{ id: string; name: string; email: string }>();
 
-    // Always include all possible priorities (0 = No Priority, 1 = High, 2 = Medium, 3 = Low)
+    // Always include all possible priorities (0 = No Priority, 1 = Urgent, 2 = High, 3 = Medium, 4 = Low)
     priorities.add(0);
     priorities.add(1);
     priorities.add(2);
     priorities.add(3);
+    priorities.add(4);
 
     // Always include all possible statuses
     statuses.add('active');
@@ -703,16 +705,18 @@ export function ListView({
   function renderPriority(priority: number) {
     const labels = {
       0: 'No Priority',
-      1: 'High',
-      2: 'Medium',
-      3: 'Low',
+      1: 'Urgent',
+      2: 'High',
+      3: 'Medium',
+      4: 'Low',
     };
 
     const colors = {
       0: 'border-gray-300 bg-gray-50 text-gray-700 dark:bg-gray-800 dark:text-gray-300',
-      1: 'border-red-500 bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300',
-      2: 'border-yellow-500 bg-yellow-50 text-yellow-700 dark:bg-yellow-950 dark:text-yellow-300',
-      3: 'border-green-500 bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300',
+      1: 'border-pink-600 bg-pink-50 text-pink-700 dark:bg-pink-950 dark:text-pink-300',
+      2: 'border-red-500 bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300',
+      3: 'border-yellow-500 bg-yellow-50 text-yellow-700 dark:bg-yellow-950 dark:text-yellow-300',
+      4: 'border-green-500 bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300',
     };
 
     return (
@@ -1796,9 +1800,10 @@ export function ListView({
                 <SelectContent>
                   <SelectItem value="keep">Keep current</SelectItem>
                   <SelectItem value="0">No Priority</SelectItem>
-                  <SelectItem value="1">High</SelectItem>
-                  <SelectItem value="2">Medium</SelectItem>
-                  <SelectItem value="3">Low</SelectItem>
+                  <SelectItem value="1">Urgent</SelectItem>
+                  <SelectItem value="2">High</SelectItem>
+                  <SelectItem value="3">Medium</SelectItem>
+                  <SelectItem value="4">Low</SelectItem>
                 </SelectContent>
               </Select>
             </div>

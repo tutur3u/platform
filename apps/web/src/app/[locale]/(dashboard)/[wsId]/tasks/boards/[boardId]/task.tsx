@@ -73,11 +73,6 @@ interface Props {
   availableLists?: TaskList[]; // Optional: pass from parent to avoid redundant API calls
 }
 
-// Add a type guard for tag objects at the top-level of the file or inside the component
-function isTagWithName(tag: unknown): tag is { name: string } {
-  return typeof tag === 'object' && tag !== null && 'name' in tag && typeof (tag as any).name === 'string';
-}
-
 export function TaskCard({
   task,
   boardId,
@@ -364,10 +359,6 @@ export function TaskCard({
     }
     return 'border-l-dynamic-gray/30';
   };
-
-  const extraTagsTitle = task.tags && task.tags.length > 1
-    ? task.tags.slice(1).map(tag => isTagWithName(tag) ? (tag.name ?? '') : String(tag)).join(', ')
-    : '';
 
   return (
     <Card
@@ -773,9 +764,9 @@ export function TaskCard({
           </div>
         )}
         {/* Bottom Row: Three-column layout for assignee, priority/tags, and checkbox, with only one tag visible and +N tooltip for extras */}
-        <div className="flex items-center min-w-0 gap-x-1 overflow-hidden whitespace-nowrap h-8">
+        <div className="flex items-center gap-x-1 min-w-0 h-8 whitespace-nowrap overflow-hidden">
           {/* Assignee: left, not cut off */}
-          <div className="flex-shrink-0 min-w-0 max-w-[120px] truncate">
+          <div className="flex-shrink-0 max-w-[120px] min-w-0 overflow-hidden truncate">
             <AssigneeSelect
               taskId={task.id}
               assignees={task.assignees}
@@ -784,13 +775,13 @@ export function TaskCard({
           </div>
           {/* Priority */}
           {!task.archived && task.priority && (
-            <div className="min-w-0 overflow-hidden">
+            <div className="max-w-[80px] min-w-0 overflow-hidden">
               <Badge
                 variant="secondary"
                 className={cn(
-                  'px-1.5 py-0.5 text-[10px] min-w-0 overflow-hidden',
+                  'min-w-0 overflow-hidden px-1.5 py-0.5 text-[10px] truncate',
                   getPriorityBorderColor(),
-                  task.priority && getPriorityIndicator() && getPriorityIndicator().props.className
+                  task.priority && getPriorityIndicator && getPriorityIndicator()?.props?.className
                 )}
               >
                 <Flag className="mr-1 h-3 w-3" />
@@ -801,19 +792,19 @@ export function TaskCard({
               </Badge>
             </div>
           )}
-          {/* Tags and +N: flex-1 min-w-0 so it shrinks/clamps */}
+          {/* Tags and +N: do NOT shrink */}
           {!task.archived && task.tags && task.tags.length > 0 && (
-            <div className="min-w-0 overflow-hidden">
+            <div className="max-w-[180px] min-w-0">
               <TaskTagsDisplay
                 tags={task.tags}
                 maxDisplay={1}
-                className="mt-0 px-1.5 py-0.5 rounded-full text-[10px] font-medium h-6 min-w-0 overflow-hidden"
+                className="mt-0 px-1.5 py-0.5 rounded-full text-[10px] font-medium h-6 truncate"
                 clickable={false}
               />
             </div>
           )}
           {/* Checkbox: always at far right */}
-          <div className="flex-shrink-0 ml-auto">
+          <div className="ml-auto flex-shrink-0">
             <Checkbox
               checked={task.archived}
               className={cn(
@@ -898,7 +889,7 @@ export function TaskCard({
         task={task}
         isOpen={editDialogOpen}
         onClose={() => setEditDialogOpen(false)}
-        onUpdate={onUpdate ?? (() => {})}
+        onUpdate={onUpdate ? onUpdate : () => {}}
         availableLists={availableLists}
       />
 
