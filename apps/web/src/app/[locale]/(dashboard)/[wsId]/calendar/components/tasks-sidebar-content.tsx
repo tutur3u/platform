@@ -442,8 +442,8 @@ function PriorityView({ allTasks }: { allTasks: ExtendedWorkspaceTask[] }) {
                               </div>
                               {task.total_duration && (
                                 <div className="rounded-md bg-accent/50 px-2 py-1 font-mono text-xs text-muted-foreground transition-colors duration-200 group-hover/task:bg-accent">
-                                  {Math.floor((task.total_duration || 0) / 60)}h{' '}
-                                  {(task.total_duration || 0) % 60}m
+                                  {Math.floor(task.total_duration || 0)}h{' '}
+                                  {((task.total_duration || 0) * 60) % 60}m
                                 </div>
                               )}
                             </div>

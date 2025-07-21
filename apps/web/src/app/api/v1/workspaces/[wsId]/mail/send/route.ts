@@ -1,4 +1,4 @@
-import { DEV_MODE } from '@/constants/common';
+import { DEV_MODE, IS_PRODUCTION_DB } from '@/constants/common';
 import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses';
 import {
   createAdminClient,
@@ -82,7 +82,7 @@ export async function POST(
     );
   }
 
-  if (DEV_MODE) {
+  if (DEV_MODE && !IS_PRODUCTION_DB) {
     // Get allowed emails from internal_email_api_keys
     const { data: internalData, error: internalDataError } = await supabase
       .from('internal_email_api_keys')

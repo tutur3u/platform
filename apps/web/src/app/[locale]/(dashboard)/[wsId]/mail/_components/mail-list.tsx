@@ -1,6 +1,7 @@
 import { useMail } from '../use-mail';
 import type { InternalEmail } from '@tuturuuu/types/db';
 import { Loader2 } from '@tuturuuu/ui/icons';
+import { formatEmailAddresses } from '@tuturuuu/utils/email/client';
 import { cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
 import 'dayjs/locale/en';
@@ -60,7 +61,9 @@ export function MailList({ items, hasMore, loading }: MailListProps) {
               <div className="flex items-start justify-between gap-3">
                 <div className="flex min-w-0 flex-1 items-center gap-2">
                   <span className="truncate text-sm font-semibold text-foreground">
-                    {item.source_email}
+                    {formatEmailAddresses(item.source_email)
+                      .map(({ name }) => name)
+                      .join(', ')}
                   </span>
                 </div>
                 <time className="text-xs font-medium whitespace-nowrap text-muted-foreground">
@@ -70,7 +73,11 @@ export function MailList({ items, hasMore, loading }: MailListProps) {
 
               <div className="truncate text-xs font-medium text-muted-foreground/80">
                 <span className="text-muted-foreground">{t('to_label')}</span>{' '}
-                <span className="text-foreground/60">{item.to_addresses}</span>
+                <span className="text-foreground/60">
+                  {formatEmailAddresses(item.to_addresses)
+                    .map(({ email }) => email)
+                    .join(', ')}
+                </span>
               </div>
 
               <div className="line-clamp-2 text-sm leading-relaxed font-medium break-words text-foreground/80 transition-colors group-hover:text-foreground/95">

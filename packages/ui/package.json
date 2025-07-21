@@ -6,9 +6,9 @@
     "access": "public"
   },
   "scripts": {
+    "lint": "eslint .",
     "ui": "bunx shadcn-ui@latest"
   },
-  "packageManager": "bun@1.2.19",
   "dependencies": {
     "@hookform/resolvers": "^5.1.1",
     "@lucide/lab": "^0.1.2",
@@ -122,5 +122,6 @@
       "import": "./src/components/ui/custom/education/certificates/types.ts"
     },
     "./*": "./src/components/ui/*.tsx"
-  }
+  },
+  "packageManager": "bun@1.2.19"
 }
