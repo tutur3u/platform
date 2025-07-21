@@ -73,6 +73,11 @@ interface Props {
   availableLists?: TaskList[]; // Optional: pass from parent to avoid redundant API calls
 }
 
+// Add a type guard for tag objects at the top-level of the file or inside the component
+function isTagWithName(tag: unknown): tag is { name: string } {
+  return typeof tag === 'object' && tag !== null && 'name' in tag && typeof (tag as any).name === 'string';
+}
+
 export function TaskCard({
   task,
   boardId,
@@ -339,7 +344,7 @@ export function TaskCard({
       <Badge
         variant="secondary"
         className={cn(
-          'px-2 py-0.5 text-xs',
+          'px-1.5 py-0.5 text-xs scale-85',
           colors[task.priority as keyof typeof colors]
         )}
       >
@@ -359,6 +364,10 @@ export function TaskCard({
     }
     return 'border-l-dynamic-gray/30';
   };
+
+  const extraTagsTitle = task.tags && task.tags.length > 1
+    ? task.tags.slice(1).map(tag => isTagWithName(tag) ? (tag.name ?? '') : String(tag)).join(', ')
+    : '';
 
   return (
     <Card
@@ -411,7 +420,7 @@ export function TaskCard({
 
           <div className="min-w-0 flex-1">
             {isEditing ? (
-              <div className="space-y-3">
+              <div className="space-y-2">
                 <Input
                   value={editName}
                   onChange={(e) => setEditName(e.target.value)}
@@ -432,7 +441,7 @@ export function TaskCard({
                   placeholder="Add description..."
                   className="text-xs"
                 />
-                <div className="flex gap-2">
+                <div className="flex gap-2 justify-end pt-1">
                   <Button
                     size="sm"
                     onClick={handleQuickEdit}
@@ -457,11 +466,11 @@ export function TaskCard({
               </div>
             ) : (
               <>
-                <div className="flex items-start justify-between gap-1">
+                <div className="flex items-center gap-2 mb-1">
                   <button
                     type="button"
                     className={cn(
-                      'mb-2 w-full cursor-pointer text-left font-semibold text-xs leading-tight transition-colors',
+                      'w-full cursor-pointer text-left font-semibold text-xs leading-tight transition-colors',
                       task.archived
                         ? 'text-muted-foreground line-through'
                         : 'text-foreground hover:text-primary group-hover:text-foreground/90'
@@ -471,8 +480,28 @@ export function TaskCard({
                   >
                     {task.name}
                   </button>
-
-                  <div className="flex items-center justify-end gap-1">
+                </div>
+                {/* Description (truncated, tooltip on hover) */}
+                {task.description && (
+                  <div className="mb-1">
+                    <button
+                      type="button"
+                      className="line-clamp-2 text-xs text-muted-foreground cursor-pointer w-full text-left bg-transparent border-none p-0 hover:text-foreground/80 focus:outline-none"
+                      title={task.description}
+                      onClick={() => setIsEditing(true)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') setIsEditing(true);
+                      }}
+                    >
+                      {task.description}
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+          {/* Actions (date picker, menu) remain unchanged */}
+          <div className="flex items-center justify-end gap-1">
                     {/* Custom Date Picker - Separate from Dropdown */}
                     {!isOverlay && (
                       <Popover
@@ -718,131 +747,113 @@ export function TaskCard({
                       </DropdownMenu>
                     )}
                   </div>
-                </div>
-
-                {task.description && (
-                  <button
-                    type="button"
-                    className="mb-2 line-clamp-2 w-full cursor-pointer text-left text-muted-foreground text-xs leading-relaxed transition-colors hover:text-foreground/80"
-                    onClick={() => setIsEditing(true)}
-                    aria-label={`Edit task description: ${task.description}`}
-                  >
-                    {task.description}
-                  </button>
+        </div>
+        {/* Dates Row (compact, smaller font) */}
+        {(startDate || endDate) && (
+          <div className="flex items-center gap-2 text-[10px] text-muted-foreground mb-1">
+            {startDate && (
+              <span className="flex items-center gap-1">
+                <Clock className="h-2.5 w-2.5 shrink-0" />
+                Starts {formatSmartDate(startDate)}
+              </span>
+            )}
+            {startDate && endDate && <span className="mx-1">•</span>}
+            {endDate && (
+              <span className={cn('flex items-center gap-1', isOverdue && !task.archived ? 'font-medium text-dynamic-red/80' : '')}>
+                <Calendar className="h-2.5 w-2.5 shrink-0" />
+                Due {formatSmartDate(endDate)}
+                {isOverdue && !task.archived && (
+                  <Badge className="ml-1 h-4 bg-dynamic-red/80 px-1 text-[9px] text-white">OVERDUE</Badge>
                 )}
-
-                {/* Tags Display */}
-                {task.tags && task.tags.length > 0 && (
-                  <div className="mb-2">
-                    <TaskTagsDisplay
-                      tags={task.tags}
-                      maxDisplay={3}
-                      className="mt-1"
-                      clickable={false}
-                    />
-                  </div>
+                {endDate && !isOverdue && !task.archived && (
+                  <span className="ml-1 text-[10px] text-muted-foreground">({format(endDate, 'MMM dd')})</span>
                 )}
-              </>
+              </span>
             )}
           </div>
-        </div>
-
-        {/* Metadata */}
-        <div className="space-y-2">
-          {/* Priority and Status Tags */}
-          {!task.archived && getPriorityIndicator() && (
-            <div className="flex flex-wrap items-center gap-2">
-              {getPriorityIndicator()}
-            </div>
-          )}
-
-          {/* Dates */}
-          {(startDate || endDate) && (
-            <div className="space-y-1.5">
-              {startDate && (
-                <div className="flex items-center gap-1.5 text-muted-foreground text-xs">
-                  <Clock className="h-3 w-3 shrink-0" />
-                  <span>Starts {formatSmartDate(startDate)}</span>
-                </div>
-              )}
-              {!task.archived && endDate && (
-                <div
-                  className={cn(
-                    'flex items-center gap-1.5 text-xs',
-                    isOverdue && !task.archived
-                      ? 'font-medium text-dynamic-red/80'
-                      : 'text-muted-foreground'
-                  )}
-                >
-                  <Calendar className="h-3 w-3 shrink-0" />
-                  <span>Due {formatSmartDate(endDate)}</span>
-                  {isOverdue && !task.archived && (
-                    <Badge className="ml-1 h-4 bg-dynamic-red/80 px-1 text-[9px] text-white">
-                      OVERDUE
-                    </Badge>
-                  )}
-                  {endDate && !isOverdue && !task.archived && (
-                    <span className="ml-1 text-[10px] text-muted-foreground">
-                      ({format(endDate, 'MMM dd')})
-                    </span>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Bottom Actions */}
-          <div className="flex items-center justify-between pt-1">
+        )}
+        {/* Bottom Row: Three-column layout for assignee, priority/tags, and checkbox, with only one tag visible and +N tooltip for extras */}
+        <div className="flex items-center min-w-0 gap-x-1 overflow-hidden whitespace-nowrap h-8">
+          {/* Assignee: left, not cut off */}
+          <div className="flex-shrink-0 min-w-0 max-w-[120px] truncate">
             <AssigneeSelect
               taskId={task.id}
               assignees={task.assignees}
               onUpdate={onUpdate}
             />
-
-            <div className="flex items-center gap-2">
-              <Checkbox
-                checked={task.archived}
+          </div>
+          {/* Priority */}
+          {!task.archived && task.priority && (
+            <div className="min-w-0 overflow-hidden">
+              <Badge
+                variant="secondary"
                 className={cn(
-                  'h-4 w-4 transition-all duration-200',
-                  'data-[state=checked]:border-dynamic-green/70 data-[state=checked]:bg-dynamic-green/70',
-                  'hover:scale-110 hover:border-primary/50',
-                  getListColorClasses(taskList?.color as SupportedColor),
-                  isOverdue &&
-                    !task.archived &&
-                    'border-dynamic-red/70 bg-dynamic-red/10 ring-1 ring-dynamic-red/20'
+                  'px-1.5 py-0.5 text-[10px] min-w-0 overflow-hidden',
+                  getPriorityBorderColor(),
+                  task.priority && getPriorityIndicator() && getPriorityIndicator().props.className
                 )}
-                style={
-                  !task.archived && taskList?.status === 'done'
-                    ? {
-                        animation: 'pulse 4s ease-in-out infinite',
-                        borderColor: 'rgb(245 158 11 / 0.3)',
-                        backgroundColor: 'rgb(245 158 11 / 0.6)',
-                      }
-                    : undefined
-                }
-                disabled={isLoading}
-                onCheckedChange={handleArchiveToggle}
-                onClick={(e) => e.stopPropagation()}
-                title={
-                  !task.archived && taskList?.status === 'done'
-                    ? 'Task is in Done list but not individually checked'
-                    : undefined
-                }
+              >
+                <Flag className="mr-1 h-3 w-3" />
+                {(() => {
+                  const labels = { 1: 'Urgent', 2: 'High', 3: 'Medium', 4: 'Low' };
+                  return labels[task.priority as 1 | 2 | 3 | 4];
+                })()}
+              </Badge>
+            </div>
+          )}
+          {/* Tags and +N: flex-1 min-w-0 so it shrinks/clamps */}
+          {!task.archived && task.tags && task.tags.length > 0 && (
+            <div className="min-w-0 overflow-hidden">
+              <TaskTagsDisplay
+                tags={task.tags}
+                maxDisplay={1}
+                className="mt-0 px-1.5 py-0.5 rounded-full text-[10px] font-medium h-6 min-w-0 overflow-hidden"
+                clickable={false}
               />
             </div>
+          )}
+          {/* Checkbox: always at far right */}
+          <div className="flex-shrink-0 ml-auto">
+            <Checkbox
+              checked={task.archived}
+              className={cn(
+                'h-4 w-4 transition-all duration-200',
+                'data-[state=checked]:border-dynamic-green/70 data-[state=checked]:bg-dynamic-green/70',
+                'hover:scale-110 hover:border-primary/50',
+                getListColorClasses(taskList?.color as SupportedColor),
+                isOverdue && !task.archived && 'border-dynamic-red/70 bg-dynamic-red/10 ring-1 ring-dynamic-red/20'
+              )}
+              style={
+                !task.archived && taskList?.status === 'done'
+                  ? {
+                      animation: 'pulse 4s ease-in-out infinite',
+                      borderColor: 'rgb(245 158 11 / 0.3)',
+                      backgroundColor: 'rgb(245 158 11 / 0.6)',
+                    }
+                  : undefined
+              }
+              disabled={isLoading}
+              onCheckedChange={handleArchiveToggle}
+              onClick={(e) => e.stopPropagation()}
+              title={
+                !task.archived && taskList?.status === 'done'
+                  ? 'Task is in Done list but not individually checked'
+                  : undefined
+              }
+            />
           </div>
         </div>
-
-        {/* Footer - Enhanced priority indicator */}
-        {!task.archived && task.priority === 1 && (
-          <div className="mt-3 flex items-center justify-center border-dynamic-red/20 border-t pt-2">
-            <div className="flex items-center gap-1 text-dynamic-red/80">
-              <Sparkles className="h-3 w-3 animate-pulse" />
-              <span className="font-medium text-[10px]">Urgent Priority</span>
-            </div>
-          </div>
-        )}
       </div>
+
+      {/* Footer - Enhanced priority indicator */}
+      {!task.archived && task.priority === 1 && (
+        <div className="mt-3 flex items-center justify-center border-dynamic-red/20 border-t pt-2">
+          <div className="flex items-center gap-1 text-dynamic-red/80">
+            <Sparkles className="h-3 w-3 animate-pulse" />
+            <span className="font-medium text-[10px]">Urgent Priority</span>
+          </div>
+        </div>
+      )}
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
@@ -887,7 +898,7 @@ export function TaskCard({
         task={task}
         isOpen={editDialogOpen}
         onClose={() => setEditDialogOpen(false)}
-        onUpdate={onUpdate || (() => {})}
+        onUpdate={onUpdate ?? (() => {})}
         availableLists={availableLists}
       />
 

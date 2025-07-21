@@ -248,14 +248,14 @@ export function AssigneeSelect({ taskId, assignees = [], onUpdate }: Props) {
           aria-expanded={open}
           disabled={isLoading}
           className={cn(
-            'h-auto justify-start px-2 py-1 text-xs transition-all duration-200',
+            'h-6 justify-start px-0.5 py-0.5 text-[10px] transition-all duration-200',
             'hover:bg-gray-100 dark:hover:bg-gray-800',
             'border border-transparent hover:border-gray-300 dark:hover:border-gray-600',
             'min-w-0 rounded-lg'
           )}
         >
           {uniqueAssignees.length > 0 ? (
-            <div className="flex min-w-0 items-center gap-2">
+            <div className="flex min-w-0 items-center gap-x-0.5">
               <div className="-space-x-1.5 flex">
                 {uniqueAssignees.slice(0, 2).map((assignee) => (
                   <Avatar
@@ -283,20 +283,22 @@ export function AssigneeSelect({ taskId, assignees = [], onUpdate }: Props) {
               </span>
             </div>
           ) : (
-            <div className="flex items-center gap-1.5 text-gray-500 dark:text-gray-400">
+            <div className="flex items-center gap-x-0.5 text-gray-500 dark:text-gray-400">
               <Users className="h-3 w-3" />
               <span className="text-[10px]">Assign</span>
             </div>
           )}
           {isLoading ? (
-            <Loader2 className="ml-1 h-2.5 w-2.5 animate-spin text-gray-500" />
+            <Loader2 className="ml-1 h-2 w-2 animate-spin text-gray-500" />
           ) : (
-            <ChevronsUpDown
-              className={cn(
-                'ml-1 h-2.5 w-2.5 shrink-0 opacity-50 transition-all duration-200',
-                'group-hover:opacity-100'
-              )}
-            />
+            ((open || uniqueAssignees.length !== 1) && (
+              <ChevronsUpDown
+                className={cn(
+                  'ml-1 h-2 w-2 shrink-0 opacity-50 transition-all duration-200',
+                  'group-hover:opacity-100'
+                )}
+              />
+            ))
           )}
         </Button>
       </PopoverTrigger>

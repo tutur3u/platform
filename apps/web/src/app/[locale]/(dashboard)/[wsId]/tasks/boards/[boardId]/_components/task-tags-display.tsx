@@ -42,9 +42,8 @@ export function TaskTagsDisplay({
               key={tag}
               variant="outline"
               className={cn(
-                'h-auto rounded-full border px-2 py-0.5 font-medium text-xs',
+                'h-auto rounded-full border px-1.5 py-0.5 font-medium text-[10px] min-w-0 overflow-hidden max-w-[80px] truncate',
                 'transition-all duration-200 hover:scale-105',
-                'max-w-[120px] truncate',
                 tagClassName,
                 clickable && 'cursor-pointer hover:brightness-110'
               )}
@@ -52,7 +51,7 @@ export function TaskTagsDisplay({
               onClick={() => clickable && onTagClick?.(tag)}
               title={tag.length > 15 ? `#${tag}` : undefined}
             >
-              #{tag}
+              <span className="truncate overflow-hidden whitespace-nowrap w-full block">#{tag}</span>
             </Badge>
           );
         })}
@@ -88,14 +87,14 @@ export function TaskTagsDisplay({
                         variant="outline"
                         className={cn(
                           'h-auto rounded-full border px-2 py-0.5 font-medium text-xs',
-                          'max-w-[140px] truncate transition-all duration-200',
-                          'hover:scale-105 hover:brightness-110',
+                          'transition-all duration-200 hover:scale-105 hover:brightness-110',
+                          'max-w-[110px]',
                           tagClassName
                         )}
                         style={style}
                         title={tag.length > 18 ? `#${tag}` : undefined}
                       >
-                        #{tag}
+                        <span className="truncate overflow-hidden whitespace-nowrap w-full block">#{tag}</span>
                       </Badge>
                     );
                   })}
