@@ -167,7 +167,7 @@ export function TaskCreationAnalytics({
     <Card className="p-4">
       <div className="mb-3 flex items-center justify-between">
         <h4 className="font-medium">Task Creation & Flow</h4>
-        <span className="text-muted-foreground text-xs">
+        <span className="text-xs text-muted-foreground">
           {taskAnalytics.totalTasks} total tasks
         </span>
       </div>
@@ -177,17 +177,17 @@ export function TaskCreationAnalytics({
         <div className="rounded-lg bg-blue-50 p-3 dark:bg-blue-900/20">
           <div className="flex items-center justify-between">
             <div>
-              <div className="font-bold text-blue-600 text-lg">
+              <div className="text-lg font-bold text-blue-600">
                 {taskAnalytics.thisWeekCreated}
               </div>
-              <div className="text-blue-700 text-xs dark:text-blue-300">
+              <div className="text-xs text-blue-700 dark:text-blue-300">
                 Tasks created this week
               </div>
             </div>
             <div className="text-right">
               <div
                 className={cn(
-                  'font-medium text-sm',
+                  'text-sm font-medium',
                   taskAnalytics.creationTrend > 0
                     ? 'text-green-600'
                     : taskAnalytics.creationTrend < 0
@@ -202,7 +202,7 @@ export function TaskCreationAnalytics({
                     : '→'}
                 {Math.abs(taskAnalytics.creationTrend).toFixed(0)}%
               </div>
-              <div className="text-muted-foreground text-xs">
+              <div className="text-xs text-muted-foreground">
                 vs last week ({taskAnalytics.lastWeekCreated})
               </div>
             </div>
@@ -229,7 +229,7 @@ export function TaskCreationAnalytics({
 
         {/* Priority Distribution */}
         <div className="space-y-2">
-          <div className="font-medium text-sm">Priority Distribution</div>
+          <div className="text-sm font-medium">Priority Distribution</div>
           <div className="space-y-1">
             {priorityConfig
               .filter((p) => p.count > 0)
@@ -244,7 +244,7 @@ export function TaskCreationAnalytics({
                     ></div>
                     <span className="text-xs">{priority.label}</span>
                   </div>
-                  <span className="font-medium text-xs">{priority.count}</span>
+                  <span className="text-xs font-medium">{priority.count}</span>
                 </div>
               ))}
           </div>
@@ -253,12 +253,12 @@ export function TaskCreationAnalytics({
         {/* Task Types */}
         {topTaskTypes.length > 0 && (
           <div className="space-y-2">
-            <div className="font-medium text-sm">Top Task Types</div>
+            <div className="text-sm font-medium">Top Task Types</div>
             <div className="space-y-1">
               {topTaskTypes.map(([type, count]) => (
                 <div key={type} className="flex items-center justify-between">
                   <span className="flex-1 truncate text-xs">{type}</span>
-                  <span className="ml-2 font-medium text-xs">{count}</span>
+                  <span className="ml-2 text-xs font-medium">{count}</span>
                 </div>
               ))}
             </div>
@@ -270,7 +270,7 @@ export function TaskCreationAnalytics({
           <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-2 dark:border-yellow-800 dark:bg-yellow-900/20">
             <div className="flex items-center gap-2">
               <AlertTriangle className="h-3 w-3 text-yellow-600" />
-              <span className="font-medium text-xs text-yellow-700 dark:text-yellow-300">
+              <span className="text-xs font-medium text-yellow-700 dark:text-yellow-300">
                 {taskAnalytics.backlogTasks} tasks in backlog (&gt;1 week old)
               </span>
             </div>
