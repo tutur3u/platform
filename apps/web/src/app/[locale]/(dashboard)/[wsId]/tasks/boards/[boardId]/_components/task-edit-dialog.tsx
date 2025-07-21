@@ -1,7 +1,5 @@
 'use client';
 
-import { TaskTagInput } from './task-tag-input';
-import { updateTask } from '@/lib/task-helper';
 import { useQuery } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { Task, TaskList } from '@tuturuuu/types/primitives/TaskBoard';
@@ -37,6 +35,8 @@ import { cn } from '@tuturuuu/utils/format';
 import { format } from 'date-fns';
 import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { updateTask } from '@/lib/task-helper';
+import { TaskTagInput } from './task-tag-input';
 
 interface TaskEditDialogProps {
   task: Task;

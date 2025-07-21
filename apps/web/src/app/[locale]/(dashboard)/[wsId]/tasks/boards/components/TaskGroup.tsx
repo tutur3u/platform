@@ -1,6 +1,5 @@
 'use client';
 
-import { calculateOverdueDays } from '../utils/taskHelpers';
 import type { TaskBoardStatus } from '@tuturuuu/types/primitives/TaskBoard';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
@@ -21,6 +20,7 @@ import {
 } from '@tuturuuu/ui/icons';
 import { cn } from '@tuturuuu/utils/format';
 import { useState } from 'react';
+import { calculateOverdueDays } from '../utils/taskHelpers';
 
 interface TaskItem {
   id: string;
@@ -122,7 +122,7 @@ export function TaskGroup({
                     <div className="min-w-0 flex-1">
                       <h4
                         className={cn(
-                          'text-sm leading-relaxed font-medium transition-all duration-200',
+                          'font-medium text-sm leading-relaxed transition-all duration-200',
                           isExpanded ? 'line-clamp-none' : 'line-clamp-2'
                         )}
                         title={task.name}
@@ -135,7 +135,7 @@ export function TaskGroup({
                       {task.priority === 1 && (
                         <Badge
                           variant="destructive"
-                          className="text-xs whitespace-nowrap"
+                          className="whitespace-nowrap text-xs"
                         >
                           🔥 Urgent
                         </Badge>
@@ -143,7 +143,7 @@ export function TaskGroup({
                       {task.priority === 2 && (
                         <Badge
                           variant="secondary"
-                          className="text-xs whitespace-nowrap"
+                          className="whitespace-nowrap text-xs"
                         >
                           ⚡ High
                         </Badge>
@@ -151,7 +151,7 @@ export function TaskGroup({
                       {task.priority === 3 && (
                         <Badge
                           variant="outline"
-                          className="text-xs whitespace-nowrap"
+                          className="whitespace-nowrap text-xs"
                         >
                           📋 Medium
                         </Badge>
@@ -159,7 +159,7 @@ export function TaskGroup({
                       {task.priority === 4 && (
                         <Badge
                           variant="outline"
-                          className="text-xs whitespace-nowrap"
+                          className="whitespace-nowrap text-xs"
                         >
                           📝 Low
                         </Badge>
@@ -195,7 +195,7 @@ export function TaskGroup({
 
                   {/* Task Description */}
                   {task.description && (
-                    <div className="text-xs text-muted-foreground">
+                    <div className="text-muted-foreground text-xs">
                       <p
                         className={cn(
                           'leading-relaxed transition-all duration-200',
@@ -209,7 +209,7 @@ export function TaskGroup({
                   )}
 
                   {/* Task Metadata */}
-                  <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+                  <div className="flex flex-wrap items-center gap-3 text-muted-foreground text-xs">
                     <span className="flex min-w-0 items-center gap-1">
                       <LayoutGrid className="h-3 w-3 flex-shrink-0" />
                       <span className="truncate" title={task.boardName}>
@@ -242,7 +242,7 @@ export function TaskGroup({
                     task.listStatus !== 'closed' && (
                       <div className="flex items-center gap-1 rounded-md bg-red-50 px-2 py-1 dark:bg-red-900/20">
                         <AlertTriangle className="h-3 w-3 text-red-500" />
-                        <span className="text-xs font-medium text-red-600 dark:text-red-400">
+                        <span className="font-medium text-red-600 text-xs dark:text-red-400">
                           Overdue by{' '}
                           {typeof task.end_date === 'string'
                             ? calculateOverdueDays(task.end_date)
