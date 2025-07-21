@@ -5,7 +5,9 @@
   "publishConfig": {
     "access": "public"
   },
-  "packageManager": "bun@1.2.19",
+  "scripts": {
+    "lint": "eslint ."
+  },
   "dependencies": {
     "@ai-sdk/amazon-bedrock": "3.0.0-canary.19",
     "@ai-sdk/anthropic": "2.0.0-beta.3",
@@ -53,5 +55,6 @@
   },
   "exports": {
     "./*": "./src/*.ts"
-  }
+  },
+  "packageManager": "bun@1.2.19"
 }
