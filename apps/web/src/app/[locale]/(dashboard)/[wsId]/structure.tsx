@@ -245,6 +245,7 @@ export function Structure({
       )}
 
       <Suspense
+        key={user?.id}
         fallback={
           <div className="h-10 w-full animate-pulse rounded-lg bg-foreground/5" />
         }
@@ -273,6 +274,7 @@ export function Structure({
       >
         {navState.history.length === 0 ? (
           <Nav
+            key={`${user?.id}-root`}
             wsId={wsId}
             isCollapsed={isCollapsed}
             links={filteredCurrentLinks}
@@ -286,6 +288,7 @@ export function Structure({
         ) : (
           <>
             <Nav
+              key={`${user?.id}-back`}
               wsId={wsId}
               isCollapsed={isCollapsed}
               links={[backButton]}
@@ -305,6 +308,7 @@ export function Structure({
             {filteredCurrentLinks.length > 0 && (
               <div className="scrollbar-none flex-1 overflow-y-auto">
                 <Nav
+                  key={`${user?.id}-nav`}
                   wsId={wsId}
                   isCollapsed={isCollapsed}
                   links={filteredCurrentLinks}

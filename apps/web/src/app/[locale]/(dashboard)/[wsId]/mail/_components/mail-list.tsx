@@ -1,5 +1,5 @@
-import type { Mail } from '../client';
 import { useMail } from '../use-mail';
+import type { InternalEmail } from '@tuturuuu/types/db';
 import { Loader2 } from '@tuturuuu/ui/icons';
 import { cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
@@ -15,7 +15,7 @@ dayjs.extend(relativeTime);
 dayjs.extend(localizedFormat);
 
 interface MailListProps {
-  items: Mail[];
+  items: InternalEmail[];
   hasMore?: boolean;
   loading?: boolean;
 }
@@ -50,27 +50,27 @@ export function MailList({ items, hasMore, loading }: MailListProps) {
           }
         >
           <div className="flex w-full items-start gap-3">
-            <div className="flex items-center pt-1">
+            {/* <div className="flex items-center pt-1">
               {!item.read && (
                 <span className="flex h-2.5 w-2.5 flex-shrink-0 rounded-full bg-primary shadow-sm" />
               )}
-            </div>
+            </div> */}
 
             <div className="flex w-full min-w-0 flex-1 flex-col gap-1">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex min-w-0 flex-1 items-center gap-2">
                   <span className="truncate text-sm font-semibold text-foreground">
-                    {item.name}
+                    {item.source_email}
                   </span>
                 </div>
                 <time className="text-xs font-medium whitespace-nowrap text-muted-foreground">
-                  {dayjs(item.date).fromNow()}
+                  {dayjs(item.created_at).fromNow()}
                 </time>
               </div>
 
-              <div className="text-xs font-medium text-muted-foreground/80">
+              <div className="truncate text-xs font-medium text-muted-foreground/80">
                 <span className="text-muted-foreground">{t('to_label')}</span>{' '}
-                <span className="text-foreground/60">{item.recipient}</span>
+                <span className="text-foreground/60">{item.to_addresses}</span>
               </div>
 
               <div className="line-clamp-2 text-sm leading-relaxed font-medium break-words text-foreground/80 transition-colors group-hover:text-foreground/95">

@@ -1,6 +1,6 @@
 'use client';
 
-import type { Mail } from '../client';
+import type { InternalEmail } from '@tuturuuu/types/db';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -20,6 +20,7 @@ import {
   ReplyAll,
   Trash2,
 } from '@tuturuuu/ui/icons';
+import { UserIcon } from '@tuturuuu/ui/icons';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { Separator } from '@tuturuuu/ui/separator';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
@@ -28,6 +29,7 @@ import dayjs from 'dayjs';
 import 'dayjs/locale/vi';
 import localizedFormat from 'dayjs/plugin/localizedFormat';
 import relativeTime from 'dayjs/plugin/relativeTime';
+import DOMPurify from 'dompurify';
 import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 
@@ -35,10 +37,90 @@ dayjs.extend(relativeTime);
 dayjs.extend(localizedFormat);
 
 interface MailDisplayProps {
-  mail: Mail | null;
+  mail: InternalEmail | null;
 }
 
 const DISABLE_MAIL_ACTIONS = true;
+
+function formatDisplayAddresses(
+  addresses: string | string[]
+): { name: string; email: string; raw: string }[] {
+  if (!addresses) return [];
+  const arr = Array.isArray(addresses) ? addresses : [addresses];
+  return arr
+    .filter((addr): addr is string => typeof addr === 'string')
+    .map((addr) => {
+      const match = addr.match(
+        /^(.+?)\s*<\s*([\w\-.+]+@[\w\-.]+\.[a-zA-Z]{2,})\s*>$/
+      );
+      if (match) {
+        return { name: match[1] ?? '', email: match[2] ?? '', raw: addr };
+      }
+      // If just an email
+      if (/^[\w\-.+]+@[\w\-.]+\.[a-zA-Z]{2,}$/.test(addr)) {
+        return { name: '', email: addr, raw: addr };
+      }
+      return { name: '', email: '', raw: addr };
+    });
+}
+
+function AvatarChip({ name, email }: { name: string; email: string }) {
+  const initial = name
+    ? name.charAt(0).toUpperCase()
+    : email.charAt(0).toUpperCase();
+  return (
+    <span className="flex items-center gap-1 rounded-full bg-accent px-2 py-0.5 text-xs font-medium text-accent-foreground shadow-sm">
+      <span className="mr-1 flex h-5 w-5 items-center justify-center rounded-full bg-muted text-xs font-bold text-muted-foreground">
+        {initial || <UserIcon className="h-4 w-4" />}
+      </span>
+      <span>{name || email}</span>
+      {name && email && (
+        <span className="ml-1 text-foreground/80">{`<${email}>`}</span>
+      )}
+    </span>
+  );
+}
+
+function AddressChips({
+  label,
+  addresses,
+  avatar,
+}: {
+  label: string;
+  addresses: string[];
+  avatar?: boolean;
+}) {
+  const parsed = formatDisplayAddresses(addresses).filter(
+    ({ email }) => !!email
+  );
+  return (
+    <div className="flex flex-wrap items-center gap-2 text-xs">
+      <span className="min-w-[40px] font-medium text-muted-foreground">
+        {label.replace(/:/g, '')}:
+      </span>
+      {parsed.length === 0 ? (
+        <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground opacity-70 shadow-sm">
+          None
+        </span>
+      ) : (
+        parsed.map(({ name, email, raw }, idx) => {
+          const key = email ? `${email}-${name}` : raw || idx;
+          return avatar ? (
+            <AvatarChip key={key} name={name} email={email} />
+          ) : (
+            <span
+              key={key}
+              className="flex items-center gap-1 rounded-full bg-accent px-2 py-0.5 text-xs font-medium text-accent-foreground shadow-sm"
+            >
+              {name && <span>{name}</span>}
+              <span className="break-words text-foreground/80">{email}</span>
+            </span>
+          );
+        })
+      )}
+    </div>
+  );
+}
 
 export function MailDisplay({ mail }: MailDisplayProps) {
   const [isHeaderCollapsed, setIsHeaderCollapsed] = useState(false);
@@ -54,7 +136,7 @@ export function MailDisplay({ mail }: MailDisplayProps) {
 
   useEffect(() => {
     const sanitizeContent = async () => {
-      if (!mail?.text) {
+      if (!mail?.payload) {
         setSanitizedHtml('');
         setIsLoading(false);
         return;
@@ -62,20 +144,19 @@ export function MailDisplay({ mail }: MailDisplayProps) {
 
       try {
         // Dynamically import DOMPurify only on client-side
-        const DOMPurify = (await import('dompurify')).default;
-        const sanitized = DOMPurify.sanitize(mail.text);
+        const sanitized = DOMPurify.sanitize(mail.payload);
         setSanitizedHtml(sanitized);
       } catch (error) {
         console.error('Failed to sanitize HTML:', error);
         try {
           // Fallback to sanitize-html if DOMPurify fails
           const sanitizeHtml = (await import('sanitize-html')).default;
-          setSanitizedHtml(sanitizeHtml(mail.text));
+          setSanitizedHtml(sanitizeHtml(mail.payload));
         } catch (fallbackError) {
           console.error('Failed to sanitize HTML:', fallbackError);
           // If both sanitizers fail, show plain text
-          let sanitizedFallback = mail.text;
-          let previous;
+          let sanitizedFallback = mail.payload;
+          let previous: string;
           do {
             previous = sanitizedFallback;
             sanitizedFallback = sanitizedFallback.replace(/<[^>]*>?/g, '');
@@ -89,7 +170,7 @@ export function MailDisplay({ mail }: MailDisplayProps) {
 
     setIsLoading(true);
     sanitizeContent();
-  }, [mail?.text]);
+  }, [mail?.payload]);
 
   return (
     <div className="flex h-full flex-col bg-background">
@@ -196,9 +277,9 @@ export function MailDisplay({ mail }: MailDisplayProps) {
             <div className="flex items-start justify-between gap-4">
               <div className="flex items-center gap-4">
                 <Avatar className="h-10 w-10 shadow-sm ring-2 ring-background">
-                  <AvatarImage alt={mail.name} />
+                  <AvatarImage alt={mail.source_email} />
                   <AvatarFallback className="bg-primary/10 text-sm font-semibold text-primary">
-                    {mail.name
+                    {mail.source_email
                       .split(' ')
                       .map((chunk: string) => chunk[0])
                       .join('')
@@ -209,16 +290,16 @@ export function MailDisplay({ mail }: MailDisplayProps) {
                   <h2 className="truncate text-base leading-tight font-semibold text-foreground">
                     {mail.subject}
                   </h2>
-                  <p className="text-sm font-medium text-foreground/80">
-                    {mail.name}
+                  <p className="truncate text-sm font-medium text-foreground/80">
+                    {mail.source_email}
                   </p>
                 </div>
               </div>
 
               <div className="flex items-center gap-2">
-                {mail.date && (
+                {mail.created_at && (
                   <time className="text-xs font-medium whitespace-nowrap text-muted-foreground">
-                    {dayjs(mail.date).format('LLLL')}
+                    {dayjs(mail.created_at).format('LLLL')}
                   </time>
                 )}
                 <Button
@@ -240,41 +321,62 @@ export function MailDisplay({ mail }: MailDisplayProps) {
                 'overflow-hidden transition-all duration-300 ease-in-out',
                 isHeaderCollapsed
                   ? 'max-h-0 opacity-0'
-                  : 'max-h-24 pt-3 opacity-100'
+                  : 'max-h-96 pt-3 opacity-100'
               )}
             >
               <div className="flex flex-col items-start gap-1 text-xs text-muted-foreground">
-                <div className="flex items-center gap-1">
-                  <span className="font-medium">{t('from_label')}</span>
-                  <span className="text-foreground/70">{mail.email}</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <span className="font-medium">{t('to_label')}</span>
-                  <span className="text-foreground/70">{mail.recipient}</span>
-                </div>
+                <AddressChips
+                  label={t('from_label')}
+                  addresses={[mail.source_email]}
+                  avatar
+                />
+                {mail.to_addresses && mail.to_addresses.length > 0 && (
+                  <AddressChips
+                    label={t('to_label')}
+                    addresses={mail.to_addresses}
+                  />
+                )}
+                <AddressChips label="CC" addresses={mail.cc_addresses ?? []} />
+                <AddressChips
+                  label="BCC"
+                  addresses={mail.bcc_addresses ?? []}
+                />
+                {mail.reply_to_addresses &&
+                  mail.reply_to_addresses.length > 0 && (
+                    <AddressChips
+                      label="Reply-To"
+                      addresses={mail.reply_to_addresses}
+                    />
+                  )}
               </div>
             </div>
           </div>
 
           <ScrollArea className="min-h-0 flex-1">
-            <div className="p-6">
-              {isLoading ? (
-                <div className="flex items-center justify-center py-12">
-                  <div className="flex items-center gap-3 text-muted-foreground">
-                    <Loader2 className="h-5 w-5 animate-spin" />
-                    <span className="text-sm font-medium">
-                      {t('loading_email_content')}
-                    </span>
-                  </div>
-                </div>
-              ) : (
+            {isLoading ? (
+              <div className="flex h-full items-center justify-center">
+                <Loader2 className="h-6 w-6 animate-spin" />
+              </div>
+            ) : mail.html_payload ? (
+              <>
+                <style>{`.prose a { word-break: break-all; }`}</style>
                 <div
-                  className="[&_blockquote]:text-muted-black [&_code]:text-muted-black [&_pre]:text-muted-black prose prose-sm max-w-none leading-relaxed text-black/90 [&_a]:text-primary [&_a:hover]:text-primary/80 [&_blockquote]:border-l-4 [&_blockquote]:border-border [&_blockquote]:pl-4 [&_blockquote]:italic [&_code]:rounded [&_code]:bg-muted [&_code]:px-1.5 [&_code]:py-0.5 [&_div]:text-inherit [&_em]:italic [&_h1]:text-black [&_h2]:text-black [&_h3]:text-black [&_h4]:text-black [&_h5]:text-black [&_h6]:text-black [&_li]:ml-4 [&_ol]:list-decimal [&_p]:text-inherit [&_pre]:rounded-lg [&_pre]:bg-muted [&_pre]:p-4 [&_span]:text-inherit [&_strong]:font-semibold [&_table]:border-collapse [&_td]:border [&_td]:p-2 [&_th]:border [&_th]:p-2 [&_ul]:list-disc [&>*]:text-inherit"
-                  // biome-ignore lint/security/noDangerouslySetInnerHtml: sanitized HTML output from DOMPurify
+                  className="prose max-w-full bg-background break-words text-foreground prose-a:text-dynamic-blue prose-a:underline prose-strong:text-foreground"
+                  style={{ padding: '1.5rem' }}
+                  // biome-ignore lint/security/noDangerouslySetInnerHtml: <html content is sanitized>
                   dangerouslySetInnerHTML={{ __html: sanitizedHtml }}
                 />
-              )}
-            </div>
+              </>
+            ) : (
+              <div
+                className="bg-background text-sm text-foreground"
+                style={{ padding: '1.5rem' }}
+              >
+                <pre className="whitespace-pre-wrap" style={{ margin: 0 }}>
+                  {mail.payload}
+                </pre>
+              </div>
+            )}
           </ScrollArea>
         </div>
       ) : (
