@@ -3773,7 +3773,13 @@
     "starred": "Starred",
     "drafts": "Drafts",
     "spam": "Spam",
-    "trash": "Trash"
+    "trash": "Trash",
+    "send_as": "Send as",
+    "display_name_required": "Display name is required.",
+    "display_name_required_message": "You must set a display name before sending mail.",
+    "preview": "Preview",
+    "edit": "Edit",
+    "none": "None"
   },
   "ws-polls": {
     "plural": "Polls",
