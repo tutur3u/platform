@@ -149,12 +149,13 @@ export async function POST(
   });
 
   try {
+    const sourceEmail = `${userProfile.display_name} <${user.email}>`;
+
     // Send the email via SES (unless in DEV_MODE or email sending is disabled)
     if (!DEV_MODE || ENABLE_MAIL_ON_DEV) {
       const emailSent = await sendEmail({
         client: sesClient,
-        sourceName: userProfile.display_name,
-        sourceEmail: user.email,
+        sourceEmail,
         toAddresses: data.to,
         ccAddresses: data.cc,
         bccAddresses: data.bcc,
@@ -178,7 +179,7 @@ export async function POST(
       .insert({
         ws_id: wsId,
         user_id: user.id,
-        source_email: user.email,
+        source_email: sourceEmail,
         subject: data.subject,
         to_addresses: data.to,
         cc_addresses: data.cc || [],
@@ -214,7 +215,6 @@ export async function POST(
 
 const sendEmail = async ({
   client,
-  sourceName,
   sourceEmail,
   toAddresses,
   ccAddresses,
@@ -223,7 +223,6 @@ const sendEmail = async ({
   content,
 }: {
   client: SESClient;
-  sourceName: string;
   sourceEmail: string;
   toAddresses: string[];
   ccAddresses?: string[];
@@ -250,7 +249,7 @@ const sendEmail = async ({
     const inlinedHtmlContent = juice(htmlContent);
 
     const params = {
-      Source: `${sourceName} <${sourceEmail}>`,
+      Source: sourceEmail,
       Destination: {
         ToAddresses: toAddresses,
         CcAddresses: ccAddresses,

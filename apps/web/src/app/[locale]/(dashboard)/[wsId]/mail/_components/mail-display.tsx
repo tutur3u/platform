@@ -358,12 +358,15 @@ export function MailDisplay({ mail }: MailDisplayProps) {
                 <Loader2 className="h-6 w-6 animate-spin" />
               </div>
             ) : mail.html_payload ? (
-              <div
-                className="prose max-w-full bg-background break-all text-foreground"
-                style={{ padding: '1.5rem' }}
-                // biome-ignore lint/security/noDangerouslySetInnerHtml: <html content is sanitized>
-                dangerouslySetInnerHTML={{ __html: sanitizedHtml }}
-              />
+              <>
+                <style>{`.prose a { word-break: break-all; }`}</style>
+                <div
+                  className="prose max-w-full bg-background break-words text-foreground prose-a:text-dynamic-blue prose-a:underline prose-strong:text-foreground"
+                  style={{ padding: '1.5rem' }}
+                  // biome-ignore lint/security/noDangerouslySetInnerHtml: <html content is sanitized>
+                  dangerouslySetInnerHTML={{ __html: sanitizedHtml }}
+                />
+              </>
             ) : (
               <div
                 className="bg-background text-sm text-foreground"
