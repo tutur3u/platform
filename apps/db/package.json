@@ -9,7 +9,7 @@
     "sb:pull": "bun supabase db pull",
     "sb:push": "bun supabase db push",
     "sb:link": "bun supabase link",
-    "sb:reset": "bun supabase db reset && bun sb:typegen",
+    "sb:reset": "bun supabase db reset",
     "sb:diff": "bun supabase db diff -f new_migration",
     "sb:new": "bun supabase migration new new_migration",
     "sb:up": "bun supabase migration up && bun sb:typegen",

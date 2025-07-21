@@ -286,7 +286,7 @@ export default function UserGroupPosts({
                   </div>
                 </div>
                 {groupId && (
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 text-start">
                     <Link
                       href={
                         groupId
@@ -336,7 +336,7 @@ export default function UserGroupPosts({
                 )}
               </div>
               {configs.showContent && post.content && (
-                <div className="text-sm whitespace-pre-line opacity-70">
+                <div className="text-start text-sm whitespace-pre-line opacity-70">
                   {post.content}
                 </div>
               )}

@@ -1,6 +1,6 @@
 'use client';
 
-import { Filter } from '../../users/filters';
+import { Filter } from '../users/filters';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';

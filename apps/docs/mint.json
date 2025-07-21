@@ -44,6 +44,7 @@
         "git-conventions",
         "local-supabase-development",
         "ci-cd-pipelines",
+        "cleaning-clone",
         "documenting"
       ]
     },

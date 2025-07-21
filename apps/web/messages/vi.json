@@ -809,7 +809,8 @@
     "link_shortener": "Liên kết rút ngắn",
     "tumeet": "Tumeet",
     "polls": "Bỏ phiếu",
-    "qr_generator": "Trình tạo QR"
+    "qr_generator": "Trình tạo QR",
+    "posts": "Bài viết"
   },
   "link-shortener": {
     "title": "Rút ngắn liên kết",
@@ -1108,7 +1109,11 @@
     "send_email": "Gửi email",
     "preview": "Xem trước",
     "notes": "Ghi chú",
-    "created_at": "Ngày tạo"
+    "created_at": "Ngày tạo",
+    "error": "Lỗi",
+    "sending": "Đang gửi",
+    "sent": "Đã gửi",
+    "pending": "Chờ gửi"
   },
   "course-data-table": {
     "id": "Mã số",
@@ -3721,6 +3726,11 @@
     "loading_email_content": "Đang tải nội dung email...",
     "no_email_selected": "Chưa chọn email nào",
     "choose_email_message": "Chọn một email từ danh sách để xem nội dung tại đây.",
-    "no_emails_found": "Không tìm thấy email nào"
+    "no_emails_found": "Không tìm thấy email nào",
+    "sent": "Đã gửi",
+    "starred": "Đã gắn sao",
+    "drafts": "Bản nháp",
+    "spam": "Thư rác",
+    "trash": "Rác"
   }
 }
