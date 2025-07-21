@@ -359,7 +359,7 @@ export function MailDisplay({ mail }: MailDisplayProps) {
               </div>
             ) : mail.html_payload ? (
               <div
-                className="prose max-w-full break-all bg-background text-foreground"
+                className="prose max-w-full bg-background break-all text-foreground"
                 style={{ padding: '1.5rem' }}
                 // biome-ignore lint/security/noDangerouslySetInnerHtml: <html content is sanitized>
                 dangerouslySetInnerHTML={{ __html: sanitizedHtml }}
