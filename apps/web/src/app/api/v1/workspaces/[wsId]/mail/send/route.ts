@@ -82,42 +82,47 @@ export async function POST(
     );
   }
 
-  // Get allowed emails from internal_email_api_keys
-  const { data: internalData, error: internalDataError } = await supabase
-    .from('internal_email_api_keys')
-    .select('*')
-    .or(`user_id.eq.${user?.id},value.eq.${apiKey}`)
-    .single();
+  if (DEV_MODE) {
+    // Get allowed emails from internal_email_api_keys
+    const { data: internalData, error: internalDataError } = await supabase
+      .from('internal_email_api_keys')
+      .select('*')
+      .or(`user_id.eq.${user?.id},value.eq.${apiKey}`)
+      .single();
 
-  if (internalDataError) {
-    console.error('Error fetching allowed emails:', internalDataError);
-    return NextResponse.json(
-      { message: 'Error fetching allowed emails' },
-      { status: 500 }
-    );
-  }
+    if (internalDataError) {
+      console.error('Error fetching allowed emails:', internalDataError);
+      return NextResponse.json(
+        { message: 'Error fetching allowed emails' },
+        { status: 500 }
+      );
+    }
 
-  if (!internalData) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-  }
+    if (!internalData) {
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    }
 
-  if (
-    internalData.allowed_emails &&
-    difference(
-      [...data.to, ...(data.cc || []), ...(data.bcc || [])],
-      internalData.allowed_emails
-    ).length > 0
-  ) {
-    console.error(
-      'Email not allowed',
-      { to: data.to, cc: data.cc, bcc: data.bcc },
-      internalData.allowed_emails,
+    if (
+      internalData.allowed_emails &&
       difference(
         [...data.to, ...(data.cc || []), ...(data.bcc || [])],
         internalData.allowed_emails
-      )
-    );
-    return NextResponse.json({ message: 'Email not allowed' }, { status: 400 });
+      ).length > 0
+    ) {
+      console.error(
+        'Email not allowed',
+        { to: data.to, cc: data.cc, bcc: data.bcc },
+        internalData.allowed_emails,
+        difference(
+          [...data.to, ...(data.cc || []), ...(data.bcc || [])],
+          internalData.allowed_emails
+        )
+      );
+      return NextResponse.json(
+        { message: 'Email not allowed' },
+        { status: 400 }
+      );
+    }
   }
 
   const sbAdmin = await createAdminClient();
