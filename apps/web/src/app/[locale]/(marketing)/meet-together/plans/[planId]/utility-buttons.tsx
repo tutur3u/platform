@@ -1,6 +1,7 @@
 'use client';
 
 import CopyLinkButton from './copy-link-button';
+import DownloadAsPNG from './download-as-png';
 import EmailButton from './email-button';
 import LoggedInAsButton from './logged-in-as-button';
 import ShowQRButton from './show-qr-button';
@@ -9,13 +10,17 @@ import type { User } from '@tuturuuu/types/primitives/User';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
+interface UtilityButtonsProps {
+  plan: MeetTogetherPlan;
+  platformUser: User | null;
+  handlePNG: () => Promise<void>;
+}
+
 export default function UtilityButtons({
   plan,
   platformUser,
-}: {
-  plan: MeetTogetherPlan;
-  platformUser: User | null;
-}) {
+  handlePNG,
+}: UtilityButtonsProps) {
   const pathname = usePathname();
   const [url, setUrl] = useState('');
 
@@ -31,6 +36,7 @@ export default function UtilityButtons({
         <CopyLinkButton url={url} />
         <ShowQRButton url={url} />
         <EmailButton plan={plan} url={url} />
+        <DownloadAsPNG onClick={handlePNG} />
       </div>
       <LoggedInAsButton platformUser={platformUser} />
     </div>
