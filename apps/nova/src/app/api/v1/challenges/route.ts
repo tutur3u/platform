@@ -1,3 +1,4 @@
+import { createChallengeSchema } from '../schemas';
 import {
   createAdminClient,
   createClient,
@@ -5,7 +6,6 @@ import {
 import { generateSalt, hashPassword } from '@tuturuuu/utils/crypto';
 import { NextResponse } from 'next/server';
 import { ZodError } from 'zod';
-import { createChallengeSchema } from '../schemas';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);

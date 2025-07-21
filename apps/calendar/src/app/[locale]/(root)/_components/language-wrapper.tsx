@@ -1,5 +1,5 @@
-import { type Locale, supportedLocales } from '@/i18n/routing';
 import { LanguageDropdownItem } from './language-dropdown-item';
+import { type Locale, supportedLocales } from '@/i18n/routing';
 
 interface Props {
   label: string;

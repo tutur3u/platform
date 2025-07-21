@@ -1,5 +1,6 @@
 'use client';
 
+import ProblemForm, { type ProblemFormValues } from './problem-form';
 import {
   Dialog,
   DialogContent,
@@ -11,7 +12,6 @@ import {
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import ProblemForm, { type ProblemFormValues } from './problem-form';
 
 interface CreateProblemDialogProps {
   trigger: React.ReactNode;

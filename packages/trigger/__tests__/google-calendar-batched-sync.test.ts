@@ -1,3 +1,14 @@
+// Mocks must come next, before any imports that use them!
+import {
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vitest';
+
 // Set required env vars for Supabase at the VERY TOP
 process.env.NEXT_PUBLIC_SUPABASE_URL = 'http://localhost:54321';
 process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'dummy-anon-key';
@@ -7,34 +18,31 @@ process.env.GOOGLE_CLIENT_ID = 'dummy-client-id';
 process.env.GOOGLE_CLIENT_SECRET = 'dummy-client-secret';
 process.env.GOOGLE_REDIRECT_URI = 'http://localhost:3000/auth/callback';
 
-// Mocks must come next, before any imports that use them!
-import { vi, describe, it, expect, beforeEach, afterEach, beforeAll } from 'vitest';
-
 // Mock Supabase client
 const mockSupabaseClient = {
   from: vi.fn(() => ({
     upsert: vi.fn(() => Promise.resolve({ error: null as any })),
     delete: vi.fn(() => ({
-      or: vi.fn(() => Promise.resolve({ error: null as any }))
-    }))
-  }))
+      or: vi.fn(() => Promise.resolve({ error: null as any })),
+    })),
+  })),
 };
 
 vi.mock('@tuturuuu/supabase/next/server', () => ({
-  createAdminClient: vi.fn(() => mockSupabaseClient)
+  createAdminClient: vi.fn(() => mockSupabaseClient),
 }));
 
 // Mock the calendar sync coordination utility
 vi.mock('@tuturuuu/utils/calendar-sync-coordination', () => ({
-  updateLastUpsert: vi.fn(() => Promise.resolve())
+  updateLastUpsert: vi.fn(() => Promise.resolve()),
 }));
 
 // Mock the calendar utils
 vi.mock('@tuturuuu/ui/hooks/calendar-utils', () => ({
   convertGoogleAllDayEvent: vi.fn((start, end, timezone) => ({
     start_at: start,
-    end_at: end
-  }))
+    end_at: end,
+  })),
 }));
 
 // Dynamically import the actual functions after env and mocks are set
@@ -43,12 +51,19 @@ let syncWorkspaceBatched: any;
 
 beforeAll(async () => {
   const mod = await import('../google-calendar-sync');
-  syncGoogleCalendarEventsForWorkspaceBatched = mod.syncGoogleCalendarEventsForWorkspaceBatched;
+  syncGoogleCalendarEventsForWorkspaceBatched =
+    mod.syncGoogleCalendarEventsForWorkspaceBatched;
   syncWorkspaceBatched = mod.syncWorkspaceBatched;
 });
 
 // Mock Google Calendar events for testing
-const createMockGoogleEvent = (id: string, title: string, start: string, end: string, status = 'confirmed') => ({
+const createMockGoogleEvent = (
+  id: string,
+  title: string,
+  start: string,
+  end: string,
+  status = 'confirmed'
+) => ({
   id,
   summary: title,
   description: `Description for ${title}`,
@@ -56,7 +71,7 @@ const createMockGoogleEvent = (id: string, title: string, start: string, end: st
   end: { dateTime: end },
   location: `Location for ${title}`,
   colorId: '1',
-  status
+  status,
 });
 
 describe('Google Calendar Batched Sync', () => {
@@ -65,13 +80,13 @@ describe('Google Calendar Batched Sync', () => {
     delete process.env.LOCALE;
     // Clear all mocks
     vi.clearAllMocks();
-    
+
     // Reset Supabase client mocks
     mockSupabaseClient.from.mockReturnValue({
       upsert: vi.fn(() => Promise.resolve({ error: null as any })),
       delete: vi.fn(() => ({
-        or: vi.fn(() => Promise.resolve({ error: null as any }))
-      }))
+        or: vi.fn(() => Promise.resolve({ error: null as any })),
+      })),
     });
   });
 
@@ -84,12 +99,30 @@ describe('Google Calendar Batched Sync', () => {
     it('should process events in batches for upserts', async () => {
       const ws_id = 'test-workspace';
       const events = [
-        createMockGoogleEvent('event1', 'Test Event 1', '2024-01-15T10:00:00Z', '2024-01-15T11:00:00Z'),
-        createMockGoogleEvent('event2', 'Test Event 2', '2024-01-15T14:00:00Z', '2024-01-15T15:00:00Z'),
-        createMockGoogleEvent('event3', 'Test Event 3', '2024-01-15T16:00:00Z', '2024-01-15T17:00:00Z'),
+        createMockGoogleEvent(
+          'event1',
+          'Test Event 1',
+          '2024-01-15T10:00:00Z',
+          '2024-01-15T11:00:00Z'
+        ),
+        createMockGoogleEvent(
+          'event2',
+          'Test Event 2',
+          '2024-01-15T14:00:00Z',
+          '2024-01-15T15:00:00Z'
+        ),
+        createMockGoogleEvent(
+          'event3',
+          'Test Event 3',
+          '2024-01-15T16:00:00Z',
+          '2024-01-15T17:00:00Z'
+        ),
       ];
 
-      const result = await syncGoogleCalendarEventsForWorkspaceBatched(ws_id, events);
+      const result = await syncGoogleCalendarEventsForWorkspaceBatched(
+        ws_id,
+        events
+      );
 
       expect(result).toEqual({
         ws_id: 'test-workspace',
@@ -103,24 +136,42 @@ describe('Google Calendar Batched Sync', () => {
       expect(upsertMock).toHaveBeenCalledWith(
         expect.arrayContaining([
           expect.objectContaining({
+            color: 'RED',
+            description: 'Description for Test Event 1',
+            end_at: '2024-01-15T11:00:00Z',
             google_event_id: 'event1',
+            start_at: '2024-01-15T10:00:00Z',
             title: 'Test Event 1',
-            ws_id: 'test-workspace'
+            ws_id: 'test-workspace',
+            location: 'Location for Test Event 1',
+            locked: false,
           }),
           expect.objectContaining({
+            color: 'RED',
+            description: 'Description for Test Event 2',
+            end_at: '2024-01-15T15:00:00Z',
             google_event_id: 'event2',
             title: 'Test Event 2',
-            ws_id: 'test-workspace'
+            ws_id: 'test-workspace',
+            location: 'Location for Test Event 2',
+            locked: false,
+            start_at: '2024-01-15T14:00:00Z',
           }),
           expect.objectContaining({
+            color: 'RED',
+            description: 'Description for Test Event 3',
+            end_at: '2024-01-15T17:00:00Z',
             google_event_id: 'event3',
+            start_at: '2024-01-15T16:00:00Z',
             title: 'Test Event 3',
-            ws_id: 'test-workspace'
-          })
+            ws_id: 'test-workspace',
+            location: 'Location for Test Event 3',
+            locked: false,
+          }),
         ]),
         {
           onConflict: 'ws_id,google_event_id',
-          ignoreDuplicates: true,
+          ignoreDuplicates: false,
         }
       );
     });
@@ -128,12 +179,33 @@ describe('Google Calendar Batched Sync', () => {
     it('should process events in batches for deletes', async () => {
       const ws_id = 'test-workspace';
       const events = [
-        createMockGoogleEvent('event1', 'Cancelled Event 1', '2024-01-15T10:00:00Z', '2024-01-15T11:00:00Z', 'cancelled'),
-        createMockGoogleEvent('event2', 'Cancelled Event 2', '2024-01-15T14:00:00Z', '2024-01-15T15:00:00Z', 'cancelled'),
-        createMockGoogleEvent('event3', 'Cancelled Event 3', '2024-01-15T16:00:00Z', '2024-01-15T17:00:00Z', 'cancelled'),
+        createMockGoogleEvent(
+          'event1',
+          'Cancelled Event 1',
+          '2024-01-15T10:00:00Z',
+          '2024-01-15T11:00:00Z',
+          'cancelled'
+        ),
+        createMockGoogleEvent(
+          'event2',
+          'Cancelled Event 2',
+          '2024-01-15T14:00:00Z',
+          '2024-01-15T15:00:00Z',
+          'cancelled'
+        ),
+        createMockGoogleEvent(
+          'event3',
+          'Cancelled Event 3',
+          '2024-01-15T16:00:00Z',
+          '2024-01-15T17:00:00Z',
+          'cancelled'
+        ),
       ];
 
-      const result = await syncGoogleCalendarEventsForWorkspaceBatched(ws_id, events);
+      const result = await syncGoogleCalendarEventsForWorkspaceBatched(
+        ws_id,
+        events
+      );
 
       expect(result).toEqual({
         ws_id: 'test-workspace',
@@ -150,12 +222,33 @@ describe('Google Calendar Batched Sync', () => {
     it('should handle mixed events (confirmed and cancelled)', async () => {
       const ws_id = 'test-workspace';
       const events = [
-        createMockGoogleEvent('event1', 'Confirmed Event', '2024-01-15T10:00:00Z', '2024-01-15T11:00:00Z', 'confirmed'),
-        createMockGoogleEvent('event2', 'Cancelled Event', '2024-01-15T14:00:00Z', '2024-01-15T15:00:00Z', 'cancelled'),
-        createMockGoogleEvent('event3', 'Another Confirmed Event', '2024-01-15T16:00:00Z', '2024-01-15T17:00:00Z', 'confirmed'),
+        createMockGoogleEvent(
+          'event1',
+          'Confirmed Event',
+          '2024-01-15T10:00:00Z',
+          '2024-01-15T11:00:00Z',
+          'confirmed'
+        ),
+        createMockGoogleEvent(
+          'event2',
+          'Cancelled Event',
+          '2024-01-15T14:00:00Z',
+          '2024-01-15T15:00:00Z',
+          'cancelled'
+        ),
+        createMockGoogleEvent(
+          'event3',
+          'Another Confirmed Event',
+          '2024-01-15T16:00:00Z',
+          '2024-01-15T17:00:00Z',
+          'confirmed'
+        ),
       ];
 
-      const result = await syncGoogleCalendarEventsForWorkspaceBatched(ws_id, events);
+      const result = await syncGoogleCalendarEventsForWorkspaceBatched(
+        ws_id,
+        events
+      );
 
       expect(result).toEqual({
         ws_id: 'test-workspace',
@@ -169,7 +262,10 @@ describe('Google Calendar Batched Sync', () => {
       const ws_id = 'test-workspace';
       const events: any[] = [];
 
-      const result = await syncGoogleCalendarEventsForWorkspaceBatched(ws_id, events);
+      const result = await syncGoogleCalendarEventsForWorkspaceBatched(
+        ws_id,
+        events
+      );
 
       expect(result).toEqual({
         ws_id: 'test-workspace',
@@ -182,18 +278,28 @@ describe('Google Calendar Batched Sync', () => {
     it('should handle upsert errors gracefully', async () => {
       const ws_id = 'test-workspace';
       const events = [
-        createMockGoogleEvent('event1', 'Test Event 1', '2024-01-15T10:00:00Z', '2024-01-15T11:00:00Z'),
+        createMockGoogleEvent(
+          'event1',
+          'Test Event 1',
+          '2024-01-15T10:00:00Z',
+          '2024-01-15T11:00:00Z'
+        ),
       ];
 
       // Mock upsert error
       mockSupabaseClient.from.mockReturnValue({
-        upsert: vi.fn(() => Promise.resolve({ error: new Error('Upsert failed') })),
+        upsert: vi.fn(() =>
+          Promise.resolve({ error: new Error('Upsert failed') })
+        ),
         delete: vi.fn(() => ({
-          or: vi.fn(() => Promise.resolve({ error: null as any }))
-        }))
+          or: vi.fn(() => Promise.resolve({ error: null as any })),
+        })),
       });
 
-      const result = await syncGoogleCalendarEventsForWorkspaceBatched(ws_id, events);
+      const result = await syncGoogleCalendarEventsForWorkspaceBatched(
+        ws_id,
+        events
+      );
 
       expect(result).toEqual({
         ws_id: 'test-workspace',
@@ -205,18 +311,29 @@ describe('Google Calendar Batched Sync', () => {
     it('should handle delete errors gracefully', async () => {
       const ws_id = 'test-workspace';
       const events = [
-        createMockGoogleEvent('event1', 'Cancelled Event', '2024-01-15T10:00:00Z', '2024-01-15T11:00:00Z', 'cancelled'),
+        createMockGoogleEvent(
+          'event1',
+          'Cancelled Event',
+          '2024-01-15T10:00:00Z',
+          '2024-01-15T11:00:00Z',
+          'cancelled'
+        ),
       ];
 
       // Mock delete error
       mockSupabaseClient.from.mockReturnValue({
         upsert: vi.fn(() => Promise.resolve({ error: null as any })),
         delete: vi.fn(() => ({
-          or: vi.fn(() => Promise.resolve({ error: new Error('Delete failed') }))
-        }))
+          or: vi.fn(() =>
+            Promise.resolve({ error: new Error('Delete failed') })
+          ),
+        })),
       });
 
-      const result = await syncGoogleCalendarEventsForWorkspaceBatched(ws_id, events);
+      const result = await syncGoogleCalendarEventsForWorkspaceBatched(
+        ws_id,
+        events
+      );
 
       expect(result).toEqual({
         ws_id: 'test-workspace',
@@ -228,13 +345,23 @@ describe('Google Calendar Batched Sync', () => {
     it('should process large batches correctly', async () => {
       const ws_id = 'test-workspace';
       const events: any[] = [];
-      
+
       // Create 150 events (more than BATCH_SIZE of 100)
       for (let i = 1; i <= 150; i++) {
-        events.push(createMockGoogleEvent(`event${i}`, `Test Event ${i}`, '2024-01-15T10:00:00Z', '2024-01-15T11:00:00Z'));
+        events.push(
+          createMockGoogleEvent(
+            `event${i}`,
+            `Test Event ${i}`,
+            '2024-01-15T10:00:00Z',
+            '2024-01-15T11:00:00Z'
+          )
+        );
       }
 
-      const result = await syncGoogleCalendarEventsForWorkspaceBatched(ws_id, events);
+      const result = await syncGoogleCalendarEventsForWorkspaceBatched(
+        ws_id,
+        events
+      );
 
       expect(result).toEqual({
         ws_id: 'test-workspace',
@@ -251,13 +378,24 @@ describe('Google Calendar Batched Sync', () => {
     it('should process large delete batches correctly', async () => {
       const ws_id = 'test-workspace';
       const events: any[] = [];
-      
+
       // Create 75 cancelled events (more than DELETE_BATCH_SIZE of 50)
       for (let i = 1; i <= 75; i++) {
-        events.push(createMockGoogleEvent(`event${i}`, `Cancelled Event ${i}`, '2024-01-15T10:00:00Z', '2024-01-15T11:00:00Z', 'cancelled'));
+        events.push(
+          createMockGoogleEvent(
+            `event${i}`,
+            `Cancelled Event ${i}`,
+            '2024-01-15T10:00:00Z',
+            '2024-01-15T11:00:00Z',
+            'cancelled'
+          )
+        );
       }
 
-      const result = await syncGoogleCalendarEventsForWorkspaceBatched(ws_id, events);
+      const result = await syncGoogleCalendarEventsForWorkspaceBatched(
+        ws_id,
+        events
+      );
 
       expect(result).toEqual({
         ws_id: 'test-workspace',
@@ -277,9 +415,19 @@ describe('Google Calendar Batched Sync', () => {
       const payload = {
         ws_id: 'test-workspace',
         events_to_sync: [
-          createMockGoogleEvent('event1', 'Test Event 1', '2024-01-15T10:00:00Z', '2024-01-15T11:00:00Z'),
-          createMockGoogleEvent('event2', 'Test Event 2', '2024-01-15T14:00:00Z', '2024-01-15T15:00:00Z'),
-        ]
+          createMockGoogleEvent(
+            'event1',
+            'Test Event 1',
+            '2024-01-15T10:00:00Z',
+            '2024-01-15T11:00:00Z'
+          ),
+          createMockGoogleEvent(
+            'event2',
+            'Test Event 2',
+            '2024-01-15T14:00:00Z',
+            '2024-01-15T15:00:00Z'
+          ),
+        ],
       };
 
       const result = await syncWorkspaceBatched(payload);
@@ -295,7 +443,7 @@ describe('Google Calendar Batched Sync', () => {
     it('should handle empty events array', async () => {
       const payload = {
         ws_id: 'test-workspace',
-        events_to_sync: []
+        events_to_sync: [],
       };
 
       const result = await syncWorkspaceBatched(payload);
@@ -312,16 +460,23 @@ describe('Google Calendar Batched Sync', () => {
       const payload = {
         ws_id: 'test-workspace',
         events_to_sync: [
-          createMockGoogleEvent('event1', 'Test Event 1', '2024-01-15T10:00:00Z', '2024-01-15T11:00:00Z'),
-        ]
+          createMockGoogleEvent(
+            'event1',
+            'Test Event 1',
+            '2024-01-15T10:00:00Z',
+            '2024-01-15T11:00:00Z'
+          ),
+        ],
       };
 
       // Mock error in the underlying function
       mockSupabaseClient.from.mockReturnValue({
-        upsert: vi.fn(() => Promise.resolve({ error: new Error('Database error') })),
+        upsert: vi.fn(() =>
+          Promise.resolve({ error: new Error('Database error') })
+        ),
         delete: vi.fn(() => ({
-          or: vi.fn(() => Promise.resolve({ error: null as any }))
-        }))
+          or: vi.fn(() => Promise.resolve({ error: null as any })),
+        })),
       });
 
       const result = await syncWorkspaceBatched(payload);
@@ -338,17 +493,36 @@ describe('Google Calendar Batched Sync', () => {
     it('should use correct batch sizes for different operations', async () => {
       const ws_id = 'test-workspace';
       const events: any[] = [];
-      
+
       // Create events that will test both upsert and delete batching
       for (let i = 1; i <= 120; i++) {
         if (i <= 60) {
-          events.push(createMockGoogleEvent(`event${i}`, `Confirmed Event ${i}`, '2024-01-15T10:00:00Z', '2024-01-15T11:00:00Z', 'confirmed'));
+          events.push(
+            createMockGoogleEvent(
+              `event${i}`,
+              `Confirmed Event ${i}`,
+              '2024-01-15T10:00:00Z',
+              '2024-01-15T11:00:00Z',
+              'confirmed'
+            )
+          );
         } else {
-          events.push(createMockGoogleEvent(`event${i}`, `Cancelled Event ${i}`, '2024-01-15T10:00:00Z', '2024-01-15T11:00:00Z', 'cancelled'));
+          events.push(
+            createMockGoogleEvent(
+              `event${i}`,
+              `Cancelled Event ${i}`,
+              '2024-01-15T10:00:00Z',
+              '2024-01-15T11:00:00Z',
+              'cancelled'
+            )
+          );
         }
       }
 
-      const result = await syncGoogleCalendarEventsForWorkspaceBatched(ws_id, events);
+      const result = await syncGoogleCalendarEventsForWorkspaceBatched(
+        ws_id,
+        events
+      );
 
       expect(result).toEqual({
         ws_id: 'test-workspace',
@@ -366,4 +540,4 @@ describe('Google Calendar Batched Sync', () => {
       expect(deleteMock).toHaveBeenCalledTimes(2);
     });
   });
-}); 
+});

@@ -1,14 +1,14 @@
-import { cn } from '@tuturuuu/utils/format';
-import { isAfter } from 'date-fns';
-import { Fragment } from 'react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../../tooltip';
 import {
+  type WorkspaceUserAttendance,
   getAttendanceGroupNames,
   isCurrentMonth,
   isDateAbsent,
   isDateAttended,
-  type WorkspaceUserAttendance,
 } from './utils';
+import { cn } from '@tuturuuu/utils/format';
+import { isAfter } from 'date-fns';
+import { Fragment } from 'react';
 
 export const DayCell: React.FC<{
   day: Date;
@@ -19,7 +19,7 @@ export const DayCell: React.FC<{
   onDateClick?: (date: Date) => void;
 }> = ({ day, currentDate, today, attendanceData, onDateClick }) => {
   const isInCurrentMonth = isCurrentMonth(day, currentDate);
-  
+
   // Cache attendance checks
   const isAttended = isDateAttended(day, attendanceData);
   const isAbsent = isDateAbsent(day, attendanceData);
@@ -33,7 +33,8 @@ export const DayCell: React.FC<{
           'flex flex-none justify-center rounded border bg-foreground/5 p-2 font-semibold transition duration-300 hover:cursor-pointer md:rounded-lg dark:bg-foreground/10',
           isAfter(day, today) &&
             '!cursor-not-allowed opacity-50 hover:!cursor-not-allowed',
-          !isInCurrentMonth && 'text-foreground/40 bg-foreground/3 dark:bg-foreground/5',
+          !isInCurrentMonth &&
+            'bg-foreground/3 text-foreground/40 dark:bg-foreground/5',
           isInCurrentMonth && 'text-foreground/40'
         )}
       >

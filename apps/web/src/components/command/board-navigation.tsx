@@ -1,5 +1,6 @@
 'use client';
 
+import type { Board } from './types';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@tuturuuu/ui/button';
 import { CommandGroup, CommandItem } from '@tuturuuu/ui/command';
@@ -19,7 +20,6 @@ import {
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { useRouter } from 'next/navigation';
 import React from 'react';
-import type { Board } from './types';
 
 interface BoardItemProps {
   board: Board;
@@ -101,7 +101,9 @@ export function BoardNavigation({ wsId, setOpen }: BoardNavigationProps) {
             <LayoutDashboard className="h-5 w-5 text-dynamic-blue" />
           </div>
           <div className="space-y-1">
-            <p className="font-semibold text-foreground">No workspace selected</p>
+            <p className="font-semibold text-foreground">
+              No workspace selected
+            </p>
             <p className="text-xs text-muted-foreground">
               Navigate to a workspace to view and manage boards
             </p>
@@ -134,13 +136,15 @@ export function BoardNavigation({ wsId, setOpen }: BoardNavigationProps) {
   }>({
     queryKey: ['boards', wsId],
     queryFn: async () => {
-      const response = await fetch(`/api/v1/workspaces/${wsId}/boards-with-lists`);
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/boards-with-lists`
+      );
       if (!response.ok) {
         if (response.status === 401) {
           throw new Error('Please sign in to view boards');
         }
         if (response.status === 403) {
-          throw new Error('You don\'t have access to this workspace');
+          throw new Error("You don't have access to this workspace");
         }
         if (response.status === 400) {
           throw new Error('Invalid workspace selected');
@@ -158,7 +162,9 @@ export function BoardNavigation({ wsId, setOpen }: BoardNavigationProps) {
 
   // Check scroll position to show/hide arrows
   const checkScrollPosition = React.useCallback(() => {
-    const scrollElement = scrollAreaRef.current?.querySelector('[data-radix-scroll-area-viewport]');
+    const scrollElement = scrollAreaRef.current?.querySelector(
+      '[data-radix-scroll-area-viewport]'
+    );
     if (scrollElement) {
       const { scrollTop, scrollHeight, clientHeight } = scrollElement;
       setCanScrollUp(scrollTop > 0);
@@ -170,12 +176,15 @@ export function BoardNavigation({ wsId, setOpen }: BoardNavigationProps) {
   React.useEffect(() => {
     if (boards.length > 4 && isExpanded) {
       setTimeout(checkScrollPosition, 100); // Allow time for rendering
-      
+
       // Add scroll event listener
-      const scrollElement = scrollAreaRef.current?.querySelector('[data-radix-scroll-area-viewport]');
+      const scrollElement = scrollAreaRef.current?.querySelector(
+        '[data-radix-scroll-area-viewport]'
+      );
       if (scrollElement) {
         scrollElement.addEventListener('scroll', checkScrollPosition);
-        return () => scrollElement.removeEventListener('scroll', checkScrollPosition);
+        return () =>
+          scrollElement.removeEventListener('scroll', checkScrollPosition);
       }
     } else {
       setCanScrollUp(false);
@@ -252,10 +261,13 @@ export function BoardNavigation({ wsId, setOpen }: BoardNavigationProps) {
               Failed to load boards
             </p>
             <p className="text-xs text-muted-foreground">
-              {boardsError instanceof Error ? boardsError.message : 'Unable to fetch boards at the moment'}
+              {boardsError instanceof Error
+                ? boardsError.message
+                : 'Unable to fetch boards at the moment'}
             </p>
           </div>
-          {boardsError instanceof Error && boardsError.message === 'Please sign in to view boards' ? (
+          {boardsError instanceof Error &&
+          boardsError.message === 'Please sign in to view boards' ? (
             <Button
               variant="outline"
               size="sm"
@@ -268,15 +280,15 @@ export function BoardNavigation({ wsId, setOpen }: BoardNavigationProps) {
               Sign In
             </Button>
           ) : (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => refetch()}
-            className="gap-2"
-          >
-            <RefreshCw className="h-3 w-3" />
-            Retry
-          </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => refetch()}
+              className="gap-2"
+            >
+              <RefreshCw className="h-3 w-3" />
+              Retry
+            </Button>
           )}
         </div>
       </div>
@@ -357,17 +369,14 @@ export function BoardNavigation({ wsId, setOpen }: BoardNavigationProps) {
           <div className="relative">
             {/* Top scroll indicator */}
             {boards.length > 4 && canScrollUp && (
-              <div className="absolute top-0 left-0 right-0 z-10 flex justify-center bg-gradient-to-b from-background to-transparent pb-2">
-                <ChevronUp className="h-4 w-4 text-muted-foreground animate-bounce" />
+              <div className="absolute top-0 right-0 left-0 z-10 flex justify-center bg-gradient-to-b from-background to-transparent pb-2">
+                <ChevronUp className="h-4 w-4 animate-bounce text-muted-foreground" />
               </div>
             )}
 
             {/* Scrollable content */}
             {boards.length > 4 ? (
-              <ScrollArea
-                ref={scrollAreaRef}
-                className="h-[280px]"
-              >
+              <ScrollArea ref={scrollAreaRef} className="h-[280px]">
                 <CommandGroup className="py-2">
                   {boards.map((board: Board) => (
                     <BoardItem
@@ -378,7 +387,7 @@ export function BoardNavigation({ wsId, setOpen }: BoardNavigationProps) {
                     />
                   ))}
                 </CommandGroup>
-          </ScrollArea>
+              </ScrollArea>
             ) : (
               <CommandGroup className="space-y-1">
                 {boards.map((board: Board) => (
@@ -394,8 +403,8 @@ export function BoardNavigation({ wsId, setOpen }: BoardNavigationProps) {
 
             {/* Bottom scroll indicator */}
             {boards.length > 4 && canScrollDown && (
-              <div className="absolute bottom-0 left-0 right-0 z-10 flex justify-center bg-gradient-to-t from-background to-transparent pt-2">
-                <ChevronDown className="h-4 w-4 text-muted-foreground animate-bounce" />
+              <div className="absolute right-0 bottom-0 left-0 z-10 flex justify-center bg-gradient-to-t from-background to-transparent pt-2">
+                <ChevronDown className="h-4 w-4 animate-bounce text-muted-foreground" />
               </div>
             )}
           </div>

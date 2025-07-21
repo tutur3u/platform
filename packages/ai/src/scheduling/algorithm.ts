@@ -1,6 +1,3 @@
-import dayjs from 'dayjs';
-import minMax from 'dayjs/plugin/minMax';
-import { v4 as uuidv4 } from 'uuid';
 import { defaultActiveHours } from './default';
 import type {
   ActiveHours,
@@ -11,6 +8,9 @@ import type {
   Task,
   TaskPriority,
 } from './types';
+import dayjs from 'dayjs';
+import minMax from 'dayjs/plugin/minMax';
+import { v4 as uuidv4 } from 'uuid';
 
 dayjs.extend(minMax);
 

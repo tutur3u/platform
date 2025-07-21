@@ -1,5 +1,6 @@
 'use client';
 
+import { SubmissionCard } from '@/components/common/SubmissionCard';
 import type { NovaSubmissionData } from '@tuturuuu/types/db';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
@@ -16,7 +17,6 @@ import { toast } from '@tuturuuu/ui/sonner';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { SubmissionCard } from '@/components/common/SubmissionCard';
 
 interface SubmissionClientProps {
   submission: NovaSubmissionData;

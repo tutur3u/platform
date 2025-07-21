@@ -1,7 +1,7 @@
-import dayjs from 'dayjs';
-import { describe, expect, it } from 'vitest';
 import { scheduleTasks } from './algorithm';
 import { defaultActiveHours, defaultTasks } from './default';
+import dayjs from 'dayjs';
+import { describe, expect, it } from 'vitest';
 
 describe('Scheduling Algorithm', () => {
   describe('DateRange interface', () => {

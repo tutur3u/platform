@@ -1,5 +1,9 @@
 'use client';
 
+import { ChatGptComparisonCard } from './comparison/ChatGptComparisonCard';
+import { GmailComparisonCard } from './comparison/GmailComparisonCard';
+import { MeetComparisonCard } from './comparison/MeetComparisonCard';
+import { MessengerComparisonCard } from './comparison/MessengerComparisonCard';
 import { Button } from '@tuturuuu/ui/button';
 import {
   ArrowRight,
@@ -12,13 +16,9 @@ import {
   Video,
   X as XIcon,
 } from '@tuturuuu/ui/icons';
-import Link from 'next/link';
 import { useTranslations } from 'next-intl';
+import Link from 'next/link';
 import { useRef, useState } from 'react';
-import { ChatGptComparisonCard } from './comparison/ChatGptComparisonCard';
-import { GmailComparisonCard } from './comparison/GmailComparisonCard';
-import { MeetComparisonCard } from './comparison/MeetComparisonCard';
-import { MessengerComparisonCard } from './comparison/MessengerComparisonCard';
 
 interface Competitor {
   id: string;

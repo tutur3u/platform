@@ -1,3 +1,5 @@
+import { Filter } from '../../../users/filters';
+import type { SectionProps } from './index';
 import { useQuery } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
@@ -9,8 +11,6 @@ import { cn } from '@tuturuuu/utils/format';
 import { getInitials } from '@tuturuuu/utils/name-helper';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
-import { Filter } from '../../../users/filters';
-import type { SectionProps } from './index';
 
 export default function RoleFormMembersSection({
   wsId,

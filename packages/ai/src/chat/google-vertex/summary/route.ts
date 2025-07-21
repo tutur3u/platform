@@ -1,6 +1,6 @@
 import { vertex } from '@ai-sdk/google-vertex/edge';
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { convertToModelMessages, generateText, type UIMessage } from 'ai';
+import { type UIMessage, convertToModelMessages, generateText } from 'ai';
 import { NextResponse } from 'next/server';
 
 const DEFAULT_MODEL_NAME = 'gemini-1.5-flash-002';

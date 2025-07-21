@@ -1,5 +1,11 @@
 'use client';
 
+import { LanguageWrapper } from '../(dashboard)/_components/language-wrapper';
+import { LogoutDropdownItem } from '../(dashboard)/_components/logout-dropdown-item';
+import { SystemLanguageWrapper } from '../(dashboard)/_components/system-language-wrapper';
+import { ThemeDropdownItems } from '../(dashboard)/_components/theme-dropdown-items';
+import UserSettingsDialog from './settings-dialog';
+import UserPresenceIndicator from './user-presence-indicator';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Dialog } from '@tuturuuu/ui/dialog';
@@ -27,15 +33,9 @@ import {
 } from '@tuturuuu/ui/icons';
 import { cn } from '@tuturuuu/utils/format';
 import { getInitials } from '@tuturuuu/utils/name-helper';
-import Link from 'next/link';
 import { useTranslations } from 'next-intl';
+import Link from 'next/link';
 import { useState } from 'react';
-import { LanguageWrapper } from '../(dashboard)/_components/language-wrapper';
-import { LogoutDropdownItem } from '../(dashboard)/_components/logout-dropdown-item';
-import { SystemLanguageWrapper } from '../(dashboard)/_components/system-language-wrapper';
-import { ThemeDropdownItems } from '../(dashboard)/_components/theme-dropdown-items';
-import UserSettingsDialog from './settings-dialog';
-import UserPresenceIndicator from './user-presence-indicator';
 
 export default function UserNavClient({
   user,

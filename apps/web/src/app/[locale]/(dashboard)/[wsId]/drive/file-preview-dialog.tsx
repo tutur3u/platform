@@ -1,5 +1,6 @@
 'use client';
 
+import { formatBytes } from '@/utils/file-helper';
 import { createDynamicClient } from '@tuturuuu/supabase/next/client';
 import type { StorageObject } from '@tuturuuu/types/primitives/StorageObject';
 import { Button } from '@tuturuuu/ui/button';
@@ -23,11 +24,10 @@ import {
 import { Separator } from '@tuturuuu/ui/separator';
 import { cn } from '@tuturuuu/utils/format';
 import { joinPath } from '@tuturuuu/utils/path-helper';
+import { useTranslations } from 'next-intl';
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
-import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
-import { formatBytes } from '@/utils/file-helper';
 
 // Dynamic imports for heavy components
 const PDFViewer = dynamic(
@@ -249,16 +249,16 @@ export function FilePreviewDialog({
         <div className={previewAreaClass}>
           {/* Skeleton for image/pdf */}
           {fileType === 'image' && (
-            <div className="absolute inset-0 animate-pulse bg-gradient-to-br from-muted/40 to-muted/10 rounded-lg" />
+            <div className="absolute inset-0 animate-pulse rounded-lg bg-gradient-to-br from-muted/40 to-muted/10" />
           )}
           {fileType === 'pdf' && (
-            <div className="absolute inset-0 animate-pulse bg-gradient-to-br from-muted/40 to-muted/10 rounded-lg flex items-center justify-center">
+            <div className="absolute inset-0 flex animate-pulse items-center justify-center rounded-lg bg-gradient-to-br from-muted/40 to-muted/10">
               <FileText className="h-16 w-16 text-muted-foreground/30" />
             </div>
           )}
           <div className="z-10 flex flex-col items-center justify-center">
-            <Loader2 className="h-10 w-10 animate-spin text-dynamic-blue mb-4" />
-            <span className="text-muted-foreground text-sm font-medium">
+            <Loader2 className="mb-4 h-10 w-10 animate-spin text-dynamic-blue" />
+            <span className="text-sm font-medium text-muted-foreground">
               {t('common.loading')}...
             </span>
           </div>
@@ -271,7 +271,7 @@ export function FilePreviewDialog({
         <div className={previewAreaClass}>
           <div className="space-y-2 text-center">
             <FileText className="mx-auto h-12 w-12 text-muted-foreground" />
-            <p className="text-muted-foreground text-sm">
+            <p className="text-sm text-muted-foreground">
               {t('ws-storage-objects.no_preview')}
             </p>
           </div>
@@ -287,14 +287,14 @@ export function FilePreviewDialog({
               href={signedUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="block w-full h-full"
+              className="block h-full w-full"
               title={t('common.view')}
             >
               <Image
                 src={signedUrl}
                 alt={cleanFileName || 'File preview'}
                 fill
-                className="object-contain rounded-lg w-full h-full cursor-zoom-in bg-white dark:bg-black transition-opacity duration-300"
+                className="h-full w-full cursor-zoom-in rounded-lg bg-white object-contain transition-opacity duration-300 dark:bg-black"
                 quality={90}
                 sizes="100vw"
                 priority
@@ -305,11 +305,11 @@ export function FilePreviewDialog({
 
       case 'video':
         return (
-          <div className={cn(previewAreaClass, 'p-2 min-h-[60vh]')}>
+          <div className={cn(previewAreaClass, 'min-h-[60vh] p-2')}>
             <video
               src={signedUrl}
               controls
-              className="w-full h-full max-h-[70vh] rounded-lg object-contain"
+              className="h-full max-h-[70vh] w-full rounded-lg object-contain"
               preload="metadata"
             >
               <track kind="captions" srcLang="en" label="English" />
@@ -320,7 +320,7 @@ export function FilePreviewDialog({
 
       case 'audio':
         return (
-          <div className={cn(previewAreaClass, 'p-4 min-h-[40vh]')}>
+          <div className={cn(previewAreaClass, 'min-h-[40vh] p-4')}>
             <div className="w-full max-w-md space-y-4">
               <div className="text-center">
                 <Music className="mx-auto mb-4 h-16 w-16 text-dynamic-blue" />
@@ -344,10 +344,10 @@ export function FilePreviewDialog({
           <div
             className={cn(
               previewAreaClass,
-              'h-[75vh] w-full p-0 overflow-y-auto'
+              'h-[75vh] w-full overflow-y-auto p-0'
             )}
           >
-            <div className="relative w-full h-full min-h-[75vh]">
+            <div className="relative h-full min-h-[75vh] w-full">
               <PDFViewer url={signedUrl} />
             </div>
           </div>
@@ -357,7 +357,7 @@ export function FilePreviewDialog({
       case 'code':
         return (
           <div className={cn(previewAreaClass, 'h-[60vh] overflow-auto')}>
-            <pre className="whitespace-pre-wrap rounded-lg bg-muted/50 p-4 font-mono text-sm">
+            <pre className="rounded-lg bg-muted/50 p-4 font-mono text-sm whitespace-pre-wrap">
               {textContent || t('ws-storage-objects.no_preview')}
             </pre>
           </div>
@@ -370,7 +370,7 @@ export function FilePreviewDialog({
               {getFileIcon(fileType)}
               <div>
                 <h3 className="mb-2 font-medium">{cleanFileName}</h3>
-                <p className="mb-4 text-muted-foreground text-sm">
+                <p className="mb-4 text-sm text-muted-foreground">
                   {t('ws-storage-objects.no_preview')}
                 </p>
                 <div className="flex justify-center gap-2">
@@ -399,7 +399,7 @@ export function FilePreviewDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="!sm:max-w-6xl !max-w-[90vw] w-full h-[90vh] overflow-y-auto flex flex-col"
+        className="!sm:max-w-6xl flex h-[90vh] w-full !max-w-[90vw] flex-col overflow-y-auto"
         showXIcon={false}
       >
         <DialogHeader>
@@ -445,7 +445,7 @@ export function FilePreviewDialog({
 
         <Separator />
 
-        <div className="flex-1 min-h-0 min-w-0 flex flex-col overflow-auto">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-auto">
           {renderPreview()}
         </div>
       </DialogContent>

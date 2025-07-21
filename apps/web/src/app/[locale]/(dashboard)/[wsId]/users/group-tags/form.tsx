@@ -1,5 +1,6 @@
 'use client';
 
+import { Filter } from '../filters';
 import { useQuery } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
@@ -20,10 +21,9 @@ import { Users } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { Separator } from '@tuturuuu/ui/separator';
-import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
 import * as z from 'zod';
-import { Filter } from '../filters';
 
 interface Props {
   wsId: string;

@@ -1,5 +1,5 @@
-import { useEffect } from 'react';
 import { MonthPicker } from './month-picker';
+import { useEffect } from 'react';
 
 interface Props {
   startMonth?: Date;

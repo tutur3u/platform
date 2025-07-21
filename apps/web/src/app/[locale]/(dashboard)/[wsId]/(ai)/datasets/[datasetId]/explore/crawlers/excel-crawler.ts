@@ -1,5 +1,5 @@
-import * as XLSX from 'xlsx';
 import { BaseCrawler } from './base-crawler';
+import * as XLSX from 'xlsx';
 
 interface ExcelCrawlerProps {
   url: string;

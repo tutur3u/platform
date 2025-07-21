@@ -1,5 +1,9 @@
 'use client';
 
+import { Countdown } from './Countdown';
+import { TimeProgress } from './TimeProgress';
+import { ConfirmDialog } from './confirmDialog';
+import EditChallengeDialog from './editChallengeDialog';
 import type { NovaExtendedChallenge } from '@tuturuuu/types/db';
 import {
   AlertDialog,
@@ -44,13 +48,9 @@ import {
 import { Progress } from '@tuturuuu/ui/progress';
 import { formatDuration } from '@tuturuuu/utils/format';
 import { format, formatDistanceToNow } from 'date-fns';
-import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
-import { Countdown } from './Countdown';
-import { ConfirmDialog } from './confirmDialog';
-import EditChallengeDialog from './editChallengeDialog';
-import { TimeProgress } from './TimeProgress';
 
 interface Props {
   isAdmin: boolean;

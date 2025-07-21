@@ -1,11 +1,10 @@
 'use client';
 
-import { cn } from '@tuturuuu/utils/format';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
-import type { NavLink as NavLinkType } from '@/components/navigation';
-import { ENABLE_KEYBOARD_SHORTCUTS } from '@/constants/common';
 import { NavLink } from './nav-link';
+import type { NavLink as NavLinkType } from '@/components/navigation';
+import { cn } from '@tuturuuu/utils/format';
+import { usePathname } from 'next/navigation';
+import { useEffect, useState } from 'react';
 
 interface NavProps {
   wsId: string;
@@ -25,57 +24,13 @@ export function Nav({
   onClick,
   className,
 }: NavProps) {
-  const router = useRouter();
   const pathname = usePathname();
-  const searchParams = useSearchParams();
 
   const [urlToLoad, setUrlToLoad] = useState<string>();
 
   useEffect(() => {
     if (urlToLoad && urlToLoad === pathname) setUrlToLoad(undefined);
-  }, [pathname, searchParams]);
-
-  function hasFocus(selector: string) {
-    return Array.from(document.querySelectorAll(selector)).some(
-      (el) => el === document.activeElement
-    );
-  }
-
-  function parseShortcut(shortcut: string) {
-    const parts = shortcut.split('+');
-    return {
-      ctrl: parts.includes('CTRL'),
-      shift: parts.includes('SHIFT'),
-      key: parts.find((part) => part.length === 1),
-    };
-  }
-
-  useEffect(() => {
-    function down(e: KeyboardEvent) {
-      links.forEach((link) => {
-        if (!link || !link.shortcut || !link.href) return;
-        const { ctrl, shift, key } = parseShortcut(link.shortcut);
-        if (
-          !hasFocus('input, select, textarea') &&
-          e.key.toUpperCase() === key?.toUpperCase() &&
-          ctrl === e.ctrlKey &&
-          shift === e.shiftKey
-        ) {
-          e.preventDefault();
-          if (link.href.split('?')[0] !== pathname)
-            setUrlToLoad(link.href.split('?')[0]);
-          router.push(link.href);
-        }
-      });
-    }
-
-    if (ENABLE_KEYBOARD_SHORTCUTS) document.addEventListener('keydown', down);
-
-    return () => {
-      if (ENABLE_KEYBOARD_SHORTCUTS)
-        document.removeEventListener('keydown', down);
-    };
-  }, [links, pathname]);
+  }, [pathname, urlToLoad]);
 
   if (!links?.length) {
     return null;
@@ -91,7 +46,7 @@ export function Nav({
           if (!link) {
             return (
               <div
-                key={index}
+                key={`nav-divider-${index + 1}`}
                 className={cn(
                   'my-2 ml-4 border-b',
                   isCollapsed ? 'mx-auto w-1/2' : 'w-auto'
@@ -102,7 +57,7 @@ export function Nav({
 
           return (
             <NavLink
-              key={link.href || index}
+              key={`nav-link-${link.href}-${index + 1}`}
               wsId={wsId}
               link={link}
               isCollapsed={isCollapsed}

@@ -1,10 +1,10 @@
 'use client';
 
+import type { TimerStats } from '../types';
 import { Card, CardContent } from '@tuturuuu/ui/card';
 import { Calendar, Clock, TrendingUp, Zap } from '@tuturuuu/ui/icons';
 import { cn } from '@tuturuuu/utils/format';
 import { useMemo } from 'react';
-import type { TimerStats } from '../types';
 
 interface StatsOverviewProps {
   timerStats: TimerStats;

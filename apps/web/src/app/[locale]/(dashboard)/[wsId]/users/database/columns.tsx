@@ -1,5 +1,6 @@
 'use client';
 
+import { UserRowActions } from './row-actions';
 import type { ColumnDef } from '@tanstack/react-table';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import type { WorkspaceUserField } from '@tuturuuu/types/primitives/WorkspaceUserField';
@@ -11,7 +12,6 @@ import {
   TooltipTrigger,
 } from '@tuturuuu/ui/tooltip';
 import dayjs from 'dayjs';
-import { UserRowActions } from './row-actions';
 import 'dayjs/locale/vi';
 import moment from 'moment';
 import Image from 'next/image';

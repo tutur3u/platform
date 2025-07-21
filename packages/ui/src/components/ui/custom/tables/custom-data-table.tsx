@@ -4,8 +4,8 @@ import {
   DataTable,
   type DataTableProps,
 } from '@tuturuuu/ui/custom/tables/data-table';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useEffect, useState } from 'react';
 
 function CustomDataTableInner<TData, TValue>({

@@ -1,3 +1,16 @@
+// Mocks must come next, before any imports that use them!
+import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
+import {
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vitest';
+
 // Set required env vars for Supabase at the VERY TOP
 process.env.NEXT_PUBLIC_SUPABASE_URL = 'http://localhost:54321';
 process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'dummy-anon-key';
@@ -6,9 +19,6 @@ process.env.SUPABASE_SERVICE_ROLE_KEY = 'dummy-service-role-key';
 process.env.GOOGLE_CLIENT_ID = 'dummy-client-id';
 process.env.GOOGLE_CLIENT_SECRET = 'dummy-client-secret';
 process.env.GOOGLE_REDIRECT_URI = 'http://localhost:3000/auth/callback';
-
-// Mocks must come next, before any imports that use them!
-import { vi, describe, it, expect, beforeEach, afterEach, beforeAll } from 'vitest';
 
 // Mock the google-calendar-sync module
 vi.mock('../google-calendar-sync', async () => {
@@ -20,12 +30,14 @@ vi.mock('../google-calendar-sync', async () => {
     })),
     getSyncToken: vi.fn(() => Promise.resolve('existing-sync-token-123')),
     storeSyncToken: vi.fn(() => Promise.resolve()),
-    syncWorkspaceBatched: vi.fn((payload) => Promise.resolve({
-      ws_id: payload.ws_id,
-      success: true,
-      eventsSynced: payload.events_to_sync?.length || 10,
-      eventsDeleted: 0,
-    })),
+    syncWorkspaceBatched: vi.fn((payload) =>
+      Promise.resolve({
+        ws_id: payload.ws_id,
+        success: true,
+        eventsSynced: payload.events_to_sync?.length || 10,
+        eventsDeleted: 0,
+      })
+    ),
   };
 });
 
@@ -48,42 +60,44 @@ type MockCalendarResponse = {
 };
 
 // Mock googleapis
-const mockCalendarEventsList = vi.fn(() => Promise.resolve({
-  data: {
-    items: [
-      {
-        id: 'event1',
-        summary: 'Test Event 1',
-        description: 'Test Description 1',
-        start: { dateTime: '2024-01-15T10:00:00Z' },
-        end: { dateTime: '2024-01-15T11:00:00Z' },
-        location: 'Test Location 1',
-        colorId: '1',
-        status: 'confirmed'
-      },
-      {
-        id: 'event2',
-        summary: 'Test Event 2',
-        description: 'Test Description 2',
-        start: { dateTime: '2024-01-15T14:00:00Z' },
-        end: { dateTime: '2024-01-15T15:00:00Z' },
-        location: 'Test Location 2',
-        colorId: '2',
-        status: 'confirmed'
-      }
-    ],
-    nextSyncToken: 'test-sync-token-123'
-  } as MockCalendarResponse['data']
-}));
+const mockCalendarEventsList = vi.fn(() =>
+  Promise.resolve({
+    data: {
+      items: [
+        {
+          id: 'event1',
+          summary: 'Test Event 1',
+          description: 'Test Description 1',
+          start: { dateTime: '2024-01-15T10:00:00Z' },
+          end: { dateTime: '2024-01-15T11:00:00Z' },
+          location: 'Test Location 1',
+          colorId: '1',
+          status: 'confirmed',
+        },
+        {
+          id: 'event2',
+          summary: 'Test Event 2',
+          description: 'Test Description 2',
+          start: { dateTime: '2024-01-15T14:00:00Z' },
+          end: { dateTime: '2024-01-15T15:00:00Z' },
+          location: 'Test Location 2',
+          colorId: '2',
+          status: 'confirmed',
+        },
+      ],
+      nextSyncToken: 'test-sync-token-123',
+    } as MockCalendarResponse['data'],
+  })
+);
 
 vi.mock('googleapis', () => ({
   google: {
     calendar: vi.fn(() => ({
       events: {
-        list: mockCalendarEventsList
-      }
-    }))
-  }
+        list: mockCalendarEventsList,
+      },
+    })),
+  },
 }));
 
 // Mock @trigger.dev/sdk/v3
@@ -92,19 +106,17 @@ vi.mock('@trigger.dev/sdk/v3', () => ({
     id: config.id,
     trigger: vi.fn(),
     run: config.run,
-    queue: config.queue
+    queue: config.queue,
   })),
   schedules: {
     task: vi.fn((config) => ({
       id: config.id,
       cron: config.cron,
-      run: config.run
-    }))
-  }
+      run: config.run,
+    })),
+  },
 }));
 
-import dayjs from 'dayjs';
-import utc from 'dayjs/plugin/utc';
 dayjs.extend(utc);
 
 // Dynamically import the actual functions after env and mocks are set
@@ -114,7 +126,8 @@ let googleCalendarIncrementalSyncOrchestrator: any;
 beforeAll(async () => {
   const mod = await import('../google-calendar-incremental-sync');
   googleCalendarIncrementalSync = mod.googleCalendarIncrementalSync;
-  googleCalendarIncrementalSyncOrchestrator = mod.googleCalendarIncrementalSyncOrchestrator;
+  googleCalendarIncrementalSyncOrchestrator =
+    mod.googleCalendarIncrementalSyncOrchestrator;
 });
 
 // Test isolation utility to prevent environment contamination
@@ -130,7 +143,13 @@ const isolateTest = (testFn: () => void | Promise<void>) => {
 };
 
 // Mock Google Calendar events for testing
-const createMockGoogleEvent = (id: string, title: string, start: string, end: string, status = 'confirmed') => ({
+const createMockGoogleEvent = (
+  id: string,
+  title: string,
+  start: string,
+  end: string,
+  status = 'confirmed'
+) => ({
   id,
   summary: title,
   description: `Description for ${title}`,
@@ -138,7 +157,7 @@ const createMockGoogleEvent = (id: string, title: string, start: string, end: st
   end: { dateTime: end },
   location: `Location for ${title}`,
   colorId: '1',
-  status
+  status,
 });
 
 describe('Google Calendar Incremental Sync', () => {
@@ -147,7 +166,7 @@ describe('Google Calendar Incremental Sync', () => {
     delete process.env.LOCALE;
     // Clear all mocks
     vi.clearAllMocks();
-    
+
     // Reset the mock calendar events list to default state
     mockCalendarEventsList.mockResolvedValue({
       data: {
@@ -160,7 +179,7 @@ describe('Google Calendar Incremental Sync', () => {
             end: { dateTime: '2024-01-15T11:00:00Z' },
             location: 'Test Location 1',
             colorId: '1',
-            status: 'confirmed'
+            status: 'confirmed',
           },
           {
             id: 'event2',
@@ -170,11 +189,11 @@ describe('Google Calendar Incremental Sync', () => {
             end: { dateTime: '2024-01-15T15:00:00Z' },
             location: 'Test Location 2',
             colorId: '2',
-            status: 'confirmed'
-          }
+            status: 'confirmed',
+          },
         ],
-        nextSyncToken: 'test-sync-token-123'
-      } as MockCalendarResponse['data']
+        nextSyncToken: 'test-sync-token-123',
+      } as MockCalendarResponse['data'],
     });
   });
 
@@ -186,7 +205,7 @@ describe('Google Calendar Incremental Sync', () => {
   describe('Sync Token Handling', () => {
     it('should handle existing sync token correctly', async () => {
       const { getSyncToken } = await import('../google-calendar-sync');
-      
+
       const result = await getSyncToken('test-workspace-id');
       expect(result).toBe('existing-sync-token-123');
       expect(getSyncToken).toHaveBeenCalledWith('test-workspace-id');
@@ -195,9 +214,13 @@ describe('Google Calendar Incremental Sync', () => {
     it('should store sync token correctly', async () => {
       const { storeSyncToken } = await import('../google-calendar-sync');
       const testDate = new Date('2024-01-15T10:00:00Z');
-      
+
       await storeSyncToken('test-workspace-id', 'new-sync-token', testDate);
-      expect(storeSyncToken).toHaveBeenCalledWith('test-workspace-id', 'new-sync-token', testDate);
+      expect(storeSyncToken).toHaveBeenCalledWith(
+        'test-workspace-id',
+        'new-sync-token',
+        testDate
+      );
     });
   });
 
@@ -207,16 +230,30 @@ describe('Google Calendar Incremental Sync', () => {
       mockCalendarEventsList
         .mockResolvedValueOnce({
           data: {
-            items: [createMockGoogleEvent('event1', 'Event 1', '2024-01-15T10:00:00Z', '2024-01-15T11:00:00Z')],
+            items: [
+              createMockGoogleEvent(
+                'event1',
+                'Event 1',
+                '2024-01-15T10:00:00Z',
+                '2024-01-15T11:00:00Z'
+              ),
+            ],
             nextPageToken: 'page2-token',
-            nextSyncToken: 'intermediate-sync-token'
-          } as MockCalendarResponse['data']
+            nextSyncToken: 'intermediate-sync-token',
+          } as MockCalendarResponse['data'],
         })
         .mockResolvedValueOnce({
           data: {
-            items: [createMockGoogleEvent('event2', 'Event 2', '2024-01-15T14:00:00Z', '2024-01-15T15:00:00Z')],
-            nextSyncToken: 'final-sync-token'
-          } as MockCalendarResponse['data']
+            items: [
+              createMockGoogleEvent(
+                'event2',
+                'Event 2',
+                '2024-01-15T14:00:00Z',
+                '2024-01-15T15:00:00Z'
+              ),
+            ],
+            nextSyncToken: 'final-sync-token',
+          } as MockCalendarResponse['data'],
         });
 
       // Test that pagination is properly handled
@@ -233,9 +270,16 @@ describe('Google Calendar Incremental Sync', () => {
       // Mock single page response
       mockCalendarEventsList.mockResolvedValue({
         data: {
-          items: [createMockGoogleEvent('event1', 'Single Event', '2024-01-15T10:00:00Z', '2024-01-15T11:00:00Z')],
-          nextSyncToken: 'single-page-sync-token'
-        } as MockCalendarResponse['data']
+          items: [
+            createMockGoogleEvent(
+              'event1',
+              'Single Event',
+              '2024-01-15T10:00:00Z',
+              '2024-01-15T11:00:00Z'
+            ),
+          ],
+          nextSyncToken: 'single-page-sync-token',
+        } as MockCalendarResponse['data'],
       });
 
       const response = await mockCalendarEventsList();
@@ -250,7 +294,12 @@ describe('Google Calendar Incremental Sync', () => {
       mockCalendarEventsList.mockResolvedValue({
         data: {
           items: [
-            createMockGoogleEvent('event1', 'Active Event', '2024-01-15T10:00:00Z', '2024-01-15T11:00:00Z'),
+            createMockGoogleEvent(
+              'event1',
+              'Active Event',
+              '2024-01-15T10:00:00Z',
+              '2024-01-15T11:00:00Z'
+            ),
             {
               id: 'event2',
               summary: 'Deleted Event',
@@ -259,11 +308,11 @@ describe('Google Calendar Incremental Sync', () => {
               end: { dateTime: '2024-01-15T15:00:00Z' },
               location: 'Location for Deleted Event',
               colorId: '1',
-              status: 'cancelled'
-            }
+              status: 'cancelled',
+            },
           ],
-          nextSyncToken: 'sync-token-with-deleted'
-        } as MockCalendarResponse['data']
+          nextSyncToken: 'sync-token-with-deleted',
+        } as MockCalendarResponse['data'],
       });
 
       // This would be tested in the actual task run
@@ -282,7 +331,7 @@ describe('Google Calendar Incremental Sync', () => {
               end: { dateTime: '2024-01-15T11:00:00Z' },
               location: 'Location for Deleted Event 1',
               colorId: '1',
-              status: 'cancelled'
+              status: 'cancelled',
             },
             {
               id: 'event2',
@@ -292,11 +341,11 @@ describe('Google Calendar Incremental Sync', () => {
               end: { dateTime: '2024-01-15T15:00:00Z' },
               location: 'Location for Deleted Event 2',
               colorId: '1',
-              status: 'cancelled'
-            }
+              status: 'cancelled',
+            },
           ],
-          nextSyncToken: 'sync-token-only-deleted'
-        } as MockCalendarResponse['data']
+          nextSyncToken: 'sync-token-only-deleted',
+        } as MockCalendarResponse['data'],
       });
 
       // This would be tested in the actual task run
@@ -307,7 +356,7 @@ describe('Google Calendar Incremental Sync', () => {
   describe('Integration with syncWorkspaceBatched', () => {
     it('should call syncWorkspaceBatched when events exist', async () => {
       const { syncWorkspaceBatched } = await import('../google-calendar-sync');
-      
+
       // This would be tested in the actual task run
       expect(syncWorkspaceBatched).toBeDefined();
     });
@@ -317,12 +366,12 @@ describe('Google Calendar Incremental Sync', () => {
       mockCalendarEventsList.mockResolvedValue({
         data: {
           items: [],
-          nextSyncToken: 'empty-sync-token'
-        } as MockCalendarResponse['data']
+          nextSyncToken: 'empty-sync-token',
+        } as MockCalendarResponse['data'],
       });
 
       const { syncWorkspaceBatched } = await import('../google-calendar-sync');
-      
+
       // This would be tested in the actual task run
       expect(syncWorkspaceBatched).toBeDefined();
     });
@@ -330,7 +379,9 @@ describe('Google Calendar Incremental Sync', () => {
     it('should handle batched sync errors gracefully', async () => {
       // Mock error in syncWorkspaceBatched
       const { syncWorkspaceBatched } = await import('../google-calendar-sync');
-      (syncWorkspaceBatched as any).mockRejectedValue(new Error('Batched sync error'));
+      (syncWorkspaceBatched as any).mockRejectedValue(
+        new Error('Batched sync error')
+      );
 
       // This would be tested in the actual task run
       expect(syncWorkspaceBatched).toBeDefined();
@@ -352,7 +403,7 @@ describe('Google Calendar Incremental Sync', () => {
 
     it('should handle sync token parameter correctly', async () => {
       const { getSyncToken } = await import('../google-calendar-sync');
-      
+
       // Test that existing sync token is retrieved
       const syncToken = await getSyncToken('test-workspace-id');
       expect(syncToken).toBe('existing-sync-token-123');
@@ -372,14 +423,14 @@ describe('Google Calendar Incremental Sync', () => {
     it('should return properly structured mock events', async () => {
       const response = await mockCalendarEventsList();
       const events = response.data.items;
-      
+
       expect(events).toHaveLength(2);
       expect(events[0]).toMatchObject({
-          id: 'event1',
-          summary: 'Test Event 1',
-          start: { dateTime: '2024-01-15T10:00:00Z' },
-          end: { dateTime: '2024-01-15T11:00:00Z' },
-          status: 'confirmed',
+        id: 'event1',
+        summary: 'Test Event 1',
+        start: { dateTime: '2024-01-15T10:00:00Z' },
+        end: { dateTime: '2024-01-15T11:00:00Z' },
+        status: 'confirmed',
       });
     });
 
@@ -396,7 +447,7 @@ describe('Google Calendar Incremental Sync', () => {
               end: { dateTime: '2024-01-15T11:00:00Z' },
               location: 'Location for Confirmed Event',
               colorId: '1',
-              status: 'confirmed'
+              status: 'confirmed',
             },
             {
               id: 'event2',
@@ -406,7 +457,7 @@ describe('Google Calendar Incremental Sync', () => {
               end: { dateTime: '2024-01-15T15:00:00Z' },
               location: 'Location for Cancelled Event',
               colorId: '1',
-              status: 'cancelled'
+              status: 'cancelled',
             },
             {
               id: 'event3',
@@ -416,20 +467,20 @@ describe('Google Calendar Incremental Sync', () => {
               end: { dateTime: '2024-01-15T17:00:00Z' },
               location: 'Location for Tentative Event',
               colorId: '1',
-              status: 'tentative'
-            }
+              status: 'tentative',
+            },
           ],
-          nextSyncToken: 'test-sync-token-123'
-        } as MockCalendarResponse['data']
+          nextSyncToken: 'test-sync-token-123',
+        } as MockCalendarResponse['data'],
       });
 
       const response = await mockCalendarEventsList();
       const events = response.data.items;
-      
+
       expect(events).toHaveLength(3);
       expect(events[0].status).toBe('confirmed');
       expect(events[1].status).toBe('cancelled');
       expect(events[2].status).toBe('tentative');
     });
   });
-}); 
+});

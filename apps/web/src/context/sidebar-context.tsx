@@ -1,15 +1,15 @@
 'use client';
 
+import { SIDEBAR_BEHAVIOR_COOKIE_NAME } from '@/constants/common';
 import { setCookie } from 'cookies-next';
 import {
-  createContext,
   type Dispatch,
   type ReactNode,
   type SetStateAction,
+  createContext,
   useContext,
   useState,
 } from 'react';
-import { SIDEBAR_BEHAVIOR_COOKIE_NAME } from '@/constants/common';
 
 type SidebarBehavior = 'expanded' | 'collapsed' | 'hover';
 

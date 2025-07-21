@@ -1,3 +1,7 @@
+import NewActions from './new-actions';
+import StorageObjectsTable from './table';
+import { formatBytes } from '@/utils/file-helper';
+import { joinPath } from '@/utils/path-helper';
 import {
   createClient,
   createDynamicClient,
@@ -34,13 +38,9 @@ import {
   getPermissions,
   verifyHasSecrets,
 } from '@tuturuuu/utils/workspace-helper';
+import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { getTranslations } from 'next-intl/server';
-import { formatBytes } from '@/utils/file-helper';
-import { joinPath } from '@/utils/path-helper';
-import NewActions from './new-actions';
-import StorageObjectsTable from './table';
 
 interface Props {
   params: Promise<{
@@ -120,7 +120,7 @@ export default async function WorkspaceStorageObjectsPage({
     <div className="space-y-6">
       {/* Breadcrumb Navigation */}
       <Breadcrumb>
-        <BreadcrumbList className="overflow-x-auto whitespace-nowrap px-1 py-2 rounded-lg bg-muted/40 border border-dynamic-border flex items-center gap-1">
+        <BreadcrumbList className="border-dynamic-border flex items-center gap-1 overflow-x-auto rounded-lg border bg-muted/40 px-1 py-2 whitespace-nowrap">
           {visibleItems.map((item, index) => (
             <div key={item.href} className="flex items-center">
               <BreadcrumbItem>
@@ -128,19 +128,19 @@ export default async function WorkspaceStorageObjectsPage({
                   <BreadcrumbLink asChild>
                     <Link
                       href={item.href}
-                      className="flex items-center gap-1 font-semibold text-dynamic-blue transition-colors hover:text-dynamic-blue/80 focus:outline-none focus:ring-2 focus:ring-dynamic-blue/30 px-2 py-1 rounded"
+                      className="flex items-center gap-1 rounded px-2 py-1 font-semibold text-dynamic-blue transition-colors hover:text-dynamic-blue/80 focus:ring-2 focus:ring-dynamic-blue/30 focus:outline-none"
                     >
-                      <Folder className="h-4 w-4 mr-1 text-dynamic-blue/70" />
+                      <Folder className="mr-1 h-4 w-4 text-dynamic-blue/70" />
                       {item.label}
                     </Link>
                   </BreadcrumbLink>
                 ) : index === visibleItems.length - 1 ? (
-                  <BreadcrumbPage className="flex items-center gap-1 text-dynamic-blue font-semibold px-2 py-1 rounded">
-                    <Folder className="h-4 w-4 mr-1 text-dynamic-blue/70" />
+                  <BreadcrumbPage className="flex items-center gap-1 rounded px-2 py-1 font-semibold text-dynamic-blue">
+                    <Folder className="mr-1 h-4 w-4 text-dynamic-blue/70" />
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <span className="truncate max-w-[120px] inline-block align-middle">
+                          <span className="inline-block max-w-[120px] truncate align-middle">
                             {item.label}
                           </span>
                         </TooltipTrigger>
@@ -152,13 +152,13 @@ export default async function WorkspaceStorageObjectsPage({
                   <BreadcrumbLink asChild>
                     <Link
                       href={item.href}
-                      className="flex items-center gap-1 transition-colors hover:text-dynamic-blue focus:outline-none focus:ring-2 focus:ring-dynamic-blue/30 px-2 py-1 rounded"
+                      className="flex items-center gap-1 rounded px-2 py-1 transition-colors hover:text-dynamic-blue focus:ring-2 focus:ring-dynamic-blue/30 focus:outline-none"
                     >
-                      <Folder className="h-4 w-4 mr-1 text-dynamic-blue/70" />
+                      <Folder className="mr-1 h-4 w-4 text-dynamic-blue/70" />
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <span className="truncate max-w-[120px] inline-block align-middle">
+                            <span className="inline-block max-w-[120px] truncate align-middle">
                               {item.label}
                             </span>
                           </TooltipTrigger>
@@ -178,7 +178,7 @@ export default async function WorkspaceStorageObjectsPage({
                       <DropdownMenuTrigger asChild>
                         <button
                           type="button"
-                          className="px-2 py-1 rounded hover:bg-muted/60 focus:outline-none focus:ring-2 focus:ring-dynamic-blue/30 text-muted-foreground"
+                          className="rounded px-2 py-1 text-muted-foreground hover:bg-muted/60 focus:ring-2 focus:ring-dynamic-blue/30 focus:outline-none"
                         >
                           …
                         </button>
@@ -190,7 +190,7 @@ export default async function WorkspaceStorageObjectsPage({
                               href={collapsed.href}
                               className="flex items-center gap-1"
                             >
-                              <Folder className="h-4 w-4 mr-1 text-dynamic-blue/70" />
+                              <Folder className="mr-1 h-4 w-4 text-dynamic-blue/70" />
                               <span>{collapsed.label}</span>
                             </Link>
                           </DropdownMenuItem>
@@ -219,12 +219,12 @@ export default async function WorkspaceStorageObjectsPage({
 
       {/* Minimal Storage Usage Bar */}
       <div className="mb-4">
-        <div className="flex items-center justify-between mb-1">
-          <span className="text-xs text-muted-foreground font-medium flex items-center gap-1">
+        <div className="mb-1 flex items-center justify-between">
+          <span className="flex items-center gap-1 text-xs font-medium text-muted-foreground">
             Storage
             {usagePercent >= 80 && usagePercent < 95 && (
               <svg
-                className="w-3.5 h-3.5 text-dynamic-orange"
+                className="h-3.5 w-3.5 text-dynamic-orange"
                 fill="currentColor"
                 viewBox="0 0 20 20"
                 role="img"
@@ -236,7 +236,7 @@ export default async function WorkspaceStorageObjectsPage({
             )}
             {usagePercent >= 95 && (
               <svg
-                className="w-3.5 h-3.5 text-dynamic-red"
+                className="h-3.5 w-3.5 text-dynamic-red"
                 fill="currentColor"
                 viewBox="0 0 20 20"
                 role="img"
@@ -247,12 +247,12 @@ export default async function WorkspaceStorageObjectsPage({
               </svg>
             )}
           </span>
-          <span className="text-xs font-mono text-muted-foreground">
+          <span className="font-mono text-xs text-muted-foreground">
             {formatBytes(totalSize)} / {storageLimitDisplay} ({usagePercent}%)
           </span>
         </div>
         <div
-          className="w-full h-2 bg-muted/50 rounded-full overflow-hidden"
+          className="h-2 w-full overflow-hidden rounded-full bg-muted/50"
           role="img"
           aria-label={`Storage usage: ${formatBytes(totalSize)} of ${storageLimitDisplay} (${usagePercent}%)`}
         >
@@ -265,63 +265,63 @@ export default async function WorkspaceStorageObjectsPage({
 
       {/* Enhanced Statistics Dashboard */}
       <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
-        <div className="group relative overflow-hidden rounded-xl border border-dynamic-border bg-gradient-to-br from-dynamic-blue/5 to-dynamic-blue/10 p-6 transition-all hover:shadow-dynamic-blue/10 hover:shadow-lg">
-          <div className="-right-4 -top-4 absolute h-16 w-16 rounded-full bg-dynamic-blue/10 opacity-60 transition-transform group-hover:scale-110" />
+        <div className="group border-dynamic-border relative overflow-hidden rounded-xl border bg-gradient-to-br from-dynamic-blue/5 to-dynamic-blue/10 p-6 transition-all hover:shadow-lg hover:shadow-dynamic-blue/10">
+          <div className="absolute -top-4 -right-4 h-16 w-16 rounded-full bg-dynamic-blue/10 opacity-60 transition-transform group-hover:scale-110" />
           <div className="relative">
-            <h3 className="font-medium text-dynamic-blue text-sm">
+            <h3 className="text-sm font-medium text-dynamic-blue">
               {t('ws-storage-objects.total_files')}
             </h3>
-            <div className="mt-2 font-bold text-3xl text-foreground">
+            <div className="mt-2 text-3xl font-bold text-foreground">
               {count}
             </div>
-            <p className="mt-1 text-muted-foreground text-xs">
+            <p className="mt-1 text-xs text-muted-foreground">
               {t('ws-storage-objects.files_in_workspace')}
             </p>
           </div>
         </div>
 
-        <div className="group relative overflow-hidden rounded-xl border border-dynamic-border bg-gradient-to-br from-dynamic-green/5 to-dynamic-green/10 p-6 transition-all hover:shadow-dynamic-green/10 hover:shadow-lg">
-          <div className="-right-4 -top-4 absolute h-16 w-16 rounded-full bg-dynamic-green/10 opacity-60 transition-transform group-hover:scale-110" />
+        <div className="group border-dynamic-border relative overflow-hidden rounded-xl border bg-gradient-to-br from-dynamic-green/5 to-dynamic-green/10 p-6 transition-all hover:shadow-lg hover:shadow-dynamic-green/10">
+          <div className="absolute -top-4 -right-4 h-16 w-16 rounded-full bg-dynamic-green/10 opacity-60 transition-transform group-hover:scale-110" />
           <div className="relative">
-            <h3 className="font-medium text-dynamic-green text-sm">
+            <h3 className="text-sm font-medium text-dynamic-green">
               {t('ws-storage-objects.total_size')}
             </h3>
-            <div className="mt-2 font-bold text-3xl text-foreground">
+            <div className="mt-2 text-3xl font-bold text-foreground">
               {formatBytes(totalSize)}
             </div>
-            <p className="mt-1 text-muted-foreground text-xs">
+            <p className="mt-1 text-xs text-muted-foreground">
               {t('ws-storage-objects.storage_used')}
             </p>
           </div>
         </div>
 
-        <div className="group relative overflow-hidden rounded-xl border border-dynamic-border bg-gradient-to-br from-dynamic-purple/5 to-dynamic-purple/10 p-6 transition-all hover:shadow-dynamic-purple/10 hover:shadow-lg">
-          <div className="-right-4 -top-4 absolute h-16 w-16 rounded-full bg-dynamic-purple/10 opacity-60 transition-transform group-hover:scale-110" />
+        <div className="group border-dynamic-border relative overflow-hidden rounded-xl border bg-gradient-to-br from-dynamic-purple/5 to-dynamic-purple/10 p-6 transition-all hover:shadow-lg hover:shadow-dynamic-purple/10">
+          <div className="absolute -top-4 -right-4 h-16 w-16 rounded-full bg-dynamic-purple/10 opacity-60 transition-transform group-hover:scale-110" />
           <div className="relative">
-            <h3 className="font-medium text-dynamic-purple text-sm">
+            <h3 className="text-sm font-medium text-dynamic-purple">
               {t('ws-storage-objects.largest_file')}
             </h3>
-            <div className="mt-2 font-bold text-3xl text-foreground">
+            <div className="mt-2 text-3xl font-bold text-foreground">
               {data.length > 0 ? formatBytes(largestFile?.size as number) : '-'}
             </div>
-            <p className="mt-1 text-muted-foreground text-xs">
+            <p className="mt-1 text-xs text-muted-foreground">
               {t('ws-storage-objects.max_file_size')}
             </p>
           </div>
         </div>
 
-        <div className="group relative overflow-hidden rounded-xl border border-dynamic-border bg-gradient-to-br from-dynamic-orange/5 to-dynamic-orange/10 p-6 transition-all hover:shadow-dynamic-orange/10 hover:shadow-lg">
-          <div className="-right-4 -top-4 absolute h-16 w-16 rounded-full bg-dynamic-orange/10 opacity-60 transition-transform group-hover:scale-110" />
+        <div className="group border-dynamic-border relative overflow-hidden rounded-xl border bg-gradient-to-br from-dynamic-orange/5 to-dynamic-orange/10 p-6 transition-all hover:shadow-lg hover:shadow-dynamic-orange/10">
+          <div className="absolute -top-4 -right-4 h-16 w-16 rounded-full bg-dynamic-orange/10 opacity-60 transition-transform group-hover:scale-110" />
           <div className="relative">
-            <h3 className="font-medium text-dynamic-orange text-sm">
+            <h3 className="text-sm font-medium text-dynamic-orange">
               {t('ws-storage-objects.smallest_file')}
             </h3>
-            <div className="mt-2 font-bold text-3xl text-foreground">
+            <div className="mt-2 text-3xl font-bold text-foreground">
               {data.length > 0
                 ? formatBytes(smallestFile?.size as number)
                 : '-'}
             </div>
-            <p className="mt-1 text-muted-foreground text-xs">
+            <p className="mt-1 text-xs text-muted-foreground">
               {t('ws-storage-objects.min_file_size')}
             </p>
           </div>

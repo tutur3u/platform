@@ -1,10 +1,10 @@
-import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
-import { describe, expect, it } from 'vitest';
 import {
   convertGoogleAllDayEvent,
   createAllDayEvent,
   isAllDayEvent,
 } from './calendar-utils';
+import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
+import { describe, expect, it } from 'vitest';
 
 describe('calendar-utils', () => {
   describe('isAllDayEvent', () => {
@@ -153,8 +153,17 @@ describe('calendar-utils', () => {
       const date = new Date('2024-01-01T10:00:00Z');
       const result = createAllDayEvent(date, undefined);
 
-      expect(result.start_at).toMatch(/2024-01-01T00:00:00\.000Z/);
-      expect(result.end_at).toMatch(/2024-01-02T00:00:00\.000Z/);
+      // When timezone is undefined, the function should use the system's local timezone.
+      // To make this test robust regardless of the environment, we compute the expected UTC start/end.
+      const localDate = new Date(date);
+      localDate.setHours(0, 0, 0, 0);
+      const expectedStart = localDate.toISOString();
+      const expectedEnd = new Date(
+        localDate.getTime() + 24 * 60 * 60 * 1000
+      ).toISOString();
+
+      expect(result.start_at).toBe(expectedStart);
+      expect(result.end_at).toBe(expectedEnd);
     });
   });
 });

@@ -1,6 +1,6 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { NextRequest } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { NextRequest } from 'next/server';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock Supabase
 vi.mock('@supabase/supabase-js', () => ({
@@ -8,18 +8,18 @@ vi.mock('@supabase/supabase-js', () => ({
     from: vi.fn(() => ({
       select: vi.fn(() => ({
         eq: vi.fn(() => ({
-          single: vi.fn(() => Promise.resolve({ data: null, error: null }))
-        }))
+          single: vi.fn(() => Promise.resolve({ data: null, error: null })),
+        })),
       })),
       insert: vi.fn(() => Promise.resolve({ data: null, error: null })),
       update: vi.fn(() => ({
-        eq: vi.fn(() => Promise.resolve({ data: null, error: null }))
+        eq: vi.fn(() => Promise.resolve({ data: null, error: null })),
       })),
       delete: vi.fn(() => ({
-        eq: vi.fn(() => Promise.resolve({ data: null, error: null }))
-      }))
-    }))
-  }))
+        eq: vi.fn(() => Promise.resolve({ data: null, error: null })),
+      })),
+    })),
+  })),
 }));
 
 // Mock Google API
@@ -27,48 +27,54 @@ vi.mock('googleapis', () => ({
   google: {
     calendar: vi.fn(() => ({
       events: {
-        list: vi.fn(() => Promise.resolve({
-          data: {
-            items: [
-              {
-                id: 'event1',
-                summary: 'Test Event',
-                start: { dateTime: '2024-01-01T10:00:00Z' },
-                end: { dateTime: '2024-01-01T11:00:00Z' },
-                colorId: '1'
-              },
-              {
-                id: 'event2',
-                summary: 'All Day Event',
-                start: { date: '2024-01-02' },
-                end: { date: '2024-01-03' },
-                colorId: '2'
-              }
-            ]
-          }
-        })),
+        list: vi.fn(() =>
+          Promise.resolve({
+            data: {
+              items: [
+                {
+                  id: 'event1',
+                  summary: 'Test Event',
+                  start: { dateTime: '2024-01-01T10:00:00Z' },
+                  end: { dateTime: '2024-01-01T11:00:00Z' },
+                  colorId: '1',
+                },
+                {
+                  id: 'event2',
+                  summary: 'All Day Event',
+                  start: { date: '2024-01-02' },
+                  end: { date: '2024-01-03' },
+                  colorId: '2',
+                },
+              ],
+            },
+          })
+        ),
         insert: vi.fn(() => Promise.resolve({ data: { id: 'new-event-id' } })),
-        update: vi.fn(() => Promise.resolve({ data: { id: 'updated-event-id' } })),
-        delete: vi.fn(() => Promise.resolve({ data: {} }))
-      }
-    }))
-  }
+        update: vi.fn(() =>
+          Promise.resolve({ data: { id: 'updated-event-id' } })
+        ),
+        delete: vi.fn(() => Promise.resolve({ data: {} })),
+      },
+    })),
+  },
 }));
 
 // Mock isAllDayEvent function
 vi.mock('@/utils/calendar', () => ({
   isAllDayEvent: vi.fn((startAt, endAt) => {
     // Mock logic: if startAt or endAt contains 'T', it's not all-day
-    return !startAt?.includes('T') && !endAt?.includes('T')
-  })
+    return !startAt?.includes('T') && !endAt?.includes('T');
+  }),
 }));
 
 // Mock auth functions
 vi.mock('@/lib/auth', () => ({
-  getServerSession: vi.fn(() => Promise.resolve({
-    user: { id: 'test-user-id', email: 'test@example.com' }
-  })),
-  getGoogleAccessToken: vi.fn(() => Promise.resolve('mock-access-token'))
+  getServerSession: vi.fn(() =>
+    Promise.resolve({
+      user: { id: 'test-user-id', email: 'test@example.com' },
+    })
+  ),
+  getGoogleAccessToken: vi.fn(() => Promise.resolve('mock-access-token')),
 }));
 
 // Mock database functions
@@ -77,18 +83,18 @@ vi.mock('@/lib/db', () => ({
     from: vi.fn(() => ({
       select: vi.fn(() => ({
         eq: vi.fn(() => ({
-          single: vi.fn(() => Promise.resolve({ data: null, error: null }))
-        }))
+          single: vi.fn(() => Promise.resolve({ data: null, error: null })),
+        })),
       })),
       insert: vi.fn(() => Promise.resolve({ data: null, error: null })),
       update: vi.fn(() => ({
-        eq: vi.fn(() => Promise.resolve({ data: null, error: null }))
+        eq: vi.fn(() => Promise.resolve({ data: null, error: null })),
       })),
       delete: vi.fn(() => ({
-        eq: vi.fn(() => Promise.resolve({ data: null, error: null }))
-      }))
-    }))
-  }))
+        eq: vi.fn(() => Promise.resolve({ data: null, error: null })),
+      })),
+    })),
+  })),
 }));
 
 describe('Calendar Sync Routes', () => {
@@ -98,58 +104,62 @@ describe('Calendar Sync Routes', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    
+
     // Setup mock Supabase client
     mockSupabase = {
       from: vi.fn(() => ({
         select: vi.fn(() => ({
           eq: vi.fn(() => ({
-            single: vi.fn(() => Promise.resolve({ data: null, error: null }))
-          }))
+            single: vi.fn(() => Promise.resolve({ data: null, error: null })),
+          })),
         })),
         insert: vi.fn(() => Promise.resolve({ data: null, error: null })),
         update: vi.fn(() => ({
-          eq: vi.fn(() => Promise.resolve({ data: null, error: null }))
+          eq: vi.fn(() => Promise.resolve({ data: null, error: null })),
         })),
         delete: vi.fn(() => ({
-          eq: vi.fn(() => Promise.resolve({ data: null, error: null }))
-        }))
-      }))
+          eq: vi.fn(() => Promise.resolve({ data: null, error: null })),
+        })),
+      })),
     };
 
     // Setup mock Google Calendar
     mockGoogleCalendar = {
       events: {
-        list: vi.fn(() => Promise.resolve({
-          data: {
-            items: [
-              {
-                id: 'event1',
-                summary: 'Test Event',
-                start: { dateTime: '2024-01-01T10:00:00Z' },
-                end: { dateTime: '2024-01-01T11:00:00Z' },
-                colorId: '1'
-              },
-              {
-                id: 'event2',
-                summary: 'All Day Event',
-                start: { date: '2024-01-02' },
-                end: { date: '2024-01-03' },
-                colorId: '2'
-              }
-            ]
-          }
-        })),
+        list: vi.fn(() =>
+          Promise.resolve({
+            data: {
+              items: [
+                {
+                  id: 'event1',
+                  summary: 'Test Event',
+                  start: { dateTime: '2024-01-01T10:00:00Z' },
+                  end: { dateTime: '2024-01-01T11:00:00Z' },
+                  colorId: '1',
+                },
+                {
+                  id: 'event2',
+                  summary: 'All Day Event',
+                  start: { date: '2024-01-02' },
+                  end: { date: '2024-01-03' },
+                  colorId: '2',
+                },
+              ],
+            },
+          })
+        ),
         insert: vi.fn(() => Promise.resolve({ data: { id: 'new-event-id' } })),
-        update: vi.fn(() => Promise.resolve({ data: { id: 'updated-event-id' } })),
-        delete: vi.fn(() => Promise.resolve({ data: {} }))
-      }
+        update: vi.fn(() =>
+          Promise.resolve({ data: { id: 'updated-event-id' } })
+        ),
+        delete: vi.fn(() => Promise.resolve({ data: {} })),
+      },
     };
 
     // Setup mock isAllDayEvent function
     mockIsAllDayEvent = vi.fn((startAt, endAt) => {
       // Mock logic: if startAt or endAt contains 'T', it's not all-day
-      return !startAt?.includes('T') && !endAt?.includes('T')
+      return !startAt?.includes('T') && !endAt?.includes('T');
     });
   });
 
@@ -172,20 +182,22 @@ describe('Calendar Sync Routes', () => {
         summary: 'New Event',
         start_at: '2024-01-01T10:00:00Z',
         end_at: '2024-01-01T11:00:00Z',
-        color_id: '1'
+        color_id: '1',
       };
 
       // Mock successful insert
-      const mockInsert = vi.fn(() => Promise.resolve({ 
-        data: { id: 'new-event-id' }, 
-        error: null 
-      }));
+      const mockInsert = vi.fn(() =>
+        Promise.resolve({
+          data: { id: 'new-event-id' },
+          error: null,
+        })
+      );
       mockSupabase.from.mockReturnValue({
-        insert: mockInsert
+        insert: mockInsert,
       });
 
       const result = await mockSupabase.from('events').insert(eventData);
-      
+
       expect(mockInsert).toHaveBeenCalledWith(eventData);
       expect(result.data).toEqual({ id: 'new-event-id' });
       expect(result.error).toBeNull();
@@ -196,19 +208,21 @@ describe('Calendar Sync Routes', () => {
         summary: 'All Day Event',
         start_at: '2024-01-01',
         end_at: '2024-01-02',
-        color_id: '2'
+        color_id: '2',
       };
 
-      const mockInsert = vi.fn(() => Promise.resolve({ 
-        data: { id: 'all-day-event-id' }, 
-        error: null 
-      }));
+      const mockInsert = vi.fn(() =>
+        Promise.resolve({
+          data: { id: 'all-day-event-id' },
+          error: null,
+        })
+      );
       mockSupabase.from.mockReturnValue({
-        insert: mockInsert
+        insert: mockInsert,
       });
 
       const result = await mockSupabase.from('events').insert(allDayEventData);
-      
+
       expect(mockInsert).toHaveBeenCalledWith(allDayEventData);
       expect(result.data).toEqual({ id: 'all-day-event-id' });
     });
@@ -216,8 +230,12 @@ describe('Calendar Sync Routes', () => {
     it('should detect all-day events using isAllDayEvent', () => {
       // Test all-day event detection
       expect(mockIsAllDayEvent('2024-01-01', '2024-01-02')).toBe(true);
-      expect(mockIsAllDayEvent('2024-01-01T10:00:00Z', '2024-01-01T11:00:00Z')).toBe(false);
-      expect(mockIsAllDayEvent('2024-01-01', '2024-01-01T11:00:00Z')).toBe(false);
+      expect(
+        mockIsAllDayEvent('2024-01-01T10:00:00Z', '2024-01-01T11:00:00Z')
+      ).toBe(false);
+      expect(mockIsAllDayEvent('2024-01-01', '2024-01-01T11:00:00Z')).toBe(
+        false
+      );
     });
   });
 
@@ -227,22 +245,27 @@ describe('Calendar Sync Routes', () => {
       const updateData = {
         summary: 'Updated Event',
         start_at: '2024-01-01T11:00:00Z',
-        end_at: '2024-01-01T12:00:00Z'
+        end_at: '2024-01-01T12:00:00Z',
       };
 
       // Mock successful update
-      const mockUpdate = vi.fn(() => Promise.resolve({ 
-        data: { id: eventId, ...updateData }, 
-        error: null 
-      }));
+      const mockUpdate = vi.fn(() =>
+        Promise.resolve({
+          data: { id: eventId, ...updateData },
+          error: null,
+        })
+      );
       mockSupabase.from.mockReturnValue({
         update: vi.fn(() => ({
-          eq: mockUpdate
-        }))
+          eq: mockUpdate,
+        })),
       });
 
-      const result = await mockSupabase.from('events').update(updateData).eq('id', eventId);
-      
+      const result = await mockSupabase
+        .from('events')
+        .update(updateData)
+        .eq('id', eventId);
+
       expect(mockUpdate).toHaveBeenCalledWith('id', eventId);
       expect(result.data).toEqual({ id: eventId, ...updateData });
     });
@@ -250,7 +273,7 @@ describe('Calendar Sync Routes', () => {
     it('should handle partial updates with existing event data', async () => {
       const eventId = 'event1';
       const partialUpdate = {
-        summary: 'Updated Event'
+        summary: 'Updated Event',
         // Missing start_at and end_at
       };
 
@@ -259,33 +282,44 @@ describe('Calendar Sync Routes', () => {
         id: eventId,
         summary: 'Original Event',
         start_at: '2024-01-01T10:00:00Z',
-        end_at: '2024-01-01T11:00:00Z'
+        end_at: '2024-01-01T11:00:00Z',
       };
 
       const mockSelect = vi.fn(() => ({
         eq: vi.fn(() => ({
-          single: vi.fn(() => Promise.resolve({ data: existingEvent, error: null }))
-        }))
+          single: vi.fn(() =>
+            Promise.resolve({ data: existingEvent, error: null })
+          ),
+        })),
       }));
 
-      const mockUpdate = vi.fn(() => Promise.resolve({ 
-        data: { id: eventId, ...partialUpdate }, 
-        error: null 
-      }));
+      const mockUpdate = vi.fn(() =>
+        Promise.resolve({
+          data: { id: eventId, ...partialUpdate },
+          error: null,
+        })
+      );
 
       mockSupabase.from.mockReturnValue({
         select: mockSelect,
         update: vi.fn(() => ({
-          eq: mockUpdate
-        }))
+          eq: mockUpdate,
+        })),
       });
 
       // Simulate fetching existing event first
-      const existing = await mockSupabase.from('events').select('*').eq('id', eventId).single();
+      const existing = await mockSupabase
+        .from('events')
+        .select('*')
+        .eq('id', eventId)
+        .single();
       expect(existing.data).toEqual(existingEvent);
 
       // Then update
-      const result = await mockSupabase.from('events').update(partialUpdate).eq('id', eventId);
+      const result = await mockSupabase
+        .from('events')
+        .update(partialUpdate)
+        .eq('id', eventId);
       expect(mockUpdate).toHaveBeenCalledWith('id', eventId);
     });
   });
@@ -294,18 +328,23 @@ describe('Calendar Sync Routes', () => {
     it('should delete an event', async () => {
       const eventId = 'event1';
 
-      const mockDelete = vi.fn(() => Promise.resolve({ 
-        data: null, 
-        error: null 
-      }));
+      const mockDelete = vi.fn(() =>
+        Promise.resolve({
+          data: null,
+          error: null,
+        })
+      );
       mockSupabase.from.mockReturnValue({
         delete: vi.fn(() => ({
-          eq: mockDelete
-        }))
+          eq: mockDelete,
+        })),
       });
 
-      const result = await mockSupabase.from('events').delete().eq('id', eventId);
-      
+      const result = await mockSupabase
+        .from('events')
+        .delete()
+        .eq('id', eventId);
+
       expect(mockDelete).toHaveBeenCalledWith('id', eventId);
       expect(result.data).toBeNull();
       expect(result.error).toBeNull();
@@ -315,12 +354,14 @@ describe('Calendar Sync Routes', () => {
   describe('Error handling', () => {
     it('should handle database errors', async () => {
       const mockError = new Error('Database connection failed');
-      const mockInsert = vi.fn(() => Promise.resolve({ 
-        data: null, 
-        error: mockError 
-      }));
+      const mockInsert = vi.fn(() =>
+        Promise.resolve({
+          data: null,
+          error: mockError,
+        })
+      );
       mockSupabase.from.mockReturnValue({
-        insert: mockInsert
+        insert: mockInsert,
       });
 
       const result = await mockSupabase.from('events').insert({});
@@ -331,7 +372,9 @@ describe('Calendar Sync Routes', () => {
       const mockError = new Error('Google API rate limit exceeded');
       mockGoogleCalendar.events.list = vi.fn(() => Promise.reject(mockError));
 
-      await expect(mockGoogleCalendar.events.list()).rejects.toThrow('Google API rate limit exceeded');
+      await expect(mockGoogleCalendar.events.list()).rejects.toThrow(
+        'Google API rate limit exceeded'
+      );
     });
   });
 
@@ -340,10 +383,10 @@ describe('Calendar Sync Routes', () => {
       const allDayEvents = [
         { start_at: '2024-01-01', end_at: '2024-01-02' },
         { start_at: '2024-01-01', end_at: '2024-01-01' },
-        { start_at: '2024-01-01', end_at: null }
+        { start_at: '2024-01-01', end_at: null },
       ];
 
-      allDayEvents.forEach(event => {
+      allDayEvents.forEach((event) => {
         expect(mockIsAllDayEvent(event.start_at, event.end_at)).toBe(true);
       });
     });
@@ -352,12 +395,12 @@ describe('Calendar Sync Routes', () => {
       const timedEvents = [
         { start_at: '2024-01-01T10:00:00Z', end_at: '2024-01-01T11:00:00Z' },
         { start_at: '2024-01-01T10:00:00Z', end_at: '2024-01-01' },
-        { start_at: '2024-01-01', end_at: '2024-01-01T11:00:00Z' }
+        { start_at: '2024-01-01', end_at: '2024-01-01T11:00:00Z' },
       ];
 
-      timedEvents.forEach(event => {
+      timedEvents.forEach((event) => {
         expect(mockIsAllDayEvent(event.start_at, event.end_at)).toBe(false);
       });
     });
   });
-}); 
+});

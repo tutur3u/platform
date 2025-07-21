@@ -69,6 +69,7 @@ export type WorkspaceUserReport = Tables<'external_user_monthly_reports'> & {
   href?: string;
 };
 export type WorkspaceCalendarGoogleToken = Tables<'calendar_auth_tokens'>;
+export type InternalEmail = Tables<'internal_emails'>;
 
 export type TimeTrackingCategory = Tables<'time_tracking_categories'>;
 export type TimeTrackingSession = Tables<'time_tracking_sessions'>;

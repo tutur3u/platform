@@ -1,3 +1,4 @@
+import type { SectionProps } from './index';
 import {
   FormControl,
   FormField,
@@ -7,7 +8,6 @@ import {
 } from '@tuturuuu/ui/form';
 import { Input } from '@tuturuuu/ui/input';
 import { useTranslations } from 'next-intl';
-import type { SectionProps } from './index';
 
 export default function RoleFormDisplaySection({ form }: SectionProps) {
   const t = useTranslations();

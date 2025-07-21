@@ -7,12 +7,14 @@ This package contains Google Calendar synchronization functionality with workspa
 The sync has been designed with workspace-level concurrency in mind:
 
 ### 1. Immediate Sync (`syncWorkspaceImmediate`)
+
 - **Time Range**: Current time to 1 week from now
 - **Interval**: Every 1 minute (orchestrated)
 - **Concurrency**: 1 sync per workspace at a time
 - **Purpose**: Keeps the immediate future (next 7 days) up-to-date with frequent updates
 
 ### 2. Extended Sync (`syncWorkspaceExtended`)
+
 - **Time Range**: 1 week from now to 4 weeks from now (3 weeks after the first week)
 - **Interval**: Every 10 minutes (orchestrated)
 - **Concurrency**: 1 sync per workspace at a time
@@ -21,6 +23,7 @@ The sync has been designed with workspace-level concurrency in mind:
 ## Concurrency Management
 
 Each workspace has its own queue using `concurrencyKey: ws_id`. This means:
+
 - ✅ Multiple workspaces can sync simultaneously (up to your environment's concurrency limit of 10)
 - ✅ If a sync is already running for a workspace, new sync requests for that workspace are queued
 - ✅ No duplicate syncs for the same workspace
@@ -35,6 +38,7 @@ Each workspace has its own queue using `concurrencyKey: ws_id`. This means:
 ## Task Structure
 
 ### Orchestrator Tasks (Scheduled)
+
 1. **`googleCalendarImmediateOrchestrator`** - Runs every 1 minute
    - Fetches all workspaces with auth tokens
    - Triggers individual workspace immediate syncs with concurrency keys
@@ -44,6 +48,7 @@ Each workspace has its own queue using `concurrencyKey: ws_id`. This means:
    - Triggers individual workspace extended syncs with concurrency keys
 
 ### Worker Tasks (Individual Workspace)
+
 1. **`googleCalendarWorkspaceImmediateSync`** - Handles immediate sync for one workspace
 2. **`googleCalendarWorkspaceExtendedSync`** - Handles extended sync for one workspace
 
@@ -52,9 +57,9 @@ Each workspace has its own queue using `concurrencyKey: ws_id`. This means:
 ### Manual Execution for Specific Workspace
 
 ```typescript
-import { 
+import {
   triggerWorkspaceImmediateSync,
-  triggerWorkspaceExtendedSync 
+  triggerWorkspaceExtendedSync
 } from '@tuturuuu/trigger/google-calendar-background-sync';
 
 // Sync immediate range for specific workspace
@@ -67,9 +72,9 @@ const result = await triggerWorkspaceExtendedSync('workspace-123');
 ### Manual Execution for All Workspaces
 
 ```typescript
-import { 
+import {
   triggerAllWorkspacesImmediateSync,
-  triggerAllWorkspacesExtendedSync 
+  triggerAllWorkspacesExtendedSync
 } from '@tuturuuu/trigger/google-calendar-background-sync';
 
 // Sync all workspaces immediately
@@ -82,16 +87,16 @@ const results = await triggerAllWorkspacesExtendedSync();
 ### Direct Workspace Sync
 
 ```typescript
-import { 
-  syncWorkspaceImmediate, 
-  syncWorkspaceExtended 
+import {
+  syncWorkspaceExtended,
+  syncWorkspaceImmediate,
 } from '@tuturuuu/trigger/google-calendar-sync';
 
 // Direct sync with workspace data
 const result = await syncWorkspaceImmediate({
   ws_id: 'workspace-123',
   access_token: 'google-access-token',
-  refresh_token: 'google-refresh-token'
+  refresh_token: 'google-refresh-token',
 });
 ```
 
@@ -117,6 +122,7 @@ export const tasks = googleCalendarTasks;
 ## Concurrency Keys
 
 Each workspace sync uses `concurrencyKey: ws_id`, which means:
+
 - Workspace `ws-123` gets queue `google-calendar-workspace-immediate-sync-ws-123`
 - Workspace `ws-456` gets queue `google-calendar-workspace-immediate-sync-ws-456`
 - If `ws-123` is syncing, new `ws-123` syncs are queued
@@ -125,6 +131,7 @@ Each workspace sync uses `concurrencyKey: ws_id`, which means:
 ## Response Format
 
 Sync functions return:
+
 ```typescript
 {
   ws_id: string;
@@ -138,6 +145,7 @@ Sync functions return:
 ## Configuration
 
 All sync functions use the same environment variables:
+
 - `GOOGLE_CLIENT_ID`
 - `GOOGLE_CLIENT_SECRET`
 - `GOOGLE_REDIRECT_URI`
@@ -145,12 +153,14 @@ All sync functions use the same environment variables:
 ## Database Tables
 
 The sync functions interact with:
+
 - `calendar_auth_tokens` - Stores OAuth tokens for each workspace
 - `workspace_calendar_events` - Stores synchronized calendar events
 
 ## Backward Compatibility
 
 Legacy functions are still available:
+
 - `syncGoogleCalendarEventsImmediate()` - Syncs all workspaces sequentially
 - `syncGoogleCalendarEventsExtended()` - Syncs all workspaces sequentially
-- `syncGoogleCalendarEvents()` - Defaults to immediate sync 
+- `syncGoogleCalendarEvents()` - Defaults to immediate sync

@@ -1,6 +1,6 @@
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { generateText, type UIMessage } from 'ai';
+import { type UIMessage, generateText } from 'ai';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 
@@ -20,7 +20,11 @@ export function createPOST(
 ) {
   return async function handler(req: Request) {
     try {
-      const { id, model = DEFAULT_MODEL_NAME, message } = (await req.json()) as {
+      const {
+        id,
+        model = DEFAULT_MODEL_NAME,
+        message,
+      } = (await req.json()) as {
         id?: string;
         model?: string;
         message?: string;
@@ -94,12 +98,16 @@ export function createPOST(
         );
       }
 
-      const { data: chat, error: chatError } = await supabase.from('ai_chats').insert({
-        id,
-        title,
-        creator_id: user.id,
-        model: model.toLowerCase(),
-      }).select('id').single();
+      const { data: chat, error: chatError } = await supabase
+        .from('ai_chats')
+        .insert({
+          id,
+          title,
+          creator_id: user.id,
+          model: model.toLowerCase(),
+        })
+        .select('id')
+        .single();
 
       if (chatError) {
         console.log(chatError);

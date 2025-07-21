@@ -1,3 +1,4 @@
+import { PostEmailStatus } from './post';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -27,11 +28,10 @@ import { Separator } from '@tuturuuu/ui/separator';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { cn } from '@tuturuuu/utils/format';
 import { format } from 'date-fns';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useTranslations } from 'next-intl';
 import { useState } from 'react';
-import { PostEmailStatus } from './post';
 
 export interface UserGroupPost {
   id?: string;
@@ -142,7 +142,7 @@ export default function UserGroupPosts({
     <>
       <div className="flex items-start justify-between">
         <div className="grid gap-1">
-          <div className="mb-2 font-semibold text-xl">
+          <div className="mb-2 text-xl font-semibold">
             {t('ws-user-groups.posts')}
             {!!count && ` (${count})`}
           </div>
@@ -159,7 +159,7 @@ export default function UserGroupPosts({
             />
             <label
               htmlFor="show-post-content"
-              className="font-medium text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+              className="text-sm leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
             >
               {t('ws-user-groups.show_post_content')}
             </label>
@@ -177,7 +177,7 @@ export default function UserGroupPosts({
             />
             <label
               htmlFor="show-post-status"
-              className="font-medium text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+              className="text-sm leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
             >
               {t('ws-user-groups.show_post_status')}
             </label>
@@ -270,10 +270,10 @@ export default function UserGroupPosts({
             >
               <div className="flex items-start justify-between">
                 <div>
-                  <div className="font-semibold text-sm">{post.title}</div>
+                  <div className="text-sm font-semibold">{post.title}</div>
                   <div className="flex flex-wrap items-center gap-2 font-semibold">
                     {post?.group_name && (
-                      <div className="flex w-fit items-center gap-0.5 rounded bg-foreground px-2 py-1 text-background text-xs">
+                      <div className="flex w-fit items-center gap-0.5 rounded bg-foreground px-2 py-1 text-xs text-background">
                         {post?.group_name}
                       </div>
                     )}
@@ -286,7 +286,7 @@ export default function UserGroupPosts({
                   </div>
                 </div>
                 {groupId && (
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 text-start">
                     <Link
                       href={
                         groupId
@@ -336,7 +336,7 @@ export default function UserGroupPosts({
                 )}
               </div>
               {configs.showContent && post.content && (
-                <div className="whitespace-pre-line text-sm opacity-70">
+                <div className="text-start text-sm whitespace-pre-line opacity-70">
                   {post.content}
                 </div>
               )}

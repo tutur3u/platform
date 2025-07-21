@@ -1,5 +1,9 @@
 'use client';
 
+import { Nav } from './nav';
+import type { NavLink } from '@/components/navigation';
+import { PROD_MODE, SIDEBAR_COLLAPSED_COOKIE_NAME } from '@/constants/common';
+import { useSidebar } from '@/context/sidebar-context';
 import { useQuery } from '@tanstack/react-query';
 import type { Workspace } from '@tuturuuu/types/db';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
@@ -10,15 +14,11 @@ import { ArrowLeft } from '@tuturuuu/ui/icons';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { cn } from '@tuturuuu/utils/format';
 import { setCookie } from 'cookies-next';
+import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useTranslations } from 'next-intl';
 import { type ReactNode, Suspense, useEffect, useState } from 'react';
-import type { NavLink } from '@/components/navigation';
-import { PROD_MODE, SIDEBAR_COLLAPSED_COOKIE_NAME } from '@/constants/common';
-import { useSidebar } from '@/context/sidebar-context';
-import { Nav } from './nav';
 
 interface MailProps {
   wsId: string;
@@ -245,6 +245,7 @@ export function Structure({
       )}
 
       <Suspense
+        key={user?.id}
         fallback={
           <div className="h-10 w-full animate-pulse rounded-lg bg-foreground/5" />
         }
@@ -273,6 +274,7 @@ export function Structure({
       >
         {navState.history.length === 0 ? (
           <Nav
+            key={`${user?.id}-root`}
             wsId={wsId}
             isCollapsed={isCollapsed}
             links={filteredCurrentLinks}
@@ -286,6 +288,7 @@ export function Structure({
         ) : (
           <>
             <Nav
+              key={`${user?.id}-back`}
               wsId={wsId}
               isCollapsed={isCollapsed}
               links={[backButton]}
@@ -305,6 +308,7 @@ export function Structure({
             {filteredCurrentLinks.length > 0 && (
               <div className="scrollbar-none flex-1 overflow-y-auto">
                 <Nav
+                  key={`${user?.id}-nav`}
                   wsId={wsId}
                   isCollapsed={isCollapsed}
                   links={filteredCurrentLinks}
