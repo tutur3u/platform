@@ -11,16 +11,19 @@ const schedulableTasksHelper = async (ws_id: string): Promise<Params> => {
 
   try {
     // Get the base URL from environment variables
-    const baseUrl = process.env.API_BASE_URL || process.env.NEXT_PUBLIC_URL || 'http://localhost:7803';
+    const baseUrl =
+      process.env.API_BASE_URL ||
+      process.env.NEXT_PUBLIC_URL ||
+      'http://localhost:7803';
     const fullUrl = `${baseUrl}/api/${ws_id}/calendar/auto-schedule?stream=false`;
-    
+
     console.log('Calling API:', fullUrl);
-    
+
     const response = await fetch(fullUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-      }
+      },
     });
 
     if (!response.ok) {
@@ -29,16 +32,16 @@ const schedulableTasksHelper = async (ws_id: string): Promise<Params> => {
 
     const data = await response.json();
     console.log('=== Schedule tasks helper completed successfully ===');
-    
+
     return {
       success: true,
-      data
+      data,
     };
   } catch (error) {
     console.error('Error in schedulable tasks helper:', error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: error instanceof Error ? error.message : 'Unknown error',
     };
   }
 };
