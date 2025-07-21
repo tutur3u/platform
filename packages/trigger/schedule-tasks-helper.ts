@@ -1,5 +1,3 @@
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
-
 type Params = {
   success: boolean;
   data?: any;
