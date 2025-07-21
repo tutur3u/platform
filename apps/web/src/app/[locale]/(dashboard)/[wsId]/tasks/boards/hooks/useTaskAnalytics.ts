@@ -1,5 +1,5 @@
+import { useMemo } from 'react';
 import { getTaskCompletionDate } from '../utils/taskHelpers';
-import { useMemo, useRef } from 'react';
 
 interface Task {
   id: string;
@@ -51,7 +51,11 @@ const getCachedDate = (dateString: string): Date => {
   if (!dateCache.has(dateString)) {
     dateCache.set(dateString, new Date(dateString));
   }
-  return dateCache.get(dateString)!;
+  const cached = dateCache.get(dateString);
+  if (!cached) {
+    throw new Error('Failed to get cached date');
+  }
+  return cached;
 };
 
 // Helper function to clear cache when needed
@@ -109,14 +113,15 @@ export function useAvgDuration(
     let validDurations = 0;
     const totalDurationMs = completedTasks.reduce((sum, task) => {
       try {
-        const createdDate = getCachedDate(task.created_at!);
+        if (!task.created_at) return sum;
+        const createdDate = getCachedDate(task.created_at);
         const completionDate = getTaskCompletionDate(task);
 
         // Validate dates
         if (
           !completionDate ||
-          isNaN(createdDate.getTime()) ||
-          isNaN(completionDate.getTime())
+          Number.isNaN(createdDate.getTime()) ||
+          Number.isNaN(completionDate.getTime())
         ) {
           return sum;
         }
@@ -129,7 +134,7 @@ export function useAvgDuration(
           validDurations++;
           return sum + duration;
         }
-      } catch (error) {
+      } catch {
         // Skip invalid dates
         return sum;
       }
@@ -148,7 +153,9 @@ export function useAvgDuration(
 
     const avgDurationMs = totalDurationMs / validDurations;
     const days = Math.floor(avgDurationMs / (1000 * 60 * 60 * 24));
-    const hours = Math.floor((avgDurationMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const hours = Math.floor(
+      (avgDurationMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
+    );
 
     let label: string;
     if (days >= 1) {
@@ -307,17 +314,22 @@ export function useOnTimeRate(
 
     completedTasks.forEach((task) => {
       try {
-        const dueDate = getCachedDate(task.end_date!);
+        if (!task.end_date) return;
+        const dueDate = getCachedDate(task.end_date);
         const completionDate = getTaskCompletionDate(task);
 
-        if (completionDate && !isNaN(dueDate.getTime()) && !isNaN(completionDate.getTime())) {
+        if (
+          completionDate &&
+          !Number.isNaN(dueDate.getTime()) &&
+          !Number.isNaN(completionDate.getTime())
+        ) {
           if (completionDate <= dueDate) {
             onTime++;
           } else {
             late++;
           }
         }
-      } catch (error) {
+      } catch {
         // Skip invalid dates
       }
     });
