@@ -1,3 +1,5 @@
+'use client';
+
 import type { InternalEmail } from '@tuturuuu/types/db';
 import { atom, useAtom } from 'jotai';
 

@@ -5,7 +5,7 @@ import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { type ReactNode, useEffect, useState } from 'react';
+import { type ReactNode, useCallback, useEffect, useState } from 'react';
 
 export interface NavLink {
   title: string;
@@ -27,7 +27,6 @@ export interface NavLink {
   disableOnProduction?: boolean;
   allowedRoles?: string[];
   experimental?: 'alpha' | 'beta' | 'new';
-  shortcut?: string;
 }
 
 interface Props {
@@ -46,7 +45,7 @@ export function Navigation({
   const pathname = usePathname();
   const isRootWorkspace = currentWsId === ROOT_WORKSPACE_ID;
 
-  const scrollActiveLinksIntoView = () => {
+  const scrollActiveLinksIntoView = useCallback(() => {
     const activeWorkspaceLink = document.getElementById('active-ws-navlink');
     const activeLink = document.getElementById('active-navlink');
 
@@ -67,14 +66,14 @@ export function Navigation({
         })
       );
     }
-  };
+  }, []);
 
   const [urlToLoad, setUrlToLoad] = useState<string>();
 
   useEffect(() => {
     if (urlToLoad) setUrlToLoad(undefined);
     scrollActiveLinksIntoView();
-  }, [pathname]);
+  }, [urlToLoad, scrollActiveLinksIntoView]);
 
   return (
     <div className="mb-4 scrollbar-none flex flex-none gap-1 overflow-x-auto font-semibold">
