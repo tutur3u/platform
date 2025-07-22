@@ -179,13 +179,82 @@ export default function CreatePlanDialog({ plan }: Props) {
               )}
             />
 
-            <DialogFooter>
-              <Button
-                type="submit"
-                className="w-full"
-                disabled={disabled || creating}
-              >
-                {creating ? t('creating_plan') : t('create_plan')}
+            <Separator className="my-6" />
+
+            {/* Extra Features Section */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-purple-500" />
+                <h3 className="text-sm font-semibold text-foreground">Extra Features</h3>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Enhance your meeting plan with additional features to make coordination easier.
+              </p>
+
+              {/* Where-to-meet feature */}
+              <FormField
+                control={form.control}
+                name="where_to_meet"
+                render={({ field }) => (
+                  <FormItem>
+                    <div
+                      className="rounded-lg border border-border bg-muted/30 p-4 transition-colors hover:bg-muted/50 cursor-pointer"
+                      onClick={() => field.onChange(!field.value)}
+                    >
+                      <div className="flex items-start space-x-3">
+                        <FormControl>
+                          <input
+                            type="checkbox"
+                            id="where_to_meet"
+                            checked={field.value}
+                            onChange={field.onChange}
+                            className="mt-1 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                          />
+                        </FormControl>
+                        <div className="flex-1 space-y-2">
+                          <div className="flex items-center gap-2">
+                            <MapPin className="h-4 w-4 text-blue-500" />
+                            <FormLabel
+                              htmlFor="where_to_meet"
+                              className="mb-0 cursor-pointer font-medium text-foreground"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              Where to Meet?
+                            </FormLabel>
+                          </div>
+                          <p className="text-xs text-muted-foreground leading-relaxed">
+                            Enable location suggestions and voting. Participants can propose meeting locations and vote
+                            on their preferred spots, making it easier to find the perfect place for everyone.
+                          </p>
+                          <div className="flex items-center gap-1 text-xs text-blue-600">
+                            <span>✨ Popular feature</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Placeholder for future features */}
+              <div className="rounded-lg border border-dashed border-border/50 bg-muted/20 p-4">
+                <div className="flex items-center justify-center text-center">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-center gap-2 text-muted-foreground">
+                      <Sparkles className="h-4 w-4" />
+                      <span className="text-sm font-medium">More features coming soon!</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      We're working on additional features to make your meetings even better.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <DialogFooter className="pt-4">
+              <Button type="submit" className="w-full" disabled={disabled || creating}>
                 {creating ? t("creating_plan") : t("create_plan")}
               </Button>
             </DialogFooter>
