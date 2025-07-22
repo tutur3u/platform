@@ -246,33 +246,27 @@ export function CalendarSyncDashboard() {
   }, [completedSyncs]);
 
   return (
-    <div className="flex min-h-screen flex-col bg-gradient-to-br from-slate-50 to-slate-100/50">
+    <div className="flex min-h-screen flex-col gap-4">
       {/* Header */}
-      <header className="sticky top-0 z-10 border-b bg-white/80 backdrop-blur-sm">
+      <header className="sticky top-0 z-10 rounded-lg border-b bg-foreground/10 backdrop-blur-sm">
         <div className="flex h-16 items-center px-6">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-blue-600">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-dynamic-blue to-dynamic-blue/80">
               <Calendar className="h-5 w-5 text-white" />
             </div>
             <div>
-              <h1 className="text-xl font-semibold text-slate-900">
-                Calendar Sync Dashboard
-              </h1>
-              <p className="text-sm text-slate-500">
+              <h1 className="text-xl font-semibold">Calendar Sync Dashboard</h1>
+              <p className="text-sm opacity-70">
                 Monitor workspace calendar synchronization
               </p>
             </div>
           </div>
-          <div className="ml-auto flex items-center gap-3">
-            <Button
-              variant="outline"
-              size="sm"
-              className="gap-2 bg-transparent"
-            >
+          <div className="ml-auto flex items-center gap-2">
+            <Button variant="outline">
               <Download className="h-4 w-4" />
               Export
             </Button>
-            <Button size="sm" className="gap-2 bg-blue-600 hover:bg-blue-700">
+            <Button size="sm">
               <RefreshCw className="h-4 w-4" />
               Refresh
             </Button>
@@ -280,8 +274,8 @@ export function CalendarSyncDashboard() {
         </div>
       </header>
 
-      <main className="flex-1 p-6">
-        <div className="mx-auto max-w-7xl space-y-8">
+      <main>
+        <div className="mx-auto space-y-8">
           {/* Summary Cards */}
           <SummaryCards
             totalSyncs={syncLogs.length}

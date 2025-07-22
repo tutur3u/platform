@@ -52,53 +52,31 @@ export function AnalyticsCharts({
   calendarSourceData,
 }: AnalyticsChartsProps) {
   return (
-    <Card className="border-0 bg-white/60 shadow-sm backdrop-blur-sm">
+    <Card className="border-0 bg-foreground/10 shadow-sm backdrop-blur-sm">
       <CardHeader>
         <div className="flex items-center gap-2">
-          <BarChart3 className="h-5 w-5 text-blue-600" />
-          <CardTitle className="text-xl text-slate-900">
-            Analytics & Insights
-          </CardTitle>
+          <BarChart3 className="h-5 w-5 text-dynamic-blue" />
+          <CardTitle className="text-xl">Analytics & Insights</CardTitle>
         </div>
-        <CardDescription className="text-slate-500">
+        <CardDescription className="opacity-70">
           Comprehensive sync performance and trend analysis
         </CardDescription>
       </CardHeader>
       <CardContent>
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 bg-slate-100/80">
-            <TabsTrigger
-              value="overview"
-              className="data-[state=active]:bg-white"
-            >
-              Overview
-            </TabsTrigger>
-            <TabsTrigger
-              value="performance"
-              className="data-[state=active]:bg-white"
-            >
-              Performance
-            </TabsTrigger>
-            <TabsTrigger
-              value="workspaces"
-              className="data-[state=active]:bg-white"
-            >
-              Workspaces
-            </TabsTrigger>
-            <TabsTrigger
-              value="sources"
-              className="data-[state=active]:bg-white"
-            >
-              Sources
-            </TabsTrigger>
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="performance">Performance</TabsTrigger>
+            <TabsTrigger value="workspaces">Workspaces</TabsTrigger>
+            <TabsTrigger value="sources">Sources</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6">
             <div className="grid gap-6 lg:grid-cols-2">
-              <Card className="border border-slate-200">
+              <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-lg">
-                    <TrendingUp className="h-4 w-4 text-blue-600" />
+                    <TrendingUp className="h-4 w-4 text-dynamic-blue" />
                     Sync Activity (24h)
                   </CardTitle>
                 </CardHeader>
@@ -147,10 +125,10 @@ export function AnalyticsCharts({
                 </CardContent>
               </Card>
 
-              <Card className="border border-slate-200">
+              <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-lg">
-                    <Activity className="h-4 w-4 text-green-600" />
+                    <Activity className="h-4 w-4 text-dynamic-green" />
                     Event Changes Over Time
                   </CardTitle>
                 </CardHeader>
@@ -207,7 +185,7 @@ export function AnalyticsCharts({
 
           <TabsContent value="performance" className="space-y-6">
             <div className="grid gap-6 lg:grid-cols-2">
-              <Card className="border border-slate-200">
+              <Card>
                 <CardHeader>
                   <CardTitle className="text-lg">
                     Sync Duration Trends
@@ -249,7 +227,7 @@ export function AnalyticsCharts({
                 </CardContent>
               </Card>
 
-              <Card className="border border-slate-200">
+              <Card>
                 <CardHeader>
                   <CardTitle className="text-lg">Success Rate Trend</CardTitle>
                 </CardHeader>
@@ -301,7 +279,7 @@ export function AnalyticsCharts({
           </TabsContent>
 
           <TabsContent value="workspaces" className="space-y-6">
-            <Card className="border border-slate-200">
+            <Card>
               <CardHeader>
                 <CardTitle className="text-lg">
                   Workspace Activity Comparison
@@ -355,7 +333,7 @@ export function AnalyticsCharts({
 
           <TabsContent value="sources" className="space-y-6">
             <div className="grid gap-6 lg:grid-cols-2">
-              <Card className="border border-slate-200">
+              <Card>
                 <CardHeader>
                   <CardTitle className="text-lg">
                     Calendar Source Distribution
@@ -402,7 +380,7 @@ export function AnalyticsCharts({
                 </CardContent>
               </Card>
 
-              <Card className="border border-slate-200">
+              <Card>
                 <CardHeader>
                   <CardTitle className="text-lg">Source Performance</CardTitle>
                 </CardHeader>
@@ -410,24 +388,18 @@ export function AnalyticsCharts({
                   {calendarSourceData.map((source, index) => (
                     <div
                       key={index}
-                      className="flex items-center justify-between rounded-lg bg-slate-50 p-3"
+                      className="flex items-center justify-between rounded-lg bg-foreground/10 p-3"
                     >
                       <div className="flex items-center gap-3">
                         <div
                           className="h-3 w-3 rounded-full"
                           style={{ backgroundColor: source.color }}
                         />
-                        <span className="font-medium text-slate-700">
-                          {source.name}
-                        </span>
+                        <span className="font-medium">{source.name}</span>
                       </div>
                       <div className="text-right">
-                        <div className="text-lg font-bold text-slate-900">
-                          {source.value}%
-                        </div>
-                        <div className="text-xs text-slate-500">
-                          of total syncs
-                        </div>
+                        <div className="text-lg font-bold">{source.value}%</div>
+                        <div className="text-xs opacity-70">of total syncs</div>
                       </div>
                     </div>
                   ))}
