@@ -256,7 +256,7 @@ export function AssigneeSelect({ taskId, assignees = [], onUpdate }: Props) {
         >
           {uniqueAssignees.length > 0 ? (
             <div className="flex min-w-0 items-center gap-x-0.5">
-              <div className="-space-x-1.5 flex">
+              <div className="flex -space-x-1.5">
                 {uniqueAssignees.slice(0, 2).map((assignee) => (
                   <Avatar
                     key={assignee.id}
@@ -270,7 +270,7 @@ export function AssigneeSelect({ taskId, assignees = [], onUpdate }: Props) {
                 ))}
               </div>
               {uniqueAssignees.length > 2 && (
-                <span className="font-medium text-[10px] text-gray-600 dark:text-gray-400">
+                <span className="text-[10px] font-medium text-gray-600 dark:text-gray-400">
                   +{uniqueAssignees.length - 2}
                 </span>
               )}
@@ -291,14 +291,14 @@ export function AssigneeSelect({ taskId, assignees = [], onUpdate }: Props) {
           {isLoading ? (
             <Loader2 className="ml-1 h-2 w-2 animate-spin text-gray-500" />
           ) : (
-            ((open || uniqueAssignees.length !== 1) && (
+            (open || uniqueAssignees.length !== 1) && (
               <ChevronsUpDown
                 className={cn(
                   'ml-1 h-2 w-2 shrink-0 opacity-50 transition-all duration-200',
                   'group-hover:opacity-100'
                 )}
               />
-            ))
+            )
           )}
         </Button>
       </PopoverTrigger>
@@ -309,7 +309,7 @@ export function AssigneeSelect({ taskId, assignees = [], onUpdate }: Props) {
       >
         <div className="/50 overflow-hidden rounded-xl border dark:border-gray-700/50">
           <Command>
-            <div className="border-gray-100 border-b bg-gradient-to-r from-gray-50 to-slate-50 dark:border-gray-800 dark:from-gray-900 dark:to-slate-900">
+            <div className="border-b border-gray-100 bg-gradient-to-r from-gray-50 to-slate-50 dark:border-gray-800 dark:from-gray-900 dark:to-slate-900">
               <CommandInput
                 placeholder="Search workspace members..."
                 value={searchQuery}
@@ -318,14 +318,14 @@ export function AssigneeSelect({ taskId, assignees = [], onUpdate }: Props) {
               />
             </div>
             <CommandList className="max-h-72">
-              <CommandEmpty className="py-6 text-center text-muted-foreground text-sm">
+              <CommandEmpty className="py-6 text-center text-sm text-muted-foreground">
                 <UserPlus className="mx-auto mb-2 h-8 w-8 opacity-50" />
                 No members found.
               </CommandEmpty>
               {uniqueAssignedMembers.length > 0 && (
                 <CommandGroup
                   heading="Assigned"
-                  className="bg-gradient-to-r from-green-50 to-emerald-50 px-2 py-2 font-semibold text-green-700 text-xs dark:from-green-950/20 dark:to-emerald-950/20 dark:text-green-400"
+                  className="bg-gradient-to-r from-green-50 to-emerald-50 px-2 py-2 text-xs font-semibold text-green-700 dark:from-green-950/20 dark:to-emerald-950/20 dark:text-green-400"
                 >
                   {uniqueAssignedMembers.map((member) => (
                     <CommandItem
@@ -342,7 +342,7 @@ export function AssigneeSelect({ taskId, assignees = [], onUpdate }: Props) {
                         </AvatarFallback>
                       </Avatar>
                       <div className="min-w-0 flex-1">
-                        <div className="truncate font-medium text-gray-900 text-sm dark:text-gray-100">
+                        <div className="truncate text-sm font-medium text-gray-900 dark:text-gray-100">
                           {member.display_name || member.email}
                         </div>
                         {member.role_title && (
@@ -351,7 +351,7 @@ export function AssigneeSelect({ taskId, assignees = [], onUpdate }: Props) {
                             <Badge
                               variant="outline"
                               className={cn(
-                                'h-5 border-0 px-2 font-medium text-[10px]',
+                                'h-5 border-0 px-2 text-[10px] font-medium',
                                 getRoleColor(member.role)
                               )}
                             >
@@ -362,7 +362,7 @@ export function AssigneeSelect({ taskId, assignees = [], onUpdate }: Props) {
                       </div>
                       <div className="flex items-center gap-1">
                         <div className="h-2 w-2 rounded-full bg-green-500"></div>
-                        <span className="text-green-600 text-xs dark:text-green-400">
+                        <span className="text-xs text-green-600 dark:text-green-400">
                           Assigned
                         </span>
                       </div>
@@ -373,7 +373,7 @@ export function AssigneeSelect({ taskId, assignees = [], onUpdate }: Props) {
               {uniqueUnassignedMembers.length > 0 && (
                 <CommandGroup
                   heading="Available Members"
-                  className="bg-gradient-to-r from-blue-50 to-indigo-50 px-2 py-2 font-semibold text-blue-700 text-xs dark:from-blue-950/20 dark:to-indigo-950/20 dark:text-blue-400"
+                  className="bg-gradient-to-r from-blue-50 to-indigo-50 px-2 py-2 text-xs font-semibold text-blue-700 dark:from-blue-950/20 dark:to-indigo-950/20 dark:text-blue-400"
                 >
                   {uniqueUnassignedMembers.map((member) => (
                     <CommandItem
@@ -390,7 +390,7 @@ export function AssigneeSelect({ taskId, assignees = [], onUpdate }: Props) {
                         </AvatarFallback>
                       </Avatar>
                       <div className="min-w-0 flex-1">
-                        <div className="truncate font-medium text-gray-900 text-sm dark:text-gray-100">
+                        <div className="truncate text-sm font-medium text-gray-900 dark:text-gray-100">
                           {member.display_name || member.email}
                         </div>
                         {member.role_title && (
@@ -399,7 +399,7 @@ export function AssigneeSelect({ taskId, assignees = [], onUpdate }: Props) {
                             <Badge
                               variant="outline"
                               className={cn(
-                                'h-5 border-0 px-2 font-medium text-[10px]',
+                                'h-5 border-0 px-2 text-[10px] font-medium',
                                 getRoleColor(member.role)
                               )}
                             >
@@ -410,7 +410,7 @@ export function AssigneeSelect({ taskId, assignees = [], onUpdate }: Props) {
                       </div>
                       <div className="flex items-center gap-1">
                         <div className="h-2 w-2 rounded-full bg-gray-300 dark:bg-gray-600"></div>
-                        <span className="text-gray-500 text-xs dark:text-gray-400">
+                        <span className="text-xs text-gray-500 dark:text-gray-400">
                           Available
                         </span>
                       </div>

@@ -1,14 +1,14 @@
 'use client';
 
-import { Card } from '@tuturuuu/ui/card';
-import type { MouseEvent as DOMMouseEvent } from 'react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { GanttTask } from '../types';
 import { getTaskCompletionDate } from '../utils/taskHelpers';
 import { GanttControls } from './GanttControls';
 import { GanttHeader } from './GanttHeader';
 import { GanttTimeline } from './GanttTimeline';
 import { TaskDetailCard } from './TaskDetailCard';
+import { Card } from '@tuturuuu/ui/card';
+import type { MouseEvent as DOMMouseEvent } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 interface AnalyticsFilters {
   timeView: 'week' | 'month' | 'year';

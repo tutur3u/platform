@@ -1,5 +1,11 @@
 'use client';
 
+import { coordinateGetter } from './keyboard-preset';
+import { LightweightTaskCard } from './task';
+import { BoardColumn, BoardContainer } from './task-list';
+import { TaskListForm } from './task-list-form';
+import { hasDraggableData } from './utils';
+import { getTaskLists, useMoveTask } from '@/lib/task-helper';
 import {
   DndContext,
   type DragEndEvent,
@@ -9,25 +15,19 @@ import {
   KeyboardSensor,
   MeasuringStrategy,
   PointerSensor,
+  closestCorners,
   useSensor,
   useSensors,
-  closestCorners,
 } from '@dnd-kit/core';
 import {
-  horizontalListSortingStrategy,
   SortableContext,
+  horizontalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { Task, TaskList } from '@tuturuuu/types/primitives/TaskBoard';
 import { Card, CardContent } from '@tuturuuu/ui/card';
-import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
-import { getTaskLists, useMoveTask } from '@/lib/task-helper';
-import { coordinateGetter } from './keyboard-preset';
-import { LightweightTaskCard } from './task';
-import { BoardColumn, BoardContainer } from './task-list';
-import { TaskListForm } from './task-list-form';
-import { hasDraggableData } from './utils';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 interface Props {
   boardId: string;
@@ -196,23 +196,22 @@ export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
   }
 
   // Memoized DragOverlay content to minimize re-renders
-  const MemoizedTaskOverlay = useMemo(() =>
-    activeTask ? (
-      <LightweightTaskCard task={activeTask} />
-    ) : null,
+  const MemoizedTaskOverlay = useMemo(
+    () => (activeTask ? <LightweightTaskCard task={activeTask} /> : null),
     [activeTask]
   );
-  const MemoizedColumnOverlay = useMemo(() =>
-    activeColumn ? (
-      <BoardColumn
-        column={activeColumn}
-        boardId={boardId}
-        tasks={tasks.filter((task) => task.list_id === activeColumn.id)}
-        isOverlay
-        onTaskCreated={handleTaskCreated}
-        onListUpdated={handleTaskCreated}
-      />
-    ) : null,
+  const MemoizedColumnOverlay = useMemo(
+    () =>
+      activeColumn ? (
+        <BoardColumn
+          column={activeColumn}
+          boardId={boardId}
+          tasks={tasks.filter((task) => task.list_id === activeColumn.id)}
+          isOverlay
+          onTaskCreated={handleTaskCreated}
+          onListUpdated={handleTaskCreated}
+        />
+      ) : null,
     [activeColumn, tasks, boardId, handleTaskCreated]
   );
 
@@ -261,7 +260,8 @@ export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
         }
         return;
       }
-      const originalListId = event.active.data?.current?.task?.list_id || pickedUpTaskColumn.current;
+      const originalListId =
+        event.active.data?.current?.task?.list_id || pickedUpTaskColumn.current;
       if (!originalListId) {
         if (process.env.NODE_ENV === 'development') {
           // eslint-disable-next-line no-console
@@ -369,11 +369,13 @@ export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
           modifiers={[
             (args) => {
               const { transform } = args;
-              if (!boardRef.current || dragStartCardLeft.current === null) return transform;
+              if (!boardRef.current || dragStartCardLeft.current === null)
+                return transform;
               const boardRect = boardRef.current.getBoundingClientRect();
               // Clamp overlay within board
               const minX = boardRect.left - dragStartCardLeft.current;
-              const maxX = boardRect.right - dragStartCardLeft.current - overlayWidth;
+              const maxX =
+                boardRect.right - dragStartCardLeft.current - overlayWidth;
               return {
                 ...transform,
                 x: Math.max(minX, Math.min(transform.x, maxX)),
