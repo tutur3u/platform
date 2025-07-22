@@ -2722,6 +2722,7 @@ export type Database = {
           is_public: boolean;
           name: string | null;
           start_time: string;
+          where_to_meet: boolean;
           ws_id: string | null;
         };
         Insert: {
@@ -2734,6 +2735,7 @@ export type Database = {
           is_public?: boolean;
           name?: string | null;
           start_time: string;
+          where_to_meet?: boolean;
           ws_id?: string | null;
         };
         Update: {
@@ -2746,6 +2748,7 @@ export type Database = {
           is_public?: boolean;
           name?: string | null;
           start_time?: string;
+          where_to_meet?: boolean;
           ws_id?: string | null;
         };
         Relationships: [
