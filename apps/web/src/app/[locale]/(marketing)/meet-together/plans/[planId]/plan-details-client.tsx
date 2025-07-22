@@ -46,10 +46,10 @@ export default function PlanDetailsClient({
     if (!element) throw new Error('Plan element not found');
 
     const backgroundColor = resolvedTheme === 'dark' ? '#0a0a0a' : '#ffffff';
-    const logoSrc =
-      resolvedTheme === 'dark'
-        ? '/media/official-logos/light-logo.png'
-        : '/media/official-logos/dark-logo.png';
+    // const logoSrc =
+    //   resolvedTheme === 'dark'
+    //     ? '/media/official-logos/light-logo.png'
+    //     : '/media/official-logos/dark-logo.png';
 
     try {
       const canvas = await html2canvas(element, {
@@ -68,63 +68,63 @@ export default function PlanDetailsClient({
         },
       });
 
-      const ctx = canvas.getContext('2d');
-      const logo = new window.Image();
-      logo.crossOrigin = 'anonymous';
-      logo.src = logoSrc;
-      logo.onload = () => {
-        if (ctx) {
-          const logoWidth = 60;
-          const logoHeight = 60;
-          const logoPosition:
-            | 'center'
-            | 'top-left'
-            | 'top-right'
-            | 'bottom-left'
-            | 'bottom-right' = 'bottom-right';
-          const margin = 32;
-          let x = 0;
-          let y = 0;
-          switch (logoPosition) {
-            case 'center':
-              x = (canvas.width - logoWidth) / 2;
-              y = (canvas.height - logoHeight) / 2;
-              break;
-            case 'top-left':
-              x = margin;
-              y = margin;
-              break;
-            case 'top-right':
-              x = canvas.width - logoWidth - margin;
-              y = margin;
-              break;
-            case 'bottom-left':
-              x = margin;
-              y = canvas.height - logoHeight - margin;
-              break;
-            case 'bottom-right':
-              x = canvas.width - logoWidth - margin;
-              y = canvas.height - logoHeight - margin;
-              break;
-            default:
-              x = (canvas.width - logoWidth) / 2;
-              y = (canvas.height - logoHeight) / 2;
-          }
-          ctx.drawImage(logo, x, y, logoWidth, logoHeight);
-        }
-        const link = document.createElement('a');
-        link.download = `plan-${plan.id}.png`;
-        link.href = canvas.toDataURL('image/png', 2.0);
-        link.click();
-      };
-      logo.onerror = (e) => {
-        console.error('Logo failed to load:', logoSrc, e);
-        alert('Logo failed to load! Check the path and file type.');
-        const link = document.createElement('a');
-        link.download = `plan-${plan.id}.png`;
-        link.href = canvas.toDataURL('image/png', 2.0);
-        link.click();
-      };
+      // const ctx = canvas.getContext('2d');
+      // const logo = new window.Image();
+      // logo.crossOrigin = 'anonymous';
+      // logo.src = logoSrc;
+      // logo.onload = () => {
+      //   if (ctx) {
+      //     const logoWidth = 60;
+      //     const logoHeight = 60;
+      //     const logoPosition:
+      //       | 'center'
+      //       | 'top-left'
+      //       | 'top-right'
+      //       | 'bottom-left'
+      //       | 'bottom-right' = 'bottom-right';
+      //     const margin = 32;
+      //     let x = 0;
+      //     let y = 0;
+      //     switch (logoPosition) {
+      //       case 'center':
+      //         x = (canvas.width - logoWidth) / 2;
+      //         y = (canvas.height - logoHeight) / 2;
+      //         break;
+      //       case 'top-left':
+      //         x = margin;
+      //         y = margin;
+      //         break;
+      //       case 'top-right':
+      //         x = canvas.width - logoWidth - margin;
+      //         y = margin;
+      //         break;
+      //       case 'bottom-left':
+      //         x = margin;
+      //         y = canvas.height - logoHeight - margin;
+      //         break;
+      //       case 'bottom-right':
+      //         x = canvas.width - logoWidth - margin;
+      //         y = canvas.height - logoHeight - margin;
+      //         break;
+      //       default:
+      //         x = (canvas.width - logoWidth) / 2;
+      //         y = (canvas.height - logoHeight) / 2;
+      //     }
+      //     ctx.drawImage(logo, x, y, logoWidth, logoHeight);
+      //   }
+      const link = document.createElement('a');
+      link.download = `plan-${plan.id}.png`;
+      link.href = canvas.toDataURL('image/png', 2.0);
+      link.click();
+
+      // logo.onerror = (e) => {
+      //   console.error('Logo failed to load:', logoSrc, e);
+      //   alert('Logo failed to load! Check the path and file type.');
+      //   const link = document.createElement('a');
+      //   link.download = `plan-${plan.id}.png`;
+      //   link.href = canvas.toDataURL('image/png', 2.0);
+      //   link.click();
+      // };
     } catch (error) {
       console.error('Error generating PNG:', error);
       throw error;
