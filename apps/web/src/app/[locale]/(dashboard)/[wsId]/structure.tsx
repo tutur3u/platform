@@ -80,9 +80,13 @@ export function Structure({
       }
     }
     // Flatten links with a single child
-    const flattenedLinks = links.flatMap((link) =>
-      link?.children && link.children.length === 1 ? [link.children[0]] : [link]
-    );
+    const flattenedLinks = links
+      .flatMap((link) =>
+        link?.children && link.children.length === 1
+          ? [link.children[0] as NavLink]
+          : [link]
+      )
+      .filter(Boolean) as (NavLink | null)[];
     return {
       currentLinks: flattenedLinks,
       history: [],
@@ -126,11 +130,13 @@ export function Structure({
       // it means we navigated to a top-level page. Go back to the main menu.
       if (prevState.history.length > 0) {
         // Flatten links with a single child
-        const flattenedLinks = links.flatMap((link) =>
-          link?.children && link.children.length === 1
-            ? [link.children[0]]
-            : [link]
-        );
+        const flattenedLinks = links
+          .flatMap((link) =>
+            link?.children && link.children.length === 1
+              ? [link.children[0] as NavLink]
+              : [link]
+          )
+          .filter(Boolean) as (NavLink | null)[];
         return {
           currentLinks: flattenedLinks,
           history: [],
@@ -208,7 +214,7 @@ export function Structure({
       }
       // Flatten links with a single child
       if (link.children && link.children.length === 1) {
-        return getFilteredLinks([link.children[0]]);
+        return getFilteredLinks([link.children[0] as NavLink]);
       }
 
       return [link];
