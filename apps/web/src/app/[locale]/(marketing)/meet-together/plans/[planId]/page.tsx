@@ -1,12 +1,7 @@
-import AllAvailabilities from './all-availabilities';
-import EditPlanDialog from './edit-plan-dialog';
 import { getPlan } from './helpers';
-import PlanLogin from './plan-login';
-import PlanUserFilter from './plan-user-filter';
+import PlanDetailsClient from './plan-details-client';
 import { TimeBlockingProvider } from './time-blocking-provider';
-import UtilityButtons from './utility-buttons';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { Separator } from '@tuturuuu/ui/separator';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import 'dayjs/locale/vi';
 import { notFound } from 'next/navigation';
@@ -37,30 +32,12 @@ export default async function MeetTogetherPlanDetailsPage({ params }: Props) {
             users={users}
             timeblocks={timeblocks}
           >
-            <div className="flex w-full max-w-6xl flex-col gap-6 p-4 text-foreground md:px-8 lg:gap-14 lg:px-14">
-              <div className="flex w-full flex-col items-center">
-                <UtilityButtons plan={plan} platformUser={platformUser} />
-                <p className="my-4 flex max-w-xl items-center gap-2 text-center text-2xl leading-tight! font-semibold md:mb-4 lg:text-3xl">
-                  {plan.name} <EditPlanDialog plan={plan} />
-                </p>
-
-                <div className="mt-8 grid w-full items-center justify-between gap-4 md:grid-cols-2">
-                  <PlanLogin
-                    plan={plan}
-                    timeblocks={[]}
-                    platformUser={platformUser}
-                  />
-                  <AllAvailabilities plan={plan} timeblocks={timeblocks} />
-                </div>
-              </div>
-            </div>
-
-            {users.length > 0 && (
-              <>
-                <Separator className="mt-8" />
-                <PlanUserFilter users={users} />
-              </>
-            )}
+            <PlanDetailsClient
+              plan={plan}
+              platformUser={platformUser}
+              users={users}
+              timeblocks={timeblocks}
+            />
           </TimeBlockingProvider>
         )}
       </Suspense>
