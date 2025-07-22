@@ -19,27 +19,26 @@ import {
 } from '@dnd-kit/sortable';
 import { useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
-import type { Task as TaskType } from '@tuturuuu/types/primitives/TaskBoard';
+import type { Task, TaskList } from '@tuturuuu/types/primitives/TaskBoard';
 import { Card, CardContent } from '@tuturuuu/ui/card';
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { getTaskLists, useMoveTask } from '@/lib/task-helper';
 import { coordinateGetter } from './keyboard-preset';
 import { LightweightTaskCard } from './task';
-import type { Column } from './task-list';
 import { BoardColumn, BoardContainer } from './task-list';
 import { TaskListForm } from './task-list-form';
 import { hasDraggableData } from './utils';
 
 interface Props {
   boardId: string;
-  tasks: TaskType[];
+  tasks: Task[];
   isLoading: boolean;
 }
 
 export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
-  const [columns, setColumns] = useState<Column[]>([]);
-  const [activeColumn, setActiveColumn] = useState<Column | null>(null);
-  const [activeTask, setActiveTask] = useState<TaskType | null>(null);
+  const [columns, setColumns] = useState<TaskList[]>([]);
+  const [activeColumn, setActiveColumn] = useState<TaskList | null>(null);
+  const [activeTask, setActiveTask] = useState<Task | null>(null);
   const pickedUpTaskColumn = useRef<string | null>(null);
   const queryClient = useQueryClient();
   const moveTaskMutation = useMoveTask(boardId);
@@ -63,7 +62,7 @@ export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
       try {
         const lists = await getTaskLists(supabase, boardId);
         // Use the full TaskList objects as columns (they extend Column interface)
-        const enhancedColumns: Column[] = lists.map((list) => ({
+        const enhancedColumns: TaskList[] = lists.map((list) => ({
           ...list,
           title: list.name, // Maintain backward compatibility for title property
         }));
@@ -186,7 +185,7 @@ export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
       // Optimistically update the task in the cache for preview
       queryClient.setQueryData(
         ['tasks', boardId],
-        (oldData: TaskType[] | undefined) => {
+        (oldData: Task[] | undefined) => {
           if (!oldData) return oldData;
           return oldData.map((t) =>
             t.id === activeTask.id ? { ...t, list_id: targetListId } : t
@@ -288,7 +287,7 @@ export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
         try {
           queryClient.setQueryData(
             ['tasks', boardId],
-            (oldData: TaskType[] | undefined) => {
+            (oldData: Task[] | undefined) => {
               if (!oldData) return oldData;
               return oldData.map((t) =>
                 t.id === activeTask.id ? { ...t, list_id: targetListId } : t

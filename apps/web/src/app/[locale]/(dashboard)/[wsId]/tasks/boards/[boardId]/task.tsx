@@ -2,10 +2,7 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
-import type {
-  TaskList,
-  Task as TaskType,
-} from '@tuturuuu/types/primitives/TaskBoard';
+import type { Task, TaskList } from '@tuturuuu/types/primitives/TaskBoard';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card } from '@tuturuuu/ui/card';
@@ -46,6 +43,7 @@ import {
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
+import { Textarea } from '@tuturuuu/ui/textarea';
 import { cn } from '@tuturuuu/utils/format';
 import {
   addDays,
@@ -62,8 +60,6 @@ import { TaskEditDialog } from './_components/task-edit-dialog';
 import { TaskTagsDisplay } from './_components/task-tags-display';
 import { TaskActions } from './task-actions';
 import React from 'react';
-
-export interface Task extends TaskType {}
 
 interface Props {
   task: Task;
@@ -460,7 +456,7 @@ export const TaskCard = React.memo(function TaskCard({
                   className="font-semibold text-sm"
                   autoFocus
                 />
-                <Input
+                <Textarea
                   value={editDescription}
                   onChange={(e) => setEditDescription(e.target.value)}
                   placeholder="Add description..."
@@ -886,8 +882,8 @@ export const TaskCard = React.memo(function TaskCard({
           <DialogHeader>
             <DialogTitle>Delete Task</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete "{task.name}"? This action cannot
-              be undone.
+              Are you sure you want to delete &quot;{task.name}&quot;? This
+              action cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
