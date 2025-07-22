@@ -38,7 +38,6 @@ create table "public"."users_poll_votes" (
 
 alter table "public"."users_poll_votes" enable row level security;
 
-alter table "public"."meet_together_plans" add column "where_to_meet" boolean not null default false;
 
 CREATE UNIQUE INDEX guest_poll_votes_pkey ON public.guest_poll_votes USING btree (id);
 
