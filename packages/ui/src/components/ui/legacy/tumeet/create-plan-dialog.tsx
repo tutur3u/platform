@@ -1,5 +1,6 @@
 'use client';
 
+import { AgendaEditor } from './agenda-editor';
 import type { Timezone } from '@tuturuuu/types/primitives/Timezone';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -23,10 +24,9 @@ import { useForm } from '@tuturuuu/ui/hooks/use-form';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Input } from '@tuturuuu/ui/input';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
-import { Separator } from '@tuturuuu/ui/separator';
+import type { JSONContent } from '@tuturuuu/ui/tiptap';
 import { cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
-import { MapPin, Sparkles } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -43,15 +43,17 @@ interface Props {
 }
 
 const FormSchema = z.object({
-  name: z.string(),
+  name: z.string().min(1, { message: 'Name is required' }),
   // start_time and end_time are time with timezone offset
   start_time: z.string().optional(),
   end_time: z.string().optional(),
   dates: z.array(z.string()).optional(),
   is_public: z.boolean().optional(),
   ws_id: z.string().optional(),
-  where_to_meet: z.boolean().optional(), // <-- Added field
+  agenda: z.any().optional(), // JSONContent type
 });
+
+type FormData = z.infer<typeof FormSchema>;
 
 const convertToTimetz = (
   time: number | undefined,
@@ -64,8 +66,10 @@ const convertToTimetz = (
 export default function CreatePlanDialog({ plan }: Props) {
   const t = useTranslations('meet-together');
   const router = useRouter();
+
   const [isOpened, setIsOpened] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [agendaContent, setAgendaContent] = useState<JSONContent | null>(null);
 
   const form = useForm({
     resolver: zodResolver(FormSchema),
@@ -78,17 +82,23 @@ export default function CreatePlanDialog({ plan }: Props) {
         ?.map((date) => dayjs(date).format('YYYY-MM-DD')),
       is_public: true,
       ws_id: plan.wsId,
-      where_to_meet: false, // <-- Default value
+      agenda: agendaContent,
     },
   });
 
   const isValid = form.formState.isValid;
   const isSubmitting = form.formState.isSubmitting;
+
   const disabled = !isValid || isSubmitting;
 
-  const handleSubmit = async () => {
+  const handleAgendaChange = (content: JSONContent) => {
+    setAgendaContent(content);
+    form.setValue('agenda', content);
+  };
+
+  const handleSubmit = async (data: FormData) => {
     setCreating(true);
-    const data = form.getValues();
+
     let hasError = false;
 
     if (!data.start_time) {
@@ -146,7 +156,10 @@ export default function CreatePlanDialog({ plan }: Props) {
     <Dialog
       open={isOpened}
       onOpenChange={(open) => {
-        if (!open) form.reset();
+        if (!open) {
+          form.reset();
+          setAgendaContent(null);
+        }
         setIsOpened(open);
       }}
     >
@@ -175,11 +188,12 @@ export default function CreatePlanDialog({ plan }: Props) {
           </div>
         </button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[800px]">
         <DialogHeader>
           <DialogTitle>{t('new_plan')}</DialogTitle>
           <DialogDescription>{t('new_plan_desc')}</DialogDescription>
         </DialogHeader>
+
         <Form {...form}>
           <form
             onSubmit={form.handleSubmit(handleSubmit)}
@@ -199,89 +213,15 @@ export default function CreatePlanDialog({ plan }: Props) {
               )}
             />
 
-            <Separator className="my-6" />
-
-            {/* Extra Features Section */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-purple-500" />
-                <h3 className="text-sm font-semibold text-foreground">
-                  Extra Features
-                </h3>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Enhance your meeting plan with additional features to make
-                coordination easier.
-              </p>
-
-              {/* Where-to-meet feature */}
-              <FormField
-                control={form.control}
-                name="where_to_meet"
-                render={({ field }) => (
-                  <FormItem>
-                    <div
-                      className="cursor-pointer rounded-lg border border-border bg-muted/30 p-4 transition-colors hover:bg-muted/50"
-                      onClick={() => field.onChange(!field.value)}
-                    >
-                      <div className="flex items-start space-x-3">
-                        <FormControl>
-                          <input
-                            type="checkbox"
-                            id="where_to_meet"
-                            checked={field.value}
-                            onChange={field.onChange}
-                            className="mt-1 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                          />
-                        </FormControl>
-                        <div className="flex-1 space-y-2">
-                          <div className="flex items-center gap-2">
-                            <MapPin className="h-4 w-4 text-blue-500" />
-                            <FormLabel
-                              htmlFor="where_to_meet"
-                              className="mb-0 cursor-pointer font-medium text-foreground"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              Where TuMeet?
-                            </FormLabel>
-                          </div>
-                          <p className="text-xs leading-relaxed text-muted-foreground">
-                            Enable location suggestions and voting. Participants
-                            can propose meeting locations and vote on their
-                            preferred spots, making it easier to find the
-                            perfect place for everyone.
-                          </p>
-                          <div className="flex items-center gap-1 text-xs text-blue-600">
-                            <span>✨ Popular feature</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    <FormMessage />
-                  </FormItem>
-                )}
+            <div className="space-y-2">
+              <FormLabel>{t('agenda')}</FormLabel>
+              <AgendaEditor
+                content={agendaContent}
+                onChange={handleAgendaChange}
               />
-
-              {/* Placeholder for future features */}
-              <div className="rounded-lg border border-dashed border-border/50 bg-muted/20 p-4">
-                <div className="flex items-center justify-center text-center">
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-center gap-2 text-muted-foreground">
-                      <Sparkles className="h-4 w-4" />
-                      <span className="text-sm font-medium">
-                        More features coming soon!
-                      </span>
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      We&apos;re working on additional features to make your
-                      meetings even better.
-                    </p>
-                  </div>
-                </div>
-              </div>
             </div>
 
-            <DialogFooter className="pt-4">
+            <DialogFooter>
               <Button
                 type="submit"
                 className="w-full"
