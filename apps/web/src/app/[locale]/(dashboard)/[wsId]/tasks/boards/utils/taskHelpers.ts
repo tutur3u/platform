@@ -38,9 +38,7 @@ interface BoardMetrics {
  */
 export function calculateOverdueDays(dueDate: string | Date): number {
   const due = new Date(dueDate);
-  return Math.ceil(
-    (Date.now() - due.getTime()) / (1000 * 60 * 60 * 24)
-  );
+  return Math.ceil((Date.now() - due.getTime()) / (1000 * 60 * 60 * 24));
 }
 
 /**

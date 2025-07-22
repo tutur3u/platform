@@ -1,9 +1,9 @@
 'use client';
 
+import type { GanttTask } from '../types';
 import { Card } from '@tuturuuu/ui/card';
 import { cn } from '@tuturuuu/utils/format';
 import { useMemo } from 'react';
-import type { GanttTask } from '../types';
 
 interface StatusDistributionProps {
   allTasks: GanttTask[];
@@ -79,7 +79,7 @@ export function StatusDistribution({
     <Card className="p-4">
       <div className="mb-3 flex items-center justify-between">
         <h4 className="font-medium">Status Distribution</h4>
-        <span className="text-muted-foreground text-xs">{total} tasks</span>
+        <span className="text-xs text-muted-foreground">{total} tasks</span>
       </div>
       <div className="space-y-3">
         {statusConfig.map((status) => (
@@ -90,10 +90,10 @@ export function StatusDistribution({
                 <span className="text-sm">{status.label}</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="font-medium text-sm">
+                <span className="text-sm font-medium">
                   {statusCounts[status.key as keyof typeof statusCounts]}
                 </span>
-                <span className="text-muted-foreground text-xs">
+                <span className="text-xs text-muted-foreground">
                   ({status.percentage.toFixed(0)}%)
                 </span>
               </div>
@@ -111,7 +111,7 @@ export function StatusDistribution({
           </div>
         ))}
         {total === 0 && (
-          <div className="py-4 text-center text-muted-foreground text-sm">
+          <div className="py-4 text-center text-sm text-muted-foreground">
             No tasks found
           </div>
         )}
