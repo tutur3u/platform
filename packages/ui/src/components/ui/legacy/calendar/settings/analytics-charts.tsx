@@ -102,7 +102,7 @@ export function AnalyticsCharts({
                     Sync Activity (24h)
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="p-0">
                   <ChartContainer
                     config={{
                       syncs: {
@@ -114,7 +114,7 @@ export function AnalyticsCharts({
                         color: 'hsl(var(--chart-2))',
                       },
                     }}
-                    className="h-[300px]"
+                    className="h-[300px] w-full"
                   >
                     <ResponsiveContainer width="100%" height="100%">
                       <AreaChart data={timeSeriesData}>
@@ -154,7 +154,7 @@ export function AnalyticsCharts({
                     Event Changes Over Time
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="p-0">
                   <ChartContainer
                     config={{
                       added: {
@@ -170,7 +170,7 @@ export function AnalyticsCharts({
                         color: 'hsl(var(--chart-3))',
                       },
                     }}
-                    className="h-[300px]"
+                    className="h-[300px] w-full"
                   >
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart data={eventTypeData}>
@@ -213,7 +213,7 @@ export function AnalyticsCharts({
                     Sync Duration Trends
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="p-0">
                   <ChartContainer
                     config={{
                       duration: {
@@ -221,7 +221,7 @@ export function AnalyticsCharts({
                         color: 'hsl(var(--chart-4))',
                       },
                     }}
-                    className="h-[300px]"
+                    className="h-[300px] w-full"
                   >
                     <ResponsiveContainer width="100%" height="100%">
                       <LineChart data={timeSeriesData}>
@@ -253,7 +253,7 @@ export function AnalyticsCharts({
                 <CardHeader>
                   <CardTitle className="text-lg">Success Rate Trend</CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="p-0">
                   <ChartContainer
                     config={{
                       success: {
@@ -265,7 +265,7 @@ export function AnalyticsCharts({
                         color: 'hsl(var(--chart-5))',
                       },
                     }}
-                    className="h-[300px]"
+                    className="h-[300px] w-full"
                   >
                     <ResponsiveContainer width="100%" height="100%">
                       <AreaChart data={timeSeriesData}>
@@ -307,7 +307,7 @@ export function AnalyticsCharts({
                   Workspace Activity Comparison
                 </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="p-0">
                 <ChartContainer
                   config={{
                     syncs: {
@@ -319,7 +319,7 @@ export function AnalyticsCharts({
                       color: 'hsl(var(--chart-2))',
                     },
                   }}
-                  className="h-[400px]"
+                  className="h-[400px] w-full"
                 >
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={workspaceActivityData} layout="horizontal">
@@ -361,7 +361,7 @@ export function AnalyticsCharts({
                     Calendar Source Distribution
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="p-0">
                   <ChartContainer
                     config={{
                       google: {
@@ -377,7 +377,7 @@ export function AnalyticsCharts({
                         color: '#007aff',
                       },
                     }}
-                    className="h-[300px]"
+                    className="h-[300px] w-full"
                   >
                     <ResponsiveContainer width="100%" height="100%">
                       <PieChart>
