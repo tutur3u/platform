@@ -247,8 +247,8 @@ export function ComposeDialog({
             const sanitizeHtml = (await import('sanitize-html')).default;
             sanitized = sanitizeHtml(contentValue);
           } catch {
-            // fallback: strip tags
-            sanitized = contentValue.replace(/<[^>]*>?/g, '');
+            // fallback: empty string
+            sanitized = '';
           }
         }
         if (!cancelled) setSanitizedHtml(sanitized);
