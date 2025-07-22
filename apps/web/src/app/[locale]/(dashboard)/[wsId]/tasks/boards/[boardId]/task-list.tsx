@@ -39,6 +39,7 @@ import { ListActions } from './list-actions';
 import { statusIcons } from './status-section';
 import { type Task, TaskCard } from './task';
 import { TaskForm } from './task-form';
+import React from 'react';
 
 export interface Column extends TaskList {
   // This extends TaskList to include color, status, position
@@ -94,7 +95,7 @@ const colorClasses: Record<SupportedColor, string> = {
   CYAN: 'border-l-dynamic-cyan/50 bg-dynamic-cyan/5',
 };
 
-export function BoardColumn({
+export const BoardColumn = React.memo(function BoardColumn({
   column,
   boardId,
   tasks,
@@ -375,6 +376,24 @@ export function BoardColumn({
     colorClasses[column.color as SupportedColor] || colorClasses.GRAY;
   const statusIcon = statusIcons[column.status];
 
+  // Memoize drag handle for performance
+  const DragHandle = useMemo(() => (
+    <div
+      {...attributes}
+      {...listeners}
+      className={cn(
+        '-ml-2 h-auto cursor-grab p-1 opacity-40 transition-all',
+        'hover:bg-black/5 group-hover:opacity-70',
+        isDragging && 'opacity-100',
+        isOverlay && 'cursor-grabbing'
+      )}
+      title="Drag to move list"
+    >
+      <span className="sr-only">Move list</span>
+      <GripVertical className="h-4 w-4" />
+    </div>
+  ), [attributes, listeners, isDragging, isOverlay]);
+
   return (
     <Card
       ref={setNodeRef}
@@ -383,26 +402,15 @@ export function BoardColumn({
         'group flex h-full w-[350px] flex-col rounded-xl transition-all duration-200',
         'touch-none select-none border-l-4',
         colorClass,
-        isDragging &&
-          'rotate-1 scale-[1.02] opacity-90 shadow-xl ring-2 ring-primary/20',
+        isDragging && 'rotate-1 scale-[1.02] opacity-90 shadow-xl ring-2 ring-primary/20',
         isOverlay && 'shadow-2xl ring-2 ring-primary/30',
-        'hover:shadow-md'
+        'hover:shadow-md',
+        // Visual feedback for invalid drop (dev only)
+        process.env.NODE_ENV === 'development' && isDragging && !isOverlay && 'ring-2 ring-red-400/60'
       )}
     >
       <div className="flex items-center gap-2 rounded-t-xl border-b p-3">
-        <div
-          {...attributes}
-          {...listeners}
-          className={cn(
-            '-ml-2 h-auto cursor-grab p-1 opacity-40 transition-all',
-            'hover:bg-black/5 group-hover:opacity-70',
-            isDragging && 'opacity-100',
-            isOverlay && 'cursor-grabbing'
-          )}
-        >
-          <span className="sr-only">Move list</span>
-          <GripVertical className="h-4 w-4" />
-        </div>
+        {DragHandle}
         <div className="flex flex-1 items-center gap-2">
           <span className="text-sm">{statusIcon}</span>
           <h3 className="font-semibold text-foreground/90 text-sm">
@@ -979,7 +987,7 @@ export function BoardColumn({
       </div>
     </Card>
   );
-}
+});
 
 export function BoardContainer({ children }: { children: React.ReactNode }) {
   return (

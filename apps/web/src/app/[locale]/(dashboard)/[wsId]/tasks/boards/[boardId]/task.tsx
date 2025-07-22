@@ -55,12 +55,13 @@ import {
   isTomorrow,
   isYesterday,
 } from 'date-fns';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useMemo } from 'react';
 import { moveTask, useDeleteTask, useUpdateTask } from '@/lib/task-helper';
 import { AssigneeSelect } from './_components/assignee-select';
 import { TaskEditDialog } from './_components/task-edit-dialog';
 import { TaskTagsDisplay } from './_components/task-tags-display';
 import { TaskActions } from './task-actions';
+import React from 'react';
 
 export interface Task extends TaskType {}
 
@@ -73,7 +74,29 @@ interface Props {
   availableLists?: TaskList[]; // Optional: pass from parent to avoid redundant API calls
 }
 
-export function TaskCard({
+// Lightweight drag overlay version
+export function LightweightTaskCard({ task }: { task: Task }) {
+  return (
+    <Card className="pointer-events-none select-none w-full max-w-[350px] opacity-95 scale-105 shadow-xl ring-2 ring-primary/20">
+      <div className="p-4 flex flex-col gap-2">
+        <div className="font-semibold text-base truncate">{task.name}</div>
+        <div className="flex gap-2 items-center">
+          {task.priority && (
+            <Badge variant="secondary" className="text-xs">
+              {['', 'Urgent', 'High', 'Medium', 'Low'][task.priority]}
+            </Badge>
+          )}
+          {task.tags && task.tags.length > 0 && (
+            <span className="text-xs text-muted-foreground">+{task.tags.length} tags</span>
+          )}
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+// Memoized full TaskCard
+export const TaskCard = React.memo(function TaskCard({
   task,
   boardId,
   taskList,
@@ -360,8 +383,29 @@ export function TaskCard({
     return 'border-l-dynamic-gray/30';
   };
 
+  // Memoize drag handle for performance
+  const DragHandle = useMemo(() => (
+    <div
+      {...attributes}
+      {...listeners}
+      className={cn(
+        'mt-0.5 h-4 w-4 shrink-0 cursor-grab text-muted-foreground/60 transition-all duration-200',
+        'group-hover:text-foreground/80',
+        'hover:scale-110 hover:text-primary/80',
+        isDragging && 'cursor-grabbing text-primary',
+        isOverlay && 'cursor-grabbing'
+      )}
+      title="Drag to move task"
+    >
+      <GripVertical className="h-4 w-4" />
+    </div>
+  ), [attributes, listeners, isDragging, isOverlay]);
+
+  // Hide the source card during drag (unless in overlay)
+  if (isDragging && !isOverlay) return null;
+
   return (
-    <Card
+    <Card data-id={task.id}
       ref={setNodeRef}
       style={style}
       onMouseEnter={() => setIsHovered(true)}
@@ -382,7 +426,9 @@ export function TaskCard({
           'border-dynamic-red/70 bg-dynamic-red/10 ring-1 ring-dynamic-red/20',
         // Hover state
         !isDragging &&
-          'hover:border-primary/30 hover:ring-1 hover:ring-primary/15'
+          'hover:border-primary/30 hover:ring-1 hover:ring-primary/15',
+        // Visual feedback for invalid drop (dev only)
+        process.env.NODE_ENV === 'development' && isDragging && !isOverlay && 'ring-2 ring-red-400/60'
       )}
     >
       {/* Overdue indicator */}
@@ -395,19 +441,7 @@ export function TaskCard({
       <div className="p-4">
         {/* Header */}
         <div className="flex items-start gap-1">
-          <div
-            {...attributes}
-            {...listeners}
-            className={cn(
-              'mt-0.5 h-4 w-4 shrink-0 cursor-grab text-muted-foreground/60 transition-all duration-200',
-              'group-hover:text-foreground/80',
-              'hover:scale-110 hover:text-primary/80',
-              isDragging && 'cursor-grabbing text-primary',
-              isOverlay && 'cursor-grabbing'
-            )}
-          >
-            <GripVertical className="h-4 w-4" />
-          </div>
+          {DragHandle}
 
           <div className="min-w-0 flex-1">
             {isEditing ? (
@@ -898,4 +932,4 @@ export function TaskCard({
       )}
     </Card>
   );
-}
+});

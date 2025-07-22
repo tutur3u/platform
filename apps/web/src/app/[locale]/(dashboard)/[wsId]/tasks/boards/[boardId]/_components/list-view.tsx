@@ -3,6 +3,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { Task, TaskList } from '@tuturuuu/types/primitives/TaskBoard';
+import type { Json } from '@tuturuuu/types/supabase';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
@@ -129,13 +130,7 @@ interface Member {
   avatar_url?: string | null;
 }
 
-interface TaskBulkUpdate {
-  id: string;
-  priority?: number | null;
-  archived?: boolean;
-  tags?: string[];
-  [key: string]: any; // index signature for Json compatibility
-}
+type TaskBulkUpdate = { id: string } & Record<string, Json>;
 
 // Priority labels constant - defined once outside component for performance
 const priorityLabels = {
