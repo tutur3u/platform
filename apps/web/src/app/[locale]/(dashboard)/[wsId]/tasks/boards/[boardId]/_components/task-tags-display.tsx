@@ -1,5 +1,6 @@
 'use client';
 
+import { getTagColorStyling } from '@/lib/tag-utils';
 import { Badge } from '@tuturuuu/ui/badge';
 import {
   Tooltip,
@@ -8,7 +9,6 @@ import {
   TooltipTrigger,
 } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
-import { getTagColorStyling } from '@/lib/tag-utils';
 
 interface TaskTagsDisplayProps {
   tags: string[];
@@ -42,7 +42,7 @@ export function TaskTagsDisplay({
               key={tag}
               variant="outline"
               className={cn(
-                'block border font-medium h-auto max-w-[80px] min-w-0 overflow-hidden px-1.5 py-0.5 rounded-full text-[10px] transition-all truncate duration-200 hover:scale-105',
+                'block h-auto max-w-[80px] min-w-0 truncate overflow-hidden rounded-full border px-1.5 py-0.5 text-[10px] font-medium transition-all duration-200 hover:scale-105',
                 tagClassName,
                 clickable && 'cursor-pointer hover:brightness-110'
               )}
@@ -50,7 +50,9 @@ export function TaskTagsDisplay({
               onClick={() => clickable && onTagClick?.(tag)}
               title={tag.length > 15 ? `#${tag}` : undefined}
             >
-              <span className="block overflow-hidden truncate whitespace-nowrap w-full">#{tag}</span>
+              <span className="block w-full truncate overflow-hidden whitespace-nowrap">
+                #{tag}
+              </span>
             </Badge>
           );
         })}
@@ -59,14 +61,17 @@ export function TaskTagsDisplay({
             <TooltipTrigger asChild>
               <Badge
                 variant="outline"
-                className="bg-primary/10 border border-primary/30 font-semibold px-2 py-0.5 rounded-full text-primary transition-all duration-200 hover:bg-primary/20"
+                className="rounded-full border border-primary/30 bg-primary/10 px-2 py-0.5 font-semibold text-primary transition-all duration-200 hover:bg-primary/20"
               >
                 +{remainingCount}
               </Badge>
             </TooltipTrigger>
             <TooltipContent
               side="top"
-              className={cn('backdrop-blur-lg bg-gray-900/80 border border-white/10 p-5 rounded-2xl shadow-2xl text-white transition-all duration-200', needsScroll && 'max-h-64')}
+              className={cn(
+                'rounded-2xl border border-white/10 bg-gray-900/80 p-5 text-white shadow-2xl backdrop-blur-lg transition-all duration-200',
+                needsScroll && 'max-h-64'
+              )}
               sideOffset={8}
             >
               <div className="space-y-3 p-4">
@@ -74,7 +79,7 @@ export function TaskTagsDisplay({
                 <hr className="my-3 border-white/10" />
                 <div
                   className={cn(
-                    'flex flex-wrap gap-2 justify-start',
+                    'flex flex-wrap justify-start gap-2',
                     needsScroll && 'max-h-48 overflow-y-auto pr-2'
                   )}
                 >
@@ -86,13 +91,15 @@ export function TaskTagsDisplay({
                         key={tag}
                         variant="outline"
                         className={cn(
-                          'block border font-medium h-auto max-w-[110px] rounded-full px-2 py-0.5 text-xs transition-all duration-200 hover:brightness-110 hover:scale-105',
+                          'block h-auto max-w-[110px] rounded-full border px-2 py-0.5 text-xs font-medium transition-all duration-200 hover:scale-105 hover:brightness-110',
                           tagClassName
                         )}
                         style={style}
                         title={tag.length > 18 ? `#${tag}` : undefined}
                       >
-                        <span className="block overflow-hidden truncate whitespace-nowrap w-full">#{tag}</span>
+                        <span className="block w-full truncate overflow-hidden whitespace-nowrap">
+                          #{tag}
+                        </span>
                       </Badge>
                     );
                   })}

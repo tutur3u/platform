@@ -1,3 +1,5 @@
+import { EnhancedBoardsView } from './enhanced-boards-view';
+import { TaskBoardForm } from './form';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type {
   Task,
@@ -7,10 +9,8 @@ import type {
 import { Button } from '@tuturuuu/ui/button';
 import { Plus } from '@tuturuuu/ui/icons';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
-import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
-import { EnhancedBoardsView } from './enhanced-boards-view';
-import { TaskBoardForm } from './form';
+import { redirect } from 'next/navigation';
 
 interface Props {
   params: Promise<{
@@ -156,7 +156,7 @@ export default async function WorkspaceProjectsPage({
       {/* Header Section */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="font-bold text-2xl tracking-tight">
+          <h1 className="text-2xl font-bold tracking-tight">
             {t('ws-task-boards.plural')}
           </h1>
           <p className="text-muted-foreground">

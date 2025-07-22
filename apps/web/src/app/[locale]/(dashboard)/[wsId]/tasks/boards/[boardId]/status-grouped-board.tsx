@@ -1,7 +1,10 @@
 'use client';
 
+import { EnhancedTaskList } from './enhanced-task-list';
+import { StatusSection } from './status-section';
+import { TaskCard } from './task';
+import { useMoveTask } from '@/lib/task-helper';
 import {
-  closestCorners,
   DndContext,
   type DragEndEvent,
   type DragOverEvent,
@@ -11,6 +14,7 @@ import {
   MouseSensor,
   PointerSensor,
   TouchSensor,
+  closestCorners,
   useSensor,
   useSensors,
 } from '@dnd-kit/core';
@@ -28,10 +32,6 @@ import type {
 import { cn } from '@tuturuuu/utils/format';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { useMoveTask } from '@/lib/task-helper';
-import { EnhancedTaskList } from './enhanced-task-list';
-import { StatusSection } from './status-section';
-import { TaskCard } from './task';
 
 interface Props {
   lists: TaskList[];
@@ -361,15 +361,15 @@ export function StatusGroupedBoard({
                 </svg>
               </div>
               <div>
-                <h2 className="font-semibold text-foreground text-lg">
+                <h2 className="text-lg font-semibold text-foreground">
                   Board Structure View
                 </h2>
-                <p className="text-muted-foreground text-sm">
+                <p className="text-sm text-muted-foreground">
                   Viewing task lists and organization without individual tasks
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-2 text-muted-foreground text-sm">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <span className="rounded-full bg-dynamic-gray/20 px-3 py-1">
                 {lists.length} lists
               </span>
