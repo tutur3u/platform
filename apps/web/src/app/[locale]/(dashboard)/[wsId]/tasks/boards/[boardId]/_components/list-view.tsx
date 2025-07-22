@@ -134,6 +134,7 @@ interface TaskBulkUpdate {
   priority?: number | null;
   archived?: boolean;
   tags?: string[];
+  [key: string]: any; // index signature for Json compatibility
 }
 
 // Priority labels constant - defined once outside component for performance
