@@ -9675,6 +9675,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      update_many_tasks: {
+        Args: { updates: Json }
+        Returns: number
+      }
       update_session_total_score: {
         Args: { challenge_id_param: string; user_id_param: string }
         Returns: undefined
