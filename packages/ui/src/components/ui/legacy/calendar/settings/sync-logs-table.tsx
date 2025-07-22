@@ -1,6 +1,6 @@
 'use client';
 
-import type { SyncLog, User, Workspace } from './types';
+import type { SyncLog, Workspace } from './types';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import {
