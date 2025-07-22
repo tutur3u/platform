@@ -1728,6 +1728,42 @@ export type Database = {
           },
         ];
       };
+      guest_poll_votes: {
+        Row: {
+          created_at: string;
+          guest_id: string | null;
+          id: string;
+          option_id: string | null;
+        };
+        Insert: {
+          created_at?: string;
+          guest_id?: string | null;
+          id?: string;
+          option_id?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          guest_id?: string | null;
+          id?: string;
+          option_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'guest_poll_votes_guest_id_fkey';
+            columns: ['guest_id'];
+            isOneToOne: false;
+            referencedRelation: 'meet_together_guests';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'guest_poll_votes_option_id_fkey';
+            columns: ['option_id'];
+            isOneToOne: false;
+            referencedRelation: 'poll_option';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       handles: {
         Row: {
           created_at: string | null;
@@ -3718,6 +3754,64 @@ export type Database = {
           },
         ];
       };
+      poll_option: {
+        Row: {
+          created_at: string;
+          id: string;
+          option_value: string | null;
+          poll_id: string | null;
+        };
+        Insert: {
+          created_at?: string;
+          id?: string;
+          option_value?: string | null;
+          poll_id?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          option_value?: string | null;
+          poll_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'poll_option_poll_id_fkey';
+            columns: ['poll_id'];
+            isOneToOne: false;
+            referencedRelation: 'polls';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      polls: {
+        Row: {
+          created_at: string;
+          id: string;
+          plan_id: string | null;
+          poll_name: string | null;
+        };
+        Insert: {
+          created_at?: string;
+          id?: string;
+          plan_id?: string | null;
+          poll_name?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          plan_id?: string | null;
+          poll_name?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'polls_plan_id_fkey';
+            columns: ['plan_id'];
+            isOneToOne: false;
+            referencedRelation: 'meet_together_plans';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       product_categories: {
         Row: {
           created_at: string | null;
@@ -5357,6 +5451,63 @@ export type Database = {
             isOneToOne: true;
             referencedRelation: 'handles';
             referencedColumns: ['value'];
+          },
+        ];
+      };
+      users_poll_votes: {
+        Row: {
+          created_at: string;
+          id: string;
+          option_id: string | null;
+          user_id: string | null;
+        };
+        Insert: {
+          created_at?: string;
+          id?: string;
+          option_id?: string | null;
+          user_id?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          option_id?: string | null;
+          user_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'users_poll_votes_option_id_fkey';
+            columns: ['option_id'];
+            isOneToOne: false;
+            referencedRelation: 'poll_option';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'users_poll_votes_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'users_poll_votes_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'users_poll_votes_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'users_poll_votes_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
           },
         ];
       };
