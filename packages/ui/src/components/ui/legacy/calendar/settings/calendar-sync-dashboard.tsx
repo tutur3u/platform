@@ -1,13 +1,10 @@
 'use client';
 
+import type { SyncLog, Workspace } from './types';
 import { Button } from '@tuturuuu/ui/button';
 import { AnalyticsCharts } from '@tuturuuu/ui/legacy/calendar/settings/analytics-charts';
 import { SummaryCards } from '@tuturuuu/ui/legacy/calendar/settings/summary-cards';
 import { SyncLogsTable } from '@tuturuuu/ui/legacy/calendar/settings/sync-logs-table';
-import type {
-  SyncLog,
-  Workspace,
-} from '@tuturuuu/ui/legacy/calendar/settings/types';
 import { Calendar, Download, RefreshCw } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
@@ -25,7 +22,7 @@ const syncLogs: SyncLog[] = [
     id: 'sync_001',
     timestamp: '2024-01-19T14:30:00Z',
     type: 'active',
-    workspace: workspaces[0],
+    workspace: workspaces[0]!,
     triggeredBy: {
       id: 'user_1',
       name: 'Sarah Chen',
@@ -45,7 +42,7 @@ const syncLogs: SyncLog[] = [
     id: 'sync_002',
     timestamp: '2024-01-19T14:00:00Z',
     type: 'background',
-    workspace: workspaces[1],
+    workspace: workspaces[1]!,
     triggeredBy: null,
     status: 'completed',
     duration: 1890,
@@ -60,7 +57,7 @@ const syncLogs: SyncLog[] = [
     id: 'sync_003',
     timestamp: '2024-01-19T13:45:00Z',
     type: 'active',
-    workspace: workspaces[0],
+    workspace: workspaces[0]!,
     triggeredBy: {
       id: 'user_2',
       name: 'Mike Johnson',
@@ -81,7 +78,7 @@ const syncLogs: SyncLog[] = [
     id: 'sync_004',
     timestamp: '2024-01-19T13:30:00Z',
     type: 'background',
-    workspace: workspaces[2],
+    workspace: workspaces[2]!,
     triggeredBy: null,
     status: 'completed',
     duration: 3200,
@@ -96,7 +93,7 @@ const syncLogs: SyncLog[] = [
     id: 'sync_005',
     timestamp: '2024-01-19T13:15:00Z',
     type: 'active',
-    workspace: workspaces[1],
+    workspace: workspaces[1]!,
     triggeredBy: {
       id: 'user_3',
       name: 'Emma Davis',
@@ -116,7 +113,7 @@ const syncLogs: SyncLog[] = [
     id: 'sync_006',
     timestamp: '2024-01-19T13:00:00Z',
     type: 'background',
-    workspace: workspaces[3],
+    workspace: workspaces[3]!,
     triggeredBy: null,
     status: 'completed',
     duration: 2100,
@@ -131,7 +128,14 @@ const syncLogs: SyncLog[] = [
 
 // Generate mock time series data for charts
 const generateTimeSeriesData = () => {
-  const data = [];
+  const data: {
+    time: string;
+    syncs: number;
+    success: number;
+    failed: number;
+    events: number;
+    duration: number;
+  }[] = [];
   const now = new Date();
 
   for (let i = 23; i >= 0; i--) {
