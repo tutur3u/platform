@@ -3,6 +3,7 @@ import { ListActions } from './list-actions';
 import { statusIcons } from './status-section';
 import { TaskCard } from './task';
 import { TaskForm } from './task-form';
+import { DEV_MODE } from '@/constants/common';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useQuery } from '@tanstack/react-query';
@@ -41,7 +42,6 @@ import Image from 'next/image';
 import { useParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import React from 'react';
-import { DEV_MODE } from '@/constants/common';
 
 interface Props {
   column: TaskList;
@@ -62,7 +62,10 @@ type SortOption =
   | 'priority_desc';
 type SortDirection = 'asc' | 'desc';
 
-type WorkspaceMember = Pick<WorkspaceUser, 'id' | 'display_name' | 'email' | 'avatar_url'>;
+type WorkspaceMember = Pick<
+  WorkspaceUser,
+  'id' | 'display_name' | 'email' | 'avatar_url'
+>;
 
 interface TaskListFilters {
   search: string;
@@ -795,8 +798,13 @@ export const BoardColumn = React.memo(function BoardColumn({
                                   <CommandItem
                                     key={member.id}
                                     onSelect={() => {
-                                      const newAssignees = new Set(filters.assignees);
-                                      if (filters.assignees.has('all') || filters.assignees.has('unassigned')) {
+                                      const newAssignees = new Set(
+                                        filters.assignees
+                                      );
+                                      if (
+                                        filters.assignees.has('all') ||
+                                        filters.assignees.has('unassigned')
+                                      ) {
                                         // If 'all' or 'unassigned' is selected, clear them to avoid conflicts
                                         newAssignees.delete('all');
                                         newAssignees.delete('unassigned');

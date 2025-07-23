@@ -56,8 +56,8 @@ import {
   SelectValue,
 } from '@tuturuuu/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
-import { useCallback, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useCallback, useMemo, useState } from 'react';
 
 interface AnalyticsFilters {
   timeView: 'week' | 'month' | 'year';
@@ -336,7 +336,7 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
     // Should navigate to the specific task's board view or open task details modal
     // For now, log the task for debugging purposes
     console.log('Task clicked:', task);
-    
+
     // TODO: Add navigation logic here:
     // - Navigate to the task's board: router.push(`/tasks/boards/${task.board_id}?task=${task.id}`)
     // - Or open a task details modal
@@ -348,7 +348,7 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
     // Should invalidate and refetch task data instead of page reload
     // For now, use page reload as fallback
     window.location.reload();
-    
+
     // TODO: Replace with proper data refresh:
     // - Invalidate React Query cache
     // - Refetch task data
@@ -360,7 +360,7 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
     // Should toggle advanced filter panel or filter dropdown
     // For now, just log the action
     console.log('Table filter triggered');
-    
+
     // TODO: Add filter logic here:
     // - Toggle filter panel visibility
     // - Show/hide advanced filter options
@@ -372,7 +372,7 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
     // Should cycle through sort options or toggle sort direction
     // For now, just log the action
     console.log('Table sort triggered');
-    
+
     // TODO: Add sort logic here:
     // - Cycle through available sort fields
     // - Toggle sort direction (asc/desc)
@@ -384,7 +384,7 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
     // Should toggle column visibility settings panel
     // For now, just log the action
     console.log('Table settings triggered');
-    
+
     // TODO: Add settings logic here:
     // - Toggle column visibility panel
     // - Show/hide table customization options
