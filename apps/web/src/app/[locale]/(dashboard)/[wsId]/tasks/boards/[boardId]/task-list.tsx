@@ -1,3 +1,8 @@
+import { TaskTagInput } from './_components/task-tag-input';
+import { ListActions } from './list-actions';
+import { statusIcons } from './status-section';
+import { TaskCard } from './task';
+import { TaskForm } from './task-form';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useQuery } from '@tanstack/react-query';
@@ -35,11 +40,6 @@ import { debounce } from 'lodash';
 import Image from 'next/image';
 import { useParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { TaskTagInput } from './_components/task-tag-input';
-import { ListActions } from './list-actions';
-import { statusIcons } from './status-section';
-import { TaskCard } from './task';
-import { TaskForm } from './task-form';
 import React from 'react';
 import { DEV_MODE } from '@/constants/common';
 
@@ -363,22 +363,25 @@ export const BoardColumn = React.memo(function BoardColumn({
   const statusIcon = statusIcons[column.status];
 
   // Memoize drag handle for performance
-  const DragHandle = useMemo(() => (
-    <div
-      {...attributes}
-      {...listeners}
-      className={cn(
-        '-ml-2 h-auto cursor-grab p-1 opacity-40 transition-all',
-        'hover:bg-black/5 group-hover:opacity-70',
-        isDragging && 'opacity-100',
-        isOverlay && 'cursor-grabbing'
-      )}
-      title="Drag to move list"
-    >
-      <span className="sr-only">Move list</span>
-      <GripVertical className="h-4 w-4" />
-    </div>
-  ), [attributes, listeners, isDragging, isOverlay]);
+  const DragHandle = useMemo(
+    () => (
+      <div
+        {...attributes}
+        {...listeners}
+        className={cn(
+          '-ml-2 h-auto cursor-grab p-1 opacity-40 transition-all',
+          'group-hover:opacity-70 hover:bg-black/5',
+          isDragging && 'opacity-100',
+          isOverlay && 'cursor-grabbing'
+        )}
+        title="Drag to move list"
+      >
+        <span className="sr-only">Move list</span>
+        <GripVertical className="h-4 w-4" />
+      </div>
+    ),
+    [attributes, listeners, isDragging, isOverlay]
+  );
 
   return (
     <Card
@@ -386,9 +389,10 @@ export const BoardColumn = React.memo(function BoardColumn({
       style={style}
       className={cn(
         'group flex h-full w-[350px] flex-col rounded-xl transition-all duration-200',
-        'touch-none select-none border-l-4',
+        'touch-none border-l-4 select-none',
         colorClass,
-        isDragging && 'rotate-1 scale-[1.02] opacity-90 shadow-xl ring-2 ring-primary/20',
+        isDragging &&
+          'scale-[1.02] rotate-1 opacity-90 shadow-xl ring-2 ring-primary/20',
         isOverlay && 'shadow-2xl ring-2 ring-primary/30',
         'hover:shadow-md',
         // Visual feedback for invalid drop (dev only)
@@ -399,13 +403,13 @@ export const BoardColumn = React.memo(function BoardColumn({
         {DragHandle}
         <div className="flex flex-1 items-center gap-2">
           <span className="text-sm">{statusIcon}</span>
-          <h3 className="font-semibold text-foreground/90 text-sm">
+          <h3 className="text-sm font-semibold text-foreground/90">
             {column.name}
           </h3>
           <Badge
             variant="secondary"
             className={cn(
-              'px-2 py-0.5 font-medium text-xs',
+              'px-2 py-0.5 text-xs font-medium',
               filteredAndSortedTasks.length === 0
                 ? 'text-muted-foreground'
                 : 'text-foreground'
@@ -638,7 +642,7 @@ export const BoardColumn = React.memo(function BoardColumn({
               >
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <h4 className="font-medium text-sm">Filters</h4>
+                    <h4 className="text-sm font-medium">Filters</h4>
                     {hasActiveFilters && (
                       <Button
                         variant="ghost"
@@ -778,7 +782,7 @@ export const BoardColumn = React.memo(function BoardColumn({
                               </CommandItem>
 
                               {members.length > 0 && (
-                                <div className="my-1 border-border border-t" />
+                                <div className="my-1 border-t border-border" />
                               )}
 
                               {members.map((member: WorkspaceMember) => {
@@ -949,7 +953,7 @@ export const BoardColumn = React.memo(function BoardColumn({
 
 export function BoardContainer({ children }: { children: React.ReactNode }) {
   return (
-    <div className="scrollbar-none relative flex h-full w-full gap-4 overflow-x-auto pb-6">
+    <div className="relative scrollbar-none flex h-full w-full gap-4 overflow-x-auto pb-6">
       {children}
     </div>
   );
