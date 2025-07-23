@@ -24,6 +24,8 @@ import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Input } from '@tuturuuu/ui/input';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { Separator } from '@tuturuuu/ui/separator';
+import { RichTextEditor } from '@tuturuuu/ui/text-editor/editor';
+import type { JSONContent } from '@tuturuuu/ui/tiptap';
 import { cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
 import { MapPin, Sparkles } from 'lucide-react';
@@ -43,15 +45,18 @@ interface Props {
 }
 
 const FormSchema = z.object({
-  name: z.string(),
+  name: z.string().min(1, { message: 'Name is required' }),
   // start_time and end_time are time with timezone offset
   start_time: z.string().optional(),
   end_time: z.string().optional(),
   dates: z.array(z.string()).optional(),
   is_public: z.boolean().optional(),
   ws_id: z.string().optional(),
+  agenda_content: z.custom<JSONContent>().optional(),
   where_to_meet: z.boolean().optional(), // <-- Added field
 });
+
+type FormData = z.infer<typeof FormSchema>;
 
 const convertToTimetz = (
   time: number | undefined,
@@ -78,6 +83,7 @@ export default function CreatePlanDialog({ plan }: Props) {
         ?.map((date) => dayjs(date).format('YYYY-MM-DD')),
       is_public: true,
       ws_id: plan.wsId,
+      agenda_content: undefined,
       where_to_meet: false, // <-- Default value
     },
   });
@@ -86,9 +92,8 @@ export default function CreatePlanDialog({ plan }: Props) {
   const isSubmitting = form.formState.isSubmitting;
   const disabled = !isValid || isSubmitting;
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (data: FormData) => {
     setCreating(true);
-    const data = form.getValues();
     let hasError = false;
 
     if (!data.start_time) {
@@ -175,7 +180,7 @@ export default function CreatePlanDialog({ plan }: Props) {
           </div>
         </button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[800px]">
         <DialogHeader>
           <DialogTitle>{t('new_plan')}</DialogTitle>
           <DialogDescription>{t('new_plan_desc')}</DialogDescription>
@@ -213,6 +218,30 @@ export default function CreatePlanDialog({ plan }: Props) {
                 Enhance your meeting plan with additional features to make
                 coordination easier.
               </p>
+
+              <FormField
+                control={form.control}
+                name="agenda_content"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('agenda')}</FormLabel>
+                    <FormControl>
+                      <div className="h-64 overflow-y-auto">
+                        <RichTextEditor
+                          content={field.value || null}
+                          onChange={field.onChange}
+                          readOnly={false}
+                          titlePlaceholder={t('agenda_title_placeholder')}
+                          writePlaceholder={t('agenda_content_placeholder')}
+                          saveButtonLabel={t('save_agenda')}
+                          savedButtonLabel={t('agenda_saved')}
+                        />
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
               {/* Where-to-meet feature */}
               <FormField
