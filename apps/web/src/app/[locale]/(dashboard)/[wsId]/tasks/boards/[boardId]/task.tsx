@@ -66,7 +66,7 @@ interface Props {
   boardId: string;
   taskList?: TaskList;
   isOverlay?: boolean;
-  onUpdate?: () => void;
+  onUpdate: () => void;
   availableLists?: TaskList[]; // Optional: pass from parent to avoid redundant API calls
 }
 
@@ -820,27 +820,7 @@ export const TaskCard = React.memo(function TaskCard({
           {/* Priority */}
           {!task.archived && task.priority && (
             <div className="max-w-[80px] min-w-0 overflow-hidden">
-              <Badge
-                variant="secondary"
-                className={cn(
-                  'min-w-0 truncate overflow-hidden px-1.5 py-0.5 text-[10px]',
-                  getPriorityBorderColor(),
-                  task.priority &&
-                    getPriorityIndicator &&
-                    getPriorityIndicator()?.props?.className
-                )}
-              >
-                <Flag className="mr-1 h-3 w-3" />
-                {(() => {
-                  const labels = {
-                    1: 'Urgent',
-                    2: 'High',
-                    3: 'Medium',
-                    4: 'Low',
-                  };
-                  return labels[task.priority as 1 | 2 | 3 | 4];
-                })()}
-              </Badge>
+              {getPriorityIndicator()}
             </div>
           )}
           {/* Tags and +N: do NOT shrink */}
@@ -942,11 +922,11 @@ export const TaskCard = React.memo(function TaskCard({
         task={task}
         isOpen={editDialogOpen}
         onClose={() => setEditDialogOpen(false)}
-        onUpdate={onUpdate ? onUpdate : () => {}}
+        onUpdate={onUpdate}
         availableLists={availableLists}
       />
 
-      {!isOverlay && onUpdate && (
+      {!isOverlay && (
         <TaskActions taskId={task.id} boardId={boardId} onUpdate={onUpdate} />
       )}
     </Card>

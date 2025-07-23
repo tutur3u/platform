@@ -332,28 +332,63 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
   }, []);
 
   const handleTaskClick = useCallback((task: (typeof filteredTasks)[0]) => {
-    // Handle task click logic here
+    // TODO: Implement task click navigation
+    // Should navigate to the specific task's board view or open task details modal
+    // For now, log the task for debugging purposes
     console.log('Task clicked:', task);
+    
+    // TODO: Add navigation logic here:
+    // - Navigate to the task's board: router.push(`/tasks/boards/${task.board_id}?task=${task.id}`)
+    // - Or open a task details modal
+    // - Or highlight the task in the current view
   }, []);
 
   const refreshTasks = useCallback(() => {
-    // Refresh logic here
-    console.log('Refreshing tasks...');
+    // TODO: Implement proper data refresh
+    // Should invalidate and refetch task data instead of page reload
+    // For now, use page reload as fallback
+    window.location.reload();
+    
+    // TODO: Replace with proper data refresh:
+    // - Invalidate React Query cache
+    // - Refetch task data
+    // - Update local state
   }, []);
 
   const handleTableFilter = useCallback(() => {
-    // Table filter logic here
+    // TODO: Implement table filter toggle
+    // Should toggle advanced filter panel or filter dropdown
+    // For now, just log the action
     console.log('Table filter triggered');
+    
+    // TODO: Add filter logic here:
+    // - Toggle filter panel visibility
+    // - Show/hide advanced filter options
+    // - Apply current filter state
   }, []);
 
   const handleTableSort = useCallback(() => {
-    // Table sort logic here
+    // TODO: Implement table sort toggle
+    // Should cycle through sort options or toggle sort direction
+    // For now, just log the action
     console.log('Table sort triggered');
+    
+    // TODO: Add sort logic here:
+    // - Cycle through available sort fields
+    // - Toggle sort direction (asc/desc)
+    // - Update sort state
   }, []);
 
   const handleTableSettings = useCallback(() => {
-    // Table settings logic here
+    // TODO: Implement table settings toggle
+    // Should toggle column visibility settings panel
+    // For now, just log the action
     console.log('Table settings triggered');
+    
+    // TODO: Add settings logic here:
+    // - Toggle column visibility panel
+    // - Show/hide table customization options
+    // - Save/restore user preferences
   }, []);
 
   // Apply filters to data and check if filters are active
