@@ -10,7 +10,7 @@ import { Button } from '@tuturuuu/ui/button';
 import { ImageIcon, PrinterIcon } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import dayjs from 'dayjs';
-import html2canvas from 'html2canvas';
+import html2canvas from 'html2canvas-pro';
 import { useTranslations } from 'next-intl';
 import { useCallback, useRef } from 'react';
 
