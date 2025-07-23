@@ -255,7 +255,12 @@ export function ListView({
         return updateObj;
       });
 
-      if (updates.some((obj) => Object.keys(obj).length > 1)) {
+      // Check if any updates have meaningful changes (more than just the id field)
+      const hasUpdates = updates.some((obj) => 
+        obj.priority !== undefined || obj.archived !== undefined || obj.tags !== undefined
+      );
+      
+      if (hasUpdates) {
         // Only call RPC if at least one field is being updated
         const { error } = await supabase.rpc('update_many_tasks', { updates });
         if (error) throw error;

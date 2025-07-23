@@ -140,11 +140,23 @@ export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
       const task = active.data.current.task;
       setActiveTask(task);
       pickedUpTaskColumn.current = String(task.list_id);
-      // Get the DOM node of the dragged card
-      const cardNode = document.querySelector(`[data-id="${task.id}"]`);
+      
+      // Use more specific selector for better reliability
+      // Prefer data-id selector over generic querySelector
+      const cardNode = document.querySelector(`[data-id="${task.id}"]`) as HTMLElement;
       if (cardNode) {
         const cardRect = cardNode.getBoundingClientRect();
         dragStartCardLeft.current = cardRect.left;
+      } else {
+        // Fallback: try to find the card by task ID in a more specific way
+        const taskCards = document.querySelectorAll('[data-id]');
+        const targetCard = Array.from(taskCards).find(
+          (card) => card.getAttribute('data-id') === task.id
+        ) as HTMLElement;
+        if (targetCard) {
+          const cardRect = targetCard.getBoundingClientRect();
+          dragStartCardLeft.current = cardRect.left;
+        }
       }
       return;
     }

@@ -740,6 +740,7 @@ export const BoardColumn = React.memo(function BoardColumn({
                                   if (!filters.assignees.has('all')) {
                                     newAssignees.add('all');
                                   }
+                                  // Ensure mutual exclusivity with 'unassigned'
                                   setFilters((prev) => ({
                                     ...prev,
                                     assignees: newAssignees,
@@ -764,6 +765,7 @@ export const BoardColumn = React.memo(function BoardColumn({
                                   if (!filters.assignees.has('unassigned')) {
                                     newAssignees.add('unassigned');
                                   }
+                                  // Ensure mutual exclusivity with 'all'
                                   setFilters((prev) => ({
                                     ...prev,
                                     assignees: newAssignees,
@@ -795,8 +797,9 @@ export const BoardColumn = React.memo(function BoardColumn({
                                     onSelect={() => {
                                       const newAssignees = new Set(filters.assignees);
                                       if (filters.assignees.has('all') || filters.assignees.has('unassigned')) {
-                                        // If 'all' or 'unassigned' is selected, start fresh
-                                        newAssignees.clear();
+                                        // If 'all' or 'unassigned' is selected, clear them to avoid conflicts
+                                        newAssignees.delete('all');
+                                        newAssignees.delete('unassigned');
                                       }
                                       if (isSelected) {
                                         newAssignees.delete(member.id);
