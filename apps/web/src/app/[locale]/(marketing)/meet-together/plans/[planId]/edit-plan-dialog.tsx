@@ -120,108 +120,116 @@ export default function EditPlanDialog({ plan }: Props) {
   };
 
   return (
-    <Dialog
-      open={isOpened}
-      onOpenChange={(open) => {
-        if (!open) form.reset();
-        setIsOpened(open);
-      }}
-    >
-      <DialogTrigger asChild>
-        <Button variant="ghost" size="icon">
-          <Pencil size={24} />
-        </Button>
-      </DialogTrigger>
-      <DialogContent
-        className="sm:max-w-[425px]"
-        onOpenAutoFocus={(e) => e.preventDefault()}
+    <span className="group relative">
+      <Dialog
+        open={isOpened}
+        onOpenChange={(open) => {
+          if (!open) form.reset();
+          setIsOpened(open);
+        }}
       >
-        <DialogHeader>
-          <DialogTitle>
-            {t('meet-together-plan-details.update_plan')}
-          </DialogTitle>
-          <DialogDescription>
-            {t('meet-together-plan-details.update_plan_desc')}
-          </DialogDescription>
-        </DialogHeader>
-
-        <Form {...form}>
-          <form
-            onSubmit={form.handleSubmit(handleSubmit)}
-            className="space-y-3"
+        <DialogTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="opacity-0 transition-opacity group-hover:opacity-100"
           >
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('meet-together-plan-details.name')}</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Name" autoComplete="off" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <Pencil size={24} />
+          </Button>
+        </DialogTrigger>
+        <DialogContent
+          className="sm:max-w-[425px]"
+          onOpenAutoFocus={(e) => e.preventDefault()}
+        >
+          <DialogHeader>
+            <DialogTitle>
+              {t('meet-together-plan-details.update_plan')}
+            </DialogTitle>
+            <DialogDescription>
+              {t('meet-together-plan-details.update_plan_desc')}
+            </DialogDescription>
+          </DialogHeader>
 
-            <DialogFooter>
-              <div className="grid w-full gap-2">
-                <Button
-                  type="submit"
-                  className="w-full"
-                  disabled={
-                    plan.name === form.getValues('name') ||
-                    disabled ||
-                    updating ||
-                    deleting
-                  }
-                >
-                  {updating
-                    ? t('meet-together-plan-details.updating_plan')
-                    : t('meet-together-plan-details.update_plan')}
-                </Button>
+          <Form {...form}>
+            <form
+              onSubmit={form.handleSubmit(handleSubmit)}
+              className="space-y-3"
+            >
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      {t('meet-together-plan-details.name')}
+                    </FormLabel>
+                    <FormControl>
+                      <Input placeholder="Name" autoComplete="off" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-                <Separator />
+              <DialogFooter>
+                <div className="grid w-full gap-2">
+                  <Button
+                    type="submit"
+                    className="w-full"
+                    disabled={
+                      plan.name === form.getValues('name') ||
+                      disabled ||
+                      updating ||
+                      deleting
+                    }
+                  >
+                    {updating
+                      ? t('meet-together-plan-details.updating_plan')
+                      : t('meet-together-plan-details.update_plan')}
+                  </Button>
 
-                <AlertDialog>
-                  <AlertDialogTrigger>
-                    <Button
-                      type="button"
-                      className="w-full"
-                      variant="destructive"
-                      disabled={disabled || updating || deleting}
-                    >
-                      {deleting
-                        ? t('meet-together-plan-details.deleting_plan')
-                        : t('meet-together-plan-details.delete_plan')}
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>
-                        {t(
-                          'meet-together-plan-details.are_you_absolutely_sure'
-                        )}
-                      </AlertDialogTitle>
-                      <AlertDialogDescription>
-                        {t('meet-together-plan-details.delete_plan_warning')}
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>
-                        {t('common.cancel')}
-                      </AlertDialogCancel>
-                      <AlertDialogAction onClick={handleDelete}>
-                        {t('common.continue')}
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              </div>
-            </DialogFooter>
-          </form>
-        </Form>
-      </DialogContent>
-    </Dialog>
+                  <Separator />
+
+                  <AlertDialog>
+                    <AlertDialogTrigger>
+                      <Button
+                        type="button"
+                        className="w-full"
+                        variant="destructive"
+                        disabled={disabled || updating || deleting}
+                      >
+                        {deleting
+                          ? t('meet-together-plan-details.deleting_plan')
+                          : t('meet-together-plan-details.delete_plan')}
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>
+                          {t(
+                            'meet-together-plan-details.are_you_absolutely_sure'
+                          )}
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                          {t('meet-together-plan-details.delete_plan_warning')}
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>
+                          {t('common.cancel')}
+                        </AlertDialogCancel>
+                        <AlertDialogAction onClick={handleDelete}>
+                          {t('common.continue')}
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+    </span>
   );
 }

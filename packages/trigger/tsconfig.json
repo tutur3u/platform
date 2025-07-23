@@ -6,6 +6,6 @@
       "@tuturuuu/trigger/*": ["./src/*"]
     }
   },
-  "include": ["src"],
+  "include": ["*.ts", "__tests__/**/*.ts"],
   "exclude": ["node_modules", "dist", ".turbo"]
 }
