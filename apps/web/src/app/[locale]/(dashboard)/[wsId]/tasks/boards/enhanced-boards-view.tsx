@@ -57,6 +57,7 @@ import {
 import type { EnhancedTaskBoard } from './types';
 // Import helper functions
 import { getFilteredMetrics } from './utils/taskHelpers';
+import { useRouter } from 'next/navigation';
 
 interface AnalyticsFilters {
   timeView: 'week' | 'month' | 'year';
@@ -88,6 +89,7 @@ interface TaskModalState {
 }
 
 export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
+  const router = useRouter();
   // Ensure data is always an array to prevent hook order issues
   const safeData = useMemo(() => data || [], [data]);
 
@@ -1514,7 +1516,7 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                   <Button
                     className="flex-1"
                     onClick={() => {
-                      window.location.href = selectedBoardData?.href || '';
+                      router.push(selectedBoardData?.href || '');
                     }}
                   >
                     <Eye className="mr-2 h-4 w-4" />

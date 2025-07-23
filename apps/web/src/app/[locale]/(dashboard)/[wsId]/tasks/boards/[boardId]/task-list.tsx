@@ -3,6 +3,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { useQuery } from '@tanstack/react-query';
 import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import type { Task, TaskList } from '@tuturuuu/types/primitives/TaskBoard';
+import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card } from '@tuturuuu/ui/card';
@@ -40,6 +41,7 @@ import { statusIcons } from './status-section';
 import { TaskCard } from './task';
 import { TaskForm } from './task-form';
 import React from 'react';
+import { DEV_MODE } from '@/constants/common';
 
 interface Props {
   column: TaskList;
@@ -60,12 +62,7 @@ type SortOption =
   | 'priority_desc';
 type SortDirection = 'asc' | 'desc';
 
-interface WorkspaceMember {
-  id: string;
-  display_name?: string;
-  email?: string;
-  avatar_url?: string;
-}
+type WorkspaceMember = Pick<WorkspaceUser, 'id' | 'display_name' | 'email' | 'avatar_url'>;
 
 interface TaskListFilters {
   search: string;
@@ -73,7 +70,6 @@ interface TaskListFilters {
   assignees: Set<string>;
   tags: Set<string>;
   overdue: boolean;
-  unassigned: boolean;
   dueSoon: boolean;
 }
 
@@ -90,6 +86,10 @@ const colorClasses: Record<SupportedColor, string> = {
   INDIGO: 'border-l-dynamic-indigo/50 bg-dynamic-indigo/5',
   CYAN: 'border-l-dynamic-cyan/50 bg-dynamic-cyan/5',
 };
+
+const FilterLabel = ({ children }: { children: React.ReactNode }) => (
+  <div className="text-xs font-medium">{children}</div>
+);
 
 export const BoardColumn = React.memo(function BoardColumn({
   column,
@@ -124,7 +124,6 @@ export const BoardColumn = React.memo(function BoardColumn({
     assignees: new Set(),
     tags: new Set(),
     overdue: false,
-    unassigned: false,
     dueSoon: false,
   });
   const [filtersPanelOpen, setFiltersPanelOpen] = useState(false);
@@ -199,7 +198,6 @@ export const BoardColumn = React.memo(function BoardColumn({
 
       // Assignees filter
       if (filters.assignees.size > 0) {
-        // Handle special filter options
         if (filters.assignees.has('all')) {
           // "All" option selected - show all tasks
         } else if (filters.assignees.has('unassigned')) {
@@ -226,13 +224,6 @@ export const BoardColumn = React.memo(function BoardColumn({
       // Overdue filter
       if (filters.overdue) {
         if (!task.end_date || new Date(task.end_date) >= new Date()) {
-          return false;
-        }
-      }
-
-      // Unassigned filter
-      if (filters.unassigned) {
-        if (task.assignees && task.assignees.length > 0) {
           return false;
         }
       }
@@ -344,7 +335,6 @@ export const BoardColumn = React.memo(function BoardColumn({
       assignees: new Set(),
       tags: new Set(),
       overdue: false,
-      unassigned: false,
       dueSoon: false,
     });
     setSortBy('none');
@@ -356,7 +346,6 @@ export const BoardColumn = React.memo(function BoardColumn({
     filters.assignees.size > 0 ||
     filters.tags.size > 0 ||
     filters.overdue ||
-    filters.unassigned ||
     filters.dueSoon ||
     sortBy !== 'none';
 
@@ -403,7 +392,7 @@ export const BoardColumn = React.memo(function BoardColumn({
         isOverlay && 'shadow-2xl ring-2 ring-primary/30',
         'hover:shadow-md',
         // Visual feedback for invalid drop (dev only)
-        process.env.NODE_ENV === 'development' && isDragging && !isOverlay && 'ring-2 ring-red-400/60'
+        DEV_MODE && isDragging && !isOverlay && 'ring-2 ring-red-400/60'
       )}
     >
       <div className="flex items-center gap-2 rounded-t-xl border-b p-3">
@@ -636,7 +625,6 @@ export const BoardColumn = React.memo(function BoardColumn({
                           filters.priorities.size > 0,
                           filters.assignees.size > 0,
                           filters.overdue,
-                          filters.unassigned,
                           filters.dueSoon,
                         ].filter(Boolean).length
                       }
@@ -665,7 +653,7 @@ export const BoardColumn = React.memo(function BoardColumn({
 
                   {/* Priority Filter */}
                   <div className="space-y-2">
-                    <div className="font-medium text-xs">Priority</div>
+                    <FilterLabel>Priority</FilterLabel>
                     <div className="flex flex-wrap gap-1">
                       {[1, 2, 3, 4].map((priority) => {
                         const isSelected = filters.priorities.has(priority);
@@ -715,7 +703,7 @@ export const BoardColumn = React.memo(function BoardColumn({
 
                   {/* Assignees Filter */}
                   <div className="space-y-2">
-                    <div className="font-medium text-xs">Assignees</div>
+                    <FilterLabel>Assignees</FilterLabel>
                     <Popover
                       open={assigneesOpen}
                       onOpenChange={setAssigneesOpen}
@@ -744,13 +732,8 @@ export const BoardColumn = React.memo(function BoardColumn({
                               {/* All option */}
                               <CommandItem
                                 onSelect={() => {
-                                  const newAssignees = new Set(
-                                    filters.assignees
-                                  );
-                                  if (newAssignees.has('all')) {
-                                    newAssignees.delete('all');
-                                  } else {
-                                    newAssignees.clear();
+                                  const newAssignees = new Set<string>();
+                                  if (!filters.assignees.has('all')) {
                                     newAssignees.add('all');
                                   }
                                   setFilters((prev) => ({
@@ -773,12 +756,8 @@ export const BoardColumn = React.memo(function BoardColumn({
                               {/* Unassigned option */}
                               <CommandItem
                                 onSelect={() => {
-                                  const newAssignees = new Set(
-                                    filters.assignees
-                                  );
-                                  if (newAssignees.has('unassigned')) {
-                                    newAssignees.delete('unassigned');
-                                  } else {
+                                  const newAssignees = new Set<string>();
+                                  if (!filters.assignees.has('unassigned')) {
                                     newAssignees.add('unassigned');
                                   }
                                   setFilters((prev) => ({
@@ -810,9 +789,11 @@ export const BoardColumn = React.memo(function BoardColumn({
                                   <CommandItem
                                     key={member.id}
                                     onSelect={() => {
-                                      const newAssignees = new Set(
-                                        filters.assignees
-                                      );
+                                      const newAssignees = new Set(filters.assignees);
+                                      if (filters.assignees.has('all') || filters.assignees.has('unassigned')) {
+                                        // If 'all' or 'unassigned' is selected, start fresh
+                                        newAssignees.clear();
+                                      }
                                       if (isSelected) {
                                         newAssignees.delete(member.id);
                                       } else {
@@ -860,7 +841,7 @@ export const BoardColumn = React.memo(function BoardColumn({
 
                   {/* Tags Filter */}
                   <div className="space-y-2">
-                    <div className="font-medium text-xs">Tags</div>
+                    <FilterLabel>Tags</FilterLabel>
                     <TaskTagInput
                       value={Array.from(filters.tags)}
                       onChange={(tags) => {
@@ -877,7 +858,7 @@ export const BoardColumn = React.memo(function BoardColumn({
 
                   {/* Quick Filters */}
                   <div className="space-y-2">
-                    <div className="font-medium text-xs">Quick Filters</div>
+                    <FilterLabel>Quick Filters</FilterLabel>
                     <div className="flex flex-wrap gap-1">
                       <Button
                         variant={filters.overdue ? 'default' : 'outline'}
@@ -904,26 +885,6 @@ export const BoardColumn = React.memo(function BoardColumn({
                         }}
                       >
                         📅 Due Soon
-                      </Button>
-                      <Button
-                        variant={filters.unassigned ? 'default' : 'outline'}
-                        size="sm"
-                        className="h-6 text-xs"
-                        onClick={() => {
-                          setFilters((prev) => ({
-                            ...prev,
-                            unassigned: !prev.unassigned,
-                          }));
-                        }}
-                      >
-                        👤 Unassigned (
-                        {
-                          tasks.filter(
-                            (task) =>
-                              !task.assignees || task.assignees.length === 0
-                          ).length
-                        }
-                        )
                       </Button>
                     </div>
                   </div>

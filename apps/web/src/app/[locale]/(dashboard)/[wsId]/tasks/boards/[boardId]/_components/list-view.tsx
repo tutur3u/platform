@@ -149,6 +149,8 @@ const priorityColors = {
   4: 'border-green-500 bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300',
 };
 
+const SKELETON_KEYS: string[] = ['a', 'b', 'c', 'd', 'e'];
+
 export function ListView({
   board,
   selectedTags = [],
@@ -861,8 +863,11 @@ export function ListView({
           <Skeleton className="h-10 flex-1" />
         </div>
         <div className="space-y-3">
-          {Array.from({ length: 5 }, (_, i) => (
-            <Skeleton key={`loading-skeleton-${Date.now()}-${i}`} className="h-16 w-full" />
+          {SKELETON_KEYS.map((key: string) => (
+            <Skeleton
+              key={`loading-skeleton-${key}`}
+              className="h-16 w-full"
+            />
           ))}
         </div>
       </div>

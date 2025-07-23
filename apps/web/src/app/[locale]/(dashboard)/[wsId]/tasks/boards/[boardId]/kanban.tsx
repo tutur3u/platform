@@ -216,6 +216,13 @@ export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
     [activeColumn, tasks, boardId, handleTaskCreated]
   );
 
+  const debugLog = (message: string) => {
+    if (process.env.NODE_ENV === 'development') {
+      // eslint-disable-next-line no-console
+      console.debug(`DragEnd: ${message}`);
+    }
+  };
+
   async function onDragEnd(event: DragEndEvent) {
     const { active, over } = event;
     // Always reset drag state, even on invalid drop
@@ -226,27 +233,18 @@ export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
     if (!over) {
       // Reset the cache if dropped outside
       queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
-      if (process.env.NODE_ENV === 'development') {
-        // eslint-disable-next-line no-console
-        console.debug('DragEnd: No drop target, state reset.');
-      }
+      debugLog('No drop target, state reset.');
       return;
     }
     const activeType = active.data?.current?.type;
     if (!activeType) {
-      if (process.env.NODE_ENV === 'development') {
-        // eslint-disable-next-line no-console
-        console.debug('DragEnd: No activeType, state reset.');
-      }
+      debugLog('No activeType, state reset.');
       return;
     }
     if (activeType === 'Task') {
       const activeTask = active.data?.current?.task;
       if (!activeTask) {
-        if (process.env.NODE_ENV === 'development') {
-          // eslint-disable-next-line no-console
-          console.debug('DragEnd: No activeTask, state reset.');
-        }
+        debugLog('No activeTask, state reset.');
         return;
       }
       let targetListId: string;
@@ -255,18 +253,12 @@ export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
       } else if (over.data?.current?.type === 'Task') {
         targetListId = String(over.data.current.task.list_id);
       } else {
-        if (process.env.NODE_ENV === 'development') {
-          // eslint-disable-next-line no-console
-          console.debug('DragEnd: Invalid drop type, state reset.');
-        }
+        debugLog('Invalid drop type, state reset.');
         return;
       }
       const originalListId = event.active.data?.current?.task?.list_id || pickedUpTaskColumn.current;
       if (!originalListId) {
-        if (process.env.NODE_ENV === 'development') {
-          // eslint-disable-next-line no-console
-          console.debug('DragEnd: No originalListId, state reset.');
-        }
+        debugLog('No originalListId, state reset.');
         return;
       }
       const sourceListExists = columns.some(
@@ -276,10 +268,7 @@ export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
         (col) => String(col.id) === targetListId
       );
       if (!sourceListExists || !targetListExists) {
-        if (process.env.NODE_ENV === 'development') {
-          // eslint-disable-next-line no-console
-          console.debug('DragEnd: Source or target list missing, state reset.');
-        }
+        debugLog('Source or target list missing, state reset.');
         return;
       }
       // Only move if actually changing lists
