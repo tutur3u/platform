@@ -453,3 +453,73 @@ export function removeTimeblocks(
 
   return filteredTimeblocks;
 }
+
+// Returns an array of best time slots (date, start_time, end_time, availableUserIds)
+export function getBestMeetingTimes({
+  timeblocks,
+  users,
+  dates,
+  start,
+  end,
+  slotMinutes = 15,
+}: {
+  timeblocks: Timeblock[];
+  users: { id: string | null }[];
+  dates: string[];
+  start: string;
+  end: string;
+  slotMinutes?: number;
+}) {
+  const userIds = users.map((u) => u.id).filter(Boolean);
+  let bestSlots: {
+    date: string;
+    start_time: string;
+    end_time: string;
+    availableUserIds: string[];
+  }[] = [];
+  let maxAvailable = 0;
+
+  for (const date of dates) {
+    // For each 15-min slot in the day
+    let slot = dayjs(`${date} ${start}`);
+    const endSlot = dayjs(`${date} ${end}`);
+    while (slot.isBefore(endSlot)) {
+      const slotStart = slot;
+      const slotEnd = slot.add(slotMinutes, 'minute');
+      // For this slot, count available users
+      const availableUserIds = userIds
+        .filter((userId) => {
+          return timeblocks.some((tb) => {
+            if (tb.user_id !== userId) return false;
+            const tbStart = dayjs(`${tb.date} ${tb.start_time}`);
+            const tbEnd = dayjs(`${tb.date} ${tb.end_time}`);
+            // Slot must be fully within user's available block
+            return (
+              slotStart.isSameOrAfter(tbStart) && slotEnd.isSameOrBefore(tbEnd)
+            );
+          });
+        })
+        .filter((id): id is string => id !== null);
+      if (availableUserIds.length > maxAvailable) {
+        maxAvailable = availableUserIds.length;
+        bestSlots = [
+          {
+            date,
+            start_time: slotStart.format('HH:mm:ssZ'),
+            end_time: slotEnd.format('HH:mm:ssZ'),
+            availableUserIds,
+          },
+        ];
+      } else if (availableUserIds.length === maxAvailable && maxAvailable > 0) {
+        bestSlots.push({
+          date,
+          start_time: slotStart.format('HH:mm:ssZ'),
+          end_time: slotEnd.format('HH:mm:ssZ'),
+          availableUserIds,
+        });
+      }
+      slot = slot.add(slotMinutes, 'minute');
+    }
+  }
+  return bestSlots;
+}
