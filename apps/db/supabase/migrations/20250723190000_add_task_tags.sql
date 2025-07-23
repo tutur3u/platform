@@ -3,14 +3,10 @@
 
 -- Add tags column to tasks table
 ALTER TABLE "public"."tasks" 
-ADD COLUMN "tags" text[] DEFAULT '{}';
+ADD COLUMN "tags" text[] NOT NULL DEFAULT ARRAY[]::text[];
 
 -- Create index for efficient tag-based queries
 CREATE INDEX idx_tasks_tags ON "public"."tasks" USING GIN (tags);
-
--- Add constraint to ensure tags are not null (empty array is fine)
-ALTER TABLE "public"."tasks" 
-ALTER COLUMN "tags" SET NOT NULL;
 
 -- Add constraint to ensure tags array doesn't contain empty strings
 ALTER TABLE "public"."tasks" 
@@ -30,10 +26,13 @@ IMMUTABLE
 AS $$
 BEGIN
   -- Remove empty strings, trim whitespace, and convert to lowercase
-  RETURN ARRAY(
-    SELECT DISTINCT lower(trim(tag))
-    FROM unnest(tags) AS tag
-    WHERE trim(tag) != ''
+  RETURN (
+    SELECT array_agg(lower(trim(tag)) ORDER BY lower(trim(tag)))
+    FROM (
+      SELECT DISTINCT lower(trim(tag)) AS tag
+      FROM unnest(tags)
+      WHERE trim(tag) <> ''
+    ) AS dedup
   );
 END;
 $$;
@@ -52,7 +51,7 @@ END;
 $$;
 
 -- Create trigger to automatically normalize tags
-CREATE TRIGGER normalize_task_tags_trigger
+CREATE TRIGGER trg_normalize_task_tags
   BEFORE INSERT OR UPDATE ON "public"."tasks"
   FOR EACH ROW
   EXECUTE FUNCTION normalize_task_tags_trigger();
@@ -74,6 +73,9 @@ LANGUAGE plpgsql
 SECURITY INVOKER
 AS $$
 BEGIN
+  -- Normalize the search tags to match the normalized tags stored in the database
+  search_tags := normalize_task_tags(search_tags);
+  
   RETURN QUERY
   SELECT 
     t.id,
