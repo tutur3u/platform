@@ -11,7 +11,6 @@ interface NavLinkProps {
   wsId: string;
   link: NavLinkType;
   isCollapsed: boolean;
-  // eslint-disable-next-line no-unused-vars
   onSubMenuClick: (links: NavLinkType[], title: string) => void;
   onClick: () => void;
 }
@@ -43,10 +42,13 @@ export function NavLink({
 
   const commonProps = {
     className: cn(
-      'flex cursor-pointer items-center justify-between rounded-md p-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground',
+      'flex cursor-pointer items-center justify-between rounded-md p-2 text-sm font-medium',
       isCollapsed && 'justify-center',
       isActive && 'bg-accent text-accent-foreground',
-      link.isBack && 'mb-2 cursor-pointer'
+      link.isBack && 'mb-2 cursor-pointer',
+      link.tempDisabled
+        ? 'cursor-default opacity-50'
+        : 'hover:bg-accent hover:text-accent-foreground'
     ),
     onClick: () => {
       if (onLinkClick) {
