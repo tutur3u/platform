@@ -38,6 +38,17 @@ import { useEffect, useState } from 'react';
 dayjs.extend(relativeTime);
 dayjs.extend(localizedFormat);
 
+interface ThreadMessage {
+  id: string;
+  from: string;
+  date: string;
+  subject: string;
+  content: string;
+  isOriginal?: boolean;
+  to?: string[];
+  cc?: string[];
+}
+
 interface MailDisplayProps {
   mail: InternalEmail | null;
   user: (User & UserPrivateDetails) | WorkspaceUser | null;
@@ -65,6 +76,232 @@ interface MailDisplayProps {
 }
 
 const DISABLE_MAIL_ACTIONS = true;
+
+// Utility function to parse email threads
+function parseEmailThread(content: string): ThreadMessage[] {
+  const messages: ThreadMessage[] = [];
+
+  // Clean up content first
+  const cleanContent = content.trim();
+
+  // Common patterns for email threading
+  const patterns = [
+    // Gmail HTML blockquote format with class="gmail_quote"
+    {
+      regex:
+        /<blockquote[^>]*class="gmail_quote"[^>]*>([\s\S]*?)<\/blockquote>/gi,
+      isDateFirst: false,
+      isHtmlQuote: true,
+    },
+    // Gmail HTML div format with class="gmail_quote"
+    {
+      regex: /<div[^>]*class="gmail_quote"[^>]*>([\s\S]*?)<\/div>/gi,
+      isDateFirst: false,
+      isHtmlQuote: true,
+    },
+    // Generic HTML blockquote (common in many email clients)
+    {
+      regex: /<blockquote[^>]*>([\s\S]*?)<\/blockquote>/gi,
+      isDateFirst: false,
+      isHtmlQuote: true,
+    },
+    // Gmail style: "On [date], [sender] wrote:" (with various date formats)
+    {
+      regex:
+        /On (.+?), (.+?) wrote:\s*\n?([\s\S]*?)(?=\n\s*On .+?, .+? wrote:|$)/g,
+      isDateFirst: true,
+    },
+    // Alternative Gmail format with different date patterns
+    {
+      regex:
+        /On (.+?) at (.+?), (.+?) wrote:\s*\n?([\s\S]*?)(?=\n\s*On .+? at .+?, .+? wrote:|$)/g,
+      isDateFirst: true,
+      hasTimeInDate: true,
+    },
+    // More flexible Gmail pattern (handles various date formats)
+    {
+      regex:
+        /On .+?, .+? <[^>]+> wrote:\s*\n?([\s\S]*?)(?=\n\s*On .+?, .+? <[^>]+> wrote:|$)/g,
+      isDateFirst: false,
+      isFlexibleGmail: true,
+    },
+    // Outlook style: "From: [sender] Sent: [date]" or similar header blocks
+    {
+      regex:
+        /(?:^|\n)From:\s*(.+?)\s*\n(?:Sent:\s*(.+?)\s*\n)?(?:To:\s*.+?\s*\n)?(?:Subject:\s*.+?\s*\n)?\s*\n([\s\S]*?)(?=\n(?:From:|$))/g,
+      isDateFirst: false,
+    },
+    // Forward style: "---------- Forwarded message ----------"
+    {
+      regex:
+        /----------\s*Forwarded message\s*----------\s*\nFrom:\s*(.+?)\s*\nDate:\s*(.+?)\s*\n(?:Subject:\s*.+?\s*\n)?(?:To:\s*.+?\s*\n)?\s*\n([\s\S]*?)(?=\n----------\s*Forwarded message|$)/g,
+      isDateFirst: false,
+    },
+    // Alternative Gmail quote format with '>' prefixes
+    {
+      regex: /\n\s*>+\s*On (.+?), (.+?) wrote:\s*\n((?:\s*>.*\n?)*)/g,
+      isDateFirst: true,
+      isQuoted: true,
+    },
+    // Simple quoted lines starting with '>' (capture longer blocks)
+    {
+      regex: /\n((?:\s*>.*\n?){3,})/g, // At least 3 lines of quoted content
+      isDateFirst: false,
+      isSimpleQuote: true,
+    },
+  ];
+
+  let remainingContent = cleanContent;
+  let messageIndex = 0;
+  const foundMatches = [];
+
+  // Try each pattern
+  for (const pattern of patterns) {
+    pattern.regex.lastIndex = 0; // Reset regex
+    let match;
+
+    while ((match = pattern.regex.exec(cleanContent)) !== null) {
+      const [fullMatch, dateOrFrom, senderOrDate, messageContent] = match;
+
+      if (pattern.isHtmlQuote) {
+        // Handle HTML quoted content (Gmail blockquotes, etc.)
+        let quotedContent = messageContent || '';
+
+        // Strip HTML tags to get text content
+        quotedContent = quotedContent.replace(/<[^>]*>/g, '').trim();
+
+        // Try to extract sender info from common patterns within HTML
+        const senderMatch = quotedContent.match(/On .+?, (.+?) wrote:/);
+        const dateMatch = quotedContent.match(/On (.+?), .+? wrote:/);
+
+        if (quotedContent) {
+          foundMatches.push({
+            match: fullMatch,
+            message: {
+              id: `thread-${messageIndex++}`,
+              from: senderMatch?.[1]?.trim() || 'Previous sender',
+              date: dateMatch?.[1]?.trim() || '',
+              subject: '',
+              content: quotedContent,
+              isOriginal: false,
+            },
+          });
+        }
+      } else if (pattern.isFlexibleGmail) {
+        // Handle flexible Gmail format
+        const content = messageContent?.trim();
+        if (content) {
+          foundMatches.push({
+            match: fullMatch,
+            message: {
+              id: `thread-${messageIndex++}`,
+              from: 'Previous sender',
+              date: '',
+              subject: '',
+              content,
+              isOriginal: false,
+            },
+          });
+        }
+      } else if (pattern.isSimpleQuote) {
+        // Handle simple quoted lines
+        const quotedContent = (messageContent || '')
+          .replace(/^\s*>+\s?/gm, '')
+          .trim();
+        if (quotedContent) {
+          foundMatches.push({
+            match: fullMatch,
+            message: {
+              id: `thread-${messageIndex++}`,
+              from: 'Previous sender',
+              date: '',
+              subject: '',
+              content: quotedContent,
+              isOriginal: false,
+            },
+          });
+        }
+      } else if (messageContent && messageContent.trim()) {
+        // Handle other patterns
+        const isDateFirst = pattern.isDateFirst;
+        let from, date;
+
+        if (pattern.hasTimeInDate) {
+          // Special handling for "On [date] at [time], [sender] wrote:" format
+          from = match[3]; // Third capture group is sender
+          date = `${match[1]} at ${match[2]}`; // Combine date and time
+        } else {
+          from = isDateFirst ? senderOrDate : dateOrFrom;
+          date = isDateFirst ? dateOrFrom : senderOrDate;
+        }
+
+        let content = messageContent.trim();
+
+        // If this is quoted content, clean up '>' prefixes
+        if (pattern.isQuoted) {
+          content = content.replace(/^\s*>+\s?/gm, '').trim();
+        }
+
+        foundMatches.push({
+          match: fullMatch,
+          message: {
+            id: `thread-${messageIndex++}`,
+            from: from?.trim() || 'Unknown',
+            date: date?.trim() || '',
+            subject: '',
+            content,
+            isOriginal: false,
+          },
+        });
+      }
+    }
+  }
+
+  // Sort matches by position in text and add them
+  foundMatches.sort(
+    (a, b) => cleanContent.indexOf(a.match) - cleanContent.indexOf(b.match)
+  );
+
+  // Remove matched content and add messages in reverse order (oldest first in array)
+  for (let i = foundMatches.length - 1; i >= 0; i--) {
+    const { match, message } = foundMatches[i]!;
+    messages.unshift(message); // Add to beginning of array (oldest first)
+    remainingContent = remainingContent.replace(match, '').trim();
+  }
+
+  // If we found threaded messages, the remaining content is the current/latest message
+  if (messages.length > 0 && remainingContent) {
+    // Clean up remaining content (remove extra whitespace, empty lines at start/end)
+    remainingContent = remainingContent
+      .replace(/^\s*\n+/, '')
+      .replace(/\n+\s*$/, '')
+      .trim();
+
+    if (remainingContent) {
+      // Add the latest message at the end of array (will be displayed first)
+      messages.push({
+        id: `thread-current`,
+        from: '', // Will be set from mail data
+        date: '', // Will be set from mail data
+        subject: '', // Will be set from mail data
+        content: remainingContent,
+        isOriginal: true,
+      });
+    }
+  } else if (messages.length === 0) {
+    // No threading detected, treat entire content as single message
+    messages.push({
+      id: `thread-single`,
+      from: '', // Will be set from mail data
+      date: '', // Will be set from mail data
+      subject: '', // Will be set from mail data
+      content: cleanContent,
+      isOriginal: true,
+    });
+  }
+
+  return messages; // Return in correct order: [oldest, ..., newest]
+}
 
 function AvatarChip({
   name,
@@ -96,6 +333,137 @@ function AvatarChip({
       <span>{name || email}</span>
       {name && email && <span className="ml-1 opacity-50">{`<${email}>`}</span>}
     </span>
+  );
+}
+
+function ThreadMessageItem({
+  message,
+  mail,
+  membersMap,
+  isLast = false,
+}: {
+  message: ThreadMessage;
+  mail: InternalEmail;
+  membersMap: Record<string, { avatar_url?: string; display_name?: string }>;
+  isLast?: boolean;
+}) {
+  // Latest message (isOriginal) should always be expanded, older messages collapsed by default
+  const [isCollapsed, setIsCollapsed] = useState(!message.isOriginal);
+
+  // Use mail data for original message, parsed data for threaded messages
+  const from = message.isOriginal ? mail.source_email : message.from;
+  const date = message.isOriginal ? mail.created_at : message.date;
+  const parsedFrom = formatEmailAddresses(from)[0];
+  const member = membersMap?.[parsedFrom?.email || ''];
+
+  return (
+    <div
+      className={cn(
+        'border-l-2 border-muted/30 px-4 pt-3',
+        message.isOriginal && 'border-l-primary/50 bg-primary/5',
+        !isLast && 'mb-6',
+        'rounded-r-xl'
+      )}
+    >
+      <div className="mb-3 flex items-start justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <Avatar className="h-8 w-8 shadow-sm ring-1 ring-background">
+            {member?.avatar_url ? (
+              <AvatarImage
+                alt={member.display_name || parsedFrom?.name}
+                src={member.avatar_url}
+              />
+            ) : (
+              <AvatarFallback className="bg-primary/10 text-xs font-semibold text-primary">
+                {getInitials(parsedFrom?.name || parsedFrom?.email || from)}
+              </AvatarFallback>
+            )}
+          </Avatar>
+          <div className="flex flex-col">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-foreground">
+                {parsedFrom?.name || parsedFrom?.email || from}
+              </span>
+              {message.isOriginal && (
+                <span className="rounded bg-primary/20 px-1.5 py-0.5 text-xs font-medium text-primary">
+                  Latest
+                </span>
+              )}
+            </div>
+            <span className="text-xs text-muted-foreground">
+              {parsedFrom?.email && parsedFrom.name && `<${parsedFrom.email}>`}
+            </span>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <time className="text-xs whitespace-nowrap text-muted-foreground">
+            {message.isOriginal
+              ? dayjs(date).format('LLLL')
+              : date || 'Unknown date'}
+          </time>
+          {!message.isOriginal && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6"
+              onClick={() => setIsCollapsed(!isCollapsed)}
+            >
+              {isCollapsed ? (
+                <ChevronDown className="h-3 w-3" />
+              ) : (
+                <ChevronUp className="h-3 w-3" />
+              )}
+            </Button>
+          )}
+        </div>
+      </div>
+
+      <div
+        className={cn(
+          'overflow-hidden transition-all duration-200 ease-in-out',
+          isCollapsed ? 'max-h-12' : 'max-h-none'
+        )}
+      >
+        <div className="text-sm leading-relaxed text-foreground">
+          {message.isOriginal && mail.html_payload ? (
+            <div
+              className="prose prose-sm max-w-full break-words text-foreground prose-a:text-dynamic-blue prose-a:underline prose-blockquote:text-foreground prose-strong:text-foreground"
+              // biome-ignore lint/security/noDangerouslySetInnerHtml: content is sanitized
+              dangerouslySetInnerHTML={{
+                __html: DOMPurify.sanitize(message.content),
+              }}
+            />
+          ) : message.content.includes('<') && message.content.includes('>') ? (
+            // Handle HTML content in threaded messages
+            <div
+              className="prose prose-sm max-w-full break-words text-foreground prose-a:text-dynamic-blue prose-a:underline prose-blockquote:text-foreground prose-strong:text-foreground"
+              // biome-ignore lint/security/noDangerouslySetInnerHtml: content is sanitized
+              dangerouslySetInnerHTML={{
+                __html: DOMPurify.sanitize(
+                  isCollapsed
+                    ? `${message.content.slice(0, 150)}${message.content.length > 150 ? '...' : ''}`
+                    : message.content
+                ),
+              }}
+            />
+          ) : (
+            <pre className="font-sans text-sm whitespace-pre-wrap">
+              {isCollapsed
+                ? `${message.content.slice(0, 150)}${message.content.length > 150 ? '...' : ''}`
+                : message.content}
+            </pre>
+          )}
+          {isCollapsed && message.content.length > 150 && (
+            <button
+              onClick={() => setIsCollapsed(false)}
+              className="mt-2 text-xs font-medium text-primary hover:text-primary/80"
+            >
+              Show more
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -157,6 +525,7 @@ export function MailDisplay({
   const [isHeaderCollapsed, setIsHeaderCollapsed] = useState(false);
   const [sanitizedHtml, setSanitizedHtml] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
+  const [threadMessages, setThreadMessages] = useState<ThreadMessage[]>([]);
   const t = useTranslations('mail');
   const locale = useLocale();
 
@@ -288,12 +657,37 @@ export function MailDisplay({
     const sanitizeContent = async () => {
       if (!mail?.payload) {
         setSanitizedHtml('');
+        setThreadMessages([]);
         setIsLoading(false);
         return;
       }
 
       try {
-        // Dynamically import DOMPurify only on client-side
+        // Parse email thread first
+        const messages = parseEmailThread(mail.payload);
+
+        console.log('Raw mail payload:', mail.payload); // Debug log
+        console.log('Parsed thread messages:', messages); // Debug log
+        console.log('Thread messages count:', messages.length); // Debug log
+
+        // Update messages with mail data for the original message
+        const updatedMessages = messages.map((msg) => {
+          if (msg.isOriginal) {
+            return {
+              ...msg,
+              from: mail.source_email,
+              date: mail.created_at,
+              subject: mail.subject,
+              to: mail.to_addresses,
+              cc: mail.cc_addresses,
+            };
+          }
+          return msg;
+        });
+
+        setThreadMessages(updatedMessages);
+
+        // Sanitize HTML content
         const sanitized = DOMPurify.sanitize(mail.payload);
         setSanitizedHtml(sanitized);
       } catch (error) {
@@ -302,6 +696,23 @@ export function MailDisplay({
           // Fallback to sanitize-html if DOMPurify fails
           const sanitizeHtml = (await import('sanitize-html')).default;
           setSanitizedHtml(sanitizeHtml(mail.payload));
+
+          // Still parse threads on fallback
+          const messages = parseEmailThread(mail.payload);
+          const updatedMessages = messages.map((msg) => {
+            if (msg.isOriginal) {
+              return {
+                ...msg,
+                from: mail.source_email,
+                date: mail.created_at,
+                subject: mail.subject,
+                to: mail.to_addresses,
+                cc: mail.cc_addresses,
+              };
+            }
+            return msg;
+          });
+          setThreadMessages(updatedMessages);
         } catch (fallbackError) {
           console.error('Failed to sanitize HTML:', fallbackError);
           // If both sanitizers fail, show plain text
@@ -312,6 +723,23 @@ export function MailDisplay({
             sanitizedFallback = sanitizedFallback.replace(/<[^>]*>?/g, '');
           } while (sanitizedFallback !== previous);
           setSanitizedHtml(sanitizedFallback);
+
+          // Still parse threads on final fallback
+          const messages = parseEmailThread(mail.payload);
+          const updatedMessages = messages.map((msg) => {
+            if (msg.isOriginal) {
+              return {
+                ...msg,
+                from: mail.source_email,
+                date: mail.created_at,
+                subject: mail.subject,
+                to: mail.to_addresses,
+                cc: mail.cc_addresses,
+              };
+            }
+            return msg;
+          });
+          setThreadMessages(updatedMessages);
         }
       } finally {
         setIsLoading(false);
@@ -320,7 +748,14 @@ export function MailDisplay({
 
     setIsLoading(true);
     sanitizeContent();
-  }, [mail?.payload]);
+  }, [
+    mail?.payload,
+    mail?.source_email,
+    mail?.created_at,
+    mail?.subject,
+    mail?.to_addresses,
+    mail?.cc_addresses,
+  ]);
 
   return (
     <div className="flex h-full flex-col bg-background">
@@ -536,7 +971,30 @@ export function MailDisplay({
               >
                 <Loader2 className="h-6 w-6 animate-spin" />
               </div>
+            ) : threadMessages.length > 1 ? (
+              // Threaded view - multiple messages in conversation
+              <div className="space-y-0 p-6">
+                <div className="mb-4 flex items-center gap-2 text-sm text-muted-foreground">
+                  <span className="rounded-full bg-primary/10 px-2 py-1 text-xs font-medium text-primary">
+                    {threadMessages.length} messages
+                  </span>
+                  <span>in this conversation</span>
+                </div>
+                {threadMessages
+                  .slice()
+                  .reverse() // Show latest first in display
+                  .map((message, index) => (
+                    <ThreadMessageItem
+                      key={message.id}
+                      message={message}
+                      mail={mail}
+                      membersMap={membersMap}
+                      isLast={index === threadMessages.length - 1}
+                    />
+                  ))}
+              </div>
             ) : mail.html_payload ? (
+              // Single message - HTML content
               <>
                 <style>{`.prose a { word-break: break-all; }`}</style>
                 <div
@@ -547,6 +1005,7 @@ export function MailDisplay({
                 />
               </>
             ) : (
+              // Single message - plain text
               <div
                 className="bg-background text-sm text-foreground"
                 style={{ padding: '1.5rem' }}
