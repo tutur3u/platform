@@ -3813,5 +3813,12 @@
     "created_by": "by",
     "filter": "Filter",
     "sort": "Sort"
+  },
+  "ws-guest-users": {
+    "plural": "Guest Users",
+    "singular": "Guest User",
+    "description": "Guest users are temporary users who have limited access to your workspace for collaboration purposes.",
+    "create": "Create Guest User",
+    "create_description": "Add a new guest user with limited workspace access"
   }
 }
