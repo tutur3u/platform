@@ -65,9 +65,10 @@ export async function MeetTogetherPage({
         <div className="absolute bottom-1/3 left-1/4 h-40 w-40 rounded-full bg-dynamic-green/5 blur-2xl"></div>
       </div>
 
-      {/* Hero section */}
-      <div className="container mx-auto mt-8 flex max-w-5xl flex-col gap-8 px-4 py-16 md:py-24 lg:gap-12">
-        <div className="flex flex-col items-center text-center">
+      {/* Hero + Form side-by-side on desktop, stacked on mobile */}
+      <div className="container mx-auto mt-8 flex max-w-6xl flex-col gap-8 px-4 py-10 lg:flex-row lg:items-center lg:gap-12">
+        {/* Hero section */}
+        <div className="flex flex-1 flex-col items-center text-center lg:items-start lg:text-left">
           {/* Badge */}
           <Badge variant="secondary" className="mb-6 px-4 py-2">
             <Video className="mr-2 h-4 w-4" />
@@ -75,7 +76,7 @@ export async function MeetTogetherPage({
           </Badge>
 
           {/* Main heading */}
-          <h1 className="mb-6 text-center text-4xl leading-tight font-bold tracking-tight text-balance text-foreground md:text-5xl lg:text-6xl">
+          <h1 className="mb-6 text-center text-4xl leading-tight font-bold tracking-tight text-balance text-foreground md:text-5xl lg:text-left lg:text-6xl">
             {t('headline-p1')}{' '}
             <GradientHeadline className="bg-gradient-to-r from-dynamic-blue via-dynamic-purple to-dynamic-green bg-clip-text">
               {t('headline-p2')}
@@ -83,7 +84,7 @@ export async function MeetTogetherPage({
           </h1>
 
           {/* Subtitle */}
-          <p className="mb-8 max-w-2xl text-center text-lg leading-relaxed text-foreground/70 md:text-xl">
+          <p className="mb-8 max-w-2xl text-center text-lg leading-relaxed text-foreground/70 md:text-xl lg:text-left">
             {t('new_plan_desc')}
           </p>
 
@@ -132,15 +133,14 @@ export async function MeetTogetherPage({
             </div>
           </div>
         </div>
-      </div>
-
-      {/* Form section */}
-      <div className="w-full max-w-4xl px-2 md:px-4">
-        <Card className="border-border/50 bg-accent/50 backdrop-blur-sm">
-          <CardContent className="p-2 md:p-6">
-            <Form wsId={wsId} />
-          </CardContent>
-        </Card>
+        {/* Form section */}
+        <div className="mx-auto w-full max-w-2xl flex-1 lg:mx-0">
+          <Card className="border-border/50 bg-accent/50 backdrop-blur-sm">
+            <CardContent className="p-6 md:p-8">
+              <Form wsId={wsId} />
+            </CardContent>
+          </Card>
+        </div>
       </div>
 
       <Separator className="my-8 md:my-16" />

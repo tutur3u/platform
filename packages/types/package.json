@@ -5,8 +5,9 @@
   "publishConfig": {
     "access": "public"
   },
-  "scripts": {},
-  "packageManager": "bun@1.2.19",
+  "scripts": {
+    "lint": "eslint ."
+  },
   "dependencies": {
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
@@ -15,11 +16,12 @@
   "devDependencies": {
     "@tuturuuu/eslint-config": "workspace:*",
     "@tuturuuu/typescript-config": "workspace:*",
-    "@types/node": "^24.0.15",
+    "@types/node": "^24.1.0",
     "@types/react": "^19.1.8",
     "typescript": "^5.8.3"
   },
   "exports": {
     "./*": "./src/*.ts"
-  }
+  },
+  "packageManager": "bun@1.2.19"
 }

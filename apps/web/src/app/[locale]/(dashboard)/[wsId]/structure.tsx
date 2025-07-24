@@ -62,7 +62,7 @@ export function Structure({
     direction: 'forward' | 'backward';
   }>(() => {
     for (const link of links) {
-      if (link?.children) {
+      if (link?.children && link.children.length > 1) {
         const isActive = link.children.some(
           (child) =>
             child?.href &&
@@ -79,8 +79,16 @@ export function Structure({
         }
       }
     }
+    // Flatten links with a single child
+    const flattenedLinks = links
+      .flatMap((link) =>
+        link?.children && link.children.length === 1
+          ? [link.children[0] as NavLink]
+          : [link]
+      )
+      .filter(Boolean) as (NavLink | null)[];
     return {
-      currentLinks: links,
+      currentLinks: flattenedLinks,
       history: [],
       titleHistory: [],
       direction: 'forward' as const,
@@ -91,7 +99,7 @@ export function Structure({
     setNavState((prevState) => {
       // Find if any submenu should be active for the current path.
       for (const link of links) {
-        if (link?.children) {
+        if (link?.children && link.children.length > 1) {
           const isActive = link.children.some(
             (child) =>
               child?.href &&
@@ -121,8 +129,16 @@ export function Structure({
       // If we are in a submenu, but no submenu link is active for the current path,
       // it means we navigated to a top-level page. Go back to the main menu.
       if (prevState.history.length > 0) {
+        // Flatten links with a single child
+        const flattenedLinks = links
+          .flatMap((link) =>
+            link?.children && link.children.length === 1
+              ? [link.children[0] as NavLink]
+              : [link]
+          )
+          .filter(Boolean) as (NavLink | null)[];
         return {
-          currentLinks: links,
+          currentLinks: flattenedLinks,
           history: [],
           titleHistory: [],
           direction: 'backward',
@@ -179,28 +195,30 @@ export function Structure({
   const getFilteredLinks = (
     linksToFilter: (NavLink | null)[] | undefined
   ): NavLink[] =>
-    (linksToFilter || [])
-      .map((link) => {
-        if (!link) return null;
+    (linksToFilter || []).flatMap((link) => {
+      if (!link) return [];
 
-        if (link.disabled) return null;
-        if (link.disableOnProduction && PROD_MODE) return null;
-        if (link.requireRootMember && !user?.email?.endsWith('@tuturuuu.com'))
-          return null;
-        if (link.requireRootWorkspace && !isRootWorkspace) return null;
-        if (link.allowedRoles && link.allowedRoles.length > 0) return null;
+      if (link.disabled) return [];
+      if (link.disableOnProduction && PROD_MODE) return [];
+      if (link.requireRootMember && !user?.email?.endsWith('@tuturuuu.com'))
+        return [];
+      if (link.requireRootWorkspace && !isRootWorkspace) return [];
+      if (link.allowedRoles && link.allowedRoles.length > 0) return [];
 
-        if (link.children) {
-          const filteredChildren = getFilteredLinks(link.children);
-          if (filteredChildren.length === 0) {
-            return null;
-          }
-          return { ...link, children: filteredChildren };
+      if (link.children && link.children.length > 1) {
+        const filteredChildren = getFilteredLinks(link.children);
+        if (filteredChildren.length === 0) {
+          return [];
         }
+        return [{ ...link, children: filteredChildren }];
+      }
+      // Flatten links with a single child
+      if (link.children && link.children.length === 1) {
+        return getFilteredLinks([link.children[0] as NavLink]);
+      }
 
-        return link;
-      })
-      .filter((link): link is NavLink => link !== null);
+      return [link];
+    });
 
   const backButton: NavLink = {
     title: t('common.back'),
@@ -253,8 +271,7 @@ export function Structure({
         <WorkspaceSelect
           t={t as (key: string) => string}
           hideLeading={isCollapsed}
-          // biome-ignore lint/suspicious/noExplicitAny: <useQuery can be any>
-          localUseQuery={useQuery as any}
+          localUseQuery={useQuery}
           disableCreateNewWorkspace={disableCreateNewWorkspace}
         />
       </Suspense>
