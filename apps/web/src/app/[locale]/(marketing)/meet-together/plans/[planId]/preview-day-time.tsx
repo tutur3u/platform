@@ -160,9 +160,6 @@ export default function PreviewDayTime({
             .minute((i % hourSplits) * 15)
             .toDate();
 
-
-
-
           const isSelected = isSaved || isLocal || result.includes('add');
           const isSelectable = i + hourSplits < array.length;
           const hideBorder = i === 0 || i + hourSplits > array.length - 1;
