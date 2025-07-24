@@ -11,6 +11,7 @@ import {
 import { SidebarProvider } from '@/context/sidebar-context';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import {
+  Activity,
   Archive,
   Banknote,
   Blocks,
@@ -90,7 +91,6 @@ export default async function Layout({ children, params }: LayoutProps) {
       icon: <ChartArea className="h-5 w-5" />,
       matchExact: true,
     },
-    null,
     {
       title: t('sidebar_tabs.ai_tools'),
       icon: <Sparkles className="h-5 w-5" />,
@@ -218,10 +218,23 @@ export default async function Layout({ children, params }: LayoutProps) {
       children: [
         {
           title: t('sidebar_tabs.calendar'),
-          href: `/${wsId}/calendar`,
           icon: <Calendar className="h-5 w-5" />,
           disabled: ENABLE_AI_ONLY || withoutPermission('manage_calendar'),
           experimental: 'alpha',
+          children: [
+            {
+              title: t('calendar-tabs.calendar'),
+              href: `/${wsId}/calendar`,
+              icon: <Calendar className="h-4 w-4" />,
+              matchExact: true,
+            },
+            {
+              title: t('calendar-tabs.sync-history'),
+              href: `/${wsId}/calendar/history/sync`,
+              icon: <Activity className="h-4 w-4" />,
+              requireRootWorkspace: true,
+            },
+          ],
         },
         {
           title: t('sidebar_tabs.tumeet'),
@@ -435,7 +448,6 @@ export default async function Layout({ children, params }: LayoutProps) {
         },
       ],
     },
-    null,
     {
       title: t('common.settings'),
       icon: <Cog className="h-5 w-5" />,
