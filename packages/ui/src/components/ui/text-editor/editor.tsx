@@ -101,11 +101,12 @@ export function RichTextEditor({
         linkOnPaste: true,
         defaultProtocol: 'https',
         HTMLAttributes: {
-          class: 'text-blue-600 hover:text-blue-800 underline cursor-pointer transition-colors',
+          class:
+            'text-blue-600 hover:text-blue-800 underline cursor-pointer transition-colors',
           rel: 'noopener noreferrer',
           target: '_blank',
         },
-        validate: href => {
+        validate: (href) => {
           // Allow http/https URLs and mailto links
           return /^https?:\/\/.+/.test(href) || /^mailto:.+@.+\..+/.test(href);
         },

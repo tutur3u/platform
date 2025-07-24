@@ -75,38 +75,41 @@ export function ToolBar({
       icon: <Link className="size-4" />,
       onClick: () => {
         const isLinkActive = editor.isActive('link');
-        
+
         if (isLinkActive) {
           // Get current link URL
           const currentUrl = editor.getAttributes('link').href;
-          
+
           // Show dialog with options to edit or remove
           const userChoice = window.confirm(
             `Current link: ${currentUrl}\n\nClick OK to edit this link, or Cancel to remove it.`
           );
-          
+
           if (userChoice) {
             // User wants to edit the link
             const newUrl = window.prompt('Edit link URL:', currentUrl);
-            
+
             if (newUrl === null) {
               // User cancelled
               return;
             }
-            
+
             if (newUrl.trim() === '') {
               // Empty URL means remove link
               editor.chain().focus().unsetLink().run();
               return;
             }
-            
+
             // Format the URL properly
             let formattedUrl = newUrl.trim();
-            if (!formattedUrl.match(/^https?:\/\//) && !formattedUrl.match(/^mailto:/)) {
+            if (
+              !formattedUrl.match(/^https?:\/\//) &&
+              !formattedUrl.match(/^mailto:/)
+            ) {
               // Add https:// if no protocol specified
               formattedUrl = `https://${formattedUrl}`;
             }
-            
+
             // Update the link
             editor.chain().focus().setLink({ href: formattedUrl }).run();
           } else {
@@ -117,42 +120,48 @@ export function ToolBar({
           // No link is active, create a new one
           const { from, to } = editor.state.selection;
           const selectedText = editor.state.doc.textBetween(from, to);
-          
+
           if (selectedText.trim()) {
             // Text is selected, ask for URL
             const url = window.prompt('Enter URL for the selected text:');
-            
+
             if (url === null || url.trim() === '') {
               return; // User cancelled or entered empty URL
             }
-            
+
             // Format the URL properly
             let formattedUrl = url.trim();
-            if (!formattedUrl.match(/^https?:\/\//) && !formattedUrl.match(/^mailto:/)) {
+            if (
+              !formattedUrl.match(/^https?:\/\//) &&
+              !formattedUrl.match(/^mailto:/)
+            ) {
               formattedUrl = `https://${formattedUrl}`;
             }
-            
+
             editor.chain().focus().setLink({ href: formattedUrl }).run();
           } else {
             // No text selected, ask for both URL and text
             const url = window.prompt('Enter URL:');
-            
+
             if (url === null || url.trim() === '') {
               return; // User cancelled or entered empty URL
             }
-            
+
             const linkText = window.prompt('Enter text to display:', url);
-            
+
             if (linkText === null) {
               return; // User cancelled
             }
-            
+
             // Format the URL properly
             let formattedUrl = url.trim();
-            if (!formattedUrl.match(/^https?:\/\//) && !formattedUrl.match(/^mailto:/)) {
+            if (
+              !formattedUrl.match(/^https?:\/\//) &&
+              !formattedUrl.match(/^mailto:/)
+            ) {
               formattedUrl = `https://${formattedUrl}`;
             }
-            
+
             // Insert the link with custom text
             const displayText = linkText.trim() || formattedUrl;
             editor
