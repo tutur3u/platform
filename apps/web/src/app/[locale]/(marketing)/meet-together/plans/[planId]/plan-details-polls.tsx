@@ -123,15 +123,15 @@ function PlanDetailsPollContent({
     }
   };
 
-  const onDeleteOption = async (pollId: string, optionId: string) => {
+  const onDeleteOption = async (optionId: string) => {
     const res = await fetch(
       `/api/meet-together/plans/${plan.id}/poll/option/${optionId}`,
       {
         method: 'DELETE',
         body: JSON.stringify({
-          pollId,
+          optionId,
           userType, // 'PLATFORM' or 'GUEST'
-          guestId: userType === 'GUEST' ? user?.id : undefined,
+          //   guestId: userType === 'GUEST' ? user?.id : undefined,
         }),
         headers: { 'Content-Type': 'application/json' },
       }
@@ -174,13 +174,13 @@ function PlanDetailsPollContent({
         isCreator && (
           <div className="flex flex-col gap-4">
             <p className="text-sm text-gray-500">
-              You can enable "Where to meet" voting for your plan.
+              {t('enable_where_poll_desc')}
             </p>
             <button
               className="rounded bg-dynamic-blue px-4 py-2 font-medium text-white shadow transition hover:bg-dynamic-blue/80"
               onClick={async () => await onToggleWhereToMeet(true)}
             >
-              Enable "Where to meet" voting
+              {t('enable_where_poll')}
             </button>
           </div>
         )

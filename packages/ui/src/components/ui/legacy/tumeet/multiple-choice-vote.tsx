@@ -35,7 +35,7 @@ interface MultipleChoiceVoteProps {
   isDisplayMode?: boolean;
   onVote: (pollId: string, optionIds: string[]) => Promise<void>;
   onAddOption: (pollId: string, value: string) => Promise<void>;
-  onDeleteOption: (pollId: string, optionId: string) => Promise<void>;
+  onDeleteOption: (optionId: string) => Promise<void>;
   className?: string;
 }
 
@@ -181,7 +181,7 @@ export default function MultipleChoiceVote({
   const handleDeleteOption = async (optionId: string) => {
     setOptionsState((prev) => prev.filter((o) => o.id !== optionId));
     setDeleteDialog(null);
-    await onDeleteOption(pollId, optionId);
+    await onDeleteOption(optionId);
   };
 
   return (
@@ -298,7 +298,7 @@ export default function MultipleChoiceVote({
           {votedOptionIds.length === 0 && !voting && (
             <Button
               type="button"
-              className="w-full bg-dynamic-purple text-white hover:bg-dynamic-purple/90"
+              className="w-full bg-dynamic-purple text-foreground hover:bg-dynamic-purple/90"
               onClick={handleVoteButton}
               disabled={isDisplayMode}
             >
@@ -331,7 +331,7 @@ export default function MultipleChoiceVote({
           {voting && (
             <Button
               type="button"
-              className="w-full border bg-dynamic-purple text-white hover:border-dynamic-purple/90 hover:bg-transparent"
+              className="w-full border border-dynamic-purple bg-transparent text-foreground hover:bg-dynamic-purple/30"
               onClick={() => setConfirmOpen(true)}
               disabled={selectedOptionIds.length === 0}
             >
@@ -362,7 +362,7 @@ export default function MultipleChoiceVote({
           <DialogFooter>
             <Button
               onClick={handleVoteConfirm}
-              className="border bg-dynamic-purple text-white hover:border-dynamic-purple/90 hover:bg-transparent"
+              className="border border-dynamic-purple bg-transparent text-foreground hover:bg-dynamic-purple/30"
             >
               {t('confirm')}
             </Button>
@@ -383,7 +383,7 @@ export default function MultipleChoiceVote({
           <DialogFooter>
             <Button
               onClick={() => deleteDialog && handleDeleteOption(deleteDialog)}
-              className="bg-dynamic-red text-white"
+              className="bg-dynamic-red text-background"
             >
               {t('delete')}
             </Button>
