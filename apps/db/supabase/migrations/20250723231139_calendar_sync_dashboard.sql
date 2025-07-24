@@ -38,7 +38,7 @@ CREATE OR REPLACE FUNCTION validate_triggered_by()
 RETURNS TRIGGER AS $$
 BEGIN
   IF NEW.triggered_by != 'system' THEN
-    IF NOT EXISTS (SELECT 1 FROM users WHERE id::text = NEW.triggered_by) THEN
+    IF NOT EXISTS (SELECT 1 FROM users WHERE id::uuid = NEW.triggered_by) THEN
       RAISE EXCEPTION 'triggered_by must reference a valid user or be "system"';
     END IF;
   END IF;
@@ -52,22 +52,6 @@ CREATE TRIGGER validate_triggered_by_trigger
   FOR EACH ROW
   EXECUTE FUNCTION validate_triggered_by();
 
-grant delete on table "public"."calendar_sync_dashboard" to "anon";
-
-grant insert on table "public"."calendar_sync_dashboard" to "anon";
-
-grant references on table "public"."calendar_sync_dashboard" to "anon";
-
-grant select on table "public"."calendar_sync_dashboard" to "anon";
-
-grant trigger on table "public"."calendar_sync_dashboard" to "anon";
-
-grant truncate on table "public"."calendar_sync_dashboard" to "anon";
-
-grant update on table "public"."calendar_sync_dashboard" to "anon";
-
-grant delete on table "public"."calendar_sync_dashboard" to "authenticated";
-
 grant insert on table "public"."calendar_sync_dashboard" to "authenticated";
 
 grant references on table "public"."calendar_sync_dashboard" to "authenticated";
@@ -76,11 +60,7 @@ grant select on table "public"."calendar_sync_dashboard" to "authenticated";
 
 grant trigger on table "public"."calendar_sync_dashboard" to "authenticated";
 
-grant truncate on table "public"."calendar_sync_dashboard" to "authenticated";
-
 grant update on table "public"."calendar_sync_dashboard" to "authenticated";
-
-grant delete on table "public"."calendar_sync_dashboard" to "service_role";
 
 grant insert on table "public"."calendar_sync_dashboard" to "service_role";
 
@@ -89,8 +69,6 @@ grant references on table "public"."calendar_sync_dashboard" to "service_role";
 grant select on table "public"."calendar_sync_dashboard" to "service_role";
 
 grant trigger on table "public"."calendar_sync_dashboard" to "service_role";
-
-grant truncate on table "public"."calendar_sync_dashboard" to "service_role";
 
 grant update on table "public"."calendar_sync_dashboard" to "service_role";
 
@@ -113,11 +91,4 @@ on "public"."calendar_sync_dashboard"
 as permissive
 for update
 to authenticated
-using (is_org_member(auth.uid(), ws_id) AND (triggered_by = auth.uid()::text));
-
-create policy "Enable delete access for workspace members"
-on "public"."calendar_sync_dashboard"
-as permissive
-for delete
-to authenticated
-using (is_org_member(auth.uid(), ws_id)); 
+using (is_org_member(auth.uid(), ws_id) AND (triggered_by = auth.uid()::text)); 
