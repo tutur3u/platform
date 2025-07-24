@@ -34,6 +34,10 @@ const getEditorClasses = (readOnly: boolean) => {
     '[&_*:is(p,h1,h2,h3).is-empty::before]:h-0',
     '[&_*:is(p,h1,h2,h3).is-empty::before]:pointer-events-none',
     '[&_li]:my-1 [&_li_h1]:text-4xl [&_li_h2]:text-3xl [&_li_h3]:text-2xl',
+    // Link styling
+    '[&_a]:text-blue-600 [&_a]:underline [&_a]:cursor-pointer [&_a]:transition-colors',
+    '[&_a:hover]:text-blue-800',
+    'dark:[&_a]:text-blue-400 dark:[&_a:hover]:text-blue-300',
   ];
   return baseClasses.join(' ');
 };
@@ -93,8 +97,22 @@ export function RichTextEditor({
       Highlight,
       Link.configure({
         openOnClick: false,
+        autolink: true,
+        linkOnPaste: true,
+        defaultProtocol: 'https',
         HTMLAttributes: {
-          class: 'text-blue-500 hover:text-blue-700 underline cursor-pointer',
+          class: 'text-blue-600 hover:text-blue-800 underline cursor-pointer transition-colors',
+          rel: 'noopener noreferrer',
+          target: '_blank',
+        },
+        validate: href => {
+          // Allow http/https URLs and mailto links
+          return /^https?:\/\/.+/.test(href) || /^mailto:.+@.+\..+/.test(href);
+        },
+        protocols: ['http', 'https', 'mailto'],
+        shouldAutoLink: () => {
+          // Auto-link URLs but not in code blocks
+          return true;
         },
       }),
       Strike,
