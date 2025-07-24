@@ -3,6 +3,9 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import Highlight from '@tiptap/extension-highlight';
 import Link from '@tiptap/extension-link';
+import Strike from '@tiptap/extension-strike';
+import Subscript from '@tiptap/extension-subscript';
+import Superscript from '@tiptap/extension-superscript';
 import TextAlign from '@tiptap/extension-text-align';
 import Underline from '@tiptap/extension-underline';
 import { generateHTML } from '@tiptap/html';
@@ -355,6 +358,9 @@ export function ComposeDialog({
           Highlight,
           Underline,
           Link.configure({ openOnClick: false }),
+          Strike,
+          Subscript,
+          Superscript,
         ];
 
         let contentHtml = '';
@@ -421,6 +427,9 @@ export function ComposeDialog({
         Highlight,
         Underline,
         Link.configure({ openOnClick: false }),
+        Strike,
+        Subscript,
+        Superscript,
       ];
 
       // Generate HTML from the editor content

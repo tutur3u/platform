@@ -2,7 +2,11 @@
 
 import { ToolBar } from './tool-bar';
 import Highlight from '@tiptap/extension-highlight';
+import Link from '@tiptap/extension-link';
 import Placeholder from '@tiptap/extension-placeholder';
+import Strike from '@tiptap/extension-strike';
+import Subscript from '@tiptap/extension-subscript';
+import Superscript from '@tiptap/extension-superscript';
 import TextAlign from '@tiptap/extension-text-align';
 import { EditorContent, type JSONContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
@@ -87,6 +91,15 @@ export function RichTextEditor({
         emptyNodeClass: 'is-empty',
       }),
       Highlight,
+      Link.configure({
+        openOnClick: false,
+        HTMLAttributes: {
+          class: 'text-blue-500 hover:text-blue-700 underline cursor-pointer',
+        },
+      }),
+      Strike,
+      Subscript,
+      Superscript,
     ],
     content: content || '',
     editable: !readOnly,

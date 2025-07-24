@@ -11,10 +11,13 @@ import {
   Heading3,
   Highlighter,
   Italic,
+  Link,
   List,
   ListOrdered,
   Save,
   Strikethrough,
+  Subscript,
+  Superscript,
 } from '@tuturuuu/ui/icons';
 import { Toggle } from '@tuturuuu/ui/toggle';
 
@@ -67,6 +70,26 @@ export function ToolBar({
       icon: <Strikethrough className="size-4" />,
       onClick: () => editor.chain().focus().toggleStrike().run(),
       pressed: editor.isActive('strike'),
+    },
+    {
+      icon: <Link className="size-4" />,
+      onClick: () => {
+        const url = window.prompt('Enter URL:');
+        if (url) {
+          editor.chain().focus().setLink({ href: url }).run();
+        }
+      },
+      pressed: editor.isActive('link'),
+    },
+    {
+      icon: <Subscript className="size-4" />,
+      onClick: () => editor.chain().focus().toggleSubscript().run(),
+      pressed: editor.isActive('subscript'),
+    },
+    {
+      icon: <Superscript className="size-4" />,
+      onClick: () => editor.chain().focus().toggleSuperscript().run(),
+      pressed: editor.isActive('superscript'),
     },
     {
       icon: <AlignLeft className="size-4" />,
