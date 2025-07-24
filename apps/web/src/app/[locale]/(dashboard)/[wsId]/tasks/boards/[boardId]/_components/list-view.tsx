@@ -139,7 +139,13 @@ interface Member {
   avatar_url?: string | null;
 }
 
-type TaskBulkUpdate = { id: string } & Record<string, Json>;
+interface TaskBulkUpdate {
+  id: string;
+  priority?: number | null;
+  archived?: boolean;
+  tags?: string[];
+  [key: string]: Json | string[] | number | boolean | null | undefined;
+}
 
 // Priority labels constant - defined once outside component for performance
 const priorityLabels = {

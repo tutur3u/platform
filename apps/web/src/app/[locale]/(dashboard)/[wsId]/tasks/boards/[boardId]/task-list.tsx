@@ -736,14 +736,10 @@ export const BoardColumn = React.memo(function BoardColumn({
                               {/* All option */}
                               <CommandItem
                                 onSelect={() => {
-                                  const newAssignees = new Set<string>();
-                                  if (!filters.assignees.has('all')) {
-                                    newAssignees.add('all');
-                                  }
-                                  // Ensure mutual exclusivity with 'unassigned'
+                                  // Selecting 'all' should clear all other selections
                                   setFilters((prev) => ({
                                     ...prev,
-                                    assignees: newAssignees,
+                                    assignees: new Set(['all']),
                                   }));
                                 }}
                               >
@@ -761,14 +757,10 @@ export const BoardColumn = React.memo(function BoardColumn({
                               {/* Unassigned option */}
                               <CommandItem
                                 onSelect={() => {
-                                  const newAssignees = new Set<string>();
-                                  if (!filters.assignees.has('unassigned')) {
-                                    newAssignees.add('unassigned');
-                                  }
-                                  // Ensure mutual exclusivity with 'all'
+                                  // Selecting 'unassigned' should clear all other selections
                                   setFilters((prev) => ({
                                     ...prev,
-                                    assignees: newAssignees,
+                                    assignees: new Set(['unassigned']),
                                   }));
                                 }}
                               >
@@ -795,12 +787,10 @@ export const BoardColumn = React.memo(function BoardColumn({
                                   <CommandItem
                                     key={member.id}
                                     onSelect={() => {
+                                      // Selecting a specific assignee clears 'all' and 'unassigned', and toggles the assignee
                                       const newAssignees = new Set(filters.assignees);
-                                      if (filters.assignees.has('all') || filters.assignees.has('unassigned')) {
-                                        // If 'all' or 'unassigned' is selected, clear them to avoid conflicts
-                                        newAssignees.delete('all');
-                                        newAssignees.delete('unassigned');
-                                      }
+                                      newAssignees.delete('all');
+                                      newAssignees.delete('unassigned');
                                       if (isSelected) {
                                         newAssignees.delete(member.id);
                                       } else {
