@@ -1,7 +1,7 @@
 import DayPlanner from './day-planner';
 import { useTimeBlocking } from './time-blocking-provider';
 import type { Timeblock } from '@tuturuuu/types/primitives/Timeblock';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 export default function DayPlanners({
   timeblocks,
@@ -32,15 +32,17 @@ export default function DayPlanners({
     if (onBestTimesStatusByDateAction) {
       onBestTimesStatusByDateAction(bestTimesStatus);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [JSON.stringify(bestTimesStatus)]);
+  }, [bestTimesStatus, onBestTimesStatusByDateAction]);
 
-  function handleBestTimesStatus(date: string, hasBestTimes: boolean) {
-    setBestTimesStatus((prev) => {
-      if (prev[date] === hasBestTimes) return prev;
-      return { ...prev, [date]: hasBestTimes };
-    });
-  }
+  const handleBestTimesStatus = useCallback(
+    (date: string, hasBestTimes: boolean) => {
+      setBestTimesStatus((prev) => {
+        if (prev[date] === hasBestTimes) return prev;
+        return { ...prev, [date]: hasBestTimes };
+      });
+    },
+    []
+  );
 
   function preventScroll(e: any) {
     e.preventDefault();

@@ -15,7 +15,7 @@ import { Switch } from '@tuturuuu/ui/switch';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import html2canvas from 'html2canvas-pro';
 import { useTheme } from 'next-themes';
-import React, { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 interface PlanDetailsClientProps {
   plan: MeetTogetherPlan;
@@ -50,9 +50,11 @@ export default function PlanDetailsClient({
 
   // If user filter is active, force best times off
   const isUserFilterActive = filteredUserIds && filteredUserIds.length > 0;
-  if (isUserFilterActive && showBestTimes) {
-    setShowBestTimes(false);
-  }
+  useEffect(() => {
+    if (isUserFilterActive && showBestTimes) {
+      setShowBestTimes(false);
+    }
+  }, [isUserFilterActive, showBestTimes]);
 
   // Best times status state
   const [bestTimesStatusByDate, setBestTimesStatusByDate] = useState<

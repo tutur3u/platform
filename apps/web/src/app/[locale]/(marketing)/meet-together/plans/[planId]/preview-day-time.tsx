@@ -10,7 +10,7 @@ import {
   TooltipTrigger,
 } from '@tuturuuu/ui/tooltip';
 import dayjs from 'dayjs';
-import React from 'react';
+import { useEffect } from 'react';
 
 export default function PreviewDayTime({
   timeblocks: serverTimeblocks,
@@ -106,12 +106,11 @@ export default function PreviewDayTime({
   }
 
   // Notify parent about best times status
-  React.useEffect(() => {
+  useEffect(() => {
     if (onBestTimesStatus) {
       onBestTimesStatus(bestBlockIndices.size > 0);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [showBestTimes, bestBlockIndices.size]);
+  }, [showBestTimes, bestBlockIndices.size, onBestTimesStatus]);
 
   const isTimeBlockSelected = (i: number): 'local' | 'server' | 'none' => {
     // If the timeblock is pre-selected
