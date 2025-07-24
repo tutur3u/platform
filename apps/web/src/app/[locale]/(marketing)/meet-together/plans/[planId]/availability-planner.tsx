@@ -17,7 +17,7 @@ export default function AvailabilityPlanner({
   className?: string;
 }) {
   const t = useTranslations('meet-together-plan-details');
-  const { selectedTimeBlocks, syncTimeBlocks, editing } = useTimeBlocking();
+  const { syncTimeBlocks, editing } = useTimeBlocking();
   const [isSaving, setIsSaving] = useState(false);
   const [dirty, setDirty] = useState(false);
 
