@@ -791,7 +791,9 @@ export const BoardColumn = React.memo(function BoardColumn({
                                     key={member.id}
                                     onSelect={() => {
                                       // Selecting a specific assignee clears 'all' and 'unassigned', and toggles the assignee
-                                      const newAssignees = new Set(filters.assignees);
+                                      const newAssignees = new Set(
+                                        filters.assignees
+                                      );
                                       newAssignees.delete('all');
                                       newAssignees.delete('unassigned');
                                       if (isSelected) {
