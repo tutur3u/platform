@@ -10,12 +10,6 @@ import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@tuturuuu/ui/dropdown-menu';
-import {
   Archive,
   ChevronDown,
   ChevronUp,
@@ -25,10 +19,10 @@ import {
   Reply,
   ReplyAll,
   Trash2,
+  UserIcon,
 } from '@tuturuuu/ui/icons';
-import { UserIcon } from '@tuturuuu/ui/icons';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
-import { Separator } from '@tuturuuu/ui/separator';
+import type { JSONContent } from '@tuturuuu/ui/tiptap';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { formatEmailAddresses } from '@tuturuuu/utils/email/client';
 import { cn } from '@tuturuuu/utils/format';
@@ -47,6 +41,27 @@ dayjs.extend(localizedFormat);
 interface MailDisplayProps {
   mail: InternalEmail | null;
   user: (User & UserPrivateDetails) | WorkspaceUser | null;
+  onReply?: (mailData: {
+    to: string[];
+    subject: string;
+    content: JSONContent;
+    quotedContent: string;
+    isReply: boolean;
+  }) => void;
+  onReplyAll?: (mailData: {
+    to: string[];
+    cc: string[];
+    subject: string;
+    content: JSONContent;
+    quotedContent: string;
+    isReply: boolean;
+  }) => void;
+  onForward?: (mailData: {
+    subject: string;
+    content: JSONContent;
+    quotedContent: string;
+    isReply: boolean;
+  }) => void;
 }
 
 const DISABLE_MAIL_ACTIONS = true;
@@ -132,7 +147,13 @@ function AddressChips({
   );
 }
 
-export function MailDisplay({ mail, user }: MailDisplayProps) {
+export function MailDisplay({
+  mail,
+  user,
+  onReply,
+  onReplyAll,
+  onForward,
+}: MailDisplayProps) {
   const [isHeaderCollapsed, setIsHeaderCollapsed] = useState(false);
   const [sanitizedHtml, setSanitizedHtml] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
@@ -189,6 +210,73 @@ export function MailDisplay({ mail, user }: MailDisplayProps) {
   useEffect(() => {
     dayjs.locale(locale);
   }, [locale]);
+
+  // Reply handlers
+  const handleReply = () => {
+    if (!mail || !onReply) return;
+
+    const senderEmail =
+      formatEmailAddresses(mail.source_email)[0]?.email || mail.source_email;
+    const replySubject = mail.subject.startsWith('Re: ')
+      ? mail.subject
+      : `Re: ${mail.subject}`;
+    const quotedContent = `--- Original Message ---\nFrom: ${mail.source_email}\nDate: ${dayjs(mail.created_at).format('LLLL')}\nSubject: ${mail.subject}\n\n${mail.payload}`;
+
+    onReply({
+      to: [senderEmail],
+      subject: replySubject,
+      content: { type: 'doc', content: [{ type: 'paragraph', content: [] }] }, // Start with empty JSON content for new reply
+      quotedContent,
+      isReply: true,
+    });
+  };
+
+  const handleReplyAll = () => {
+    if (!mail || !onReplyAll) return;
+
+    const senderEmail =
+      formatEmailAddresses(mail.source_email)[0]?.email || mail.source_email;
+    const replySubject = mail.subject.startsWith('Re: ')
+      ? mail.subject
+      : `Re: ${mail.subject}`;
+    const quotedContent = `--- Original Message ---\nFrom: ${mail.source_email}\nDate: ${dayjs(mail.created_at).format('LLLL')}\nSubject: ${mail.subject}\n\n${mail.payload}`;
+
+    // Include all original recipients except the current user
+    const allRecipients = [senderEmail];
+    if (mail.to_addresses) {
+      allRecipients.push(...mail.to_addresses);
+    }
+
+    // Remove duplicates and filter out current user
+    const uniqueRecipients = [...new Set(allRecipients)].filter(
+      (email) => email !== user?.email
+    );
+
+    onReplyAll({
+      to: uniqueRecipients,
+      cc: mail.cc_addresses || [],
+      subject: replySubject,
+      content: { type: 'doc', content: [{ type: 'paragraph', content: [] }] }, // Start with empty JSON content for new reply
+      quotedContent,
+      isReply: true,
+    });
+  };
+
+  const handleForward = () => {
+    if (!mail || !onForward) return;
+
+    const forwardSubject = mail.subject.startsWith('Fwd: ')
+      ? mail.subject
+      : `Fwd: ${mail.subject}`;
+    const forwardedContent = `--- Forwarded Message ---\nFrom: ${mail.source_email}\nDate: ${dayjs(mail.created_at).format('LLLL')}\nSubject: ${mail.subject}\nTo: ${mail.to_addresses?.join(', ') || ''}\n\n${mail.payload}`;
+
+    onForward({
+      subject: forwardSubject,
+      content: { type: 'doc', content: [{ type: 'paragraph', content: [] }] }, // Start with empty JSON content for new forward message
+      quotedContent: forwardedContent,
+      isReply: false, // Forward is not a reply
+    });
+  };
 
   useEffect(() => {
     const sanitizeContent = async () => {
@@ -268,8 +356,9 @@ export function MailDisplay({ mail, user }: MailDisplayProps) {
               <Button
                 variant="ghost"
                 size="sm"
-                disabled={!mail || DISABLE_MAIL_ACTIONS}
+                disabled={!mail || !onReply}
                 className="h-8 w-8 hover:bg-accent/80"
+                onClick={handleReply}
               >
                 <Reply className="h-4 w-4" />
                 <span className="sr-only">{t('reply')}</span>
@@ -282,8 +371,9 @@ export function MailDisplay({ mail, user }: MailDisplayProps) {
               <Button
                 variant="ghost"
                 size="sm"
-                disabled={!mail || DISABLE_MAIL_ACTIONS}
+                disabled={!mail || !onReplyAll}
                 className="h-8 w-8 hover:bg-accent/80"
+                onClick={handleReplyAll}
               >
                 <ReplyAll className="h-4 w-4" />
                 <span className="sr-only">{t('reply_all')}</span>
@@ -296,8 +386,9 @@ export function MailDisplay({ mail, user }: MailDisplayProps) {
               <Button
                 variant="ghost"
                 size="sm"
-                disabled={!mail || DISABLE_MAIL_ACTIONS}
+                disabled={!mail || !onForward}
                 className="h-8 w-8 hover:bg-accent/80"
+                onClick={handleForward}
               >
                 <Forward className="h-4 w-4" />
                 <span className="sr-only">{t('forward')}</span>
@@ -306,9 +397,9 @@ export function MailDisplay({ mail, user }: MailDisplayProps) {
             <TooltipContent side="bottom">{t('forward')}</TooltipContent>
           </Tooltip>
 
-          <Separator orientation="vertical" className="mx-2 h-5" />
+          {/* <Separator orientation="vertical" className="mx-2 h-5" /> */}
 
-          <DropdownMenu>
+          {/* <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
                 variant="ghost"
@@ -323,7 +414,7 @@ export function MailDisplay({ mail, user }: MailDisplayProps) {
             <DropdownMenuContent align="end">
               <DropdownMenuItem>{t('mark_as_unread')}</DropdownMenuItem>
             </DropdownMenuContent>
-          </DropdownMenu>
+          </DropdownMenu> */}
         </div>
       </div>
 

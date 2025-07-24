@@ -45,6 +45,7 @@ export function RichTextEditor({
 }: RichTextEditorProps) {
   const [hasChanges, setHasChanges] = useState(false);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const debouncedOnChange = useCallback(
     debounce((newContent: JSONContent) => {
       onChange?.(newContent);

@@ -18,6 +18,7 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
 } from '@tuturuuu/ui/resizable';
+import type { JSONContent } from '@tuturuuu/ui/tiptap';
 import { TooltipProvider } from '@tuturuuu/ui/tooltip';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { useTranslations } from 'next-intl';
@@ -52,6 +53,18 @@ export function MailClient({
   const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed);
 
   const [composeOpen, setComposeOpen] = useState(false);
+  const [composeInitialData, setComposeInitialData] = useState<
+    | {
+        to?: string[];
+        cc?: string[];
+        bcc?: string[];
+        subject?: string;
+        content?: JSONContent;
+        quotedContent?: string;
+        isReply?: boolean;
+      }
+    | undefined
+  >(undefined);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const t = useTranslations();
 
@@ -67,6 +80,62 @@ export function MailClient({
       onLoadMore();
     }
   }, [onLoadMore, hasMore, loading]);
+
+  // Reply handlers
+  const handleReply = useCallback(
+    (mailData: {
+      to: string[];
+      subject: string;
+      content: JSONContent;
+      quotedContent: string;
+      isReply: boolean;
+    }) => {
+      setComposeInitialData(mailData);
+      setComposeOpen(true);
+    },
+    []
+  );
+
+  const handleReplyAll = useCallback(
+    (mailData: {
+      to: string[];
+      cc: string[];
+      subject: string;
+      content: JSONContent;
+      quotedContent: string;
+      isReply: boolean;
+    }) => {
+      setComposeInitialData(mailData);
+      setComposeOpen(true);
+    },
+    []
+  );
+
+  const handleForward = useCallback(
+    (mailData: {
+      subject: string;
+      content: JSONContent;
+      quotedContent: string;
+      isReply: boolean;
+    }) => {
+      setComposeInitialData(mailData);
+      setComposeOpen(true);
+    },
+    []
+  );
+
+  const openComposeDialog = useCallback(() => {
+    setComposeInitialData(undefined);
+    setComposeOpen(true);
+  }, []);
+
+  const handleComposeOpenChange = useCallback((open: boolean) => {
+    setComposeOpen(open);
+    // Clear initial data when closing
+    if (!open) {
+      setComposeInitialData(undefined);
+    }
+  }, []);
 
   useEffect(() => {
     const scrollElement = scrollContainerRef.current;
@@ -119,7 +188,7 @@ export function MailClient({
             <h1 className="text-xl font-bold">{t('mail.sent')}</h1>
             {wsId === ROOT_WORKSPACE_ID && (
               <ComposeButton
-                onClick={() => setComposeOpen(true)}
+                onClick={openComposeDialog}
                 disabled={!hasCredential}
               />
             )}
@@ -136,13 +205,17 @@ export function MailClient({
           <MailDisplay
             user={user}
             mail={mails.find((item) => item.id === mail.selected) || null}
+            onReply={handleReply}
+            onReplyAll={handleReplyAll}
+            onForward={handleForward}
           />
         </ResizablePanel>
       </ResizablePanelGroup>
       <ComposeDialog
         wsId={wsId}
         open={composeOpen}
-        onOpenChange={setComposeOpen}
+        onOpenChange={handleComposeOpenChange}
+        initialData={composeInitialData}
       />
     </TooltipProvider>
   );
