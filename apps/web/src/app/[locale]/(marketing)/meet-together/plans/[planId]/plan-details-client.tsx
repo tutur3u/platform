@@ -166,7 +166,10 @@ export default function PlanDetailsClient({
         />
         <div id="plan-ref" className="flex w-full flex-col items-center">
           <p className="my-4 flex max-w-xl items-center gap-2 text-center text-2xl leading-tight! font-semibold md:mb-4 lg:text-3xl">
-            {plan.name} <EditPlanDialog plan={plan} />
+            {plan.name}{' '}
+            {platformUser?.id === plan.creator_id ? (
+              <EditPlanDialog plan={plan} />
+            ) : null}
           </p>
           <div className="mb-4 flex flex-col items-center justify-center gap-2">
             <div className="flex items-center justify-center gap-2">
