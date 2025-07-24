@@ -6,7 +6,15 @@ import type {
   MeetTogetherPlan,
 } from '@tuturuuu/types/primitives/MeetTogetherPlan';
 import type { User } from '@tuturuuu/types/primitives/User';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@tuturuuu/ui/accordion';
+import { useIsMobile } from '@tuturuuu/ui/hooks/use-mobile';
 import MultipleChoiceVote from '@tuturuuu/ui/legacy/tumeet/multiple-choice-vote';
+import { useTranslations } from 'next-intl';
 
 interface PlanDetailsPollsProps {
   plan: MeetTogetherPlan;
@@ -21,6 +29,52 @@ export default function PlanDetailsPolls({
   platformUser,
   polls,
 }: PlanDetailsPollsProps) {
+  const t = useTranslations('ws-polls');
+  const isMobile = useIsMobile();
+  if (!plan.where_to_meet && !isCreator) {
+    return null; // Don't render anything if "where to meet" is not enabled and user is not creator
+  }
+
+  if (isMobile) {
+    return (
+      <Accordion
+        type="single"
+        collapsible
+        className="order-first col-span-full w-full"
+        defaultValue="item-1"
+      >
+        <AccordionItem value="item-1" className="w-full">
+          <AccordionTrigger className="pl-3 text-lg">
+            {t('plural')}
+          </AccordionTrigger>
+          <AccordionContent>
+            <PlanDetailsPollContent
+              plan={plan}
+              isCreator={isCreator}
+              platformUser={platformUser}
+              polls={polls}
+            />
+          </AccordionContent>
+        </AccordionItem>
+      </Accordion>
+    );
+  }
+  return (
+    <PlanDetailsPollContent
+      plan={plan}
+      isCreator={isCreator}
+      platformUser={platformUser}
+      polls={polls}
+    />
+  );
+}
+function PlanDetailsPollContent({
+  plan,
+  isCreator,
+  platformUser,
+  polls,
+}: PlanDetailsPollsProps) {
+  const t = useTranslations('ws-polls');
   const { user: guestUser } = useTimeBlocking();
 
   const user = guestUser ?? platformUser;
@@ -36,7 +90,7 @@ export default function PlanDetailsPolls({
   const wherePoll = polls?.polls?.[0]; // Assuming the first poll is the "where to meet" poll
 
   const onVote = async (pollId: string, optionIds: string[]) => {
-    await fetch(`/api/meet-together/plans/${plan.id}/poll/vote`, {
+    const res = await fetch(`/api/meet-together/plans/${plan.id}/poll/vote`, {
       method: 'POST',
       body: JSON.stringify({
         pollId,
@@ -46,6 +100,10 @@ export default function PlanDetailsPolls({
       }),
       headers: { 'Content-Type': 'application/json' },
     });
+    if (!res.ok) {
+      console.error('Failed to vote in poll');
+      return;
+    }
   };
 
   const onAddOption = async (pollId: string, value: string) => {
@@ -59,18 +117,50 @@ export default function PlanDetailsPolls({
       }),
       headers: { 'Content-Type': 'application/json' },
     });
-
-    console.log('Option added:', res);
+    if (!res.ok) {
+      console.error('Failed to add poll option');
+      return;
+    }
   };
 
-  if (!plan.where_to_meet && !isCreator) {
-    return null; // Don't render anything if "where to meet" is not enabled and user is not creator
-  }
+  const onDeleteOption = async (pollId: string, optionId: string) => {
+    const res = await fetch(
+      `/api/meet-together/plans/${plan.id}/poll/option/${optionId}`,
+      {
+        method: 'DELETE',
+        body: JSON.stringify({
+          pollId,
+          userType, // 'PLATFORM' or 'GUEST'
+          guestId: userType === 'GUEST' ? user?.id : undefined,
+        }),
+        headers: { 'Content-Type': 'application/json' },
+      }
+    );
+    if (!res.ok) {
+      console.error('Failed to delete poll option');
+    }
+  };
+
+  const onToggleWhereToMeet = async (enable: boolean) => {
+    const res = await fetch(`/api/meet-together/plans/${plan.id}/where-poll`, {
+      method: 'PATCH',
+      body: JSON.stringify({
+        planId: plan.id,
+        whereToMeet: enable,
+      }),
+      headers: { 'Content-Type': 'application/json' },
+    });
+
+    if (!res.ok) {
+      console.error('Failed to update "where to meet" setting');
+    }
+  };
 
   return (
-    <div className="sticky top-16 z-10 self-start rounded-lg border px-2 py-4 md:px-4">
+    <div className="top-16 z-10 self-start rounded-lg border px-2 py-4 md:sticky md:px-4">
       {plan.where_to_meet && wherePoll ? (
         <MultipleChoiceVote
+          isCreator={isCreator}
           pollName={wherePoll.name}
           pollId={wherePoll.id}
           options={wherePoll.options}
@@ -78,6 +168,7 @@ export default function PlanDetailsPolls({
           isDisplayMode={userType === 'DISPLAY'}
           onAddOption={onAddOption}
           onVote={onVote}
+          onDeleteOption={onDeleteOption}
         />
       ) : (
         isCreator && (
@@ -87,10 +178,7 @@ export default function PlanDetailsPolls({
             </p>
             <button
               className="rounded bg-dynamic-blue px-4 py-2 font-medium text-white shadow transition hover:bg-dynamic-blue/80"
-              onClick={async () => {
-                // call your backend here to enable where_to_meet
-                // await onUpdateWhereToMeet(true);
-              }}
+              onClick={async () => await onToggleWhereToMeet(true)}
             >
               Enable "Where to meet" voting
             </button>

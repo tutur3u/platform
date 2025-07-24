@@ -140,7 +140,7 @@ export default function PlanDetailsClient({
   }, [plan.id, resolvedTheme]);
 
   return (
-    <div className="flex w-full max-w-6xl flex-col gap-6 p-4 text-foreground md:px-8 lg:gap-14 lg:px-14">
+    <div className="flex w-full max-w-6xl flex-col gap-6 p-4 text-foreground md:px-6 lg:gap-14 lg:px-14">
       <div className="flex w-full flex-col items-center">
         <UtilityButtons
           plan={plan}
@@ -152,7 +152,7 @@ export default function PlanDetailsClient({
           <p className="my-4 flex max-w-xl items-center gap-2 text-center text-2xl leading-tight! font-semibold md:mb-4 lg:text-3xl">
             {plan.name} <EditPlanDialog plan={plan} />
           </p>
-          <div className="mt-8 grid w-full items-center justify-between gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-8 grid w-full grid-cols-1 items-start justify-between gap-4 md:grid-cols-3 md:items-center">
             <PlanLogin
               plan={plan}
               timeblocks={[]}

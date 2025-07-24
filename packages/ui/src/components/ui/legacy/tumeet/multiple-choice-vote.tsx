@@ -12,6 +12,7 @@ import {
 import { Input } from '@tuturuuu/ui/input';
 import { Progress } from '@tuturuuu/ui/progress';
 import { cn } from '@tuturuuu/utils/format';
+import { Trash2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';
 
@@ -30,9 +31,11 @@ interface MultipleChoiceVoteProps {
   pollName: string;
   options: PollOptionWithVotes[];
   currentUserId: string | null;
+  isCreator?: boolean;
   isDisplayMode?: boolean;
   onVote: (pollId: string, optionIds: string[]) => Promise<void>;
   onAddOption: (pollId: string, value: string) => Promise<void>;
+  onDeleteOption: (pollId: string, optionId: string) => Promise<void>;
   className?: string;
 }
 
@@ -50,9 +53,11 @@ export default function MultipleChoiceVote({
   pollName,
   options,
   currentUserId,
+  isCreator = false,
   isDisplayMode = false,
   onVote,
   onAddOption,
+  onDeleteOption,
   className,
 }: MultipleChoiceVoteProps) {
   const t = useTranslations('ws-polls');
@@ -64,11 +69,11 @@ export default function MultipleChoiceVote({
     setOptionsState(options);
   }, [options]);
 
-  // Add option
   const [customOption, setCustomOption] = useState('');
   const [voting, setVoting] = useState(false);
   const [selectedOptionIds, setSelectedOptionIds] = useState<string[]>([]);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [deleteDialog, setDeleteDialog] = useState<null | string>(null);
 
   // Memoize user's voted options
   const votedOptionIds = useMemo(() => {
@@ -131,7 +136,6 @@ export default function MultipleChoiceVote({
   // Confirm vote (optimistic update)
   const handleVoteConfirm = async () => {
     if (!arraysAreEqual(selectedOptionIds, votedOptionIds)) {
-      // --- Optimistically update options state ---
       setOptionsState((prev) =>
         prev.map((option) => {
           const wasVoted =
@@ -139,12 +143,10 @@ export default function MultipleChoiceVote({
             option.guestVotes.some((v) => v.guest_id === currentUserId);
           const willBeVoted = selectedOptionIds.includes(option.id);
 
-          // Only adjust userVotes for current user
           let newUserVotes = option.userVotes;
           let newGuestVotes = option.guestVotes;
 
           if (currentUserId) {
-            // Remove previous vote if user had voted and is now unselected
             if (wasVoted && !willBeVoted) {
               newUserVotes = newUserVotes.filter(
                 (v) => v.user_id !== currentUserId
@@ -153,9 +155,7 @@ export default function MultipleChoiceVote({
                 (v) => v.guest_id !== currentUserId
               );
             }
-            // Add vote if not voted before and now selected
             if (!wasVoted && willBeVoted) {
-              // You can use a user/guestType flag if you want more precise type checks
               newUserVotes = [...newUserVotes, { user_id: currentUserId }];
             }
           }
@@ -171,20 +171,24 @@ export default function MultipleChoiceVote({
           };
         })
       );
-      // --- Backend sync ---
       await onVote(pollId, selectedOptionIds);
     }
     setVoting(false);
     setConfirmOpen(false);
   };
 
+  // Delete option (creator only)
+  const handleDeleteOption = async (optionId: string) => {
+    setOptionsState((prev) => prev.filter((o) => o.id !== optionId));
+    setDeleteDialog(null);
+    await onDeleteOption(pollId, optionId);
+  };
+
   return (
     <div className={cn('space-y-4', className)}>
-      <h3 className="text-lg font-semibold">{pollName}</h3>
-
-      {/* Options list */}
+      <h3 className="text-lg font-semibold text-dynamic-purple">{pollName}</h3>
       {!isDisplayMode && (
-        <div className="text-sm text-foreground/70">{t('select_options')}</div>
+        <div className="text-sm text-foreground">{t('select_options')}</div>
       )}
       <div className="space-y-2">
         {optionsState.map((option) => {
@@ -196,9 +200,10 @@ export default function MultipleChoiceVote({
               key={option.id}
               className={cn(
                 'flex items-center justify-between rounded-lg border p-2',
+                'border-dynamic-purple/50',
                 isSelected &&
                   !isDisplayMode &&
-                  'border-dynamic-blue bg-dynamic-blue/5'
+                  'border-dynamic-purple bg-dynamic-purple/10'
               )}
             >
               <div className="flex items-center gap-2">
@@ -211,19 +216,25 @@ export default function MultipleChoiceVote({
                     voting && handleToggleOption(option.id)
                   }
                   id={`option-${option.id}`}
+                  className="data-[state=checked]:border-dynamic-purple data-[state=checked]:bg-dynamic-purple"
                 />
                 <label
                   htmlFor={`option-${option.id}`}
                   className={cn(
                     'text-sm font-medium',
-                    isSelected && !isDisplayMode && 'text-dynamic-blue'
+                    isSelected && !isDisplayMode && 'text-dynamic-purple'
                   )}
                 >
                   {option.value}
                 </label>
               </div>
               <div className="flex min-w-[90px] flex-col items-end">
-                <span className="text-xs text-foreground/70">
+                <span
+                  className={cn(
+                    'w-full text-xs text-dynamic-purple',
+                    isCreator ? 'text-center' : 'text-left'
+                  )}
+                >
                   {option.totalVotes} {t('votes')}
                 </span>
                 <Progress
@@ -232,9 +243,25 @@ export default function MultipleChoiceVote({
                       ? (option.totalVotes / totalVotesAll) * 100
                       : 0
                   }
-                  className="mt-1 h-2 w-20"
+                  className="mt-1 h-2 w-20 bg-dynamic-light-purple"
+                  style={
+                    {
+                      // Ensure progress bar uses dynamic color
+                      '--progress-bar-color': 'var(--color-dynamic-purple)',
+                    } as React.CSSProperties
+                  }
                 />
               </div>
+              {isCreator && !isDisplayMode && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="ml-2 text-dynamic-red hover:bg-dynamic-red/10"
+                  onClick={() => setDeleteDialog(option.id)}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              )}
             </div>
           );
         })}
@@ -247,7 +274,7 @@ export default function MultipleChoiceVote({
             placeholder={t('create_new_option')}
             value={customOption}
             onChange={(e) => setCustomOption(e.target.value)}
-            className="w-full"
+            className="w-full border-dynamic-purple"
             onKeyDown={async (e) => {
               if (e.key === 'Enter' && canAdd) await handleAddOption();
             }}
@@ -256,6 +283,7 @@ export default function MultipleChoiceVote({
           <Button
             type="button"
             variant="outline"
+            className="border-dynamic-purple text-dynamic-purple"
             onClick={handleAddOption}
             disabled={!canAdd}
           >
@@ -270,7 +298,7 @@ export default function MultipleChoiceVote({
           {votedOptionIds.length === 0 && !voting && (
             <Button
               type="button"
-              className="w-full"
+              className="w-full bg-dynamic-purple text-white hover:bg-dynamic-purple/90"
               onClick={handleVoteButton}
               disabled={isDisplayMode}
             >
@@ -279,7 +307,7 @@ export default function MultipleChoiceVote({
           )}
           {votedOptionIds.length > 0 && !voting && (
             <div className="flex flex-col items-center gap-2">
-              <div className="text-center text-sm font-medium text-dynamic-green">
+              <div className="text-center text-sm font-medium text-dynamic-purple">
                 {t('voted_for')}{' '}
                 {votedOptionIds.length === 1
                   ? `"${optionsState.find((o) => o.id === votedOptionIds[0])?.value ?? ''}"`
@@ -293,7 +321,7 @@ export default function MultipleChoiceVote({
               <Button
                 type="button"
                 variant="outline"
-                className="w-full"
+                className="w-full border-dynamic-purple text-dynamic-purple"
                 onClick={handleVoteButton}
               >
                 {t('vote_again')}
@@ -303,7 +331,7 @@ export default function MultipleChoiceVote({
           {voting && (
             <Button
               type="button"
-              className="w-full"
+              className="w-full border bg-dynamic-purple text-white hover:border-dynamic-purple/90 hover:bg-transparent"
               onClick={() => setConfirmOpen(true)}
               disabled={selectedOptionIds.length === 0}
             >
@@ -332,8 +360,34 @@ export default function MultipleChoiceVote({
           </DialogHeader>
           <div className="py-4">{t('vote_confirm')}</div>
           <DialogFooter>
-            <Button onClick={handleVoteConfirm}>{t('confirm')}</Button>
+            <Button
+              onClick={handleVoteConfirm}
+              className="border bg-dynamic-purple text-white hover:border-dynamic-purple/90 hover:bg-transparent"
+            >
+              {t('confirm')}
+            </Button>
             <Button variant="ghost" onClick={() => setConfirmOpen(false)}>
+              {t('cancel')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete option modal */}
+      <Dialog open={!!deleteDialog} onOpenChange={() => setDeleteDialog(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t('delete_option')}</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">{t('delete_option_confirm')}</div>
+          <DialogFooter>
+            <Button
+              onClick={() => deleteDialog && handleDeleteOption(deleteDialog)}
+              className="bg-dynamic-red text-white"
+            >
+              {t('delete')}
+            </Button>
+            <Button variant="ghost" onClick={() => setDeleteDialog(null)}>
               {t('cancel')}
             </Button>
           </DialogFooter>
