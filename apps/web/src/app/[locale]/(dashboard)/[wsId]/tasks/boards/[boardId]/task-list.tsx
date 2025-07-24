@@ -790,24 +790,10 @@ export const BoardColumn = React.memo(function BoardColumn({
                                   <CommandItem
                                     key={member.id}
                                     onSelect={() => {
-<<<<<<< HEAD
                                       // Selecting a specific assignee clears 'all' and 'unassigned', and toggles the assignee
                                       const newAssignees = new Set(filters.assignees);
                                       newAssignees.delete('all');
                                       newAssignees.delete('unassigned');
-=======
-                                      const newAssignees = new Set(
-                                        filters.assignees
-                                      );
-                                      if (
-                                        filters.assignees.has('all') ||
-                                        filters.assignees.has('unassigned')
-                                      ) {
-                                        // If 'all' or 'unassigned' is selected, clear them to avoid conflicts
-                                        newAssignees.delete('all');
-                                        newAssignees.delete('unassigned');
-                                      }
->>>>>>> origin/feat/tasks/add-tags
                                       if (isSelected) {
                                         newAssignees.delete(member.id);
                                       } else {
