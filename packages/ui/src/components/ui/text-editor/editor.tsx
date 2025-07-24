@@ -2,7 +2,11 @@
 
 import { ToolBar } from './tool-bar';
 import Highlight from '@tiptap/extension-highlight';
+import Link from '@tiptap/extension-link';
 import Placeholder from '@tiptap/extension-placeholder';
+import Strike from '@tiptap/extension-strike';
+import Subscript from '@tiptap/extension-subscript';
+import Superscript from '@tiptap/extension-superscript';
 import TextAlign from '@tiptap/extension-text-align';
 import { EditorContent, type JSONContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
@@ -30,6 +34,10 @@ const getEditorClasses = (readOnly: boolean) => {
     '[&_*:is(p,h1,h2,h3).is-empty::before]:h-0',
     '[&_*:is(p,h1,h2,h3).is-empty::before]:pointer-events-none',
     '[&_li]:my-1 [&_li_h1]:text-4xl [&_li_h2]:text-3xl [&_li_h3]:text-2xl',
+    // Link styling
+    '[&_a]:text-blue-600 [&_a]:underline [&_a]:cursor-pointer [&_a]:transition-colors',
+    '[&_a:hover]:text-blue-800',
+    'dark:[&_a]:text-blue-400 dark:[&_a:hover]:text-blue-300',
   ];
   return baseClasses.join(' ');
 };
@@ -45,6 +53,7 @@ export function RichTextEditor({
 }: RichTextEditorProps) {
   const [hasChanges, setHasChanges] = useState(false);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const debouncedOnChange = useCallback(
     debounce((newContent: JSONContent) => {
       onChange?.(newContent);
@@ -86,6 +95,30 @@ export function RichTextEditor({
         emptyNodeClass: 'is-empty',
       }),
       Highlight,
+      Link.configure({
+        openOnClick: false,
+        autolink: true,
+        linkOnPaste: true,
+        defaultProtocol: 'https',
+        HTMLAttributes: {
+          class:
+            'text-blue-600 hover:text-blue-800 underline cursor-pointer transition-colors',
+          rel: 'noopener noreferrer',
+          target: '_blank',
+        },
+        validate: (href) => {
+          // Allow http/https URLs and mailto links
+          return /^https?:\/\/.+/.test(href) || /^mailto:.+@.+\..+/.test(href);
+        },
+        protocols: ['http', 'https', 'mailto'],
+        shouldAutoLink: () => {
+          // Auto-link URLs but not in code blocks
+          return true;
+        },
+      }),
+      Strike,
+      Subscript,
+      Superscript,
     ],
     content: content || '',
     editable: !readOnly,

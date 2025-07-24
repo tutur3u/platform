@@ -8,7 +8,6 @@ import type { ReactNode } from 'react';
 
 interface StructureProps {
   isCollapsed: boolean;
-  // eslint-disable-next-line no-unused-vars
   setIsCollapsed: (isCollapsed: boolean) => void;
   hideSizeToggle?: boolean;
   header?: ReactNode;
@@ -77,7 +76,7 @@ export function Structure({
               'group fixed z-50 flex h-full flex-col overflow-hidden border-r backdrop-blur-lg transition-all duration-300 ease-in-out md:z-20',
               isCollapsed
                 ? 'w-16 bg-background/50 max-md:w-0'
-                : 'w-72 bg-background',
+                : 'w-64 bg-background',
               'max-md:absolute',
               isCollapsed && 'max-md:-translate-x-full'
             )}
@@ -86,7 +85,7 @@ export function Structure({
           >
             <div
               className={cn(
-                'flex h-12 items-center border-b border-foreground/10 p-2 md:px-0',
+                'flex h-12 items-center p-2 md:px-0',
                 isCollapsed ? 'justify-center' : 'max-sm:py-1'
               )}
             >
@@ -148,7 +147,7 @@ export function Structure({
             id="main-content"
             className={cn(
               'relative flex h-full min-h-screen flex-col overflow-x-hidden transition-all duration-300 ease-in-out',
-              isCollapsed ? 'md:pl-16' : 'md:pl-72'
+              isCollapsed ? 'md:pl-16' : 'md:pl-64'
             )}
           >
             {header && <div className="mb-4 hidden md:block">{header}</div>}
