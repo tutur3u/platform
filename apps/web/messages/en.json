@@ -584,7 +584,8 @@
     "agenda_content_placeholder": "Add agenda items, discussion points, and meeting objectives...",
     "save_agenda": "Save Agenda",
     "agenda_saved": "Agenda Saved",
-    "agenda": "Agenda"
+    "agenda": "Agenda",
+    "agenda_description": "All of main discussion points, and what we'll be discussing."
   },
   "meet-together-plan-details": {
     "copy_link": "Copy link",

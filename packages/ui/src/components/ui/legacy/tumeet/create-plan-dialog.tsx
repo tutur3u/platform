@@ -226,17 +226,16 @@ export default function CreatePlanDialog({ plan }: Props) {
                   <FormItem>
                     <FormLabel>{t('agenda')}</FormLabel>
                     <FormControl>
-                      <div className="h-64 overflow-y-auto">
-                        <RichTextEditor
-                          content={field.value || null}
-                          onChange={field.onChange}
-                          readOnly={false}
-                          titlePlaceholder={t('agenda_title_placeholder')}
-                          writePlaceholder={t('agenda_content_placeholder')}
-                          saveButtonLabel={t('save_agenda')}
-                          savedButtonLabel={t('agenda_saved')}
-                        />
-                      </div>
+                      <RichTextEditor
+                        content={field.value || null}
+                        onChange={field.onChange}
+                        readOnly={false}
+                        titlePlaceholder={t('agenda_title_placeholder')}
+                        writePlaceholder={t('agenda_content_placeholder')}
+                        saveButtonLabel={t('save_agenda')}
+                        savedButtonLabel={t('agenda_saved')}
+                        className="h-64"
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

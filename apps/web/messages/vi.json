@@ -582,7 +582,8 @@
     "agenda_content_placeholder": "Thêm các mục nghị sự, điểm thảo luận và mục tiêu cuộc họp...",
     "save_agenda": "Lưu nội dung cuộc họp",
     "agenda_saved": "Nội dung cuộc họp đã được lưu",
-    "agenda": "Nội dung cuộc họp"
+    "agenda": "Nội dung cuộc họp",
+    "agenda_description": "Tất cả các điểm thảo luận chính và những gì chúng ta sẽ thảo luận."
   },
   "meet-together-plan-details": {
     "copy_link": "Sao chép liên kết",

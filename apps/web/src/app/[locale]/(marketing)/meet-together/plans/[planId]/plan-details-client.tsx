@@ -1,5 +1,6 @@
 'use client';
 
+import AgendaDialog from './agenda-dialog';
 import AllAvailabilities from './all-availabilities';
 import EditPlanDialog from './edit-plan-dialog';
 import PlanLogin from './plan-login';
@@ -7,8 +8,11 @@ import PlanUserFilter from './plan-user-filter';
 import UtilityButtons from './utility-buttons';
 import type { MeetTogetherPlan } from '@tuturuuu/types/primitives/MeetTogetherPlan';
 import type { User } from '@tuturuuu/types/primitives/User';
+import { Button } from '@tuturuuu/ui/button';
+import { FileText } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import html2canvas from 'html2canvas-pro';
+import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import { useCallback } from 'react';
 
@@ -40,16 +44,13 @@ export default function PlanDetailsClient({
   timeblocks,
 }: PlanDetailsClientProps) {
   const { resolvedTheme } = useTheme();
+  const t = useTranslations('meet-together');
 
   const downloadAsPNG = useCallback(async () => {
     const element = document.getElementById('plan-ref');
     if (!element) throw new Error('Plan element not found');
 
     const backgroundColor = resolvedTheme === 'dark' ? '#0a0a0a' : '#ffffff';
-    // const logoSrc =
-    //   resolvedTheme === 'dark'
-    //     ? '/media/official-logos/light-logo.png'
-    //     : '/media/official-logos/dark-logo.png';
 
     try {
       const canvas = await html2canvas(element, {
@@ -68,63 +69,10 @@ export default function PlanDetailsClient({
         },
       });
 
-      // const ctx = canvas.getContext('2d');
-      // const logo = new window.Image();
-      // logo.crossOrigin = 'anonymous';
-      // logo.src = logoSrc;
-      // logo.onload = () => {
-      //   if (ctx) {
-      //     const logoWidth = 60;
-      //     const logoHeight = 60;
-      //     const logoPosition:
-      //       | 'center'
-      //       | 'top-left'
-      //       | 'top-right'
-      //       | 'bottom-left'
-      //       | 'bottom-right' = 'bottom-right';
-      //     const margin = 32;
-      //     let x = 0;
-      //     let y = 0;
-      //     switch (logoPosition) {
-      //       case 'center':
-      //         x = (canvas.width - logoWidth) / 2;
-      //         y = (canvas.height - logoHeight) / 2;
-      //         break;
-      //       case 'top-left':
-      //         x = margin;
-      //         y = margin;
-      //         break;
-      //       case 'top-right':
-      //         x = canvas.width - logoWidth - margin;
-      //         y = margin;
-      //         break;
-      //       case 'bottom-left':
-      //         x = margin;
-      //         y = canvas.height - logoHeight - margin;
-      //         break;
-      //       case 'bottom-right':
-      //         x = canvas.width - logoWidth - margin;
-      //         y = canvas.height - logoHeight - margin;
-      //         break;
-      //       default:
-      //         x = (canvas.width - logoWidth) / 2;
-      //         y = (canvas.height - logoHeight) / 2;
-      //     }
-      //     ctx.drawImage(logo, x, y, logoWidth, logoHeight);
-      //   }
       const link = document.createElement('a');
       link.download = `plan-${plan.id}.png`;
       link.href = canvas.toDataURL('image/png', 2.0);
       link.click();
-
-      // logo.onerror = (e) => {
-      //   console.error('Logo failed to load:', logoSrc, e);
-      //   alert('Logo failed to load! Check the path and file type.');
-      //   const link = document.createElement('a');
-      //   link.download = `plan-${plan.id}.png`;
-      //   link.href = canvas.toDataURL('image/png', 2.0);
-      //   link.click();
-      // };
     } catch (error) {
       console.error('Error generating PNG:', error);
       throw error;
@@ -143,6 +91,19 @@ export default function PlanDetailsClient({
           <p className="my-4 flex max-w-xl items-center gap-2 text-center text-2xl leading-tight! font-semibold md:mb-4 lg:text-3xl">
             {plan.name} <EditPlanDialog plan={plan} />
           </p>
+          {plan.agenda_content && (
+            <div className="mb-4">
+              <AgendaDialog
+                agendaContent={plan.agenda_content}
+                trigger={
+                  <Button variant="outline" size="sm" className="gap-2">
+                    <FileText size={16} />
+                    {t('agenda')}
+                  </Button>
+                }
+              />
+            </div>
+          )}
           <div className="mt-8 grid w-full items-center justify-between gap-4 md:grid-cols-2">
             <PlanLogin
               plan={plan}

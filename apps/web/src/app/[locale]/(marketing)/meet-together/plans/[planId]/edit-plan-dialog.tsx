@@ -200,21 +200,20 @@ export default function EditPlanDialog({ plan }: Props) {
                     <FormItem>
                       <FormLabel>{t('meet-together.agenda')}</FormLabel>
                       <FormControl>
-                        <div className="h-64 overflow-y-auto">
-                          <RichTextEditor
-                            content={field.value || null}
-                            onChange={field.onChange}
-                            readOnly={false}
-                            titlePlaceholder={t(
-                              'meet-together.agenda_title_placeholder'
-                            )}
-                            writePlaceholder={t(
-                              'meet-together.agenda_content_placeholder'
-                            )}
-                            saveButtonLabel={t('meet-together.save_agenda')}
-                            savedButtonLabel={t('meet-together.agenda_saved')}
-                          />
-                        </div>
+                        <RichTextEditor
+                          content={field.value || null}
+                          onChange={field.onChange}
+                          readOnly={false}
+                          titlePlaceholder={t(
+                            'meet-together.agenda_title_placeholder'
+                          )}
+                          writePlaceholder={t(
+                            'meet-together.agenda_content_placeholder'
+                          )}
+                          saveButtonLabel={t('meet-together.save_agenda')}
+                          savedButtonLabel={t('meet-together.agenda_saved')}
+                          className="h-64"
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

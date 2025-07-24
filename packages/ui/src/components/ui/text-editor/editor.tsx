@@ -7,7 +7,7 @@ import TextAlign from '@tiptap/extension-text-align';
 import { EditorContent, type JSONContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { debounce } from 'lodash';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 interface RichTextEditorProps {
   content: JSONContent | null;
@@ -17,22 +17,8 @@ interface RichTextEditorProps {
   writePlaceholder?: string;
   saveButtonLabel?: string;
   savedButtonLabel?: string;
+  className?: string;
 }
-
-const getEditorClasses = (readOnly: boolean) => {
-  const baseClasses = [
-    readOnly ? 'h-full' : 'h-[calc(100vh-8rem)]',
-    'border rounded-md bg-white dark:bg-foreground/5 py-2 px-3',
-    'prose dark:prose-invert max-w-none overflow-y-auto',
-    '[&_*:is(p,h1,h2,h3).is-empty::before]:content-[attr(data-placeholder)]',
-    '[&_*:is(p,h1,h2,h3).is-empty::before]:text-gray-400',
-    '[&_*:is(p,h1,h2,h3).is-empty::before]:float-left',
-    '[&_*:is(p,h1,h2,h3).is-empty::before]:h-0',
-    '[&_*:is(p,h1,h2,h3).is-empty::before]:pointer-events-none',
-    '[&_li]:my-1 [&_li_h1]:text-4xl [&_li_h2]:text-3xl [&_li_h3]:text-2xl',
-  ];
-  return baseClasses.join(' ');
-};
 
 export function RichTextEditor({
   content,
@@ -42,6 +28,7 @@ export function RichTextEditor({
   writePlaceholder = 'Write something...',
   saveButtonLabel = 'Save',
   savedButtonLabel = 'Saved',
+  className,
 }: RichTextEditorProps) {
   const [hasChanges, setHasChanges] = useState(false);
 
@@ -59,6 +46,21 @@ export function RichTextEditor({
       debouncedOnChange.cancel();
     };
   }, [debouncedOnChange]);
+
+  const getEditorClasses = useMemo(() => {
+    const baseClasses = [
+      'border rounded-md bg-white dark:bg-foreground/5 py-2 px-3',
+      'prose dark:prose-invert max-w-none overflow-y-auto ',
+      '[&_*:is(p,h1,h2,h3).is-empty::before]:content-[attr(data-placeholder)]',
+      '[&_*:is(p,h1,h2,h3).is-empty::before]:text-gray-400',
+      '[&_*:is(p,h1,h2,h3).is-empty::before]:float-left',
+      '[&_*:is(p,h1,h2,h3).is-empty::before]:h-0',
+      '[&_*:is(p,h1,h2,h3).is-empty::before]:pointer-events-none',
+      '[&_li]:my-1 [&_li_h1]:text-4xl [&_li_h2]:text-3xl [&_li_h3]:text-2xl',
+      className,
+    ];
+    return baseClasses.join(' ');
+  }, [className]);
 
   const editor = useEditor({
     extensions: [
@@ -93,7 +95,7 @@ export function RichTextEditor({
     immediatelyRender: false,
     editorProps: {
       attributes: {
-        class: getEditorClasses(readOnly),
+        class: getEditorClasses,
       },
     },
     onUpdate: ({ editor }) => {
@@ -112,9 +114,7 @@ export function RichTextEditor({
   }, [editor, onChange, readOnly]);
 
   return (
-    <div
-      className={`flex ${readOnly ? 'h-full' : 'h-[calc(100vh-4rem)]'} flex-col`}
-    >
+    <div className={`space-y-2`}>
       {!readOnly && (
         <ToolBar
           editor={editor}
