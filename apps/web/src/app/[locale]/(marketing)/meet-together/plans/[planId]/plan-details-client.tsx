@@ -4,6 +4,7 @@ import AllAvailabilities from './all-availabilities';
 import EditPlanDialog from './edit-plan-dialog';
 import PlanLogin from './plan-login';
 import PlanUserFilter from './plan-user-filter';
+import { useTimeBlocking } from './time-blocking-provider';
 import UtilityButtons from './utility-buttons';
 import type { MeetTogetherPlan } from '@tuturuuu/types/primitives/MeetTogetherPlan';
 import type { User } from '@tuturuuu/types/primitives/User';
@@ -40,7 +41,7 @@ export default function PlanDetailsClient({
   timeblocks,
 }: PlanDetailsClientProps) {
   const { resolvedTheme } = useTheme();
-
+  const { user } = useTimeBlocking();
   const downloadAsPNG = useCallback(async () => {
     const element = document.getElementById('plan-ref');
     if (!element) throw new Error('Plan element not found');
@@ -141,7 +142,8 @@ export default function PlanDetailsClient({
         />
         <div id="plan-ref" className="flex w-full flex-col items-center">
           <p className="my-4 flex max-w-xl items-center gap-2 text-center text-2xl leading-tight! font-semibold md:mb-4 lg:text-3xl">
-            {plan.name} <EditPlanDialog plan={plan} />
+            {plan.name}{' '}
+            {user || platformUser ? <EditPlanDialog plan={plan} /> : null}
           </p>
           <div className="mt-8 grid w-full items-center justify-between gap-4 md:grid-cols-2">
             <PlanLogin
