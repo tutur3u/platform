@@ -8,12 +8,12 @@ import { useTimeBlocking } from './time-blocking-provider';
 import UtilityButtons from './utility-buttons';
 import type { MeetTogetherPlan } from '@tuturuuu/types/primitives/MeetTogetherPlan';
 import type { User } from '@tuturuuu/types/primitives/User';
+import { CircleQuestionMark } from '@tuturuuu/ui/icons';
 import { Label } from '@tuturuuu/ui/label';
 import { Separator } from '@tuturuuu/ui/separator';
 import { Switch } from '@tuturuuu/ui/switch';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import html2canvas from 'html2canvas-pro';
-import { CircleQuestionMark } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import React, { useCallback, useState } from 'react';
 
