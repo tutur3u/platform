@@ -19,6 +19,7 @@ export default function PreviewDayTime({
   end,
   disabled,
   showBestTimes = false,
+  globalMaxAvailable,
   onBestTimesStatus,
 }: {
   timeblocks: Timeblock[];
@@ -27,6 +28,7 @@ export default function PreviewDayTime({
   end: number;
   disabled: boolean;
   showBestTimes?: boolean;
+  globalMaxAvailable: number;
   onBestTimesStatus?: (hasBestTimes: boolean) => void;
 }) {
   const {
@@ -67,42 +69,15 @@ export default function PreviewDayTime({
       const uniqueUserIds = Array.from(new Set(userIds));
       return uniqueUserIds.length;
     });
-  const maxAvailable = Math.max(...slotAvailableCounts);
 
-  // Find the longest contiguous block(s) with max availability
+  // Find all blocks with the global max available
   const bestBlockIndices: Set<number> = new Set();
-  if (showBestTimes && maxAvailable >= 2) {
-    let longest = 0;
-    let currentStart = -1;
-    let currentLen = 0;
-    const blocks: { start: number; len: number }[] = [];
-    for (let i = 0; i < slotAvailableCounts.length; i++) {
-      if (slotAvailableCounts[i] === maxAvailable) {
-        if (currentStart === -1) currentStart = i;
-        currentLen++;
-      } else {
-        if (currentLen > 0) {
-          blocks.push({ start: currentStart, len: currentLen });
-          if (currentLen > longest) longest = currentLen;
-        }
-        currentStart = -1;
-        currentLen = 0;
+  if (showBestTimes && globalMaxAvailable >= 2) {
+    slotAvailableCounts.forEach((count, i) => {
+      if (count === globalMaxAvailable) {
+        bestBlockIndices.add(i);
       }
-    }
-    if (currentLen > 0) {
-      blocks.push({ start: currentStart, len: currentLen });
-      if (currentLen > longest) longest = currentLen;
-    }
-    // Only highlight if the longest block is more than 1 slot
-    if (longest > 1) {
-      blocks
-        .filter((b) => b.len === longest)
-        .forEach((b) => {
-          for (let i = b.start; i < b.start + b.len; i++) {
-            bestBlockIndices.add(i);
-          }
-        });
-    }
+    });
   }
 
   // Notify parent about best times status
