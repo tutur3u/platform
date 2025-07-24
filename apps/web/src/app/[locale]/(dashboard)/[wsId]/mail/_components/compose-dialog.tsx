@@ -3,11 +3,10 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import Highlight from '@tiptap/extension-highlight';
 import Link from '@tiptap/extension-link';
-import Placeholder from '@tiptap/extension-placeholder';
 import TextAlign from '@tiptap/extension-text-align';
 import Underline from '@tiptap/extension-underline';
 import { generateHTML } from '@tiptap/html';
-import { EditorContent, type JSONContent, useEditor } from '@tiptap/react';
+import { type JSONContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -30,20 +29,11 @@ import {
   FormLabel,
   FormMessage,
 } from '@tuturuuu/ui/form';
-import {
-  Bold,
-  ChevronDown,
-  ChevronUp,
-  Italic,
-  Send,
-  Underline as UnderlineIcon,
-  X,
-} from '@tuturuuu/ui/icons';
+import { ChevronDown, ChevronUp, Send, X } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
-import { Separator } from '@tuturuuu/ui/separator';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
-import { Toggle } from '@tuturuuu/ui/toggle';
+import { RichTextEditor } from '@tuturuuu/ui/text-editor/editor';
 import DOMPurify from 'dompurify';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
@@ -166,162 +156,6 @@ const composeSchema = z.object({
 });
 
 type ComposeFormValues = z.infer<typeof composeSchema>;
-
-// Simple Rich Text Editor Component
-function SimpleRichTextEditor({
-  content,
-  onChange,
-  placeholder,
-}: {
-  content: JSONContent;
-  onChange: (content: JSONContent) => void;
-  placeholder?: string;
-}) {
-  const editor = useEditor({
-    extensions: [
-      StarterKit.configure({
-        bulletList: { HTMLAttributes: { class: 'list-disc ml-3' } },
-        orderedList: { HTMLAttributes: { class: 'list-decimal ml-3' } },
-      }),
-      TextAlign.configure({ types: ['heading', 'paragraph'] }),
-      Placeholder.configure({
-        placeholder: placeholder || 'Write something...',
-      }),
-      Highlight,
-      Underline,
-      Link.configure({ openOnClick: false }),
-    ],
-    content,
-    editable: true,
-    immediatelyRender: false,
-    onUpdate: ({ editor }) => {
-      onChange(editor.getJSON());
-    },
-  });
-
-  const toggleBold = useCallback(() => {
-    editor?.chain().focus().toggleBold().run();
-  }, [editor]);
-
-  const toggleItalic = useCallback(() => {
-    editor?.chain().focus().toggleItalic().run();
-  }, [editor]);
-
-  const toggleUnderline = useCallback(() => {
-    editor?.chain().focus().toggleUnderline().run();
-  }, [editor]);
-
-  if (!editor) return null;
-
-  return (
-    <div className="rounded-lg border">
-      <div className="flex items-center gap-1 border-b bg-muted/20 p-2">
-        <Toggle
-          pressed={editor.isActive('bold')}
-          onPressedChange={toggleBold}
-          size="sm"
-          aria-label="Bold"
-        >
-          <Bold className="h-4 w-4" />
-        </Toggle>
-        <Toggle
-          pressed={editor.isActive('italic')}
-          onPressedChange={toggleItalic}
-          size="sm"
-          aria-label="Italic"
-        >
-          <Italic className="h-4 w-4" />
-        </Toggle>
-        <Toggle
-          pressed={editor.isActive('underline')}
-          onPressedChange={toggleUnderline}
-          size="sm"
-          aria-label="Underline"
-        >
-          <UnderlineIcon className="h-4 w-4" />
-        </Toggle>
-        <Separator orientation="vertical" className="mx-1 h-6" />
-        <Toggle
-          pressed={editor.isActive('bulletList')}
-          onPressedChange={() =>
-            editor.chain().focus().toggleBulletList().run()
-          }
-          size="sm"
-          aria-label="Bullet List"
-        >
-          •
-        </Toggle>
-        <Toggle
-          pressed={editor.isActive('orderedList')}
-          onPressedChange={() =>
-            editor.chain().focus().toggleOrderedList().run()
-          }
-          size="sm"
-          aria-label="Numbered List"
-        >
-          1.
-        </Toggle>
-      </div>
-      <style>{`
-        .rich-text-editor .ProseMirror {
-          color: hsl(var(--foreground));
-          outline: none;
-          min-height: 180px;
-        }
-        .rich-text-editor .ProseMirror * {
-          color: hsl(var(--foreground));
-        }
-        .rich-text-editor .ProseMirror p {
-          margin: 0.5rem 0;
-        }
-        .rich-text-editor .ProseMirror h1 {
-          font-size: 1.5rem;
-          font-weight: bold;
-          margin: 1rem 0 0.5rem 0;
-        }
-        .rich-text-editor .ProseMirror h2 {
-          font-size: 1.25rem;
-          font-weight: bold;
-          margin: 0.75rem 0 0.5rem 0;
-        }
-        .rich-text-editor .ProseMirror h3 {
-          font-size: 1.125rem;
-          font-weight: bold;
-          margin: 0.5rem 0 0.25rem 0;
-        }
-        .rich-text-editor .ProseMirror strong {
-          font-weight: bold;
-        }
-        .rich-text-editor .ProseMirror em {
-          font-style: italic;
-        }
-        .rich-text-editor .ProseMirror ul {
-          list-style-type: disc;
-          margin-left: 1.5rem;
-        }
-        .rich-text-editor .ProseMirror ol {
-          list-style-type: decimal;
-          margin-left: 1.5rem;
-        }
-        .rich-text-editor .ProseMirror li {
-          margin: 0.25rem 0;
-        }
-        .rich-text-editor .ProseMirror .is-empty::before {
-          color: hsl(var(--muted-foreground));
-          float: left;
-          height: 0;
-          pointer-events: none;
-        }
-      `}</style>
-      <div className="rich-text-editor">
-        <EditorContent
-          editor={editor}
-          className="min-h-[200px] max-w-none p-3 text-foreground focus-within:outline-none"
-        />
-      </div>
-    </div>
-  );
-}
 
 interface ComposeDialogProps {
   wsId: string;
@@ -831,7 +665,7 @@ export function ComposeDialog({
                     render={({ field }) => (
                       <FormItem className="flex flex-1 flex-col">
                         <FormControl>
-                          <SimpleRichTextEditor
+                          <RichTextEditor
                             content={
                               field.value &&
                               field.value.type === 'doc' &&
@@ -845,7 +679,7 @@ export function ComposeDialog({
                                   }
                             }
                             onChange={field.onChange}
-                            placeholder={t('mail.message_placeholder')}
+                            writePlaceholder={t('mail.message_placeholder')}
                           />
                         </FormControl>
                         <FormMessage />
@@ -861,7 +695,7 @@ export function ComposeDialog({
                       </div>
                     ) : sanitizedHtml.trim().length > 0 ? (
                       <div
-                        className="prose max-w-full break-words text-foreground prose-a:text-dynamic-blue prose-a:underline prose-blockquote:text-foreground prose-strong:text-foreground"
+                        className="prose max-w-full break-words text-foreground prose-h1:text-foreground prose-h2:text-foreground prose-h3:text-foreground prose-h4:text-foreground prose-h5:text-foreground prose-h6:text-foreground prose-a:text-dynamic-blue prose-a:underline prose-blockquote:text-foreground prose-strong:text-foreground"
                         // biome-ignore lint/security/noDangerouslySetInnerHtml: <html content is sanitized>
                         dangerouslySetInnerHTML={{ __html: sanitizedHtml }}
                       />
