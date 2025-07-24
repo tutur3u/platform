@@ -1,3 +1,4 @@
+import { TaskTagInput } from './_components/task-tag-input';
 import { createTask } from '@/lib/task-helper';
 import { useQuery } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
@@ -45,6 +46,7 @@ export function TaskForm({ listId, onTaskCreated }: Props) {
   const [startDate, setStartDate] = useState<Date | undefined>();
   const [endDate, setEndDate] = useState<Date | undefined>();
   const [selectedAssignees, setSelectedAssignees] = useState<string[]>([]);
+  const [tags, setTags] = useState<string[]>([]);
 
   const params = useParams();
   const wsId = params.wsId as string;
@@ -68,6 +70,7 @@ export function TaskForm({ listId, onTaskCreated }: Props) {
     setStartDate(undefined);
     setEndDate(undefined);
     setSelectedAssignees([]);
+    setTags([]);
     setIsExpanded(false);
     setIsAdding(false);
   };
@@ -80,14 +83,26 @@ export function TaskForm({ listId, onTaskCreated }: Props) {
     try {
       const supabase = createClient();
 
-      // Create the task
-      const taskData = {
+      // Create the task data
+      const taskData: {
+        name: string;
+        description?: string;
+        priority?: number;
+        start_date?: string;
+        end_date?: string;
+        tags?: string[];
+      } = {
         name: name.trim(),
         description: description.trim() || undefined,
         priority: priority === '0' ? undefined : parseInt(priority),
         start_date: startDate?.toISOString(),
         end_date: endDate?.toISOString(),
       };
+
+      // Only add tags if we have them
+      if (tags.length > 0) {
+        taskData.tags = tags;
+      }
 
       const newTask = await createTask(supabase, listId, taskData);
 
@@ -107,6 +122,10 @@ export function TaskForm({ listId, onTaskCreated }: Props) {
       onTaskCreated();
     } catch (error) {
       console.error('Error creating task:', error);
+      // Show a more detailed error message
+      if (error instanceof Error) {
+        console.error('Error details:', error.message);
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -223,25 +242,31 @@ export function TaskForm({ listId, onTaskCreated }: Props) {
             <div className="space-y-2">
               <Label className="text-xs font-medium">Quick Assign</Label>
               <div className="flex flex-wrap gap-2">
-                {members.map((member: any) => (
-                  <Button
-                    key={member.id}
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className={cn(
-                      'h-8 px-3 text-xs transition-all duration-200',
-                      selectedAssignees.includes(member.id) &&
-                        'border-blue-300 bg-blue-50 text-blue-700 dark:border-blue-700 dark:bg-blue-950 dark:text-blue-300'
-                    )}
-                    onClick={() => handleQuickAssign(member.id)}
-                  >
-                    <Users className="mr-1 h-3 w-3" />
-                    {member.display_name ||
-                      member.email?.split('@')[0] ||
-                      'User'}
-                  </Button>
-                ))}
+                {members.map(
+                  (member: {
+                    id: string;
+                    display_name?: string;
+                    email?: string;
+                  }) => (
+                    <Button
+                      key={member.id}
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className={cn(
+                        'h-8 px-3 text-xs transition-all duration-200',
+                        selectedAssignees.includes(member.id) &&
+                          'border-blue-300 bg-blue-50 text-blue-700 dark:border-blue-700 dark:bg-blue-950 dark:text-blue-300'
+                      )}
+                      onClick={() => handleQuickAssign(member.id)}
+                    >
+                      <Users className="mr-1 h-3 w-3" />
+                      {member.display_name ||
+                        member.email?.split('@')[0] ||
+                        'User'}
+                    </Button>
+                  )
+                )}
               </div>
             </div>
           )}
@@ -268,6 +293,18 @@ export function TaskForm({ listId, onTaskCreated }: Props) {
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   className="min-h-[60px] text-xs"
+                />
+              </div>
+
+              {/* Tags */}
+              <div className="space-y-2">
+                <Label className="text-xs font-medium">Tags</Label>
+                <TaskTagInput
+                  value={tags}
+                  onChange={setTags}
+                  boardId={params.boardId as string}
+                  placeholder="Add tags..."
+                  maxTags={10}
                 />
               </div>
 

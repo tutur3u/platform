@@ -1,6 +1,6 @@
 'use client';
 
-import { getStatusColor } from '../utils/taskHelpers';
+import type { GanttTask } from '../types';
 import { Badge } from '@tuturuuu/ui/badge';
 import {
   Collapsible,
@@ -21,24 +21,26 @@ interface TimeMarker {
   label: string;
 }
 
-interface GanttTask {
-  id: string;
-  name: string;
-  status: string;
-  startOffset: number;
-  width: number;
-  createdDate: Date;
-  updated_at?: string;
-  created_at: string;
-  end_date?: string;
-  [key: string]: any;
-}
-
 interface GanttTimelineProps {
   filters: AnalyticsFilters;
   timeMarkers: TimeMarker[];
-  ganttTasks: GanttTask[];
-  handleTaskClick: (e: React.MouseEvent, task: GanttTask) => void;
+  ganttTasks: Array<
+    GanttTask & {
+      startOffset: number;
+      width: number;
+      createdDate: Date;
+      endDate: Date;
+    }
+  >;
+  handleTaskClick: (
+    e: React.MouseEvent,
+    task: GanttTask & {
+      startOffset: number;
+      width: number;
+      createdDate: Date;
+      endDate: Date;
+    }
+  ) => void;
 }
 
 export function GanttTimeline({
@@ -65,9 +67,9 @@ export function GanttTimeline({
               filters.timeView === 'year' ? 'h-6 min-w-[1000px]' : 'h-6 w-full'
             )}
           >
-            {timeMarkers.map((marker, index) => (
+            {timeMarkers.map((marker) => (
               <div
-                key={index}
+                key={`${marker.position}-${marker.label}`}
                 className={cn(
                   'flex items-center justify-center text-xs whitespace-nowrap text-muted-foreground',
                   filters.timeView === 'year'
@@ -95,54 +97,7 @@ export function GanttTimeline({
         className="relative rounded-lg border bg-background"
         style={{ height: '320px' }} // Fixed height instead of expanding
       >
-        <style
-          dangerouslySetInnerHTML={{
-            __html: `
-            .custom-scrollbar::-webkit-scrollbar {
-              width: 8px;
-            }
-            .custom-scrollbar::-webkit-scrollbar-track {
-              background: transparent;
-            }
-            .custom-scrollbar::-webkit-scrollbar-thumb {
-              background: #3b82f6;
-              border-radius: 4px;
-            }
-            .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-              background: #2563eb;
-            }
-            .hover-card {
-              position: fixed;
-              z-index: 9999;
-              pointer-events: none;
-              opacity: 0;
-              transform: scale(0.95);
-              transition: all 0.2s ease-out;
-              will-change: transform, opacity, left, top;
-            }
-            .group:hover .hover-card {
-              opacity: 1;
-              transform: scale(1);
-              pointer-events: auto;
-            }
-            .hover-card::before {
-              content: '';
-              position: absolute;
-              width: 0;
-              height: 0;
-              border-style: solid;
-              border-width: 5px 5px 5px 0;
-              border-color: transparent #ffffff transparent transparent;
-              left: -5px;
-              top: 12px;
-              filter: drop-shadow(-1px 0 1px rgba(0,0,0,0.1));
-            }
-            .dark .hover-card::before {
-              border-color: transparent #111827 transparent transparent;
-            }
-          `,
-          }}
-        />
+        {/* Custom scrollbar styles applied via className */}
 
         {/* Scrollable Content Area */}
         <div
@@ -179,7 +134,11 @@ export function GanttTimeline({
                     <div
                       className={cn(
                         'absolute h-full cursor-pointer rounded transition-all hover:opacity-90',
-                        getStatusColor(task.status)
+                        task.status === 'active'
+                          ? 'bg-blue-500'
+                          : task.status === 'done' || task.status === 'closed'
+                            ? 'bg-green-500'
+                            : 'bg-gray-400'
                       )}
                       style={{
                         left: `${task.startOffset}%`,
@@ -265,14 +224,23 @@ export function GanttTimeline({
                           <div
                             className="ml-auto cursor-help bg-green-400 opacity-40 transition-opacity hover:opacity-60"
                             style={{ width: '25%' }}
-                            title={`✅ ${task.status === 'done' ? 'Completed' : 'Closed'}: ${task.updated_at ? new Date(task.updated_at).toLocaleDateString() + ' at ' + new Date(task.updated_at).toLocaleTimeString() : 'Date unknown'}${task.end_date ? ` • Due was: ${new Date(task.end_date).toLocaleDateString()}` : ''}`}
+                            title={`✅ ${task.status === 'done' ? 'Completed' : 'Closed'}: ${task.updated_at ? `${new Date(task.updated_at).toLocaleDateString()} at ${new Date(task.updated_at).toLocaleTimeString()}` : 'Date unknown'}${task.end_date ? ` • Due was: ${new Date(task.end_date).toLocaleDateString()}` : ''}`}
                           />
                         )}
 
                         {/* Main timeline click area */}
-                        <div
+                        <button
+                          type="button"
                           className="absolute inset-0 cursor-pointer"
                           onClick={(e) => handleTaskClick(e, task)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              handleTaskClick(
+                                e as unknown as React.MouseEvent,
+                                task
+                              );
+                            }
+                          }}
                         />
                       </div>
                     </div>

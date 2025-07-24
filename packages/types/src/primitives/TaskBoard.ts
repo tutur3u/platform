@@ -59,6 +59,7 @@ export interface Task {
   end_date?: string | null;
   archived: boolean;
   created_at: string;
+  tags?: string[];
   assignees?: {
     id: string;
     display_name?: string;

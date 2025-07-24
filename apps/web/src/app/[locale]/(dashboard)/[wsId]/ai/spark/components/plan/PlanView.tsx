@@ -274,17 +274,15 @@ export function PlanView({ yearPlan, isLoading }: PlanViewProps) {
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
-                  {yearPlan.metadata.prerequisites.map(
-                    (prereq: string, idx: number) => (
-                      <Badge
-                        key={`prereq-${idx}`}
-                        variant="outline"
-                        className="mr-2"
-                      >
-                        {prereq}
-                      </Badge>
-                    )
-                  )}
+                  {yearPlan.metadata.prerequisites.map((prereq: string) => (
+                    <Badge
+                      key={`prereq-${prereq}`}
+                      variant="outline"
+                      className="mr-2"
+                    >
+                      {prereq}
+                    </Badge>
+                  ))}
                 </div>
               </CardContent>
             </Card>
@@ -351,7 +349,7 @@ export function PlanView({ yearPlan, isLoading }: PlanViewProps) {
                 <div className="mt-2 flex flex-wrap gap-2">
                   {task.resources.map((resource, resourceIdx) => (
                     <Button
-                      key={`resource-${uniqueKey}-${resourceIdx}`}
+                      key={`resource-${resource.title}-${resource.url}-${resourceIdx}`}
                       variant="ghost"
                       size="sm"
                       className="h-6 gap-1 text-xs"
@@ -527,7 +525,10 @@ export function PlanView({ yearPlan, isLoading }: PlanViewProps) {
             Math.ceil(new Date().getMonth() / 3) === quarter.quarter;
 
           return (
-            <div key={`quarter-${quarterIdx}`} className="space-y-6">
+            <div
+              key={`quarter-${quarter.quarter}-${quarter.focus}`}
+              className="space-y-6"
+            >
               <div className="rounded-lg border bg-card p-6">
                 <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold">
                   <CheckCircle2 className="h-5 w-5 text-primary" />Q
@@ -548,7 +549,7 @@ export function PlanView({ yearPlan, isLoading }: PlanViewProps) {
 
                     return (
                       <Card
-                        key={`milestone-${quarterIdx}-${milestoneIdx}`}
+                        key={`milestone-${quarter.quarter}-${milestone.title}`}
                         className="border-muted/50"
                       >
                         <CardHeader className="pb-3">
@@ -601,7 +602,7 @@ export function PlanView({ yearPlan, isLoading }: PlanViewProps) {
             <ul className="grid gap-3 sm:grid-cols-2">
               {yearPlan.recommendations.map((recommendation, idx) => (
                 <li
-                  key={`recommendation-${idx}`}
+                  key={`recommendation-${recommendation.substring(0, 20)}-${idx}`}
                   className="flex items-start gap-2 rounded-md border bg-card/50 p-3 text-sm text-muted-foreground"
                 >
                   <span className="mt-1 text-sm text-primary">•</span>
@@ -615,9 +616,9 @@ export function PlanView({ yearPlan, isLoading }: PlanViewProps) {
         {/* Loading placeholders */}
         {isLoading && !yearPlan?.quarters?.length && (
           <div className="space-y-4">
-            {Array.from({ length: 3 }).map((_, idx) => (
+            {Array.from({ length: 3 }).map(() => (
               <div
-                key={`loading-${idx}`}
+                key={`loading-skeleton-${crypto.randomUUID()}`}
                 className="h-32 animate-pulse rounded-lg bg-muted"
               />
             ))}
