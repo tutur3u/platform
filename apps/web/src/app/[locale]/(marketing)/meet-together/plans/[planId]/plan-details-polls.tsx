@@ -129,7 +129,6 @@ function PlanDetailsPollContent({
       {
         method: 'DELETE',
         body: JSON.stringify({
-          optionId,
           userType, // 'PLATFORM' or 'GUEST'
           //   guestId: userType === 'GUEST' ? user?.id : undefined,
         }),

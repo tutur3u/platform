@@ -32,9 +32,13 @@ export async function POST(req: Request) {
     data: { user },
   } = await supabase.auth.getUser();
 
+  if (!user) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
+
   const { data: plan, error } = await sbAdmin
     .from('meet_together_plans')
-    .insert({ ...data, creator_id: user?.id })
+    .insert({ ...data, creator_id: user.id })
     .select('id, where_to_meet')
     .single();
 
@@ -51,7 +55,7 @@ export async function POST(req: Request) {
       plan_id: plan.id as string,
       // allow_anonymous_updates: plan.allow_anonymous_updates
       // TODO: fix later after knowing user id can be nullable or not
-      creator_id: user?.id ?? '',
+      creator_id: user.id,
       name: 'Where to Meet?',
     });
 

@@ -48,20 +48,60 @@ export async function POST(req: Request) {
 
   // 3. Insert new votes
   if (userType === 'PLATFORM' && userId) {
-    const toInsert = optionIds.map((option_id: string) => ({
+    // Validate that all option IDs belong to this poll
+    const validOptionIds = optionIds.filter((id: string) =>
+      pollOptionIds.includes(id)
+    );
+
+    if (validOptionIds.length !== optionIds.length) {
+      return NextResponse.json(
+        { message: 'Some option IDs are invalid for this poll' },
+        { status: 400 }
+      );
+    }
+
+    const toInsert = validOptionIds.map((option_id: string) => ({
       user_id: userId,
       option_id,
     }));
     if (toInsert.length > 0) {
-      await sbAdmin.from('poll_user_votes').insert(toInsert);
+      const { error: insertError } = await sbAdmin
+        .from('poll_user_votes')
+        .insert(toInsert);
+      if (insertError) {
+        return NextResponse.json(
+          { message: 'Failed to submit votes', error: insertError },
+          { status: 500 }
+        );
+      }
     }
   } else if (userType === 'GUEST' && guestId) {
-    const toInsert = optionIds.map((option_id: string) => ({
+    // Validate that all option IDs belong to this poll
+    const validOptionIds = optionIds.filter((id: string) =>
+      pollOptionIds.includes(id)
+    );
+
+    if (validOptionIds.length !== optionIds.length) {
+      return NextResponse.json(
+        { message: 'Some option IDs are invalid for this poll' },
+        { status: 400 }
+      );
+    }
+
+    const toInsert = validOptionIds.map((option_id: string) => ({
       guest_id: guestId,
       option_id,
     }));
     if (toInsert.length > 0) {
-      await sbAdmin.from('poll_guest_votes').insert(toInsert);
+      const { error: insertError } = await sbAdmin
+        .from('poll_guest_votes')
+        .insert(toInsert);
+      if (insertError) {
+        return NextResponse.json(
+          { message: 'Failed to submit votes', error: insertError },
+          { status: 500 }
+        );
+      }
     }
   } else {
     return NextResponse.json(

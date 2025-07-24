@@ -101,8 +101,10 @@ export default function MultipleChoiceVote({
   const handleAddOption = async () => {
     const trimmed = customOption.trim();
     if (!trimmed || !canAdd) return;
+    const previousState = optionsState;
+
     // Optimistic UI update
-    const newOptionId = `temp-${Date.now()}`;
+    const newOptionId = crypto.randomUUID();
     setOptionsState((prev) => [
       ...prev,
       {
@@ -117,7 +119,13 @@ export default function MultipleChoiceVote({
     ]);
     setCustomOption('');
     setSelectedOptionIds((prev) => [...prev, newOptionId]);
-    await onAddOption(pollId, trimmed);
+    try {
+      await onAddOption(pollId, trimmed);
+    } catch (error) {
+      console.error('Failed to add option:', error);
+      setOptionsState(previousState); // Revert state on failure
+      // Optionally, show a toast notification to the user
+    }
   };
 
   // Option toggle (checkbox)
@@ -135,6 +143,7 @@ export default function MultipleChoiceVote({
   // Confirm vote (optimistic update)
   const handleVoteConfirm = async () => {
     if (hasChanges) {
+      const previousState = optionsState;
       setOptionsState((prev) =>
         prev.map((option) => {
           const wasVoted =
@@ -170,7 +179,13 @@ export default function MultipleChoiceVote({
           };
         })
       );
-      await onVote(pollId, selectedOptionIds);
+      try {
+        await onVote(pollId, selectedOptionIds);
+      } catch (error) {
+        console.error('Failed to submit vote:', error);
+        setOptionsState(previousState);
+        // Optionally show an error toast/notification
+      }
     }
     setConfirmOpen(false);
   };

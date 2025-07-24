@@ -101,7 +101,7 @@ async function getTimeBlocks(planId: string) {
     })),
   ];
 }
-export async function getPollsForPlan(planId: string) {
+async function getPollsForPlan(planId: string) {
   const sbAdmin = await createAdminClient();
 
   // 1. Get all polls for the plan
