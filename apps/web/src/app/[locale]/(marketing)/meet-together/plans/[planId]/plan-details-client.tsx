@@ -190,7 +190,7 @@ export default function PlanDetailsClient({
                     </div>
                     <ul className="mt-2 list-disc pl-4 text-xs">
                       <li>
-                        Only time slots where <b>more than 2 people</b> are
+                        Only time slots where <b>2 or more people</b> are
                         available are highlighted.
                       </li>
                       <li>
