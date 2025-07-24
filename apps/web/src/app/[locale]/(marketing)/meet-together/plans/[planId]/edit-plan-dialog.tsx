@@ -36,9 +36,6 @@ import { Pencil } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { Separator } from '@tuturuuu/ui/separator';
-import { RichTextEditor } from '@tuturuuu/ui/text-editor/editor';
-import type { JSONContent } from '@tuturuuu/ui/tiptap';
-import { Sparkles } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -51,7 +48,6 @@ interface Props {
 const FormSchema = z.object({
   name: z.string(),
   is_public: z.boolean().optional(),
-  agenda_content: z.custom<JSONContent>().optional(),
 });
 
 type FormData = z.infer<typeof FormSchema>;
@@ -70,7 +66,6 @@ export default function EditPlanDialog({ plan }: Props) {
     values: {
       name: plan.name || t('meet-together.untitled_plan'),
       is_public: true,
-      agenda_content: plan.agenda_content ?? undefined,
     },
   });
 
@@ -80,7 +75,6 @@ export default function EditPlanDialog({ plan }: Props) {
   const disabled = !isValid || isSubmitting;
 
   const handleSubmit = async (data: FormData) => {
-    console.log(data);
     setUpdating(true);
 
     const hasError = false;
@@ -145,7 +139,7 @@ export default function EditPlanDialog({ plan }: Props) {
           </Button>
         </DialogTrigger>
         <DialogContent
-          className="max-h-[90vh] overflow-y-auto sm:max-w-[800px]"
+          className="sm:max-w-[425px]"
           onOpenAutoFocus={(e) => e.preventDefault()}
         >
           <DialogHeader>
@@ -177,49 +171,6 @@ export default function EditPlanDialog({ plan }: Props) {
                   </FormItem>
                 )}
               />
-
-              <Separator className="my-6" />
-
-              {/* Extra Features Section */}
-              <div className="space-y-4">
-                <div className="flex items-center gap-2">
-                  <Sparkles className="h-4 w-4 text-purple-500" />
-                  <h3 className="text-sm font-semibold text-foreground">
-                    Extra Features
-                  </h3>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Enhance your meeting plan with additional features to make
-                  coordination easier.
-                </p>
-
-                <FormField
-                  control={form.control}
-                  name="agenda_content"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t('meet-together.agenda')}</FormLabel>
-                      <FormControl>
-                        <RichTextEditor
-                          content={field.value || null}
-                          onChange={field.onChange}
-                          readOnly={false}
-                          titlePlaceholder={t(
-                            'meet-together.agenda_title_placeholder'
-                          )}
-                          writePlaceholder={t(
-                            'meet-together.agenda_content_placeholder'
-                          )}
-                          saveButtonLabel={t('meet-together.save_agenda')}
-                          savedButtonLabel={t('meet-together.agenda_saved')}
-                          className="h-64"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
 
               <DialogFooter>
                 <div className="grid w-full gap-2">

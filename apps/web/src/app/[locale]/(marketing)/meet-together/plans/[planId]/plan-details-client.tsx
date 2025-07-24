@@ -1,6 +1,6 @@
 'use client';
 
-import AgendaDialog from './agenda-dialog';
+import AgendaDetails from './agenda-details';
 import AllAvailabilities from './all-availabilities';
 import EditPlanDialog from './edit-plan-dialog';
 import PlanLogin from './plan-login';
@@ -8,11 +8,8 @@ import PlanUserFilter from './plan-user-filter';
 import UtilityButtons from './utility-buttons';
 import type { MeetTogetherPlan } from '@tuturuuu/types/primitives/MeetTogetherPlan';
 import type { User } from '@tuturuuu/types/primitives/User';
-import { Button } from '@tuturuuu/ui/button';
-import { FileText } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import html2canvas from 'html2canvas-pro';
-import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import { useCallback } from 'react';
 
@@ -44,7 +41,6 @@ export default function PlanDetailsClient({
   timeblocks,
 }: PlanDetailsClientProps) {
   const { resolvedTheme } = useTheme();
-  const t = useTranslations('meet-together');
 
   const downloadAsPNG = useCallback(async () => {
     const element = document.getElementById('plan-ref');
@@ -91,19 +87,6 @@ export default function PlanDetailsClient({
           <p className="my-4 flex max-w-xl items-center gap-2 text-center text-2xl leading-tight! font-semibold md:mb-4 lg:text-3xl">
             {plan.name} <EditPlanDialog plan={plan} />
           </p>
-          {plan.agenda_content && (
-            <div className="mb-4">
-              <AgendaDialog
-                agendaContent={plan.agenda_content}
-                trigger={
-                  <Button variant="outline" size="sm" className="gap-2">
-                    <FileText size={16} />
-                    {t('agenda')}
-                  </Button>
-                }
-              />
-            </div>
-          )}
           <div className="mt-8 grid w-full items-center justify-between gap-4 md:grid-cols-2">
             <PlanLogin
               plan={plan}
@@ -112,6 +95,10 @@ export default function PlanDetailsClient({
             />
             <AllAvailabilities plan={plan} timeblocks={timeblocks} />
           </div>
+
+          <Separator className="my-8" />
+
+          <AgendaDetails plan={plan} />
         </div>
       </div>
       {users.length > 0 && (
