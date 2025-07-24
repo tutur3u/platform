@@ -71,6 +71,7 @@ export default function EditPlanDialog({ plan }: Props) {
   const isSubmitting = form.formState.isSubmitting;
 
   const disabled = !isValid || isSubmitting;
+  const watchedName = form.watch('name');
 
   const handleSubmit = async () => {
     setUpdating(true);
@@ -177,7 +178,7 @@ export default function EditPlanDialog({ plan }: Props) {
                     type="submit"
                     className="w-full"
                     disabled={
-                      plan.name === form.getValues('name') ||
+                      plan.name === watchedName ||
                       disabled ||
                       updating ||
                       deleting
@@ -191,7 +192,7 @@ export default function EditPlanDialog({ plan }: Props) {
                   <Separator />
 
                   <AlertDialog>
-                    <AlertDialogTrigger>
+                    <AlertDialogTrigger asChild>
                       <Button
                         type="button"
                         className="w-full"

@@ -2,7 +2,6 @@
 
 import DatePlanner from './date-planner';
 import { useTimeBlocking } from './time-blocking-provider';
-import { getBestMeetingTimes } from '@/utils/timeblock-helper';
 import type { MeetTogetherPlan } from '@tuturuuu/types/primitives/MeetTogetherPlan';
 import type { Timeblock } from '@tuturuuu/types/primitives/Timeblock';
 import { useTranslations } from 'next-intl';
@@ -10,9 +9,13 @@ import { useTranslations } from 'next-intl';
 export default function AllAvailabilities({
   plan,
   timeblocks,
+  showBestTimes = false,
+  onBestTimesStatusByDateAction,
 }: {
   plan: MeetTogetherPlan;
   timeblocks: Timeblock[];
+  showBestTimes?: boolean;
+  onBestTimesStatusByDateAction?: (status: Record<string, boolean>) => void;
 }) {
   const t = useTranslations('meet-together-plan-details');
   const { user, planUsers, selectedTimeBlocks, filteredUserIds } =
@@ -31,31 +34,8 @@ export default function AllAvailabilities({
     })),
   ];
 
-  // --- Best time calculation ---
-  const bestTimes = getBestMeetingTimes({
-    timeblocks: localTimeblocks,
-    users: planUsers.map((u) => ({ id: u.id ?? null })),
-    dates: plan.dates || [],
-    start: plan.start_time || '08:00:00+00:00',
-    end: plan.end_time || '18:00:00+00:00',
-    slotMinutes: 15,
-  });
-
   return (
     <div className="flex flex-col gap-2 text-center">
-      {/* Best time display */}
-      {bestTimes.length > 0 && (
-        <div className="mb-2 rounded bg-green-100 p-2 text-green-900 dark:bg-green-900 dark:text-green-100">
-          <div className="font-semibold">Best time:</div>
-          {bestTimes.map((slot, idx) => (
-            <div key={idx} className="text-sm">
-              {slot.date} {slot.start_time.slice(0, 5)} -{' '}
-              {slot.end_time.slice(0, 5)} ({slot.availableUserIds.length}/
-              {totalUserCount} {t('available')})
-            </div>
-          ))}
-        </div>
-      )}
       {/* Existing UI */}
       <div className="font-semibold">{t('everyone_availability')}</div>
       <div className="flex items-center justify-center gap-2 text-sm">
@@ -93,6 +73,8 @@ export default function AllAvailabilities({
         dates={plan.dates}
         start={plan.start_time}
         end={plan.end_time}
+        showBestTimes={showBestTimes}
+        onBestTimesStatusByDateAction={onBestTimesStatusByDateAction}
       />
     </div>
   );

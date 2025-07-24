@@ -11,6 +11,8 @@ export default function DayPlanner({
   end,
   editable,
   disabled,
+  showBestTimes = false,
+  onBestTimesStatus,
 }: {
   timeblocks: Timeblock[];
   date: string;
@@ -18,6 +20,8 @@ export default function DayPlanner({
   end: number;
   editable: boolean;
   disabled: boolean;
+  showBestTimes?: boolean;
+  onBestTimesStatus?: (hasBestTimes: boolean) => void;
 }) {
   const locale = useLocale();
   dayjs.locale(locale);
@@ -42,6 +46,8 @@ export default function DayPlanner({
         end={end}
         editable={editable}
         disabled={disabled}
+        showBestTimes={showBestTimes}
+        onBestTimesStatus={onBestTimesStatus}
       />
     </div>
   );

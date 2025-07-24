@@ -18,7 +18,7 @@ export default function AccountBadge({ type }: { type: 'GUEST' | 'PLATFORM' }) {
       } mt-2 rounded px-2 py-1 text-sm font-semibold`}
     >
       <span
-        className={`bg-linear-to-r bg-clip-text text-transparent text-white`}
+        className={`bg-linear-to-r bg-clip-text text-white`}
       >
         {t(type === 'GUEST' ? 'guest_account' : 'tuturuuu_account')}
       </span>

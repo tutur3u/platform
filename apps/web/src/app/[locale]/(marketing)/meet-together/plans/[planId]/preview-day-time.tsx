@@ -10,6 +10,7 @@ import {
   TooltipTrigger,
 } from '@tuturuuu/ui/tooltip';
 import dayjs from 'dayjs';
+import React from 'react';
 
 export default function PreviewDayTime({
   timeblocks: serverTimeblocks,
@@ -17,12 +18,16 @@ export default function PreviewDayTime({
   start,
   end,
   disabled,
+  showBestTimes = false,
+  onBestTimesStatus,
 }: {
   timeblocks: Timeblock[];
   date: string;
   start: number;
   end: number;
   disabled: boolean;
+  showBestTimes?: boolean;
+  onBestTimesStatus?: (hasBestTimes: boolean) => void;
 }) {
   const {
     filteredUserIds,
@@ -41,6 +46,72 @@ export default function PreviewDayTime({
 
   const hourBlocks = Array.from(Array(Math.floor(end + 1 - start)).keys());
   const hourSplits = 4;
+
+  // Compute available user count for each slot
+  const slotAvailableCounts: number[] = hourBlocks
+    .map((i) => (i + start) * hourSplits)
+    .flatMap((i) => Array(hourSplits).fill(i))
+    .map((_, i) => {
+      const currentDate = dayjs(date)
+        .hour(Math.floor(i / hourSplits) + start)
+        .minute((i % hourSplits) * 15)
+        .toDate();
+      const userIds = timeblocks
+        .filter((tb) => {
+          const start = dayjs(`${tb.date} ${tb.start_time}`);
+          const end = dayjs(`${tb.date} ${tb.end_time}`);
+          return dayjs(currentDate).isBetween(start, end, null, '[)');
+        })
+        .map((tb) => tb.user_id)
+        .filter(Boolean);
+      const uniqueUserIds = Array.from(new Set(userIds));
+      return uniqueUserIds.length;
+    });
+  const maxAvailable = Math.max(...slotAvailableCounts);
+
+  // Find the longest contiguous block(s) with max availability
+  const bestBlockIndices: Set<number> = new Set();
+  if (showBestTimes && maxAvailable >= 2) {
+    let longest = 0;
+    let currentStart = -1;
+    let currentLen = 0;
+    const blocks: { start: number; len: number }[] = [];
+    for (let i = 0; i < slotAvailableCounts.length; i++) {
+      if (slotAvailableCounts[i] === maxAvailable) {
+        if (currentStart === -1) currentStart = i;
+        currentLen++;
+      } else {
+        if (currentLen > 0) {
+          blocks.push({ start: currentStart, len: currentLen });
+          if (currentLen > longest) longest = currentLen;
+        }
+        currentStart = -1;
+        currentLen = 0;
+      }
+    }
+    if (currentLen > 0) {
+      blocks.push({ start: currentStart, len: currentLen });
+      if (currentLen > longest) longest = currentLen;
+    }
+    // Only highlight if the longest block is more than 1 slot
+    if (longest > 1) {
+      blocks
+        .filter((b) => b.len === longest)
+        .forEach((b) => {
+          for (let i = b.start; i < b.start + b.len; i++) {
+            bestBlockIndices.add(i);
+          }
+        });
+    }
+  }
+
+  // Notify parent about best times status
+  React.useEffect(() => {
+    if (onBestTimesStatus) {
+      onBestTimesStatus(bestBlockIndices.size > 0);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showBestTimes, bestBlockIndices.size]);
 
   const isTimeBlockSelected = (i: number): 'local' | 'server' | 'none' => {
     // If the timeblock is pre-selected
@@ -89,10 +160,37 @@ export default function PreviewDayTime({
             .minute((i % hourSplits) * 15)
             .toDate();
 
+
+
+
           const isSelected = isSaved || isLocal || result.includes('add');
           const isSelectable = i + hourSplits < array.length;
           const hideBorder = i === 0 || i + hourSplits > array.length - 1;
           const opacity = getOpacityForDate(currentDate, timeblocks);
+
+          // If showBestTimes is enabled, only highlight slots in the longest contiguous block(s) with max availability
+          let cellClass = '';
+          let cellStyle = {};
+          if (i + hourSplits < array.length) {
+            if (showBestTimes) {
+              if (bestBlockIndices.has(i)) {
+                cellClass = 'bg-green-500/70';
+                cellStyle = { opacity: 1 };
+              } else {
+                cellClass = 'bg-foreground/10';
+                cellStyle = { opacity: 1 };
+              }
+            } else {
+              cellClass = isSelected
+                ? isDraft
+                  ? 'bg-green-500/50'
+                  : isSaved
+                    ? 'bg-green-500/70'
+                    : 'bg-green-500/70'
+                : 'bg-foreground/10';
+              cellStyle = { opacity: isSelected ? opacity : 1 };
+            }
+          }
 
           const editData = {
             mode: isSelected ? 'remove' : 'add',
@@ -120,21 +218,8 @@ export default function PreviewDayTime({
                             setPreviewDate(editData.date);
                           }
                     }
-                    style={{
-                      opacity: isSelected ? opacity : 1,
-                    }}
-                    className={`${
-                      i + hourSplits < array.length
-                        ? isSelected
-                          ? isDraft
-                            ? 'bg-green-500/50'
-                            : isSaved
-                              ? 'bg-green-500/70'
-                              : // : 'animate-pulse bg-green-500/70'
-                                'bg-green-500/70'
-                          : 'bg-foreground/10'
-                        : ''
-                    } relative h-3 w-full ${
+                    style={cellStyle}
+                    className={`${cellClass} relative h-3 w-full ${
                       hideBorder
                         ? ''
                         : (i + 1) % hourSplits === 0
