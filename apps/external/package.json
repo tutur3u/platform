@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev -p 3000 --turbopack",
     "devx": "bun sb:stop && bun sb:start && bun dev",
-    "devrs": "bun sb:stop && bun sb:reset && bun sb:start && bun dev",
+    "devrs": "bun sb:stop && bun sb:start && bun sb:reset && bun dev",
     "build": "NODE_OPTIONS='--max-old-space-size=8192' next build --turbo",
     "start": "next start",
     "preview": "NODE_OPTIONS='--max-old-space-size=8192' next build --turbo && next start -p 3000 --turbopack",
