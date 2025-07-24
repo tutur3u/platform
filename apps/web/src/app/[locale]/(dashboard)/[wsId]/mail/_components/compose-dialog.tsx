@@ -541,7 +541,7 @@ export function ComposeDialog({
 
         // Combine content with quoted content for preview
         const fullContent = quotedContent
-          ? `${contentHtml}\n\n<div style="color: #6b7280; border-left: 3px solid #d1d5db; padding-left: 12px; margin-top: 20px;"><pre style="white-space: pre-wrap; font-family: inherit;">${quotedContent}</pre></div>`
+          ? `${contentHtml}\n\n<div class="gmail_quote"><blockquote class="gmail_quote" style="margin:0 0 0 .8ex;border-left:1px #ccc solid;padding-left:1ex">${quotedContent.replace(/\n/g, '<br>')}</blockquote></div>`
           : contentHtml;
 
         if (!fullContent.trim()) {
@@ -594,7 +594,7 @@ export function ComposeDialog({
 
       // Combine user content with quoted content if present
       const finalContent = quotedContent
-        ? `${contentHtml}\n\n<div style="color: #6b7280; border-left: 3px solid #d1d5db; padding-left: 12px; margin-top: 20px;"><pre style="white-space: pre-wrap; font-family: inherit;">${quotedContent}</pre></div>`
+        ? `${contentHtml}\n\n<div class="gmail_quote"><blockquote class="gmail_quote" style="margin:0 0 0 .8ex;border-left:1px #ccc solid;padding-left:1ex">${quotedContent.replace(/\n/g, '<br>')}</blockquote></div>`
         : contentHtml;
 
       const response = await fetch(
@@ -861,7 +861,7 @@ export function ComposeDialog({
                       </div>
                     ) : sanitizedHtml.trim().length > 0 ? (
                       <div
-                        className="prose max-w-full break-words text-foreground prose-a:text-dynamic-blue prose-a:underline prose-strong:text-foreground"
+                        className="prose max-w-full break-words text-foreground prose-a:text-dynamic-blue prose-a:underline prose-blockquote:text-foreground prose-strong:text-foreground"
                         // biome-ignore lint/security/noDangerouslySetInnerHtml: <html content is sanitized>
                         dangerouslySetInnerHTML={{ __html: sanitizedHtml }}
                       />
@@ -907,11 +907,6 @@ export function ComposeDialog({
                     </CollapsibleTrigger>
                     <CollapsibleContent className="mt-2">
                       <div className="rounded-lg border bg-muted/10 p-4">
-                        <div className="mb-2 text-xs font-medium text-muted-foreground">
-                          {initialData?.isReply
-                            ? 'Original Message:'
-                            : 'Forwarded Message:'}
-                        </div>
                         <pre className="text-xs leading-relaxed whitespace-pre-wrap text-muted-foreground">
                           {quotedContent}
                         </pre>

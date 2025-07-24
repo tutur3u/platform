@@ -227,7 +227,7 @@ export function MailDisplay({
     const replySubject = mail.subject.startsWith('Re: ')
       ? mail.subject
       : `Re: ${mail.subject}`;
-    const quotedContent = `--- Original Message ---\nFrom: ${mail.source_email}\nDate: ${dayjs(mail.created_at).format('LLLL')}\nSubject: ${mail.subject}\n\n${mail.payload}`;
+    const quotedContent = `On ${dayjs(mail.created_at).format('LLLL')}, ${mail.source_email} wrote:\n\n${mail.payload}`;
 
     onReply({
       to: recipients,
@@ -248,7 +248,7 @@ export function MailDisplay({
     const replySubject = mail.subject.startsWith('Re: ')
       ? mail.subject
       : `Re: ${mail.subject}`;
-    const quotedContent = `--- Original Message ---\nFrom: ${mail.source_email}\nDate: ${dayjs(mail.created_at).format('LLLL')}\nSubject: ${mail.subject}\n\n${mail.payload}`;
+    const quotedContent = `On ${dayjs(mail.created_at).format('LLLL')}, ${mail.source_email} wrote:\n\n${mail.payload}`;
 
     // Remove duplicates and filter out current user
     const uniqueToRecipients = [...new Set(allRecipients)].filter(
@@ -274,7 +274,7 @@ export function MailDisplay({
     const forwardSubject = mail.subject.startsWith('Fwd: ')
       ? mail.subject
       : `Fwd: ${mail.subject}`;
-    const forwardedContent = `--- Forwarded Message ---\nFrom: ${mail.source_email}\nDate: ${dayjs(mail.created_at).format('LLLL')}\nSubject: ${mail.subject}\nTo: ${mail.to_addresses?.join(', ') || ''}\n\n${mail.payload}`;
+    const forwardedContent = `---------- Forwarded message ----------\nFrom: ${mail.source_email}\nDate: ${dayjs(mail.created_at).format('LLLL')}\nSubject: ${mail.subject}\nTo: ${mail.to_addresses?.join(', ') || ''}\n\n${mail.payload}`;
 
     onForward({
       subject: forwardSubject,
@@ -540,7 +540,7 @@ export function MailDisplay({
               <>
                 <style>{`.prose a { word-break: break-all; }`}</style>
                 <div
-                  className="prose max-w-full bg-background break-words text-foreground prose-a:text-dynamic-blue prose-a:underline prose-strong:text-foreground"
+                  className="prose max-w-full bg-background break-words text-foreground prose-a:text-dynamic-blue prose-a:underline prose-blockquote:text-foreground prose-strong:text-foreground"
                   style={{ padding: '1.5rem' }}
                   // biome-ignore lint/security/noDangerouslySetInnerHtml: <html content is sanitized>
                   dangerouslySetInnerHTML={{ __html: sanitizedHtml }}
