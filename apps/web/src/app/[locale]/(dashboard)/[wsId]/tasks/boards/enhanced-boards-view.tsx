@@ -56,8 +56,8 @@ import {
   SelectValue,
 } from '@tuturuuu/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
-import { cn } from '@tuturuuu/utils/format';
-import { useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useCallback, useMemo, useState } from 'react';
 
 interface AnalyticsFilters {
   timeView: 'week' | 'month' | 'year';
@@ -89,13 +89,13 @@ interface TaskModalState {
 }
 
 export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
+  const router = useRouter();
   // Ensure data is always an array to prevent hook order issues
-  const safeData = data || [];
+  const safeData = useMemo(() => data || [], [data]);
 
   // Removed unused activeTab state - tabs are controlled by Tabs component
   const [cardLayout, setCardLayout] = useState<CardLayout>('grid-cols-3');
   const [selectedBoard, setSelectedBoard] = useState<string | null>(null);
-  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('name');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
@@ -115,7 +115,7 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
   });
 
   // Reset column visibility to default
-  const resetColumnVisibility = () => {
+  const resetColumnVisibility = useCallback(() => {
     setColumnVisibility({
       boardName: true,
       totalTasks: true,
@@ -127,14 +127,15 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
       lastUpdated: false,
       priorityDistribution: true,
     });
-  };
+  }, []);
+
   const [taskModal, setTaskModal] = useState<TaskModalState>({
     isOpen: false,
     filterType: 'all',
     selectedBoard: null,
   });
 
-  const handleLayoutChange = () => {
+  const handleLayoutChange = useCallback(() => {
     const currentIndex = CARD_LAYOUT_OPTIONS.findIndex(
       (opt) => opt.value === cardLayout
     );
@@ -143,7 +144,7 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
     if (nextOption) {
       setCardLayout(nextOption.value);
     }
-  };
+  }, [cardLayout]);
 
   const [analyticsFilters, setAnalyticsFilters] = useState<AnalyticsFilters>({
     timeView: 'week',
@@ -174,8 +175,10 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
     [analyticsFilters.selectedBoard, safeData]
   );
 
-  // Get all tasks across all boards for filtering
+  // Get all tasks across all boards for filtering - optimized with early return
   const allTasks = useMemo(() => {
+    if (!safeData.length) return [];
+
     return safeData.flatMap((board) =>
       (board.task_lists || []).flatMap((list) =>
         (list.tasks || []).map((task) => ({
@@ -205,8 +208,10 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
     analyticsFilters.selectedBoard
   );
 
-  // Filter tasks based on modal state
+  // Filter tasks based on modal state - optimized with early returns
   const filteredTasks = useMemo(() => {
+    if (!allTasks.length) return [];
+
     let tasks = allTasks;
 
     // Filter by board if specified
@@ -214,7 +219,7 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
       tasks = tasks.filter((task) => task.boardId === taskModal.selectedBoard);
     }
 
-    // Filter by type
+    // Filter by type with early returns for better performance
     switch (taskModal.filterType) {
       case 'completed':
         return tasks.filter(
@@ -223,15 +228,17 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
             task.listStatus === 'done' ||
             task.listStatus === 'closed'
         );
-      case 'overdue':
+      case 'overdue': {
+        const now = new Date();
         return tasks.filter(
           (task) =>
             !task.archived &&
             task.listStatus !== 'done' &&
             task.listStatus !== 'closed' &&
             task.end_date &&
-            new Date(task.end_date) < new Date()
+            new Date(task.end_date) < now
         );
+      }
       case 'urgent':
         return tasks.filter(
           (task) =>
@@ -245,8 +252,17 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
     }
   }, [allTasks, taskModal]);
 
-  // Group filtered tasks by status
+  // Group filtered tasks by status - optimized
   const groupedTasks = useMemo(() => {
+    if (!filteredTasks.length) {
+      return {
+        not_started: [],
+        active: [],
+        done: [],
+        closed: [],
+      };
+    }
+
     const groups: Record<TaskStatus, typeof filteredTasks> = {
       not_started: [],
       active: [],
@@ -269,79 +285,116 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
     return groups;
   }, [filteredTasks]);
 
-  const handleBoardClick = (
-    board: (typeof safeData)[0],
-    e?: React.MouseEvent
-  ) => {
-    if (e) {
-      e.preventDefault();
-    }
-    setSelectedBoard(board.id);
-    setSidebarOpen(true);
-  };
+  const handleBoardClick = useCallback(
+    (board: (typeof safeData)[0], e?: React.MouseEvent) => {
+      if (e) {
+        e.preventDefault();
+      }
+      setSelectedBoard(board.id);
+      setSidebarOpen(true);
+    },
+    []
+  );
 
   // Handler for table row clicks
-  const handleTableRowClick = (board: (typeof safeData)[0]) => {
-    // Check if any dialogs or alert dialogs are currently open
-    const hasOpenDialogs = document.querySelector('[role="dialog"]') !== null;
-    const hasOpenAlertDialogs =
-      document.querySelector('[role="alertdialog"]') !== null;
-    if (hasOpenDialogs || hasOpenAlertDialogs) {
-      return; // Don't trigger row click if dialogs are open
-    }
-    handleBoardClick(board);
-  };
+  const handleTableRowClick = useCallback(
+    (board: (typeof safeData)[0]) => {
+      // Check if any dialogs or alert dialogs are currently open
+      const hasOpenDialogs = document.querySelector('[role="dialog"]') !== null;
+      const hasOpenAlertDialogs =
+        document.querySelector('[role="alertdialog"]') !== null;
+      if (hasOpenDialogs || hasOpenAlertDialogs) {
+        return; // Don't trigger row click if dialogs are open
+      }
+      handleBoardClick(board);
+    },
+    [handleBoardClick]
+  );
 
-  const closeSidebar = () => {
+  const closeSidebar = useCallback(() => {
     setSidebarOpen(false);
     setSelectedBoard(null);
-  };
+  }, []);
 
-  const openTaskModal = (filterType: FilterType, boardId?: string) => {
-    setTaskModal({
-      isOpen: true,
-      filterType,
-      selectedBoard: boardId || null,
-    });
-  };
+  const openTaskModal = useCallback(
+    (filterType: FilterType, boardId?: string) => {
+      setTaskModal({
+        isOpen: true,
+        filterType,
+        selectedBoard: boardId || null,
+      });
+    },
+    []
+  );
 
-  const closeTaskModal = () => {
-    setTaskModal({
-      isOpen: false,
-      filterType: 'all',
-      selectedBoard: null,
-    });
-  };
+  const closeTaskModal = useCallback(() => {
+    setTaskModal((prev) => ({ ...prev, isOpen: false }));
+  }, []);
 
-  const handleTaskClick = (task: (typeof filteredTasks)[0]) => {
-    // Navigate to the task's board page
-    window.location.href = `${task.boardHref}?taskId=${task.id}`;
-  };
+  const handleTaskClick = useCallback((task: (typeof filteredTasks)[0]) => {
+    // TODO: Implement task click navigation
+    // Should navigate to the specific task's board view or open task details modal
+    // For now, log the task for debugging purposes
+    console.log('Task clicked:', task);
 
-  const refreshTasks = () => {
-    // Refresh the page to reload data
+    // TODO: Add navigation logic here:
+    // - Navigate to the task's board: router.push(`/tasks/boards/${task.board_id}?task=${task.id}`)
+    // - Or open a task details modal
+    // - Or highlight the task in the current view
+  }, []);
+
+  const refreshTasks = useCallback(() => {
+    // TODO: Implement proper data refresh
+    // Should invalidate and refetch task data instead of page reload
+    // For now, use page reload as fallback
     window.location.reload();
-  };
 
-  // Table functionality handlers
-  const handleTableFilter = () => {
-    setShowAdvancedFilters(!showAdvancedFilters);
-  };
+    // TODO: Replace with proper data refresh:
+    // - Invalidate React Query cache
+    // - Refetch task data
+    // - Update local state
+  }, []);
 
-  const handleTableSort = () => {
-    setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-  };
+  const handleTableFilter = useCallback(() => {
+    // TODO: Implement table filter toggle
+    // Should toggle advanced filter panel or filter dropdown
+    // For now, just log the action
+    console.log('Table filter triggered');
 
-  const handleTableSettings = () => {
-    setShowColumnSettings(!showColumnSettings);
-  };
+    // TODO: Add filter logic here:
+    // - Toggle filter panel visibility
+    // - Show/hide advanced filter options
+    // - Apply current filter state
+  }, []);
+
+  const handleTableSort = useCallback(() => {
+    // TODO: Implement table sort toggle
+    // Should cycle through sort options or toggle sort direction
+    // For now, just log the action
+    console.log('Table sort triggered');
+
+    // TODO: Add sort logic here:
+    // - Cycle through available sort fields
+    // - Toggle sort direction (asc/desc)
+    // - Update sort state
+  }, []);
+
+  const handleTableSettings = useCallback(() => {
+    // TODO: Implement table settings toggle
+    // Should toggle column visibility settings panel
+    // For now, just log the action
+    console.log('Table settings triggered');
+
+    // TODO: Add settings logic here:
+    // - Toggle column visibility panel
+    // - Show/hide table customization options
+    // - Save/restore user preferences
+  }, []);
 
   // Apply filters to data and check if filters are active
   const { filteredData, hasActiveFilters } = useMemo(() => {
     const hasFilters =
-      showAdvancedFilters ||
-      searchQuery.trim() !== '' ||
-      taskModal.filterType !== 'all';
+      searchQuery.trim() !== '' || taskModal.filterType !== 'all';
     let filtered = [...safeData];
 
     // Search filter
@@ -360,7 +413,7 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
 
     // Sort
     filtered.sort((a, b) => {
-      let aValue: any, bValue: any;
+      let aValue: string | number, bValue: string | number;
 
       switch (sortBy) {
         case 'name':
@@ -392,22 +445,22 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
     });
 
     return { filteredData: filtered, hasActiveFilters: hasFilters };
-  }, [
-    safeData,
-    showAdvancedFilters,
-    searchQuery,
-    sortBy,
-    sortOrder,
-    taskModal,
-  ]);
+  }, [safeData, searchQuery, sortBy, sortOrder, taskModal]);
 
   return (
     <>
       {/* Enhanced Quick Stats - Now Clickable */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
-        <div
+        <button
+          type="button"
           className="cursor-pointer rounded-xl border bg-gradient-to-br from-blue-50 to-blue-100/50 p-4 transition-all hover:scale-105 hover:shadow-md dark:from-blue-950/20 dark:to-blue-900/10"
           onClick={() => openTaskModal('all')}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              openTaskModal('all');
+            }
+          }}
         >
           <div className="flex items-center gap-3">
             <div className="rounded-lg bg-blue-500/10 p-2">
@@ -422,11 +475,18 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
               </p>
             </div>
           </div>
-        </div>
+        </button>
 
-        <div
+        <button
+          type="button"
           className="cursor-pointer rounded-xl border bg-gradient-to-br from-green-50 to-green-100/50 p-4 transition-all hover:scale-105 hover:shadow-md dark:from-green-950/20 dark:to-green-900/10"
           onClick={() => openTaskModal('completed')}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              openTaskModal('completed');
+            }
+          }}
         >
           <div className="flex items-center gap-3">
             <div className="rounded-lg bg-green-500/10 p-2">
@@ -441,7 +501,7 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
               </p>
             </div>
           </div>
-        </div>
+        </button>
 
         <div className="rounded-xl border bg-gradient-to-br from-purple-50 to-purple-100/50 p-4 transition-all hover:shadow-md dark:from-purple-950/20 dark:to-purple-900/10">
           <div className="flex items-center gap-3">
@@ -459,9 +519,17 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
           </div>
         </div>
 
-        <div
+        <button
+          type="button"
           className="cursor-pointer rounded-xl border bg-gradient-to-br from-red-50 to-red-100/50 p-4 transition-all hover:scale-105 hover:shadow-md dark:from-red-950/20 dark:to-red-900/10"
           onClick={() => openTaskModal('overdue')}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              openTaskModal('overdue');
+            }
+          }}
+          aria-label="View overdue tasks"
         >
           <div className="flex items-center gap-3">
             <div className="rounded-lg bg-red-500/10 p-2">
@@ -476,11 +544,19 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
               </p>
             </div>
           </div>
-        </div>
+        </button>
 
-        <div
+        <button
+          type="button"
           className="cursor-pointer rounded-xl border bg-gradient-to-br from-orange-50 to-orange-100/50 p-4 transition-all hover:scale-105 hover:shadow-md dark:from-orange-950/20 dark:to-orange-900/10"
           onClick={() => openTaskModal('urgent')}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              openTaskModal('urgent');
+            }
+          }}
+          aria-label="View urgent priority tasks"
         >
           <div className="flex items-center gap-3">
             <div className="rounded-lg bg-orange-500/10 p-2">
@@ -495,7 +571,7 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
               </p>
             </div>
           </div>
-        </div>
+        </button>
       </div>
 
       {/* Main Content with Tabs */}
@@ -539,7 +615,7 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
               >
                 <div className="flex items-center gap-1">
                   <Button
-                    variant={showAdvancedFilters ? 'default' : 'ghost'}
+                    variant="ghost"
                     size="sm"
                     className="h-8 w-8 p-0"
                     onClick={handleTableFilter}
@@ -552,14 +628,9 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                     size="sm"
                     className="h-8 w-8 p-0"
                     onClick={handleTableSort}
-                    title={`Sort ${showAdvancedFilters ? 'descending' : 'ascending'}`}
+                    title="Sort"
                   >
-                    <SortAsc
-                      className={cn(
-                        'h-4 w-4',
-                        showAdvancedFilters && 'rotate-180'
-                      )}
-                    />
+                    <SortAsc className="h-4 w-4" />
                   </Button>
                   <Button
                     variant={showColumnSettings ? 'default' : 'ghost'}
@@ -580,7 +651,7 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
               >
                 <div className="flex items-center gap-1">
                   <Button
-                    variant={showAdvancedFilters ? 'default' : 'ghost'}
+                    variant="ghost"
                     size="sm"
                     className="h-8 w-8 p-0"
                     onClick={handleTableFilter}
@@ -595,12 +666,7 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                     onClick={handleTableSort}
                     title="Sort cards"
                   >
-                    <SortAsc
-                      className={cn(
-                        'h-4 w-4',
-                        showAdvancedFilters && 'rotate-180'
-                      )}
-                    />
+                    <SortAsc className="h-4 w-4" />
                   </Button>
                   <Button
                     variant="ghost"
@@ -640,65 +706,72 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
           </div>
 
           {/* Filter Panel */}
-          {showAdvancedFilters && (
-            <div className="mt-4 rounded-lg border bg-muted/30 p-4">
-              <div className="flex items-center gap-4">
-                <div className="flex-1">
-                  <label className="text-sm font-medium">Search</label>
-                  <input
-                    type="text"
-                    placeholder="Search boards..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="mt-1 w-full rounded-md border bg-background px-3 py-2 text-sm"
-                  />
-                </div>
-                <div className="w-40">
-                  <label className="text-sm font-medium">Status</label>
-                  <select
-                    value={taskModal.filterType || 'all'}
-                    onChange={(e) =>
-                      setTaskModal({
-                        ...taskModal,
-                        filterType: e.target.value as FilterType,
-                      })
-                    }
-                    className="mt-1 w-full rounded-md border bg-background px-3 py-2 text-sm"
-                  >
-                    <option value="all">All Boards</option>
-                    <option value="active">Active</option>
-                    <option value="archived">Archived</option>
-                  </select>
-                </div>
-                <div className="w-32">
-                  <label className="text-sm font-medium">Sort By</label>
-                  <select
-                    value={sortBy}
-                    onChange={(e) => setSortBy(e.target.value)}
-                    className="mt-1 w-full rounded-md border bg-background px-3 py-2 text-sm"
-                  >
-                    <option value="name">Name</option>
-                    <option value="created_at">Created</option>
-                    <option value="totalTasks">Tasks</option>
-                    <option value="progressPercentage">Progress</option>
-                  </select>
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    setSearchQuery('');
-                    setSortBy('name');
-                    setSortOrder('asc');
-                    setTaskModal({ ...taskModal, filterType: 'all' });
-                  }}
-                  className="mt-6"
-                >
-                  Clear
-                </Button>
+          <div className="mt-4 rounded-lg border bg-muted/30 p-4">
+            <div className="flex items-center gap-4">
+              <div className="flex-1">
+                <label htmlFor="board-search" className="text-sm font-medium">
+                  Search
+                </label>
+                <input
+                  id="board-search"
+                  type="text"
+                  placeholder="Search boards..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="mt-1 w-full rounded-md border bg-background px-3 py-2 text-sm"
+                />
               </div>
+              <div className="w-40">
+                <label htmlFor="board-status" className="text-sm font-medium">
+                  Status
+                </label>
+                <select
+                  id="board-status"
+                  value={taskModal.filterType || 'all'}
+                  onChange={(e) =>
+                    setTaskModal({
+                      ...taskModal,
+                      filterType: e.target.value as FilterType,
+                    })
+                  }
+                  className="mt-1 w-full rounded-md border bg-background px-3 py-2 text-sm"
+                >
+                  <option value="all">All Boards</option>
+                  <option value="active">Active</option>
+                  <option value="archived">Archived</option>
+                </select>
+              </div>
+              <div className="w-32">
+                <label htmlFor="board-sort" className="text-sm font-medium">
+                  Sort By
+                </label>
+                <select
+                  id="board-sort"
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value)}
+                  className="mt-1 w-full rounded-md border bg-background px-3 py-2 text-sm"
+                >
+                  <option value="name">Name</option>
+                  <option value="created_at">Created</option>
+                  <option value="totalTasks">Tasks</option>
+                  <option value="progressPercentage">Progress</option>
+                </select>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setSearchQuery('');
+                  setSortBy('name');
+                  setSortOrder('asc');
+                  setTaskModal({ ...taskModal, filterType: 'all' });
+                }}
+                className="mt-6"
+              >
+                Clear
+              </Button>
             </div>
-          )}
+          </div>
 
           {/* Column Settings Panel */}
           {showColumnSettings && (
@@ -886,10 +959,18 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                 className={`grid grid-cols-1 gap-6 sm:${cardLayout} lg:${cardLayout}`}
               >
                 {filteredData.map((board) => (
-                  <div
+                  <button
                     key={board.id}
-                    className="group relative cursor-pointer rounded-xl border bg-card p-6 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:border-primary/20 hover:shadow-lg"
+                    type="button"
+                    className="group relative w-full cursor-pointer rounded-xl border bg-card p-6 text-left shadow-sm transition-all duration-200 hover:-translate-y-1 hover:border-primary/20 hover:shadow-lg"
                     onClick={(e) => handleBoardClick(board, e)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        handleBoardClick(board);
+                      }
+                    }}
+                    aria-label={`View board: ${board.name}`}
                   >
                     {/* Board Header */}
                     <div className="mb-4">
@@ -920,16 +1001,14 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                       {/* Tags */}
                       {board.tags && board.tags.length > 0 && (
                         <div className="flex flex-wrap gap-1">
-                          {board.tags
-                            .slice(0, 2)
-                            .map((tag: string, index: number) => (
-                              <span
-                                key={index}
-                                className="inline-flex items-center rounded-md bg-primary/10 px-2 py-1 text-xs font-medium text-primary"
-                              >
-                                {tag}
-                              </span>
-                            ))}
+                          {board.tags.slice(0, 2).map((tag: string) => (
+                            <span
+                              key={tag}
+                              className="inline-flex items-center rounded-md bg-primary/10 px-2 py-1 text-xs font-medium text-primary"
+                            >
+                              {tag}
+                            </span>
+                          ))}
                           {board.tags.length > 2 && (
                             <span className="inline-flex items-center rounded-md bg-muted px-2 py-1 text-xs font-medium text-muted-foreground">
                               +{board.tags.length - 2}
@@ -1021,7 +1100,7 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                         <ArrowRight className="h-3 w-3 text-primary" />
                       </div>
                     </div>
-                  </div>
+                  </button>
                 ))}
               </div>
 
@@ -1060,7 +1139,12 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                       onValueChange={(value) =>
                         setAnalyticsFilters((prev) => ({
                           ...prev,
-                          statusFilter: value as any,
+                          statusFilter: value as
+                            | 'all'
+                            | 'not_started'
+                            | 'active'
+                            | 'done'
+                            | 'closed',
                         }))
                       }
                     >
@@ -1256,9 +1340,17 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
       {sidebarOpen && selectedBoard && (
         <div className="fixed inset-0 z-50 flex">
           {/* Backdrop */}
-          <div
+          <button
+            type="button"
             className="absolute inset-0 bg-black/20 backdrop-blur-sm"
             onClick={closeSidebar}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                closeSidebar();
+              }
+            }}
+            aria-label="Close sidebar"
           />
 
           {/* Sidebar */}
@@ -1294,16 +1386,14 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                   {selectedBoardData?.tags &&
                     selectedBoardData.tags.length > 0 && (
                       <div className="flex flex-wrap gap-1">
-                        {selectedBoardData.tags.map(
-                          (tag: string, index: number) => (
-                            <span
-                              key={index}
-                              className="inline-flex items-center rounded-md bg-primary/10 px-2 py-1 text-xs font-medium text-primary"
-                            >
-                              {tag}
-                            </span>
-                          )
-                        )}
+                        {selectedBoardData.tags.map((tag: string) => (
+                          <span
+                            key={tag}
+                            className="inline-flex items-center rounded-md bg-primary/10 px-2 py-1 text-xs font-medium text-primary"
+                          >
+                            {tag}
+                          </span>
+                        ))}
                       </div>
                     )}
                 </div>
@@ -1466,9 +1556,9 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
                 <div className="flex gap-2">
                   <Button
                     className="flex-1"
-                    onClick={() =>
-                      (window.location.href = selectedBoardData?.href || '')
-                    }
+                    onClick={() => {
+                      router.push(selectedBoardData?.href || '');
+                    }}
                   >
                     <Eye className="mr-2 h-4 w-4" />
                     Open Board

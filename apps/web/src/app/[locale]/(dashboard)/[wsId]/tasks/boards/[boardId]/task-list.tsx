@@ -1,11 +1,15 @@
+import { TaskTagInput } from './_components/task-tag-input';
 import { ListActions } from './list-actions';
 import { statusIcons } from './status-section';
 import { TaskCard } from './task';
 import { TaskForm } from './task-form';
+import { DEV_MODE } from '@/constants/common';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { useQuery } from '@tanstack/react-query';
 import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import type { Task, TaskList } from '@tuturuuu/types/primitives/TaskBoard';
+import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card } from '@tuturuuu/ui/card';
@@ -35,7 +39,9 @@ import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { cn } from '@tuturuuu/utils/format';
 import { debounce } from 'lodash';
 import Image from 'next/image';
+import { useParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React from 'react';
 
 interface Props {
   column: TaskList;
@@ -56,12 +62,17 @@ type SortOption =
   | 'priority_desc';
 type SortDirection = 'asc' | 'desc';
 
+type WorkspaceMember = Pick<
+  WorkspaceUser,
+  'id' | 'display_name' | 'email' | 'avatar_url'
+>;
+
 interface TaskListFilters {
   search: string;
   priorities: Set<number>;
   assignees: Set<string>;
+  tags: Set<string>;
   overdue: boolean;
-  unassigned: boolean;
   dueSoon: boolean;
 }
 
@@ -79,7 +90,11 @@ const colorClasses: Record<SupportedColor, string> = {
   CYAN: 'border-l-dynamic-cyan/50 bg-dynamic-cyan/5',
 };
 
-export function BoardColumn({
+const FilterLabel = ({ children }: { children: React.ReactNode }) => (
+  <div className="text-xs font-medium">{children}</div>
+);
+
+export const BoardColumn = React.memo(function BoardColumn({
   column,
   boardId,
   tasks,
@@ -87,6 +102,22 @@ export function BoardColumn({
   onTaskCreated,
   onListUpdated,
 }: Props) {
+  const params = useParams();
+  const wsId = params.wsId as string;
+
+  // Fetch workspace members
+  const { data: members = [] } = useQuery({
+    queryKey: ['workspace-members', wsId],
+    queryFn: async () => {
+      const response = await fetch(`/api/workspaces/${wsId}/members`);
+      if (!response.ok) throw new Error('Failed to fetch members');
+      const { members: fetchedMembers } = await response.json();
+      return fetchedMembers;
+    },
+    enabled: !!wsId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<SortOption>('none');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
@@ -94,8 +125,8 @@ export function BoardColumn({
     search: '',
     priorities: new Set(),
     assignees: new Set(),
+    tags: new Set(),
     overdue: false,
-    unassigned: false,
     dueSoon: false,
   });
   const [filtersPanelOpen, setFiltersPanelOpen] = useState(false);
@@ -144,17 +175,6 @@ export function BoardColumn({
     };
   }, [searchQuery, debouncedSearch]);
 
-  // Get all unique assignees from tasks in this column
-  const allAssignees = useMemo(() => {
-    const assigneeMap = new Map();
-    tasks.forEach((task) => {
-      task.assignees?.forEach((assignee) => {
-        assigneeMap.set(assignee.id, assignee);
-      });
-    });
-    return Array.from(assigneeMap.values());
-  }, [tasks]);
-
   // Filter and sort tasks for this column
   const filteredAndSortedTasks = useMemo(() => {
     const filtered = tasks.filter((task) => {
@@ -181,22 +201,32 @@ export function BoardColumn({
 
       // Assignees filter
       if (filters.assignees.size > 0) {
-        const hasMatchingAssignee = task.assignees?.some((assignee) =>
-          filters.assignees.has(assignee.id)
-        );
-        if (!hasMatchingAssignee) return false;
+        if (filters.assignees.has('all')) {
+          // "All" option selected - show all tasks
+        } else if (filters.assignees.has('unassigned')) {
+          // "Unassigned" option selected - show tasks with no assignees
+          if (task.assignees && task.assignees.length > 0) {
+            return false;
+          }
+        } else {
+          // Specific assignees selected
+          const hasMatchingAssignee = task.assignees?.some((assignee) =>
+            filters.assignees.has(assignee.id)
+          );
+          if (!hasMatchingAssignee) return false;
+        }
+      }
+
+      // Tags filter
+      if (filters.tags.size > 0) {
+        if (!task.tags || task.tags.length === 0) return false;
+        const hasMatchingTag = task.tags.some((tag) => filters.tags.has(tag));
+        if (!hasMatchingTag) return false;
       }
 
       // Overdue filter
       if (filters.overdue) {
         if (!task.end_date || new Date(task.end_date) >= new Date()) {
-          return false;
-        }
-      }
-
-      // Unassigned filter
-      if (filters.unassigned) {
-        if (task.assignees && task.assignees.length > 0) {
           return false;
         }
       }
@@ -306,8 +336,8 @@ export function BoardColumn({
       search: '',
       priorities: new Set(),
       assignees: new Set(),
+      tags: new Set(),
       overdue: false,
-      unassigned: false,
       dueSoon: false,
     });
     setSortBy('none');
@@ -317,8 +347,8 @@ export function BoardColumn({
     filters.search ||
     filters.priorities.size > 0 ||
     filters.assignees.size > 0 ||
+    filters.tags.size > 0 ||
     filters.overdue ||
-    filters.unassigned ||
     filters.dueSoon ||
     sortBy !== 'none';
 
@@ -335,6 +365,27 @@ export function BoardColumn({
     colorClasses[column.color as SupportedColor] || colorClasses.GRAY;
   const statusIcon = statusIcons[column.status];
 
+  // Memoize drag handle for performance
+  const DragHandle = useMemo(
+    () => (
+      <div
+        {...attributes}
+        {...listeners}
+        className={cn(
+          '-ml-2 h-auto cursor-grab p-1 opacity-40 transition-all',
+          'group-hover:opacity-70 hover:bg-black/5',
+          isDragging && 'opacity-100',
+          isOverlay && 'cursor-grabbing'
+        )}
+        title="Drag to move list"
+      >
+        <span className="sr-only">Move list</span>
+        <GripVertical className="h-4 w-4" />
+      </div>
+    ),
+    [attributes, listeners, isDragging, isOverlay]
+  );
+
   return (
     <Card
       ref={setNodeRef}
@@ -346,23 +397,13 @@ export function BoardColumn({
         isDragging &&
           'scale-[1.02] rotate-1 opacity-90 shadow-xl ring-2 ring-primary/20',
         isOverlay && 'shadow-2xl ring-2 ring-primary/30',
-        'hover:shadow-md'
+        'hover:shadow-md',
+        // Visual feedback for invalid drop (dev only)
+        DEV_MODE && isDragging && !isOverlay && 'ring-2 ring-red-400/60'
       )}
     >
       <div className="flex items-center gap-2 rounded-t-xl border-b p-3">
-        <div
-          {...attributes}
-          {...listeners}
-          className={cn(
-            '-ml-2 h-auto cursor-grab p-1 opacity-40 transition-all',
-            'group-hover:opacity-70 hover:bg-black/5',
-            isDragging && 'opacity-100',
-            isOverlay && 'cursor-grabbing'
-          )}
-        >
-          <span className="sr-only">Move list</span>
-          <GripVertical className="h-4 w-4" />
-        </div>
+        {DragHandle}
         <div className="flex flex-1 items-center gap-2">
           <span className="text-sm">{statusIcon}</span>
           <h3 className="text-sm font-semibold text-foreground/90">
@@ -591,7 +632,6 @@ export function BoardColumn({
                           filters.priorities.size > 0,
                           filters.assignees.size > 0,
                           filters.overdue,
-                          filters.unassigned,
                           filters.dueSoon,
                         ].filter(Boolean).length
                       }
@@ -599,7 +639,10 @@ export function BoardColumn({
                   )}
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-72 p-3" align="start">
+              <PopoverContent
+                className="max-h-96 w-72 overflow-y-auto p-3"
+                align="start"
+              >
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <h4 className="text-sm font-medium">Filters</h4>
@@ -617,7 +660,7 @@ export function BoardColumn({
 
                   {/* Priority Filter */}
                   <div className="space-y-2">
-                    <label className="text-xs font-medium">Priority</label>
+                    <FilterLabel>Priority</FilterLabel>
                     <div className="flex flex-wrap gap-1">
                       {[1, 2, 3, 4].map((priority) => {
                         const isSelected = filters.priorities.has(priority);
@@ -666,93 +709,158 @@ export function BoardColumn({
                   </div>
 
                   {/* Assignees Filter */}
-                  {allAssignees.length > 0 && (
-                    <div className="space-y-2">
-                      <label className="text-xs font-medium">Assignees</label>
-                      <Popover
-                        open={assigneesOpen}
-                        onOpenChange={setAssigneesOpen}
+                  <div className="space-y-2">
+                    <FilterLabel>Assignees</FilterLabel>
+                    <Popover
+                      open={assigneesOpen}
+                      onOpenChange={setAssigneesOpen}
+                    >
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-6 w-full justify-start text-xs"
+                        >
+                          <Users className="mr-2 h-3 w-3" />
+                          {filters.assignees.size === 0
+                            ? 'Select assignees...'
+                            : `${filters.assignees.size} selected`}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent
+                        className="max-h-64 w-56 p-0"
+                        align="start"
                       >
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-6 w-full justify-start text-xs"
-                          >
-                            <Users className="mr-2 h-3 w-3" />
-                            {filters.assignees.size === 0
-                              ? 'Select assignees...'
-                              : `${filters.assignees.size} selected`}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-56 p-0" align="start">
-                          <Command>
-                            <CommandInput placeholder="Search assignees..." />
-                            <CommandList>
-                              <CommandEmpty>No assignees found.</CommandEmpty>
-                              <CommandGroup>
-                                {allAssignees.map((assignee) => {
-                                  const isSelected = filters.assignees.has(
-                                    assignee.id
-                                  );
-                                  return (
-                                    <CommandItem
-                                      key={assignee.id}
-                                      onSelect={() => {
-                                        const newAssignees = new Set(
-                                          filters.assignees
-                                        );
-                                        if (isSelected) {
-                                          newAssignees.delete(assignee.id);
-                                        } else {
-                                          newAssignees.add(assignee.id);
-                                        }
-                                        setFilters((prev) => ({
-                                          ...prev,
-                                          assignees: newAssignees,
-                                        }));
-                                      }}
-                                    >
-                                      <Check
-                                        className={cn(
-                                          'mr-2 h-4 w-4',
-                                          isSelected
-                                            ? 'opacity-100'
-                                            : 'opacity-0'
-                                        )}
-                                      />
-                                      <div className="flex items-center gap-2">
-                                        {assignee.avatar_url && (
-                                          <Image
-                                            src={assignee.avatar_url}
-                                            alt={
-                                              assignee.display_name ||
-                                              assignee.email
-                                            }
-                                            width={20}
-                                            height={20}
-                                            className="h-5 w-5 rounded-full"
-                                          />
-                                        )}
-                                        <div className="text-sm">
-                                          {assignee.display_name ||
-                                            assignee.email}
-                                        </div>
+                        <Command>
+                          <CommandInput placeholder="Search assignees..." />
+                          <CommandList className="max-h-48 overflow-y-auto">
+                            <CommandEmpty>No assignees found.</CommandEmpty>
+                            <CommandGroup>
+                              {/* All option */}
+                              <CommandItem
+                                onSelect={() => {
+                                  // Selecting 'all' should clear all other selections
+                                  setFilters((prev) => ({
+                                    ...prev,
+                                    assignees: new Set(['all']),
+                                  }));
+                                }}
+                              >
+                                <Check
+                                  className={cn(
+                                    'mr-2 h-4 w-4',
+                                    filters.assignees.has('all')
+                                      ? 'opacity-100'
+                                      : 'opacity-0'
+                                  )}
+                                />
+                                <span>All tasks</span>
+                              </CommandItem>
+
+                              {/* Unassigned option */}
+                              <CommandItem
+                                onSelect={() => {
+                                  // Selecting 'unassigned' should clear all other selections
+                                  setFilters((prev) => ({
+                                    ...prev,
+                                    assignees: new Set(['unassigned']),
+                                  }));
+                                }}
+                              >
+                                <Check
+                                  className={cn(
+                                    'mr-2 h-4 w-4',
+                                    filters.assignees.has('unassigned')
+                                      ? 'opacity-100'
+                                      : 'opacity-0'
+                                  )}
+                                />
+                                <span>Unassigned</span>
+                              </CommandItem>
+
+                              {members.length > 0 && (
+                                <div className="my-1 border-t border-border" />
+                              )}
+
+                              {members.map((member: WorkspaceMember) => {
+                                const isSelected = filters.assignees.has(
+                                  member.id
+                                );
+                                return (
+                                  <CommandItem
+                                    key={member.id}
+                                    onSelect={() => {
+                                      // Selecting a specific assignee clears 'all' and 'unassigned', and toggles the assignee
+                                      const newAssignees = new Set(
+                                        filters.assignees
+                                      );
+                                      newAssignees.delete('all');
+                                      newAssignees.delete('unassigned');
+                                      if (isSelected) {
+                                        newAssignees.delete(member.id);
+                                      } else {
+                                        newAssignees.add(member.id);
+                                      }
+                                      setFilters((prev) => ({
+                                        ...prev,
+                                        assignees: newAssignees,
+                                      }));
+                                    }}
+                                  >
+                                    <Check
+                                      className={cn(
+                                        'mr-2 h-4 w-4',
+                                        isSelected ? 'opacity-100' : 'opacity-0'
+                                      )}
+                                    />
+                                    <div className="flex items-center gap-2">
+                                      {member.avatar_url && (
+                                        <Image
+                                          src={member.avatar_url}
+                                          alt={
+                                            member.display_name ||
+                                            member.email ||
+                                            'User avatar'
+                                          }
+                                          width={20}
+                                          height={20}
+                                          className="h-5 w-5 rounded-full"
+                                        />
+                                      )}
+                                      <div className="text-sm">
+                                        {member.display_name || member.email}
                                       </div>
-                                    </CommandItem>
-                                  );
-                                })}
-                              </CommandGroup>
-                            </CommandList>
-                          </Command>
-                        </PopoverContent>
-                      </Popover>
-                    </div>
-                  )}
+                                    </div>
+                                  </CommandItem>
+                                );
+                              })}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+
+                  {/* Tags Filter */}
+                  <div className="space-y-2">
+                    <FilterLabel>Tags</FilterLabel>
+                    <TaskTagInput
+                      value={Array.from(filters.tags)}
+                      onChange={(tags) => {
+                        setFilters((prev) => ({
+                          ...prev,
+                          tags: new Set(tags),
+                        }));
+                      }}
+                      boardId={boardId}
+                      placeholder="Filter by tags..."
+                      maxTags={5}
+                    />
+                  </div>
 
                   {/* Quick Filters */}
                   <div className="space-y-2">
-                    <label className="text-xs font-medium">Quick Filters</label>
+                    <FilterLabel>Quick Filters</FilterLabel>
                     <div className="flex flex-wrap gap-1">
                       <Button
                         variant={filters.overdue ? 'default' : 'outline'}
@@ -779,26 +887,6 @@ export function BoardColumn({
                         }}
                       >
                         📅 Due Soon
-                      </Button>
-                      <Button
-                        variant={filters.unassigned ? 'default' : 'outline'}
-                        size="sm"
-                        className="h-6 text-xs"
-                        onClick={() => {
-                          setFilters((prev) => ({
-                            ...prev,
-                            unassigned: !prev.unassigned,
-                          }));
-                        }}
-                      >
-                        👤 Unassigned (
-                        {
-                          tasks.filter(
-                            (task) =>
-                              !task.assignees || task.assignees.length === 0
-                          ).length
-                        }
-                        )
                       </Button>
                     </div>
                   </div>
@@ -859,7 +947,7 @@ export function BoardColumn({
       </div>
     </Card>
   );
-}
+});
 
 export function BoardContainer({ children }: { children: React.ReactNode }) {
   return (

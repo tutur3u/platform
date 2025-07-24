@@ -1,3 +1,4 @@
+import type { ViewType } from './types';
 import { useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type {
@@ -50,9 +51,8 @@ import { useMemo, useState } from 'react';
 
 interface Props {
   board: TaskBoard & { tasks: Task[]; lists: TaskList[] };
-  currentView: 'kanban' | 'status-grouped' | 'list';
-  // eslint-disable-next-line no-unused-vars
-  onViewChange: (view: 'kanban' | 'status-grouped' | 'list') => void;
+  currentView: ViewType;
+  onViewChange: (view: ViewType) => void;
 }
 
 export function BoardHeader({ board, currentView, onViewChange }: Props) {
@@ -269,7 +269,7 @@ export function BoardHeader({ board, currentView, onViewChange }: Props) {
                     'gap-2 transition-all duration-200',
                     isActive && 'bg-primary/10 text-primary shadow-sm'
                   )}
-                  onClick={() => onViewChange(view as any)}
+                  onClick={() => onViewChange(view as ViewType)}
                   title={config.description}
                 >
                   <Icon className="h-4 w-4" />
