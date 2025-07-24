@@ -232,8 +232,6 @@ export default function CreatePlanDialog({ plan }: Props) {
                         readOnly={false}
                         titlePlaceholder={t('agenda_title_placeholder')}
                         writePlaceholder={t('agenda_content_placeholder')}
-                        saveButtonLabel={t('save_agenda')}
-                        savedButtonLabel={t('agenda_saved')}
                         className="h-64"
                       />
                     </FormControl>

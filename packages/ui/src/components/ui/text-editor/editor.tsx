@@ -26,8 +26,8 @@ export function RichTextEditor({
   readOnly = false,
   titlePlaceholder = 'What is the title?',
   writePlaceholder = 'Write something...',
-  saveButtonLabel = 'Save',
-  savedButtonLabel = 'Saved',
+  saveButtonLabel,
+  savedButtonLabel,
   className,
 }: RichTextEditorProps) {
   const [hasChanges, setHasChanges] = useState(false);
@@ -105,6 +105,14 @@ export function RichTextEditor({
       }
     },
   });
+
+  // Update editor's editable state when readOnly prop changes
+  useEffect(() => {
+    if (editor) {
+      editor.commands.setContent(content || '');
+      editor.setEditable(!readOnly);
+    }
+  }, [editor, readOnly, content]);
 
   const handleSave = useCallback(() => {
     if (editor && !readOnly) {
