@@ -52,7 +52,7 @@ export async function POST(req: Request) {
       // allow_anonymous_updates: plan.allow_anonymous_updates
       // TODO: fix later after knowing user id can be nullable or not
       creator_id: user?.id ?? '',
-      name: 'Where to Meet Poll',
+      name: 'Where to Meet?',
     });
 
     if (pollError) {

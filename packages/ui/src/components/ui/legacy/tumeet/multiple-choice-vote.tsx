@@ -70,12 +70,11 @@ export default function MultipleChoiceVote({
   }, [options]);
 
   const [customOption, setCustomOption] = useState('');
-  const [voting, setVoting] = useState(false);
   const [selectedOptionIds, setSelectedOptionIds] = useState<string[]>([]);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [deleteDialog, setDeleteDialog] = useState<null | string>(null);
 
-  // Memoize user's voted options
+  // Memoize user's voted options (previous votes from backend)
   const votedOptionIds = useMemo(() => {
     if (!currentUserId) return [];
     return optionsState
@@ -87,6 +86,11 @@ export default function MultipleChoiceVote({
       .map((opt) => opt.id);
   }, [optionsState, currentUserId]);
 
+  // On mount/options change: set selected to previous votes (if any)
+  useEffect(() => {
+    setSelectedOptionIds(votedOptionIds);
+  }, [votedOptionIds.join(','), optionsState.length]);
+
   const totalVotesAll = optionsState.reduce((s, o) => s + o.totalVotes, 0);
 
   // Add option
@@ -97,9 +101,8 @@ export default function MultipleChoiceVote({
   const handleAddOption = async () => {
     const trimmed = customOption.trim();
     if (!trimmed || !canAdd) return;
-
-    // --- Optimistic local update ---
-    const newOptionId = `temp-${Date.now()}`; // temporary unique id for UI
+    // Optimistic UI update
+    const newOptionId = `temp-${Date.now()}`;
     setOptionsState((prev) => [
       ...prev,
       {
@@ -113,15 +116,8 @@ export default function MultipleChoiceVote({
       },
     ]);
     setCustomOption('');
-
-    // --- Backend sync (waits for real DB id) ---
+    setSelectedOptionIds((prev) => [...prev, newOptionId]);
     await onAddOption(pollId, trimmed);
-  };
-
-  // Start voting (preserve previous votes)
-  const handleVoteButton = () => {
-    setVoting(true);
-    setSelectedOptionIds(votedOptionIds);
   };
 
   // Option toggle (checkbox)
@@ -133,9 +129,12 @@ export default function MultipleChoiceVote({
     );
   };
 
+  // Confirm enable logic
+  const hasChanges = !arraysAreEqual(selectedOptionIds, votedOptionIds);
+
   // Confirm vote (optimistic update)
   const handleVoteConfirm = async () => {
-    if (!arraysAreEqual(selectedOptionIds, votedOptionIds)) {
+    if (hasChanges) {
       setOptionsState((prev) =>
         prev.map((option) => {
           const wasVoted =
@@ -173,7 +172,6 @@ export default function MultipleChoiceVote({
       );
       await onVote(pollId, selectedOptionIds);
     }
-    setVoting(false);
     setConfirmOpen(false);
   };
 
@@ -192,9 +190,7 @@ export default function MultipleChoiceVote({
       )}
       <div className="space-y-2">
         {optionsState.map((option) => {
-          const isSelected = voting
-            ? selectedOptionIds.includes(option.id)
-            : votedOptionIds.includes(option.id);
+          const isSelected = selectedOptionIds.includes(option.id);
           return (
             <div
               key={option.id}
@@ -209,11 +205,9 @@ export default function MultipleChoiceVote({
               <div className="flex items-center gap-2">
                 <Checkbox
                   checked={isSelected}
-                  disabled={
-                    isDisplayMode || (!voting && votedOptionIds.length === 0)
-                  }
+                  disabled={isDisplayMode}
                   onCheckedChange={() =>
-                    voting && handleToggleOption(option.id)
+                    !isDisplayMode && handleToggleOption(option.id)
                   }
                   id={`option-${option.id}`}
                   className="data-[state=checked]:border-dynamic-purple data-[state=checked]:bg-dynamic-purple"
@@ -243,13 +237,8 @@ export default function MultipleChoiceVote({
                       ? (option.totalVotes / totalVotesAll) * 100
                       : 0
                   }
-                  className="mt-1 h-2 w-20 bg-dynamic-light-purple"
-                  style={
-                    {
-                      // Ensure progress bar uses dynamic color
-                      '--progress-bar-color': 'var(--color-dynamic-purple)',
-                    } as React.CSSProperties
-                  }
+                  className="mt-1 h-2 w-20 bg-foreground/30"
+                  indicatorClassName="bg-dynamic-purple"
                 />
               </div>
               {isCreator && !isDisplayMode && (
@@ -278,7 +267,7 @@ export default function MultipleChoiceVote({
             onKeyDown={async (e) => {
               if (e.key === 'Enter' && canAdd) await handleAddOption();
             }}
-            disabled={voting && votedOptionIds.length > 0}
+            disabled={false}
           />
           <Button
             type="button"
@@ -292,53 +281,21 @@ export default function MultipleChoiceVote({
         </div>
       )}
 
-      {/* Action buttons */}
+      {/* Action button: Confirm only */}
       {!isDisplayMode && (
-        <>
-          {votedOptionIds.length === 0 && !voting && (
-            <Button
-              type="button"
-              className="w-full bg-dynamic-purple text-foreground hover:bg-dynamic-purple/90"
-              onClick={handleVoteButton}
-              disabled={isDisplayMode}
-            >
-              {t('vote')}
-            </Button>
+        <Button
+          type="button"
+          className={cn(
+            'w-full border border-dynamic-purple bg-transparent text-foreground hover:bg-dynamic-purple/30',
+            hasChanges
+              ? 'border-dynamic-purple text-dynamic-purple'
+              : 'cursor-not-allowed opacity-50'
           )}
-          {votedOptionIds.length > 0 && !voting && (
-            <div className="flex flex-col items-center gap-2">
-              <div className="text-center text-sm font-medium text-dynamic-purple">
-                {t('voted_for')}{' '}
-                {votedOptionIds.length === 1
-                  ? `"${optionsState.find((o) => o.id === votedOptionIds[0])?.value ?? ''}"`
-                  : votedOptionIds
-                      .map(
-                        (id) =>
-                          `"${optionsState.find((o) => o.id === id)?.value ?? ''}"`
-                      )
-                      .join(', ')}
-              </div>
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full border-dynamic-purple text-dynamic-purple"
-                onClick={handleVoteButton}
-              >
-                {t('vote_again')}
-              </Button>
-            </div>
-          )}
-          {voting && (
-            <Button
-              type="button"
-              className="w-full border border-dynamic-purple bg-transparent text-foreground hover:bg-dynamic-purple/30"
-              onClick={() => setConfirmOpen(true)}
-              disabled={selectedOptionIds.length === 0}
-            >
-              {t('confirm')}
-            </Button>
-          )}
-        </>
+          onClick={() => hasChanges && setConfirmOpen(true)}
+          disabled={!hasChanges}
+        >
+          {t('confirm')}
+        </Button>
       )}
 
       {/* Confirm modal */}

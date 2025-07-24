@@ -142,14 +142,17 @@ function PlanDetailsPollContent({
   };
 
   const onToggleWhereToMeet = async (enable: boolean) => {
-    const res = await fetch(`/api/meet-together/plans/${plan.id}/where-poll`, {
-      method: 'PATCH',
-      body: JSON.stringify({
-        planId: plan.id,
-        whereToMeet: enable,
-      }),
-      headers: { 'Content-Type': 'application/json' },
-    });
+    const res = await fetch(
+      `/api/meet-together/plans/${plan.id}/poll/where-poll`,
+      {
+        method: 'PATCH',
+        body: JSON.stringify({
+          planId: plan.id,
+          whereToMeet: enable,
+        }),
+        headers: { 'Content-Type': 'application/json' },
+      }
+    );
 
     if (!res.ok) {
       console.error('Failed to update "where to meet" setting');
@@ -177,7 +180,7 @@ function PlanDetailsPollContent({
               {t('enable_where_poll_desc')}
             </p>
             <button
-              className="rounded bg-dynamic-blue px-4 py-2 font-medium text-white shadow transition hover:bg-dynamic-blue/80"
+              className="rounded border border-dynamic-purple bg-dynamic-purple/20 px-4 py-2 font-medium text-foreground shadow transition hover:bg-dynamic-purple/40"
               onClick={async () => await onToggleWhereToMeet(true)}
             >
               {t('enable_where_poll')}

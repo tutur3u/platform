@@ -61,7 +61,7 @@ export async function PATCH(req: Request) {
         .insert({
           plan_id: planId,
           creator_id: user.id,
-          name: 'where',
+          name: 'Where to Meet?',
         })
         .select('id')
         .single();
