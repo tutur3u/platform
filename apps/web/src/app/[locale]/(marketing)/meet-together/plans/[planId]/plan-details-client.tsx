@@ -5,7 +5,11 @@ import EditPlanDialog from './edit-plan-dialog';
 import PlanLogin from './plan-login';
 import PlanUserFilter from './plan-user-filter';
 import UtilityButtons from './utility-buttons';
-import type { MeetTogetherPlan } from '@tuturuuu/types/primitives/MeetTogetherPlan';
+import PlanDetailsPolls from '@/app/[locale]/(marketing)/meet-together/plans/[planId]/plan-details-polls';
+import type {
+  GetPollsForPlanResult,
+  MeetTogetherPlan,
+} from '@tuturuuu/types/primitives/MeetTogetherPlan';
 import type { User } from '@tuturuuu/types/primitives/User';
 import { Separator } from '@tuturuuu/ui/separator';
 import html2canvas from 'html2canvas-pro';
@@ -14,7 +18,9 @@ import { useCallback } from 'react';
 
 interface PlanDetailsClientProps {
   plan: MeetTogetherPlan;
+  polls: GetPollsForPlanResult | null;
   platformUser: User | null;
+  isCreator: boolean;
   users: {
     id: string | null;
     display_name: string | null;
@@ -36,7 +42,9 @@ interface PlanDetailsClientProps {
 export default function PlanDetailsClient({
   plan,
   platformUser,
+  isCreator,
   users,
+  polls,
   timeblocks,
 }: PlanDetailsClientProps) {
   const { resolvedTheme } = useTheme();
@@ -139,17 +147,24 @@ export default function PlanDetailsClient({
           platformUser={platformUser}
           handlePNG={downloadAsPNG}
         />
+
         <div id="plan-ref" className="flex w-full flex-col items-center">
           <p className="my-4 flex max-w-xl items-center gap-2 text-center text-2xl leading-tight! font-semibold md:mb-4 lg:text-3xl">
             {plan.name} <EditPlanDialog plan={plan} />
           </p>
-          <div className="mt-8 grid w-full items-center justify-between gap-4 md:grid-cols-2">
+          <div className="mt-8 grid w-full items-center justify-between gap-4 md:grid-cols-2 lg:grid-cols-3">
             <PlanLogin
               plan={plan}
               timeblocks={[]}
               platformUser={platformUser}
             />
             <AllAvailabilities plan={plan} timeblocks={timeblocks} />
+            <PlanDetailsPolls
+              plan={plan}
+              polls={polls}
+              isCreator={isCreator}
+              platformUser={platformUser}
+            />
           </div>
         </div>
       </div>
