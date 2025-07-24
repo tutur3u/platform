@@ -215,15 +215,22 @@ export function MailDisplay({
   const handleReply = () => {
     if (!mail || !onReply) return;
 
-    const senderEmail =
-      formatEmailAddresses(mail.source_email)[0]?.email || mail.source_email;
+    // In "sent" mode, source_email is always the current user, so reply to the original recipients
+    const recipients =
+      mail.to_addresses && mail.to_addresses.length > 0
+        ? mail.to_addresses
+        : [
+            formatEmailAddresses(mail.source_email)[0]?.email ||
+              mail.source_email,
+          ];
+
     const replySubject = mail.subject.startsWith('Re: ')
       ? mail.subject
       : `Re: ${mail.subject}`;
     const quotedContent = `--- Original Message ---\nFrom: ${mail.source_email}\nDate: ${dayjs(mail.created_at).format('LLLL')}\nSubject: ${mail.subject}\n\n${mail.payload}`;
 
     onReply({
-      to: [senderEmail],
+      to: recipients,
       subject: replySubject,
       content: { type: 'doc', content: [{ type: 'paragraph', content: [] }] }, // Start with empty JSON content for new reply
       quotedContent,
@@ -234,27 +241,26 @@ export function MailDisplay({
   const handleReplyAll = () => {
     if (!mail || !onReplyAll) return;
 
-    const senderEmail =
-      formatEmailAddresses(mail.source_email)[0]?.email || mail.source_email;
+    // In "sent" mode, include all original recipients plus anyone in CC
+    const allRecipients = mail.to_addresses || [];
+    const ccRecipients = mail.cc_addresses || [];
+
     const replySubject = mail.subject.startsWith('Re: ')
       ? mail.subject
       : `Re: ${mail.subject}`;
     const quotedContent = `--- Original Message ---\nFrom: ${mail.source_email}\nDate: ${dayjs(mail.created_at).format('LLLL')}\nSubject: ${mail.subject}\n\n${mail.payload}`;
 
-    // Include all original recipients except the current user
-    const allRecipients = [senderEmail];
-    if (mail.to_addresses) {
-      allRecipients.push(...mail.to_addresses);
-    }
-
     // Remove duplicates and filter out current user
-    const uniqueRecipients = [...new Set(allRecipients)].filter(
+    const uniqueToRecipients = [...new Set(allRecipients)].filter(
       (email) => email !== user?.email
+    );
+    const uniqueCcRecipients = [...new Set(ccRecipients)].filter(
+      (email) => email !== user?.email && !uniqueToRecipients.includes(email)
     );
 
     onReplyAll({
-      to: uniqueRecipients,
-      cc: mail.cc_addresses || [],
+      to: uniqueToRecipients,
+      cc: uniqueCcRecipients,
       subject: replySubject,
       content: { type: 'doc', content: [{ type: 'paragraph', content: [] }] }, // Start with empty JSON content for new reply
       quotedContent,

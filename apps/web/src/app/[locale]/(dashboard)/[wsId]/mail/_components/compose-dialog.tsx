@@ -541,7 +541,7 @@ export function ComposeDialog({
 
         // Combine content with quoted content for preview
         const fullContent = quotedContent
-          ? `${contentHtml}\n\n<div style="color: #666; border-left: 3px solid #ccc; padding-left: 12px; margin-top: 20px;"><pre style="white-space: pre-wrap; font-family: inherit;">${quotedContent}</pre></div>`
+          ? `${contentHtml}\n\n<div style="color: #6b7280; border-left: 3px solid #d1d5db; padding-left: 12px; margin-top: 20px;"><pre style="white-space: pre-wrap; font-family: inherit;">${quotedContent}</pre></div>`
           : contentHtml;
 
         if (!fullContent.trim()) {
@@ -594,7 +594,7 @@ export function ComposeDialog({
 
       // Combine user content with quoted content if present
       const finalContent = quotedContent
-        ? `${contentHtml}\n\n<div style="color: #666; border-left: 3px solid #ccc; padding-left: 12px; margin-top: 20px;"><pre style="white-space: pre-wrap; font-family: inherit;">${quotedContent}</pre></div>`
+        ? `${contentHtml}\n\n<div style="color: #6b7280; border-left: 3px solid #d1d5db; padding-left: 12px; margin-top: 20px;"><pre style="white-space: pre-wrap; font-family: inherit;">${quotedContent}</pre></div>`
         : contentHtml;
 
       const response = await fetch(
