@@ -140,10 +140,10 @@ export default function PlanDetailsClient({
           handlePNG={downloadAsPNG}
         />
         <div id="plan-ref" className="flex w-full flex-col items-center">
-          <p className="my-4 flex max-w-xl items-center gap-2 text-center text-2xl leading-tight! font-semibold md:mb-4 lg:text-3xl">
+          <p className="mx-auto my-4 flex max-w-xl items-center justify-center gap-2 text-center text-2xl leading-tight! font-semibold md:mb-4 lg:text-3xl">
             {plan.name} <EditPlanDialog plan={plan} />
           </p>
-          <div className="mt-8 grid w-full items-center justify-between gap-4 md:grid-cols-2">
+          <div className="mx-auto mt-8 flex w-full flex-col items-center justify-center gap-8 md:flex-row md:gap-16 lg:gap-32 xl:gap-80">
             <PlanLogin
               plan={plan}
               timeblocks={[]}
