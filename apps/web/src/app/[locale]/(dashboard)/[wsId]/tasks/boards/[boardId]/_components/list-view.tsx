@@ -262,10 +262,13 @@ export function ListView({
       });
 
       // Check if any updates have meaningful changes (more than just the id field)
-      const hasUpdates = updates.some((obj) => 
-        obj.priority !== undefined || obj.archived !== undefined || obj.tags !== undefined
+      const hasUpdates = updates.some(
+        (obj) =>
+          obj.priority !== undefined ||
+          obj.archived !== undefined ||
+          obj.tags !== undefined
       );
-      
+
       if (hasUpdates) {
         // Only call RPC if at least one field is being updated
         const { error } = await supabase.rpc('update_many_tasks', { updates });
@@ -890,10 +893,7 @@ export function ListView({
         </div>
         <div className="space-y-3">
           {SKELETON_KEYS.map((key: string) => (
-            <Skeleton
-              key={`loading-skeleton-${key}`}
-              className="h-16 w-full"
-            />
+            <Skeleton key={`loading-skeleton-${key}`} className="h-16 w-full" />
           ))}
         </div>
       </div>

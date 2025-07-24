@@ -140,10 +140,12 @@ export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
       const task = active.data.current.task;
       setActiveTask(task);
       pickedUpTaskColumn.current = String(task.list_id);
-      
+
       // Use more specific selector for better reliability
       // Prefer data-id selector over generic querySelector
-      const cardNode = document.querySelector(`[data-id="${task.id}"]`) as HTMLElement;
+      const cardNode = document.querySelector(
+        `[data-id="${task.id}"]`
+      ) as HTMLElement;
       if (cardNode) {
         const cardRect = cardNode.getBoundingClientRect();
         dragStartCardLeft.current = cardRect.left;
