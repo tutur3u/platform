@@ -10,6 +10,7 @@ import {
   TooltipTrigger,
 } from '@tuturuuu/ui/tooltip';
 import dayjs from 'dayjs';
+import { useEffect } from 'react';
 
 export default function PreviewDayTime({
   timeblocks: serverTimeblocks,
@@ -17,12 +18,18 @@ export default function PreviewDayTime({
   start,
   end,
   disabled,
+  showBestTimes = false,
+  globalMaxAvailable,
+  onBestTimesStatus,
 }: {
   timeblocks: Timeblock[];
   date: string;
   start: number;
   end: number;
   disabled: boolean;
+  showBestTimes?: boolean;
+  globalMaxAvailable: number;
+  onBestTimesStatus?: (hasBestTimes: boolean) => void;
 }) {
   const {
     filteredUserIds,
@@ -41,6 +48,44 @@ export default function PreviewDayTime({
 
   const hourBlocks = Array.from(Array(Math.floor(end + 1 - start)).keys());
   const hourSplits = 4;
+
+  // Compute available user count for each slot
+  const slotAvailableCounts: number[] = hourBlocks
+    .map((i) => (i + start) * hourSplits)
+    .flatMap((i) => Array(hourSplits).fill(i))
+    .map((_, i) => {
+      const currentDate = dayjs(date)
+        .hour(Math.floor(i / hourSplits) + start)
+        .minute((i % hourSplits) * 15)
+        .toDate();
+      const userIds = timeblocks
+        .filter((tb) => {
+          const start = dayjs(`${tb.date} ${tb.start_time}`);
+          const end = dayjs(`${tb.date} ${tb.end_time}`);
+          return dayjs(currentDate).isBetween(start, end, null, '[)');
+        })
+        .map((tb) => tb.user_id)
+        .filter(Boolean);
+      const uniqueUserIds = Array.from(new Set(userIds));
+      return uniqueUserIds.length;
+    });
+
+  // Find all blocks with the global max available
+  const bestBlockIndices: Set<number> = new Set();
+  if (showBestTimes && globalMaxAvailable >= 2) {
+    slotAvailableCounts.forEach((count, i) => {
+      if (count === globalMaxAvailable) {
+        bestBlockIndices.add(i);
+      }
+    });
+  }
+
+  // Notify parent about best times status
+  useEffect(() => {
+    if (onBestTimesStatus) {
+      onBestTimesStatus(bestBlockIndices.size > 0);
+    }
+  }, [showBestTimes, bestBlockIndices.size, onBestTimesStatus]);
 
   const isTimeBlockSelected = (i: number): 'local' | 'server' | 'none' => {
     // If the timeblock is pre-selected
@@ -94,6 +139,30 @@ export default function PreviewDayTime({
           const hideBorder = i === 0 || i + hourSplits > array.length - 1;
           const opacity = getOpacityForDate(currentDate, timeblocks);
 
+          // If showBestTimes is enabled, only highlight slots in the longest contiguous block(s) with max availability
+          let cellClass = '';
+          let cellStyle = {};
+          if (i + hourSplits < array.length) {
+            if (showBestTimes) {
+              if (bestBlockIndices.has(i)) {
+                cellClass = 'bg-green-500/70';
+                cellStyle = { opacity: 1 };
+              } else {
+                cellClass = 'bg-foreground/10';
+                cellStyle = { opacity: 1 };
+              }
+            } else {
+              cellClass = isSelected
+                ? isDraft
+                  ? 'bg-green-500/50'
+                  : isSaved
+                    ? 'bg-green-500/70'
+                    : 'bg-green-500/70'
+                : 'bg-foreground/10';
+              cellStyle = { opacity: isSelected ? opacity : 1 };
+            }
+          }
+
           const editData = {
             mode: isSelected ? 'remove' : 'add',
             date: currentDate,
@@ -120,21 +189,8 @@ export default function PreviewDayTime({
                             setPreviewDate(editData.date);
                           }
                     }
-                    style={{
-                      opacity: isSelected ? opacity : 1,
-                    }}
-                    className={`${
-                      i + hourSplits < array.length
-                        ? isSelected
-                          ? isDraft
-                            ? 'bg-green-500/50'
-                            : isSaved
-                              ? 'bg-green-500/70'
-                              : // : 'animate-pulse bg-green-500/70'
-                                'bg-green-500/70'
-                          : 'bg-foreground/10'
-                        : ''
-                    } relative h-3 w-full ${
+                    style={cellStyle}
+                    className={`${cellClass} relative h-3 w-full ${
                       hideBorder
                         ? ''
                         : (i + 1) % hourSplits === 0
