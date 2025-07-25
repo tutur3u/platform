@@ -2,7 +2,11 @@
 
 import { ToolBar } from './tool-bar';
 import Highlight from '@tiptap/extension-highlight';
+import Link from '@tiptap/extension-link';
 import Placeholder from '@tiptap/extension-placeholder';
+import Strike from '@tiptap/extension-strike';
+import Subscript from '@tiptap/extension-subscript';
+import Superscript from '@tiptap/extension-superscript';
 import TextAlign from '@tiptap/extension-text-align';
 import { EditorContent, type JSONContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
@@ -89,6 +93,30 @@ export function RichTextEditor({
         emptyNodeClass: 'is-empty',
       }),
       Highlight,
+      Link.configure({
+        openOnClick: false,
+        autolink: true,
+        linkOnPaste: true,
+        defaultProtocol: 'https',
+        HTMLAttributes: {
+          class:
+            'text-blue-600 hover:text-blue-800 underline cursor-pointer transition-colors',
+          rel: 'noopener noreferrer',
+          target: '_blank',
+        },
+        validate: (href) => {
+          // Allow http/https URLs and mailto links
+          return /^https?:\/\/.+/.test(href) || /^mailto:.+@.+\..+/.test(href);
+        },
+        protocols: ['http', 'https', 'mailto'],
+        shouldAutoLink: () => {
+          // Auto-link URLs but not in code blocks
+          return true;
+        },
+      }),
+      Strike,
+      Subscript,
+      Superscript,
     ],
     content: content || '',
     editable: !readOnly,

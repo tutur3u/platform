@@ -73,6 +73,7 @@ export default function EditPlanDialog({ plan }: Props) {
   const isSubmitting = form.formState.isSubmitting;
 
   const disabled = !isValid || isSubmitting;
+  const watchedName = form.watch('name');
 
   const handleSubmit = async (data: FormData) => {
     setUpdating(true);
@@ -177,7 +178,12 @@ export default function EditPlanDialog({ plan }: Props) {
                   <Button
                     type="submit"
                     className="w-full"
-                    disabled={disabled || updating || deleting}
+                    disabled={
+                      plan.name === watchedName ||
+                      disabled ||
+                      updating ||
+                      deleting
+                    }
                   >
                     {updating
                       ? t('meet-together-plan-details.updating_plan')

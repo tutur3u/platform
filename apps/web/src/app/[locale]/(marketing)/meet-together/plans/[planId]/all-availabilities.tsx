@@ -9,9 +9,13 @@ import { useTranslations } from 'next-intl';
 export default function AllAvailabilities({
   plan,
   timeblocks,
+  showBestTimes = false,
+  onBestTimesStatusByDateAction,
 }: {
   plan: MeetTogetherPlan;
   timeblocks: Timeblock[];
+  showBestTimes?: boolean;
+  onBestTimesStatusByDateAction?: (status: Record<string, boolean>) => void;
 }) {
   const t = useTranslations('meet-together-plan-details');
   const { user, planUsers, selectedTimeBlocks, filteredUserIds } =
@@ -32,8 +36,8 @@ export default function AllAvailabilities({
 
   return (
     <div className="flex flex-col gap-2 text-center">
+      {/* Existing UI */}
       <div className="font-semibold">{t('everyone_availability')}</div>
-
       <div className="flex items-center justify-center gap-2 text-sm">
         <div>
           0/{totalUserCount} {t('available')}
@@ -60,17 +64,17 @@ export default function AllAvailabilities({
             </div>
           ))}
         </div>
-
         <div>
           {totalUserCount}/{totalUserCount} {t('available')}
         </div>
       </div>
-
       <DatePlanner
         timeblocks={localTimeblocks}
         dates={plan.dates}
         start={plan.start_time}
         end={plan.end_time}
+        showBestTimes={showBestTimes}
+        onBestTimesStatusByDateAction={onBestTimesStatusByDateAction}
       />
     </div>
   );

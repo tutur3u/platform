@@ -35,7 +35,19 @@ export async function POST(
       start_date,
       end_date,
       priority,
+      tags,
     } = body;
+
+    // Validate tags if provided
+    if (
+      tags !== undefined &&
+      (!Array.isArray(tags) || !tags.every((tag) => typeof tag === 'string'))
+    ) {
+      return NextResponse.json(
+        { error: 'Tags must be an array of strings' },
+        { status: 400 }
+      );
+    }
 
     if (!name || typeof name !== 'string' || name.trim().length === 0) {
       return NextResponse.json(
@@ -77,6 +89,7 @@ export async function POST(
       start_date: start_date || null,
       end_date: end_date || null,
       user_defined_priority: priority || 'normal',
+      tags: tags || [],
     };
 
     // 4. Insert task into Supabase
@@ -148,7 +161,7 @@ export async function POST(
     }
 
     return NextResponse.json(dbTask, { status: 201 });
-  } catch (e: any) {
+  } catch (e: unknown) {
     console.error('Error in task creation route:', e);
     if (e instanceof SyntaxError) {
       return NextResponse.json(

@@ -4624,6 +4624,7 @@ export type Database = {
           name: string;
           priority: number | null;
           start_date: string | null;
+          tags: string[];
           total_duration: number | null;
           user_defined_priority:
             | Database['public']['Enums']['task_priority']
@@ -4646,6 +4647,7 @@ export type Database = {
           name: string;
           priority?: number | null;
           start_date?: string | null;
+          tags?: string[];
           total_duration?: number | null;
           user_defined_priority?:
             | Database['public']['Enums']['task_priority']
@@ -4668,6 +4670,7 @@ export type Database = {
           name?: string;
           priority?: number | null;
           start_date?: string | null;
+          tags?: string[];
           total_duration?: number | null;
           user_defined_priority?:
             | Database['public']['Enums']['task_priority']
@@ -9378,6 +9381,10 @@ export type Database = {
             };
         Returns: string;
       };
+      get_board_task_tags: {
+        Args: { board_id: string };
+        Returns: string[];
+      };
       get_browsers: {
         Args: { p_link_id: string; p_limit?: number };
         Returns: {
@@ -9835,6 +9842,10 @@ export type Database = {
         Args: { user_id_param: string };
         Returns: boolean;
       };
+      normalize_task_tags: {
+        Args: { tags: string[] };
+        Returns: string[];
+      };
       nova_get_all_challenges_with_user_stats: {
         Args: { user_id: string };
         Returns: Json;
@@ -9885,6 +9896,20 @@ export type Database = {
           board_id: string;
           board_name: string;
           board_tags: Json;
+        }[];
+      };
+      search_tasks_by_tags: {
+        Args: { search_tags: string[] };
+        Returns: {
+          id: string;
+          name: string;
+          description: string;
+          tags: string[];
+          list_id: string;
+          priority: number;
+          start_date: string;
+          end_date: string;
+          created_at: string;
         }[];
       };
       search_users: {
@@ -9958,6 +9983,10 @@ export type Database = {
       update_expired_sessions: {
         Args: Record<PropertyKey, never>;
         Returns: undefined;
+      };
+      update_many_tasks: {
+        Args: { updates: Json };
+        Returns: number;
       };
       update_session_total_score: {
         Args: { challenge_id_param: string; user_id_param: string };

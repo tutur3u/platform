@@ -1,11 +1,12 @@
 'use client';
 
+import type { GanttTask } from '../types';
 import { Card } from '@tuturuuu/ui/card';
 import { cn } from '@tuturuuu/utils/format';
 import { useMemo } from 'react';
 
 interface StatusDistributionProps {
-  allTasks: any[];
+  allTasks: GanttTask[];
   selectedBoard: string | null;
 }
 

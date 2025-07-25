@@ -82,7 +82,7 @@ export async function POST(
     );
   }
 
-  if (DEV_MODE && !IS_PRODUCTION_DB) {
+  if (DEV_MODE && IS_PRODUCTION_DB) {
     // Get allowed emails from internal_email_api_keys
     const { data: internalData, error: internalDataError } = await supabase
       .from('internal_email_api_keys')

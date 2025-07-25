@@ -61,7 +61,7 @@
       }
 
       &::before {
-        content: '\25B6';
+        content: '\\25B6';
       }
     }
 

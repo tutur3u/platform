@@ -17,6 +17,7 @@ export interface NavLink {
   label?: string;
   external?: boolean;
   disabled?: boolean;
+  tempDisabled?: boolean;
   disabledRoles?: string[];
   isBack?: boolean;
   onClick?: () => void;
@@ -135,11 +136,13 @@ export function Navigation({
                   : undefined
             }
             className={`text-sm md:text-base ${
-              isActive
-                ? 'border-border bg-foreground/[0.025] text-foreground dark:bg-foreground/5'
-                : urlToLoad === link.href
-                  ? 'animate-pulse bg-foreground/5 text-foreground/70 dark:text-foreground/40'
-                  : 'border-transparent text-foreground/70 md:hover:bg-foreground/5 md:hover:text-foreground dark:text-foreground/40'
+              link.tempDisabled
+                ? 'cursor-not-allowed opacity-50'
+                : isActive
+                  ? 'border-border bg-foreground/[0.025] text-foreground dark:bg-foreground/5'
+                  : urlToLoad === link.href
+                    ? 'animate-pulse bg-foreground/5 text-foreground/70 dark:text-foreground/40'
+                    : 'border-transparent text-foreground/70 md:hover:bg-foreground/5 md:hover:text-foreground dark:text-foreground/40'
             } ${
               enableUnderline && notPublic
                 ? 'underline decoration-dashed underline-offset-4'

@@ -12,11 +12,9 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-  CommandSeparator,
 } from '@tuturuuu/ui/command';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import {
-  Check,
   ChevronsUpDown,
   Crown,
   Loader2,
@@ -37,6 +35,11 @@ interface Member {
   role_title?: string;
 }
 
+interface Task {
+  id: string;
+  assignees?: Member[];
+}
+
 interface Props {
   taskId: string;
   assignees?: Member[];
@@ -54,9 +57,7 @@ export function AssigneeSelect({ taskId, assignees = [], onUpdate }: Props) {
   // Deduplicate assignees by ID
   const uniqueAssignees = assignees.filter(
     (assignee, index, self) =>
-      assignee &&
-      assignee.id &&
-      self.findIndex((a) => a && a.id === assignee.id) === index
+      assignee?.id && self.findIndex((a) => a && a.id === assignee.id) === index
   );
 
   // Fetch workspace members with React Query
@@ -124,34 +125,37 @@ export function AssigneeSelect({ taskId, assignees = [], onUpdate }: Props) {
       const previousTasks = queryClient.getQueryData(['tasks', boardId]);
 
       // Optimistically update the cache
-      queryClient.setQueryData(['tasks', boardId], (old: any) => {
-        if (!old) return old;
+      queryClient.setQueryData(
+        ['tasks', boardId],
+        (old: Task[] | undefined) => {
+          if (!old) return old;
 
-        return old.map((task: any) => {
-          if (task.id !== taskId) return task;
+          return old.map((task: Task) => {
+            if (task.id !== taskId) return task;
 
-          const currentAssignees = task.assignees || [];
-          let newAssignees;
+            const currentAssignees = task.assignees || [];
+            let newAssignees: Member[];
 
-          if (action === 'add') {
-            const member = members.find((m) => m.id === memberId);
-            if (
-              member &&
-              !currentAssignees.some((a: any) => a.id === memberId)
-            ) {
-              newAssignees = [...currentAssignees, member];
+            if (action === 'add') {
+              const member = members.find((m) => m.id === memberId);
+              if (
+                member &&
+                !currentAssignees.some((a: Member) => a.id === memberId)
+              ) {
+                newAssignees = [...currentAssignees, member];
+              } else {
+                newAssignees = currentAssignees;
+              }
             } else {
-              newAssignees = currentAssignees;
+              newAssignees = currentAssignees.filter(
+                (a: Member) => a.id !== memberId
+              );
             }
-          } else {
-            newAssignees = currentAssignees.filter(
-              (a: any) => a.id !== memberId
-            );
-          }
 
-          return { ...task, assignees: newAssignees };
-        });
-      });
+            return { ...task, assignees: newAssignees };
+          });
+        }
+      );
 
       return { previousTasks };
     },
@@ -194,16 +198,14 @@ export function AssigneeSelect({ taskId, assignees = [], onUpdate }: Props) {
   // Filter assigned and unassigned members with additional safety checks
   const assignedMembers = members.filter(
     (member) =>
-      member &&
-      member.id &&
-      uniqueAssignees.some((assignee) => assignee && assignee.id === member.id)
+      member?.id &&
+      uniqueAssignees.some((assignee) => assignee?.id === member.id)
   );
 
   const unassignedMembers = members.filter(
     (member) =>
-      member &&
-      member.id &&
-      !uniqueAssignees.some((assignee) => assignee && assignee.id === member.id)
+      member?.id &&
+      !uniqueAssignees.some((assignee) => assignee?.id === member.id)
   );
 
   // Additional deduplication just to be safe
@@ -243,18 +245,17 @@ export function AssigneeSelect({ taskId, assignees = [], onUpdate }: Props) {
       <PopoverTrigger asChild>
         <Button
           variant="ghost"
-          role="combobox"
           aria-expanded={open}
           disabled={isLoading}
           className={cn(
-            'h-auto justify-start px-2 py-1 text-xs transition-all duration-200',
+            'h-6 justify-start px-0.5 py-0.5 text-[10px] transition-all duration-200',
             'hover:bg-gray-100 dark:hover:bg-gray-800',
             'border border-transparent hover:border-gray-300 dark:hover:border-gray-600',
             'min-w-0 rounded-lg'
           )}
         >
           {uniqueAssignees.length > 0 ? (
-            <div className="flex min-w-0 items-center gap-2">
+            <div className="flex min-w-0 items-center gap-x-0.5">
               <div className="flex -space-x-1.5">
                 {uniqueAssignees.slice(0, 2).map((assignee) => (
                   <Avatar
@@ -282,20 +283,22 @@ export function AssigneeSelect({ taskId, assignees = [], onUpdate }: Props) {
               </span>
             </div>
           ) : (
-            <div className="flex items-center gap-1.5 text-gray-500 dark:text-gray-400">
+            <div className="flex items-center gap-x-0.5 text-gray-500 dark:text-gray-400">
               <Users className="h-3 w-3" />
               <span className="text-[10px]">Assign</span>
             </div>
           )}
           {isLoading ? (
-            <Loader2 className="ml-1 h-2.5 w-2.5 animate-spin text-gray-500" />
+            <Loader2 className="ml-1 h-2 w-2 animate-spin text-gray-500" />
           ) : (
-            <ChevronsUpDown
-              className={cn(
-                'ml-1 h-2.5 w-2.5 shrink-0 opacity-50 transition-all duration-200',
-                'group-hover:opacity-100'
-              )}
-            />
+            (open || uniqueAssignees.length !== 1) && (
+              <ChevronsUpDown
+                className={cn(
+                  'ml-1 h-2 w-2 shrink-0 opacity-50 transition-all duration-200',
+                  'group-hover:opacity-100'
+                )}
+              />
+            )
           )}
         </Button>
       </PopoverTrigger>
@@ -357,15 +360,16 @@ export function AssigneeSelect({ taskId, assignees = [], onUpdate }: Props) {
                           </div>
                         )}
                       </div>
-                      <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
+                      <div className="flex items-center gap-1">
+                        <div className="h-2 w-2 rounded-full bg-green-500"></div>
+                        <span className="text-xs text-green-600 dark:text-green-400">
+                          Assigned
+                        </span>
+                      </div>
                     </CommandItem>
                   ))}
                 </CommandGroup>
               )}
-              {uniqueAssignedMembers.length > 0 &&
-                uniqueUnassignedMembers.length > 0 && (
-                  <CommandSeparator className="my-1" />
-                )}
               {uniqueUnassignedMembers.length > 0 && (
                 <CommandGroup
                   heading="Available Members"
@@ -379,9 +383,9 @@ export function AssigneeSelect({ taskId, assignees = [], onUpdate }: Props) {
                       disabled={assigneeMutation.isPending}
                       className="mx-1 my-1 gap-3 rounded-lg px-3 py-3 transition-all duration-200 hover:bg-gradient-to-r hover:from-blue-100 hover:to-indigo-100 disabled:opacity-50 dark:hover:from-blue-900/20 dark:hover:to-indigo-900/20"
                     >
-                      <Avatar className="h-8 w-8 shadow-sm ring-2 ring-gray-200 dark:ring-gray-700">
+                      <Avatar className="h-8 w-8 shadow-sm ring-2 ring-blue-200 dark:ring-blue-800">
                         <AvatarImage src={member.avatar_url} />
-                        <AvatarFallback className="bg-gradient-to-br from-gray-100 to-slate-100 text-gray-700 dark:from-gray-800 dark:to-slate-800 dark:text-gray-300">
+                        <AvatarFallback className="bg-gradient-to-br from-blue-100 to-indigo-100 text-blue-700 dark:from-blue-900 dark:to-indigo-900 dark:text-blue-300">
                           {member.display_name?.[0] || member.email?.[0] || '?'}
                         </AvatarFallback>
                       </Avatar>
@@ -403,6 +407,12 @@ export function AssigneeSelect({ taskId, assignees = [], onUpdate }: Props) {
                             </Badge>
                           </div>
                         )}
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <div className="h-2 w-2 rounded-full bg-gray-300 dark:bg-gray-600"></div>
+                        <span className="text-xs text-gray-500 dark:text-gray-400">
+                          Available
+                        </span>
                       </div>
                     </CommandItem>
                   ))}
