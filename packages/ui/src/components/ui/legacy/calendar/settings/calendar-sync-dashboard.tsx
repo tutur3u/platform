@@ -11,11 +11,17 @@ import { useMemo, useState } from 'react';
 
 const getSyncLogs = async () => {
   const syncLogs = await fetch('/api/sync-logs');
+  if (!syncLogs.ok) {
+    throw new Error(`Failed to fetch sync logs: ${syncLogs.status}`);
+  }
   return syncLogs.json();
 };
 
 const getWorkspaces = async () => {
   const workspaces = await fetch('/api/workspaces');
+  if (!workspaces.ok) {
+    throw new Error(`Failed to fetch workspaces: ${workspaces.status}`);
+  }
   return workspaces.json();
 };
 
