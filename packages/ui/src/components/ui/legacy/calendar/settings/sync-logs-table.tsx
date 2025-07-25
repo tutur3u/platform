@@ -124,15 +124,22 @@ export function SyncLogsTable({
         className="border-dynamic-purple/10 bg-dynamic-purple/10 font-medium text-dynamic-purple"
       >
         <Zap className="mr-1 h-3 w-3" />
-        Manual
+        {type.charAt(0).toUpperCase() + type.slice(1)}
+      </Badge>
+    ) : type === 'background' ? (
+      <Badge
+        variant="outline"
+        className="border-dynamic-blue/10 bg-dynamic-blue/10 font-medium text-dynamic-blue"
+      >
+        <Clock className="mr-1 h-3 w-3" />
+        {type.charAt(0).toUpperCase() + type.slice(1)}
       </Badge>
     ) : (
       <Badge
         variant="outline"
-        className="border-foreground/10 bg-foreground/10 font-medium text-foreground"
+        className="border-dynamic-green/10 bg-dynamic-green/10 font-medium text-dynamic-green"
       >
-        <Clock className="mr-1 h-3 w-3" />
-        Auto
+        {type.charAt(0).toUpperCase() + type.slice(1)}
       </Badge>
     );
   };
@@ -194,8 +201,9 @@ export function SyncLogsTable({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Types</SelectItem>
-                <SelectItem value="active">Manual Sync</SelectItem>
-                <SelectItem value="background">Auto Sync</SelectItem>
+                <SelectItem value="active">Active Sync</SelectItem>
+                <SelectItem value="background">Background Sync</SelectItem>
+                <SelectItem value="manual">Manual Sync</SelectItem>
               </SelectContent>
             </Select>
           </div>

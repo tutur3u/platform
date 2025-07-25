@@ -14,7 +14,7 @@ export interface User {
 export interface SyncLog {
   id: string;
   timestamp: string;
-  type: 'active' | 'background';
+  type: 'active' | 'background' | 'manual';
   workspace: Workspace;
   triggeredBy: User | null;
   status: 'completed' | 'failed' | 'running';
