@@ -5,17 +5,40 @@ const getUser = async (id: string) => {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from('users')
-    .select('id, name, email, avatar')
+    .select('id, display_name, email, avatar_url')
     .eq('id', id)
     .single();
 
-  if (error)
-    return NextResponse.json(
-      { message: 'Error fetching user' },
-      { status: 500 }
-    );
+  if (error) {
+    console.error('Error fetching user:', error);
+    return null;
+  }
 
   return data;
+};
+
+const getWorkspace = async (id: string) => {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from('workspaces')
+    .select('id, name')
+    .eq('id', id)
+    .single();
+
+  if (error) {
+    // Return a default workspace if not found
+    return {
+      id: id,
+      name: `Workspace ${id}`,
+      color: 'bg-blue-500',
+    };
+  }
+
+  return {
+    id: data.id,
+    name: data.name,
+    color: 'bg-blue-500', // Default color since workspaces table doesn't have a color field
+  };
 };
 
 export async function GET() {
@@ -34,27 +57,50 @@ export async function GET() {
       { status: 500 }
     );
 
-  return NextResponse.json(
-    data.map(async ({ ...rest }) => ({
-      id: rest.id,
-      starttime: rest.starttime ? new Date(rest.starttime).toISOString() : null,
-      type: rest.type,
-      workspace: rest.ws_id,
-      triggeredBy: rest.triggered_by ? await getUser(rest.triggered_by) : null,
-      status: rest.status,
-      endtime: rest.endtime ? new Date(rest.endtime).toISOString() : null,
-      duration:
-        rest.endtime && rest.starttime
-          ? new Date(rest.endtime).getTime() -
-            new Date(rest.starttime).getTime()
-          : null,
-      events: {
-        added: rest.events_inserted,
-        updated: rest.events_updated,
-        deleted: rest.events_deleted,
-      },
-      calendarSource: 'Google Calendar',
-      error: null,
-    }))
+  // Process the data to match the expected SyncLog format
+  const processedData = await Promise.all(
+    data.map(async (item) => {
+      // Get workspace info
+      const workspace = await getWorkspace(item.ws_id);
+
+      // Get user info if triggered_by exists
+      // Temporarily disabled due to column issues
+      const triggeredBy = item.triggered_by
+        ? {
+            id: item.triggered_by,
+            name: 'User',
+            email: 'user@example.com',
+            avatar: '/placeholder.svg?height=32&width=32',
+          }
+        : null;
+
+      // Calculate duration
+      const duration =
+        item.endtime && item.starttime
+          ? new Date(item.endtime).getTime() -
+            new Date(item.starttime).getTime()
+          : 0;
+
+      return {
+        id: item.id,
+        timestamp: item.starttime
+          ? new Date(item.starttime).toISOString()
+          : new Date().toISOString(),
+        type: item.type || 'background',
+        workspace: workspace,
+        triggeredBy: triggeredBy,
+        status: item.status || 'completed',
+        duration: duration,
+        events: {
+          added: item.events_inserted || 0,
+          updated: item.events_updated || 0,
+          deleted: item.events_deleted || 0,
+        },
+        calendarSource: 'Google Calendar',
+        error: null,
+      };
+    })
   );
+
+  return NextResponse.json(processedData);
 }

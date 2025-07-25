@@ -14,13 +14,25 @@ const getSyncLogs = async () => {
   return syncLogs.json();
 };
 
+const getWorkspaces = async () => {
+  const workspaces = await fetch('/api/workspaces');
+  return workspaces.json();
+};
+
 export function CalendarSyncDashboard() {
   const [filterType, setFilterType] = useState('all');
   const [filterWorkspace, setFilterWorkspace] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Mock data for workspaces
-  const workspaces: Workspace[] = [
+  // Get workspaces from API
+  const workspacesQuery = useQuery({
+    queryKey: ['workspaces'],
+    queryFn: () => getWorkspaces(),
+    refetchInterval: 1000 * 60 * 5, // 5 minutes
+  });
+
+  // Fallback to mock workspaces if API fails
+  const workspaces: Workspace[] = workspacesQuery.data || [
     { id: 'ws_1', name: 'Marketing Team', color: 'bg-blue-500' },
     { id: 'ws_2', name: 'Engineering', color: 'bg-green-500' },
     { id: 'ws_3', name: 'Sales Department', color: 'bg-purple-500' },
@@ -137,12 +149,35 @@ export function CalendarSyncDashboard() {
     },
   ];
 
-  const syncLogs: SyncLog[] =
-    useQuery({
-      queryKey: ['syncLogs'],
-      queryFn: () => getSyncLogs(),
-      refetchInterval: 1000 * 60 * 5, // 5 minutes
-    }).data || syncLogsMock;
+  const syncLogsQuery = useQuery({
+    queryKey: ['syncLogs'],
+    queryFn: () => getSyncLogs(),
+    refetchInterval: 1000 * 60 * 5, // 5 minutes
+  });
+
+  const syncLogs: SyncLog[] = syncLogsQuery.data || syncLogsMock;
+
+  // Debug logging
+  console.log('SyncLogs Query state:', {
+    isLoading: syncLogsQuery.isLoading,
+    isError: syncLogsQuery.isError,
+    error: syncLogsQuery.error,
+    data: syncLogsQuery.data,
+    dataLength: syncLogsQuery.data?.length,
+    usingMock: !syncLogsQuery.data,
+  });
+
+  console.log('Final syncLogs being used:', syncLogs);
+  console.log('Final workspaces being used:', workspaces);
+
+  console.log('Workspaces Query state:', {
+    isLoading: workspacesQuery.isLoading,
+    isError: workspacesQuery.isError,
+    error: workspacesQuery.error,
+    data: workspacesQuery.data,
+    dataLength: workspacesQuery.data?.length,
+    usingMock: !workspacesQuery.data,
+  });
 
   const filteredLogs = useMemo(() => {
     return syncLogs.filter((log) => {
@@ -240,7 +275,7 @@ export function CalendarSyncDashboard() {
       syncs: workspaceLogs.length,
       events: totalEvents,
       success: workspaceLogs.filter((log) => log.status === 'completed').length,
-      color: workspace.color.replace('bg-', ''),
+      color: (workspace.color || 'bg-blue-500').replace('bg-', ''),
     };
   });
 
