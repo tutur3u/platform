@@ -27,7 +27,7 @@ export async function POST(req: Request) {
       poll_id: pollId,
       value,
     })
-    .select('id')
+    .select('id, poll_id, value, created_at')
     .single();
 
   if (error) {
@@ -50,8 +50,24 @@ export async function POST(req: Request) {
     });
   }
 
+  // Fetch votes for the new option
+  const { data: userVotes = [] } = await sbAdmin
+    .from('poll_user_votes')
+    .select('user_id')
+    .eq('option_id', option.id);
+  const { data: guestVotes = [] } = await sbAdmin
+    .from('poll_guest_votes')
+    .select('guest_id')
+    .eq('option_id', option.id);
+  const totalVotes = (userVotes?.length || 0) + (guestVotes?.length || 0);
+
   return NextResponse.json({
     message: 'Option added and voted',
-    optionId: option.id,
+    option: {
+      ...option,
+      userVotes,
+      guestVotes,
+      totalVotes,
+    },
   });
 }

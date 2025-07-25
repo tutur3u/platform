@@ -34,7 +34,10 @@ interface MultipleChoiceVoteProps {
   isCreator?: boolean;
   isDisplayMode?: boolean;
   onVote: (pollId: string, optionIds: string[]) => Promise<void>;
-  onAddOption: (pollId: string, value: string) => Promise<void>;
+  onAddOption: (
+    pollId: string,
+    value: string
+  ) => Promise<PollOptionWithVotes | null>;
   onDeleteOption: (optionId: string) => Promise<void>;
   className?: string;
 }
@@ -105,22 +108,30 @@ export default function MultipleChoiceVote({
 
     // Optimistic UI update
     const newOptionId = crypto.randomUUID();
-    setOptionsState((prev) => [
-      ...prev,
-      {
-        id: newOptionId,
-        poll_id: pollId,
-        value: trimmed,
-        created_at: new Date().toISOString(),
-        userVotes: currentUserId ? [{ user_id: currentUserId }] : [],
-        guestVotes: [],
-        totalVotes: currentUserId ? 1 : 0,
-      },
-    ]);
+    const fakeOption = {
+      id: newOptionId,
+      poll_id: pollId,
+      value: trimmed,
+      created_at: new Date().toISOString(),
+      userVotes: currentUserId ? [{ user_id: currentUserId }] : [],
+      guestVotes: [],
+      totalVotes: currentUserId ? 1 : 0,
+    };
+    setOptionsState((prev) => [...prev, fakeOption]);
     setCustomOption('');
     setSelectedOptionIds((prev) => [...prev, newOptionId]);
     try {
-      await onAddOption(pollId, trimmed);
+      const realOption = await onAddOption(pollId, trimmed);
+      if (realOption) {
+        setOptionsState((prev) =>
+          prev.map((opt) => (opt.id === newOptionId ? realOption : opt))
+        );
+        setSelectedOptionIds((prev) =>
+          prev.map((id) => (id === newOptionId ? realOption.id : id))
+        );
+      } else {
+        setOptionsState(previousState); // Revert state on failure
+      }
     } catch (error) {
       console.error('Failed to add option:', error);
       setOptionsState(previousState); // Revert state on failure

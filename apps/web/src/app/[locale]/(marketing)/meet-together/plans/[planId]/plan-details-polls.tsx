@@ -119,8 +119,10 @@ function PlanDetailsPollContent({
     });
     if (!res.ok) {
       console.error('Failed to add poll option');
-      return;
+      return null;
     }
+    const data = await res.json();
+    return data.option;
   };
 
   const onDeleteOption = async (optionId: string) => {
