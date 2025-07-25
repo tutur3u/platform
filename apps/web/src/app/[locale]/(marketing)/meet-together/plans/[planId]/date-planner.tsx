@@ -3,7 +3,7 @@
 import DayPlanners from './day-planners';
 import { useTimeBlocking } from './time-blocking-provider';
 import TimeColumn from './time-column';
-import { timetzToHour } from '@/utils/date-helper';
+import { combineDateAndTimetzToLocal, timetzToHour } from '@/utils/date-helper';
 import type { Timeblock } from '@tuturuuu/types/primitives/Timeblock';
 
 export default function DatePlanner({
@@ -30,7 +30,14 @@ export default function DatePlanner({
   const startHour = timetzToHour(start);
   const endHour = timetzToHour(end);
 
-  if (!startHour || !endHour) return null;
+  if (!dates || !start || !end) return null;
+
+  // Compute local start and end datetimes for each date
+  const localDateRanges = dates.map((date) => ({
+    date,
+    localStart: combineDateAndTimetzToLocal(date, start),
+    localEnd: combineDateAndTimetzToLocal(date, end),
+  }));
 
   return (
     <div
@@ -62,8 +69,8 @@ export default function DatePlanner({
     >
       <TimeColumn
         id={editable ? 'self' : 'group'}
-        start={startHour}
-        end={endHour}
+        start={startHour!}
+        end={endHour!}
         className="flex-initial"
       />
 
@@ -81,9 +88,7 @@ export default function DatePlanner({
         >
           <DayPlanners
             timeblocks={timeblocks}
-            dates={dates}
-            start={startHour}
-            end={endHour}
+            dateRanges={localDateRanges}
             editable={editable}
             disabled={editable ? (user ? disabled : true) : disabled}
             showBestTimes={showBestTimes}

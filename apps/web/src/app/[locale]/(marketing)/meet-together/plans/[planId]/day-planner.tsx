@@ -7,8 +7,8 @@ import { useLocale } from 'next-intl';
 export default function DayPlanner({
   timeblocks,
   date,
-  start,
-  end,
+  localStart,
+  localEnd,
   editable,
   disabled,
   showBestTimes = false,
@@ -17,8 +17,8 @@ export default function DayPlanner({
 }: {
   timeblocks: Timeblock[];
   date: string;
-  start: number;
-  end: number;
+  localStart: Date;
+  localEnd: Date;
   editable: boolean;
   disabled: boolean;
   showBestTimes?: boolean;
@@ -32,20 +32,20 @@ export default function DayPlanner({
     <div>
       <div className="pointer-events-none p-1 select-none">
         <div className="line-clamp-1 text-xs">
-          {dayjs(date)
+          {dayjs(localStart)
             .locale(locale)
             .format(locale === 'vi' ? 'DD/MM' : 'MMM D')}
         </div>
         <div className="font-semibold">
-          {dayjs(date).locale(locale).format('ddd')}
+          {dayjs(localStart).locale(locale).format('ddd')}
         </div>
       </div>
 
       <DayTime
         timeblocks={timeblocks}
         date={date}
-        start={start}
-        end={end}
+        start={localStart.getHours()}
+        end={localEnd.getHours()}
         editable={editable}
         disabled={disabled}
         showBestTimes={showBestTimes}

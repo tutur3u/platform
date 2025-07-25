@@ -6,18 +6,14 @@ import { useCallback, useEffect, useState } from 'react';
 
 export default function DayPlanners({
   timeblocks,
-  dates,
-  start,
-  end,
+  dateRanges,
   editable,
   disabled,
   showBestTimes = false,
   onBestTimesStatusByDateAction,
 }: {
   timeblocks: Timeblock[];
-  dates: string[];
-  start: number;
-  end: number;
+  dateRanges: { date: string; localStart: Date; localEnd: Date }[];
   editable: boolean;
   disabled: boolean;
   showBestTimes?: boolean;
@@ -73,15 +69,19 @@ export default function DayPlanners({
   // Compute global max availability across all days
   const hourSplits = 4;
   let globalMaxAvailable = 0;
-  dates.forEach((d) => {
-    const dayTimeblocks = timeblocks.filter((tb) => tb.date === d);
-    const hourBlocks = Array.from(Array(Math.floor(end + 1 - start)).keys());
+  dateRanges.forEach(({ date, localStart, localEnd }) => {
+    const dayTimeblocks = timeblocks.filter((tb) => tb.date === date);
+    const startHour = localStart.getHours();
+    const endHour = localEnd.getHours();
+    const hourBlocks = Array.from(
+      Array(Math.floor(endHour + 1 - startHour)).keys()
+    );
     const slotAvailableCounts: number[] = hourBlocks
-      .map((i) => (i + start) * hourSplits)
+      .map((i) => (i + startHour) * hourSplits)
       .flatMap((i) => Array(hourSplits).fill(i))
       .map((_, i) => {
-        const currentDate = dayjs(d)
-          .hour(Math.floor(i / hourSplits) + start)
+        const currentDate = dayjs(localStart)
+          .hour(Math.floor(i / hourSplits) + startHour)
           .minute((i % hourSplits) * 15)
           .toDate();
         const userIds = dayTimeblocks
@@ -104,19 +104,19 @@ export default function DayPlanners({
       id="scrollable"
       className="relative flex flex-1 items-start justify-center gap-2 overflow-x-auto"
     >
-      {dates.map((d) => (
+      {dateRanges.map(({ date, localStart, localEnd }) => (
         <DayPlanner
-          key={d}
-          date={d}
-          start={start}
-          end={end}
+          key={date}
+          date={date}
+          localStart={localStart}
+          localEnd={localEnd}
           editable={editable}
           disabled={disabled}
-          timeblocks={timeblocks.filter((tb) => tb.date === d)}
+          timeblocks={timeblocks.filter((tb) => tb.date === date)}
           showBestTimes={showBestTimes}
           globalMaxAvailable={globalMaxAvailable}
           onBestTimesStatus={(hasBestTimes) =>
-            handleBestTimesStatus(d, hasBestTimes)
+            handleBestTimesStatus(date, hasBestTimes)
           }
         />
       ))}

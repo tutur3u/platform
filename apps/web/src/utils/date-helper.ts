@@ -222,3 +222,51 @@ export function minTimetz(timetz1: string, timetz2: string) {
 export function maxTimetz(timetz1: string, timetz2: string) {
   return compareTimetz(timetz1, timetz2) > 0 ? timetz1 : timetz2;
 }
+
+/**
+ * Combines a date string (YYYY-MM-DD) and a time string with offset (HH:mm:ss+ZZ) into a local Date object.
+ * Example: combineDateAndTimetzToLocal('2024-06-01', '23:00:00+07') returns a Date in the user's local timezone.
+ */
+export function combineDateAndTimetzToLocal(
+  dateStr: string,
+  timetz: string
+): Date {
+  // Find the position of the '+' or '-' that indicates the start of the offset
+  const offsetPos = Math.max(timetz.lastIndexOf('+'), timetz.lastIndexOf('-'));
+  const time = timetz.substring(0, offsetPos);
+  const offsetStr = timetz.substring(offsetPos);
+
+  // Split the time into hours, minutes, seconds
+  const [hourStr, minuteStr, secondStr] = time.split(':');
+  const hour = parseInt(hourStr ?? '0', 10);
+  const minute = parseInt(minuteStr ?? '0', 10);
+  const second = parseInt(secondStr ?? '0', 10);
+
+  // Parse the offset (e.g., +07 or -05)
+  // Support both +HH and +HH:MM formats
+  let offsetHours = 0;
+  let offsetMinutes = 0;
+  if (offsetStr.includes(':')) {
+    const sign = offsetStr[0] === '-' ? -1 : 1;
+    const [h, m] = offsetStr.slice(1).split(':');
+    offsetHours = sign * parseInt(h, 10);
+    offsetMinutes = sign * parseInt(m, 10);
+  } else {
+    offsetHours = parseInt(offsetStr, 10);
+  }
+
+  // Create a Date object in UTC for the given date and time in the plan's timezone
+  const utcDate = new Date(
+    Date.UTC(
+      parseInt(dateStr.slice(0, 4), 10), // year
+      parseInt(dateStr.slice(5, 7), 10) - 1, // month (0-based)
+      parseInt(dateStr.slice(8, 10), 10), // day
+      hour - offsetHours, // convert to UTC
+      minute - (offsetMinutes || 0),
+      second
+    )
+  );
+
+  // The Date object will be interpreted in the user's local timezone when used
+  return utcDate;
+}
