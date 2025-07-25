@@ -361,6 +361,42 @@ export const CalendarSyncProvider = ({
 
         const supabase = createClient();
 
+        // get the current user
+        const {
+          data: { user: authUser },
+        } = await supabase.auth.getUser();
+
+        if (!authUser) {
+          setError(new Error('User not authenticated'));
+          return;
+        }
+
+        // Log the start of the sync
+        const { data: syncRecord, error: insertError } = await supabase
+          .from('calendar_sync_dashboard')
+          .insert({
+            ws_id: wsId,
+            starttime: new Date().toISOString(),
+            endtime: new Date().toISOString(),
+            triggered_by: authUser?.id,
+            type: 'manual',
+            status: 'running',
+            events_inserted: 0,
+            events_updated: 0,
+            events_deleted: 0,
+          })
+          .select()
+          .single();
+
+        if (insertError) {
+          setError(insertError);
+          return;
+        }
+
+        let numInserted = 0;
+        let numUpdated = 0;
+        let numDeleted = 0;
+
         // Use the exact range from dates array
         const startDate = dayjs(dates[0]).startOf('day');
         const endDate = dayjs(dates[dates.length - 1]).endOf('day');
@@ -448,13 +484,21 @@ export const CalendarSyncProvider = ({
         );
         // Delete dataToDelete
         if (dataToDelete) {
-          await supabase
+          const { error: deleteError } = await supabase
             .from('workspace_calendar_events')
             .delete()
             .in(
               'id',
               dataToDelete.map((e) => e.id)
             );
+
+          if (deleteError) {
+            setError(deleteError);
+            return;
+          } else {
+            setError(null);
+            numDeleted = dataToDelete.length;
+          }
         }
 
         if (progressCallback) {
@@ -494,26 +538,40 @@ export const CalendarSyncProvider = ({
           }
         );
 
-        // Upsert using id as conflict target since we've properly assigned ids
-        const { error: upsertError } = await supabase
-          .from('workspace_calendar_events')
-          .upsert(eventsToUpsert, {
-            onConflict: 'ws_id,google_event_id',
-            ignoreDuplicates: false,
-          });
+        const { data: upsertData, error: upsertError } = await supabase.rpc(
+          'upsert_calendar_events_and_count',
+          {
+            events: eventsToUpsert,
+          }
+        );
 
         if (upsertError) {
           setError(upsertError);
           return;
         } else {
           setError(null);
-
+          // Type assertion since we know the function returns { inserted: number, updated: number }
+          const result = upsertData as { inserted: number; updated: number };
+          numInserted = result?.inserted || 0;
+          numUpdated = result?.updated || 0;
           // Update lastUpsert timestamp after successful upsert
           await updateLastUpsert(wsId);
         }
 
         // Refresh the cache to trigger queryClient to refetch the data from database
         refresh();
+
+        // Update the sync dashboard
+        await supabase
+          .from('calendar_sync_dashboard')
+          .update({
+            status: 'completed',
+            endtime: new Date().toISOString(),
+            events_inserted: numInserted,
+            events_updated: numUpdated,
+            events_deleted: numDeleted,
+          })
+          .eq('id', syncRecord.id);
 
         if (progressCallback) {
           progressCallback({
