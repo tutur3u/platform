@@ -104,19 +104,23 @@ export default function EditPlanDialog({ plan }: Props) {
 
   const handleDelete = async () => {
     setDeleting(true);
-
-    const res = await fetch(`/api/meet-together/plans/${plan.id}`, {
-      method: 'DELETE',
-    });
-
-    if (res.ok) {
-      router.push('/meet-together');
-    } else {
-      setDeleting(false);
-      toast({
-        title: t('meet-together-plan-details.something_went_wrong'),
-        description: t('meet-together-plan-details.cant_delete_plan_right_now'),
+    try {
+      const res = await fetch(`/api/meet-together/plans/${plan.id}`, {
+        method: 'DELETE',
       });
+
+      if (res.ok) {
+        router.push('/meet-together');
+      } else {
+        toast({
+          title: t('meet-together-plan-details.something_went_wrong'),
+          description: t(
+            'meet-together-plan-details.cant_delete_plan_right_now'
+          ),
+        });
+      }
+    } finally {
+      setDeleting(false);
     }
   };
 
