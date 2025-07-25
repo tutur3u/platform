@@ -24,6 +24,13 @@ export async function POST(
 
     // 2. Parse and validate the request body
     const body = await req.json();
+    // Defensive: reject if 'tag' (singular) is present
+    if ('tag' in body) {
+      return NextResponse.json(
+        { error: 'Invalid field: use "tags" (array) instead of "tag".' },
+        { status: 400 }
+      );
+    }
     const {
       name,
       description,
