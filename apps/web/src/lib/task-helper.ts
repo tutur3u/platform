@@ -23,10 +23,10 @@ export async function getTaskBoard(supabase: SupabaseClient, boardId: string) {
     .from('workspace_boards')
     .select('*')
     .eq('id', boardId)
-    .single();
+    .maybeSingle(); // Use maybeSingle instead of single to return null if no rows
 
   if (error) throw error;
-  return data as TaskBoard;
+  return data as TaskBoard | null;
 }
 
 export async function getTaskLists(supabase: SupabaseClient, boardId: string) {
@@ -43,49 +43,55 @@ export async function getTaskLists(supabase: SupabaseClient, boardId: string) {
 }
 
 export async function getTasks(supabase: SupabaseClient, boardId: string) {
-  const { data: lists } = await supabase
-    .from('task_lists')
-    .select('id')
-    .eq('board_id', boardId)
-    .eq('deleted', false);
+  try {
+    const { data: lists } = await supabase
+      .from('task_lists')
+      .select('id')
+      .eq('board_id', boardId)
+      .eq('deleted', false);
 
-  if (!lists?.length) return [];
+    if (!lists?.length) return [];
 
-  const { data, error } = await supabase
-    .from('tasks')
-    .select(
-      `
-      *,
-      assignees:task_assignees(
-        user:users(
-          id,
-          display_name,
-          avatar_url
+    const { data, error } = await supabase
+      .from('tasks')
+      .select(
+        `
+        *,
+        assignees:task_assignees(
+          user:users(
+            id,
+            display_name,
+            avatar_url
+          )
         )
+      `
       )
-    `
-    )
-    .in(
-      'list_id',
-      lists.map((list) => list.id)
-    )
-    .eq('deleted', false)
-    .order('created_at');
+      .in(
+        'list_id',
+        lists.map((list) => list.id)
+      )
+      .eq('deleted', false)
+      .order('created_at');
 
-  if (error) throw error;
+    if (error) {
+      console.error('Error fetching tasks:', error);
+      throw error;
+    }
 
-  // Transform the nested assignees data
-  const transformedTasks = data.map((task) => ({
-    ...task,
-    assignees: task.assignees
-      ?.map((a) => a.user)
-      .filter(
-        (user: User, index: number, self: User[]) =>
-          user?.id && self.findIndex((u: User) => u.id === user.id) === index
+    // Transform the nested assignees data and ensure tags field exists
+    const transformedTasks = data.map((task) => ({
+      ...task,
+      tags: task.tags || [], // Ensure tags field exists
+      assignees: transformAssignees(
+        task.assignees as (TaskAssignee & { user: User })[]
       ),
-  }));
+    }));
 
-  return transformedTasks as Task[];
+    return transformedTasks as Task[];
+  } catch (error) {
+    console.error('Error in getTasks:', error);
+    throw error;
+  }
 }
 
 export async function getTaskAssignees(
@@ -172,6 +178,52 @@ export function invalidateTaskCaches(
   }
   // Always invalidate time tracker since task availability affects it
   queryClient.invalidateQueries({ queryKey: ['time-tracking-data'] });
+}
+
+// Utility function to sync task archived status with list status
+export async function syncTaskArchivedStatus(
+  supabase: SupabaseClient,
+  taskId: string,
+  listId: string
+) {
+  // Get the list status
+  const { data: list, error: listError } = await supabase
+    .from('task_lists')
+    .select('status')
+    .eq('id', listId)
+    .single();
+
+  if (listError) {
+    console.error('Error fetching list status:', listError);
+    return;
+  }
+
+  // Determine if task should be archived based on list status
+  const shouldArchive = list.status === 'done' || list.status === 'closed';
+
+  // Get current task status
+  const { data: task, error: taskError } = await supabase
+    .from('tasks')
+    .select('archived')
+    .eq('id', taskId)
+    .single();
+
+  if (taskError) {
+    console.error('Error fetching task status:', taskError);
+    return;
+  }
+
+  // Only update if there's a mismatch
+  if (task.archived !== shouldArchive) {
+    const { error: updateError } = await supabase
+      .from('tasks')
+      .update({ archived: shouldArchive })
+      .eq('id', taskId);
+
+    if (updateError) {
+      console.error('Error syncing task archived status:', updateError);
+    }
+  }
 }
 
 export async function moveTask(
@@ -756,5 +808,145 @@ export function useUpdateTaskListStatus(boardId: string) {
         variant: 'destructive',
       });
     },
+  });
+}
+
+// Tag-related helper functions
+export async function getBoardTaskTags(
+  supabase: SupabaseClient,
+  boardId: string
+) {
+  try {
+    const { data, error } = await (
+      supabase as SupabaseClient & {
+        rpc: (
+          functionName: string,
+          params: Record<string, unknown>
+        ) => Promise<{
+          data: unknown;
+          error: { message: string } | null;
+        }>;
+      }
+    ).rpc('get_board_task_tags', {
+      board_id: boardId,
+    });
+
+    if (error) {
+      // If the RPC function doesn't exist (migration not applied), return empty array
+      if (
+        error.message.includes('function "get_board_task_tags" does not exist')
+      ) {
+        console.warn(
+          'Tags migration not applied yet, returning empty tags array'
+        );
+        return [];
+      }
+      throw error;
+    }
+    return data || [];
+  } catch (err) {
+    console.warn('Error getting board task tags:', err);
+    return [];
+  }
+}
+
+export async function searchTasksByTags(
+  supabase: SupabaseClient,
+  searchTags: string[]
+) {
+  try {
+    const { data, error } = await (
+      supabase as SupabaseClient & {
+        rpc: (
+          functionName: string,
+          params: Record<string, unknown>
+        ) => Promise<{
+          data: unknown;
+          error: { message: string } | null;
+        }>;
+      }
+    ).rpc('search_tasks_by_tags', {
+      search_tags: searchTags,
+    });
+
+    if (error) {
+      // If the RPC function doesn't exist (migration not applied), return empty array
+      if (
+        error.message.includes('function "search_tasks_by_tags" does not exist')
+      ) {
+        console.warn(
+          'Tags migration not applied yet, returning empty search results'
+        );
+        return [];
+      }
+      throw error;
+    }
+    return data || [];
+  } catch (err) {
+    console.warn('Error searching tasks by tags:', err);
+    return [];
+  }
+}
+
+export async function getTasksWithTagFilter(
+  supabase: SupabaseClient,
+  boardId: string,
+  tags: string[]
+) {
+  const { data: lists } = await supabase
+    .from('task_lists')
+    .select('id')
+    .eq('board_id', boardId)
+    .eq('deleted', false);
+
+  if (!lists?.length) return [];
+
+  const { data, error } = await supabase
+    .from('tasks')
+    .select(
+      `
+      *,
+      assignees:task_assignees(
+        user:users(
+          id,
+          display_name,
+          avatar_url
+        )
+      )
+    `
+    )
+    .in(
+      'list_id',
+      lists.map((list) => list.id)
+    )
+    .eq('deleted', false)
+    .overlaps('tags', tags) // Filter tasks that have any of the specified tags
+    .order('created_at');
+
+  if (error) throw error;
+
+  // Transform the nested assignees data
+  const transformedTasks = data.map((task) => ({
+    ...task,
+    assignees: task.assignees
+      ?.map((a) => a.user)
+      .filter(
+        (user: User, index: number, self: User[]) =>
+          user?.id && self.findIndex((u: User) => u.id === user.id) === index
+      ),
+  }));
+
+  return transformedTasks as Task[];
+}
+
+// React hooks for tag management
+export function useBoardTaskTags(boardId: string) {
+  return useQuery({
+    queryKey: ['board-task-tags', boardId],
+    queryFn: async () => {
+      const supabase = createClient();
+      return getBoardTaskTags(supabase, boardId);
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 }

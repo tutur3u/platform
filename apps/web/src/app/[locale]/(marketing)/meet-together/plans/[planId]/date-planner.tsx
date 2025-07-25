@@ -13,6 +13,8 @@ export default function DatePlanner({
   end,
   editable = false,
   disabled = false,
+  showBestTimes = false,
+  onBestTimesStatusByDateAction,
 }: {
   timeblocks: Timeblock[];
   dates?: string[];
@@ -20,6 +22,8 @@ export default function DatePlanner({
   end?: string;
   editable?: boolean;
   disabled?: boolean;
+  showBestTimes?: boolean;
+  onBestTimesStatusByDateAction?: (status: Record<string, boolean>) => void;
 }) {
   const { user, editing, endEditing, setPreviewDate } = useTimeBlocking();
 
@@ -82,6 +86,8 @@ export default function DatePlanner({
             end={endHour}
             editable={editable}
             disabled={editable ? (user ? disabled : true) : disabled}
+            showBestTimes={showBestTimes}
+            onBestTimesStatusByDateAction={onBestTimesStatusByDateAction}
           />
         </div>
       )}

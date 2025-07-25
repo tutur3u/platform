@@ -348,7 +348,10 @@ export function StatusGroupedBoard({
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
+                  role="img"
+                  aria-label="Board structure view icon"
                 >
+                  <title>Board Structure View</title>
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"

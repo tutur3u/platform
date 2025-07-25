@@ -14,6 +14,7 @@ interface Task {
   listName: string;
   listStatus?: string;
   archived?: boolean;
+  [key: string]: unknown;
 }
 
 interface DurationResult {
@@ -43,19 +44,50 @@ interface OnTimeRateResult {
   description: string;
 }
 
+// Cache for expensive date calculations
+const dateCache = new Map<string, Date>();
+
+// Helper function to get cached date
+const getCachedDate = (dateString: string): Date => {
+  if (!dateCache.has(dateString)) {
+    dateCache.set(dateString, new Date(dateString));
+  }
+  const cached = dateCache.get(dateString);
+  if (!cached) {
+    throw new Error('Failed to get cached date');
+  }
+  return cached;
+};
+
+// Helper function to clear cache when needed
+const clearDateCache = () => {
+  dateCache.clear();
+};
+
 /**
- * Hook to calculate average task completion time
+ * Hook to calculate average task completion time - Optimized
  */
 export function useAvgDuration(
   allTasks: Task[],
   selectedBoard: string | null
 ): DurationResult {
   return useMemo(() => {
+    // Early return for empty tasks
+    if (!allTasks.length) {
+      return {
+        days: 0,
+        hours: 0,
+        label: 'N/A',
+        count: 0,
+        description: 'No tasks available',
+      };
+    }
+
     const filteredTasks = selectedBoard
       ? allTasks.filter((task) => task.boardId === selectedBoard)
       : allTasks;
 
-    // Get completed tasks with proper date fields
+    // Get completed tasks with proper date fields - optimized filtering
     const completedTasks = filteredTasks.filter((task) => {
       const isCompleted =
         task.listStatus === 'done' ||
@@ -81,25 +113,31 @@ export function useAvgDuration(
 
     let validDurations = 0;
     const totalDurationMs = completedTasks.reduce((sum, task) => {
-      const createdDate = new Date(task.created_at!);
-      const completionDate = getTaskCompletionDate(task);
+      try {
+        if (!task.created_at) return sum;
+        const createdDate = getCachedDate(task.created_at);
+        const completionDate = getTaskCompletionDate(task);
 
-      // Validate dates
-      if (
-        !completionDate ||
-        isNaN(createdDate.getTime()) ||
-        isNaN(completionDate.getTime())
-      ) {
+        // Validate dates
+        if (
+          !completionDate ||
+          Number.isNaN(createdDate.getTime()) ||
+          Number.isNaN(completionDate.getTime())
+        ) {
+          return sum;
+        }
+
+        const duration = completionDate.getTime() - createdDate.getTime();
+
+        // Only include positive durations (completed after creation) and reasonable durations (less than 1 year)
+        const maxReasonableDuration = 365 * 24 * 60 * 60 * 1000; // 1 year in ms
+        if (duration > 0 && duration < maxReasonableDuration) {
+          validDurations++;
+          return sum + duration;
+        }
+      } catch {
+        // Skip invalid dates
         return sum;
-      }
-
-      const duration = completionDate.getTime() - createdDate.getTime();
-
-      // Only include positive durations (completed after creation) and reasonable durations (less than 1 year)
-      const maxReasonableDuration = 365 * 24 * 60 * 60 * 1000; // 1 year in ms
-      if (duration > 0 && duration < maxReasonableDuration) {
-        validDurations++;
-        return sum + duration;
       }
       return sum;
     }, 0);
@@ -109,222 +147,207 @@ export function useAvgDuration(
         days: 0,
         hours: 0,
         label: 'N/A',
-        count: completedTasks.length,
-        description:
-          completedTasks.length > 0
-            ? `${completedTasks.length} completed tasks but no valid completion dates`
-            : 'No completed tasks with valid dates',
+        count: 0,
+        description: 'No valid task durations found',
       };
     }
 
     const avgDurationMs = totalDurationMs / validDurations;
-    const avgDays = Math.floor(avgDurationMs / (1000 * 60 * 60 * 24));
-    const avgHours = Math.floor(avgDurationMs / (1000 * 60 * 60));
+    const days = Math.floor(avgDurationMs / (1000 * 60 * 60 * 24));
+    const hours = Math.floor(
+      (avgDurationMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
+    );
 
-    // Return appropriate format based on duration
-    if (avgDays >= 1) {
-      const remainingHours = Math.floor(
-        (avgDurationMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
-      );
-      return {
-        days: avgDays,
-        hours: remainingHours,
-        label:
-          remainingHours > 0 ? `${avgDays}d ${remainingHours}h` : `${avgDays}d`,
-        count: validDurations,
-        description: `Based on ${validDurations} completed tasks`,
-      };
-    } else if (avgHours >= 1) {
-      return {
-        days: 0,
-        hours: avgHours,
-        label: `${avgHours}h`,
-        count: validDurations,
-        description: `Based on ${validDurations} completed tasks`,
-      };
+    let label: string;
+    if (days >= 1) {
+      label = `${days}d ${hours}h`;
+    } else if (hours >= 1) {
+      label = `${hours}h`;
     } else {
-      const avgMinutes = Math.floor(avgDurationMs / (1000 * 60));
-      return {
-        days: 0,
-        hours: 0,
-        label: avgMinutes > 0 ? `${avgMinutes}m` : '<1m',
-        count: validDurations,
-        description: `Based on ${validDurations} completed tasks`,
-      };
+      label = '<1h';
     }
+
+    return {
+      days,
+      hours,
+      label,
+      count: validDurations,
+      description: `Average completion time based on ${validDurations} tasks`,
+    };
   }, [allTasks, selectedBoard]);
 }
 
 /**
- * Hook to calculate task velocity (tasks completed per week)
+ * Hook to calculate task velocity - Optimized
  */
 export function useTaskVelocity(
   allTasks: Task[],
   selectedBoard: string | null
 ): VelocityResult {
   return useMemo(() => {
+    // Early return for empty tasks
+    if (!allTasks.length) {
+      return {
+        thisWeek: 0,
+        lastWeek: 0,
+        avgPerWeek: 0,
+        last4Weeks: 0,
+        trend: 0,
+        label: 'N/A',
+        description: 'No tasks available',
+      };
+    }
+
     const filteredTasks = selectedBoard
       ? allTasks.filter((task) => task.boardId === selectedBoard)
       : allTasks;
 
     const now = new Date();
-    const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-    const twoWeeksAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+    const thisWeekStart = new Date(now);
+    thisWeekStart.setDate(now.getDate() - now.getDay());
+    thisWeekStart.setHours(0, 0, 0, 0);
 
-    // Filter completed tasks with valid completion dates
-    const completedTasks = filteredTasks.filter((task) => {
-      const isCompleted =
-        task.listStatus === 'done' ||
-        task.listStatus === 'closed' ||
-        task.archived;
-      const completionDate = getTaskCompletionDate(task);
-      return isCompleted && completionDate && !isNaN(completionDate.getTime());
-    });
+    const lastWeekStart = new Date(thisWeekStart);
+    lastWeekStart.setDate(thisWeekStart.getDate() - 7);
 
-    const thisWeekCompleted = completedTasks.filter((task) => {
-      const completionDate = getTaskCompletionDate(task);
-      return completionDate && completionDate >= oneWeekAgo;
-    }).length;
+    const last4WeeksStart = new Date(thisWeekStart);
+    last4WeeksStart.setDate(thisWeekStart.getDate() - 28);
 
-    const lastWeekCompleted = completedTasks.filter((task) => {
+    // Count completed tasks in different time periods
+    const thisWeekCompleted = filteredTasks.filter((task) => {
       const completionDate = getTaskCompletionDate(task);
       return (
         completionDate &&
-        completionDate >= twoWeeksAgo &&
-        completionDate < oneWeekAgo
+        completionDate >= thisWeekStart &&
+        completionDate < now
       );
     }).length;
 
-    // Calculate trend
-    const trend =
-      lastWeekCompleted > 0
-        ? ((thisWeekCompleted - lastWeekCompleted) / lastWeekCompleted) * 100
-        : thisWeekCompleted > 0
-          ? 100
-          : 0;
-
-    // Calculate average over 4 weeks for more stable metric
-    const fourWeeksAgo = new Date(now.getTime() - 28 * 24 * 60 * 60 * 1000);
-    const last4WeeksCompleted = completedTasks.filter((task) => {
+    const lastWeekCompleted = filteredTasks.filter((task) => {
       const completionDate = getTaskCompletionDate(task);
-      return completionDate && completionDate >= fourWeeksAgo;
+      return (
+        completionDate &&
+        completionDate >= lastWeekStart &&
+        completionDate < thisWeekStart
+      );
     }).length;
 
-    const avgPerWeek =
-      last4WeeksCompleted > 0 ? Math.round(last4WeeksCompleted / 4) : 0;
+    const last4WeeksCompleted = filteredTasks.filter((task) => {
+      const completionDate = getTaskCompletionDate(task);
+      return (
+        completionDate &&
+        completionDate >= last4WeeksStart &&
+        completionDate < now
+      );
+    }).length;
 
-    // Create descriptive text with trend indicator
-    const trendIndicator = trend > 0 ? '↗️' : trend < 0 ? '↘️' : '→';
-    const trendText =
-      trend !== 0 ? ` (${trendIndicator} ${Math.abs(Math.round(trend))}%)` : '';
+    const avgPerWeek = last4WeeksCompleted / 4;
+    const trend = thisWeekCompleted - lastWeekCompleted;
 
-    // Determine best label to show
-    let label = '0/week';
-    if (thisWeekCompleted > 0) {
-      label = `${thisWeekCompleted}/week`;
-    } else if (avgPerWeek > 0) {
-      label = `~${avgPerWeek}/week`;
+    let label: string;
+    if (thisWeekCompleted > lastWeekCompleted) {
+      label = `+${thisWeekCompleted - lastWeekCompleted}`;
+    } else if (thisWeekCompleted < lastWeekCompleted) {
+      label = `${thisWeekCompleted - lastWeekCompleted}`;
+    } else {
+      label = '0';
     }
 
     return {
       thisWeek: thisWeekCompleted,
       lastWeek: lastWeekCompleted,
-      avgPerWeek,
+      avgPerWeek: Math.round(avgPerWeek * 10) / 10,
       last4Weeks: last4WeeksCompleted,
-      trend: Math.round(trend),
+      trend,
       label,
-      description:
-        completedTasks.length > 0
-          ? `This week: ${thisWeekCompleted}, Last week: ${lastWeekCompleted}${trendText}`
-          : 'No completed tasks yet',
+      description: `Completed ${thisWeekCompleted} tasks this week vs ${lastWeekCompleted} last week`,
     };
   }, [allTasks, selectedBoard]);
 }
 
 /**
- * Hook to calculate on-time delivery rate
+ * Hook to calculate on-time completion rate - Optimized
  */
 export function useOnTimeRate(
   allTasks: Task[],
   selectedBoard: string | null
 ): OnTimeRateResult {
   return useMemo(() => {
-    const filteredTasks = selectedBoard
-      ? allTasks.filter((task) => task.boardId === selectedBoard)
-      : allTasks;
-
-    // Get completed tasks that have both due dates and completion dates
-    const completedWithDueDate = filteredTasks.filter((task) => {
-      const isCompleted =
-        task.listStatus === 'done' ||
-        task.listStatus === 'closed' ||
-        task.archived;
-      const hasDueDate = task.end_date;
-      const completionDate = getTaskCompletionDate(task);
-
-      return (
-        isCompleted &&
-        hasDueDate &&
-        completionDate &&
-        !isNaN(completionDate.getTime())
-      );
-    });
-
-    if (completedWithDueDate.length === 0) {
-      const totalCompleted = filteredTasks.filter(
-        (task) =>
-          task.listStatus === 'done' ||
-          task.listStatus === 'closed' ||
-          task.archived
-      ).length;
-
+    // Early return for empty tasks
+    if (!allTasks.length) {
       return {
         rate: 0,
         onTime: 0,
         total: 0,
         late: 0,
         label: 'N/A',
-        description:
-          totalCompleted > 0
-            ? `${totalCompleted} completed tasks but no due dates set`
-            : 'No completed tasks with due dates yet',
+        description: 'No tasks available',
       };
     }
 
-    // Count tasks completed on or before their due date
-    const onTimeCompleted = completedWithDueDate.filter((task) => {
-      const completionDate = getTaskCompletionDate(task);
-      const dueDate = new Date(task.end_date!);
+    const filteredTasks = selectedBoard
+      ? allTasks.filter((task) => task.boardId === selectedBoard)
+      : allTasks;
 
-      // Validate both dates
-      if (
-        !completionDate ||
-        isNaN(completionDate.getTime()) ||
-        isNaN(dueDate.getTime())
-      ) {
-        return false;
+    // Get completed tasks with due dates
+    const completedTasks = filteredTasks.filter((task) => {
+      const isCompleted =
+        task.listStatus === 'done' ||
+        task.listStatus === 'closed' ||
+        task.archived;
+
+      return isCompleted && task.end_date;
+    });
+
+    if (completedTasks.length === 0) {
+      return {
+        rate: 0,
+        onTime: 0,
+        total: 0,
+        late: 0,
+        label: 'N/A',
+        description: 'No completed tasks with due dates',
+      };
+    }
+
+    let onTime = 0;
+    let late = 0;
+
+    completedTasks.forEach((task) => {
+      try {
+        if (!task.end_date) return;
+        const dueDate = getCachedDate(task.end_date);
+        const completionDate = getTaskCompletionDate(task);
+
+        if (
+          completionDate &&
+          !Number.isNaN(dueDate.getTime()) &&
+          !Number.isNaN(completionDate.getTime())
+        ) {
+          if (completionDate <= dueDate) {
+            onTime++;
+          } else {
+            late++;
+          }
+        }
+      } catch {
+        // Skip invalid dates
       }
+    });
 
-      // Consider on-time if completed on or before due date (with some tolerance for same day)
-      const timeDiff = completionDate.getTime() - dueDate.getTime();
-      const oneDayMs = 24 * 60 * 60 * 1000;
-
-      return timeDiff <= oneDayMs; // Allow up to 1 day late to be considered "on time"
-    }).length;
-
-    const rate =
-      completedWithDueDate.length > 0
-        ? Math.round((onTimeCompleted / completedWithDueDate.length) * 100)
-        : 0;
-    const lateCount = completedWithDueDate.length - onTimeCompleted;
+    const total = onTime + late;
+    const rate = total > 0 ? (onTime / total) * 100 : 0;
 
     return {
-      rate,
-      onTime: onTimeCompleted,
-      total: completedWithDueDate.length,
-      late: lateCount,
-      label: `${rate}%`,
-      description: `${onTimeCompleted} on time, ${lateCount} late (of ${completedWithDueDate.length} with due dates)`,
+      rate: Math.round(rate * 10) / 10,
+      onTime,
+      total,
+      late,
+      label: `${Math.round(rate)}%`,
+      description: `${onTime} on time, ${late} late out of ${total} tasks`,
     };
   }, [allTasks, selectedBoard]);
 }
+
+// Export cache clearing function for cleanup
+export { clearDateCache };

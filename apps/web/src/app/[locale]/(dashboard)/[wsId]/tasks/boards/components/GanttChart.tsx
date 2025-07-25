@@ -1,12 +1,14 @@
 'use client';
 
+import type { GanttTask } from '../types';
 import { getTaskCompletionDate } from '../utils/taskHelpers';
 import { GanttControls } from './GanttControls';
 import { GanttHeader } from './GanttHeader';
 import { GanttTimeline } from './GanttTimeline';
 import { TaskDetailCard } from './TaskDetailCard';
 import { Card } from '@tuturuuu/ui/card';
-import { useEffect, useMemo, useState } from 'react';
+import type { MouseEvent as DOMMouseEvent } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 interface AnalyticsFilters {
   timeView: 'week' | 'month' | 'year';
@@ -15,7 +17,7 @@ interface AnalyticsFilters {
 }
 
 interface GanttChartProps {
-  allTasks: any[];
+  allTasks: GanttTask[];
   filters: AnalyticsFilters;
 }
 
@@ -25,7 +27,20 @@ export function GanttChart({ allTasks, filters }: GanttChartProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [clickCardVisible, setClickCardVisible] = useState(false);
   const [clickCardPosition, setClickCardPosition] = useState({ x: 0, y: 0 });
-  const [clickedTask, setClickedTask] = useState<any | null>(null);
+  const [clickedTask, setClickedTask] = useState<GanttTask | null>(null);
+
+  // Track previous filter values to detect changes
+  const prevFiltersRef = useRef({
+    selectedBoard: filters.selectedBoard,
+    statusFilter: filters.statusFilter,
+    searchQuery,
+  });
+
+  // Memoize the close handler to prevent unnecessary re-renders
+  const handleCloseClick = useCallback(() => {
+    setClickCardVisible(false);
+    setClickedTask(null);
+  }, []);
 
   // Filter tasks based on selected board, status, and search
   const filteredTasks = useMemo(() => {
@@ -59,7 +74,7 @@ export function GanttChart({ allTasks, filters }: GanttChartProps) {
   }, [allTasks, filters.selectedBoard, filters.statusFilter, searchQuery]);
 
   // Get time range based on filter
-  const getTimeRange = () => {
+  const getTimeRange = useCallback(() => {
     const now = new Date();
     switch (filters.timeView) {
       case 'week': {
@@ -80,12 +95,16 @@ export function GanttChart({ allTasks, filters }: GanttChartProps) {
         return { start: yearStart, end: yearEnd };
       }
     }
-  };
+  }, [filters.timeView]);
 
-  const timeRange = getTimeRange();
-  const totalDays = Math.ceil(
-    (timeRange.end.getTime() - timeRange.start.getTime()) /
-      (1000 * 60 * 60 * 24)
+  const timeRange = useMemo(() => getTimeRange(), [getTimeRange]);
+  const totalDays = useMemo(
+    () =>
+      Math.ceil(
+        (timeRange.end.getTime() - timeRange.start.getTime()) /
+          (1000 * 60 * 60 * 24)
+      ),
+    [timeRange]
   );
 
   // Calculate productivity stats
@@ -144,6 +163,12 @@ export function GanttChart({ allTasks, filters }: GanttChartProps) {
 
         return {
           ...task,
+          boardId: task.boardId ?? '',
+          boardName: task.boardName ?? '',
+          listName: task.listName ?? '',
+          listStatus: task.listStatus ?? 'not_started',
+          updated_at: task.updated_at ?? undefined,
+          end_date: task.end_date ?? undefined,
           createdDate,
           endDate,
           startOffset: (startOffset / totalDays) * 100,
@@ -151,7 +176,7 @@ export function GanttChart({ allTasks, filters }: GanttChartProps) {
             (duration / totalDays) * 100,
             100 - (startOffset / totalDays) * 100
           ),
-          status: task.listStatus || 'not_started',
+          status: (task.listStatus ?? 'not_started') as string,
         };
       })
       .filter((task) => task.startOffset < 100) // Only show tasks within time range
@@ -208,14 +233,14 @@ export function GanttChart({ allTasks, filters }: GanttChartProps) {
         ? new Date(clickedTask.created_at)
         : null;
 
-      if (!createdDate || isNaN(createdDate.getTime())) {
+      if (!createdDate || Number.isNaN(createdDate.getTime())) {
         return 'N/A';
       }
 
       // For completed tasks, calculate actual duration
       if (clickedTask.status === 'done' || clickedTask.status === 'closed') {
         const completionDate = getTaskCompletionDate(clickedTask);
-        if (completionDate && !isNaN(completionDate.getTime())) {
+        if (completionDate && !Number.isNaN(completionDate.getTime())) {
           const durationMs = completionDate.getTime() - createdDate.getTime();
           const days = Math.floor(durationMs / (1000 * 60 * 60 * 24));
           const hours = Math.floor(durationMs / (1000 * 60 * 60));
@@ -233,7 +258,7 @@ export function GanttChart({ allTasks, filters }: GanttChartProps) {
       // For non-completed tasks, show planned duration or time elapsed
       if (clickedTask.end_date) {
         const dueDate = new Date(clickedTask.end_date);
-        if (!isNaN(dueDate.getTime())) {
+        if (!Number.isNaN(dueDate.getTime())) {
           const plannedDurationMs = dueDate.getTime() - createdDate.getTime();
           const days = Math.floor(plannedDurationMs / (1000 * 60 * 60 * 24));
           const hours = Math.floor(plannedDurationMs / (1000 * 60 * 60));
@@ -266,42 +291,54 @@ export function GanttChart({ allTasks, filters }: GanttChartProps) {
     }
   }, [clickedTask]);
 
-  // Reset to first page when filters change
+  // Reset to first page when filters change - optimized dependencies
   useEffect(() => {
-    setCurrentPage(1);
+    const currentFilters = {
+      selectedBoard: filters.selectedBoard,
+      statusFilter: filters.statusFilter,
+      searchQuery,
+    };
+    const prevFilters = prevFiltersRef.current;
+
+    if (
+      currentFilters.selectedBoard !== prevFilters.selectedBoard ||
+      currentFilters.statusFilter !== prevFilters.statusFilter ||
+      currentFilters.searchQuery !== prevFilters.searchQuery
+    ) {
+      setCurrentPage(1);
+      prevFiltersRef.current = currentFilters;
+    }
   }, [filters.selectedBoard, filters.statusFilter, searchQuery]);
 
   // Add the click handlers to the GanttChart component
-  const handleTaskClick = (e: React.MouseEvent, task: any) => {
-    e.stopPropagation();
+  const handleTaskClick = useCallback(
+    (e: DOMMouseEvent<Element, globalThis.MouseEvent>, task: GanttTask) => {
+      e.stopPropagation();
 
-    const mouseX = e.clientX;
-    const mouseY = e.clientY;
+      const mouseX = e.clientX;
+      const mouseY = e.clientY;
 
-    setClickedTask(task);
-    setClickCardVisible(true);
+      setClickedTask(task);
+      setClickCardVisible(true);
 
-    // Position near the click
-    let newX = mouseX + 15;
-    let newY = mouseY + 15;
+      // Position near the click
+      let newX = mouseX + 15;
+      let newY = mouseY + 15;
 
-    // Ensure it doesn't go off screen
-    if (newX + 250 > window.innerWidth) {
-      newX = mouseX - 265;
-    }
-    if (newY + 150 > window.innerHeight) {
-      newY = mouseY - 165;
-    }
+      // Ensure it doesn't go off screen
+      if (newX + 250 > window.innerWidth) {
+        newX = mouseX - 265;
+      }
+      if (newY + 150 > window.innerHeight) {
+        newY = mouseY - 165;
+      }
 
-    setClickCardPosition({ x: newX, y: newY });
-  };
+      setClickCardPosition({ x: newX, y: newY });
+    },
+    []
+  );
 
-  const handleCloseClick = () => {
-    setClickCardVisible(false);
-    setClickedTask(null);
-  };
-
-  // Add click outside to close
+  // Add click outside to close - fixed dependency
   useEffect(() => {
     const handleScroll = () => {
       handleCloseClick();
@@ -333,7 +370,7 @@ export function GanttChart({ allTasks, filters }: GanttChartProps) {
         ganttContainer.removeEventListener('scroll', handleScroll);
       }
     };
-  }, [clickCardVisible]);
+  }, [clickCardVisible, handleCloseClick]);
 
   return (
     <>
@@ -363,7 +400,16 @@ export function GanttChart({ allTasks, filters }: GanttChartProps) {
 
       <TaskDetailCard
         clickCardVisible={clickCardVisible}
-        clickedTask={clickedTask}
+        clickedTask={
+          clickedTask
+            ? {
+                ...clickedTask,
+                status: clickedTask.status ?? 'not_started',
+                end_date: clickedTask.end_date ?? undefined,
+                priority: clickedTask.priority ?? undefined,
+              }
+            : null
+        }
         clickCardPosition={clickCardPosition}
         clickedTaskDuration={clickedTaskDuration}
         handleCloseClick={handleCloseClick}

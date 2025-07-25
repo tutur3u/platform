@@ -13,7 +13,18 @@ import { useRef } from 'react';
 
 interface TaskDetailCardProps {
   clickCardVisible: boolean;
-  clickedTask: any | null;
+  clickedTask: {
+    id: string;
+    name: string;
+    description?: string;
+    status: string;
+    boardName?: string;
+    listName?: string;
+    createdDate?: Date;
+    end_date?: string;
+    priority?: number;
+    assignee_name?: string;
+  } | null;
   clickCardPosition: { x: number; y: number };
   clickedTaskDuration: string;
   handleCloseClick: () => void;
@@ -35,9 +46,16 @@ export function TaskDetailCard({
   return (
     <>
       {/* Subtle backdrop */}
-      <div
+      <button
+        type="button"
         className="fixed inset-0 z-[9998] bg-black/5 backdrop-blur-[1px]"
         onClick={handleCloseClick}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            handleCloseClick();
+          }
+        }}
+        aria-label="Close task details"
       />
 
       <div
@@ -109,6 +127,7 @@ export function TaskDetailCard({
                 )}
               </Badge>
               <button
+                type="button"
                 onClick={handleCloseClick}
                 className="text-gray-400 transition-colors hover:text-gray-600 dark:hover:text-gray-300"
               >
@@ -235,8 +254,7 @@ export function TaskDetailCard({
                 <span className="text-xs font-medium text-red-600 dark:text-red-400">
                   Overdue by{' '}
                   {Math.ceil(
-                    (new Date().getTime() -
-                      new Date(clickedTask.end_date).getTime()) /
+                    (Date.now() - new Date(clickedTask.end_date).getTime()) /
                       (1000 * 60 * 60 * 24)
                   )}{' '}
                   days
