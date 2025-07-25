@@ -13,9 +13,27 @@ import StarterKit from '@tiptap/starter-kit';
 import { debounce } from 'lodash';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
+const isContentEmpty = (content: JSONContent) => {
+  if (!content || !content.content) return true;
+
+  if (content.content.length === 0) return true;
+
+  if (content.content.length === 1) {
+    const firstNode = content.content[0];
+    if (
+      firstNode?.type === 'paragraph' &&
+      (!firstNode.content || firstNode.content.length === 0)
+    ) {
+      return true;
+    }
+  }
+
+  return false;
+};
+
 interface RichTextEditorProps {
   content: JSONContent | null;
-  onChange?: (content: JSONContent) => void;
+  onChange?: (content: JSONContent | null) => void;
   readOnly?: boolean;
   titlePlaceholder?: string;
   writePlaceholder?: string;
@@ -39,7 +57,7 @@ export function RichTextEditor({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const debouncedOnChange = useCallback(
     debounce((newContent: JSONContent) => {
-      onChange?.(newContent);
+      onChange?.(isContentEmpty(newContent) ? null : newContent);
       setHasChanges(false);
     }, 500),
     [onChange]
@@ -118,7 +136,7 @@ export function RichTextEditor({
       Subscript,
       Superscript,
     ],
-    content: content || '',
+    content,
     editable: !readOnly,
     immediatelyRender: false,
     editorProps: {
@@ -137,17 +155,17 @@ export function RichTextEditor({
   // Update editor's editable state when readOnly prop changes
   useEffect(() => {
     if (editor) {
-      editor.commands.setContent(content || '');
+      editor.commands.setContent(content);
       editor.setEditable(!readOnly);
     }
   }, [editor, readOnly, content]);
 
   const handleSave = useCallback(() => {
     if (editor && !readOnly) {
-      onChange?.(editor.getJSON());
-      setHasChanges(false);
+      setHasChanges(true);
+      debouncedOnChange(editor.getJSON());
     }
-  }, [editor, onChange, readOnly]);
+  }, [editor, readOnly, debouncedOnChange]);
 
   return (
     <div className={`space-y-2`}>

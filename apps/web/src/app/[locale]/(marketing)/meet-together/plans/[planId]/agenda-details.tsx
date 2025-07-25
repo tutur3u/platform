@@ -60,13 +60,13 @@ export default function AgendaDetails({ plan }: AgendaDetailsProps) {
     }
   }, [plan.id, editContent, router]);
 
-  const handleContentChange = useCallback((content: JSONContent) => {
-    setEditContent(content);
+  const handleContentChange = useCallback((content: JSONContent | null) => {
+    setEditContent(content || null);
   }, []);
 
   return (
     <div className="w-full space-y-8">
-      <div className="flex flex-col items-center justify-between gap-4 md:flex-row">
+      <div className="flex flex-col items-start justify-between gap-4 md:flex-row">
         <div className="space-y-4">
           <p className="text-4xl font-semibold">{t('agenda')}</p>
           <p className="text-md text-muted-foreground">
@@ -100,9 +100,9 @@ export default function AgendaDetails({ plan }: AgendaDetailsProps) {
         )}
       </div>
 
-      {plan.agenda_content ? (
+      {plan.agenda_content || isEditing ? (
         <RichTextEditor
-          content={isEditing ? editContent : plan.agenda_content}
+          content={isEditing ? editContent : plan.agenda_content || null}
           onChange={isEditing ? handleContentChange : undefined}
           readOnly={!isEditing}
           className="max-h-screen w-full"
