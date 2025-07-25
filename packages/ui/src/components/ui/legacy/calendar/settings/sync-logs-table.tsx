@@ -10,6 +10,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@tuturuuu/ui/card';
+import { DataPagination } from '@tuturuuu/ui/custom/data-pagination';
 import { Input } from '@tuturuuu/ui/input';
 import {
   Select,
@@ -38,6 +39,7 @@ import {
   Search,
   Zap,
 } from 'lucide-react';
+import { useState } from 'react';
 
 interface SyncLogsTableProps {
   syncLogs: SyncLog[];
@@ -60,6 +62,10 @@ export function SyncLogsTable({
   onFilterWorkspaceChange,
   onSearchTermChange,
 }: SyncLogsTableProps) {
+  // Internal pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
   const formatTimestamp = (timestamp: string) => {
     const date = new Date(timestamp);
     const now = new Date();
@@ -144,6 +150,38 @@ export function SyncLogsTable({
     );
   };
 
+  // Calculate pagination values
+  const totalCount = syncLogs.length;
+  const totalPages = Math.ceil(totalCount / pageSize);
+  const startIndex = (currentPage - 1) * pageSize;
+  const endIndex = startIndex + pageSize;
+  const paginatedLogs = syncLogs.slice(startIndex, endIndex);
+
+  // Reset to first page when filters change
+  const handleFilterTypeChange = (value: string) => {
+    setCurrentPage(1);
+    onFilterTypeChange(value);
+  };
+
+  const handleFilterWorkspaceChange = (value: string) => {
+    setCurrentPage(1);
+    onFilterWorkspaceChange(value);
+  };
+
+  const handleSearchTermChange = (value: string) => {
+    setCurrentPage(1);
+    onSearchTermChange(value);
+  };
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const handlePageSizeChange = (newPageSize: number) => {
+    setPageSize(newPageSize);
+    setCurrentPage(1); // Reset to first page when changing page size
+  };
+
   return (
     <Card className="border-0 bg-foreground/10 shadow-sm backdrop-blur-sm">
       <CardHeader className="pb-6">
@@ -166,7 +204,7 @@ export function SyncLogsTable({
               <Input
                 placeholder="Search by user, workspace, or calendar source..."
                 value={searchTerm}
-                onChange={(e) => onSearchTermChange(e.target.value)}
+                onChange={(e) => handleSearchTermChange(e.target.value)}
                 className="border-foreground/10 bg-foreground/10 pl-10"
               />
             </div>
@@ -174,7 +212,7 @@ export function SyncLogsTable({
           <div className="flex gap-3">
             <Select
               value={filterWorkspace}
-              onValueChange={onFilterWorkspaceChange}
+              onValueChange={handleFilterWorkspaceChange}
             >
               <SelectTrigger className="w-[180px] border-foreground/10 bg-foreground/10">
                 <Building2 className="mr-2 h-4 w-4 text-foreground/50" />
@@ -194,7 +232,7 @@ export function SyncLogsTable({
                 ))}
               </SelectContent>
             </Select>
-            <Select value={filterType} onValueChange={onFilterTypeChange}>
+            <Select value={filterType} onValueChange={handleFilterTypeChange}>
               <SelectTrigger className="w-[140px] border-foreground/10 bg-foreground/10">
                 <Filter className="mr-2 h-4 w-4 text-foreground/50" />
                 <SelectValue placeholder="All Types" />
@@ -228,7 +266,7 @@ export function SyncLogsTable({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {syncLogs.map((log) => (
+              {paginatedLogs.map((log) => (
                 <TableRow
                   key={log.id}
                   className="transition-colors hover:bg-slate-50/50"
@@ -325,6 +363,23 @@ export function SyncLogsTable({
             <p className="text-foreground/50">
               Try adjusting your search criteria or filters.
             </p>
+          </div>
+        )}
+
+        {/* Pagination */}
+        {syncLogs.length > 0 && totalPages > 1 && (
+          <div className="mt-6">
+            <DataPagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalCount={totalCount}
+              pageSize={pageSize}
+              onPageChange={handlePageChange}
+              onPageSizeChange={handlePageSizeChange}
+              itemName="sync logs"
+              pageSizeOptions={[10, 20, 50, 100]}
+              showPageSizeSelector={totalCount > 10}
+            />
           </div>
         )}
       </CardContent>
