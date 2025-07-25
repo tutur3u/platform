@@ -137,22 +137,6 @@ export async function createTask(
   return data as Task;
 }
 
-export async function updateTask(
-  supabase: SupabaseClient,
-  taskId: string,
-  task: Partial<Task>
-) {
-  const { data, error } = await supabase
-    .from('tasks')
-    .update(task)
-    .eq('id', taskId)
-    .select()
-    .single();
-
-  if (error) throw error;
-  return data as Task;
-}
-
 // Utility function to transform and deduplicate assignees
 export function transformAssignees(
   assignees: (TaskAssignee & { user: User })[]
@@ -337,72 +321,6 @@ export async function deleteTaskList(supabase: SupabaseClient, listId: string) {
 }
 
 // React Query Hooks with Optimistic Updates
-
-export function useUpdateTask(boardId: string) {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({
-      taskId,
-      updates,
-    }: {
-      taskId: string;
-      updates: Partial<Task>;
-    }) => {
-      const supabase = createClient();
-      return updateTask(supabase, taskId, updates);
-    },
-    onMutate: async ({ taskId, updates }) => {
-      // Cancel any outgoing refetches
-      await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
-
-      // Snapshot the previous value
-      const previousTasks = queryClient.getQueryData(['tasks', boardId]);
-
-      // Optimistically update the cache
-      queryClient.setQueryData(
-        ['tasks', boardId],
-        (old: Task[] | undefined) => {
-          if (!old) return old;
-          return old.map((task) =>
-            task.id === taskId ? { ...task, ...updates } : task
-          );
-        }
-      );
-
-      return { previousTasks };
-    },
-    onError: (err, _, context) => {
-      // Rollback optimistic update on error
-      if (context?.previousTasks) {
-        queryClient.setQueryData(['tasks', boardId], context.previousTasks);
-      }
-
-      console.error('Failed to update task:', err);
-      toast({
-        title: 'Error',
-        description: 'Failed to update task. Please try again.',
-        variant: 'destructive',
-      });
-    },
-    onSuccess: (updatedTask) => {
-      // Update the cache with the server response
-      queryClient.setQueryData(
-        ['tasks', boardId],
-        (old: Task[] | undefined) => {
-          if (!old) return old;
-          return old.map((task) =>
-            task.id === updatedTask.id ? updatedTask : task
-          );
-        }
-      );
-    },
-    onSettled: () => {
-      // Ensure data consistency
-      queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
-    },
-  });
-}
 
 export function useCreateTask(boardId: string) {
   const queryClient = useQueryClient();

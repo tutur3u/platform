@@ -2,7 +2,7 @@ import { AssigneeSelect } from './_components/assignee-select';
 import { TaskEditDialog } from './_components/task-edit-dialog';
 import { TaskTagsDisplay } from './_components/task-tags-display';
 import { TaskActions } from './task-actions';
-import { moveTask, useDeleteTask, useUpdateTask } from '@/lib/task-helper';
+import { moveTask, useDeleteTask } from '@/lib/task-helper';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { createClient } from '@tuturuuu/supabase/next/client';
@@ -115,7 +115,6 @@ export const TaskCard = React.memo(function TaskCard({
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [availableLists, setAvailableLists] = useState<TaskList[]>([]);
   const datePickerRef = useRef<HTMLButtonElement>(null);
-  const updateTaskMutation = useUpdateTask(boardId);
   const deleteTaskMutation = useDeleteTask(boardId);
 
   // Fetch available task lists for the board (only if not provided as prop)
@@ -195,15 +194,13 @@ export const TaskCard = React.memo(function TaskCard({
     if (!onUpdate) return;
 
     setIsLoading(true);
-    updateTaskMutation.mutate(
-      { taskId: task.id, updates: { archived: !task.archived } },
-      {
-        onSettled: () => {
-          setIsLoading(false);
-          onUpdate();
-        },
-      }
-    );
+    await fetch(`/api/v1/workspaces/${boardId}/tasks/${task.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ archived: !task.archived }),
+    });
+    onUpdate();
+    setIsLoading(false);
   }
 
   // Quick actions
@@ -211,65 +208,54 @@ export const TaskCard = React.memo(function TaskCard({
     if (editName.trim() === '') return;
 
     setIsLoading(true);
-    updateTaskMutation.mutate(
-      {
-        taskId: task.id,
-        updates: {
-          name: editName.trim(),
-          description: editDescription.trim() || undefined,
-        },
-      },
-      {
-        onSettled: () => {
-          setIsLoading(false);
-          setIsEditing(false);
-          onUpdate?.();
-        },
-      }
-    );
+    await fetch(`/api/v1/workspaces/${boardId}/tasks/${task.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: editName.trim(),
+        description: editDescription.trim() || undefined,
+      }),
+    });
+    setIsEditing(false);
+    onUpdate?.();
+    setIsLoading(false);
   }
 
   async function handlePriorityChange(priority: number) {
     setIsLoading(true);
-    updateTaskMutation.mutate(
-      { taskId: task.id, updates: { priority } },
-      {
-        onSettled: () => {
-          setIsLoading(false);
-          onUpdate?.();
-        },
-      }
-    );
+    await fetch(`/api/v1/workspaces/${boardId}/tasks/${task.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ priority }),
+    });
+    onUpdate?.();
+    setIsLoading(false);
   }
 
   async function handleDueDateChange(days: number | null) {
     const newDate =
       days !== null ? addDays(new Date(), days).toISOString() : null;
     setIsLoading(true);
-    updateTaskMutation.mutate(
-      { taskId: task.id, updates: { end_date: newDate } },
-      {
-        onSettled: () => {
-          setIsLoading(false);
-          onUpdate?.();
-        },
-      }
-    );
+    await fetch(`/api/v1/workspaces/${boardId}/tasks/${task.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ end_date: newDate }),
+    });
+    onUpdate?.();
+    setIsLoading(false);
   }
 
   async function handleCustomDateChange(date: Date | undefined) {
     const newDate = date ? date.toISOString() : null;
     setIsLoading(true);
-    updateTaskMutation.mutate(
-      { taskId: task.id, updates: { end_date: newDate } },
-      {
-        onSettled: () => {
-          setIsLoading(false);
-          setCustomDateOpen(false);
-          onUpdate?.();
-        },
-      }
-    );
+    await fetch(`/api/v1/workspaces/${boardId}/tasks/${task.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ end_date: newDate }),
+    });
+    setCustomDateOpen(false);
+    onUpdate?.();
+    setIsLoading(false);
   }
 
   async function handleMoveToCompletion() {

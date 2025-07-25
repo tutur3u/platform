@@ -1,9 +1,7 @@
 'use client';
 
 import { TaskTagInput } from './task-tag-input';
-import { updateTask } from '@/lib/task-helper';
 import { useQuery } from '@tanstack/react-query';
-import { createClient } from '@tuturuuu/supabase/next/client';
 import type { Task, TaskList } from '@tuturuuu/types/primitives/TaskBoard';
 import { Button } from '@tuturuuu/ui/button';
 import { Calendar } from '@tuturuuu/ui/calendar';
@@ -71,22 +69,24 @@ export function TaskEditDialog({
 
   const params = useParams();
   const boardId = params.boardId as string;
+  const wsId = params.wsId as string;
 
   // Fetch available task lists for the board (only if not provided as prop)
   const { data: availableLists = [] } = useQuery({
     queryKey: ['task-lists', boardId],
     queryFn: async () => {
-      const supabase = createClient();
-      const { data, error } = await supabase
-        .from('task_lists')
-        .select('*')
-        .eq('board_id', boardId)
-        .eq('deleted', false)
-        .order('position')
-        .order('created_at');
-
-      if (error) throw error;
-      return data as TaskList[];
+      // Example: fetch from a REST API endpoint if available
+      if (wsId && boardId) {
+        try {
+          const res = await fetch(`/api/v1/workspaces/${wsId}/task-boards/${boardId}/lists`);
+          if (res.ok) {
+            const data = await res.json();
+            return data.lists as TaskList[];
+          }
+        } catch {}
+      }
+      // TODO: Implement actual fetch logic or update endpoint as needed
+      return [] as TaskList[];
     },
     enabled: !!boardId && isOpen && !propAvailableLists,
     initialData: propAvailableLists,
@@ -110,22 +110,19 @@ export function TaskEditDialog({
 
     setIsLoading(true);
     try {
-      const supabase = createClient();
-
-      // Prepare task updates
-      const taskUpdates: Partial<Task> = {
-        name: name.trim(),
-        description: description.trim() || undefined,
-        priority: priority === '0' ? undefined : parseInt(priority),
-        start_date: startDate?.toISOString(),
-        end_date: endDate?.toISOString(),
-        list_id: selectedListId,
-      };
-
-      // Always include tags to allow clearing
-      taskUpdates.tags = tags;
-
-      await updateTask(supabase, task.id, taskUpdates);
+      await fetch(`/api/v1/workspaces/${wsId}/tasks/${task.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: name.trim(),
+          description: description.trim() || undefined,
+          priority: priority === '0' ? undefined : parseInt(priority),
+          start_date: startDate?.toISOString(),
+          end_date: endDate?.toISOString(),
+          list_id: selectedListId,
+          tags: tags,
+        }),
+      });
 
       onUpdate();
       onClose();

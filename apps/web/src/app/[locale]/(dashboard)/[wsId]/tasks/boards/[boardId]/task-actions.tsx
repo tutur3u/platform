@@ -1,4 +1,4 @@
-import { useDeleteTask, useUpdateTask } from '@/lib/task-helper';
+import { useDeleteTask } from '@/lib/task-helper';
 import { useQuery } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import { Button } from '@tuturuuu/ui/button';
@@ -129,7 +129,7 @@ export function TaskActions({ taskId, boardId, onUpdate }: Props) {
   const [isLoading, setIsLoading] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
 
-  const updateTaskMutation = useUpdateTask(boardId);
+  // (no hook needed)
   const deleteTaskMutation = useDeleteTask(boardId);
 
   // Update local state when task data changes
@@ -182,27 +182,20 @@ export function TaskActions({ taskId, boardId, onUpdate }: Props) {
     if (!hasChanges || !task) return;
 
     setIsLoading(true);
-    updateTaskMutation.mutate(
-      {
-        taskId,
-        updates: {
-          name: newName,
-          description: newDescription === '' ? undefined : newDescription,
-          start_date: newStartDate?.toISOString() ?? undefined,
-          end_date: newEndDate?.toISOString() ?? undefined,
-          priority: newPriority === '0' ? undefined : parseInt(newPriority),
-        },
-      },
-      {
-        onSuccess: () => {
-          onUpdate();
-          setIsEditDialogOpen(false);
-        },
-        onSettled: () => {
-          setIsLoading(false);
-        },
-      }
-    );
+    await fetch(`/api/v1/workspaces/${boardId}/tasks/${taskId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: newName,
+        description: newDescription === '' ? undefined : newDescription,
+        start_date: newStartDate?.toISOString() ?? undefined,
+        end_date: newEndDate?.toISOString() ?? undefined,
+        priority: newPriority === '0' ? undefined : parseInt(newPriority),
+      }),
+    });
+    onUpdate();
+    setIsEditDialogOpen(false);
+    setIsLoading(false);
   }
 
   function handleResetChanges() {

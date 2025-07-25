@@ -1,12 +1,13 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { NextRequest, NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
 
 export async function PATCH(
   request: NextRequest,
   { params }: { params: { wsId: string; taskId: string } }
 ) {
   try {
-    const { wsId, taskId } = params;
+    const { taskId } = await params;
     const supabase = await createClient();
 
     // Get authenticated user (optional, but recommended)
@@ -31,7 +32,7 @@ export async function PATCH(
     const allowedFields = [
       'name', 'description', 'priority', 'start_date', 'end_date', 'tags', 'archived'
     ];
-    const updates: Record<string, any> = {};
+    const updates: Record<string, unknown> = {};
     for (const key of allowedFields) {
       if (key in body) updates[key] = body[key];
     }
@@ -39,7 +40,7 @@ export async function PATCH(
     // Validate tags if present
     if (
       'tags' in updates &&
-      (!Array.isArray(updates.tags) || !updates.tags.every((tag: any) => typeof tag === 'string'))
+      (!Array.isArray(updates.tags) || !updates.tags.every((tag: unknown) => typeof tag === 'string'))
     ) {
       return NextResponse.json(
         { error: 'Tags must be an array of strings.' },
@@ -62,7 +63,7 @@ export async function PATCH(
     }
 
     return NextResponse.json({ success: true });
-  } catch (e) {
+  } catch {
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
