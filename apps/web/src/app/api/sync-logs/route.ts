@@ -1,46 +1,6 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 
-const getUser = async (id: string) => {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from('users')
-    .select('id, display_name, avatar_url')
-    .eq('id', id)
-    .single();
-
-  if (error) {
-    console.error('Error fetching user:', error);
-    return null;
-  }
-
-  return data;
-};
-
-const getWorkspace = async (id: string) => {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from('workspaces')
-    .select('id, name')
-    .eq('id', id)
-    .single();
-
-  if (error) {
-    // Return a default workspace if not found
-    return {
-      id: id,
-      name: `Workspace ${id}`,
-      color: 'bg-blue-500',
-    };
-  }
-
-  return {
-    id: data.id,
-    name: data.name,
-    color: 'bg-blue-500', // Default color since workspaces table doesn't have a color field
-  };
-};
-
 export async function GET() {
   const supabase = await createClient();
 
