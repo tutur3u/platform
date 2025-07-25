@@ -163,28 +163,6 @@ export function CalendarSyncDashboard() {
 
   const syncLogs: SyncLog[] = syncLogsQuery.data || syncLogsMock;
 
-  // Debug logging
-  console.log('SyncLogs Query state:', {
-    isLoading: syncLogsQuery.isLoading,
-    isError: syncLogsQuery.isError,
-    error: syncLogsQuery.error,
-    data: syncLogsQuery.data,
-    dataLength: syncLogsQuery.data?.length,
-    usingMock: !syncLogsQuery.data,
-  });
-
-  console.log('Final syncLogs being used:', syncLogs);
-  console.log('Final workspaces being used:', workspaces);
-
-  console.log('Workspaces Query state:', {
-    isLoading: workspacesQuery.isLoading,
-    isError: workspacesQuery.isError,
-    error: workspacesQuery.error,
-    data: workspacesQuery.data,
-    dataLength: workspacesQuery.data?.length,
-    usingMock: !workspacesQuery.data,
-  });
-
   const filteredLogs = useMemo(() => {
     return syncLogs.filter((log) => {
       const matchesType = filterType === 'all' || log.type === filterType;
