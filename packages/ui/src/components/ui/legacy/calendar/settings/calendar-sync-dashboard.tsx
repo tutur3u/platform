@@ -196,7 +196,7 @@ export function CalendarSyncDashboard() {
         log.calendarSource.toLowerCase().includes(searchTerm.toLowerCase());
       return matchesType && matchesWorkspace && matchesSearch;
     });
-  }, [filterType, filterWorkspace, searchTerm]);
+  }, [filterType, filterWorkspace, searchTerm, syncLogs, workspaces]);
 
   const totalEvents = useMemo(() => {
     return syncLogs.reduce(
@@ -211,11 +211,11 @@ export function CalendarSyncDashboard() {
 
   const completedSyncs = useMemo(() => {
     return syncLogs.filter((log) => log.status === 'completed').length;
-  }, []);
+  }, [syncLogs]);
 
   const failedSyncs = useMemo(() => {
     return syncLogs.filter((log) => log.status === 'failed').length;
-  }, []);
+  }, [syncLogs]);
 
   const successRate = useMemo(() => {
     return ((completedSyncs / syncLogs.length) * 100).toFixed(1);
