@@ -99,7 +99,6 @@ export async function GET() {
       ? {
           id: userData.id,
           name: userData.display_name || 'System',
-          email: user.email || 'system@tuturuuu.com',
           avatar: userData.avatar_url || '/placeholder.svg?height=32&width=32',
         }
       : null;
