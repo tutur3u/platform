@@ -40,6 +40,9 @@ as $$
       and event->>'google_event_id' is not null
       and event->>'start_at' is not null
       and event->>'end_at' is not null
+      and (event->>'ws_id')::text ~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+      and length(event->>'google_event_id') > 0
+      and (event->>'start_at')::timestamptz < (event->>'end_at')::timestamptz
     on conflict (ws_id, google_event_id)
     do update set
       title = excluded.title,
