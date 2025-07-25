@@ -192,9 +192,15 @@ export default function MultipleChoiceVote({
 
   // Delete option (creator only)
   const handleDeleteOption = async (optionId: string) => {
+    const previousState = optionsState;
     setOptionsState((prev) => prev.filter((o) => o.id !== optionId));
     setDeleteDialog(null);
-    await onDeleteOption(optionId);
+    try {
+      await onDeleteOption(optionId);
+    } catch (error) {
+      console.error('Failed to delete option:', error);
+      setOptionsState(previousState);
+    }
   };
 
   return (
