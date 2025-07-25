@@ -1,4 +1,4 @@
--- Add tags support to tasks table
+-- Add tags support to tasks table (fixed migration)
 -- This migration adds a tags array column to the tasks table for better task organization and filtering
 
 -- Add tags column to tasks table
@@ -93,7 +93,7 @@ BEGIN
 END;
 $$;
 
--- Create function to get all unique tags from tasks in a board
+-- Create function to get all unique tags from tasks in a board (fixed)
 CREATE OR REPLACE FUNCTION get_board_task_tags(board_id uuid)
 RETURNS text[]
 LANGUAGE plpgsql
@@ -102,15 +102,18 @@ AS $$
 DECLARE
   all_tags text[];
 BEGIN
-  SELECT array_agg(DISTINCT unnest(t.tags))
+  SELECT array_agg(DISTINCT tag)
   INTO all_tags
-  FROM "public"."tasks" t
-  JOIN "public"."task_lists" tl ON t.list_id = tl.id
-  WHERE tl.board_id = board_id
-    AND t.deleted = false
-    AND tl.deleted = false
-    AND t.tags IS NOT NULL
-    AND array_length(t.tags, 1) > 0;
+  FROM (
+    SELECT unnest(t.tags) AS tag
+    FROM "public"."tasks" t
+    JOIN "public"."task_lists" tl ON t.list_id = tl.id
+    WHERE tl.board_id = board_id
+      AND t.deleted = false
+      AND tl.deleted = false
+      AND t.tags IS NOT NULL
+      AND array_length(t.tags, 1) > 0
+  ) AS unnested;
   
   RETURN COALESCE(all_tags, ARRAY[]::text[]);
 END;

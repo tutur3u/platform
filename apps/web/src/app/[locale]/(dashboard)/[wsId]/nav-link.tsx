@@ -54,7 +54,9 @@ export function NavLink({
       if (onLinkClick) {
         onLinkClick();
       } else if (hasChildren) {
-        onSubMenuClick(children!, title);
+        if (children && children.length > 0) {
+          onSubMenuClick(children, title);
+        }
       } else if (href) {
         onClick();
       }

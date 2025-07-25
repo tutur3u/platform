@@ -56,7 +56,7 @@ export function Nav({
 
           return (
             <NavLink
-              key={`nav-link-${link.href}-${index + 1}`}
+              key={`nav-link-${link.href || link.title || index}`}
               wsId={wsId}
               link={link}
               isCollapsed={isCollapsed}

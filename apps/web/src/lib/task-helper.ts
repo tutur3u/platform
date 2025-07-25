@@ -730,10 +730,11 @@ export function useUpdateTaskListStatus(boardId: string) {
 }
 
 // Tag-related helper functions
-export async function getBoardTaskTags(
-  supabase: SupabaseClient,
-  boardId: string
-) {
+export async function getBoardTaskTags(supabase: SupabaseClient, boardId: string) {
+  if (!boardId || typeof boardId !== 'string' || boardId.trim() === '') {
+    console.warn('getBoardTaskTags called with invalid boardId:', boardId);
+    return [];
+  }
   try {
     const { data, error } = await (
       supabase as SupabaseClient & {

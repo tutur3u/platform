@@ -9,8 +9,8 @@ interface Params {
 
 export async function GET(_: Request, { params }: Params) {
   const supabase = await createClient();
-  const session = await supabase.auth.getSession();
-  if (!session.data.session) {
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
+  if (userError || !user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
   const { wsId } = await params;
@@ -18,7 +18,7 @@ export async function GET(_: Request, { params }: Params) {
     .from('workspace_users')
     .select('role')
     .eq('ws_id', wsId)
-    .eq('user_id', session.data.session.user.id)
+    .eq('user_id', user.id)
     .single();
   if (!wsAccess) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
