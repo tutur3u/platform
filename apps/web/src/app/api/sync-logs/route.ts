@@ -44,6 +44,15 @@ const getWorkspace = async (id: string) => {
 export async function GET() {
   const supabase = await createClient();
 
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
+
   const { data, error } = await supabase
     .from('calendar_sync_dashboard')
     .select(
@@ -71,7 +80,7 @@ export async function GET() {
         ? {
             id: userData.id,
             name: userData.display_name || 'Unknown User',
-            email: 'user@example.com', // email column removed from query
+            email: user.email || 'user@example.com',
             avatar:
               userData.avatar_url || '/placeholder.svg?height=32&width=32',
           }
