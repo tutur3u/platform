@@ -2,7 +2,7 @@ create table "public"."calendar_sync_dashboard" (
     "id" uuid not null default gen_random_uuid(),
     "time" timestamp with time zone not null default now(),
     "ws_id" uuid not null,
-    "triggered_by" text not null,
+    "triggered_by" uuid,
     "starttime" timestamp with time zone,
     "endtime" timestamp with time zone,
     "type" text check (type in ('active', 'manual', 'background')),
@@ -29,18 +29,15 @@ alter table "public"."calendar_sync_dashboard" add constraint "calendar_sync_das
 
 alter table "public"."calendar_sync_dashboard" add constraint "calendar_sync_dashboard_ws_id_fkey" FOREIGN KEY (ws_id) REFERENCES workspaces(id) ON UPDATE CASCADE ON DELETE CASCADE not valid;
 
-alter table "public"."calendar_sync_dashboard" add constraint "calendar_sync_dashboard_triggered_by_check" CHECK (triggered_by = 'system' OR triggered_by ~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$');
-
 alter table "public"."calendar_sync_dashboard" validate constraint "calendar_sync_dashboard_ws_id_fkey";
 
--- Function to validate triggered_by references a valid user when not 'system'
+-- Function to validate triggered_by references a valid user or NULL
 CREATE OR REPLACE FUNCTION validate_triggered_by()
 RETURNS TRIGGER AS $$
 BEGIN
-  IF NEW.triggered_by != 'system' THEN
-    IF NOT EXISTS (SELECT 1 FROM users WHERE id::uuid = NEW.triggered_by) THEN
-      RAISE EXCEPTION 'triggered_by must reference a valid user or be "system"';
-    END IF;
+  -- Allow NULL (system operations) or valid user UUID
+  IF NEW.triggered_by IS NOT NULL AND NOT EXISTS (SELECT 1 FROM users WHERE id = NEW.triggered_by) THEN
+    RAISE EXCEPTION 'triggered_by must reference a valid user or be NULL for system operations';
   END IF;
   RETURN NEW;
 END;
@@ -84,11 +81,11 @@ on "public"."calendar_sync_dashboard"
 as permissive
 for insert
 to authenticated
-with check (is_org_member(auth.uid(), ws_id) AND (triggered_by = auth.uid()::text));
+with check (is_org_member(auth.uid(), ws_id) AND (triggered_by = auth.uid() OR triggered_by IS NULL));
 
 create policy "Enable update access for workspace members"
 on "public"."calendar_sync_dashboard"
 as permissive
 for update
 to authenticated
-using (is_org_member(auth.uid(), ws_id) AND (triggered_by = auth.uid()::text)); 
+using (is_org_member(auth.uid(), ws_id) AND (triggered_by = auth.uid() OR triggered_by IS NULL)); 

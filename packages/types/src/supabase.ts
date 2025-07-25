@@ -775,7 +775,7 @@ export type Database = {
           starttime: string | null
           status: string | null
           time: string
-          triggered_by: string
+          triggered_by: string | null
           type: string | null
           ws_id: string
         }
@@ -789,7 +789,7 @@ export type Database = {
           starttime?: string | null
           status?: string | null
           time?: string
-          triggered_by: string
+          triggered_by?: string | null
           type?: string | null
           ws_id: string
         }
@@ -803,7 +803,7 @@ export type Database = {
           starttime?: string | null
           status?: string | null
           time?: string
-          triggered_by?: string
+          triggered_by?: string | null
           type?: string | null
           ws_id?: string
         }

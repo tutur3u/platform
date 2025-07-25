@@ -379,7 +379,7 @@ export const CalendarSyncProvider = ({
             starttime: new Date().toISOString(),
             endtime: new Date().toISOString(),
             triggered_by: authUser?.id,
-            type: 'manual',
+            type: 'active',
             status: 'running',
             events_inserted: 0,
             events_updated: 0,
