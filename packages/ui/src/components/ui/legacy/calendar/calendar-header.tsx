@@ -8,7 +8,7 @@ import {
   SelectValue,
 } from '@tuturuuu/ui/select';
 import dayjs from 'dayjs';
-import { CalendarIcon, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 export function CalendarHeader({
   t,
@@ -20,6 +20,8 @@ export function CalendarHeader({
   availableViews,
   onViewChange,
   extras,
+  onSidebarToggle,
+  sidebarToggleButton,
 }: {
   t: any;
   locale: string;
@@ -31,6 +33,8 @@ export function CalendarHeader({
   // eslint-disable-next-line no-unused-vars
   onViewChange: (view: 'day' | '4-days' | 'week' | 'month') => void;
   extras?: React.ReactNode;
+  onSidebarToggle?: () => void;
+  sidebarToggleButton?: React.ReactNode;
 }) {
   const views = availableViews.filter((view) => view?.disabled !== true);
 
@@ -72,7 +76,7 @@ export function CalendarHeader({
   return (
     <div className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex items-center gap-2">
-        <CalendarIcon className="h-5 w-5 text-muted-foreground" />
+        {sidebarToggleButton}
         <h2 className="text-xl font-semibold tracking-tight">{title}</h2>
       </div>
       <div className="flex flex-col gap-2 md:flex-row md:items-center">

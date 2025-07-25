@@ -1,21 +1,18 @@
+import { useCallback, useEffect, useState } from 'react';
+import { cn } from '@tuturuuu/utils/format';
+import { useViewTransition } from '@tuturuuu/ui/hooks/use-view-transition';
+import { useCalendarSync } from '@tuturuuu/ui/hooks/use-calendar-sync';
+import { useCalendar } from '@tuturuuu/ui/hooks/use-calendar';
+import type { CalendarView } from '@tuturuuu/ui/hooks/use-view-transition';
+import type { CalendarSettings } from './settings/settings-context';
+import type { Workspace, WorkspaceCalendarGoogleToken } from '@tuturuuu/types/db';
 import { CalendarHeader } from './calendar-header';
 import { CalendarViewWithTrail } from './calendar-view-with-trail';
 import { CreateEventButton } from './create-event-button';
 import { EventModal } from './event-modal';
 import { MonthCalendar } from './month-calendar';
 import { SettingsButton } from './settings-button';
-import type { CalendarSettings } from './settings/settings-context';
 import { WeekdayBar } from './weekday-bar';
-import type {
-  Workspace,
-  WorkspaceCalendarGoogleToken,
-} from '@tuturuuu/types/db';
-import { useCalendar } from '@tuturuuu/ui/hooks/use-calendar';
-import { useCalendarSync } from '@tuturuuu/ui/hooks/use-calendar-sync';
-import type { CalendarView } from '@tuturuuu/ui/hooks/use-view-transition';
-import { useViewTransition } from '@tuturuuu/ui/hooks/use-view-transition';
-import { cn } from '@tuturuuu/utils/format';
-import { useCallback, useEffect, useState } from 'react';
 
 function getMonthGridDates(date: Date, firstDayOfWeek: number): Date[] {
   const newDate = new Date(date);
@@ -57,8 +54,10 @@ export const CalendarContent = ({
   onSaveSettings,
   externalState,
   extras,
+  onSidebarToggle,
+  sidebarToggleButton,
 }: {
-  t: any;
+  t: any; // TODO: Replace 'any' with a more specific type if available
   locale: string;
   disabled?: boolean;
   workspace?: Workspace;
@@ -76,6 +75,8 @@ export const CalendarContent = ({
     availableViews: { value: string; label: string; disabled?: boolean }[];
   };
   extras?: React.ReactNode;
+  onSidebarToggle?: () => void;
+  sidebarToggleButton?: React.ReactNode;
 }) => {
   const { transition } = useViewTransition();
   const { settings } = useCalendar();
@@ -203,7 +204,7 @@ export const CalendarContent = ({
       handleSetView('week');
       setDates(getWeekdays());
     });
-  }, [date, transition, settings, handleSetView, setDates]);
+  }, [date, transition, handleSetView, setDates, settings?.appearance?.firstDayOfWeek, settings?.appearance?.showWeekends]);
 
   const enableMonthView = useCallback(() => {
     let firstDayNumber = 1; // Monday
@@ -215,7 +216,7 @@ export const CalendarContent = ({
     setDate(newDate);
     const gridDates = getMonthGridDates(newDate, firstDayNumber);
     setDates(gridDates);
-  }, [date, settings, setView, setDate, setDates]);
+  }, [date, settings?.appearance?.firstDayOfWeek, setDates]);
 
   // Initialize available views
   useEffect(() => {
@@ -358,7 +359,7 @@ export const CalendarContent = ({
       const gridDates = getMonthGridDates(date, firstDayNumber);
       setDates(gridDates);
     }
-  }, [date, view]);
+  }, [date, view, settings?.appearance?.firstDayOfWeek, setDates]);
 
   // Set initial view based on screen size
   useEffect(() => {
@@ -436,6 +437,8 @@ export const CalendarContent = ({
             else if (newView === 'month') enableMonthView();
           }}
           extras={extras}
+          onSidebarToggle={onSidebarToggle}
+          sidebarToggleButton={sidebarToggleButton}
         />
       )}
 
@@ -443,7 +446,7 @@ export const CalendarContent = ({
         <WeekdayBar locale={locale} view={view} dates={dates} />
       )}
 
-      <div className="relative scrollbar-none flex-1 overflow-auto bg-background/50">
+      <div className="flex-1 relative overflow-auto scrollbar-none bg-background/50">
         {view === 'month' && dates?.[0] ? (
           <MonthCalendar
             date={dates[0]}
