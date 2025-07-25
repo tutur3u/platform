@@ -41,11 +41,11 @@ export default function TimezoneSelector({ value, onValueChange }: Props) {
         <Command>
           <CommandInput placeholder={t('select-time-zone')} className="h-9" />
           <CommandList>
-            <CommandEmpty>No timezones found</CommandEmpty>
+            <CommandEmpty>{t('no-timezone-found')}</CommandEmpty>
             <CommandGroup>
               {timezones.map((timezone) => (
                 <CommandItem
-                  key={timezone.text}
+                  key={timezone.text + timezone.value}
                   value={timezone.value + timezone.text}
                   onSelect={() => {
                     onValueChange(timezone);

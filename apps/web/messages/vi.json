@@ -577,7 +577,8 @@
     "dates_count": "{count} ngày",
     "dates": "ngày",
     "time_range": "Khoảng thời gian",
-    "loading_plans": "Đang tải kế hoạch của bạn..."
+    "loading_plans": "Đang tải kế hoạch của bạn...",
+    "no-timezone-found": "Không tìm thấy múi giờ"
   },
   "meet-together-plan-details": {
     "copy_link": "Sao chép liên kết",
