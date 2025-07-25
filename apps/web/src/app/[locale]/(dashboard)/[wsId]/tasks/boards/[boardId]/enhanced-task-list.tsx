@@ -287,17 +287,25 @@ export function EnhancedTaskList({
               />
             </div>
           ) : (
-            <div
+            <button
+              type="button"
               className={cn(
                 'truncate text-sm font-medium text-foreground',
                 !isClosed && 'cursor-pointer hover:text-primary',
                 isClosed && 'text-muted-foreground'
               )}
               onClick={() => !isClosed && setIsEditing(true)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  !isClosed && setIsEditing(true);
+                }
+              }}
+              disabled={isClosed}
             >
               {list.name}
               {isClosed && <Lock className="ml-1 inline h-3 w-3" />}
-            </div>
+            </button>
           )}
         </div>
 
@@ -330,6 +338,7 @@ export function EnhancedTaskList({
             <div className="grid grid-cols-5 gap-1 p-2">
               {colorOptions.map((color) => (
                 <button
+                  type="button"
                   key={color.value}
                   onClick={() => updateColorMutation.mutate(color.value)}
                   className={cn(
@@ -375,7 +384,10 @@ export function EnhancedTaskList({
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
+                role="img"
+                aria-label="Tasks hidden icon"
               >
+                <title>Tasks Hidden</title>
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"

@@ -258,8 +258,7 @@ export default function TimeTracker({ wsId, tasks = [] }: TimeTrackerProps) {
         setCurrentSession(runningRes.session);
         setIsRunning(true);
         const elapsed = Math.floor(
-          (new Date().getTime() -
-            new Date(runningRes.session.start_time).getTime()) /
+          (Date.now() - new Date(runningRes.session.start_time).getTime()) /
             1000
         );
         setElapsedTime(elapsed);
@@ -281,9 +280,7 @@ export default function TimeTracker({ wsId, tasks = [] }: TimeTrackerProps) {
     if (isRunning && currentSession) {
       interval = setInterval(() => {
         const elapsed = Math.floor(
-          (new Date().getTime() -
-            new Date(currentSession.start_time).getTime()) /
-            1000
+          (Date.now() - new Date(currentSession.start_time).getTime()) / 1000
         );
         setElapsedTime(elapsed);
       }, 1000);
@@ -356,47 +353,53 @@ export default function TimeTracker({ wsId, tasks = [] }: TimeTrackerProps) {
   };
 
   // Start timer with task
-  const startTimerWithTask = async (taskId: string, taskName: string) => {
-    setIsLoading(true);
+  const startTimerWithTask = useCallback(
+    async (taskId: string, taskName: string) => {
+      setIsLoading(true);
 
-    try {
-      const response = await apiCall(
-        `/api/v1/workspaces/${wsId}/time-tracking/sessions`,
-        {
-          method: 'POST',
-          body: JSON.stringify({
-            title: `Working on: ${taskName}`,
-            description: newSessionDescription || null,
-            categoryId: selectedCategoryId || null,
-            taskId: taskId,
-          }),
-        }
-      );
+      try {
+        const response = await apiCall(
+          `/api/v1/workspaces/${wsId}/time-tracking/sessions`,
+          {
+            method: 'POST',
+            body: JSON.stringify({
+              title: `Working on: ${taskName}`,
+              description: newSessionDescription || null,
+              categoryId: selectedCategoryId || null,
+              taskId: taskId,
+            }),
+          }
+        );
 
-      setCurrentSession(response.session);
-      setIsRunning(true);
-      setElapsedTime(0);
-      setNewSessionTitle('');
-      setNewSessionDescription('');
-      setSelectedCategoryId('');
-      setSelectedTaskId('');
+        setCurrentSession(response.session);
+        setIsRunning(true);
+        setElapsedTime(0);
+        setNewSessionTitle('');
+        setNewSessionDescription('');
+        setSelectedCategoryId('');
+        setSelectedTaskId('');
 
-      fetchData();
-      toast.success('Timer started!');
-    } catch (error) {
-      console.error('Error starting timer:', error);
-      toast.error('Failed to start timer');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+        fetchData();
+        toast.success('Timer started!');
+      } catch (error) {
+        console.error('Error starting timer:', error);
+        toast.error('Failed to start timer');
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [wsId, newSessionDescription, selectedCategoryId, fetchData, apiCall]
+  );
 
   // Start timer
-  const startTimer = async () => {
+  const startTimer = useCallback(async () => {
     if (sessionMode === 'task' && selectedTaskId) {
       const selectedTask = tasks.find((t) => t.id === selectedTaskId);
       if (selectedTask) {
-        await startTimerWithTask(selectedTaskId, selectedTask.name!);
+        await startTimerWithTask(
+          selectedTaskId,
+          selectedTask.name || 'Untitled Task'
+        );
         return;
       }
     }
@@ -443,10 +446,21 @@ export default function TimeTracker({ wsId, tasks = [] }: TimeTrackerProps) {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [
+    sessionMode,
+    selectedTaskId,
+    tasks,
+    newSessionTitle,
+    newSessionDescription,
+    selectedCategoryId,
+    wsId,
+    fetchData,
+    apiCall,
+    startTimerWithTask,
+  ]);
 
   // Stop timer
-  const stopTimer = async () => {
+  const stopTimer = useCallback(async () => {
     if (!currentSession) return;
 
     setIsLoading(true);
@@ -483,10 +497,10 @@ export default function TimeTracker({ wsId, tasks = [] }: TimeTrackerProps) {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [currentSession, wsId, fetchData, apiCall, formatDuration]);
 
   // Pause timer
-  const pauseTimer = async () => {
+  const pauseTimer = useCallback(async () => {
     if (!currentSession) return;
 
     setIsLoading(true);
@@ -512,7 +526,7 @@ export default function TimeTracker({ wsId, tasks = [] }: TimeTrackerProps) {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [currentSession, wsId, fetchData, apiCall]);
 
   // Resume session (creates new session with same details)
   const resumeSession = async (session: SessionWithRelations) => {
@@ -721,7 +735,7 @@ export default function TimeTracker({ wsId, tasks = [] }: TimeTrackerProps) {
     );
 
     if (matchingTask && title.length > 2) {
-      setSelectedTaskId(matchingTask.id!);
+      setSelectedTaskId(matchingTask.id || '');
       setShowTaskSuggestion(false);
     } else if (title.length > 2 && !selectedTaskId) {
       // Suggest creating a new task if title doesn't match any existing task
@@ -834,7 +848,12 @@ export default function TimeTracker({ wsId, tasks = [] }: TimeTrackerProps) {
             </DialogDescription>
           </DialogHeader>
 
-          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
+          <Tabs
+            value={activeTab}
+            onValueChange={(v) =>
+              setActiveTab(v as 'current' | 'recent' | 'history')
+            }
+          >
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="current" className="flex items-center gap-2">
                 <Play className="h-4 w-4" />
@@ -968,7 +987,7 @@ export default function TimeTracker({ wsId, tasks = [] }: TimeTrackerProps) {
                         <Tabs
                           value={sessionMode}
                           onValueChange={(v) =>
-                            handleSessionModeChange(v as any)
+                            handleSessionModeChange(v as 'task' | 'manual')
                           }
                         >
                           <TabsList className="grid h-full w-full grid-cols-2 bg-muted/50">
@@ -1021,7 +1040,7 @@ export default function TimeTracker({ wsId, tasks = [] }: TimeTrackerProps) {
                                   {tasks.map((task) => (
                                     <SelectItem
                                       key={task.id}
-                                      value={task.id!}
+                                      value={task.id || ''}
                                       className="p-0"
                                     >
                                       <div className="flex w-full items-start gap-3 p-3">
@@ -1324,25 +1343,29 @@ export default function TimeTracker({ wsId, tasks = [] }: TimeTrackerProps) {
 
                             <div className="space-y-2">
                               {/* Most recent session */}
-                              {recentSessions.length > 0 && (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() =>
-                                    duplicateSession(recentSessions[0]!)
-                                  }
-                                  className="w-full justify-start text-xs"
-                                >
-                                  <RotateCcw className="mr-2 h-3 w-3" />
-                                  Repeat: {recentSessions[0]?.title}
-                                </Button>
-                              )}
+                              {recentSessions.length > 0 &&
+                                recentSessions[0] && (
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => {
+                                      const session = recentSessions[0];
+                                      if (session) {
+                                        duplicateSession(session);
+                                      }
+                                    }}
+                                    className="w-full justify-start text-xs"
+                                  >
+                                    <RotateCcw className="mr-2 h-3 w-3" />
+                                    Repeat: {recentSessions[0].title}
+                                  </Button>
+                                )}
 
                               {/* Templates */}
                               {showQuickActions &&
-                                templates.slice(0, 3).map((template, idx) => (
+                                templates.slice(0, 3).map((template) => (
                                   <Button
-                                    key={idx}
+                                    key={`template-${template.title}`}
                                     variant="outline"
                                     size="sm"
                                     onClick={() => startFromTemplate(template)}
@@ -1507,7 +1530,10 @@ export default function TimeTracker({ wsId, tasks = [] }: TimeTrackerProps) {
                                 <SelectContent>
                                   <SelectItem value="">All tasks</SelectItem>
                                   {tasks.map((task) => (
-                                    <SelectItem key={task.id} value={task.id!}>
+                                    <SelectItem
+                                      key={task.id}
+                                      value={task.id || ''}
+                                    >
                                       {task.name}
                                     </SelectItem>
                                   ))}
@@ -1780,7 +1806,7 @@ export default function TimeTracker({ wsId, tasks = [] }: TimeTrackerProps) {
                   <SelectContent>
                     <SelectItem value="">No task</SelectItem>
                     {tasks.map((task) => (
-                      <SelectItem key={task.id} value={task.id!}>
+                      <SelectItem key={task.id} value={task.id || ''}>
                         {task.name}
                       </SelectItem>
                     ))}

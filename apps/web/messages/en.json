@@ -3781,7 +3781,11 @@
     "display_name_required_message": "You must set a display name before sending mail.",
     "preview": "Preview",
     "edit": "Edit",
-    "none": "None"
+    "none": "None",
+    "original_message": "Original Message",
+    "quoted_message": "Quoted Message",
+    "original_content_included": "Original message will be included when sent",
+    "quoted_content_included": "Quoted content will be included when sent"
   },
   "ws-polls": {
     "plural": "Polls",
