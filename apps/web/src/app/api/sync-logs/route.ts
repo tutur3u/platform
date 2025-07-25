@@ -5,7 +5,7 @@ const getUser = async (id: string) => {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from('users')
-    .select('id, display_name, email, avatar_url')
+    .select('id, display_name, avatar_url')
     .eq('id', id)
     .single();
 
@@ -64,13 +64,16 @@ export async function GET() {
       const workspace = await getWorkspace(item.ws_id);
 
       // Get user info if triggered_by exists
-      // Temporarily disabled due to column issues
-      const triggeredBy = item.triggered_by
+      const userData = item.triggered_by
+        ? await getUser(item.triggered_by)
+        : null;
+      const triggeredBy = userData
         ? {
-            id: item.triggered_by,
-            name: 'User',
-            email: 'user@example.com',
-            avatar: '/placeholder.svg?height=32&width=32',
+            id: userData.id,
+            name: userData.display_name || 'Unknown User',
+            email: 'user@example.com', // email column removed from query
+            avatar:
+              userData.avatar_url || '/placeholder.svg?height=32&width=32',
           }
         : null;
 

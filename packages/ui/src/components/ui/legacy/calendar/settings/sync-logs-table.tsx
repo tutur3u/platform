@@ -253,7 +253,7 @@ export function SyncLogsTable({
                             src={log.triggeredBy.avatar || '/placeholder.svg'}
                           />
                           <AvatarFallback className="bg-foreground/10 text-xs">
-                            {log.triggeredBy.name
+                            {(log.triggeredBy.name || 'U')
                               .split(' ')
                               .map((n) => n[0])
                               .join('')}
@@ -261,10 +261,7 @@ export function SyncLogsTable({
                         </Avatar>
                         <div className="flex min-w-0 flex-col">
                           <span className="truncate text-sm font-medium">
-                            {log.triggeredBy.name}
-                          </span>
-                          <span className="truncate text-xs opacity-70">
-                            {log.triggeredBy.email}
+                            {log.triggeredBy.name || 'Unknown User'}
                           </span>
                         </div>
                       </div>
