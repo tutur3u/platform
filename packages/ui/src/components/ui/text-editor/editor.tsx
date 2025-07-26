@@ -87,6 +87,8 @@ export function RichTextEditor({
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
+        link: false,
+        strike: false,
         bulletList: {
           HTMLAttributes: {
             class: 'list-disc ml-3',
