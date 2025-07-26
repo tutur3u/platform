@@ -16,7 +16,7 @@
     "@tuturuuu/types": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
     "dayjs": "^1.11.13",
-    "google-auth-library": "^10.1.0",
+    "google-auth-library": "^10.2.0",
     "googleapis": "^154.0.0"
   },
   "devDependencies": {
