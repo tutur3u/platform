@@ -144,7 +144,7 @@ describe('Google Calendar Batched Sync', () => {
             title: 'Test Event 1',
             ws_id: 'test-workspace',
             location: 'Location for Test Event 1',
-            locked: false,
+            locked: true,
           }),
           expect.objectContaining({
             color: 'RED',
@@ -154,7 +154,7 @@ describe('Google Calendar Batched Sync', () => {
             title: 'Test Event 2',
             ws_id: 'test-workspace',
             location: 'Location for Test Event 2',
-            locked: false,
+            locked: true,
             start_at: '2024-01-15T14:00:00Z',
           }),
           expect.objectContaining({
@@ -166,7 +166,7 @@ describe('Google Calendar Batched Sync', () => {
             title: 'Test Event 3',
             ws_id: 'test-workspace',
             location: 'Location for Test Event 3',
-            locked: false,
+            locked: true,
           }),
         ]),
         {

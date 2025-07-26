@@ -4,9 +4,10 @@ import {
   scheduleWithFlexibleEvents,
 } from '@tuturuuu/ai/scheduling/algorithm';
 import { defaultActiveHours } from '@tuturuuu/ai/scheduling/default';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type dayjs from 'dayjs';
+import { headers } from 'next/headers';
 import { type NextRequest, NextResponse } from 'next/server';
 
 export interface DateRange {
@@ -50,7 +51,18 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ wsId: string }> }
 ) {
-  const supabase = createClient();
+  const vercelKey = process.env.VERCEL_TRIGGER_API_KEY;
+  const triggerApiKey = process.env.TRIGGER_API_PROD;
+
+  if (vercelKey && triggerApiKey) {
+    return NextResponse.json(
+      {
+        error: 'Both Vercel and Trigger API keys are set. Please use only one.',
+      },
+      { status: 400 }
+    );
+  }
+  const supabase = createAdminClient();
   const requestId = Math.random().toString(36).substring(7);
 
   try {
@@ -72,52 +84,8 @@ export async function POST(
       );
     }
 
-    // Check permissions
-    try {
-      const { withoutPermission } = await getPermissions({ wsId });
-      if (withoutPermission('manage_calendar')) {
-        console.log(`[AUTO-SCHEDULE-${requestId}] Permission denied`);
-        return NextResponse.json(
-          { error: 'Permission denied' },
-          { status: 403 }
-        );
-      }
-    } catch (error) {
-      console.error(
-        `[AUTO-SCHEDULE-${requestId}] Permission check failed:`,
-        error
-      );
-      return NextResponse.json(
-        { error: 'Failed to check permissions' },
-        { status: 500 }
-      );
-    }
-
     const { searchParams } = new URL(request.url);
     const streamMode = searchParams.get('stream') !== 'false';
-
-    // Authenticate user
-    try {
-      const {
-        data: { user },
-      } = await (await supabase).auth.getUser();
-      if (!user) {
-        console.log(`[AUTO-SCHEDULE-${requestId}] User not authenticated`);
-        return NextResponse.json(
-          { error: 'Authentication required' },
-          { status: 401 }
-        );
-      }
-    } catch (error) {
-      console.error(
-        `[AUTO-SCHEDULE-${requestId}] Authentication failed:`,
-        error
-      );
-      return NextResponse.json(
-        { error: 'Authentication failed' },
-        { status: 401 }
-      );
-    }
 
     console.log(`[AUTO-SCHEDULE-${requestId}] Fetching tasks and events...`);
 

@@ -1,3 +1,4 @@
+import type { SyncOrchestratorResult } from './google-calendar-sync';
 import {
   getGoogleAuthClient,
   getSyncToken,
@@ -5,7 +6,6 @@ import {
   storeSyncToken,
   syncWorkspaceBatched,
 } from './google-calendar-sync';
-import type { SyncOrchestratorResult } from './google-calendar-sync';
 import { schedules, task } from '@trigger.dev/sdk/v3';
 import { google } from 'googleapis';
 
@@ -24,8 +24,8 @@ async function performIncrementalSyncForWorkspace(
   try {
     const syncToken = await getSyncToken(ws_id);
     let allEvents = [];
-    let pageToken: string | undefined = undefined;
-    let nextSyncToken: string | undefined = undefined;
+    let pageToken: string | undefined;
+    let nextSyncToken: string | undefined;
     do {
       const res = await calendar.events.list({
         calendarId,
