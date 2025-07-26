@@ -47,12 +47,14 @@ export default async function CalendarPage({
       <CalendarStateProvider>
         {DEV_MODE && <CalendarActiveSyncDebugger />}
         <div className="flex h-full">
-          <CalendarPageClient
-            wsId={wsId}
-            locale={locale}
-            workspace={workspace}
-            experimentalGoogleToken={googleToken}
-          />
+          <div className="flex-1">
+            <CalendarPageClient
+              wsId={wsId}
+              locale={locale}
+              workspace={workspace}
+              experimentalGoogleToken={googleToken}
+            />
+          </div>
           <TaskSidebarServer wsId={wsId} />
         </div>
       </CalendarStateProvider>

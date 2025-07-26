@@ -3,7 +3,6 @@ import { Button } from '@tuturuuu/ui/button';
 import {
   Calendar as CalendarIcon,
   Mail,
-  PanelRightClose,
   Plus,
 } from '@tuturuuu/ui/icons';
 import {
@@ -21,7 +20,7 @@ const stubAccounts = [
   // Add more accounts as needed
 ];
 
-export default function CalendarSidebar({ onClose }: { onClose: () => void }) {
+export default function CalendarSidebar() {
   return (
     <aside className="slide-in-from-left-5 mr-2 flex h-full w-64 flex-col rounded-lg border border-border bg-background/60 text-foreground shadow-xl backdrop-blur-md transition-all duration-500 ease-out xl:flex">
       {/* Header */}

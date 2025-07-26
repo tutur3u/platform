@@ -76,7 +76,7 @@ export default function CalendarClientPage({
   return (
     <>
       <div className="flex h-full">
-        {isMounted && sidebarOpen && <CalendarSidebar onClose={() => setSidebarOpen(false)} />}
+        {isMounted && sidebarOpen && <CalendarSidebar />}
         <div className="flex-1">
           <SmartCalendar
             t={t}

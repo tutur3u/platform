@@ -50,15 +50,15 @@ export function NavLink({
         ? 'cursor-default opacity-50'
         : 'hover:bg-accent hover:text-accent-foreground'
     ),
-    onClick: () => {
-      if (onLinkClick) {
-        onLinkClick();
-      } else if (hasChildren) {
-        onSubMenuClick(children!, title);
-      } else if (href) {
-        onClick();
-      }
-    },
+          onClick: () => {
+        if (onLinkClick) {
+          onLinkClick();
+        } else if (hasChildren && children) {
+          onSubMenuClick(children, title);
+        } else if (href) {
+          onClick();
+        }
+      },
   };
 
   const linkElement = href ? (

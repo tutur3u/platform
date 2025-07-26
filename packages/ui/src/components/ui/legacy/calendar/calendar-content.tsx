@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useState } from 'react';
-import { cn } from '@tuturuuu/utils/format';
 import { useViewTransition } from '@tuturuuu/ui/hooks/use-view-transition';
 import { useCalendarSync } from '@tuturuuu/ui/hooks/use-calendar-sync';
 import { useCalendar } from '@tuturuuu/ui/hooks/use-calendar';
@@ -57,7 +56,7 @@ export const CalendarContent = ({
   onSidebarToggle,
   sidebarToggleButton,
 }: {
-  t: any; // TODO: Replace 'any' with a more specific type if available
+  t: (key: string) => string;
   locale: string;
   disabled?: boolean;
   workspace?: Workspace;

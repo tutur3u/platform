@@ -19,6 +19,7 @@ export const CalendarColumn = ({ date, last }: CalendarColumnProps) => {
       style={{
         gridTemplateRows: `repeat(24, ${HOUR_HEIGHT}px)`,
         minWidth: `${MIN_COLUMN_WIDTH}px`,
+        width: '100%',
         height: `${DAY_HEIGHT}px`, // 24 hours * 80px = 1920px
       }}
       data-column-date={date}

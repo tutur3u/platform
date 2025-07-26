@@ -617,7 +617,7 @@ export default async function Layout({ children, params }: LayoutProps) {
       </div>
     );
 
-  const pathname = headers().get('next-url') || '';
+  const pathname = (await headers()).get('next-url') || '';
   const isCalendarPage = pathname.includes('/calendar');
 
   return (
