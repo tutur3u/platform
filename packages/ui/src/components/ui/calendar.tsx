@@ -52,9 +52,9 @@ function Calendar({
   // Helper functions for minDate logic
   const isPreviousMonthDisabled = () => {
     if (!minDate) return false;
-    const prevMonth = new Date(month);
-    prevMonth.setMonth(prevMonth.getMonth() - 1);
-    return dayjs(prevMonth).isBefore(dayjs(minDate).startOf('month'));
+    // Use dayjs for safe date manipulation to avoid issues with month-end dates.
+    const prevMonth = dayjs(month).subtract(1, 'month');
+    return prevMonth.isBefore(dayjs(minDate).startOf('month'));
   };
 
   const isYearDisabled = (year: number) => {
@@ -91,8 +91,8 @@ function Calendar({
           <button
             type="button"
             onClick={() => {
-              const prev = new Date(month);
-              prev.setMonth(prev.getMonth() - 1);
+              // Use dayjs for safe date manipulation to avoid issues with month-end dates.
+              const prev = dayjs(month).subtract(1, 'month').toDate();
               setMonth(prev);
             }}
             className={cn(
@@ -110,8 +110,8 @@ function Calendar({
             <Select
               value={month.getFullYear().toString()}
               onValueChange={(year) => {
-                const newDate = new Date(month);
-                newDate.setFullYear(parseInt(year));
+                // Use dayjs for safe date manipulation to avoid issues with month-end dates.
+                const newDate = dayjs(month).year(parseInt(year)).toDate();
                 setMonth(newDate);
               }}
             >
@@ -154,8 +154,10 @@ function Calendar({
             <Select
               value={month.getMonth().toString()}
               onValueChange={(monthValue) => {
-                const newDate = new Date(month);
-                newDate.setMonth(parseInt(monthValue));
+                // Use dayjs for safe date manipulation to avoid issues with month-end dates.
+                const newDate = dayjs(month)
+                  .month(parseInt(monthValue))
+                  .toDate();
                 setMonth(newDate);
               }}
             >
@@ -187,8 +189,8 @@ function Calendar({
           <button
             type="button"
             onClick={() => {
-              const next = new Date(month);
-              next.setMonth(next.getMonth() + 1);
+              // Use dayjs for safe date manipulation to avoid issues with month-end dates.
+              const next = dayjs(month).add(1, 'month').toDate();
               setMonth(next);
             }}
             className={cn(
