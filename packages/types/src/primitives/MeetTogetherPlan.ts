@@ -1,3 +1,5 @@
+import type { JSONContent } from '@tuturuuu/ui/tiptap';
+
 export interface MeetTogetherPlan {
   id?: string;
   name?: string;
@@ -10,4 +12,5 @@ export interface MeetTogetherPlan {
   creator_id?: string;
   ws_id?: string;
   is_public?: boolean;
+  agenda_content?: JSONContent;
 }
