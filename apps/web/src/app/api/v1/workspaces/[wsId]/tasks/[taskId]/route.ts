@@ -30,7 +30,13 @@ export async function PATCH(
 
     // Only allow fields you expect (whitelist)
     const allowedFields = [
-      'name', 'description', 'priority', 'start_date', 'end_date', 'tags', 'archived'
+      'name',
+      'description',
+      'priority',
+      'start_date',
+      'end_date',
+      'tags',
+      'archived',
     ];
     const updates: Record<string, unknown> = {};
     for (const key of allowedFields) {
@@ -40,7 +46,8 @@ export async function PATCH(
     // Validate tags if present
     if (
       'tags' in updates &&
-      (!Array.isArray(updates.tags) || !updates.tags.every((tag: unknown) => typeof tag === 'string'))
+      (!Array.isArray(updates.tags) ||
+        !updates.tags.every((tag: unknown) => typeof tag === 'string'))
     ) {
       return NextResponse.json(
         { error: 'Tags must be an array of strings.' },
@@ -69,4 +76,4 @@ export async function PATCH(
       { status: 500 }
     );
   }
-} 
+}

@@ -78,7 +78,9 @@ export function TaskEditDialog({
       // Example: fetch from a REST API endpoint if available
       if (wsId && boardId) {
         try {
-          const res = await fetch(`/api/v1/workspaces/${wsId}/task-boards/${boardId}/lists`);
+          const res = await fetch(
+            `/api/v1/workspaces/${wsId}/task-boards/${boardId}/lists`
+          );
           if (res.ok) {
             const data = await res.json();
             return data.lists as TaskList[];
