@@ -2,7 +2,9 @@
 
 import { useCalendarSync } from '@tuturuuu/ui/hooks/use-calendar-sync';
 import { Separator } from '@tuturuuu/ui/separator';
+import { Switch } from '@tuturuuu/ui/switch';
 import dayjs from 'dayjs';
+import { useState } from 'react';
 
 const InnerComponent = () => {
   const { data, googleData, dates, error } = useCalendarSync();
@@ -56,5 +58,18 @@ const InnerComponent = () => {
 };
 
 export const CalendarActiveSyncDebugger = () => {
-  return <InnerComponent />;
+  const [isDebuggingOpen, setIsDebuggingOpen] = useState(false);
+
+  return (
+    <>
+      <div className="flex items-center gap-2">
+        <Switch
+          checked={isDebuggingOpen}
+          onCheckedChange={setIsDebuggingOpen}
+        />
+        <span>Active Sync</span>
+      </div>
+      {isDebuggingOpen && <InnerComponent />}
+    </>
+  );
 };
