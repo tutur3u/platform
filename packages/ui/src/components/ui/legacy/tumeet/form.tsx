@@ -9,6 +9,76 @@ import { Separator } from '@tuturuuu/ui/separator';
 import timezones from '@tuturuuu/utils/timezones';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
+import dayjs from 'dayjs';
+import timezone from 'dayjs/plugin/timezone';
+import utc from 'dayjs/plugin/utc';
+
+dayjs.extend(timezone);
+dayjs.extend(utc);
+
+// Component to display user's current timezone and time
+function UserTimezoneDisplay() {
+  const [userTimezone, setUserTimezone] = useState<string>('');
+  const [currentTime, setCurrentTime] = useState<string>('');
+  const [offset, setOffset] = useState<string>('');
+
+  useEffect(() => {
+    const updateTime = () => {
+      const tz = dayjs.tz.guess();
+      const now = dayjs().tz(tz);
+      const timeStr = now.format('HH:mm');
+      const offsetStr = now.format('Z'); // e.g., "+08:00"
+      
+      setUserTimezone(tz);
+      setCurrentTime(timeStr);
+      setOffset(offsetStr);
+    };
+
+    updateTime();
+    const interval = setInterval(updateTime, 1000); // Update every second
+
+    return () => clearInterval(interval);
+  }, []);
+
+  if (!userTimezone) return null;
+
+  return (
+    <div className="mb-4 rounded-lg bg-dynamic-blue/5 p-3 text-sm">
+      <div className="flex items-center justify-center gap-2 text-dynamic-blue lg:justify-start">
+        <span role="img" aria-label="clock" className="text-base">🕒</span>
+        <span className="font-medium">Your timezone:</span>
+        <span className="font-semibold">{userTimezone}</span>
+        <span className="text-dynamic-blue/70">(UTC{offset})</span>
+      </div>
+      <div className="mt-1 flex items-center justify-center gap-2 text-dynamic-blue/80 lg:justify-start">
+        <span role="img" aria-label="calendar" className="text-base">🗓️</span>
+        <span className="font-medium">Local time:</span>
+        <span className="font-semibold">{currentTime}</span>
+      </div>
+    </div>
+  );
+}
+
+// Utility function to get timezone info for display
+function getTimezoneInfo(offset: number | undefined) {
+  if (offset === undefined) return null;
+  
+  const matchingTimezones = timezones.filter(tz => tz.offset === offset);
+  if (matchingTimezones.length === 0) return null;
+  
+  // Prefer non-DST timezones
+  const nonDstTimezone = matchingTimezones.find(tz => !tz.isdst);
+  const timezone = nonDstTimezone || matchingTimezones[0];
+  
+  if (!timezone) return null;
+  
+  return {
+    name: timezone.value,
+    text: timezone.text,
+    offset: timezone.offset,
+    isdst: timezone.isdst
+  };
+}
 
 export default function Form({ wsId }: { wsId?: string }) {
   const t = useTranslations('meet-together');
@@ -42,6 +112,7 @@ export default function Form({ wsId }: { wsId?: string }) {
       {/* Date Selector */}
       <div className="flex flex-col items-center justify-center gap-2">
         <p className="font-semibold">{t('dates-to-meet-together')}</p>
+        <UserTimezoneDisplay />
         <div>
           <DateSelector
             value={dates}

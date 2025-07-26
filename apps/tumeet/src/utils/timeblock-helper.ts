@@ -306,7 +306,8 @@ export function removeTimeblocks(
         id: undefined,
         end_time: minTimetz(
           dayjs(soonest).format('HH:mm:ssZ'),
-          timeblock.end_time
+          timeblock.end_time,
+          timeblock.date
         ),
       };
 
@@ -320,7 +321,8 @@ export function removeTimeblocks(
         id: undefined,
         start_time: maxTimetz(
           dayjs(latest).format('HH:mm:ssZ'),
-          timeblock.start_time
+          timeblock.start_time,
+          timeblock.date
         ),
       };
 

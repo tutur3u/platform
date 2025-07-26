@@ -26,11 +26,15 @@ export async function POST(req: Request) {
   const sbAdmin = await createAdminClient();
 
   const data = await req.json();
+  console.log('Creating plan with data:', data);
+  
   const supabase = await createClient();
 
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
+  console.log('User:', user?.id);
 
   const { data: plan, error } = await sbAdmin
     .from('meet_together_plans')
@@ -39,12 +43,13 @@ export async function POST(req: Request) {
     .single();
 
   if (error) {
-    console.log(error);
+    console.error('Database error creating plan:', error);
     return NextResponse.json(
-      { message: 'Error creating meet together plan' },
+      { message: 'Error creating meet together plan', error: error.message },
       { status: 500 }
     );
   }
 
+  console.log('Plan created successfully:', plan);
   return NextResponse.json({ id: plan.id, message: 'success' });
 }

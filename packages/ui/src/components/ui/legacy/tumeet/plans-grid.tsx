@@ -83,8 +83,8 @@ export function PlansGrid({
               <div className="flex items-center gap-2 text-foreground/80">
                 <Clock className="h-4 w-4 text-dynamic-green" />
                 <span className="text-sm font-medium">
-                  <UserTime time={plan.start_time} /> -{' '}
-                  <UserTime time={plan.end_time} />
+                  <UserTime time={plan.start_time} date={plan.dates?.[0]} /> -{' '}
+                  <UserTime time={plan.end_time} date={plan.dates?.[0]} />
                 </span>
               </div>
               <p className="ml-6 text-xs text-foreground/60">
