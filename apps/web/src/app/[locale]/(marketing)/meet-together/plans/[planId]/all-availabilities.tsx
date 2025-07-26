@@ -1,10 +1,13 @@
 'use client';
 
 import DatePlanner from './date-planner';
+import TimezoneIndicator from './timezone-indicator';
+import TimezoneToggle from './timezone-toggle';
 import { useTimeBlocking } from './time-blocking-provider';
 import type { MeetTogetherPlan } from '@tuturuuu/types/primitives/MeetTogetherPlan';
 import type { Timeblock } from '@tuturuuu/types/primitives/Timeblock';
 import { useTranslations } from 'next-intl';
+import { useState } from 'react';
 
 export default function AllAvailabilities({
   plan,
@@ -20,6 +23,7 @@ export default function AllAvailabilities({
   const t = useTranslations('meet-together-plan-details');
   const { user, planUsers, selectedTimeBlocks, filteredUserIds } =
     useTimeBlocking();
+  const [showLocalTime, setShowLocalTime] = useState(false);
 
   const totalUserCount =
     filteredUserIds.length === 0 ? planUsers.length : filteredUserIds.length;
@@ -38,27 +42,40 @@ export default function AllAvailabilities({
     <div className="flex flex-col gap-2 text-center">
       {/* Existing UI */}
       <div className="font-semibold">{t('everyone_availability')}</div>
+      
+      {/* Timezone Indicator */}
+      <TimezoneIndicator plan={plan} />
+      
+      {/* Timezone Toggle */}
+      <TimezoneToggle 
+        showLocalTime={showLocalTime} 
+        onToggle={setShowLocalTime} 
+      />
+      
       <div className="flex items-center justify-center gap-2 text-sm">
         <div>
           0/{totalUserCount} {t('available')}
         </div>
         <div className="flex h-4 w-32 border border-foreground/50">
-          {Array.from({ length: totalUserCount + 1 }).map((_, i) => (
+          {Array.from({ length: totalUserCount + 1 }, (_, i) => ({
+            id: `availability-bar-${i}`,
+            index: i
+          })).map(({ id, index }) => (
             <div
-              key={i}
+              key={id}
               style={{
                 width: `calc(100% / ${totalUserCount})`,
               }}
               className={`h-full ${
-                i < totalUserCount ? 'border-r border-foreground/50' : ''
+                index < totalUserCount ? 'border-r border-foreground/50' : ''
               }`}
             >
               <div
                 className={`h-full w-full ${
-                  i === 0 ? 'bg-foreground/10' : 'bg-green-500/70'
+                  index === 0 ? 'bg-foreground/10' : 'bg-green-500/70'
                 }`}
                 style={{
-                  opacity: i === 0 ? 1 : i / totalUserCount,
+                  opacity: index === 0 ? 1 : index / totalUserCount,
                 }}
               />
             </div>
@@ -74,6 +91,7 @@ export default function AllAvailabilities({
         start={plan.start_time}
         end={plan.end_time}
         showBestTimes={showBestTimes}
+        showLocalTime={showLocalTime}
         onBestTimesStatusByDateAction={onBestTimesStatusByDateAction}
       />
     </div>
