@@ -17,17 +17,17 @@ export function ModuleContentEditor({ courseId, moduleId, content }: Props) {
   const [post, setPost] = useState<JSONContent | null>(content || null);
   const t = useTranslations();
 
-  const onChange = (content: JSONContent) => {
+  const onChange = (content: JSONContent | null) => {
     setPost(content);
     saveContentToDB(content);
   };
 
-  const saveContentToDB = async (content: JSONContent) => {
+  const saveContentToDB = async (content: JSONContent | null) => {
     const supabase = createClient();
 
     const { error } = await supabase
       .from('workspace_course_modules')
-      .update({ content: content })
+      .update({ content })
       .eq('id', moduleId)
       .eq('course_id', courseId);
 

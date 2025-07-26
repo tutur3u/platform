@@ -579,7 +579,12 @@
     "dates_count": "{count} dates",
     "dates": "dates",
     "time_range": "Time range",
-    "loading_plans": "Loading your plans..."
+    "loading_plans": "Loading your plans...",
+    "agenda_title_placeholder": "Meeting Agenda",
+    "agenda_content_placeholder": "Add agenda items, discussion points, and meeting objectives...",
+    "agenda": "Agenda",
+    "agenda_description": "All of main discussion points, and what we'll be discussing.",
+    "no-timezone-found": "No timezones found"
   },
   "meet-together-plan-details": {
     "copy_link": "Copy link",

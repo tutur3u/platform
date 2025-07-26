@@ -577,7 +577,12 @@
     "dates_count": "{count} ngày",
     "dates": "ngày",
     "time_range": "Khoảng thời gian",
-    "loading_plans": "Đang tải kế hoạch của bạn..."
+    "loading_plans": "Đang tải kế hoạch của bạn...",
+    "agenda_title_placeholder": "Chương trình nghị sự",
+    "agenda_content_placeholder": "Thêm các mục nghị sự, điểm thảo luận và mục tiêu cuộc họp...",
+    "save_agenda": "Lưu chương trình nghị sự",
+    "agenda_saved": "Chương trình nghị sự đã được lưu",
+    "agenda": "Chương trình nghị sự"
   },
   "meet-together-plan-details": {
     "copy_link": "Sao chép liên kết",

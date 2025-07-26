@@ -12,11 +12,10 @@ export async function PUT(req: Request, { params }: Params) {
   const { planId: id } = await params;
 
   const data = await req.json();
-  const name = data.name;
 
   const { error } = await sbAdmin
     .from('meet_together_plans')
-    .update({ name })
+    .update(data)
     .eq('id', id);
 
   if (error) {
