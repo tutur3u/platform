@@ -1,9 +1,9 @@
 'use client';
 
 import DatePlanner from './date-planner';
+import { useTimeBlocking } from './time-blocking-provider';
 import TimezoneIndicator from './timezone-indicator';
 import TimezoneToggle from './timezone-toggle';
-import { useTimeBlocking } from './time-blocking-provider';
 import type { MeetTogetherPlan } from '@tuturuuu/types/primitives/MeetTogetherPlan';
 import type { Timeblock } from '@tuturuuu/types/primitives/Timeblock';
 import { useTranslations } from 'next-intl';
@@ -32,16 +32,16 @@ export default function AvailabilityPlanner({
     <div className="flex flex-col gap-2 text-center">
       {/* Existing UI */}
       <div className="font-semibold">{t('your_availability')}</div>
-      
+
       {/* Timezone Indicator */}
       <TimezoneIndicator plan={plan} />
-      
+
       {/* Timezone Toggle */}
-      <TimezoneToggle 
-        showLocalTime={showLocalTime} 
-        onToggle={setShowLocalTime} 
+      <TimezoneToggle
+        showLocalTime={showLocalTime}
+        onToggle={setShowLocalTime}
       />
-      
+
       <div className="flex items-center justify-center gap-4 text-sm">
         <div className="flex items-center gap-2">
           <div>{t('unavailable')}</div>
@@ -53,7 +53,7 @@ export default function AvailabilityPlanner({
           <div className="h-4 w-8 border border-foreground/50 bg-green-500/70" />
         </div>
       </div>
-      
+
       <DatePlanner
         timeblocks={localTimeblocks}
         dates={plan.dates}

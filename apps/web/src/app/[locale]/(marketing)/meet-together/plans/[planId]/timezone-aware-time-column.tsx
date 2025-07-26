@@ -1,7 +1,7 @@
-import { useLocale } from 'next-intl';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
+import { useLocale } from 'next-intl';
 
 dayjs.extend(timezone);
 dayjs.extend(utc);
@@ -9,8 +9,8 @@ dayjs.extend(utc);
 interface TimezoneAwareTimeColumnProps {
   id: string;
   start: string; // timetz format like "09:00:00+08"
-  end: string;   // timetz format like "17:00:00+08"
-  date: string;  // date like "2024-07-23"
+  end: string; // timetz format like "17:00:00+08"
+  date: string; // date like "2024-07-23"
   className?: string;
 }
 
@@ -28,21 +28,31 @@ export default function TimezoneAwareTimeColumn({
   const referenceDate = date || dayjs().format('YYYY-MM-DD');
 
   // Convert plan times to user's local timezone
-  const convertTimetzToLocalHour = (timetz: string, referenceDate: string): number => {
+  const convertTimetzToLocalHour = (
+    timetz: string,
+    referenceDate: string
+  ): number => {
     try {
       // Extract time and timezone offset
-      const time = timetz.substring(0, timetz.lastIndexOf('+') !== -1 ? timetz.lastIndexOf('+') : timetz.lastIndexOf('-'));
-      const offset = timetz.substring(timetz.lastIndexOf('+') !== -1 ? timetz.lastIndexOf('+') : timetz.lastIndexOf('-'));
-      
+      const time = timetz.substring(
+        0,
+        timetz.lastIndexOf('+') !== -1
+          ? timetz.lastIndexOf('+')
+          : timetz.lastIndexOf('-')
+      );
+      const offset = timetz.substring(
+        timetz.lastIndexOf('+') !== -1
+          ? timetz.lastIndexOf('+')
+          : timetz.lastIndexOf('-')
+      );
+
       // Convert offset to timezone name
       const timezoneName = getTimezoneFromOffset(offset);
-      
+
       // Create datetime in plan's timezone and convert to user's timezone
       const planDateTime = dayjs.tz(`${referenceDate} ${time}`, timezoneName);
       const userDateTime = planDateTime.tz(userTimezone);
-      
 
-      
       return userDateTime.hour();
     } catch (error) {
       console.error('Error converting timetz to local hour:', error);
@@ -56,7 +66,7 @@ export default function TimezoneAwareTimeColumn({
     // Remove the sign and convert to number for lookup
     const offsetNum = parseInt(offset, 10);
     const offsetKey = offsetNum.toString();
-    
+
     // Simple mapping for common offsets
     const offsetMap: Record<string, string> = {
       '-12': 'Etc/GMT+12',
@@ -91,8 +101,6 @@ export default function TimezoneAwareTimeColumn({
 
   const localStartHour = convertTimetzToLocalHour(start, referenceDate);
   const localEndHour = convertTimetzToLocalHour(end, referenceDate);
-
-
 
   return (
     <div className={className}>
@@ -164,4 +172,4 @@ export default function TimezoneAwareTimeColumn({
       </div>
     </div>
   );
-} 
+}

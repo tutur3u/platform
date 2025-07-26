@@ -127,15 +127,19 @@ export default function PreviewDayTime({
       // Convert timeblock times to local hours and minutes
       const startParts = startTime.split(':').map((v) => Number(v));
       const endParts = endTime.split(':').map((v) => Number(v));
-      
+
       if (startParts.length < 2 || endParts.length < 2) return false;
-      
+
       const [startHour, startMinute] = startParts;
       const [endHour, endMinute] = endParts;
 
       // Additional type guards for destructured values
-      if (typeof startHour !== 'number' || typeof startMinute !== 'number' || 
-          typeof endHour !== 'number' || typeof endMinute !== 'number') {
+      if (
+        typeof startHour !== 'number' ||
+        typeof startMinute !== 'number' ||
+        typeof endHour !== 'number' ||
+        typeof endMinute !== 'number'
+      ) {
         return false;
       }
 

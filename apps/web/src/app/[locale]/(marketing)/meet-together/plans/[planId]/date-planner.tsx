@@ -1,13 +1,12 @@
 'use client';
 
-import dayjs from 'dayjs';
-import type { Timeblock } from '@tuturuuu/types/primitives/Timeblock';
-
-import { timetzToHour, combineDateAndTimetzToLocal } from '@/utils/date-helper';
-import { useTimeBlocking } from './time-blocking-provider';
 import DayPlanners from './day-planners';
+import { useTimeBlocking } from './time-blocking-provider';
 import TimeColumn from './time-column';
 import TimezoneAwareTimeColumn from './timezone-aware-time-column';
+import { combineDateAndTimetzToLocal, timetzToHour } from '@/utils/date-helper';
+import type { Timeblock } from '@tuturuuu/types/primitives/Timeblock';
+import dayjs from 'dayjs';
 
 export default function DatePlanner({
   timeblocks,
@@ -35,7 +34,14 @@ export default function DatePlanner({
   const startHour = timetzToHour(start);
   const endHour = timetzToHour(end);
 
-  if (!dates || !start || !end || typeof startHour !== 'number' || typeof endHour !== 'number') return null;
+  if (
+    !dates ||
+    !start ||
+    !end ||
+    typeof startHour !== 'number' ||
+    typeof endHour !== 'number'
+  )
+    return null;
 
   // Compute local start and end datetimes for each date
   let localDateRanges = dates.map((date) => ({
