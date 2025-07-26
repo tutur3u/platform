@@ -157,10 +157,9 @@ export function RichTextEditor({
   // Update editor's editable state when readOnly prop changes
   useEffect(() => {
     if (editor) {
-      editor.commands.setContent(content);
       editor.setEditable(!readOnly);
     }
-  }, [editor, readOnly, content]);
+  }, [editor, readOnly]);
 
   const handleSave = useCallback(() => {
     if (editor && !readOnly) {
