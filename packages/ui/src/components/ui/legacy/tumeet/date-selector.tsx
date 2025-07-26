@@ -39,6 +39,7 @@ export default function DateSelector({
             'h-full w-full rounded-md p-0 font-normal transition-colors duration-300',
         }}
         locale={locale === 'vi' ? vi : enUS}
+        minDate={new Date()}
       />
     </div>
   );
