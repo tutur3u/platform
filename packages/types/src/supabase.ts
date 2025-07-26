@@ -764,6 +764,66 @@ export type Database = {
           },
         ];
       };
+      calendar_sync_dashboard: {
+        Row: {
+          endtime: string | null;
+          events_deleted: number | null;
+          events_inserted: number | null;
+          events_updated: number | null;
+          id: string;
+          source: string | null;
+          starttime: string | null;
+          status: string | null;
+          time: string;
+          triggered_by: string | null;
+          type: string | null;
+          ws_id: string;
+        };
+        Insert: {
+          endtime?: string | null;
+          events_deleted?: number | null;
+          events_inserted?: number | null;
+          events_updated?: number | null;
+          id?: string;
+          source?: string | null;
+          starttime?: string | null;
+          status?: string | null;
+          time?: string;
+          triggered_by?: string | null;
+          type?: string | null;
+          ws_id: string;
+        };
+        Update: {
+          endtime?: string | null;
+          events_deleted?: number | null;
+          events_inserted?: number | null;
+          events_updated?: number | null;
+          id?: string;
+          source?: string | null;
+          starttime?: string | null;
+          status?: string | null;
+          time?: string;
+          triggered_by?: string | null;
+          type?: string | null;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'calendar_sync_dashboard_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'calendar_sync_dashboard_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       calendar_sync_states: {
         Row: {
           calendar_id: string;
@@ -9364,9 +9424,9 @@ export type Database = {
       generate_cross_app_token: {
         Args:
           | {
-              p_target_app: string;
               p_user_id: string;
               p_origin_app: string;
+              p_target_app: string;
               p_expiry_seconds?: number;
             }
           | {
@@ -9532,8 +9592,8 @@ export type Database = {
       get_operating_systems: {
         Args: { p_link_id: string; p_limit?: number };
         Returns: {
-          count: number;
           os: string;
+          count: number;
         }[];
       };
       get_pending_event_participants: {
@@ -9630,7 +9690,7 @@ export type Database = {
         }[];
       };
       get_user_role: {
-        Args: { ws_id: string; user_id: string };
+        Args: { user_id: string; ws_id: string };
         Returns: string;
       };
       get_user_session_stats: {
@@ -9719,10 +9779,10 @@ export type Database = {
       };
       get_workspace_users: {
         Args: {
-          search_query: string;
-          excluded_groups: string[];
-          included_groups: string[];
           _ws_id: string;
+          included_groups: string[];
+          excluded_groups: string[];
+          search_query: string;
         };
         Returns: {
           ws_id: string;
@@ -9808,7 +9868,7 @@ export type Database = {
         Returns: boolean;
       };
       is_nova_user_email_in_team: {
-        Args: { _team_id: string; _user_email: string };
+        Args: { _user_email: string; _team_id: string };
         Returns: boolean;
       };
       is_nova_user_id_in_team: {
@@ -9988,6 +10048,10 @@ export type Database = {
       update_session_total_score: {
         Args: { user_id_param: string; challenge_id_param: string };
         Returns: undefined;
+      };
+      upsert_calendar_events_and_count: {
+        Args: { events: Json };
+        Returns: Json;
       };
       validate_and_normalize_board_tags: {
         Args: { tags: Json };
