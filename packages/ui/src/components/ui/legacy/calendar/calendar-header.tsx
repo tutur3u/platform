@@ -74,7 +74,7 @@ export function CalendarHeader({
     date.getFullYear() === new Date().getFullYear();
 
   return (
-    <div className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex items-center gap-2">
         {sidebarToggleButton}
         <h2 className="text-xl font-semibold tracking-tight">{title}</h2>

@@ -413,50 +413,53 @@ export const CalendarContent = ({
   if (!initialized || !view || !dates.length) return null;
 
   return (
-    <div
-      className={cn(
-        'grid h-full w-full',
-        view === 'month' ? 'grid-rows-[auto_1fr]' : 'grid-rows-[auto_auto_1fr]'
-      )}
-    >
+    <div className="flex h-full w-full flex-col">
       {enableHeader && (
-        <CalendarHeader
-          t={t}
-          locale={locale}
-          availableViews={availableViews}
-          date={date}
-          setDate={handleSetDate}
-          view={view}
-          offset={
-            view === 'day' ? 1 : view === '4-days' ? 4 : view === 'week' ? 7 : 0
-          }
-          onViewChange={(newView) => {
-            if (newView === 'day') enableDayView();
-            else if (newView === '4-days') enable4DayView();
-            else if (newView === 'week') enableWeekView();
-            else if (newView === 'month') enableMonthView();
-          }}
-          extras={extras}
-          onSidebarToggle={onSidebarToggle}
-          sidebarToggleButton={sidebarToggleButton}
-        />
+        <div className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+          <div className="p-4">
+            <CalendarHeader
+              t={t}
+              locale={locale}
+              availableViews={availableViews}
+              date={date}
+              setDate={handleSetDate}
+              view={view}
+              offset={
+                view === 'day' ? 1 : view === '4-days' ? 4 : view === 'week' ? 7 : 0
+              }
+              onViewChange={(newView) => {
+                if (newView === 'day') enableDayView();
+                else if (newView === '4-days') enable4DayView();
+                else if (newView === 'week') enableWeekView();
+                else if (newView === 'month') enableMonthView();
+              }}
+              extras={extras}
+              onSidebarToggle={onSidebarToggle}
+              sidebarToggleButton={sidebarToggleButton}
+            />
+          </div>
+        </div>
       )}
 
-      {view !== 'month' && (
-        <WeekdayBar locale={locale} view={view} dates={dates} />
-      )}
-
-      <div className="flex-1 relative overflow-auto scrollbar-none bg-background/50">
-        {view === 'month' && dates?.[0] ? (
-          <MonthCalendar
-            date={dates[0]}
-            workspace={workspace}
-            visibleDates={dates}
-            viewedMonth={date}
-          />
-        ) : (
-          <CalendarViewWithTrail dates={dates} />
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {view !== 'month' && (
+          <div className="border-b bg-background/50">
+            <WeekdayBar locale={locale} view={view} dates={dates} />
+          </div>
         )}
+
+        <div className="flex-1 relative overflow-auto scrollbar-none bg-background/50">
+          {view === 'month' && dates?.[0] ? (
+            <MonthCalendar
+              date={dates[0]}
+              workspace={workspace}
+              visibleDates={dates}
+              viewedMonth={date}
+            />
+          ) : (
+            <CalendarViewWithTrail dates={dates} />
+          )}
+        </div>
       </div>
 
       {disabled ? null : (

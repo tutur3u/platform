@@ -1,14 +1,13 @@
-import { CalendarActiveSyncDebugger } from './active-sync';
-import CalendarClientPage from './client';
-// import TasksSidebar from './components/tasks-sidebar';
-import TaskSidebarServer from './components/tasks-sidebar-server';
-import CalendarSidebar from './components/calendar-sidebar';
-import { DEV_MODE } from '@/constants/common';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { CalendarSyncProvider } from '@tuturuuu/ui/hooks/use-calendar-sync';
 import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { redirect } from 'next/navigation';
+import { DEV_MODE } from '@/constants/common';
+import { CalendarActiveSyncDebugger } from './active-sync';
+import CalendarPageClient from './calendar-page-client';
+import { CalendarStateProvider } from './calendar-state-context';
+import TaskSidebarServer from './components/tasks-sidebar-server';
 
 interface PageProps {
   params: Promise<{
@@ -17,8 +16,10 @@ interface PageProps {
   }>;
 }
 
-export default async function CalendarPage({ params }: PageProps) {
-  const { wsId } = await params;
+export default async function CalendarPage({
+  params,
+}: PageProps) {
+  const { wsId, locale } = await params;
   const workspace = await getWorkspace(wsId);
 
   const { withoutPermission } = await getPermissions({
@@ -43,16 +44,18 @@ export default async function CalendarPage({ params }: PageProps) {
       useQuery={useQuery}
       useQueryClient={useQueryClient}
     >
-      {DEV_MODE && <CalendarActiveSyncDebugger />}
-      <div className="flex h-[calc(100%-2rem-4px)]">
-        {/* <CalendarSidebar /> */}
-        <CalendarClientPage
-          experimentalGoogleToken={googleToken}
-          workspace={workspace}
-        />
-        {/* <TasksSidebar wsId={wsId} locale={locale} /> */}
-        <TaskSidebarServer wsId={wsId} />
-      </div>
+      <CalendarStateProvider>
+        {DEV_MODE && <CalendarActiveSyncDebugger />}
+        <div className="flex h-full">
+          <CalendarPageClient
+            wsId={wsId}
+            locale={locale}
+            workspace={workspace}
+            experimentalGoogleToken={googleToken}
+          />
+          <TaskSidebarServer wsId={wsId} />
+        </div>
+      </CalendarStateProvider>
     </CalendarSyncProvider>
   );
 }

@@ -1,9 +1,5 @@
 'use client';
 
-import { Nav } from './nav';
-import type { NavLink } from '@/components/navigation';
-import { PROD_MODE, SIDEBAR_COLLAPSED_COOKIE_NAME } from '@/constants/common';
-import { useSidebar } from '@/context/sidebar-context';
 import { useQuery } from '@tanstack/react-query';
 import type { Workspace } from '@tuturuuu/types/db';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
@@ -14,11 +10,15 @@ import { ArrowLeft } from '@tuturuuu/ui/icons';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { cn } from '@tuturuuu/utils/format';
 import { setCookie } from 'cookies-next';
-import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { type ReactNode, Suspense, useEffect, useState } from 'react';
+import type { NavLink } from '@/components/navigation';
+import { PROD_MODE, SIDEBAR_COLLAPSED_COOKIE_NAME } from '@/constants/common';
+import { useSidebar } from '@/context/sidebar-context';
+import { Nav } from './nav';
 
 interface MailProps {
   wsId: string;
@@ -30,6 +30,7 @@ interface MailProps {
   userPopover: ReactNode;
   children: ReactNode;
   disableCreateNewWorkspace: boolean;
+  hideSidebarSizeToggle?: boolean;
 }
 
 export function Structure({
@@ -41,6 +42,7 @@ export function Structure({
   userPopover,
   children,
   disableCreateNewWorkspace,
+  hideSidebarSizeToggle = false,
 }: MailProps) {
   const t = useTranslations();
   const pathname = usePathname();
@@ -285,8 +287,8 @@ export function Structure({
         className={cn(
           'absolute flex h-full w-full flex-col transition-transform duration-300 ease-in-out',
           navState.direction === 'forward'
-            ? 'animate-in slide-in-from-right'
-            : 'animate-in slide-in-from-left'
+            ? 'slide-in-from-right animate-in'
+            : 'slide-in-from-left animate-in'
         )}
       >
         {navState.history.length === 0 ? (
@@ -316,7 +318,7 @@ export function Structure({
             />
             {!isCollapsed && currentTitle && (
               <div className="p-2 pt-0">
-                <h2 className="line-clamp-1 px-2 text-sm font-semibold tracking-wide text-muted-foreground uppercase">
+                <h2 className="line-clamp-1 px-2 font-semibold text-muted-foreground text-sm uppercase tracking-wide">
                   {currentTitle}
                 </h2>
               </div>
@@ -360,7 +362,7 @@ export function Structure({
         </Link>
       </div>
       <div className="mx-2 h-4 w-px flex-none rotate-30 bg-foreground/20" />
-      <div className="flex items-center gap-2 text-lg font-semibold break-all">
+      <div className="flex items-center gap-2 break-all font-semibold text-lg">
         {currentLink?.icon && (
           <div className="flex-none">{currentLink.icon}</div>
         )}
@@ -382,6 +384,7 @@ export function Structure({
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
       hideSizeToggle={behavior === 'hover'}
+      hideSidebarSizeToggle={hideSidebarSizeToggle}
     >
       {children}
     </BaseStructure>

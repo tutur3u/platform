@@ -1,11 +1,11 @@
 'use client';
 
-import type { NavLink as NavLinkType } from '@/components/navigation';
 import { ChevronRight } from '@tuturuuu/ui/icons';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import type { NavLink as NavLinkType } from '@/components/navigation';
 
 interface NavLinkProps {
   wsId: string;
@@ -23,7 +23,7 @@ export function NavLink({
 }: NavLinkProps) {
   const pathname = usePathname();
   const { title, icon, href, children, onClick: onLinkClick } = link;
-  const hasChildren = children && children.length > 0;
+  const hasChildren = Array.isArray(children) && children.length > 0;
 
   const isActive =
     href && (link.matchExact ? pathname === href : pathname.startsWith(href));
@@ -42,7 +42,7 @@ export function NavLink({
 
   const commonProps = {
     className: cn(
-      'flex cursor-pointer items-center justify-between rounded-md p-2 text-sm font-medium',
+      'flex cursor-pointer items-center justify-between rounded-md p-2 font-medium text-sm',
       isCollapsed && 'justify-center',
       isActive && 'bg-accent text-accent-foreground',
       link.isBack && 'mb-2 cursor-pointer',
