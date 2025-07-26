@@ -579,7 +579,8 @@
     "dates_count": "{count} dates",
     "dates": "dates",
     "time_range": "Time range",
-    "loading_plans": "Loading your plans..."
+    "loading_plans": "Loading your plans...",
+    "no-timezone-found": "No timezones found"
   },
   "meet-together-plan-details": {
     "copy_link": "Copy link",
