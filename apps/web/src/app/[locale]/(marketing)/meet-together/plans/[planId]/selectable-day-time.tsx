@@ -89,11 +89,23 @@ export default function SelectableDayTime({
       const startTime = timetzToTime(tb.start_time);
       const endTime = timetzToTime(tb.end_time);
 
+      // Check if times are valid
+      if (!startTime || !endTime) return false;
+
       // Convert timeblock times to local hours and minutes
-      const [startHour, startMinute] = startTime
-        .split(':')
-        .map((v) => Number(v));
-      const [endHour, endMinute] = endTime.split(':').map((v) => Number(v));
+      const startParts = startTime.split(':').map((v) => Number(v));
+      const endParts = endTime.split(':').map((v) => Number(v));
+      
+      if (startParts.length < 2 || endParts.length < 2) return false;
+      
+      const [startHour, startMinute] = startParts;
+      const [endHour, endMinute] = endParts;
+
+      // Additional type guards for destructured values
+      if (typeof startHour !== 'number' || typeof startMinute !== 'number' || 
+          typeof endHour !== 'number' || typeof endMinute !== 'number') {
+        return false;
+      }
 
       // Calculate the current slot's hour
       let slotHour = Math.floor(i / hourSplits) + start;

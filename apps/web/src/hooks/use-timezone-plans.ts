@@ -1,5 +1,8 @@
-import { useTimezone } from '../context/timezone-context';
 import { useEffect, useState } from 'react';
+import dayjs from 'dayjs';
+import timezone from 'dayjs/plugin/timezone';
+
+dayjs.extend(timezone);
 
 interface UseTimezonePlansOptions {
   planId?: string;
@@ -8,7 +11,7 @@ interface UseTimezonePlansOptions {
 
 export function useTimezonePlans(options: UseTimezonePlansOptions = {}) {
   const { planId, includeTimezoneInfo = true } = options;
-  const { userTimezone } = useTimezone();
+  const userTimezone = dayjs.tz.guess();
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -44,7 +47,7 @@ export function useTimezonePlans(options: UseTimezonePlansOptions = {}) {
     };
 
     fetchPlans();
-  }, [planId, userTimezone, includeTimezoneInfo]);
+  }, [planId, userTimezone]);
 
   return { data, loading, error };
 }
