@@ -99,9 +99,8 @@ export function TaskForm({ listId, onTaskCreated }: Props) {
         end_date: endDate?.toISOString(),
       };
 
-      // Only add tags if we have them
-      if (tags.length > 0) {
-        taskData.tags = tags;
+      if (tags?.filter((tag) => tag && tag.trim() !== '').length > 0) {
+        taskData.tags = tags.filter((tag) => tag && tag.trim() !== '');
       }
 
       const newTask = await createTask(supabase, listId, taskData);
