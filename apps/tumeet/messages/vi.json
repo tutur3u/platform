@@ -2073,7 +2073,19 @@
     "more_options": "tùy chọn khác",
     "created_by": "bởi",
     "filter": "Lọc",
-    "sort": "Sắp xếp"
+    "sort": "Sắp xếp",
+    "select_options": "Chọn các tùy chọn để bình chọn",
+    "create_new_option": "Thêm tùy chọn của bạn...",
+    "add": "Thêm",
+    "confirm": "Xác nhận",
+    "cancel": "Hủy",
+    "voted_for": "Bạn đã bình chọn cho",
+    "vote_again": "Bình chọn lại",
+    "vote_for": "Bình chọn cho",
+    "vote_confirm": "Bạn có chắc chắn muốn gửi phiếu bầu cho những tùy chọn này không?",
+    "delete_option": "Xóa Tùy chọn",
+    "delete_option_confirm": "Bạn có chắc chắn muốn xóa tùy chọn này không? Hành động này không thể hoàn tác.",
+    "delete": "Xóa"
   },
   "ai_chat": {
     "welcome_to": "Chào mừng đến với",
