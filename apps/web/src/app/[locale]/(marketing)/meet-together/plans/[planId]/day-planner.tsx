@@ -14,6 +14,8 @@ export default function DayPlanner({
   showBestTimes = false,
   globalMaxAvailable,
   onBestTimesStatus,
+  startHour,
+  endHour,
 }: {
   timeblocks: Timeblock[];
   date: string;
@@ -24,6 +26,8 @@ export default function DayPlanner({
   showBestTimes?: boolean;
   globalMaxAvailable: number;
   onBestTimesStatus?: (hasBestTimes: boolean) => void;
+  startHour?: number;
+  endHour?: number;
 }) {
   const locale = useLocale();
   dayjs.locale(locale);
@@ -44,8 +48,10 @@ export default function DayPlanner({
       <DayTime
         timeblocks={timeblocks}
         date={date}
-        start={localStart.getHours()}
-        end={localEnd.getHours()}
+        start={
+          typeof startHour === 'number' ? startHour : localStart.getHours()
+        }
+        end={typeof endHour === 'number' ? endHour : localEnd.getHours()}
         editable={editable}
         disabled={disabled}
         showBestTimes={showBestTimes}

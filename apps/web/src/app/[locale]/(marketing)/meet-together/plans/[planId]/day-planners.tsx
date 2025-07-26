@@ -73,15 +73,42 @@ export default function DayPlanners({
     const dayTimeblocks = timeblocks.filter((tb) => tb.date === date);
     const startHour = localStart.getHours();
     const endHour = localEnd.getHours();
-    const hourBlocks = Array.from(
-      Array(Math.floor(endHour + 1 - startHour)).keys()
-    );
+
+    // Handle time ranges that cross midnight
+    let hourBlocks: number[];
+    if (endHour >= startHour) {
+      // Normal case: same day
+      hourBlocks = Array.from(
+        Array(Math.floor(endHour + 1 - startHour)).keys()
+      );
+    } else {
+      // Crosses midnight: split into two parts
+      // Part 1: from start to 23 (end of day)
+      const part1 = Array.from(Array(24 - startHour)).keys();
+      // Part 2: from 0 to end (beginning of next day)
+      const part2 = Array.from(Array(endHour + 1)).keys();
+      hourBlocks = [...part1, ...part2];
+    }
+
     const slotAvailableCounts: number[] = hourBlocks
-      .map((i) => (i + startHour) * hourSplits)
+      .map((i) => {
+        // Adjust hour calculation for midnight crossing
+        let adjustedHour = i + startHour;
+        if (adjustedHour >= 24) {
+          adjustedHour = adjustedHour - 24;
+        }
+        return adjustedHour * hourSplits;
+      })
       .flatMap((i) => Array(hourSplits).fill(i))
       .map((_, i) => {
+        // Calculate the actual hour for this slot
+        let actualHour = Math.floor(i / hourSplits) + startHour;
+        if (actualHour >= 24) {
+          actualHour = actualHour - 24;
+        }
+
         const currentDate = dayjs(localStart)
-          .hour(Math.floor(i / hourSplits) + startHour)
+          .hour(actualHour)
           .minute((i % hourSplits) * 15)
           .toDate();
         const userIds = dayTimeblocks
@@ -104,22 +131,43 @@ export default function DayPlanners({
       id="scrollable"
       className="relative flex flex-1 items-start justify-center gap-2 overflow-x-auto"
     >
-      {dateRanges.map(({ date, localStart, localEnd }) => (
-        <DayPlanner
-          key={date}
-          date={date}
-          localStart={localStart}
-          localEnd={localEnd}
-          editable={editable}
-          disabled={disabled}
-          timeblocks={timeblocks.filter((tb) => tb.date === date)}
-          showBestTimes={showBestTimes}
-          globalMaxAvailable={globalMaxAvailable}
-          onBestTimesStatus={(hasBestTimes) =>
-            handleBestTimesStatus(date, hasBestTimes)
+      {dateRanges.map(({ date, localStart, localEnd }, idx) => {
+        // Determine if the plan crosses midnight
+        const crossesMidnight = localEnd < localStart;
+        const displayStart = localStart;
+        const displayEnd = localEnd;
+        let startHour = localStart.getHours();
+        let endHour = localEnd.getHours();
+
+        if (crossesMidnight) {
+          if (idx === 0) {
+            // First day: show from localStart to 23:59
+            endHour = 23;
+          } else {
+            // Next day: show from 00:00 to localEnd
+            startHour = 0;
           }
-        />
-      ))}
+        }
+
+        return (
+          <DayPlanner
+            key={date}
+            date={date}
+            localStart={displayStart}
+            localEnd={displayEnd}
+            editable={editable}
+            disabled={disabled}
+            timeblocks={timeblocks.filter((tb) => tb.date === date)}
+            showBestTimes={showBestTimes}
+            globalMaxAvailable={globalMaxAvailable}
+            onBestTimesStatus={(hasBestTimes) =>
+              handleBestTimesStatus(date, hasBestTimes)
+            }
+            startHour={startHour}
+            endHour={endHour}
+          />
+        );
+      })}
     </div>
   );
 }

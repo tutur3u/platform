@@ -248,7 +248,11 @@ const TimeBlockingProvider = ({
       ) as Date[];
 
       if (editing.mode === 'add') {
-        const extraTimeblocks = durationToTimeblocks(dates);
+        const extraTimeblocks = durationToTimeblocks(
+          dates,
+          plan.start_time,
+          plan.end_time
+        );
         const timeblocks = addTimeblocks(prevTimeblocks.data, extraTimeblocks);
         return {
           planId: plan.id,

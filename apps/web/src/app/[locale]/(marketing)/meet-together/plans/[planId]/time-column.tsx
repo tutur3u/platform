@@ -21,36 +21,60 @@ export default function TimeColumn({
       </div>
 
       <div className="border border-b-0 border-transparent">
-        {Array.from(Array(Math.floor(end + 1 - start)).keys())
-          .map((i) => (i + start) * 4)
-          // duplicate each item 4 times
-          .flatMap((i) => [i, i, i, i])
-          .map((hr, i) => (
-            <div
-              key={`${id}-${hr}-${i}`}
-              className={`relative h-3 w-14 ${
-                hr === 0
-                  ? ''
-                  : (hr + 1) % 4 === 0 || (hr + 1) % 2 === 0
-                    ? 'border-b border-transparent'
-                    : ''
-              }`}
-            >
-              {i % 4 === 0 && (
-                <div className="absolute -top-2 right-0 text-xs">
-                  <div className="flex-none text-xs">
-                    {hr / 4 === 12
-                      ? '12:00 PM'
-                      : hr / 4 === 24
-                        ? '12:00 AM'
-                        : hr / 4 < 12
-                          ? `${hr / 4}:00 ${locale === 'vi' ? 'SA' : 'AM'}`
-                          : `${hr / 4 - 12}:00 ${locale === 'vi' ? 'CH' : 'PM'}`}
-                  </div>
+        {(() => {
+          // Handle time ranges that cross midnight
+          let timeSlots = [];
+
+          if (end >= start) {
+            // Normal case: same day
+            timeSlots = Array.from(
+              Array(Math.floor(end + 1 - start)).keys()
+            ).map((i) => (i + start) * 4);
+          } else {
+            // Crosses midnight: split into two parts
+            // Part 1: from start to 23 (end of day)
+            const part1 = Array.from(Array(24 - start))
+              .keys()
+              .map((i) => (i + start) * 4);
+            // Part 2: from 0 to end (beginning of next day)
+            const part2 = Array.from(Array(end + 1))
+              .keys()
+              .map((i) => i * 4);
+            timeSlots = [...part1, ...part2];
+          }
+
+          return (
+            timeSlots
+              // duplicate each item 4 times
+              .flatMap((i) => [i, i, i, i])
+              .map((hr, i) => (
+                <div
+                  key={`${id}-${hr}-${i}`}
+                  className={`relative h-3 w-14 ${
+                    hr === 0
+                      ? ''
+                      : (hr + 1) % 4 === 0 || (hr + 1) % 2 === 0
+                        ? 'border-b border-transparent'
+                        : ''
+                  }`}
+                >
+                  {i % 4 === 0 && (
+                    <div className="absolute -top-2 right-0 text-xs">
+                      <div className="flex-none text-xs">
+                        {hr / 4 === 12
+                          ? '12:00 PM'
+                          : hr / 4 === 24
+                            ? '12:00 AM'
+                            : hr / 4 < 12
+                              ? `${hr / 4}:00 ${locale === 'vi' ? 'SA' : 'AM'}`
+                              : `${hr / 4 - 12}:00 ${locale === 'vi' ? 'CH' : 'PM'}`}
+                      </div>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-          ))}
+              ))
+          );
+        })()}
       </div>
     </div>
   );

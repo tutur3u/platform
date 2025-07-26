@@ -5,6 +5,7 @@ import { useTimeBlocking } from './time-blocking-provider';
 import TimeColumn from './time-column';
 import { combineDateAndTimetzToLocal, timetzToHour } from '@/utils/date-helper';
 import type { Timeblock } from '@tuturuuu/types/primitives/Timeblock';
+import dayjs from 'dayjs';
 
 export default function DatePlanner({
   timeblocks,
@@ -33,11 +34,32 @@ export default function DatePlanner({
   if (!dates || !start || !end) return null;
 
   // Compute local start and end datetimes for each date
-  const localDateRanges = dates.map((date) => ({
+  let localDateRanges = dates.map((date) => ({
     date,
     localStart: combineDateAndTimetzToLocal(date, start),
     localEnd: combineDateAndTimetzToLocal(date, end),
   }));
+
+  // If the plan crosses midnight, add an extra date for the next day
+  if (startHour > endHour) {
+    localDateRanges = localDateRanges.flatMap(
+      ({ date, localStart, localEnd }) => {
+        const nextDay = dayjs(date).add(1, 'day').format('YYYY-MM-DD');
+        return [
+          {
+            date,
+            localStart,
+            localEnd: dayjs(localStart).hour(23).minute(59).second(59).toDate(),
+          },
+          {
+            date: nextDay,
+            localStart: dayjs(localEnd).hour(0).minute(0).second(0).toDate(),
+            localEnd,
+          },
+        ];
+      }
+    );
+  }
 
   return (
     <div

@@ -77,7 +77,11 @@ export function datesToTimeMatrix(dates?: Date[] | null): {
   };
 }
 
-export function durationToTimeblocks(dates: Date[]): Timeblock[] {
+export function durationToTimeblocks(
+  dates: Date[],
+  planStartTime?: string,
+  planEndTime?: string
+): Timeblock[] {
   if (dates.length != 2) return [];
   const timeblocks: Timeblock[] = [];
 
@@ -100,10 +104,31 @@ export function durationToTimeblocks(dates: Date[]): Timeblock[] {
     const startTime = dayjs(soonestTime);
     const endTime = dayjs(latestTime).add(15, 'minutes');
 
+    // Convert to plan timezone if plan timezone information is provided
+    let startTimeFormatted: string;
+    let endTimeFormatted: string;
+
+    if (planStartTime && planEndTime) {
+      // Convert local time to plan timezone
+      const { convertLocalToPlanTimezone } = require('./date-helper');
+      startTimeFormatted = convertLocalToPlanTimezone(
+        startTime.toDate(),
+        planStartTime
+      );
+      endTimeFormatted = convertLocalToPlanTimezone(
+        endTime.toDate(),
+        planEndTime
+      );
+    } else {
+      // Fallback to user's timezone (original behavior)
+      startTimeFormatted = startTime.format('HH:mm:ssZ');
+      endTimeFormatted = endTime.format('HH:mm:ssZ');
+    }
+
     timeblocks.push({
       date,
-      start_time: startTime.format('HH:mm:ssZ'),
-      end_time: endTime.format('HH:mm:ssZ'),
+      start_time: startTimeFormatted,
+      end_time: endTimeFormatted,
     });
 
     // Increment the date

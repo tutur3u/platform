@@ -46,16 +46,42 @@ export default function PreviewDayTime({
         )
       : serverTimeblocks;
 
-  const hourBlocks = Array.from(Array(Math.floor(end + 1 - start)).keys());
+  // Handle time ranges that cross midnight
+  let hourBlocks: number[];
+  if (end >= start) {
+    // Normal case: same day
+    hourBlocks = Array.from(Array(Math.floor(end + 1 - start)).keys());
+  } else {
+    // Crosses midnight: split into two parts
+    // Part 1: from start to 23 (end of day)
+    const part1 = Array.from(Array(24 - start)).keys();
+    // Part 2: from 0 to end (beginning of next day)
+    const part2 = Array.from(Array(end + 1)).keys();
+    hourBlocks = [...part1, ...part2];
+  }
+
   const hourSplits = 4;
 
   // Compute available user count for each slot
   const slotAvailableCounts: number[] = hourBlocks
-    .map((i) => (i + start) * hourSplits)
+    .map((i) => {
+      // Adjust hour calculation for midnight crossing
+      let adjustedHour = i + start;
+      if (adjustedHour >= 24) {
+        adjustedHour = adjustedHour - 24;
+      }
+      return adjustedHour * hourSplits;
+    })
     .flatMap((i) => Array(hourSplits).fill(i))
     .map((_, i) => {
+      // Calculate the actual hour for this slot
+      let actualHour = Math.floor(i / hourSplits) + start;
+      if (actualHour >= 24) {
+        actualHour = actualHour - 24;
+      }
+
       const currentDate = dayjs(date)
-        .hour(Math.floor(i / hourSplits) + start)
+        .hour(actualHour)
         .minute((i % hourSplits) * 15)
         .toDate();
       const userIds = timeblocks
@@ -95,21 +121,27 @@ export default function PreviewDayTime({
       const startTime = timetzToTime(tb.start_time);
       const endTime = timetzToTime(tb.end_time);
 
+      // Convert timeblock times to local hours and minutes
       const [startHour, startMinute] = startTime
         .split(':')
-        .map((v) => Number(v) - start);
+        .map((v) => Number(v));
+      const [endHour, endMinute] = endTime.split(':').map((v) => Number(v));
 
-      const [endHour, endMinute] = endTime
-        .split(':')
-        .map((v) => Number(v) - start);
+      // Calculate the current slot's hour
+      let slotHour = Math.floor(i / hourSplits) + start;
+      if (slotHour >= 24) {
+        slotHour = slotHour - 24;
+      }
 
-      const startBlock =
-        Math.floor((startHour ?? 0) * hourSplits + (startMinute ?? 0) / 15) + 1;
-      const endBlock = Math.floor(
-        (endHour ?? 0) * hourSplits + (endMinute ?? 0) / 15
+      // Check if the current slot is within the timeblock range
+      const currentSlotTime = slotHour * 60 + (i % hourSplits) * 15;
+      const timeblockStartTime = startHour * 60 + startMinute;
+      const timeblockEndTime = endHour * 60 + endMinute;
+
+      return (
+        currentSlotTime >= timeblockStartTime &&
+        currentSlotTime < timeblockEndTime
       );
-
-      return i >= startBlock && i <= endBlock;
     });
 
     if (tb) return tb.id !== undefined ? 'server' : 'local';
@@ -119,20 +151,36 @@ export default function PreviewDayTime({
   return (
     <div className="relative w-14 border border-b-0 border-foreground/50">
       {hourBlocks
-        .map((i) => (i + start) * hourSplits)
+        .map((i) => {
+          // Adjust hour calculation for midnight crossing
+          let adjustedHour = i + start;
+          if (adjustedHour >= 24) {
+            adjustedHour = adjustedHour - 24;
+          }
+          return adjustedHour * hourSplits;
+        })
         // duplicate each item `hourSplits` times
         .flatMap((i) => Array(hourSplits).fill(i))
         .map((_, i, array) => {
+          // Calculate the actual hour for this slot
+          let actualHour = Math.floor(i / hourSplits) + start;
+          if (actualHour >= 24) {
+            actualHour = actualHour - 24;
+          }
+
+          const currentDate = dayjs(date)
+            .hour(actualHour)
+            .minute((i % hourSplits) * 15)
+            .toDate();
+
+          // Only render if currentDate matches the column's date
+          if (dayjs(currentDate).format('YYYY-MM-DD') !== date) return null;
+
           const result = isTimeBlockSelected(i);
 
           const isDraft = result.includes('draft');
           const isSaved = result.includes('server');
           const isLocal = result.includes('local');
-
-          const currentDate = dayjs(date)
-            .hour(Math.floor(i / hourSplits) + start)
-            .minute((i % hourSplits) * 15)
-            .toDate();
 
           const isSelected = isSaved || isLocal || result.includes('add');
           const isSelectable = i + hourSplits < array.length;
