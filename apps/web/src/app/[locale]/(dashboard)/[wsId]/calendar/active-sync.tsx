@@ -63,11 +63,13 @@ export const CalendarActiveSyncDebugger = () => {
   return (
     <>
       <div className="flex items-center gap-2">
-        <Switch
-          checked={isDebuggingOpen}
-          onCheckedChange={setIsDebuggingOpen}
-        />
-        <span>Active Sync</span>
+        <label className="flex cursor-pointer items-center gap-2">
+          <Switch
+            checked={isDebuggingOpen}
+            onCheckedChange={setIsDebuggingOpen}
+          />
+          <span>Show Debugger</span>
+        </label>
       </div>
       {isDebuggingOpen && <InnerComponent />}
     </>
