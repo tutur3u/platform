@@ -33,8 +33,8 @@ export function ToolBar({
   editor,
   hasChanges,
   onSave,
-  saveButtonLabel = 'Save',
-  savedButtonLabel = 'Saved',
+  saveButtonLabel,
+  savedButtonLabel,
 }: ToolBarProps) {
   if (!editor) {
     return null;
@@ -230,17 +230,19 @@ export function ToolBar({
           </Toggle>
         ))}
       </div>
-      {hasChanges ? (
-        <Button variant="ghost" size="sm" onClick={onSave} className="ml-2">
-          <Save className="mr-2 size-4" />
-          {saveButtonLabel}
-        </Button>
-      ) : (
-        <Button variant="ghost" size="sm" disabled className="ml-2">
-          <Check className="mr-2 size-4" />
-          {savedButtonLabel}
-        </Button>
-      )}
+      {saveButtonLabel &&
+        savedButtonLabel &&
+        (hasChanges ? (
+          <Button variant="ghost" size="sm" onClick={onSave} className="ml-2">
+            <Save className="mr-2 size-4" />
+            {saveButtonLabel}
+          </Button>
+        ) : (
+          <Button variant="ghost" size="sm" disabled className="ml-2">
+            <Check className="mr-2 size-4" />
+            {savedButtonLabel}
+          </Button>
+        ))}
     </div>
   );
 }

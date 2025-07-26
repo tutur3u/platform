@@ -23,6 +23,9 @@ import { useForm } from '@tuturuuu/ui/hooks/use-form';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Input } from '@tuturuuu/ui/input';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
+import { Separator } from '@tuturuuu/ui/separator';
+import { RichTextEditor } from '@tuturuuu/ui/text-editor/editor';
+import type { JSONContent } from '@tuturuuu/ui/tiptap';
 import { cn } from '@tuturuuu/utils/format';
 import timezones from '@tuturuuu/utils/timezones';
 import dayjs from 'dayjs';
@@ -31,6 +34,7 @@ import utc from 'dayjs/plugin/utc';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { MapPin, Sparkles } from 'lucide-react';
 import * as z from 'zod';
 
 dayjs.extend(timezone);
@@ -83,14 +87,18 @@ interface Props {
 }
 
 const FormSchema = z.object({
-  name: z.string(),
+  name: z.string().min(1, { message: 'Name is required' }),
   // start_time and end_time are time with timezone offset
   start_time: z.string().optional(),
   end_time: z.string().optional(),
   dates: z.array(z.string()).optional(),
   is_public: z.boolean().optional(),
   ws_id: z.string().optional(),
+  agenda_content: z.custom<JSONContent>().optional(),
+  where_to_meet: z.boolean().optional(), // <-- Added field
 });
+
+type FormData = z.infer<typeof FormSchema>;
 
 export default function CreatePlanDialog({ plan }: Props) {
   const t = useTranslations('meet-together');
@@ -102,13 +110,15 @@ export default function CreatePlanDialog({ plan }: Props) {
     resolver: zodResolver(FormSchema),
     values: {
       name: t('untitled_plan'),
-      start_time: convertToTimetz(plan.startTime, plan.timezone?.offset),
-      end_time: convertToTimetz(plan.endTime, plan.timezone?.offset),
+      start_time: convertToTimetz(plan.startTime, plan.timezone?.offset) || undefined,
+      end_time: convertToTimetz(plan.endTime, plan.timezone?.offset) || undefined,
       dates: plan.dates
         ?.sort((a, b) => a.getTime() - b.getTime())
         ?.map((date) => dayjs(date).format('YYYY-MM-DD')),
       is_public: true,
       ...(plan.wsId && { ws_id: plan.wsId }),
+      agenda_content: undefined,
+      where_to_meet: false, // <-- Default value
     },
   });
 
@@ -116,9 +126,8 @@ export default function CreatePlanDialog({ plan }: Props) {
   const isSubmitting = form.formState.isSubmitting;
   const disabled = !isValid || isSubmitting;
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (data: FormData) => {
     setCreating(true);
-    const data = form.getValues();
     let hasError = false;
 
     if (!data.start_time) {
@@ -214,7 +223,7 @@ export default function CreatePlanDialog({ plan }: Props) {
           </div>
         </button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[800px]">
         <DialogHeader>
           <DialogTitle>{t('new_plan')}</DialogTitle>
           <DialogDescription>{t('new_plan_desc')}</DialogDescription>
@@ -237,6 +246,109 @@ export default function CreatePlanDialog({ plan }: Props) {
                 </FormItem>
               )}
             />
+
+            <Separator className="my-6" />
+
+            {/* Extra Features Section */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-purple-500" />
+                <h3 className="text-sm font-semibold text-foreground">
+                  Extra Features
+                </h3>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Enhance your meeting plan with additional features to make
+                coordination easier.
+              </p>
+
+              <FormField
+                control={form.control}
+                name="agenda_content"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('agenda')}</FormLabel>
+                    <FormControl>
+                      <RichTextEditor
+                        content={field.value || null}
+                        onChange={field.onChange}
+                        readOnly={false}
+                        titlePlaceholder={t('agenda_title_placeholder')}
+                        writePlaceholder={t('agenda_content_placeholder')}
+                        className="h-64"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Where-to-meet feature */}
+              <FormField
+                control={form.control}
+                name="where_to_meet"
+                render={({ field }) => (
+                  <FormItem>
+                    <div
+                      className="cursor-pointer rounded-lg border border-border bg-muted/30 p-4 transition-colors hover:bg-muted/50"
+                      onClick={() => field.onChange(!field.value)}
+                    >
+                      <div className="flex items-start space-x-3">
+                        <FormControl>
+                          <input
+                            type="checkbox"
+                            id="where_to_meet"
+                            checked={field.value}
+                            onChange={field.onChange}
+                            className="mt-1 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                          />
+                        </FormControl>
+                        <div className="flex-1 space-y-2">
+                          <div className="flex items-center gap-2">
+                            <MapPin className="h-4 w-4 text-blue-500" />
+                            <FormLabel
+                              htmlFor="where_to_meet"
+                              className="mb-0 cursor-pointer font-medium text-foreground"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              Where TuMeet?
+                            </FormLabel>
+                          </div>
+                          <p className="text-xs leading-relaxed text-muted-foreground">
+                            Enable location suggestions and voting. Participants
+                            can propose meeting locations and vote on their
+                            preferred spots, making it easier to find the
+                            perfect place for everyone.
+                          </p>
+                          <div className="flex items-center gap-1 text-xs text-blue-600">
+                            <span>✨ Popular feature</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Placeholder for future features */}
+              <div className="rounded-lg border border-dashed border-border/50 bg-muted/20 p-4">
+                <div className="flex items-center justify-center text-center">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-center gap-2 text-muted-foreground">
+                      <Sparkles className="h-4 w-4" />
+                      <span className="text-sm font-medium">
+                        More features coming soon!
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      We&apos;re working on additional features to make your
+                      meetings even better.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
 
             <DialogFooter className="pt-4">
               <Button

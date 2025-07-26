@@ -231,7 +231,6 @@ export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
 
   const debugLog = (message: string) => {
     if (process.env.NODE_ENV === 'development') {
-      // eslint-disable-next-line no-console
       console.debug(`DragEnd: ${message}`);
     }
   };
@@ -304,7 +303,6 @@ export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
         } catch (error) {
           queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
           if (process.env.NODE_ENV === 'development') {
-            // eslint-disable-next-line no-console
             console.error('Failed to move task:', error);
           }
         }
