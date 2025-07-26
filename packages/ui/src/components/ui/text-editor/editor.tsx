@@ -13,21 +13,11 @@ import StarterKit from '@tiptap/starter-kit';
 import { debounce } from 'lodash';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
-const isContentEmpty = (content: JSONContent) => {
-  if (!content || !content.content) return true;
-
-  if (content.content.length === 0) return true;
-
-  if (content.content.length === 1) {
-    const firstNode = content.content[0];
-    if (
-      firstNode?.type === 'paragraph' &&
-      (!firstNode.content || firstNode.content.length === 0)
-    ) {
-      return true;
-    }
+const hasTextContent = (node: JSONContent): boolean => {
+  if (node.text && node.text.trim().length > 0) return true;
+  if (node.content) {
+    return node.content.some((child: JSONContent) => hasTextContent(child));
   }
-
   return false;
 };
 
@@ -57,7 +47,7 @@ export function RichTextEditor({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const debouncedOnChange = useCallback(
     debounce((newContent: JSONContent) => {
-      onChange?.(isContentEmpty(newContent) ? null : newContent);
+      onChange?.(hasTextContent(newContent) ? newContent : null);
       setHasChanges(false);
     }, 500),
     [onChange]
