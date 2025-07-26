@@ -11,20 +11,21 @@ import {
 } from './select';
 import { cn } from '@tuturuuu/utils/format';
 import { format } from 'date-fns';
+import dayjs from 'dayjs';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import * as React from 'react';
 import { DayPicker } from 'react-day-picker';
 
 export type CalendarProps = React.ComponentProps<typeof DayPicker> & {
-  // eslint-disable-next-line no-unused-vars
   onSubmit?: (date: Date) => void;
+  minDate?: Date;
 };
 
 function Calendar({
   className,
   classNames,
-  showOutsideDays = true,
   onSubmit,
+  minDate,
   ...props
 }: CalendarProps) {
   const defaultMonth = props.defaultMonth || new Date();
@@ -48,13 +49,37 @@ function Calendar({
   const isCurrentMonth =
     month.getMonth() === new Date().getMonth() && isCurrentYear;
 
+  // Helper functions for minDate logic
+  const isPreviousMonthDisabled = () => {
+    if (!minDate) return false;
+    const prevMonth = new Date(month);
+    prevMonth.setMonth(prevMonth.getMonth() - 1);
+    return dayjs(prevMonth).isBefore(dayjs(minDate).startOf('month'));
+  };
+
+  const isYearDisabled = (year: number) => {
+    if (!minDate) return false;
+    return year < minDate.getFullYear();
+  };
+
+  const isMonthDisabled = (monthIndex: number) => {
+    if (!minDate) return false;
+    const selectedYear = month.getFullYear();
+    const minYear = minDate.getFullYear();
+    const minMonth = minDate.getMonth();
+
+    if (selectedYear < minYear) return true;
+    if (selectedYear > minYear) return false;
+    return monthIndex < minMonth;
+  };
+
   return (
     <div className="space-y-4">
       {props.mode === 'single' && (
         <div className="flex items-center justify-center border-b p-2">
           <DateInput
             value={props.selected as Date}
-            // biome-ignore lint/suspicious/noExplicitAny: <onSelect can be anything>
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             onChange={props.onSelect as any}
             onSubmit={onSubmit}
           />
@@ -76,6 +101,7 @@ function Calendar({
               className?.includes('bg-background/50') &&
                 'bg-background/50 hover:bg-background/80'
             )}
+            disabled={isPreviousMonthDisabled()}
           >
             <ChevronLeft className="h-4 w-4" />
           </button>
@@ -112,6 +138,7 @@ function Calendar({
                   <SelectItem
                     key={year.value}
                     value={year.value}
+                    disabled={isYearDisabled(parseInt(year.value))}
                     className={cn(
                       'transition-colors',
                       parseInt(year.value) === currentYear &&
@@ -147,6 +174,7 @@ function Calendar({
                   <SelectItem
                     key={month.value}
                     value={month.value}
+                    disabled={isMonthDisabled(parseInt(month.value))}
                     className="capitalize"
                   >
                     {month.label}
@@ -217,6 +245,7 @@ function Calendar({
             month_grid: 'w-full',
             ...classNames,
           }}
+          disabled={minDate ? { before: minDate } : undefined}
         />
       </div>
     </div>
