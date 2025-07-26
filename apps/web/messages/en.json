@@ -580,6 +580,10 @@
     "dates": "dates",
     "time_range": "Time range",
     "loading_plans": "Loading your plans...",
+    "agenda_title_placeholder": "Meeting Agenda",
+    "agenda_content_placeholder": "Add agenda items, discussion points, and meeting objectives...",
+    "agenda": "Agenda",
+    "agenda_description": "All of main discussion points, and what we'll be discussing.",
     "no-timezone-found": "No timezones found"
   },
   "meet-together-plan-details": {
@@ -3819,6 +3823,20 @@
     "more_options": "more options",
     "created_by": "by",
     "filter": "Filter",
-    "sort": "Sort"
+    "sort": "Sort",
+    "select_options": "Select options to vote",
+    "create_new_option": "Add your own option...",
+    "add": "Add",
+    "confirm": "Confirm",
+    "cancel": "Cancel",
+    "voted_for": "You voted for",
+    "vote_again": "Vote again",
+    "vote_for": "Vote for",
+    "vote_confirm": "Are you sure you want to submit your vote for these options?",
+    "delete_option": "Delete Option",
+    "delete_option_confirm": "Are you sure you want to delete this option? This action cannot be undone.",
+    "delete": "Delete",
+    "enable_where_poll_desc": "You can enable 'Where to meet' voting for your plan.",
+    "enable_where_poll": "Enable 'Where to meet' voting"
   }
 }

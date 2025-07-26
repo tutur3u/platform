@@ -123,7 +123,10 @@ export function TaskEditDialog({
       };
 
       // Always include tags to allow clearing
-      taskUpdates.tags = tags;
+      taskUpdates.tags = tags.filter((tag) => tag && tag.trim() !== '');
+      if (taskUpdates.tags.length === 0) {
+        taskUpdates.tags = undefined;
+      }
 
       await updateTask(supabase, task.id, taskUpdates);
 
