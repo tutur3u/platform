@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 const TIMEZONE_INDICATOR_KEY = 'tumeet_timezone_indicator_visible';
 
@@ -20,4 +20,4 @@ export function useTimezonePreference() {
   };
 
   return [isVisible, setVisible] as const;
-} 
+}

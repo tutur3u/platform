@@ -31,10 +31,10 @@ import timezones from '@tuturuuu/utils/timezones';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
+import { MapPin, Sparkles } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { MapPin, Sparkles } from 'lucide-react';
 import * as z from 'zod';
 
 dayjs.extend(timezone);
@@ -46,19 +46,19 @@ const convertToTimetz = (
   utcOffset: number | undefined
 ) => {
   if (!time || utcOffset === undefined) return undefined;
-  
+
   // Convert time number to HH:MM:SS format
   const hours = Math.floor(time);
   const minutes = Math.round((time - hours) * 60);
   const timeStr = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:00`;
-  
+
   // Find the proper timezone name for this offset
-  const matchingTimezones = timezones.filter(tz => tz.offset === utcOffset);
+  const matchingTimezones = timezones.filter((tz) => tz.offset === utcOffset);
   let timezoneName = 'UTC'; // fallback
-  
+
   if (matchingTimezones.length > 0) {
     // Prefer non-DST timezones first
-    const nonDstTimezone = matchingTimezones.find(tz => !tz.isdst);
+    const nonDstTimezone = matchingTimezones.find((tz) => !tz.isdst);
     if (nonDstTimezone && nonDstTimezone.utc && nonDstTimezone.utc.length > 0) {
       timezoneName = nonDstTimezone.utc[0];
     } else {
@@ -69,10 +69,13 @@ const convertToTimetz = (
       }
     }
   }
-  
+
   // Create proper timezone offset format for PostgreSQL
-  const offsetStr = utcOffset < 0 ? `-${Math.abs(utcOffset).toString().padStart(2, '0')}` : `+${utcOffset.toString().padStart(2, '0')}`;
-  
+  const offsetStr =
+    utcOffset < 0
+      ? `-${Math.abs(utcOffset).toString().padStart(2, '0')}`
+      : `+${utcOffset.toString().padStart(2, '0')}`;
+
   return `${timeStr}${offsetStr}`;
 };
 
@@ -110,8 +113,10 @@ export default function CreatePlanDialog({ plan }: Props) {
     resolver: zodResolver(FormSchema),
     values: {
       name: t('untitled_plan'),
-      start_time: convertToTimetz(plan.startTime, plan.timezone?.offset) || undefined,
-      end_time: convertToTimetz(plan.endTime, plan.timezone?.offset) || undefined,
+      start_time:
+        convertToTimetz(plan.startTime, plan.timezone?.offset) || undefined,
+      end_time:
+        convertToTimetz(plan.endTime, plan.timezone?.offset) || undefined,
       dates: plan.dates
         ?.sort((a, b) => a.getTime() - b.getTime())
         ?.map((date) => dayjs(date).format('YYYY-MM-DD')),
@@ -177,7 +182,9 @@ export default function CreatePlanDialog({ plan }: Props) {
       router.push(`/meet-together/plans/${normalizedId}`);
       router.refresh();
     } else {
-      const errorData = await res.json().catch(() => ({ message: 'Unknown error' }));
+      const errorData = await res
+        .json()
+        .catch(() => ({ message: 'Unknown error' }));
       console.error('Plan creation failed:', errorData);
       setCreating(false);
       toast({

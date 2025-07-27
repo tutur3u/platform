@@ -27,7 +27,7 @@ export async function POST(req: Request) {
 
   const data = await req.json();
   console.log('Creating plan with data:', data);
-  
+
   const supabase = await createClient();
 
   const {

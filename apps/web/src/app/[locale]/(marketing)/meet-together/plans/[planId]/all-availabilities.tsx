@@ -1,9 +1,9 @@
 'use client';
 
 import DatePlanner from './date-planner';
+import { useTimeBlocking } from './time-blocking-provider';
 import TimezoneIndicator from './timezone-indicator';
 import TimezoneToggle from './timezone-toggle';
-import { useTimeBlocking } from './time-blocking-provider';
 import type { MeetTogetherPlan } from '@tuturuuu/types/primitives/MeetTogetherPlan';
 import type { Timeblock } from '@tuturuuu/types/primitives/Timeblock';
 import { useTranslations } from 'next-intl';
@@ -42,16 +42,16 @@ export default function AllAvailabilities({
     <div className="flex flex-col gap-2 text-center">
       {/* Existing UI */}
       <div className="font-semibold">{t('everyone_availability')}</div>
-      
+
       {/* Timezone Indicator */}
       <TimezoneIndicator plan={plan} />
-      
+
       {/* Timezone Toggle */}
-      <TimezoneToggle 
-        showLocalTime={showLocalTime} 
-        onToggle={setShowLocalTime} 
+      <TimezoneToggle
+        showLocalTime={showLocalTime}
+        onToggle={setShowLocalTime}
       />
-      
+
       <div className="flex items-center justify-center gap-2 text-sm">
         <div>
           0/{totalUserCount} {t('available')}
@@ -59,7 +59,7 @@ export default function AllAvailabilities({
         <div className="flex h-4 w-32 border border-foreground/50">
           {Array.from({ length: totalUserCount + 1 }, (_, i) => ({
             id: `availability-bar-${i}`,
-            index: i
+            index: i,
           })).map(({ id, index }) => (
             <div
               key={id}

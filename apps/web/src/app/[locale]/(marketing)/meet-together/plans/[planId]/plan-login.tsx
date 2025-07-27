@@ -178,10 +178,7 @@ export default function PlanLogin({
       }}
     >
       <DialogTrigger asChild={!!user || !!platformUser}>
-        <AvailabilityPlanner
-          plan={plan}
-          timeblocks={timeblocks}
-        />
+        <AvailabilityPlanner plan={plan} timeblocks={timeblocks} />
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
