@@ -177,7 +177,6 @@ export const BoardColumn = React.memo(function BoardColumn({
 
   // Filter and sort tasks for this column
   const filteredAndSortedTasks = useMemo(() => {
-    
     const filtered = tasks.filter((task) => {
       // Search filter
       if (filters.search) {
