@@ -268,8 +268,8 @@ export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
         debugLog('Invalid drop type, state reset.');
         return;
       }
-      const originalListId =
-        event.active.data?.current?.task?.list_id || pickedUpTaskColumn.current;
+      // Get the original list ID from the active task data
+      const originalListId = event.active.data?.current?.task?.list_id;
       if (!originalListId) {
         debugLog('No originalListId, state reset.');
         return;
@@ -286,26 +286,10 @@ export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
       }
       // Only move if actually changing lists
       if (targetListId !== originalListId) {
-        try {
-          queryClient.setQueryData(
-            ['tasks', boardId],
-            (oldData: Task[] | undefined) => {
-              if (!oldData) return oldData;
-              return oldData.map((t) =>
-                t.id === activeTask.id ? { ...t, list_id: targetListId } : t
-              );
-            }
-          );
-          moveTaskMutation.mutate({
-            taskId: activeTask.id,
-            newListId: targetListId,
-          });
-        } catch (error) {
-          queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
-          if (process.env.NODE_ENV === 'development') {
-            console.error('Failed to move task:', error);
-          }
-        }
+        moveTaskMutation.mutate({
+          taskId: activeTask.id,
+          newListId: targetListId,
+        });
       }
     }
   }
@@ -406,16 +390,19 @@ export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
                     if (statusA !== statusB) return statusA - statusB;
                     return (a.position || 0) - (b.position || 0);
                   })
-                  .map((column) => (
-                    <BoardColumn
-                      key={column.id}
-                      column={column}
-                      boardId={boardId}
-                      tasks={tasks.filter((task) => task.list_id === column.id)}
-                      onTaskCreated={handleTaskCreated}
-                      onListUpdated={handleTaskCreated}
-                    />
-                  ))}
+                          .map((column) => {
+          const columnTasks = tasks.filter((task) => task.list_id === column.id);
+          return (
+                      <BoardColumn
+                        key={column.id}
+                        column={column}
+                        boardId={boardId}
+                        tasks={columnTasks}
+                        onTaskCreated={handleTaskCreated}
+                        onListUpdated={handleTaskCreated}
+                      />
+                    );
+                  })}
                 <TaskListForm
                   boardId={boardId}
                   onListCreated={handleTaskCreated}
