@@ -1,5 +1,6 @@
 'use client';
 
+import { useTimeBlocking } from './time-blocking-provider';
 import type { MeetTogetherPlan } from '@tuturuuu/types/primitives/MeetTogetherPlan';
 import { Button } from '@tuturuuu/ui/button';
 import { ClipboardList, Pencil, Plus } from '@tuturuuu/ui/icons';
@@ -16,7 +17,7 @@ interface AgendaDetailsProps {
 export default function AgendaDetails({ plan }: AgendaDetailsProps) {
   const t = useTranslations('meet-together');
   const router = useRouter();
-
+  const { user } = useTimeBlocking();
   const [editContent, setEditContent] = useState<JSONContent | null>(
     plan.agenda_content || null
   );
@@ -87,17 +88,19 @@ export default function AgendaDetails({ plan }: AgendaDetailsProps) {
               {isLoading ? 'Saving...' : 'Save'}
             </Button>
           </div>
-        ) : plan.agenda_content ? (
-          <Button onClick={handleEdit} variant="outline" size="lg">
-            <Pencil size={16} />
-            Edit
-          </Button>
-        ) : (
-          <Button onClick={handleEdit} variant="default" size="lg">
-            <Plus size={16} />
-            Add Agenda
-          </Button>
-        )}
+        ) : user ? (
+          plan.agenda_content ? (
+            <Button onClick={handleEdit} variant="outline" size="lg">
+              <Pencil size={16} />
+              Edit
+            </Button>
+          ) : (
+            <Button onClick={handleEdit} variant="default" size="lg">
+              <Plus size={16} />
+              Add Agenda
+            </Button>
+          )
+        ) : null}
       </div>
 
       {plan.agenda_content || isEditing ? (
