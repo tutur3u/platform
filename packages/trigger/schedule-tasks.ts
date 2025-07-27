@@ -5,7 +5,7 @@ import { schedules, task } from '@trigger.dev/sdk/v3';
 export const scheduleTasksTrigger = schedules.task({
   id: 'schedule-tasks',
   cron: {
-    pattern: '15 * * * *',
+    pattern: '* * * * *',
   },
   run: async () => {
     console.log('=== Starting schedule tasks trigger ===');
@@ -19,14 +19,16 @@ export const scheduleTasksTrigger = schedules.task({
         `Found ${workspaces.length} workspaces to sync incrementally`
       );
 
+      let result = { success: true, error: null };
+
       for (const workspace of workspaces) {
         const ws_id = workspace.ws_id;
         console.log(`Processing workspace: ${ws_id}`);
-        const result = await schedulableTasksHelper(ws_id);
-      }
+        result = await schedulableTasksHelper(ws_id);
 
-      if (!result.success) {
-        throw new Error(result.error || 'Schedule tasks failed');
+        if (!result.success) {
+          throw new Error(result.error || 'Schedule tasks failed');
+        }
       }
 
       console.log('=== Schedule tasks completed ===');
