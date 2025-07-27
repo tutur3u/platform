@@ -16,7 +16,7 @@ export async function GET() {
   const { data, error } = await supabase
     .from('calendar_sync_dashboard')
     .select(
-      'id, start_time, type, ws_id, triggered_by, status, end_time, inserted_events, updated_events, deleted_events'
+      'id, start_time, type, ws_id, triggered_by, status, end_time, inserted_events, updated_events, deleted_events, workspaces!inner(id, name), users(id, display_name, avatar_url)'
     )
     .order('start_time', { ascending: true });
 
@@ -26,35 +26,14 @@ export async function GET() {
       { status: 500 }
     );
 
-  // Fetch all required data in batch
-  const workspaceIds = [...new Set(data.map((item) => item.ws_id))];
-  const userIds = [
-    ...new Set(data.map((item) => item.triggered_by).filter(Boolean)),
-  ];
-
-  const [workspacesData, usersData] = await Promise.all([
-    supabase.from('workspaces').select('id, name').in('id', workspaceIds),
-    userIds.length > 0
-      ? supabase
-          .from('users')
-          .select('id, display_name, avatar_url')
-          .in('id', userIds as string[])
-      : Promise.resolve({ data: [] }),
-  ]);
-
-  const workspacesMap = new Map(
-    workspacesData.data?.map((w) => [w.id, w]) || []
-  );
-  const usersMap = new Map(usersData.data?.map((u) => [u.id, u]) || []);
-
   const processedData = data.map((item) => {
-    const workspace = workspacesMap.get(item.ws_id) || {
+    const workspace = item.workspaces || {
       id: item.ws_id,
       name: `Workspace ${item.ws_id}`,
       color: 'bg-blue-500',
     };
 
-    const userData = item.triggered_by ? usersMap.get(item.triggered_by) : null;
+    const userData = item.users;
     const triggeredBy = userData
       ? {
           id: userData.id,
