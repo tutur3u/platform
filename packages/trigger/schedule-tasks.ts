@@ -5,7 +5,7 @@ import { schedules, task } from '@trigger.dev/sdk/v3';
 export const scheduleTask = task({
   id: 'schedule-task',
   queue: {
-    concurrencyLimit: 1,
+    concurrencyLimit: 10,
   },
   run: async (payload: { ws_id: string }) => {
     try {
