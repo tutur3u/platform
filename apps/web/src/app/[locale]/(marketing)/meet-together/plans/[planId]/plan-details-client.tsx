@@ -199,7 +199,7 @@ export default function PlanDetailsClient({
 
           <Separator className="my-8" />
 
-          <AgendaDetails plan={plan} />
+          <AgendaDetails plan={plan} platformUser={platformUser} />
         </div>
       </div>
       {users.length > 0 && (
