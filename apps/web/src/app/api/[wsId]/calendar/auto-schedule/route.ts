@@ -7,7 +7,6 @@ import { defaultActiveHours } from '@tuturuuu/ai/scheduling/default';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type dayjs from 'dayjs';
-import { headers } from 'next/headers';
 import { type NextRequest, NextResponse } from 'next/server';
 
 export interface DateRange {
