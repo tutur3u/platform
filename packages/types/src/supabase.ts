@@ -766,45 +766,45 @@ export type Database = {
       };
       calendar_sync_dashboard: {
         Row: {
+          deleted_events: number | null;
           end_time: string | null;
-          events_deleted: number | null;
-          events_inserted: number | null;
-          events_updated: number | null;
           id: string;
+          inserted_events: number | null;
           source: string | null;
           start_time: string | null;
           status: string | null;
           time: string;
           triggered_by: string | null;
           type: string | null;
+          updated_events: number | null;
           ws_id: string;
         };
         Insert: {
+          deleted_events?: number | null;
           end_time?: string | null;
-          events_deleted?: number | null;
-          events_inserted?: number | null;
-          events_updated?: number | null;
           id?: string;
+          inserted_events?: number | null;
           source?: string | null;
           start_time?: string | null;
           status?: string | null;
           time?: string;
           triggered_by?: string | null;
           type?: string | null;
+          updated_events?: number | null;
           ws_id: string;
         };
         Update: {
+          deleted_events?: number | null;
           end_time?: string | null;
-          events_deleted?: number | null;
-          events_inserted?: number | null;
-          events_updated?: number | null;
           id?: string;
+          inserted_events?: number | null;
           source?: string | null;
           start_time?: string | null;
           status?: string | null;
           time?: string;
           triggered_by?: string | null;
           type?: string | null;
+          updated_events?: number | null;
           ws_id?: string;
         };
         Relationships: [

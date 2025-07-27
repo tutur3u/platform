@@ -16,7 +16,7 @@ export async function GET() {
   const { data, error } = await supabase
     .from('calendar_sync_dashboard')
     .select(
-      'id, start_time, type, ws_id, triggered_by, status, end_time, events_inserted, events_updated, events_deleted'
+      'id, start_time, type, ws_id, triggered_by, status, end_time, inserted_events, updated_events, deleted_events'
     )
     .order('start_time', { ascending: true });
 
@@ -81,9 +81,9 @@ export async function GET() {
       status: item.status || 'completed',
       duration: duration,
       events: {
-        added: item.events_inserted || 0,
-        updated: item.events_updated || 0,
-        deleted: item.events_deleted || 0,
+        added: item.inserted_events || 0,
+        updated: item.updated_events || 0,
+        deleted: item.deleted_events || 0,
       },
       calendarSource: 'Google Calendar',
       error: null,

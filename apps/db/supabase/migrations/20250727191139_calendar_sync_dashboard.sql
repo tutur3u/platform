@@ -8,9 +8,9 @@ create table "public"."calendar_sync_dashboard" (
     "type" text check (type in ('active', 'manual', 'background')),
     "source" text,
     "status" text check (status in ('completed', 'failed', 'running')),
-    "events_inserted" integer default 0,
-    "events_updated" integer default 0,
-    "events_deleted" integer default 0
+    "inserted_events" integer default 0,
+    "updated_events" integer default 0,
+    "deleted_events" integer default 0
 );
 
 alter table "public"."calendar_sync_dashboard" enable row level security;

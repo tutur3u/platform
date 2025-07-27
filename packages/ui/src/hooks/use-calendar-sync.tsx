@@ -375,9 +375,9 @@ export const CalendarSyncProvider = ({
         // Log the start of the sync
         let syncRecord: {
           end_time: string | null;
-          events_deleted: number | null;
-          events_inserted: number | null;
-          events_updated: number | null;
+          deleted_events: number | null;
+          inserted_events: number | null;
+          updated_events: number | null;
           id: string;
           source: string | null;
           start_time: string | null;
@@ -400,9 +400,9 @@ export const CalendarSyncProvider = ({
               triggered_by: authUser?.id,
               type: 'active',
               status: 'running',
-              events_inserted: 0,
-              events_updated: 0,
-              events_deleted: 0,
+              inserted_events: 0,
+              updated_events: 0,
+              deleted_events: 0,
             })
             .select()
             .single();
@@ -586,9 +586,9 @@ export const CalendarSyncProvider = ({
             .update({
               status: 'completed',
               end_time: new Date().toISOString(),
-              events_inserted: numInserted,
-              events_updated: numUpdated,
-              events_deleted: numDeleted,
+              inserted_events: numInserted,
+              updated_events: numUpdated,
+              deleted_events: numDeleted,
             })
             .eq('id', syncRecord.id);
         }
