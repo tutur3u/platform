@@ -2,6 +2,7 @@
 
 import { useTimeBlocking } from './time-blocking-provider';
 import type { MeetTogetherPlan } from '@tuturuuu/types/primitives/MeetTogetherPlan';
+import type { User } from '@tuturuuu/types/primitives/User';
 import { Button } from '@tuturuuu/ui/button';
 import { ClipboardList, Pencil, Plus } from '@tuturuuu/ui/icons';
 import { RichTextEditor } from '@tuturuuu/ui/text-editor/editor';
@@ -12,9 +13,13 @@ import { useCallback, useState } from 'react';
 
 interface AgendaDetailsProps {
   plan: MeetTogetherPlan;
+  platformUser: User | null;
 }
 
-export default function AgendaDetails({ plan }: AgendaDetailsProps) {
+export default function AgendaDetails({
+  plan,
+  platformUser,
+}: AgendaDetailsProps) {
   const t = useTranslations('meet-together');
   const router = useRouter();
   const { user } = useTimeBlocking();
@@ -65,6 +70,9 @@ export default function AgendaDetails({ plan }: AgendaDetailsProps) {
     setEditContent(content || null);
   }, []);
 
+  // Only allow platform users to edit (not guest users)
+  const canEdit = !!platformUser;
+
   return (
     <div className="w-full space-y-8">
       <div className="flex flex-col items-start justify-between gap-4 md:flex-row">
@@ -88,7 +96,7 @@ export default function AgendaDetails({ plan }: AgendaDetailsProps) {
               {isLoading ? 'Saving...' : 'Save'}
             </Button>
           </div>
-        ) : user ? (
+        ) : canEdit ? (
           plan.agenda_content ? (
             <Button onClick={handleEdit} variant="outline" size="lg">
               <Pencil size={16} />
