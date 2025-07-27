@@ -2,16 +2,14 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
-import { NextResponse } from 'next/server';
 import { parseTimeFromTimetz } from '@tuturuuu/utils/time-helper';
+import { NextResponse } from 'next/server';
 
 interface Params {
   params: Promise<{
     planId: string;
   }>;
 }
-
-
 
 export async function PUT(req: Request, { params }: Params) {
   const supabase = await createClient();
