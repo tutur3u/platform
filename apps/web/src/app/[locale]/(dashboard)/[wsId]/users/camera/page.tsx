@@ -149,7 +149,10 @@ async function getData(
     return getData(wsId, { q, pageSize, retry: false });
   }
 
-  return { data, count } as unknown as { data: WorkspaceCamera[]; count: number };
+  return { data, count } as unknown as {
+    data: WorkspaceCamera[];
+    count: number;
+  };
 }
 
 async function getCameraFields(wsId: string) {
