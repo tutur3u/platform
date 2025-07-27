@@ -169,6 +169,42 @@ export const CalendarSyncProvider = ({
     return rangeStart <= endOfToday && rangeEnd >= startOfToday;
   };
 
+  const getActiveSyncToken = async () => {
+    const supabase = createClient();
+    const { data: activeSyncToken, error: activeSyncTokenError } =
+      await supabase
+        .from('google_calendar_active_sync_token')
+        .select('*')
+        .eq('ws_id', wsId);
+
+    if (activeSyncTokenError) {
+      console.error(
+        `[${wsId}] Error fetching active sync token:`,
+        activeSyncTokenError.message
+      );
+    }
+
+    return activeSyncToken?.[0]?.sync_token || null;
+  };
+
+  const storeActiveSyncToken = async (syncToken: string) => {
+    const supabase = createClient();
+    const { error: storeActiveSyncTokenError } = await supabase
+      .from('google_calendar_active_sync_token')
+      .upsert({
+        ws_id: wsId,
+        sync_token: syncToken,
+        last_synced_at: new Date().toISOString(),
+      });
+
+    if (storeActiveSyncTokenError) {
+      console.error(
+        `[${wsId}] Error storing active sync token:`,
+        storeActiveSyncTokenError.message
+      );
+    }
+  };
+
   // Enhanced cache staleness check - shorter staleness for current week
   const isCacheStaleEnhanced = (lastUpdated: number, dateRange: Date[]) => {
     const isCurrentWeek = includesCurrentWeek(dateRange);
