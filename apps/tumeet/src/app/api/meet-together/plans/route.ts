@@ -3,6 +3,7 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
+import { parseTimeFromTimetz } from '@tuturuuu/utils/time-helper';
 
 export async function GET(_: Request) {
   const supabase = await createClient();
@@ -31,6 +32,23 @@ export async function POST(req: Request) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
+  // Backend validation: ensure end_time is after start_time
+  if (data.start_time && data.end_time) {
+    const startHour = parseTimeFromTimetz(data.start_time);
+    const endHour = parseTimeFromTimetz(data.end_time);
+
+    if (
+      startHour !== undefined &&
+      endHour !== undefined &&
+      endHour <= startHour
+    ) {
+      return NextResponse.json(
+        { message: 'End time must be after start time' },
+        { status: 400 }
+      );
+    }
+  }
 
   const { data: plan, error } = await sbAdmin
     .from('meet_together_plans')

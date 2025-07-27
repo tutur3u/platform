@@ -39,6 +39,7 @@ import { Pencil } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { Separator } from '@tuturuuu/ui/separator';
+import { parseTimeFromTimetz } from '@tuturuuu/utils/time-helper';
 import timezones from '@tuturuuu/utils/timezones';
 import dayjs from 'dayjs';
 import { useTranslations } from 'next-intl';
@@ -50,27 +51,33 @@ interface Props {
   plan: MeetTogetherPlan;
 }
 
-const FormSchema = z.object({
-  name: z.string(),
-  start_time: z.string().min(1, { message: 'Start time is required' }),
-  end_time: z.string().min(1, { message: 'End time is required' }),
-  dates: z
-    .array(z.string())
-    .min(1, { message: 'At least one date is required' }),
-  is_public: z.boolean().optional(),
-});
+const FormSchema = z
+  .object({
+    name: z.string(),
+    start_time: z.string().min(1, { message: 'Start time is required' }),
+    end_time: z.string().min(1, { message: 'End time is required' }),
+    dates: z
+      .array(z.string())
+      .min(1, { message: 'At least one date is required' }),
+    is_public: z.boolean().optional(),
+  })
+  .refine(
+    (data) => {
+      // Custom validation to ensure end_time is after start_time
+      if (!data.start_time || !data.end_time) return true; // Let individual field validation handle this
 
-// Utility function to parse time from timetz format (e.g., "09:00:00+00")
-const parseTimeFromTimetz = (
-  timetz: string | undefined
-): number | undefined => {
-  if (!timetz) return undefined;
-  const timePart = timetz.split(':')[0];
-  if (!timePart) return undefined;
-  const hour = parseInt(timePart, 10);
-  // Convert 0 to 24 for the TimeSelector component (which uses 1-24 format)
-  return hour === 0 ? 24 : hour;
-};
+      const startHour = parseTimeFromTimetz(data.start_time);
+      const endHour = parseTimeFromTimetz(data.end_time);
+
+      if (startHour === undefined || endHour === undefined) return true; // Let individual field validation handle this
+
+      return endHour > startHour;
+    },
+    {
+      message: 'End time must be after start time',
+      path: ['end_time'], // This will show the error on the end_time field
+    }
+  );
 
 // Utility function to parse timezone offset from timetz format (e.g., "09:00:00+00")
 const parseTimezoneFromTimetz = (
@@ -332,42 +339,62 @@ export default function EditPlanDialog({ plan }: Props) {
               {/* Time and Timezone Controls */}
               <div className="space-y-4">
                 <div className="grid w-full grid-cols-1 gap-4 md:grid-cols-2">
-                  <div className="grid gap-1">
-                    <FormLabel>
-                      {t('meet-together.soonest-time-to-meet')}
-                    </FormLabel>
-                    <TimeSelector
-                      value={currentStartTime}
-                      onValueChange={(newStartTime) => {
-                        form.setValue(
-                          'start_time',
-                          convertToTimetz(
-                            newStartTime,
-                            currentTimezone?.offset
-                          ) || ''
-                        );
-                      }}
-                      disabledTime={currentEndTime}
-                    />
-                  </div>
-                  <div className="grid gap-1">
-                    <FormLabel>
-                      {t('meet-together.latest-time-to-meet')}
-                    </FormLabel>
-                    <TimeSelector
-                      value={currentEndTime}
-                      onValueChange={(newEndTime) => {
-                        form.setValue(
-                          'end_time',
-                          convertToTimetz(
-                            newEndTime,
-                            currentTimezone?.offset
-                          ) || ''
-                        );
-                      }}
-                      disabledTime={currentStartTime}
-                    />
-                  </div>
+                  <FormField
+                    control={form.control}
+                    name="start_time"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>
+                          {t('meet-together.soonest-time-to-meet')}
+                        </FormLabel>
+                        <FormControl>
+                          <TimeSelector
+                            value={currentStartTime}
+                            onValueChange={(newStartTime) => {
+                              form.setValue(
+                                'start_time',
+                                convertToTimetz(
+                                  newStartTime,
+                                  currentTimezone?.offset
+                                ) || ''
+                              );
+                            }}
+                            disabledTime={currentEndTime}
+                            isStartTime={true}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="end_time"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>
+                          {t('meet-together.latest-time-to-meet')}
+                        </FormLabel>
+                        <FormControl>
+                          <TimeSelector
+                            value={currentEndTime}
+                            onValueChange={(newEndTime) => {
+                              form.setValue(
+                                'end_time',
+                                convertToTimetz(
+                                  newEndTime,
+                                  currentTimezone?.offset
+                                ) || ''
+                              );
+                            }}
+                            disabledTime={currentStartTime}
+                            isStartTime={false}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 </div>
                 <Separator className="my-2" />
                 <div className="grid w-full gap-1">
