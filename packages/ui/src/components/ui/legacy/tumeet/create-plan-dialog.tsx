@@ -204,6 +204,27 @@ export default function CreatePlanDialog({ plan }: Props) {
               )}
             />
 
+            <FormField
+              control={form.control}
+              name="agenda_content"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t('agenda')}</FormLabel>
+                  <FormControl>
+                    <RichTextEditor
+                      content={field.value || null}
+                      onChange={field.onChange}
+                      readOnly={false}
+                      titlePlaceholder={t('agenda_title_placeholder')}
+                      writePlaceholder={t('agenda_content_placeholder')}
+                      className="h-64"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             <Separator className="my-6" />
 
             {/* Extra Features Section */}
@@ -218,27 +239,6 @@ export default function CreatePlanDialog({ plan }: Props) {
                 Enhance your meeting plan with additional features to make
                 coordination easier.
               </p>
-
-              <FormField
-                control={form.control}
-                name="agenda_content"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t('agenda')}</FormLabel>
-                    <FormControl>
-                      <RichTextEditor
-                        content={field.value || null}
-                        onChange={field.onChange}
-                        readOnly={false}
-                        titlePlaceholder={t('agenda_title_placeholder')}
-                        writePlaceholder={t('agenda_content_placeholder')}
-                        className="h-64"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
 
               {/* Where-to-meet feature */}
               <FormField
