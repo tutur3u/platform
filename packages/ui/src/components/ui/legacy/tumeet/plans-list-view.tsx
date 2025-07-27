@@ -24,8 +24,6 @@ export function PlansListView({
   // biome-ignore lint/suspicious/noExplicitAny: <translations are not typed>
   t: any;
 }) {
-
-
   if (plans.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-16">
