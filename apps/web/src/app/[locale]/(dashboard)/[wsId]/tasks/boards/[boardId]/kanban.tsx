@@ -390,9 +390,11 @@ export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
                     if (statusA !== statusB) return statusA - statusB;
                     return (a.position || 0) - (b.position || 0);
                   })
-                          .map((column) => {
-          const columnTasks = tasks.filter((task) => task.list_id === column.id);
-          return (
+                  .map((column) => {
+                    const columnTasks = tasks.filter(
+                      (task) => task.list_id === column.id
+                    );
+                    return (
                       <BoardColumn
                         key={column.id}
                         column={column}
