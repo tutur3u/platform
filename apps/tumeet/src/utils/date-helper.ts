@@ -1,8 +1,7 @@
+import timezones from '@tuturuuu/utils/timezones';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
-
-import timezones from '@tuturuuu/utils/timezones';
 
 dayjs.extend(timezone);
 dayjs.extend(utc);
@@ -30,7 +29,7 @@ export function timetzToTime(timetz: string, dateStr?: string) {
     // Use current date if no date provided (for backward compatibility)
     const referenceDate = dateStr || dayjs().format('YYYY-MM-DD');
     const userTimezone = dayjs.tz.guess();
-    
+
     // Extract time and timezone offset
     const time = extractTime(timetz);
     const offset = extractTimezoneOffset(timetz);
@@ -47,18 +46,20 @@ export function timetzToTime(timetz: string, dateStr?: string) {
     // Check if the date has changed due to timezone conversion
     const originalDate = dayjs(referenceDate);
     const convertedDate = userDateTime.format('YYYY-MM-DD');
-    const isNextDay = convertedDate !== referenceDate && userDateTime.isAfter(originalDate);
-    const isPreviousDay = convertedDate !== referenceDate && userDateTime.isBefore(originalDate);
+    const isNextDay =
+      convertedDate !== referenceDate && userDateTime.isAfter(originalDate);
+    const isPreviousDay =
+      convertedDate !== referenceDate && userDateTime.isBefore(originalDate);
 
     // Return formatted time with date indicator if needed
     const timeStr = userDateTime.format('HH:mm');
-    
+
     if (isNextDay) {
       return `${timeStr} (next day)`;
     } else if (isPreviousDay) {
       return `${timeStr} (previous day)`;
     }
-    
+
     return timeStr;
   } catch (error) {
     console.error('Error converting timetz to time:', error);
@@ -75,7 +76,7 @@ export function timetzToTimeWithDate(timetz: string, dateStr?: string) {
     // Use current date if no date provided (for backward compatibility)
     const referenceDate = dateStr || dayjs().format('YYYY-MM-DD');
     const userTimezone = dayjs.tz.guess();
-    
+
     // Extract time and timezone offset
     const time = extractTime(timetz);
     const offset = extractTimezoneOffset(timetz);
@@ -92,8 +93,10 @@ export function timetzToTimeWithDate(timetz: string, dateStr?: string) {
     // Check if the date has changed due to timezone conversion
     const originalDate = dayjs(referenceDate);
     const convertedDate = userDateTime.format('YYYY-MM-DD');
-    const isNextDay = convertedDate !== referenceDate && userDateTime.isAfter(originalDate);
-    const isPreviousDay = convertedDate !== referenceDate && userDateTime.isBefore(originalDate);
+    const isNextDay =
+      convertedDate !== referenceDate && userDateTime.isAfter(originalDate);
+    const isPreviousDay =
+      convertedDate !== referenceDate && userDateTime.isBefore(originalDate);
 
     return {
       time: userDateTime.format('HH:mm'),
@@ -102,7 +105,7 @@ export function timetzToTimeWithDate(timetz: string, dateStr?: string) {
       isPreviousDay,
       originalDate: referenceDate,
       userTimezone,
-      planTimezone: timezoneName
+      planTimezone: timezoneName,
     };
   } catch (error) {
     console.error('Error converting timetz to time with date:', error);
@@ -113,24 +116,24 @@ export function timetzToTimeWithDate(timetz: string, dateStr?: string) {
 // Enhanced function to get proper timezone from offset using the comprehensive timezone database
 function getTimezoneFromOffset(offset: string): string {
   const offsetNum = parseInt(offset, 10);
-  
+
   // Find timezone entries that match this offset
-  const matchingTimezones = timezones.filter(tz => tz.offset === offsetNum);
-  
+  const matchingTimezones = timezones.filter((tz) => tz.offset === offsetNum);
+
   if (matchingTimezones.length > 0) {
     // Prefer non-DST timezones first, then take the first available
-    const nonDstTimezone = matchingTimezones.find(tz => !tz.isdst);
+    const nonDstTimezone = matchingTimezones.find((tz) => !tz.isdst);
     if (nonDstTimezone?.utc?.[0]) {
       return nonDstTimezone.utc[0]; // Return the first IANA timezone name
     }
-    
+
     // If no non-DST timezone found, use the first available
     const firstTimezone = matchingTimezones[0];
     if (firstTimezone?.utc?.[0]) {
       return firstTimezone.utc[0];
     }
   }
-  
+
   // Fallback to simple mapping for edge cases
   const offsetMap: Record<string, string> = {
     '+00': 'UTC',
@@ -203,7 +206,11 @@ export function timetzToHour(timetz?: string, dateStr?: string) {
   return parseInt(hourStr ?? '0');
 }
 
-export function compareTimetz(timetz1: string, timetz2: string, dateStr?: string) {
+export function compareTimetz(
+  timetz1: string,
+  timetz2: string,
+  dateStr?: string
+) {
   const time1 = timetzToTime(timetz1, dateStr);
   const time2 = timetzToTime(timetz2, dateStr);
   return time1.localeCompare(time2);
@@ -233,8 +240,14 @@ export function doesTimeSpanMidnight(
     const endOffset = extractTimezoneOffset(endTimetz);
 
     // Create start and end datetimes in plan timezone
-    const startDateTime = dayjs.tz(`${dateStr} ${startTime}`, getTimezoneFromOffset(startOffset));
-    const endDateTime = dayjs.tz(`${dateStr} ${endTime}`, getTimezoneFromOffset(endOffset));
+    const startDateTime = dayjs.tz(
+      `${dateStr} ${startTime}`,
+      getTimezoneFromOffset(startOffset)
+    );
+    const endDateTime = dayjs.tz(
+      `${dateStr} ${endTime}`,
+      getTimezoneFromOffset(endOffset)
+    );
 
     // Convert to user timezone
     const userStartDateTime = startDateTime.tz(userTimezone);
