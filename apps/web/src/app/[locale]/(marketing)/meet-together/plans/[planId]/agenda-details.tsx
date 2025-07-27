@@ -1,6 +1,5 @@
 'use client';
 
-import { useTimeBlocking } from './time-blocking-provider';
 import type { MeetTogetherPlan } from '@tuturuuu/types/primitives/MeetTogetherPlan';
 import type { User } from '@tuturuuu/types/primitives/User';
 import { Button } from '@tuturuuu/ui/button';
@@ -22,7 +21,6 @@ export default function AgendaDetails({
 }: AgendaDetailsProps) {
   const t = useTranslations('meet-together');
   const router = useRouter();
-  const { user } = useTimeBlocking();
   const [editContent, setEditContent] = useState<JSONContent | null>(
     plan.agenda_content || null
   );
