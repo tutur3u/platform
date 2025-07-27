@@ -39,7 +39,7 @@
     "@octokit/rest": "^22.0.0",
     "@tanstack/react-query": "^5.83.0",
     "@tanstack/react-table": "^8.21.3",
-    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/jest-dom": "^6.6.4",
     "@tiptap/html": "^3.0.7",
     "@tldraw/sync": "^3.14.2",
     "@trpc/client": "^11.4.3",
