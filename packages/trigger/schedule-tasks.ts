@@ -35,7 +35,7 @@ export const scheduleTask = task({
 export const scheduleTasksTrigger = schedules.task({
   id: 'schedule-tasks',
   cron: {
-    pattern: '* * * * *',
+    pattern: '*/5 * * * *',
   },
   run: async () => {
     console.log('=== Starting schedule tasks trigger ===');
