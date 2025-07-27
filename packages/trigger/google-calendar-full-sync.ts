@@ -1,6 +1,7 @@
 import {
   getGoogleAuthClient,
   getWorkspacesForSync,
+  storeActiveSyncToken,
   storeSyncToken,
   syncWorkspaceBatched,
 } from './google-calendar-sync';
@@ -43,6 +44,7 @@ export async function performFullSyncForWorkspace(
 
   if (syncToken) {
     await storeSyncToken(ws_id, syncToken, new Date());
+    await storeActiveSyncToken(ws_id, syncToken, new Date());
   }
 
   return events;
