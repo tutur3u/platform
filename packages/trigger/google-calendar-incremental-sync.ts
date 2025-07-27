@@ -65,7 +65,7 @@ export const googleCalendarIncrementalSync = task({
     ws_id: string;
     access_token: string;
     refresh_token: string;
-    calendarId?: string; // Optional, defaults to "primary"
+    calendarId?: string;
   }) => {
     console.log(`[${payload.ws_id}] Starting incremental sync task`);
 
