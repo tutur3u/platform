@@ -1,8 +1,8 @@
 'use client';
 
 import { TaskTagInput } from './task-tag-input';
-import { updateTask } from '@/lib/task-helper';
-import { useQuery } from '@tanstack/react-query';
+import { useUpdateTask, invalidateTaskCaches } from '@/lib/task-helper';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { Task, TaskList } from '@tuturuuu/types/primitives/TaskBoard';
 import { Button } from '@tuturuuu/ui/button';
@@ -71,6 +71,10 @@ export function TaskEditDialog({
 
   const params = useParams();
   const boardId = params.boardId as string;
+  const queryClient = useQueryClient();
+  
+  // Use the React Query mutation hook for updating tasks
+  const updateTaskMutation = useUpdateTask(boardId);
 
   // Fetch available task lists for the board (only if not provided as prop)
   const { data: availableLists = [] } = useQuery({
@@ -109,39 +113,56 @@ export function TaskEditDialog({
     if (!name.trim()) return;
 
     setIsLoading(true);
-    try {
-      const supabase = createClient();
+    
+    // Prepare task updates
+    const taskUpdates: Partial<Task> = {
+      name: name.trim(),
+      description: description.trim() || undefined,
+      priority: priority === '0' ? undefined : parseInt(priority),
+      start_date: startDate?.toISOString(),
+      end_date: endDate?.toISOString(),
+      list_id: selectedListId,
+    };
 
-      // Prepare task updates
-      const taskUpdates: Partial<Task> = {
-        name: name.trim(),
-        description: description.trim() || undefined,
-        priority: priority === '0' ? undefined : parseInt(priority),
-        start_date: startDate?.toISOString(),
-        end_date: endDate?.toISOString(),
-        list_id: selectedListId,
-      };
-
-      // Always include tags to allow clearing
-      taskUpdates.tags = tags.filter((tag) => tag && tag.trim() !== '');
-      if (taskUpdates.tags.length === 0) {
-        taskUpdates.tags = undefined;
-      }
-
-      await updateTask(supabase, task.id, taskUpdates);
-
-      onUpdate();
-      onClose();
-    } catch (error) {
-      console.error('Error updating task:', error);
-      toast({
-        title: 'Error updating task',
-        description: 'Please try again later',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsLoading(false);
+    // Always include tags to allow clearing
+    taskUpdates.tags = tags.filter((tag) => tag && tag.trim() !== '');
+    // Ensure tags is always an array, never undefined
+    if (taskUpdates.tags.length === 0) {
+      taskUpdates.tags = [];
     }
+    
+    // No debugging needed
+    
+    updateTaskMutation.mutate(
+      {
+        taskId: task.id,
+        updates: taskUpdates,
+      },
+      {
+        onSuccess: () => {
+          // Force cache invalidation
+          invalidateTaskCaches(queryClient, boardId);
+          
+          toast({
+            title: 'Task updated',
+            description: 'The task has been successfully updated.',
+          });
+          onUpdate();
+          onClose();
+        },
+        onError: (error) => {
+          console.error('Error updating task:', error);
+          toast({
+            title: 'Error updating task',
+            description: error.message || 'Please try again later',
+            variant: 'destructive',
+          });
+        },
+        onSettled: () => {
+          setIsLoading(false);
+        },
+      }
+    );
   };
 
   const handleClose = () => {

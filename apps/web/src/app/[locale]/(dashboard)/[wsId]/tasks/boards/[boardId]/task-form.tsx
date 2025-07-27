@@ -24,6 +24,7 @@ import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { Textarea } from '@tuturuuu/ui/textarea';
+import { useToast } from '@tuturuuu/ui/hooks/use-toast';
 import { cn } from '@tuturuuu/utils/format';
 import { format } from 'date-fns';
 import { useParams } from 'next/navigation';
@@ -35,9 +36,12 @@ interface Props {
 }
 
 export function TaskForm({ listId, onTaskCreated }: Props) {
+  const { toast } = useToast();
   const [isAdding, setIsAdding] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // No debugging needed
 
   // Form state
   const [name, setName] = useState('');
@@ -103,6 +107,8 @@ export function TaskForm({ listId, onTaskCreated }: Props) {
         taskData.tags = tags.filter((tag) => tag && tag.trim() !== '');
       }
 
+      console.log('Submitting task data:', { taskData, listId });
+
       const newTask = await createTask(supabase, listId, taskData);
 
       // Add assignees if any selected
@@ -121,10 +127,33 @@ export function TaskForm({ listId, onTaskCreated }: Props) {
       onTaskCreated();
     } catch (error) {
       console.error('Error creating task:', error);
-      // Show a more detailed error message
+      
+      // Enhanced error handling with better error messages
+      let errorMessage = 'Failed to create task';
+      
       if (error instanceof Error) {
+        errorMessage = error.message;
         console.error('Error details:', error.message);
+      } else if (typeof error === 'object' && error !== null) {
+        // Handle Supabase errors
+        const supabaseError = error as { message?: string; details?: string; hint?: string; code?: string };
+        if (supabaseError.message) {
+          errorMessage = supabaseError.message;
+        } else if (supabaseError.details) {
+          errorMessage = supabaseError.details;
+        } else if (supabaseError.hint) {
+          errorMessage = supabaseError.hint;
+        } else if (supabaseError.code) {
+          errorMessage = `Database error (${supabaseError.code}): ${supabaseError.message || 'Unknown database error'}`;
+        }
       }
+      
+      // Show user-friendly error message
+      toast({
+        title: 'Error creating task',
+        description: errorMessage,
+        variant: 'destructive',
+      });
     } finally {
       setIsSubmitting(false);
     }

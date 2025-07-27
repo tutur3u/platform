@@ -1,6 +1,8 @@
-import { useDeleteTask, useUpdateTask } from '@/lib/task-helper';
+import { TaskTagInput } from './_components/task-tag-input';
+import { useUpdateTask, useDeleteTask } from '@/lib/task-helper';
 import { useQuery } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
+import type { Task } from '@tuturuuu/types/primitives/TaskBoard';
 import { Button } from '@tuturuuu/ui/button';
 import { Calendar } from '@tuturuuu/ui/calendar';
 import {
@@ -18,11 +20,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
+import { useToast } from '@tuturuuu/ui/hooks/use-toast';
 import {
   AlertCircle,
   CalendarIcon,
   Clock,
-  Flag,
   Loader2,
   MoreHorizontal,
   Pencil,
@@ -32,19 +34,12 @@ import {
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@tuturuuu/ui/select';
 import { Separator } from '@tuturuuu/ui/separator';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
 import { addDays, format, isBefore, isToday, startOfToday } from 'date-fns';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 interface Props {
   taskId: string;
@@ -54,11 +49,12 @@ interface Props {
 
 export function TaskActions({ taskId, boardId, onUpdate }: Props) {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const { toast } = useToast();
 
   // Fetch the latest task data using React Query
-  const { data: task, isLoading: isTaskLoading } = useQuery({
+  const { data: task, isLoading: isTaskLoading } = useQuery<Task>({
     queryKey: ['task', taskId],
-    queryFn: async () => {
+    queryFn: async (): Promise<Task> => {
       const supabase = createClient();
       const { data, error } = await supabase
         .from('tasks')
@@ -80,9 +76,14 @@ export function TaskActions({ taskId, boardId, onUpdate }: Props) {
 
       if (error) throw error;
 
-      // Transform the nested assignees data
+      // Transform the nested assignees data and convert null to undefined for optional fields
       const transformedTask = {
         ...data,
+        description: data.description || undefined,
+        priority: data.priority || undefined,
+        start_date: data.start_date || undefined,
+        end_date: data.end_date || undefined,
+        tags: data.tags || undefined,
         assignees: data.assignees
           ?.map(
             (a: {
@@ -92,28 +93,33 @@ export function TaskActions({ taskId, boardId, onUpdate }: Props) {
                 avatar_url: string | null;
                 handle: string | null;
               };
-            }) => a.user
+            }) => ({
+              id: a.user.id,
+              display_name: a.user.display_name || undefined,
+              avatar_url: a.user.avatar_url || undefined,
+              handle: a.user.handle || undefined,
+            })
           )
           .filter(
             (
               user: {
                 id: string;
-                display_name: string | null;
-                avatar_url: string | null;
-                handle: string | null;
+                display_name?: string | undefined;
+                avatar_url?: string | undefined;
+                handle?: string | undefined;
               } | null,
               index: number,
               self: ({
                 id: string;
-                display_name: string | null;
-                avatar_url: string | null;
-                handle: string | null;
+                display_name?: string | undefined;
+                avatar_url?: string | undefined;
+                handle?: string | undefined;
               } | null)[]
             ) => user?.id && self.findIndex((u) => u?.id === user.id) === index
-          ),
+          ) || [],
       };
 
-      return transformedTask;
+      return transformedTask as Task;
     },
     enabled: !!taskId && isEditDialogOpen, // Only fetch when modal is open
     staleTime: 0, // Always fetch fresh data
@@ -126,11 +132,18 @@ export function TaskActions({ taskId, boardId, onUpdate }: Props) {
   const [newStartDate, setNewStartDate] = useState<Date | undefined>(undefined);
   const [newEndDate, setNewEndDate] = useState<Date | undefined>(undefined);
   const [newPriority, setNewPriority] = useState<string>('0');
+  const [newTags, setNewTags] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
 
   const updateTaskMutation = useUpdateTask(boardId);
   const deleteTaskMutation = useDeleteTask(boardId);
+
+  // Memoize the onChange handler to prevent stale closures
+  const handleTagsChange = useCallback((tags: string[]) => {
+    console.log('TaskActions: handleTagsChange called with:', tags);
+    setNewTags(tags);
+  }, []); // Remove newTags from dependencies to prevent recreation
 
   // Update local state when task data changes
   useEffect(() => {
@@ -140,6 +153,7 @@ export function TaskActions({ taskId, boardId, onUpdate }: Props) {
       setNewStartDate(task.start_date ? new Date(task.start_date) : undefined);
       setNewEndDate(task.end_date ? new Date(task.end_date) : undefined);
       setNewPriority(task.priority?.toString() || '0');
+      setNewTags(task.tags || []);
     }
   }, [task]);
 
@@ -154,23 +168,36 @@ export function TaskActions({ taskId, boardId, onUpdate }: Props) {
       (newEndDate?.toISOString() || null) !== task.end_date;
     const hasPriorityChange =
       newPriority !== (task.priority?.toString() || '0');
+    const hasTagsChange = JSON.stringify(newTags) !== JSON.stringify(task.tags || []);
 
     setHasChanges(
       hasNameChange ||
         hasDescriptionChange ||
         hasStartDateChange ||
         hasEndDateChange ||
-        hasPriorityChange
+        hasPriorityChange ||
+        hasTagsChange
     );
-  }, [newName, newDescription, newStartDate, newEndDate, newPriority, task]);
+  }, [newName, newDescription, newStartDate, newEndDate, newPriority, newTags, task]);
 
   async function handleDelete() {
     setIsLoading(true);
     deleteTaskMutation.mutate(taskId, {
       onSuccess: () => {
+        toast({
+          title: 'Task deleted',
+          description: 'The task has been successfully deleted.',
+        });
         setIsDeleteDialogOpen(false);
         onUpdate();
         setIsEditDialogOpen(false);
+      },
+      onError: (error) => {
+        toast({
+          title: 'Error deleting task',
+          description: error.message || 'Failed to delete the task. Please try again.',
+          variant: 'destructive',
+        });
       },
       onSettled: () => {
         setIsLoading(false);
@@ -191,12 +218,24 @@ export function TaskActions({ taskId, boardId, onUpdate }: Props) {
           start_date: newStartDate?.toISOString() ?? undefined,
           end_date: newEndDate?.toISOString() ?? undefined,
           priority: newPriority === '0' ? undefined : parseInt(newPriority),
+          tags: newTags.filter((tag) => tag && tag.trim() !== ''),
         },
       },
       {
         onSuccess: () => {
+          toast({
+            title: 'Task updated',
+            description: 'The task has been successfully updated.',
+          });
           onUpdate();
           setIsEditDialogOpen(false);
+        },
+        onError: (error) => {
+          toast({
+            title: 'Error updating task',
+            description: error.message || 'Failed to update the task. Please try again.',
+            variant: 'destructive',
+          });
         },
         onSettled: () => {
           setIsLoading(false);
@@ -213,6 +252,7 @@ export function TaskActions({ taskId, boardId, onUpdate }: Props) {
     setNewStartDate(task.start_date ? new Date(task.start_date) : undefined);
     setNewEndDate(task.end_date ? new Date(task.end_date) : undefined);
     setNewPriority(task.priority?.toString() || '0');
+    setNewTags(task.tags || []);
   }
 
   const today = startOfToday();
@@ -280,7 +320,7 @@ export function TaskActions({ taskId, boardId, onUpdate }: Props) {
           <DialogHeader>
             <DialogTitle>Delete Task</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete "{task.name}"? This action cannot
+              Are you sure you want to delete &quot;{task.name}&quot;? This action cannot
               be undone.
             </DialogDescription>
           </DialogHeader>
@@ -317,7 +357,7 @@ export function TaskActions({ taskId, boardId, onUpdate }: Props) {
           <DialogHeader>
             <DialogTitle>Edit Task</DialogTitle>
             <DialogDescription>
-              Make changes to your task here. Click save when you're done.
+              Make changes to your task here. Click save when you&apos;re done.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
@@ -347,60 +387,45 @@ export function TaskActions({ taskId, boardId, onUpdate }: Props) {
                 id="description"
                 value={newDescription}
                 onChange={(e) => setNewDescription(e.target.value)}
-                placeholder="Add a more detailed description"
-                className="min-h-[100px] resize-y"
+                placeholder="Enter task description"
+                className="resize-none"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label>Tags</Label>
+              <TaskTagInput
+                value={newTags}
+                onChange={handleTagsChange}
+                boardId={boardId}
+                placeholder="Add tags..."
+                maxTags={10}
               />
             </div>
             <div className="grid gap-2">
               <Label>Priority</Label>
-              <Select value={newPriority} onValueChange={setNewPriority}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select priority">
-                    {newPriority === '0' ? (
-                      'No priority'
-                    ) : (
-                      <div className="flex items-center gap-2">
-                        <Flag
-                          className={cn('h-3 w-3', {
-                            'fill-destructive stroke-destructive':
-                              newPriority === '1',
-                            'fill-yellow-500 stroke-yellow-500':
-                              newPriority === '2',
-                            'fill-green-500 stroke-green-500':
-                              newPriority === '3',
-                          })}
-                        />
-                        {newPriority === '1'
-                          ? 'P1 - High'
-                          : newPriority === '2'
-                            ? 'P2 - Medium'
-                            : 'P3 - Low'}
-                      </div>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { value: '0', label: 'None', color: 'bg-gray-100 text-gray-700' },
+                  { value: '1', label: 'Urgent', color: 'bg-red-100 text-red-700' },
+                  { value: '2', label: 'High', color: 'bg-orange-100 text-orange-700' },
+                  { value: '3', label: 'Medium', color: 'bg-yellow-100 text-yellow-700' },
+                  { value: '4', label: 'Low', color: 'bg-green-100 text-green-700' },
+                ].map(({ value, label, color }) => (
+                  <Button
+                    key={value}
+                    type="button"
+                    variant={newPriority === value ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setNewPriority(value)}
+                    className={cn(
+                      'h-8 px-3 text-xs',
+                      newPriority === value && color
                     )}
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="0">No priority</SelectItem>
-                  <SelectItem value="1">
-                    <div className="flex items-center gap-2">
-                      <Flag className="h-3 w-3 fill-destructive stroke-destructive" />
-                      P1 - High
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="2">
-                    <div className="flex items-center gap-2">
-                      <Flag className="h-3 w-3 fill-yellow-500 stroke-yellow-500" />
-                      P2 - Medium
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="3">
-                    <div className="flex items-center gap-2">
-                      <Flag className="h-3 w-3 fill-green-500 stroke-green-500" />
-                      P3 - Low
-                    </div>
-                  </SelectItem>
-                </SelectContent>
-              </Select>
+                  >
+                    {label}
+                  </Button>
+                ))}
+              </div>
             </div>
             <div className="grid gap-2">
               <Label>Start date</Label>

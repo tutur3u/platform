@@ -127,13 +127,148 @@ export async function createTask(
   listId: string,
   task: Partial<Task>
 ) {
+  // Validate required fields
+  if (!task.name || task.name.trim().length === 0) {
+    throw new Error('Task name is required');
+  }
+
+  if (!listId) {
+    throw new Error('List ID is required');
+  }
+
+  // First, check if user is authenticated
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError || !user) {
+    console.error('Authentication error:', authError);
+    throw new Error('User not authenticated');
+  }
+
+  console.log('User authenticated:', user.id);
+
+  // Then, verify that the list exists and user has access to it
+  console.log('Verifying list access for listId:', listId);
+  const { data: listCheck, error: listError } = await supabase
+    .from('task_lists')
+    .select('id, name')
+    .eq('id', listId)
+    .single();
+
+  if (listError) {
+    console.error('Error checking list access:', listError);
+    throw new Error(`List not found or access denied: ${listError.message || 'Unknown error'}`);
+  }
+
+  if (!listCheck) {
+    throw new Error('List not found');
+  }
+
+  console.log('List access verified:', listCheck);
+
+  // Debug: Log the incoming task object to see what properties it has
+  console.log('Incoming task object:', task);
+  console.log('Task object keys:', Object.keys(task));
+
+  // Prepare task data with only the fields that exist in the database
+  const taskData: {
+    name: string;
+    description: string | null;
+    list_id: string;
+    priority: number | null;
+    start_date: string | null;
+    end_date: string | null;
+    archived: boolean;
+    created_at: string;
+    tags?: string[];
+  } = {
+    name: task.name.trim(),
+    description: task.description || null,
+    list_id: listId,
+    priority: task.priority || null,
+    start_date: task.start_date || null,
+    end_date: task.end_date || null,
+    archived: false,
+    created_at: new Date().toISOString(),
+  };
+
+  // Handle tags separately to ensure proper formatting
+  if (task.tags && Array.isArray(task.tags)) {
+    // Filter out empty tags and trim whitespace
+    const filteredTags = task.tags
+      .filter(tag => tag && typeof tag === 'string' && tag.trim().length > 0)
+      .map(tag => tag.trim());
+    
+    if (filteredTags.length > 0) {
+      taskData.tags = filteredTags;
+    }
+  }
+
+  // Debug: Log the prepared task data
+  console.log('Prepared task data keys:', Object.keys(taskData));
+
+  console.log('Creating task with data:', taskData);
+  console.log('Task data JSON:', JSON.stringify(taskData, null, 2));
+
+  // Try a minimal insert first to test
+  const minimalTaskData: {
+    name: string;
+    list_id: string;
+    archived: boolean;
+    created_at: string;
+  } = {
+    name: taskData.name,
+    list_id: taskData.list_id,
+    archived: false,
+    created_at: new Date().toISOString(),
+  };
+
+  console.log('Minimal task data:', minimalTaskData);
+
+  // Now try the normal insert with the fixed database
   const { data, error } = await supabase
     .from('tasks')
-    .insert({ ...task, name: task.name || '', list_id: listId })
+    .insert(taskData)
     .select()
     .single();
 
-  if (error) throw error;
+  if (error) {
+    console.error('Supabase error creating task:', error);
+    console.error('Error type:', typeof error);
+    console.error('Error keys:', Object.keys(error));
+    console.error('Error stringified:', JSON.stringify(error, null, 2));
+    
+    // Create a more descriptive error message
+    let errorMessage = 'Failed to create task';
+    
+    // Try to extract error information from various possible structures
+    const errorObj = error as { message?: string; details?: string; hint?: string; code?: string; error?: string };
+    
+    if (errorObj?.message) {
+      errorMessage = errorObj.message;
+    } else if (errorObj?.details) {
+      errorMessage = errorObj.details;
+    } else if (errorObj?.hint) {
+      errorMessage = errorObj.hint;
+    } else if (errorObj?.code) {
+      errorMessage = `Database error (${errorObj.code}): ${errorObj.message || 'Unknown database error'}`;
+    } else if (errorObj?.error) {
+      errorMessage = errorObj.error;
+    } else if (typeof errorObj === 'string') {
+      errorMessage = errorObj;
+    } else {
+      // If we can't extract a meaningful message, create one based on the error structure
+      errorMessage = `Database operation failed: ${JSON.stringify(errorObj)}`;
+    }
+    
+    console.error('Extracted error message:', errorMessage);
+    
+    // Create a new Error object with the descriptive message
+    const enhancedError = new Error(errorMessage);
+    enhancedError.name = 'TaskCreationError';
+    (enhancedError as { originalError?: unknown }).originalError = error;
+    
+    throw enhancedError;
+  }
+  
   return data as Task;
 }
 
@@ -149,7 +284,10 @@ export async function updateTask(
     .select()
     .single();
 
-  if (error) throw error;
+  if (error) {
+    throw error;
+  }
+  
   return data as Task;
 }
 
@@ -239,7 +377,6 @@ export async function moveTask(
     .single();
 
   if (listError) {
-    console.error('❌ Error fetching target list:', listError);
     throw listError;
   }
 
@@ -248,7 +385,7 @@ export async function moveTask(
   // - done, closed: task is completed/archived (archived = true)
   const shouldArchive =
     targetList.status === 'done' || targetList.status === 'closed';
-
+  
   const { data, error } = await supabase
     .from('tasks')
     .update({
@@ -271,7 +408,6 @@ export async function moveTask(
     .single();
 
   if (error) {
-    console.error('❌ Error moving task in database:', error);
     throw error;
   }
 
@@ -350,7 +486,7 @@ export function useUpdateTask(boardId: string) {
       updates: Partial<Task>;
     }) => {
       const supabase = createClient();
-      return updateTask(supabase, taskId, updates);
+      return await updateTask(supabase, taskId, updates);
     },
     onMutate: async ({ taskId, updates }) => {
       // Cancel any outgoing refetches
@@ -385,15 +521,18 @@ export function useUpdateTask(boardId: string) {
         variant: 'destructive',
       });
     },
-    onSuccess: (updatedTask) => {
+        onSuccess: (updatedTask) => {
       // Update the cache with the server response
       queryClient.setQueryData(
         ['tasks', boardId],
         (old: Task[] | undefined) => {
           if (!old) return old;
-          return old.map((task) =>
-            task.id === updatedTask.id ? updatedTask : task
-          );
+          return old.map((task) => {
+            if (task.id === updatedTask.id) {
+              return updatedTask;
+            }
+            return task;
+          });
         }
       );
     },
@@ -542,16 +681,16 @@ export function useMoveTask(boardId: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({
-      taskId,
-      newListId,
-    }: {
-      taskId: string;
-      newListId: string;
-    }) => {
-      const supabase = createClient();
-      return moveTask(supabase, taskId, newListId);
-    },
+          mutationFn: async ({
+        taskId,
+        newListId,
+      }: {
+        taskId: string;
+        newListId: string;
+      }) => {
+        const supabase = createClient();
+        return moveTask(supabase, taskId, newListId);
+      },
     onMutate: async ({ taskId, newListId }) => {
       // Cancel any outgoing refetches
       await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
@@ -585,7 +724,7 @@ export function useMoveTask(boardId: string) {
         variant: 'destructive',
       });
     },
-    onSuccess: (updatedTask, _variables) => {
+    onSuccess: (updatedTask) => {
       // Update the cache with the server response
       queryClient.setQueryData(
         ['tasks', boardId],
@@ -597,7 +736,7 @@ export function useMoveTask(boardId: string) {
         }
       );
     },
-    onSettled: (_data, _error, _variables) => {
+    onSettled: () => {
       // Ensure data consistency across all task-related caches
       invalidateTaskCaches(queryClient, boardId);
     },
