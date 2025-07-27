@@ -249,8 +249,8 @@ export function combineDateAndTimetzToLocal(
   if (offsetStr.includes(':')) {
     const sign = offsetStr[0] === '-' ? -1 : 1;
     const [h, m] = offsetStr.slice(1).split(':');
-    offsetHours = sign * parseInt(h, 10);
-    offsetMinutes = sign * parseInt(m, 10);
+    offsetHours = sign * parseInt(h || '0', 10);
+    offsetMinutes = sign * parseInt(m || '0', 10);
   } else {
     offsetHours = parseInt(offsetStr, 10);
   }
@@ -293,20 +293,20 @@ export function convertLocalToPlanTimezone(
   if (offsetStr.includes(':')) {
     const sign = offsetStr[0] === '-' ? -1 : 1;
     const [h, m] = offsetStr.slice(1).split(':');
-    planOffsetHours = sign * parseInt(h, 10);
-    planOffsetMinutes = sign * parseInt(m, 10);
+    planOffsetHours = sign * parseInt(h || '0', 10);
+    planOffsetMinutes = sign * parseInt(m || '0', 10);
   } else {
     planOffsetHours = parseInt(offsetStr, 10);
   }
 
-  // Get the user's local timezone offset
-  const userOffsetHours = -localDate.getTimezoneOffset() / 60;
-
-  // Calculate the difference between user's timezone and plan's timezone
-  const offsetDiff = userOffsetHours - planOffsetHours;
-
-  // Convert the local time to the plan's timezone
-  const planTime = new Date(localDate.getTime() + offsetDiff * 60 * 60 * 1000);
+  // Date objects already store UTC time internally!
+  // localDate.getTime() returns UTC milliseconds
+  // So we just need to convert from UTC to plan timezone
+  const planTime = new Date(
+    localDate.getTime() +
+      planOffsetHours * 60 * 60 * 1000 +
+      planOffsetMinutes * 60 * 1000
+  );
 
   // Format the time in the plan's timezone
   const hour = planTime.getUTCHours().toString().padStart(2, '0');
@@ -314,4 +314,55 @@ export function convertLocalToPlanTimezone(
   const second = planTime.getUTCSeconds().toString().padStart(2, '0');
 
   return `${hour}:${minute}:${second}${offsetStr}`;
+}
+
+/**
+ * Converts a local Date object to both date and time in the plan's timezone.
+ * Returns an object with the date string and time string in the plan's timezone.
+ * This handles timezone boundary crossings where the date changes.
+ */
+export function convertLocalToPlanTimezoneWithDate(
+  localDate: Date,
+  planTimezoneTime: string
+): { date: string; time: string } {
+  // Extract the plan's timezone offset from the plan's time
+  const offsetPos = Math.max(
+    planTimezoneTime.lastIndexOf('+'),
+    planTimezoneTime.lastIndexOf('-')
+  );
+  const offsetStr = planTimezoneTime.substring(offsetPos);
+
+  // Parse the plan's timezone offset
+  let planOffsetHours = 0;
+  let planOffsetMinutes = 0;
+  if (offsetStr.includes(':')) {
+    const sign = offsetStr[0] === '-' ? -1 : 1;
+    const [h, m] = offsetStr.slice(1).split(':');
+    planOffsetHours = sign * parseInt(h || '0', 10);
+    planOffsetMinutes = sign * parseInt(m || '0', 10);
+  } else {
+    planOffsetHours = parseInt(offsetStr, 10);
+  }
+
+  // Date objects already store UTC time internally!
+  // localDate.getTime() returns UTC milliseconds
+  // So we just need to convert from UTC to plan timezone
+  const planTime = new Date(
+    localDate.getTime() +
+      planOffsetHours * 60 * 60 * 1000 +
+      planOffsetMinutes * 60 * 1000
+  );
+
+  // Format the date and time in the plan's timezone
+  const year = planTime.getUTCFullYear();
+  const month = (planTime.getUTCMonth() + 1).toString().padStart(2, '0');
+  const day = planTime.getUTCDate().toString().padStart(2, '0');
+  const hour = planTime.getUTCHours().toString().padStart(2, '0');
+  const minute = planTime.getUTCMinutes().toString().padStart(2, '0');
+  const second = planTime.getUTCSeconds().toString().padStart(2, '0');
+
+  return {
+    date: `${year}-${month}-${day}`,
+    time: `${hour}:${minute}:${second}${offsetStr}`,
+  };
 }

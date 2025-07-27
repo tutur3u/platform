@@ -49,27 +49,10 @@ export function datesToTimeMatrix(dates?: Date[] | null): {
   if (dates.length === 1)
     return { soonest: dayjs(dates[0]), latest: dayjs(dates[0]) };
 
-  const now = dayjs();
-
+  // Don't normalize to "now" - preserve the actual dates
   const soonest =
-    dayjs.min(
-      dates.map((date) =>
-        dayjs(date)
-          .set('year', now.year())
-          .set('month', now.month())
-          .set('date', now.date())
-      )
-    ) ?? now;
-
-  const latest =
-    dayjs.max(
-      dates.map((date) =>
-        dayjs(date)
-          .set('year', now.year())
-          .set('month', now.month())
-          .set('date', now.date())
-      )
-    ) ?? now;
+    dayjs.min(dates.map((date) => dayjs(date))) ?? dayjs(dates[0]);
+  const latest = dayjs.max(dates.map((date) => dayjs(date))) ?? dayjs(dates[0]);
 
   return {
     soonest,
@@ -99,28 +82,36 @@ export function durationToTimeblocks(
     .set('second', 0);
 
   while (start.isBefore(end)) {
-    const date = start.format('YYYY-MM-DD');
-
-    const startTime = dayjs(soonestTime);
-    const endTime = dayjs(latestTime).add(15, 'minutes');
+    // Use the actual start and end times from the selection, not just time components
+    const startTime = start;
+    const endTime = latestTime.isSame(start, 'day')
+      ? latestTime.add(15, 'minutes')
+      : start.hour(23).minute(59).second(59);
 
     // Convert to plan timezone if plan timezone information is provided
+    let date: string;
     let startTimeFormatted: string;
     let endTimeFormatted: string;
 
     if (planStartTime && planEndTime) {
-      // Convert local time to plan timezone
-      const { convertLocalToPlanTimezone } = require('./date-helper');
-      startTimeFormatted = convertLocalToPlanTimezone(
+      // Convert local time to plan timezone with proper date handling
+      const { convertLocalToPlanTimezoneWithDate } = require('./date-helper');
+      const startConverted = convertLocalToPlanTimezoneWithDate(
         startTime.toDate(),
         planStartTime
       );
-      endTimeFormatted = convertLocalToPlanTimezone(
+      const endConverted = convertLocalToPlanTimezoneWithDate(
         endTime.toDate(),
         planEndTime
       );
+
+      // Use the date from the converted start time (handles timezone boundary crossings)
+      date = startConverted.date;
+      startTimeFormatted = startConverted.time;
+      endTimeFormatted = endConverted.time;
     } else {
       // Fallback to user's timezone (original behavior)
+      date = start.format('YYYY-MM-DD');
       startTimeFormatted = startTime.format('HH:mm:ssZ');
       endTimeFormatted = endTime.format('HH:mm:ssZ');
     }

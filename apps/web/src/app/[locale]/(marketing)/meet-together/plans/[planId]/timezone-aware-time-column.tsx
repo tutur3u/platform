@@ -1,7 +1,7 @@
-import { useLocale } from 'next-intl';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
+import { useLocale } from 'next-intl';
 
 dayjs.extend(timezone);
 dayjs.extend(utc);
@@ -9,8 +9,8 @@ dayjs.extend(utc);
 interface TimezoneAwareTimeColumnProps {
   id: string;
   start: string; // timetz format like "09:00:00+08"
-  end: string;   // timetz format like "17:00:00+08"
-  date: string;  // date like "2024-07-23"
+  end: string; // timetz format like "17:00:00+08"
+  date: string; // date like "2024-07-23"
   className?: string;
 }
 
@@ -28,21 +28,31 @@ export default function TimezoneAwareTimeColumn({
   const referenceDate = date || dayjs().format('YYYY-MM-DD');
 
   // Convert plan times to user's local timezone
-  const convertTimetzToLocalHour = (timetz: string, referenceDate: string): number => {
+  const convertTimetzToLocalHour = (
+    timetz: string,
+    referenceDate: string
+  ): number => {
     try {
       // Extract time and timezone offset
-      const time = timetz.substring(0, timetz.lastIndexOf('+') !== -1 ? timetz.lastIndexOf('+') : timetz.lastIndexOf('-'));
-      const offset = timetz.substring(timetz.lastIndexOf('+') !== -1 ? timetz.lastIndexOf('+') : timetz.lastIndexOf('-'));
-      
+      const time = timetz.substring(
+        0,
+        timetz.lastIndexOf('+') !== -1
+          ? timetz.lastIndexOf('+')
+          : timetz.lastIndexOf('-')
+      );
+      const offset = timetz.substring(
+        timetz.lastIndexOf('+') !== -1
+          ? timetz.lastIndexOf('+')
+          : timetz.lastIndexOf('-')
+      );
+
       // Convert offset to timezone name
       const timezoneName = getTimezoneFromOffset(offset);
-      
+
       // Create datetime in plan's timezone and convert to user's timezone
       const planDateTime = dayjs.tz(`${referenceDate} ${time}`, timezoneName);
       const userDateTime = planDateTime.tz(userTimezone);
-      
 
-      
       return userDateTime.hour();
     } catch (error) {
       console.error('Error converting timetz to local hour:', error);
@@ -56,7 +66,7 @@ export default function TimezoneAwareTimeColumn({
     // Remove the sign and convert to number for lookup
     const offsetNum = parseInt(offset, 10);
     const offsetKey = offsetNum.toString();
-    
+
     // Simple mapping for common offsets
     const offsetMap: Record<string, string> = {
       '-12': 'Etc/GMT+12',
@@ -92,8 +102,6 @@ export default function TimezoneAwareTimeColumn({
   const localStartHour = convertTimetzToLocalHour(start, referenceDate);
   const localEndHour = convertTimetzToLocalHour(end, referenceDate);
 
-
-
   return (
     <div className={className}>
       <div className="p-1 text-transparent">
@@ -105,14 +113,15 @@ export default function TimezoneAwareTimeColumn({
         {(() => {
           // Handle time ranges that cross midnight
           let timeSlots = [];
+          const crossesMidnight = localEndHour < localStartHour;
 
-          if (localEndHour >= localStartHour) {
+          if (!crossesMidnight) {
             // Normal case: same day
             timeSlots = Array.from(
               Array(Math.floor(localEndHour + 1 - localStartHour)).keys()
             ).map((i) => (i + localStartHour) * 4);
           } else {
-            // Crosses midnight: split into two parts
+            // Crosses midnight: create two separate parts with a separator
             // Part 1: from start to 23 (end of day)
             const part1 = Array.from(Array(24 - localStartHour))
               .keys()
@@ -121,47 +130,55 @@ export default function TimezoneAwareTimeColumn({
             const part2 = Array.from(Array(localEndHour + 1))
               .keys()
               .map((i) => i * 4);
-            timeSlots = [...part1, ...part2];
+            timeSlots = [...part1, 'separator', ...part2];
           }
 
-          return (
-            timeSlots
-              // duplicate each item 4 times with unique identifiers
-              .flatMap((hr) => [
-                { hr, slot: 0, key: `${id}-time-${hr}-slot-0` },
-                { hr, slot: 1, key: `${id}-time-${hr}-slot-1` },
-                { hr, slot: 2, key: `${id}-time-${hr}-slot-2` },
-                { hr, slot: 3, key: `${id}-time-${hr}-slot-3` },
-              ])
-              .map(({ hr, key, slot }) => (
+          return timeSlots.flatMap((slot, slotIndex) => {
+            if (slot === 'separator') {
+              // Render separator
+              return (
                 <div
-                  key={key}
+                  key={`${id}-separator`}
+                  className="relative flex h-6 w-14 items-center justify-center border-l border-transparent bg-transparent"
+                >
+                  <div className="text-xs text-foreground/60">···</div>
+                </div>
+              );
+            }
+
+            const hr = slot as number;
+            // duplicate each time slot 4 times for 15-minute intervals
+            return Array(4)
+              .fill(hr)
+              .map((hrValue, i) => (
+                <div
+                  key={`${id}-time-${hrValue}-${slotIndex}-${i}`}
                   className={`relative h-3 w-14 ${
-                    hr === 0
+                    hrValue === 0
                       ? ''
-                      : (hr + 1) % 4 === 0 || (hr + 1) % 2 === 0
+                      : (hrValue + 1) % 4 === 0 || (hrValue + 1) % 2 === 0
                         ? 'border-b border-transparent'
                         : ''
                   }`}
                 >
-                  {slot === 0 && (
+                  {i === 0 && (
                     <div className="absolute -top-2 right-0 text-xs">
                       <div className="flex-none text-xs">
-                        {hr / 4 === 12
+                        {hrValue / 4 === 12
                           ? '12:00 PM'
-                          : hr / 4 === 24
+                          : hrValue / 4 === 24
                             ? '12:00 AM'
-                            : hr / 4 < 12
-                              ? `${hr / 4}:00 ${locale === 'vi' ? 'SA' : 'AM'}`
-                              : `${hr / 4 - 12}:00 ${locale === 'vi' ? 'CH' : 'PM'}`}
+                            : hrValue / 4 < 12
+                              ? `${hrValue / 4}:00 ${locale === 'vi' ? 'SA' : 'AM'}`
+                              : `${hrValue / 4 - 12}:00 ${locale === 'vi' ? 'CH' : 'PM'}`}
                       </div>
                     </div>
                   )}
                 </div>
-              ))
-          );
+              ));
+          });
         })()}
       </div>
     </div>
   );
-} 
+}

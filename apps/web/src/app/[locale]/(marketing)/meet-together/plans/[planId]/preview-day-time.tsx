@@ -1,5 +1,5 @@
 import { useTimeBlocking } from './time-blocking-provider';
-import { timetzToTime } from '@/utils/date-helper';
+import { combineDateAndTimetzToLocal } from '@/utils/date-helper';
 import type { Timeblock } from '@tuturuuu/types/primitives/Timeblock';
 import { ShieldCheck, ShieldMinus } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
@@ -37,6 +37,7 @@ export default function PreviewDayTime({
     setPreviewDate,
     getPreviewUsers,
     getOpacityForDate,
+    editing,
   } = useTimeBlocking();
 
   const timeblocks =
@@ -46,44 +47,22 @@ export default function PreviewDayTime({
         )
       : serverTimeblocks;
 
-  // Handle time ranges that cross midnight
-  let hourBlocks: number[];
-  if (end >= start) {
-    // Normal case: same day
-    hourBlocks = Array.from(Array(Math.floor(end + 1 - start)).keys());
-  } else {
-    // Crosses midnight: split into two parts
-    // Part 1: from start to 23 (end of day)
-    const part1 = Array.from(Array(24 - start)).keys();
-    // Part 2: from 0 to end (beginning of next day)
-    const part2 = Array.from(Array(end + 1)).keys();
-    hourBlocks = [...part1, ...part2];
-  }
-
+  // Since we now handle timezone boundary crossings at the DatePlanner level,
+  // we don't need to handle midnight crossing here - just use the given start/end hours
+  const hourBlocks = Array.from(Array(Math.floor(end + 1 - start)).keys());
   const hourSplits = 4;
 
   // Compute available user count for each slot
   const slotAvailableCounts: number[] = hourBlocks
-    .map((i) => {
-      // Adjust hour calculation for midnight crossing
-      let adjustedHour = i + start;
-      if (adjustedHour >= 24) {
-        adjustedHour = adjustedHour - 24;
-      }
-      return adjustedHour * hourSplits;
-    })
+    .map((i) => (i + start) * hourSplits)
     .flatMap((i) => Array(hourSplits).fill(i))
     .map((_, i) => {
-      // Calculate the actual hour for this slot
-      let actualHour = Math.floor(i / hourSplits) + start;
-      if (actualHour >= 24) {
-        actualHour = actualHour - 24;
-      }
-
+      const actualHour = Math.floor(i / hourSplits) + start;
       const currentDate = dayjs(date)
         .hour(actualHour)
         .minute((i % hourSplits) * 15)
         .toDate();
+
       const userIds = timeblocks
         .filter((tb) => {
           const start = dayjs(`${tb.date} ${tb.start_time}`);
@@ -113,47 +92,74 @@ export default function PreviewDayTime({
     }
   }, [showBestTimes, bestBlockIndices.size, onBestTimesStatus]);
 
-  const isTimeBlockSelected = (i: number): 'local' | 'server' | 'none' => {
+  const isTimeBlockSelected = (
+    i: number
+  ): 'draft-add' | 'draft-remove' | 'local' | 'server' | 'none' => {
+    const editingStartDate =
+      editing.startDate && editing.endDate
+        ? dayjs(editing.startDate).isAfter(editing.endDate)
+          ? editing.endDate
+          : editing.startDate
+        : editing.startDate;
+
+    const editingEndDate =
+      editing.startDate && editing.endDate
+        ? dayjs(editing.startDate).isAfter(editing.endDate)
+          ? editing.startDate
+          : editing.endDate
+        : editing.endDate;
+
+    // If editing is enabled and the date is between the start and end date
+    if (
+      editing.enabled &&
+      editingStartDate &&
+      editingEndDate &&
+      (dayjs(date).isSame(editingStartDate, 'day') ||
+        dayjs(date).isSame(editingEndDate, 'day') ||
+        dayjs(date).isBetween(editingStartDate, editingEndDate)) &&
+      ((i >=
+        Math.floor(
+          (editingStartDate.getHours() - start) * hourSplits +
+            editingStartDate.getMinutes() / 15
+        ) &&
+        i <=
+          Math.floor(
+            (editingEndDate.getHours() - start) * hourSplits +
+              editingEndDate.getMinutes() / 15
+          )) ||
+        (i >=
+          Math.floor(
+            (editingEndDate.getHours() - start) * hourSplits +
+              editingEndDate.getMinutes() / 15
+          ) &&
+          i <=
+            Math.floor(
+              (editingStartDate.getHours() - start) * hourSplits +
+                editingStartDate.getMinutes() / 15
+            )))
+    )
+      return editing.mode === 'add' ? 'draft-add' : 'draft-remove';
+
     // If the timeblock is pre-selected
     const tb = timeblocks.find((tb) => {
-      if (tb.date !== date) return false;
+      // Compute the Date object representing the current grid slot
+      const currentSlotDate = dayjs(date)
+        .hour(Math.floor(i / hourSplits) + start)
+        .minute((i % hourSplits) * 15)
+        .toDate();
 
-      const startTime = timetzToTime(tb.start_time);
-      const endTime = timetzToTime(tb.end_time);
+      // Convert the plan's timetz values into the user's local Date objects
+      const startLocal = combineDateAndTimetzToLocal(tb.date, tb.start_time);
+      const endLocalInitial = combineDateAndTimetzToLocal(tb.date, tb.end_time);
 
-      // Check if times are valid
-      if (!startTime || !endTime) return false;
+      // Handle blocks that cross midnight in the user's timezone
+      const endLocal =
+        endLocalInitial <= startLocal
+          ? dayjs(endLocalInitial).add(1, 'day').toDate()
+          : endLocalInitial;
 
-      // Convert timeblock times to local hours and minutes
-      const startParts = startTime.split(':').map((v) => Number(v));
-      const endParts = endTime.split(':').map((v) => Number(v));
-      
-      if (startParts.length < 2 || endParts.length < 2) return false;
-      
-      const [startHour, startMinute] = startParts;
-      const [endHour, endMinute] = endParts;
-
-      // Additional type guards for destructured values
-      if (typeof startHour !== 'number' || typeof startMinute !== 'number' || 
-          typeof endHour !== 'number' || typeof endMinute !== 'number') {
-        return false;
-      }
-
-      // Calculate the current slot's hour
-      let slotHour = Math.floor(i / hourSplits) + start;
-      if (slotHour >= 24) {
-        slotHour = slotHour - 24;
-      }
-
-      // Check if the current slot is within the timeblock range
-      const currentSlotTime = slotHour * 60 + (i % hourSplits) * 15;
-      const timeblockStartTime = startHour * 60 + startMinute;
-      const timeblockEndTime = endHour * 60 + endMinute;
-
-      return (
-        currentSlotTime >= timeblockStartTime &&
-        currentSlotTime < timeblockEndTime
-      );
+      // Check whether the current slot's Date falls within the [startLocal, endLocal) range
+      return dayjs(currentSlotDate).isBetween(startLocal, endLocal, null, '[)');
     });
 
     if (tb) return tb.id !== undefined ? 'server' : 'local';
@@ -163,22 +169,12 @@ export default function PreviewDayTime({
   return (
     <div className="relative w-14 border border-b-0 border-foreground/50">
       {hourBlocks
-        .map((i) => {
-          // Adjust hour calculation for midnight crossing
-          let adjustedHour = i + start;
-          if (adjustedHour >= 24) {
-            adjustedHour = adjustedHour - 24;
-          }
-          return adjustedHour * hourSplits;
-        })
+        .map((i) => (i + start) * hourSplits)
         // duplicate each item `hourSplits` times
         .flatMap((i) => Array(hourSplits).fill(i))
         .map((_, i, array) => {
           // Calculate the actual hour for this slot
-          let actualHour = Math.floor(i / hourSplits) + start;
-          if (actualHour >= 24) {
-            actualHour = actualHour - 24;
-          }
+          const actualHour = Math.floor(i / hourSplits) + start;
 
           const currentDate = dayjs(date)
             .hour(actualHour)

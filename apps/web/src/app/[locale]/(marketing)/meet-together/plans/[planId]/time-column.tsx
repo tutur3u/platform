@@ -24,14 +24,15 @@ export default function TimeColumn({
         {(() => {
           // Handle time ranges that cross midnight
           let timeSlots = [];
+          const crossesMidnight = end < start;
 
-          if (end >= start) {
+          if (!crossesMidnight) {
             // Normal case: same day
             timeSlots = Array.from(
               Array(Math.floor(end + 1 - start)).keys()
             ).map((i) => (i + start) * 4);
           } else {
-            // Crosses midnight: split into two parts
+            // Crosses midnight: create two separate parts with a separator
             // Part 1: from start to 23 (end of day)
             const part1 = Array.from(Array(24 - start))
               .keys()
@@ -40,40 +41,53 @@ export default function TimeColumn({
             const part2 = Array.from(Array(end + 1))
               .keys()
               .map((i) => i * 4);
-            timeSlots = [...part1, ...part2];
+            timeSlots = [...part1, 'separator', ...part2];
           }
 
-          return (
-            timeSlots
-              // duplicate each item 4 times
-              .flatMap((i) => [i, i, i, i])
-              .map((hr, i) => (
+          return timeSlots.flatMap((slot, slotIndex) => {
+            if (slot === 'separator') {
+              // Render separator
+              return (
                 <div
-                  key={`${id}-${hr}-${i}`}
+                  key={`${id}-separator`}
+                  className="relative flex h-6 w-14 items-center justify-center border-l border-transparent bg-transparent"
+                >
+                  <div className="text-xs text-foreground/60">···</div>
+                </div>
+              );
+            }
+
+            const hr = slot as number;
+            // duplicate each time slot 4 times for 15-minute intervals
+            return Array(4)
+              .fill(hr)
+              .map((hrValue, i) => (
+                <div
+                  key={`${id}-${hrValue}-${slotIndex}-${i}`}
                   className={`relative h-3 w-14 ${
-                    hr === 0
+                    hrValue === 0
                       ? ''
-                      : (hr + 1) % 4 === 0 || (hr + 1) % 2 === 0
+                      : (hrValue + 1) % 4 === 0 || (hrValue + 1) % 2 === 0
                         ? 'border-b border-transparent'
                         : ''
                   }`}
                 >
-                  {i % 4 === 0 && (
+                  {i === 0 && (
                     <div className="absolute -top-2 right-0 text-xs">
                       <div className="flex-none text-xs">
-                        {hr / 4 === 12
+                        {hrValue / 4 === 12
                           ? '12:00 PM'
-                          : hr / 4 === 24
+                          : hrValue / 4 === 24
                             ? '12:00 AM'
-                            : hr / 4 < 12
-                              ? `${hr / 4}:00 ${locale === 'vi' ? 'SA' : 'AM'}`
-                              : `${hr / 4 - 12}:00 ${locale === 'vi' ? 'CH' : 'PM'}`}
+                            : hrValue / 4 < 12
+                              ? `${hrValue / 4}:00 ${locale === 'vi' ? 'SA' : 'AM'}`
+                              : `${hrValue / 4 - 12}:00 ${locale === 'vi' ? 'CH' : 'PM'}`}
                       </div>
                     </div>
                   )}
                 </div>
-              ))
-          );
+              ));
+          });
         })()}
       </div>
     </div>

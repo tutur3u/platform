@@ -131,30 +131,16 @@ export default function DayPlanners({
       id="scrollable"
       className="relative flex flex-1 items-start justify-center gap-2 overflow-x-auto"
     >
-      {dateRanges.map(({ date, localStart, localEnd }, idx) => {
-        // Determine if the plan crosses midnight
-        const crossesMidnight = localEnd < localStart;
-        const displayStart = localStart;
-        const displayEnd = localEnd;
-        let startHour = localStart.getHours();
-        let endHour = localEnd.getHours();
-
-        if (crossesMidnight) {
-          if (idx === 0) {
-            // First day: show from localStart to 23:59
-            endHour = 23;
-          } else {
-            // Next day: show from 00:00 to localEnd
-            startHour = 0;
-          }
-        }
+      {dateRanges.map(({ date, localStart, localEnd }) => {
+        const startHour = localStart.getHours();
+        const endHour = localEnd.getHours();
 
         return (
           <DayPlanner
             key={date}
             date={date}
-            localStart={displayStart}
-            localEnd={displayEnd}
+            localStart={localStart}
+            localEnd={localEnd}
             editable={editable}
             disabled={disabled}
             timeblocks={timeblocks.filter((tb) => tb.date === date)}
