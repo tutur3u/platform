@@ -391,28 +391,38 @@ export const CalendarSyncProvider = ({
         let numDeleted = 0;
 
         if (DEV_MODE) {
-          const { data: syncRecordData, error: insertError } = await supabase
-            .from('calendar_sync_dashboard')
-            .insert({
-              ws_id: wsId,
-              start_time: new Date().toISOString(),
-              end_time: new Date().toISOString(),
-              triggered_by: authUser?.id,
-              type: 'active',
-              status: 'running',
-              inserted_events: 0,
-              updated_events: 0,
-              deleted_events: 0,
-            })
-            .select()
-            .single();
+          // Use the API endpoint instead of direct database call
+          const insertResponse = await fetch(
+            '/api/v1/calendar/sync-dashboard/insert',
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                ws_id: wsId,
+                start_time: new Date().toISOString(),
+                end_time: new Date().toISOString(),
+                triggered_by: authUser?.id,
+                type: 'active',
+                status: 'running',
+                inserted_events: 0,
+                updated_events: 0,
+                deleted_events: 0,
+              }),
+            }
+          );
 
-          if (insertError) {
-            setError(insertError);
+          if (!insertResponse.ok) {
+            const errorData = await insertResponse.json();
+            setError(
+              new Error(errorData.error || 'Failed to create sync record')
+            );
             return;
           }
 
-          syncRecord = syncRecordData;
+          const insertData = await insertResponse.json();
+          syncRecord = insertData.data;
         }
 
         // Use the exact range from dates array
@@ -580,17 +590,32 @@ export const CalendarSyncProvider = ({
           numInserted = result?.inserted || 0;
           numUpdated = result?.updated || 0;
 
-          // Update the sync dashboard
-          await supabase
-            .from('calendar_sync_dashboard')
-            .update({
-              status: 'completed',
-              end_time: new Date().toISOString(),
-              inserted_events: numInserted,
-              updated_events: numUpdated,
-              deleted_events: numDeleted,
-            })
-            .eq('id', syncRecord.id);
+          // Update the sync dashboard using the API endpoint
+          const updateResponse = await fetch(
+            '/api/v1/calendar/sync-dashboard/update',
+            {
+              method: 'PUT',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                id: syncRecord.id,
+                status: 'completed',
+                end_time: new Date().toISOString(),
+                inserted_events: numInserted,
+                updated_events: numUpdated,
+                deleted_events: numDeleted,
+              }),
+            }
+          );
+
+          if (!updateResponse.ok) {
+            const errorData = await updateResponse.json();
+            console.error(
+              'Failed to update sync dashboard record:',
+              errorData.error
+            );
+          }
         }
 
         if (progressCallback) {

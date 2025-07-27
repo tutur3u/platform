@@ -75,17 +75,3 @@ as permissive
 for select
 to authenticated
 using (is_org_member(auth.uid(), ws_id));
-
-create policy "Enable insert access for workspace members"
-on "public"."calendar_sync_dashboard"
-as permissive
-for insert
-to authenticated
-with check (is_org_member(auth.uid(), ws_id) AND (triggered_by = auth.uid() OR triggered_by IS NULL));
-
-create policy "Enable update access for workspace members"
-on "public"."calendar_sync_dashboard"
-as permissive
-for update
-to authenticated
-using (is_org_member(auth.uid(), ws_id) AND (triggered_by = auth.uid() OR triggered_by IS NULL)); 
