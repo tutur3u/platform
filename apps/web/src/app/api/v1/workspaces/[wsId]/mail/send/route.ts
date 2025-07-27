@@ -52,10 +52,15 @@ export async function POST(
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
-  if (!user.email?.endsWith('@tuturuuu.com')) {
-    console.error('User is not a @tuturuuu.com email');
+  if (
+    !(
+      user.email?.endsWith('@tuturuuu.com') ||
+      user.email?.endsWith('@xwf.tuturuuu.com')
+    )
+  ) {
+    console.error('User is not a @tuturuuu.com or @xwf.tuturuuu.com email');
     return NextResponse.json(
-      { message: 'Only @tuturuuu.com emails are allowed' },
+      { message: 'Only @tuturuuu.com or @xwf.tuturuuu.com emails are allowed' },
       { status: 401 }
     );
   }
@@ -82,7 +87,7 @@ export async function POST(
     );
   }
 
-  if (DEV_MODE && !IS_PRODUCTION_DB) {
+  if (DEV_MODE && IS_PRODUCTION_DB) {
     // Get allowed emails from internal_email_api_keys
     const { data: internalData, error: internalDataError } = await supabase
       .from('internal_email_api_keys')

@@ -84,12 +84,32 @@ export function TaskActions({ taskId, boardId, onUpdate }: Props) {
       const transformedTask = {
         ...data,
         assignees: data.assignees
-          ?.map((a: any) => a.user)
+          ?.map(
+            (a: {
+              user: {
+                id: string;
+                display_name: string | null;
+                avatar_url: string | null;
+                handle: string | null;
+              };
+            }) => a.user
+          )
           .filter(
-            (user: any, index: number, self: any[]) =>
-              user &&
-              user.id &&
-              self.findIndex((u: any) => u.id === user.id) === index
+            (
+              user: {
+                id: string;
+                display_name: string | null;
+                avatar_url: string | null;
+                handle: string | null;
+              } | null,
+              index: number,
+              self: ({
+                id: string;
+                display_name: string | null;
+                avatar_url: string | null;
+                handle: string | null;
+              } | null)[]
+            ) => user?.id && self.findIndex((u) => u?.id === user.id) === index
           ),
       };
 
@@ -218,7 +238,11 @@ export function TaskActions({ taskId, boardId, onUpdate }: Props) {
   }
 
   return (
-    <div onClick={(e) => e.stopPropagation()}>
+    <div
+      onPointerDown={(e) => e.stopPropagation()}
+      className="w-full"
+      role="presentation"
+    >
       <DropdownMenu modal={false}>
         <DropdownMenuTrigger asChild>
           <Button
@@ -394,7 +418,7 @@ export function TaskActions({ taskId, boardId, onUpdate }: Props) {
                     {newStartDate && (
                       <span
                         className="ml-auto flex h-4 w-4 cursor-pointer items-center justify-center rounded-sm p-0 opacity-50 hover:opacity-100"
-                        onClick={(e) => {
+                        onPointerDown={(e) => {
                           e.stopPropagation();
                           setNewStartDate(undefined);
                         }}
@@ -453,7 +477,7 @@ export function TaskActions({ taskId, boardId, onUpdate }: Props) {
                     {newEndDate && (
                       <span
                         className="ml-auto flex h-4 w-4 cursor-pointer items-center justify-center rounded-sm p-0 opacity-50 hover:opacity-100"
-                        onClick={(e) => {
+                        onPointerDown={(e) => {
                           e.stopPropagation();
                           setNewEndDate(undefined);
                         }}

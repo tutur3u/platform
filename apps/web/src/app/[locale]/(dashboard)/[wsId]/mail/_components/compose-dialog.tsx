@@ -1,7 +1,22 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
+import Highlight from '@tiptap/extension-highlight';
+import Link from '@tiptap/extension-link';
+import Strike from '@tiptap/extension-strike';
+import Subscript from '@tiptap/extension-subscript';
+import Superscript from '@tiptap/extension-superscript';
+import TextAlign from '@tiptap/extension-text-align';
+import Underline from '@tiptap/extension-underline';
+import { generateHTML } from '@tiptap/html';
+import { type JSONContent } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
 import { Button } from '@tuturuuu/ui/button';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@tuturuuu/ui/collapsible';
 import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
 import {
   Dialog,
@@ -17,15 +32,15 @@ import {
   FormLabel,
   FormMessage,
 } from '@tuturuuu/ui/form';
-import { Send, X } from '@tuturuuu/ui/icons';
+import { ChevronDown, ChevronUp, Send, X } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
-import { Textarea } from '@tuturuuu/ui/textarea';
+import { RichTextEditor } from '@tuturuuu/ui/text-editor/editor';
 import DOMPurify from 'dompurify';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
@@ -123,7 +138,24 @@ const composeSchema = z.object({
   cc: z.array(z.string()).optional(),
   bcc: z.array(z.string()).optional(),
   subject: z.string().min(1, 'Subject is required'),
-  content: z.string().min(1, 'Message content is required'),
+  content: z.any().refine((val) => {
+    // Check if it's a valid JSONContent with some meaningful content
+    if (!val || !val.content) return false;
+
+    // Helper function to check if a node has text content
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const hasTextContent = (node: any): boolean => {
+      if (node.text && node.text.trim().length > 0) return true;
+      if (node.content) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return node.content.some((child: any) => hasTextContent(child));
+      }
+      return false;
+    };
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return val.content.some((node: any) => hasTextContent(node));
+  }, 'Message content is required'),
 });
 
 type ComposeFormValues = z.infer<typeof composeSchema>;
@@ -132,12 +164,22 @@ interface ComposeDialogProps {
   wsId: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  initialData?: {
+    to?: string[];
+    cc?: string[];
+    bcc?: string[];
+    subject?: string;
+    content?: JSONContent;
+    quotedContent?: string;
+    isReply?: boolean;
+  };
 }
 
 export function ComposeDialog({
   wsId,
   open,
   onOpenChange,
+  initialData,
 }: ComposeDialogProps) {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
@@ -157,6 +199,10 @@ export function ComposeDialog({
   const [previewMode, setPreviewMode] = useState<'edit' | 'preview'>('edit');
   const [sanitizedHtml, setSanitizedHtml] = useState('');
   const [previewLoading, setPreviewLoading] = useState(false);
+
+  // Quoted content state
+  const [showQuotedContent, setShowQuotedContent] = useState(false);
+  const [quotedContent, setQuotedContent] = useState('');
 
   // Fetch user info on mount
   useEffect(() => {
@@ -193,37 +239,109 @@ export function ComposeDialog({
     if (open) fetchUser();
   }, [open]);
 
-  const templates = [
-    {
-      label: 'Blank',
-      subject: '',
-      content: '',
-    },
-    {
-      label: 'Welcome',
-      subject: 'Welcome to Tuturuuu!',
-      content:
-        'Hi there,\n\nWelcome to Tuturuuu. We are excited to have you on board!',
-    },
-    {
-      label: 'Reset Password',
-      subject: 'Reset Your Password',
-      content:
-        'Hi,\n\nClick the link below to reset your password. If you did not request this, please ignore this email.',
-    },
-  ];
-  const [selectedTemplate, setSelectedTemplate] = useState(templates[0]);
+  const templates = useCallback(
+    () => [
+      {
+        label: 'Blank',
+        subject: '',
+        content: {
+          type: 'doc',
+          content: [{ type: 'paragraph', content: [] }],
+        },
+      },
+      {
+        label: 'Welcome',
+        subject: 'Welcome to Tuturuuu!',
+        content: {
+          type: 'doc',
+          content: [
+            {
+              type: 'paragraph',
+              content: [{ type: 'text', text: 'Hi there,' }],
+            },
+            {
+              type: 'paragraph',
+              content: [
+                {
+                  type: 'text',
+                  text: 'Welcome to Tuturuuu. We are excited to have you on board!',
+                },
+              ],
+            },
+          ],
+        },
+      },
+      {
+        label: 'Reset Password',
+        subject: 'Reset Your Password',
+        content: {
+          type: 'doc',
+          content: [
+            {
+              type: 'paragraph',
+              content: [{ type: 'text', text: 'Hi,' }],
+            },
+            {
+              type: 'paragraph',
+              content: [
+                {
+                  type: 'text',
+                  text: 'Click the link below to reset your password. If you did not request this, please ignore this email.',
+                },
+              ],
+            },
+          ],
+        },
+      },
+    ],
+    []
+  );
+
+  const [selectedTemplate, setSelectedTemplate] = useState(templates()[0]);
 
   const form = useForm<ComposeFormValues>({
     resolver: zodResolver(composeSchema),
     defaultValues: {
-      to: [],
-      cc: [],
-      bcc: [],
-      subject: '',
-      content: '',
+      to: initialData?.to || [],
+      cc: initialData?.cc || [],
+      bcc: initialData?.bcc || [],
+      subject: initialData?.subject || '',
+      content: initialData?.content || {
+        type: 'doc',
+        content: [{ type: 'paragraph', content: [] }],
+      },
     },
   });
+
+  // Reset form when dialog opens with new initial data
+  useEffect(() => {
+    if (open) {
+      form.reset({
+        to: initialData?.to || [],
+        cc: initialData?.cc || [],
+        bcc: initialData?.bcc || [],
+        subject: initialData?.subject || '',
+        content: initialData?.content || {
+          type: 'doc',
+          content: [{ type: 'paragraph', content: [] }],
+        },
+      });
+
+      // Handle quoted content for replies
+      if (initialData?.quotedContent) {
+        setQuotedContent(initialData.quotedContent);
+        setShowQuotedContent(false); // Collapsed by default
+      } else {
+        setQuotedContent('');
+        setShowQuotedContent(false);
+      }
+
+      // Reset template selection to blank when using initial data
+      if (initialData) {
+        setSelectedTemplate(templates()[0]);
+      }
+    }
+  }, [open, initialData, form, templates]);
 
   // Preview sanitization logic
   const contentValue = form.watch('content');
@@ -233,25 +351,62 @@ export function ComposeDialog({
     async function sanitizeContent() {
       setPreviewLoading(true);
       try {
-        if (!contentValue) {
+        // Convert Tiptap JSON to HTML for preview
+        const extensions = [
+          StarterKit,
+          TextAlign,
+          Highlight,
+          Underline,
+          Link.configure({ openOnClick: false }),
+          Strike,
+          Subscript,
+          Superscript,
+        ];
+
+        let contentHtml = '';
+
+        // Check if we have valid content to convert
+        if (
+          contentValue &&
+          contentValue.content &&
+          Array.isArray(contentValue.content)
+        ) {
+          try {
+            contentHtml = generateHTML(contentValue, extensions);
+          } catch (error) {
+            console.error('Error generating HTML from Tiptap content:', error);
+            contentHtml = '<p>Error generating preview</p>';
+          }
+        }
+
+        // Combine content with quoted content for preview
+        const fullContent = quotedContent
+          ? `${contentHtml}\n\n<div class="gmail_quote"><blockquote class="gmail_quote" style="margin:0 0 0 .8ex;border-left:1px #ccc solid;padding-left:1ex">${quotedContent.replace(/\n/g, '<br>')}</blockquote></div>`
+          : contentHtml;
+
+        if (!fullContent.trim()) {
           setSanitizedHtml('');
           setPreviewLoading(false);
           return;
         }
+
         let sanitized = '';
         try {
-          sanitized = DOMPurify.sanitize(contentValue);
+          sanitized = DOMPurify.sanitize(fullContent);
           // eslint-disable-next-line @typescript-eslint/no-unused-vars
         } catch (_) {
           try {
             const sanitizeHtml = (await import('sanitize-html')).default;
-            sanitized = sanitizeHtml(contentValue);
+            sanitized = sanitizeHtml(fullContent);
           } catch {
-            // fallback: empty string
-            sanitized = '';
+            // fallback: show raw content
+            sanitized = fullContent;
           }
         }
         if (!cancelled) setSanitizedHtml(sanitized);
+      } catch (error) {
+        console.error('Error in preview sanitization:', error);
+        if (!cancelled) setSanitizedHtml('<p>Error generating preview</p>');
       } finally {
         if (!cancelled) setPreviewLoading(false);
       }
@@ -260,11 +415,31 @@ export function ComposeDialog({
     return () => {
       cancelled = true;
     };
-  }, [contentValue, previewMode]);
+  }, [contentValue, previewMode, quotedContent]);
 
   async function onSubmit(values: ComposeFormValues) {
     setIsLoading(true);
     try {
+      // Convert Tiptap JSON to HTML
+      const extensions = [
+        StarterKit,
+        TextAlign,
+        Highlight,
+        Underline,
+        Link.configure({ openOnClick: false }),
+        Strike,
+        Subscript,
+        Superscript,
+      ];
+
+      // Generate HTML from the editor content
+      const contentHtml = generateHTML(values.content, extensions);
+
+      // Combine user content with quoted content if present
+      const finalContent = quotedContent
+        ? `${contentHtml}\n\n<div class="gmail_quote"><blockquote class="gmail_quote" style="margin:0 0 0 .8ex;border-left:1px #ccc solid;padding-left:1ex">${quotedContent.replace(/\n/g, '<br>')}</blockquote></div>`
+        : contentHtml;
+
       const response = await fetch(
         // switch to https://tuturuuu.com endpoint once the mail service PR is merged
         `/api/v1/workspaces/${wsId}/mail/send`,
@@ -274,7 +449,10 @@ export function ComposeDialog({
             'Content-Type': 'application/json',
             Authorization: `Bearer ${localStorage.getItem('apiKey')}`,
           },
-          body: JSON.stringify(values),
+          body: JSON.stringify({
+            ...values,
+            content: finalContent,
+          }),
         }
       );
 
@@ -360,7 +538,7 @@ export function ComposeDialog({
                   className="w-full rounded border bg-background px-2 py-1 text-foreground"
                   value={selectedTemplate?.label ?? ''}
                   onChange={(e) => {
-                    const tmpl = templates.find(
+                    const tmpl = templates().find(
                       (t) => t.label === e.target.value
                     );
                     if (tmpl) {
@@ -371,7 +549,7 @@ export function ComposeDialog({
                   }}
                   disabled={isLoading}
                 >
-                  {templates.map((tmpl) => (
+                  {templates().map((tmpl) => (
                     <option value={tmpl.label} key={tmpl.label}>
                       {tmpl.label}
                     </option>
@@ -496,10 +674,21 @@ export function ComposeDialog({
                     render={({ field }) => (
                       <FormItem className="flex flex-1 flex-col">
                         <FormControl>
-                          <Textarea
-                            placeholder={t('mail.message_placeholder')}
-                            className="min-h-[200px] flex-1 resize-none"
-                            {...field}
+                          <RichTextEditor
+                            content={
+                              field.value &&
+                              field.value.type === 'doc' &&
+                              field.value.content
+                                ? field.value
+                                : {
+                                    type: 'doc',
+                                    content: [
+                                      { type: 'paragraph', content: [] },
+                                    ],
+                                  }
+                            }
+                            onChange={field.onChange}
+                            writePlaceholder={t('mail.message_placeholder')}
                           />
                         </FormControl>
                         <FormMessage />
@@ -513,24 +702,70 @@ export function ComposeDialog({
                       <div className="text-xs text-muted-foreground">
                         {t('common.loading')}
                       </div>
-                    ) : sanitizedHtml.trim().length > 0 &&
-                      /<[^>]+>/.test(contentValue) ? (
+                    ) : sanitizedHtml.trim().length > 0 ? (
                       <div
-                        className="prose max-w-full break-words text-foreground prose-a:text-dynamic-blue prose-a:underline prose-strong:text-foreground"
+                        className="prose max-w-full break-words text-foreground prose-h1:text-foreground prose-h2:text-foreground prose-h3:text-foreground prose-h4:text-foreground prose-h5:text-foreground prose-h6:text-foreground prose-a:text-dynamic-blue prose-a:underline prose-blockquote:text-foreground prose-strong:text-foreground"
                         // biome-ignore lint/security/noDangerouslySetInnerHtml: <html content is sanitized>
                         dangerouslySetInnerHTML={{ __html: sanitizedHtml }}
                       />
                     ) : (
-                      <pre
-                        className="text-sm whitespace-pre-wrap text-foreground"
-                        style={{ margin: 0 }}
-                      >
-                        {contentValue}
-                      </pre>
+                      <div className="text-sm text-muted-foreground">
+                        No content to preview
+                      </div>
                     )}
                   </div>
                 </TabsContent>
               </Tabs>
+
+              {/* Quoted Content Section */}
+              {quotedContent && (
+                <div className="mt-4">
+                  <Collapsible
+                    open={showQuotedContent}
+                    onOpenChange={setShowQuotedContent}
+                  >
+                    <CollapsibleTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="flex w-full items-center justify-between rounded-lg border bg-muted/20 px-3 py-2.5 text-left text-sm font-medium text-muted-foreground transition-all hover:bg-muted/40 hover:text-foreground"
+                      >
+                        <span className="flex items-center gap-2">
+                          <div className="flex h-5 w-5 items-center justify-center rounded-sm bg-primary/10">
+                            <span className="text-xs">💬</span>
+                          </div>
+                          <span className="text-sm">
+                            {initialData?.isReply
+                              ? t('mail.original_message')
+                              : t('mail.quoted_message')}
+                          </span>
+                        </span>
+                        {showQuotedContent ? (
+                          <ChevronUp className="h-4 w-4 transition-transform" />
+                        ) : (
+                          <ChevronDown className="h-4 w-4 transition-transform" />
+                        )}
+                      </Button>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="mt-2">
+                      <div className="rounded-lg border bg-muted/10 p-4">
+                        <pre className="text-xs leading-relaxed whitespace-pre-wrap text-muted-foreground">
+                          {quotedContent}
+                        </pre>
+                      </div>
+                    </CollapsibleContent>
+                  </Collapsible>
+                  <div className="mt-2 flex items-center gap-1 text-xs text-muted-foreground">
+                    <span className="inline-block h-1 w-1 rounded-full bg-green-500"></span>
+                    <span>
+                      {initialData?.isReply
+                        ? t('mail.original_content_included')
+                        : t('mail.quoted_content_included')}
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="flex flex-shrink-0 justify-end gap-2 border-t pt-4">
