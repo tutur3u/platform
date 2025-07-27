@@ -1,5 +1,6 @@
 'use client';
 
+import EditPlanDialog from './edit-plan-dialog';
 import type { MeetTogetherPlanWithParticipants } from './page';
 import UserTime from './user-time';
 import { Separator } from '@tuturuuu/ui/separator';
@@ -18,6 +19,11 @@ export function PlansGrid({
   // biome-ignore lint/suspicious/noExplicitAny: <translations are not typed>
   t: any;
 }) {
+  const handleDialogClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
   if (plans.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-16">
@@ -44,7 +50,7 @@ export function PlansGrid({
           className="group relative rounded-xl border border-foreground/10 bg-accent p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-foreground/20 hover:shadow-lg"
         >
           {/* Header with title and timezone */}
-          <div className="mb-5 flex w-full items-start justify-between gap-3">
+          <div className="mb-5 flex w-full items-center justify-between gap-3">
             <h3 className="line-clamp-2 flex-1 text-lg leading-tight font-semibold text-foreground transition-colors">
               {plan.name || t('untitled_plan')}
             </h3>
@@ -59,6 +65,9 @@ export function PlansGrid({
                 )}
               </div>
             )}
+            <div onClick={handleDialogClick}>
+              <EditPlanDialog plan={plan} />
+            </div>
           </div>
 
           {/* Description */}

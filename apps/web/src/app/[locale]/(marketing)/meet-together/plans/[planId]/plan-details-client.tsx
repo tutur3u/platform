@@ -1,12 +1,17 @@
 'use client';
 
+import AgendaDetails from './agenda-details';
 import AllAvailabilities from './all-availabilities';
 import EditPlanDialog from './edit-plan-dialog';
 import PlanLogin from './plan-login';
 import PlanUserFilter from './plan-user-filter';
 import { useTimeBlocking } from './time-blocking-provider';
 import UtilityButtons from './utility-buttons';
-import type { MeetTogetherPlan } from '@tuturuuu/types/primitives/MeetTogetherPlan';
+import PlanDetailsPolls from '@/app/[locale]/(marketing)/meet-together/plans/[planId]/plan-details-polls';
+import type {
+  GetPollsForPlanResult,
+  MeetTogetherPlan,
+} from '@tuturuuu/types/primitives/MeetTogetherPlan';
 import type { User } from '@tuturuuu/types/primitives/User';
 import { CircleQuestionMark } from '@tuturuuu/ui/icons';
 import { Label } from '@tuturuuu/ui/label';
@@ -19,7 +24,9 @@ import { useCallback, useEffect, useState } from 'react';
 
 interface PlanDetailsClientProps {
   plan: MeetTogetherPlan;
+  polls: GetPollsForPlanResult | null;
   platformUser: User | null;
+  isCreator: boolean;
   users: {
     id: string | null;
     display_name: string | null;
@@ -41,7 +48,9 @@ interface PlanDetailsClientProps {
 export default function PlanDetailsClient({
   plan,
   platformUser,
+  isCreator,
   users,
+  polls,
   timeblocks,
 }: PlanDetailsClientProps) {
   const { resolvedTheme } = useTheme();
@@ -71,10 +80,6 @@ export default function PlanDetailsClient({
     if (!element) throw new Error('Plan element not found');
 
     const backgroundColor = resolvedTheme === 'dark' ? '#0a0a0a' : '#ffffff';
-    // const logoSrc =
-    //   resolvedTheme === 'dark'
-    //     ? '/media/official-logos/light-logo.png'
-    //     : '/media/official-logos/dark-logo.png';
 
     try {
       const canvas = await html2canvas(element, {
@@ -93,63 +98,10 @@ export default function PlanDetailsClient({
         },
       });
 
-      // const ctx = canvas.getContext('2d');
-      // const logo = new window.Image();
-      // logo.crossOrigin = 'anonymous';
-      // logo.src = logoSrc;
-      // logo.onload = () => {
-      //   if (ctx) {
-      //     const logoWidth = 60;
-      //     const logoHeight = 60;
-      //     const logoPosition:
-      //       | 'center'
-      //       | 'top-left'
-      //       | 'top-right'
-      //       | 'bottom-left'
-      //       | 'bottom-right' = 'bottom-right';
-      //     const margin = 32;
-      //     let x = 0;
-      //     let y = 0;
-      //     switch (logoPosition) {
-      //       case 'center':
-      //         x = (canvas.width - logoWidth) / 2;
-      //         y = (canvas.height - logoHeight) / 2;
-      //         break;
-      //       case 'top-left':
-      //         x = margin;
-      //         y = margin;
-      //         break;
-      //       case 'top-right':
-      //         x = canvas.width - logoWidth - margin;
-      //         y = margin;
-      //         break;
-      //       case 'bottom-left':
-      //         x = margin;
-      //         y = canvas.height - logoHeight - margin;
-      //         break;
-      //       case 'bottom-right':
-      //         x = canvas.width - logoWidth - margin;
-      //         y = canvas.height - logoHeight - margin;
-      //         break;
-      //       default:
-      //         x = (canvas.width - logoWidth) / 2;
-      //         y = (canvas.height - logoHeight) / 2;
-      //     }
-      //     ctx.drawImage(logo, x, y, logoWidth, logoHeight);
-      //   }
       const link = document.createElement('a');
       link.download = `plan-${plan.id}.png`;
       link.href = canvas.toDataURL('image/png', 2.0);
       link.click();
-
-      // logo.onerror = (e) => {
-      //   console.error('Logo failed to load:', logoSrc, e);
-      //   alert('Logo failed to load! Check the path and file type.');
-      //   const link = document.createElement('a');
-      //   link.download = `plan-${plan.id}.png`;
-      //   link.href = canvas.toDataURL('image/png', 2.0);
-      //   link.click();
-      // };
     } catch (error) {
       console.error('Error generating PNG:', error);
       throw error;
@@ -157,13 +109,14 @@ export default function PlanDetailsClient({
   }, [plan.id, resolvedTheme]);
 
   return (
-    <div className="flex w-full max-w-6xl flex-col gap-6 p-4 text-foreground md:px-8 lg:gap-14 lg:px-14">
+    <div className="flex w-full max-w-6xl flex-col gap-6 p-4 text-foreground md:px-6 lg:gap-14 lg:px-14">
       <div className="flex w-full flex-col items-center">
         <UtilityButtons
           plan={plan}
           platformUser={platformUser}
           handlePNG={downloadAsPNG}
         />
+
         <div id="plan-ref" className="flex w-full flex-col items-center">
           <p className="my-4 flex max-w-xl items-center gap-2 text-center text-2xl leading-tight! font-semibold md:mb-4 lg:text-3xl">
             {plan.name}{' '}
@@ -224,7 +177,7 @@ export default function PlanDetailsClient({
               </div>
             )}
           </div>
-          <div className="mt-8 grid w-full items-center justify-between gap-4 md:grid-cols-2">
+          <div className="mt-8 grid w-full grid-cols-1 items-start justify-between gap-4 md:grid-cols-3 md:items-center">
             <PlanLogin
               plan={plan}
               timeblocks={[]}
@@ -236,7 +189,17 @@ export default function PlanDetailsClient({
               showBestTimes={showBestTimes}
               onBestTimesStatusByDateAction={setBestTimesStatusByDate}
             />
+            <PlanDetailsPolls
+              plan={plan}
+              polls={polls}
+              isCreator={isCreator}
+              platformUser={platformUser}
+            />
           </div>
+
+          <Separator className="my-8" />
+
+          <AgendaDetails plan={plan} />
         </div>
       </div>
       {users.length > 0 && (
