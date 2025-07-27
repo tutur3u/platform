@@ -14,9 +14,10 @@ export function checkEnvVariables({
   url: string;
   key: string;
 } {
-  const url = 'http://127.0.0.1:8001';
-  const key =
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0';
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = useServiceKey
+    ? process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY
+    : process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   if (!url) throw Error('Missing Supabase URL');
   if (!key) throw Error(`Missing Supabase key`);
