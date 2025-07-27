@@ -373,7 +373,19 @@ export const CalendarSyncProvider = ({
         }
 
         // Log the start of the sync
-        let syncRecord: any = null;
+        let syncRecord: {
+          endtime: string | null;
+          events_deleted: number | null;
+          events_inserted: number | null;
+          events_updated: number | null;
+          id: string;
+          source: string | null;
+          starttime: string | null;
+          status: string | null;
+          type: string | null;
+          triggered_by: string | null;
+          ws_id: string;
+        } | null = null;
         let numInserted = 0;
         let numUpdated = 0;
         let numDeleted = 0;
