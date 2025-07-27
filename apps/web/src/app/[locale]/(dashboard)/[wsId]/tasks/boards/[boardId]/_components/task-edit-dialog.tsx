@@ -129,9 +129,7 @@ export function TaskEditDialog({
     // Ensure tags is always an array, never undefined
     if (taskUpdates.tags.length === 0) {
       taskUpdates.tags = [];
-    }
-    
-    // No debugging needed
+        }
     
     updateTaskMutation.mutate(
       {

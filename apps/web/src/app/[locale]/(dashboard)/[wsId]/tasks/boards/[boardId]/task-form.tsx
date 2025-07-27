@@ -41,8 +41,6 @@ export function TaskForm({ listId, onTaskCreated }: Props) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // No debugging needed
-
   // Form state
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -106,8 +104,6 @@ export function TaskForm({ listId, onTaskCreated }: Props) {
       if (tags?.filter((tag) => tag && tag.trim() !== '').length > 0) {
         taskData.tags = tags.filter((tag) => tag && tag.trim() !== '');
       }
-
-      console.log('Submitting task data:', { taskData, listId });
 
       const newTask = await createTask(supabase, listId, taskData);
 

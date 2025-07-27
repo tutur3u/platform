@@ -143,10 +143,7 @@ export async function createTask(
     throw new Error('User not authenticated');
   }
 
-  console.log('User authenticated:', user.id);
-
   // Then, verify that the list exists and user has access to it
-  console.log('Verifying list access for listId:', listId);
   const { data: listCheck, error: listError } = await supabase
     .from('task_lists')
     .select('id, name')
@@ -154,7 +151,6 @@ export async function createTask(
     .single();
 
   if (listError) {
-    console.error('Error checking list access:', listError);
     throw new Error(`List not found or access denied: ${listError.message || 'Unknown error'}`);
   }
 
@@ -162,11 +158,7 @@ export async function createTask(
     throw new Error('List not found');
   }
 
-  console.log('List access verified:', listCheck);
 
-  // Debug: Log the incoming task object to see what properties it has
-  console.log('Incoming task object:', task);
-  console.log('Task object keys:', Object.keys(task));
 
   // Prepare task data with only the fields that exist in the database
   const taskData: {
@@ -202,26 +194,9 @@ export async function createTask(
     }
   }
 
-  // Debug: Log the prepared task data
-  console.log('Prepared task data keys:', Object.keys(taskData));
 
-  console.log('Creating task with data:', taskData);
-  console.log('Task data JSON:', JSON.stringify(taskData, null, 2));
 
-  // Try a minimal insert first to test
-  const minimalTaskData: {
-    name: string;
-    list_id: string;
-    archived: boolean;
-    created_at: string;
-  } = {
-    name: taskData.name,
-    list_id: taskData.list_id,
-    archived: false,
-    created_at: new Date().toISOString(),
-  };
 
-  console.log('Minimal task data:', minimalTaskData);
 
   // Now try the normal insert with the fixed database
   const { data, error } = await supabase
@@ -231,10 +206,6 @@ export async function createTask(
     .single();
 
   if (error) {
-    console.error('Supabase error creating task:', error);
-    console.error('Error type:', typeof error);
-    console.error('Error keys:', Object.keys(error));
-    console.error('Error stringified:', JSON.stringify(error, null, 2));
     
     // Create a more descriptive error message
     let errorMessage = 'Failed to create task';
@@ -258,8 +229,6 @@ export async function createTask(
       // If we can't extract a meaningful message, create one based on the error structure
       errorMessage = `Database operation failed: ${JSON.stringify(errorObj)}`;
     }
-    
-    console.error('Extracted error message:', errorMessage);
     
     // Create a new Error object with the descriptive message
     const enhancedError = new Error(errorMessage);

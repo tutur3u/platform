@@ -141,7 +141,6 @@ export function TaskActions({ taskId, boardId, onUpdate }: Props) {
 
   // Memoize the onChange handler to prevent stale closures
   const handleTagsChange = useCallback((tags: string[]) => {
-    console.log('TaskActions: handleTagsChange called with:', tags);
     setNewTags(tags);
   }, []); // Remove newTags from dependencies to prevent recreation
 
