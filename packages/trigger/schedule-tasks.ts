@@ -8,16 +8,12 @@ export const scheduleTask = task({
     concurrencyLimit: 1,
   },
   run: async (payload: { ws_id: string }) => {
-    console.log(`[${payload.ws_id}] Starting schedule task`);
-
     try {
       const result = await schedulableTasksHelper(payload.ws_id);
 
       if (!result.success) {
         throw new Error(result.error || 'Schedule tasks failed');
       }
-
-      console.log(`[${payload.ws_id}] Schedule task completed successfully`);
 
       return {
         ws_id: payload.ws_id,
