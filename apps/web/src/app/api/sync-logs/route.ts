@@ -16,9 +16,9 @@ export async function GET() {
   const { data, error } = await supabase
     .from('calendar_sync_dashboard')
     .select(
-      'id, starttime, type, ws_id, triggered_by, status, endtime, events_inserted, events_updated, events_deleted'
+      'id, start_time, type, ws_id, triggered_by, status, end_time, events_inserted, events_updated, events_deleted'
     )
-    .order('starttime', { ascending: true });
+    .order('start_time', { ascending: true });
 
   if (error)
     return NextResponse.json(
@@ -65,14 +65,15 @@ export async function GET() {
 
     // Calculate duration
     const duration =
-      item.endtime && item.starttime
-        ? new Date(item.endtime).getTime() - new Date(item.starttime).getTime()
+      item.end_time && item.start_time
+        ? new Date(item.end_time).getTime() -
+          new Date(item.start_time).getTime()
         : 0;
 
     return {
       id: item.id,
-      timestamp: item.starttime
-        ? new Date(item.starttime).toISOString()
+      timestamp: item.start_time
+        ? new Date(item.start_time).toISOString()
         : new Date().toISOString(),
       type: item.type || 'background',
       workspace: workspace,

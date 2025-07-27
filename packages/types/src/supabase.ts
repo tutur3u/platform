@@ -766,13 +766,13 @@ export type Database = {
       };
       calendar_sync_dashboard: {
         Row: {
-          endtime: string | null;
+          end_time: string | null;
           events_deleted: number | null;
           events_inserted: number | null;
           events_updated: number | null;
           id: string;
           source: string | null;
-          starttime: string | null;
+          start_time: string | null;
           status: string | null;
           time: string;
           triggered_by: string | null;
@@ -780,13 +780,13 @@ export type Database = {
           ws_id: string;
         };
         Insert: {
-          endtime?: string | null;
+          end_time?: string | null;
           events_deleted?: number | null;
           events_inserted?: number | null;
           events_updated?: number | null;
           id?: string;
           source?: string | null;
-          starttime?: string | null;
+          start_time?: string | null;
           status?: string | null;
           time?: string;
           triggered_by?: string | null;
@@ -794,13 +794,13 @@ export type Database = {
           ws_id: string;
         };
         Update: {
-          endtime?: string | null;
+          end_time?: string | null;
           events_deleted?: number | null;
           events_inserted?: number | null;
           events_updated?: number | null;
           id?: string;
           source?: string | null;
-          starttime?: string | null;
+          start_time?: string | null;
           status?: string | null;
           time?: string;
           triggered_by?: string | null;

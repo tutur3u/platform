@@ -374,13 +374,13 @@ export const CalendarSyncProvider = ({
 
         // Log the start of the sync
         let syncRecord: {
-          endtime: string | null;
+          end_time: string | null;
           events_deleted: number | null;
           events_inserted: number | null;
           events_updated: number | null;
           id: string;
           source: string | null;
-          starttime: string | null;
+          start_time: string | null;
           status: string | null;
           type: string | null;
           triggered_by: string | null;
@@ -395,8 +395,8 @@ export const CalendarSyncProvider = ({
             .from('calendar_sync_dashboard')
             .insert({
               ws_id: wsId,
-              starttime: new Date().toISOString(),
-              endtime: new Date().toISOString(),
+              start_time: new Date().toISOString(),
+              end_time: new Date().toISOString(),
               triggered_by: authUser?.id,
               type: 'active',
               status: 'running',
@@ -585,7 +585,7 @@ export const CalendarSyncProvider = ({
             .from('calendar_sync_dashboard')
             .update({
               status: 'completed',
-              endtime: new Date().toISOString(),
+              end_time: new Date().toISOString(),
               events_inserted: numInserted,
               events_updated: numUpdated,
               events_deleted: numDeleted,
