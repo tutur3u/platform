@@ -229,7 +229,10 @@ export function TaskActions({ taskId, boardId, onUpdate }: Props) {
           start_date: newStartDate?.toISOString() ?? undefined,
           end_date: newEndDate?.toISOString() ?? undefined,
           priority: newPriority === '0' ? undefined : parseInt(newPriority),
-          tags: newTags.filter((tag) => tag && tag.trim() !== ''),
+          tags: (() => {
+            const filteredTags = newTags.filter((tag) => tag && tag.trim() !== '');
+            return filteredTags.length === 0 ? [] : filteredTags;
+          })(),
         },
       },
       {
