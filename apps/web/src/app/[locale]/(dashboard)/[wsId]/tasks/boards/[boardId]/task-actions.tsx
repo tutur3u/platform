@@ -230,7 +230,9 @@ export function TaskActions({ taskId, boardId, onUpdate }: Props) {
           end_date: newEndDate?.toISOString() ?? undefined,
           priority: newPriority === '0' ? undefined : parseInt(newPriority),
           tags: (() => {
-            const filteredTags = newTags.filter((tag) => tag && tag.trim() !== '');
+            const filteredTags = newTags.filter(
+              (tag) => tag && tag.trim() !== ''
+            );
             return filteredTags.length === 0 ? [] : filteredTags;
           })(),
         },
@@ -418,9 +420,9 @@ export function TaskActions({ taskId, boardId, onUpdate }: Props) {
             </div>
             <div className="grid gap-2">
               <Label>Priority</Label>
-              <div 
-                className="flex flex-wrap gap-2" 
-                role="radiogroup" 
+              <div
+                className="flex flex-wrap gap-2"
+                role="radiogroup"
                 aria-label="Task priority selection"
               >
                 {[

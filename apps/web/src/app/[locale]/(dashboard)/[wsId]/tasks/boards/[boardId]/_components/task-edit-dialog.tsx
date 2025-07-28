@@ -207,9 +207,9 @@ export function TaskEditDialog({
           {/* Priority Selection */}
           <div className="space-y-2">
             <Label>Priority</Label>
-            <div 
-              className="flex flex-wrap gap-2" 
-              role="radiogroup" 
+            <div
+              className="flex flex-wrap gap-2"
+              role="radiogroup"
               aria-label="Task priority selection"
             >
               {[
