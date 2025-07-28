@@ -138,8 +138,11 @@ export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
     }
     if (type === 'Task') {
       const task = active.data.current.task;
+      console.log('🎯 onDragStart - Task:', task);
+      console.log('📋 Task list_id:', task.list_id);
       setActiveTask(task);
       pickedUpTaskColumn.current = String(task.list_id);
+      console.log('📋 pickedUpTaskColumn set to:', pickedUpTaskColumn.current);
 
       // Use more specific selector for better reliability
       // Prefer data-id selector over generic querySelector
@@ -196,6 +199,8 @@ export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
 
       if (!sourceListExists || !targetListExists) return;
 
+      console.log('🔄 onDragOver - Optimistically updating task:', activeTask.id, 'to list:', targetListId);
+      
       // Optimistically update the task in the cache for preview
       queryClient.setQueryData(
         ['tasks', boardId],
@@ -241,6 +246,9 @@ export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
     console.log('🔄 onDragEnd triggered');
     console.log('📦 Active:', active);
     console.log('🎯 Over:', over);
+    
+    // Store the original list ID before resetting drag state
+    const originalListId = pickedUpTaskColumn.current;
     
     // Always reset drag state, even on invalid drop
     setActiveColumn(null);
@@ -292,10 +300,10 @@ export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
         return;
       }
       
-      // Get the original list ID from the active task data
-      const originalListId = event.active.data?.current?.task?.list_id;
-      console.log('🏠 Original list ID:', originalListId);
+      // Use the stored original list ID from drag start
+      console.log('🏠 Original list ID (from drag start):', originalListId);
       console.log('🎯 Target list ID:', targetListId);
+      console.log('📋 Active task full data:', event.active.data?.current?.task);
       
       if (!originalListId) {
         console.log('❌ No originalListId, state reset.');
