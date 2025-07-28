@@ -278,8 +278,15 @@ export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
         targetListId = String(over.id);
         console.log('📋 Dropping on column, targetListId:', targetListId);
       } else if (overType === 'Task') {
-        targetListId = String(over.data.current.task.list_id);
+        // When dropping on a task, use the list_id of the target task
+        const targetTask = over.data?.current?.task;
+        if (!targetTask) {
+          console.log('❌ No target task data, state reset.');
+          return;
+        }
+        targetListId = String(targetTask.list_id);
         console.log('📋 Dropping on task, targetListId:', targetListId);
+        console.log('📋 Target task details:', targetTask);
       } else {
         console.log('❌ Invalid drop type:', overType, 'state reset.');
         return;
@@ -305,6 +312,8 @@ export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
       console.log('🔍 Source list exists:', sourceListExists);
       console.log('🔍 Target list exists:', targetListExists);
       console.log('📊 Available columns:', columns.map(col => ({ id: col.id, name: col.name })));
+      console.log('📋 Tasks in source list:', tasks.filter(t => t.list_id === originalListId).map(t => ({ id: t.id, name: t.name })));
+      console.log('📋 Tasks in target list:', tasks.filter(t => t.list_id === targetListId).map(t => ({ id: t.id, name: t.name })));
       
       if (!sourceListExists || !targetListExists) {
         console.log('❌ Source or target list missing, state reset.');
