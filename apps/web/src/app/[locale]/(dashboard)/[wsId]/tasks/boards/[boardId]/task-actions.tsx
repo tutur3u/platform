@@ -1,5 +1,5 @@
 import { TaskTagInput } from './_components/task-tag-input';
-import { useUpdateTask, useDeleteTask } from '@/lib/task-helper';
+import { useDeleteTask, useUpdateTask } from '@/lib/task-helper';
 import { useQuery } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { Task } from '@tuturuuu/types/primitives/TaskBoard';
@@ -84,39 +84,41 @@ export function TaskActions({ taskId, boardId, onUpdate }: Props) {
         start_date: data.start_date || undefined,
         end_date: data.end_date || undefined,
         tags: data.tags || undefined,
-        assignees: data.assignees
-          ?.map(
-            (a: {
-              user: {
-                id: string;
-                display_name: string | null;
-                avatar_url: string | null;
-                handle: string | null;
-              };
-            }) => ({
-              id: a.user.id,
-              display_name: a.user.display_name || undefined,
-              avatar_url: a.user.avatar_url || undefined,
-              handle: a.user.handle || undefined,
-            })
-          )
-          .filter(
-            (
-              user: {
-                id: string;
-                display_name?: string | undefined;
-                avatar_url?: string | undefined;
-                handle?: string | undefined;
-              } | null,
-              index: number,
-              self: ({
-                id: string;
-                display_name?: string | undefined;
-                avatar_url?: string | undefined;
-                handle?: string | undefined;
-              } | null)[]
-            ) => user?.id && self.findIndex((u) => u?.id === user.id) === index
-          ) || [],
+        assignees:
+          data.assignees
+            ?.map(
+              (a: {
+                user: {
+                  id: string;
+                  display_name: string | null;
+                  avatar_url: string | null;
+                  handle: string | null;
+                };
+              }) => ({
+                id: a.user.id,
+                display_name: a.user.display_name || undefined,
+                avatar_url: a.user.avatar_url || undefined,
+                handle: a.user.handle || undefined,
+              })
+            )
+            .filter(
+              (
+                user: {
+                  id: string;
+                  display_name?: string | undefined;
+                  avatar_url?: string | undefined;
+                  handle?: string | undefined;
+                } | null,
+                index: number,
+                self: ({
+                  id: string;
+                  display_name?: string | undefined;
+                  avatar_url?: string | undefined;
+                  handle?: string | undefined;
+                } | null)[]
+              ) =>
+                user?.id && self.findIndex((u) => u?.id === user.id) === index
+            ) || [],
       };
 
       return transformedTask as Task;
@@ -167,7 +169,8 @@ export function TaskActions({ taskId, boardId, onUpdate }: Props) {
       (newEndDate?.toISOString() || null) !== task.end_date;
     const hasPriorityChange =
       newPriority !== (task.priority?.toString() || '0');
-    const hasTagsChange = JSON.stringify(newTags) !== JSON.stringify(task.tags || []);
+    const hasTagsChange =
+      JSON.stringify(newTags) !== JSON.stringify(task.tags || []);
 
     setHasChanges(
       hasNameChange ||
@@ -177,7 +180,15 @@ export function TaskActions({ taskId, boardId, onUpdate }: Props) {
         hasPriorityChange ||
         hasTagsChange
     );
-  }, [newName, newDescription, newStartDate, newEndDate, newPriority, newTags, task]);
+  }, [
+    newName,
+    newDescription,
+    newStartDate,
+    newEndDate,
+    newPriority,
+    newTags,
+    task,
+  ]);
 
   async function handleDelete() {
     setIsLoading(true);
@@ -194,7 +205,8 @@ export function TaskActions({ taskId, boardId, onUpdate }: Props) {
       onError: (error) => {
         toast({
           title: 'Error deleting task',
-          description: error.message || 'Failed to delete the task. Please try again.',
+          description:
+            error.message || 'Failed to delete the task. Please try again.',
           variant: 'destructive',
         });
       },
@@ -232,7 +244,8 @@ export function TaskActions({ taskId, boardId, onUpdate }: Props) {
         onError: (error) => {
           toast({
             title: 'Error updating task',
-            description: error.message || 'Failed to update the task. Please try again.',
+            description:
+              error.message || 'Failed to update the task. Please try again.',
             variant: 'destructive',
           });
         },
@@ -319,8 +332,8 @@ export function TaskActions({ taskId, boardId, onUpdate }: Props) {
           <DialogHeader>
             <DialogTitle>Delete Task</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete &quot;{task.name}&quot;? This action cannot
-              be undone.
+              Are you sure you want to delete &quot;{task.name}&quot;? This
+              action cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -404,11 +417,31 @@ export function TaskActions({ taskId, boardId, onUpdate }: Props) {
               <Label>Priority</Label>
               <div className="flex flex-wrap gap-2">
                 {[
-                  { value: '0', label: 'None', color: 'bg-gray-100 text-gray-700' },
-                  { value: '1', label: 'Urgent', color: 'bg-red-100 text-red-700' },
-                  { value: '2', label: 'High', color: 'bg-orange-100 text-orange-700' },
-                  { value: '3', label: 'Medium', color: 'bg-yellow-100 text-yellow-700' },
-                  { value: '4', label: 'Low', color: 'bg-green-100 text-green-700' },
+                  {
+                    value: '0',
+                    label: 'None',
+                    color: 'bg-gray-100 text-gray-700',
+                  },
+                  {
+                    value: '1',
+                    label: 'Urgent',
+                    color: 'bg-red-100 text-red-700',
+                  },
+                  {
+                    value: '2',
+                    label: 'High',
+                    color: 'bg-orange-100 text-orange-700',
+                  },
+                  {
+                    value: '3',
+                    label: 'Medium',
+                    color: 'bg-yellow-100 text-yellow-700',
+                  },
+                  {
+                    value: '4',
+                    label: 'Low',
+                    color: 'bg-green-100 text-green-700',
+                  },
                 ].map(({ value, label, color }) => (
                   <Button
                     key={value}

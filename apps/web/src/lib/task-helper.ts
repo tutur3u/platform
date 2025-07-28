@@ -137,7 +137,10 @@ export async function createTask(
   }
 
   // First, check if user is authenticated
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
   if (authError || !user) {
     console.error('Authentication error:', authError);
     throw new Error('User not authenticated');
@@ -151,14 +154,14 @@ export async function createTask(
     .single();
 
   if (listError) {
-    throw new Error(`List not found or access denied: ${listError.message || 'Unknown error'}`);
+    throw new Error(
+      `List not found or access denied: ${listError.message || 'Unknown error'}`
+    );
   }
 
   if (!listCheck) {
     throw new Error('List not found');
   }
-
-
 
   // Prepare task data with only the fields that exist in the database
   const taskData: {
@@ -186,17 +189,13 @@ export async function createTask(
   if (task.tags && Array.isArray(task.tags)) {
     // Filter out empty tags and trim whitespace
     const filteredTags = task.tags
-      .filter(tag => tag && typeof tag === 'string' && tag.trim().length > 0)
-      .map(tag => tag.trim());
-    
+      .filter((tag) => tag && typeof tag === 'string' && tag.trim().length > 0)
+      .map((tag) => tag.trim());
+
     if (filteredTags.length > 0) {
       taskData.tags = filteredTags;
     }
   }
-
-
-
-
 
   // Now try the normal insert with the fixed database
   const { data, error } = await supabase
@@ -206,13 +205,18 @@ export async function createTask(
     .single();
 
   if (error) {
-    
     // Create a more descriptive error message
     let errorMessage = 'Failed to create task';
-    
+
     // Try to extract error information from various possible structures
-    const errorObj = error as { message?: string; details?: string; hint?: string; code?: string; error?: string };
-    
+    const errorObj = error as {
+      message?: string;
+      details?: string;
+      hint?: string;
+      code?: string;
+      error?: string;
+    };
+
     if (errorObj?.message) {
       errorMessage = errorObj.message;
     } else if (errorObj?.details) {
@@ -229,15 +233,15 @@ export async function createTask(
       // If we can't extract a meaningful message, create one based on the error structure
       errorMessage = `Database operation failed: ${JSON.stringify(errorObj)}`;
     }
-    
+
     // Create a new Error object with the descriptive message
     const enhancedError = new Error(errorMessage);
     enhancedError.name = 'TaskCreationError';
     (enhancedError as { originalError?: unknown }).originalError = error;
-    
+
     throw enhancedError;
   }
-  
+
   return data as Task;
 }
 
@@ -256,7 +260,7 @@ export async function updateTask(
   if (error) {
     throw error;
   }
-  
+
   return data as Task;
 }
 
@@ -354,7 +358,7 @@ export async function moveTask(
   // - done, closed: task is completed/archived (archived = true)
   const shouldArchive =
     targetList.status === 'done' || targetList.status === 'closed';
-  
+
   const { data, error } = await supabase
     .from('tasks')
     .update({
@@ -490,7 +494,7 @@ export function useUpdateTask(boardId: string) {
         variant: 'destructive',
       });
     },
-        onSuccess: (updatedTask) => {
+    onSuccess: (updatedTask) => {
       // Update the cache with the server response
       queryClient.setQueryData(
         ['tasks', boardId],
@@ -650,16 +654,16 @@ export function useMoveTask(boardId: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
-          mutationFn: async ({
-        taskId,
-        newListId,
-      }: {
-        taskId: string;
-        newListId: string;
-      }) => {
-        const supabase = createClient();
-        return moveTask(supabase, taskId, newListId);
-      },
+    mutationFn: async ({
+      taskId,
+      newListId,
+    }: {
+      taskId: string;
+      newListId: string;
+    }) => {
+      const supabase = createClient();
+      return moveTask(supabase, taskId, newListId);
+    },
     onMutate: async ({ taskId, newListId }) => {
       // Cancel any outgoing refetches
       await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });

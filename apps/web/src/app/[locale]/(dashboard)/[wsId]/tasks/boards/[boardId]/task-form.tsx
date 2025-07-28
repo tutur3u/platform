@@ -11,6 +11,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@tuturuuu/ui/card';
+import { useToast } from '@tuturuuu/ui/hooks/use-toast';
 import {
   Calendar as CalendarIcon,
   Clock,
@@ -24,7 +25,6 @@ import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { Textarea } from '@tuturuuu/ui/textarea';
-import { useToast } from '@tuturuuu/ui/hooks/use-toast';
 import { cn } from '@tuturuuu/utils/format';
 import { format } from 'date-fns';
 import { useParams } from 'next/navigation';
@@ -123,16 +123,21 @@ export function TaskForm({ listId, onTaskCreated }: Props) {
       onTaskCreated();
     } catch (error) {
       console.error('Error creating task:', error);
-      
+
       // Enhanced error handling with better error messages
       let errorMessage = 'Failed to create task';
-      
+
       if (error instanceof Error) {
         errorMessage = error.message;
         console.error('Error details:', error.message);
       } else if (typeof error === 'object' && error !== null) {
         // Handle Supabase errors
-        const supabaseError = error as { message?: string; details?: string; hint?: string; code?: string };
+        const supabaseError = error as {
+          message?: string;
+          details?: string;
+          hint?: string;
+          code?: string;
+        };
         if (supabaseError.message) {
           errorMessage = supabaseError.message;
         } else if (supabaseError.details) {
@@ -143,7 +148,7 @@ export function TaskForm({ listId, onTaskCreated }: Props) {
           errorMessage = `Database error (${supabaseError.code}): ${supabaseError.message || 'Unknown database error'}`;
         }
       }
-      
+
       // Show user-friendly error message
       toast({
         title: 'Error creating task',

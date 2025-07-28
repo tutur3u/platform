@@ -1,7 +1,7 @@
 'use client';
 
 import { TaskTagInput } from './task-tag-input';
-import { useUpdateTask, invalidateTaskCaches } from '@/lib/task-helper';
+import { invalidateTaskCaches, useUpdateTask } from '@/lib/task-helper';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { Task, TaskList } from '@tuturuuu/types/primitives/TaskBoard';
@@ -72,7 +72,7 @@ export function TaskEditDialog({
   const params = useParams();
   const boardId = params.boardId as string;
   const queryClient = useQueryClient();
-  
+
   // Use the React Query mutation hook for updating tasks
   const updateTaskMutation = useUpdateTask(boardId);
 
@@ -113,7 +113,7 @@ export function TaskEditDialog({
     if (!name.trim()) return;
 
     setIsLoading(true);
-    
+
     // Prepare task updates
     const taskUpdates: Partial<Task> = {
       name: name.trim(),
@@ -129,8 +129,8 @@ export function TaskEditDialog({
     // Ensure tags is always an array, never undefined
     if (taskUpdates.tags.length === 0) {
       taskUpdates.tags = [];
-        }
-    
+    }
+
     updateTaskMutation.mutate(
       {
         taskId: task.id,
@@ -140,7 +140,7 @@ export function TaskEditDialog({
         onSuccess: () => {
           // Force cache invalidation
           invalidateTaskCaches(queryClient, boardId);
-          
+
           toast({
             title: 'Task updated',
             description: 'The task has been successfully updated.',
