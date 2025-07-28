@@ -68,12 +68,15 @@ interface Props {
   isOverlay?: boolean;
   onUpdate: () => void;
   availableLists?: TaskList[]; // Optional: pass from parent to avoid redundant API calls
+  isSelected?: boolean;
+  isMultiSelectMode?: boolean;
+  onSelect?: (taskId: string, event: React.MouseEvent) => void;
 }
 
 // Lightweight drag overlay version
 export function LightweightTaskCard({ task }: { task: Task }) {
   return (
-    <Card className="pointer-events-none w-full max-w-[350px] scale-105 opacity-95 shadow-xl ring-2 ring-primary/20 select-none">
+    <Card className="pointer-events-none w-full max-w-[350px] scale-105 border-2 border-primary/20 bg-background opacity-95 shadow-xl ring-2 ring-primary/20 select-none">
       <div className="flex flex-col gap-2 p-4">
         <div className="truncate text-base font-semibold">{task.name}</div>
         <div className="flex items-center gap-2">
@@ -101,6 +104,9 @@ export const TaskCard = React.memo(function TaskCard({
   isOverlay,
   onUpdate,
   availableLists: propAvailableLists,
+  isSelected = false,
+  isMultiSelectMode = false,
+  onSelect,
 }: Props) {
   const [isLoading, setIsLoading] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
@@ -412,6 +418,7 @@ export const TaskCard = React.memo(function TaskCard({
       style={style}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
+      onClick={(e) => onSelect?.(task.id, e)}
       className={cn(
         'group relative overflow-hidden rounded-lg border-l-4 transition-all duration-200',
         'cursor-default hover:shadow-md',
@@ -429,6 +436,8 @@ export const TaskCard = React.memo(function TaskCard({
         // Hover state
         !isDragging &&
           'hover:border-primary/30 hover:ring-1 hover:ring-primary/15',
+        // Selection state
+        isSelected && 'bg-primary/5 shadow-md ring-2 ring-primary/50',
         // Visual feedback for invalid drop (dev only)
         process.env.NODE_ENV === 'development' &&
           isDragging &&
@@ -440,6 +449,13 @@ export const TaskCard = React.memo(function TaskCard({
       {isOverdue && !task.archived && (
         <div className="absolute top-0 right-0 h-0 w-0 border-t-[20px] border-l-[20px] border-t-dynamic-red/80 border-l-transparent">
           <AlertCircle className="absolute -top-4 -right-[18px] h-3 w-3" />
+        </div>
+      )}
+
+      {/* Selection indicator */}
+      {isMultiSelectMode && isSelected && (
+        <div className="absolute top-2 left-2 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground shadow-sm">
+          ✓
         </div>
       )}
 
