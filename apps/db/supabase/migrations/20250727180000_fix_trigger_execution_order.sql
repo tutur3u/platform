@@ -7,6 +7,26 @@ DROP TRIGGER IF EXISTS trg_ensure_tags_not_null ON "public"."tasks";
 DROP FUNCTION IF EXISTS normalize_task_tags_trigger();
 DROP FUNCTION IF EXISTS ensure_tags_not_null();
 
+-- Ensure the normalize_task_tags function exists (in case it was dropped)
+CREATE OR REPLACE FUNCTION normalize_task_tags(tags text[])
+RETURNS text[]
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  normalized_tags text[];
+BEGIN
+  -- Convert tags to lowercase and remove duplicates
+  SELECT ARRAY(
+    SELECT DISTINCT LOWER(TRIM(tag))
+    FROM unnest(tags) AS tag
+    WHERE TRIM(tag) <> ''
+    ORDER BY LOWER(TRIM(tag))
+  ) INTO normalized_tags;
+  
+  RETURN COALESCE(normalized_tags, ARRAY[]::text[]);
+END;
+$$;
+
 -- Create a single combined trigger function that handles both operations in sequence
 CREATE OR REPLACE FUNCTION handle_task_tags()
 RETURNS trigger
@@ -34,4 +54,5 @@ CREATE TRIGGER trg_handle_task_tags
   EXECUTE FUNCTION handle_task_tags();
 
 -- Grant execute permissions
+GRANT EXECUTE ON FUNCTION normalize_task_tags(text[]) TO authenticated;
 GRANT EXECUTE ON FUNCTION handle_task_tags() TO authenticated; 
