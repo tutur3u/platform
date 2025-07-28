@@ -59,3 +59,10 @@ export interface GetPollsForPlanResult {
   guestVotes: PollGuestVote[]; // Flat array for convenience
   error?: string;
 }
+
+export interface GuestUser {
+  id?: string | null;
+  display_name?: string | null;
+  password_hash?: string;
+  is_guest?: boolean | null;
+}

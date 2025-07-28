@@ -1,8 +1,10 @@
 'use client';
 
+import PlanComments from '@/app/[locale]/(marketing)/meet-together/plans/[planId]/plan-comments';
 import { useTimeBlocking } from '@/app/[locale]/(marketing)/meet-together/plans/[planId]/time-blocking-provider';
 import type {
   GetPollsForPlanResult,
+  GuestUser,
   MeetTogetherPlan,
 } from '@tuturuuu/types/primitives/MeetTogetherPlan';
 import type { User } from '@tuturuuu/types/primitives/User';
@@ -35,6 +37,16 @@ export default function PlanDetailsPolls({
   const t = useTranslations('ws-polls');
   const isMobile = useIsMobile();
 
+  const { user: guestUser } = useTimeBlocking();
+  const user = guestUser ?? platformUser;
+
+  const userType =
+    user?.is_guest === true
+      ? 'GUEST'
+      : platformUser?.id
+        ? 'PLATFORM'
+        : 'DISPLAY';
+
   if (isMobile) {
     return (
       <Accordion
@@ -51,7 +63,9 @@ export default function PlanDetailsPolls({
             <PlanDetailsPollContent
               plan={plan}
               isCreator={isCreator}
-              platformUser={platformUser}
+              user={user}
+              userType={userType}
+              // platformUser={platformUser}
               polls={polls}
             />
           </AccordionContent>
@@ -60,35 +74,43 @@ export default function PlanDetailsPolls({
     );
   }
   return (
-    <PlanDetailsPollContent
-      plan={plan}
-      isCreator={isCreator}
-      platformUser={platformUser}
-      polls={polls}
-    />
+    <>
+      <PlanDetailsPollContent
+        plan={plan}
+        isCreator={isCreator}
+        user={user}
+        userType={userType}
+        // platformUser={platformUser}
+        polls={polls}
+      />
+      <PlanComments
+        planId={plan.id ?? ''}
+        userType={userType}
+        currentUserName={user?.display_name ?? ''}
+        guestId={userType === 'GUEST' ? user?.id : undefined}
+      />
+    </>
   );
 }
 function PlanDetailsPollContent({
   plan,
   isCreator,
-  platformUser,
+  user,
+  userType,
   polls,
-}: PlanDetailsPollsProps) {
+}: {
+  plan: MeetTogetherPlan;
+  isCreator: boolean;
+  user: GuestUser | User | null;
+  userType: 'PLATFORM' | 'GUEST' | 'DISPLAY';
+  polls: GetPollsForPlanResult | null;
+}) {
   const t = useTranslations('ws-polls');
-  const { user: guestUser } = useTimeBlocking();
   // State for new poll input
   const [newPollName, setNewPollName] = useState('');
   const [creating, setCreating] = useState(false);
 
-  const user = guestUser ?? platformUser;
   const currentUserId = user?.id ?? null;
-  const userType =
-    user?.is_guest === true
-      ? 'GUEST'
-      : platformUser?.id
-        ? 'PLATFORM'
-        : 'DISPLAY';
-
   const otherPolls = polls?.polls?.slice(1) ?? [];
 
   const onVote = async (pollId: string, optionIds: string[]) => {
@@ -298,12 +320,12 @@ function DefaultWherePollContent({
     return (
       <div className="flex flex-col gap-4">
         <p className="text-sm text-gray-500">{t('enable_where_poll_desc')}</p>
-        <button
+        <Button
           className="rounded border border-dynamic-purple bg-dynamic-purple/20 px-4 py-2 font-medium text-foreground shadow transition hover:bg-dynamic-purple/40"
           onClick={async () => await onToggleWhereToMeet(true)}
         >
           {t('enable_where_poll')}
-        </button>
+        </Button>
       </div>
     );
   }
