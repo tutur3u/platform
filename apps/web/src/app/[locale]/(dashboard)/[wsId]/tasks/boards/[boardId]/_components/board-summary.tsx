@@ -14,7 +14,6 @@ import {
 import { Progress } from '@tuturuuu/ui/progress';
 import { cn } from '@tuturuuu/utils/format';
 import { format } from 'date-fns';
-import { useEffect } from 'react';
 
 interface Props {
   board: TaskBoard;
