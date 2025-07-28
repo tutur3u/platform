@@ -56,7 +56,7 @@ export function AssigneeSelect({ taskId, assignees = [], onUpdate }: Props) {
 
   // Deduplicate assignees by ID using O(n) Map approach
   const uniqueAssignees = Array.from(
-    (assignees || []).reduce((map, assignee) => {
+    assignees.reduce((map, assignee) => {
       if (assignee?.id) {
         map.set(assignee.id, assignee);
       }
@@ -204,13 +204,13 @@ export function AssigneeSelect({ taskId, assignees = [], onUpdate }: Props) {
   };
 
   // Filter assigned and unassigned members with additional safety checks
-  const assignedMembers = (members || []).filter(
+  const assignedMembers = members.filter(
     (member) =>
       member?.id &&
       uniqueAssignees.some((assignee) => assignee?.id === member.id)
   );
 
-  const unassignedMembers = (members || []).filter(
+  const unassignedMembers = members.filter(
     (member) =>
       member?.id &&
       !uniqueAssignees.some((assignee) => assignee?.id === member.id)
