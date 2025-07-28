@@ -56,12 +56,14 @@ export function AssigneeSelect({ taskId, assignees = [], onUpdate }: Props) {
 
   // Deduplicate assignees by ID using O(n) Map approach
   const uniqueAssignees = Array.from(
-    assignees.reduce((map, assignee) => {
-      if (assignee?.id) {
-        map.set(assignee.id, assignee);
-      }
-      return map;
-    }, new Map()).values()
+    assignees
+      .reduce((map, assignee) => {
+        if (assignee?.id) {
+          map.set(assignee.id, assignee);
+        }
+        return map;
+      }, new Map())
+      .values()
   );
 
   // Fetch workspace members with React Query
@@ -75,12 +77,14 @@ export function AssigneeSelect({ taskId, assignees = [], onUpdate }: Props) {
 
       // Deduplicate members by ID using O(n) Map approach
       const uniqueMembers = Array.from(
-        fetchedMembers.reduce((map: Map<string, Member>, member: Member) => {
-          if (member.id) {
-            map.set(member.id, member);
-          }
-          return map;
-        }, new Map<string, Member>()).values()
+        fetchedMembers
+          .reduce((map: Map<string, Member>, member: Member) => {
+            if (member.id) {
+              map.set(member.id, member);
+            }
+            return map;
+          }, new Map<string, Member>())
+          .values()
       );
 
       return uniqueMembers as Member[];
@@ -218,21 +222,25 @@ export function AssigneeSelect({ taskId, assignees = [], onUpdate }: Props) {
 
   // Additional deduplication using O(n) Map approach
   const uniqueAssignedMembers = Array.from(
-    assignedMembers.reduce((map: Map<string, Member>, member: Member) => {
-      if (member.id) {
-        map.set(member.id, member);
-      }
-      return map;
-    }, new Map<string, Member>()).values()
+    assignedMembers
+      .reduce((map: Map<string, Member>, member: Member) => {
+        if (member.id) {
+          map.set(member.id, member);
+        }
+        return map;
+      }, new Map<string, Member>())
+      .values()
   );
 
   const uniqueUnassignedMembers = Array.from(
-    unassignedMembers.reduce((map: Map<string, Member>, member: Member) => {
-      if (member.id) {
-        map.set(member.id, member);
-      }
-      return map;
-    }, new Map<string, Member>()).values()
+    unassignedMembers
+      .reduce((map: Map<string, Member>, member: Member) => {
+        if (member.id) {
+          map.set(member.id, member);
+        }
+        return map;
+      }, new Map<string, Member>())
+      .values()
   );
 
   const getRoleColor = (role?: string) => {
