@@ -76,7 +76,7 @@ interface Props {
 // Lightweight drag overlay version
 export function LightweightTaskCard({ task }: { task: Task }) {
   return (
-    <Card className="pointer-events-none w-full max-w-[350px] scale-105 opacity-95 shadow-xl ring-2 ring-primary/20 select-none bg-background/95 backdrop-blur-sm">
+    <Card className="pointer-events-none w-full max-w-[350px] scale-105 opacity-95 shadow-xl ring-2 ring-primary/20 select-none bg-background border-2 border-primary/20">
       <div className="flex flex-col gap-2 p-4">
         <div className="truncate text-base font-semibold">{task.name}</div>
         <div className="flex items-center gap-2">

@@ -297,43 +297,44 @@ export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
     if (isMultiSelectMode && selectedTasks.size > 1) {
       const selectedTaskIds = Array.from(selectedTasks);
       const selectedTaskObjects = tasks.filter(task => selectedTaskIds.includes(task.id));
-      const maxStack = 3;
-      const offsetY = 6; // tighter vertical offset
-      const offsetX = 3; // tighter horizontal offset
+      
       return (
-        <div className="relative w-[350px]" style={{ pointerEvents: 'none' }}>
-          {/* Stacked cards with proper offset and border/shadow */}
-          {selectedTaskObjects.slice(0, maxStack).map((task, index) => (
-            <div
-              key={task.id}
-              className="absolute w-full"
+        <div className="relative">
+          {/* Single card with stacked effect */}
+          <div 
+            className="relative"
+            style={{
+              transform: 'rotate(-2deg)',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.12), 0 4px 16px rgba(0,0,0,0.08)',
+            }}
+          >
+            <LightweightTaskCard task={activeTask} />
+            
+            {/* Stacked effect layers */}
+            <div 
+              className="absolute inset-0 -z-10 rounded-lg bg-background/80"
               style={{
-                transform: `translateY(${index * offsetY}px) translateX(${index * offsetX}px)`,
-                zIndex: selectedTaskObjects.length - index,
-                opacity: 1 - (index * 0.10), // Slight fade for depth
-                boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-                border: '2px solid var(--primary)',
-                borderRadius: '0.75rem',
-                background: 'var(--background)',
+                transform: 'translateY(4px) translateX(2px) rotate(-1deg)',
+                boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
               }}
-            >
-              <LightweightTaskCard task={task} />
-            </div>
-          ))}
-          {/* Show all borders by offsetting the stack upward if needed */}
-          {/* Count badge below the stack, not overlapping cards */}
-          <div className="absolute -bottom-6 right-2 flex h-7 w-7 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground shadow-lg border-2 border-background">
+            />
+            <div 
+              className="absolute inset-0 -z-20 rounded-lg bg-background/60"
+              style={{
+                transform: 'translateY(8px) translateX(4px) rotate(-2deg)',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+              }}
+            />
+          </div>
+          
+          {/* Count badge */}
+          <div className="absolute -top-2 -right-2 flex h-7 w-7 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground shadow-lg border-2 border-background">
             {selectedTasks.size}
           </div>
-          {/* Show "more" indicator if there are more than maxStack cards */}
-          {selectedTasks.size > maxStack && (
-            <div className="absolute bottom-2 left-2 text-xs text-muted-foreground bg-background/80 px-2 py-1 rounded shadow">
-              +{selectedTasks.size - maxStack} more
-            </div>
-          )}
         </div>
       );
     }
+    
     // Single task overlay
     return <LightweightTaskCard task={activeTask} />;
   }, [activeTask, isMultiSelectMode, selectedTasks, tasks]);
