@@ -9328,6 +9328,19 @@ export type Database = {
         Args: { board_id: string; new_tags: string[] };
         Returns: Json;
       };
+      adjust_timeblock_times: {
+        Args: {
+          timeblock_start_time: string;
+          timeblock_end_time: string;
+          plan_start_time: string;
+          plan_end_time: string;
+        };
+        Returns: {
+          start_time: string;
+          end_time: string;
+          needs_adjustment: boolean;
+        }[];
+      };
       calculate_productivity_score: {
         Args: { duration_seconds: number; category_color: string };
         Returns: number;
@@ -9834,6 +9847,17 @@ export type Database = {
         Args: { _user_id: string; _board_id: string };
         Returns: boolean;
       };
+      is_timeblock_valid: {
+        Args: {
+          timeblock_date: string;
+          timeblock_start_time: string;
+          timeblock_end_time: string;
+          plan_dates: string[];
+          plan_start_time: string;
+          plan_end_time: string;
+        };
+        Returns: boolean;
+      };
       is_user_task_in_board: {
         Args: { _user_id: string; _task_id: string };
         Returns: boolean;
@@ -9860,6 +9884,10 @@ export type Database = {
       };
       nova_get_user_total_sessions: {
         Args: { challenge_id: string; user_id: string };
+        Returns: number;
+      };
+      parse_time_from_timetz: {
+        Args: { timetz: string };
         Returns: number;
       };
       parse_user_agent: {
