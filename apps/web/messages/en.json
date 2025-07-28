@@ -804,7 +804,11 @@
     "tumeet": "Tumeet",
     "polls": "Polls",
     "qr_generator": "QR Generator",
-    "posts": "Posts"
+    "posts": "Posts",
+    "tumeet_plans": "TuMeet Plans",
+    "meeting_notes": "Meeting Notes",
+    "meetings": "Meetings",
+    "plans": "Plans"
   },
   "link-shortener": {
     "title": "Link Shortener",

@@ -152,7 +152,7 @@ export function MailClient({
         }}
         className="h-full items-stretch"
       >
-        <ResizablePanel defaultSize={defaultLayout[1]} minSize={30}>
+        <ResizablePanel defaultSize={defaultLayout[0]} minSize={30}>
           <div className="flex h-16 items-center justify-between border-b bg-background/50 px-4 backdrop-blur-sm">
             <h1 className="text-xl font-bold">{t('mail.sent')}</h1>
             {wsId === ROOT_WORKSPACE_ID && (
@@ -170,7 +170,7 @@ export function MailClient({
           </div>
         </ResizablePanel>
         <ResizableHandle />
-        <ResizablePanel defaultSize={defaultLayout[2]} minSize={30}>
+        <ResizablePanel defaultSize={defaultLayout[1]} minSize={30}>
           <MailDisplay
             user={user}
             mail={mails.find((item) => item.id === mail.selected) || null}

@@ -1,24 +1,10 @@
-import { MeetTogetherPage } from '@tuturuuu/ui/legacy/tumeet/page';
-
-interface TumeetPageProps {
-  params: Promise<{
-    wsId: string;
-  }>;
-  searchParams: Promise<{
-    page?: string;
-    pageSize?: string;
-    search?: string;
-  }>;
-}
+import { redirect } from 'next/navigation';
 
 export default async function TumeetPage({
   params,
-  searchParams,
-}: TumeetPageProps) {
+}: {
+  params: Promise<{ wsId: string }>;
+}) {
   const { wsId } = await params;
-  return (
-    <div className="-m-4">
-      <MeetTogetherPage wsId={wsId} searchParams={searchParams} />
-    </div>
-  );
+  redirect(`/${wsId}/tumeet/plans`);
 }

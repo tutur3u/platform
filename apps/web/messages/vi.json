@@ -815,7 +815,11 @@
     "tumeet": "Tumeet",
     "polls": "Bỏ phiếu",
     "qr_generator": "Trình tạo QR",
-    "posts": "Bài viết"
+    "posts": "Bài viết",
+    "tumeet_plans": "Kế hoạch gặp nhau",
+    "meeting_notes": "Ghi chú cuộc họp",
+    "meetings": "Các cuộc họp",
+    "plans": "Kế hoạch"
   },
   "link-shortener": {
     "title": "Rút ngắn liên kết",
