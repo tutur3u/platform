@@ -3769,7 +3769,27 @@
     "confidential_subject": "[BẢO MẬT]",
     "confidential_email": "[BẢO MẬT]",
     "confidential_content": "Nội dung bị ẩn",
-    "confidential_content_desc": "Nội dung email bị ẩn trong chế độ bảo mật"
+    "confidential_content_desc": "Nội dung email bị ẩn trong chế độ bảo mật",
+    "ai_draft": "Soạn thảo Email AI",
+    "ai_draft_title": "Trợ lý Email AI",
+    "context": "Ngữ cảnh",
+    "context_placeholder": "Mô tả những gì bạn muốn truyền đạt...",
+    "recipients": "Người nhận",
+    "recipients_placeholder": "Bạn đang viết cho ai?",
+    "purpose": "Mục đích",
+    "purpose_placeholder": "Mục đích của email này là gì?",
+    "tone": "Giọng điệu",
+    "tone_professional": "Chuyên nghiệp",
+    "tone_formal": "Trang trọng",
+    "tone_friendly": "Thân thiện",
+    "tone_casual": "Thân mật",
+    "generating": "Đang tạo...",
+    "generate_draft": "Tạo bản nháp",
+    "ai_error": "Không thể tạo bản nháp email. Vui lòng thử lại.",
+    "generated_subject": "Chủ đề đã tạo",
+    "generated_content": "Nội dung đã tạo",
+    "suggestions": "Gợi ý",
+    "apply_draft": "Áp dụng bản nháp"
   },
   "confidential_mode": "Chế độ bảo mật"
 }
