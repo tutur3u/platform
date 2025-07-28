@@ -41,6 +41,28 @@ import { cn } from '@tuturuuu/utils/format';
 import { addDays, format, isBefore, isToday, startOfToday } from 'date-fns';
 import { useCallback, useEffect, useState } from 'react';
 
+// Extract to a utility function for better performance and reusability
+const transformTaskData = (data: any): Task => {
+  return {
+    ...data,
+    description: data.description || undefined,
+    priority: data.priority || undefined,
+    start_date: data.start_date || undefined,
+    end_date: data.end_date || undefined,
+    tags: data.tags || undefined,
+    assignees: data.assignees
+      ?.map((a: any) => ({
+        id: a.user.id,
+        display_name: a.user.display_name || undefined,
+        avatar_url: a.user.avatar_url || undefined,
+        handle: a.user.handle || undefined,
+      }))
+      .filter((user: any, index: number, self: any[]) =>
+        user?.id && self.findIndex((u) => u?.id === user.id) === index
+      ) || [],
+  };
+};
+
 interface Props {
   taskId: string;
   boardId: string;
@@ -76,52 +98,7 @@ export function TaskActions({ taskId, boardId, onUpdate }: Props) {
 
       if (error) throw error;
 
-      // Transform the nested assignees data and convert null to undefined for optional fields
-      const transformedTask = {
-        ...data,
-        description: data.description || undefined,
-        priority: data.priority || undefined,
-        start_date: data.start_date || undefined,
-        end_date: data.end_date || undefined,
-        tags: data.tags || undefined,
-        assignees:
-          data.assignees
-            ?.map(
-              (a: {
-                user: {
-                  id: string;
-                  display_name: string | null;
-                  avatar_url: string | null;
-                  handle: string | null;
-                };
-              }) => ({
-                id: a.user.id,
-                display_name: a.user.display_name || undefined,
-                avatar_url: a.user.avatar_url || undefined,
-                handle: a.user.handle || undefined,
-              })
-            )
-            .filter(
-              (
-                user: {
-                  id: string;
-                  display_name?: string | undefined;
-                  avatar_url?: string | undefined;
-                  handle?: string | undefined;
-                } | null,
-                index: number,
-                self: ({
-                  id: string;
-                  display_name?: string | undefined;
-                  avatar_url?: string | undefined;
-                  handle?: string | undefined;
-                } | null)[]
-              ) =>
-                user?.id && self.findIndex((u) => u?.id === user.id) === index
-            ) || [],
-      };
-
-      return transformedTask as Task;
+      return transformTaskData(data);
     },
     enabled: !!taskId && isEditDialogOpen, // Only fetch when modal is open
     staleTime: 0, // Always fetch fresh data
