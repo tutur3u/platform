@@ -1,11 +1,11 @@
-import type { SyncOrchestratorResult } from './google-calendar-sync.js';
+import type { SyncOrchestratorResult } from './google-calendar-sync';
 import {
   getGoogleAuthClient,
   getSyncToken,
   getWorkspacesForSync,
   storeSyncToken,
   syncWorkspaceBatched,
-} from './google-calendar-sync.js';
+} from './google-calendar-sync';
 import { schedules, task } from '@trigger.dev/sdk/v3';
 import { google } from 'googleapis';
 
