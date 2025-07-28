@@ -345,7 +345,7 @@ export async function moveTask(
   console.log('🗄️ moveTask function called');
   console.log('📋 Task ID:', taskId);
   console.log('🎯 New List ID:', newListId);
-  
+
   // First, get the target list to check its status
   console.log('🔍 Fetching target list details...');
   const { data: targetList, error: listError } = await supabase
@@ -683,20 +683,20 @@ export function useMoveTask(boardId: string) {
       console.log('🚀 Starting moveTask mutation');
       console.log('📋 Task ID:', taskId);
       console.log('🎯 New List ID:', newListId);
-      
+
       const supabase = createClient();
       const result = await moveTask(supabase, taskId, newListId);
-      
+
       console.log('✅ moveTask completed successfully');
       console.log('📊 Result:', result);
-      
+
       return result;
     },
     onMutate: async ({ taskId, newListId }) => {
       console.log('🎭 onMutate triggered - optimistic update');
       console.log('📋 Task ID:', taskId);
       console.log('🎯 New List ID:', newListId);
-      
+
       // Cancel any outgoing refetches
       await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
 
@@ -712,18 +712,22 @@ export function useMoveTask(boardId: string) {
           return old.map((task) => {
             if (task.id === taskId) {
               // Get the target list to determine archived status
-              const targetList = queryClient.getQueryData(['task-lists', boardId]) as TaskList[] | undefined;
-              const list = targetList?.find(l => l.id === newListId);
-              const shouldArchive = list?.status === 'done' || list?.status === 'closed';
-              
+              const targetList = queryClient.getQueryData([
+                'task-lists',
+                boardId,
+              ]) as TaskList[] | undefined;
+              const list = targetList?.find((l) => l.id === newListId);
+              const shouldArchive =
+                list?.status === 'done' || list?.status === 'closed';
+
               console.log('🔄 Optimistically updating task:', taskId);
               console.log('📊 Target list:', list);
               console.log('📦 Should archive:', shouldArchive);
-              
-              return { 
-                ...task, 
+
+              return {
+                ...task,
                 list_id: newListId,
-                archived: shouldArchive || false
+                archived: shouldArchive || false,
               };
             }
             return task;
@@ -738,7 +742,7 @@ export function useMoveTask(boardId: string) {
       console.log('❌ onError triggered - rollback optimistic update');
       console.log('📋 Error details:', err);
       console.log('📊 Variables:', variables);
-      
+
       // Rollback optimistic update on error
       if (context?.previousTasks) {
         console.log('🔄 Rolling back to previous state');
@@ -753,9 +757,11 @@ export function useMoveTask(boardId: string) {
       });
     },
     onSuccess: (updatedTask) => {
-      console.log('✅ onSuccess triggered - updating cache with server response');
+      console.log(
+        '✅ onSuccess triggered - updating cache with server response'
+      );
       console.log('📊 Updated task from server:', updatedTask);
-      
+
       // Update the cache with the server response
       queryClient.setQueryData(
         ['tasks', boardId],
@@ -766,7 +772,7 @@ export function useMoveTask(boardId: string) {
           );
         }
       );
-      
+
       console.log('✅ Cache updated with server response');
     },
     // Removed onSettled to prevent cache invalidation conflicts with optimistic updates

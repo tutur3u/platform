@@ -76,7 +76,7 @@ interface Props {
 // Lightweight drag overlay version
 export function LightweightTaskCard({ task }: { task: Task }) {
   return (
-    <Card className="pointer-events-none w-full max-w-[350px] scale-105 opacity-95 shadow-xl ring-2 ring-primary/20 select-none bg-background border-2 border-primary/20">
+    <Card className="pointer-events-none w-full max-w-[350px] scale-105 border-2 border-primary/20 bg-background opacity-95 shadow-xl ring-2 ring-primary/20 select-none">
       <div className="flex flex-col gap-2 p-4">
         <div className="truncate text-base font-semibold">{task.name}</div>
         <div className="flex items-center gap-2">
@@ -437,7 +437,7 @@ export const TaskCard = React.memo(function TaskCard({
         !isDragging &&
           'hover:border-primary/30 hover:ring-1 hover:ring-primary/15',
         // Selection state
-        isSelected && 'ring-2 ring-primary/50 bg-primary/5 shadow-md',
+        isSelected && 'bg-primary/5 shadow-md ring-2 ring-primary/50',
         // Visual feedback for invalid drop (dev only)
         process.env.NODE_ENV === 'development' &&
           isDragging &&
