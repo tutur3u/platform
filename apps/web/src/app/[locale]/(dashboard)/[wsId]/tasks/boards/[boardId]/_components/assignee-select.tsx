@@ -216,15 +216,23 @@ export function AssigneeSelect({ taskId, assignees = [], onUpdate }: Props) {
       !uniqueAssignees.some((assignee) => assignee?.id === member.id)
   );
 
-  // Additional deduplication just to be safe
-  const uniqueAssignedMembers = assignedMembers.filter(
-    (member, index, self) =>
-      member.id && self.findIndex((m) => m.id === member.id) === index
+  // Additional deduplication using O(n) Map approach
+  const uniqueAssignedMembers = Array.from(
+    assignedMembers.reduce((map: Map<string, Member>, member: Member) => {
+      if (member.id) {
+        map.set(member.id, member);
+      }
+      return map;
+    }, new Map<string, Member>()).values()
   );
 
-  const uniqueUnassignedMembers = unassignedMembers.filter(
-    (member, index, self) =>
-      member.id && self.findIndex((m) => m.id === member.id) === index
+  const uniqueUnassignedMembers = Array.from(
+    unassignedMembers.reduce((map: Map<string, Member>, member: Member) => {
+      if (member.id) {
+        map.set(member.id, member);
+      }
+      return map;
+    }, new Map<string, Member>()).values()
   );
 
   const getRoleColor = (role?: string) => {
