@@ -207,13 +207,17 @@ export function TaskEditDialog({
           {/* Priority Selection */}
           <div className="space-y-2">
             <Label>Priority</Label>
-            <div className="flex flex-wrap gap-2">
+            <div 
+              className="flex flex-wrap gap-2" 
+              role="radiogroup" 
+              aria-label="Task priority selection"
+            >
               {[
                 { value: '0', label: 'None', icon: null },
-                { value: '1', label: 'Urgent', icon: Flag },
-                { value: '2', label: 'High', icon: Flag },
-                { value: '3', label: 'Medium', icon: Flag },
-                { value: '4', label: 'Low', icon: Flag },
+                { value: '1', label: 'Low', icon: Flag },
+                { value: '2', label: 'Medium', icon: Flag },
+                { value: '3', label: 'High', icon: Flag },
+                { value: '4', label: 'Urgent', icon: Flag },
               ].map(({ value, label, icon: Icon }) => (
                 <Button
                   key={value}
@@ -225,6 +229,9 @@ export function TaskEditDialog({
                     priority === value && getPriorityColor(value)
                   )}
                   onClick={() => setPriority(value)}
+                  role="radio"
+                  aria-checked={priority === value}
+                  aria-label={`Priority: ${label}`}
                 >
                   {Icon && <Icon className="mr-1 h-3 w-3" />}
                   {label}

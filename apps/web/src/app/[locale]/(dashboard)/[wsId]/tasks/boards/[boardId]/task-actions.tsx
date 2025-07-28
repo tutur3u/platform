@@ -418,7 +418,11 @@ export function TaskActions({ taskId, boardId, onUpdate }: Props) {
             </div>
             <div className="grid gap-2">
               <Label>Priority</Label>
-              <div className="flex flex-wrap gap-2">
+              <div 
+                className="flex flex-wrap gap-2" 
+                role="radiogroup" 
+                aria-label="Task priority selection"
+              >
                 {[
                   {
                     value: '0',
@@ -427,23 +431,23 @@ export function TaskActions({ taskId, boardId, onUpdate }: Props) {
                   },
                   {
                     value: '1',
-                    label: 'Urgent',
-                    color: 'bg-red-100 text-red-700',
+                    label: 'Low',
+                    color: 'bg-green-100 text-green-700',
                   },
                   {
                     value: '2',
-                    label: 'High',
-                    color: 'bg-orange-100 text-orange-700',
-                  },
-                  {
-                    value: '3',
                     label: 'Medium',
                     color: 'bg-yellow-100 text-yellow-700',
                   },
                   {
+                    value: '3',
+                    label: 'High',
+                    color: 'bg-orange-100 text-orange-700',
+                  },
+                  {
                     value: '4',
-                    label: 'Low',
-                    color: 'bg-green-100 text-green-700',
+                    label: 'Urgent',
+                    color: 'bg-red-100 text-red-700',
                   },
                 ].map(({ value, label, color }) => (
                   <Button
@@ -456,6 +460,9 @@ export function TaskActions({ taskId, boardId, onUpdate }: Props) {
                       'h-8 px-3 text-xs',
                       newPriority === value && color
                     )}
+                    role="radio"
+                    aria-checked={newPriority === value}
+                    aria-label={`Priority: ${label}`}
                   >
                     {label}
                   </Button>
