@@ -55,7 +55,7 @@ export function AssigneeSelect({ taskId, assignees = [], onUpdate }: Props) {
   const queryClient = useQueryClient();
 
   // Deduplicate assignees by ID
-  const uniqueAssignees = assignees.filter(
+  const uniqueAssignees = (assignees || []).filter(
     (assignee, index, self) =>
       assignee?.id && self.findIndex((a) => a && a.id === assignee.id) === index
   );
@@ -196,13 +196,13 @@ export function AssigneeSelect({ taskId, assignees = [], onUpdate }: Props) {
   };
 
   // Filter assigned and unassigned members with additional safety checks
-  const assignedMembers = members.filter(
+  const assignedMembers = (members || []).filter(
     (member) =>
       member?.id &&
       uniqueAssignees.some((assignee) => assignee?.id === member.id)
   );
 
-  const unassignedMembers = members.filter(
+  const unassignedMembers = (members || []).filter(
     (member) =>
       member?.id &&
       !uniqueAssignees.some((assignee) => assignee?.id === member.id)
