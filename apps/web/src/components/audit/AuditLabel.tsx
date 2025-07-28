@@ -25,7 +25,7 @@ const AuditLabel = ({ data, isLoading, hasActor, actor }: Props) => {
 
   const { data: workspace } = useSWR<Workspace>(wsApiPath);
 
-  const label = getLabel(t, data);
+  const label = getLabel(t as (key: string, options?: { count: number }) => string, data);
   const unnamedWorkspace = commonT('unnamed-workspace');
 
   const fullLabel = isLoading ? commonT('loading') : label.trim();
