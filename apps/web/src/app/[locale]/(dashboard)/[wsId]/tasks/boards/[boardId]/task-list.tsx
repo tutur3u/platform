@@ -50,6 +50,8 @@ interface Props {
   isOverlay?: boolean;
   onTaskCreated?: () => void;
   onListUpdated?: () => void;
+  selectedTasks?: Set<string>;
+  onTaskSelect?: (taskId: string, event: React.MouseEvent) => void;
 }
 
 type SortOption =
@@ -101,6 +103,8 @@ export const BoardColumn = React.memo(function BoardColumn({
   isOverlay,
   onTaskCreated,
   onListUpdated,
+  selectedTasks,
+  onTaskSelect,
 }: Props) {
   const params = useParams();
   const wsId = params.wsId as string;
@@ -937,6 +941,8 @@ export const BoardColumn = React.memo(function BoardColumn({
               taskList={column}
               boardId={boardId}
               onUpdate={handleUpdate}
+              isSelected={selectedTasks?.has(task.id) || false}
+              onSelect={onTaskSelect}
             />
           ))
         )}

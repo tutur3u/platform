@@ -39,6 +39,8 @@ export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
   const [columns, setColumns] = useState<TaskList[]>([]);
   const [activeColumn, setActiveColumn] = useState<TaskList | null>(null);
   const [activeTask, setActiveTask] = useState<Task | null>(null);
+  const [selectedTasks, setSelectedTasks] = useState<Set<string>>(new Set());
+  const [isMultiSelectMode, setIsMultiSelectMode] = useState(false);
   const pickedUpTaskColumn = useRef<string | null>(null);
   const queryClient = useQueryClient();
   const moveTaskMutation = useMoveTask(boardId);
@@ -52,6 +54,45 @@ export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
     queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
     queryClient.invalidateQueries({ queryKey: ['task_lists', boardId] });
   }, [queryClient, boardId]);
+
+  // Multi-select handlers
+  const handleTaskSelect = useCallback((taskId: string, event: React.MouseEvent) => {
+    const isCtrlPressed = event.ctrlKey || event.metaKey;
+    const isShiftPressed = event.shiftKey;
+    
+    if (isCtrlPressed || isShiftPressed) {
+      event.preventDefault();
+      event.stopPropagation();
+      
+      setIsMultiSelectMode(true);
+      
+      if (isCtrlPressed) {
+        // Toggle selection
+        setSelectedTasks(prev => {
+          const newSet = new Set(prev);
+          if (newSet.has(taskId)) {
+            newSet.delete(taskId);
+          } else {
+            newSet.add(taskId);
+          }
+          return newSet;
+        });
+      } else if (isShiftPressed) {
+        // Range selection (if there's a last selected task)
+        // For now, just add to selection
+        setSelectedTasks(prev => new Set([...prev, taskId]));
+      }
+    } else {
+      // Single click - clear selection and select only this task
+      setSelectedTasks(new Set([taskId]));
+      setIsMultiSelectMode(false);
+    }
+  }, []);
+
+  const clearSelection = useCallback(() => {
+    setSelectedTasks(new Set());
+    setIsMultiSelectMode(false);
+  }, []);
 
   useEffect(() => {
     let mounted = true;
@@ -140,7 +181,18 @@ export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
       const task = active.data.current.task;
       console.log('🎯 onDragStart - Task:', task);
       console.log('📋 Task list_id:', task.list_id);
-      setActiveTask(task);
+      console.log('📋 Selected tasks:', selectedTasks);
+      console.log('📋 Is multi-select mode:', isMultiSelectMode);
+      
+      // If this is a multi-select drag, include all selected tasks
+      if (isMultiSelectMode && selectedTasks.has(task.id)) {
+        console.log('📋 Multi-select drag detected');
+        // For now, we'll handle single task drag and extend to multi later
+        setActiveTask(task);
+      } else {
+        setActiveTask(task);
+      }
+      
       pickedUpTaskColumn.current = String(task.list_id);
       console.log('📋 pickedUpTaskColumn set to:', pickedUpTaskColumn.current);
 
@@ -331,12 +383,30 @@ export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
       // Only move if actually changing lists
       if (targetListId !== originalListId) {
         console.log('✅ Lists are different, initiating move mutation');
-        console.log('📤 Moving task:', activeTask.id, 'from', originalListId, 'to', targetListId);
         
-        moveTaskMutation.mutate({
-          taskId: activeTask.id,
-          newListId: targetListId,
-        });
+        // Check if this is a multi-select drag
+        if (isMultiSelectMode && selectedTasks.size > 1) {
+          console.log('📤 Batch moving tasks:', Array.from(selectedTasks), 'from', originalListId, 'to', targetListId);
+          
+          // Move all selected tasks
+          const tasksToMove = Array.from(selectedTasks);
+          tasksToMove.forEach(taskId => {
+            moveTaskMutation.mutate({
+              taskId,
+              newListId: targetListId,
+            });
+          });
+          
+          // Clear selection after batch move
+          clearSelection();
+        } else {
+          console.log('📤 Moving single task:', activeTask.id, 'from', originalListId, 'to', targetListId);
+          
+          moveTaskMutation.mutate({
+            taskId: activeTask.id,
+            newListId: targetListId,
+          });
+        }
       } else {
         console.log('ℹ️ Same list detected, no move needed');
       }
@@ -451,6 +521,8 @@ export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
                         tasks={columnTasks}
                         onTaskCreated={handleTaskCreated}
                         onListUpdated={handleTaskCreated}
+                        selectedTasks={selectedTasks}
+                        onTaskSelect={handleTaskSelect}
                       />
                     );
                   })}

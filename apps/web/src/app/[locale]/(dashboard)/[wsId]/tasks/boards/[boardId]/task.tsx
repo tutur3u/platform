@@ -68,6 +68,8 @@ interface Props {
   isOverlay?: boolean;
   onUpdate: () => void;
   availableLists?: TaskList[]; // Optional: pass from parent to avoid redundant API calls
+  isSelected?: boolean;
+  onSelect?: (taskId: string, event: React.MouseEvent) => void;
 }
 
 // Lightweight drag overlay version
@@ -101,6 +103,8 @@ export const TaskCard = React.memo(function TaskCard({
   isOverlay,
   onUpdate,
   availableLists: propAvailableLists,
+  isSelected = false,
+  onSelect,
 }: Props) {
   const [isLoading, setIsLoading] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
@@ -412,6 +416,7 @@ export const TaskCard = React.memo(function TaskCard({
       style={style}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
+      onClick={(e) => onSelect?.(task.id, e)}
       className={cn(
         'group relative overflow-hidden rounded-lg border-l-4 transition-all duration-200',
         'cursor-default hover:shadow-md',
@@ -429,6 +434,8 @@ export const TaskCard = React.memo(function TaskCard({
         // Hover state
         !isDragging &&
           'hover:border-primary/30 hover:ring-1 hover:ring-primary/15',
+        // Selection state
+        isSelected && 'ring-2 ring-primary/50 bg-primary/5',
         // Visual feedback for invalid drop (dev only)
         process.env.NODE_ENV === 'development' &&
           isDragging &&
