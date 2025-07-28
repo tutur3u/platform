@@ -3794,7 +3794,14 @@
     "original_message": "Original Message",
     "quoted_message": "Quoted Message",
     "original_content_included": "Original message will be included when sent",
-    "quoted_content_included": "Quoted content will be included when sent"
+    "quoted_content_included": "Quoted content will be included when sent",
+    "confidential_mode": "Confidential",
+    "confidential_sender": "[CONFIDENTIAL]",
+    "confidential_recipients": "[CONFIDENTIAL]",
+    "confidential_subject": "[CONFIDENTIAL]",
+    "confidential_email": "[CONFIDENTIAL]",
+    "confidential_content": "Content Hidden",
+    "confidential_content_desc": "Email content is hidden in confidential mode"
   },
   "ws-polls": {
     "plural": "Polls",
@@ -3842,5 +3849,6 @@
     "delete": "Delete",
     "enable_where_poll_desc": "You can enable 'Where to meet' voting for your plan.",
     "enable_where_poll": "Enable 'Where to meet' voting"
-  }
+  },
+  "confidential_mode": "Confidential mode"
 }

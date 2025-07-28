@@ -3762,6 +3762,14 @@
     "display_name_required_message": "Bạn phải đặt tên hiển thị trước khi gửi thư.",
     "edit": "Biên tập",
     "preview": "Xem trước",
-    "none": "Không có"
-  }
+    "none": "Không có",
+    "confidential_mode": "Bảo mật",
+    "confidential_sender": "[BẢO MẬT]",
+    "confidential_recipients": "[BẢO MẬT]",
+    "confidential_subject": "[BẢO MẬT]",
+    "confidential_email": "[BẢO MẬT]",
+    "confidential_content": "Nội dung bị ẩn",
+    "confidential_content_desc": "Nội dung email bị ẩn trong chế độ bảo mật"
+  },
+  "confidential_mode": "Chế độ bảo mật"
 }
