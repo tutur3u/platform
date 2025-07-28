@@ -50,16 +50,18 @@ const transformTaskData = (data: any): Task => {
     start_date: data.start_date || undefined,
     end_date: data.end_date || undefined,
     tags: data.tags || undefined,
-    assignees: data.assignees
-      ?.map((a: any) => ({
-        id: a.user.id,
-        display_name: a.user.display_name || undefined,
-        avatar_url: a.user.avatar_url || undefined,
-        handle: a.user.handle || undefined,
-      }))
-      .filter((user: any, index: number, self: any[]) =>
-        user?.id && self.findIndex((u) => u?.id === user.id) === index
-      ) || [],
+    assignees:
+      data.assignees
+        ?.map((a: any) => ({
+          id: a.user.id,
+          display_name: a.user.display_name || undefined,
+          avatar_url: a.user.avatar_url || undefined,
+          handle: a.user.handle || undefined,
+        }))
+        .filter(
+          (user: any, index: number, self: any[]) =>
+            user?.id && self.findIndex((u) => u?.id === user.id) === index
+        ) || [],
   };
 };
 
