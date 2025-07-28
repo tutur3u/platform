@@ -1,7 +1,7 @@
 'use client';
 
 import { getTaskLists, getTasks } from '@/lib/task-helper';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { TaskBoard } from '@tuturuuu/types/primitives/TaskBoard';
 import {
@@ -21,7 +21,6 @@ interface Props {
 
 export function BoardSummary({ board }: Props) {
   const { id: boardId } = board;
-  const queryClient = useQueryClient();
 
   const { data: tasks = [], isLoading } = useQuery({
     queryKey: ['tasks', boardId],

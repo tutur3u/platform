@@ -295,9 +295,6 @@ export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
     
     // If multi-select mode and multiple tasks selected, show stacked overlay
     if (isMultiSelectMode && selectedTasks.size > 1) {
-      const selectedTaskIds = Array.from(selectedTasks);
-      const selectedTaskObjects = tasks.filter(task => selectedTaskIds.includes(task.id));
-      
       return (
         <div className="relative">
           {/* Single card with stacked effect */}
@@ -337,7 +334,7 @@ export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
     
     // Single task overlay
     return <LightweightTaskCard task={activeTask} />;
-  }, [activeTask, isMultiSelectMode, selectedTasks, tasks]);
+  }, [activeTask, isMultiSelectMode, selectedTasks]);
   const MemoizedColumnOverlay = useMemo(
     () =>
       activeColumn ? (
@@ -352,12 +349,6 @@ export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
       ) : null,
     [activeColumn, tasks, boardId, handleTaskCreated]
   );
-
-  const debugLog = (message: string) => {
-    if (process.env.NODE_ENV === 'development') {
-      console.debug(`DragEnd: ${message}`);
-    }
-  };
 
   async function onDragEnd(event: DragEndEvent) {
     const { active, over } = event;
