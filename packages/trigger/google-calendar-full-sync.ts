@@ -3,8 +3,8 @@ import {
   getWorkspacesForSync,
   storeSyncToken,
   syncWorkspaceBatched,
-} from './google-calendar-sync';
-import type { SyncOrchestratorResult } from './google-calendar-sync';
+} from './google-calendar-sync.js';
+import type { SyncOrchestratorResult } from './google-calendar-sync.js';
 import { task } from '@trigger.dev/sdk/v3';
 import dayjs from 'dayjs';
 import { google } from 'googleapis';
@@ -108,7 +108,7 @@ export const googleCalendarFullSyncOrchestrator = task({
         try {
           // Trigger individual workspace sync with concurrency key
           const handle = await googleCalendarFullSync.trigger(workspace, {
-            concurrencyKey: workspace.ws_id, // Each workspace gets its own queue
+            concurrencyKey: `google-calendar-full-sync-${workspace.ws_id}`, // Each workspace gets its own queue
           });
 
           results.push({

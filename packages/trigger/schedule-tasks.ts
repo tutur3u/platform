@@ -54,7 +54,7 @@ export const scheduleTasksTrigger = schedules.task({
           const handle = await scheduleTask.trigger(
             { ws_id: workspace.ws_id },
             {
-              concurrencyKey: workspace.ws_id,
+              concurrencyKey: `calendar-auto-schedule-${workspace.ws_id}`,
             }
           );
 

@@ -1,11 +1,11 @@
-import type { SyncOrchestratorResult } from './google-calendar-sync';
+import type { SyncOrchestratorResult } from './google-calendar-sync.js';
 import {
   getGoogleAuthClient,
   getSyncToken,
   getWorkspacesForSync,
   storeSyncToken,
   syncWorkspaceBatched,
-} from './google-calendar-sync';
+} from './google-calendar-sync.js';
 import { schedules, task } from '@trigger.dev/sdk/v3';
 import { google } from 'googleapis';
 
@@ -23,7 +23,8 @@ async function performIncrementalSyncForWorkspace(
 
   try {
     const syncToken = await getSyncToken(ws_id);
-    let allEvents = [];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let allEvents: any[] = [];
     let pageToken: string | undefined;
     let nextSyncToken: string | undefined;
     do {
@@ -38,7 +39,7 @@ async function performIncrementalSyncForWorkspace(
       const events = res.data.items || [];
       allEvents = allEvents.concat(events);
       nextSyncToken = res.data.nextSyncToken ?? nextSyncToken;
-      pageToken = res.data.nextPageToken;
+      pageToken = res.data.nextPageToken ?? undefined;
     } while (pageToken);
 
     if (allEvents.length > 0) {
@@ -125,7 +126,7 @@ export const googleCalendarIncrementalSyncOrchestrator = schedules.task({
           const handle = await googleCalendarIncrementalSync.trigger(
             workspace,
             {
-              concurrencyKey: workspace.ws_id,
+              concurrencyKey: `google-calendar-incremental-sync-${workspace.ws_id}`,
             }
           );
 
