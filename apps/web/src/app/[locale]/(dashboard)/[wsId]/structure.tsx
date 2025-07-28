@@ -55,6 +55,26 @@ export function Structure({
     }
   }, [behavior]);
 
+  // Recursive function to check if any nested child matches the pathname
+  const hasActiveChild = (navLinks: NavLink[]): boolean => {
+    return navLinks.some((child) => {
+      const childMatches =
+        child?.href &&
+        (pathname.startsWith(child.href) ||
+          child.aliases?.some((alias) => pathname.startsWith(alias)));
+
+      if (childMatches) {
+        return true;
+      }
+
+      if (child.children) {
+        return hasActiveChild(child.children);
+      }
+
+      return false;
+    });
+  };
+
   const [navState, setNavState] = useState<{
     currentLinks: (NavLink | null)[];
     history: (NavLink | null)[][];
@@ -62,13 +82,8 @@ export function Structure({
     direction: 'forward' | 'backward';
   }>(() => {
     for (const link of links) {
-      if (link?.children && link.children.length > 1) {
-        const isActive = link.children.some(
-          (child) =>
-            child?.href &&
-            (pathname.startsWith(child.href) ||
-              child.aliases?.some((alias) => pathname.startsWith(alias)))
-        );
+      if (link?.children && link.children.length > 0) {
+        const isActive = hasActiveChild(link.children);
         if (isActive) {
           return {
             currentLinks: link.children,
@@ -99,13 +114,8 @@ export function Structure({
     setNavState((prevState) => {
       // Find if any submenu should be active for the current path.
       for (const link of links) {
-        if (link?.children && link.children.length > 1) {
-          const isActive = link.children.some(
-            (child) =>
-              child?.href &&
-              (pathname.startsWith(child.href) ||
-                child.aliases?.some((alias) => pathname.startsWith(alias)))
-          );
+        if (link?.children && link.children.length > 0) {
+          const isActive = hasActiveChild(link.children);
 
           if (isActive) {
             // If the active submenu is not the one currently displayed, switch to it.
@@ -120,6 +130,26 @@ export function Structure({
                 direction: 'forward',
               };
             }
+
+            // We're already in this submenu, but we need to check if we should go deeper
+            // Find the specific child that matches the current pathname
+            const activeChild = link.children.find(
+              (child) => child.href && pathname.startsWith(child.href)
+            );
+
+            if (
+              activeChild &&
+              activeChild.children &&
+              activeChild.children.length > 0
+            ) {
+              return {
+                currentLinks: activeChild.children,
+                history: [...prevState.history, prevState.currentLinks],
+                titleHistory: [...prevState.titleHistory, activeChild.title],
+                direction: 'forward',
+              };
+            }
+
             // It's the correct submenu, do nothing to the state.
             return prevState;
           }
