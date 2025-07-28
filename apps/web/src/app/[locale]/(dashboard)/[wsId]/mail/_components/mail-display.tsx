@@ -73,6 +73,7 @@ interface MailDisplayProps {
     quotedContent: string;
     isReply: boolean;
   }) => void;
+  confidentialMode?: boolean;
 }
 
 const DISABLE_MAIL_ACTIONS = true;
@@ -314,6 +315,7 @@ function AvatarChip({
 }) {
   // Always use only the name part for initials, fallback to email if name is empty
   const initials = getInitials(name || email);
+
   return (
     <span className="flex items-center gap-1 rounded-full bg-accent px-2 py-0.5 text-xs font-medium text-accent-foreground shadow-sm">
       <Avatar className="mr-1 h-5 w-5">
@@ -341,12 +343,16 @@ function ThreadMessageItem({
   mail,
   membersMap,
   isLast = false,
+  confidentialMode = false,
 }: {
   message: ThreadMessage;
   mail: InternalEmail;
   membersMap: Record<string, { avatar_url?: string; display_name?: string }>;
   isLast?: boolean;
+  confidentialMode?: boolean;
 }) {
+  const t = useTranslations('mail');
+
   // Latest message (isOriginal) should always be expanded, older messages collapsed by default
   const [isCollapsed, setIsCollapsed] = useState(!message.isOriginal);
 
@@ -382,7 +388,9 @@ function ThreadMessageItem({
           <div className="flex flex-col">
             <div className="flex items-center gap-2">
               <span className="text-sm font-medium text-foreground">
-                {parsedFrom?.name || parsedFrom?.email || from}
+                {confidentialMode
+                  ? t('confidential_sender')
+                  : parsedFrom?.name || parsedFrom?.email || from}
               </span>
               {message.isOriginal && (
                 <span className="rounded bg-primary/20 px-1.5 py-0.5 text-xs font-medium text-primary">
@@ -391,7 +399,11 @@ function ThreadMessageItem({
               )}
             </div>
             <span className="text-xs text-muted-foreground">
-              {parsedFrom?.email && parsedFrom.name && `<${parsedFrom.email}>`}
+              {confidentialMode
+                ? t('confidential_email')
+                : parsedFrom?.email &&
+                  parsedFrom.name &&
+                  `<${parsedFrom.email}>`}
             </span>
           </div>
         </div>
@@ -425,7 +437,13 @@ function ThreadMessageItem({
         )}
       >
         <div className="text-sm leading-relaxed text-foreground">
-          {message.isOriginal && mail.html_payload ? (
+          {confidentialMode ? (
+            <div className="py-4 text-center text-muted-foreground">
+              <div className="mb-2 text-2xl opacity-20">🔒</div>
+              <p className="text-sm font-medium">{t('confidential_content')}</p>
+              <p className="text-xs">{t('confidential_content_desc')}</p>
+            </div>
+          ) : message.isOriginal && mail.html_payload ? (
             <div
               className="prose prose-sm max-w-full break-words text-foreground prose-a:text-dynamic-blue prose-a:underline prose-blockquote:text-foreground prose-strong:text-foreground"
               // biome-ignore lint/security/noDangerouslySetInnerHtml: content is sanitized
@@ -453,7 +471,7 @@ function ThreadMessageItem({
                 : message.content}
             </pre>
           )}
-          {isCollapsed && message.content.length > 150 && (
+          {!confidentialMode && isCollapsed && message.content.length > 150 && (
             <button
               onClick={() => setIsCollapsed(false)}
               className="mt-2 text-xs font-medium text-primary hover:text-primary/80"
@@ -521,6 +539,7 @@ export function MailDisplay({
   onReply,
   onReplyAll,
   onForward,
+  confidentialMode = false,
 }: MailDisplayProps) {
   const [isHeaderCollapsed, setIsHeaderCollapsed] = useState(false);
   const [sanitizedHtml, setSanitizedHtml] = useState<string>('');
@@ -883,17 +902,21 @@ export function MailDisplay({
                 </Avatar>
                 <div className="grid gap-0.5">
                   <h2 className="truncate text-base leading-tight font-semibold text-foreground">
-                    {mail.subject}
+                    {confidentialMode
+                      ? t('confidential_subject')
+                      : mail.subject}
                   </h2>
                   <p className="truncate text-sm font-medium text-foreground/80">
-                    {formatEmailAddresses(mail.source_email).map(
-                      ({ name, email }) => (
-                        <span key={email}>
-                          {name}{' '}
-                          <span className="opacity-50">{`<${email}>`}</span>
-                        </span>
-                      )
-                    )}
+                    {confidentialMode
+                      ? t('confidential_sender')
+                      : formatEmailAddresses(mail.source_email).map(
+                          ({ name, email }) => (
+                            <span key={email}>
+                              {name}{' '}
+                              <span className="opacity-50">{`<${email}>`}</span>
+                            </span>
+                          )
+                        )}
                   </p>
                 </div>
               </div>
@@ -927,38 +950,61 @@ export function MailDisplay({
               )}
             >
               <div className="flex flex-col items-start gap-1 text-xs text-muted-foreground">
-                <AddressChips
-                  label={t('from_label')}
-                  addresses={[mail.source_email]}
-                  avatar
-                  membersMap={membersMap}
-                />
-                {mail.to_addresses && mail.to_addresses.length > 0 && (
-                  <AddressChips
-                    label={t('to_label')}
-                    addresses={mail.to_addresses}
-                    avatar={false}
-                    membersMap={membersMap}
-                  />
-                )}
-                <AddressChips
-                  label="CC"
-                  addresses={mail.cc_addresses ?? []}
-                  membersMap={membersMap}
-                />
-                <AddressChips
-                  label="BCC"
-                  addresses={mail.bcc_addresses ?? []}
-                  membersMap={membersMap}
-                />
-                {mail.reply_to_addresses &&
-                  mail.reply_to_addresses.length > 0 && (
+                {confidentialMode ? (
+                  <>
+                    <div className="flex flex-wrap items-center gap-2 text-xs">
+                      <span className="min-w-[40px] font-medium text-muted-foreground">
+                        {t('from_label').replace(/:/g, '')}:
+                      </span>
+                      <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground opacity-70 shadow-sm">
+                        {t('confidential_sender')}
+                      </span>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2 text-xs">
+                      <span className="min-w-[40px] font-medium text-muted-foreground">
+                        {t('to_label').replace(/:/g, '')}:
+                      </span>
+                      <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground opacity-70 shadow-sm">
+                        {t('confidential_recipients')}
+                      </span>
+                    </div>
+                  </>
+                ) : (
+                  <>
                     <AddressChips
-                      label="Reply-To"
-                      addresses={mail.reply_to_addresses}
+                      label={t('from_label')}
+                      addresses={[mail.source_email]}
+                      avatar
                       membersMap={membersMap}
                     />
-                  )}
+                    {mail.to_addresses && mail.to_addresses.length > 0 && (
+                      <AddressChips
+                        label={t('to_label')}
+                        addresses={mail.to_addresses}
+                        avatar={false}
+                        membersMap={membersMap}
+                      />
+                    )}
+                    <AddressChips
+                      label="CC"
+                      addresses={mail.cc_addresses ?? []}
+                      membersMap={membersMap}
+                    />
+                    <AddressChips
+                      label="BCC"
+                      addresses={mail.bcc_addresses ?? []}
+                      membersMap={membersMap}
+                    />
+                    {mail.reply_to_addresses &&
+                      mail.reply_to_addresses.length > 0 && (
+                        <AddressChips
+                          label="Reply-To"
+                          addresses={mail.reply_to_addresses}
+                          membersMap={membersMap}
+                        />
+                      )}
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -990,6 +1036,7 @@ export function MailDisplay({
                       mail={mail}
                       membersMap={membersMap}
                       isLast={index === threadMessages.length - 1}
+                      confidentialMode={confidentialMode}
                     />
                   ))}
               </div>
@@ -1001,7 +1048,15 @@ export function MailDisplay({
                   className="prose max-w-full bg-background break-words text-foreground prose-a:text-dynamic-blue prose-a:underline prose-blockquote:text-foreground prose-strong:text-foreground"
                   style={{ padding: '1.5rem' }}
                   // biome-ignore lint/security/noDangerouslySetInnerHtml: <html content is sanitized>
-                  dangerouslySetInnerHTML={{ __html: sanitizedHtml }}
+                  dangerouslySetInnerHTML={{
+                    __html: confidentialMode
+                      ? `<div class="text-center text-muted-foreground py-8">
+                          <div class="text-4xl mb-4 opacity-20">🔒</div>
+                          <p class="text-lg font-medium">${t('confidential_content')}</p>
+                          <p class="text-sm">${t('confidential_content_desc')}</p>
+                        </div>`
+                      : sanitizedHtml,
+                  }}
                 />
               </>
             ) : (
@@ -1011,9 +1066,19 @@ export function MailDisplay({
                 style={{ padding: '1.5rem' }}
                 data-testid="mail-plain-content"
               >
-                <pre className="whitespace-pre-wrap" style={{ margin: 0 }}>
-                  {mail.payload}
-                </pre>
+                {confidentialMode ? (
+                  <div className="py-8 text-center text-muted-foreground">
+                    <div className="mb-4 text-4xl opacity-20">🔒</div>
+                    <p className="text-lg font-medium">
+                      {t('confidential_content')}
+                    </p>
+                    <p className="text-sm">{t('confidential_content_desc')}</p>
+                  </div>
+                ) : (
+                  <pre className="whitespace-pre-wrap" style={{ margin: 0 }}>
+                    {mail.payload}
+                  </pre>
+                )}
               </div>
             )}
           </ScrollArea>

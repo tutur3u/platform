@@ -16,6 +16,7 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
 } from '@tuturuuu/ui/resizable';
+import { Switch } from '@tuturuuu/ui/switch';
 import type { JSONContent } from '@tuturuuu/ui/tiptap';
 import { TooltipProvider } from '@tuturuuu/ui/tooltip';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
@@ -46,6 +47,7 @@ export function MailClient({
   user,
 }: MailProps) {
   const [mail] = useMail();
+  const [confidentialMode, setConfidentialMode] = useState(false);
 
   const [composeOpen, setComposeOpen] = useState(false);
   const [composeInitialData, setComposeInitialData] = useState<
@@ -154,7 +156,23 @@ export function MailClient({
       >
         <ResizablePanel defaultSize={defaultLayout[0]} minSize={30}>
           <div className="flex h-16 items-center justify-between border-b bg-background/50 px-4 backdrop-blur-sm">
-            <h1 className="text-xl font-bold">{t('mail.sent')}</h1>
+            <div className="flex items-center gap-4">
+              <h1 className="text-xl font-bold">{t('mail.sent')}</h1>
+              <div className="flex items-center gap-2">
+                <Switch
+                  id="confidential-mode"
+                  checked={confidentialMode}
+                  onCheckedChange={setConfidentialMode}
+                  className="data-[state=checked]:bg-dynamic-red"
+                />
+                <label
+                  htmlFor="confidential-mode"
+                  className="text-xs font-medium text-muted-foreground"
+                >
+                  {t('confidential_mode')}
+                </label>
+              </div>
+            </div>
             {wsId === ROOT_WORKSPACE_ID && (
               <ComposeButton
                 onClick={openComposeDialog}
@@ -166,7 +184,12 @@ export function MailClient({
             ref={scrollContainerRef}
             className="h-full w-full overflow-y-auto p-2"
           >
-            <MailList items={mails} hasMore={hasMore} loading={loading} />
+            <MailList
+              items={mails}
+              hasMore={hasMore}
+              loading={loading}
+              confidentialMode={confidentialMode}
+            />
           </div>
         </ResizablePanel>
         <ResizableHandle />
@@ -177,6 +200,7 @@ export function MailClient({
             onReply={handleReply}
             onReplyAll={handleReplyAll}
             onForward={handleForward}
+            confidentialMode={confidentialMode}
           />
         </ResizablePanel>
       </ResizablePanelGroup>
