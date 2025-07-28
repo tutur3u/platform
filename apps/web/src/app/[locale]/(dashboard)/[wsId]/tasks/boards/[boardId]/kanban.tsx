@@ -243,8 +243,6 @@ export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
     pickedUpTaskColumn.current = null;
     dragStartCardLeft.current = null;
     if (!over) {
-      // Reset the cache if dropped outside
-      queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
       debugLog('No drop target, state reset.');
       return;
     }

@@ -671,14 +671,26 @@ export function useMoveTask(boardId: string) {
       // Snapshot the previous value
       const previousTasks = queryClient.getQueryData(['tasks', boardId]);
 
-      // Optimistically update the task's list_id
+      // Optimistically update the task's list_id and archived status
       queryClient.setQueryData(
         ['tasks', boardId],
         (old: Task[] | undefined) => {
           if (!old) return old;
-          return old.map((task) =>
-            task.id === taskId ? { ...task, list_id: newListId } : task
-          );
+          return old.map((task) => {
+            if (task.id === taskId) {
+              // Get the target list to determine archived status
+              const targetList = queryClient.getQueryData(['task-lists', boardId]) as TaskList[] | undefined;
+              const list = targetList?.find(l => l.id === newListId);
+              const shouldArchive = list?.status === 'done' || list?.status === 'closed';
+              
+              return { 
+                ...task, 
+                list_id: newListId,
+                archived: shouldArchive || false
+              };
+            }
+            return task;
+          });
         }
       );
 
@@ -709,10 +721,7 @@ export function useMoveTask(boardId: string) {
         }
       );
     },
-    onSettled: () => {
-      // Ensure data consistency across all task-related caches
-      invalidateTaskCaches(queryClient, boardId);
-    },
+    // Removed onSettled to prevent cache invalidation conflicts with optimistic updates
   });
 }
 

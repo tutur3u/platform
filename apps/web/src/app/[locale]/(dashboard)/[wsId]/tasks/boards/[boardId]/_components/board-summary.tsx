@@ -40,59 +40,7 @@ export function BoardSummary({ board }: Props) {
     },
   });
 
-  useEffect(() => {
-    const supabase = createClient();
-    const listIds = lists.map((l) => l.id);
-
-    if (!listIds || listIds.length === 0) return;
-
-    const tasksSubscription = supabase
-      .channel(`board-summary-${boardId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'tasks',
-          filter: `list_id=in.(${listIds.join(',')})`,
-        },
-        () => {
-          queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'task_assignees',
-          filter: `task_id=in.(${tasks.map((t) => t.id).join(',')})`,
-        },
-        () => {
-          queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'task_lists',
-          filter: `board_id=eq.${boardId}`,
-        },
-        () => {
-          queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
-          queryClient.invalidateQueries({
-            queryKey: ['task-lists', boardId],
-          });
-        }
-      )
-      .subscribe();
-
-    return () => {
-      tasksSubscription.unsubscribe();
-    };
-  }, [boardId, queryClient, tasks, lists]);
+  // Removed real-time subscriptions to prevent cache invalidation conflicts with drag-and-drop
 
   const totalTasks = tasks.length;
   const completedTasks = tasks.filter((task) => {
