@@ -298,22 +298,33 @@ export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
       const selectedTaskObjects = tasks.filter(task => selectedTaskIds.includes(task.id));
       
       return (
-        <div className="relative">
-          {selectedTaskObjects.map((task, index) => (
+        <div className="relative w-[350px]">
+          {/* Stacked cards with proper offset */}
+          {selectedTaskObjects.slice(0, 3).map((task, index) => (
             <div
               key={task.id}
-              className="absolute"
+              className="absolute w-full"
               style={{
-                transform: `translateY(${index * 8}px) translateX(${index * 4}px)`,
+                transform: `translateY(${index * 12}px) translateX(${index * 6}px)`,
                 zIndex: selectedTaskObjects.length - index,
+                opacity: 1 - (index * 0.15), // Fade out stacked cards
               }}
             >
               <LightweightTaskCard task={task} />
             </div>
           ))}
-          <div className="absolute -bottom-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
+          
+          {/* Badge showing total count */}
+          <div className="absolute -top-2 -right-2 flex h-7 w-7 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground shadow-lg">
             {selectedTasks.size}
           </div>
+          
+          {/* Show "more" indicator if there are more than 3 cards */}
+          {selectedTasks.size > 3 && (
+            <div className="absolute bottom-2 right-2 text-xs text-muted-foreground bg-background/80 px-2 py-1 rounded">
+              +{selectedTasks.size - 3} more
+            </div>
+          )}
         </div>
       );
     }
@@ -507,6 +518,28 @@ export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
 
   return (
     <div className="flex h-full flex-col">
+      {/* Multi-select indicator */}
+      {isMultiSelectMode && selectedTasks.size > 0 && (
+        <div className="flex items-center justify-between bg-primary/10 border-b px-4 py-2">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium">
+              {selectedTasks.size} task{selectedTasks.size !== 1 ? 's' : ''} selected
+            </span>
+            <span className="text-xs text-muted-foreground">
+              Drag to move all • Press Esc to clear
+            </span>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={clearSelection}
+            className="h-6 px-2 text-xs"
+          >
+            Clear
+          </Button>
+        </div>
+      )}
+      
       {/* Kanban Board */}
       <div className="flex-1 overflow-hidden">
         <DndContext
