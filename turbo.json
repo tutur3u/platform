@@ -3,6 +3,7 @@
   "ui": "tui",
   "globalDependencies": ["**/.env.*local"],
   "globalEnv": [
+    "INTERNAL_TRIGGER_SECRET_KEY",
     "NEXT_PUBLIC_SUPABASE_ANON_KEY",
     "NEXT_PUBLIC_SUPABASE_URL",
     "SHOW_TAILWIND_INDICATOR",

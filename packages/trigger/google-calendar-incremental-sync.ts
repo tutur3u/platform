@@ -1,3 +1,4 @@
+import type { SyncOrchestratorResult } from './google-calendar-sync';
 import {
   getGoogleAuthClient,
   getSyncToken,
@@ -5,7 +6,6 @@ import {
   storeSyncToken,
   syncWorkspaceBatched,
 } from './google-calendar-sync';
-import type { SyncOrchestratorResult } from './google-calendar-sync';
 import { schedules, task } from '@trigger.dev/sdk/v3';
 import { google } from 'googleapis';
 
@@ -23,9 +23,10 @@ async function performIncrementalSyncForWorkspace(
 
   try {
     const syncToken = await getSyncToken(ws_id);
-    let allEvents = [];
-    let pageToken: string | undefined = undefined;
-    let nextSyncToken: string | undefined = undefined;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let allEvents: any[] = [];
+    let pageToken: string | undefined;
+    let nextSyncToken: string | undefined;
     do {
       const res = await calendar.events.list({
         calendarId,
@@ -38,7 +39,7 @@ async function performIncrementalSyncForWorkspace(
       const events = res.data.items || [];
       allEvents = allEvents.concat(events);
       nextSyncToken = res.data.nextSyncToken ?? nextSyncToken;
-      pageToken = res.data.nextPageToken;
+      pageToken = res.data.nextPageToken ?? undefined;
     } while (pageToken);
 
     if (allEvents.length > 0) {
@@ -65,7 +66,7 @@ export const googleCalendarIncrementalSync = task({
     ws_id: string;
     access_token: string;
     refresh_token: string;
-    calendarId?: string; // Optional, defaults to "primary"
+    calendarId?: string;
   }) => {
     console.log(`[${payload.ws_id}] Starting incremental sync task`);
 
@@ -125,7 +126,7 @@ export const googleCalendarIncrementalSyncOrchestrator = schedules.task({
           const handle = await googleCalendarIncrementalSync.trigger(
             workspace,
             {
-              concurrencyKey: workspace.ws_id,
+              concurrencyKey: `google-calendar-incremental-sync-${workspace.ws_id}`,
             }
           );
 
