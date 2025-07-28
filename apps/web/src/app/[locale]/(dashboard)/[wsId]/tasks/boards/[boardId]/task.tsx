@@ -435,7 +435,7 @@ export const TaskCard = React.memo(function TaskCard({
         !isDragging &&
           'hover:border-primary/30 hover:ring-1 hover:ring-primary/15',
         // Selection state
-        isSelected && 'ring-2 ring-primary/50 bg-primary/5',
+        isSelected && 'ring-2 ring-primary/50 bg-primary/5 shadow-md',
         // Visual feedback for invalid drop (dev only)
         process.env.NODE_ENV === 'development' &&
           isDragging &&
@@ -447,6 +447,13 @@ export const TaskCard = React.memo(function TaskCard({
       {isOverdue && !task.archived && (
         <div className="absolute top-0 right-0 h-0 w-0 border-t-[20px] border-l-[20px] border-t-dynamic-red/80 border-l-transparent">
           <AlertCircle className="absolute -top-4 -right-[18px] h-3 w-3" />
+        </div>
+      )}
+
+      {/* Selection indicator */}
+      {isSelected && (
+        <div className="absolute top-2 left-2 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
+          ✓
         </div>
       )}
 

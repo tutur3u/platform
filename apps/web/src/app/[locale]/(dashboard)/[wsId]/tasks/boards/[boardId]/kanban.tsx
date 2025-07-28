@@ -94,6 +94,18 @@ export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
     setIsMultiSelectMode(false);
   }, []);
 
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        clearSelection();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [clearSelection]);
+
   useEffect(() => {
     let mounted = true;
     const supabase = createClient();
@@ -187,8 +199,8 @@ export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
       // If this is a multi-select drag, include all selected tasks
       if (isMultiSelectMode && selectedTasks.has(task.id)) {
         console.log('📋 Multi-select drag detected');
-        // For now, we'll handle single task drag and extend to multi later
-        setActiveTask(task);
+        console.log('📋 Number of selected tasks:', selectedTasks.size);
+        setActiveTask(task); // Set the dragged task as active for overlay
       } else {
         setActiveTask(task);
       }
@@ -253,24 +265,62 @@ export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
 
       console.log('🔄 onDragOver - Optimistically updating task:', activeTask.id, 'to list:', targetListId);
       
-      // Optimistically update the task in the cache for preview
+      // Optimistically update the tasks in the cache for preview
       queryClient.setQueryData(
         ['tasks', boardId],
         (oldData: Task[] | undefined) => {
           if (!oldData) return oldData;
-          return oldData.map((t) =>
-            t.id === activeTask.id ? { ...t, list_id: targetListId } : t
-          );
+          
+          // If multi-select mode, update all selected tasks
+          if (isMultiSelectMode && selectedTasks.size > 1) {
+            console.log('🔄 onDragOver - Optimistically updating multiple tasks to list:', targetListId);
+            return oldData.map((t) =>
+              selectedTasks.has(t.id) ? { ...t, list_id: targetListId } : t
+            );
+          } else {
+            // Single task update
+            return oldData.map((t) =>
+              t.id === activeTask.id ? { ...t, list_id: targetListId } : t
+            );
+          }
         }
       );
     }
   }
 
   // Memoized DragOverlay content to minimize re-renders
-  const MemoizedTaskOverlay = useMemo(
-    () => (activeTask ? <LightweightTaskCard task={activeTask} /> : null),
-    [activeTask]
-  );
+  const MemoizedTaskOverlay = useMemo(() => {
+    if (!activeTask) return null;
+    
+    // If multi-select mode and multiple tasks selected, show stacked overlay
+    if (isMultiSelectMode && selectedTasks.size > 1) {
+      const selectedTaskIds = Array.from(selectedTasks);
+      const selectedTaskObjects = tasks.filter(task => selectedTaskIds.includes(task.id));
+      
+      return (
+        <div className="relative">
+          {selectedTaskObjects.map((task, index) => (
+            <div
+              key={task.id}
+              className="absolute"
+              style={{
+                transform: `translateY(${index * 8}px) translateX(${index * 4}px)`,
+                zIndex: selectedTaskObjects.length - index,
+              }}
+            >
+              <LightweightTaskCard task={task} />
+            </div>
+          ))}
+          <div className="absolute -bottom-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
+            {selectedTasks.size}
+          </div>
+        </div>
+      );
+    }
+    
+    // Single task overlay
+    return <LightweightTaskCard task={activeTask} />;
+  }, [activeTask, isMultiSelectMode, selectedTasks, tasks]);
   const MemoizedColumnOverlay = useMemo(
     () =>
       activeColumn ? (
