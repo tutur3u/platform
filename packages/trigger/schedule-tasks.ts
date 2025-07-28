@@ -1,5 +1,5 @@
-import { getWorkspacesForSync } from './google-calendar-sync';
-import { schedulableTasksHelper } from './schedule-tasks-helper';
+import { getWorkspacesForSync } from './google-calendar-sync.js';
+import { schedulableTasksHelper } from './schedule-tasks-helper.js';
 import { schedules, task } from '@trigger.dev/sdk/v3';
 
 export const scheduleTask = task({
@@ -17,8 +17,8 @@ export const scheduleTask = task({
 
       return {
         ws_id: payload.ws_id,
-        success: true,
         ...result,
+        success: true,
       };
     } catch (error) {
       console.error(`[${payload.ws_id}] Error in schedule task:`, error);

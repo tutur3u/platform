@@ -10,17 +10,25 @@ const schedulableTasksHelper = async (ws_id: string): Promise<Params> => {
   try {
     // Get the base URL from environment variables
     const baseUrl =
-      process.env.API_BASE_URL ||
-      process.env.NEXT_PUBLIC_URL ||
-      'http://localhost:7803';
+      process.env.NODE_ENV === 'production'
+        ? 'https://tuturuuu.com'
+        : 'http://localhost:7803';
+
     const fullUrl = `${baseUrl}/api/${ws_id}/calendar/auto-schedule?stream=false`;
 
     console.log('Calling API:', fullUrl);
+
+    const secretKey = process.env.INTERNAL_TRIGGER_SECRET_KEY;
+
+    if (!secretKey) {
+      throw new Error('INTERNAL_TRIGGER_SECRET_KEY is not set');
+    }
 
     const response = await fetch(fullUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'x-internal-trigger-secret-key': secretKey,
       },
     });
 

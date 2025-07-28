@@ -50,17 +50,23 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ wsId: string }> }
 ) {
-  const vercelKey = process.env.VERCEL_TRIGGER_API_KEY;
-  const triggerApiKey = process.env.TRIGGER_API_PROD;
+  const secretKey = process.env.INTERNAL_TRIGGER_SECRET_KEY;
 
-  if (vercelKey && triggerApiKey) {
+  if (!secretKey) {
     return NextResponse.json(
       {
-        error: 'Both Vercel and Trigger API keys are set. Please use only one.',
+        error: 'Internal trigger secret key is not set.',
       },
       { status: 400 }
     );
   }
+
+  const requestKey = request.headers.get('x-internal-trigger-secret-key');
+
+  if (requestKey !== secretKey) {
+    return NextResponse.json({ error: 'Invalid secret key' }, { status: 401 });
+  }
+
   const supabase = createAdminClient();
   const requestId = Math.random().toString(36).substring(7);
 
