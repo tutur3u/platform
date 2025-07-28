@@ -1,6 +1,7 @@
 'use client';
 
 import { calculateOverdueDays } from '../utils/taskHelpers';
+import type { TaskBoardStatus } from '@tuturuuu/types/primitives/TaskBoard';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card } from '@tuturuuu/ui/card';
@@ -21,23 +22,36 @@ import {
 import { cn } from '@tuturuuu/utils/format';
 import { useState } from 'react';
 
+interface TaskItem {
+  id: string;
+  name: string;
+  description?: string;
+  priority?: number | null;
+  end_date?: string | null;
+  boardId: string;
+  boardName: string;
+  listId: string;
+  listName: string;
+  list_id: string;
+  boardHref: string;
+  archived: boolean;
+  listStatus: TaskBoardStatus;
+  created_at: string;
+  assignees?: {
+    id: string;
+    display_name?: string;
+    email?: string;
+    avatar_url?: string;
+    handle?: string;
+  }[];
+}
+
 interface TaskGroupProps {
   title: string;
   icon: React.ReactNode;
-  tasks: Array<{
-    id: string;
-    name: string;
-    description?: string;
-    priority?: number | null;
-    end_date?: string | null;
-    boardName: string;
-    listName: string;
-    boardHref?: string;
-    archived?: boolean;
-    listStatus?: string;
-  }>;
+  tasks: Array<TaskItem>;
   count: number;
-  onTaskClick: (task: any) => void;
+  onTaskClick: (task: TaskItem) => void;
 }
 
 export function TaskGroup({

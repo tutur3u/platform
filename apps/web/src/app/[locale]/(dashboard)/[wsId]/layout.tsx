@@ -43,9 +43,14 @@ import {
   QrCodeIcon,
   ScanSearch,
   ScrollText,
+  Send,
   ShieldUser,
   Sparkles,
   SquaresIntersect,
+  Star,
+  TextSelect,
+  Trash,
+  TriangleAlert,
   UserLock,
   Users,
   Vote,
@@ -258,6 +263,39 @@ export default async function Layout({ children, params }: LayoutProps) {
           title: t('sidebar_tabs.mail'),
           href: `/${wsId}/mail`,
           icon: <Mail className="h-5 w-5" />,
+          children: [
+            {
+              title: t('mail.inbox'),
+              icon: <Mail className="h-5 w-5" />,
+              tempDisabled: true,
+            },
+            {
+              title: t('mail.starred'),
+              icon: <Star className="h-5 w-5" />,
+              tempDisabled: true,
+            },
+            {
+              title: t('mail.sent'),
+              href: `/${wsId}/mail`,
+              icon: <Send className="h-5 w-5" />,
+              aliases: [`/${wsId}/mail/sent`],
+            },
+            {
+              title: t('mail.drafts'),
+              icon: <TextSelect className="h-5 w-5" />,
+              tempDisabled: true,
+            },
+            {
+              title: t('mail.spam'),
+              icon: <TriangleAlert className="h-5 w-5" />,
+              tempDisabled: true,
+            },
+            {
+              title: t('mail.trash'),
+              icon: <Trash className="h-5 w-5" />,
+              tempDisabled: true,
+            },
+          ],
           disabled:
             !DEV_MODE &&
             (ENABLE_AI_ONLY ||

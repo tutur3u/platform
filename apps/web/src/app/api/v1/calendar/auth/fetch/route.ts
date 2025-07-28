@@ -203,6 +203,7 @@ export async function GET(request: Request) {
       });
 
       return NextResponse.json({ events: formattedEvents }, { status: 200 });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       console.error('Error fetching Google Calendar events:', error);
 
@@ -243,6 +244,7 @@ export async function GET(request: Request) {
         status: errorDetails.statusCode,
       });
     }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     console.error('Error fetching Google Calendar events:', error);
 

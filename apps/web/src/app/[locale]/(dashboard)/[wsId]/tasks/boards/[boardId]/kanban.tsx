@@ -1,7 +1,7 @@
 'use client';
 
 import { coordinateGetter } from './keyboard-preset';
-import { TaskCard } from './task';
+import { LightweightTaskCard } from './task';
 import { BoardColumn, BoardContainer } from './task-list';
 import { TaskListForm } from './task-list-form';
 import { hasDraggableData } from './utils';
@@ -15,7 +15,7 @@ import {
   KeyboardSensor,
   MeasuringStrategy,
   PointerSensor,
-  closestCenter,
+  closestCorners,
   useSensor,
   useSensors,
 } from '@dnd-kit/core';
@@ -27,7 +27,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { Task, TaskList } from '@tuturuuu/types/primitives/TaskBoard';
 import { Card, CardContent } from '@tuturuuu/ui/card';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 interface Props {
   boardId: string;
@@ -42,12 +42,16 @@ export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
   const pickedUpTaskColumn = useRef<string | null>(null);
   const queryClient = useQueryClient();
   const moveTaskMutation = useMoveTask(boardId);
+  // Ref for the Kanban board container
+  const boardRef = useRef<HTMLDivElement>(null);
+  const dragStartCardLeft = useRef<number | null>(null);
+  const overlayWidth = 350; // Column width
 
-  const handleTaskCreated = () => {
+  const handleTaskCreated = useCallback(() => {
     // Invalidate the tasks query to trigger a refetch
     queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
     queryClient.invalidateQueries({ queryKey: ['task_lists', boardId] });
-  };
+  }, [queryClient, boardId]);
 
   useEffect(() => {
     let mounted = true;
@@ -93,6 +97,21 @@ export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
     };
   }, [boardId]);
 
+  // Global drag state reset on mouseup/touchend
+  useEffect(() => {
+    function handleGlobalPointerUp() {
+      setActiveColumn(null);
+      setActiveTask(null);
+      pickedUpTaskColumn.current = null;
+    }
+    window.addEventListener('mouseup', handleGlobalPointerUp);
+    window.addEventListener('touchend', handleGlobalPointerUp);
+    return () => {
+      window.removeEventListener('mouseup', handleGlobalPointerUp);
+      window.removeEventListener('touchend', handleGlobalPointerUp);
+    };
+  }, []);
+
   const columnsId = useMemo(() => columns.map((col) => col.id), [columns]);
 
   const sensors = useSensors(
@@ -106,6 +125,7 @@ export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
     })
   );
 
+  // Capture drag start card left position
   function onDragStart(event: DragStartEvent) {
     if (!hasDraggableData(event.active)) return;
     const { active } = event;
@@ -120,6 +140,26 @@ export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
       const task = active.data.current.task;
       setActiveTask(task);
       pickedUpTaskColumn.current = String(task.list_id);
+
+      // Use more specific selector for better reliability
+      // Prefer data-id selector over generic querySelector
+      const cardNode = document.querySelector(
+        `[data-id="${task.id}"]`
+      ) as HTMLElement;
+      if (cardNode) {
+        const cardRect = cardNode.getBoundingClientRect();
+        dragStartCardLeft.current = cardRect.left;
+      } else {
+        // Fallback: try to find the card by task ID in a more specific way
+        const taskCards = document.querySelectorAll('[data-id]');
+        const targetCard = Array.from(taskCards).find(
+          (card) => card.getAttribute('data-id') === task.id
+        ) as HTMLElement;
+        if (targetCard) {
+          const cardRect = targetCard.getBoundingClientRect();
+          dragStartCardLeft.current = cardRect.left;
+        }
+      }
       return;
     }
   }
@@ -169,64 +209,84 @@ export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
     }
   }
 
+  // Memoized DragOverlay content to minimize re-renders
+  const MemoizedTaskOverlay = useMemo(
+    () => (activeTask ? <LightweightTaskCard task={activeTask} /> : null),
+    [activeTask]
+  );
+  const MemoizedColumnOverlay = useMemo(
+    () =>
+      activeColumn ? (
+        <BoardColumn
+          column={activeColumn}
+          boardId={boardId}
+          tasks={tasks.filter((task) => task.list_id === activeColumn.id)}
+          isOverlay
+          onTaskCreated={handleTaskCreated}
+          onListUpdated={handleTaskCreated}
+        />
+      ) : null,
+    [activeColumn, tasks, boardId, handleTaskCreated]
+  );
+
+  const debugLog = (message: string) => {
+    if (process.env.NODE_ENV === 'development') {
+      console.debug(`DragEnd: ${message}`);
+    }
+  };
+
   async function onDragEnd(event: DragEndEvent) {
     const { active, over } = event;
-
+    // Always reset drag state, even on invalid drop
     setActiveColumn(null);
     setActiveTask(null);
-
+    pickedUpTaskColumn.current = null;
+    dragStartCardLeft.current = null;
     if (!over) {
       // Reset the cache if dropped outside
       queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
-      pickedUpTaskColumn.current = null;
+      debugLog('No drop target, state reset.');
       return;
     }
-
     const activeType = active.data?.current?.type;
     if (!activeType) {
-      pickedUpTaskColumn.current = null;
+      debugLog('No activeType, state reset.');
       return;
     }
-
     if (activeType === 'Task') {
       const activeTask = active.data?.current?.task;
       if (!activeTask) {
-        pickedUpTaskColumn.current = null;
+        debugLog('No activeTask, state reset.');
         return;
       }
-
       let targetListId: string;
       if (over.data?.current?.type === 'Column') {
         targetListId = String(over.id);
       } else if (over.data?.current?.type === 'Task') {
         targetListId = String(over.data.current.task.list_id);
       } else {
-        pickedUpTaskColumn.current = null;
+        debugLog('Invalid drop type, state reset.');
         return;
       }
-
-      const originalListId = pickedUpTaskColumn.current;
+      const originalListId =
+        event.active.data?.current?.task?.list_id || pickedUpTaskColumn.current;
       if (!originalListId) {
-        pickedUpTaskColumn.current = null;
+        debugLog('No originalListId, state reset.');
         return;
       }
-
       const sourceListExists = columns.some(
         (col) => String(col.id) === originalListId
       );
       const targetListExists = columns.some(
         (col) => String(col.id) === targetListId
       );
-
       if (!sourceListExists || !targetListExists) {
-        pickedUpTaskColumn.current = null;
+        debugLog('Source or target list missing, state reset.');
         return;
       }
-
       // Only move if actually changing lists
       if (targetListId !== originalListId) {
         try {
-          // Optimistically update the task in the cache
           queryClient.setQueryData(
             ['tasks', boardId],
             (oldData: Task[] | undefined) => {
@@ -236,20 +296,18 @@ export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
               );
             }
           );
-
           moveTaskMutation.mutate({
             taskId: activeTask.id,
             newListId: targetListId,
           });
         } catch (error) {
-          // Revert the optimistic update by invalidating the query
           queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
-          console.error('Failed to move task:', error);
+          if (process.env.NODE_ENV === 'development') {
+            console.error('Failed to move task:', error);
+          }
         }
       }
     }
-
-    pickedUpTaskColumn.current = null;
   }
 
   if (isLoading) {
@@ -300,7 +358,7 @@ export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
       <div className="flex-1 overflow-hidden">
         <DndContext
           sensors={sensors}
-          collisionDetection={closestCenter}
+          collisionDetection={closestCorners}
           onDragStart={onDragStart}
           onDragOver={onDragOver}
           onDragEnd={onDragEnd}
@@ -312,17 +370,16 @@ export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
           modifiers={[
             (args) => {
               const { transform } = args;
-
-              // Get viewport bounds - only access window in browser environment
-              // Use responsive fallback based on common breakpoints for better mobile handling
-              const viewportWidth =
-                typeof window !== 'undefined' ? window.innerWidth : 1024; // Default to tablet landscape width for SSR (better than desktop 1200px)
-
-              const maxX = viewportWidth - 350; // Account for card width
-
+              if (!boardRef.current || dragStartCardLeft.current === null)
+                return transform;
+              const boardRect = boardRef.current.getBoundingClientRect();
+              // Clamp overlay within board
+              const minX = boardRect.left - dragStartCardLeft.current;
+              const maxX =
+                boardRect.right - dragStartCardLeft.current - overlayWidth;
               return {
                 ...transform,
-                x: Math.min(Math.max(transform.x, -50), maxX), // Constrain X position
+                x: Math.max(minX, Math.min(transform.x, maxX)),
               };
             },
           ]}
@@ -332,7 +389,7 @@ export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
               items={columnsId}
               strategy={horizontalListSortingStrategy}
             >
-              <div className="flex h-full gap-4">
+              <div ref={boardRef} className="flex h-full gap-4">
                 {columns
                   .sort((a, b) => {
                     // First sort by status priority, then by position within status
@@ -366,7 +423,6 @@ export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
               </div>
             </SortableContext>
           </BoardContainer>
-
           <DragOverlay
             wrapperElement="div"
             style={{
@@ -375,29 +431,8 @@ export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
               pointerEvents: 'none',
             }}
           >
-            {activeColumn && (
-              <BoardColumn
-                column={activeColumn}
-                boardId={boardId}
-                tasks={tasks.filter((task) => task.list_id === activeColumn.id)}
-                isOverlay
-                onTaskCreated={handleTaskCreated}
-                onListUpdated={handleTaskCreated}
-              />
-            )}
-            {activeTask && (
-              <div className="w-full max-w-[350px]">
-                <TaskCard
-                  task={activeTask}
-                  taskList={columns.find(
-                    (col) => col.id === activeTask.list_id
-                  )}
-                  boardId={boardId}
-                  isOverlay
-                  onUpdate={handleTaskCreated}
-                />
-              </div>
-            )}
+            {MemoizedColumnOverlay}
+            {MemoizedTaskOverlay}
           </DragOverlay>
         </DndContext>
       </div>

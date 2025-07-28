@@ -2713,6 +2713,7 @@ export type Database = {
       };
       meet_together_plans: {
         Row: {
+          agenda_content: Json | null;
           created_at: string | null;
           creator_id: string | null;
           dates: string[];
@@ -2726,6 +2727,7 @@ export type Database = {
           ws_id: string | null;
         };
         Insert: {
+          agenda_content?: Json | null;
           created_at?: string | null;
           creator_id?: string | null;
           dates: string[];
@@ -2739,6 +2741,7 @@ export type Database = {
           ws_id?: string | null;
         };
         Update: {
+          agenda_content?: Json | null;
           created_at?: string | null;
           creator_id?: string | null;
           dates?: string[];
@@ -4621,6 +4624,7 @@ export type Database = {
           name: string;
           priority: number | null;
           start_date: string | null;
+          tags: string[] | null;
           total_duration: number | null;
           user_defined_priority:
             | Database['public']['Enums']['task_priority']
@@ -4643,6 +4647,7 @@ export type Database = {
           name: string;
           priority?: number | null;
           start_date?: string | null;
+          tags?: string[] | null;
           total_duration?: number | null;
           user_defined_priority?:
             | Database['public']['Enums']['task_priority']
@@ -4665,6 +4670,7 @@ export type Database = {
           name?: string;
           priority?: number | null;
           start_date?: string | null;
+          tags?: string[] | null;
           total_duration?: number | null;
           user_defined_priority?:
             | Database['public']['Enums']['task_priority']
@@ -9340,9 +9346,9 @@ export type Database = {
       };
       count_search_users: {
         Args: {
-          enabled_filter?: boolean;
-          role_filter?: string;
           search_query: string;
+          role_filter?: string;
+          enabled_filter?: boolean;
         };
         Returns: number;
       };
@@ -9361,22 +9367,26 @@ export type Database = {
       generate_cross_app_token: {
         Args:
           | {
-              p_target_app: string;
               p_user_id: string;
               p_origin_app: string;
+              p_target_app: string;
               p_expiry_seconds?: number;
             }
           | {
               p_user_id: string;
-              p_target_app: string;
-              p_session_data?: Json;
-              p_expiry_seconds?: number;
               p_origin_app: string;
+              p_target_app: string;
+              p_expiry_seconds?: number;
+              p_session_data?: Json;
             };
         Returns: string;
       };
+      get_board_task_tags: {
+        Args: { board_id: string };
+        Returns: string[];
+      };
       get_browsers: {
-        Args: { p_limit?: number; p_link_id: string };
+        Args: { p_link_id: string; p_limit?: number };
         Returns: {
           browser: string;
           count: number;
@@ -9390,7 +9400,7 @@ export type Database = {
         }[];
       };
       get_clicks_by_day: {
-        Args: { p_days?: number; p_link_id: string };
+        Args: { p_link_id: string; p_days?: number };
         Returns: {
           click_date: string;
           clicks: number;
@@ -9399,20 +9409,20 @@ export type Database = {
       get_clicks_by_day_of_week: {
         Args: { p_link_id: string };
         Returns: {
-          clicks: number;
           day_of_week: number;
           day_name: string;
+          clicks: number;
         }[];
       };
       get_clicks_by_hour: {
         Args: { p_link_id: string };
         Returns: {
-          clicks: number;
           hour: number;
+          clicks: number;
         }[];
       };
       get_daily_income_expense: {
-        Args: { past_days?: number; _ws_id: string };
+        Args: { _ws_id: string; past_days?: number };
         Returns: {
           day: string;
           total_income: number;
@@ -9422,16 +9432,16 @@ export type Database = {
       get_daily_prompt_completion_tokens: {
         Args: { past_days?: number };
         Returns: {
-          total_prompt_tokens: number;
           day: string;
+          total_prompt_tokens: number;
           total_completion_tokens: number;
         }[];
       };
       get_device_types: {
         Args: { p_link_id: string; p_limit?: number };
         Returns: {
-          count: number;
           device_type: string;
+          count: number;
         }[];
       };
       get_finance_invoices_count: {
@@ -9478,7 +9488,6 @@ export type Database = {
           _has_unit?: boolean;
         };
         Returns: {
-          ws_id: string;
           id: string;
           name: string;
           manufacturer: string;
@@ -9487,6 +9496,7 @@ export type Database = {
           category: string;
           price: number;
           amount: number;
+          ws_id: string;
           created_at: string;
         }[];
       };
@@ -9507,7 +9517,7 @@ export type Database = {
         Returns: number;
       };
       get_monthly_income_expense: {
-        Args: { past_months?: number; _ws_id: string };
+        Args: { _ws_id: string; past_months?: number };
         Returns: {
           month: string;
           total_income: number;
@@ -9525,8 +9535,8 @@ export type Database = {
       get_operating_systems: {
         Args: { p_link_id: string; p_limit?: number };
         Returns: {
-          count: number;
           os: string;
+          count: number;
         }[];
       };
       get_pending_event_participants: {
@@ -9536,9 +9546,9 @@ export type Database = {
       get_possible_excluded_groups: {
         Args: { _ws_id: string; included_groups: string[] };
         Returns: {
-          ws_id: string;
-          name: string;
           id: string;
+          name: string;
+          ws_id: string;
           amount: number;
         }[];
       };
@@ -9546,19 +9556,19 @@ export type Database = {
         Args: { _ws_id: string; included_tags: string[] };
         Returns: {
           id: string;
+          name: string;
           ws_id: string;
           amount: number;
-          name: string;
         }[];
       };
       get_session_statistics: {
         Args: Record<PropertyKey, never>;
         Returns: {
-          latest_session_date: string;
           total_count: number;
           unique_users_count: number;
           active_count: number;
           completed_count: number;
+          latest_session_date: string;
         }[];
       };
       get_session_templates: {
@@ -9568,25 +9578,25 @@ export type Database = {
           limit_count?: number;
         };
         Returns: {
-          task_name: string;
-          category_color: string;
           title: string;
           description: string;
           category_id: string;
           task_id: string;
           tags: string[];
           category_name: string;
-          last_used: string;
+          category_color: string;
+          task_name: string;
           usage_count: number;
           avg_duration: number;
+          last_used: string;
         }[];
       };
       get_submission_statistics: {
         Args: Record<PropertyKey, never>;
         Returns: {
           total_count: number;
-          unique_users_count: number;
           latest_submission_date: string;
+          unique_users_count: number;
         }[];
       };
       get_top_cities: {
@@ -9605,7 +9615,7 @@ export type Database = {
         }[];
       };
       get_top_referrers: {
-        Args: { p_limit?: number; p_link_id: string };
+        Args: { p_link_id: string; p_limit?: number };
         Returns: {
           domain: string;
           count: number;
@@ -9614,33 +9624,33 @@ export type Database = {
       get_transaction_categories_with_amount: {
         Args: Record<PropertyKey, never>;
         Returns: {
-          ws_id: string;
+          id: string;
           name: string;
           is_expense: boolean;
-          amount: number;
+          ws_id: string;
           created_at: string;
-          id: string;
+          amount: number;
         }[];
       };
       get_user_role: {
-        Args: { ws_id: string; user_id: string };
+        Args: { user_id: string; ws_id: string };
         Returns: string;
       };
       get_user_session_stats: {
         Args: { user_id: string };
         Returns: {
-          current_session_age: unknown;
-          active_sessions: number;
           total_sessions: number;
+          active_sessions: number;
+          current_session_age: unknown;
         }[];
       };
       get_user_sessions: {
         Args: { user_id: string };
         Returns: {
-          user_agent: string;
           session_id: string;
           created_at: string;
           updated_at: string;
+          user_agent: string;
           ip: string;
           is_current: boolean;
         }[];
@@ -9648,24 +9658,24 @@ export type Database = {
       get_user_tasks: {
         Args: { _board_id: string };
         Returns: {
-          priority: number;
-          description: string;
+          id: string;
           name: string;
-          list_id: string;
-          board_id: string;
+          description: string;
+          priority: number;
+          completed: boolean;
           start_date: string;
           end_date: string;
-          completed: boolean;
-          id: string;
+          list_id: string;
+          board_id: string;
         }[];
       };
       get_user_whitelist_status: {
         Args: { user_id_param: string };
         Returns: {
-          allow_manage_all_challenges: boolean;
-          allow_challenge_management: boolean;
-          enabled: boolean;
           is_whitelisted: boolean;
+          enabled: boolean;
+          allow_challenge_management: boolean;
+          allow_manage_all_challenges: boolean;
           allow_role_management: boolean;
         }[];
       };
@@ -9686,24 +9696,24 @@ export type Database = {
         Returns: number;
       };
       get_workspace_transactions_count: {
-        Args: { ws_id: string; end_date?: string; start_date?: string };
+        Args: { ws_id: string; start_date?: string; end_date?: string };
         Returns: number;
       };
       get_workspace_user_groups: {
         Args: {
-          excluded_tags: string[];
-          search_query: string;
           _ws_id: string;
           included_tags: string[];
+          excluded_tags: string[];
+          search_query: string;
         };
         Returns: {
-          created_at: string;
-          tag_count: number;
-          tags: string[];
-          ws_id: string;
-          notes: string;
-          name: string;
           id: string;
+          name: string;
+          notes: string;
+          ws_id: string;
+          tags: string[];
+          tag_count: number;
+          created_at: string;
         }[];
       };
       get_workspace_user_groups_count: {
@@ -9712,32 +9722,32 @@ export type Database = {
       };
       get_workspace_users: {
         Args: {
-          search_query: string;
-          excluded_groups: string[];
-          included_groups: string[];
           _ws_id: string;
+          included_groups: string[];
+          excluded_groups: string[];
+          search_query: string;
         };
         Returns: {
-          balance: number;
-          gender: string;
-          updated_at: string;
-          created_at: string;
-          linked_users: Json;
-          group_count: number;
-          groups: string[];
-          ws_id: string;
-          full_name: string;
-          avatar_url: string;
           id: string;
-          note: string;
-          national_id: string;
-          address: string;
-          guardian: string;
-          ethnicity: string;
-          birthday: string;
+          avatar_url: string;
+          full_name: string;
           display_name: string;
           email: string;
           phone: string;
+          gender: string;
+          birthday: string;
+          ethnicity: string;
+          guardian: string;
+          address: string;
+          national_id: string;
+          note: string;
+          balance: number;
+          ws_id: string;
+          groups: string[];
+          group_count: number;
+          linked_users: Json;
+          created_at: string;
+          updated_at: string;
         }[];
       };
       get_workspace_users_count: {
@@ -9749,11 +9759,11 @@ export type Database = {
         Returns: number;
       };
       get_workspace_wallets_expense: {
-        Args: { ws_id: string; end_date?: string; start_date?: string };
+        Args: { ws_id: string; start_date?: string; end_date?: string };
         Returns: number;
       };
       get_workspace_wallets_income: {
-        Args: { end_date?: string; ws_id: string; start_date?: string };
+        Args: { ws_id: string; start_date?: string; end_date?: string };
         Returns: number;
       };
       gtrgm_compress: {
@@ -9777,11 +9787,11 @@ export type Database = {
         Returns: unknown;
       };
       has_other_owner: {
-        Args: { _user_id: string; _ws_id: string };
+        Args: { _ws_id: string; _user_id: string };
         Returns: boolean;
       };
       insert_ai_chat_message: {
-        Args: { chat_id: string; source: string; message: string };
+        Args: { message: string; chat_id: string; source: string };
         Returns: undefined;
       };
       is_list_accessible: {
@@ -9801,7 +9811,7 @@ export type Database = {
         Returns: boolean;
       };
       is_nova_user_email_in_team: {
-        Args: { _team_id: string; _user_email: string };
+        Args: { _user_email: string; _team_id: string };
         Returns: boolean;
       };
       is_nova_user_id_in_team: {
@@ -9832,6 +9842,10 @@ export type Database = {
         Args: { user_id_param: string };
         Returns: boolean;
       };
+      normalize_task_tags: {
+        Args: { tags: string[] };
+        Returns: string[];
+      };
       nova_get_all_challenges_with_user_stats: {
         Args: { user_id: string };
         Returns: Json;
@@ -9845,7 +9859,7 @@ export type Database = {
         Returns: number;
       };
       nova_get_user_total_sessions: {
-        Args: { user_id: string; challenge_id: string };
+        Args: { challenge_id: string; user_id: string };
         Returns: number;
       };
       parse_user_agent: {
@@ -9857,7 +9871,7 @@ export type Database = {
         }[];
       };
       remove_board_tags: {
-        Args: { tags_to_remove: string[]; board_id: string };
+        Args: { board_id: string; tags_to_remove: string[] };
         Returns: Json;
       };
       revoke_all_cross_app_tokens: {
@@ -9879,21 +9893,34 @@ export type Database = {
           match_all?: boolean;
         };
         Returns: {
-          board_tags: Json;
           board_id: string;
           board_name: string;
+          board_tags: Json;
+        }[];
+      };
+      search_tasks_by_tags: {
+        Args: { search_tags: string[] };
+        Returns: {
+          id: string;
+          name: string;
+          description: string;
+          tags: string[];
+          list_id: string;
+          priority: number;
+          start_date: string;
+          end_date: string;
+          created_at: string;
         }[];
       };
       search_users: {
         Args: {
-          role_filter?: string;
-          enabled_filter?: boolean;
           search_query: string;
           page_number: number;
           page_size: number;
+          role_filter?: string;
+          enabled_filter?: boolean;
         };
         Returns: {
-          enabled: boolean;
           id: string;
           display_name: string;
           deleted: boolean;
@@ -9902,6 +9929,7 @@ export type Database = {
           bio: string;
           created_at: string;
           user_id: string;
+          enabled: boolean;
           allow_challenge_management: boolean;
           allow_manage_all_challenges: boolean;
           allow_role_management: boolean;
@@ -9914,16 +9942,16 @@ export type Database = {
       };
       search_users_by_name: {
         Args: {
-          min_similarity?: number;
-          result_limit?: number;
           search_query: string;
+          result_limit?: number;
+          min_similarity?: number;
         };
         Returns: {
-          relevance: number;
           id: string;
           handle: string;
-          avatar_url: string;
           display_name: string;
+          avatar_url: string;
+          relevance: number;
         }[];
       };
       set_limit: {
@@ -9955,6 +9983,10 @@ export type Database = {
       update_expired_sessions: {
         Args: Record<PropertyKey, never>;
         Returns: undefined;
+      };
+      update_many_tasks: {
+        Args: { updates: Json };
+        Returns: number;
       };
       update_session_total_score: {
         Args: { challenge_id_param: string; user_id_param: string };
@@ -10034,21 +10066,28 @@ export type Database = {
   };
 };
 
-type DefaultSchema = Database[Extract<keyof Database, 'public'>];
+type DatabaseWithoutInternals = Omit<Database, '__InternalSupabase'>;
+
+type DefaultSchema = DatabaseWithoutInternals[Extract<
+  keyof Database,
+  'public'
+>];
 
 export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema['Tables'] & DefaultSchema['Views'])
-    | { schema: keyof Database },
+    | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof Database;
+    schema: keyof DatabaseWithoutInternals;
   }
-    ? keyof (Database[DefaultSchemaTableNameOrOptions['schema']]['Tables'] &
-        Database[DefaultSchemaTableNameOrOptions['schema']]['Views'])
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables'] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Views'])
     : never = never,
-> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
-  ? (Database[DefaultSchemaTableNameOrOptions['schema']]['Tables'] &
-      Database[DefaultSchemaTableNameOrOptions['schema']]['Views'])[TableName] extends {
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals;
+}
+  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables'] &
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Views'])[TableName] extends {
       Row: infer R;
     }
     ? R
@@ -10066,14 +10105,16 @@ export type Tables<
 export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema['Tables']
-    | { schema: keyof Database },
+    | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof Database;
+    schema: keyof DatabaseWithoutInternals;
   }
-    ? keyof Database[DefaultSchemaTableNameOrOptions['schema']]['Tables']
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables']
     : never = never,
-> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
-  ? Database[DefaultSchemaTableNameOrOptions['schema']]['Tables'][TableName] extends {
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals;
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables'][TableName] extends {
       Insert: infer I;
     }
     ? I
@@ -10089,14 +10130,16 @@ export type TablesInsert<
 export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema['Tables']
-    | { schema: keyof Database },
+    | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof Database;
+    schema: keyof DatabaseWithoutInternals;
   }
-    ? keyof Database[DefaultSchemaTableNameOrOptions['schema']]['Tables']
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables']
     : never = never,
-> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
-  ? Database[DefaultSchemaTableNameOrOptions['schema']]['Tables'][TableName] extends {
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals;
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions['schema']]['Tables'][TableName] extends {
       Update: infer U;
     }
     ? U
@@ -10112,14 +10155,16 @@ export type TablesUpdate<
 export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema['Enums']
-    | { schema: keyof Database },
+    | { schema: keyof DatabaseWithoutInternals },
   EnumName extends DefaultSchemaEnumNameOrOptions extends {
-    schema: keyof Database;
+    schema: keyof DatabaseWithoutInternals;
   }
-    ? keyof Database[DefaultSchemaEnumNameOrOptions['schema']]['Enums']
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions['schema']]['Enums']
     : never = never,
-> = DefaultSchemaEnumNameOrOptions extends { schema: keyof Database }
-  ? Database[DefaultSchemaEnumNameOrOptions['schema']]['Enums'][EnumName]
+> = DefaultSchemaEnumNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals;
+}
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions['schema']]['Enums'][EnumName]
   : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema['Enums']
     ? DefaultSchema['Enums'][DefaultSchemaEnumNameOrOptions]
     : never;
@@ -10127,14 +10172,16 @@ export type Enums<
 export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema['CompositeTypes']
-    | { schema: keyof Database },
+    | { schema: keyof DatabaseWithoutInternals },
   CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
-    schema: keyof Database;
+    schema: keyof DatabaseWithoutInternals;
   }
-    ? keyof Database[PublicCompositeTypeNameOrOptions['schema']]['CompositeTypes']
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions['schema']]['CompositeTypes']
     : never = never,
-> = PublicCompositeTypeNameOrOptions extends { schema: keyof Database }
-  ? Database[PublicCompositeTypeNameOrOptions['schema']]['CompositeTypes'][CompositeTypeName]
+> = PublicCompositeTypeNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals;
+}
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions['schema']]['CompositeTypes'][CompositeTypeName]
   : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema['CompositeTypes']
     ? DefaultSchema['CompositeTypes'][PublicCompositeTypeNameOrOptions]
     : never;

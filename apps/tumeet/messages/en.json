@@ -579,7 +579,12 @@
     "dates_count": "{count} dates",
     "dates": "dates",
     "time_range": "Time range",
-    "loading_plans": "Loading your plans..."
+    "loading_plans": "Loading your plans...",
+    "agenda_title_placeholder": "Meeting Agenda",
+    "agenda_content_placeholder": "Add agenda items, discussion points, and meeting objectives...",
+    "save_agenda": "Save Agenda",
+    "agenda_saved": "Agenda Saved",
+    "agenda": "Agenda"
   },
   "meet-together-plan-details": {
     "copy_link": "Copy link",
@@ -3795,6 +3800,18 @@
     "more_options": "more options",
     "created_by": "by",
     "filter": "Filter",
-    "sort": "Sort"
+    "sort": "Sort",
+    "select_options": "Select options to vote",
+    "create_new_option": "Add your own option...",
+    "add": "Add",
+    "confirm": "Confirm",
+    "cancel": "Cancel",
+    "voted_for": "You voted for",
+    "vote_again": "Vote again",
+    "vote_for": "Vote for",
+    "vote_confirm": "Are you sure you want to submit your vote for these options?",
+    "delete_option": "Delete Option",
+    "delete_option_confirm": "Are you sure you want to delete this option? This action cannot be undone.",
+    "delete": "Delete"
   }
 }

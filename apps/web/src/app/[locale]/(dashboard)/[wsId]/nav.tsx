@@ -10,7 +10,6 @@ interface NavProps {
   wsId: string;
   isCollapsed: boolean;
   links: (NavLinkType | null)[];
-  // eslint-disable-next-line no-unused-vars
   onSubMenuClick: (links: NavLinkType[], title: string) => void;
   onClick: () => void;
   className?: string;

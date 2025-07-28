@@ -1,5 +1,6 @@
 'use client';
 
+import EditPlanDialog from './edit-plan-dialog';
 import type { MeetTogetherPlanWithParticipants } from './page';
 import UserTime from './user-time';
 import dayjs from 'dayjs';
@@ -11,6 +12,7 @@ import {
   Users,
 } from 'lucide-react';
 import Link from 'next/link';
+import type { MouseEvent } from 'react';
 
 // Plans list view component
 export function PlansListView({
@@ -23,6 +25,11 @@ export function PlansListView({
   // biome-ignore lint/suspicious/noExplicitAny: <translations are not typed>
   t: any;
 }) {
+  const handleDialogClick = (e: MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
   if (plans.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-16">
@@ -57,20 +64,26 @@ export function PlansListView({
           <div className="flex-1 space-y-3">
             {/* Header with title and timezone */}
             <div className="flex w-full items-start justify-between gap-3">
-              <h3 className="line-clamp-1 flex-1 text-lg leading-tight font-semibold text-foreground transition-colors">
-                {plan.name || t('untitled_plan')}
-              </h3>
-              {plan.start_time && (
-                <div className="rounded-full bg-foreground/10 px-3 py-1 text-xs font-medium whitespace-nowrap text-foreground/80">
-                  GMT
-                  {Intl.NumberFormat('en-US', {
-                    signDisplay: 'always',
-                  }).format(
-                    parseInt(plan.start_time?.split(/[+-]/)?.[1] ?? '0') *
-                      (plan.start_time?.includes('-') ? -1 : 1)
-                  )}
-                </div>
-              )}
+              <div className="flex flex-row gap-2">
+                <h3 className="line-clamp-1 flex-1 text-lg leading-tight font-semibold text-foreground transition-colors">
+                  {plan.name || t('untitled_plan')}
+                </h3>
+                {plan.start_time && (
+                  <div className="rounded-full bg-foreground/10 px-3 py-1 text-xs font-medium whitespace-nowrap text-foreground/80">
+                    GMT
+                    {Intl.NumberFormat('en-US', {
+                      signDisplay: 'always',
+                    }).format(
+                      Number.parseInt(
+                        plan.start_time?.split(/[+-]/)?.[1] ?? '0'
+                      ) * (plan.start_time?.includes('-') ? -1 : 1)
+                    )}
+                  </div>
+                )}
+              </div>
+              <div onClick={handleDialogClick}>
+                <EditPlanDialog plan={plan} />
+              </div>
             </div>
 
             {/* Description */}

@@ -577,7 +577,12 @@
     "dates_count": "{count} ngày",
     "dates": "ngày",
     "time_range": "Khoảng thời gian",
-    "loading_plans": "Đang tải kế hoạch của bạn..."
+    "loading_plans": "Đang tải kế hoạch của bạn...",
+    "agenda_title_placeholder": "Nội dung cuộc họp",
+    "agenda_content_placeholder": "Thêm các mục nghị sự, điểm thảo luận và mục tiêu cuộc họp...",
+    "agenda": "Nội dung cuộc họp",
+    "agenda_description": "Tất cả các điểm thảo luận chính và những gì chúng ta sẽ thảo luận.",
+    "no-timezone-found": "Không tìm thấy múi giờ"
   },
   "meet-together-plan-details": {
     "copy_link": "Sao chép liên kết",
@@ -2076,7 +2081,21 @@
     "more_options": "tùy chọn khác",
     "created_by": "bởi",
     "filter": "Lọc",
-    "sort": "Sắp xếp"
+    "sort": "Sắp xếp",
+    "create_new_option": "Thêm tùy chọn của bạn...",
+    "add": "Thêm",
+    "confirm": "Xác nhận",
+    "cancel": "Hủy",
+    "voted_for": "Bạn đã bình chọn cho",
+    "select_options": "Chọn các tùy chọn để bỏ phiếu",
+    "vote_again": "Bỏ phiếu lại",
+    "vote_for": "Bỏ phiếu cho",
+    "vote_confirm": "Bạn có chắc chắn muốn gửi phiếu bầu cho những tùy chọn này không?",
+    "delete_option": "Xóa Tùy chọn",
+    "delete_option_confirm": "Bạn có chắc chắn muốn xóa tùy chọn này không? Hành động này không thể hoàn tác.",
+    "delete": "Xóa",
+    "enable_where_poll_desc": "Bạn có thể bật tính năng bình chọn 'Nơi gặp mặt' cho kế hoạch của mình.",
+    "enable_where_poll": "Bật tính năng bình chọn 'Nơi gặp mặt'"
   },
   "ws-guest-users": {
     "plural": "Người dùng khách",
