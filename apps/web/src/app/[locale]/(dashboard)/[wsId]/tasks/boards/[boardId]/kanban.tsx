@@ -26,8 +26,8 @@ import {
 import { useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { Task, TaskList } from '@tuturuuu/types/primitives/TaskBoard';
-import { Card, CardContent } from '@tuturuuu/ui/card';
 import { Button } from '@tuturuuu/ui/button';
+import { Card, CardContent } from '@tuturuuu/ui/card';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 interface Props {
@@ -57,38 +57,41 @@ export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
   }, [queryClient, boardId]);
 
   // Multi-select handlers
-  const handleTaskSelect = useCallback((taskId: string, event: React.MouseEvent) => {
-    const isCtrlPressed = event.ctrlKey || event.metaKey;
-    const isShiftPressed = event.shiftKey;
-    
-    if (isCtrlPressed || isShiftPressed) {
-      event.preventDefault();
-      event.stopPropagation();
-      
-      setIsMultiSelectMode(true);
-      
-      if (isCtrlPressed) {
-        // Toggle selection
-        setSelectedTasks(prev => {
-          const newSet = new Set(prev);
-          if (newSet.has(taskId)) {
-            newSet.delete(taskId);
-          } else {
-            newSet.add(taskId);
-          }
-          return newSet;
-        });
-      } else if (isShiftPressed) {
-        // Range selection (if there's a last selected task)
-        // For now, just add to selection
-        setSelectedTasks(prev => new Set([...prev, taskId]));
+  const handleTaskSelect = useCallback(
+    (taskId: string, event: React.MouseEvent) => {
+      const isCtrlPressed = event.ctrlKey || event.metaKey;
+      const isShiftPressed = event.shiftKey;
+
+      if (isCtrlPressed || isShiftPressed) {
+        event.preventDefault();
+        event.stopPropagation();
+
+        setIsMultiSelectMode(true);
+
+        if (isCtrlPressed) {
+          // Toggle selection
+          setSelectedTasks((prev) => {
+            const newSet = new Set(prev);
+            if (newSet.has(taskId)) {
+              newSet.delete(taskId);
+            } else {
+              newSet.add(taskId);
+            }
+            return newSet;
+          });
+        } else if (isShiftPressed) {
+          // Range selection (if there's a last selected task)
+          // For now, just add to selection
+          setSelectedTasks((prev) => new Set([...prev, taskId]));
+        }
+      } else {
+        // Single click - clear selection and select only this task
+        setSelectedTasks(new Set([taskId]));
+        setIsMultiSelectMode(false);
       }
-    } else {
-      // Single click - clear selection and select only this task
-      setSelectedTasks(new Set([taskId]));
-      setIsMultiSelectMode(false);
-    }
-  }, []);
+    },
+    []
+  );
 
   const clearSelection = useCallback(() => {
     setSelectedTasks(new Set());
@@ -196,7 +199,7 @@ export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
       console.log('📋 Task list_id:', task.list_id);
       console.log('📋 Selected tasks:', selectedTasks);
       console.log('📋 Is multi-select mode:', isMultiSelectMode);
-      
+
       // If this is a multi-select drag, include all selected tasks
       if (isMultiSelectMode && selectedTasks.has(task.id)) {
         console.log('📋 Multi-select drag detected');
@@ -205,7 +208,7 @@ export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
       } else {
         setActiveTask(task);
       }
-      
+
       pickedUpTaskColumn.current = String(task.list_id);
       console.log('📋 pickedUpTaskColumn set to:', pickedUpTaskColumn.current);
 
@@ -264,17 +267,25 @@ export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
 
       if (!sourceListExists || !targetListExists) return;
 
-      console.log('🔄 onDragOver - Optimistically updating task:', activeTask.id, 'to list:', targetListId);
-      
+      console.log(
+        '🔄 onDragOver - Optimistically updating task:',
+        activeTask.id,
+        'to list:',
+        targetListId
+      );
+
       // Optimistically update the tasks in the cache for preview
       queryClient.setQueryData(
         ['tasks', boardId],
         (oldData: Task[] | undefined) => {
           if (!oldData) return oldData;
-          
+
           // If multi-select mode, update all selected tasks
           if (isMultiSelectMode && selectedTasks.size > 1) {
-            console.log('🔄 onDragOver - Optimistically updating multiple tasks to list:', targetListId);
+            console.log(
+              '🔄 onDragOver - Optimistically updating multiple tasks to list:',
+              targetListId
+            );
             return oldData.map((t) =>
               selectedTasks.has(t.id) ? { ...t, list_id: targetListId } : t
             );
@@ -292,33 +303,36 @@ export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
   // Memoized DragOverlay content to minimize re-renders
   const MemoizedTaskOverlay = useMemo(() => {
     if (!activeTask) return null;
-    
+
     // If multi-select mode and multiple tasks selected, show stacked overlay
     if (isMultiSelectMode && selectedTasks.size > 1) {
       const selectedTaskIds = Array.from(selectedTasks);
-      const selectedTaskObjects = tasks.filter(task => selectedTaskIds.includes(task.id));
-      
+      const selectedTaskObjects = tasks.filter((task) =>
+        selectedTaskIds.includes(task.id)
+      );
+
       return (
         <div className="relative">
           {/* Single card with stacked effect */}
-          <div 
+          <div
             className="relative"
             style={{
               transform: 'rotate(-2deg)',
-              boxShadow: '0 8px 32px rgba(0,0,0,0.12), 0 4px 16px rgba(0,0,0,0.08)',
+              boxShadow:
+                '0 8px 32px rgba(0,0,0,0.12), 0 4px 16px rgba(0,0,0,0.08)',
             }}
           >
             <LightweightTaskCard task={activeTask} />
-            
+
             {/* Stacked effect layers */}
-            <div 
+            <div
               className="absolute inset-0 -z-10 rounded-lg bg-background/80"
               style={{
                 transform: 'translateY(4px) translateX(2px) rotate(-1deg)',
                 boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
               }}
             />
-            <div 
+            <div
               className="absolute inset-0 -z-20 rounded-lg bg-background/60"
               style={{
                 transform: 'translateY(8px) translateX(4px) rotate(-2deg)',
@@ -326,15 +340,15 @@ export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
               }}
             />
           </div>
-          
+
           {/* Count badge */}
-          <div className="absolute -top-2 -right-2 flex h-7 w-7 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground shadow-lg border-2 border-background">
+          <div className="absolute -top-2 -right-2 flex h-7 w-7 items-center justify-center rounded-full border-2 border-background bg-primary text-xs font-bold text-primary-foreground shadow-lg">
             {selectedTasks.size}
           </div>
         </div>
       );
     }
-    
+
     // Single task overlay
     return <LightweightTaskCard task={activeTask} />;
   }, [activeTask, isMultiSelectMode, selectedTasks, tasks]);
@@ -361,46 +375,46 @@ export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
 
   async function onDragEnd(event: DragEndEvent) {
     const { active, over } = event;
-    
+
     console.log('🔄 onDragEnd triggered');
     console.log('📦 Active:', active);
     console.log('🎯 Over:', over);
-    
+
     // Store the original list ID before resetting drag state
     const originalListId = pickedUpTaskColumn.current;
-    
+
     // Always reset drag state, even on invalid drop
     setActiveColumn(null);
     setActiveTask(null);
     pickedUpTaskColumn.current = null;
     dragStartCardLeft.current = null;
-    
+
     if (!over) {
       console.log('❌ No drop target detected, state reset.');
       return;
     }
-    
+
     const activeType = active.data?.current?.type;
     console.log('🏷️ Active type:', activeType);
-    
+
     if (!activeType) {
       console.log('❌ No activeType, state reset.');
       return;
     }
-    
+
     if (activeType === 'Task') {
       const activeTask = active.data?.current?.task;
       console.log('📋 Active task:', activeTask);
-      
+
       if (!activeTask) {
         console.log('❌ No activeTask, state reset.');
         return;
       }
-      
+
       let targetListId: string;
       const overType = over.data?.current?.type;
       console.log('🎯 Over type:', overType);
-      
+
       if (overType === 'Column') {
         targetListId = String(over.id);
         console.log('📋 Dropping on column, targetListId:', targetListId);
@@ -418,57 +432,87 @@ export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
         console.log('❌ Invalid drop type:', overType, 'state reset.');
         return;
       }
-      
+
       // Use the stored original list ID from drag start
       console.log('🏠 Original list ID (from drag start):', originalListId);
       console.log('🎯 Target list ID:', targetListId);
-      console.log('📋 Active task full data:', event.active.data?.current?.task);
-      
+      console.log(
+        '📋 Active task full data:',
+        event.active.data?.current?.task
+      );
+
       if (!originalListId) {
         console.log('❌ No originalListId, state reset.');
         return;
       }
-      
+
       const sourceListExists = columns.some(
         (col) => String(col.id) === originalListId
       );
       const targetListExists = columns.some(
         (col) => String(col.id) === targetListId
       );
-      
+
       console.log('🔍 Source list exists:', sourceListExists);
       console.log('🔍 Target list exists:', targetListExists);
-      console.log('📊 Available columns:', columns.map(col => ({ id: col.id, name: col.name })));
-      console.log('📋 Tasks in source list:', tasks.filter(t => t.list_id === originalListId).map(t => ({ id: t.id, name: t.name })));
-      console.log('📋 Tasks in target list:', tasks.filter(t => t.list_id === targetListId).map(t => ({ id: t.id, name: t.name })));
-      
+      console.log(
+        '📊 Available columns:',
+        columns.map((col) => ({ id: col.id, name: col.name }))
+      );
+      console.log(
+        '📋 Tasks in source list:',
+        tasks
+          .filter((t) => t.list_id === originalListId)
+          .map((t) => ({ id: t.id, name: t.name }))
+      );
+      console.log(
+        '📋 Tasks in target list:',
+        tasks
+          .filter((t) => t.list_id === targetListId)
+          .map((t) => ({ id: t.id, name: t.name }))
+      );
+
       if (!sourceListExists || !targetListExists) {
         console.log('❌ Source or target list missing, state reset.');
         return;
       }
-      
+
       // Only move if actually changing lists
       if (targetListId !== originalListId) {
         console.log('✅ Lists are different, initiating move mutation');
-        
+
         // Check if this is a multi-select drag
         if (isMultiSelectMode && selectedTasks.size > 1) {
-          console.log('📤 Batch moving tasks:', Array.from(selectedTasks), 'from', originalListId, 'to', targetListId);
-          
+          console.log(
+            '📤 Batch moving tasks:',
+            Array.from(selectedTasks),
+            'from',
+            originalListId,
+            'to',
+            targetListId
+          );
+
           // Move all selected tasks
           const tasksToMove = Array.from(selectedTasks);
-          tasksToMove.forEach(taskId => {
+          tasksToMove.forEach((taskId) => {
             moveTaskMutation.mutate({
               taskId,
               newListId: targetListId,
             });
           });
-          
+
           // Clear selection after batch move
           clearSelection();
         } else {
-          console.log('📤 Moving single task:', activeTask.id, 'from', originalListId, 'to', targetListId);
-          
+          console.log(
+            '📤 Moving single task:',
+            activeTask.id,
+            'from',
+            originalListId,
+            'to',
+            targetListId
+          );
+
           moveTaskMutation.mutate({
             taskId: activeTask.id,
             newListId: targetListId,
@@ -529,7 +573,8 @@ export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
         <div className="flex items-center justify-between border-b px-4 py-2">
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium">
-              {selectedTasks.size} task{selectedTasks.size !== 1 ? 's' : ''} selected
+              {selectedTasks.size} task{selectedTasks.size !== 1 ? 's' : ''}{' '}
+              selected
             </span>
             <span className="text-xs text-muted-foreground">
               Drag to move all • Press Esc to clear
@@ -545,7 +590,7 @@ export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
           </Button>
         </div>
       )}
-      
+
       {/* Kanban Board */}
       <div className="flex-1 overflow-hidden">
         <DndContext
