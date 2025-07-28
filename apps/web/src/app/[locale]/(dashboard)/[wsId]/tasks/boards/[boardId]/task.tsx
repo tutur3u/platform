@@ -69,6 +69,7 @@ interface Props {
   onUpdate: () => void;
   availableLists?: TaskList[]; // Optional: pass from parent to avoid redundant API calls
   isSelected?: boolean;
+  isMultiSelectMode?: boolean;
   onSelect?: (taskId: string, event: React.MouseEvent) => void;
 }
 
@@ -104,6 +105,7 @@ export const TaskCard = React.memo(function TaskCard({
   onUpdate,
   availableLists: propAvailableLists,
   isSelected = false,
+  isMultiSelectMode = false,
   onSelect,
 }: Props) {
   const [isLoading, setIsLoading] = useState(false);
@@ -451,7 +453,7 @@ export const TaskCard = React.memo(function TaskCard({
       )}
 
       {/* Selection indicator */}
-      {isSelected && (
+      {isMultiSelectMode && isSelected && (
         <div className="absolute top-2 left-2 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground shadow-sm">
           ✓
         </div>

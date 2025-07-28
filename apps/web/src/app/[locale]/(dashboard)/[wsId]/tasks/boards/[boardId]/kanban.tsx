@@ -297,39 +297,43 @@ export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
     if (isMultiSelectMode && selectedTasks.size > 1) {
       const selectedTaskIds = Array.from(selectedTasks);
       const selectedTaskObjects = tasks.filter(task => selectedTaskIds.includes(task.id));
-      
+      const maxStack = 3;
+      const offsetY = 6; // tighter vertical offset
+      const offsetX = 3; // tighter horizontal offset
       return (
-        <div className="relative w-[350px]">
-          {/* Stacked cards with proper offset */}
-          {selectedTaskObjects.slice(0, 3).map((task, index) => (
+        <div className="relative w-[350px]" style={{ pointerEvents: 'none' }}>
+          {/* Stacked cards with proper offset and border/shadow */}
+          {selectedTaskObjects.slice(0, maxStack).map((task, index) => (
             <div
               key={task.id}
               className="absolute w-full"
               style={{
-                transform: `translateY(${index * 12}px) translateX(${index * 6}px)`,
+                transform: `translateY(${index * offsetY}px) translateX(${index * offsetX}px)`,
                 zIndex: selectedTaskObjects.length - index,
-                opacity: 1 - (index * 0.15), // Fade out stacked cards
+                opacity: 1 - (index * 0.10), // Slight fade for depth
+                boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+                border: '2px solid var(--primary)',
+                borderRadius: '0.75rem',
+                background: 'var(--background)',
               }}
             >
               <LightweightTaskCard task={task} />
             </div>
           ))}
-          
-          {/* Badge showing total count */}
-          <div className="absolute -top-2 -right-2 flex h-7 w-7 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground shadow-lg">
+          {/* Show all borders by offsetting the stack upward if needed */}
+          {/* Count badge below the stack, not overlapping cards */}
+          <div className="absolute -bottom-6 right-2 flex h-7 w-7 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground shadow-lg border-2 border-background">
             {selectedTasks.size}
           </div>
-          
-          {/* Show "more" indicator if there are more than 3 cards */}
-          {selectedTasks.size > 3 && (
-            <div className="absolute bottom-2 right-2 text-xs text-muted-foreground bg-background/80 px-2 py-1 rounded">
-              +{selectedTasks.size - 3} more
+          {/* Show "more" indicator if there are more than maxStack cards */}
+          {selectedTasks.size > maxStack && (
+            <div className="absolute bottom-2 left-2 text-xs text-muted-foreground bg-background/80 px-2 py-1 rounded shadow">
+              +{selectedTasks.size - maxStack} more
             </div>
           )}
         </div>
       );
     }
-    
     // Single task overlay
     return <LightweightTaskCard task={activeTask} />;
   }, [activeTask, isMultiSelectMode, selectedTasks, tasks]);
@@ -521,7 +525,7 @@ export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
     <div className="flex h-full flex-col">
       {/* Multi-select indicator */}
       {isMultiSelectMode && selectedTasks.size > 0 && (
-        <div className="flex items-center justify-between bg-primary/10 border-b px-4 py-2">
+        <div className="flex items-center justify-between border-b px-4 py-2">
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium">
               {selectedTasks.size} task{selectedTasks.size !== 1 ? 's' : ''} selected
@@ -606,6 +610,7 @@ export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
                         onTaskCreated={handleTaskCreated}
                         onListUpdated={handleTaskCreated}
                         selectedTasks={selectedTasks}
+                        isMultiSelectMode={isMultiSelectMode}
                         onTaskSelect={handleTaskSelect}
                       />
                     );
