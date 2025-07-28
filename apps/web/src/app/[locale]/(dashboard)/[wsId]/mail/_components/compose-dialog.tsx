@@ -1,5 +1,6 @@
 'use client';
 
+import { AIEmailDrafter } from './ai-email-drafter';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Highlight from '@tiptap/extension-highlight';
 import Link from '@tiptap/extension-link';
@@ -40,7 +41,7 @@ import { RichTextEditor } from '@tuturuuu/ui/text-editor/editor';
 import DOMPurify from 'dompurify';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 
@@ -239,66 +240,6 @@ export function ComposeDialog({
     if (open) fetchUser();
   }, [open]);
 
-  const templates = useCallback(
-    () => [
-      {
-        label: 'Blank',
-        subject: '',
-        content: {
-          type: 'doc',
-          content: [{ type: 'paragraph', content: [] }],
-        },
-      },
-      {
-        label: 'Welcome',
-        subject: 'Welcome to Tuturuuu!',
-        content: {
-          type: 'doc',
-          content: [
-            {
-              type: 'paragraph',
-              content: [{ type: 'text', text: 'Hi there,' }],
-            },
-            {
-              type: 'paragraph',
-              content: [
-                {
-                  type: 'text',
-                  text: 'Welcome to Tuturuuu. We are excited to have you on board!',
-                },
-              ],
-            },
-          ],
-        },
-      },
-      {
-        label: 'Reset Password',
-        subject: 'Reset Your Password',
-        content: {
-          type: 'doc',
-          content: [
-            {
-              type: 'paragraph',
-              content: [{ type: 'text', text: 'Hi,' }],
-            },
-            {
-              type: 'paragraph',
-              content: [
-                {
-                  type: 'text',
-                  text: 'Click the link below to reset your password. If you did not request this, please ignore this email.',
-                },
-              ],
-            },
-          ],
-        },
-      },
-    ],
-    []
-  );
-
-  const [selectedTemplate, setSelectedTemplate] = useState(templates()[0]);
-
   const form = useForm<ComposeFormValues>({
     resolver: zodResolver(composeSchema),
     defaultValues: {
@@ -335,13 +276,8 @@ export function ComposeDialog({
         setQuotedContent('');
         setShowQuotedContent(false);
       }
-
-      // Reset template selection to blank when using initial data
-      if (initialData) {
-        setSelectedTemplate(templates()[0]);
-      }
     }
-  }, [open, initialData, form, templates]);
+  }, [open, initialData, form]);
 
   // Preview sanitization logic
   const contentValue = form.watch('content');
@@ -525,37 +461,23 @@ export function ComposeDialog({
             className="flex min-h-0 flex-1 flex-col"
           >
             <div className="flex-1 space-y-4 overflow-y-auto pr-2">
-              {/* Template Selector */}
-              <div className="mb-2">
-                <label
-                  htmlFor="template-select"
-                  className="mb-1 block text-xs font-medium"
-                >
-                  Template
-                </label>
-                <select
-                  id="template-select"
-                  className="w-full rounded border bg-background px-2 py-1 text-foreground"
-                  value={selectedTemplate?.label ?? ''}
-                  onChange={(e) => {
-                    const tmpl = templates().find(
-                      (t) => t.label === e.target.value
-                    );
-                    if (tmpl) {
-                      setSelectedTemplate(tmpl);
-                      form.setValue('subject', tmpl.subject);
-                      form.setValue('content', tmpl.content);
-                    }
-                  }}
-                  disabled={isLoading}
-                >
-                  {templates().map((tmpl) => (
-                    <option value={tmpl.label} key={tmpl.label}>
-                      {tmpl.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              {/* AI Email Drafter */}
+              <AIEmailDrafter
+                onDraftGenerated={(draft) => {
+                  form.setValue('subject', draft.subject);
+                  form.setValue('content', draft.content);
+                  // Force form to re-render and trigger validation
+                  form.trigger(['subject', 'content']);
+                }}
+                disabled={isLoading}
+                initialRecipients={form.watch('to')}
+                initialContext={
+                  initialData?.content ? 'Reply to existing email' : ''
+                }
+                userEmail={user?.email}
+                userDisplayName={user?.display_name || undefined}
+              />
+
               {/* Recipients Row */}
               <div className="flex flex-col gap-2">
                 <div className="flex items-center gap-2">
@@ -675,6 +597,7 @@ export function ComposeDialog({
                       <FormItem className="flex flex-1 flex-col">
                         <FormControl>
                           <RichTextEditor
+                            key={JSON.stringify(field.value)}
                             content={
                               field.value &&
                               field.value.type === 'doc' &&
