@@ -237,57 +237,91 @@ export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
 
   async function onDragEnd(event: DragEndEvent) {
     const { active, over } = event;
+    
+    console.log('🔄 onDragEnd triggered');
+    console.log('📦 Active:', active);
+    console.log('🎯 Over:', over);
+    
     // Always reset drag state, even on invalid drop
     setActiveColumn(null);
     setActiveTask(null);
     pickedUpTaskColumn.current = null;
     dragStartCardLeft.current = null;
+    
     if (!over) {
-      debugLog('No drop target, state reset.');
+      console.log('❌ No drop target detected, state reset.');
       return;
     }
+    
     const activeType = active.data?.current?.type;
+    console.log('🏷️ Active type:', activeType);
+    
     if (!activeType) {
-      debugLog('No activeType, state reset.');
+      console.log('❌ No activeType, state reset.');
       return;
     }
+    
     if (activeType === 'Task') {
       const activeTask = active.data?.current?.task;
+      console.log('📋 Active task:', activeTask);
+      
       if (!activeTask) {
-        debugLog('No activeTask, state reset.');
+        console.log('❌ No activeTask, state reset.');
         return;
       }
+      
       let targetListId: string;
-      if (over.data?.current?.type === 'Column') {
+      const overType = over.data?.current?.type;
+      console.log('🎯 Over type:', overType);
+      
+      if (overType === 'Column') {
         targetListId = String(over.id);
-      } else if (over.data?.current?.type === 'Task') {
+        console.log('📋 Dropping on column, targetListId:', targetListId);
+      } else if (overType === 'Task') {
         targetListId = String(over.data.current.task.list_id);
+        console.log('📋 Dropping on task, targetListId:', targetListId);
       } else {
-        debugLog('Invalid drop type, state reset.');
+        console.log('❌ Invalid drop type:', overType, 'state reset.');
         return;
       }
+      
       // Get the original list ID from the active task data
       const originalListId = event.active.data?.current?.task?.list_id;
+      console.log('🏠 Original list ID:', originalListId);
+      console.log('🎯 Target list ID:', targetListId);
+      
       if (!originalListId) {
-        debugLog('No originalListId, state reset.');
+        console.log('❌ No originalListId, state reset.');
         return;
       }
+      
       const sourceListExists = columns.some(
         (col) => String(col.id) === originalListId
       );
       const targetListExists = columns.some(
         (col) => String(col.id) === targetListId
       );
+      
+      console.log('🔍 Source list exists:', sourceListExists);
+      console.log('🔍 Target list exists:', targetListExists);
+      console.log('📊 Available columns:', columns.map(col => ({ id: col.id, name: col.name })));
+      
       if (!sourceListExists || !targetListExists) {
-        debugLog('Source or target list missing, state reset.');
+        console.log('❌ Source or target list missing, state reset.');
         return;
       }
+      
       // Only move if actually changing lists
       if (targetListId !== originalListId) {
+        console.log('✅ Lists are different, initiating move mutation');
+        console.log('📤 Moving task:', activeTask.id, 'from', originalListId, 'to', targetListId);
+        
         moveTaskMutation.mutate({
           taskId: activeTask.id,
           newListId: targetListId,
         });
+      } else {
+        console.log('ℹ️ Same list detected, no move needed');
       }
     }
   }
