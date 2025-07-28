@@ -52,12 +52,14 @@ export function AIEmailDrafter({
   const [tone, setTone] = useState<
     'formal' | 'casual' | 'friendly' | 'professional'
   >('professional');
+  const [revisionInstructions, setRevisionInstructions] = useState('');
+  const [isRevising, setIsRevising] = useState(false);
 
   const [object, setObject] = useState<EmailDraft | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleGenerateDraft = async () => {
+  const handleGenerateDraft = async (isRevision = false) => {
     const promptData = {
       context: context.trim() || 'General communication',
       recipients: recipients.trim() || 'Not specified',
@@ -65,11 +67,21 @@ export function AIEmailDrafter({
       tone,
       userEmail,
       userDisplayName,
+      existingContent: isRevision && object ? object.content : undefined,
+      revisionInstructions: isRevision
+        ? revisionInstructions.trim()
+        : undefined,
     };
 
-    setIsLoading(true);
+    if (isRevision) {
+      setIsRevising(true);
+    } else {
+      setIsLoading(true);
+    }
     setError(null);
-    setObject(null);
+    if (!isRevision) {
+      setObject(null);
+    }
 
     try {
       const response = await fetch('/api/ai/email-draft', {
@@ -96,6 +108,7 @@ export function AIEmailDrafter({
       );
     } finally {
       setIsLoading(false);
+      setIsRevising(false);
     }
   };
 
@@ -110,9 +123,9 @@ export function AIEmailDrafter({
     // Split by double line breaks to get main paragraphs
     const mainParagraphs = text.split(/\n\s*\n/).filter((p) => p.trim());
 
-    const content: any[] = [];
+    const content: JSONContent[] = [];
 
-    mainParagraphs.forEach((paragraph, index) => {
+    mainParagraphs.forEach((paragraph) => {
       // Split each paragraph by single line breaks
       const lines = paragraph.split('\n').filter((line) => line.trim());
 
@@ -127,7 +140,7 @@ export function AIEmailDrafter({
         const processedLines: string[] = [];
         let currentLine = '';
 
-        lines.forEach((line, lineIndex) => {
+        lines.forEach((line) => {
           const trimmedLine = line.trim();
 
           // If this line is very short (likely a signature element) or contains email
@@ -315,7 +328,8 @@ export function AIEmailDrafter({
 
             {/* Generate Button */}
             <Button
-              onClick={handleGenerateDraft}
+              type="button"
+              onClick={() => handleGenerateDraft(false)}
               disabled={isLoading || !context.trim()}
               className="w-full"
             >
@@ -384,9 +398,51 @@ export function AIEmailDrafter({
                   </div>
                 )}
 
-                <Button onClick={handleApplyDraft} className="w-full" size="sm">
+                <Button
+                  type="button"
+                  onClick={handleApplyDraft}
+                  className="w-full"
+                  size="sm"
+                >
                   {t('mail.apply_draft', { default: 'Apply Draft' })}
                 </Button>
+
+                {/* Revision Section */}
+                <div className="mt-4 space-y-3 border-t pt-4">
+                  <Label className="text-sm font-medium">
+                    {t('mail.revise_email', { default: 'Revise Email' })}
+                  </Label>
+                  <Textarea
+                    placeholder={t('mail.revision_placeholder', {
+                      default: 'Describe how you want to revise the email...',
+                    })}
+                    value={revisionInstructions}
+                    onChange={(e) => setRevisionInstructions(e.target.value)}
+                    disabled={isRevising}
+                    minRows={2}
+                    className="w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                  />
+                  <Button
+                    type="button"
+                    onClick={() => handleGenerateDraft(true)}
+                    disabled={isRevising || !revisionInstructions.trim()}
+                    className="w-full"
+                    size="sm"
+                    variant="outline"
+                  >
+                    {isRevising ? (
+                      <>
+                        <LoadingIndicator className="mr-2" />
+                        {t('mail.revising', { default: 'Revising...' })}
+                      </>
+                    ) : (
+                      <>
+                        <Wand2 className="mr-2 h-4 w-4" />
+                        {t('mail.revise', { default: 'Revise' })}
+                      </>
+                    )}
+                  </Button>
+                </div>
               </div>
             )}
           </CardContent>

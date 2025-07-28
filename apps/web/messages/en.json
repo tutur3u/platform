@@ -3821,7 +3821,11 @@
     "generated_subject": "Generated Subject",
     "generated_content": "Generated Content",
     "suggestions": "Suggestions",
-    "apply_draft": "Apply Draft"
+    "apply_draft": "Apply Draft",
+    "revise_email": "Revise Email",
+    "revision_placeholder": "Describe how you want to revise the email...",
+    "revising": "Revising...",
+    "revise": "Revise"
   },
   "ws-polls": {
     "plural": "Polls",

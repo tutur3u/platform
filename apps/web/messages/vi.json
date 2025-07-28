@@ -3789,7 +3789,11 @@
     "generated_subject": "Chủ đề đã tạo",
     "generated_content": "Nội dung đã tạo",
     "suggestions": "Gợi ý",
-    "apply_draft": "Áp dụng bản nháp"
+    "apply_draft": "Áp dụng bản nháp",
+    "revise_email": "Chỉnh sửa Email",
+    "revision_placeholder": "Mô tả cách bạn muốn chỉnh sửa email...",
+    "revising": "Đang chỉnh sửa...",
+    "revise": "Chỉnh sửa"
   },
   "confidential_mode": "Chế độ bảo mật"
 }
