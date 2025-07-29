@@ -9,6 +9,12 @@ export async function PUT(request: Request) {
   try {
     const sbAdmin = await createAdminClient();
 
+    const { data: user } = await sbAdmin.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     // Parse the request body
     const body: { id: string } & CalendarSyncDashboardUpdate =
       await request.json();
