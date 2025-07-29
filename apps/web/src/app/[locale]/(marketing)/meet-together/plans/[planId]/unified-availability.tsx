@@ -47,45 +47,38 @@ export default function UnifiedAvailability({
     <div className="flex flex-col gap-4 text-center">
       {/* Header with toggle button */}
       <div className="flex items-center justify-center gap-4">
-        {isEditing ? (
-          <Button
-            variant="outline"
-            size="lg"
-            onClick={handleToggleMode}
-            className="flex items-center gap-2"
-          >
-            <Users size={16} />
-            View Everyone
-          </Button>
-        ) : (
-          <Button
-            variant="outline"
-            size="lg"
-            onClick={handleToggleMode}
-            className="flex items-center gap-2"
-            disabled={!canEdit || showBestTimes}
-          >
-            <Calendar size={16} />
-            Add Availability
-          </Button>
-        )}
+        <Button
+          variant="outline"
+          size="lg"
+          onClick={handleToggleMode}
+          className="flex items-center gap-2"
+          disabled={!isEditing && (!canEdit || showBestTimes)}
+        >
+          {isEditing ? (
+            <>
+              <Users size={16} />
+              View Everyone
+            </>
+          ) : (
+            <>
+              <Calendar size={16} />
+              Add Availability
+            </>
+          )}
+        </Button>
       </div>
 
-      {/* Show appropriate component based on mode */}
-      {isEditing ? (
-        <PlanLogin
-          plan={plan}
-          timeblocks={timeblocks}
-          platformUser={platformUser}
-        />
-      ) : (
+      <div className={isEditing ? 'block' : 'hidden'}>
+        <PlanLogin plan={plan} timeblocks={[]} platformUser={platformUser} />
+      </div>
+      <div className={isEditing ? 'hidden' : 'block'}>
         <AllAvailabilities
           plan={plan}
           timeblocks={timeblocks}
           showBestTimes={showBestTimes}
           onBestTimesStatusByDateAction={onBestTimesStatusByDateAction}
         />
-      )}
+      </div>
     </div>
   );
 }
