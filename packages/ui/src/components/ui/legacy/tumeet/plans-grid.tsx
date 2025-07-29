@@ -1,5 +1,6 @@
 'use client';
 
+import { formatTimezoneOffset } from '../../../../utils/date-helper';
 import EditPlanDialog from './edit-plan-dialog';
 import type { MeetTogetherPlanWithParticipants } from './page';
 import UserTime from './user-time';
@@ -56,13 +57,7 @@ export function PlansGrid({
             </h3>
             {plan.start_time && (
               <div className="rounded-full bg-foreground/10 px-3 py-1 text-xs font-medium whitespace-nowrap text-foreground/80">
-                GMT
-                {Intl.NumberFormat('en-US', {
-                  signDisplay: 'always',
-                }).format(
-                  parseInt(plan.start_time?.split(/[+-]/)?.[1] ?? '0') *
-                    (plan.start_time?.includes('-') ? -1 : 1)
-                )}
+                {formatTimezoneOffset(plan.start_time)}
               </div>
             )}
             <div onClick={handleDialogClick}>

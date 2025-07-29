@@ -54,3 +54,66 @@ export function minTimetz(timetz1: string, timetz2: string) {
 export function maxTimetz(timetz1: string, timetz2: string) {
   return compareTimetz(timetz1, timetz2) > 0 ? timetz1 : timetz2;
 }
+
+/**
+ * Parses timezone offset from a time string and returns a formatted offset string
+ * @param timeString - String like "11:00:00+07:00" or "14:30:00-05:30"
+ * @returns Formatted offset string like "+07:00" or "-05:30"
+ */
+export function parseTimezoneOffset(timeString: string): string {
+  if (!timeString) return '';
+
+  // Find the last occurrence of '+' or '-' which indicates the timezone offset
+  const lastPlusIndex = timeString.lastIndexOf('+');
+  const lastMinusIndex = timeString.lastIndexOf('-');
+
+  // If no offset found, return empty string
+  if (lastPlusIndex === -1 && lastMinusIndex === -1) {
+    return '';
+  }
+
+  // Determine which offset to use (take the last one if both exist)
+  const offsetIndex = Math.max(lastPlusIndex, lastMinusIndex);
+
+  // Extract the offset part
+  const offsetPart = timeString.substring(offsetIndex);
+
+  // Handle cases where the offset is already in HH:MM format like "+05:30"
+  if (offsetPart.includes(':')) {
+    // Already in HH:MM format, return as-is
+    return offsetPart;
+  }
+
+  // Handle legacy decimal format like "+5.5" (for backward compatibility)
+  const offset = parseFloat(offsetPart);
+
+  // Handle NaN case
+  if (isNaN(offset)) {
+    return '';
+  }
+
+  // Convert decimal hours to HH:MM format
+  const hours = Math.floor(Math.abs(offset));
+  const minutes = Math.round((Math.abs(offset) - hours) * 60);
+
+  // Format as HH:MM
+  const formattedHours = hours.toString().padStart(2, '0');
+  const formattedMinutes = minutes.toString().padStart(2, '0');
+
+  const sign = offset >= 0 ? '+' : '-';
+  return `${sign}${formattedHours}:${formattedMinutes}`;
+}
+
+/**
+ * Formats timezone offset for display in UI
+ * @param timeString - String like "11:00:00+07" or "14:30:00-05"
+ * @returns Formatted string like "UTC+07:00" or "UTC-05:30"
+ */
+export function formatTimezoneOffset(timeString: string): string {
+  if (!timeString) return '';
+
+  const offset = parseTimezoneOffset(timeString);
+  if (!offset) return '';
+
+  return `UTC${offset}`;
+}
