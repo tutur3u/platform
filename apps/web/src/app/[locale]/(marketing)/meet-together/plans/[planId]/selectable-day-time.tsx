@@ -2,11 +2,6 @@ import { useTimeBlocking } from './time-blocking-provider';
 import { timetzToTime } from '@/utils/date-helper';
 import dayjs from 'dayjs';
 
-type TimeBlockResult = {
-  type: 'draft-add' | 'draft-remove' | 'local' | 'server' | 'none';
-  tentative?: boolean;
-};
-
 export default function SelectableDayTime({
   date,
   start,
@@ -24,7 +19,12 @@ export default function SelectableDayTime({
   const hourBlocks = Array.from(Array(Math.floor(end + 1 - start)).keys());
   const hourSplits = 4;
 
-  const isTimeBlockSelected = (i: number): TimeBlockResult => {
+  const isTimeBlockSelected = (
+    i: number
+  ): {
+    type: 'draft-add' | 'draft-remove' | 'local' | 'server' | 'none';
+    tentative?: boolean;
+  } => {
     const editingStartDate =
       editing.startDate && editing.endDate
         ? dayjs(editing.startDate).isAfter(editing.endDate)

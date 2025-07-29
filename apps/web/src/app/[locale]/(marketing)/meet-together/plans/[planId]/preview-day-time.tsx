@@ -138,7 +138,6 @@ export default function PreviewDayTime({
           const isDraft = result.type.includes('draft');
           const isSaved = result.type.includes('server');
           const isLocal = result.type.includes('local');
-          const isTentative = result.tentative ?? false;
 
           const currentDate = dayjs(date)
             .hour(Math.floor(i / hourSplits) + start)
