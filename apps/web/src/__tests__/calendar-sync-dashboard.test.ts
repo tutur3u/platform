@@ -176,7 +176,7 @@ describe('Calendar Sync Dashboard APIs', () => {
     it('should return 401 when user is not authenticated', async () => {
       // Mock unauthenticated user
       mockAdminClient.auth.getUser.mockResolvedValue({
-        data: null,
+        data: { user: null },
       });
 
       const { POST } = await import(
@@ -330,7 +330,7 @@ describe('Calendar Sync Dashboard APIs', () => {
     it('should return 401 when user is not authenticated', async () => {
       // Mock unauthenticated user
       mockAdminClient.auth.getUser.mockResolvedValue({
-        data: null,
+        data: { user: null },
       });
 
       const { PUT } = await import(
