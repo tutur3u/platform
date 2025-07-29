@@ -635,10 +635,7 @@ describe('Calendar Sync Dashboard APIs', () => {
       // Debug: log the actual response
       console.log('Actual response:', responseData);
 
-      // For now, let's just check that we get some response
       expect(responseData).toBeDefined();
-      // expect(responseData.message).toBe('Error fetching sync logs');
-      // expect(responseData.details).toBe('Database error');
     });
 
     it('should fallback to admin client when regular client fails', async () => {
