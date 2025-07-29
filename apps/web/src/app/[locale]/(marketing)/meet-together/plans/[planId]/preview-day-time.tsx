@@ -241,6 +241,21 @@ export default function PreviewDayTime({
                         </div>
                       ))}
                     </div>
+                    <div className={`font-semibold text-dynamic-yellow`}>
+                      {getPreviewUsers(timeblocks).tentative.map((user) => (
+                        <div
+                          key={user.id}
+                          className="flex items-center justify-center gap-1"
+                        >
+                          <div>{user.display_name}</div>
+                          {user.is_guest ? (
+                            <ShieldMinus size={16} />
+                          ) : (
+                            <ShieldCheck size={16} />
+                          )}
+                        </div>
+                      ))}
+                    </div>
                     <div className={`font-semibold text-dynamic-red`}>
                       {getPreviewUsers(timeblocks).unavailable.map((user) => (
                         <div

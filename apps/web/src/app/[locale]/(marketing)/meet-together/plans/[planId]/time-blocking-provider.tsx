@@ -54,8 +54,9 @@ const TimeBlockContext = createContext({
   displayMode: 'account-switcher' as 'login' | 'account-switcher' | undefined,
 
   getPreviewUsers: (_: Timeblock[]) =>
-    ({ available: [], unavailable: [] }) as {
+    ({ available: [], tentative: [], unavailable: [] }) as {
       available: (PlatformUser | GuestUser)[];
+      tentative: (PlatformUser | GuestUser)[];
       unavailable: (PlatformUser | GuestUser)[];
     },
   getOpacityForDate: (_: Date, __: Timeblock[]) => 0 as number,
@@ -101,13 +102,31 @@ const TimeBlockingProvider = ({
 
   const getPreviewUsers = useCallback(
     (timeblocks: Timeblock[]) => {
-      if (!previewDate) return { available: [], unavailable: [] };
+      if (!previewDate)
+        return { available: [], tentative: [], unavailable: [] };
 
-      const previewUserIds = timeblocks
+      // Get users with confirmed timeblocks
+      const confirmedUserIds = timeblocks
         .filter((timeblock) => {
           const start = dayjs(`${timeblock.date} ${timeblock.start_time}`);
           const end = dayjs(`${timeblock.date} ${timeblock.end_time}`);
-          return dayjs(previewDate).isBetween(start, end, null, '[)');
+          return (
+            dayjs(previewDate).isBetween(start, end, null, '[)') &&
+            !timeblock.tentative
+          );
+        })
+        .map((timeblock) => timeblock.user_id)
+        .filter(Boolean) as string[];
+
+      // Get users with tentative timeblocks
+      const tentativeUserIds = timeblocks
+        .filter((timeblock) => {
+          const start = dayjs(`${timeblock.date} ${timeblock.start_time}`);
+          const end = dayjs(`${timeblock.date} ${timeblock.end_time}`);
+          return (
+            dayjs(previewDate).isBetween(start, end, null, '[)') &&
+            timeblock.tentative
+          );
         })
         .map((timeblock) => timeblock.user_id)
         .filter(Boolean) as string[];
@@ -119,14 +138,21 @@ const TimeBlockingProvider = ({
           filteredUserIds.includes(user.id)
       );
 
-      const uniqueUserIds = Array.from(new Set(previewUserIds));
+      const uniqueConfirmedUserIds = Array.from(new Set(confirmedUserIds));
+      const uniqueTentativeUserIds = Array.from(new Set(tentativeUserIds));
 
       return {
         available: allUsers.filter(
-          (user) => !user?.id || uniqueUserIds.includes(user.id)
+          (user) => !user?.id || uniqueConfirmedUserIds.includes(user.id)
+        ),
+        tentative: allUsers.filter(
+          (user) => !user?.id || uniqueTentativeUserIds.includes(user.id)
         ),
         unavailable: allUsers.filter(
-          (user) => user.id && !uniqueUserIds.includes(user.id)
+          (user) =>
+            user.id &&
+            !uniqueConfirmedUserIds.includes(user.id) &&
+            !uniqueTentativeUserIds.includes(user.id)
         ),
       };
     },
