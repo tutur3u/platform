@@ -9,7 +9,9 @@ export async function PUT(request: Request) {
   try {
     const sbAdmin = await createAdminClient();
 
-    const { data: user } = await sbAdmin.auth.getUser();
+    const {
+      data: { user },
+    } = await sbAdmin.auth.getUser();
 
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
