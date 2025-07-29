@@ -46,7 +46,7 @@ export async function POST(req: Request) {
     );
   }
 
-  if (plan.where_to_meet && typeof plan.id === 'string') {
+  if (plan.where_to_meet && typeof plan.id === 'string' && user?.id) {
     const { error: pollError } = await sbAdmin.from('polls').insert({
       plan_id: plan.id as string,
       creator_id: user?.id,
