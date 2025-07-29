@@ -11,7 +11,7 @@ export default function AddEventButton({ onOpenDialog }: AddEventButtonProps) {
       onClick={onOpenDialog}
       variant="default"
       size="sm"
-      className="w-full bg-blue-500 text-white hover:bg-blue-600 md:w-fit"
+      className="h-8 bg-blue-500 text-white hover:bg-blue-600"
     >
       <PlusIcon className="mr-2 h-4 w-4" />
       Add Task

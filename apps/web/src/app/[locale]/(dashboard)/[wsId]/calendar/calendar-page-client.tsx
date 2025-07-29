@@ -5,7 +5,7 @@ import type { Workspace, WorkspaceCalendarGoogleToken } from '@tuturuuu/types/db
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
 import { Button } from '@tuturuuu/ui/button';
-import { PanelLeftClose, Sparkles } from '@tuturuuu/ui/icons';
+import { PanelLeftClose, PanelRightClose, Sparkles, Plus } from '@tuturuuu/ui/icons';
 import { SmartCalendar } from '@tuturuuu/ui/legacy/calendar/smart-calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@tuturuuu/ui/select';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
@@ -16,6 +16,7 @@ import AddEventButton from './components/add-event-button';
 import TestEventGeneratorButton from './components/test-event-generator-button';
 import AutoScheduleComprehensiveDialog from './components/auto-schedule-comprehensive-dialog';
 import CalendarSidebar from './components/calendar-sidebar';
+import TasksSidebarContent from './components/tasks-sidebar-content';
 import { useCalendarState } from './calendar-state-context';
 
 interface CalendarPageClientProps {
@@ -31,7 +32,20 @@ export default function CalendarPageClient({
   const t = useTranslations('calendar');
   const [isAddEventModalOpen, setIsAddEventModalOpen] = useState(false);
   const [calendarSidebarOpen, setCalendarSidebarOpen] = useState(false);
+  const [othersSidebarOpen, setOthersSidebarOpen] = useState(false);
   const { date, setDate, view, setView, availableViews } = useCalendarState();
+
+  // Fetch tasks data
+  const { data: tasksData } = useQuery({
+    queryKey: ['tasks', workspace.id],
+    queryFn: async () => {
+      const response = await fetch(`/api/v1/workspaces/${workspace.id}/tasks?limit=100`);
+      if (!response.ok) throw new Error('Failed to fetch tasks');
+      return response.json();
+    },
+    enabled: othersSidebarOpen, // Only fetch when sidebar is open
+    staleTime: 30000, // Cache for 30 seconds
+  });
 
   const handleNext = () => {
     const newDate = new Date(date);
@@ -84,36 +98,52 @@ export default function CalendarPageClient({
   const openAddEventDialog = () => setIsAddEventModalOpen(true);
   const closeAddEventDialog = () => setIsAddEventModalOpen(false);
 
-  // Sidebar toggle button for header
+  // Sidebar toggle button for header (left sidebar)
   const sidebarToggleButton = (
     <Button
       variant="ghost"
       size="icon"
-      aria-label="Toggle calendar sidebar"
-      onClick={() => setCalendarSidebarOpen(!calendarSidebarOpen)}
+      aria-label={calendarSidebarOpen ? 'Close sidebar' : 'Open sidebar'}
+      onClick={() => setCalendarSidebarOpen((open) => !open)}
       className="h-7 w-7"
     >
-      <PanelLeftClose className="h-5 w-5 text-muted-foreground" />
+      {calendarSidebarOpen ? (
+        <PanelRightClose className="h-5 w-5 text-muted-foreground" />
+      ) : (
+        <PanelLeftClose className="h-5 w-5 text-muted-foreground" />
+      )}
     </Button>
   );
 
-  const extras =
-    workspace.id === ROOT_WORKSPACE_ID ? (
-      <div className="grid w-full items-center gap-2 md:flex md:w-auto">
+  const extras = (
+    <div className="flex items-center gap-2">
+      {/* Add Task button - only show when others sidebar is open */}
+      {othersSidebarOpen && (
         <AddEventButton onOpenDialog={openAddEventDialog} />
-        {DEV_MODE && <TestEventGeneratorButton wsId={workspace.id} />}
-        <AutoScheduleComprehensiveDialog wsId={workspace.id}>
-          <Button
-            variant="default"
-            size="sm"
-            className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:from-purple-700 hover:to-blue-700 md:w-fit"
-          >
-            <Sparkles className="mr-2 h-4 w-4" />
-            Auto-Schedule
-          </Button>
-        </AutoScheduleComprehensiveDialog>
-      </div>
-    ) : undefined;
+      )}
+      {DEV_MODE && <TestEventGeneratorButton wsId={workspace.id} />}
+      <AutoScheduleComprehensiveDialog wsId={workspace.id}>
+        <Button
+          variant="default"
+          size="sm"
+          className="h-8 bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:from-purple-700 hover:to-blue-700"
+        >
+          <Sparkles className="mr-2 h-4 w-4" />
+          Auto-Schedule
+        </Button>
+      </AutoScheduleComprehensiveDialog>
+      {/* Tools button */}
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => setOthersSidebarOpen((open) => !open)}
+        className="h-8"
+      >
+        <Plus className="mr-2 h-4 w-4" />
+        Tools
+      </Button>
+    </div>
+  );
 
   const externalState = {
     date,
@@ -199,6 +229,19 @@ export default function CalendarPageClient({
               sidebarToggleButton={undefined} // Sidebar toggle is now handled by CalendarPageClient
             />
           </div>
+
+          {/* Right sidebar (tasks and AI chat) - only show when others sidebar is open */}
+          {othersSidebarOpen && (
+            <TasksSidebarContent
+              wsId={workspace.id}
+              locale={locale}
+              tasks={tasksData?.tasks || []}
+              hasKeys={{ openAI: false, anthropic: false, google: false }}
+              chats={[]}
+              count={0}
+              hasAiChatAccess={true}
+            />
+          )}
         </div>
       </div>
       <AddEventModal

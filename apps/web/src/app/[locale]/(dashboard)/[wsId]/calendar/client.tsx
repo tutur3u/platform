@@ -5,6 +5,7 @@ import AddEventModal from './components/add-event-dialog';
 import AutoScheduleComprehensiveDialog from './components/auto-schedule-comprehensive-dialog';
 import TestEventGeneratorButton from './components/test-event-generator-button';
 import CalendarSidebar from './components/calendar-sidebar';
+import TasksSidebarContent from './components/tasks-sidebar-content';
 import { DEV_MODE } from '@/constants/common';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type {
@@ -12,7 +13,7 @@ import type {
   WorkspaceCalendarGoogleToken,
 } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
-import { PanelLeftClose, PanelRightClose, Sparkles } from '@tuturuuu/ui/icons';
+import { PanelLeftClose, PanelRightClose, Sparkles, Plus } from '@tuturuuu/ui/icons';
 import { SmartCalendar } from '@tuturuuu/ui/legacy/calendar/smart-calendar';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { useLocale, useTranslations } from 'next-intl';
@@ -29,6 +30,7 @@ export default function CalendarClientPage({
   const locale = useLocale();
   const [isAddEventModalOpen, setIsAddEventModalOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [othersSidebarOpen, setOthersSidebarOpen] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
@@ -38,7 +40,19 @@ export default function CalendarClientPage({
   const openAddEventDialog = () => setIsAddEventModalOpen(true);
   const closeAddEventDialog = () => setIsAddEventModalOpen(false);
 
-  // Sidebar toggle button for header
+  // Fetch tasks data
+  const { data: tasksData } = useQuery({
+    queryKey: ['tasks', workspace.id],
+    queryFn: async () => {
+      const response = await fetch(`/api/v1/workspaces/${workspace.id}/tasks?limit=100`);
+      if (!response.ok) throw new Error('Failed to fetch tasks');
+      return response.json();
+    },
+    enabled: othersSidebarOpen, // Only fetch when sidebar is open
+    staleTime: 30000, // Cache for 30 seconds
+  });
+
+  // Sidebar toggle button for header (left sidebar)
   const sidebarToggleButton = (
     <Button
       variant="ghost"
@@ -58,7 +72,10 @@ export default function CalendarClientPage({
   const extras =
     workspace.id === ROOT_WORKSPACE_ID ? (
       <div className="grid w-full items-center gap-2 md:flex md:w-auto">
-        <AddEventButton onOpenDialog={openAddEventDialog} />
+        {/* Add Task button - only show when others sidebar is open */}
+        {othersSidebarOpen && (
+          <AddEventButton onOpenDialog={openAddEventDialog} />
+        )}
         {DEV_MODE && <TestEventGeneratorButton wsId={workspace.id} />}
         <AutoScheduleComprehensiveDialog wsId={workspace.id}>
           <Button
@@ -70,13 +87,26 @@ export default function CalendarClientPage({
             Auto-Schedule
           </Button>
         </AutoScheduleComprehensiveDialog>
+        {/* New "Others" button */}
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setOthersSidebarOpen((open) => !open)}
+          className="w-full md:w-fit"
+        >
+          <Plus className="mr-2 h-4 w-4" />
+          Others
+        </Button>
       </div>
     ) : undefined;
 
   return (
     <>
       <div className="flex h-full">
+        {/* Left sidebar (existing) */}
         {isMounted && sidebarOpen && <CalendarSidebar />}
+        
+        {/* Main calendar content */}
         <div className="flex-1">
           <SmartCalendar
             t={t}
@@ -94,6 +124,19 @@ export default function CalendarClientPage({
             sidebarToggleButton={sidebarToggleButton}
           />
         </div>
+
+        {/* Right sidebar (tasks and AI chat) - only show when others sidebar is open */}
+        {isMounted && othersSidebarOpen && (
+          <TasksSidebarContent
+            wsId={workspace.id}
+            locale={locale}
+            tasks={tasksData?.tasks || []}
+            hasKeys={{ openAI: false, anthropic: false, google: false }}
+            chats={[]}
+            count={0}
+            hasAiChatAccess={false}
+          />
+        )}
       </div>
       <AddEventModal
         wsId={workspace.id}

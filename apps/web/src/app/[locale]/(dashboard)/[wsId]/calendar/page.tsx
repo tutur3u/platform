@@ -7,7 +7,6 @@ import { DEV_MODE } from '@/constants/common';
 import { CalendarActiveSyncDebugger } from './active-sync';
 import CalendarPageClient from './calendar-page-client';
 import { CalendarStateProvider } from './calendar-state-context';
-import TaskSidebarServer from './components/tasks-sidebar-server';
 
 interface PageProps {
   params: Promise<{
@@ -46,17 +45,12 @@ export default async function CalendarPage({
     >
       <CalendarStateProvider>
         {DEV_MODE && <CalendarActiveSyncDebugger />}
-        <div className="flex h-full">
-          <div className="flex-1">
-            <CalendarPageClient
-              wsId={wsId}
-              locale={locale}
-              workspace={workspace}
-              experimentalGoogleToken={googleToken}
-            />
-          </div>
-          <TaskSidebarServer wsId={wsId} />
-        </div>
+        <CalendarPageClient
+          wsId={wsId}
+          locale={locale}
+          workspace={workspace}
+          experimentalGoogleToken={googleToken}
+        />
       </CalendarStateProvider>
     </CalendarSyncProvider>
   );
