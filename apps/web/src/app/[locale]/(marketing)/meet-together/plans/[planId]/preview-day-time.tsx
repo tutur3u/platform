@@ -165,16 +165,10 @@ export default function PreviewDayTime({
             } else {
               cellClass = isSelected
                 ? isDraft
-                  ? isTentative
-                    ? 'bg-yellow-500/50'
-                    : 'bg-green-500/50'
+                  ? 'bg-green-500/50'
                   : isSaved
-                    ? isTentative
-                      ? 'bg-yellow-500/70'
-                      : 'bg-green-500/70'
-                    : isTentative
-                      ? 'bg-yellow-500/70'
-                      : 'bg-green-500/70'
+                    ? 'bg-green-500/70'
+                    : 'bg-green-500/70'
                 : 'bg-foreground/10';
               cellStyle = { opacity: isSelected ? opacity : 1 };
             }
