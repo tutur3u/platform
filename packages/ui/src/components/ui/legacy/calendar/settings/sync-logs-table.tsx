@@ -282,7 +282,9 @@ export function SyncLogsTable({
                       <div
                         className={`h-3 w-3 rounded-full ${log.workspace?.color}`}
                       />
-                      <span className="font-medium">{log.workspace?.name}</span>
+                      <span className="font-medium">
+                        {log.workspace?.name || 'Unknown Workspace'}
+                      </span>
                     </div>
                   </TableCell>
                   <TableCell>{getTypeBadge(log.type)}</TableCell>

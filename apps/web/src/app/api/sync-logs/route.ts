@@ -43,11 +43,25 @@ export async function GET() {
     const workspaceIds = workspaceMemberships.map((w) => w.ws_id);
     console.log('User has access to workspaces:', workspaceIds);
 
-    // Try with regular client first - fetch basic sync logs without joins
+    // Try with regular client first - fetch sync logs with proper joins
     let { data: syncLogs, error } = await supabase
       .from('calendar_sync_dashboard')
       .select(
-        'id, time, start_time, type, ws_id, triggered_by, status, end_time, inserted_events, updated_events, deleted_events'
+        `
+        id, 
+        time, 
+        start_time, 
+        type, 
+        ws_id, 
+        triggered_by, 
+        status, 
+        end_time, 
+        inserted_events, 
+        updated_events, 
+        deleted_events,
+        workspaces!inner(id, name),
+        users!inner(id, display_name, avatar_url)
+      `
       )
       .in('ws_id', workspaceIds)
       .order('time', { ascending: false });
@@ -63,7 +77,21 @@ export async function GET() {
       const adminResult = await sbAdmin
         .from('calendar_sync_dashboard')
         .select(
-          'id, time, start_time, type, ws_id, triggered_by, status, end_time, inserted_events, updated_events, deleted_events'
+          `
+          id, 
+          time, 
+          start_time, 
+          type, 
+          ws_id, 
+          triggered_by, 
+          status, 
+          end_time, 
+          inserted_events, 
+          updated_events, 
+          deleted_events,
+          workspaces!inner(id, name),
+          users!inner(id, display_name, avatar_url)
+        `
         )
         .in('ws_id', workspaceIds)
         .order('time', { ascending: false });
@@ -87,44 +115,9 @@ export async function GET() {
 
     console.log('Found sync logs:', syncLogs.length);
 
-    // Fetch workspace data separately
-    const { data: workspaces } = await supabase
-      .from('workspaces')
-      .select('id, name')
-      .in('id', workspaceIds);
-
-    const workspaceMap = new Map(workspaces?.map((w) => [w.id, w]) || []);
-
-    // Fetch user data separately for non-null triggered_by values
-    const userIds = syncLogs
-      .map((log) => log.triggered_by)
-      .filter((id) => id !== null) as string[];
-
-    const { data: users } = await supabase
-      .from('users')
-      .select('id, display_name, avatar_url')
-      .in('id', userIds);
-
-    const userMap = new Map(users?.map((u) => [u.id, u]) || []);
-
     const processedData = syncLogs.map((item) => {
-      const workspace = workspaceMap.get(item.ws_id) || {
-        id: item.ws_id,
-        name: `Workspace ${item.ws_id}`,
-        color: 'bg-blue-500',
-      };
-
-      const userData = item.triggered_by
-        ? userMap.get(item.triggered_by)
-        : null;
-      const triggeredBy = userData
-        ? {
-            id: userData.id,
-            name: userData.display_name || 'System',
-            avatar:
-              userData.avatar_url || '/placeholder.svg?height=32&width=32',
-          }
-        : null;
+      const workspace = item.workspaces;
+      const user = item.users;
 
       // Calculate duration
       const duration =
@@ -138,7 +131,7 @@ export async function GET() {
         timestamp: item.time || item.start_time || new Date().toISOString(),
         type: item.type || 'background',
         workspace: workspace,
-        triggeredBy: triggeredBy,
+        triggeredBy: user || 'System',
         status: item.status || 'completed',
         duration: duration,
         events: {

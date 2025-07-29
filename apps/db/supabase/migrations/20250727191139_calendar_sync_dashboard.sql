@@ -2,7 +2,7 @@ create table "public"."calendar_sync_dashboard" (
     "id" uuid not null default gen_random_uuid(),
     "time" timestamp with time zone not null default now(),
     "ws_id" uuid not null,
-    "triggered_by" uuid,
+    "triggered_by" uuid not null,
     "start_time" timestamp with time zone,
     "end_time" timestamp with time zone,
     "type" text check (type in ('active', 'manual', 'background')),
@@ -29,7 +29,11 @@ alter table "public"."calendar_sync_dashboard" add constraint "calendar_sync_das
 
 alter table "public"."calendar_sync_dashboard" add constraint "calendar_sync_dashboard_ws_id_fkey" FOREIGN KEY (ws_id) REFERENCES workspaces(id) ON UPDATE CASCADE ON DELETE CASCADE not valid;
 
+alter table "public"."calendar_sync_dashboard" add constraint "calendar_sync_dashboard_triggered_by_fkey" FOREIGN KEY (triggered_by) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE not valid;
+
 alter table "public"."calendar_sync_dashboard" validate constraint "calendar_sync_dashboard_ws_id_fkey";
+
+alter table "public"."calendar_sync_dashboard" validate constraint "calendar_sync_dashboard_triggered_by_fkey";
 
 -- Function to validate triggered_by references a valid user or NULL
 CREATE OR REPLACE FUNCTION validate_triggered_by()
