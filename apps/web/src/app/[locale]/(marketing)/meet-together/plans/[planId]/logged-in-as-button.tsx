@@ -4,6 +4,7 @@ import type { User as PlatformUser } from '@tuturuuu/types/primitives/User';
 import { Button } from '@tuturuuu/ui/button';
 import { Separator } from '@tuturuuu/ui/separator';
 import { useTranslations } from 'next-intl';
+import { useState } from 'react';
 
 export default function LoggedInAsButton({
   platformUser,
@@ -11,7 +12,28 @@ export default function LoggedInAsButton({
   platformUser: PlatformUser | null;
 }) {
   const t = useTranslations();
-  const { user: guestUser, setDisplayMode } = useTimeBlocking();
+  const {
+    user: guestUser,
+    setDisplayMode,
+    isDirty,
+    isAutoSaving,
+    syncTimeBlocks,
+    clearDirtyState,
+  } = useTimeBlocking();
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Handle manual save
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      await syncTimeBlocks();
+      clearDirtyState();
+    } catch (error) {
+      console.error('Failed to save timeblocks:', error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   const user = guestUser ?? platformUser;
 
@@ -51,6 +73,13 @@ export default function LoggedInAsButton({
         {user?.id
           ? t('meet-together-plan-details.switch_account')
           : t('common.login')}
+      </Button>
+      <Button
+        className="mt-2 w-full bg-gradient-to-r from-sky-500 via-blue-500 to-indigo-500 text-white shadow-md hover:from-sky-600 hover:via-blue-600 hover:to-indigo-600 focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 focus:outline-none active:scale-100 disabled:cursor-not-allowed disabled:from-gray-400 disabled:via-gray-400 disabled:to-gray-400"
+        onClick={handleSave}
+        disabled={!isDirty || isSaving || isAutoSaving}
+      >
+        {isSaving || isAutoSaving ? 'Saving...' : 'Save Changes'}
       </Button>
     </div>
   );
