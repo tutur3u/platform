@@ -551,7 +551,6 @@ describe('Calendar Sync Dashboard APIs', () => {
       const response = await GET(request);
       const responseData = await response.json();
 
-      console.log('Unauthorized test response:', responseData);
       expect(responseData.message).toBe('Unauthorized');
     });
 
