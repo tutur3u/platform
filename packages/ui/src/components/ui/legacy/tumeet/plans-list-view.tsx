@@ -70,7 +70,7 @@ export function PlansListView({
                 </h3>
                 {plan.start_time && (
                   <div className="rounded-full bg-foreground/10 px-3 py-1 text-xs font-medium whitespace-nowrap text-foreground/80">
-                    GMT
+                    UTC
                     {Intl.NumberFormat('en-US', {
                       signDisplay: 'always',
                     }).format(
