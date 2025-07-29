@@ -63,7 +63,18 @@ const convertToTimetz = (
   utcOffset: number | undefined
 ) => {
   if (!time || utcOffset === undefined) return undefined;
-  return `${time}:00${utcOffset < 0 ? '-' : '+'}${Math.abs(utcOffset)}`;
+
+  // Convert decimal offset to HH:MM format for PostgreSQL
+  const hours = Math.floor(Math.abs(utcOffset));
+  const minutes = Math.round((Math.abs(utcOffset) - hours) * 60);
+
+  // Format time as HH:MM
+  const timeStr = time.toString().padStart(2, '0') + ':00';
+
+  // Format offset as +/-HH:MM
+  const offsetStr = `${utcOffset < 0 ? '-' : '+'}${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+
+  return `${timeStr}${offsetStr}`;  
 };
 
 export default function CreatePlanDialog({ plan }: Props) {
