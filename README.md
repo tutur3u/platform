@@ -100,8 +100,8 @@ This turborepo has some additional tools already setup for you:
 > If you're using VS Code, you can install following the recommended extensions
 > that will help you with the development process:
 >
-> - [ESLint](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint),
-> - [Prettier](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode),
+> - [ESLint](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint)
+> - [Prettier](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode)
 > - [Biome](https://marketplace.visualstudio.com/items?itemName=biomejs.biome)
 > - [Vitest](https://marketplace.visualstudio.com/items?itemName=vitest.explorer)
 > - [Tailwind CSS IntelliSense](https://marketplace.visualstudio.com/items?itemName=bradlc.vscode-tailwindcss)
