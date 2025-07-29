@@ -2,15 +2,16 @@
 
 import AgendaDetails from './agenda-details';
 import EditPlanDialog from './edit-plan-dialog';
+import PlanDetailsPolls from './plan-details-polls';
 import PlanUserFilter from './plan-user-filter';
 import { useTimeBlocking } from './time-blocking-provider';
 import UnifiedAvailability from './unified-availability';
 import UtilityButtons from './utility-buttons';
-import PlanDetailsPolls from '@/app/[locale]/(marketing)/meet-together/plans/[planId]/plan-details-polls';
 import type {
   GetPollsForPlanResult,
   MeetTogetherPlan,
 } from '@tuturuuu/types/primitives/MeetTogetherPlan';
+import type { Timeblock } from '@tuturuuu/types/primitives/Timeblock';
 import type { User } from '@tuturuuu/types/primitives/User';
 import { CircleQuestionMark } from '@tuturuuu/ui/icons';
 import { Label } from '@tuturuuu/ui/label';
@@ -32,16 +33,7 @@ interface PlanDetailsClientProps {
     is_guest: boolean | null;
     timeblock_count: number | null;
   }[];
-  timeblocks: {
-    is_guest: boolean;
-    created_at: string;
-    date: string;
-    end_time: string;
-    id: string;
-    plan_id: string;
-    start_time: string;
-    user_id: string;
-  }[];
+  timeblocks: Timeblock[];
 }
 
 export default function PlanDetailsClient({

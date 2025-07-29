@@ -68,17 +68,16 @@ export default function UnifiedAvailability({
         </Button>
       </div>
 
-      <div className={isEditing ? 'block' : 'hidden'}>
+      {isEditing ? (
         <PlanLogin plan={plan} timeblocks={[]} platformUser={platformUser} />
-      </div>
-      <div className={isEditing ? 'hidden' : 'block'}>
+      ) : (
         <AllAvailabilities
           plan={plan}
           timeblocks={timeblocks}
           showBestTimes={showBestTimes}
           onBestTimesStatusByDateAction={onBestTimesStatusByDateAction}
         />
-      </div>
+      )}
     </div>
   );
 }

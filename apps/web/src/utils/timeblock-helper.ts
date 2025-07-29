@@ -77,7 +77,10 @@ export function datesToTimeMatrix(dates?: Date[] | null): {
   };
 }
 
-export function durationToTimeblocks(dates: Date[]): Timeblock[] {
+export function durationToTimeblocks(
+  dates: Date[],
+  tentative: boolean
+): Timeblock[] {
   if (dates.length != 2) return [];
   const timeblocks: Timeblock[] = [];
 
@@ -104,6 +107,7 @@ export function durationToTimeblocks(dates: Date[]): Timeblock[] {
       date,
       start_time: startTime.format('HH:mm:ssZ'),
       end_time: endTime.format('HH:mm:ssZ'),
+      tentative,
     });
 
     // Increment the date

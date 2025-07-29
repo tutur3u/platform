@@ -1,7 +1,11 @@
 import { useTimeBlocking } from './time-blocking-provider';
 import { timetzToTime } from '@/utils/date-helper';
-import type { Timeblock } from '@tuturuuu/types/primitives/Timeblock';
 import dayjs from 'dayjs';
+
+type TimeBlockResult = {
+  type: 'draft-add' | 'draft-remove' | 'local' | 'server' | 'none';
+  tentative?: boolean;
+};
 
 export default function SelectableDayTime({
   date,
@@ -9,21 +13,18 @@ export default function SelectableDayTime({
   end,
   disabled,
 }: {
-  timeblocks: Timeblock[];
   date: string;
   start: number;
   end: number;
   disabled: boolean;
 }) {
-  const { editing, selectedTimeBlocks, edit, setPreviewDate } =
+  const { editing, selectedTimeBlocks, edit, setPreviewDate, tentativeMode } =
     useTimeBlocking();
 
   const hourBlocks = Array.from(Array(Math.floor(end + 1 - start)).keys());
   const hourSplits = 4;
 
-  const isTimeBlockSelected = (
-    i: number
-  ): 'draft-add' | 'draft-remove' | 'local' | 'server' | 'none' => {
+  const isTimeBlockSelected = (i: number): TimeBlockResult => {
     const editingStartDate =
       editing.startDate && editing.endDate
         ? dayjs(editing.startDate).isAfter(editing.endDate)
@@ -67,7 +68,10 @@ export default function SelectableDayTime({
                 editingStartDate.getMinutes() / 15
             )))
     )
-      return editing.mode === 'add' ? 'draft-add' : 'draft-remove';
+      return {
+        type: editing.mode === 'add' ? 'draft-add' : 'draft-remove',
+        tentative: tentativeMode,
+      };
 
     // If the timeblock is pre-selected
     const tb = selectedTimeBlocks.data.find((tb) => {
@@ -93,8 +97,13 @@ export default function SelectableDayTime({
       return i >= startBlock && i <= endBlock;
     });
 
-    if (tb) return tb.id !== undefined ? 'server' : 'local';
-    return 'none';
+    if (tb) {
+      return {
+        type: tb.id !== undefined ? 'server' : 'local',
+        tentative: tb.tentative,
+      };
+    }
+    return { type: 'none' };
   };
 
   return (
@@ -106,16 +115,17 @@ export default function SelectableDayTime({
         .map((_, i, array) => {
           const result = isTimeBlockSelected(i);
 
-          const isDraft = result.includes('draft');
-          const isSaved = result.includes('server');
-          const isLocal = result.includes('local');
+          const isDraft = result.type.includes('draft');
+          const isSaved = result.type.includes('server');
+          const isLocal = result.type.includes('local');
+          const isTentative = result.tentative ?? false;
 
           const currentDate = dayjs(date)
             .hour(Math.floor(i / hourSplits) + start)
             .minute((i % hourSplits) * 15)
             .toDate();
 
-          const isSelected = isSaved || isLocal || result.includes('add');
+          const isSelected = isSaved || isLocal || result.type.includes('add');
           const isSelectable = i + hourSplits < array.length && !disabled;
           const hideBorder = i === 0 || i + hourSplits > array.length - 1;
 
@@ -178,11 +188,16 @@ export default function SelectableDayTime({
                 i + hourSplits < array.length
                   ? isSelected
                     ? isDraft
-                      ? 'bg-green-500/50'
+                      ? isTentative
+                        ? 'bg-yellow-500/50'
+                        : 'bg-green-500/50'
                       : isSaved
-                        ? 'bg-green-500/70'
-                        : // : 'animate-pulse bg-green-500/70'
-                          'bg-green-500/70'
+                        ? isTentative
+                          ? 'bg-yellow-500/70'
+                          : 'bg-green-500/70'
+                        : isTentative
+                          ? 'bg-yellow-500/70'
+                          : 'bg-green-500/70'
                     : isDraft
                       ? 'bg-red-500/50'
                       : 'bg-red-500/20'

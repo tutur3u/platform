@@ -50,6 +50,7 @@ const TimeBlockContext = createContext({
   editing: {
     enabled: false,
   } as EditingParams,
+  tentativeMode: false,
   displayMode: 'account-switcher' as 'login' | 'account-switcher' | undefined,
 
   getPreviewUsers: (_: Timeblock[]) =>
@@ -65,6 +66,7 @@ const TimeBlockContext = createContext({
   setSelectedTimeBlocks: (_: { planId?: string; data: Timeblock[] }) => {},
   edit: (_: { mode: 'add' | 'remove'; date: Date }, __?: any) => {},
   endEditing: () => {},
+  setTentativeMode: (_: boolean) => {},
   setDisplayMode: (
     _?:
       | 'login'
@@ -155,6 +157,8 @@ const TimeBlockingProvider = ({
   const [editing, setEditing] = useState<EditingParams>({
     enabled: false,
   });
+
+  const [tentativeMode, setTentativeMode] = useState(false);
 
   const [user, setInternalUser] = useState<PlatformUser | GuestUser | null>(
     platformUser
@@ -248,7 +252,7 @@ const TimeBlockingProvider = ({
       ) as Date[];
 
       if (editing.mode === 'add') {
-        const extraTimeblocks = durationToTimeblocks(dates);
+        const extraTimeblocks = durationToTimeblocks(dates, tentativeMode);
         const timeblocks = addTimeblocks(prevTimeblocks.data, extraTimeblocks);
         return {
           planId: plan.id,
@@ -270,7 +274,7 @@ const TimeBlockingProvider = ({
     setEditing({
       enabled: false,
     });
-  }, [plan.id, editing]);
+  }, [plan.id, editing, tentativeMode]);
 
   useEffect(() => {
     const addTimeBlock = async (timeblock: Timeblock) => {
@@ -425,6 +429,7 @@ const TimeBlockingProvider = ({
         selectedTimeBlocks,
         editing,
         displayMode,
+        tentativeMode,
 
         getPreviewUsers,
         getOpacityForDate,
@@ -436,6 +441,7 @@ const TimeBlockingProvider = ({
         edit,
         endEditing,
         setDisplayMode,
+        setTentativeMode,
       }}
     >
       {children}

@@ -87,7 +87,12 @@ export default function PreviewDayTime({
     }
   }, [showBestTimes, bestBlockIndices.size, onBestTimesStatus]);
 
-  const isTimeBlockSelected = (i: number): 'local' | 'server' | 'none' => {
+  const isTimeBlockSelected = (
+    i: number
+  ): {
+    type: 'local' | 'server' | 'none';
+    tentative?: boolean;
+  } => {
     // If the timeblock is pre-selected
     const tb = timeblocks.find((tb) => {
       if (tb.date !== date) return false;
@@ -112,8 +117,13 @@ export default function PreviewDayTime({
       return i >= startBlock && i <= endBlock;
     });
 
-    if (tb) return tb.id !== undefined ? 'server' : 'local';
-    return 'none';
+    if (tb) {
+      return {
+        type: tb.id !== undefined ? 'server' : 'local',
+        tentative: tb.tentative,
+      };
+    }
+    return { type: 'none' };
   };
 
   return (
@@ -125,16 +135,17 @@ export default function PreviewDayTime({
         .map((_, i, array) => {
           const result = isTimeBlockSelected(i);
 
-          const isDraft = result.includes('draft');
-          const isSaved = result.includes('server');
-          const isLocal = result.includes('local');
+          const isDraft = result.type.includes('draft');
+          const isSaved = result.type.includes('server');
+          const isLocal = result.type.includes('local');
+          const isTentative = result.tentative ?? false;
 
           const currentDate = dayjs(date)
             .hour(Math.floor(i / hourSplits) + start)
             .minute((i % hourSplits) * 15)
             .toDate();
 
-          const isSelected = isSaved || isLocal || result.includes('add');
+          const isSelected = isSaved || isLocal || result.type.includes('add');
           const isSelectable = i + hourSplits < array.length;
           const hideBorder = i === 0 || i + hourSplits > array.length - 1;
           const opacity = getOpacityForDate(currentDate, timeblocks);
@@ -154,10 +165,16 @@ export default function PreviewDayTime({
             } else {
               cellClass = isSelected
                 ? isDraft
-                  ? 'bg-green-500/50'
+                  ? isTentative
+                    ? 'bg-yellow-500/50'
+                    : 'bg-green-500/50'
                   : isSaved
-                    ? 'bg-green-500/70'
-                    : 'bg-green-500/70'
+                    ? isTentative
+                      ? 'bg-yellow-500/70'
+                      : 'bg-green-500/70'
+                    : isTentative
+                      ? 'bg-yellow-500/70'
+                      : 'bg-green-500/70'
                 : 'bg-foreground/10';
               cellStyle = { opacity: isSelected ? opacity : 1 };
             }

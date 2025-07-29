@@ -2639,7 +2639,7 @@ export type Database = {
           id: string;
           plan_id: string;
           start_time: string;
-          tentative: boolean | null;
+          tentative: boolean;
           user_id: string;
         };
         Insert: {
@@ -2649,7 +2649,7 @@ export type Database = {
           id?: string;
           plan_id: string;
           start_time: string;
-          tentative?: boolean | null;
+          tentative?: boolean;
           user_id: string;
         };
         Update: {
@@ -2659,7 +2659,7 @@ export type Database = {
           id?: string;
           plan_id?: string;
           start_time?: string;
-          tentative?: boolean | null;
+          tentative?: boolean;
           user_id?: string;
         };
         Relationships: [
@@ -2810,7 +2810,7 @@ export type Database = {
           id: string;
           plan_id: string;
           start_time: string;
-          tentative: boolean | null;
+          tentative: boolean;
           user_id: string;
         };
         Insert: {
@@ -2820,7 +2820,7 @@ export type Database = {
           id?: string;
           plan_id: string;
           start_time: string;
-          tentative?: boolean | null;
+          tentative?: boolean;
           user_id: string;
         };
         Update: {
@@ -2830,7 +2830,7 @@ export type Database = {
           id?: string;
           plan_id?: string;
           start_time?: string;
-          tentative?: boolean | null;
+          tentative?: boolean;
           user_id?: string;
         };
         Relationships: [
