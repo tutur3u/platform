@@ -36,8 +36,8 @@
     "next": "^15.4.4",
     "next-intl": "^4.3.4",
     "qrcode.react": "^4.2.0",
-    "react": "^19.1.0",
-    "react-dom": "^19.1.0",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
     "zod": "^3.25.76"
   },
   "devDependencies": {
