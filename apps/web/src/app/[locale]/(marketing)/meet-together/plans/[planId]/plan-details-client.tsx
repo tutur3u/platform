@@ -17,6 +17,7 @@ import { Label } from '@tuturuuu/ui/label';
 import { Separator } from '@tuturuuu/ui/separator';
 import { Switch } from '@tuturuuu/ui/switch';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
+import { cn } from '@tuturuuu/utils/format';
 import html2canvas from 'html2canvas-pro';
 import { useTheme } from 'next-themes';
 import { useCallback, useEffect, useState } from 'react';
@@ -176,8 +177,17 @@ export default function PlanDetailsClient({
               </div>
             )}
           </div>
-          <div className="mt-8 grid w-full grid-cols-1 items-start justify-between gap-4 md:grid-cols-3 md:items-center">
-            <div className="md:col-span-2">
+          <div
+            className={cn(
+              'mt-8 grid w-full grid-cols-1 items-start justify-between gap-4 md:grid-cols-3 md:items-center'
+            )}
+          >
+            <div
+              className={cn(
+                'md:col-span-2',
+                !plan.where_to_meet && 'md:col-span-full'
+              )}
+            >
               <UnifiedAvailability
                 plan={plan}
                 timeblocks={timeblocks}
@@ -186,12 +196,14 @@ export default function PlanDetailsClient({
                 onBestTimesStatusByDateAction={setBestTimesStatusByDate}
               />
             </div>
-            <PlanDetailsPolls
-              plan={plan}
-              polls={polls}
-              isCreator={isCreator}
-              platformUser={platformUser}
-            />
+            {plan.where_to_meet && (
+              <PlanDetailsPolls
+                plan={plan}
+                polls={polls}
+                isCreator={isCreator}
+                platformUser={platformUser}
+              />
+            )}
           </div>
 
           <Separator className="my-8" />

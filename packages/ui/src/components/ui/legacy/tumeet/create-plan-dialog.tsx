@@ -142,9 +142,12 @@ export default function CreatePlanDialog({ plan }: Props) {
       return;
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { agenda_enabled, ...rest } = data;
+
     const res = await fetch('/api/meet-together/plans', {
       method: 'POST',
-      body: JSON.stringify(data),
+      body: JSON.stringify(rest),
     });
 
     if (res.ok) {
@@ -383,24 +386,6 @@ export default function CreatePlanDialog({ plan }: Props) {
                   />
                 </div>
               )}
-
-              {/* Placeholder for future features */}
-              <div className="rounded-lg border border-dashed border-border/50 bg-muted/20 p-4">
-                <div className="flex items-center justify-center text-center">
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-center gap-2 text-muted-foreground">
-                      <SparklesIcon className="h-4 w-4" />
-                      <span className="text-sm font-medium">
-                        More features coming soon!
-                      </span>
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      We&apos;re working on additional features to make your
-                      meetings even better.
-                    </p>
-                  </div>
-                </div>
-              </div>
             </div>
 
             <DialogFooter className="pt-4">
