@@ -2,6 +2,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import { NextRequest } from 'next/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock Supabase modules
@@ -109,7 +110,7 @@ describe('Calendar Sync Dashboard APIs', () => {
     it('should successfully insert a sync dashboard record', async () => {
       // Mock successful authentication
       mockAdminClient.auth.getUser.mockResolvedValue({
-        data: { user: { id: 'test-user-id' } },
+        data: { id: 'test-user-id' },
       });
 
       // Mock successful insert
@@ -178,7 +179,7 @@ describe('Calendar Sync Dashboard APIs', () => {
     it('should return 401 when user is not authenticated', async () => {
       // Mock unauthenticated user
       mockAdminClient.auth.getUser.mockResolvedValue({
-        data: { user: null },
+        data: null,
       });
 
       const { POST } = await import(
@@ -203,7 +204,7 @@ describe('Calendar Sync Dashboard APIs', () => {
     it('should return 400 when ws_id is missing', async () => {
       // Mock successful authentication
       mockAdminClient.auth.getUser.mockResolvedValue({
-        data: { user: { id: 'test-user-id' } },
+        data: { id: 'test-user-id' },
       });
 
       const { POST } = await import(
@@ -228,7 +229,7 @@ describe('Calendar Sync Dashboard APIs', () => {
     it('should handle database errors gracefully', async () => {
       // Mock successful authentication
       mockAdminClient.auth.getUser.mockResolvedValue({
-        data: { user: { id: 'test-user-id' } },
+        data: { id: 'test-user-id' },
       });
 
       // Mock database error
@@ -270,7 +271,7 @@ describe('Calendar Sync Dashboard APIs', () => {
     it('should successfully update a sync dashboard record', async () => {
       // Mock successful authentication
       mockAdminClient.auth.getUser.mockResolvedValue({
-        data: { user: { id: 'test-user-id' } },
+        data: { id: 'test-user-id' },
       });
 
       // Mock successful update
@@ -332,7 +333,7 @@ describe('Calendar Sync Dashboard APIs', () => {
     it('should return 401 when user is not authenticated', async () => {
       // Mock unauthenticated user
       mockAdminClient.auth.getUser.mockResolvedValue({
-        data: { user: null },
+        data: null,
       });
 
       const { PUT } = await import(
@@ -357,7 +358,7 @@ describe('Calendar Sync Dashboard APIs', () => {
     it('should return 400 when id is missing', async () => {
       // Mock successful authentication
       mockAdminClient.auth.getUser.mockResolvedValue({
-        data: { user: { id: 'test-user-id' } },
+        data: { id: 'test-user-id' },
       });
 
       const { PUT } = await import(
@@ -382,7 +383,7 @@ describe('Calendar Sync Dashboard APIs', () => {
     it('should return 404 when record is not found', async () => {
       // Mock successful authentication
       mockAdminClient.auth.getUser.mockResolvedValue({
-        data: { user: { id: 'test-user-id' } },
+        data: { id: 'test-user-id' },
       });
 
       // Mock no data returned
@@ -418,7 +419,7 @@ describe('Calendar Sync Dashboard APIs', () => {
     it('should handle database errors gracefully', async () => {
       // Mock successful authentication
       mockAdminClient.auth.getUser.mockResolvedValue({
-        data: { user: { id: 'test-user-id' } },
+        data: { id: 'test-user-id' },
       });
 
       // Mock database error

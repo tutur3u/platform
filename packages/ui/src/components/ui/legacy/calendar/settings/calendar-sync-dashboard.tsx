@@ -54,7 +54,7 @@ export function CalendarSyncDashboard() {
       workspace: workspaces[0]!,
       triggeredBy: {
         id: 'user_1',
-        name: 'Sarah Chen',
+        display_name: 'Sarah Chen',
         email: 'sarah@company.com',
         avatar: '/placeholder.svg?height=32&width=32',
       },
