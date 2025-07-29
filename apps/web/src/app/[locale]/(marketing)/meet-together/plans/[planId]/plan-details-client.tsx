@@ -1,11 +1,10 @@
 'use client';
 
 import AgendaDetails from './agenda-details';
-import AllAvailabilities from './all-availabilities';
 import EditPlanDialog from './edit-plan-dialog';
-import PlanLogin from './plan-login';
 import PlanUserFilter from './plan-user-filter';
 import { useTimeBlocking } from './time-blocking-provider';
+import UnifiedAvailability from './unified-availability';
 import UtilityButtons from './utility-buttons';
 import PlanDetailsPolls from '@/app/[locale]/(marketing)/meet-together/plans/[planId]/plan-details-polls';
 import type {
@@ -178,17 +177,15 @@ export default function PlanDetailsClient({
             )}
           </div>
           <div className="mt-8 grid w-full grid-cols-1 items-start justify-between gap-4 md:grid-cols-3 md:items-center">
-            <PlanLogin
-              plan={plan}
-              timeblocks={[]}
-              platformUser={platformUser}
-            />
-            <AllAvailabilities
-              plan={plan}
-              timeblocks={timeblocks}
-              showBestTimes={showBestTimes}
-              onBestTimesStatusByDateAction={setBestTimesStatusByDate}
-            />
+            <div className="md:col-span-2">
+              <UnifiedAvailability
+                plan={plan}
+                timeblocks={timeblocks}
+                platformUser={platformUser}
+                showBestTimes={showBestTimes}
+                onBestTimesStatusByDateAction={setBestTimesStatusByDate}
+              />
+            </div>
             <PlanDetailsPolls
               plan={plan}
               polls={polls}
