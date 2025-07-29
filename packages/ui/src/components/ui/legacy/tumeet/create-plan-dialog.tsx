@@ -74,7 +74,7 @@ const convertToTimetz = (
   // Format offset as +/-HH:MM
   const offsetStr = `${utcOffset < 0 ? '-' : '+'}${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
 
-  return `${timeStr}${offsetStr}`;  
+  return `${timeStr}${offsetStr}`;
 };
 
 export default function CreatePlanDialog({ plan }: Props) {
