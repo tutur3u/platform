@@ -89,7 +89,7 @@ export function CalendarSyncDashboard() {
       workspace: workspaces[0]!,
       triggeredBy: {
         id: 'user_2',
-        name: 'Mike Johnson',
+        display_name: 'Mike Johnson',
         email: 'mike@company.com',
         avatar: '/placeholder.svg?height=32&width=32',
       },
@@ -125,7 +125,7 @@ export function CalendarSyncDashboard() {
       workspace: workspaces[1]!,
       triggeredBy: {
         id: 'user_3',
-        name: 'Emma Davis',
+        display_name: 'Emma Davis',
         email: 'emma@company.com',
         avatar: '/placeholder.svg?height=32&width=32',
       },
@@ -170,7 +170,7 @@ export function CalendarSyncDashboard() {
         filterWorkspace === 'all' || log.workspace?.id === filterWorkspace;
       const matchesSearch =
         searchTerm === '' ||
-        log.triggeredBy?.name
+        log.triggeredBy?.display_name
           .toLowerCase()
           .includes(searchTerm.toLowerCase()) ||
         log.triggeredBy?.email
