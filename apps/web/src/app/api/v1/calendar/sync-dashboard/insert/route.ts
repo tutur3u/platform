@@ -9,7 +9,9 @@ export async function POST(request: Request) {
   try {
     const sbAdmin = await createAdminClient();
 
-    const { data: user } = await sbAdmin.auth.getUser();
+    const {
+      data: { user },
+    } = await sbAdmin.auth.getUser();
 
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -26,7 +28,7 @@ export async function POST(request: Request) {
     // Set default values and ensure triggered_by is set to current user
     const insertData: CalendarSyncDashboardInsert = {
       ...body,
-      triggered_by: body.triggered_by || '00000000-0000-0000-0000-000000000000',
+      triggered_by: body.triggered_by || user.id,
       start_time: body.start_time || new Date().toISOString(),
       end_time: body.end_time || new Date().toISOString(),
       status: body.status || 'running',
