@@ -55,7 +55,28 @@ export default function PlanDetailsClient({
 }: PlanDetailsClientProps) {
   const { resolvedTheme } = useTheme();
   const [showBestTimes, setShowBestTimes] = useState(false);
-  const { filteredUserIds } = useTimeBlocking();
+  const {
+    filteredUserIds,
+    isDirty,
+    isAutoSaving,
+    autoSaveCountdown,
+    syncTimeBlocks,
+    clearDirtyState,
+  } = useTimeBlocking();
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Handle manual save
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      await syncTimeBlocks();
+      clearDirtyState();
+    } catch (error) {
+      console.error('Failed to save timeblocks:', error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   // If user filter is active, force best times off
   const isUserFilterActive = filteredUserIds && filteredUserIds.length > 0;
@@ -124,6 +145,18 @@ export default function PlanDetailsClient({
               <EditPlanDialog plan={plan} />
             ) : null}
           </p>
+
+          {/* Global dirty state indicator */}
+          {isDirty && (
+            <div className="mb-4 flex items-center gap-2 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:bg-amber-950 dark:text-amber-200">
+              <div className="h-2 w-2 animate-pulse rounded-full bg-amber-500"></div>
+              {isAutoSaving
+                ? 'Auto-saving changes...'
+                : 'You have unsaved changes'}
+            </div>
+          )}
+
+          {/* Show Only Best Times Toggle - Back to original centered position */}
           <div className="mb-4 flex flex-col items-center justify-center gap-2">
             <div className="flex items-center justify-center gap-2">
               <Label
@@ -177,6 +210,7 @@ export default function PlanDetailsClient({
               </div>
             )}
           </div>
+
           <div className="mt-8 grid w-full grid-cols-1 items-start justify-between gap-4 md:grid-cols-3 md:items-center">
             <PlanLogin
               plan={plan}
@@ -196,6 +230,8 @@ export default function PlanDetailsClient({
               platformUser={platformUser}
             />
           </div>
+
+          {/* Save Button - Positioned below the availability sections */}
 
           <Separator className="my-8" />
 
