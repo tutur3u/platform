@@ -36,13 +36,13 @@ export const WeekdayBar = ({
       {/* Weekday header bar */}
       <div className="flex">
         {/* Time column header */}
-        <div className="flex w-16 items-center justify-center rounded-tl-lg border border-r-0 bg-muted/30 p-2 font-medium">
+        <div className="flex w-16 items-center justify-center bg-muted/30 p-2 font-medium">
           <Clock className="h-4 w-4 text-muted-foreground" />
         </div>
 
         {/* Weekday columns */}
         <div
-          className={cn('grid flex-1 rounded-tr-lg border-t border-r')}
+          className={cn('grid flex-1')}
           style={{
             gridTemplateColumns: `repeat(${visibleDates.length}, minmax(0, 1fr))`,
             minWidth: `${visibleDates.length * MIN_COLUMN_WIDTH}px`, // Match column width
@@ -54,7 +54,7 @@ export const WeekdayBar = ({
             return (
               <div
                 key={`date-${dayjsDate.format('YYYY-MM-DD')}`}
-                className="group transition-colors last:border-r-0 hover:bg-muted/20"
+                className="group transition-colors hover:bg-muted/20"
               >
                 <DayTitle
                   view={view}

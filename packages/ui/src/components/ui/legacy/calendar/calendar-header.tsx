@@ -20,7 +20,6 @@ export function CalendarHeader({
   availableViews,
   onViewChange,
   extras,
-  onSidebarToggle,
   sidebarToggleButton,
 }: {
   t: (key: string) => string;
@@ -92,7 +91,7 @@ export function CalendarHeader({
           )}
           <div className="flex flex-none items-center justify-center gap-2 md:justify-start">
             <Button
-              variant="outline"
+              variant="ghost"
               size="icon"
               className="h-8 w-8"
               onClick={handlePrev}
@@ -101,7 +100,7 @@ export function CalendarHeader({
               <ChevronLeft className="h-4 w-4" />
             </Button>
             <Button
-              variant="outline"
+              variant="ghost"
               size="sm"
               onClick={isToday() || isCurrentMonth() ? undefined : selectToday}
               disabled={isToday() || isCurrentMonth()}
@@ -115,7 +114,7 @@ export function CalendarHeader({
                     : t('current')}
             </Button>
             <Button
-              variant="outline"
+              variant="ghost"
               size="icon"
               className="h-8 w-8"
               onClick={handleNext}
@@ -132,7 +131,7 @@ export function CalendarHeader({
                   onViewChange(value as 'day' | '4-days' | 'week' | 'month')
                 }
               >
-                <SelectTrigger className="h-8 w-full">
+                <SelectTrigger className="h-8 w-full border-0">
                   <SelectValue placeholder={t('view')} />
                 </SelectTrigger>
                 <SelectContent>

@@ -21,7 +21,7 @@ export function DayTitle({ date, weekday }: DayTitleProps) {
   return (
     <div
       className={cn(
-        'border-b border-l text-center font-medium'
+        'text-center font-medium'
         // view !== 'day' ? 'p-1.5' : 'md:p-1.5'
       )}
     >

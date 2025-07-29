@@ -127,7 +127,7 @@ export default function CalendarPageClient({
     <>
       <div className="flex h-full w-full flex-col">
         {/* Sticky Header */}
-        <div className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="sticky top-0 z-10 border-b">
           <div className="p-4">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-2">
