@@ -20,10 +20,22 @@ vi.mock('next/server', () => ({
   },
 }));
 
+// Define proper types for mocks
+type MockSupabaseClient = {
+  auth: {
+    getUser: ReturnType<typeof vi.fn>;
+  };
+  from: ReturnType<typeof vi.fn>;
+};
+
+type MockNextResponse = {
+  json: ReturnType<typeof vi.fn>;
+};
+
 describe('Calendar Sync Dashboard APIs', () => {
-  let mockAdminClient: any;
-  let mockClient: any;
-  let mockNextResponse: any;
+  let mockAdminClient: MockSupabaseClient;
+  let mockClient: MockSupabaseClient;
+  let mockNextResponse: MockNextResponse;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -83,8 +95,10 @@ describe('Calendar Sync Dashboard APIs', () => {
     };
 
     // Mock the module functions
-    (createAdminClient as any).mockResolvedValue(mockAdminClient);
-    (createClient as any).mockResolvedValue(mockClient);
+    (createAdminClient as ReturnType<typeof vi.fn>).mockResolvedValue(
+      mockAdminClient
+    );
+    (createClient as ReturnType<typeof vi.fn>).mockResolvedValue(mockClient);
   });
 
   afterEach(() => {
