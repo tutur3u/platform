@@ -270,17 +270,19 @@ export function createPOST(
           model.price.per1MReasoningTokens,
       };
 
+      const totalCostUSD =
+        cost.inputCost + cost.outputCost + cost.reasoningCost;
+      const exchangeRate = 26000; // VND per USD
+      const totalCostVND = totalCostUSD * exchangeRate;
+
       return NextResponse.json({
         ...typedResult,
         cost: {
           inputCost: `$${cost.inputCost.toFixed(8)}`,
           outputCost: `$${cost.outputCost.toFixed(8)}`,
           reasoningCost: `$${cost.reasoningCost.toFixed(8)}`,
-          totalCost: `$${(
-            cost.inputCost +
-            cost.outputCost +
-            cost.reasoningCost
-          ).toFixed(8)}`,
+          totalCost: `$${totalCostUSD.toFixed(8)}`,
+          totalCostVND: `${totalCostVND.toFixed(0)} VND`,
         },
       });
     } catch (error) {
