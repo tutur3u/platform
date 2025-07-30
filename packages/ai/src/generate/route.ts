@@ -28,22 +28,24 @@ export function createPOST(
 
     const {
       wsId = ROOT_WORKSPACE_ID,
-      secretKey,
+      accessId,
+      accessKey,
       model = DEFAULT_MODEL_NAME,
       prompt,
       systemPrompt,
     } = (await req.json()) as {
       wsId?: string;
-      secretKey?: string;
+      accessId?: string;
+      accessKey?: string;
       model?: (typeof ALLOWED_MODELS)[number];
       prompt?: string;
       systemPrompt?: string;
     };
 
     try {
-      if (!secretKey) {
-        console.error('Missing secret key');
-        return new Response('Missing secret key', { status: 400 });
+      if (!accessId || !accessKey) {
+        console.error('Missing accessId or accessKey');
+        return new Response('Missing accessId or accessKey', { status: 400 });
       }
 
       if (!prompt) {
@@ -65,23 +67,33 @@ export function createPOST(
       if (!ALLOWED_MODELS.includes(model)) {
         console.error('Invalid model');
         return new Response(
-          `Invalid model, allowed models: ${ALLOWED_MODELS.join(', ')}`,
+          `Invalid model: ${model}\nAllowed models: ${ALLOWED_MODELS.join(', ')}`,
           { status: 400 }
         );
       }
 
       const { data: apiKeyData, error: apiKeyError } = await sbAdmin
         .from('workspace_api_keys')
-        .select('id')
+        .select('id, scopes')
         .eq('ws_id', wsId)
-        .eq('value', secretKey)
-        .in('scopes', [[model]])
+        .eq('id', accessId)
+        .eq('value', accessKey)
         .single();
 
       if (apiKeyError) {
-        console.error('Invalid secret key');
-        return new Response('Invalid secret key', { status: 400 });
+        console.error('Invalid accessId or accessKey');
+        return new Response('Invalid accessId or accessKey', { status: 400 });
       }
+
+      if (!apiKeyData.scopes.includes(model)) {
+        console.error('Invalid model');
+        return new Response(
+          `Invalid model: ${model}\nAllowed models: ${apiKeyData.scopes.join(', ')}`,
+          { status: 400 }
+        );
+      }
+
+      const apiKeyId = apiKeyData.id;
 
       const google = createGoogleGenerativeAI({
         apiKey: apiKey,
@@ -109,7 +121,8 @@ export function createPOST(
 
           const insertData = {
             ws_id: wsId,
-            api_key: apiKeyData.id,
+            api_key_id: apiKeyId,
+            model_id: model,
             input: prompt,
             output: text,
             finish_reason: String(finishReason),
