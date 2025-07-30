@@ -377,11 +377,11 @@ const TimeBlockingProvider = ({
       ) as Date[];
 
       if (editing.mode === 'add') {
-        const extraTimeblocks = durationToTimeblocks(
+        const timeblocks = addTimeblocks(
+          prevTimeblocks.data,
           dates,
           editing.tentativeMode ?? false
         );
-        const timeblocks = addTimeblocks(prevTimeblocks.data, extraTimeblocks);
         return {
           planId: plan.id,
           data: timeblocks.map((tb) => ({ ...tb, plan_id: plan.id })),
