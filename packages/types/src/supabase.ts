@@ -5802,6 +5802,83 @@ export type Database = {
         };
         Relationships: [];
       };
+      workspace_ai_executions: {
+        Row: {
+          api_key_id: string;
+          created_at: string;
+          finish_reason: string;
+          id: string;
+          input: string;
+          input_tokens: number;
+          model_id: string;
+          output: string;
+          output_tokens: number;
+          reasoning_tokens: number;
+          system_prompt: string;
+          total_tokens: number;
+          ws_id: string;
+        };
+        Insert: {
+          api_key_id: string;
+          created_at?: string;
+          finish_reason: string;
+          id?: string;
+          input: string;
+          input_tokens: number;
+          model_id: string;
+          output: string;
+          output_tokens: number;
+          reasoning_tokens: number;
+          system_prompt: string;
+          total_tokens: number;
+          ws_id: string;
+        };
+        Update: {
+          api_key_id?: string;
+          created_at?: string;
+          finish_reason?: string;
+          id?: string;
+          input?: string;
+          input_tokens?: number;
+          model_id?: string;
+          output?: string;
+          output_tokens?: number;
+          reasoning_tokens?: number;
+          system_prompt?: string;
+          total_tokens?: number;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'workspace_ai_executions_api_key_fkey';
+            columns: ['api_key_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_api_keys';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_ai_executions_model_id_fkey';
+            columns: ['model_id'];
+            isOneToOne: false;
+            referencedRelation: 'ai_models';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_ai_executions_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_ai_executions_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       workspace_ai_models: {
         Row: {
           created_at: string;
@@ -5935,6 +6012,7 @@ export type Database = {
           created_at: string;
           id: string;
           name: string;
+          scopes: Database['public']['Enums']['workspace_api_key_scope'][];
           value: string;
           ws_id: string;
         };
@@ -5942,6 +6020,7 @@ export type Database = {
           created_at?: string;
           id?: string;
           name: string;
+          scopes?: Database['public']['Enums']['workspace_api_key_scope'][];
           value: string;
           ws_id: string;
         };
@@ -5949,6 +6028,7 @@ export type Database = {
           created_at?: string;
           id?: string;
           name?: string;
+          scopes?: Database['public']['Enums']['workspace_api_key_scope'][];
           value?: string;
           ws_id?: string;
         };
@@ -10041,6 +10121,11 @@ export type Database = {
       subscription_status: 'trialing' | 'active' | 'canceled' | 'past_due';
       task_board_status: 'not_started' | 'active' | 'done' | 'closed';
       task_priority: 'low' | 'normal' | 'high' | 'critical';
+      workspace_api_key_scope:
+        | 'gemini-2.0-flash'
+        | 'gemini-2.5-flash'
+        | 'gemini-2.0-pro'
+        | 'gemini-2.5-pro';
       workspace_role_permission:
         | 'view_infrastructure'
         | 'manage_workspace_secrets'
@@ -10219,6 +10304,12 @@ export const Constants = {
       subscription_status: ['trialing', 'active', 'canceled', 'past_due'],
       task_board_status: ['not_started', 'active', 'done', 'closed'],
       task_priority: ['low', 'normal', 'high', 'critical'],
+      workspace_api_key_scope: [
+        'gemini-2.0-flash',
+        'gemini-2.5-flash',
+        'gemini-2.0-pro',
+        'gemini-2.5-pro',
+      ],
       workspace_role_permission: [
         'view_infrastructure',
         'manage_workspace_secrets',
