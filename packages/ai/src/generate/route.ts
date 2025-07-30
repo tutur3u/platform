@@ -1,11 +1,14 @@
 import { ROOT_WORKSPACE_ID } from './../../../utils/src/constants';
-import { createGoogleGenerativeAI } from '@ai-sdk/google';
+import {
+  type GoogleGenerativeAIProviderOptions,
+  createGoogleGenerativeAI,
+} from '@ai-sdk/google';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { type FinishReason, streamText } from 'ai';
 import { cookies } from 'next/headers';
 import { type NextRequest, NextResponse } from 'next/server';
 
-const DEFAULT_MODEL_NAME = 'gemini-2.5-flash';
+const DEFAULT_MODEL_NAME = 'gemini-2.0-flash';
 const ALLOWED_MODELS = [
   'gemini-2.0-flash',
   'gemini-2.5-flash',
@@ -23,23 +26,51 @@ export function createPOST(
     const sbAdmin = await createAdminClient();
 
     const {
-      wsId = ROOT_WORKSPACE_ID,
-      accessId,
-      accessKey,
-      model = DEFAULT_MODEL_NAME,
       prompt,
-      systemPrompt,
+      accessKey,
+      configs = {
+        wsId: ROOT_WORKSPACE_ID,
+        model: DEFAULT_MODEL_NAME,
+        systemPrompt: '',
+        thinkingBudget: 0,
+        includeThoughts: false,
+      },
     } = (await req.json()) as {
-      wsId?: string;
-      accessId?: string;
-      accessKey?: string;
-      model?: (typeof ALLOWED_MODELS)[number];
       prompt?: string;
-      systemPrompt?: string;
+      accessKey?: {
+        id: string;
+        value: string;
+      };
+      configs?: {
+        wsId: string;
+        model: (typeof ALLOWED_MODELS)[number];
+        systemPrompt?: string;
+        thinkingBudget?: number;
+        includeThoughts?: boolean;
+      };
     };
 
+    if (!configs?.wsId) {
+      configs.wsId = ROOT_WORKSPACE_ID;
+    }
+    if (!configs?.model) {
+      configs.model = DEFAULT_MODEL_NAME;
+    }
+
+    if (!configs?.systemPrompt) {
+      configs.systemPrompt = '';
+    }
+
+    if (!configs?.thinkingBudget) {
+      configs.thinkingBudget = 0;
+    }
+
+    if (!configs?.includeThoughts) {
+      configs.includeThoughts = false;
+    }
+
     try {
-      if (!accessId || !accessKey) {
+      if (!accessKey?.id || !accessKey?.value) {
         console.error('Missing accessId or accessKey');
         return new Response('Missing accessId or accessKey', { status: 400 });
       }
@@ -60,20 +91,30 @@ export function createPOST(
         return new Response('Missing API key', { status: 400 });
       }
 
-      if (!ALLOWED_MODELS.includes(model)) {
+      if (!configs?.model) {
+        console.error('Missing model');
+        return new Response('Missing model', { status: 400 });
+      }
+
+      if (!ALLOWED_MODELS.includes(configs.model)) {
         console.error('Invalid model');
         return new Response(
-          `Invalid model: ${model}\nAllowed models: ${ALLOWED_MODELS.join(', ')}`,
+          `Invalid model: ${configs.model}\nAllowed models: ${ALLOWED_MODELS.join(', ')}`,
           { status: 400 }
         );
+      }
+
+      if (!configs.wsId) {
+        console.error('Missing workspace ID');
+        return new Response('Missing workspace ID', { status: 400 });
       }
 
       const { data: apiKeyData, error: apiKeyError } = await sbAdmin
         .from('workspace_api_keys')
         .select('id, scopes')
-        .eq('ws_id', wsId)
-        .eq('id', accessId)
-        .eq('value', accessKey)
+        .eq('ws_id', configs.wsId)
+        .eq('id', accessKey.id)
+        .eq('value', accessKey.value)
         .single();
 
       if (apiKeyError) {
@@ -81,10 +122,10 @@ export function createPOST(
         return new Response('Invalid accessId or accessKey', { status: 400 });
       }
 
-      if (!apiKeyData.scopes.includes(model)) {
+      if (!apiKeyData.scopes.includes(configs.model)) {
         console.error('Invalid model');
         return new Response(
-          `Invalid model: ${model}\nAllowed models: ${apiKeyData.scopes.join(', ')}`,
+          `Invalid model: ${configs.model}\nAllowed models: ${apiKeyData.scopes.join(', ')}`,
           { status: 400 }
         );
       }
@@ -108,9 +149,9 @@ export function createPOST(
       } | null = null;
 
       const stream = streamText({
-        model: google(model),
+        model: google(configs.model),
         prompt,
-        system: systemPrompt,
+        system: configs.systemPrompt,
         onFinish: async ({ text, finishReason, usage }) => {
           result = {
             input: prompt,
@@ -125,9 +166,9 @@ export function createPOST(
           };
 
           const insertData = {
-            ws_id: wsId,
+            ws_id: configs.wsId,
             api_key_id: apiKeyId,
-            model_id: model,
+            model_id: configs.model,
             input: prompt,
             output: text,
             finish_reason: String(finishReason),
@@ -135,7 +176,7 @@ export function createPOST(
             output_tokens: usage.outputTokens ?? 0,
             reasoning_tokens: usage.reasoningTokens ?? 0,
             total_tokens: usage.totalTokens ?? 0,
-            system_prompt: systemPrompt ?? '',
+            system_prompt: configs.systemPrompt ?? '',
           };
 
           const { error: saveError } = await sbAdmin
@@ -149,25 +190,12 @@ export function createPOST(
         },
         providerOptions: {
           google: {
-            safetySettings: [
-              {
-                category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
-                threshold: 'BLOCK_NONE',
-              },
-              {
-                category: 'HARM_CATEGORY_HATE_SPEECH',
-                threshold: 'BLOCK_NONE',
-              },
-              {
-                category: 'HARM_CATEGORY_HARASSMENT',
-                threshold: 'BLOCK_NONE',
-              },
-              {
-                category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
-                threshold: 'BLOCK_NONE',
-              },
-            ],
-          },
+            responseModalities: ['TEXT'],
+            thinkingConfig: {
+              thinkingBudget: configs.thinkingBudget ?? 0,
+              includeThoughts: configs.includeThoughts ?? false,
+            },
+          } satisfies GoogleGenerativeAIProviderOptions,
         },
       });
 
