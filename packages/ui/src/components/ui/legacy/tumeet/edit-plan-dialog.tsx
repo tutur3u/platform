@@ -49,6 +49,7 @@ import * as z from 'zod';
 
 interface Props {
   plan: MeetTogetherPlan;
+  onEditingChange?: (isEditing: boolean) => void;
 }
 
 const FormSchema = z
@@ -103,7 +104,7 @@ const convertToTimetz = (
   return `${hour}:00:00${utcOffset < 0 ? '-' : '+'}${paddedOffset}`;
 };
 
-export default function EditPlanDialog({ plan }: Props) {
+export default function EditPlanDialog({ plan, onEditingChange }: Props) {
   const t = useTranslations();
   const router = useRouter();
 
@@ -268,6 +269,7 @@ export default function EditPlanDialog({ plan }: Props) {
             form.reset();
           }
           setIsOpened(open);
+          onEditingChange?.(open);
         }}
       >
         <DialogTrigger asChild>

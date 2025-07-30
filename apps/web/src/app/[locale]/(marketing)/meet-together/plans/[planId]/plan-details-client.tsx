@@ -55,7 +55,7 @@ export default function PlanDetailsClient({
 }: PlanDetailsClientProps) {
   const { resolvedTheme } = useTheme();
   const [showBestTimes, setShowBestTimes] = useState(false);
-  const { filteredUserIds } = useTimeBlocking();
+  const { filteredUserIds, setPlanEditing } = useTimeBlocking();
 
   // If user filter is active, force best times off
   const isUserFilterActive = filteredUserIds && filteredUserIds.length > 0;
@@ -121,7 +121,7 @@ export default function PlanDetailsClient({
           <p className="my-4 flex max-w-xl items-center gap-2 text-center text-2xl leading-tight! font-semibold text-balance md:mb-4 lg:text-3xl">
             {plan.name}{' '}
             {platformUser?.id === plan.creator_id ? (
-              <EditPlanDialog plan={plan} />
+              <EditPlanDialog plan={plan} onEditingChange={setPlanEditing} />
             ) : null}
           </p>
           <div className="mb-4 flex flex-col items-center justify-center gap-2">

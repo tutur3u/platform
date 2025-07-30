@@ -39,6 +39,11 @@ interface EditingParams {
   endDate?: Date;
 }
 
+interface PlanEditingState {
+  isEditing: boolean;
+  lastUpdateTime?: number;
+}
+
 const TimeBlockContext = createContext({
   user: null as PlatformUser | GuestUser | null,
   planUsers: [] as (PlatformUser | GuestUser)[],
@@ -73,6 +78,8 @@ const TimeBlockContext = createContext({
           prev: 'login' | 'account-switcher' | undefined
         ) => 'login' | 'account-switcher' | undefined)
   ) => {},
+
+  setPlanEditing: (_: boolean) => {},
 });
 
 const TimeBlockingProvider = ({
@@ -156,6 +163,10 @@ const TimeBlockingProvider = ({
     enabled: false,
   });
 
+  const [planEditing, setPlanEditing] = useState<PlanEditingState>({
+    isEditing: false,
+  });
+
   const [user, setInternalUser] = useState<PlatformUser | GuestUser | null>(
     platformUser
   );
@@ -171,6 +182,47 @@ const TimeBlockingProvider = ({
     planId: plan.id,
     data: timeblocks.filter((tb) => tb.user_id === user?.id),
   });
+
+  // Update selectedTimeBlocks when plan data changes to filter out invalid timeblocks
+  useEffect(() => {
+    if (!plan.id || !user?.id) return;
+
+    const planStartDate = dayjs(plan.dates?.[0]);
+    const planEndDate = dayjs(plan.dates?.[plan.dates.length - 1]);
+    const planStartTime = plan.start_time
+      ? dayjs(`2000-01-01 ${plan.start_time.split('+')[0]}`)
+      : dayjs('2000-01-01 09:00');
+    const planEndTime = plan.end_time
+      ? dayjs(`2000-01-01 ${plan.end_time.split('+')[0]}`)
+      : dayjs('2000-01-01 17:00');
+
+    // Filter timeblocks to only include those that are valid for the current plan
+    const validTimeblocks = selectedTimeBlocks.data.filter((timeblock) => {
+      const timeblockDate = dayjs(timeblock.date);
+      const timeblockStartTime = dayjs(`2000-01-01 ${timeblock.start_time}`);
+      const timeblockEndTime = dayjs(`2000-01-01 ${timeblock.end_time}`);
+
+      // Check if the timeblock date is within the plan date range
+      const isDateValid = timeblockDate.isBetween(
+        planStartDate,
+        planEndDate,
+        'day',
+        '[]'
+      );
+
+      // Check if the timeblock time overlaps with the plan time range
+      const isTimeValid =
+        timeblockStartTime.isBefore(planEndTime) &&
+        timeblockEndTime.isAfter(planStartTime);
+
+      return isDateValid && isTimeValid;
+    });
+
+    setSelectedTimeBlocks({
+      planId: plan.id,
+      data: validTimeblocks,
+    });
+  }, [plan.dates, plan.start_time, plan.end_time, user?.id]);
 
   const setUser = (planId: string, user: PlatformUser | GuestUser | null) => {
     setSelectedTimeBlocks({
@@ -321,7 +373,7 @@ const TimeBlockingProvider = ({
     const syncTimeBlocks = async () => {
       if (!plan.id || !user?.id) return;
 
-      if (!editing.enabled) return;
+      if (planEditing.isEditing) return;
 
       const serverTimeblocks = await fetchCurrentTimeBlocks(plan?.id);
       const localTimeblocks = selectedTimeBlocks.data;
@@ -330,11 +382,42 @@ const TimeBlockingProvider = ({
       if (serverTimeblocks.length === 0 && localTimeblocks.length === 0) return;
 
       // If server timeblocks are empty and local timeblocks are not,
-      // add all local timeblocks to server
+      // only add local timeblocks that are valid for the current plan
       if (serverTimeblocks.length === 0 && localTimeblocks.length > 0) {
-        await Promise.all(
-          localTimeblocks.map((timeblock) => addTimeBlock(timeblock))
-        );
+        const planStartDate = dayjs(plan.dates?.[0]);
+        const planEndDate = dayjs(plan.dates?.[plan.dates.length - 1]);
+        const planStartTime = plan.start_time
+          ? dayjs(`2000-01-01 ${plan.start_time.split('+')[0]}`)
+          : dayjs('2000-01-01 09:00');
+        const planEndTime = plan.end_time
+          ? dayjs(`2000-01-01 ${plan.end_time.split('+')[0]}`)
+          : dayjs('2000-01-01 17:00');
+
+        const validTimeblocks = localTimeblocks.filter((timeblock) => {
+          const timeblockDate = dayjs(timeblock.date);
+          const timeblockStartTime = dayjs(
+            `2000-01-01 ${timeblock.start_time}`
+          );
+          const timeblockEndTime = dayjs(`2000-01-01 ${timeblock.end_time}`);
+
+          const isDateValid = timeblockDate.isBetween(
+            planStartDate,
+            planEndDate,
+            'day',
+            '[]'
+          );
+          const isTimeValid =
+            timeblockStartTime.isBefore(planEndTime) &&
+            timeblockEndTime.isAfter(planStartTime);
+
+          return isDateValid && isTimeValid;
+        });
+
+        if (validTimeblocks.length > 0) {
+          await Promise.all(
+            validTimeblocks.map((timeblock) => addTimeBlock(timeblock))
+          );
+        }
         return;
       }
 
@@ -413,8 +496,42 @@ const TimeBlockingProvider = ({
       });
     };
 
+    if (editing.enabled) return;
     syncTimeBlocks();
-  }, [plan.id, user, selectedTimeBlocks, editing.enabled]);
+  }, [
+    plan.id,
+    user,
+    selectedTimeBlocks,
+    editing.enabled,
+    editing.mode,
+    planEditing.isEditing,
+  ]);
+
+  const setPlanEditingState = useCallback((isEditing: boolean) => {
+    setPlanEditing({
+      isEditing,
+      lastUpdateTime: isEditing ? Date.now() : undefined,
+    });
+  }, []);
+
+  // Detect when plan data changes (indicating plan editing)
+  useEffect(() => {
+    if (planEditing.lastUpdateTime) {
+      // If we recently set plan editing to true, don't trigger again
+      const timeSinceLastUpdate = Date.now() - planEditing.lastUpdateTime;
+      if (timeSinceLastUpdate < 5000) return; // 5 second cooldown
+    }
+
+    // Set plan editing to false when plan data changes
+    // This indicates that plan editing has finished and the plan has been updated
+    setPlanEditingState(false);
+  }, [
+    plan.dates,
+    plan.start_time,
+    plan.end_time,
+    plan.name,
+    planEditing.lastUpdateTime,
+  ]);
 
   return (
     <TimeBlockContext.Provider
@@ -437,6 +554,8 @@ const TimeBlockingProvider = ({
         edit,
         endEditing,
         setDisplayMode,
+
+        setPlanEditing: setPlanEditingState,
       }}
     >
       {children}
