@@ -282,7 +282,7 @@ export function createPOST(
           outputCost: `$${cost.outputCost.toFixed(8)}`,
           reasoningCost: `$${cost.reasoningCost.toFixed(8)}`,
           totalCost: `$${totalCostUSD.toFixed(8)}`,
-          totalCostVND: `${totalCostVND.toFixed(0)} VND`,
+          totalCostVND: `${totalCostVND.toFixed(2)} VND`,
         },
       });
     } catch (error) {
