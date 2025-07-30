@@ -48,10 +48,14 @@ export async function POST(
   return NextResponse.json({ poll, message: 'Poll created' });
 }
 
-export async function DELETE(req: Request) {
+export async function DELETE(
+  req: Request,
+  { params }: { params: { planId: string } }
+) {
   const sbAdmin = await createAdminClient();
   const supabase = await createClient();
-  const { planId, pollId } = await req.json();
+  const { planId } = params;
+  const { pollId } = await req.json();
 
   try {
     // Get the current user
@@ -69,12 +73,9 @@ export async function DELETE(req: Request) {
     // First, check if the poll exists and get its creator
     const { data: poll, error: pollError } = await sbAdmin
       .from('polls')
-      .select('creator_id, plan_id')
+      .select('creator_id, plan_id, name')
       .eq('id', pollId)
       .single();
-
-    console.log(poll);
-    console.log(pollError);
 
     if (pollError || !poll) {
       return NextResponse.json(
@@ -99,23 +100,8 @@ export async function DELETE(req: Request) {
       );
     }
 
-    // Prevent deletion of the "Where to Meet?" poll
-    const { data: pollToDelete, error: pollNameError } = await sbAdmin
-      .from('polls')
-      .select('name')
-      .eq('id', pollId)
-      .single();
-
-    if (pollNameError) {
-      console.error('Error fetching poll name:', pollNameError);
-      return NextResponse.json(
-        { message: 'Error fetching poll details' },
-        { status: 500 }
-      );
-    }
-
     // If this is the "Where to Meet?" poll, prevent deletion
-    if (pollToDelete?.name === 'Where to Meet?') {
+    if (poll?.name === 'Where to Meet?') {
       return NextResponse.json(
         { message: 'Cannot delete the "Where to Meet?" poll' },
         { status: 403 }
