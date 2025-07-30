@@ -3,6 +3,7 @@
 import AgendaDetails from './agenda-details';
 import EditPlanDialog from './edit-plan-dialog';
 import PlanDetailsPolls from './plan-details-polls';
+import PlanLogin from './plan-login';
 import PlanUserFilter from './plan-user-filter';
 import { useTimeBlocking } from './time-blocking-provider';
 import UnifiedAvailability from './unified-availability';
@@ -101,114 +102,117 @@ export default function PlanDetailsClient({
   }, [plan.id, resolvedTheme]);
 
   return (
-    <div className="flex w-full max-w-6xl flex-col gap-6 p-4 text-foreground md:px-6 lg:gap-14 lg:px-14">
-      <div className="flex w-full flex-col items-center">
-        <UtilityButtons
-          plan={plan}
-          platformUser={platformUser}
-          handlePNG={downloadAsPNG}
-        />
+    <>
+      <div className="flex w-full max-w-6xl flex-col gap-6 p-4 text-foreground md:px-6 lg:gap-14 lg:px-14">
+        <div className="flex w-full flex-col items-center">
+          <UtilityButtons
+            plan={plan}
+            platformUser={platformUser}
+            handlePNG={downloadAsPNG}
+          />
 
-        <div id="plan-ref" className="flex w-full flex-col items-center">
-          <p className="my-4 flex max-w-xl items-center gap-2 text-center text-2xl leading-tight! font-semibold text-balance md:mb-4 lg:text-3xl">
-            {plan.name}{' '}
-            {platformUser?.id === plan.creator_id ? (
-              <EditPlanDialog plan={plan} />
-            ) : null}
-          </p>
-          <div className="mb-4 flex flex-col items-center justify-center gap-2">
-            <div className="flex items-center justify-center gap-2">
-              <Label
-                htmlFor="show-best-times-toggle"
-                className="flex cursor-pointer items-center gap-1 text-sm"
-              >
-                Show Only Best Times
-              </Label>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <span className="ml-1 inline-flex cursor-pointer items-center justify-center">
-                    <CircleQuestionMark size={16} />
-                  </span>
-                </TooltipTrigger>
-                <TooltipContent side="top">
-                  <div>
+          <div id="plan-ref" className="flex w-full flex-col items-center">
+            <p className="my-4 flex max-w-xl items-center gap-2 text-center text-2xl leading-tight! font-semibold text-balance md:mb-4 lg:text-3xl">
+              {plan.name}{' '}
+              {platformUser?.id === plan.creator_id ? (
+                <EditPlanDialog plan={plan} />
+              ) : null}
+            </p>
+            <div className="mb-4 flex flex-col items-center justify-center gap-2">
+              <div className="flex items-center justify-center gap-2">
+                <Label
+                  htmlFor="show-best-times-toggle"
+                  className="flex cursor-pointer items-center gap-1 text-sm"
+                >
+                  Show Only Best Times
+                </Label>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="ml-1 inline-flex cursor-pointer items-center justify-center">
+                      <CircleQuestionMark size={16} />
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent side="top">
                     <div>
-                      <b>Show Only Best Times</b> highlights the time slots that
-                      work best for the most people.
+                      <div>
+                        <b>Show Only Best Times</b> highlights the time slots
+                        that work best for the most people.
+                      </div>
+                      <ul className="mt-2 list-disc pl-4 text-xs">
+                        <li>
+                          Only time slots where <b>2 or more people</b> are
+                          available are highlighted.
+                        </li>
+                        <li>
+                          If you filter by user, this feature is <b>disabled</b>{' '}
+                          (since &quot;best time&quot; only makes sense for
+                          groups).
+                        </li>
+                      </ul>
+                      <div className="mt-2 text-xs text-muted-foreground">
+                        We&apos;re always tweaking this feature for clarity and
+                        usefulness. Let us know if you have feedback!
+                      </div>
                     </div>
-                    <ul className="mt-2 list-disc pl-4 text-xs">
-                      <li>
-                        Only time slots where <b>2 or more people</b> are
-                        available are highlighted.
-                      </li>
-                      <li>
-                        If you filter by user, this feature is <b>disabled</b>{' '}
-                        (since &quot;best time&quot; only makes sense for
-                        groups).
-                      </li>
-                    </ul>
-                    <div className="mt-2 text-xs text-muted-foreground">
-                      We&apos;re always tweaking this feature for clarity and
-                      usefulness. Let us know if you have feedback!
-                    </div>
-                  </div>
-                </TooltipContent>
-              </Tooltip>
-              <Switch
-                id="show-best-times-toggle"
-                checked={showBestTimes}
-                onCheckedChange={() => setShowBestTimes((v) => !v)}
-                disabled={isUserFilterActive}
-              />
-            </div>
-            {noBestTimesFound && (
-              <div className="mt-2 w-full max-w-xl rounded bg-yellow-100 p-2 text-center text-xs text-yellow-900 dark:bg-yellow-900 dark:text-yellow-100">
-                <strong>No best times were found!</strong>
-                <br />
-                Encourage your group to sync up or adjust their availability.
+                  </TooltipContent>
+                </Tooltip>
+                <Switch
+                  id="show-best-times-toggle"
+                  checked={showBestTimes}
+                  onCheckedChange={() => setShowBestTimes((v) => !v)}
+                  disabled={isUserFilterActive}
+                />
               </div>
-            )}
-          </div>
-          <div
-            className={cn(
-              'mt-8 grid w-full grid-cols-1 items-start justify-between gap-4 md:grid-cols-3 md:items-center'
-            )}
-          >
+              {noBestTimesFound && (
+                <div className="mt-2 w-full max-w-xl rounded bg-yellow-100 p-2 text-center text-xs text-yellow-900 dark:bg-yellow-900 dark:text-yellow-100">
+                  <strong>No best times were found!</strong>
+                  <br />
+                  Encourage your group to sync up or adjust their availability.
+                </div>
+              )}
+            </div>
             <div
               className={cn(
-                'md:col-span-2',
-                !plan.where_to_meet && 'md:col-span-full'
+                'mt-8 grid w-full grid-cols-1 items-start justify-between gap-4 md:grid-cols-3 md:items-center'
               )}
             >
-              <UnifiedAvailability
-                plan={plan}
-                timeblocks={timeblocks}
-                platformUser={platformUser}
-                showBestTimes={showBestTimes}
-                onBestTimesStatusByDateAction={setBestTimesStatusByDate}
-              />
+              <div
+                className={cn(
+                  'md:col-span-2',
+                  !plan.where_to_meet && 'md:col-span-full'
+                )}
+              >
+                <UnifiedAvailability
+                  plan={plan}
+                  timeblocks={timeblocks}
+                  showBestTimes={showBestTimes}
+                  onBestTimesStatusByDateAction={setBestTimesStatusByDate}
+                />
+              </div>
+              {plan.where_to_meet && (
+                <PlanDetailsPolls
+                  plan={plan}
+                  polls={polls}
+                  isCreator={isCreator}
+                  platformUser={platformUser}
+                />
+              )}
             </div>
-            {plan.where_to_meet && (
-              <PlanDetailsPolls
-                plan={plan}
-                polls={polls}
-                isCreator={isCreator}
-                platformUser={platformUser}
-              />
-            )}
+
+            <Separator className="my-8" />
+
+            <AgendaDetails plan={plan} platformUser={platformUser} />
           </div>
-
-          <Separator className="my-8" />
-
-          <AgendaDetails plan={plan} platformUser={platformUser} />
         </div>
+        {users.length > 0 && (
+          <>
+            <Separator className="mt-8" />
+            <PlanUserFilter users={users} />
+          </>
+        )}
       </div>
-      {users.length > 0 && (
-        <>
-          <Separator className="mt-8" />
-          <PlanUserFilter users={users} />
-        </>
-      )}
-    </div>
+
+      <PlanLogin plan={plan} platformUser={platformUser} />
+    </>
   );
 }

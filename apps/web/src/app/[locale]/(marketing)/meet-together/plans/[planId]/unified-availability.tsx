@@ -1,10 +1,10 @@
 'use client';
 
 import AllAvailabilities from './all-availabilities';
-import PlanLogin from './plan-login';
+import AvailabilityPlanner from './availability-planner';
+import { useTimeBlocking } from './time-blocking-provider';
 import type { MeetTogetherPlan } from '@tuturuuu/types/primitives/MeetTogetherPlan';
 import type { Timeblock } from '@tuturuuu/types/primitives/Timeblock';
-import type { User } from '@tuturuuu/types/primitives/User';
 import { Button } from '@tuturuuu/ui/button';
 import { Calendar, Users } from '@tuturuuu/ui/icons';
 import { useEffect, useState } from 'react';
@@ -12,7 +12,6 @@ import { useEffect, useState } from 'react';
 interface UnifiedAvailabilityProps {
   plan: MeetTogetherPlan;
   timeblocks: Timeblock[];
-  platformUser: User | null;
   showBestTimes?: boolean;
   onBestTimesStatusByDateAction?: (status: Record<string, boolean>) => void;
 }
@@ -20,11 +19,11 @@ interface UnifiedAvailabilityProps {
 export default function UnifiedAvailability({
   plan,
   timeblocks,
-  platformUser,
   showBestTimes = false,
   onBestTimesStatusByDateAction,
 }: UnifiedAvailabilityProps) {
   const [isEditing, setIsEditing] = useState(false);
+  const { user, setDisplayMode } = useTimeBlocking();
 
   // Auto-switch to everyone's view when showBestTimes is enabled
   // because best times only make sense when viewing everyone's availability
@@ -35,7 +34,11 @@ export default function UnifiedAvailability({
   }, [showBestTimes, isEditing]);
 
   const handleToggleMode = () => {
-    setIsEditing(!isEditing);
+    if (user) {
+      setIsEditing(!isEditing);
+    } else {
+      setDisplayMode('account-switcher');
+    }
   };
 
   return (
@@ -64,7 +67,7 @@ export default function UnifiedAvailability({
       </div>
 
       {isEditing ? (
-        <PlanLogin plan={plan} timeblocks={[]} platformUser={platformUser} />
+        <AvailabilityPlanner plan={plan} timeblocks={[]} disabled={!user} />
       ) : (
         <AllAvailabilities
           plan={plan}
