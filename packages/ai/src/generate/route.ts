@@ -9,12 +9,40 @@ import { cookies } from 'next/headers';
 import { type NextRequest, NextResponse } from 'next/server';
 
 const DEFAULT_MODEL_NAME = 'gemini-2.0-flash';
+
 const ALLOWED_MODELS = [
-  'gemini-2.0-flash',
-  'gemini-2.5-flash',
-  'gemini-2.0-pro',
-  'gemini-2.5-pro',
-] as const;
+  {
+    name: 'gemini-2.0-flash',
+    price: {
+      per1MInputTokens: 0.1,
+      per1MOutputTokens: 0.4,
+      per1MReasoningTokens: 0.4,
+    },
+  },
+  {
+    name: 'gemini-2.5-flash',
+    price: {
+      per1MInputTokens: 0.3,
+      per1MOutputTokens: 2.5,
+      per1MReasoningTokens: 2.5,
+    },
+  },
+  {
+    name: 'gemini-2.5-pro',
+    price: {
+      per1MInputTokens: 1.25,
+      per1MOutputTokens: 10,
+      per1MReasoningTokens: 10,
+    },
+  },
+] as const satisfies {
+  name: string;
+  price: {
+    per1MInputTokens: number;
+    per1MOutputTokens: number;
+    per1MReasoningTokens: number;
+  };
+}[];
 
 export function createPOST(
   options: { serverAPIKeyFallback?: boolean } = {
@@ -43,7 +71,7 @@ export function createPOST(
       };
       configs?: {
         wsId: string;
-        model: (typeof ALLOWED_MODELS)[number];
+        model: (typeof ALLOWED_MODELS)[number]['name'];
         systemPrompt?: string;
         thinkingBudget?: number;
         includeThoughts?: boolean;
@@ -96,7 +124,7 @@ export function createPOST(
         return new Response('Missing model', { status: 400 });
       }
 
-      if (!ALLOWED_MODELS.includes(configs.model)) {
+      if (!ALLOWED_MODELS.some((model) => model.name === configs.model)) {
         console.error('Invalid model');
         return new Response(
           `Invalid model: ${configs.model}\nAllowed models: ${ALLOWED_MODELS.join(', ')}`,
@@ -204,7 +232,57 @@ export function createPOST(
         // console.log(textPart);
       }
 
-      return NextResponse.json(result);
+      // Calculate the cost of the request
+      const model = ALLOWED_MODELS.find(
+        (model) => model.name === configs.model
+      );
+      if (!model) {
+        console.error('Invalid model');
+        return new Response('Invalid model', { status: 400 });
+      }
+
+      if (!result) {
+        console.error('No result');
+        return new Response('No result', { status: 400 });
+      }
+
+      const typedResult = result as {
+        input: string;
+        output: string;
+        usage: {
+          inputTokens: number;
+          outputTokens: number;
+          reasoningTokens: number;
+          totalTokens: number;
+        };
+        finishReason: FinishReason;
+      };
+
+      const cost = {
+        inputCost:
+          (typedResult.usage.inputTokens / 1_000_000) *
+          model.price.per1MInputTokens,
+        outputCost:
+          (typedResult.usage.outputTokens / 1_000_000) *
+          model.price.per1MOutputTokens,
+        reasoningCost:
+          (typedResult.usage.reasoningTokens / 1_000_000) *
+          model.price.per1MReasoningTokens,
+      };
+
+      return NextResponse.json({
+        ...typedResult,
+        cost: {
+          inputCost: `$${cost.inputCost.toFixed(8)}`,
+          outputCost: `$${cost.outputCost.toFixed(8)}`,
+          reasoningCost: `$${cost.reasoningCost.toFixed(8)}`,
+          totalCost: `$${(
+            cost.inputCost +
+            cost.outputCost +
+            cost.reasoningCost
+          ).toFixed(8)}`,
+        },
+      });
     } catch (error) {
       if (error instanceof Error) {
         console.log(error.message);
