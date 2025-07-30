@@ -125,39 +125,42 @@ export function addTimeblocks(
   const newTimeblocks = durationToTimeblocks(dates, tentative);
   if (newTimeblocks.length === 0) return prevTimeblocks;
 
-  let result = prevTimeblocks.filter(isValidTimeblock);
-  const filteredNewTimeblocks = newTimeblocks.filter(isValidTimeblock);
+  // Start with all existing timeblocks
+  let result: Timeblock[] = [...prevTimeblocks];
 
-  // Process each new timeblock
-  for (const newTimeblock of filteredNewTimeblocks) {
-    const newStart = dayjs(`${newTimeblock.date} ${newTimeblock.start_time}`);
-    const newEnd = dayjs(`${newTimeblock.date} ${newTimeblock.end_time}`);
+  // Merge each new timeblock with existing ones
+  for (const newTimeblock of newTimeblocks) {
+    if (!isValidTimeblock(newTimeblock)) continue;
 
-    const processedTimeblocks: Timeblock[] = [];
+    const mergedResult: Timeblock[] = [];
+    let wasProcessed = false;
 
-    // Handle overlaps with existing timeblocks
-    for (const existing of result) {
-      const existingStart = dayjs(`${existing.date} ${existing.start_time}`);
-      const existingEnd = dayjs(`${existing.date} ${existing.end_time}`);
+    for (const existingTimeblock of result) {
+      if (!isValidTimeblock(existingTimeblock)) continue;
 
-      if (existingStart.isBefore(newEnd) && existingEnd.isAfter(newStart)) {
-        // Handle overlap: new timeblock wins, split existing if needed
-        const splitResults = handleTimeblockOverlap(existing, newTimeblock);
-        processedTimeblocks.push(...splitResults);
+      // Check if timeblocks are on the same date and can potentially be merged
+      if (existingTimeblock.date === newTimeblock.date) {
+        const merged = mergeTimeblocks(existingTimeblock, newTimeblock);
+        mergedResult.push(...merged);
+        wasProcessed = true;
       } else {
-        // No overlap, keep both timeblocks
-        processedTimeblocks.push(existing);
-        processedTimeblocks.push(newTimeblock);
+        mergedResult.push(existingTimeblock);
       }
     }
 
-    result = processedTimeblocks;
+    // If the new timeblock wasn't processed (no overlap with existing ones), add it separately
+    if (!wasProcessed) {
+      mergedResult.push(newTimeblock);
+    }
+
+    result = mergedResult;
   }
 
+  // Sort the result by date and time
   return result.sort((a, b) => {
-    const aTime = dayjs(`${a.date} ${a.start_time}`);
-    const bTime = dayjs(`${b.date} ${b.start_time}`);
-    return aTime.diff(bTime);
+    const aDateTime = dayjs(`${a.date} ${a.start_time}`);
+    const bDateTime = dayjs(`${b.date} ${b.start_time}`);
+    return aDateTime.diff(bDateTime);
   });
 }
 
@@ -193,7 +196,7 @@ export function removeTimeblocks(
   return result;
 }
 
-function handleTimeblockOverlap(
+function mergeTimeblocks(
   existing: Timeblock,
   newTimeblock: Timeblock
 ): Timeblock[] {
