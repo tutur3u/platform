@@ -10,7 +10,7 @@ interface YearSummaryStatsProps {
     duration: number;
     sessions: number;
   }>;
-   
+
   formatDuration: (seconds: number) => string;
 }
 
