@@ -1,10 +1,6 @@
 'use client';
 
-import {
-  addTimeblocks,
-  durationToTimeblocks,
-  removeTimeblocks,
-} from '@/utils/timeblock-helper';
+import { addTimeblocks, removeTimeblocks } from '@/utils/timeblock-helper';
 import type { MeetTogetherPlan } from '@tuturuuu/types/primitives/MeetTogetherPlan';
 import type { Timeblock } from '@tuturuuu/types/primitives/Timeblock';
 import type { User as PlatformUser } from '@tuturuuu/types/primitives/User';
@@ -122,7 +118,7 @@ const TimeBlockContext = createContext({
   edit: (
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     _: { mode: 'add' | 'remove'; date: Date; tentativeMode?: boolean },
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any
     __?: any
   ) => {},
   endEditing: () => {},
