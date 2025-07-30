@@ -18,6 +18,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useRef,
   useState,
 } from 'react';
 
@@ -39,10 +40,51 @@ interface EditingParams {
   endDate?: Date;
 }
 
-interface PlanEditingState {
-  isEditing: boolean;
-  lastUpdateTime?: number;
-}
+// Utility function to compare timeblock arrays
+const areTimeBlockArraysEqual = (arr1: Timeblock[], arr2: Timeblock[]) => {
+  if (arr1.length !== arr2.length) return false;
+
+  return arr1.every((tb1) =>
+    arr2.some(
+      (tb2) =>
+        tb1.date === tb2.date &&
+        tb1.start_time === tb2.start_time &&
+        tb1.end_time === tb2.end_time
+    )
+  );
+};
+
+// Utility function to find timeblocks that exist in arr1 but not in arr2
+const findTimeBlocksToRemove = (
+  serverTimeblocks: Timeblock[],
+  localTimeblocks: Timeblock[]
+) => {
+  return serverTimeblocks.filter(
+    (serverTimeblock: Timeblock) =>
+      !localTimeblocks.some(
+        (localTimeblock: Timeblock) =>
+          localTimeblock.date === serverTimeblock.date &&
+          localTimeblock.start_time === serverTimeblock.start_time &&
+          localTimeblock.end_time === serverTimeblock.end_time
+      )
+  );
+};
+
+// Utility function to find timeblocks that exist in arr2 but not in arr1
+const findTimeBlocksToAdd = (
+  localTimeblocks: Timeblock[],
+  serverTimeblocks: Timeblock[]
+) => {
+  return localTimeblocks.filter(
+    (localTimeblock: Timeblock) =>
+      !serverTimeblocks?.some(
+        (serverTimeblock: Timeblock) =>
+          serverTimeblock.date === localTimeblock.date &&
+          serverTimeblock.start_time === localTimeblock.start_time &&
+          serverTimeblock.end_time === localTimeblock.end_time
+      )
+  );
+};
 
 const TimeBlockContext = createContext({
   user: null as PlatformUser | GuestUser | null,
@@ -56,6 +98,7 @@ const TimeBlockContext = createContext({
     enabled: false,
   } as EditingParams,
   displayMode: 'account-switcher' as 'login' | 'account-switcher' | undefined,
+  isDirty: false,
 
   getPreviewUsers: (_: Timeblock[]) =>
     ({ available: [], unavailable: [] }) as {
@@ -78,8 +121,9 @@ const TimeBlockContext = createContext({
           prev: 'login' | 'account-switcher' | undefined
         ) => 'login' | 'account-switcher' | undefined)
   ) => {},
-
-  setPlanEditing: (_: boolean) => {},
+  syncTimeBlocks: () => Promise.resolve(),
+  markAsDirty: () => {},
+  clearDirtyState: () => {},
 });
 
 const TimeBlockingProvider = ({
@@ -163,9 +207,6 @@ const TimeBlockingProvider = ({
     enabled: false,
   });
 
-  const [planEditing, setPlanEditing] = useState<PlanEditingState>({
-    isEditing: false,
-  });
 
   const [user, setInternalUser] = useState<PlatformUser | GuestUser | null>(
     platformUser
@@ -183,46 +224,46 @@ const TimeBlockingProvider = ({
     data: timeblocks.filter((tb) => tb.user_id === user?.id),
   });
 
-  // Update selectedTimeBlocks when plan data changes to filter out invalid timeblocks
+  // Add dirty state tracking
+  const [isDirty, setIsDirty] = useState(false);
+  const initialTimeBlocksRef = useRef<Timeblock[]>([]);
+
+  // Initialize initial timeblocks for comparison
   useEffect(() => {
-    if (!plan.id || !user?.id) return;
+    initialTimeBlocksRef.current = timeblocks.filter(
+      (tb) => tb.user_id === user?.id
+    );
+  }, [timeblocks, user?.id]);
 
-    const planStartDate = dayjs(plan.dates?.[0]);
-    const planEndDate = dayjs(plan.dates?.[plan.dates.length - 1]);
-    const planStartTime = plan.start_time
-      ? dayjs(`2000-01-01 ${plan.start_time.split('+')[0]}`)
-      : dayjs('2000-01-01 09:00');
-    const planEndTime = plan.end_time
-      ? dayjs(`2000-01-01 ${plan.end_time.split('+')[0]}`)
-      : dayjs('2000-01-01 17:00');
+  // Check if current timeblocks differ from initial state
+  useEffect(() => {
+    const currentTimeBlocks = selectedTimeBlocks.data;
+    const initialTimeBlocks = initialTimeBlocksRef.current;
 
-    // Filter timeblocks to only include those that are valid for the current plan
-    const validTimeblocks = selectedTimeBlocks.data.filter((timeblock) => {
-      const timeblockDate = dayjs(timeblock.date);
-      const timeblockStartTime = dayjs(`2000-01-01 ${timeblock.start_time}`);
-      const timeblockEndTime = dayjs(`2000-01-01 ${timeblock.end_time}`);
-
-      // Check if the timeblock date is within the plan date range
-      const isDateValid = timeblockDate.isBetween(
-        planStartDate,
-        planEndDate,
-        'day',
-        '[]'
+    const hasChanges =
+      JSON.stringify(
+        [...currentTimeBlocks].sort((a, b) =>
+          `${a.date}${a.start_time}`.localeCompare(`${b.date}${b.start_time}`)
+        )
+      ) !==
+      JSON.stringify(
+        [...initialTimeBlocks].sort((a, b) =>
+          `${a.date}${a.start_time}`.localeCompare(`${b.date}${b.start_time}`)
+        )
       );
 
-      // Check if the timeblock time overlaps with the plan time range
-      const isTimeValid =
-        timeblockStartTime.isBefore(planEndTime) &&
-        timeblockEndTime.isAfter(planStartTime);
+    setIsDirty(hasChanges);
+  }, [selectedTimeBlocks.data]);
 
-      return isDateValid && isTimeValid;
-    });
+  const markAsDirty = useCallback(() => {
+    setIsDirty(true);
+  }, []);
 
-    setSelectedTimeBlocks({
-      planId: plan.id,
-      data: validTimeblocks,
-    });
-  }, [plan.dates, plan.start_time, plan.end_time, user?.id]);
+  const clearDirtyState = useCallback(() => {
+    setIsDirty(false);
+    // Update initial state to current state
+    initialTimeBlocksRef.current = [...selectedTimeBlocks.data];
+  }, [selectedTimeBlocks.data]);
 
   const setUser = (planId: string, user: PlatformUser | GuestUser | null) => {
     setSelectedTimeBlocks({
@@ -324,43 +365,30 @@ const TimeBlockingProvider = ({
     });
   }, [plan.id, editing]);
 
+  // Page leave warning
   useEffect(() => {
-    const addTimeBlock = async (timeblock: Timeblock) => {
-      if (plan.id !== selectedTimeBlocks.planId) return;
-
-      const data = {
-        user_id: user?.id,
-        password_hash: user?.password_hash,
-        timeblock,
-      };
-
-      await fetch(`/api/meet-together/plans/${plan.id}/timeblocks`, {
-        method: 'POST',
-        body: JSON.stringify(data),
-      });
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (isDirty && user?.id) {
+        e.preventDefault();
+        e.returnValue =
+          'You have unsaved changes. Are you sure you want to leave?';
+        return 'You have unsaved changes. Are you sure you want to leave?';
+      }
     };
 
-    const removeTimeBlock = async (timeblock: Timeblock) => {
-      if (plan.id !== selectedTimeBlocks.planId) return;
-
-      const data = {
-        user_id: user?.id,
-        password_hash: user?.password_hash,
-      };
-
-      await fetch(
-        `/api/meet-together/plans/${plan.id}/timeblocks/${timeblock.id}`,
-        {
-          method: 'DELETE',
-          body: JSON.stringify(data),
-        }
-      );
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
     };
+  }, [isDirty, user?.id]);
+
+  // --- Move syncTimeBlocks outside useEffect and expose it via context ---
+  const syncTimeBlocks = useCallback(async () => {
+    if (!plan.id || !user?.id) return;
 
     const fetchCurrentTimeBlocks = async (planId: string) => {
       const res = await fetch(`/api/meet-together/plans/${planId}/timeblocks`);
       if (!res.ok) return [];
-
       const timeblocks = (await res.json()) as Timeblock[];
       return timeblocks
         ?.flat()
@@ -370,168 +398,79 @@ const TimeBlockingProvider = ({
         );
     };
 
-    const syncTimeBlocks = async () => {
-      if (!plan.id || !user?.id) return;
-
-      if (planEditing.isEditing) return;
-
-      const serverTimeblocks = await fetchCurrentTimeBlocks(plan?.id);
-      const localTimeblocks = selectedTimeBlocks.data;
-
-      if (!serverTimeblocks || !localTimeblocks) return;
-      if (serverTimeblocks.length === 0 && localTimeblocks.length === 0) return;
-
-      // If server timeblocks are empty and local timeblocks are not,
-      // only add local timeblocks that are valid for the current plan
-      if (serverTimeblocks.length === 0 && localTimeblocks.length > 0) {
-        const planStartDate = dayjs(plan.dates?.[0]);
-        const planEndDate = dayjs(plan.dates?.[plan.dates.length - 1]);
-        const planStartTime = plan.start_time
-          ? dayjs(`2000-01-01 ${plan.start_time.split('+')[0]}`)
-          : dayjs('2000-01-01 09:00');
-        const planEndTime = plan.end_time
-          ? dayjs(`2000-01-01 ${plan.end_time.split('+')[0]}`)
-          : dayjs('2000-01-01 17:00');
-
-        const validTimeblocks = localTimeblocks.filter((timeblock) => {
-          const timeblockDate = dayjs(timeblock.date);
-          const timeblockStartTime = dayjs(
-            `2000-01-01 ${timeblock.start_time}`
-          );
-          const timeblockEndTime = dayjs(`2000-01-01 ${timeblock.end_time}`);
-
-          const isDateValid = timeblockDate.isBetween(
-            planStartDate,
-            planEndDate,
-            'day',
-            '[]'
-          );
-          const isTimeValid =
-            timeblockStartTime.isBefore(planEndTime) &&
-            timeblockEndTime.isAfter(planStartTime);
-
-          return isDateValid && isTimeValid;
-        });
-
-        if (validTimeblocks.length > 0) {
-          await Promise.all(
-            validTimeblocks.map((timeblock) => addTimeBlock(timeblock))
-          );
-        }
-        return;
-      }
-
-      // If local timeblocks are empty, remove all server timeblocks
-      if (serverTimeblocks.length > 0 && localTimeblocks.length === 0) {
-        await Promise.all(
-          serverTimeblocks.map((timeblock) => removeTimeBlock(timeblock))
-        );
-        return;
-      }
-
-      // If there are no timeblocks to sync (both local and server have
-      // the same timeblocks), return early
-      if (
-        serverTimeblocks.every((serverTimeblock: Timeblock) =>
-          localTimeblocks.some(
-            (localTimeblock: Timeblock) =>
-              localTimeblock.date === serverTimeblock.date &&
-              localTimeblock.start_time === serverTimeblock.start_time &&
-              localTimeblock.end_time === serverTimeblock.end_time
-          )
-        ) &&
-        localTimeblocks.every((localTimeblock: Timeblock) =>
-          serverTimeblocks.some(
-            (serverTimeblock: Timeblock) =>
-              serverTimeblock.date === localTimeblock.date &&
-              serverTimeblock.start_time === localTimeblock.start_time &&
-              serverTimeblock.end_time === localTimeblock.end_time
-          )
-        ) &&
-        serverTimeblocks.length === localTimeblocks.length
-      )
-        return;
-
-      // For each time block, remove timeblocks that are not on local
-      // and add timeblocks that are not on server
-      const timeblocksToRemove = serverTimeblocks.filter(
-        (serverTimeblock: Timeblock) =>
-          !localTimeblocks.some(
-            (localTimeblock: Timeblock) =>
-              localTimeblock.date === serverTimeblock.date &&
-              localTimeblock.start_time === serverTimeblock.start_time &&
-              localTimeblock.end_time === serverTimeblock.end_time
-          )
-      );
-
-      const timeblocksToAdd = localTimeblocks.filter(
-        (localTimeblock: Timeblock) =>
-          !serverTimeblocks?.some(
-            (serverTimeblock: Timeblock) =>
-              serverTimeblock.date === localTimeblock.date &&
-              serverTimeblock.start_time === localTimeblock.start_time &&
-              serverTimeblock.end_time === localTimeblock.end_time
-          )
-      );
-
-      if (timeblocksToRemove.length === 0 && timeblocksToAdd.length === 0)
-        return;
-
-      if (timeblocksToRemove.length > 0)
-        await Promise.all(
-          timeblocksToRemove.map((timeblock) =>
-            timeblock.id ? removeTimeBlock(timeblock) : null
-          )
-        );
-
-      if (timeblocksToAdd.length > 0)
-        await Promise.all(
-          timeblocksToAdd.map((timeblock) => addTimeBlock(timeblock))
-        );
-
-      const syncedServerTimeblocks = await fetchCurrentTimeBlocks(plan?.id);
-      setSelectedTimeBlocks({
-        planId: plan.id,
-        data: syncedServerTimeblocks,
+    const addTimeBlock = async (timeblock: Timeblock) => {
+      if (plan.id !== selectedTimeBlocks.planId) return;
+      const data = {
+        user_id: user?.id,
+        password_hash: user?.password_hash,
+        timeblock,
+      };
+      await fetch(`/api/meet-together/plans/${plan.id}/timeblocks`, {
+        method: 'POST',
+        body: JSON.stringify(data),
       });
     };
 
-    if (editing.enabled) return;
-    syncTimeBlocks();
-  }, [
-    plan.id,
-    user,
-    selectedTimeBlocks,
-    editing.enabled,
-    editing.mode,
-    planEditing.isEditing,
-  ]);
+    const removeTimeBlock = async (timeblock: Timeblock) => {
+      if (plan.id !== selectedTimeBlocks.planId) return;
+      const data = {
+        user_id: user?.id,
+        password_hash: user?.password_hash,
+      };
+      await fetch(
+        `/api/meet-together/plans/${plan.id}/timeblocks/${timeblock.id}`,
+        {
+          method: 'DELETE',
+          body: JSON.stringify(data),
+        }
+      );
+    };
 
-  const setPlanEditingState = useCallback((isEditing: boolean) => {
-    setPlanEditing({
-      isEditing,
-      lastUpdateTime: isEditing ? Date.now() : undefined,
-    });
-  }, []);
-
-  // Detect when plan data changes (indicating plan editing)
-  useEffect(() => {
-    if (planEditing.lastUpdateTime) {
-      // If we recently set plan editing to true, don't trigger again
-      const timeSinceLastUpdate = Date.now() - planEditing.lastUpdateTime;
-      if (timeSinceLastUpdate < 5000) return; // 5 second cooldown
+    const serverTimeblocks = await fetchCurrentTimeBlocks(plan?.id);
+    const localTimeblocks = selectedTimeBlocks.data;
+    if (!serverTimeblocks || !localTimeblocks) return;
+    if (serverTimeblocks.length === 0 && localTimeblocks.length === 0) return;
+    if (serverTimeblocks.length === 0 && localTimeblocks.length > 0) {
+      await Promise.all(
+        localTimeblocks.map((timeblock) => addTimeBlock(timeblock))
+      );
+      return;
     }
+    if (serverTimeblocks.length > 0 && localTimeblocks.length === 0) {
+      await Promise.all(
+        serverTimeblocks.map((timeblock) => removeTimeBlock(timeblock))
+      );
+      return;
+    }
+    if (areTimeBlockArraysEqual(serverTimeblocks, localTimeblocks)) return;
+    const timeblocksToRemove = findTimeBlocksToRemove(
+      serverTimeblocks,
+      localTimeblocks
+    );
+    const timeblocksToAdd = findTimeBlocksToAdd(
+      localTimeblocks,
+      serverTimeblocks
+    );
+    if (timeblocksToRemove.length === 0 && timeblocksToAdd.length === 0) return;
+    if (timeblocksToRemove.length > 0)
+      await Promise.all(
+        timeblocksToRemove.map((timeblock) =>
+          timeblock.id ? removeTimeBlock(timeblock) : null
+        )
+      );
+    if (timeblocksToAdd.length > 0)
+      await Promise.all(
+        timeblocksToAdd.map((timeblock) => addTimeBlock(timeblock))
+      );
+    const syncedServerTimeblocks = await fetchCurrentTimeBlocks(plan?.id);
+    setSelectedTimeBlocks({
+      planId: plan.id,
+      data: syncedServerTimeblocks,
+    });
+  }, [plan.id, user, selectedTimeBlocks]);
 
-    // Set plan editing to false when plan data changes
-    // This indicates that plan editing has finished and the plan has been updated
-    setPlanEditingState(false);
-  }, [
-    plan.dates,
-    plan.start_time,
-    plan.end_time,
-    plan.name,
-    planEditing.lastUpdateTime,
-  ]);
+  // --- Remove the auto-sync useEffect ---
+  // useEffect(() => { ... if (editing.enabled) return; syncTimeBlocks(); }, [plan.id, user, selectedTimeBlocks, editing.enabled]);
 
   return (
     <TimeBlockContext.Provider
@@ -543,6 +482,7 @@ const TimeBlockingProvider = ({
         selectedTimeBlocks,
         editing,
         displayMode,
+        isDirty,
 
         getPreviewUsers,
         getOpacityForDate,
@@ -554,8 +494,9 @@ const TimeBlockingProvider = ({
         edit,
         endEditing,
         setDisplayMode,
-
-        setPlanEditing: setPlanEditingState,
+        syncTimeBlocks, // Expose syncTimeBlocks in context
+        markAsDirty,
+        clearDirtyState,
       }}
     >
       {children}

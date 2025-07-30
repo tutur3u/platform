@@ -55,7 +55,7 @@ export default function PlanDetailsClient({
 }: PlanDetailsClientProps) {
   const { resolvedTheme } = useTheme();
   const [showBestTimes, setShowBestTimes] = useState(false);
-  const { filteredUserIds, setPlanEditing } = useTimeBlocking();
+  const { filteredUserIds, isDirty } = useTimeBlocking();
 
   // If user filter is active, force best times off
   const isUserFilterActive = filteredUserIds && filteredUserIds.length > 0;
@@ -121,9 +121,19 @@ export default function PlanDetailsClient({
           <p className="my-4 flex max-w-xl items-center gap-2 text-center text-2xl leading-tight! font-semibold text-balance md:mb-4 lg:text-3xl">
             {plan.name}{' '}
             {platformUser?.id === plan.creator_id ? (
-              <EditPlanDialog plan={plan} onEditingChange={setPlanEditing} />
+              <EditPlanDialog plan={plan}  />
             ) : null}
           </p>
+
+          {/* Global dirty state indicator */}
+          {isDirty && (
+            <div className="mb-4 flex items-center gap-2 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:bg-amber-950 dark:text-amber-200">
+              <div className="h-2 w-2 animate-pulse rounded-full bg-amber-500"></div>
+              You have unsaved changes
+            </div>
+          )}
+
+          {/* Show Only Best Times Toggle - Back to original centered position */}
           <div className="mb-4 flex flex-col items-center justify-center gap-2">
             <div className="flex items-center justify-center gap-2">
               <Label
