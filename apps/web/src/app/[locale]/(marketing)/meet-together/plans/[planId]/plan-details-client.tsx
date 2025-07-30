@@ -1,7 +1,6 @@
 'use client';
 
 import AgendaDetails from './agenda-details';
-import EditPlanDialog from './edit-plan-dialog';
 import PlanUserFilter from './plan-user-filter';
 import { useTimeBlocking } from './time-blocking-provider';
 import UnifiedAvailability from './unified-availability';
@@ -14,6 +13,7 @@ import type {
 import type { User } from '@tuturuuu/types/primitives/User';
 import { CircleQuestionMark } from '@tuturuuu/ui/icons';
 import { Label } from '@tuturuuu/ui/label';
+import EditPlanDialog from '@tuturuuu/ui/legacy/tumeet/edit-plan-dialog';
 import { Separator } from '@tuturuuu/ui/separator';
 import { Switch } from '@tuturuuu/ui/switch';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
@@ -55,10 +55,11 @@ export default function PlanDetailsClient({
 }: PlanDetailsClientProps) {
   const { resolvedTheme } = useTheme();
   const [showBestTimes, setShowBestTimes] = useState(false);
-  const { filteredUserIds, isDirty } = useTimeBlocking();
+  const { filteredUserIds, isDirty, resetLocalTimeblocks } = useTimeBlocking();
 
   // If user filter is active, force best times off
   const isUserFilterActive = filteredUserIds && filteredUserIds.length > 0;
+
   useEffect(() => {
     if (isUserFilterActive && showBestTimes) {
       setShowBestTimes(false);
@@ -121,7 +122,12 @@ export default function PlanDetailsClient({
           <p className="my-4 flex max-w-xl items-center gap-2 text-center text-2xl leading-tight! font-semibold text-balance md:mb-4 lg:text-3xl">
             {plan.name}{' '}
             {platformUser?.id === plan.creator_id ? (
-              <EditPlanDialog plan={plan} />
+              <EditPlanDialog
+                plan={plan}
+                onSuccess={() => {
+                  resetLocalTimeblocks();
+                }}
+              />
             ) : null}
           </p>
 

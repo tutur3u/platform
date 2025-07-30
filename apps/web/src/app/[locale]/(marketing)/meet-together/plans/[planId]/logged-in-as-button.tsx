@@ -17,7 +17,6 @@ export default function LoggedInAsButton({
     setDisplayMode,
     isDirty,
     syncTimeBlocks,
-    clearDirtyState,
   } = useTimeBlocking();
   const [isSaving, setIsSaving] = useState(false);
 
@@ -26,7 +25,6 @@ export default function LoggedInAsButton({
     setIsSaving(true);
     try {
       await syncTimeBlocks();
-      clearDirtyState();
     } catch (error) {
       console.error('Failed to save timeblocks:', error);
     } finally {
