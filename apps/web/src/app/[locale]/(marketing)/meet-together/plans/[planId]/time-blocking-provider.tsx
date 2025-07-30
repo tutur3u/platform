@@ -413,7 +413,6 @@ const TimeBlockingProvider = ({
       });
     };
 
-    if (editing.enabled) return;
     syncTimeBlocks();
   }, [plan.id, user, selectedTimeBlocks, editing.enabled]);
 
