@@ -124,6 +124,7 @@ const TimeBlockContext = createContext({
   syncTimeBlocks: () => Promise.resolve(),
   markAsDirty: () => {},
   clearDirtyState: () => {},
+  clearDirtyStateWithTimeblocks: (_: Timeblock[]) => {},
 });
 
 const TimeBlockingProvider = ({
@@ -207,7 +208,6 @@ const TimeBlockingProvider = ({
     enabled: false,
   });
 
-
   const [user, setInternalUser] = useState<PlatformUser | GuestUser | null>(
     platformUser
   );
@@ -264,6 +264,16 @@ const TimeBlockingProvider = ({
     // Update initial state to current state
     initialTimeBlocksRef.current = [...selectedTimeBlocks.data];
   }, [selectedTimeBlocks.data]);
+
+  // Add a function to clear dirty state with specific timeblocks
+  const clearDirtyStateWithTimeblocks = useCallback(
+    (timeblocks: Timeblock[]) => {
+      setIsDirty(false);
+      // Update initial state to the provided timeblocks
+      initialTimeBlocksRef.current = [...timeblocks];
+    },
+    []
+  );
 
   const setUser = (planId: string, user: PlatformUser | GuestUser | null) => {
     setSelectedTimeBlocks({
@@ -429,20 +439,40 @@ const TimeBlockingProvider = ({
     const serverTimeblocks = await fetchCurrentTimeBlocks(plan?.id);
     const localTimeblocks = selectedTimeBlocks.data;
     if (!serverTimeblocks || !localTimeblocks) return;
-    if (serverTimeblocks.length === 0 && localTimeblocks.length === 0) return;
+    if (serverTimeblocks.length === 0 && localTimeblocks.length === 0) {
+      // No changes needed, clear dirty state
+      clearDirtyStateWithTimeblocks([]);
+      return;
+    }
     if (serverTimeblocks.length === 0 && localTimeblocks.length > 0) {
       await Promise.all(
         localTimeblocks.map((timeblock) => addTimeBlock(timeblock))
       );
+      const syncedServerTimeblocks = await fetchCurrentTimeBlocks(plan?.id);
+      setSelectedTimeBlocks({
+        planId: plan.id,
+        data: syncedServerTimeblocks,
+      });
+      clearDirtyStateWithTimeblocks(syncedServerTimeblocks);
       return;
     }
     if (serverTimeblocks.length > 0 && localTimeblocks.length === 0) {
       await Promise.all(
         serverTimeblocks.map((timeblock) => removeTimeBlock(timeblock))
       );
+      const syncedServerTimeblocks = await fetchCurrentTimeBlocks(plan?.id);
+      setSelectedTimeBlocks({
+        planId: plan.id,
+        data: syncedServerTimeblocks,
+      });
+      clearDirtyStateWithTimeblocks(syncedServerTimeblocks);
       return;
     }
-    if (areTimeBlockArraysEqual(serverTimeblocks, localTimeblocks)) return;
+    if (areTimeBlockArraysEqual(serverTimeblocks, localTimeblocks)) {
+      // No changes needed, clear dirty state
+      clearDirtyStateWithTimeblocks(serverTimeblocks);
+      return;
+    }
     const timeblocksToRemove = findTimeBlocksToRemove(
       serverTimeblocks,
       localTimeblocks
@@ -451,7 +481,11 @@ const TimeBlockingProvider = ({
       localTimeblocks,
       serverTimeblocks
     );
-    if (timeblocksToRemove.length === 0 && timeblocksToAdd.length === 0) return;
+    if (timeblocksToRemove.length === 0 && timeblocksToAdd.length === 0) {
+      // No changes needed, clear dirty state
+      clearDirtyStateWithTimeblocks(serverTimeblocks);
+      return;
+    }
     if (timeblocksToRemove.length > 0)
       await Promise.all(
         timeblocksToRemove.map((timeblock) =>
@@ -467,7 +501,10 @@ const TimeBlockingProvider = ({
       planId: plan.id,
       data: syncedServerTimeblocks,
     });
-  }, [plan.id, user, selectedTimeBlocks]);
+
+    // Clear dirty state with the synced timeblocks
+    clearDirtyStateWithTimeblocks(syncedServerTimeblocks);
+  }, [plan.id, user, selectedTimeBlocks, clearDirtyStateWithTimeblocks]);
 
   // --- Remove the auto-sync useEffect ---
   // useEffect(() => { ... if (editing.enabled) return; syncTimeBlocks(); }, [plan.id, user, selectedTimeBlocks, editing.enabled]);
@@ -497,6 +534,7 @@ const TimeBlockingProvider = ({
         syncTimeBlocks, // Expose syncTimeBlocks in context
         markAsDirty,
         clearDirtyState,
+        clearDirtyStateWithTimeblocks,
       }}
     >
       {children}
