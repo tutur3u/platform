@@ -53,8 +53,6 @@ const TimeBlockContext = createContext({
   } as EditingParams,
   displayMode: 'account-switcher' as 'login' | 'account-switcher' | undefined,
   isDirty: false,
-  isAutoSaving: false,
-  autoSaveCountdown: 0,
 
   getPreviewUsers: (_: Timeblock[]) =>
     ({ available: [], unavailable: [] }) as {
@@ -181,7 +179,6 @@ const TimeBlockingProvider = ({
 
   // Add dirty state tracking
   const [isDirty, setIsDirty] = useState(false);
-  const [isAutoSaving, setIsAutoSaving] = useState(false);
   const initialTimeBlocksRef = useRef<Timeblock[]>([]);
 
   // Initialize initial timeblocks for comparison
@@ -526,8 +523,6 @@ const TimeBlockingProvider = ({
         editing,
         displayMode,
         isDirty,
-        isAutoSaving,
-        autoSaveCountdown: 0, // Remove autoSaveCountdown from context
 
         getPreviewUsers,
         getOpacityForDate,

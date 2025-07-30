@@ -3,7 +3,6 @@ import { useTimeBlocking } from './time-blocking-provider';
 import type { MeetTogetherPlan } from '@tuturuuu/types/primitives/MeetTogetherPlan';
 import type { Timeblock } from '@tuturuuu/types/primitives/Timeblock';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
 
 export default function AvailabilityPlanner({
   plan,
@@ -17,27 +16,7 @@ export default function AvailabilityPlanner({
   className?: string;
 }) {
   const t = useTranslations('meet-together-plan-details');
-  const {
-    syncTimeBlocks,
-    isDirty,
-    isAutoSaving,
-    autoSaveCountdown,
-    clearDirtyState,
-  } = useTimeBlocking();
-  const [isSaving, setIsSaving] = useState(false);
-
-  // Handle manual save
-  const handleSave = async () => {
-    setIsSaving(true);
-    try {
-      await syncTimeBlocks();
-      clearDirtyState();
-    } catch (error) {
-      console.error('Failed to save timeblocks:', error);
-    } finally {
-      setIsSaving(false);
-    }
-  };
+  const { isDirty } = useTimeBlocking();
 
   return (
     <div

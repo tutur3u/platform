@@ -55,28 +55,7 @@ export default function PlanDetailsClient({
 }: PlanDetailsClientProps) {
   const { resolvedTheme } = useTheme();
   const [showBestTimes, setShowBestTimes] = useState(false);
-  const {
-    filteredUserIds,
-    isDirty,
-    isAutoSaving,
-    autoSaveCountdown,
-    syncTimeBlocks,
-    clearDirtyState,
-  } = useTimeBlocking();
-  const [isSaving, setIsSaving] = useState(false);
-
-  // Handle manual save
-  const handleSave = async () => {
-    setIsSaving(true);
-    try {
-      await syncTimeBlocks();
-      clearDirtyState();
-    } catch (error) {
-      console.error('Failed to save timeblocks:', error);
-    } finally {
-      setIsSaving(false);
-    }
-  };
+  const { filteredUserIds, isDirty } = useTimeBlocking();
 
   // If user filter is active, force best times off
   const isUserFilterActive = filteredUserIds && filteredUserIds.length > 0;
@@ -150,9 +129,7 @@ export default function PlanDetailsClient({
           {isDirty && (
             <div className="mb-4 flex items-center gap-2 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:bg-amber-950 dark:text-amber-200">
               <div className="h-2 w-2 animate-pulse rounded-full bg-amber-500"></div>
-              {isAutoSaving
-                ? 'Auto-saving changes...'
-                : 'You have unsaved changes'}
+              You have unsaved changes
             </div>
           )}
 

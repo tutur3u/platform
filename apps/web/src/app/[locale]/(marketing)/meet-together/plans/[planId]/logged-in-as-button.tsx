@@ -16,7 +16,6 @@ export default function LoggedInAsButton({
     user: guestUser,
     setDisplayMode,
     isDirty,
-    isAutoSaving,
     syncTimeBlocks,
     clearDirtyState,
   } = useTimeBlocking();
@@ -77,9 +76,9 @@ export default function LoggedInAsButton({
       <Button
         className="mt-2 w-full bg-gradient-to-r from-sky-500 via-blue-500 to-indigo-500 text-white shadow-md hover:from-sky-600 hover:via-blue-600 hover:to-indigo-600 focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 focus:outline-none active:scale-100 disabled:cursor-not-allowed disabled:from-gray-400 disabled:via-gray-400 disabled:to-gray-400"
         onClick={handleSave}
-        disabled={!isDirty || isSaving || isAutoSaving}
+        disabled={!isDirty || isSaving}
       >
-        {isSaving || isAutoSaving ? 'Saving...' : 'Save Changes'}
+        {isSaving ? 'Saving...' : 'Save Changes'}
       </Button>
     </div>
   );
