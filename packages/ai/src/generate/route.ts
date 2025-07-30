@@ -275,6 +275,12 @@ export function createPOST(
       const exchangeRate = 26000; // VND per USD
       const totalCostVND = totalCostUSD * exchangeRate;
 
+      // Format VND cost: show up to 3 decimal places if under 1 VND, otherwise whole number
+      const formattedVNDCost =
+        totalCostVND < 1
+          ? `${totalCostVND.toFixed(3)} VND`
+          : `${totalCostVND.toFixed(0)} VND`;
+
       return NextResponse.json({
         ...typedResult,
         cost: {
@@ -282,7 +288,7 @@ export function createPOST(
           outputCost: `$${cost.outputCost.toFixed(8)}`,
           reasoningCost: `$${cost.reasoningCost.toFixed(8)}`,
           totalCost: `$${totalCostUSD.toFixed(8)}`,
-          totalCostVND: `${totalCostVND.toFixed(2)} VND`,
+          totalCostVND: formattedVNDCost,
         },
       });
     } catch (error) {
