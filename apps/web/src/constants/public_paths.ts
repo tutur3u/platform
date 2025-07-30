@@ -21,6 +21,7 @@ export const APP_PUBLIC_PATHS = [
   '/ai/chats',
   '/qr-generator',
   '/documents',
+  '/tumeet',
   '/meet-together',
   '/visualizations/horse-racing',
 ].reduce((acc: string[], path) => {

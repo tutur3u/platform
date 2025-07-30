@@ -10,7 +10,7 @@
     "ui": "bunx shadcn-ui@latest"
   },
   "dependencies": {
-    "@hookform/resolvers": "^5.2.0",
+    "@hookform/resolvers": "^5.2.1",
     "@lucide/lab": "^0.1.2",
     "@radix-ui/react-accordion": "^1.2.11",
     "@radix-ui/react-alert-dialog": "^1.1.14",
@@ -94,7 +94,7 @@
     "@tuturuuu/typescript-config": "workspace:*",
     "@types/lodash": "^4.17.20",
     "@types/node": "^24.1.0",
-    "@types/react": "^19.1.8",
+    "@types/react": "^19.1.9",
     "@types/react-resizable": "^3.0.8",
     "@types/react-syntax-highlighter": "^15.5.13",
     "autoprefixer": "^10.4.21",

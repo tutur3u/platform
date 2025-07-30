@@ -2,7 +2,6 @@
 
 import AllAvailabilities from './all-availabilities';
 import PlanLogin from './plan-login';
-import { useTimeBlocking } from './time-blocking-provider';
 import type { MeetTogetherPlan } from '@tuturuuu/types/primitives/MeetTogetherPlan';
 import type { Timeblock } from '@tuturuuu/types/primitives/Timeblock';
 import type { User } from '@tuturuuu/types/primitives/User';
@@ -25,11 +24,7 @@ export default function UnifiedAvailability({
   showBestTimes = false,
   onBestTimesStatusByDateAction,
 }: UnifiedAvailabilityProps) {
-  const { user } = useTimeBlocking();
   const [isEditing, setIsEditing] = useState(false);
-
-  // Determine if user can edit (must be logged in)
-  const canEdit = !!user;
 
   // Auto-switch to everyone's view when showBestTimes is enabled
   // because best times only make sense when viewing everyone's availability
@@ -52,7 +47,7 @@ export default function UnifiedAvailability({
           size="lg"
           onClick={handleToggleMode}
           className="flex items-center gap-2"
-          disabled={!isEditing && (!canEdit || showBestTimes)}
+          disabled={!isEditing && showBestTimes}
         >
           {isEditing ? (
             <>
