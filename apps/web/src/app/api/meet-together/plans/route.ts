@@ -33,8 +33,6 @@ export async function POST(req: Request) {
     data: { user },
   } = await supabase.auth.getUser();
 
-
-
   // Backend validation: ensure end_time is after start_time
   if (data.start_time && data.end_time) {
     const startHour = parseTimeFromTimetz(data.start_time);
@@ -51,7 +49,7 @@ export async function POST(req: Request) {
       );
     }
   }
-  
+
   const { data: plan, error } = await sbAdmin
     .from('meet_together_plans')
     .insert({ ...data, creator_id: user?.id })
