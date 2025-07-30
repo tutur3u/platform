@@ -6,6 +6,7 @@ import TimeColumn from './time-column';
 import { timetzToHour } from '@/utils/date-helper';
 import type { Timeblock } from '@tuturuuu/types/primitives/Timeblock';
 import { Tabs, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
+import { useState } from 'react';
 
 export default function DatePlanner({
   timeblocks,
@@ -26,14 +27,8 @@ export default function DatePlanner({
   showBestTimes?: boolean;
   onBestTimesStatusByDateAction?: (status: Record<string, boolean>) => void;
 }) {
-  const {
-    user,
-    editing,
-    endEditing,
-    setPreviewDate,
-    tentativeMode,
-    setTentativeMode,
-  } = useTimeBlocking();
+  const { user, editing, endEditing, setPreviewDate } = useTimeBlocking();
+  const [tentativeMode, setTentativeMode] = useState(false);
 
   const startHour = timetzToHour(start);
   const endHour = timetzToHour(end);
@@ -120,6 +115,7 @@ export default function DatePlanner({
               editable={editable}
               disabled={editable ? (user ? disabled : true) : disabled}
               showBestTimes={showBestTimes}
+              tentativeMode={tentativeMode}
               onBestTimesStatusByDateAction={onBestTimesStatusByDateAction}
             />
           </div>

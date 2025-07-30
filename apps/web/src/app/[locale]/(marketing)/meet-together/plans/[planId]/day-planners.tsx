@@ -12,6 +12,7 @@ export default function DayPlanners({
   editable,
   disabled,
   showBestTimes = false,
+  tentativeMode = false,
   onBestTimesStatusByDateAction,
 }: {
   timeblocks: Timeblock[];
@@ -21,6 +22,7 @@ export default function DayPlanners({
   editable: boolean;
   disabled: boolean;
   showBestTimes?: boolean;
+  tentativeMode?: boolean;
   onBestTimesStatusByDateAction?: (status: Record<string, boolean>) => void;
 }) {
   const { editing } = useTimeBlocking();
@@ -45,7 +47,7 @@ export default function DayPlanners({
     []
   );
 
-  function preventScroll(e: any) {
+  function preventScroll(e: Event) {
     e.preventDefault();
     return false;
   }
@@ -114,6 +116,7 @@ export default function DayPlanners({
           disabled={disabled}
           timeblocks={timeblocks.filter((tb) => tb.date === d)}
           showBestTimes={showBestTimes}
+          tentativeMode={tentativeMode}
           globalMaxAvailable={globalMaxAvailable}
           onBestTimesStatus={(hasBestTimes) =>
             handleBestTimesStatus(d, hasBestTimes)

@@ -37,6 +37,7 @@ interface EditingParams {
   initialTouch?: { x: number; y: number };
   startDate?: Date;
   endDate?: Date;
+  tentativeMode?: boolean;
 }
 
 const TimeBlockContext = createContext({
@@ -50,7 +51,6 @@ const TimeBlockContext = createContext({
   editing: {
     enabled: false,
   } as EditingParams,
-  tentativeMode: false,
   displayMode: 'account-switcher' as 'login' | 'account-switcher' | undefined,
 
   getPreviewUsers: (_: Timeblock[]) =>
@@ -65,9 +65,11 @@ const TimeBlockContext = createContext({
   setFilteredUserIds: (_: string[] | ((prev: string[]) => string[])) => {},
   setPreviewDate: (_: Date | null) => {},
   setSelectedTimeBlocks: (_: { planId?: string; data: Timeblock[] }) => {},
-  edit: (_: { mode: 'add' | 'remove'; date: Date }, __?: any) => {},
+  edit: (
+    _: { mode: 'add' | 'remove'; date: Date; tentativeMode?: boolean },
+    __?: any
+  ) => {},
   endEditing: () => {},
-  setTentativeMode: (_: boolean) => {},
   setDisplayMode: (
     _?:
       | 'login'
@@ -184,8 +186,6 @@ const TimeBlockingProvider = ({
     enabled: false,
   });
 
-  const [tentativeMode, setTentativeMode] = useState(false);
-
   const [user, setInternalUser] = useState<PlatformUser | GuestUser | null>(
     platformUser
   );
@@ -218,23 +218,29 @@ const TimeBlockingProvider = ({
   >();
 
   const edit = useCallback(
-    ({ mode, date }: { mode: 'add' | 'remove'; date: Date }, event?: any) => {
+    (
+      {
+        mode,
+        date,
+        tentativeMode,
+      }: { mode: 'add' | 'remove'; date: Date; tentativeMode?: boolean },
+      event?: any
+    ) => {
       const touch = event?.touches?.[0] as Touch | undefined;
 
       setEditing((prevData) => {
-        const nextMode = prevData?.mode === undefined ? mode : prevData.mode;
+        const nextMode = prevData?.mode ?? mode;
+        const nextTentativeMode = prevData?.tentativeMode ?? tentativeMode;
         const nextTouch =
-          prevData?.initialTouch === undefined
-            ? touch
-              ? {
-                  x: touch.clientX,
-                  y: touch.clientY,
-                }
-              : undefined
-            : prevData.initialTouch;
+          prevData?.initialTouch ??
+          (touch
+            ? {
+                x: touch.clientX,
+                y: touch.clientY,
+              }
+            : undefined);
 
-        const nextStart =
-          prevData?.startDate === undefined ? date : prevData.startDate;
+        const nextStart = prevData?.startDate ?? date;
 
         const touchXDiff =
           (touch?.clientX || 0) - (prevData?.initialTouch?.x || 0);
@@ -258,6 +264,7 @@ const TimeBlockingProvider = ({
           startDate: nextStart,
           endDate: nextEnd,
           initialTouch: nextTouch,
+          tentativeMode: nextTentativeMode,
         };
       });
     },
@@ -278,7 +285,10 @@ const TimeBlockingProvider = ({
       ) as Date[];
 
       if (editing.mode === 'add') {
-        const extraTimeblocks = durationToTimeblocks(dates, tentativeMode);
+        const extraTimeblocks = durationToTimeblocks(
+          dates,
+          editing.tentativeMode ?? false
+        );
         const timeblocks = addTimeblocks(prevTimeblocks.data, extraTimeblocks);
         return {
           planId: plan.id,
@@ -300,7 +310,7 @@ const TimeBlockingProvider = ({
     setEditing({
       enabled: false,
     });
-  }, [plan.id, editing, tentativeMode]);
+  }, [plan.id, editing]);
 
   useEffect(() => {
     const addTimeBlock = async (timeblock: Timeblock) => {
@@ -455,7 +465,6 @@ const TimeBlockingProvider = ({
         selectedTimeBlocks,
         editing,
         displayMode,
-        tentativeMode,
 
         getPreviewUsers,
         getOpacityForDate,
@@ -467,7 +476,6 @@ const TimeBlockingProvider = ({
         edit,
         endEditing,
         setDisplayMode,
-        setTentativeMode,
       }}
     >
       {children}

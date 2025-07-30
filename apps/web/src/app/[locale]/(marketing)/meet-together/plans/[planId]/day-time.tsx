@@ -4,6 +4,7 @@ import type { Timeblock } from '@tuturuuu/types/primitives/Timeblock';
 
 export default function DayTime({
   editable,
+  tentativeMode,
   onBestTimesStatus,
   globalMaxAvailable,
   ...props
@@ -15,10 +16,12 @@ export default function DayTime({
   editable: boolean;
   disabled: boolean;
   showBestTimes?: boolean;
+  tentativeMode?: boolean;
   globalMaxAvailable: number;
   onBestTimesStatus?: (hasBestTimes: boolean) => void;
 }) {
-  if (editable) return <SelectableDayTime {...props} />;
+  if (editable)
+    return <SelectableDayTime {...props} tentativeMode={tentativeMode} />;
   return (
     <PreviewDayTime
       {...props}

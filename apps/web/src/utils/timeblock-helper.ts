@@ -182,6 +182,7 @@ export function _experimentalAddTimeblocks(
       )
     ) {
       lastTB.end_time = currTB.end_time;
+      lastTB.tentative = currTB.tentative;
       continue;
     }
 
@@ -376,6 +377,7 @@ export function addTimeblocks(
       )
     ) {
       lastTB.end_time = currTB.end_time;
+      lastTB.tentative = currTB.tentative;
       continue;
     }
 

@@ -7,13 +7,15 @@ export default function SelectableDayTime({
   start,
   end,
   disabled,
+  tentativeMode = false,
 }: {
   date: string;
   start: number;
   end: number;
   disabled: boolean;
+  tentativeMode?: boolean;
 }) {
-  const { editing, selectedTimeBlocks, edit, setPreviewDate, tentativeMode } =
+  const { editing, selectedTimeBlocks, edit, setPreviewDate } =
     useTimeBlocking();
 
   const hourBlocks = Array.from(Array(Math.floor(end + 1 - start)).keys());
@@ -127,11 +129,21 @@ export default function SelectableDayTime({
 
           const isSelected = isSaved || isLocal || result.type.includes('add');
           const isSelectable = i + hourSplits < array.length && !disabled;
+          const sameMode = result.tentative === tentativeMode;
           const hideBorder = i === 0 || i + hourSplits > array.length - 1;
 
           const editData = {
-            mode: isSelected ? 'remove' : 'add',
+            mode: editing.enabled
+              ? editing.mode || 'add'
+              : isSelected && sameMode
+                ? 'remove'
+                : 'add',
             date: currentDate,
+            tentativeMode: editing.enabled
+              ? editing.tentativeMode
+              : isSelected && sameMode
+                ? undefined
+                : tentativeMode,
           } as const;
 
           return (
@@ -191,13 +203,9 @@ export default function SelectableDayTime({
                       ? isTentative
                         ? 'bg-yellow-500/50'
                         : 'bg-green-500/50'
-                      : isSaved
-                        ? isTentative
-                          ? 'bg-yellow-500/70'
-                          : 'bg-green-500/70'
-                        : isTentative
-                          ? 'bg-yellow-500/70'
-                          : 'bg-green-500/70'
+                      : isTentative
+                        ? 'bg-yellow-500/70'
+                        : 'bg-green-500/70'
                     : isDraft
                       ? 'bg-red-500/50'
                       : 'bg-red-500/20'
