@@ -1,0 +1,73 @@
+---
+title: Generate AI Completion
+---
+
+# POST /api/ai/generate
+
+This public API endpoint allows you to generate text completions using supported AI models (e.g., Gemini). You must provide a valid access ID and access key for authentication.
+
+## Endpoint
+
+```
+POST https://tuturuuu.com/api/ai/generate
+```
+
+## Request Body
+
+Send a JSON object with the following fields:
+
+| Field          | Type   | Required | Description                                                                                                                             |
+| -------------- | ------ | -------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `model`        | string | Yes      | The model to use (supported: `gemini-2.0-flash`, `gemini-2.0-pro`, `gemini-2.5-flash`, `gemini-2.5-pro`). Must be allowed for your key. |
+| `accessId`     | string | Yes      | Your API access ID.                                                                                                                     |
+| `accessKey`    | string | Yes      | Your API access key.                                                                                                                    |
+| `prompt`       | string | Yes      | The prompt text to generate a completion for.                                                                                           |
+| `systemPrompt` | string | No       | (Optional) System instructions for the model.                                                                                           |
+
+## Supported Models
+
+- `gemini-2.0-flash`
+- `gemini-2.0-pro`
+- `gemini-2.5-flash`
+- `gemini-2.5-pro`
+
+## Example Request
+
+```json
+{
+  "model": "gemini-2.5-pro",
+  "accessId": "00000000-0000-0000-0000-000000000000",
+  "accessKey": "00000000-0000-0000-0000-000000000000",
+  "prompt": "The Swedish buyout firm has sold its remaining 22.4 percent stake, almost eighteen months after taking the company public in Finland.",
+  "systemPrompt": "Analyze the sentiment of the text and return a JSON object with the following format: {\"sentiment\": positive|negative|neutral,\"confidence_scores\":{\"positive\": <float between 0.0 and 1.0>, \"negative\": <float between 0.0 and 1.0>, \"neutral\": <float between 0.0 and 1.0>}, \"explanation\": \"<brief explanation of the sentiment>\"}.\n\nEnsure no extra text outside the JSON."
+}
+```
+
+## Example Response
+
+```json
+{
+  "input": "The Swedish buyout firm has sold its remaining 22.4 percent stake, almost eighteen months after taking the company public in Finland.",
+  "output": "{\"sentiment\":\"neutral\",\"confidence_scores\":{\"positive\":0.12,\"negative\":0.10,\"neutral\":0.78},\"explanation\":\"The text is factual and does not express a clear positive or negative sentiment.\"}",
+  "usage": {
+    "inputTokens": 45,
+    "outputTokens": 60,
+    "reasoningTokens": 10,
+    "totalTokens": 115
+  },
+  "finishReason": "stop"
+}
+```
+
+## Errors
+
+- `400 Missing accessId or accessKey` — You must provide both credentials.
+- `400 Invalid model` — The model is not allowed for your key.
+- `400 Invalid accessId or accessKey` — The credentials are invalid.
+- `400 Missing prompt` — The prompt field is required.
+- `400 Missing API key` — Internal error, contact support.
+
+## Notes
+
+- You must have a valid access ID and key with the required model scope.
+- The response includes the original input, the model output, token usage, and the finish reason.
