@@ -100,20 +100,28 @@ const TimeBlockContext = createContext({
   displayMode: 'account-switcher' as 'login' | 'account-switcher' | undefined,
   isDirty: false,
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   getPreviewUsers: (_: Timeblock[]) =>
     ({ available: [], unavailable: [] }) as {
       available: (PlatformUser | GuestUser)[];
       unavailable: (PlatformUser | GuestUser)[];
     },
-  getOpacityForDate: (_: Date, __: Timeblock[]) => 0 as number,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  getOpacityForDate: (_: Date, __: Timeblock[]) => 0 as number | string,
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   setUser: (_: string, __: PlatformUser | GuestUser | null) => {},
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   setFilteredUserIds: (_: string[] | ((prev: string[]) => string[])) => {},
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   setPreviewDate: (_: Date | null) => {},
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   setSelectedTimeBlocks: (_: { planId?: string; data: Timeblock[] }) => {},
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any
   edit: (_: { mode: 'add' | 'remove'; date: Date }, __?: any) => {},
   endEditing: () => {},
   setDisplayMode: (
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     _?:
       | 'login'
       | 'account-switcher'
@@ -122,8 +130,10 @@ const TimeBlockContext = createContext({
         ) => 'login' | 'account-switcher' | undefined)
   ) => {},
   syncTimeBlocks: () => Promise.resolve(),
+  resetLocalTimeblocks: () => Promise.resolve(),
   markAsDirty: () => {},
   clearDirtyState: () => {},
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   clearDirtyStateWithTimeblocks: (_: Timeblock[]) => {},
 });
 
@@ -228,6 +238,10 @@ const TimeBlockingProvider = ({
   const [isDirty, setIsDirty] = useState(false);
   const initialTimeBlocksRef = useRef<Timeblock[]>([]);
 
+  useEffect(() => {
+    setIsDirty(false);
+  }, [plan.dates, plan.start_time, plan.end_time]);
+
   // Initialize initial timeblocks for comparison
   useEffect(() => {
     initialTimeBlocksRef.current = timeblocks.filter(
@@ -291,6 +305,7 @@ const TimeBlockingProvider = ({
   >();
 
   const edit = useCallback(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ({ mode, date }: { mode: 'add' | 'remove'; date: Date }, event?: any) => {
       const touch = event?.touches?.[0] as Touch | undefined;
 
@@ -392,11 +407,8 @@ const TimeBlockingProvider = ({
     };
   }, [isDirty, user?.id]);
 
-  // --- Move syncTimeBlocks outside useEffect and expose it via context ---
-  const syncTimeBlocks = useCallback(async () => {
-    if (!plan.id || !user?.id) return;
-
-    const fetchCurrentTimeBlocks = async (planId: string) => {
+  const fetchCurrentTimeBlocks = useCallback(
+    async (planId: string) => {
       const res = await fetch(`/api/meet-together/plans/${planId}/timeblocks`);
       if (!res.ok) return [];
       const timeblocks = (await res.json()) as Timeblock[];
@@ -406,7 +418,22 @@ const TimeBlockingProvider = ({
           (tb: Timeblock) =>
             tb.user_id === user?.id && tb.is_guest === (user?.is_guest ?? false)
         );
-    };
+    },
+    [user?.id, user?.is_guest]
+  );
+
+  const resetLocalTimeblocks = useCallback(async () => {
+    if (!plan.id || !user?.id) return;
+    const serverTimeblocks = await fetchCurrentTimeBlocks(plan.id);
+    setSelectedTimeBlocks({
+      planId: plan.id,
+      data: serverTimeblocks,
+    });
+    setIsDirty(false);
+  }, [fetchCurrentTimeBlocks, plan.id, user?.id]);
+
+  const syncTimeBlocks = useCallback(async () => {
+    if (!plan.id || !user?.id) return;
 
     const addTimeBlock = async (timeblock: Timeblock) => {
       if (plan.id !== selectedTimeBlocks.planId) return;
@@ -504,7 +531,13 @@ const TimeBlockingProvider = ({
 
     // Clear dirty state with the synced timeblocks
     clearDirtyStateWithTimeblocks(syncedServerTimeblocks);
-  }, [plan.id, user, selectedTimeBlocks, clearDirtyStateWithTimeblocks]);
+  }, [
+    fetchCurrentTimeBlocks,
+    plan.id,
+    user,
+    selectedTimeBlocks,
+    clearDirtyStateWithTimeblocks,
+  ]);
 
   // --- Remove the auto-sync useEffect ---
   // useEffect(() => { ... if (editing.enabled) return; syncTimeBlocks(); }, [plan.id, user, selectedTimeBlocks, editing.enabled]);
@@ -531,7 +564,8 @@ const TimeBlockingProvider = ({
         edit,
         endEditing,
         setDisplayMode,
-        syncTimeBlocks, // Expose syncTimeBlocks in context
+        syncTimeBlocks,
+        resetLocalTimeblocks,
         markAsDirty,
         clearDirtyState,
         clearDirtyStateWithTimeblocks,

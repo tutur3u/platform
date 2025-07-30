@@ -49,6 +49,7 @@ import * as z from 'zod';
 
 interface Props {
   plan: MeetTogetherPlan;
+  onSuccess?: () => void;
   onEditingChange?: (isEditing: boolean) => void;
 }
 
@@ -104,7 +105,11 @@ const convertToTimetz = (
   return `${hour}:00:00${utcOffset < 0 ? '-' : '+'}${paddedOffset}`;
 };
 
-export default function EditPlanDialog({ plan, onEditingChange }: Props) {
+export default function EditPlanDialog({
+  plan,
+  onEditingChange,
+  onSuccess,
+}: Props) {
   const t = useTranslations();
   const router = useRouter();
 
@@ -221,11 +226,12 @@ export default function EditPlanDialog({ plan, onEditingChange }: Props) {
     }
 
     const res = await fetch(`/api/meet-together/plans/${plan.id}`, {
-      method: 'PUT',
+      method: 'PATCH',
       body: JSON.stringify(data),
     });
 
     if (res.ok) {
+      onSuccess?.();
       router.refresh();
       setUpdating(false);
       setIsOpened(false);
@@ -344,7 +350,7 @@ export default function EditPlanDialog({ plan, onEditingChange }: Props) {
                   <FormField
                     control={form.control}
                     name="start_time"
-                    render={({ field }) => (
+                    render={() => (
                       <FormItem>
                         <FormLabel>
                           {t('meet-together.soonest-time-to-meet')}
@@ -372,7 +378,7 @@ export default function EditPlanDialog({ plan, onEditingChange }: Props) {
                   <FormField
                     control={form.control}
                     name="end_time"
-                    render={({ field }) => (
+                    render={() => (
                       <FormItem>
                         <FormLabel>
                           {t('meet-together.latest-time-to-meet')}

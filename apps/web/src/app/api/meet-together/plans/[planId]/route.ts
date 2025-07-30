@@ -105,7 +105,7 @@ function adjustTimeblockTimes(
   return { startTime: newStartTime, endTime: newEndTime, needsAdjustment };
 }
 
-export async function PUT(req: Request, { params }: Params) {
+export async function PATCH(req: Request, { params }: Params) {
   const supabase = await createClient();
   const {
     data: { user },

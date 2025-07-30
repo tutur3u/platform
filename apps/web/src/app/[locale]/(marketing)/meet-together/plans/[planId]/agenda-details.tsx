@@ -47,7 +47,7 @@ export default function AgendaDetails({
       };
 
       const res = await fetch(`/api/meet-together/plans/${plan.id}`, {
-        method: 'PUT',
+        method: 'PATCH',
         body: JSON.stringify(data),
       });
 
