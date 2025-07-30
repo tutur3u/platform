@@ -336,7 +336,6 @@ export interface ChatMessageProps {
   embeddedUrl?: string;
   locale?: string;
   anonymize?: boolean;
-  // eslint-disable-next-line no-unused-vars
   setInput?: (input: string) => void;
 }
 
@@ -540,7 +539,6 @@ export function ChatMessage({
           </blockquote>
         );
       },
-      // eslint-disable-next-line no-unused-vars
       code({
         node,
         className,

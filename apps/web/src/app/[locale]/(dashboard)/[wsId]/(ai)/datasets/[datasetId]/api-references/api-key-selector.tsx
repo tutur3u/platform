@@ -21,7 +21,6 @@ interface ApiKey {
 interface Props {
   wsId: string;
   apiKeys: ApiKey[];
-  // eslint-disable-next-line no-unused-vars
   onSelect?: (value: string) => void;
   defaultValue?: string;
 }
