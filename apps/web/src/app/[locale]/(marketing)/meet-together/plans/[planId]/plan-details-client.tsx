@@ -1,11 +1,10 @@
 'use client';
 
 import AgendaDetails from './agenda-details';
-import AllAvailabilities from './all-availabilities';
 import EditPlanDialog from './edit-plan-dialog';
-import PlanLogin from './plan-login';
 import PlanUserFilter from './plan-user-filter';
 import { useTimeBlocking } from './time-blocking-provider';
+import UnifiedAvailability from './unified-availability';
 import UtilityButtons from './utility-buttons';
 import PlanDetailsPolls from '@/app/[locale]/(marketing)/meet-together/plans/[planId]/plan-details-polls';
 import type {
@@ -18,6 +17,7 @@ import { Label } from '@tuturuuu/ui/label';
 import { Separator } from '@tuturuuu/ui/separator';
 import { Switch } from '@tuturuuu/ui/switch';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
+import { cn } from '@tuturuuu/utils/format';
 import html2canvas from 'html2canvas-pro';
 import { useTheme } from 'next-themes';
 import { useCallback, useEffect, useState } from 'react';
@@ -118,7 +118,7 @@ export default function PlanDetailsClient({
         />
 
         <div id="plan-ref" className="flex w-full flex-col items-center">
-          <p className="my-4 flex max-w-xl items-center gap-2 text-center text-2xl leading-tight! font-semibold md:mb-4 lg:text-3xl">
+          <p className="my-4 flex max-w-xl items-center gap-2 text-center text-2xl leading-tight! font-semibold text-balance md:mb-4 lg:text-3xl">
             {plan.name}{' '}
             {platformUser?.id === plan.creator_id ? (
               <EditPlanDialog plan={plan} />
@@ -187,25 +187,33 @@ export default function PlanDetailsClient({
               </div>
             )}
           </div>
-
-          <div className="mt-8 grid w-full grid-cols-1 items-start justify-between gap-4 md:grid-cols-3 md:items-center">
-            <PlanLogin
-              plan={plan}
-              timeblocks={[]}
-              platformUser={platformUser}
-            />
-            <AllAvailabilities
-              plan={plan}
-              timeblocks={timeblocks}
-              showBestTimes={showBestTimes}
-              onBestTimesStatusByDateAction={setBestTimesStatusByDate}
-            />
-            <PlanDetailsPolls
-              plan={plan}
-              polls={polls}
-              isCreator={isCreator}
-              platformUser={platformUser}
-            />
+          <div
+            className={cn(
+              'mt-8 grid w-full grid-cols-1 items-start justify-between gap-4 md:grid-cols-3 md:items-center'
+            )}
+          >
+            <div
+              className={cn(
+                'md:col-span-2',
+                !plan.where_to_meet && 'md:col-span-full'
+              )}
+            >
+              <UnifiedAvailability
+                plan={plan}
+                timeblocks={timeblocks}
+                platformUser={platformUser}
+                showBestTimes={showBestTimes}
+                onBestTimesStatusByDateAction={setBestTimesStatusByDate}
+              />
+            </div>
+            {plan.where_to_meet && (
+              <PlanDetailsPolls
+                plan={plan}
+                polls={polls}
+                isCreator={isCreator}
+                platformUser={platformUser}
+              />
+            )}
           </div>
 
           {/* Save Button - Positioned below the availability sections */}
