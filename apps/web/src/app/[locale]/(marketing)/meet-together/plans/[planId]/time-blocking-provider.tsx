@@ -207,7 +207,6 @@ const TimeBlockingProvider = ({
     enabled: false,
   });
 
-
   const [user, setInternalUser] = useState<PlatformUser | GuestUser | null>(
     platformUser
   );
