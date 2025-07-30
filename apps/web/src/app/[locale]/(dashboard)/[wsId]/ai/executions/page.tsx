@@ -47,6 +47,8 @@ export default async function WorkspaceAIExecutionsPage({
     AIExecutionAnalyticsService.getAllTimeStats(wsId), // Get all-time stats for total counts
   ]);
 
+  console.log(executionData, analyticsData, allTimeStats);
+
   const { data, count } = executionData;
   const executions = data.map((e) => ({
     ...e,

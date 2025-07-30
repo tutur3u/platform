@@ -219,10 +219,49 @@ export class AIExecutionAnalyticsService {
     dailyStats: AIExecutionDailyStats[];
     modelStats: AIExecutionModelStats[];
   }> {
+    const client = await this.getClient();
+
     const [summary, dailyStats, modelStats] = await Promise.all([
-      this.getSummary(wsId), // No date range = all time
-      this.getDailyStats(wsId), // No date range = all time
-      this.getModelStats(wsId), // No date range = all time
+      // Call database functions directly with NULL dates for all-time data
+      client
+        .rpc('get_ai_execution_summary', {
+          p_ws_id: wsId,
+          p_start_date: undefined,
+          p_end_date: undefined,
+        })
+        .then(({ data, error }) => {
+          if (error) {
+            console.error('Error fetching AI execution summary:', error);
+            return null;
+          }
+          return data?.[0] || null;
+        }),
+      client
+        .rpc('get_ai_execution_daily_stats', {
+          p_ws_id: wsId,
+          p_start_date: undefined,
+          p_end_date: undefined,
+        })
+        .then(({ data, error }) => {
+          if (error) {
+            console.error('Error fetching AI execution daily stats:', error);
+            return [];
+          }
+          return data || [];
+        }),
+      client
+        .rpc('get_ai_execution_model_stats', {
+          p_ws_id: wsId,
+          p_start_date: undefined,
+          p_end_date: undefined,
+        })
+        .then(({ data, error }) => {
+          if (error) {
+            console.error('Error fetching AI execution model stats:', error);
+            return [];
+          }
+          return data || [];
+        }),
     ]);
 
     return {

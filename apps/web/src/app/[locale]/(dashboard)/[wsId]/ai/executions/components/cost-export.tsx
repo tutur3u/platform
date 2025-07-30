@@ -1,6 +1,6 @@
 'use client';
 
-import { calculateCost, formatCost } from '../utils/cost-calculator';
+import { calculateCost } from '../utils/cost-calculator';
 import type { WorkspaceAIExecution } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -10,13 +10,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@tuturuuu/ui/card';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@tuturuuu/ui/select';
 import { Download, FileText, Table } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
