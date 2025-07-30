@@ -1,4 +1,5 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { parseTimeFromTimetz } from '@tuturuuu/utils/time-helper';
 import { NextResponse } from 'next/server';
 
 interface Params {
@@ -8,16 +9,6 @@ interface Params {
 }
 
 // Utility function to parse time from timetz format (e.g., "09:00:00+00")
-const parseTimeFromTimetz = (
-  timetz: string | undefined
-): number | undefined => {
-  if (!timetz) return undefined;
-  const timePart = timetz.split(':')[0];
-  if (!timePart) return undefined;
-  const hour = parseInt(timePart, 10);
-  // Convert 0 to 24 for comparison (which uses 1-24 format)
-  return hour === 0 ? 24 : hour;
-};
 
 export async function PUT(req: Request, { params }: Params) {
   const sbAdmin = await createAdminClient();

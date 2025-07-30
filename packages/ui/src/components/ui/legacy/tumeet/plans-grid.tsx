@@ -63,6 +63,7 @@ export function PlansGrid({
             target="_blank"
             href={`/meet-together/plans/${plan.id?.replace(/-/g, '')}`}
             className="block"
+            rel="noopener"
           >
             {/* Description */}
             {plan.description && (
