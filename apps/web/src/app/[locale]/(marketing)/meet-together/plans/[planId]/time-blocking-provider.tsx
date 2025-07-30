@@ -321,6 +321,8 @@ const TimeBlockingProvider = ({
     const syncTimeBlocks = async () => {
       if (!plan.id || !user?.id) return;
 
+      if (!editing.enabled) return;
+
       const serverTimeblocks = await fetchCurrentTimeBlocks(plan?.id);
       const localTimeblocks = selectedTimeBlocks.data;
 
