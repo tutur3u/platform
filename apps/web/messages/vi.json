@@ -2098,6 +2098,8 @@
     "vote_confirm": "Bạn có chắc chắn muốn gửi phiếu bầu cho những tùy chọn này không?",
     "delete_option": "Xóa Tùy chọn",
     "delete_option_confirm": "Bạn có chắc chắn muốn xóa tùy chọn này không? Hành động này không thể hoàn tác.",
+    "delete_poll": "Xóa Bình chọn",
+    "delete_poll_confirm": "Bạn có chắc chắn muốn xóa bình chọn \"{pollName}\"? Hành động này không thể hoàn tác và sẽ xóa tất cả phiếu bầu và tùy chọn.",
     "delete": "Xóa",
     "enable_where_poll_desc": "Bạn có thể bật tính năng bình chọn 'Nơi gặp mặt' cho kế hoạch của mình.",
     "enable_where_poll": "Bật tính năng bình chọn 'Nơi gặp mặt'"

@@ -14,9 +14,11 @@ import {
 } from '@tuturuuu/ui/accordion';
 import { Button } from '@tuturuuu/ui/button';
 import { useIsMobile } from '@tuturuuu/ui/hooks/use-mobile';
+import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Input } from '@tuturuuu/ui/input';
 import MultipleChoiceVote from '@tuturuuu/ui/legacy/tumeet/multiple-choice-vote';
 import { useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 interface PlanDetailsPollsProps {
@@ -34,7 +36,6 @@ export default function PlanDetailsPolls({
 }: PlanDetailsPollsProps) {
   const t = useTranslations('ws-polls');
   const isMobile = useIsMobile();
-
   if (isMobile) {
     return (
       <Accordion
@@ -79,6 +80,7 @@ function PlanDetailsPollContent({
   // State for new poll input
   const [newPollName, setNewPollName] = useState('');
   const [creating, setCreating] = useState(false);
+  const router = useRouter();
 
   const user = guestUser ?? platformUser;
   const currentUserId = user?.id ?? null;
@@ -103,7 +105,10 @@ function PlanDetailsPollContent({
       headers: { 'Content-Type': 'application/json' },
     });
     if (!res.ok) {
-      console.error('Failed to vote in poll');
+      toast({
+        title: 'Failed to vote',
+        description: 'Please try again',
+      });
       return;
     }
   };
@@ -120,7 +125,10 @@ function PlanDetailsPollContent({
       headers: { 'Content-Type': 'application/json' },
     });
     if (!res.ok) {
-      console.error('Failed to add poll option');
+      toast({
+        title: 'Failed to add poll option',
+        description: 'Please try again',
+      });
       return null;
     }
     const data = await res.json();
@@ -134,14 +142,43 @@ function PlanDetailsPollContent({
         method: 'DELETE',
         body: JSON.stringify({
           userType, // 'PLATFORM' or 'GUEST'
-          //   guestId: userType === 'GUEST' ? user?.id : undefined,
         }),
         headers: { 'Content-Type': 'application/json' },
       }
     );
     if (!res.ok) {
-      console.error('Failed to delete poll option');
+      toast({
+        title: 'Failed to delete poll option',
+        description: 'Please try again',
+      });
     }
+  };
+
+  const onDeletePoll = async (pollId: string) => {
+    const wherePoll = polls?.polls?.[0];
+    if (wherePoll && wherePoll.id === pollId) {
+      toast({
+        title: 'Cannot delete the "Where" poll',
+        description: 'Deleting the "Where" poll is not allowed',
+      });
+      return;
+    }
+
+    const res = await fetch(`/api/meet-together/plans/${plan.id}/poll`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        pollId,
+      }),
+    });
+    if (!res.ok) {
+      toast({
+        title: 'Failed to delete poll',
+        description: 'Please try again',
+      });
+      return;
+    }
+    router.refresh();
   };
 
   const onAddPoll = async () => {
@@ -150,7 +187,6 @@ function PlanDetailsPollContent({
     const res = await fetch(`/api/meet-together/plans/${plan.id}/poll`, {
       method: 'POST',
       body: JSON.stringify({
-        planId: plan.id,
         name: newPollName.trim(),
       }),
       headers: { 'Content-Type': 'application/json' },
@@ -158,11 +194,12 @@ function PlanDetailsPollContent({
     setCreating(false);
     if (res.ok) {
       setNewPollName('');
-      // Ideally refetch poll list here or update state (e.g., call mutate())
-      window.location.reload(); // Simple fallback; replace with your data reload logic if needed
+      router.refresh();
     } else {
-      // Optionally, show error
-      alert('Failed to create poll');
+      toast({
+        title: 'Failed to create poll',
+        description: 'Please try again',
+      });
     }
   };
 
@@ -177,6 +214,7 @@ function PlanDetailsPollContent({
         onAddOption={onAddOption}
         onVote={onVote}
         onDeleteOption={onDeleteOption}
+        onDeletePoll={onDeletePoll}
       />
       {/* ADDITIONAL POLLS */}
       {otherPolls.length > 0 && (
@@ -197,6 +235,7 @@ function PlanDetailsPollContent({
               onAddOption={onAddOption}
               onVote={onVote}
               onDeleteOption={onDeleteOption}
+              onDeletePoll={onDeletePoll}
               className="border-t pt-4"
             />
           ))}
@@ -245,6 +284,7 @@ function DefaultWherePollContent({
   onAddOption,
   onVote,
   onDeleteOption,
+  onDeletePoll,
 }: {
   plan: MeetTogetherPlan;
   isCreator: boolean;
@@ -254,6 +294,7 @@ function DefaultWherePollContent({
   onAddOption: (pollId: string, value: string) => Promise<any>;
   onVote: (pollId: string, optionIds: string[]) => Promise<void>;
   onDeleteOption: (optionId: string) => Promise<void>;
+  onDeletePoll?: (pollId: string) => Promise<void>;
 }) {
   const t = useTranslations('ws-polls');
   if (!plan.where_to_meet && !isCreator) {
@@ -276,7 +317,6 @@ function DefaultWherePollContent({
     );
 
     if (!res.ok) {
-      console.error('Failed to update "where to meet" setting');
     }
   };
 
@@ -292,6 +332,8 @@ function DefaultWherePollContent({
         onAddOption={onAddOption}
         onVote={onVote}
         onDeleteOption={onDeleteOption}
+        // Don't allow deletion of the "Where" poll
+        onDeletePoll={undefined}
       />
     );
   else if (isCreator) {
