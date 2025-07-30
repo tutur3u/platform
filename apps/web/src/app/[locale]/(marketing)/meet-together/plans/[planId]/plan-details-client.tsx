@@ -216,8 +216,6 @@ export default function PlanDetailsClient({
             )}
           </div>
 
-          {/* Save Button - Positioned below the availability sections */}
-
           <Separator className="my-8" />
 
           <AgendaDetails plan={plan} platformUser={platformUser} />
