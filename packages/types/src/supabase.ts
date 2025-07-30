@@ -9467,6 +9467,53 @@ export type Database = {
             };
         Returns: string;
       };
+      get_ai_execution_daily_stats: {
+        Args: { p_ws_id: string; p_start_date?: string; p_end_date?: string };
+        Returns: {
+          date: string;
+          executions: number;
+          total_cost_usd: number;
+          total_tokens: number;
+          input_tokens: number;
+          output_tokens: number;
+          reasoning_tokens: number;
+        }[];
+      };
+      get_ai_execution_model_stats: {
+        Args: { p_ws_id: string; p_start_date?: string; p_end_date?: string };
+        Returns: {
+          model_id: string;
+          executions: number;
+          total_cost_usd: number;
+          total_tokens: number;
+          avg_cost_per_execution: number;
+          avg_tokens_per_execution: number;
+          percentage_of_total: number;
+        }[];
+      };
+      get_ai_execution_monthly_cost: {
+        Args: { p_ws_id: string; p_year?: number; p_month?: number };
+        Returns: {
+          total_cost_usd: number;
+          total_cost_vnd: number;
+          executions: number;
+          avg_daily_cost: number;
+        }[];
+      };
+      get_ai_execution_summary: {
+        Args: { p_ws_id: string; p_start_date?: string; p_end_date?: string };
+        Returns: {
+          total_executions: number;
+          total_cost_usd: number;
+          total_cost_vnd: number;
+          total_tokens: number;
+          total_input_tokens: number;
+          total_output_tokens: number;
+          total_reasoning_tokens: number;
+          avg_cost_per_execution: number;
+          avg_tokens_per_execution: number;
+        }[];
+      };
       get_board_task_tags: {
         Args: { board_id: string };
         Returns: string[];

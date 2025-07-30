@@ -39,7 +39,6 @@ export function GenerateDialog({
   title: string;
   description: string;
   isLoading?: boolean;
-  // eslint-disable-next-line no-unused-vars
   onGenerate: (context: string) => void;
 }) {
   const t = useTranslations();

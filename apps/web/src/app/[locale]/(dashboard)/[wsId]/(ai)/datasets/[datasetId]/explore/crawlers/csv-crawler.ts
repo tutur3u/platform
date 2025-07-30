@@ -5,7 +5,6 @@ interface CsvCrawlerProps {
   url: string;
   headerRow?: number;
   dataStartRow?: number;
-  // eslint-disable-next-line no-unused-vars
   onProgress: (progress: number, status: string) => void;
 }
 

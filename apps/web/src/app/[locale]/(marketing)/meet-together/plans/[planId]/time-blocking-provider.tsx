@@ -101,24 +101,33 @@ const TimeBlockContext = createContext({
   displayMode: 'account-switcher' as 'login' | 'account-switcher' | undefined,
   isDirty: false,
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   getPreviewUsers: (_: Timeblock[]) =>
     ({ available: [], tentative: [], unavailable: [] }) as {
       available: (PlatformUser | GuestUser)[];
       tentative: (PlatformUser | GuestUser)[];
       unavailable: (PlatformUser | GuestUser)[];
     },
-  getOpacityForDate: (_: Date, __: Timeblock[]) => 0 as number,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  getOpacityForDate: (_: Date, __: Timeblock[]) => 0 as number | string,
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   setUser: (_: string, __: PlatformUser | GuestUser | null) => {},
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   setFilteredUserIds: (_: string[] | ((prev: string[]) => string[])) => {},
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   setPreviewDate: (_: Date | null) => {},
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   setSelectedTimeBlocks: (_: { planId?: string; data: Timeblock[] }) => {},
   edit: (
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     _: { mode: 'add' | 'remove'; date: Date; tentativeMode?: boolean },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     __?: any
   ) => {},
   endEditing: () => {},
   setDisplayMode: (
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     _?:
       | 'login'
       | 'account-switcher'
@@ -127,8 +136,11 @@ const TimeBlockContext = createContext({
         ) => 'login' | 'account-switcher' | undefined)
   ) => {},
   syncTimeBlocks: () => Promise.resolve(),
+  resetLocalTimeblocks: () => Promise.resolve(),
   markAsDirty: () => {},
   clearDirtyState: () => {},
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  clearDirtyStateWithTimeblocks: (_: Timeblock[]) => {},
 });
 
 const TimeBlockingProvider = ({
@@ -257,6 +269,10 @@ const TimeBlockingProvider = ({
   const [isDirty, setIsDirty] = useState(false);
   const initialTimeBlocksRef = useRef<Timeblock[]>([]);
 
+  useEffect(() => {
+    setIsDirty(false);
+  }, [plan.dates, plan.start_time, plan.end_time]);
+
   // Initialize initial timeblocks for comparison
   useEffect(() => {
     initialTimeBlocksRef.current = timeblocks.filter(
@@ -294,6 +310,16 @@ const TimeBlockingProvider = ({
     initialTimeBlocksRef.current = [...selectedTimeBlocks.data];
   }, [selectedTimeBlocks.data]);
 
+  // Add a function to clear dirty state with specific timeblocks
+  const clearDirtyStateWithTimeblocks = useCallback(
+    (timeblocks: Timeblock[]) => {
+      setIsDirty(false);
+      // Update initial state to the provided timeblocks
+      initialTimeBlocksRef.current = [...timeblocks];
+    },
+    []
+  );
+
   const setUser = (planId: string, user: PlatformUser | GuestUser | null) => {
     setSelectedTimeBlocks({
       planId,
@@ -316,6 +342,7 @@ const TimeBlockingProvider = ({
         date,
         tentativeMode,
       }: { mode: 'add' | 'remove'; date: Date; tentativeMode?: boolean },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       event?: any
     ) => {
       const touch = event?.touches?.[0] as Touch | undefined;
@@ -421,11 +448,8 @@ const TimeBlockingProvider = ({
     };
   }, [isDirty, user?.id]);
 
-  // --- Move syncTimeBlocks outside useEffect and expose it via context ---
-  const syncTimeBlocks = useCallback(async () => {
-    if (!plan.id || !user?.id) return;
-
-    const fetchCurrentTimeBlocks = async (planId: string) => {
+  const fetchCurrentTimeBlocks = useCallback(
+    async (planId: string) => {
       const res = await fetch(`/api/meet-together/plans/${planId}/timeblocks`);
       if (!res.ok) return [];
       const timeblocks = (await res.json()) as Timeblock[];
@@ -435,7 +459,22 @@ const TimeBlockingProvider = ({
           (tb: Timeblock) =>
             tb.user_id === user?.id && tb.is_guest === (user?.is_guest ?? false)
         );
-    };
+    },
+    [user?.id, user?.is_guest]
+  );
+
+  const resetLocalTimeblocks = useCallback(async () => {
+    if (!plan.id || !user?.id) return;
+    const serverTimeblocks = await fetchCurrentTimeBlocks(plan.id);
+    setSelectedTimeBlocks({
+      planId: plan.id,
+      data: serverTimeblocks,
+    });
+    setIsDirty(false);
+  }, [fetchCurrentTimeBlocks, plan.id, user?.id]);
+
+  const syncTimeBlocks = useCallback(async () => {
+    if (!plan.id || !user?.id) return;
 
     const addTimeBlock = async (timeblock: Timeblock) => {
       if (plan.id !== selectedTimeBlocks.planId) return;
@@ -468,20 +507,40 @@ const TimeBlockingProvider = ({
     const serverTimeblocks = await fetchCurrentTimeBlocks(plan?.id);
     const localTimeblocks = selectedTimeBlocks.data;
     if (!serverTimeblocks || !localTimeblocks) return;
-    if (serverTimeblocks.length === 0 && localTimeblocks.length === 0) return;
+    if (serverTimeblocks.length === 0 && localTimeblocks.length === 0) {
+      // No changes needed, clear dirty state
+      clearDirtyStateWithTimeblocks([]);
+      return;
+    }
     if (serverTimeblocks.length === 0 && localTimeblocks.length > 0) {
       await Promise.all(
         localTimeblocks.map((timeblock) => addTimeBlock(timeblock))
       );
+      const syncedServerTimeblocks = await fetchCurrentTimeBlocks(plan?.id);
+      setSelectedTimeBlocks({
+        planId: plan.id,
+        data: syncedServerTimeblocks,
+      });
+      clearDirtyStateWithTimeblocks(syncedServerTimeblocks);
       return;
     }
     if (serverTimeblocks.length > 0 && localTimeblocks.length === 0) {
       await Promise.all(
         serverTimeblocks.map((timeblock) => removeTimeBlock(timeblock))
       );
+      const syncedServerTimeblocks = await fetchCurrentTimeBlocks(plan?.id);
+      setSelectedTimeBlocks({
+        planId: plan.id,
+        data: syncedServerTimeblocks,
+      });
+      clearDirtyStateWithTimeblocks(syncedServerTimeblocks);
       return;
     }
-    if (areTimeBlockArraysEqual(serverTimeblocks, localTimeblocks)) return;
+    if (areTimeBlockArraysEqual(serverTimeblocks, localTimeblocks)) {
+      // No changes needed, clear dirty state
+      clearDirtyStateWithTimeblocks(serverTimeblocks);
+      return;
+    }
     const timeblocksToRemove = findTimeBlocksToRemove(
       serverTimeblocks,
       localTimeblocks
@@ -490,7 +549,11 @@ const TimeBlockingProvider = ({
       localTimeblocks,
       serverTimeblocks
     );
-    if (timeblocksToRemove.length === 0 && timeblocksToAdd.length === 0) return;
+    if (timeblocksToRemove.length === 0 && timeblocksToAdd.length === 0) {
+      // No changes needed, clear dirty state
+      clearDirtyStateWithTimeblocks(serverTimeblocks);
+      return;
+    }
     if (timeblocksToRemove.length > 0)
       await Promise.all(
         timeblocksToRemove.map((timeblock) =>
@@ -506,7 +569,16 @@ const TimeBlockingProvider = ({
       planId: plan.id,
       data: syncedServerTimeblocks,
     });
-  }, [plan.id, user, selectedTimeBlocks]);
+
+    // Clear dirty state with the synced timeblocks
+    clearDirtyStateWithTimeblocks(syncedServerTimeblocks);
+  }, [
+    fetchCurrentTimeBlocks,
+    plan.id,
+    user,
+    selectedTimeBlocks,
+    clearDirtyStateWithTimeblocks,
+  ]);
 
   // --- Remove the auto-sync useEffect ---
   // useEffect(() => { ... if (editing.enabled) return; syncTimeBlocks(); }, [plan.id, user, selectedTimeBlocks, editing.enabled]);
@@ -533,9 +605,11 @@ const TimeBlockingProvider = ({
         edit,
         endEditing,
         setDisplayMode,
-        syncTimeBlocks, // Expose syncTimeBlocks in context
+        syncTimeBlocks,
+        resetLocalTimeblocks,
         markAsDirty,
         clearDirtyState,
+        clearDirtyStateWithTimeblocks,
       }}
     >
       {children}

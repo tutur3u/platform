@@ -11,12 +11,31 @@ interface Props {
   value: number | undefined;
   onValueChange: (value: number) => void;
   disabledTime?: number | undefined;
+  isStartTime?: boolean; // Add prop to distinguish between start and end time selectors
 }
 
-export function TimeSelector({ value, onValueChange, disabledTime }: Props) {
+export function TimeSelector({
+  value,
+  onValueChange,
+  disabledTime,
+  isStartTime = false,
+}: Props) {
   const locale = useLocale();
 
-  const hours = Array.from({ length: 23 }, (_, index) => index + 1);
+  const hours = Array.from({ length: 24 }, (_, index) => index + 1);
+
+  // Function to determine if a time option should be disabled
+  const isTimeDisabled = (hour: number) => {
+    if (!disabledTime) return false;
+
+    if (isStartTime) {
+      // For start time: disable times that are greater than or equal to the end time
+      return hour >= disabledTime;
+    } else {
+      // For end time: disable times that are less than or equal to the start time
+      return hour <= disabledTime;
+    }
+  };
 
   return (
     <Select
@@ -31,7 +50,7 @@ export function TimeSelector({ value, onValueChange, disabledTime }: Props) {
           <SelectItem
             key={hour}
             value={hour.toString()}
-            disabled={hour === disabledTime}
+            disabled={isTimeDisabled(hour)}
           >
             {hour === 12
               ? '12:00 PM'

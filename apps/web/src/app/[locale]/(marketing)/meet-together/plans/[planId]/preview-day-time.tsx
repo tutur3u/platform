@@ -169,7 +169,13 @@ export default function PreviewDayTime({
                     ? 'bg-green-500/70'
                     : 'bg-green-500/70'
                 : 'bg-foreground/10';
-              cellStyle = { opacity: isSelected ? opacity : 1 };
+              cellStyle = {
+                opacity: isSelected
+                  ? opacity === 'infinity'
+                    ? 1
+                    : opacity
+                  : 1,
+              };
             }
           }
 
