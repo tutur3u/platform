@@ -1,13 +1,13 @@
 import { getColumns } from './columns';
 import { CostExport } from './components/cost-export';
-import { CostManagement } from './components/cost-management';
-import { ExecutionCharts } from './components/execution-charts';
+import { PerformanceMetrics } from './components/performance-metrics';
 import { AIExecutionAnalyticsService } from './services/analytics-service';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { type WorkspaceAIExecution } from '@tuturuuu/types/db';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
+import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { getTranslations } from 'next-intl/server';
 
@@ -36,7 +36,10 @@ export default async function WorkspaceAIExecutionsPage({
     wsId,
   });
 
-  if (withoutPermission('manage_workspace_roles')) {
+  if (
+    wsId !== ROOT_WORKSPACE_ID ||
+    withoutPermission('manage_workspace_roles')
+  ) {
     return <div>You are not allowed to access this page</div>;
   }
 
@@ -63,21 +66,18 @@ export default async function WorkspaceAIExecutionsPage({
         description={t('ws-ai-executions.description')}
       />
       <Separator className="my-4" />
-      <ExecutionCharts
-        executions={data}
-        analyticsData={{
-          ...analyticsData,
-          summary: allTimeStats.summary, // Use all-time summary for total counts
-        }}
-      />
-      <Separator className="my-4" />
-      <CostManagement
-        executions={data}
-        analyticsData={{
-          ...analyticsData,
-          summary: allTimeStats.summary, // Use all-time summary for total counts
-        }}
-      />
+
+      {/* Analytics Dashboard */}
+      <div className="space-y-6">
+        <PerformanceMetrics
+          executions={data}
+          analyticsData={{
+            ...analyticsData,
+            summary: allTimeStats.summary,
+          }}
+        />
+      </div>
+
       <Separator className="my-4" />
       <CostExport executions={data} />
       <Separator className="my-4" />
