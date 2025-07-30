@@ -40,6 +40,52 @@ interface EditingParams {
   endDate?: Date;
 }
 
+// Utility function to compare timeblock arrays
+const areTimeBlockArraysEqual = (arr1: Timeblock[], arr2: Timeblock[]) => {
+  if (arr1.length !== arr2.length) return false;
+
+  return arr1.every((tb1) =>
+    arr2.some(
+      (tb2) =>
+        tb1.date === tb2.date &&
+        tb1.start_time === tb2.start_time &&
+        tb1.end_time === tb2.end_time
+    )
+  );
+};
+
+// Utility function to find timeblocks that exist in arr1 but not in arr2
+const findTimeBlocksToRemove = (
+  serverTimeblocks: Timeblock[],
+  localTimeblocks: Timeblock[]
+) => {
+  return serverTimeblocks.filter(
+    (serverTimeblock: Timeblock) =>
+      !localTimeblocks.some(
+        (localTimeblock: Timeblock) =>
+          localTimeblock.date === serverTimeblock.date &&
+          localTimeblock.start_time === serverTimeblock.start_time &&
+          localTimeblock.end_time === serverTimeblock.end_time
+      )
+  );
+};
+
+// Utility function to find timeblocks that exist in arr2 but not in arr1
+const findTimeBlocksToAdd = (
+  localTimeblocks: Timeblock[],
+  serverTimeblocks: Timeblock[]
+) => {
+  return localTimeblocks.filter(
+    (localTimeblock: Timeblock) =>
+      !serverTimeblocks?.some(
+        (serverTimeblock: Timeblock) =>
+          serverTimeblock.date === localTimeblock.date &&
+          serverTimeblock.start_time === localTimeblock.start_time &&
+          serverTimeblock.end_time === localTimeblock.end_time
+      )
+  );
+};
+
 const TimeBlockContext = createContext({
   user: null as PlatformUser | GuestUser | null,
   planUsers: [] as (PlatformUser | GuestUser)[],
@@ -195,12 +241,12 @@ const TimeBlockingProvider = ({
 
     const hasChanges =
       JSON.stringify(
-        currentTimeBlocks.sort((a, b) =>
+        [...currentTimeBlocks].sort((a, b) =>
           `${a.date}${a.start_time}`.localeCompare(`${b.date}${b.start_time}`)
         )
       ) !==
       JSON.stringify(
-        initialTimeBlocks.sort((a, b) =>
+        [...initialTimeBlocks].sort((a, b) =>
           `${a.date}${a.start_time}`.localeCompare(`${b.date}${b.start_time}`)
         )
       );
@@ -318,64 +364,6 @@ const TimeBlockingProvider = ({
     });
   }, [plan.id, editing]);
 
-  // Auto-save functionality with countdown
-  /**
-  useEffect(() => {
-    if (isDirty && !editing.enabled && user?.id) {
-      // Clear existing timeout and interval
-      if (autoSaveTimeoutRef.current) {
-        clearTimeout(autoSaveTimeoutRef.current);
-      }
-      if (countdownIntervalRef.current) {
-        clearInterval(countdownIntervalRef.current);
-      }
-
-      // Start countdown from 30 seconds
-      setAutoSaveCountdown(30);
-
-      // Update countdown every second
-      countdownIntervalRef.current = setInterval(() => {
-        setAutoSaveCountdown((prev) => {
-          if (prev <= 1) {
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-
-      // Set new timeout for auto-save after 30 seconds
-      autoSaveTimeoutRef.current = setTimeout(async () => {
-        if (isDirty) {
-          setIsAutoSaving(true);
-          try {
-            await syncTimeBlocks();
-            clearDirtyState();
-          } catch (error) {
-            console.error('Auto-save failed:', error);
-          } finally {
-            setIsAutoSaving(false);
-          }
-        }
-      }, 30000); // 30 seconds
-    } else {
-      // Clear countdown when not dirty or editing
-      setAutoSaveCountdown(0);
-      if (countdownIntervalRef.current) {
-        clearInterval(countdownIntervalRef.current);
-      }
-    }
-
-    return () => {
-      if (autoSaveTimeoutRef.current) {
-        clearTimeout(autoSaveTimeoutRef.current);
-      }
-      if (countdownIntervalRef.current) {
-        clearInterval(countdownIntervalRef.current);
-      }
-    };
-  }, [isDirty, editing.enabled, user?.id]);
-  */
-
   // Page leave warning
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
@@ -453,43 +441,14 @@ const TimeBlockingProvider = ({
       );
       return;
     }
-    if (
-      serverTimeblocks.every((serverTimeblock: Timeblock) =>
-        localTimeblocks.some(
-          (localTimeblock: Timeblock) =>
-            localTimeblock.date === serverTimeblock.date &&
-            localTimeblock.start_time === serverTimeblock.start_time &&
-            localTimeblock.end_time === serverTimeblock.end_time
-        )
-      ) &&
-      localTimeblocks.every((localTimeblock: Timeblock) =>
-        serverTimeblocks.some(
-          (serverTimeblock: Timeblock) =>
-            serverTimeblock.date === localTimeblock.date &&
-            serverTimeblock.start_time === localTimeblock.start_time &&
-            serverTimeblock.end_time === localTimeblock.end_time
-        )
-      ) &&
-      serverTimeblocks.length === localTimeblocks.length
-    )
-      return;
-    const timeblocksToRemove = serverTimeblocks.filter(
-      (serverTimeblock: Timeblock) =>
-        !localTimeblocks.some(
-          (localTimeblock: Timeblock) =>
-            localTimeblock.date === serverTimeblock.date &&
-            localTimeblock.start_time === serverTimeblock.start_time &&
-            localTimeblock.end_time === serverTimeblock.end_time
-        )
+    if (areTimeBlockArraysEqual(serverTimeblocks, localTimeblocks)) return;
+    const timeblocksToRemove = findTimeBlocksToRemove(
+      serverTimeblocks,
+      localTimeblocks
     );
-    const timeblocksToAdd = localTimeblocks.filter(
-      (localTimeblock: Timeblock) =>
-        !serverTimeblocks?.some(
-          (serverTimeblock: Timeblock) =>
-            serverTimeblock.date === localTimeblock.date &&
-            serverTimeblock.start_time === localTimeblock.start_time &&
-            serverTimeblock.end_time === localTimeblock.end_time
-        )
+    const timeblocksToAdd = findTimeBlocksToAdd(
+      localTimeblocks,
+      serverTimeblocks
     );
     if (timeblocksToRemove.length === 0 && timeblocksToAdd.length === 0) return;
     if (timeblocksToRemove.length > 0)
