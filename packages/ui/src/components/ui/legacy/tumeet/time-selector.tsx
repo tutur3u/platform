@@ -22,7 +22,7 @@ export function TimeSelector({
 }: Props) {
   const locale = useLocale();
 
-  const hours = Array.from({ length: 23 }, (_, index) => index + 1);
+  const hours = Array.from({ length: 24 }, (_, index) => index + 1);
 
   // Function to determine if a time option should be disabled
   const isTimeDisabled = (hour: number) => {
