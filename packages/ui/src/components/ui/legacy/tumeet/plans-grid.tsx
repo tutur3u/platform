@@ -1,5 +1,6 @@
 'use client';
 
+import { formatTimezoneOffset } from '../../../../utils/date-helper';
 import EditPlanDialog from './edit-plan-dialog';
 import type { MeetTogetherPlanWithParticipants } from './page';
 import UserTime from './user-time';
@@ -44,26 +45,15 @@ export function PlansGrid({
         >
           {/* Header with title and timezone */}
           <div className="mb-5 flex w-full items-center justify-between gap-3">
-            <Link
-              target="_blank"
-              href={`/meet-together/plans/${plan.id?.replace(/-/g, '')}`}
-            >
-              <h3 className="line-clamp-2 flex-1 text-lg leading-tight font-semibold text-foreground transition-colors">
-                {plan.name || t('untitled_plan')}
-              </h3>
-            </Link>
-            <div className="flex items-center gap-2">
-              {plan.start_time && (
-                <div className="rounded-full bg-foreground/10 px-3 py-1 text-xs font-medium whitespace-nowrap text-foreground/80">
-                  GMT
-                  {Intl.NumberFormat('en-US', {
-                    signDisplay: 'always',
-                  }).format(
-                    parseInt(plan.start_time?.split(/[+-]/)?.[1] ?? '0') *
-                      (plan.start_time?.includes('-') ? -1 : 1)
-                  )}
-                </div>
-              )}
+            <h3 className="line-clamp-2 flex-1 text-lg leading-tight font-semibold text-foreground transition-colors">
+              {plan.name || t('untitled_plan')}
+            </h3>
+            {plan.start_time && (
+              <div className="rounded-full bg-foreground/10 px-3 py-1 text-xs font-medium whitespace-nowrap text-foreground/80">
+                {formatTimezoneOffset(plan.start_time)}
+              </div>
+            )}
+            <div>
               <EditPlanDialog plan={plan} />
             </div>
           </div>

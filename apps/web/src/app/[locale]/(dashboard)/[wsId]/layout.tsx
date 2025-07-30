@@ -46,6 +46,7 @@ import {
   Send,
   ShieldUser,
   Sparkles,
+  SquareUserRound,
   SquaresIntersect,
   Star,
   TextSelect,
@@ -53,6 +54,7 @@ import {
   TriangleAlert,
   UserLock,
   Users,
+  VectorSquare,
   Vote,
 } from '@tuturuuu/ui/icons';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
@@ -244,6 +246,18 @@ export default async function Layout({ children, params }: LayoutProps) {
           title: t('sidebar_tabs.tumeet'),
           href: `/${wsId}/tumeet`,
           icon: <SquaresIntersect className="h-5 w-5" />,
+          children: [
+            {
+              title: t('sidebar_tabs.plans'),
+              href: `/${wsId}/tumeet/plans`,
+              icon: <VectorSquare className="h-5 w-5" />,
+            },
+            {
+              title: t('sidebar_tabs.meetings'),
+              href: `/${wsId}/tumeet/meetings`,
+              icon: <SquareUserRound className="h-5 w-5" />,
+            },
+          ],
         },
         {
           title: t('sidebar_tabs.polls'),
@@ -275,9 +289,8 @@ export default async function Layout({ children, params }: LayoutProps) {
             },
             {
               title: t('mail.sent'),
-              href: `/${wsId}/mail`,
+              href: `/${wsId}/mail/sent`,
               icon: <Send className="h-5 w-5" />,
-              aliases: [`/${wsId}/mail/sent`],
             },
             {
               title: t('mail.drafts'),

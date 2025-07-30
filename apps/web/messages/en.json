@@ -804,7 +804,11 @@
     "tumeet": "Tumeet",
     "polls": "Polls",
     "qr_generator": "QR Generator",
-    "posts": "Posts"
+    "posts": "Posts",
+    "tumeet_plans": "TuMeet Plans",
+    "meeting_notes": "Meeting Notes",
+    "meetings": "Meetings",
+    "plans": "Plans"
   },
   "link-shortener": {
     "title": "Link Shortener",
@@ -3790,7 +3794,38 @@
     "original_message": "Original Message",
     "quoted_message": "Quoted Message",
     "original_content_included": "Original message will be included when sent",
-    "quoted_content_included": "Quoted content will be included when sent"
+    "quoted_content_included": "Quoted content will be included when sent",
+    "confidential_mode": "Confidential",
+    "confidential_sender": "[CONFIDENTIAL]",
+    "confidential_recipients": "[CONFIDENTIAL]",
+    "confidential_subject": "[CONFIDENTIAL]",
+    "confidential_email": "[CONFIDENTIAL]",
+    "confidential_content": "Content Hidden",
+    "confidential_content_desc": "Email content is hidden in confidential mode",
+    "ai_draft": "AI Email Draft",
+    "ai_draft_title": "AI Email Assistant",
+    "context": "Context",
+    "context_placeholder": "Describe what you want to communicate...",
+    "recipients": "Recipients",
+    "recipients_placeholder": "Who are you writing to?",
+    "purpose": "Purpose",
+    "purpose_placeholder": "What is the purpose of this email?",
+    "tone": "Tone",
+    "tone_professional": "Professional",
+    "tone_formal": "Formal",
+    "tone_friendly": "Friendly",
+    "tone_casual": "Casual",
+    "generating": "Generating...",
+    "generate_draft": "Generate Draft",
+    "ai_error": "Failed to generate email draft. Please try again.",
+    "generated_subject": "Generated Subject",
+    "generated_content": "Generated Content",
+    "suggestions": "Suggestions",
+    "apply_draft": "Apply Draft",
+    "revise_email": "Revise Email",
+    "revision_placeholder": "Describe how you want to revise the email...",
+    "revising": "Revising...",
+    "revise": "Revise"
   },
   "ws-polls": {
     "plural": "Polls",
@@ -3838,5 +3873,6 @@
     "delete": "Delete",
     "enable_where_poll_desc": "You can enable 'Where to meet' voting for your plan.",
     "enable_where_poll": "Enable 'Where to meet' voting"
-  }
+  },
+  "confidential_mode": "Confidential mode"
 }
