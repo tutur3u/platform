@@ -36,6 +36,10 @@
   ],
   "navigation": [
     {
+      "group": "API References",
+      "pages": ["api-reference/endpoint/generate"]
+    },
+    {
       "group": "Get Started",
       "pages": [
         "introduction",
