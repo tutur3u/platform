@@ -8,7 +8,6 @@ import { useMemo } from 'react';
 
 interface StatsOverviewProps {
   timerStats: TimerStats;
-  // eslint-disable-next-line no-unused-vars
   formatDuration: (seconds: number) => string;
 }
 

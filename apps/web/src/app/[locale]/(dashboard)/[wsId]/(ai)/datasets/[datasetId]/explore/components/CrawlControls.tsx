@@ -10,9 +10,7 @@ interface Props {
   onPause: () => void;
   onResume: () => void;
   onStop: () => void;
-  // eslint-disable-next-line no-unused-vars
   onMaxPagesChange: (value: string) => void;
-  // eslint-disable-next-line no-unused-vars
   onMaxArticlesChange: (value: string) => void;
 }
 

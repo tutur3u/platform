@@ -20,6 +20,7 @@ import {
   Box,
   BriefcaseBusiness,
   Calendar,
+  Cctv,
   ChartArea,
   CircleCheck,
   CircleDollarSign,
@@ -131,6 +132,14 @@ export default async function Layout({ children, params }: LayoutProps) {
             })) ||
             withoutPermission('manage_projects'),
           experimental: 'alpha',
+        },
+        {
+          title: t('sidebar_tabs.ai_executions'),
+          href: `/${wsId}/ai/executions`,
+          icon: <Cctv className="h-5 w-5" />,
+          requireRootWorkspace: true,
+          requireRootMember: true,
+          disabled: withoutPermission('manage_workspace_roles'),
         },
       ],
     },
