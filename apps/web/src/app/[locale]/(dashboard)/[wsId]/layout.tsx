@@ -100,24 +100,9 @@ export default async function Layout({ children, params }: LayoutProps) {
       matchExact: true,
     },
     {
-      title: t('sidebar_tabs.ai_tools'),
-      icon: <Sparkles className="h-5 w-5" />,
+      title: t('sidebar_tabs.ai_lab'),
+      icon: <Box className="h-5 w-5" />,
       children: [
-        {
-          title: t('sidebar_tabs.chat_with_ai'),
-          href: `/${wsId}/chat`,
-          icon: <MessageCircleIcon className="h-5 w-5" />,
-          disabled:
-            ENABLE_AI_ONLY ||
-            !(await verifySecret({
-              forceAdmin: true,
-              wsId,
-              name: 'ENABLE_CHAT',
-              value: 'true',
-            })) ||
-            withoutPermission('ai_chat'),
-          experimental: 'beta',
-        },
         {
           title: t('sidebar_tabs.spark'),
           href: `/${wsId}/ai/spark`,
@@ -134,6 +119,21 @@ export default async function Layout({ children, params }: LayoutProps) {
           experimental: 'alpha',
         },
         {
+          title: t('sidebar_tabs.chat_with_ai'),
+          href: `/${wsId}/chat`,
+          icon: <MessageCircleIcon className="h-5 w-5" />,
+          disabled:
+            ENABLE_AI_ONLY ||
+            !(await verifySecret({
+              forceAdmin: true,
+              wsId,
+              name: 'ENABLE_CHAT',
+              value: 'true',
+            })) ||
+            withoutPermission('ai_chat'),
+          experimental: 'beta',
+        },
+        {
           title: t('sidebar_tabs.ai_executions'),
           href: `/${wsId}/ai/executions`,
           icon: <Cctv className="h-5 w-5" />,
@@ -141,12 +141,6 @@ export default async function Layout({ children, params }: LayoutProps) {
           requireRootMember: true,
           disabled: withoutPermission('manage_workspace_roles'),
         },
-      ],
-    },
-    {
-      title: t('sidebar_tabs.ai_lab'),
-      icon: <Box className="h-5 w-5" />,
-      children: [
         {
           title: t('sidebar_tabs.models'),
           href: `/${wsId}/models`,
