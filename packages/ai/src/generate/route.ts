@@ -5,10 +5,6 @@ import { type FinishReason, streamText } from 'ai';
 import { cookies } from 'next/headers';
 import { type NextRequest, NextResponse } from 'next/server';
 
-export const runtime = 'edge';
-export const maxDuration = 60;
-export const preferredRegion = 'sin1';
-
 const DEFAULT_MODEL_NAME = 'gemini-2.5-flash';
 const ALLOWED_MODELS = [
   'gemini-2.0-flash',
@@ -102,8 +98,12 @@ export function createPOST(
       let result: {
         input: string;
         output: string;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        usage: any;
+        usage: {
+          inputTokens: number;
+          outputTokens: number;
+          reasoningTokens: number;
+          totalTokens: number;
+        };
         finishReason: FinishReason;
       } | null = null;
 
@@ -115,7 +115,12 @@ export function createPOST(
           result = {
             input: prompt,
             output: text,
-            usage,
+            usage: {
+              inputTokens: usage.inputTokens ?? 0,
+              outputTokens: usage.outputTokens ?? 0,
+              reasoningTokens: usage.reasoningTokens ?? 0,
+              totalTokens: usage.totalTokens ?? 0,
+            },
             finishReason,
           };
 
