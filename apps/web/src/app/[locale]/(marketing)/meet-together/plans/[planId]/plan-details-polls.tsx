@@ -144,6 +144,31 @@ function PlanDetailsPollContent({
     }
   };
 
+  const onDeletePoll = async (pollId: string) => {
+    // Prevent deletion of the "Where" poll (first poll in the array)
+    const wherePoll = polls?.polls?.[0];
+    if (wherePoll && wherePoll.id === pollId) {
+      console.error('Cannot delete the "Where" poll');
+      return;
+    }
+
+    const res = await fetch(`/api/meet-together/plans/${plan.id}/poll`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        planId: plan.id,
+        pollId,
+      }),
+    });
+    if (!res.ok) {
+      console.log(res);
+      console.error('Failed to delete poll');
+      return;
+    }
+    // Reload the page to reflect the changes
+    window.location.reload();
+  };
+
   const onAddPoll = async () => {
     if (!newPollName.trim()) return;
     setCreating(true);
@@ -177,6 +202,7 @@ function PlanDetailsPollContent({
         onAddOption={onAddOption}
         onVote={onVote}
         onDeleteOption={onDeleteOption}
+        onDeletePoll={onDeletePoll}
       />
       {/* ADDITIONAL POLLS */}
       {otherPolls.length > 0 && (
@@ -197,6 +223,7 @@ function PlanDetailsPollContent({
               onAddOption={onAddOption}
               onVote={onVote}
               onDeleteOption={onDeleteOption}
+              onDeletePoll={onDeletePoll}
               className="border-t pt-4"
             />
           ))}
@@ -245,6 +272,7 @@ function DefaultWherePollContent({
   onAddOption,
   onVote,
   onDeleteOption,
+  onDeletePoll,
 }: {
   plan: MeetTogetherPlan;
   isCreator: boolean;
@@ -254,6 +282,7 @@ function DefaultWherePollContent({
   onAddOption: (pollId: string, value: string) => Promise<any>;
   onVote: (pollId: string, optionIds: string[]) => Promise<void>;
   onDeleteOption: (optionId: string) => Promise<void>;
+  onDeletePoll?: (pollId: string) => Promise<void>;
 }) {
   const t = useTranslations('ws-polls');
   if (!plan.where_to_meet && !isCreator) {
@@ -292,6 +321,8 @@ function DefaultWherePollContent({
         onAddOption={onAddOption}
         onVote={onVote}
         onDeleteOption={onDeleteOption}
+        // Don't allow deletion of the "Where" poll
+        onDeletePoll={undefined}
       />
     );
   else if (isCreator) {
