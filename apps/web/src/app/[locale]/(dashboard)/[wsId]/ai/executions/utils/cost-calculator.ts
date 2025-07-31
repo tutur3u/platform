@@ -75,8 +75,10 @@ export function formatCost(
   currency: 'USD' | 'VND' = 'USD'
 ): string {
   if (currency === 'USD') {
-    return `$${cost.toFixed(8)}`;
+    return `$${cost.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 8 })}`;
   } else {
-    return cost < 1 ? `${cost.toFixed(3)} VND` : `${cost.toFixed(0)} VND`;
+    return cost < 1
+      ? `${cost.toFixed(3)} VND`
+      : `${cost.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} VND`;
   }
 }
