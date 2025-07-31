@@ -15,7 +15,7 @@ import {
 } from '@tuturuuu/ui/accordion';
 import { useTranslations } from 'next-intl';
 
-export interface PlanDetailsPollsProps {
+export interface SidebarDisplayProps {
   plan: MeetTogetherPlan;
   isCreator: boolean;
   platformUser: User | null;
@@ -29,7 +29,7 @@ export default function SidebarDisplay({
   platformUser,
   polls,
   users,
-}: PlanDetailsPollsProps) {
+}: SidebarDisplayProps) {
   const t = useTranslations('ws-polls');
 
   return (

@@ -5,10 +5,27 @@ import {
   MeetTogetherPlan,
 } from '@tuturuuu/types/primitives/MeetTogetherPlan';
 import { User } from '@tuturuuu/types/primitives/User';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@tuturuuu/ui/accordion';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@tuturuuu/ui/alert-dialog';
 import { Button } from '@tuturuuu/ui/button';
 import { useTimeBlocking } from '@tuturuuu/ui/hooks/time-blocking-provider';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Input } from '@tuturuuu/ui/input';
+import { Trash2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -31,6 +48,14 @@ export function PlanDetailsPollContent({
   // State for new poll input
   const [newPollName, setNewPollName] = useState('');
   const [creating, setCreating] = useState(false);
+  // State for accordion - track which polls are expanded
+  const [expandedPolls, setExpandedPolls] = useState<string[]>([]);
+  // State for delete confirmation dialog
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [pollToDelete, setPollToDelete] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
   const router = useRouter();
 
   const user = guestUser ?? platformUser;
@@ -43,6 +68,15 @@ export function PlanDetailsPollContent({
         : 'DISPLAY';
 
   const otherPolls = polls?.polls?.slice(1) ?? [];
+
+  // Helper functions for accordion management
+  const expandAllPolls = () => {
+    setExpandedPolls(otherPolls.map((poll) => poll.id));
+  };
+
+  const collapseAllPolls = () => {
+    setExpandedPolls([]);
+  };
 
   const onVote = async (pollId: string, optionIds: string[]) => {
     const res = await fetch(`/api/meet-together/plans/${plan.id}/poll/vote`, {
@@ -132,6 +166,33 @@ export function PlanDetailsPollContent({
     router.refresh();
   };
 
+  const handleDeletePollClick = (pollId: string, pollName: string) => {
+    const wherePoll = polls?.polls?.[0];
+    if (wherePoll && wherePoll.id === pollId) {
+      toast({
+        title: 'Cannot delete the "Where" poll',
+        description: 'Deleting the "Where" poll is not allowed',
+      });
+      return;
+    }
+
+    setPollToDelete({ id: pollId, name: pollName });
+    setDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!pollToDelete) return;
+
+    await onDeletePoll(pollToDelete.id);
+    setDeleteDialogOpen(false);
+    setPollToDelete(null);
+  };
+
+  const handleCancelDelete = () => {
+    setDeleteDialogOpen(false);
+    setPollToDelete(null);
+  };
+
   const onAddPoll = async () => {
     if (!newPollName.trim()) return;
     setCreating(true);
@@ -165,31 +226,114 @@ export function PlanDetailsPollContent({
         onAddOption={onAddOption}
         onVote={onVote}
         onDeleteOption={onDeleteOption}
-        onDeletePoll={onDeletePoll}
       />
       {/* ADDITIONAL POLLS */}
       {otherPolls.length > 0 && (
-        <div className="mt-8 space-y-6">
-          <h4 className="mb-2 text-base font-semibold text-foreground">
-            {/* {t('other_polls')} */}
-            Other Polls
-          </h4>
-          {otherPolls.map((poll) => (
-            <MultipleChoiceVote
-              key={poll.id}
-              isCreator={isCreator}
-              pollName={poll.name}
-              pollId={poll.id}
-              options={poll.options}
-              currentUserId={currentUserId}
-              isDisplayMode={userType === 'DISPLAY'}
-              onAddOption={onAddOption}
-              onVote={onVote}
-              onDeleteOption={onDeleteOption}
-              onDeletePoll={onDeletePoll}
-              className="border-t pt-4"
-            />
-          ))}
+        <div className="mt-8 space-y-4">
+          <div className="flex items-center justify-between">
+            <h4 className="text-base font-semibold text-foreground">
+              {/* {t('other_polls')} */}
+              Other Polls
+            </h4>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={expandAllPolls}
+                className="text-xs"
+              >
+                Expand All
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={collapseAllPolls}
+                className="text-xs"
+              >
+                Collapse All
+              </Button>
+            </div>
+          </div>
+          <Accordion
+            type="multiple"
+            value={expandedPolls}
+            onValueChange={setExpandedPolls}
+            className="space-y-2"
+          >
+            {otherPolls.map((poll) => {
+              // Calculate unique voters for this poll
+              const uniqueVoters = (() => {
+                const userVoters = new Set<string>();
+                const guestVoters = new Set<string>();
+
+                poll.options.forEach((option) => {
+                  option.userVotes.forEach((vote) =>
+                    userVoters.add(vote.user_id)
+                  );
+                  option.guestVotes.forEach((vote) =>
+                    guestVoters.add(vote.guest_id)
+                  );
+                });
+
+                return userVoters.size + guestVoters.size;
+              })();
+
+              return (
+                <AccordionItem key={poll.id} value={poll.id}>
+                  <AccordionTrigger className="items-center hover:no-underline">
+                    <div className="flex w-full items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div>
+                          <span className="text-lg font-semibold text-dynamic-purple">
+                            {poll.name}
+                          </span>
+                          {uniqueVoters > 0 && (
+                            <p className="text-xs text-muted-foreground">
+                              {uniqueVoters}{' '}
+                              {uniqueVoters === 1 ? 'voter' : 'voters'}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-muted-foreground">
+                          {poll.options.length} options
+                        </span>
+                        {isCreator && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="text-dynamic-red hover:bg-dynamic-red/10"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeletePollClick(poll.id, poll.name);
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <MultipleChoiceVote
+                      isCreator={isCreator}
+                      pollName={poll.name}
+                      pollId={poll.id}
+                      options={poll.options}
+                      currentUserId={currentUserId}
+                      isDisplayMode={userType === 'DISPLAY'}
+                      onAddOption={onAddOption}
+                      onVote={onVote}
+                      onDeleteOption={onDeleteOption}
+                      className="pt-2"
+                      hideHeader={true}
+                    />
+                  </AccordionContent>
+                </AccordionItem>
+              );
+            })}
+          </Accordion>
         </div>
       )}
       {isCreator && (
@@ -222,6 +366,30 @@ export function PlanDetailsPollContent({
           </div>
         </div>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Poll</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete {pollToDelete?.name}? This action
+              cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleCancelDelete}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDelete}
+              className="bg-dynamic-red text-white hover:bg-dynamic-red/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -14,7 +14,6 @@ export function DefaultWherePollContent({
   onAddOption,
   onVote,
   onDeleteOption,
-  // onDeletePoll,
 }: {
   plan: MeetTogetherPlan;
   isCreator: boolean;
@@ -27,7 +26,6 @@ export function DefaultWherePollContent({
   ) => Promise<PollOptionWithVotes | null>;
   onVote: (pollId: string, optionIds: string[]) => Promise<void>;
   onDeleteOption: (optionId: string) => Promise<void>;
-  onDeletePoll?: (pollId: string) => Promise<void>;
 }) {
   const t = useTranslations('ws-polls');
   if (!plan.where_to_meet && !isCreator) {
@@ -69,8 +67,6 @@ export function DefaultWherePollContent({
         onAddOption={onAddOption}
         onVote={onVote}
         onDeleteOption={onDeleteOption}
-        // Don't allow deletion of the "Where" poll
-        onDeletePoll={undefined}
       />
     );
   else if (isCreator) {
