@@ -1,6 +1,5 @@
 import { useTimeBlocking } from './time-blocking-provider';
 import { timetzToTime } from '@/utils/date-helper';
-import type { Timeblock } from '@tuturuuu/types/primitives/Timeblock';
 import { cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
 
