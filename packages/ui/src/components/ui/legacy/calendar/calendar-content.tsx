@@ -1,3 +1,11 @@
+import { CalendarHeader } from './calendar-header';
+import { CalendarViewWithTrail } from './calendar-view-with-trail';
+import { CreateEventButton } from './create-event-button';
+import { EventModal } from './event-modal';
+import { MonthCalendar } from './month-calendar';
+import { SettingsButton } from './settings-button';
+import type { CalendarSettings } from './settings/settings-context';
+import { WeekdayBar } from './weekday-bar';
 import type {
   Workspace,
   WorkspaceCalendarGoogleToken,
@@ -7,14 +15,6 @@ import { useCalendarSync } from '@tuturuuu/ui/hooks/use-calendar-sync';
 import type { CalendarView } from '@tuturuuu/ui/hooks/use-view-transition';
 import { useViewTransition } from '@tuturuuu/ui/hooks/use-view-transition';
 import { useCallback, useEffect, useState } from 'react';
-import { CalendarHeader } from './calendar-header';
-import { CalendarViewWithTrail } from './calendar-view-with-trail';
-import { CreateEventButton } from './create-event-button';
-import { EventModal } from './event-modal';
-import { MonthCalendar } from './month-calendar';
-import type { CalendarSettings } from './settings/settings-context';
-import { SettingsButton } from './settings-button';
-import { WeekdayBar } from './weekday-bar';
 
 function getMonthGridDates(date: Date, firstDayOfWeek: number): Date[] {
   const newDate = new Date(date);
@@ -474,7 +474,7 @@ export const CalendarContent = ({
               </div>
             </div>
           </div>
-          <div className="scrollbar-none relative flex-1 overflow-auto bg-background/50">
+          <div className="relative scrollbar-none flex-1 overflow-auto bg-background/50">
             <div className="flex h-full">
               <div className="w-16">
                 {Array.from({ length: 24 }).map((_, i) => (
@@ -543,11 +543,11 @@ export const CalendarContent = ({
               <WeekdayBar locale={locale} view={view} dates={dates} />
             </div>
           )}
-          <div className="scrollbar-none relative flex-1 overflow-auto bg-background/50">
+          <div className="relative scrollbar-none flex-1 overflow-auto bg-background/50">
             <div className="flex h-full items-center justify-center">
               <div className="flex flex-col items-center gap-4">
                 <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-                <p className="text-muted-foreground text-sm">
+                <p className="text-sm text-muted-foreground">
                   {isLoading
                     ? 'Loading calendar data...'
                     : 'Syncing calendar...'}

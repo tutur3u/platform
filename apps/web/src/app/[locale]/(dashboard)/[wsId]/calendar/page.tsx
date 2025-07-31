@@ -1,12 +1,12 @@
+import { CalendarActiveSyncDebugger } from './active-sync';
+import CalendarPageClient from './calendar-page-client';
+import { CalendarStateProvider } from './calendar-state-context';
+import { DEV_MODE } from '@/constants/common';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { CalendarSyncProvider } from '@tuturuuu/ui/hooks/use-calendar-sync';
 import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { redirect } from 'next/navigation';
-import { DEV_MODE } from '@/constants/common';
-import { CalendarActiveSyncDebugger } from './active-sync';
-import CalendarPageClient from './calendar-page-client';
-import { CalendarStateProvider } from './calendar-state-context';
 
 interface PageProps {
   params: Promise<{
@@ -15,9 +15,7 @@ interface PageProps {
   }>;
 }
 
-export default async function CalendarPage({
-  params,
-}: PageProps) {
+export default async function CalendarPage({ params }: PageProps) {
   const { wsId, locale } = await params;
   const workspace = await getWorkspace(wsId);
 

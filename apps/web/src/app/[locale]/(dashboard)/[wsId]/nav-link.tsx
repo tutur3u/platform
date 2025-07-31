@@ -1,11 +1,11 @@
 'use client';
 
+import type { NavLink as NavLinkType } from '@/components/navigation';
 import { ChevronRight } from '@tuturuuu/ui/icons';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import type { NavLink as NavLinkType } from '@/components/navigation';
 
 interface NavLinkProps {
   wsId: string;
@@ -63,7 +63,7 @@ export function NavLink({
 
   const commonProps = {
     className: cn(
-      'flex cursor-pointer items-center justify-between rounded-md p-2 font-medium text-sm',
+      'flex cursor-pointer items-center justify-between rounded-md p-2 text-sm font-medium',
       isCollapsed && 'justify-center',
       isActive && 'bg-accent text-accent-foreground',
       link.isBack && 'mb-2 cursor-pointer',
@@ -71,15 +71,15 @@ export function NavLink({
         ? 'cursor-default opacity-50'
         : 'hover:bg-accent hover:text-accent-foreground'
     ),
-          onClick: () => {
-        if (onLinkClick) {
-          onLinkClick();
-        } else if (hasChildren && children) {
-          onSubMenuClick(children, title);
-        } else if (href) {
-          onClick();
-        }
-      },
+    onClick: () => {
+      if (onLinkClick) {
+        onLinkClick();
+      } else if (hasChildren && children) {
+        onSubMenuClick(children, title);
+      } else if (href) {
+        onClick();
+      }
+    },
   };
 
   const linkElement = href ? (

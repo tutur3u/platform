@@ -1,11 +1,11 @@
 'use client';
 
+import { DEV_MODE } from '@/constants/common';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@tuturuuu/ui/button';
 import { SmartCalendar } from '@tuturuuu/ui/legacy/calendar/smart-calendar';
-import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
-import { DEV_MODE } from '@/constants/common';
+import Link from 'next/link';
 
 export default function Home() {
   const t = useTranslations('calendar');

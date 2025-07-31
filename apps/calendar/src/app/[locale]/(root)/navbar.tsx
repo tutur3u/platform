@@ -1,11 +1,11 @@
-import { LogoTitle } from '@tuturuuu/ui/custom/logo-title';
-import { Navbar as SharedNavbar } from '@tuturuuu/ui/navbar';
-import { Suspense } from 'react';
 import LocalWorkspaceSelect from './local-workspace-select';
 import NavbarActions from './navbar-actions';
 import NavbarCalendarWrapper from './navbar-calendar-wrapper';
 import NavbarSeparator from './navbar-separator';
 import ServerMenu from './server-menu';
+import { LogoTitle } from '@tuturuuu/ui/custom/logo-title';
+import { Navbar as SharedNavbar } from '@tuturuuu/ui/navbar';
+import { Suspense } from 'react';
 
 export default async function Navbar({
   hideMetadata = false,
@@ -60,7 +60,7 @@ export default async function Navbar({
       }
       separator={<NavbarSeparator />}
       onlyOnMobile={onlyOnMobile}
-      className="border-gray-200 border-b bg-white/80 backdrop-blur-sm dark:border-gray-700 dark:bg-gray-900/80"
+      className="border-b border-gray-200 bg-white/80 backdrop-blur-sm dark:border-gray-700 dark:bg-gray-900/80"
     />
   );
 }

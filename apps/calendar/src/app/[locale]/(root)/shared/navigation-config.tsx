@@ -1,5 +1,6 @@
 'use client';
 
+import { DEV_MODE } from '@/constants/common';
 import {
   Calendar,
   Sparkles,
@@ -8,7 +9,6 @@ import {
 } from '@tuturuuu/ui/icons';
 import type { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
-import { DEV_MODE } from '@/constants/common';
 
 export interface NavItem {
   href: string;

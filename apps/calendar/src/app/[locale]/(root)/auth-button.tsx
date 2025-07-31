@@ -30,7 +30,7 @@ export function AuthButton({
     <div className="grid gap-2">
       <div className="break-all">
         <div className="text-xs">Logged in as</div>
-        <div className="line-clamp-1 font-semibold text-sm">{user.email}</div>
+        <div className="line-clamp-1 text-sm font-semibold">{user.email}</div>
       </div>
       <form action={signOut}>
         <Button
