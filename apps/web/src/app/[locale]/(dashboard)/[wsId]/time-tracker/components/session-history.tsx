@@ -89,9 +89,7 @@ interface SessionHistoryProps {
   })[];
   onSessionUpdate: () => void;
   readOnly?: boolean;
-  // eslint-disable-next-line no-unused-vars
   formatDuration: (seconds: number) => string;
-  // eslint-disable-next-line no-unused-vars
   apiCall: (url: string, options?: RequestInit) => Promise<any>;
 }
 
@@ -213,22 +211,22 @@ const getCategoryColor = (color: string) => {
 const StackedSessionItem: FC<{
   stackedSession: StackedSession;
   readOnly: boolean;
-  // eslint-disable-next-line no-unused-vars
+
   formatDuration: (seconds: number) => string;
-  // eslint-disable-next-line no-unused-vars
+
   onResume: (session: SessionWithRelations) => void;
-  // eslint-disable-next-line no-unused-vars
+
   onEdit: (session: SessionWithRelations) => void;
-  // eslint-disable-next-line no-unused-vars
+
   onDelete: (session: SessionWithRelations) => void;
   actionStates: { [key: string]: boolean };
   tasks: (Partial<WorkspaceTask> & {
     board_name?: string;
     list_name?: string;
   })[];
-  // eslint-disable-next-line no-unused-vars
+
   calculateFocusScore: (session: SessionWithRelations) => number;
-  // eslint-disable-next-line no-unused-vars
+
   getSessionProductivityType: (session: SessionWithRelations) => string;
 }> = ({
   stackedSession,

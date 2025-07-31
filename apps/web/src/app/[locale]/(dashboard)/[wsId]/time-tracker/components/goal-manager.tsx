@@ -63,9 +63,7 @@ interface GoalManagerProps {
   timerStats: TimerStats;
   onGoalsUpdate: () => void;
   readOnly?: boolean;
-  // eslint-disable-next-line no-unused-vars
   formatDuration: (seconds: number) => string;
-  // eslint-disable-next-line no-unused-vars
   apiCall: (url: string, options?: RequestInit) => Promise<any>;
 }
 

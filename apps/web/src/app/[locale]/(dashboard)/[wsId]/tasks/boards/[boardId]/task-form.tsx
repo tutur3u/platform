@@ -11,6 +11,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@tuturuuu/ui/card';
+import { useToast } from '@tuturuuu/ui/hooks/use-toast';
 import {
   Calendar as CalendarIcon,
   Clock,
@@ -35,6 +36,7 @@ interface Props {
 }
 
 export function TaskForm({ listId, onTaskCreated }: Props) {
+  const { toast } = useToast();
   const [isAdding, setIsAdding] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -99,9 +101,8 @@ export function TaskForm({ listId, onTaskCreated }: Props) {
         end_date: endDate?.toISOString(),
       };
 
-      // Only add tags if we have them
-      if (tags.length > 0) {
-        taskData.tags = tags;
+      if (tags?.filter((tag) => tag && tag.trim() !== '').length > 0) {
+        taskData.tags = tags.filter((tag) => tag && tag.trim() !== '');
       }
 
       const newTask = await createTask(supabase, listId, taskData);
@@ -122,10 +123,38 @@ export function TaskForm({ listId, onTaskCreated }: Props) {
       onTaskCreated();
     } catch (error) {
       console.error('Error creating task:', error);
-      // Show a more detailed error message
+
+      // Enhanced error handling with better error messages
+      let errorMessage = 'Failed to create task';
+
       if (error instanceof Error) {
+        errorMessage = error.message;
         console.error('Error details:', error.message);
+      } else if (typeof error === 'object' && error !== null) {
+        // Handle Supabase errors
+        const supabaseError = error as {
+          message?: string;
+          details?: string;
+          hint?: string;
+          code?: string;
+        };
+        if (supabaseError.message) {
+          errorMessage = supabaseError.message;
+        } else if (supabaseError.details) {
+          errorMessage = supabaseError.details;
+        } else if (supabaseError.hint) {
+          errorMessage = supabaseError.hint;
+        } else if (supabaseError.code) {
+          errorMessage = `Database error (${supabaseError.code}): ${supabaseError.message || 'Unknown database error'}`;
+        }
       }
+
+      // Show user-friendly error message
+      toast({
+        title: 'Error creating task',
+        description: errorMessage,
+        variant: 'destructive',
+      });
     } finally {
       setIsSubmitting(false);
     }

@@ -9,6 +9,7 @@ import {
   Box,
   BriefcaseBusiness,
   Calendar,
+  Cctv,
   ChartArea,
   CircleCheck,
   CircleDollarSign,
@@ -35,6 +36,7 @@ import {
   Send,
   ShieldUser,
   Sparkles,
+  SquareUserRound,
   SquaresIntersect,
   Star,
   TextSelect,
@@ -42,6 +44,7 @@ import {
   TriangleAlert,
   UserLock,
   Users,
+  VectorSquare,
   Vote,
 } from '@tuturuuu/ui/icons';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
@@ -98,9 +101,24 @@ export default async function Layout({ children, params }: LayoutProps) {
       matchExact: true,
     },
     {
-      title: t('sidebar_tabs.ai_tools'),
-      icon: <Sparkles className="h-5 w-5" />,
+      title: t('sidebar_tabs.ai_lab'),
+      icon: <Box className="h-5 w-5" />,
       children: [
+        {
+          title: t('sidebar_tabs.spark'),
+          href: `/${wsId}/ai/spark`,
+          icon: <Sparkles className="h-5 w-5" />,
+          disabled:
+            ENABLE_AI_ONLY ||
+            !(await verifySecret({
+              forceAdmin: true,
+              wsId,
+              name: 'ENABLE_TASKS',
+              value: 'true',
+            })) ||
+            withoutPermission('manage_projects'),
+          experimental: 'alpha',
+        },
         {
           title: t('sidebar_tabs.chat_with_ai'),
           href: `/${wsId}/chat`,
@@ -117,26 +135,13 @@ export default async function Layout({ children, params }: LayoutProps) {
           experimental: 'beta',
         },
         {
-          title: t('sidebar_tabs.spark'),
-          href: `/${wsId}/ai/spark`,
-          icon: <Sparkles className="h-5 w-5" />,
-          disabled:
-            ENABLE_AI_ONLY ||
-            !(await verifySecret({
-              forceAdmin: true,
-              wsId,
-              name: 'ENABLE_TASKS',
-              value: 'true',
-            })) ||
-            withoutPermission('manage_projects'),
-          experimental: 'alpha',
+          title: t('sidebar_tabs.ai_executions'),
+          href: `/${wsId}/ai/executions`,
+          icon: <Cctv className="h-5 w-5" />,
+          requireRootWorkspace: true,
+          requireRootMember: true,
+          disabled: withoutPermission('manage_workspace_roles'),
         },
-      ],
-    },
-    {
-      title: t('sidebar_tabs.ai_lab'),
-      icon: <Box className="h-5 w-5" />,
-      children: [
         {
           title: t('sidebar_tabs.models'),
           href: `/${wsId}/models`,
@@ -245,6 +250,18 @@ export default async function Layout({ children, params }: LayoutProps) {
           title: t('sidebar_tabs.tumeet'),
           href: `/${wsId}/tumeet`,
           icon: <SquaresIntersect className="h-5 w-5" />,
+          children: [
+            {
+              title: t('sidebar_tabs.plans'),
+              href: `/${wsId}/tumeet/plans`,
+              icon: <VectorSquare className="h-5 w-5" />,
+            },
+            {
+              title: t('sidebar_tabs.meetings'),
+              href: `/${wsId}/tumeet/meetings`,
+              icon: <SquareUserRound className="h-5 w-5" />,
+            },
+          ],
         },
         {
           title: t('sidebar_tabs.polls'),
@@ -276,9 +293,8 @@ export default async function Layout({ children, params }: LayoutProps) {
             },
             {
               title: t('mail.sent'),
-              href: `/${wsId}/mail`,
+              href: `/${wsId}/mail/sent`,
               icon: <Send className="h-5 w-5" />,
-              aliases: [`/${wsId}/mail/sent`],
             },
             {
               title: t('mail.drafts'),

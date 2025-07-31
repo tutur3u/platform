@@ -25,8 +25,29 @@ export function NavLink({
   const { title, icon, href, children, onClick: onLinkClick } = link;
   const hasChildren = Array.isArray(children) && children.length > 0;
 
+  // Recursive function to check if any nested child matches the pathname
+  const hasActiveChild = (navLinks: NavLinkType[]): boolean => {
+    return navLinks.some((child) => {
+      const childMatches =
+        child.href &&
+        (child.matchExact
+          ? pathname === child.href
+          : pathname.startsWith(child.href));
+
+      if (childMatches) return true;
+
+      if (child.children) {
+        return hasActiveChild(child.children);
+      }
+
+      return false;
+    });
+  };
+
   const isActive =
-    href && (link.matchExact ? pathname === href : pathname.startsWith(href));
+    (href &&
+      (link.matchExact ? pathname === href : pathname.startsWith(href))) ||
+    (children && hasActiveChild(children));
 
   const content = (
     <>

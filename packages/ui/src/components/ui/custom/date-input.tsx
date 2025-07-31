@@ -2,9 +2,7 @@ import React, { useEffect, useRef } from 'react';
 
 interface DateInputProps {
   value?: Date;
-  // eslint-disable-next-line no-unused-vars
   onChange?: (date: Date) => void;
-  // eslint-disable-next-line no-unused-vars
   onSubmit?: (date: Date) => void;
 }
 

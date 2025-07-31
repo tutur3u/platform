@@ -26,6 +26,7 @@ import {
 import { useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { Task, TaskList } from '@tuturuuu/types/primitives/TaskBoard';
+import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent } from '@tuturuuu/ui/card';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
@@ -39,6 +40,8 @@ export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
   const [columns, setColumns] = useState<TaskList[]>([]);
   const [activeColumn, setActiveColumn] = useState<TaskList | null>(null);
   const [activeTask, setActiveTask] = useState<Task | null>(null);
+  const [selectedTasks, setSelectedTasks] = useState<Set<string>>(new Set());
+  const [isMultiSelectMode, setIsMultiSelectMode] = useState(false);
   const pickedUpTaskColumn = useRef<string | null>(null);
   const queryClient = useQueryClient();
   const moveTaskMutation = useMoveTask(boardId);
@@ -52,6 +55,60 @@ export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
     queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
     queryClient.invalidateQueries({ queryKey: ['task_lists', boardId] });
   }, [queryClient, boardId]);
+
+  // Multi-select handlers
+  const handleTaskSelect = useCallback(
+    (taskId: string, event: React.MouseEvent) => {
+      const isCtrlPressed = event.ctrlKey || event.metaKey;
+      const isShiftPressed = event.shiftKey;
+
+      if (isCtrlPressed || isShiftPressed) {
+        event.preventDefault();
+        event.stopPropagation();
+
+        setIsMultiSelectMode(true);
+
+        if (isCtrlPressed) {
+          // Toggle selection
+          setSelectedTasks((prev) => {
+            const newSet = new Set(prev);
+            if (newSet.has(taskId)) {
+              newSet.delete(taskId);
+            } else {
+              newSet.add(taskId);
+            }
+            return newSet;
+          });
+        } else if (isShiftPressed) {
+          // Range selection (if there's a last selected task)
+          // For now, just add to selection
+          setSelectedTasks((prev) => new Set([...prev, taskId]));
+        }
+      } else {
+        // Single click - clear selection and select only this task
+        setSelectedTasks(new Set([taskId]));
+        setIsMultiSelectMode(false);
+      }
+    },
+    []
+  );
+
+  const clearSelection = useCallback(() => {
+    setSelectedTasks(new Set());
+    setIsMultiSelectMode(false);
+  }, []);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        clearSelection();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [clearSelection]);
 
   useEffect(() => {
     let mounted = true;
@@ -138,8 +195,22 @@ export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
     }
     if (type === 'Task') {
       const task = active.data.current.task;
-      setActiveTask(task);
+      console.log('🎯 onDragStart - Task:', task);
+      console.log('📋 Task list_id:', task.list_id);
+      console.log('📋 Selected tasks:', selectedTasks);
+      console.log('📋 Is multi-select mode:', isMultiSelectMode);
+
+      // If this is a multi-select drag, include all selected tasks
+      if (isMultiSelectMode && selectedTasks.has(task.id)) {
+        console.log('📋 Multi-select drag detected');
+        console.log('📋 Number of selected tasks:', selectedTasks.size);
+        setActiveTask(task); // Set the dragged task as active for overlay
+      } else {
+        setActiveTask(task);
+      }
+
       pickedUpTaskColumn.current = String(task.list_id);
+      console.log('📋 pickedUpTaskColumn set to:', pickedUpTaskColumn.current);
 
       // Use more specific selector for better reliability
       // Prefer data-id selector over generic querySelector
@@ -196,24 +267,86 @@ export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
 
       if (!sourceListExists || !targetListExists) return;
 
-      // Optimistically update the task in the cache for preview
+      console.log(
+        '🔄 onDragOver - Optimistically updating task:',
+        activeTask.id,
+        'to list:',
+        targetListId
+      );
+
+      // Optimistically update the tasks in the cache for preview
       queryClient.setQueryData(
         ['tasks', boardId],
         (oldData: Task[] | undefined) => {
           if (!oldData) return oldData;
-          return oldData.map((t) =>
-            t.id === activeTask.id ? { ...t, list_id: targetListId } : t
-          );
+
+          // If multi-select mode, update all selected tasks
+          if (isMultiSelectMode && selectedTasks.size > 1) {
+            console.log(
+              '🔄 onDragOver - Optimistically updating multiple tasks to list:',
+              targetListId
+            );
+            return oldData.map((t) =>
+              selectedTasks.has(t.id) ? { ...t, list_id: targetListId } : t
+            );
+          } else {
+            // Single task update
+            return oldData.map((t) =>
+              t.id === activeTask.id ? { ...t, list_id: targetListId } : t
+            );
+          }
         }
       );
     }
   }
 
   // Memoized DragOverlay content to minimize re-renders
-  const MemoizedTaskOverlay = useMemo(
-    () => (activeTask ? <LightweightTaskCard task={activeTask} /> : null),
-    [activeTask]
-  );
+  const MemoizedTaskOverlay = useMemo(() => {
+    if (!activeTask) return null;
+
+    // If multi-select mode and multiple tasks selected, show stacked overlay
+    if (isMultiSelectMode && selectedTasks.size > 1) {
+      return (
+        <div className="relative">
+          {/* Single card with stacked effect */}
+          <div
+            className="relative"
+            style={{
+              transform: 'rotate(-2deg)',
+              boxShadow:
+                '0 8px 32px rgba(0,0,0,0.12), 0 4px 16px rgba(0,0,0,0.08)',
+            }}
+          >
+            <LightweightTaskCard task={activeTask} />
+
+            {/* Stacked effect layers */}
+            <div
+              className="absolute inset-0 -z-10 rounded-lg bg-background/80"
+              style={{
+                transform: 'translateY(4px) translateX(2px) rotate(-1deg)',
+                boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
+              }}
+            />
+            <div
+              className="absolute inset-0 -z-20 rounded-lg bg-background/60"
+              style={{
+                transform: 'translateY(8px) translateX(4px) rotate(-2deg)',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+              }}
+            />
+          </div>
+
+          {/* Count badge */}
+          <div className="absolute -top-2 -right-2 flex h-7 w-7 items-center justify-center rounded-full border-2 border-background bg-primary text-xs font-bold text-primary-foreground shadow-lg">
+            {selectedTasks.size}
+          </div>
+        </div>
+      );
+    }
+
+    // Single task overlay
+    return <LightweightTaskCard task={activeTask} />;
+  }, [activeTask, isMultiSelectMode, selectedTasks]);
   const MemoizedColumnOverlay = useMemo(
     () =>
       activeColumn ? (
@@ -229,85 +362,153 @@ export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
     [activeColumn, tasks, boardId, handleTaskCreated]
   );
 
-  const debugLog = (message: string) => {
-    if (process.env.NODE_ENV === 'development') {
-      // eslint-disable-next-line no-console
-      console.debug(`DragEnd: ${message}`);
-    }
-  };
-
   async function onDragEnd(event: DragEndEvent) {
     const { active, over } = event;
+
+    console.log('🔄 onDragEnd triggered');
+    console.log('📦 Active:', active);
+    console.log('🎯 Over:', over);
+
+    // Store the original list ID before resetting drag state
+    const originalListId = pickedUpTaskColumn.current;
+
     // Always reset drag state, even on invalid drop
     setActiveColumn(null);
     setActiveTask(null);
     pickedUpTaskColumn.current = null;
     dragStartCardLeft.current = null;
+
     if (!over) {
-      // Reset the cache if dropped outside
-      queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
-      debugLog('No drop target, state reset.');
+      console.log('❌ No drop target detected, state reset.');
       return;
     }
+
     const activeType = active.data?.current?.type;
+    console.log('🏷️ Active type:', activeType);
+
     if (!activeType) {
-      debugLog('No activeType, state reset.');
+      console.log('❌ No activeType, state reset.');
       return;
     }
+
     if (activeType === 'Task') {
       const activeTask = active.data?.current?.task;
+      console.log('📋 Active task:', activeTask);
+
       if (!activeTask) {
-        debugLog('No activeTask, state reset.');
+        console.log('❌ No activeTask, state reset.');
         return;
       }
+
       let targetListId: string;
-      if (over.data?.current?.type === 'Column') {
+      const overType = over.data?.current?.type;
+      console.log('🎯 Over type:', overType);
+
+      if (overType === 'Column') {
         targetListId = String(over.id);
-      } else if (over.data?.current?.type === 'Task') {
-        targetListId = String(over.data.current.task.list_id);
+        console.log('📋 Dropping on column, targetListId:', targetListId);
+      } else if (overType === 'Task') {
+        // When dropping on a task, use the list_id of the target task
+        const targetTask = over.data?.current?.task;
+        if (!targetTask) {
+          console.log('❌ No target task data, state reset.');
+          return;
+        }
+        targetListId = String(targetTask.list_id);
+        console.log('📋 Dropping on task, targetListId:', targetListId);
+        console.log('📋 Target task details:', targetTask);
       } else {
-        debugLog('Invalid drop type, state reset.');
+        console.log('❌ Invalid drop type:', overType, 'state reset.');
         return;
       }
-      const originalListId =
-        event.active.data?.current?.task?.list_id || pickedUpTaskColumn.current;
+
+      // Use the stored original list ID from drag start
+      console.log('🏠 Original list ID (from drag start):', originalListId);
+      console.log('🎯 Target list ID:', targetListId);
+      console.log(
+        '📋 Active task full data:',
+        event.active.data?.current?.task
+      );
+
       if (!originalListId) {
-        debugLog('No originalListId, state reset.');
+        console.log('❌ No originalListId, state reset.');
         return;
       }
+
       const sourceListExists = columns.some(
         (col) => String(col.id) === originalListId
       );
       const targetListExists = columns.some(
         (col) => String(col.id) === targetListId
       );
+
+      console.log('🔍 Source list exists:', sourceListExists);
+      console.log('🔍 Target list exists:', targetListExists);
+      console.log(
+        '📊 Available columns:',
+        columns.map((col) => ({ id: col.id, name: col.name }))
+      );
+      console.log(
+        '📋 Tasks in source list:',
+        tasks
+          .filter((t) => t.list_id === originalListId)
+          .map((t) => ({ id: t.id, name: t.name }))
+      );
+      console.log(
+        '📋 Tasks in target list:',
+        tasks
+          .filter((t) => t.list_id === targetListId)
+          .map((t) => ({ id: t.id, name: t.name }))
+      );
+
       if (!sourceListExists || !targetListExists) {
-        debugLog('Source or target list missing, state reset.');
+        console.log('❌ Source or target list missing, state reset.');
         return;
       }
+
       // Only move if actually changing lists
       if (targetListId !== originalListId) {
-        try {
-          queryClient.setQueryData(
-            ['tasks', boardId],
-            (oldData: Task[] | undefined) => {
-              if (!oldData) return oldData;
-              return oldData.map((t) =>
-                t.id === activeTask.id ? { ...t, list_id: targetListId } : t
-              );
-            }
+        console.log('✅ Lists are different, initiating move mutation');
+
+        // Check if this is a multi-select drag
+        if (isMultiSelectMode && selectedTasks.size > 1) {
+          console.log(
+            '📤 Batch moving tasks:',
+            Array.from(selectedTasks),
+            'from',
+            originalListId,
+            'to',
+            targetListId
           );
+
+          // Move all selected tasks
+          const tasksToMove = Array.from(selectedTasks);
+          tasksToMove.forEach((taskId) => {
+            moveTaskMutation.mutate({
+              taskId,
+              newListId: targetListId,
+            });
+          });
+
+          // Clear selection after batch move
+          clearSelection();
+        } else {
+          console.log(
+            '📤 Moving single task:',
+            activeTask.id,
+            'from',
+            originalListId,
+            'to',
+            targetListId
+          );
+
           moveTaskMutation.mutate({
             taskId: activeTask.id,
             newListId: targetListId,
           });
-        } catch (error) {
-          queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
-          if (process.env.NODE_ENV === 'development') {
-            // eslint-disable-next-line no-console
-            console.error('Failed to move task:', error);
-          }
         }
+      } else {
+        console.log('ℹ️ Same list detected, no move needed');
       }
     }
   }
@@ -356,6 +557,29 @@ export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
 
   return (
     <div className="flex h-full flex-col">
+      {/* Multi-select indicator */}
+      {isMultiSelectMode && selectedTasks.size > 0 && (
+        <div className="flex items-center justify-between border-b px-4 py-2">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium">
+              {selectedTasks.size} task{selectedTasks.size !== 1 ? 's' : ''}{' '}
+              selected
+            </span>
+            <span className="text-xs text-muted-foreground">
+              Drag to move all • Press Esc to clear
+            </span>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={clearSelection}
+            className="h-6 px-2 text-xs"
+          >
+            Clear
+          </Button>
+        </div>
+      )}
+
       {/* Kanban Board */}
       <div className="flex-1 overflow-hidden">
         <DndContext
@@ -408,16 +632,24 @@ export function KanbanBoard({ boardId, tasks, isLoading }: Props) {
                     if (statusA !== statusB) return statusA - statusB;
                     return (a.position || 0) - (b.position || 0);
                   })
-                  .map((column) => (
-                    <BoardColumn
-                      key={column.id}
-                      column={column}
-                      boardId={boardId}
-                      tasks={tasks.filter((task) => task.list_id === column.id)}
-                      onTaskCreated={handleTaskCreated}
-                      onListUpdated={handleTaskCreated}
-                    />
-                  ))}
+                  .map((column) => {
+                    const columnTasks = tasks.filter(
+                      (task) => task.list_id === column.id
+                    );
+                    return (
+                      <BoardColumn
+                        key={column.id}
+                        column={column}
+                        boardId={boardId}
+                        tasks={columnTasks}
+                        onTaskCreated={handleTaskCreated}
+                        onListUpdated={handleTaskCreated}
+                        selectedTasks={selectedTasks}
+                        isMultiSelectMode={isMultiSelectMode}
+                        onTaskSelect={handleTaskSelect}
+                      />
+                    );
+                  })}
                 <TaskListForm
                   boardId={boardId}
                   onListCreated={handleTaskCreated}

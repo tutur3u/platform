@@ -1,3 +1,5 @@
+import moment from 'moment';
+
 export function timetzToTime(timetz: string) {
   // Find the position of the '+' or '-' that indicates the start of the offset
   const offsetPos = Math.max(timetz.lastIndexOf('+'), timetz.lastIndexOf('-'));
@@ -54,3 +56,232 @@ export function minTimetz(timetz1: string, timetz2: string) {
 export function maxTimetz(timetz1: string, timetz2: string) {
   return compareTimetz(timetz1, timetz2) > 0 ? timetz1 : timetz2;
 }
+
+/**
+ * Parses timezone offset from a time string and returns a formatted offset string
+ * @param timeString - String like "11:00:00+07:00" or "14:30:00-05:30"
+ * @returns Formatted offset string like "+07:00" or "-05:30"
+ */
+export function parseTimezoneOffset(timeString: string): string {
+  if (!timeString) return '';
+
+  // Find the last occurrence of '+' or '-' which indicates the timezone offset
+  const lastPlusIndex = timeString.lastIndexOf('+');
+  const lastMinusIndex = timeString.lastIndexOf('-');
+
+  // If no offset found, return empty string
+  if (lastPlusIndex === -1 && lastMinusIndex === -1) {
+    return '';
+  }
+
+  // Determine which offset to use (take the last one if both exist)
+  const offsetIndex = Math.max(lastPlusIndex, lastMinusIndex);
+
+  // Extract the offset part
+  const offsetPart = timeString.substring(offsetIndex);
+
+  // Handle cases where the offset is already in HH:MM format like "+05:30"
+  if (offsetPart.includes(':')) {
+    // Already in HH:MM format, return as-is
+    return offsetPart;
+  }
+
+  // Handle legacy decimal format like "+5.5" (for backward compatibility)
+  const offset = parseFloat(offsetPart);
+
+  // Handle NaN case
+  if (isNaN(offset)) {
+    return '';
+  }
+
+  // Convert decimal hours to HH:MM format
+  const hours = Math.floor(Math.abs(offset));
+  const minutes = Math.round((Math.abs(offset) - hours) * 60);
+
+  // Format as HH:MM
+  const formattedHours = hours.toString().padStart(2, '0');
+  const formattedMinutes = minutes.toString().padStart(2, '0');
+
+  const sign = offset >= 0 ? '+' : '-';
+  return `${sign}${formattedHours}:${formattedMinutes}`;
+}
+
+/**
+ * Formats timezone offset for display in UI
+ * @param timeString - String like "11:00:00+07" or "14:30:00-05"
+ * @returns Formatted string like "UTC+07:00" or "UTC-05:30"
+ */
+export function formatTimezoneOffset(timeString: string): string {
+  if (!timeString) return '';
+
+  const offset = parseTimezoneOffset(timeString);
+  if (!offset) return '';
+
+  return `UTC${offset}`;
+}
+
+export type DateRangeOption = 'present' | 'past' | 'future';
+export type DateRangeUnit =
+  | 'day'
+  | 'week'
+  | 'month'
+  | 'year'
+  | 'all'
+  | 'custom';
+
+export type DateRange = [Date | null, Date | null];
+
+export const getDateRange = (
+  unit: DateRangeUnit,
+  option: DateRangeOption
+): DateRange => {
+  const start = moment();
+  const end = moment();
+
+  switch (unit) {
+    case 'day':
+      switch (option) {
+        case 'present':
+          start.startOf('day');
+          end.endOf('day');
+          break;
+
+        case 'past':
+          start.subtract(1, 'day').startOf('day');
+          end.subtract(1, 'day').endOf('day');
+          break;
+
+        case 'future':
+          start.add(1, 'day').startOf('day');
+          end.add(1, 'day').endOf('day');
+          break;
+      }
+      break;
+
+    case 'week':
+      switch (option) {
+        case 'present':
+          start.startOf('week');
+          end.endOf('week');
+          break;
+
+        case 'past':
+          start.subtract(1, 'week').startOf('week');
+          end.subtract(1, 'week').endOf('week');
+          break;
+
+        case 'future':
+          start.add(1, 'week').startOf('week');
+          end.add(1, 'week').endOf('week');
+          break;
+      }
+      break;
+
+    case 'month':
+      switch (option) {
+        case 'present':
+          start.startOf('month');
+          end.endOf('month');
+          break;
+
+        case 'past':
+          start.subtract(1, 'month').startOf('month');
+          end.subtract(1, 'month').endOf('month');
+          break;
+
+        case 'future':
+          start.add(1, 'month').startOf('month');
+          end.add(1, 'month').endOf('month');
+          break;
+      }
+      break;
+
+    case 'year':
+      switch (option) {
+        case 'present':
+          start.startOf('year');
+          end.endOf('year');
+          break;
+
+        case 'past':
+          start.subtract(1, 'year').startOf('year');
+          end.subtract(1, 'year').endOf('year');
+          break;
+
+        case 'future':
+          start.add(1, 'year').startOf('year');
+          end.add(1, 'year').endOf('year');
+          break;
+      }
+      break;
+
+    case 'all':
+      return [null, null];
+
+    case 'custom': {
+      throw new Error('Not implemented yet: "custom" case');
+    }
+  }
+
+  return [start.toDate(), end.toDate()];
+};
+
+export const getDateRangeUnits = (
+  t: (key: string) => string
+): {
+  label: string;
+  value: DateRangeUnit;
+}[] => {
+  return [
+    { label: t('date_helper.day'), value: 'day' },
+    { label: t('date_helper.week'), value: 'week' },
+    { label: t('date_helper.month'), value: 'month' },
+    { label: t('date_helper.year'), value: 'year' },
+    { label: t('date_helper.all'), value: 'all' },
+    { label: t('date_helper.custom'), value: 'custom' },
+  ];
+};
+
+export const getDateRangeOptions = (
+  unit: DateRangeUnit,
+  t: (key: string) => string
+): {
+  label: string;
+  value: DateRangeOption;
+}[] => {
+  switch (unit) {
+    case 'day':
+      return [
+        { label: t('date_helper.today'), value: 'present' },
+        { label: t('date_helper.yesterday'), value: 'past' },
+        { label: t('date_helper.tomorrow'), value: 'future' },
+      ];
+
+    case 'week':
+      return [
+        { label: t('date_helper.this-week'), value: 'present' },
+        { label: t('date_helper.last-week'), value: 'past' },
+        { label: t('date_helper.next-week'), value: 'future' },
+      ];
+
+    case 'month':
+      return [
+        { label: t('date_helper.this_month'), value: 'present' },
+        { label: t('date_helper.last-month'), value: 'past' },
+        { label: t('date_helper.next-month'), value: 'future' },
+      ];
+
+    case 'year':
+      return [
+        { label: t('date_helper.this-year'), value: 'present' },
+        { label: t('date_helper.last-year'), value: 'past' },
+        { label: t('date_helper.next-year'), value: 'future' },
+      ];
+
+    case 'all':
+      return [{ label: t('date_helper.all'), value: 'present' }];
+
+    default:
+      return [];
+  }
+};

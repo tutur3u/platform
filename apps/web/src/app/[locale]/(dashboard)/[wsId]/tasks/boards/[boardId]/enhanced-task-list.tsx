@@ -298,7 +298,7 @@ export function EnhancedTaskList({
               onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
                   e.preventDefault();
-                  !isClosed && setIsEditing(true);
+                  if (!isClosed) setIsEditing(true);
                 }
               }}
               disabled={isClosed}

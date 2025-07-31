@@ -21,12 +21,18 @@ import {
 } from '@tuturuuu/ui/form';
 import { useForm } from '@tuturuuu/ui/hooks/use-form';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
-import { MapPin, Sparkles } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { Separator } from '@tuturuuu/ui/separator';
+import { RichTextEditor } from '@tuturuuu/ui/text-editor/editor';
+import type { JSONContent } from '@tuturuuu/ui/tiptap';
 import { cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
+import {
+  ClipboardList,
+  MapPin as MapPinIcon,
+  Sparkles as SparklesIcon,
+} from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -43,22 +49,37 @@ interface Props {
 }
 
 const FormSchema = z.object({
-  name: z.string(),
+  name: z.string().min(1, { message: 'Name is required' }),
   // start_time and end_time are time with timezone offset
   start_time: z.string().optional(),
   end_time: z.string().optional(),
   dates: z.array(z.string()).optional(),
   is_public: z.boolean().optional(),
   ws_id: z.string().optional(),
+  agenda_enabled: z.boolean().optional(), // <-- Added field for agenda toggle
+  agenda_content: z.custom<JSONContent>().optional(),
   where_to_meet: z.boolean().optional(), // <-- Added field
 });
+
+type FormData = z.infer<typeof FormSchema>;
 
 const convertToTimetz = (
   time: number | undefined,
   utcOffset: number | undefined
 ) => {
   if (!time || utcOffset === undefined) return undefined;
-  return `${time}:00${utcOffset < 0 ? '-' : '+'}${Math.abs(utcOffset)}`;
+
+  // Convert decimal offset to HH:MM format for PostgreSQL
+  const hours = Math.floor(Math.abs(utcOffset));
+  const minutes = Math.round((Math.abs(utcOffset) - hours) * 60);
+
+  // Format time as HH:MM
+  const timeStr = time.toString().padStart(2, '0') + ':00';
+
+  // Format offset as +/-HH:MM
+  const offsetStr = `${utcOffset < 0 ? '-' : '+'}${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+
+  return `${timeStr}${offsetStr}`;
 };
 
 export default function CreatePlanDialog({ plan }: Props) {
@@ -78,6 +99,8 @@ export default function CreatePlanDialog({ plan }: Props) {
         ?.map((date) => dayjs(date).format('YYYY-MM-DD')),
       is_public: true,
       ws_id: plan.wsId,
+      agenda_enabled: false, // <-- Default value for agenda toggle
+      agenda_content: undefined,
       where_to_meet: false, // <-- Default value
     },
   });
@@ -86,9 +109,8 @@ export default function CreatePlanDialog({ plan }: Props) {
   const isSubmitting = form.formState.isSubmitting;
   const disabled = !isValid || isSubmitting;
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (data: FormData) => {
     setCreating(true);
-    const data = form.getValues();
     let hasError = false;
 
     if (!data.start_time) {
@@ -120,9 +142,12 @@ export default function CreatePlanDialog({ plan }: Props) {
       return;
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { agenda_enabled, ...rest } = data;
+
     const res = await fetch('/api/meet-together/plans', {
       method: 'POST',
-      body: JSON.stringify(data),
+      body: JSON.stringify(rest),
     });
 
     if (res.ok) {
@@ -175,7 +200,7 @@ export default function CreatePlanDialog({ plan }: Props) {
           </div>
         </button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[800px]">
         <DialogHeader>
           <DialogTitle>{t('new_plan')}</DialogTitle>
           <DialogDescription>{t('new_plan_desc')}</DialogDescription>
@@ -204,7 +229,7 @@ export default function CreatePlanDialog({ plan }: Props) {
             {/* Extra Features Section */}
             <div className="space-y-4">
               <div className="flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-purple-500" />
+                <SparklesIcon className="h-4 w-4 text-dynamic-purple" />
                 <h3 className="text-sm font-semibold text-foreground">
                   Extra Features
                 </h3>
@@ -221,7 +246,12 @@ export default function CreatePlanDialog({ plan }: Props) {
                 render={({ field }) => (
                   <FormItem>
                     <div
-                      className="cursor-pointer rounded-lg border border-border bg-muted/30 p-4 transition-colors hover:bg-muted/50"
+                      className={cn(
+                        'cursor-pointer rounded-lg border p-4 transition-all duration-200',
+                        field.value
+                          ? 'border-dynamic-blue/30 bg-dynamic-blue/10 ring-1 ring-dynamic-blue/20'
+                          : 'border-border bg-muted/30 hover:border-muted-foreground/20 hover:bg-muted/50'
+                      )}
                       onClick={() => field.onChange(!field.value)}
                     >
                       <div className="flex items-start space-x-3">
@@ -231,12 +261,19 @@ export default function CreatePlanDialog({ plan }: Props) {
                             id="where_to_meet"
                             checked={field.value}
                             onChange={field.onChange}
-                            className="mt-1 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                            className="mt-1 h-4 w-4 rounded border-gray-300 text-dynamic-blue focus:ring-dynamic-blue/50"
                           />
                         </FormControl>
                         <div className="flex-1 space-y-2">
                           <div className="flex items-center gap-2">
-                            <MapPin className="h-4 w-4 text-blue-500" />
+                            <MapPinIcon
+                              className={cn(
+                                'h-4 w-4 transition-colors',
+                                field.value
+                                  ? 'text-dynamic-blue'
+                                  : 'text-dynamic-blue/70'
+                              )}
+                            />
                             <FormLabel
                               htmlFor="where_to_meet"
                               className="mb-0 cursor-pointer font-medium text-foreground"
@@ -251,8 +288,9 @@ export default function CreatePlanDialog({ plan }: Props) {
                             preferred spots, making it easier to find the
                             perfect place for everyone.
                           </p>
-                          <div className="flex items-center gap-1 text-xs text-blue-600">
-                            <span>✨ Popular feature</span>
+                          <div className="flex items-center gap-1 text-xs text-dynamic-blue">
+                            <SparklesIcon className="h-3 w-3" />
+                            <span>Popular feature</span>
                           </div>
                         </div>
                       </div>
@@ -262,23 +300,92 @@ export default function CreatePlanDialog({ plan }: Props) {
                 )}
               />
 
-              {/* Placeholder for future features */}
-              <div className="rounded-lg border border-dashed border-border/50 bg-muted/20 p-4">
-                <div className="flex items-center justify-center text-center">
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-center gap-2 text-muted-foreground">
-                      <Sparkles className="h-4 w-4" />
-                      <span className="text-sm font-medium">
-                        More features coming soon!
-                      </span>
+              {/* Agenda feature */}
+              <FormField
+                control={form.control}
+                name="agenda_enabled"
+                render={({ field }) => (
+                  <FormItem>
+                    <div
+                      className={cn(
+                        'cursor-pointer rounded-lg border p-4 transition-all duration-200',
+                        field.value
+                          ? 'border-dynamic-green/30 bg-dynamic-green/10 ring-1 ring-dynamic-green/20'
+                          : 'border-border bg-muted/30 hover:border-muted-foreground/20 hover:bg-muted/50'
+                      )}
+                      onClick={() => field.onChange(!field.value)}
+                    >
+                      <div className="flex items-start space-x-3">
+                        <FormControl>
+                          <input
+                            type="checkbox"
+                            id="agenda_enabled"
+                            checked={field.value}
+                            onChange={field.onChange}
+                            className="mt-1 h-4 w-4 rounded border-gray-300 text-dynamic-green focus:ring-dynamic-green/50"
+                          />
+                        </FormControl>
+                        <div className="flex-1 space-y-2">
+                          <div className="flex items-center gap-2">
+                            <ClipboardList
+                              className={cn(
+                                'h-4 w-4 transition-colors',
+                                field.value
+                                  ? 'text-dynamic-green'
+                                  : 'text-dynamic-green/70'
+                              )}
+                            />
+                            <FormLabel
+                              htmlFor="agenda_enabled"
+                              className="mb-0 cursor-pointer font-medium text-foreground"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              {t('agenda')}
+                            </FormLabel>
+                          </div>
+                          <p className="text-xs leading-relaxed text-muted-foreground">
+                            Add an agenda to keep your meeting organized and on
+                            track. Share the plan with participants beforehand
+                            so everyone knows what to expect.
+                          </p>
+                          <div className="flex items-center gap-1 text-xs text-dynamic-green">
+                            <SparklesIcon className="h-3 w-3" />
+                            <span>Stay organized</span>
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                    <p className="text-xs text-muted-foreground">
-                      We&apos;re working on additional features to make your
-                      meetings even better.
-                    </p>
-                  </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Agenda content editor - only shown when enabled */}
+              {form.watch('agenda_enabled') && (
+                <div className="duration-300 animate-in slide-in-from-top-2">
+                  <FormField
+                    control={form.control}
+                    name="agenda_content"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormControl>
+                          <div className="rounded-lg border border-dynamic-green/30 bg-dynamic-green/5 p-3">
+                            <RichTextEditor
+                              content={field.value || null}
+                              onChange={field.onChange}
+                              readOnly={false}
+                              titlePlaceholder={t('agenda_title_placeholder')}
+                              writePlaceholder={t('agenda_content_placeholder')}
+                              className="h-64 border-0 bg-transparent"
+                            />
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 </div>
-              </div>
+              )}
             </div>
 
             <DialogFooter className="pt-4">
