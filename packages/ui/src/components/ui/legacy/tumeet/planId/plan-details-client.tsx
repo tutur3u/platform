@@ -4,7 +4,6 @@ import AgendaDetails from './agenda-details';
 import PlanDetailsPolls from './plan-details-polls';
 import PlanLogin from './plan-login';
 import PlanUserFilter from './plan-user-filter';
-import { useTimeBlocking } from './time-blocking-provider';
 import UnifiedAvailability from './unified-availability';
 import UtilityButtons from './utility-buttons';
 import type {
@@ -13,6 +12,7 @@ import type {
 } from '@tuturuuu/types/primitives/MeetTogetherPlan';
 import type { Timeblock } from '@tuturuuu/types/primitives/Timeblock';
 import type { User } from '@tuturuuu/types/primitives/User';
+import { useTimeBlocking } from '@tuturuuu/ui/hooks/time-blocking-provider';
 import { CircleQuestionMark } from '@tuturuuu/ui/icons';
 import { Label } from '@tuturuuu/ui/label';
 import EditPlanDialog from '@tuturuuu/ui/legacy/tumeet/edit-plan-dialog';
@@ -36,6 +36,7 @@ interface PlanDetailsClientProps {
     timeblock_count: number | null;
   }[];
   timeblocks: Timeblock[];
+  baseUrl: string;
 }
 
 export default function PlanDetailsClient({
@@ -45,6 +46,7 @@ export default function PlanDetailsClient({
   users,
   polls,
   timeblocks,
+  baseUrl,
 }: PlanDetailsClientProps) {
   const { resolvedTheme } = useTheme();
   const [showBestTimes, setShowBestTimes] = useState(false);
@@ -228,7 +230,7 @@ export default function PlanDetailsClient({
         )}
       </div>
 
-      <PlanLogin plan={plan} platformUser={platformUser} />
+      <PlanLogin plan={plan} platformUser={platformUser} baseUrl={baseUrl} />
     </>
   );
 }

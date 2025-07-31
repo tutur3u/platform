@@ -1,4 +1,9 @@
-import { compareTimetz, maxTimetz, minTimetz } from '@/utils/date-helper';
+import type { Timeblock } from '@tuturuuu/types/primitives/Timeblock';
+import {
+  compareTimetz,
+  maxTimetz,
+  minTimetz,
+} from '@tuturuuu/ui/utils/date-helper';
 import {
   addTimeblocks,
   datesToDateMatrix,
@@ -6,8 +11,7 @@ import {
   durationToTimeblocks,
   getDateStrings,
   removeTimeblocks,
-} from '@/utils/timeblock-helper';
-import type { Timeblock } from '@tuturuuu/types/primitives/Timeblock';
+} from '@tuturuuu/utils/timeblock-helper';
 import dayjs from 'dayjs';
 import { describe, expect, test } from 'vitest';
 

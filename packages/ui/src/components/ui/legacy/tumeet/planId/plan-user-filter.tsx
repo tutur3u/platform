@@ -1,6 +1,6 @@
 'use client';
 
-import { useTimeBlocking } from './time-blocking-provider';
+import { useTimeBlocking } from '@tuturuuu/ui/hooks/time-blocking-provider';
 import { ShieldCheck } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import { useTranslations } from 'next-intl';

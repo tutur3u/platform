@@ -1,11 +1,11 @@
 'use client';
 
 import DayPlanners from './day-planners';
-import { useTimeBlocking } from './time-blocking-provider';
 import TimeColumn from './time-column';
-import { timetzToHour } from '@/utils/date-helper';
 import type { Timeblock } from '@tuturuuu/types/primitives/Timeblock';
+import { useTimeBlocking } from '@tuturuuu/ui/hooks/time-blocking-provider';
 import { Tabs, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
+import { timetzToHour } from '@tuturuuu/ui/utils/date-helper';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';

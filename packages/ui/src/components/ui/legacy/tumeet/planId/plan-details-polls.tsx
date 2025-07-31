@@ -1,6 +1,5 @@
 'use client';
 
-import { useTimeBlocking } from '@/app/[locale]/(marketing)/meet-together/plans/[planId]/time-blocking-provider';
 import type {
   GetPollsForPlanResult,
   MeetTogetherPlan,
@@ -14,6 +13,7 @@ import {
   AccordionTrigger,
 } from '@tuturuuu/ui/accordion';
 import { Button } from '@tuturuuu/ui/button';
+import { useTimeBlocking } from '@tuturuuu/ui/hooks/time-blocking-provider';
 import { useIsMobile } from '@tuturuuu/ui/hooks/use-mobile';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Input } from '@tuturuuu/ui/input';

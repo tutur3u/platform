@@ -1,6 +1,6 @@
 import DayPlanner from './day-planner';
-import { useTimeBlocking } from './time-blocking-provider';
 import type { Timeblock } from '@tuturuuu/types/primitives/Timeblock';
+import { useTimeBlocking } from '@tuturuuu/ui/hooks/time-blocking-provider';
 import dayjs from 'dayjs';
 import { useCallback, useEffect, useState } from 'react';
 

@@ -1,9 +1,9 @@
 'use client';
 
 import DatePlanner from './date-planner';
-import { useTimeBlocking } from './time-blocking-provider';
 import type { MeetTogetherPlan } from '@tuturuuu/types/primitives/MeetTogetherPlan';
 import type { Timeblock } from '@tuturuuu/types/primitives/Timeblock';
+import { useTimeBlocking } from '@tuturuuu/ui/hooks/time-blocking-provider';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 
