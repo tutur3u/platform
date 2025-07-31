@@ -80,37 +80,76 @@ export function durationToTimeblocks(
   dates: Date[],
   tentative: boolean
 ): Timeblock[] {
-  if (dates.length != 2) return [];
+  if (dates.length === 0) return [];
+
   const timeblocks: Timeblock[] = [];
 
-  const { soonest: soonestTime, latest: latestTime } = datesToTimeMatrix(dates);
-  const { soonest: soonestDate, latest: latestDate } = datesToDateMatrix(dates);
-
-  let start = soonestDate
-    .set('hour', soonestTime.hour())
-    .set('minute', soonestTime.minute())
-    .set('second', 0);
-
-  const end = latestDate
-    .set('hour', latestTime.hour())
-    .set('minute', latestTime.minute())
-    .set('second', 0);
-
-  while (start.isBefore(end)) {
-    const date = start.format('YYYY-MM-DD');
-
-    const startTime = dayjs(soonestTime);
-    const endTime = dayjs(latestTime).add(15, 'minutes');
+  // Handle single date case (for single 15-minute timeblocks)
+  if (dates.length === 1) {
+    const date = dayjs(dates[0]);
+    const startTime = date.set('second', 0);
+    const endTime = startTime.add(15, 'minutes');
 
     timeblocks.push({
-      date,
+      date: startTime.format('YYYY-MM-DD'),
       start_time: startTime.format('HH:mm:ssZ'),
       end_time: endTime.format('HH:mm:ssZ'),
       tentative,
     });
 
-    // Increment the date
-    start = start.add(1, 'day');
+    return timeblocks;
+  }
+
+  // Handle two dates case (for duration-based timeblocks)
+  if (dates.length === 2) {
+    // If both dates are the same, treat as single date case
+    if (dayjs(dates[0]).isSame(dates[1], 'minute')) {
+      const date = dayjs(dates[0]);
+      const startTime = date.set('second', 0);
+      const endTime = startTime.add(15, 'minutes');
+
+      timeblocks.push({
+        date: startTime.format('YYYY-MM-DD'),
+        start_time: startTime.format('HH:mm:ssZ'),
+        end_time: endTime.format('HH:mm:ssZ'),
+        tentative,
+      });
+
+      return timeblocks;
+    }
+
+    const { soonest: soonestTime, latest: latestTime } =
+      datesToTimeMatrix(dates);
+    const { soonest: soonestDate, latest: latestDate } =
+      datesToDateMatrix(dates);
+
+    let start = soonestDate
+      .set('hour', soonestTime.hour())
+      .set('minute', soonestTime.minute())
+      .set('second', 0);
+
+    const end = latestDate
+      .set('hour', latestTime.hour())
+      .set('minute', latestTime.minute())
+      .set('second', 0);
+
+    // Use isSameOrBefore to handle cases where start and end are the same
+    while (start.isSameOrBefore(end)) {
+      const date = start.format('YYYY-MM-DD');
+
+      const startTime = dayjs(soonestTime);
+      const endTime = dayjs(latestTime).add(15, 'minutes');
+
+      timeblocks.push({
+        date,
+        start_time: startTime.format('HH:mm:ssZ'),
+        end_time: endTime.format('HH:mm:ssZ'),
+        tentative,
+      });
+
+      // Increment the date
+      start = start.add(1, 'day');
+    }
   }
 
   return timeblocks;
@@ -178,17 +217,107 @@ export function removeTimeblocks(
     return [];
   }
 
-  // Get the removal range from the given dates
-  const { soonest: removalStart, latest: removalEnd } =
-    datesToDateMatrix(dates);
+  // Always use min/max day logic first
+  const { soonest: soonestDate, latest: latestDate } = datesToDateMatrix(dates);
+  const { soonest: soonestTime, latest: latestTime } = datesToTimeMatrix(dates);
 
+  // Handle single date removal
+  if (dates.length === 1) {
+    const removalStart = soonestDate
+      .set('hour', soonestTime.hour())
+      .set('minute', soonestTime.minute())
+      .set('second', 0);
+    const removalEnd = removalStart.add(15, 'minutes');
+
+    return removeTimeblocksInRange(prevTimeblocks, removalStart, removalEnd);
+  }
+
+  // Handle multi-day removal - process each day separately
+  if (dates.length === 2) {
+    // If it's the same day, treat as single day removal
+    if (soonestDate.isSame(latestDate, 'day')) {
+      const removalStart = soonestDate
+        .set('hour', soonestTime.hour())
+        .set('minute', soonestTime.minute())
+        .set('second', 0);
+      let removalEnd = latestDate
+        .set('hour', latestTime.hour())
+        .set('minute', latestTime.minute())
+        .set('second', 0);
+
+      // Fix for UI sending times like 8:59:59 instead of 9:00:00
+      // If the end time is very close to the next hour boundary, round it up
+      if (removalEnd.minute() >= 59 && latestTime.second() >= 30) {
+        removalEnd = removalEnd.add(1, 'hour').minute(0);
+      }
+
+      return removeTimeblocksInRange(prevTimeblocks, removalStart, removalEnd);
+    }
+
+    // Multi-day removal - remove the same time slot on each day
+    let result = [...prevTimeblocks];
+
+    // Get the time range (hours and minutes) from the min/max times
+    const startHour = soonestTime.hour();
+    const startMinute = soonestTime.minute();
+    let endHour = latestTime.hour();
+    let endMinute = latestTime.minute();
+
+    // Fix for UI sending times like 8:59:59 instead of 9:00:00
+    // If the end time is very close to the next hour boundary, round it up
+    if (endMinute >= 59 && latestTime.second() >= 30) {
+      endHour = endHour + 1;
+      endMinute = 0;
+    }
+
+    // Iterate through each day in the range using min/max dates
+    let currentDate = soonestDate.startOf('day');
+    const lastDate = latestDate.startOf('day');
+
+    while (currentDate.isSameOrBefore(lastDate, 'day')) {
+      const dayRemovalStart = currentDate
+        .hour(startHour)
+        .minute(startMinute)
+        .second(0);
+      const dayRemovalEnd = currentDate
+        .hour(endHour)
+        .minute(endMinute)
+        .second(0);
+
+      result = removeTimeblocksInRange(result, dayRemovalStart, dayRemovalEnd);
+      currentDate = currentDate.add(1, 'day');
+    }
+
+    return result;
+  }
+
+  // Handle multiple dates (more than 2) - treat as individual removals
+  // Sort dates to ensure consistent min/max behavior
+  const sortedDates = dates.sort((a, b) => dayjs(a).diff(dayjs(b)));
+  let result = [...prevTimeblocks];
+
+  for (const date of sortedDates) {
+    const removalStart = dayjs(date).set('second', 0);
+    const removalEnd = removalStart.add(15, 'minutes');
+    result = removeTimeblocksInRange(result, removalStart, removalEnd);
+  }
+
+  return result;
+}
+
+// Helper function to remove timeblocks within a specific time range
+function removeTimeblocksInRange(
+  timeblocks: Timeblock[],
+  removalStart: Dayjs,
+  removalEnd: Dayjs
+): Timeblock[] {
   const result: Timeblock[] = [];
 
-  for (const timeblock of prevTimeblocks) {
+  for (const timeblock of timeblocks) {
     const splitTimeblocks = splitTimeblockByRemovalRange(
       timeblock,
       removalStart,
-      removalEnd
+      removalEnd.add(15, 'minutes')
     );
     result.push(...splitTimeblocks);
   }
@@ -249,8 +378,8 @@ function splitTimeblockByRemovalRange(
 
   // Timeblock is completely outside the removal range
   if (
-    timeblockEnd.isSameOrBefore(removalStart) ||
-    timeblockStart.isSameOrAfter(removalEnd)
+    timeblockEnd.isBefore(removalStart) ||
+    timeblockStart.isAfter(removalEnd)
   ) {
     return [timeblock];
   }

@@ -315,12 +315,44 @@ describe('datesToDateMatrix', () => {
 });
 
 describe('durationToTimeblocks', () => {
-  test.skip('returns an empty array if the input array does not have exactly two elements', () => {
+  test('returns an empty array if the input array is empty', () => {
     expect(durationToTimeblocks([], false)).toEqual([]);
-    expect(durationToTimeblocks([new Date()], false)).toEqual([]);
+  });
+
+  test('returns a single 15-minute timeblock for a single date', () => {
+    const date = new Date('2024-03-15T08:00:00+00:00');
+    const expectedOutput: Timeblock[] = [
+      {
+        date: '2024-03-15',
+        start_time: '08:00:00+00:00',
+        end_time: '08:15:00+00:00',
+        tentative: false,
+      },
+    ];
+
+    expect(durationToTimeblocks([date], false)).toEqual(expectedOutput);
+  });
+
+  test('returns an empty array if the input array has more than two elements', () => {
     expect(
       durationToTimeblocks([new Date(), new Date(), new Date()], false)
     ).toEqual([]);
+  });
+
+  test('returns a single 15-minute timeblock when both dates are the same', () => {
+    const sameDate = new Date('2024-03-15T08:00:00+00:00');
+    const dates = [sameDate, sameDate];
+
+    const expectedOutput: Timeblock[] = [
+      {
+        date: '2024-03-15',
+        start_time: '08:00:00+00:00',
+        end_time: '08:15:00+00:00',
+        tentative: false,
+      },
+    ];
+
+    expect(durationToTimeblocks(dates, false)).toEqual(expectedOutput);
   });
 
   test.skip('returns an array of timeblocks for a duration in a day (normal order)', () => {
@@ -481,14 +513,14 @@ describe('durationToTimeblocks', () => {
 });
 
 describe('addTimeblocks', () => {
-  test.skip('returns an empty array if both input arrays are empty', () => {
+  test('returns an empty array if both input arrays are empty', () => {
     const prevTimeblocks: Timeblock[] = [];
     const newDates: Date[] = [];
 
     expect(addTimeblocks(prevTimeblocks, newDates, false)).toEqual([]);
   });
 
-  test.skip('returns the new timeblocks if the previous timeblocks array is empty', () => {
+  test('returns the new timeblocks if the previous timeblocks array is empty', () => {
     const prevTimeblocks: Timeblock[] = [];
     const newDates: Date[] = [
       new Date('2024-03-15T08:00:00+00:00'),
@@ -497,6 +529,43 @@ describe('addTimeblocks', () => {
 
     expect(addTimeblocks(prevTimeblocks, newDates, false)).toEqual(
       durationToTimeblocks(newDates, false)
+    );
+  });
+
+  test('returns a single 15-minute timeblock when adding one date', () => {
+    const prevTimeblocks: Timeblock[] = [];
+    const newDates: Date[] = [new Date('2024-03-15T08:00:00+00:00')];
+
+    const expectedOutput: Timeblock[] = [
+      {
+        date: '2024-03-15',
+        start_time: '08:00:00+00:00',
+        end_time: '08:15:00+00:00',
+        tentative: false,
+      },
+    ];
+
+    expect(addTimeblocks(prevTimeblocks, newDates, false)).toEqual(
+      expectedOutput
+    );
+  });
+
+  test('returns a single 15-minute timeblock when adding same dates (drag and drop fix)', () => {
+    const prevTimeblocks: Timeblock[] = [];
+    const sameDate = new Date('2024-03-15T08:00:00+00:00');
+    const newDates: Date[] = [sameDate, sameDate];
+
+    const expectedOutput: Timeblock[] = [
+      {
+        date: '2024-03-15',
+        start_time: '08:00:00+00:00',
+        end_time: '08:15:00+00:00',
+        tentative: false,
+      },
+    ];
+
+    expect(addTimeblocks(prevTimeblocks, newDates, false)).toEqual(
+      expectedOutput
     );
   });
 
@@ -677,7 +746,7 @@ describe('removeTimeblocks', () => {
     expect(removeTimeblocks(prevTimeblocks, dates)).toEqual([]);
   });
 
-  test.skip('returns the previous timeblocks if the dates array is empty', () => {
+  test('returns the previous timeblocks if the dates array is empty', () => {
     const prevTimeblocks: Timeblock[] = [
       {
         date: '2024-03-15',
@@ -689,6 +758,188 @@ describe('removeTimeblocks', () => {
     const dates: Date[] = [];
 
     expect(removeTimeblocks(prevTimeblocks, dates)).toEqual(prevTimeblocks);
+  });
+
+  test('removes a single 15-minute timeblock precisely', () => {
+    const prevTimeblocks: Timeblock[] = [
+      {
+        date: '2024-03-15',
+        start_time: '08:00:00+00:00',
+        end_time: '09:00:00+00:00',
+        tentative: false,
+      },
+    ];
+    const dates: Date[] = [new Date('2024-03-15T08:15:00+00:00')];
+
+    const expectedOutput: Timeblock[] = [
+      {
+        date: '2024-03-15',
+        start_time: '08:00:00+00:00',
+        end_time: '08:15:00+00:00',
+        tentative: false,
+      },
+      {
+        date: '2024-03-15',
+        start_time: '08:30:00+00:00',
+        end_time: '09:00:00+00:00',
+        tentative: false,
+      },
+    ];
+
+    expect(removeTimeblocks(prevTimeblocks, dates)).toEqual(expectedOutput);
+  });
+
+  test('removes a single 15-minute timeblock when both dates are the same', () => {
+    const prevTimeblocks: Timeblock[] = [
+      {
+        date: '2024-03-15',
+        start_time: '08:00:00+00:00',
+        end_time: '08:15:00+00:00',
+        tentative: false,
+      },
+    ];
+    const sameDate = new Date('2024-03-15T08:00:00+00:00');
+    const dates: Date[] = [sameDate, sameDate];
+
+    const expectedOutput: Timeblock[] = [];
+
+    expect(removeTimeblocks(prevTimeblocks, dates)).toEqual(expectedOutput);
+  });
+
+  test('removes multi-day timeblocks correctly (same time slot each day)', () => {
+    const prevTimeblocks: Timeblock[] = [
+      {
+        date: '2024-03-15',
+        start_time: '08:00:00+00:00',
+        end_time: '09:00:00+00:00',
+        tentative: false,
+      },
+      {
+        date: '2024-03-16',
+        start_time: '08:00:00+00:00',
+        end_time: '09:00:00+00:00',
+        tentative: false,
+      },
+      {
+        date: '2024-03-17',
+        start_time: '08:00:00+00:00',
+        end_time: '09:00:00+00:00',
+        tentative: false,
+      },
+      {
+        date: '2024-03-15',
+        start_time: '10:00:00+00:00',
+        end_time: '11:00:00+00:00',
+        tentative: false,
+      },
+    ];
+
+    // Remove 8-9 AM on March 15-17
+    const startDate = new Date('2024-03-15T08:00:00+00:00');
+    const endDate = new Date('2024-03-17T09:00:00+00:00');
+    const dates: Date[] = [startDate, endDate];
+
+    const expectedOutput: Timeblock[] = [
+      {
+        date: '2024-03-15',
+        start_time: '10:00:00+00:00',
+        end_time: '11:00:00+00:00',
+        tentative: false,
+      },
+    ];
+
+    expect(removeTimeblocks(prevTimeblocks, dates)).toEqual(expectedOutput);
+  });
+
+  test('removes single timeblock with precise time matching', () => {
+    const prevTimeblocks: Timeblock[] = [
+      {
+        date: '2024-03-15',
+        start_time: '08:15:00+00:00',
+        end_time: '08:30:00+00:00',
+        tentative: false,
+      },
+    ];
+    
+    // Try to remove at 08:15:30 (should match the 08:15-08:30 slot)
+    const removalDate = new Date('2024-03-15T08:15:30+00:00');
+    const dates: Date[] = [removalDate];
+
+    const expectedOutput: Timeblock[] = [];
+
+    expect(removeTimeblocks(prevTimeblocks, dates)).toEqual(expectedOutput);
+  });
+
+  test('removes full hour range correctly (8-9 AM)', () => {
+    const prevTimeblocks: Timeblock[] = [
+      {
+        date: '2024-03-15',
+        start_time: '08:00:00+00:00',
+        end_time: '09:00:00+00:00',
+        tentative: false,
+      },
+    ];
+    
+    // Remove 8-9 AM (should remove the entire hour)
+    const startDate = new Date('2024-03-15T08:00:00+00:00');
+    const endDate = new Date('2024-03-15T09:00:00+00:00');
+    const dates: Date[] = [startDate, endDate];
+
+    const expectedOutput: Timeblock[] = [];
+
+    expect(removeTimeblocks(prevTimeblocks, dates)).toEqual(expectedOutput);
+  });
+
+  test('removes full hour range correctly across multiple days (8-9 AM)', () => {
+    const prevTimeblocks: Timeblock[] = [
+      {
+        date: '2024-03-15',
+        start_time: '08:00:00+00:00',
+        end_time: '09:00:00+00:00',
+        tentative: false,
+      },
+      {
+        date: '2024-03-16',
+        start_time: '08:00:00+00:00',
+        end_time: '09:00:00+00:00',
+        tentative: false,
+      },
+      {
+        date: '2024-03-17',
+        start_time: '08:00:00+00:00',
+        end_time: '09:00:00+00:00',
+        tentative: false,
+      },
+    ];
+    
+    // Remove 8-9 AM across March 15-17 (should remove the entire hour on each day)
+    const startDate = new Date('2024-03-15T08:00:00+00:00');
+    const endDate = new Date('2024-03-17T09:00:00+00:00');
+    const dates: Date[] = [startDate, endDate];
+
+    const expectedOutput: Timeblock[] = [];
+
+    expect(removeTimeblocks(prevTimeblocks, dates)).toEqual(expectedOutput);
+  });
+
+  test('fixes UI sending 8:59:59 instead of 9:00:00', () => {
+    const prevTimeblocks: Timeblock[] = [
+      {
+        date: '2024-03-15',
+        start_time: '08:00:00+00:00',
+        end_time: '09:00:00+00:00',
+        tentative: false,
+      },
+    ];
+    
+    // Simulate UI sending 8:59:59 instead of 9:00:00
+    const startDate = new Date('2024-03-15T08:00:00+00:00');
+    const endDate = new Date('2024-03-15T08:59:59+00:00'); // UI sends 8:59:59
+    const dates: Date[] = [startDate, endDate];
+
+    const expectedOutput: Timeblock[] = [];
+
+    expect(removeTimeblocks(prevTimeblocks, dates)).toEqual(expectedOutput);
   });
 
   test.skip('returns an empty array if the previous timeblocks array is empty', () => {
