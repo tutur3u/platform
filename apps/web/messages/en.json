@@ -597,6 +597,7 @@
     "your_availability": "Your availability",
     "everyone_availability": "Everyone's availability",
     "available": "Available",
+    "tentative": "Tentative",
     "unavailable": "Unavailable",
     "identity_protection": "Identity protection",
     "identity_protection_desc": "Use a guest account and optionally set a password for this plan to protect your identity.",

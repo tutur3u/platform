@@ -1,10 +1,6 @@
 'use client';
 
-import {
-  addTimeblocks,
-  durationToTimeblocks,
-  removeTimeblocks,
-} from '@/utils/timeblock-helper';
+import { addTimeblocks, removeTimeblocks } from '@/utils/timeblock-helper';
 import type { MeetTogetherPlan } from '@tuturuuu/types/primitives/MeetTogetherPlan';
 import type { Timeblock } from '@tuturuuu/types/primitives/Timeblock';
 import type { User as PlatformUser } from '@tuturuuu/types/primitives/User';
@@ -38,6 +34,7 @@ interface EditingParams {
   initialTouch?: { x: number; y: number };
   startDate?: Date;
   endDate?: Date;
+  tentativeMode?: boolean;
 }
 
 // Utility function to compare timeblock arrays
@@ -102,8 +99,9 @@ const TimeBlockContext = createContext({
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   getPreviewUsers: (_: Timeblock[]) =>
-    ({ available: [], unavailable: [] }) as {
+    ({ available: [], tentative: [], unavailable: [] }) as {
       available: (PlatformUser | GuestUser)[];
+      tentative: (PlatformUser | GuestUser)[];
       unavailable: (PlatformUser | GuestUser)[];
     },
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -117,8 +115,12 @@ const TimeBlockContext = createContext({
   setPreviewDate: (_: Date | null) => {},
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   setSelectedTimeBlocks: (_: { planId?: string; data: Timeblock[] }) => {},
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any
-  edit: (_: { mode: 'add' | 'remove'; date: Date }, __?: any) => {},
+  edit: (
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    _: { mode: 'add' | 'remove'; date: Date; tentativeMode?: boolean },
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any
+    __?: any
+  ) => {},
   endEditing: () => {},
   setDisplayMode: (
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -161,13 +163,31 @@ const TimeBlockingProvider = ({
 
   const getPreviewUsers = useCallback(
     (timeblocks: Timeblock[]) => {
-      if (!previewDate) return { available: [], unavailable: [] };
+      if (!previewDate)
+        return { available: [], tentative: [], unavailable: [] };
 
-      const previewUserIds = timeblocks
+      // Get users with confirmed timeblocks
+      const confirmedUserIds = timeblocks
         .filter((timeblock) => {
           const start = dayjs(`${timeblock.date} ${timeblock.start_time}`);
           const end = dayjs(`${timeblock.date} ${timeblock.end_time}`);
-          return dayjs(previewDate).isBetween(start, end, null, '[)');
+          return (
+            dayjs(previewDate).isBetween(start, end, null, '[)') &&
+            !timeblock.tentative
+          );
+        })
+        .map((timeblock) => timeblock.user_id)
+        .filter(Boolean) as string[];
+
+      // Get users with tentative timeblocks
+      const tentativeUserIds = timeblocks
+        .filter((timeblock) => {
+          const start = dayjs(`${timeblock.date} ${timeblock.start_time}`);
+          const end = dayjs(`${timeblock.date} ${timeblock.end_time}`);
+          return (
+            dayjs(previewDate).isBetween(start, end, null, '[)') &&
+            timeblock.tentative
+          );
         })
         .map((timeblock) => timeblock.user_id)
         .filter(Boolean) as string[];
@@ -179,14 +199,21 @@ const TimeBlockingProvider = ({
           filteredUserIds.includes(user.id)
       );
 
-      const uniqueUserIds = Array.from(new Set(previewUserIds));
+      const uniqueConfirmedUserIds = Array.from(new Set(confirmedUserIds));
+      const uniqueTentativeUserIds = Array.from(new Set(tentativeUserIds));
 
       return {
         available: allUsers.filter(
-          (user) => !user?.id || uniqueUserIds.includes(user.id)
+          (user) => !user?.id || uniqueConfirmedUserIds.includes(user.id)
+        ),
+        tentative: allUsers.filter(
+          (user) => !user?.id || uniqueTentativeUserIds.includes(user.id)
         ),
         unavailable: allUsers.filter(
-          (user) => user.id && !uniqueUserIds.includes(user.id)
+          (user) =>
+            user.id &&
+            !uniqueConfirmedUserIds.includes(user.id) &&
+            !uniqueTentativeUserIds.includes(user.id)
         ),
       };
     },
@@ -305,24 +332,30 @@ const TimeBlockingProvider = ({
   >();
 
   const edit = useCallback(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ({ mode, date }: { mode: 'add' | 'remove'; date: Date }, event?: any) => {
+    (
+      {
+        mode,
+        date,
+        tentativeMode,
+      }: { mode: 'add' | 'remove'; date: Date; tentativeMode?: boolean },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      event?: any
+    ) => {
       const touch = event?.touches?.[0] as Touch | undefined;
 
       setEditing((prevData) => {
-        const nextMode = prevData?.mode === undefined ? mode : prevData.mode;
+        const nextMode = prevData?.mode ?? mode;
+        const nextTentativeMode = prevData?.tentativeMode ?? tentativeMode;
         const nextTouch =
-          prevData?.initialTouch === undefined
-            ? touch
-              ? {
-                  x: touch.clientX,
-                  y: touch.clientY,
-                }
-              : undefined
-            : prevData.initialTouch;
+          prevData?.initialTouch ??
+          (touch
+            ? {
+                x: touch.clientX,
+                y: touch.clientY,
+              }
+            : undefined);
 
-        const nextStart =
-          prevData?.startDate === undefined ? date : prevData.startDate;
+        const nextStart = prevData?.startDate ?? date;
 
         const touchXDiff =
           (touch?.clientX || 0) - (prevData?.initialTouch?.x || 0);
@@ -346,6 +379,7 @@ const TimeBlockingProvider = ({
           startDate: nextStart,
           endDate: nextEnd,
           initialTouch: nextTouch,
+          tentativeMode: nextTentativeMode,
         };
       });
     },
@@ -366,8 +400,11 @@ const TimeBlockingProvider = ({
       ) as Date[];
 
       if (editing.mode === 'add') {
-        const extraTimeblocks = durationToTimeblocks(dates);
-        const timeblocks = addTimeblocks(prevTimeblocks.data, extraTimeblocks);
+        const timeblocks = addTimeblocks(
+          prevTimeblocks.data,
+          dates,
+          editing.tentativeMode ?? false
+        );
         return {
           planId: plan.id,
           data: timeblocks.map((tb) => ({ ...tb, plan_id: plan.id })),

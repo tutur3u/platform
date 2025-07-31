@@ -12,6 +12,7 @@ export default function DayPlanner({
   editable,
   disabled,
   showBestTimes = false,
+  tentativeMode = false,
   globalMaxAvailable,
   onBestTimesStatus,
 }: {
@@ -22,6 +23,7 @@ export default function DayPlanner({
   editable: boolean;
   disabled: boolean;
   showBestTimes?: boolean;
+  tentativeMode?: boolean;
   globalMaxAvailable: number;
   onBestTimesStatus?: (hasBestTimes: boolean) => void;
 }) {
@@ -49,6 +51,7 @@ export default function DayPlanner({
         editable={editable}
         disabled={disabled}
         showBestTimes={showBestTimes}
+        tentativeMode={tentativeMode}
         globalMaxAvailable={globalMaxAvailable}
         onBestTimesStatus={onBestTimesStatus}
       />

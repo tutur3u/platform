@@ -29,6 +29,11 @@ export default function AvailabilityPlanner({
           <div className="h-4 w-8 rounded border border-foreground/50 bg-dynamic-red/20" />
         </div>
         <div className="flex items-center gap-2">
+          <div>{t('tentative')}</div>
+          <div className="h-4 w-8 rounded border border-foreground/50 bg-yellow-500/70" />
+        </div>
+
+        <div className="flex items-center gap-2">
           <div>{t('available')}</div>
           <div className="h-4 w-8 rounded border border-foreground/50 bg-green-500/70" />
         </div>
