@@ -360,263 +360,43 @@ export const CalendarSyncProvider = ({
           return;
         }
 
-        const supabase = createClient();
-
-        // get the current user
-        const {
-          data: { user: authUser },
-        } = await supabase.auth.getUser();
-
-        if (!authUser) {
-          setError(new Error('User not authenticated'));
-          return;
-        }
-
-        // Log the start of the sync
-        let syncRecord: {
-          end_time: string | null;
-          deleted_events: number | null;
-          inserted_events: number | null;
-          updated_events: number | null;
-          id: string;
-          source: string | null;
-          start_time: string | null;
-          status: string | null;
-          type: string | null;
-          triggered_by: string | null;
-          ws_id: string;
-        } | null = null;
-        let numInserted = 0;
-        let numUpdated = 0;
-        let numDeleted = 0;
-
-        if (DEV_MODE) {
-          // Use the API endpoint instead of direct database call
-          const insertResponse = await fetch(
-            '/api/v1/calendar/sync-dashboard/insert',
-            {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                ws_id: wsId,
-                start_time: new Date().toISOString(),
-                end_time: new Date().toISOString(),
-                triggered_by: authUser?.id,
-                type: 'active',
-                status: 'running',
-                inserted_events: 0,
-                updated_events: 0,
-                deleted_events: 0,
-              }),
-            }
-          );
-
-          if (!insertResponse.ok) {
-            const errorData = await insertResponse.json();
-            setError(
-              new Error(errorData.error || 'Failed to create sync record')
-            );
-            return;
-          }
-
-          const insertData = await insertResponse.json();
-          syncRecord = insertData.data;
-        }
-
-        // Use the exact range from dates array
         const startDate = dayjs(dates[0]).startOf('day');
         const endDate = dayjs(dates[dates.length - 1]).endOf('day');
 
-        // Report get phase starting
-        if (progressCallback) {
-          progressCallback({
-            phase: 'get',
-            percentage: 0,
-            statusMessage: 'Fetching events from database...',
-            changesMade: false,
-          });
-          await new Promise((resolve) => setTimeout(resolve, 500)); // Add small delay
-        }
-
-        // Fetch from database
-        const { data: dbData, error: dbError } = await supabase
-          .from('workspace_calendar_events')
-          .select('*')
-          .eq('ws_id', wsId)
-          .lt('start_at', endDate.add(1, 'day').toISOString()) // Event starts before visible range ends
-          .gt('end_at', startDate.toISOString()) // Event ends after visible range starts
-          .order('start_at', { ascending: true });
-
-        if (dbError) {
-          setError(dbError);
-          return;
-        }
-
-        setData(dbData);
-
-        if (progressCallback) {
-          progressCallback({
-            phase: 'fetch',
-            percentage: 25,
-            statusMessage: 'Fetching events from Google Calendar...',
-            changesMade: false,
-          });
-          await new Promise((resolve) => setTimeout(resolve, 500)); // Add small delay
-        }
-
-        // Fetch from Google Calendar
-        const response = await fetch(
-          `/api/v1/calendar/auth/fetch?wsId=${wsId}&startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`
-        );
-
-        const googleResponse = await response.json();
-
-        if (!response.ok) {
-          const errorMessage =
-            googleResponse.error +
-            '. ' +
-            googleResponse.googleError +
-            ': ' +
-            googleResponse.details?.reason;
-          setError(new Error(errorMessage));
-          return;
-        } else {
-          setError(null);
-        }
-
-        setGoogleData(googleResponse.events);
-
-        if (progressCallback) {
-          progressCallback({
-            phase: 'delete',
-            percentage: 50,
-            statusMessage: 'Deleting events from database...',
-            changesMade: false,
-          });
-          await new Promise((resolve) => setTimeout(resolve, 500)); // Add small delay
-        }
-
-        // Create a set of google_event_id from googleResponse.events
-        const googleEventIds = new Set(
-          googleResponse.events.map(
-            (e: WorkspaceCalendarEvent) => e.google_event_id
-          )
-        );
-
-        // Filter data not in googleEventIds
-        const dataToDelete = dbData?.filter(
-          (e: WorkspaceCalendarEvent) =>
-            e.google_event_id && !googleEventIds.has(e.google_event_id)
-        );
-        // Delete dataToDelete
-        if (dataToDelete) {
-          const { error: deleteError } = await supabase
-            .from('workspace_calendar_events')
-            .delete()
-            .in(
-              'id',
-              dataToDelete.map((e) => e.id)
-            );
-
-          if (deleteError) {
-            setError(deleteError);
-            return;
-          } else {
-            setError(null);
-            numDeleted = dataToDelete.length;
-          }
-        }
-
-        if (progressCallback) {
-          progressCallback({
-            phase: 'upsert',
-            percentage: 75,
-            statusMessage: 'Syncing events to database...',
-            changesMade: false,
-          });
-          await new Promise((resolve) => setTimeout(resolve, 500)); // Add small delay
-        }
-
-        // Prepare events for upsert by matching with existing events
-        const eventsToUpsert = googleResponse.events.map(
-          (event: WorkspaceCalendarEvent) => {
-            // Find existing event with same google_event_id
-            const existingEvent = dbData?.find((e) => {
-              const matches =
-                e.google_event_id === event.google_event_id &&
-                e.google_event_id !== null;
-              return matches;
-            });
-
-            if (existingEvent) {
-              return {
-                ...event,
-                id: existingEvent.id,
-                ws_id: wsId,
-              };
-            }
-
-            return {
-              ...event,
-              id: crypto.randomUUID(),
-              ws_id: wsId,
-            };
-          }
-        );
-
-        const { data: upsertData, error: upsertError } = await supabase.rpc(
-          'upsert_calendar_events_and_count',
+        const activeSyncResponse = await fetch(
+          `/api/v1/calendar/auth/active-sync`,
           {
-            events: eventsToUpsert,
+            method: 'POST',
+            credentials: 'include',
+            body: JSON.stringify({
+              wsId,
+              startDate: startDate.toISOString(),
+              endDate: endDate.toISOString(),
+            }),
           }
         );
 
-        if (upsertError) {
-          setError(upsertError);
+        if (!activeSyncResponse.ok) {
+          const errorData = await activeSyncResponse.json();
+          setError(new Error(errorData.error));
           return;
         }
+
+        const activeSyncData = await activeSyncResponse.json();
+        const dbData = activeSyncData?.dbData;
+        const googleData = activeSyncData?.googleData;
+
+        if (dbData) {
+          setData(dbData);
+        }
+        if (googleData) {
+          setGoogleData(googleData);
+        }
+
         setError(null);
-        // Update lastUpsert timestamp after successful upsert
-        await updateLastUpsert(wsId);
 
         // Refresh the cache to trigger queryClient to refetch the data from database
         refresh();
-
-        if (DEV_MODE && syncRecord) {
-          // Type assertion since we know the function returns { inserted: number, updated: number }
-          const result = upsertData as { inserted: number; updated: number };
-          numInserted = result?.inserted || 0;
-          numUpdated = result?.updated || 0;
-
-          // Update the sync dashboard using the API endpoint
-          const updateResponse = await fetch(
-            '/api/v1/calendar/sync-dashboard/update',
-            {
-              method: 'PUT',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                id: syncRecord.id,
-                status: 'completed',
-                end_time: new Date().toISOString(),
-                inserted_events: numInserted,
-                updated_events: numUpdated,
-                deleted_events: numDeleted,
-              }),
-            }
-          );
-
-          if (!updateResponse.ok) {
-            const errorData = await updateResponse.json();
-            console.error(
-              'Failed to update sync dashboard record:',
-              errorData.error
-            );
-          }
-        }
 
         if (progressCallback) {
           progressCallback({
