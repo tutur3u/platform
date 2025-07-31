@@ -1,0 +1,33 @@
+{
+  "name": "@tuturuuu/games",
+  "license": "MIT",
+  "version": "0.0.1",
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "@tuturuuu/supabase": "workspace:*",
+    "clsx": "^2.1.1",
+    "next": "^15.4.5",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
+    "tailwind-merge": "^3.3.1",
+    "uuid": "^11.1.0",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@tuturuuu/eslint-config": "workspace:*",
+    "@tuturuuu/types": "workspace:*",
+    "@tuturuuu/typescript-config": "workspace:*",
+    "@types/node": "^24.1.0",
+    "@types/react": "^19.1.9",
+    "@vitejs/plugin-react": "^4.7.0",
+    "@vitest/coverage-v8": "^3.2.4",
+    "typescript": "^5.8.3",
+    "vite": "^7.0.6"
+  },
+  "packageManager": "bun@1.2.19"
+}
