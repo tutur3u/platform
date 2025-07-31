@@ -2,6 +2,7 @@ import { Crop, CropType, GrowthStage } from './crop';
 import { Inventory } from './inventory';
 import { Player } from './player';
 import { Position } from './position';
+import { WeatherSystem, WeatherType } from './weather';
 
 export interface GameState {
   player: Player;
@@ -11,6 +12,10 @@ export interface GameState {
   inventory: Inventory;
   selectedTool: 'plant' | 'water' | 'harvest' | null;
   selectedSeed: CropType | null;
+  weather: WeatherSystem;
+  gameTime: number;
+  totalHarvested: number;
+  totalEarned: number;
 }
 
 export class GameStateManager {
@@ -28,6 +33,10 @@ export class GameStateManager {
       inventory: new Inventory(),
       selectedTool: null,
       selectedSeed: null,
+      weather: new WeatherSystem(),
+      gameTime: 0,
+      totalHarvested: 0,
+      totalEarned: 0,
     };
     this.lastUpdateTime = Date.now();
   }
@@ -113,6 +122,7 @@ export class GameStateManager {
     const harvestValue = crop.harvest();
     if (harvestValue > 0) {
       this.state.inventory.addHarvestedCrop(crop.getData().type, 1);
+      this.state.totalHarvested++;
     }
     return harvestValue;
   }
@@ -128,14 +138,37 @@ export class GameStateManager {
 
   updateCrops(): void {
     const currentTime = Date.now();
+    const weather = this.state.weather.getCurrentWeather();
+
     this.state.crops.forEach((crop, key) => {
+      // Apply weather effects to crop growth and water consumption
+      const originalData = crop.getData();
+
+      // Update crop with weather multipliers
       crop.update(currentTime);
+
+      // Apply weather effects to water consumption
+      const newData = crop.getData();
+      if (
+        newData.stage !== GrowthStage.SEED &&
+        newData.stage !== GrowthStage.HARVESTED
+      ) {
+        // Adjust water consumption based on weather
+        const waterLoss = 0.5 * weather.waterMultiplier;
+        newData.waterLevel = Math.max(0, newData.waterLevel - waterLoss);
+      }
 
       // Remove dead crops
       if (crop.isDead()) {
         this.state.crops.delete(key);
       }
     });
+
+    // Update weather
+    this.state.weather.update();
+
+    // Update game time
+    this.state.gameTime = currentTime - this.lastUpdateTime;
     this.lastUpdateTime = currentTime;
   }
 
@@ -157,6 +190,10 @@ export class GameStateManager {
     return this.state.inventory;
   }
 
+  getWeather(): WeatherSystem {
+    return this.state.weather;
+  }
+
   // Action method that combines tool selection with player action
   performAction(): boolean {
     const pos = this.state.player.getPosition();
@@ -174,5 +211,38 @@ export class GameStateManager {
         return this.harvestCrop() > 0;
     }
     return false;
+  }
+
+  // Statistics methods
+  getTotalHarvested(): number {
+    return this.state.totalHarvested;
+  }
+
+  getTotalEarned(): number {
+    return this.state.totalEarned;
+  }
+
+  getGameTime(): number {
+    return this.state.gameTime;
+  }
+
+  getCropCount(): number {
+    return this.state.crops.size;
+  }
+
+  getMatureCropCount(): number {
+    let count = 0;
+    this.state.crops.forEach((crop) => {
+      if (crop.isHarvestable()) count++;
+    });
+    return count;
+  }
+
+  getDeadCropCount(): number {
+    let count = 0;
+    this.state.crops.forEach((crop) => {
+      if (crop.isDead()) count++;
+    });
+    return count;
   }
 }

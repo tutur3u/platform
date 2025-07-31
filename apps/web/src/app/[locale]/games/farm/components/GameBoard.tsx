@@ -4,6 +4,7 @@ import { CropType } from '../engine/crop';
 import { GameStateManager } from '../engine/gameState';
 import { CropRenderer } from './CropRenderer';
 import { FarmingUI } from './FarmingUI';
+import { WeatherDisplay } from './WeatherDisplay';
 import { useCallback, useEffect, useState } from 'react';
 
 const GRID_SIZE = 20;
@@ -129,17 +130,19 @@ export function GameBoard() {
   }, [gameManager]);
 
   const allCrops = gameManager.getAllCrops();
+  const currentCrop = gameManager.getCropAt(playerPos.getX(), playerPos.getY());
 
   return (
     <div className="flex gap-6">
       {/* Game Board */}
       <div className="flex flex-col items-center gap-4">
-        <div className="flex items-center gap-4">
+        {/* Status Bar */}
+        <div className="flex items-center gap-6">
           <div className="text-lg font-semibold">
             Position: ({playerPos.getX()}, {playerPos.getY()})
           </div>
           <div
-            className={`rounded px-2 py-1 text-sm font-medium ${
+            className={`rounded px-3 py-1 text-sm font-medium ${
               gameState.isGameRunning
                 ? 'bg-dynamic-green/20 text-dynamic-green'
                 : 'bg-dynamic-red/20 text-dynamic-red'
@@ -147,72 +150,100 @@ export function GameBoard() {
           >
             {gameState.isGameRunning ? 'Playing' : 'Paused'}
           </div>
-        </div>
-
-        <div
-          className="relative overflow-hidden rounded-lg border-2 border-dynamic-gray/30 bg-dynamic-gray/5"
-          style={{
-            width: GRID_SIZE * CELL_SIZE,
-            height: GRID_SIZE * CELL_SIZE,
-          }}
-        >
-          {/* Grid cells */}
-          {Array.from({ length: GRID_SIZE }, (_, y) =>
-            Array.from({ length: GRID_SIZE }, (_, x) => (
-              <div
-                key={`${x}-${y}`}
-                className="absolute border border-dynamic-gray/10"
-                style={{
-                  left: x * CELL_SIZE,
-                  top: y * CELL_SIZE,
-                  width: CELL_SIZE,
-                  height: CELL_SIZE,
-                }}
-              />
-            ))
+          {gameState.selectedTool && (
+            <div className="rounded bg-dynamic-blue/20 px-3 py-1 text-sm font-medium text-dynamic-blue">
+              Tool: {gameState.selectedTool}
+            </div>
           )}
-
-          {/* Crops */}
-          {Array.from(allCrops.entries()).map(([key, crop]) => {
-            const [x, y] = key.split(',').map(Number);
-            return (
-              <CropRenderer
-                key={key}
-                crop={crop}
-                cellSize={CELL_SIZE}
-                x={x}
-                y={y}
-              />
-            );
-          })}
-
-          {/* Player */}
-          <div
-            className={`absolute rounded-full border-2 shadow-lg transition-all duration-200 ease-out ${
-              gameState.isGameRunning
-                ? 'border-dynamic-blue/30 bg-dynamic-blue shadow-dynamic-blue/20'
-                : 'border-dynamic-gray/30 bg-dynamic-gray shadow-dynamic-gray/20'
-            }`}
-            style={{
-              left: playerPos.getX() * CELL_SIZE + 2,
-              top: playerPos.getY() * CELL_SIZE + 2,
-              width: CELL_SIZE - 4,
-              height: CELL_SIZE - 4,
-            }}
-          />
-
-          {/* Movement indicator */}
-          <div
-            className="absolute animate-pulse rounded-full border border-dynamic-blue/30 bg-dynamic-blue/20"
-            style={{
-              left: playerPos.getX() * CELL_SIZE + 1,
-              top: playerPos.getY() * CELL_SIZE + 1,
-              width: CELL_SIZE - 2,
-              height: CELL_SIZE - 2,
-            }}
-          />
+          {gameState.selectedSeed && (
+            <div className="rounded bg-dynamic-orange/20 px-3 py-1 text-sm font-medium text-dynamic-orange">
+              Seed: {gameState.selectedSeed}
+            </div>
+          )}
         </div>
 
+        {/* Current Cell Info */}
+        {currentCrop && (
+          <div className="rounded bg-dynamic-gray/10 p-3 text-center">
+            <div className="text-sm font-semibold">Current Cell</div>
+            <div className="text-xs text-dynamic-gray/70">
+              {currentCrop.isHarvestable()
+                ? 'Ready to harvest!'
+                : currentCrop.isDead()
+                  ? 'Crop is dead'
+                  : `Water: ${Math.round((currentCrop.getData().waterLevel / currentCrop.getData().maxWaterLevel) * 100)}%`}
+            </div>
+          </div>
+        )}
+
+        {/* Game Grid */}
+        <div className="relative">
+          <div
+            className="relative overflow-hidden rounded-lg border-2 border-dynamic-gray/30 bg-dynamic-gray/5 shadow-lg"
+            style={{
+              width: GRID_SIZE * CELL_SIZE,
+              height: GRID_SIZE * CELL_SIZE,
+            }}
+          >
+            {/* Grid cells */}
+            {Array.from({ length: GRID_SIZE }, (_, y) =>
+              Array.from({ length: GRID_SIZE }, (_, x) => (
+                <div
+                  key={`${x}-${y}`}
+                  className="absolute border border-dynamic-gray/10 transition-colors hover:bg-dynamic-gray/10"
+                  style={{
+                    left: x * CELL_SIZE,
+                    top: y * CELL_SIZE,
+                    width: CELL_SIZE,
+                    height: CELL_SIZE,
+                  }}
+                />
+              ))
+            )}
+
+            {/* Crops */}
+            {Array.from(allCrops.entries()).map(([key, crop]) => {
+              const [x, y] = key.split(',').map(Number);
+              return (
+                <CropRenderer
+                  key={key}
+                  crop={crop}
+                  cellSize={CELL_SIZE}
+                  x={x}
+                  y={y}
+                />
+              );
+            })}
+
+            {/* Player */}
+            <div
+              className={`absolute rounded-full border-2 shadow-lg transition-all duration-200 ease-out ${
+                gameState.isGameRunning
+                  ? 'border-dynamic-blue/30 bg-dynamic-blue shadow-dynamic-blue/20'
+                  : 'border-dynamic-gray/30 bg-dynamic-gray shadow-dynamic-gray/20'
+              }`}
+              style={{
+                left: playerPos.getX() * CELL_SIZE + 2,
+                top: playerPos.getY() * CELL_SIZE + 2,
+                width: CELL_SIZE - 4,
+                height: CELL_SIZE - 4,
+              }}
+            />
+
+            {/* Movement indicator */}
+            <div
+              className="absolute animate-pulse rounded-full border border-dynamic-blue/30 bg-dynamic-blue/20"
+              style={{
+                left: playerPos.getX() * CELL_SIZE + 1,
+                top: playerPos.getY() * CELL_SIZE + 1,
+                width: CELL_SIZE - 2,
+                height: CELL_SIZE - 2,
+              }}
+            />
+          </div>
+        </div>
+
+        {/* Instructions */}
         <div className="space-y-1 text-center text-sm text-dynamic-gray/70">
           <div>Use arrow keys or WASD to move</div>
           <div>Press SPACE to use selected tool</div>
@@ -220,16 +251,22 @@ export function GameBoard() {
         </div>
       </div>
 
-      {/* Farming UI */}
-      <FarmingUI
-        inventory={gameState.inventory}
-        selectedTool={gameState.selectedTool}
-        selectedSeed={gameState.selectedSeed}
-        onToolSelect={handleToolSelect}
-        onSeedSelect={handleSeedSelect}
-        onBuySeeds={handleBuySeeds}
-        onSellCrops={handleSellCrops}
-      />
+      {/* Right Panel */}
+      <div className="flex flex-col gap-4">
+        {/* Weather Display */}
+        <WeatherDisplay weather={gameState.weather} />
+
+        {/* Farming UI */}
+        <FarmingUI
+          inventory={gameState.inventory}
+          selectedTool={gameState.selectedTool}
+          selectedSeed={gameState.selectedSeed}
+          onToolSelect={handleToolSelect}
+          onSeedSelect={handleSeedSelect}
+          onBuySeeds={handleBuySeeds}
+          onSellCrops={handleSellCrops}
+        />
+      </div>
     </div>
   );
 }
