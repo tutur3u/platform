@@ -83,8 +83,14 @@ export async function POST(request: Request) {
     }
 
     // 5. Fetch from Google Calendar
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
     const response = await fetch(
-      `/api/v1/calendar/auth/fetch?wsId=${wsId}&startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`
+      `${baseUrl}/api/v1/calendar/auth/fetch?wsId=${wsId}&startDate=${startDate}&endDate=${endDate}`,
+      {
+        headers: {
+          Cookie: request.headers.get('cookie') || '',
+        },
+      }
     );
 
     const googleResponse = await response.json();
