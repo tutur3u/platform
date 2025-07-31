@@ -3,9 +3,10 @@
 import { PlanDetailsPollContent } from '../../polls/poll-display';
 import PlanUserFilterAccordion from './plan-user-filter-accordion';
 import type {
-  GetPollsForPlanResult,
   MeetTogetherPlan,
+  PlanUser,
 } from '@tuturuuu/types/primitives/MeetTogetherPlan';
+import type { GetPollsForPlanResult } from '@tuturuuu/types/primitives/Poll';
 import type { User } from '@tuturuuu/types/primitives/User';
 import {
   Accordion,
@@ -20,7 +21,7 @@ export interface SidebarDisplayProps {
   isCreator: boolean;
   platformUser: User | null;
   polls: GetPollsForPlanResult | null;
-  users: any[];
+  users: PlanUser[];
 }
 
 export default function SidebarDisplay({

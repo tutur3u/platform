@@ -7,9 +7,10 @@ import SidebarDisplay from './sidebar-display';
 import UnifiedAvailability from './unified-availability';
 import UtilityButtons from './utility-buttons';
 import type {
-  GetPollsForPlanResult,
   MeetTogetherPlan,
+  PlanUser,
 } from '@tuturuuu/types/primitives/MeetTogetherPlan';
+import type { GetPollsForPlanResult } from '@tuturuuu/types/primitives/Poll';
 import type { Timeblock } from '@tuturuuu/types/primitives/Timeblock';
 import type { User } from '@tuturuuu/types/primitives/User';
 import { useTimeBlocking } from '@tuturuuu/ui/hooks/time-blocking-provider';
@@ -29,12 +30,7 @@ interface PlanDetailsClientProps {
   polls: GetPollsForPlanResult | null;
   platformUser: User | null;
   isCreator: boolean;
-  users: {
-    id: string | null;
-    display_name: string | null;
-    is_guest: boolean | null;
-    timeblock_count: number | null;
-  }[];
+  users: PlanUser[];
   timeblocks: Timeblock[];
   baseUrl: string;
 }

@@ -1,9 +1,7 @@
 import MultipleChoiceVote from '../tumeet/multiple-choice-vote';
 import { DefaultWherePollContent } from './where-tu-meet';
-import {
-  GetPollsForPlanResult,
-  MeetTogetherPlan,
-} from '@tuturuuu/types/primitives/MeetTogetherPlan';
+import type { MeetTogetherPlan } from '@tuturuuu/types/primitives/MeetTogetherPlan';
+import type { GetPollsForPlanResult } from '@tuturuuu/types/primitives/Poll';
 import { User } from '@tuturuuu/types/primitives/User';
 import {
   Accordion,
@@ -300,17 +298,24 @@ export function PlanDetailsPollContent({
                           {poll.options.length} options
                         </span>
                         {isCreator && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="text-dynamic-red hover:bg-dynamic-red/10"
+                          <div
+                            className="inline-flex h-9 w-9 items-center justify-center rounded-md text-dynamic-red hover:bg-dynamic-red/10"
                             onClick={(e) => {
                               e.stopPropagation();
                               handleDeletePollClick(poll.id, poll.name);
                             }}
+                            role="button"
+                            tabIndex={0}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleDeletePollClick(poll.id, poll.name);
+                              }
+                            }}
                           >
                             <Trash2 className="h-4 w-4" />
-                          </Button>
+                          </div>
                         )}
                       </div>
                     </div>

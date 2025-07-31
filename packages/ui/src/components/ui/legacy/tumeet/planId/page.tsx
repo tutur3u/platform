@@ -1,5 +1,11 @@
 import PlanDetailsClient from './plan-details-client';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import type { PlanUser } from '@tuturuuu/types/primitives/MeetTogetherPlan';
+import type {
+  GuestVote,
+  PollOption,
+  UserVote,
+} from '@tuturuuu/types/primitives/Poll';
 import { TimeBlockingProvider } from '@tuturuuu/ui/hooks/time-blocking-provider';
 import { getPlan } from '@tuturuuu/ui/utils/plan-helpers';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
@@ -22,7 +28,7 @@ export default async function MeetTogetherPlanDetailsPage({
 
   const platformUser = await getCurrentUser(true);
   const plan = await getPlan(planId);
-  const users = await getUsers(planId);
+  const users: PlanUser[] = await getUsers(planId);
   const polls = await getPollsForPlan(planId);
   const timeblocks = await getTimeBlocks(planId);
   const isCreator = Boolean(
@@ -129,7 +135,7 @@ async function getPollsForPlan(planId: string) {
 
   // 2. Get options for all polls
   const pollIds = polls?.map((p) => p.id) ?? [];
-  let allOptions: any[] = [];
+  let allOptions: PollOption[] = [];
   if (pollIds.length > 0) {
     const { data: options, error: optionsError } = await sbAdmin
       .from('poll_options')
@@ -150,8 +156,8 @@ async function getPollsForPlan(planId: string) {
 
   // 3. Get user and guest votes for all poll options
   const optionIds = allOptions.map((o) => o.id);
-  let userVotes: any[] = [];
-  let guestVotes: any[] = [];
+  let userVotes: UserVote[] = [];
+  let guestVotes: GuestVote[] = [];
   if (optionIds.length > 0) {
     // Platform user votes
     const { data: uVotes, error: uVotesError } = await sbAdmin

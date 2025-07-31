@@ -1,11 +1,16 @@
 'use client';
 
+import type { PlanUser } from '@tuturuuu/types/primitives/MeetTogetherPlan';
 import { useTimeBlocking } from '@tuturuuu/ui/hooks/time-blocking-provider';
 import { ShieldCheck } from '@tuturuuu/ui/icons';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-export default function PlanUserFilterAccordion({ users }: { users: any[] }) {
+export default function PlanUserFilterAccordion({
+  users,
+}: {
+  users: PlanUser[];
+}) {
   const t = useTranslations('meet-together-plan-details');
   const { filteredUserIds, setFilteredUserIds } = useTimeBlocking();
   const [hoveredUserId, setHoveredUserId] = useState<string | null>(null);
@@ -87,7 +92,7 @@ export default function PlanUserFilterAccordion({ users }: { users: any[] }) {
               <button
                 key={user.id}
                 className={`w-full rounded-lg border p-3 text-left transition-all duration-200 ease-in-out ${
-                  filteredUserIds.includes(user.id)
+                  filteredUserIds?.includes(user.id ?? '')
                     ? 'border-foreground/30 bg-foreground/20'
                     : 'bg-foreground/5 hover:bg-foreground/10'
                 } ${
@@ -97,12 +102,12 @@ export default function PlanUserFilterAccordion({ users }: { users: any[] }) {
                 }`}
                 onClick={() =>
                   setFilteredUserIds((prev) =>
-                    prev.includes(user.id)
+                    prev.includes(user.id ?? '')
                       ? prev.filter((id) => id !== user.id)
-                      : [...prev, user.id]
+                      : [...prev, user.id ?? '']
                   )
                 }
-                onMouseEnter={() => handleMouseEnter(user.id)}
+                onMouseEnter={() => handleMouseEnter(user.id ?? '')}
                 onMouseLeave={handleMouseLeave}
               >
                 <div className="flex items-center justify-between">
