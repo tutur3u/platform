@@ -4,6 +4,7 @@ import { useTimeBlocking } from '@/app/[locale]/(marketing)/meet-together/plans/
 import type {
   GetPollsForPlanResult,
   MeetTogetherPlan,
+  PollOptionWithVotes,
 } from '@tuturuuu/types/primitives/MeetTogetherPlan';
 import type { User } from '@tuturuuu/types/primitives/User';
 import {
@@ -284,14 +285,17 @@ function DefaultWherePollContent({
   onAddOption,
   onVote,
   onDeleteOption,
-  onDeletePoll,
+  // onDeletePoll,
 }: {
   plan: MeetTogetherPlan;
   isCreator: boolean;
   polls: GetPollsForPlanResult | null;
   currentUserId: string | null;
   userType: 'PLATFORM' | 'GUEST' | 'DISPLAY';
-  onAddOption: (pollId: string, value: string) => Promise<any>;
+  onAddOption: (
+    pollId: string,
+    value: string
+  ) => Promise<PollOptionWithVotes | null>;
   onVote: (pollId: string, optionIds: string[]) => Promise<void>;
   onDeleteOption: (optionId: string) => Promise<void>;
   onDeletePoll?: (pollId: string) => Promise<void>;
@@ -317,6 +321,10 @@ function DefaultWherePollContent({
     );
 
     if (!res.ok) {
+      toast({
+        title: 'Failed to toggle where to meet',
+        description: 'Please try again',
+      });
     }
   };
 
