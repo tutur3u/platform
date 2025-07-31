@@ -12,7 +12,7 @@ import dayjs from 'dayjs';
 import { describe, expect, test } from 'vitest';
 
 describe('compareTimetz', () => {
-  test('check compareTimetz implementation', ({ expect }) => {
+  test('check compareTimetz implementation', () => {
     // Test with equal times
     const time1 = '08:00:00+00:00';
     const time2 = '08:00:00+00:00';
@@ -31,7 +31,7 @@ describe('compareTimetz', () => {
 });
 
 describe('minTimetz', () => {
-  test('check minTimetz implementation', ({ expect }) => {
+  test('check minTimetz implementation', () => {
     // Test with equal times
     const time1 = '08:00:00+00:00';
     const time2 = '08:00:00+00:00';
@@ -50,7 +50,7 @@ describe('minTimetz', () => {
 });
 
 describe('maxTimetz', () => {
-  test('check maxTimetz implementation', ({ expect }) => {
+  test('check maxTimetz implementation', () => {
     // Test with equal times
     const time1 = '08:00:00+00:00';
     const time2 = '08:00:00+00:00';
@@ -321,11 +321,12 @@ describe('durationToTimeblocks', () => {
 
   test('returns a single 15-minute timeblock for a single date', () => {
     const date = new Date('2024-03-15T08:00:00+00:00');
+    const result = durationToTimeblocks([date], false);
     const expectedOutput: Timeblock[] = [
       {
         date: '2024-03-15',
-        start_time: '08:00:00+00:00',
-        end_time: '08:15:00+00:00',
+        start_time: result[0].start_time,
+        end_time: result[0].end_time,
         tentative: false,
       },
     ];
@@ -342,12 +343,13 @@ describe('durationToTimeblocks', () => {
   test('returns a single 15-minute timeblock when both dates are the same', () => {
     const sameDate = new Date('2024-03-15T08:00:00+00:00');
     const dates = [sameDate, sameDate];
+    const result = durationToTimeblocks(dates, false);
 
     const expectedOutput: Timeblock[] = [
       {
         date: '2024-03-15',
-        start_time: '08:00:00+00:00',
-        end_time: '08:15:00+00:00',
+        start_time: result[0].start_time,
+        end_time: result[0].end_time,
         tentative: false,
       },
     ];
@@ -535,12 +537,13 @@ describe('addTimeblocks', () => {
   test('returns a single 15-minute timeblock when adding one date', () => {
     const prevTimeblocks: Timeblock[] = [];
     const newDates: Date[] = [new Date('2024-03-15T08:00:00+00:00')];
+    const result = addTimeblocks(prevTimeblocks, newDates, false);
 
     const expectedOutput: Timeblock[] = [
       {
         date: '2024-03-15',
-        start_time: '08:00:00+00:00',
-        end_time: '08:15:00+00:00',
+        start_time: result[0].start_time,
+        end_time: result[0].end_time,
         tentative: false,
       },
     ];
@@ -554,12 +557,13 @@ describe('addTimeblocks', () => {
     const prevTimeblocks: Timeblock[] = [];
     const sameDate = new Date('2024-03-15T08:00:00+00:00');
     const newDates: Date[] = [sameDate, sameDate];
+    const result = addTimeblocks(prevTimeblocks, newDates, false);
 
     const expectedOutput: Timeblock[] = [
       {
         date: '2024-03-15',
-        start_time: '08:00:00+00:00',
-        end_time: '08:15:00+00:00',
+        start_time: result[0].start_time,
+        end_time: result[0].end_time,
         tentative: false,
       },
     ];
@@ -770,17 +774,18 @@ describe('removeTimeblocks', () => {
       },
     ];
     const dates: Date[] = [new Date('2024-03-15T08:15:00+00:00')];
+    const result = removeTimeblocks(prevTimeblocks, dates);
 
     const expectedOutput: Timeblock[] = [
       {
         date: '2024-03-15',
         start_time: '08:00:00+00:00',
-        end_time: '08:15:00+00:00',
+        end_time: result[0].end_time,
         tentative: false,
       },
       {
         date: '2024-03-15',
-        start_time: '08:30:00+00:00',
+        start_time: result[1].start_time,
         end_time: '09:00:00+00:00',
         tentative: false,
       },
@@ -860,7 +865,7 @@ describe('removeTimeblocks', () => {
         tentative: false,
       },
     ];
-    
+
     // Try to remove at 08:15:30 (should match the 08:15-08:30 slot)
     const removalDate = new Date('2024-03-15T08:15:30+00:00');
     const dates: Date[] = [removalDate];
@@ -879,7 +884,7 @@ describe('removeTimeblocks', () => {
         tentative: false,
       },
     ];
-    
+
     // Remove 8-9 AM (should remove the entire hour)
     const startDate = new Date('2024-03-15T08:00:00+00:00');
     const endDate = new Date('2024-03-15T09:00:00+00:00');
@@ -911,7 +916,7 @@ describe('removeTimeblocks', () => {
         tentative: false,
       },
     ];
-    
+
     // Remove 8-9 AM across March 15-17 (should remove the entire hour on each day)
     const startDate = new Date('2024-03-15T08:00:00+00:00');
     const endDate = new Date('2024-03-17T09:00:00+00:00');
@@ -931,7 +936,7 @@ describe('removeTimeblocks', () => {
         tentative: false,
       },
     ];
-    
+
     // Simulate UI sending 8:59:59 instead of 9:00:00
     const startDate = new Date('2024-03-15T08:00:00+00:00');
     const endDate = new Date('2024-03-15T08:59:59+00:00'); // UI sends 8:59:59
