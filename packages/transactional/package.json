@@ -9,9 +9,9 @@
   },
   "dependencies": {
     "@react-email/components": "^0.3.3",
-    "@react-email/preview-server": "^4.2.5",
+    "@react-email/preview-server": "^4.2.6",
     "react": "^19.1.1",
-    "react-email": "^4.2.5"
+    "react-email": "^4.2.6"
   },
   "devDependencies": {
     "@tuturuuu/eslint-config": "workspace:*",
