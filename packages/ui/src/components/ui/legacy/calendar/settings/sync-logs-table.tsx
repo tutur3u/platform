@@ -1,5 +1,6 @@
 'use client';
 
+import type { SyncLog, Workspace } from './types';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import {
@@ -37,7 +38,6 @@ import {
   Search,
   Zap,
 } from 'lucide-react';
-import type { SyncLog, Workspace } from './types';
 
 interface SyncLogsTableProps {
   syncLogs: SyncLog[];
@@ -155,7 +155,7 @@ export function SyncLogsTable({
         <div className="flex flex-col gap-4 lg:flex-row">
           <div className="flex-1">
             <div className="relative">
-              <Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 transform text-foreground/50" />
+              <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform text-foreground/50" />
               <Input
                 placeholder="Search by user, workspace, or calendar source..."
                 value={searchTerm}
@@ -252,7 +252,7 @@ export function SyncLogsTable({
                           </AvatarFallback>
                         </Avatar>
                         <div className="flex min-w-0 flex-col">
-                          <span className="truncate font-medium text-sm">
+                          <span className="truncate text-sm font-medium">
                             {log.triggeredBy.name}
                           </span>
                           <span className="truncate text-xs opacity-70">
@@ -265,7 +265,7 @@ export function SyncLogsTable({
                         <div className="flex h-7 w-7 items-center justify-center rounded-full bg-foreground/10">
                           <Clock className="h-3 w-3 text-foreground/50" />
                         </div>
-                        <span className="font-medium text-foreground/50 text-sm">
+                        <span className="text-sm font-medium text-foreground/50">
                           System
                         </span>
                       </div>
@@ -274,29 +274,29 @@ export function SyncLogsTable({
                   <TableCell>
                     <div className="flex items-center gap-2">
                       <CalendarDays className="h-4 w-4 text-foreground/50" />
-                      <span className="text-foreground/50 text-sm">
+                      <span className="text-sm text-foreground/50">
                         {log.calendarSource}
                       </span>
                     </div>
                   </TableCell>
                   <TableCell>{getStatusBadge(log.status)}</TableCell>
-                  <TableCell className="font-mono text-foreground/50 text-sm">
+                  <TableCell className="font-mono text-sm text-foreground/50">
                     {formatDuration(log.duration)}
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center justify-center gap-2">
                       {log.events.added > 0 && (
-                        <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-green-100 font-medium text-green-700 text-xs">
+                        <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-green-100 text-xs font-medium text-green-700">
                           +{log.events.added}
                         </span>
                       )}
                       {log.events.updated > 0 && (
-                        <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 font-medium text-blue-700 text-xs">
+                        <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 text-xs font-medium text-blue-700">
                           ~{log.events.updated}
                         </span>
                       )}
                       {log.events.deleted > 0 && (
-                        <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-red-100 font-medium text-red-700 text-xs">
+                        <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-red-100 text-xs font-medium text-red-700">
                           -{log.events.deleted}
                         </span>
                       )}
@@ -316,7 +316,7 @@ export function SyncLogsTable({
         {syncLogs.length === 0 && (
           <div className="py-12 text-center">
             <CalendarDays className="mx-auto mb-4 h-12 w-12 text-foreground/50" />
-            <h3 className="mb-2 font-medium text-lg">No sync logs found</h3>
+            <h3 className="mb-2 text-lg font-medium">No sync logs found</h3>
             <p className="text-foreground/50">
               Try adjusting your search criteria or filters.
             </p>

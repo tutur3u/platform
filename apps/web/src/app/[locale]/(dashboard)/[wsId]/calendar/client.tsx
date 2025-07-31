@@ -3,9 +3,9 @@
 import AddEventButton from './components/add-event-button';
 import AddEventModal from './components/add-event-dialog';
 import AutoScheduleComprehensiveDialog from './components/auto-schedule-comprehensive-dialog';
-import TestEventGeneratorButton from './components/test-event-generator-button';
 import CalendarSidebar from './components/calendar-sidebar';
 import TasksSidebarContent from './components/tasks-sidebar-content';
+import TestEventGeneratorButton from './components/test-event-generator-button';
 import { DEV_MODE } from '@/constants/common';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type {
@@ -13,7 +13,12 @@ import type {
   WorkspaceCalendarGoogleToken,
 } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
-import { PanelLeftClose, PanelRightClose, Sparkles, Plus } from '@tuturuuu/ui/icons';
+import {
+  PanelLeftClose,
+  PanelRightClose,
+  Plus,
+  Sparkles,
+} from '@tuturuuu/ui/icons';
 import { SmartCalendar } from '@tuturuuu/ui/legacy/calendar/smart-calendar';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { useLocale, useTranslations } from 'next-intl';
@@ -44,7 +49,9 @@ export default function CalendarClientPage({
   const { data: tasksData } = useQuery({
     queryKey: ['tasks', workspace.id],
     queryFn: async () => {
-      const response = await fetch(`/api/v1/workspaces/${workspace.id}/tasks?limit=100`);
+      const response = await fetch(
+        `/api/v1/workspaces/${workspace.id}/tasks?limit=100`
+      );
       if (!response.ok) throw new Error('Failed to fetch tasks');
       return response.json();
     },
@@ -105,7 +112,7 @@ export default function CalendarClientPage({
       <div className="flex h-full">
         {/* Left sidebar (existing) */}
         {isMounted && sidebarOpen && <CalendarSidebar />}
-        
+
         {/* Main calendar content */}
         <div className="flex-1">
           <SmartCalendar

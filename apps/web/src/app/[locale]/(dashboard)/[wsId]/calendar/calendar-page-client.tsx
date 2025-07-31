@@ -1,22 +1,36 @@
 'use client';
 
-import { useState } from 'react';
-import type { Workspace, WorkspaceCalendarGoogleToken } from '@tuturuuu/types/db';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useTranslations } from 'next-intl';
-import { Button } from '@tuturuuu/ui/button';
-import { PanelLeftClose, PanelRightClose, Sparkles, Plus } from '@tuturuuu/ui/icons';
-import { SmartCalendar } from '@tuturuuu/ui/legacy/calendar/smart-calendar';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@tuturuuu/ui/select';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { DEV_MODE } from '@/constants/common';
-import AddEventModal from './components/add-event-dialog';
+import { useCalendarState } from './calendar-state-context';
 import AddEventButton from './components/add-event-button';
-import TestEventGeneratorButton from './components/test-event-generator-button';
+import AddEventModal from './components/add-event-dialog';
 import AutoScheduleComprehensiveDialog from './components/auto-schedule-comprehensive-dialog';
 import CalendarSidebar from './components/calendar-sidebar';
 import TasksSidebarContent from './components/tasks-sidebar-content';
-import { useCalendarState } from './calendar-state-context';
+import TestEventGeneratorButton from './components/test-event-generator-button';
+import { DEV_MODE } from '@/constants/common';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import type {
+  Workspace,
+  WorkspaceCalendarGoogleToken,
+} from '@tuturuuu/types/db';
+import { Button } from '@tuturuuu/ui/button';
+import {
+  PanelLeftClose,
+  PanelRightClose,
+  Plus,
+  Sparkles,
+} from '@tuturuuu/ui/icons';
+import { SmartCalendar } from '@tuturuuu/ui/legacy/calendar/smart-calendar';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@tuturuuu/ui/select';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { useTranslations } from 'next-intl';
+import { useState } from 'react';
 
 interface CalendarPageClientProps {
   wsId: string;
@@ -26,7 +40,9 @@ interface CalendarPageClientProps {
 }
 
 export default function CalendarPageClient({
-  locale, workspace, experimentalGoogleToken,
+  locale,
+  workspace,
+  experimentalGoogleToken,
 }: CalendarPageClientProps) {
   const t = useTranslations('calendar');
   const [isAddEventModalOpen, setIsAddEventModalOpen] = useState(false);
@@ -38,7 +54,9 @@ export default function CalendarPageClient({
   const { data: tasksData } = useQuery({
     queryKey: ['tasks', workspace.id],
     queryFn: async () => {
-      const response = await fetch(`/api/v1/workspaces/${workspace.id}/tasks?limit=100`);
+      const response = await fetch(
+        `/api/v1/workspaces/${workspace.id}/tasks?limit=100`
+      );
       if (!response.ok) throw new Error('Failed to fetch tasks');
       return response.json();
     },
@@ -81,7 +99,10 @@ export default function CalendarPageClient({
 
   const isCurrentMonth = () => {
     const today = new Date();
-    return date.getMonth() === today.getMonth() && date.getFullYear() === today.getFullYear();
+    return (
+      date.getMonth() === today.getMonth() &&
+      date.getFullYear() === today.getFullYear()
+    );
   };
 
   const onViewChange = (newView: string) => {
@@ -154,13 +175,13 @@ export default function CalendarPageClient({
 
   return (
     <>
-      <div 
-        className="flex h-full w-full flex-col" 
-        style={{ 
+      <div
+        className="flex h-full w-full flex-col"
+        style={{
           zoom: '0.8',
           transformOrigin: 'top left',
           scrollbarWidth: 'none',
-          msOverflowStyle: 'none'
+          msOverflowStyle: 'none',
         }}
       >
         {/* Add CSS to hide scrollbars */}
@@ -182,20 +203,45 @@ export default function CalendarPageClient({
                 <h2 className="text-xl font-semibold tracking-tight">
                   {date.toLocaleDateString('en-US', {
                     month: 'long',
-                    year: 'numeric'
+                    year: 'numeric',
                   })}
                 </h2>
               </div>
               <div className="flex flex-col gap-2 md:flex-row md:items-center">
                 <div className="flex items-center gap-2">
                   <div className="flex flex-none items-center justify-center gap-2 md:justify-start">
-                    <Button variant="outline" size="icon" className="h-8 w-8" onClick={handlePrev} aria-label="Previous period">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={handlePrev}
+                      aria-label="Previous period"
+                    >
                       <ChevronLeft className="h-4 w-4" />
                     </Button>
-                    <Button variant="outline" size="sm" onClick={isToday() || isCurrentMonth() ? undefined : selectToday} disabled={isToday() || isCurrentMonth()}>
-                      {view === 'day' ? t('today') : view === 'week' ? t('this-week') : view === 'month' ? t('this-month') : t('current')}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={
+                        isToday() || isCurrentMonth() ? undefined : selectToday
+                      }
+                      disabled={isToday() || isCurrentMonth()}
+                    >
+                      {view === 'day'
+                        ? t('today')
+                        : view === 'week'
+                          ? t('this-week')
+                          : view === 'month'
+                            ? t('this-month')
+                            : t('current')}
                     </Button>
-                    <Button variant="outline" size="icon" className="h-8 w-8" onClick={handleNext} aria-label="Next period">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={handleNext}
+                      aria-label="Next period"
+                    >
                       <ChevronRight className="h-4 w-4" />
                     </Button>
                   </div>
@@ -223,11 +269,9 @@ export default function CalendarPageClient({
         </div>
 
         {/* Main Content Area */}
-        <div className="flex flex-1 w-full overflow-hidden">
-          {calendarSidebarOpen && (
-            <CalendarSidebar />
-          )}
-          <div className="flex-1 w-full">
+        <div className="flex w-full flex-1 overflow-hidden">
+          {calendarSidebarOpen && <CalendarSidebar />}
+          <div className="w-full flex-1">
             <SmartCalendar
               t={t}
               locale={locale}

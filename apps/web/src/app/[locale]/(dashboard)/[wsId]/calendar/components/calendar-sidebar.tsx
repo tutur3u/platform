@@ -1,10 +1,7 @@
 'use client';
+
 import { Button } from '@tuturuuu/ui/button';
-import {
-  Calendar as CalendarIcon,
-  Mail,
-  Plus,
-} from '@tuturuuu/ui/icons';
+import { Calendar as CalendarIcon, Mail, Plus } from '@tuturuuu/ui/icons';
 import {
   SidebarContent,
   SidebarGroup,
@@ -22,10 +19,10 @@ const stubAccounts = [
 
 export default function CalendarSidebar() {
   return (
-    <aside className="slide-in-from-left-5 mr-2 flex h-full w-64 flex-col rounded-lg border border-border bg-background/60 text-foreground shadow-xl backdrop-blur-md transition-all duration-500 ease-out xl:flex">
+    <aside className="mr-2 flex h-full w-64 flex-col rounded-lg border border-border bg-background/60 text-foreground shadow-xl backdrop-blur-md transition-all duration-500 ease-out slide-in-from-left-5 xl:flex">
       {/* Header */}
-      <SidebarHeader className="flex items-center justify-between border-border/50 border-b bg-gradient-to-r from-background/80 to-background/60 px-4 py-3">
-        <span className="flex items-center gap-2 font-semibold text-lg">
+      <SidebarHeader className="flex items-center justify-between border-b border-border/50 bg-gradient-to-r from-background/80 to-background/60 px-4 py-3">
+        <span className="flex items-center gap-2 text-lg font-semibold">
           <CalendarIcon className="h-5 w-5" />
           Calendar
         </span>
@@ -49,12 +46,12 @@ export default function CalendarSidebar() {
               stubAccounts.map((acc) => (
                 <SidebarMenuItem key={acc.email}>
                   <div
-                    className={`flex items-center gap-2 rounded-md p-2${acc.active ? ' bg-accent/30 font-semibold' : ''}`}
+                    className={`flex items-center gap-2 rounded-md p-2${acc.active ? 'bg-accent/30 font-semibold' : ''}`}
                   >
                     <Mail className="h-4 w-4 text-blue-500" />
                     <span className="truncate">{acc.email}</span>
                     {acc.active && (
-                      <span className="ml-2 text-green-600 text-xs">
+                      <span className="ml-2 text-xs text-green-600">
                         Active
                       </span>
                     )}

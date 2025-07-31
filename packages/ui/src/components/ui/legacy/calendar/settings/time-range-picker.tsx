@@ -561,7 +561,7 @@ export function TimeRangePicker({
                       <div className="space-y-1">
                         <Label
                           htmlFor={`${key}-start-${blockIndex}`}
-                          className="text-muted-foreground text-xs"
+                          className="text-xs text-muted-foreground"
                         >
                           Start
                         </Label>
@@ -592,7 +592,7 @@ export function TimeRangePicker({
                             'bg-background text-foreground',
                             'appearance-none',
                             'border border-muted',
-                            'focus:outline-none focus:ring-2 focus:ring-primary'
+                            'focus:ring-2 focus:ring-primary focus:outline-none'
                           )}
                           autoComplete="off"
                           spellCheck={false}
@@ -602,7 +602,7 @@ export function TimeRangePicker({
                       <div className="space-y-1">
                         <Label
                           htmlFor={`${key}-end-${blockIndex}`}
-                          className="text-muted-foreground text-xs"
+                          className="text-xs text-muted-foreground"
                         >
                           End
                         </Label>
@@ -634,7 +634,7 @@ export function TimeRangePicker({
                             'bg-background text-foreground',
                             'appearance-none',
                             'border border-muted',
-                            'focus:outline-none focus:ring-2 focus:ring-primary'
+                            'focus:ring-2 focus:ring-primary focus:outline-none'
                           )}
                           autoComplete="off"
                           spellCheck={false}
