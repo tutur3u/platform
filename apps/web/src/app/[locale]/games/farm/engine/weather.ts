@@ -23,7 +23,7 @@ export class WeatherSystem {
 
   private generateWeather(): WeatherData {
     const types = Object.values(WeatherType);
-    const randomType = types[Math.floor(Math.random() * types.length)];
+    const randomType = types[Math.floor(Math.random() * types.length)]!;
 
     return {
       type: randomType,
