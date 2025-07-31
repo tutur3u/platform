@@ -1,6 +1,7 @@
 import { useTimeBlocking } from './time-blocking-provider';
 import { timetzToTime } from '@/utils/date-helper';
 import type { Timeblock } from '@tuturuuu/types/primitives/Timeblock';
+import { cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
 
 export default function SelectableDayTime({
@@ -98,7 +99,7 @@ export default function SelectableDayTime({
   };
 
   return (
-    <div className="relative w-14 border border-b-0 border-foreground/50">
+    <div className="relative w-14 rounded border border-b-0 border-foreground/50">
       {hourBlocks
         .map((i) => (i + start) * hourSplits)
         // duplicate each item `hourSplits` times
@@ -184,18 +185,19 @@ export default function SelectableDayTime({
                         : // : 'animate-pulse bg-green-500/70'
                           'bg-green-500/70'
                     : isDraft
-                      ? 'bg-red-500/50'
-                      : 'bg-red-500/20'
+                      ? 'bg-dynamic-red/50'
+                      : 'bg-dynamic-red/20'
                   : ''
-              } relative h-3 w-full ${
+              } relative h-3 w-full ${cn(
                 hideBorder
                   ? ''
                   : (i + 1) % hourSplits === 0
                     ? 'border-b border-foreground/50'
                     : (i + 1) % (hourSplits / 2) === 0
                       ? 'border-b border-dashed border-foreground/50'
-                      : ''
-              }`}
+                      : '',
+                i === 0 && 'rounded-t-[0.2rem]'
+              )}`}
             />
           );
         })}

@@ -4,6 +4,7 @@ import DatePlanner from './date-planner';
 import { useTimeBlocking } from './time-blocking-provider';
 import type { MeetTogetherPlan } from '@tuturuuu/types/primitives/MeetTogetherPlan';
 import type { Timeblock } from '@tuturuuu/types/primitives/Timeblock';
+import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 
 export default function AllAvailabilities({
@@ -42,7 +43,7 @@ export default function AllAvailabilities({
         <div>
           0/{totalUserCount} {t('available')}
         </div>
-        <div className="flex h-4 w-32 border border-foreground/50">
+        <div className="flex h-4 w-32 rounded border border-foreground/50">
           {Array.from({ length: totalUserCount + 1 }).map((_, i) => (
             <div
               key={i}
@@ -54,9 +55,10 @@ export default function AllAvailabilities({
               }`}
             >
               <div
-                className={`h-full w-full ${
-                  i === 0 ? 'bg-foreground/10' : 'bg-green-500/70'
-                }`}
+                className={`h-full w-full ${cn(
+                  i === 0 ? 'bg-foreground/10' : 'bg-green-500/70',
+                  i === totalUserCount && 'rounded-r-[0.175rem]'
+                )}`}
                 style={{
                   opacity: i === 0 ? 1 : i / totalUserCount,
                 }}

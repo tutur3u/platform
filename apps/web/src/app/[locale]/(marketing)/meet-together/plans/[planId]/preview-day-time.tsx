@@ -117,7 +117,7 @@ export default function PreviewDayTime({
   };
 
   return (
-    <div className="relative w-14 border border-b-0 border-foreground/50">
+    <div className="relative w-14 rounded border border-b-0 border-foreground/50">
       {hourBlocks
         .map((i) => (i + start) * hourSplits)
         // duplicate each item `hourSplits` times
