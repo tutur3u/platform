@@ -1,6 +1,9 @@
 'use client';
 
+import { CropType } from '../engine/crop';
 import { GameStateManager } from '../engine/gameState';
+import { CropRenderer } from './CropRenderer';
+import { FarmingUI } from './FarmingUI';
 import { useCallback, useEffect, useState } from 'react';
 
 const GRID_SIZE = 20;
@@ -12,6 +15,7 @@ export function GameBoard() {
     gameManager.getPlayerPosition()
   );
   const [lastMoveTime, setLastMoveTime] = useState(0);
+  const [gameState, setGameState] = useState(() => gameManager.getState());
 
   const handleMove = useCallback(
     (direction: 'up' | 'down' | 'left' | 'right') => {
@@ -27,6 +31,45 @@ export function GameBoard() {
     },
     [gameManager, lastMoveTime]
   );
+
+  const handleToolSelect = useCallback(
+    (tool: 'plant' | 'water' | 'harvest' | null) => {
+      gameManager.setSelectedTool(tool);
+      setGameState(gameManager.getState());
+    },
+    [gameManager]
+  );
+
+  const handleSeedSelect = useCallback(
+    (seed: CropType | null) => {
+      gameManager.setSelectedSeed(seed);
+      setGameState(gameManager.getState());
+    },
+    [gameManager]
+  );
+
+  const handleBuySeeds = useCallback(
+    (type: CropType, quantity: number) => {
+      gameManager.getInventory().buySeeds(type, quantity);
+      setGameState(gameManager.getState());
+    },
+    [gameManager]
+  );
+
+  const handleSellCrops = useCallback(
+    (type: CropType, quantity: number) => {
+      gameManager.getInventory().sellCrop(type, quantity);
+      setGameState(gameManager.getState());
+    },
+    [gameManager]
+  );
+
+  const handleAction = useCallback(() => {
+    const success = gameManager.performAction();
+    if (success) {
+      setGameState(gameManager.getState());
+    }
+  }, [gameManager]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -54,13 +97,14 @@ export function GameBoard() {
           direction = 'right';
           break;
         case ' ':
-          // Space bar to pause/resume
+          // Space bar for action
           event.preventDefault();
-          if (gameManager.getState().isGameRunning) {
-            gameManager.pauseGame();
-          } else {
-            gameManager.resumeGame();
-          }
+          handleAction();
+          return;
+        case 'Escape':
+          // Escape to clear selection
+          event.preventDefault();
+          handleToolSelect(null);
           return;
       }
 
@@ -72,81 +116,120 @@ export function GameBoard() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleMove, gameManager]);
+  }, [handleMove, handleAction, handleToolSelect]);
 
-  const gameState = gameManager.getState();
+  // Update crops every second
+  useEffect(() => {
+    const interval = setInterval(() => {
+      gameManager.updateCrops();
+      setGameState(gameManager.getState());
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [gameManager]);
+
+  const allCrops = gameManager.getAllCrops();
 
   return (
-    <div className="flex flex-col items-center gap-4">
-      <div className="flex items-center gap-4">
-        <div className="text-lg font-semibold">
-          Position: ({playerPos.getX()}, {playerPos.getY()})
+    <div className="flex gap-6">
+      {/* Game Board */}
+      <div className="flex flex-col items-center gap-4">
+        <div className="flex items-center gap-4">
+          <div className="text-lg font-semibold">
+            Position: ({playerPos.getX()}, {playerPos.getY()})
+          </div>
+          <div
+            className={`rounded px-2 py-1 text-sm font-medium ${
+              gameState.isGameRunning
+                ? 'bg-dynamic-green/20 text-dynamic-green'
+                : 'bg-dynamic-red/20 text-dynamic-red'
+            }`}
+          >
+            {gameState.isGameRunning ? 'Playing' : 'Paused'}
+          </div>
         </div>
+
         <div
-          className={`rounded px-2 py-1 text-sm font-medium ${
-            gameState.isGameRunning
-              ? 'bg-dynamic-green/20 text-dynamic-green'
-              : 'bg-dynamic-red/20 text-dynamic-red'
-          }`}
+          className="relative overflow-hidden rounded-lg border-2 border-dynamic-gray/30 bg-dynamic-gray/5"
+          style={{
+            width: GRID_SIZE * CELL_SIZE,
+            height: GRID_SIZE * CELL_SIZE,
+          }}
         >
-          {gameState.isGameRunning ? 'Playing' : 'Paused'}
+          {/* Grid cells */}
+          {Array.from({ length: GRID_SIZE }, (_, y) =>
+            Array.from({ length: GRID_SIZE }, (_, x) => (
+              <div
+                key={`${x}-${y}`}
+                className="absolute border border-dynamic-gray/10"
+                style={{
+                  left: x * CELL_SIZE,
+                  top: y * CELL_SIZE,
+                  width: CELL_SIZE,
+                  height: CELL_SIZE,
+                }}
+              />
+            ))
+          )}
+
+          {/* Crops */}
+          {Array.from(allCrops.entries()).map(([key, crop]) => {
+            const [x, y] = key.split(',').map(Number);
+            return (
+              <CropRenderer
+                key={key}
+                crop={crop}
+                cellSize={CELL_SIZE}
+                x={x}
+                y={y}
+              />
+            );
+          })}
+
+          {/* Player */}
+          <div
+            className={`absolute rounded-full border-2 shadow-lg transition-all duration-200 ease-out ${
+              gameState.isGameRunning
+                ? 'border-dynamic-blue/30 bg-dynamic-blue shadow-dynamic-blue/20'
+                : 'border-dynamic-gray/30 bg-dynamic-gray shadow-dynamic-gray/20'
+            }`}
+            style={{
+              left: playerPos.getX() * CELL_SIZE + 2,
+              top: playerPos.getY() * CELL_SIZE + 2,
+              width: CELL_SIZE - 4,
+              height: CELL_SIZE - 4,
+            }}
+          />
+
+          {/* Movement indicator */}
+          <div
+            className="absolute animate-pulse rounded-full border border-dynamic-blue/30 bg-dynamic-blue/20"
+            style={{
+              left: playerPos.getX() * CELL_SIZE + 1,
+              top: playerPos.getY() * CELL_SIZE + 1,
+              width: CELL_SIZE - 2,
+              height: CELL_SIZE - 2,
+            }}
+          />
+        </div>
+
+        <div className="space-y-1 text-center text-sm text-dynamic-gray/70">
+          <div>Use arrow keys or WASD to move</div>
+          <div>Press SPACE to use selected tool</div>
+          <div>Press ESC to clear selection</div>
         </div>
       </div>
 
-      <div
-        className="relative overflow-hidden rounded-lg border-2 border-dynamic-gray/30 bg-dynamic-gray/5"
-        style={{
-          width: GRID_SIZE * CELL_SIZE,
-          height: GRID_SIZE * CELL_SIZE,
-        }}
-      >
-        {/* Grid cells */}
-        {Array.from({ length: GRID_SIZE }, (_, y) =>
-          Array.from({ length: GRID_SIZE }, (_, x) => (
-            <div
-              key={`${x}-${y}`}
-              className="absolute border border-dynamic-gray/10"
-              style={{
-                left: x * CELL_SIZE,
-                top: y * CELL_SIZE,
-                width: CELL_SIZE,
-                height: CELL_SIZE,
-              }}
-            />
-          ))
-        )}
-
-        {/* Player */}
-        <div
-          className={`absolute rounded-full border-2 shadow-lg transition-all duration-200 ease-out ${
-            gameState.isGameRunning
-              ? 'border-dynamic-blue/30 bg-dynamic-blue shadow-dynamic-blue/20'
-              : 'border-dynamic-gray/30 bg-dynamic-gray shadow-dynamic-gray/20'
-          }`}
-          style={{
-            left: playerPos.getX() * CELL_SIZE + 2,
-            top: playerPos.getY() * CELL_SIZE + 2,
-            width: CELL_SIZE - 4,
-            height: CELL_SIZE - 4,
-          }}
-        />
-
-        {/* Movement indicator */}
-        <div
-          className="absolute animate-pulse rounded-full border border-dynamic-blue/30 bg-dynamic-blue/20"
-          style={{
-            left: playerPos.getX() * CELL_SIZE + 1,
-            top: playerPos.getY() * CELL_SIZE + 1,
-            width: CELL_SIZE - 2,
-            height: CELL_SIZE - 2,
-          }}
-        />
-      </div>
-
-      <div className="space-y-1 text-center text-sm text-dynamic-gray/70">
-        <div>Use arrow keys or WASD to move</div>
-        <div>Press spacebar to pause/resume</div>
-      </div>
+      {/* Farming UI */}
+      <FarmingUI
+        inventory={gameState.inventory}
+        selectedTool={gameState.selectedTool}
+        selectedSeed={gameState.selectedSeed}
+        onToolSelect={handleToolSelect}
+        onSeedSelect={handleSeedSelect}
+        onBuySeeds={handleBuySeeds}
+        onSellCrops={handleSellCrops}
+      />
     </div>
   );
 }
