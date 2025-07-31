@@ -1,7 +1,7 @@
 import { useTimeBlocking } from './time-blocking-provider';
 import { timetzToTime } from '@/utils/date-helper';
 import type { Timeblock } from '@tuturuuu/types/primitives/Timeblock';
-import { ShieldCheck, ShieldMinus } from '@tuturuuu/ui/icons';
+import { BadgeCheck, BadgeQuestionMark, BadgeX } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import {
   Tooltip,
@@ -232,11 +232,7 @@ export default function PreviewDayTime({
                           className="flex items-center justify-center gap-1"
                         >
                           <div>{user.display_name}</div>
-                          {user.is_guest ? (
-                            <ShieldMinus size={16} />
-                          ) : (
-                            <ShieldCheck size={16} />
-                          )}
+                          <BadgeCheck size={16} />
                         </div>
                       ))}
                     </div>
@@ -247,11 +243,7 @@ export default function PreviewDayTime({
                           className="flex items-center justify-center gap-1"
                         >
                           <div>{user.display_name}</div>
-                          {user.is_guest ? (
-                            <ShieldMinus size={16} />
-                          ) : (
-                            <ShieldCheck size={16} />
-                          )}
+                          <BadgeQuestionMark size={16} />
                         </div>
                       ))}
                     </div>
@@ -262,11 +254,7 @@ export default function PreviewDayTime({
                           className="flex items-center justify-center gap-1"
                         >
                           <div>{user.display_name}</div>
-                          {user.is_guest ? (
-                            <ShieldMinus size={16} />
-                          ) : (
-                            <ShieldCheck size={16} />
-                          )}
+                          <BadgeX size={16} />
                         </div>
                       ))}
                     </div>
