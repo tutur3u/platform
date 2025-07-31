@@ -2,10 +2,10 @@
 
 import AllAvailabilities from './all-availabilities';
 import AvailabilityPlanner from './availability-planner';
-import { useTimeBlocking } from './time-blocking-provider';
 import type { MeetTogetherPlan } from '@tuturuuu/types/primitives/MeetTogetherPlan';
 import type { Timeblock } from '@tuturuuu/types/primitives/Timeblock';
 import { Button } from '@tuturuuu/ui/button';
+import { useTimeBlocking } from '@tuturuuu/ui/hooks/time-blocking-provider';
 import { Calendar, Users } from '@tuturuuu/ui/icons';
 import { useEffect, useState } from 'react';
 

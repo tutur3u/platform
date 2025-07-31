@@ -1,5 +1,5 @@
-import { useTimeBlocking } from './time-blocking-provider';
-import { timetzToTime } from '@/utils/date-helper';
+import { useTimeBlocking } from '@tuturuuu/ui/hooks/time-blocking-provider';
+import { timetzToTime } from '@tuturuuu/ui/utils/date-helper';
 import { cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
 

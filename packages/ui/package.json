@@ -113,6 +113,7 @@
     "./tailwind.config": "./tailwind.config.ts",
     "./lib/*": "./src/lib/*.ts",
     "./hooks/*": "./src/hooks/*.ts",
+    "./hooks/time-blocking-provider": "./src/hooks/time-blocking-provider.tsx",
     "./hooks/use-calendar": "./src/hooks/use-calendar.tsx",
     "./hooks/use-calendar-sync": "./src/hooks/use-calendar-sync.tsx",
     "./calendar-settings": "./src/components/ui/legacy/calendar/settings/index.ts",
@@ -126,6 +127,8 @@
       "types": "./src/components/ui/custom/education/certificates/types.ts",
       "import": "./src/components/ui/custom/education/certificates/types.ts"
     },
+    "./utils/plan-helpers": "./src/utils/plan-helpers.ts",
+    "./utils/date-helper": "./src/utils/date-helper.ts",
     "./*": "./src/components/ui/*.tsx"
   },
   "packageManager": "bun@1.2.19"

@@ -1,6 +1,5 @@
-import { useTimeBlocking } from './time-blocking-provider';
-import { timetzToTime } from '@/utils/date-helper';
 import type { Timeblock } from '@tuturuuu/types/primitives/Timeblock';
+import { useTimeBlocking } from '@tuturuuu/ui/hooks/time-blocking-provider';
 import { BadgeCheck, BadgeQuestionMark, BadgeX } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import {
@@ -9,6 +8,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@tuturuuu/ui/tooltip';
+import { timetzToTime } from '@tuturuuu/ui/utils/date-helper';
 import dayjs from 'dayjs';
 import { useEffect } from 'react';
 

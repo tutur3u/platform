@@ -1,7 +1,7 @@
 import AccountBadge from './account-badge';
-import { useTimeBlocking } from './time-blocking-provider';
 import type { User as PlatformUser } from '@tuturuuu/types/primitives/User';
 import { Button } from '@tuturuuu/ui/button';
+import { useTimeBlocking } from '@tuturuuu/ui/hooks/time-blocking-provider';
 import { Separator } from '@tuturuuu/ui/separator';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
