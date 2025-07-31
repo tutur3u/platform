@@ -4,7 +4,11 @@ import { Button } from '@tuturuuu/ui/button';
 import { ChevronLeft, ChevronRight } from '@tuturuuu/ui/icons';
 import { useTranslations } from 'next-intl';
 
-export default function NavbarCalendarHeader({}: { locale: string }) {
+export default function NavbarCalendarHeader({
+  locale: _locale,
+}: {
+  locale: string;
+}) {
   const t = useTranslations('calendar');
   // const { date, setDate, view, setView, availableViews } = useCalendarContext();
 
@@ -69,7 +73,7 @@ export default function NavbarCalendarHeader({}: { locale: string }) {
         <Button
           variant="ghost"
           size="sm"
-          className="text-md h-8"
+          className="h-8 text-md"
           // onClick={isToday() || isCurrentMonth() ? undefined : selectToday}
           // disabled={isToday() || isCurrentMonth()}
           disabled

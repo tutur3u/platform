@@ -230,7 +230,7 @@ export function AlgorithmInsights({
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {algorithmConsiderations.map((consideration, index) => {
+          {algorithmConsiderations.map((consideration, _index) => {
             const IconComponent = consideration.icon;
             const impactColor =
               consideration.impact === 'high'
@@ -241,7 +241,7 @@ export function AlgorithmInsights({
 
             return (
               <div
-                key={index}
+                key={consideration.title}
                 className="flex items-start gap-3 rounded-lg border p-4"
               >
                 <IconComponent className={`mt-0.5 h-5 w-5 ${impactColor}`} />
@@ -255,7 +255,7 @@ export function AlgorithmInsights({
                       {consideration.impact} impact
                     </Badge>
                   </div>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-muted-foreground text-sm">
                     {consideration.description}
                   </p>
                 </div>
@@ -277,32 +277,32 @@ export function AlgorithmInsights({
           {/* Overview Stats */}
           <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
             <div className="text-center">
-              <div className="text-2xl font-bold text-dynamic-blue">
+              <div className="font-bold text-2xl text-dynamic-blue">
                 {metrics.scheduledTasks}/{metrics.totalTasks}
               </div>
-              <div className="text-sm text-muted-foreground">
+              <div className="text-muted-foreground text-sm">
                 Tasks Scheduled
               </div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-dynamic-green">
+              <div className="font-bold text-2xl text-dynamic-green">
                 {metrics.scheduledDuration.toFixed(1)}h
               </div>
-              <div className="text-sm text-muted-foreground">
+              <div className="text-muted-foreground text-sm">
                 Time Scheduled
               </div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-dynamic-orange">
+              <div className="font-bold text-2xl text-dynamic-orange">
                 {metrics.splitTasks}
               </div>
-              <div className="text-sm text-muted-foreground">Split Tasks</div>
+              <div className="text-muted-foreground text-sm">Split Tasks</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-dynamic-purple">
+              <div className="font-bold text-2xl text-dynamic-purple">
                 {metrics.utilizationRate.toFixed(0)}%
               </div>
-              <div className="text-sm text-muted-foreground">Utilization</div>
+              <div className="text-muted-foreground text-sm">Utilization</div>
             </div>
           </div>
 
@@ -383,7 +383,7 @@ export function AlgorithmInsights({
             <div className="space-y-3">
               {logs.map((log, index) => (
                 <Alert
-                  key={index}
+                  key={`${log.type}-${log.message}-${index}`}
                   variant={log.type === 'error' ? 'destructive' : 'default'}
                   className="text-sm"
                 >

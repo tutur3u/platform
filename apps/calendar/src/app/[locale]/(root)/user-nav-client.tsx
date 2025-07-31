@@ -1,15 +1,5 @@
 'use client';
 
-import { LanguageWrapper } from './_components/language-wrapper';
-import { LogoutDropdownItem } from './_components/logout-dropdown-item';
-import { SystemLanguageWrapper } from './_components/system-language-wrapper';
-import { ThemeDropdownItems } from './_components/theme-dropdown-items';
-import DashboardMenuItem from './dashboard-menu-item';
-import InviteMembersMenuItem from './invite-members-menu-item';
-import MeetTogetherMenuItem from './meet-together-menu-item';
-import RewiseMenuItem from './rewise-menu-item';
-import UserSettingsDialog from './settings-dialog';
-import UserPresenceIndicator from './user-presence-indicator';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Dialog } from '@tuturuuu/ui/dialog';
@@ -29,9 +19,19 @@ import {
 import { Globe, Palette, Settings, User } from '@tuturuuu/ui/icons';
 import { cn } from '@tuturuuu/utils/format';
 import { getInitials } from '@tuturuuu/utils/name-helper';
-import { useTranslations } from 'next-intl';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { LanguageWrapper } from './_components/language-wrapper';
+import { LogoutDropdownItem } from './_components/logout-dropdown-item';
+import { SystemLanguageWrapper } from './_components/system-language-wrapper';
+import { ThemeDropdownItems } from './_components/theme-dropdown-items';
+import DashboardMenuItem from './dashboard-menu-item';
+import InviteMembersMenuItem from './invite-members-menu-item';
+import MeetTogetherMenuItem from './meet-together-menu-item';
+import RewiseMenuItem from './rewise-menu-item';
+import UserSettingsDialog from './settings-dialog';
+import UserPresenceIndicator from './user-presence-indicator';
 
 export default function UserNavClient({
   user,
@@ -80,10 +80,10 @@ export default function UserNavClient({
             </Avatar>
             {hideMetadata || (
               <div className="flex w-full flex-col items-start justify-center">
-                <div className="line-clamp-1 text-sm font-semibold break-all text-gray-900 dark:text-white">
+                <div className="line-clamp-1 break-all font-semibold text-gray-900 text-sm dark:text-white">
                   {user?.display_name || user?.handle || t('common.unnamed')}
                 </div>
-                <div className="line-clamp-1 text-xs break-all text-muted-foreground">
+                <div className="line-clamp-1 break-all text-muted-foreground text-xs">
                   {user?.email}
                 </div>
               </div>
@@ -100,11 +100,11 @@ export default function UserNavClient({
             <div className="flex flex-col space-y-1">
               <Link
                 href="/settings/account"
-                className="line-clamp-1 w-fit text-sm font-semibold break-all text-gray-900 hover:text-blue-600 hover:underline dark:text-white dark:hover:text-blue-400"
+                className="line-clamp-1 w-fit break-all font-semibold text-gray-900 text-sm hover:text-blue-600 hover:underline dark:text-white dark:hover:text-blue-400"
               >
                 {user?.display_name || user?.handle || t('common.unnamed')}
               </Link>
-              <p className="line-clamp-1 text-xs break-all text-muted-foreground">
+              <p className="line-clamp-1 break-all text-muted-foreground text-xs">
                 {user?.email}
               </p>
             </div>
@@ -120,7 +120,7 @@ export default function UserNavClient({
 
           <DropdownMenuGroup className="space-y-1">
             <DropdownMenuSub>
-              <DropdownMenuSubTrigger className="rounded-md px-3 py-2 text-sm font-medium transition-all duration-200 hover:bg-blue-50 hover:text-blue-700 dark:hover:bg-blue-950/20 dark:hover:text-blue-300">
+              <DropdownMenuSubTrigger className="rounded-md px-3 py-2 font-medium text-sm transition-all duration-200 hover:bg-blue-50 hover:text-blue-700 dark:hover:bg-blue-950/20 dark:hover:text-blue-300">
                 <div className="flex items-center gap-3">
                   <div className="flex h-5 w-5 items-center justify-center rounded-full bg-purple-100 text-purple-600 dark:bg-purple-900/20 dark:text-purple-400">
                     <Palette className="h-3 w-3" />
@@ -139,7 +139,7 @@ export default function UserNavClient({
             </DropdownMenuSub>
 
             <DropdownMenuSub>
-              <DropdownMenuSubTrigger className="rounded-md px-3 py-2 text-sm font-medium transition-all duration-200 hover:bg-blue-50 hover:text-blue-700 dark:hover:bg-blue-950/20 dark:hover:text-blue-300">
+              <DropdownMenuSubTrigger className="rounded-md px-3 py-2 font-medium text-sm transition-all duration-200 hover:bg-blue-50 hover:text-blue-700 dark:hover:bg-blue-950/20 dark:hover:text-blue-300">
                 <div className="flex items-center gap-3">
                   <div className="flex h-5 w-5 items-center justify-center rounded-full bg-green-100 text-green-600 dark:bg-green-900/20 dark:text-green-400">
                     <Globe className="h-3 w-3" />
@@ -171,7 +171,7 @@ export default function UserNavClient({
             </DropdownMenuSub>
 
             <DropdownMenuItem
-              className="cursor-pointer rounded-md px-3 py-2 text-sm font-medium transition-all duration-200 hover:bg-blue-50 hover:text-blue-700 dark:hover:bg-blue-950/20 dark:hover:text-blue-300"
+              className="cursor-pointer rounded-md px-3 py-2 font-medium text-sm transition-all duration-200 hover:bg-blue-50 hover:text-blue-700 dark:hover:bg-blue-950/20 dark:hover:text-blue-300"
               onClick={() => setOpen(true)}
             >
               <div className="flex items-center gap-3">

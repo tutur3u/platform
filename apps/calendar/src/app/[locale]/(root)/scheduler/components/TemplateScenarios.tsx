@@ -91,7 +91,7 @@ export function TemplateScenarios({
                     <IconComponent className="h-4 w-4 text-muted-foreground" />
                     <h4 className="font-medium">{template.name}</h4>
                   </div>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-muted-foreground text-sm">
                     {template.description}
                   </p>
                   <div className="flex flex-wrap items-center gap-2">

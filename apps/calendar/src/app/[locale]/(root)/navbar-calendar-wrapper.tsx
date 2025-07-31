@@ -1,7 +1,7 @@
 'use client';
 
-import NavbarCalendarHeader from './navbar-calendar-header';
 import { useLocale } from 'next-intl';
+import NavbarCalendarHeader from './navbar-calendar-header';
 
 export default function NavbarCalendarWrapper() {
   const locale = useLocale();
