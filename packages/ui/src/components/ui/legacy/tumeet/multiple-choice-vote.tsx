@@ -97,7 +97,18 @@ export default function MultipleChoiceVote({
     setSelectedOptionIds(votedOptionIds);
   }, [optionsState.length, votedOptionIds]);
 
-  const totalVotesAll = optionsState.reduce((s, o) => s + o.totalVotes, 0);
+  // Calculate unique voters across all options to avoid double counting
+  const uniqueVoters = useMemo(() => {
+    const userVoters = new Set<string>();
+    const guestVoters = new Set<string>();
+
+    optionsState.forEach((option) => {
+      option.userVotes.forEach((vote) => userVoters.add(vote.user_id));
+      option.guestVotes.forEach((vote) => guestVoters.add(vote.guest_id));
+    });
+
+    return userVoters.size + guestVoters.size;
+  }, [optionsState]);
 
   // Add option
   const canAdd =
@@ -231,9 +242,16 @@ export default function MultipleChoiceVote({
   return (
     <div className={cn('space-y-4', className)}>
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-dynamic-purple">
-          {pollName}
-        </h3>
+        <div>
+          <h3 className="text-lg font-semibold text-dynamic-purple">
+            {pollName}
+          </h3>
+          {uniqueVoters > 0 && (
+            <p className="text-xs text-muted-foreground">
+              {uniqueVoters} {uniqueVoters === 1 ? t('voter') : t('voters')}
+            </p>
+          )}
+        </div>
         {isCreator && !isDisplayMode && onDeletePoll && (
           <Button
             variant="ghost"
@@ -293,8 +311,8 @@ export default function MultipleChoiceVote({
                 </span>
                 <Progress
                   value={
-                    totalVotesAll > 0
-                      ? (option.totalVotes / totalVotesAll) * 100
+                    uniqueVoters > 0
+                      ? (option.totalVotes / uniqueVoters) * 100
                       : 0
                   }
                   className="mt-1 h-2 w-20 bg-foreground/30"
