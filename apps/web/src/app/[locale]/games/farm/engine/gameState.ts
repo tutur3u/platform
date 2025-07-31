@@ -2,7 +2,7 @@ import { Crop, CropType, GrowthStage } from './crop';
 import { Inventory } from './inventory';
 import { Player } from './player';
 import { Position } from './position';
-import { WeatherSystem, WeatherType } from './weather';
+import { WeatherSystem } from './weather';
 
 export interface GameState {
   player: Player;
@@ -141,9 +141,6 @@ export class GameStateManager {
     const weather = this.state.weather.getCurrentWeather();
 
     this.state.crops.forEach((crop, key) => {
-      // Apply weather effects to crop growth and water consumption
-      const originalData = crop.getData();
-
       // Update crop with weather multipliers
       crop.update(currentTime);
 
@@ -196,9 +193,6 @@ export class GameStateManager {
 
   // Action method that combines tool selection with player action
   performAction(): boolean {
-    const pos = this.state.player.getPosition();
-    const key = `${pos.getX()},${pos.getY()}`;
-
     switch (this.state.selectedTool) {
       case 'plant':
         if (this.state.selectedSeed) {

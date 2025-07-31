@@ -1,4 +1,4 @@
-import { WeatherSystem, WeatherType } from '../engine/weather';
+import { WeatherSystem } from '../engine/weather';
 
 interface WeatherDisplayProps {
   weather: WeatherSystem;
