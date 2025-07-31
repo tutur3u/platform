@@ -1,81 +1,31 @@
-'use client';
-
-import type {
+import MultipleChoiceVote from '../tumeet/multiple-choice-vote';
+import { DefaultWherePollContent } from './where-tu-meet';
+import {
   GetPollsForPlanResult,
   MeetTogetherPlan,
-  PollOptionWithVotes,
 } from '@tuturuuu/types/primitives/MeetTogetherPlan';
-import type { User } from '@tuturuuu/types/primitives/User';
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from '@tuturuuu/ui/accordion';
+import { User } from '@tuturuuu/types/primitives/User';
 import { Button } from '@tuturuuu/ui/button';
 import { useTimeBlocking } from '@tuturuuu/ui/hooks/time-blocking-provider';
-import { useIsMobile } from '@tuturuuu/ui/hooks/use-mobile';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { Input } from '@tuturuuu/ui/input';
-import MultipleChoiceVote from '@tuturuuu/ui/legacy/tumeet/multiple-choice-vote';
 import { useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
-interface PlanDetailsPollsProps {
+interface PlanDetailsPollContentProps {
   plan: MeetTogetherPlan;
   isCreator: boolean;
   platformUser: User | null;
   polls: GetPollsForPlanResult | null;
 }
 
-export default function PlanDetailsPolls({
+export function PlanDetailsPollContent({
   plan,
   isCreator,
   platformUser,
   polls,
-}: PlanDetailsPollsProps) {
-  const t = useTranslations('ws-polls');
-  const isMobile = useIsMobile();
-  if (isMobile) {
-    return (
-      <Accordion
-        type="single"
-        collapsible
-        className="order-first col-span-full w-full"
-        defaultValue="item-1"
-      >
-        <AccordionItem value="item-1" className="w-full">
-          <AccordionTrigger className="pl-3 text-lg">
-            {t('plural')}
-          </AccordionTrigger>
-          <AccordionContent>
-            <PlanDetailsPollContent
-              plan={plan}
-              isCreator={isCreator}
-              platformUser={platformUser}
-              polls={polls}
-            />
-          </AccordionContent>
-        </AccordionItem>
-      </Accordion>
-    );
-  }
-  return (
-    <PlanDetailsPollContent
-      plan={plan}
-      isCreator={isCreator}
-      platformUser={platformUser}
-      polls={polls}
-    />
-  );
-}
-function PlanDetailsPollContent({
-  plan,
-  isCreator,
-  platformUser,
-  polls,
-}: PlanDetailsPollsProps) {
+}: PlanDetailsPollContentProps) {
   const t = useTranslations('ws-polls');
   const { user: guestUser } = useTimeBlocking();
   // State for new poll input
@@ -274,87 +224,4 @@ function PlanDetailsPollContent({
       )}
     </div>
   );
-}
-
-function DefaultWherePollContent({
-  plan,
-  isCreator,
-  polls,
-  currentUserId,
-  userType,
-  onAddOption,
-  onVote,
-  onDeleteOption,
-  // onDeletePoll,
-}: {
-  plan: MeetTogetherPlan;
-  isCreator: boolean;
-  polls: GetPollsForPlanResult | null;
-  currentUserId: string | null;
-  userType: 'PLATFORM' | 'GUEST' | 'DISPLAY';
-  onAddOption: (
-    pollId: string,
-    value: string
-  ) => Promise<PollOptionWithVotes | null>;
-  onVote: (pollId: string, optionIds: string[]) => Promise<void>;
-  onDeleteOption: (optionId: string) => Promise<void>;
-  onDeletePoll?: (pollId: string) => Promise<void>;
-}) {
-  const t = useTranslations('ws-polls');
-  if (!plan.where_to_meet && !isCreator) {
-    return null; // Don't render anything if "where to meet" is not enabled and user is not creator
-  }
-
-  const wherePoll = polls?.polls?.[0]; // Assuming the first poll is the "where to meet" poll
-
-  const onToggleWhereToMeet = async (enable: boolean) => {
-    const res = await fetch(
-      `/api/meet-together/plans/${plan.id}/poll/where-poll`,
-      {
-        method: 'PATCH',
-        body: JSON.stringify({
-          planId: plan.id,
-          whereToMeet: enable,
-        }),
-        headers: { 'Content-Type': 'application/json' },
-      }
-    );
-
-    if (!res.ok) {
-      toast({
-        title: 'Failed to toggle where to meet',
-        description: 'Please try again',
-      });
-    }
-  };
-
-  if (plan.where_to_meet && wherePoll)
-    return (
-      <MultipleChoiceVote
-        isCreator={isCreator}
-        pollName={wherePoll.name}
-        pollId={wherePoll.id}
-        options={wherePoll.options}
-        currentUserId={currentUserId}
-        isDisplayMode={userType === 'DISPLAY'}
-        onAddOption={onAddOption}
-        onVote={onVote}
-        onDeleteOption={onDeleteOption}
-        // Don't allow deletion of the "Where" poll
-        onDeletePoll={undefined}
-      />
-    );
-  else if (isCreator) {
-    return (
-      <div className="flex flex-col gap-4">
-        <p className="text-sm text-gray-500">{t('enable_where_poll_desc')}</p>
-        <button
-          className="rounded border border-dynamic-purple bg-dynamic-purple/20 px-4 py-2 font-medium text-foreground shadow transition hover:bg-dynamic-purple/40"
-          onClick={async () => await onToggleWhereToMeet(true)}
-        >
-          {t('enable_where_poll')}
-        </button>
-      </div>
-    );
-  }
 }
