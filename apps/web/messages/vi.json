@@ -1157,6 +1157,7 @@
     "created_at": "Ngày tạo"
   },
   "user-group-data-table": {
+    "is_guest": "Là khách",
     "id": "Mã số",
     "name": "Tên",
     "attendance_stats": "Thống kê điểm danh",

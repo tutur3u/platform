@@ -103,6 +103,19 @@ export const getUserGroupColumns = (
     cell: ({ row }) => <div>{row.getValue('locked') ? <Check /> : <X />}</div>,
   },
   {
+    accessorKey: 'is_guest',
+    header: ({ column }) => (
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.is_guest`)}
+      />
+    ),
+    cell: ({ row }) => (
+      <div>{row.getValue('is_guest') ? <Check /> : <X />}</div>
+    ),
+  },
+  {
     accessorKey: 'created_at',
     header: ({ column }) => (
       <DataTableColumnHeader

@@ -1146,6 +1146,7 @@
     "created_at": "Created At"
   },
   "user-group-data-table": {
+    "is_guest": "Is Guest",
     "id": "ID",
     "name": "Name",
     "attendance_stats": "Attendance Stats",
