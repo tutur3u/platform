@@ -275,9 +275,10 @@ export default function MultipleChoiceVote({
         {sortedOptions.map((option) => {
           const isSelected = selectedOptionIds.includes(option.id);
           return (
-            <button
+            <div
               key={option.id}
-              type="button"
+              role="button"
+              tabIndex={0}
               className={cn(
                 'flex w-full cursor-pointer items-center justify-between rounded-lg border p-2',
                 'border-dynamic-purple/50',
@@ -286,6 +287,12 @@ export default function MultipleChoiceVote({
                   'border-dynamic-purple bg-dynamic-purple/10'
               )}
               onClick={() => !isDisplayMode && handleToggleOption(option.id)}
+              onKeyDown={(e) => {
+                if (!isDisplayMode && (e.key === 'Enter' || e.key === ' ')) {
+                  e.preventDefault();
+                  handleToggleOption(option.id);
+                }
+              }}
             >
               <div className="flex w-full cursor-pointer items-center gap-2">
                 <Checkbox
@@ -335,7 +342,7 @@ export default function MultipleChoiceVote({
                   <Trash2 className="h-4 w-4" />
                 </Button>
               )}
-            </button>
+            </div>
           );
         })}
       </div>

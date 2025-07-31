@@ -1,6 +1,6 @@
 'use client';
 
-import CopyLinkButton from './copy-link-button';
+import CopyLinkButton, { generateTumeetMeUrl } from './copy-link-button';
 import DownloadAsPNG from './download-as-png';
 import EmailButton from './email-button';
 import LoggedInAsButton from './logged-in-as-button';
@@ -28,6 +28,8 @@ export default function UtilityButtons({
     setUrl(`${window.location.origin}${pathname}`);
   }, [pathname]);
 
+  const tumeetMeUrl = generateTumeetMeUrl(url);
+
   if (!plan?.id) return null;
 
   return (
@@ -35,7 +37,7 @@ export default function UtilityButtons({
       <div className="flex w-full flex-wrap items-start gap-2">
         <CopyLinkButton url={url} />
         <ShowQRButton url={url} />
-        <EmailButton plan={plan} url={url} />
+        <EmailButton plan={plan} url={tumeetMeUrl} />
         <DownloadAsPNG onClick={handlePNG} />
       </div>
       <LoggedInAsButton platformUser={platformUser} />

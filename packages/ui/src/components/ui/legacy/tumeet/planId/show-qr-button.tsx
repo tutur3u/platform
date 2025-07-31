@@ -1,6 +1,6 @@
 'use client';
 
-import CopyLinkButton from './copy-link-button';
+import CopyLinkButton, { generateTumeetMeUrl } from './copy-link-button';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,
@@ -17,6 +17,7 @@ import { QRCodeCanvas } from 'qrcode.react';
 
 export default function ShowQRButton({ url }: { url: string }) {
   const t = useTranslations();
+  const tumeetMeUrl = generateTumeetMeUrl(url);
 
   return (
     <Dialog>
@@ -36,7 +37,7 @@ export default function ShowQRButton({ url }: { url: string }) {
 
         <div className="flex items-center justify-center">
           <QRCodeCanvas
-            value={url}
+            value={tumeetMeUrl}
             size={256}
             marginSize={2}
             className="rounded-lg"
@@ -44,7 +45,7 @@ export default function ShowQRButton({ url }: { url: string }) {
         </div>
 
         <DialogFooter>
-          <CopyLinkButton url={url} className="md:w-full" />
+          <CopyLinkButton url={tumeetMeUrl} className="md:w-full" />
         </DialogFooter>
       </DialogContent>
     </Dialog>
