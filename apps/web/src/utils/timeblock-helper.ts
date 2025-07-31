@@ -280,5 +280,10 @@ function splitTimeblockByRemovalRange(
 }
 
 function isValidTimeblock(timeblock: Timeblock): boolean {
-  return !!(timeblock?.date && timeblock?.start_time && timeblock?.end_time);
+  return !!(
+    timeblock?.date &&
+    timeblock?.start_time &&
+    timeblock?.end_time &&
+    timeblock?.tentative !== undefined
+  );
 }

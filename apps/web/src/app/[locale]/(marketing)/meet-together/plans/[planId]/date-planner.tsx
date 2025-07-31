@@ -6,6 +6,8 @@ import TimeColumn from './time-column';
 import { timetzToHour } from '@/utils/date-helper';
 import type { Timeblock } from '@tuturuuu/types/primitives/Timeblock';
 import { Tabs, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
+import { cn } from '@tuturuuu/utils/format';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
 export default function DatePlanner({
@@ -27,6 +29,7 @@ export default function DatePlanner({
   showBestTimes?: boolean;
   onBestTimesStatusByDateAction?: (status: Record<string, boolean>) => void;
 }) {
+  const t = useTranslations('meet-together-plan-details');
   const { user, editing, endEditing, setPreviewDate } = useTimeBlocking();
   const [tentativeMode, setTentativeMode] = useState(false);
 
@@ -43,18 +46,28 @@ export default function DatePlanner({
             value={tentativeMode ? 'tentative' : 'available'}
             onValueChange={(value) => setTentativeMode(value === 'tentative')}
           >
-            <TabsList className="h-full rounded-lg bg-gray-100 dark:bg-gray-800">
+            <TabsList className="grid h-auto w-full grid-cols-2 gap-2 rounded-lg border bg-muted/30 p-1">
               <TabsTrigger
                 value="available"
-                className="px-4 py-1.5 text-lg text-green-700 data-[state=active]:bg-green-100 dark:text-green-300 dark:data-[state=active]:bg-green-900"
+                className={cn(
+                  'flex items-center gap-2 transition-all duration-300',
+                  'data-[state=active]:bg-background data-[state=active]:text-dynamic-green data-[state=active]:shadow-md',
+                  'hover:border-border/50 hover:bg-accent/60',
+                  'rounded-md border border-transparent px-4 py-2'
+                )}
               >
-                Available
+                {t('available')}
               </TabsTrigger>
               <TabsTrigger
                 value="tentative"
-                className="px-4 py-1.5 text-lg text-yellow-700 data-[state=active]:bg-yellow-100 dark:text-yellow-300 dark:data-[state=active]:bg-yellow-900"
+                className={cn(
+                  'flex items-center gap-2 transition-all duration-300',
+                  'data-[state=active]:bg-background data-[state=active]:text-dynamic-yellow data-[state=active]:shadow-md',
+                  'hover:border-border/50 hover:bg-accent/60',
+                  'rounded-md border border-transparent px-4 py-2'
+                )}
               >
-                Tentative
+                {t('tentative')}
               </TabsTrigger>
             </TabsList>
           </Tabs>

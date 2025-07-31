@@ -30,7 +30,7 @@ export default function AvailabilityPlanner({
         </div>
         <div className="flex items-center gap-2">
           <div>{t('tentative')}</div>
-          <div className="h-4 w-8 border border-foreground/50 bg-yellow-500/70" />
+          <div className="h-4 w-8 rounded border border-foreground/50 bg-yellow-500/70" />
         </div>
 
         <div className="flex items-center gap-2">
