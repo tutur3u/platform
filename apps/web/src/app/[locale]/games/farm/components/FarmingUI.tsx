@@ -1,7 +1,7 @@
 'use client';
 
-import { CropType, GrowthStage } from '../engine/crop';
-import { Inventory, SeedData } from '../engine/inventory';
+import { CropType } from '../engine/crop';
+import { Inventory } from '../engine/inventory';
 import { useState } from 'react';
 
 interface FarmingUIProps {
