@@ -204,6 +204,8 @@ export function GameBoard() {
             {/* Crops */}
             {Array.from(allCrops.entries()).map(([key, crop]) => {
               const [x, y] = key.split(',').map(Number);
+              if (x === undefined || y === undefined) return null;
+
               return (
                 <CropRenderer
                   key={key}
