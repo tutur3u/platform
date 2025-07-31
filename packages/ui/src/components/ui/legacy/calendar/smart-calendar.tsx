@@ -1,12 +1,12 @@
 'use client';
 
-import { CalendarProvider } from '../../../../hooks/use-calendar';
-import { CalendarContent } from './calendar-content';
-import type { CalendarSettings } from './settings/settings-context';
 import type {
   Workspace,
   WorkspaceCalendarGoogleToken,
 } from '@tuturuuu/types/db';
+import { CalendarProvider } from '../../../../hooks/use-calendar';
+import { CalendarContent } from './calendar-content';
+import type { CalendarSettings } from './settings/settings-context';
 
 export const SmartCalendar = ({
   t,

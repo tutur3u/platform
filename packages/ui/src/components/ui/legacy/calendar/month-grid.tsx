@@ -75,29 +75,16 @@ export function Month({ hasGrid, month, year }: MonthProps) {
     return days;
   };
 
-  // get the difference between the first monday and the last day of last week
-  const getMonthDaysLength = () => {
-    const firstMonday = getFirstMonday();
-    const lastDayOfLastWeek = getLastDayOfLastWeek();
-    return (
-      (lastDayOfLastWeek.getTime() - firstMonday.getTime()) / (1000 * 3600 * 24)
-    );
-  };
-
   return (
     <div className={`${hasGrid ? 'h-full' : ''} flex flex-col`}>
       {hasGrid || <div>{months[month]}</div>}
       <div
         className={`${
-          hasGrid ? `border-t border-l border-zinc-800` : ``
+          hasGrid ? `border-zinc-800 border-t border-l` : ``
         } grid grid-cols-7`}
       >
-        {Array.from({ length: getMonthDaysLength() + 1 }).map((_, index) => (
-          <MonthCell
-            hasGrid={hasGrid}
-            key={index}
-            date={getMonthDays()[index]!}
-          />
+        {getMonthDays().map((date, _index) => (
+          <MonthCell hasGrid={hasGrid} key={date.getTime()} date={date} />
         ))}
       </div>
     </div>

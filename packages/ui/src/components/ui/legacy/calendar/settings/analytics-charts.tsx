@@ -1,11 +1,5 @@
 'use client';
 
-import type {
-  CalendarSourceData,
-  EventTypeData,
-  TimeSeriesData,
-  WorkspaceActivityData,
-} from './types';
 import {
   Card,
   CardContent,
@@ -37,6 +31,12 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
+import type {
+  CalendarSourceData,
+  EventTypeData,
+  TimeSeriesData,
+  WorkspaceActivityData,
+} from './types';
 
 interface AnalyticsChartsProps {
   timeSeriesData: TimeSeriesData[];
@@ -398,7 +398,7 @@ export function AnalyticsCharts({
                         <span className="font-medium">{source.name}</span>
                       </div>
                       <div className="text-right">
-                        <div className="text-lg font-bold">{source.value}%</div>
+                        <div className="font-bold text-lg">{source.value}%</div>
                         <div className="text-xs opacity-70">of total syncs</div>
                       </div>
                     </div>

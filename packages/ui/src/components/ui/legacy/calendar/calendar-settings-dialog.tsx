@@ -1,18 +1,5 @@
 'use client';
 
-import { AppearanceSettings } from './settings/appearance-settings';
-import { CategoryColorsSettings } from './settings/category-color-settings';
-import { GoogleCalendarSettings } from './settings/google-calendar-settings';
-import { HoursSettings } from './settings/hour-settings';
-import { NotificationSettings } from './settings/notification-settings';
-import {
-  type CalendarSettings,
-  CalendarSettingsProvider,
-  useCalendarSettings,
-} from './settings/settings-context';
-import { SmartSchedulingSettings } from './settings/smart-scheduling-settings';
-import { TaskSettings } from './settings/task-settings';
-import { TimezoneSettings } from './settings/timezone-settings';
 import type { WorkspaceCalendarGoogleToken } from '@tuturuuu/types/db';
 import {
   Breadcrumb,
@@ -55,6 +42,19 @@ import {
   Palette,
 } from 'lucide-react';
 import * as React from 'react';
+import { AppearanceSettings } from './settings/appearance-settings';
+import { CategoryColorsSettings } from './settings/category-color-settings';
+import { GoogleCalendarSettings } from './settings/google-calendar-settings';
+import { HoursSettings } from './settings/hour-settings';
+import { NotificationSettings } from './settings/notification-settings';
+import {
+  type CalendarSettings,
+  CalendarSettingsProvider,
+  useCalendarSettings,
+} from './settings/settings-context';
+import { SmartSchedulingSettings } from './settings/smart-scheduling-settings';
+import { TaskSettings } from './settings/task-settings';
+import { TimezoneSettings } from './settings/timezone-settings';
 
 type SettingsSection = {
   id: keyof CalendarSettings | 'hours' | 'advanced' | 'googleCalendar';
@@ -221,7 +221,7 @@ function SettingsDialogContent({
                       isActive={item.id === activeSection}
                       onClick={() => setActiveSection(item.id)}
                     >
-                      <a href="#" className="group">
+                      <a href="/settings" className="group">
                         <item.icon className="h-5 w-5" />
                         <div className="flex flex-col">
                           <span>{item.name}</span>
@@ -242,7 +242,15 @@ function SettingsDialogContent({
           <div className="w-full md:hidden">
             <Select
               value={activeSection as string}
-              onValueChange={(value) => setActiveSection(value as any)}
+              onValueChange={(value) =>
+                setActiveSection(
+                  value as
+                    | keyof CalendarSettings
+                    | 'hours'
+                    | 'advanced'
+                    | 'googleCalendar'
+                )
+              }
             >
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select a setting" />

@@ -1,8 +1,8 @@
-import { useCalendar } from '../../../../hooks/use-calendar';
-import { HOUR_HEIGHT } from './config';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import { useEffect, useState } from 'react';
+import { useCalendar } from '../../../../hooks/use-calendar';
+import { HOUR_HEIGHT } from './config';
 
 dayjs.extend(timezone);
 
@@ -24,7 +24,7 @@ export const TimeIndicatorText = ({ columnIndex }: { columnIndex: number }) => {
     const interval = setInterval(updateTime, 60000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [tz]);
 
   // Use selected timezone
   const nowTz = tz === 'auto' ? now : now.tz(tz);
@@ -46,16 +46,16 @@ export const TimeIndicatorText = ({ columnIndex }: { columnIndex: number }) => {
 
   return (
     <div
-      className="pointer-events-none absolute top-[-0.075rem] -left-[70px] z-100 flex items-center"
+      className="-left-[70px] pointer-events-none absolute top-[-0.075rem] z-100 flex items-center"
       style={{
         transform: `translateY(${totalHours * HOUR_HEIGHT - 10}px)`,
         transition: 'transform 0.3s ease-out',
       }}
     >
-      <div className="rounded-md bg-dynamic-light-red px-2 py-1 text-xs font-semibold text-black">
+      <div className="rounded-md bg-dynamic-light-red px-2 py-1 font-semibold text-black text-xs">
         {formattedTime}
       </div>
-      <div className="h-0 w-0 border-y-[6px] border-l-[6px] border-y-transparent border-l-dynamic-light-red" />
+      <div className="h-0 w-0 border-y-[6px] border-y-transparent border-l-[6px] border-l-dynamic-light-red" />
     </div>
   );
 };

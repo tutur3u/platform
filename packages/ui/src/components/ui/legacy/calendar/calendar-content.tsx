@@ -1,15 +1,18 @@
-import { useCallback, useEffect, useState } from 'react';
-import { useViewTransition } from '@tuturuuu/ui/hooks/use-view-transition';
-import { useCalendarSync } from '@tuturuuu/ui/hooks/use-calendar-sync';
+import type {
+  Workspace,
+  WorkspaceCalendarGoogleToken,
+} from '@tuturuuu/types/db';
 import { useCalendar } from '@tuturuuu/ui/hooks/use-calendar';
+import { useCalendarSync } from '@tuturuuu/ui/hooks/use-calendar-sync';
 import type { CalendarView } from '@tuturuuu/ui/hooks/use-view-transition';
-import type { CalendarSettings } from './settings/settings-context';
-import type { Workspace, WorkspaceCalendarGoogleToken } from '@tuturuuu/types/db';
+import { useViewTransition } from '@tuturuuu/ui/hooks/use-view-transition';
+import { useCallback, useEffect, useState } from 'react';
 import { CalendarHeader } from './calendar-header';
 import { CalendarViewWithTrail } from './calendar-view-with-trail';
 import { CreateEventButton } from './create-event-button';
 import { EventModal } from './event-modal';
 import { MonthCalendar } from './month-calendar';
+import type { CalendarSettings } from './settings/settings-context';
 import { SettingsButton } from './settings-button';
 import { WeekdayBar } from './weekday-bar';
 
@@ -204,7 +207,14 @@ export const CalendarContent = ({
       handleSetView('week');
       setDates(getWeekdays());
     });
-  }, [date, transition, handleSetView, setDates, settings?.appearance?.firstDayOfWeek, settings?.appearance?.showWeekends]);
+  }, [
+    date,
+    transition,
+    handleSetView,
+    setDates,
+    settings?.appearance?.firstDayOfWeek,
+    settings?.appearance?.showWeekends,
+  ]);
 
   const enableMonthView = useCallback(() => {
     let firstDayNumber = 1; // Monday
@@ -451,17 +461,20 @@ export const CalendarContent = ({
             </div>
           </div>
         )}
-        <div className="flex-1 flex flex-col overflow-hidden">
+        <div className="flex flex-1 flex-col overflow-hidden">
           <div className="border-b bg-background/50">
             <div className="flex h-8 items-center justify-center">
               <div className="flex gap-1">
                 {Array.from({ length: 7 }).map((_, i) => (
-                  <div key={`weekday-skeleton-${i}`} className="h-6 w-16 animate-pulse rounded bg-muted" />
+                  <div
+                    key={`weekday-skeleton-${i}`}
+                    className="h-6 w-16 animate-pulse rounded bg-muted"
+                  />
                 ))}
               </div>
             </div>
           </div>
-          <div className="flex-1 relative overflow-auto scrollbar-none bg-background/50">
+          <div className="scrollbar-none relative flex-1 overflow-auto bg-background/50">
             <div className="flex h-full">
               <div className="w-16">
                 {Array.from({ length: 24 }).map((_, i) => (
@@ -469,11 +482,14 @@ export const CalendarContent = ({
                 ))}
               </div>
               <div className="flex-1">
-                <div className="grid grid-cols-7 h-full">
+                <div className="grid h-full grid-cols-7">
                   {Array.from({ length: 7 }).map((_, colIndex) => (
                     <div key={`calendar-col-${colIndex}`}>
                       {Array.from({ length: 24 }).map((_, rowIndex) => (
-                        <div key={`calendar-cell-${colIndex}-${rowIndex}`} className="h-20" />
+                        <div
+                          key={`calendar-cell-${colIndex}-${rowIndex}`}
+                          className="h-20"
+                        />
                       ))}
                     </div>
                   ))}
@@ -500,7 +516,13 @@ export const CalendarContent = ({
                 setDate={handleSetDate}
                 view={view}
                 offset={
-                  view === 'day' ? 1 : view === '4-days' ? 4 : view === 'week' ? 7 : 0
+                  view === 'day'
+                    ? 1
+                    : view === '4-days'
+                      ? 4
+                      : view === 'week'
+                        ? 7
+                        : 0
                 }
                 onViewChange={(newView) => {
                   if (newView === 'day') enableDayView();
@@ -515,18 +537,20 @@ export const CalendarContent = ({
             </div>
           </div>
         )}
-        <div className="flex-1 flex flex-col overflow-hidden">
+        <div className="flex flex-1 flex-col overflow-hidden">
           {view !== 'month' && (
             <div className="bg-background/50">
               <WeekdayBar locale={locale} view={view} dates={dates} />
             </div>
           )}
-          <div className="flex-1 relative overflow-auto scrollbar-none bg-background/50">
+          <div className="scrollbar-none relative flex-1 overflow-auto bg-background/50">
             <div className="flex h-full items-center justify-center">
               <div className="flex flex-col items-center gap-4">
                 <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-                <p className="text-sm text-muted-foreground">
-                  {isLoading ? 'Loading calendar data...' : 'Syncing calendar...'}
+                <p className="text-muted-foreground text-sm">
+                  {isLoading
+                    ? 'Loading calendar data...'
+                    : 'Syncing calendar...'}
                 </p>
               </div>
             </div>
@@ -549,7 +573,13 @@ export const CalendarContent = ({
               setDate={handleSetDate}
               view={view}
               offset={
-                view === 'day' ? 1 : view === '4-days' ? 4 : view === 'week' ? 7 : 0
+                view === 'day'
+                  ? 1
+                  : view === '4-days'
+                    ? 4
+                    : view === 'week'
+                      ? 7
+                      : 0
               }
               onViewChange={(newView) => {
                 if (newView === 'day') enableDayView();
@@ -565,14 +595,14 @@ export const CalendarContent = ({
         </div>
       )}
 
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex flex-1 flex-col overflow-hidden">
         {view !== 'month' && (
           <div className="bg-background/50">
             <WeekdayBar locale={locale} view={view} dates={dates} />
           </div>
         )}
 
-        <div className="flex-1 relative overflow-auto bg-background/50">
+        <div className="relative flex-1 overflow-auto bg-background/50">
           {/* Add CSS to hide scrollbars */}
           <style jsx>{`
             .flex-1::-webkit-scrollbar {

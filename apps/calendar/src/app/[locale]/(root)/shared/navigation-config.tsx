@@ -6,6 +6,7 @@ import {
   UsersRound,
   WandSparkles,
 } from '@tuturuuu/ui/icons';
+import type { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
 import { DEV_MODE } from '@/constants/common';
 
@@ -24,7 +25,9 @@ export interface NavCategory {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const useNavigation = (t: any): { categories: NavCategory[] } => {
+export const useNavigation = (
+  t: ReturnType<typeof useTranslations>
+): { categories: NavCategory[] } => {
   const products: NavItem[] = [
     {
       href: '/meet-together',

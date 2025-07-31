@@ -1,10 +1,10 @@
+import dayjs from 'dayjs';
+import timezone from 'dayjs/plugin/timezone';
+import { useEffect, useRef, useState } from 'react';
 import { useCalendar } from '../../../../hooks/use-calendar';
 import { CalendarView } from './calendar-view';
 import { HOUR_HEIGHT } from './config';
 import { TimeTrail } from './time-trail';
-import dayjs from 'dayjs';
-import timezone from 'dayjs/plugin/timezone';
-import { useEffect, useRef, useState } from 'react';
 
 dayjs.extend(timezone);
 
@@ -23,7 +23,7 @@ export const CalendarViewWithTrail = ({ dates }: { dates: Date[] }) => {
       calendarViewRef.current.scrollTop = scrollY - 100;
       setInitialized(true);
     }
-  }, [dates, initialized, tz]);
+  }, [initialized, tz]);
 
   return (
     <div
@@ -32,7 +32,7 @@ export const CalendarViewWithTrail = ({ dates }: { dates: Date[] }) => {
       className="flex h-full overflow-y-auto scroll-smooth rounded-b-lg text-center dark:text-zinc-800"
       style={{
         scrollbarWidth: 'none',
-        msOverflowStyle: 'none'
+        msOverflowStyle: 'none',
       }}
     >
       {/* Add CSS to hide scrollbars */}

@@ -1,12 +1,12 @@
 'use client';
 
-import type { SyncLog, Workspace } from './types';
 import { Button } from '@tuturuuu/ui/button';
 import { AnalyticsCharts } from '@tuturuuu/ui/legacy/calendar/settings/analytics-charts';
 import { SummaryCards } from '@tuturuuu/ui/legacy/calendar/settings/summary-cards';
 import { SyncLogsTable } from '@tuturuuu/ui/legacy/calendar/settings/sync-logs-table';
 import { Calendar, Download, RefreshCw } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import type { SyncLog, Workspace } from './types';
 
 // Mock data for workspaces
 const workspaces: Workspace[] = [
@@ -22,7 +22,7 @@ const syncLogs: SyncLog[] = [
     id: 'sync_001',
     timestamp: '2024-01-19T14:30:00Z',
     type: 'active',
-    workspace: workspaces[0]!,
+    workspace: workspaces[0] as Workspace,
     triggeredBy: {
       id: 'user_1',
       name: 'Sarah Chen',
@@ -42,7 +42,7 @@ const syncLogs: SyncLog[] = [
     id: 'sync_002',
     timestamp: '2024-01-19T14:00:00Z',
     type: 'background',
-    workspace: workspaces[1]!,
+    workspace: workspaces[1] as Workspace,
     triggeredBy: null,
     status: 'completed',
     duration: 1890,
@@ -57,7 +57,7 @@ const syncLogs: SyncLog[] = [
     id: 'sync_003',
     timestamp: '2024-01-19T13:45:00Z',
     type: 'active',
-    workspace: workspaces[0]!,
+    workspace: workspaces[0] as Workspace,
     triggeredBy: {
       id: 'user_2',
       name: 'Mike Johnson',
@@ -78,7 +78,7 @@ const syncLogs: SyncLog[] = [
     id: 'sync_004',
     timestamp: '2024-01-19T13:30:00Z',
     type: 'background',
-    workspace: workspaces[2]!,
+    workspace: workspaces[2] as Workspace,
     triggeredBy: null,
     status: 'completed',
     duration: 3200,
@@ -93,7 +93,7 @@ const syncLogs: SyncLog[] = [
     id: 'sync_005',
     timestamp: '2024-01-19T13:15:00Z',
     type: 'active',
-    workspace: workspaces[1]!,
+    workspace: workspaces[1] as Workspace,
     triggeredBy: {
       id: 'user_3',
       name: 'Emma Davis',
@@ -113,7 +113,7 @@ const syncLogs: SyncLog[] = [
     id: 'sync_006',
     timestamp: '2024-01-19T13:00:00Z',
     type: 'background',
-    workspace: workspaces[3]!,
+    workspace: workspaces[3] as Workspace,
     triggeredBy: null,
     status: 'completed',
     duration: 2100,
@@ -255,7 +255,7 @@ export function CalendarSyncDashboard() {
               <Calendar className="h-5 w-5 text-white" />
             </div>
             <div>
-              <h1 className="text-xl font-semibold">Calendar Sync Dashboard</h1>
+              <h1 className="font-semibold text-xl">Calendar Sync Dashboard</h1>
               <p className="text-sm opacity-70">
                 Monitor workspace calendar synchronization
               </p>

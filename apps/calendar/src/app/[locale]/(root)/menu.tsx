@@ -28,6 +28,7 @@ interface MenuProps {
   sbUser: SupabaseUser | null;
   user: WorkspaceUser | null;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // biome-ignore lint/suspicious/noExplicitAny: Translation function type is complex
   t?: any;
 }
 

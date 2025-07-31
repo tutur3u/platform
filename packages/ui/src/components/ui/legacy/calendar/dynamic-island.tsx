@@ -86,7 +86,7 @@ export const DynamicIsland = () => {
       setStartAt(null);
       setTime(0);
     }
-  }, [endAt, events, firstEventEnd]);
+  }, [endAt, firstEventEnd]);
 
   const startTimer = () => {
     if (startAt) {
@@ -228,6 +228,7 @@ export const DynamicIsland = () => {
 
         {pomodoroCycles > 0 && (
           <button
+            type="button"
             onClick={startTimer}
             className={`aspect-square h-fit justify-self-end rounded-lg border p-1 ${bg} transition`}
           >

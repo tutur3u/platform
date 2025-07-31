@@ -1,5 +1,5 @@
-import { TimeIndicatorLine } from './time-indicator-line';
 import { isSameDay } from 'date-fns';
+import { TimeIndicatorLine } from './time-indicator-line';
 
 export const TimeIndicator = ({ dates }: { dates: Date[] }) => {
   const now = new Date();

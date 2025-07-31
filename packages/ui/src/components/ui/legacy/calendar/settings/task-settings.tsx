@@ -82,7 +82,7 @@ export function TaskSettings({ value, onChange }: TaskSettingsProps) {
 
   const handleDefaultDurationChange = (duration: string) => {
     const durationMinutes = parseInt(duration, 10);
-    if (!isNaN(durationMinutes) && durationMinutes > 0) {
+    if (!Number.isNaN(durationMinutes) && durationMinutes > 0) {
       onChange({
         ...value,
         defaultTaskDuration: durationMinutes,
@@ -141,7 +141,7 @@ export function TaskSettings({ value, onChange }: TaskSettingsProps) {
   return (
     <div className="space-y-6">
       <div className="space-y-4">
-        <h3 className="text-lg font-medium">Task Scheduling</h3>
+        <h3 className="font-medium text-lg">Task Scheduling</h3>
 
         <div className="flex items-center justify-between">
           <Label htmlFor="auto-schedule">Auto-schedule tasks</Label>
@@ -207,7 +207,7 @@ export function TaskSettings({ value, onChange }: TaskSettingsProps) {
 
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-medium">Task Types</h3>
+          <h3 className="font-medium text-lg">Task Types</h3>
           <Button variant="outline" size="sm" onClick={addNewTaskType}>
             <PlusIcon className="mr-2 h-4 w-4" />
             Add Type
