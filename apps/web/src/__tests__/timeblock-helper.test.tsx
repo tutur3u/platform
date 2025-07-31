@@ -860,7 +860,7 @@ describe('removeTimeblocks', () => {
         tentative: false,
       },
     ];
-    
+
     // Try to remove at 08:15:30 (should match the 08:15-08:30 slot)
     const removalDate = new Date('2024-03-15T08:15:30+00:00');
     const dates: Date[] = [removalDate];
@@ -879,7 +879,7 @@ describe('removeTimeblocks', () => {
         tentative: false,
       },
     ];
-    
+
     // Remove 8-9 AM (should remove the entire hour)
     const startDate = new Date('2024-03-15T08:00:00+00:00');
     const endDate = new Date('2024-03-15T09:00:00+00:00');
@@ -911,7 +911,7 @@ describe('removeTimeblocks', () => {
         tentative: false,
       },
     ];
-    
+
     // Remove 8-9 AM across March 15-17 (should remove the entire hour on each day)
     const startDate = new Date('2024-03-15T08:00:00+00:00');
     const endDate = new Date('2024-03-17T09:00:00+00:00');
@@ -931,7 +931,7 @@ describe('removeTimeblocks', () => {
         tentative: false,
       },
     ];
-    
+
     // Simulate UI sending 8:59:59 instead of 9:00:00
     const startDate = new Date('2024-03-15T08:00:00+00:00');
     const endDate = new Date('2024-03-15T08:59:59+00:00'); // UI sends 8:59:59
