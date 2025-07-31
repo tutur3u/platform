@@ -39,8 +39,8 @@ interface MultipleChoiceVoteProps {
     value: string
   ) => Promise<PollOptionWithVotes | null>;
   onDeleteOption: (optionId: string) => Promise<void>;
-  onDeletePoll?: (pollId: string) => Promise<void>;
   className?: string;
+  hideHeader?: boolean;
 }
 
 function arraysAreEqual(a: string[], b: string[]) {
@@ -62,8 +62,8 @@ export default function MultipleChoiceVote({
   onVote,
   onAddOption,
   onDeleteOption,
-  onDeletePoll,
   className,
+  hideHeader = false,
 }: MultipleChoiceVoteProps) {
   const t = useTranslations('ws-polls');
 
@@ -78,7 +78,6 @@ export default function MultipleChoiceVote({
   const [selectedOptionIds, setSelectedOptionIds] = useState<string[]>([]);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [deleteDialog, setDeleteDialog] = useState<null | string>(null);
-  const [deletePollDialog, setDeletePollDialog] = useState(false);
 
   // Memoize user's voted options (previous votes from backend)
   const votedOptionIds = useMemo(() => {
@@ -233,41 +232,22 @@ export default function MultipleChoiceVote({
     }
   };
 
-  // Delete poll (creator only)
-  const handleDeletePoll = async () => {
-    if (!onDeletePoll) return;
-    setDeletePollDialog(false);
-    try {
-      await onDeletePoll(pollId);
-    } catch (error) {
-      console.error('Failed to delete poll:', error);
-    }
-  };
-
   return (
     <div className={cn('space-y-4', className)}>
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-lg font-semibold text-dynamic-purple">
-            {pollName}
-          </h3>
-          {uniqueVoters > 0 && (
-            <p className="text-xs text-muted-foreground">
-              {uniqueVoters} {uniqueVoters === 1 ? t('voter') : t('voters')}
-            </p>
-          )}
+      {!hideHeader && (
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-lg font-semibold text-dynamic-purple">
+              {pollName}
+            </h3>
+            {uniqueVoters > 0 && (
+              <p className="text-xs text-muted-foreground">
+                {uniqueVoters} {uniqueVoters === 1 ? t('voter') : t('voters')}
+              </p>
+            )}
+          </div>
         </div>
-        {isCreator && !isDisplayMode && onDeletePoll && (
-          <Button
-            variant="ghost"
-            size="icon"
-            className="text-dynamic-red hover:bg-dynamic-red/10"
-            onClick={() => setDeletePollDialog(true)}
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        )}
-      </div>
+      )}
       {!isDisplayMode && (
         <div className="text-sm text-foreground">{t('select_options')}</div>
       )}
@@ -436,27 +416,6 @@ export default function MultipleChoiceVote({
               {t('delete')}
             </Button>
             <Button variant="ghost" onClick={() => setDeleteDialog(null)}>
-              {t('cancel')}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Delete poll modal */}
-      <Dialog open={deletePollDialog} onOpenChange={setDeletePollDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{t('delete_poll')}</DialogTitle>
-          </DialogHeader>
-          <div className="py-4">{t('delete_poll_confirm', { pollName })}</div>
-          <DialogFooter>
-            <Button
-              onClick={handleDeletePoll}
-              className="bg-dynamic-red text-background"
-            >
-              {t('delete')}
-            </Button>
-            <Button variant="ghost" onClick={() => setDeletePollDialog(false)}>
               {t('cancel')}
             </Button>
           </DialogFooter>
