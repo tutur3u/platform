@@ -8079,6 +8079,7 @@ export type Database = {
           created_at: string | null;
           ending_date: string | null;
           id: string;
+          is_guest: boolean | null;
           name: string;
           notes: string | null;
           sessions: string[] | null;
@@ -8090,6 +8091,7 @@ export type Database = {
           created_at?: string | null;
           ending_date?: string | null;
           id?: string;
+          is_guest?: boolean | null;
           name: string;
           notes?: string | null;
           sessions?: string[] | null;
@@ -8101,6 +8103,7 @@ export type Database = {
           created_at?: string | null;
           ending_date?: string | null;
           id?: string;
+          is_guest?: boolean | null;
           name?: string;
           notes?: string | null;
           sessions?: string[] | null;
