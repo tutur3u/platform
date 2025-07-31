@@ -6,9 +6,7 @@
     "access": "public"
   },
   "scripts": {
-    "lint": "eslint .",
-    "test": "vitest run",
-    "test:watch": "vitest"
+    "lint": "eslint ."
   },
   "dependencies": {
     "@tuturuuu/supabase": "workspace:*",
