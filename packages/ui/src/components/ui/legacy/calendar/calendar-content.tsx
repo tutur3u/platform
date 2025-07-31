@@ -572,7 +572,17 @@ export const CalendarContent = ({
           </div>
         )}
 
-        <div className="flex-1 relative overflow-auto scrollbar-none bg-background/50">
+        <div className="flex-1 relative overflow-auto bg-background/50">
+          {/* Add CSS to hide scrollbars */}
+          <style jsx>{`
+            .flex-1::-webkit-scrollbar {
+              display: none;
+            }
+            .flex-1 {
+              -ms-overflow-style: none;
+              scrollbar-width: none;
+            }
+          `}</style>
           {view === 'month' && dates?.[0] ? (
             <MonthCalendar
               date={dates[0]}

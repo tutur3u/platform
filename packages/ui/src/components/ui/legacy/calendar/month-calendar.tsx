@@ -430,7 +430,7 @@ export const MonthCalendar = ({
   } = usePopoverManager();
 
   return (
-    <div className="flex-1 overflow-auto bg-background">
+    <div className="flex-1 overflow-auto scrollbar-none bg-background">
       <div className="grid grid-cols-7 divide-x divide-y border-b text-center">
         {weekdayLabels.map((day) => (
           <div

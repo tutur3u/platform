@@ -4,7 +4,6 @@ import Chat from '../../chat/chat';
 import type { ExtendedWorkspaceTask } from '../../time-tracker/types';
 import TimeTracker from './time-tracker';
 import type { AIChat } from '@tuturuuu/types/db';
-import { Button } from '@tuturuuu/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -99,7 +98,7 @@ export default function TasksSidebarContent({
         {/* Tasks Tab Content */}
         <TabsContent
           value="tasks"
-          className="m-0 flex min-h-0 flex-1 flex-col space-y-4 overflow-y-auto p-4 pb-2 duration-300 animate-in fade-in-50"
+          className="m-0 flex min-h-0 flex-1 flex-col space-y-4 overflow-y-auto scrollbar-none p-4 pb-2 duration-300 animate-in fade-in-50"
         >
           <div className="mx-auto w-full max-w-lg p-0">
             <PriorityView allTasks={tasks} />
@@ -110,9 +109,9 @@ export default function TasksSidebarContent({
         {hasAiChatAccess && (
           <TabsContent
             value="ai-chat"
-            className="m-0 min-h-0 flex-1 overflow-y-auto px-2 duration-300 animate-in fade-in-50"
+            className="m-0 min-h-0 flex-1 overflow-y-auto scrollbar-none px-2 duration-300 animate-in fade-in-50"
           >
-            <div className="relative h-full min-h-0 overflow-y-auto py-2">
+            <div className="relative h-full min-h-0 overflow-y-auto scrollbar-none py-2">
               <Chat
                 wsId={wsId}
                 hasKeys={hasKeys}

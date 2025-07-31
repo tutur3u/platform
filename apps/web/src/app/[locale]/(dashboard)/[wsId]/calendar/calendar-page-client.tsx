@@ -9,7 +9,6 @@ import { PanelLeftClose, PanelRightClose, Sparkles, Plus } from '@tuturuuu/ui/ic
 import { SmartCalendar } from '@tuturuuu/ui/legacy/calendar/smart-calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@tuturuuu/ui/select';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { DEV_MODE } from '@/constants/common';
 import AddEventModal from './components/add-event-dialog';
 import AddEventButton from './components/add-event-button';
@@ -155,7 +154,25 @@ export default function CalendarPageClient({
 
   return (
     <>
-      <div className="flex h-full w-full flex-col">
+      <div 
+        className="flex h-full w-full flex-col" 
+        style={{ 
+          zoom: '0.8',
+          transformOrigin: 'top left',
+          scrollbarWidth: 'none',
+          msOverflowStyle: 'none'
+        }}
+      >
+        {/* Add CSS to hide scrollbars */}
+        <style jsx>{`
+          div::-webkit-scrollbar {
+            display: none;
+          }
+          * {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+          }
+        `}</style>
         {/* Sticky Header */}
         <div className="sticky top-0 z-10 border-b">
           <div className="p-4">
