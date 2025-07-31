@@ -1,8 +1,7 @@
-import { getColumns } from './columns';
 import { CostExport } from './components/cost-export';
+import { ExecutionsTable } from './components/executions-table';
 import { PerformanceMetrics } from './components/performance-metrics';
 import { AIExecutionAnalyticsService } from './services/analytics-service';
-import { CustomDataTable } from '@/components/custom-data-table';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { type WorkspaceAIExecution } from '@tuturuuu/types/db';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
@@ -50,13 +49,8 @@ export default async function WorkspaceAIExecutionsPage({
     AIExecutionAnalyticsService.getAllTimeStats(wsId), // Get all-time stats for total counts
   ]);
 
-  console.log(executionData, analyticsData, allTimeStats);
-
   const { data, count } = executionData;
-  const executions = data.map((e) => ({
-    ...e,
-    href: `/${wsId}/ai/executions/${e.id}`,
-  }));
+  const executions = data;
 
   return (
     <>
@@ -81,13 +75,11 @@ export default async function WorkspaceAIExecutionsPage({
       <Separator className="my-4" />
       <CostExport executions={data} />
       <Separator className="my-4" />
-      <CustomDataTable
-        data={executions}
-        namespace="ai-execution-data-table"
-        columnGenerator={getColumns}
-        extraData={{ locale, wsId }}
+      <ExecutionsTable
+        executions={executions}
         count={count}
-        defaultVisibility={{ id: false }}
+        locale={locale}
+        wsId={wsId}
       />
     </>
   );

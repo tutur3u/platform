@@ -3,15 +3,19 @@
 import { RowActions } from './row-actions';
 import { calculateCost, formatCost } from './utils/cost-calculator';
 import type { ColumnDef } from '@tanstack/react-table';
+import type { WorkspaceAIExecution } from '@tuturuuu/types/db';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
 import moment from 'moment';
 
 export const getColumns = (
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   t: any,
   namespace: string | undefined,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   _?: any,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   extraData?: any
-): ColumnDef<any>[] => [
+): ColumnDef<WorkspaceAIExecution>[] => [
   {
     accessorKey: 'id',
     header: ({ column }) => (
@@ -195,8 +199,6 @@ export const getColumns = (
   },
   {
     id: 'actions',
-    cell: ({ row }) => (
-      <RowActions row={row} href={row.original.href} extraData={extraData} />
-    ),
+    cell: ({ row }) => <RowActions row={row} extraData={extraData} />,
   },
 ];
