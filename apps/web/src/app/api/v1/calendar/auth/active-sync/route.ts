@@ -83,7 +83,10 @@ export async function POST(request: Request) {
     }
 
     // 5. Fetch from Google Calendar
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    const baseUrl =
+      process.env.NODE_ENV === 'production'
+        ? 'https://tuturuuu.com'
+        : `http://localhost:${process.env.PORT || 3000}`;
     const response = await fetch(
       `${baseUrl}/api/v1/calendar/auth/fetch?wsId=${wsId}&startDate=${startDate}&endDate=${endDate}`,
       {
