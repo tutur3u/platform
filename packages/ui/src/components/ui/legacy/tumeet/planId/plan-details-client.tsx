@@ -1,15 +1,16 @@
 'use client';
 
 import AgendaDetails from './agenda-details';
-import PlanDetailsPolls from './plan-details-polls';
 import PlanLogin from './plan-login';
 import PlanUserFilter from './plan-user-filter';
+import SidebarDisplay from './sidebar-display';
 import UnifiedAvailability from './unified-availability';
 import UtilityButtons from './utility-buttons';
 import type {
-  GetPollsForPlanResult,
   MeetTogetherPlan,
+  PlanUser,
 } from '@tuturuuu/types/primitives/MeetTogetherPlan';
+import type { GetPollsForPlanResult } from '@tuturuuu/types/primitives/Poll';
 import type { Timeblock } from '@tuturuuu/types/primitives/Timeblock';
 import type { User } from '@tuturuuu/types/primitives/User';
 import { useTimeBlocking } from '@tuturuuu/ui/hooks/time-blocking-provider';
@@ -29,12 +30,7 @@ interface PlanDetailsClientProps {
   polls: GetPollsForPlanResult | null;
   platformUser: User | null;
   isCreator: boolean;
-  users: {
-    id: string | null;
-    display_name: string | null;
-    is_guest: boolean | null;
-    timeblock_count: number | null;
-  }[];
+  users: PlanUser[];
   timeblocks: Timeblock[];
   baseUrl: string;
 }
@@ -106,7 +102,7 @@ export default function PlanDetailsClient({
 
   return (
     <>
-      <div className="flex w-full max-w-6xl flex-col gap-6 p-4 text-foreground md:px-6 lg:gap-14 lg:px-14">
+      <div className="flex w-full max-w-7xl flex-col gap-6 p-4 text-foreground md:px-6 lg:gap-14 lg:px-10">
         <div className="flex w-full flex-col items-center">
           <UtilityButtons
             plan={plan}
@@ -191,7 +187,7 @@ export default function PlanDetailsClient({
             </div>
             <div
               className={cn(
-                'mt-8 grid w-full grid-cols-1 items-start justify-between gap-4 md:grid-cols-3 md:items-center'
+                'mt-8 grid w-full grid-cols-1 items-start justify-between gap-4 md:grid-cols-3'
               )}
             >
               <div
@@ -208,11 +204,12 @@ export default function PlanDetailsClient({
                 />
               </div>
               {plan.where_to_meet && (
-                <PlanDetailsPolls
+                <SidebarDisplay
                   plan={plan}
                   polls={polls}
                   isCreator={isCreator}
                   platformUser={platformUser}
+                  users={users}
                 />
               )}
             </div>
