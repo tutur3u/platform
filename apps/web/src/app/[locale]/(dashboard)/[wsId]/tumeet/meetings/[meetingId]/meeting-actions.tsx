@@ -1,6 +1,7 @@
 'use client';
 
 import { AudioRecorder } from './audio-recorder';
+import { RecordingStatus } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,
@@ -24,13 +25,7 @@ interface MeetingActionsProps {
 
 interface RecordingSession {
   id: string;
-  status:
-    | 'recording'
-    | 'completed'
-    | 'pending_transcription'
-    | 'transcribing'
-    | 'failed'
-    | 'interrupted';
+  status: RecordingStatus;
   created_at: string;
   updated_at: string;
 }
@@ -47,7 +42,7 @@ export function MeetingActions({ wsId, meetingId }: MeetingActionsProps) {
   const checkActiveSession = useCallback(async () => {
     try {
       const response = await fetch(
-        `/api/v1/workspaces/${wsId}/meetings/${meetingId}/recordings/active`,
+        `/api/v1/workspaces/${wsId}/meetings/${meetingId}/recordings?status=recording&limit=1`,
         {
           method: 'GET',
         }
@@ -55,11 +50,9 @@ export function MeetingActions({ wsId, meetingId }: MeetingActionsProps) {
 
       if (response.ok) {
         const data = await response.json();
-        if (data.session) {
-          setActiveSession(data.session);
-          if (data.session.status === 'recording') {
-            setShowRecorder(true);
-          }
+        if (data.sessions && data.sessions.length > 0) {
+          setActiveSession(data.sessions[0]);
+          setShowRecorder(true);
         }
       }
     } catch (error) {
