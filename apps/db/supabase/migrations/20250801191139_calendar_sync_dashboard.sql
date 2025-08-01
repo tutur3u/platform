@@ -1,6 +1,6 @@
 create table "public"."calendar_sync_dashboard" (
     "id" uuid not null default gen_random_uuid(),
-    "time" timestamp with time zone not null default now(),
+    "updated_at" timestamp with time zone not null default now(),
     "ws_id" uuid not null,
     "triggered_by" uuid not null,
     "start_time" timestamp with time zone,
@@ -18,8 +18,6 @@ alter table "public"."calendar_sync_dashboard" enable row level security;
 CREATE UNIQUE INDEX calendar_sync_dashboard_pkey ON public.calendar_sync_dashboard USING btree (id);
 
 CREATE INDEX calendar_sync_dashboard_ws_id_idx ON public.calendar_sync_dashboard USING btree (ws_id);
-
-CREATE INDEX calendar_sync_dashboard_time_idx ON public.calendar_sync_dashboard USING btree (time);
 
 CREATE INDEX calendar_sync_dashboard_status_idx ON public.calendar_sync_dashboard USING btree (status);
 

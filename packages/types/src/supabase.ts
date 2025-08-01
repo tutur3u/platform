@@ -1810,9 +1810,9 @@ export type Database = {
           source?: null | string;
           start_time?: null | string;
           status?: null | string;
-          time?: string;
           triggered_by: string;
           type?: null | string;
+          updated_at?: string;
           updated_events?: null | number;
           ws_id: string;
         };
@@ -1868,9 +1868,9 @@ export type Database = {
           source: null | string;
           start_time: null | string;
           status: null | string;
-          time: string;
           triggered_by: string;
           type: null | string;
+          updated_at: string;
           updated_events: null | number;
           ws_id: string;
         };
@@ -1882,9 +1882,9 @@ export type Database = {
           source?: null | string;
           start_time?: null | string;
           status?: null | string;
-          time?: string;
           triggered_by?: string;
           type?: null | string;
+          updated_at?: string;
           updated_events?: null | number;
           ws_id?: string;
         };

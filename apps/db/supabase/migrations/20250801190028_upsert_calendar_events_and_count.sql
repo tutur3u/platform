@@ -50,7 +50,7 @@ as $$
       color = excluded.color,
       priority = excluded.priority,
       locked = excluded.locked,
-      task_id = excluded.task_id
+      task_id = excluded.task_id,
     returning xmax
   )
   select jsonb_build_object(
