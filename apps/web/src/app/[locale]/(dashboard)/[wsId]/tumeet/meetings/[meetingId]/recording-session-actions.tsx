@@ -9,6 +9,7 @@ import {
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
 import { FileText, Play } from '@tuturuuu/ui/icons';
+import { toast } from '@tuturuuu/ui/sonner';
 import { useState } from 'react';
 
 interface RecordingSessionActionsProps {
@@ -36,8 +37,6 @@ export function RecordingSessionActions({
   const handlePlayRecording = async () => {
     setIsPlaying(true);
     try {
-      // In a real implementation, this would fetch the audio file URL
-      // and play it using the browser's audio API or a video player
       const response = await fetch(
         `/api/v1/workspaces/${wsId}/meetings/${meetingId}/recordings/${sessionId}/play`,
         {
@@ -46,20 +45,29 @@ export function RecordingSessionActions({
       );
 
       if (!response.ok) {
-        throw new Error('Failed to get recording URL');
+        throw new Error('Failed to get recording URLs');
       }
 
-      // For now, we'll just show an alert
-      // In a real implementation, you would:
-      // 1. Get the audio file URL from the response
-      // 2. Create an audio element or use a video player
-      // 3. Play the recording
-      alert(
-        'Playing recording... (This would open the audio player in a real implementation)'
-      );
+      const data = await response.json();
+
+      if (data.chunks && data.chunks.length > 0) {
+        // Create a combined audio player for all chunks
+        const audioUrls = data.chunks.map((chunk: any) => chunk.url);
+
+        // For now, we'll play the first chunk
+        // In a full implementation, you might want to concatenate all chunks
+        const audio = new Audio(audioUrls[0]);
+        audio.play();
+
+        toast.success(
+          `Playing recording (${data.totalChunks} chunks available)`
+        );
+      } else {
+        toast.error('No audio chunks found for this recording');
+      }
     } catch (error) {
       console.error('Error playing recording:', error);
-      alert('Failed to play recording. Please try again.');
+      toast.error('Failed to play recording. Please try again.');
     } finally {
       setIsPlaying(false);
     }
