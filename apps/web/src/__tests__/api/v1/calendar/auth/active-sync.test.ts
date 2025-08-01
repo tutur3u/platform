@@ -1,26 +1,32 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-// Mock Supabase modules
-const mockCreateAdminClient = vi.fn();
-const mockCreateClient = vi.fn();
-
-vi.mock('@tuturuuu/supabase/next/server', () => ({
-  createAdminClient: mockCreateAdminClient,
-  createClient: mockCreateClient,
-}));
-
-// Mock the entire Supabase package to prevent import errors
-vi.mock('@tuturuuu/supabase/next/client', () => ({
-  createClient: mockCreateClient,
-  createDynamicClient: vi.fn(),
-}));
-
+// Mock all modules before any imports
 vi.mock('@tuturuuu/supabase/next/common', () => ({
   checkEnvVariables: vi.fn(() => ({
     url: 'https://test.supabase.co',
     key: 'test-key',
   })),
 }));
+
+vi.mock('@tuturuuu/supabase/next/client', () => ({
+  createClient: mockCreateClient,
+  createDynamicClient: vi.fn(),
+}));
+
+vi.mock('@tuturuuu/supabase/next/server', () => ({
+  createAdminClient: mockCreateAdminClient,
+  createClient: mockCreateClient,
+}));
+
+// Mock SSR package that Supabase uses
+vi.mock('@supabase/ssr', () => ({
+  createBrowserClient: vi.fn(() => ({})),
+  createServerClient: vi.fn(() => ({})),
+}));
+
+// Mock Supabase modules
+const mockCreateAdminClient = vi.fn();
+const mockCreateClient = vi.fn();
 
 // Mock NextResponse
 vi.mock('next/server', () => ({
@@ -54,12 +60,6 @@ vi.mock('@tuturuuu/types/db', () => ({
 // Mock Supabase types
 vi.mock('@tuturuuu/types/supabase', () => ({
   Database: {},
-}));
-
-// Mock Supabase SSR package
-vi.mock('@supabase/ssr', () => ({
-  createBrowserClient: vi.fn(() => ({})),
-  createServerClient: vi.fn(() => ({})),
 }));
 
 // Mock Next.js cookies
