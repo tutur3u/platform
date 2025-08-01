@@ -9,6 +9,19 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
   createClient: mockCreateClient,
 }));
 
+// Mock the entire Supabase package to prevent import errors
+vi.mock('@tuturuuu/supabase/next/client', () => ({
+  createClient: mockCreateClient,
+  createDynamicClient: vi.fn(),
+}));
+
+vi.mock('@tuturuuu/supabase/next/common', () => ({
+  checkEnvVariables: vi.fn(() => ({
+    url: 'https://test.supabase.co',
+    key: 'test-key',
+  })),
+}));
+
 // Mock NextResponse
 vi.mock('next/server', () => ({
   NextResponse: {
@@ -26,6 +39,35 @@ vi.mock('@tuturuuu/utils/calendar-sync-coordination', () => ({
 
 vi.mock('@tuturuuu/utils/constants', () => ({
   DEV_MODE: true,
+}));
+
+// Mock any other utils that might be imported
+vi.mock('@tuturuuu/utils', () => ({
+  updateLastUpsert: vi.fn(() => Promise.resolve()),
+}));
+
+// Mock types package
+vi.mock('@tuturuuu/types/db', () => ({
+  WorkspaceCalendarEvent: {},
+}));
+
+// Mock Supabase types
+vi.mock('@tuturuuu/types/supabase', () => ({
+  Database: {},
+}));
+
+// Mock Supabase SSR package
+vi.mock('@supabase/ssr', () => ({
+  createBrowserClient: vi.fn(() => ({})),
+  createServerClient: vi.fn(() => ({})),
+}));
+
+// Mock Next.js cookies
+vi.mock('next/headers', () => ({
+  cookies: vi.fn(() => ({
+    getAll: vi.fn(() => []),
+    set: vi.fn(),
+  })),
 }));
 
 // Mock dayjs
