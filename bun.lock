@@ -58,6 +58,7 @@
       "version": "1.0.0",
       "devDependencies": {
         "supabase": "^2.33.7",
+        "typescript": "^5.9.2",
       },
     },
     "apps/external": {
