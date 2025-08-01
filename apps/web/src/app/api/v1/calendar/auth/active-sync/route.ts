@@ -119,11 +119,16 @@ export async function POST(request: Request) {
       )
     );
 
+    // Only delete events that:
+    // 1. Have a google_event_id (were synced from Google)
+    // 2. Are no longer present in the current Google Calendar events
     const eventsToDelete = dbData?.filter(
-      (e: WorkspaceCalendarEvent) => !googleEventIds.has(e.google_event_id)
+      (e: WorkspaceCalendarEvent) =>
+        e.google_event_id && // Only delete events that were synced from Google
+        !googleEventIds.has(e.google_event_id) // And are no longer in Google Calendar
     );
 
-    if (eventsToDelete) {
+    if (eventsToDelete && eventsToDelete.length > 0) {
       const { error: deleteError } = await supabase
         .from('workspace_calendar_events')
         .delete()

@@ -8,11 +8,7 @@ import type {
   WorkspaceCalendarGoogleToken,
 } from '@tuturuuu/types/db';
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
-import {
-  canProceedWithSync,
-  updateLastUpsert,
-} from '@tuturuuu/utils/calendar-sync-coordination';
-import { DEV_MODE } from '@tuturuuu/utils/constants';
+import { canProceedWithSync } from '@tuturuuu/utils/calendar-sync-coordination';
 import dayjs from 'dayjs';
 import {
   createContext,
