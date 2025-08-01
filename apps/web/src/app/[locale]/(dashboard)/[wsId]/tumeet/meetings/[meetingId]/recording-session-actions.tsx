@@ -28,6 +28,7 @@ interface RecordingSessionActionsProps {
   sessionId: string;
   hasTranscription: boolean;
   transcriptionText?: string;
+  onDelete?: () => void; // Optional callback for parent
 }
 
 export function RecordingSessionActions({
@@ -36,6 +37,7 @@ export function RecordingSessionActions({
   sessionId,
   hasTranscription,
   transcriptionText,
+  onDelete,
 }: RecordingSessionActionsProps) {
   const [transcriptDialogOpen, setTranscriptDialogOpen] = useState(false);
   const [audioPlayerDialogOpen, setAudioPlayerDialogOpen] = useState(false);
@@ -53,6 +55,9 @@ export function RecordingSessionActions({
   const [volume, setVolume] = useState(1);
   const [isMuted, setIsMuted] = useState(false);
   const [totalDuration, setTotalDuration] = useState(0);
+
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const audioContextRef = useRef<AudioContext | null>(null);
   const audioBuffersRef = useRef<AudioBuffer[]>([]);
@@ -375,6 +380,34 @@ export function RecordingSessionActions({
     }
   };
 
+  // --- Delete handler ---
+  const handleDelete = async () => {
+    setIsDeleting(true);
+    try {
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/meetings/${meetingId}/recordings/${sessionId}`,
+        { method: 'DELETE' }
+      );
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(
+          errorData.error || `HTTP ${response.status}: ${response.statusText}`
+        );
+      }
+      toast.success('Recording session deleted');
+      setDeleteDialogOpen(false);
+      if (onDelete) onDelete();
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : 'Failed to delete recording session';
+      toast.error(errorMessage);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   // --- Add this useEffect for animation frame management ---
   useEffect(() => {
     if (isPlaying) {
@@ -408,6 +441,14 @@ export function RecordingSessionActions({
         >
           <Headphones className="mr-1 h-3 w-3" />
           {isLoadingChunks ? 'Loading...' : 'Play'}
+        </Button>
+        <Button
+          variant="destructive"
+          size="sm"
+          onClick={() => setDeleteDialogOpen(true)}
+          disabled={isDeleting}
+        >
+          Delete
         </Button>
       </div>
 
@@ -591,6 +632,37 @@ export function RecordingSessionActions({
                 </div>
               </div>
             )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Delete Recording Session?</DialogTitle>
+            <DialogDescription>
+              This action cannot be undone. Are you sure you want to delete this
+              recording session?
+            </DialogDescription>
+          </DialogHeader>
+          <div className="mt-4 flex justify-end gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setDeleteDialogOpen(false)}
+              disabled={isDeleting}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={handleDelete}
+              disabled={isDeleting}
+            >
+              {isDeleting ? 'Deleting...' : 'Delete'}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>

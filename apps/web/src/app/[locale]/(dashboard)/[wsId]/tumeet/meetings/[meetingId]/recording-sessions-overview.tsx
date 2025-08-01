@@ -1,6 +1,7 @@
 'use client';
 
 import { RecordingSessionActions } from './recording-session-actions';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { Calendar, Clock, FileText, Mic } from '@tuturuuu/ui/icons';
@@ -26,8 +27,22 @@ interface RecordingSession {
 interface RecordingSessionsOverviewProps {
   wsId: string;
   meetingId: string;
-  sessions: RecordingSession[];
 }
+
+// Fetch recording sessions
+const fetchRecordingSessions = async (
+  wsId: string,
+  meetingId: string
+): Promise<RecordingSession[]> => {
+  const response = await fetch(
+    `/api/v1/workspaces/${wsId}/meetings/${meetingId}/recordings`
+  );
+  if (!response.ok) {
+    throw new Error('Failed to fetch recording sessions');
+  }
+  const data = await response.json();
+  return data.sessions || [];
+};
 
 const getStatusColor = (status: RecordingSession['status']) => {
   switch (status) {
@@ -79,8 +94,51 @@ const getDuration = (session: RecordingSession) => {
 export function RecordingSessionsOverview({
   wsId,
   meetingId,
-  sessions,
 }: RecordingSessionsOverviewProps) {
+  const queryClient = useQueryClient();
+
+  const {
+    data: sessions = [],
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: ['recording-sessions', wsId, meetingId],
+    queryFn: () => fetchRecordingSessions(wsId, meetingId),
+    staleTime: 30000, // 30 seconds
+    refetchInterval: 60000, // Refetch every minute for real-time updates
+  });
+
+  const handleSessionDeleted = () => {
+    // Invalidate and refetch the recording sessions
+    queryClient.invalidateQueries({
+      queryKey: ['recording-sessions', wsId, meetingId],
+    });
+  };
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardContent className="flex flex-col items-center justify-center py-8">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-dynamic-blue border-t-transparent" />
+          <p className="mt-2 text-muted-foreground">Loading recordings...</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card>
+        <CardContent className="flex flex-col items-center justify-center py-8">
+          <p className="text-dynamic-red">Failed to load recordings</p>
+          <p className="text-sm text-muted-foreground">
+            {error instanceof Error ? error.message : 'Unknown error'}
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
   if (sessions.length === 0) {
     return (
       <Card>
@@ -162,6 +220,7 @@ export function RecordingSessionsOverview({
                     sessionId={session.id}
                     hasTranscription={hasTranscription}
                     transcriptionText={transcriptionText}
+                    onDelete={handleSessionDeleted}
                   />
                 </div>
               </CardContent>

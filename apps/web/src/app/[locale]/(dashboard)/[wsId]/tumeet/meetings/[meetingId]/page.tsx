@@ -9,14 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@tuturuuu/ui/card';
-import {
-  ArrowLeft,
-  Calendar,
-  Clock,
-  Mic,
-  Play,
-  Users,
-} from '@tuturuuu/ui/icons';
+import { ArrowLeft, Calendar, Clock, Users } from '@tuturuuu/ui/icons';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { format } from 'date-fns';
 import Link from 'next/link';
@@ -59,16 +52,6 @@ export default async function MeetingDetailPage({
       *,
       creator:users!workspace_meetings_creator_id_fkey(
         display_name
-      ),
-      recording_sessions(
-        id,
-        status,
-        created_at,
-        updated_at,
-        recording_transcriptions(
-          text,
-          created_at
-        )
       )
     `
     )
@@ -110,17 +93,6 @@ export default async function MeetingDetailPage({
                 {meeting.creator.display_name}
               </div>
             </div>
-          </div>
-
-          <div className="flex gap-2">
-            <Button className="flex items-center gap-2">
-              <Play className="h-4 w-4" />
-              Join Meeting
-            </Button>
-            <Button variant="outline" className="flex items-center gap-2">
-              <Mic className="h-4 w-4" />
-              Start Recording
-            </Button>
           </div>
         </div>
       </div>
@@ -167,11 +139,7 @@ export default async function MeetingDetailPage({
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <RecordingSessionsOverview
-              wsId={wsId}
-              meetingId={meetingId}
-              sessions={meeting.recording_sessions}
-            />
+            <RecordingSessionsOverview wsId={wsId} meetingId={meetingId} />
           </CardContent>
         </Card>
       </div>
