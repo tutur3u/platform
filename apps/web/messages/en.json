@@ -1043,6 +1043,7 @@
   },
   "user-data-table": {
     "id": "ID",
+    "attendance-count": "Attendance Count",
     "avatar_url": "Avatar",
     "name": "Name",
     "full_name": "Full Name",
