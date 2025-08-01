@@ -2,6 +2,7 @@
   "name": "@tuturuuu/supabase",
   "license": "MIT",
   "version": "0.0.7",
+  "main": "./src/index.ts",
   "publishConfig": {
     "access": "public"
   },
@@ -28,6 +29,7 @@
     "vitest": "^3.2.4"
   },
   "exports": {
+    ".": "./src/index.ts",
     "./*": "./src/*.ts"
   },
   "packageManager": "bun@1.2.19"
