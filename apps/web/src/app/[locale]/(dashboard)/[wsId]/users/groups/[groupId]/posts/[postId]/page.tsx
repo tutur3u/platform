@@ -13,6 +13,7 @@ import {
   X,
 } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
+import { getGuestGroup } from '@tuturuuu/utils/workspace-helper';
 import { format } from 'date-fns';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
@@ -162,8 +163,9 @@ export default async function HomeworkCheck({ params, searchParams }: Props) {
       </div>
       <Separator className="my-4" />
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        {users.map((user) => (
+        {users.map(async (user) => (
           <UserCard
+            isGuest={(await getGuestGroup({ wsId })) ?? false}
             key={`post-${postId}-${user.id}-${status.checked === status.count}`}
             user={user}
             wsId={wsId}
