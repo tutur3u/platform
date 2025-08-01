@@ -26,8 +26,8 @@ export function AudioRecorder({
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const chunkUploadIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const chunkOrderRef = useRef(0);
+  const streamRef = useRef<MediaStream | null>(null);
+  const isUploadingRef = useRef(false);
 
   // Cleanup function
   const cleanup = useCallback(() => {
@@ -35,31 +35,40 @@ export function AudioRecorder({
       clearInterval(recordingIntervalRef.current);
       recordingIntervalRef.current = null;
     }
-    if (chunkUploadIntervalRef.current) {
-      clearInterval(chunkUploadIntervalRef.current);
-      chunkUploadIntervalRef.current = null;
-    }
     if (
       mediaRecorderRef.current &&
       mediaRecorderRef.current.state !== 'inactive'
     ) {
       mediaRecorderRef.current.stop();
     }
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+    }
     setRecordingTime(0);
-    chunkOrderRef.current = 0;
+    isUploadingRef.current = false;
   }, []);
 
-  // Upload audio chunk
-  const uploadChunk = useCallback(
-    async (audioBlob: Blob, isLastChunk: boolean = false) => {
+  // Upload complete recording
+  const uploadRecording = useCallback(
+    async (audioBlob: Blob) => {
+      // Prevent concurrent uploads
+      if (isUploadingRef.current) {
+        console.log('Upload already in progress, skipping...');
+        return false;
+      }
+
       try {
+        isUploadingRef.current = true;
+        setIsUploading(true);
+
         const formData = new FormData();
         formData.append('audio', audioBlob);
-        formData.append('chunkOrder', chunkOrderRef.current.toString());
-        formData.append('isLastChunk', isLastChunk.toString());
+
+        console.log(`Uploading complete recording (${audioBlob.size} bytes)`);
 
         const response = await fetch(
-          `/api/v1/workspaces/${wsId}/meetings/${meetingId}/recordings/${sessionId}/chunks`,
+          `/api/v1/workspaces/${wsId}/meetings/${meetingId}/recordings/${sessionId}/upload`,
           {
             method: 'POST',
             body: formData,
@@ -68,15 +77,18 @@ export function AudioRecorder({
 
         if (!response.ok) {
           const errorData = await response.json();
-          throw new Error(errorData.error || 'Failed to upload audio chunk');
+          throw new Error(errorData.error || 'Failed to upload recording');
         }
 
-        chunkOrderRef.current++;
+        console.log('Successfully uploaded complete recording');
         return true;
       } catch (error) {
-        console.error('Error uploading audio chunk:', error);
-        toast.error('Failed to upload audio chunk');
+        console.error('Error uploading recording:', error);
+        toast.error('Failed to upload recording');
         return false;
+      } finally {
+        isUploadingRef.current = false;
+        setIsUploading(false);
       }
     },
     [wsId, meetingId, sessionId]
@@ -89,46 +101,62 @@ export function AudioRecorder({
 
       // Request microphone access
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
+
+      // Check for supported MIME types
+      const supportedTypes = [
+        'audio/webm;codecs=opus',
+        'audio/webm',
+        'audio/mp4',
+        'audio/ogg;codecs=opus',
+      ];
+
+      let mimeType = 'audio/webm;codecs=opus';
+      for (const type of supportedTypes) {
+        if (MediaRecorder.isTypeSupported(type)) {
+          mimeType = type;
+          console.log(`Using MIME type: ${mimeType}`);
+          break;
+        }
+      }
 
       // Create MediaRecorder
       const mediaRecorder = new MediaRecorder(stream, {
-        mimeType: 'audio/webm;codecs=opus',
+        mimeType,
       });
 
       mediaRecorderRef.current = mediaRecorder;
       audioChunksRef.current = [];
-      chunkOrderRef.current = 0;
+      isUploadingRef.current = false;
 
-      // Handle data available event
-      mediaRecorder.ondataavailable = async (event) => {
+      // Handle data available event - collect chunks but don't upload immediately
+      mediaRecorder.ondataavailable = (event) => {
         if (event.data.size > 0) {
+          console.log(`Received audio data: ${event.data.size} bytes`);
           audioChunksRef.current.push(event.data);
-
-          // Upload chunk every 5 seconds (or when recording stops)
-          if (audioChunksRef.current.length >= 5) {
-            const chunkBlob = new Blob(audioChunksRef.current, {
-              type: 'audio/webm',
-            });
-            const success = await uploadChunk(chunkBlob);
-            if (success) {
-              audioChunksRef.current = [];
-            }
-          }
         }
       };
 
       // Handle recording stop
       mediaRecorder.onstop = async () => {
-        // Upload any remaining chunks
+        console.log('Recording stopped, uploading complete recording...');
+
+        // Create complete recording blob
         if (audioChunksRef.current.length > 0) {
-          const finalChunkBlob = new Blob(audioChunksRef.current, {
-            type: 'audio/webm',
+          const completeRecordingBlob = new Blob(audioChunksRef.current, {
+            type: mimeType,
           });
-          await uploadChunk(finalChunkBlob, true);
+          console.log(
+            `Complete recording size: ${completeRecordingBlob.size} bytes`
+          );
+          await uploadRecording(completeRecordingBlob);
         }
 
         // Stop all tracks
-        stream.getTracks().forEach((track) => track.stop());
+        if (streamRef.current) {
+          streamRef.current.getTracks().forEach((track) => track.stop());
+          streamRef.current = null;
+        }
 
         setIsRecording(false);
         setIsUploading(false);
@@ -145,32 +173,20 @@ export function AudioRecorder({
         setIsRecording(false);
         setIsUploading(false);
         cleanup();
-        stream.getTracks().forEach((track) => track.stop());
+        if (streamRef.current) {
+          streamRef.current.getTracks().forEach((track) => track.stop());
+          streamRef.current = null;
+        }
       };
 
-      // Start recording
-      mediaRecorder.start(1000); // Collect data every second
+      // Start recording - collect all data until stopped
+      mediaRecorder.start();
       setIsRecording(true);
 
       // Start timer
       recordingIntervalRef.current = setInterval(() => {
         setRecordingTime((prev) => prev + 1);
       }, 1000);
-
-      // Start periodic chunk upload (every 10 seconds)
-      chunkUploadIntervalRef.current = setInterval(async () => {
-        if (audioChunksRef.current.length > 0) {
-          setIsUploading(true);
-          const chunkBlob = new Blob(audioChunksRef.current, {
-            type: 'audio/webm',
-          });
-          const success = await uploadChunk(chunkBlob);
-          if (success) {
-            audioChunksRef.current = [];
-          }
-          setIsUploading(false);
-        }
-      }, 10000);
     } catch (error) {
       console.error('Error starting recording:', error);
       setError(
@@ -178,7 +194,7 @@ export function AudioRecorder({
       );
       setIsRecording(false);
     }
-  }, [uploadChunk, cleanup, onRecordingComplete]);
+  }, [uploadRecording, cleanup, onRecordingComplete]);
 
   // Stop recording
   const stopRecording = useCallback(() => {

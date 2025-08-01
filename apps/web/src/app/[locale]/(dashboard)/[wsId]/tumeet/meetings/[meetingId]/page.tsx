@@ -1,7 +1,6 @@
 import { MeetingActions } from './meeting-actions';
-import { RecordingSessionActions } from './recording-session-actions';
+import { RecordingSessionsOverview } from './recording-sessions-overview';
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Card,
@@ -80,25 +79,6 @@ export default async function MeetingDetailPage({
   if (error || !meeting) {
     redirect(`/${wsId}/tumeet/meetings`);
   }
-
-  const getStatusBadge = (status: string) => {
-    const statusConfig = {
-      recording: { variant: 'default' as const, label: 'Recording' },
-      interrupted: { variant: 'destructive' as const, label: 'Interrupted' },
-      pending_transcription: {
-        variant: 'secondary' as const,
-        label: 'Pending',
-      },
-      transcribing: { variant: 'secondary' as const, label: 'Transcribing' },
-      completed: { variant: 'default' as const, label: 'Completed' },
-      failed: { variant: 'destructive' as const, label: 'Failed' },
-    };
-
-    const config =
-      statusConfig[status as keyof typeof statusConfig] ||
-      statusConfig.recording;
-    return <Badge variant={config.variant}>{config.label}</Badge>;
-  };
 
   return (
     <div className="container mx-auto max-w-4xl p-6">
@@ -183,50 +163,15 @@ export default async function MeetingDetailPage({
           <CardHeader>
             <CardTitle>Recordings</CardTitle>
             <CardDescription>
-              {meeting.recording_sessions.length > 0
-                ? `${meeting.recording_sessions.length} recording session(s)`
-                : 'No recordings yet'}
+              Audio recordings and transcripts from this meeting
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {meeting.recording_sessions.length === 0 ? (
-              <p className="text-muted-foreground">
-                No recordings have been made for this meeting yet.
-              </p>
-            ) : (
-              <div className="space-y-3">
-                {meeting.recording_sessions.map((session) => (
-                  <div
-                    key={session.id}
-                    className="flex items-center justify-between rounded-lg border p-3"
-                  >
-                    <div className="flex items-center gap-3">
-                      <Mic className="h-4 w-4 text-muted-foreground" />
-                      <div>
-                        <div className="flex items-center gap-2">
-                          {getStatusBadge(session.status)}
-                          <span className="text-sm text-muted-foreground">
-                            {format(new Date(session.created_at), 'MMM d, p')}
-                          </span>
-                        </div>
-                        {session.recording_transcriptions && (
-                          <p className="mt-1 text-xs text-muted-foreground">
-                            Transcription available
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                    <RecordingSessionActions
-                      wsId={wsId}
-                      meetingId={meetingId}
-                      sessionId={session.id}
-                      hasTranscription={!!session.recording_transcriptions}
-                      transcriptionText={session.recording_transcriptions?.text}
-                    />
-                  </div>
-                ))}
-              </div>
-            )}
+            <RecordingSessionsOverview
+              wsId={wsId}
+              meetingId={meetingId}
+              sessions={meeting.recording_sessions}
+            />
           </CardContent>
         </Card>
       </div>

@@ -53,12 +53,10 @@ export async function POST(
     // Get the form data
     const formData = await request.formData();
     const audioBlob = formData.get('audio') as Blob;
-    const chunkOrder = parseInt(formData.get('chunkOrder') as string);
-    const isLastChunk = formData.get('isLastChunk') === 'true';
 
-    if (!audioBlob || isNaN(chunkOrder)) {
+    if (!audioBlob) {
       return NextResponse.json(
-        { error: 'Invalid audio data or chunk order' },
+        { error: 'Invalid audio data' },
         { status: 400 }
       );
     }
@@ -72,15 +70,14 @@ export async function POST(
     }
 
     console.log(
-      `Processing chunk ${chunkOrder}: ${audioBlob.size} bytes, type: ${audioBlob.type}, last: ${isLastChunk}`
+      `Processing complete recording: ${audioBlob.size} bytes, type: ${audioBlob.type}`
     );
 
-    // Generate a unique filename for this chunk
+    // Upload the complete recording to storage
     const timestamp = Date.now();
-    const chunkId = `${sessionId}-chunk-${chunkOrder}-${timestamp}`;
-    const storagePath = `${wsId}/recordings/${meetingId}/${sessionId}/${chunkId}.webm`;
+    const recordingId = `${sessionId}-complete-${timestamp}`;
+    const storagePath = `${wsId}/recordings/${meetingId}/${sessionId}/${recordingId}.webm`;
 
-    // Upload the audio chunk to storage
     const { error: uploadError } = await supabase.storage
       .from('workspaces')
       .upload(storagePath, audioBlob, {
@@ -89,58 +86,57 @@ export async function POST(
       });
 
     if (uploadError) {
-      console.error('Error uploading audio chunk:', uploadError);
+      console.error('Error uploading complete recording:', uploadError);
       return NextResponse.json(
-        { error: 'Failed to upload audio chunk' },
+        { error: 'Failed to upload recording' },
         { status: 500 }
       );
     }
 
-    // Save the chunk metadata to the database
+    // For now, we'll create a single chunk entry for the complete recording
+    // In the future, we could implement server-side chunking here
     const { data: chunkData, error: chunkError } = await supabase
       .from('audio_chunks')
       .insert({
         session_id: sessionId,
-        chunk_order: chunkOrder,
+        chunk_order: 0,
         storage_path: storagePath,
       })
       .select()
       .single();
 
     if (chunkError) {
-      console.error('Error saving audio chunk metadata:', chunkError);
+      console.error('Error saving recording metadata:', chunkError);
       // Try to clean up the uploaded file
       await supabase.storage.from('workspaces').remove([storagePath]);
       return NextResponse.json(
-        { error: 'Failed to save audio chunk metadata' },
+        { error: 'Failed to save recording metadata' },
         { status: 500 }
       );
     }
 
-    // If this is the last chunk, update the session status
-    if (isLastChunk) {
-      const { error: updateError } = await supabase
-        .from('recording_sessions')
-        .update({
-          status: 'pending_transcription',
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', sessionId);
+    // Update the session status
+    const { error: updateError } = await supabase
+      .from('recording_sessions')
+      .update({
+        status: 'pending_transcription',
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', sessionId);
 
-      if (updateError) {
-        console.error('Error updating session status:', updateError);
-        // Don't fail the request, just log the error
-      }
+    if (updateError) {
+      console.error('Error updating session status:', updateError);
+      // Don't fail the request, just log the error
     }
 
     return NextResponse.json({
       success: true,
-      chunkId: chunkData.id,
+      recordingId: chunkData.id,
       storagePath,
-      message: 'Audio chunk uploaded successfully',
+      message: 'Recording uploaded successfully',
     });
   } catch (error) {
-    console.error('Error in audio chunk upload API:', error);
+    console.error('Error in recording upload API:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
