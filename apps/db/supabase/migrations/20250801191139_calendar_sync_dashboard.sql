@@ -33,24 +33,6 @@ alter table "public"."calendar_sync_dashboard" validate constraint "calendar_syn
 
 alter table "public"."calendar_sync_dashboard" validate constraint "calendar_sync_dashboard_triggered_by_fkey";
 
--- Function to validate triggered_by references a valid user or NULL
-CREATE OR REPLACE FUNCTION validate_triggered_by()
-RETURNS TRIGGER AS $$
-BEGIN
-  -- Allow NULL (system operations) or valid user UUID
-  IF NEW.triggered_by IS NOT NULL AND NOT EXISTS (SELECT 1 FROM users WHERE id = NEW.triggered_by) THEN
-    RAISE EXCEPTION 'triggered_by must reference a valid user or be NULL for system operations';
-  END IF;
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
--- Trigger to validate triggered_by on insert/update
-CREATE TRIGGER validate_triggered_by_trigger
-  BEFORE INSERT OR UPDATE ON calendar_sync_dashboard
-  FOR EACH ROW
-  EXECUTE FUNCTION validate_triggered_by();
-
 grant insert on table "public"."calendar_sync_dashboard" to "authenticated";
 
 grant references on table "public"."calendar_sync_dashboard" to "authenticated";
