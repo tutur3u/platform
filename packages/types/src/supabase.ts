@@ -8339,7 +8339,7 @@ export type Database = {
           id?: string;
           name: string;
           time?: string;
-          ws_id?: null | string;
+          ws_id: string;
         };
         Relationships: [
           {
@@ -8391,7 +8391,7 @@ export type Database = {
           id: string;
           name: string;
           time: string;
-          ws_id: null | string;
+          ws_id: string;
         };
         Update: {
           created_at?: string;
@@ -8399,7 +8399,7 @@ export type Database = {
           id?: string;
           name?: string;
           time?: string;
-          ws_id?: null | string;
+          ws_id?: string;
         };
       };
       workspace_members: {
