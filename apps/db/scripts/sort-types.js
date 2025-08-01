@@ -4,21 +4,73 @@ const fs = require('fs');
 const path = require('path');
 const ts = require('typescript');
 
-function sortTypeLiteral(node, sourceFile) {
-  if (!ts.isTypeLiteralNode(node)) {
-    return;
+function sortMembers(node, sourceFile) {
+  let members = [];
+
+  if (ts.isTypeLiteralNode(node)) {
+    members = [...node.members];
+  } else if (ts.isInterfaceDeclaration(node)) {
+    members = [...node.members];
+  } else if (ts.isTypeAliasDeclaration(node) && ts.isTypeLiteralNode(node.type)) {
+    members = [...node.type.members];
+  } else if (ts.isUnionTypeNode(node)) {
+    members = [...node.types];
+  } else if (ts.isArrayLiteralExpression(node)) {
+    members = [...node.elements];
   }
 
-  const properties = [...node.members];
-  if (properties.length > 1) {
-    properties.sort((a, b) => {
-      const nameA = a.name ? a.name.getText(sourceFile) : '';
-      const nameB = b.name ? b.name.getText(sourceFile) : '';
+  if (members.length > 1) {
+    members.sort((a, b) => {
+      let nameA = '';
+      let nameB = '';
+
+      // For properties, enum members, and string literals, use their specific text/name
+      if (ts.isPropertySignature(a) || ts.isPropertyAssignment(a) || ts.isEnumMember(a)) {
+        nameA = a.name ? a.name.getText(sourceFile) : '';
+      } else if (ts.isStringLiteral(a) || ts.isNumericLiteral(a)) {
+        nameA = a.text;
+      } else if (ts.isTypeNode(a)) { // For union types, get the text of the type node
+        nameA = a.getText(sourceFile);
+      } else { // Fallback for other nodes
+        nameA = a.getText(sourceFile);
+      }
+
+      if (ts.isPropertySignature(b) || ts.isPropertyAssignment(b) || ts.isEnumMember(b)) {
+        nameB = b.name ? b.name.getText(sourceFile) : '';
+      } else if (ts.isStringLiteral(b) || ts.isNumericLiteral(b)) {
+        nameB = b.text;
+      } else if (ts.isTypeNode(b)) { // For union types, get the text of the type node
+        nameB = b.getText(sourceFile);
+      } else { // Fallback for other nodes
+        nameB = b.getText(sourceFile);
+      }
       return nameA.localeCompare(nameB);
     });
 
-    const sortedMembers = ts.factory.createNodeArray(properties);
-    return ts.factory.updateTypeLiteralNode(node, sortedMembers);
+    if (ts.isTypeLiteralNode(node)) {
+      return ts.factory.updateTypeLiteralNode(node, ts.factory.createNodeArray(members));
+    } else if (ts.isInterfaceDeclaration(node)) {
+      return ts.factory.updateInterfaceDeclaration(
+        node,
+        node.modifiers,
+        node.name,
+        node.typeParameters,
+        node.heritageClauses,
+        ts.factory.createNodeArray(members)
+      );
+    } else if (ts.isTypeAliasDeclaration(node) && ts.isTypeLiteralNode(node.type)) {
+      return ts.factory.updateTypeAliasDeclaration(
+        node,
+        node.modifiers,
+        node.name,
+        node.typeParameters,
+        ts.factory.updateTypeLiteralNode(node.type, ts.factory.createNodeArray(members))
+      );
+    } else if (ts.isUnionTypeNode(node)) {
+      return ts.factory.updateUnionTypeNode(node, ts.factory.createNodeArray(members));
+    } else if (ts.isArrayLiteralExpression(node)) {
+      return ts.factory.updateArrayLiteralExpression(node, ts.factory.createNodeArray(members));
+    }
   }
   return node;
 }
@@ -55,9 +107,18 @@ function main() {
 
     const transformer = (context) => (rootNode) => {
       function visit(node) {
+        // First, visit all children to ensure nested nodes are sorted first
         node = ts.visitEachChild(node, visit, context);
-        if (ts.isTypeLiteralNode(node)) {
-          return sortTypeLiteral(node, sourceFile);
+
+        // Then, sort the current node if it's a relevant type declaration
+        if (
+          ts.isTypeLiteralNode(node) ||
+          ts.isInterfaceDeclaration(node) ||
+          (ts.isTypeAliasDeclaration(node) && ts.isTypeLiteralNode(node.type)) ||
+          ts.isUnionTypeNode(node) ||
+          ts.isArrayLiteralExpression(node)
+        ) {
+          return sortMembers(node, sourceFile);
         }
         return node;
       }

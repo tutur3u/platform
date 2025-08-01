@@ -1,12 +1,12 @@
 export type Json =
-  | string
-  | number
-  | boolean
-  | null
   | {
       [key: string]: Json | undefined;
     }
-  | Json[];
+  | boolean
+  | Json[]
+  | null
+  | number
+  | string;
 export type Database = {
   public: {
     CompositeTypes: {
@@ -14,56 +14,56 @@ export type Database = {
     };
     Enums: {
       ai_message_type:
-        | 'message'
         | 'file'
-        | 'summary'
-        | 'notes'
+        | 'flashcards'
+        | 'message'
         | 'multi_choice_quiz'
+        | 'notes'
         | 'paragraph_quiz'
-        | 'flashcards';
-      calendar_hour_type: 'WORK' | 'PERSONAL' | 'MEETING';
-      calendar_hours: 'work_hours' | 'personal_hours' | 'meeting_hours';
-      certificate_templates: 'original' | 'modern' | 'elegant';
-      chat_role: 'FUNCTION' | 'USER' | 'SYSTEM' | 'ASSISTANT';
-      dataset_type: 'excel' | 'csv' | 'html';
+        | 'summary';
+      calendar_hour_type: 'MEETING' | 'PERSONAL' | 'WORK';
+      calendar_hours: 'meeting_hours' | 'personal_hours' | 'work_hours';
+      certificate_templates: 'elegant' | 'modern' | 'original';
+      chat_role: 'ASSISTANT' | 'FUNCTION' | 'SYSTEM' | 'USER';
+      dataset_type: 'csv' | 'excel' | 'html';
       feature_flag:
         | 'ENABLE_AI'
-        | 'ENABLE_EDUCATION'
         | 'ENABLE_CHALLENGES'
+        | 'ENABLE_EDUCATION'
         | 'ENABLE_QUIZZES';
-      platform_service: 'TUTURUUU' | 'REWISE' | 'NOVA' | 'UPSKII';
-      subscription_status: 'trialing' | 'active' | 'canceled' | 'past_due';
-      task_board_status: 'not_started' | 'active' | 'done' | 'closed';
-      task_priority: 'low' | 'normal' | 'high' | 'critical';
+      platform_service: 'NOVA' | 'REWISE' | 'TUTURUUU' | 'UPSKII';
+      subscription_status: 'active' | 'canceled' | 'past_due' | 'trialing';
+      task_board_status: 'active' | 'closed' | 'done' | 'not_started';
+      task_priority: 'critical' | 'high' | 'low' | 'normal';
       workspace_api_key_scope:
         | 'gemini-2.0-flash'
-        | 'gemini-2.5-flash'
         | 'gemini-2.0-pro'
+        | 'gemini-2.5-flash'
         | 'gemini-2.5-pro';
       workspace_role_permission:
-        | 'view_infrastructure'
-        | 'manage_workspace_secrets'
-        | 'manage_external_migrations'
-        | 'manage_workspace_roles'
-        | 'manage_workspace_members'
-        | 'manage_workspace_settings'
-        | 'manage_workspace_integrations'
-        | 'manage_workspace_billing'
-        | 'manage_workspace_security'
-        | 'manage_workspace_audit_logs'
-        | 'manage_user_report_templates'
-        | 'manage_calendar'
-        | 'manage_projects'
-        | 'manage_documents'
-        | 'manage_drive'
-        | 'manage_users'
-        | 'export_users_data'
-        | 'manage_inventory'
-        | 'manage_finance'
-        | 'export_finance_data'
         | 'ai_chat'
         | 'ai_lab'
-        | 'send_user_group_post_emails';
+        | 'export_finance_data'
+        | 'export_users_data'
+        | 'manage_calendar'
+        | 'manage_documents'
+        | 'manage_drive'
+        | 'manage_external_migrations'
+        | 'manage_finance'
+        | 'manage_inventory'
+        | 'manage_projects'
+        | 'manage_user_report_templates'
+        | 'manage_users'
+        | 'manage_workspace_audit_logs'
+        | 'manage_workspace_billing'
+        | 'manage_workspace_integrations'
+        | 'manage_workspace_members'
+        | 'manage_workspace_roles'
+        | 'manage_workspace_secrets'
+        | 'manage_workspace_security'
+        | 'manage_workspace_settings'
+        | 'send_user_group_post_emails'
+        | 'view_infrastructure';
     };
     Functions: {
       add_board_tags: {
@@ -1070,13 +1070,13 @@ export type Database = {
         Insert: {
           chat_id: string;
           completion_tokens?: number;
-          content?: string | null;
+          content?: null | string;
           created_at?: string;
-          creator_id?: string | null;
-          finish_reason?: string | null;
+          creator_id?: null | string;
+          finish_reason?: null | string;
           id?: string;
           metadata?: Json | null;
-          model?: string | null;
+          model?: null | string;
           prompt_tokens?: number;
           role: Database['public']['Enums']['chat_role'];
           type?: Database['public']['Enums']['ai_message_type'];
@@ -1128,13 +1128,13 @@ export type Database = {
         Row: {
           chat_id: string;
           completion_tokens: number;
-          content: string | null;
+          content: null | string;
           created_at: string;
-          creator_id: string | null;
-          finish_reason: string | null;
+          creator_id: null | string;
+          finish_reason: null | string;
           id: string;
           metadata: Json | null;
-          model: string | null;
+          model: null | string;
           prompt_tokens: number;
           role: Database['public']['Enums']['chat_role'];
           type: Database['public']['Enums']['ai_message_type'];
@@ -1142,13 +1142,13 @@ export type Database = {
         Update: {
           chat_id?: string;
           completion_tokens?: number;
-          content?: string | null;
+          content?: null | string;
           created_at?: string;
-          creator_id?: string | null;
-          finish_reason?: string | null;
+          creator_id?: null | string;
+          finish_reason?: null | string;
           id?: string;
           metadata?: Json | null;
-          model?: string | null;
+          model?: null | string;
           prompt_tokens?: number;
           role?: Database['public']['Enums']['chat_role'];
           type?: Database['public']['Enums']['ai_message_type'];
@@ -1157,14 +1157,14 @@ export type Database = {
       ai_chats: {
         Insert: {
           created_at?: string;
-          creator_id?: string | null;
+          creator_id?: null | string;
           id?: string;
           is_public?: boolean;
-          latest_summarized_message_id?: string | null;
-          model?: string | null;
+          latest_summarized_message_id?: null | string;
+          model?: null | string;
           pinned?: boolean;
-          summary?: string | null;
-          title?: string | null;
+          summary?: null | string;
+          title?: null | string;
         };
         Relationships: [
           {
@@ -1212,25 +1212,25 @@ export type Database = {
         ];
         Row: {
           created_at: string;
-          creator_id: string | null;
+          creator_id: null | string;
           id: string;
           is_public: boolean;
-          latest_summarized_message_id: string | null;
-          model: string | null;
+          latest_summarized_message_id: null | string;
+          model: null | string;
           pinned: boolean;
-          summary: string | null;
-          title: string | null;
+          summary: null | string;
+          title: null | string;
         };
         Update: {
           created_at?: string;
-          creator_id?: string | null;
+          creator_id?: null | string;
           id?: string;
           is_public?: boolean;
-          latest_summarized_message_id?: string | null;
-          model?: string | null;
+          latest_summarized_message_id?: null | string;
+          model?: null | string;
           pinned?: boolean;
-          summary?: string | null;
-          title?: string | null;
+          summary?: null | string;
+          title?: null | string;
         };
       };
       ai_models: {
@@ -1238,8 +1238,8 @@ export type Database = {
           created_at?: string;
           enabled?: boolean;
           id: string;
-          name?: string | null;
-          provider?: string | null;
+          name?: null | string;
+          provider?: null | string;
         };
         Relationships: [
           {
@@ -1254,15 +1254,15 @@ export type Database = {
           created_at: string;
           enabled: boolean;
           id: string;
-          name: string | null;
-          provider: string | null;
+          name: null | string;
+          provider: null | string;
         };
         Update: {
           created_at?: string;
           enabled?: boolean;
           id?: string;
-          name?: string | null;
-          provider?: string | null;
+          name?: null | string;
+          provider?: null | string;
         };
       };
       ai_providers: {
@@ -1286,20 +1286,20 @@ export type Database = {
       ai_whitelisted_domains: {
         Insert: {
           created_at?: string;
-          description?: string | null;
+          description?: null | string;
           domain: string;
           enabled?: boolean;
         };
         Relationships: [];
         Row: {
           created_at: string;
-          description: string | null;
+          description: null | string;
           domain: string;
           enabled: boolean;
         };
         Update: {
           created_at?: string;
-          description?: string | null;
+          description?: null | string;
           domain?: string;
           enabled?: boolean;
         };
@@ -1625,11 +1625,11 @@ export type Database = {
       };
       calendar_event_participant_groups: {
         Insert: {
-          created_at?: string | null;
+          created_at?: null | string;
           event_id: string;
           group_id: string;
-          notes?: string | null;
-          role?: string | null;
+          notes?: null | string;
+          role?: null | string;
         };
         Relationships: [
           {
@@ -1662,27 +1662,27 @@ export type Database = {
           },
         ];
         Row: {
-          created_at: string | null;
+          created_at: null | string;
           event_id: string;
           group_id: string;
-          notes: string | null;
-          role: string | null;
+          notes: null | string;
+          role: null | string;
         };
         Update: {
-          created_at?: string | null;
+          created_at?: null | string;
           event_id?: string;
           group_id?: string;
-          notes?: string | null;
-          role?: string | null;
+          notes?: null | string;
+          role?: null | string;
         };
       };
       calendar_event_platform_participants: {
         Insert: {
-          created_at?: string | null;
+          created_at?: null | string;
           event_id: string;
           going?: boolean | null;
           notes?: string;
-          role?: string | null;
+          role?: null | string;
           user_id: string;
         };
         Relationships: [
@@ -1723,29 +1723,29 @@ export type Database = {
           },
         ];
         Row: {
-          created_at: string | null;
+          created_at: null | string;
           event_id: string;
           going: boolean | null;
           notes: string;
-          role: string | null;
+          role: null | string;
           user_id: string;
         };
         Update: {
-          created_at?: string | null;
+          created_at?: null | string;
           event_id?: string;
           going?: boolean | null;
           notes?: string;
-          role?: string | null;
+          role?: null | string;
           user_id?: string;
         };
       };
       calendar_event_virtual_participants: {
         Insert: {
-          created_at?: string | null;
+          created_at?: null | string;
           event_id: string;
           going?: boolean | null;
           notes?: string;
-          role?: string | null;
+          role?: null | string;
           user_id: string;
         };
         Relationships: [
@@ -1779,27 +1779,27 @@ export type Database = {
           },
         ];
         Row: {
-          created_at: string | null;
+          created_at: null | string;
           event_id: string;
           going: boolean | null;
           notes: string;
-          role: string | null;
+          role: null | string;
           user_id: string;
         };
         Update: {
-          created_at?: string | null;
+          created_at?: null | string;
           event_id?: string;
           going?: boolean | null;
           notes?: string;
-          role?: string | null;
+          role?: null | string;
           user_id?: string;
         };
       };
       calendar_sync_states: {
         Insert: {
           calendar_id?: string;
-          last_synced_at?: string | null;
-          sync_token?: string | null;
+          last_synced_at?: null | string;
+          sync_token?: null | string;
           ws_id: string;
         };
         Relationships: [
@@ -1820,14 +1820,14 @@ export type Database = {
         ];
         Row: {
           calendar_id: string;
-          last_synced_at: string | null;
-          sync_token: string | null;
+          last_synced_at: null | string;
+          sync_token: null | string;
           ws_id: string;
         };
         Update: {
           calendar_id?: string;
-          last_synced_at?: string | null;
-          sync_token?: string | null;
+          last_synced_at?: null | string;
+          sync_token?: null | string;
           ws_id?: string;
         };
       };
@@ -1893,12 +1893,12 @@ export type Database = {
       };
       course_module_completion_status: {
         Insert: {
-          completed_at?: string | null;
+          completed_at?: null | string;
           completion_id?: string;
           completion_status?: boolean;
-          created_at?: string | null;
+          created_at?: null | string;
           module_id: string;
-          user_id?: string | null;
+          user_id?: null | string;
         };
         Relationships: [
           {
@@ -1938,20 +1938,20 @@ export type Database = {
           },
         ];
         Row: {
-          completed_at: string | null;
+          completed_at: null | string;
           completion_id: string;
           completion_status: boolean;
-          created_at: string | null;
+          created_at: null | string;
           module_id: string;
-          user_id: string | null;
+          user_id: null | string;
         };
         Update: {
-          completed_at?: string | null;
+          completed_at?: null | string;
           completion_id?: string;
           completion_status?: boolean;
-          created_at?: string | null;
+          created_at?: null | string;
           module_id?: string;
-          user_id?: string | null;
+          user_id?: null | string;
         };
       };
       course_module_flashcards: {
@@ -2086,9 +2086,9 @@ export type Database = {
         Insert: {
           created_at?: string;
           creator_id: string;
-          html?: string | null;
+          html?: null | string;
           id?: string;
-          markdown?: string | null;
+          markdown?: null | string;
           url: string;
         };
         Relationships: [
@@ -2124,17 +2124,17 @@ export type Database = {
         Row: {
           created_at: string;
           creator_id: string;
-          html: string | null;
+          html: null | string;
           id: string;
-          markdown: string | null;
+          markdown: null | string;
           url: string;
         };
         Update: {
           created_at?: string;
           creator_id?: string;
-          html?: string | null;
+          html?: null | string;
           id?: string;
-          markdown?: string | null;
+          markdown?: null | string;
           url?: string;
         };
       };
@@ -2177,7 +2177,7 @@ export type Database = {
           session_data?: Json | null;
           target_app: string;
           token: string;
-          used_at?: string | null;
+          used_at?: null | string;
           user_id: string;
         };
         Relationships: [
@@ -2219,7 +2219,7 @@ export type Database = {
           session_data: Json | null;
           target_app: string;
           token: string;
-          used_at: string | null;
+          used_at: null | string;
           user_id: string;
         };
         Update: {
@@ -2231,7 +2231,7 @@ export type Database = {
           session_data?: Json | null;
           target_app?: string;
           token?: string;
-          used_at?: string | null;
+          used_at?: null | string;
           user_id?: string;
         };
       };
@@ -2254,13 +2254,13 @@ export type Database = {
         Insert: {
           content?: string;
           created_at?: string;
-          creator_id?: string | null;
+          creator_id?: null | string;
           feedback?: string;
           group_id: string;
           id?: string;
           report_id: string;
-          score?: number | null;
-          scores?: number[] | null;
+          score?: null | number;
+          scores?: null | number[];
           title?: string;
           user_id: string;
         };
@@ -2339,26 +2339,26 @@ export type Database = {
         Row: {
           content: string;
           created_at: string;
-          creator_id: string | null;
+          creator_id: null | string;
           feedback: string;
           group_id: string;
           id: string;
           report_id: string;
-          score: number | null;
-          scores: number[] | null;
+          score: null | number;
+          scores: null | number[];
           title: string;
           user_id: string;
         };
         Update: {
           content?: string;
           created_at?: string;
-          creator_id?: string | null;
+          creator_id?: null | string;
           feedback?: string;
           group_id?: string;
           id?: string;
           report_id?: string;
-          score?: number | null;
-          scores?: number[] | null;
+          score?: null | number;
+          scores?: null | number[];
           title?: string;
           user_id?: string;
         };
@@ -2367,12 +2367,12 @@ export type Database = {
         Insert: {
           content: string;
           created_at?: string;
-          creator_id?: string | null;
+          creator_id?: null | string;
           feedback: string;
           group_id: string;
           id?: string;
-          score?: number | null;
-          scores?: number[] | null;
+          score?: null | number;
+          scores?: null | number[];
           title: string;
           updated_at: string;
           user_id: string;
@@ -2445,12 +2445,12 @@ export type Database = {
         Row: {
           content: string;
           created_at: string;
-          creator_id: string | null;
+          creator_id: null | string;
           feedback: string;
           group_id: string;
           id: string;
-          score: number | null;
-          scores: number[] | null;
+          score: null | number;
+          scores: null | number[];
           title: string;
           updated_at: string;
           user_id: string;
@@ -2458,12 +2458,12 @@ export type Database = {
         Update: {
           content?: string;
           created_at?: string;
-          creator_id?: string | null;
+          creator_id?: null | string;
           feedback?: string;
           group_id?: string;
           id?: string;
-          score?: number | null;
-          scores?: number[] | null;
+          score?: null | number;
+          scores?: null | number[];
           title?: string;
           updated_at?: string;
           user_id?: string;
@@ -2487,10 +2487,10 @@ export type Database = {
       finance_invoice_products: {
         Insert: {
           amount: number;
-          created_at?: string | null;
+          created_at?: null | string;
           invoice_id: string;
           price: number;
-          product_id?: string | null;
+          product_id?: null | string;
           product_name?: string;
           product_unit?: string;
           total_diff?: number;
@@ -2530,10 +2530,10 @@ export type Database = {
         ];
         Row: {
           amount: number;
-          created_at: string | null;
+          created_at: null | string;
           invoice_id: string;
           price: number;
-          product_id: string | null;
+          product_id: null | string;
           product_name: string;
           product_unit: string;
           total_diff: number;
@@ -2543,10 +2543,10 @@ export type Database = {
         };
         Update: {
           amount?: number;
-          created_at?: string | null;
+          created_at?: null | string;
           invoice_id?: string;
           price?: number;
-          product_id?: string | null;
+          product_id?: null | string;
           product_name?: string;
           product_unit?: string;
           total_diff?: number;
@@ -2559,10 +2559,10 @@ export type Database = {
         Insert: {
           code?: string;
           created_at?: string;
-          description?: string | null;
-          invoice_id?: string | null;
-          name?: string | null;
-          promo_id?: string | null;
+          description?: null | string;
+          invoice_id?: null | string;
+          name?: null | string;
+          promo_id?: null | string;
           use_ratio: boolean;
           value: number;
         };
@@ -2585,20 +2585,20 @@ export type Database = {
         Row: {
           code: string;
           created_at: string;
-          description: string | null;
-          invoice_id: string | null;
-          name: string | null;
-          promo_id: string | null;
+          description: null | string;
+          invoice_id: null | string;
+          name: null | string;
+          promo_id: null | string;
           use_ratio: boolean;
           value: number;
         };
         Update: {
           code?: string;
           created_at?: string;
-          description?: string | null;
-          invoice_id?: string | null;
-          name?: string | null;
-          promo_id?: string | null;
+          description?: null | string;
+          invoice_id?: null | string;
+          name?: null | string;
+          promo_id?: null | string;
           use_ratio?: boolean;
           value?: number;
         };
@@ -2606,19 +2606,19 @@ export type Database = {
       finance_invoices: {
         Insert: {
           category_id: string;
-          completed_at?: string | null;
-          created_at?: string | null;
-          creator_id?: string | null;
-          customer_id?: string | null;
+          completed_at?: null | string;
+          created_at?: null | string;
+          creator_id?: null | string;
+          customer_id?: null | string;
           id?: string;
-          note?: string | null;
-          notice?: string | null;
+          note?: null | string;
+          notice?: null | string;
           paid_amount?: number;
           price: number;
           total_diff?: number;
-          transaction_id?: string | null;
-          user_group_id?: string | null;
-          valid_until?: string | null;
+          transaction_id?: null | string;
+          user_group_id?: null | string;
+          valid_until?: null | string;
           wallet_id: string;
           ws_id: string;
         };
@@ -2724,45 +2724,45 @@ export type Database = {
         ];
         Row: {
           category_id: string;
-          completed_at: string | null;
-          created_at: string | null;
-          creator_id: string | null;
-          customer_id: string | null;
+          completed_at: null | string;
+          created_at: null | string;
+          creator_id: null | string;
+          customer_id: null | string;
           id: string;
-          note: string | null;
-          notice: string | null;
+          note: null | string;
+          notice: null | string;
           paid_amount: number;
           price: number;
           total_diff: number;
-          transaction_id: string | null;
-          user_group_id: string | null;
-          valid_until: string | null;
+          transaction_id: null | string;
+          user_group_id: null | string;
+          valid_until: null | string;
           wallet_id: string;
           ws_id: string;
         };
         Update: {
           category_id?: string;
-          completed_at?: string | null;
-          created_at?: string | null;
-          creator_id?: string | null;
-          customer_id?: string | null;
+          completed_at?: null | string;
+          created_at?: null | string;
+          creator_id?: null | string;
+          customer_id?: null | string;
           id?: string;
-          note?: string | null;
-          notice?: string | null;
+          note?: null | string;
+          notice?: null | string;
           paid_amount?: number;
           price?: number;
           total_diff?: number;
-          transaction_id?: string | null;
-          user_group_id?: string | null;
-          valid_until?: string | null;
+          transaction_id?: null | string;
+          user_group_id?: null | string;
+          valid_until?: null | string;
           wallet_id?: string;
           ws_id?: string;
         };
       };
       handles: {
         Insert: {
-          created_at?: string | null;
-          creator_id?: string | null;
+          created_at?: null | string;
+          creator_id?: null | string;
           value: string;
         };
         Relationships: [
@@ -2796,20 +2796,20 @@ export type Database = {
           },
         ];
         Row: {
-          created_at: string | null;
-          creator_id: string | null;
+          created_at: null | string;
+          creator_id: null | string;
           value: string;
         };
         Update: {
-          created_at?: string | null;
-          creator_id?: string | null;
+          created_at?: null | string;
+          creator_id?: null | string;
           value?: string;
         };
       };
       healthcare_checkup_vital_groups: {
         Insert: {
           checkup_id: string;
-          created_at?: string | null;
+          created_at?: null | string;
           group_id: string;
         };
         Relationships: [
@@ -2830,20 +2830,20 @@ export type Database = {
         ];
         Row: {
           checkup_id: string;
-          created_at: string | null;
+          created_at: null | string;
           group_id: string;
         };
         Update: {
           checkup_id?: string;
-          created_at?: string | null;
+          created_at?: null | string;
           group_id?: string;
         };
       };
       healthcare_checkup_vitals: {
         Insert: {
           checkup_id: string;
-          created_at?: string | null;
-          value?: number | null;
+          created_at?: null | string;
+          value?: null | number;
           vital_id: string;
         };
         Relationships: [
@@ -2864,14 +2864,14 @@ export type Database = {
         ];
         Row: {
           checkup_id: string;
-          created_at: string | null;
-          value: number | null;
+          created_at: null | string;
+          value: null | number;
           vital_id: string;
         };
         Update: {
           checkup_id?: string;
-          created_at?: string | null;
-          value?: number | null;
+          created_at?: null | string;
+          value?: null | number;
           vital_id?: string;
         };
       };
@@ -2879,14 +2879,14 @@ export type Database = {
         Insert: {
           checked?: boolean;
           checkup_at?: string;
-          completed_at?: string | null;
-          created_at?: string | null;
+          completed_at?: null | string;
+          created_at?: null | string;
           creator_id: string;
-          diagnosis_id?: string | null;
+          diagnosis_id?: null | string;
           id?: string;
           next_checked?: boolean | null;
-          next_checkup_at?: string | null;
-          note?: string | null;
+          next_checkup_at?: null | string;
+          note?: null | string;
           patient_id: string;
           ws_id: string;
         };
@@ -2965,39 +2965,39 @@ export type Database = {
         Row: {
           checked: boolean;
           checkup_at: string;
-          completed_at: string | null;
-          created_at: string | null;
+          completed_at: null | string;
+          created_at: null | string;
           creator_id: string;
-          diagnosis_id: string | null;
+          diagnosis_id: null | string;
           id: string;
           next_checked: boolean | null;
-          next_checkup_at: string | null;
-          note: string | null;
+          next_checkup_at: null | string;
+          note: null | string;
           patient_id: string;
           ws_id: string;
         };
         Update: {
           checked?: boolean;
           checkup_at?: string;
-          completed_at?: string | null;
-          created_at?: string | null;
+          completed_at?: null | string;
+          created_at?: null | string;
           creator_id?: string;
-          diagnosis_id?: string | null;
+          diagnosis_id?: null | string;
           id?: string;
           next_checked?: boolean | null;
-          next_checkup_at?: string | null;
-          note?: string | null;
+          next_checkup_at?: null | string;
+          note?: null | string;
           patient_id?: string;
           ws_id?: string;
         };
       };
       healthcare_diagnoses: {
         Insert: {
-          created_at?: string | null;
-          description?: string | null;
+          created_at?: null | string;
+          description?: null | string;
           id?: string;
-          name?: string | null;
-          note?: string | null;
+          name?: null | string;
+          note?: null | string;
           ws_id: string;
         };
         Relationships: [
@@ -3017,29 +3017,29 @@ export type Database = {
           },
         ];
         Row: {
-          created_at: string | null;
-          description: string | null;
+          created_at: null | string;
+          description: null | string;
           id: string;
-          name: string | null;
-          note: string | null;
+          name: null | string;
+          note: null | string;
           ws_id: string;
         };
         Update: {
-          created_at?: string | null;
-          description?: string | null;
+          created_at?: null | string;
+          description?: null | string;
           id?: string;
-          name?: string | null;
-          note?: string | null;
+          name?: null | string;
+          note?: null | string;
           ws_id?: string;
         };
       };
       healthcare_vital_groups: {
         Insert: {
-          created_at?: string | null;
-          description?: string | null;
+          created_at?: null | string;
+          description?: null | string;
           id?: string;
           name: string;
-          note?: string | null;
+          note?: null | string;
           ws_id: string;
         };
         Relationships: [
@@ -3059,27 +3059,27 @@ export type Database = {
           },
         ];
         Row: {
-          created_at: string | null;
-          description: string | null;
+          created_at: null | string;
+          description: null | string;
           id: string;
           name: string;
-          note: string | null;
+          note: null | string;
           ws_id: string;
         };
         Update: {
-          created_at?: string | null;
-          description?: string | null;
+          created_at?: null | string;
+          description?: null | string;
           id?: string;
           name?: string;
-          note?: string | null;
+          note?: null | string;
           ws_id?: string;
         };
       };
       healthcare_vitals: {
         Insert: {
-          created_at?: string | null;
+          created_at?: null | string;
           factor?: number;
-          group_id?: string | null;
+          group_id?: null | string;
           id?: string;
           name: string;
           unit: string;
@@ -3123,18 +3123,18 @@ export type Database = {
           },
         ];
         Row: {
-          created_at: string | null;
+          created_at: null | string;
           factor: number;
-          group_id: string | null;
+          group_id: null | string;
           id: string;
           name: string;
           unit: string;
           ws_id: string;
         };
         Update: {
-          created_at?: string | null;
+          created_at?: null | string;
           factor?: number;
-          group_id?: string | null;
+          group_id?: null | string;
           id?: string;
           name?: string;
           unit?: string;
@@ -3143,7 +3143,7 @@ export type Database = {
       };
       internal_email_api_keys: {
         Insert: {
-          allowed_emails?: string[] | null;
+          allowed_emails?: null | string[];
           created_at?: string;
           creator_id: string;
           id?: string;
@@ -3209,7 +3209,7 @@ export type Database = {
           },
         ];
         Row: {
-          allowed_emails: string[] | null;
+          allowed_emails: null | string[];
           created_at: string;
           creator_id: string;
           id: string;
@@ -3217,7 +3217,7 @@ export type Database = {
           value: string;
         };
         Update: {
-          allowed_emails?: string[] | null;
+          allowed_emails?: null | string[];
           created_at?: string;
           creator_id?: string;
           id?: string;
@@ -3317,7 +3317,7 @@ export type Database = {
         Insert: {
           amount?: number;
           batch_id: string;
-          created_at?: string | null;
+          created_at?: null | string;
           price?: number;
           product_id: string;
           unit_id: string;
@@ -3348,7 +3348,7 @@ export type Database = {
         Row: {
           amount: number;
           batch_id: string;
-          created_at: string | null;
+          created_at: null | string;
           price: number;
           product_id: string;
           unit_id: string;
@@ -3356,7 +3356,7 @@ export type Database = {
         Update: {
           amount?: number;
           batch_id?: string;
-          created_at?: string | null;
+          created_at?: null | string;
           price?: number;
           product_id?: string;
           unit_id?: string;
@@ -3364,10 +3364,10 @@ export type Database = {
       };
       inventory_batches: {
         Insert: {
-          created_at?: string | null;
+          created_at?: null | string;
           id?: string;
           price?: number;
-          supplier_id?: string | null;
+          supplier_id?: null | string;
           total_diff?: number;
           warehouse_id: string;
         };
@@ -3388,26 +3388,26 @@ export type Database = {
           },
         ];
         Row: {
-          created_at: string | null;
+          created_at: null | string;
           id: string;
           price: number;
-          supplier_id: string | null;
+          supplier_id: null | string;
           total_diff: number;
           warehouse_id: string;
         };
         Update: {
-          created_at?: string | null;
+          created_at?: null | string;
           id?: string;
           price?: number;
-          supplier_id?: string | null;
+          supplier_id?: null | string;
           total_diff?: number;
           warehouse_id?: string;
         };
       };
       inventory_products: {
         Insert: {
-          amount?: number | null;
-          created_at?: string | null;
+          amount?: null | number;
+          created_at?: null | string;
           min_amount?: number;
           price?: number;
           product_id: string;
@@ -3438,8 +3438,8 @@ export type Database = {
           },
         ];
         Row: {
-          amount: number | null;
-          created_at: string | null;
+          amount: null | number;
+          created_at: null | string;
           min_amount: number;
           price: number;
           product_id: string;
@@ -3447,8 +3447,8 @@ export type Database = {
           warehouse_id: string;
         };
         Update: {
-          amount?: number | null;
-          created_at?: string | null;
+          amount?: null | number;
+          created_at?: null | string;
           min_amount?: number;
           price?: number;
           product_id?: string;
@@ -3458,9 +3458,9 @@ export type Database = {
       };
       inventory_suppliers: {
         Insert: {
-          created_at?: string | null;
+          created_at?: null | string;
           id?: string;
-          name?: string | null;
+          name?: null | string;
           ws_id: string;
         };
         Relationships: [
@@ -3480,23 +3480,23 @@ export type Database = {
           },
         ];
         Row: {
-          created_at: string | null;
+          created_at: null | string;
           id: string;
-          name: string | null;
+          name: null | string;
           ws_id: string;
         };
         Update: {
-          created_at?: string | null;
+          created_at?: null | string;
           id?: string;
-          name?: string | null;
+          name?: null | string;
           ws_id?: string;
         };
       };
       inventory_units: {
         Insert: {
-          created_at?: string | null;
+          created_at?: null | string;
           id?: string;
-          name?: string | null;
+          name?: null | string;
           ws_id: string;
         };
         Relationships: [
@@ -3516,23 +3516,23 @@ export type Database = {
           },
         ];
         Row: {
-          created_at: string | null;
+          created_at: null | string;
           id: string;
-          name: string | null;
+          name: null | string;
           ws_id: string;
         };
         Update: {
-          created_at?: string | null;
+          created_at?: null | string;
           id?: string;
-          name?: string | null;
+          name?: null | string;
           ws_id?: string;
         };
       };
       inventory_warehouses: {
         Insert: {
-          created_at?: string | null;
+          created_at?: null | string;
           id?: string;
-          name?: string | null;
+          name?: null | string;
           ws_id: string;
         };
         Relationships: [
@@ -3552,40 +3552,40 @@ export type Database = {
           },
         ];
         Row: {
-          created_at: string | null;
+          created_at: null | string;
           id: string;
-          name: string | null;
+          name: null | string;
           ws_id: string;
         };
         Update: {
-          created_at?: string | null;
+          created_at?: null | string;
           id?: string;
-          name?: string | null;
+          name?: null | string;
           ws_id?: string;
         };
       };
       link_analytics: {
         Insert: {
-          browser?: string | null;
-          city?: string | null;
+          browser?: null | string;
+          city?: null | string;
           clicked_at?: string;
-          country?: string | null;
-          country_region?: string | null;
+          country?: null | string;
+          country_region?: null | string;
           created_at?: string;
-          device_type?: string | null;
+          device_type?: null | string;
           id?: string;
-          ip_address?: unknown | null;
-          latitude?: number | null;
+          ip_address?: null | unknown;
+          latitude?: null | number;
           link_id: string;
-          longitude?: number | null;
-          os?: string | null;
-          postal_code?: string | null;
-          referrer?: string | null;
-          referrer_domain?: string | null;
-          timezone?: string | null;
-          user_agent?: string | null;
-          vercel_id?: string | null;
-          vercel_region?: string | null;
+          longitude?: null | number;
+          os?: null | string;
+          postal_code?: null | string;
+          referrer?: null | string;
+          referrer_domain?: null | string;
+          timezone?: null | string;
+          user_agent?: null | string;
+          vercel_id?: null | string;
+          vercel_region?: null | string;
         };
         Relationships: [
           {
@@ -3618,48 +3618,48 @@ export type Database = {
           },
         ];
         Row: {
-          browser: string | null;
-          city: string | null;
+          browser: null | string;
+          city: null | string;
           clicked_at: string;
-          country: string | null;
-          country_region: string | null;
+          country: null | string;
+          country_region: null | string;
           created_at: string;
-          device_type: string | null;
+          device_type: null | string;
           id: string;
-          ip_address: unknown | null;
-          latitude: number | null;
+          ip_address: null | unknown;
+          latitude: null | number;
           link_id: string;
-          longitude: number | null;
-          os: string | null;
-          postal_code: string | null;
-          referrer: string | null;
-          referrer_domain: string | null;
-          timezone: string | null;
-          user_agent: string | null;
-          vercel_id: string | null;
-          vercel_region: string | null;
+          longitude: null | number;
+          os: null | string;
+          postal_code: null | string;
+          referrer: null | string;
+          referrer_domain: null | string;
+          timezone: null | string;
+          user_agent: null | string;
+          vercel_id: null | string;
+          vercel_region: null | string;
         };
         Update: {
-          browser?: string | null;
-          city?: string | null;
+          browser?: null | string;
+          city?: null | string;
           clicked_at?: string;
-          country?: string | null;
-          country_region?: string | null;
+          country?: null | string;
+          country_region?: null | string;
           created_at?: string;
-          device_type?: string | null;
+          device_type?: null | string;
           id?: string;
-          ip_address?: unknown | null;
-          latitude?: number | null;
+          ip_address?: null | unknown;
+          latitude?: null | number;
           link_id?: string;
-          longitude?: number | null;
-          os?: string | null;
-          postal_code?: string | null;
-          referrer?: string | null;
-          referrer_domain?: string | null;
-          timezone?: string | null;
-          user_agent?: string | null;
-          vercel_id?: string | null;
-          vercel_region?: string | null;
+          longitude?: null | number;
+          os?: null | string;
+          postal_code?: null | string;
+          referrer?: null | string;
+          referrer_domain?: null | string;
+          timezone?: null | string;
+          user_agent?: null | string;
+          vercel_id?: null | string;
+          vercel_region?: null | string;
         };
       };
       meet_together_guest_timeblocks: {
@@ -3748,17 +3748,17 @@ export type Database = {
       meet_together_plans: {
         Insert: {
           agenda_content?: Json | null;
-          created_at?: string | null;
-          creator_id?: string | null;
+          created_at?: null | string;
+          creator_id?: null | string;
           dates: string[];
-          description?: string | null;
+          description?: null | string;
           end_time: string;
           id?: string;
           is_public?: boolean;
-          name?: string | null;
+          name?: null | string;
           start_time: string;
           where_to_meet?: boolean;
-          ws_id?: string | null;
+          ws_id?: null | string;
         };
         Relationships: [
           {
@@ -3806,31 +3806,31 @@ export type Database = {
         ];
         Row: {
           agenda_content: Json | null;
-          created_at: string | null;
-          creator_id: string | null;
+          created_at: null | string;
+          creator_id: null | string;
           dates: string[];
-          description: string | null;
+          description: null | string;
           end_time: string;
           id: string;
           is_public: boolean;
-          name: string | null;
+          name: null | string;
           start_time: string;
           where_to_meet: boolean;
-          ws_id: string | null;
+          ws_id: null | string;
         };
         Update: {
           agenda_content?: Json | null;
-          created_at?: string | null;
-          creator_id?: string | null;
+          created_at?: null | string;
+          creator_id?: null | string;
           dates?: string[];
-          description?: string | null;
+          description?: null | string;
           end_time?: string;
           id?: string;
           is_public?: boolean;
-          name?: string | null;
+          name?: null | string;
           start_time?: string;
           where_to_meet?: boolean;
-          ws_id?: string | null;
+          ws_id?: null | string;
         };
       };
       meet_together_user_timeblocks: {
@@ -4009,7 +4009,7 @@ export type Database = {
       };
       nova_challenges: {
         Insert: {
-          close_at?: string | null;
+          close_at?: null | string;
           created_at?: string;
           description: string;
           duration: number;
@@ -4017,16 +4017,16 @@ export type Database = {
           id?: string;
           max_attempts?: number;
           max_daily_attempts?: number;
-          open_at?: string | null;
-          password_hash?: string | null;
-          password_salt?: string | null;
-          previewable_at?: string | null;
+          open_at?: null | string;
+          password_hash?: null | string;
+          password_salt?: null | string;
+          previewable_at?: null | string;
           title: string;
           whitelisted_only?: boolean;
         };
         Relationships: [];
         Row: {
-          close_at: string | null;
+          close_at: null | string;
           created_at: string;
           description: string;
           duration: number;
@@ -4034,15 +4034,15 @@ export type Database = {
           id: string;
           max_attempts: number;
           max_daily_attempts: number;
-          open_at: string | null;
-          password_hash: string | null;
-          password_salt: string | null;
-          previewable_at: string | null;
+          open_at: null | string;
+          password_hash: null | string;
+          password_salt: null | string;
+          previewable_at: null | string;
           title: string;
           whitelisted_only: boolean;
         };
         Update: {
-          close_at?: string | null;
+          close_at?: null | string;
           created_at?: string;
           description?: string;
           duration?: number;
@@ -4050,10 +4050,10 @@ export type Database = {
           id?: string;
           max_attempts?: number;
           max_daily_attempts?: number;
-          open_at?: string | null;
-          password_hash?: string | null;
-          password_salt?: string | null;
-          previewable_at?: string | null;
+          open_at?: null | string;
+          password_hash?: null | string;
+          password_salt?: null | string;
+          previewable_at?: null | string;
           title?: string;
           whitelisted_only?: boolean;
         };
@@ -4145,7 +4145,7 @@ export type Database = {
         Insert: {
           challenge_id: string;
           created_at?: string;
-          end_time?: string | null;
+          end_time?: null | string;
           id?: string;
           start_time: string;
           status: string;
@@ -4198,7 +4198,7 @@ export type Database = {
         Row: {
           challenge_id: string;
           created_at: string;
-          end_time: string | null;
+          end_time: null | string;
           id: string;
           start_time: string;
           status: string;
@@ -4207,7 +4207,7 @@ export type Database = {
         Update: {
           challenge_id?: string;
           created_at?: string;
-          end_time?: string | null;
+          end_time?: null | string;
           id?: string;
           start_time?: string;
           status?: string;
@@ -4219,9 +4219,9 @@ export type Database = {
           created_at?: string;
           criteria_id: string;
           feedback: string;
-          improvements?: string[] | null;
+          improvements?: null | string[];
           score: number;
-          strengths?: string[] | null;
+          strengths?: null | string[];
           submission_id: string;
         };
         Relationships: [
@@ -4251,28 +4251,28 @@ export type Database = {
           created_at: string;
           criteria_id: string;
           feedback: string;
-          improvements: string[] | null;
+          improvements: null | string[];
           score: number;
-          strengths: string[] | null;
+          strengths: null | string[];
           submission_id: string;
         };
         Update: {
           created_at?: string;
           criteria_id?: string;
           feedback?: string;
-          improvements?: string[] | null;
+          improvements?: null | string[];
           score?: number;
-          strengths?: string[] | null;
+          strengths?: null | string[];
           submission_id?: string;
         };
       };
       nova_submission_test_cases: {
         Insert: {
-          confidence?: number | null;
+          confidence?: null | number;
           created_at?: string;
           matched?: boolean;
           output: string;
-          reasoning?: string | null;
+          reasoning?: null | string;
           submission_id: string;
           test_case_id: string;
         };
@@ -4300,20 +4300,20 @@ export type Database = {
           },
         ];
         Row: {
-          confidence: number | null;
+          confidence: null | number;
           created_at: string;
           matched: boolean;
           output: string;
-          reasoning: string | null;
+          reasoning: null | string;
           submission_id: string;
           test_case_id: string;
         };
         Update: {
-          confidence?: number | null;
+          confidence?: null | number;
           created_at?: string;
           matched?: boolean;
           output?: string;
-          reasoning?: string | null;
+          reasoning?: null | string;
           submission_id?: string;
           test_case_id?: string;
         };
@@ -4322,10 +4322,10 @@ export type Database = {
         Insert: {
           created_at?: string;
           id?: string;
-          overall_assessment?: string | null;
+          overall_assessment?: null | string;
           problem_id: string;
           prompt: string;
-          session_id?: string | null;
+          session_id?: null | string;
           user_id: string;
         };
         Relationships: [
@@ -4375,19 +4375,19 @@ export type Database = {
         Row: {
           created_at: string;
           id: string;
-          overall_assessment: string | null;
+          overall_assessment: null | string;
           problem_id: string;
           prompt: string;
-          session_id: string | null;
+          session_id: null | string;
           user_id: string;
         };
         Update: {
           created_at?: string;
           id?: string;
-          overall_assessment?: string | null;
+          overall_assessment?: null | string;
           problem_id?: string;
           prompt?: string;
-          session_id?: string | null;
+          session_id?: null | string;
           user_id?: string;
         };
       };
@@ -4502,30 +4502,30 @@ export type Database = {
       nova_teams: {
         Insert: {
           created_at?: string;
-          description?: string | null;
-          goals?: string | null;
+          description?: null | string;
+          goals?: null | string;
           id?: string;
           name: string;
         };
         Relationships: [];
         Row: {
           created_at: string;
-          description: string | null;
-          goals: string | null;
+          description: null | string;
+          goals: null | string;
           id: string;
           name: string;
         };
         Update: {
           created_at?: string;
-          description?: string | null;
-          goals?: string | null;
+          description?: null | string;
+          goals?: null | string;
           id?: string;
           name?: string;
         };
       };
       onboarding_progress: {
         Insert: {
-          completed_at?: string | null;
+          completed_at?: null | string;
           completed_steps?: string[];
           created_at?: string;
           current_step?: string;
@@ -4533,9 +4533,9 @@ export type Database = {
           tour_completed?: boolean;
           updated_at?: string;
           user_id: string;
-          workspace_avatar_url?: string | null;
-          workspace_description?: string | null;
-          workspace_name?: string | null;
+          workspace_avatar_url?: null | string;
+          workspace_description?: null | string;
+          workspace_name?: null | string;
         };
         Relationships: [
           {
@@ -4568,7 +4568,7 @@ export type Database = {
           },
         ];
         Row: {
-          completed_at: string | null;
+          completed_at: null | string;
           completed_steps: string[];
           created_at: string;
           current_step: string;
@@ -4576,12 +4576,12 @@ export type Database = {
           tour_completed: boolean;
           updated_at: string;
           user_id: string;
-          workspace_avatar_url: string | null;
-          workspace_description: string | null;
-          workspace_name: string | null;
+          workspace_avatar_url: null | string;
+          workspace_description: null | string;
+          workspace_name: null | string;
         };
         Update: {
-          completed_at?: string | null;
+          completed_at?: null | string;
           completed_steps?: string[];
           created_at?: string;
           current_step?: string;
@@ -4589,15 +4589,15 @@ export type Database = {
           tour_completed?: boolean;
           updated_at?: string;
           user_id?: string;
-          workspace_avatar_url?: string | null;
-          workspace_description?: string | null;
-          workspace_name?: string | null;
+          workspace_avatar_url?: null | string;
+          workspace_description?: null | string;
+          workspace_name?: null | string;
         };
       };
       personal_notes: {
         Insert: {
-          content?: string | null;
-          created_at?: string | null;
+          content?: null | string;
+          created_at?: null | string;
           owner_id: string;
           user_id: string;
         };
@@ -4660,14 +4660,14 @@ export type Database = {
           },
         ];
         Row: {
-          content: string | null;
-          created_at: string | null;
+          content: null | string;
+          created_at: null | string;
           owner_id: string;
           user_id: string;
         };
         Update: {
-          content?: string | null;
-          created_at?: string | null;
+          content?: null | string;
+          created_at?: null | string;
           owner_id?: string;
           user_id?: string;
         };
@@ -4988,8 +4988,8 @@ export type Database = {
           creator_id: string;
           id?: string;
           name?: string;
-          plan_id?: string | null;
-          ws_id?: string | null;
+          plan_id?: null | string;
+          ws_id?: null | string;
         };
         Relationships: [
           {
@@ -5048,8 +5048,8 @@ export type Database = {
           creator_id: string;
           id: string;
           name: string;
-          plan_id: string | null;
-          ws_id: string | null;
+          plan_id: null | string;
+          ws_id: null | string;
         };
         Update: {
           allow_anonymous_updates?: boolean;
@@ -5057,15 +5057,15 @@ export type Database = {
           creator_id?: string;
           id?: string;
           name?: string;
-          plan_id?: string | null;
-          ws_id?: string | null;
+          plan_id?: null | string;
+          ws_id?: null | string;
         };
       };
       product_categories: {
         Insert: {
-          created_at?: string | null;
+          created_at?: null | string;
           id?: string;
-          name?: string | null;
+          name?: null | string;
           ws_id: string;
         };
         Relationships: [
@@ -5085,22 +5085,22 @@ export type Database = {
           },
         ];
         Row: {
-          created_at: string | null;
+          created_at: null | string;
           id: string;
-          name: string | null;
+          name: null | string;
           ws_id: string;
         };
         Update: {
-          created_at?: string | null;
+          created_at?: null | string;
           id?: string;
-          name?: string | null;
+          name?: null | string;
           ws_id?: string;
         };
       };
       product_stock_changes: {
         Insert: {
           amount: number;
-          beneficiary_id?: string | null;
+          beneficiary_id?: null | string;
           created_at?: string;
           creator_id: string;
           id?: string;
@@ -5175,7 +5175,7 @@ export type Database = {
         ];
         Row: {
           amount: number;
-          beneficiary_id: string | null;
+          beneficiary_id: null | string;
           created_at: string;
           creator_id: string;
           id: string;
@@ -5185,7 +5185,7 @@ export type Database = {
         };
         Update: {
           amount?: number;
-          beneficiary_id?: string | null;
+          beneficiary_id?: null | string;
           created_at?: string;
           creator_id?: string;
           id?: string;
@@ -5197,10 +5197,10 @@ export type Database = {
       quiz_options: {
         Insert: {
           created_at?: string;
-          explanation?: string | null;
+          explanation?: null | string;
           id?: string;
           is_correct: boolean;
-          points?: number | null;
+          points?: null | number;
           quiz_id: string;
           value: string;
         };
@@ -5215,19 +5215,19 @@ export type Database = {
         ];
         Row: {
           created_at: string;
-          explanation: string | null;
+          explanation: null | string;
           id: string;
           is_correct: boolean;
-          points: number | null;
+          points: null | number;
           quiz_id: string;
           value: string;
         };
         Update: {
           created_at?: string;
-          explanation?: string | null;
+          explanation?: null | string;
           id?: string;
           is_correct?: boolean;
-          points?: number | null;
+          points?: null | number;
           quiz_id?: string;
           value?: string;
         };
@@ -5271,7 +5271,7 @@ export type Database = {
           created_at?: string;
           email: string;
           id?: string;
-          post_id?: string | null;
+          post_id?: null | string;
           receiver_id: string;
           sender_id: string;
           source_email: string;
@@ -5356,7 +5356,7 @@ export type Database = {
           created_at: string;
           email: string;
           id: string;
-          post_id: string | null;
+          post_id: null | string;
           receiver_id: string;
           sender_id: string;
           source_email: string;
@@ -5369,7 +5369,7 @@ export type Database = {
           created_at?: string;
           email?: string;
           id?: string;
-          post_id?: string | null;
+          post_id?: null | string;
           receiver_id?: string;
           sender_id?: string;
           source_email?: string;
@@ -5486,7 +5486,7 @@ export type Database = {
       };
       task_assignees: {
         Insert: {
-          created_at?: string | null;
+          created_at?: null | string;
           task_id: string;
           user_id: string;
         };
@@ -5528,57 +5528,57 @@ export type Database = {
           },
         ];
         Row: {
-          created_at: string | null;
+          created_at: null | string;
           task_id: string;
           user_id: string;
         };
         Update: {
-          created_at?: string | null;
+          created_at?: null | string;
           task_id?: string;
           user_id?: string;
         };
       };
       task_board_status_templates: {
         Insert: {
-          created_at?: string | null;
-          description?: string | null;
+          created_at?: null | string;
+          description?: null | string;
           id?: string;
           is_default?: boolean | null;
           name: string;
           statuses: Json;
-          updated_at?: string | null;
+          updated_at?: null | string;
         };
         Relationships: [];
         Row: {
-          created_at: string | null;
-          description: string | null;
+          created_at: null | string;
+          description: null | string;
           id: string;
           is_default: boolean | null;
           name: string;
           statuses: Json;
-          updated_at: string | null;
+          updated_at: null | string;
         };
         Update: {
-          created_at?: string | null;
-          description?: string | null;
+          created_at?: null | string;
+          description?: null | string;
           id?: string;
           is_default?: boolean | null;
           name?: string;
           statuses?: Json;
-          updated_at?: string | null;
+          updated_at?: null | string;
         };
       };
       task_lists: {
         Insert: {
           archived?: boolean | null;
           board_id: string;
-          color?: string | null;
-          created_at?: string | null;
-          creator_id?: string | null;
+          color?: null | string;
+          created_at?: null | string;
+          creator_id?: null | string;
           deleted?: boolean | null;
           id?: string;
-          name?: string | null;
-          position?: number | null;
+          name?: null | string;
+          position?: null | number;
           status?: Database['public']['Enums']['task_board_status'] | null;
         };
         Relationships: [
@@ -5621,25 +5621,25 @@ export type Database = {
         Row: {
           archived: boolean | null;
           board_id: string;
-          color: string | null;
-          created_at: string | null;
-          creator_id: string | null;
+          color: null | string;
+          created_at: null | string;
+          creator_id: null | string;
           deleted: boolean | null;
           id: string;
-          name: string | null;
-          position: number | null;
+          name: null | string;
+          position: null | number;
           status: Database['public']['Enums']['task_board_status'] | null;
         };
         Update: {
           archived?: boolean | null;
           board_id?: string;
-          color?: string | null;
-          created_at?: string | null;
-          creator_id?: string | null;
+          color?: null | string;
+          created_at?: null | string;
+          creator_id?: null | string;
           deleted?: boolean | null;
           id?: string;
-          name?: string | null;
-          position?: number | null;
+          name?: null | string;
+          position?: null | number;
           status?: Database['public']['Enums']['task_board_status'] | null;
         };
       };
@@ -5648,21 +5648,21 @@ export type Database = {
           archived?: boolean | null;
           calendar_hours?: Database['public']['Enums']['calendar_hours'] | null;
           completed?: boolean | null;
-          created_at?: string | null;
-          creator_id?: string | null;
+          created_at?: null | string;
+          creator_id?: null | string;
           deleted?: boolean | null;
-          description?: string | null;
-          end_date?: string | null;
+          description?: null | string;
+          end_date?: null | string;
           id?: string;
           is_splittable?: boolean | null;
-          list_id?: string | null;
-          max_split_duration_minutes?: number | null;
-          min_split_duration_minutes?: number | null;
+          list_id?: null | string;
+          max_split_duration_minutes?: null | number;
+          min_split_duration_minutes?: null | number;
           name: string;
-          priority?: number | null;
-          start_date?: string | null;
-          tags?: string[] | null;
-          total_duration?: number | null;
+          priority?: null | number;
+          start_date?: null | string;
+          tags?: null | string[];
+          total_duration?: null | number;
           user_defined_priority?:
             | Database['public']['Enums']['task_priority']
             | null;
@@ -5708,21 +5708,21 @@ export type Database = {
           archived: boolean | null;
           calendar_hours: Database['public']['Enums']['calendar_hours'] | null;
           completed: boolean | null;
-          created_at: string | null;
-          creator_id: string | null;
+          created_at: null | string;
+          creator_id: null | string;
           deleted: boolean | null;
-          description: string | null;
-          end_date: string | null;
+          description: null | string;
+          end_date: null | string;
           id: string;
           is_splittable: boolean | null;
-          list_id: string | null;
-          max_split_duration_minutes: number | null;
-          min_split_duration_minutes: number | null;
+          list_id: null | string;
+          max_split_duration_minutes: null | number;
+          min_split_duration_minutes: null | number;
           name: string;
-          priority: number | null;
-          start_date: string | null;
-          tags: string[] | null;
-          total_duration: number | null;
+          priority: null | number;
+          start_date: null | string;
+          tags: null | string[];
+          total_duration: null | number;
           user_defined_priority:
             | Database['public']['Enums']['task_priority']
             | null;
@@ -5731,21 +5731,21 @@ export type Database = {
           archived?: boolean | null;
           calendar_hours?: Database['public']['Enums']['calendar_hours'] | null;
           completed?: boolean | null;
-          created_at?: string | null;
-          creator_id?: string | null;
+          created_at?: null | string;
+          creator_id?: null | string;
           deleted?: boolean | null;
-          description?: string | null;
-          end_date?: string | null;
+          description?: null | string;
+          end_date?: null | string;
           id?: string;
           is_splittable?: boolean | null;
-          list_id?: string | null;
-          max_split_duration_minutes?: number | null;
-          min_split_duration_minutes?: number | null;
+          list_id?: null | string;
+          max_split_duration_minutes?: null | number;
+          min_split_duration_minutes?: null | number;
           name?: string;
-          priority?: number | null;
-          start_date?: string | null;
-          tags?: string[] | null;
-          total_duration?: number | null;
+          priority?: null | number;
+          start_date?: null | string;
+          tags?: null | string[];
+          total_duration?: null | number;
           user_defined_priority?:
             | Database['public']['Enums']['task_priority']
             | null;
@@ -5804,12 +5804,12 @@ export type Database = {
       };
       time_tracking_categories: {
         Insert: {
-          color?: string | null;
-          created_at?: string | null;
-          description?: string | null;
+          color?: null | string;
+          created_at?: null | string;
+          description?: null | string;
           id?: string;
           name: string;
-          updated_at?: string | null;
+          updated_at?: null | string;
           ws_id: string;
         };
         Relationships: [
@@ -5836,34 +5836,34 @@ export type Database = {
           },
         ];
         Row: {
-          color: string | null;
-          created_at: string | null;
-          description: string | null;
+          color: null | string;
+          created_at: null | string;
+          description: null | string;
           id: string;
           name: string;
-          updated_at: string | null;
+          updated_at: null | string;
           ws_id: string;
         };
         Update: {
-          color?: string | null;
-          created_at?: string | null;
-          description?: string | null;
+          color?: null | string;
+          created_at?: null | string;
+          description?: null | string;
           id?: string;
           name?: string;
-          updated_at?: string | null;
+          updated_at?: null | string;
           ws_id?: string;
         };
       };
       time_tracking_goals: {
         Insert: {
-          category_id?: string | null;
-          created_at?: string | null;
+          category_id?: null | string;
+          created_at?: null | string;
           daily_goal_minutes?: number;
           id?: string;
           is_active?: boolean | null;
-          updated_at?: string | null;
+          updated_at?: null | string;
           user_id: string;
-          weekly_goal_minutes?: number | null;
+          weekly_goal_minutes?: null | number;
           ws_id: string;
         };
         Relationships: [
@@ -5890,43 +5890,43 @@ export type Database = {
           },
         ];
         Row: {
-          category_id: string | null;
-          created_at: string | null;
+          category_id: null | string;
+          created_at: null | string;
           daily_goal_minutes: number;
           id: string;
           is_active: boolean | null;
-          updated_at: string | null;
+          updated_at: null | string;
           user_id: string;
-          weekly_goal_minutes: number | null;
+          weekly_goal_minutes: null | number;
           ws_id: string;
         };
         Update: {
-          category_id?: string | null;
-          created_at?: string | null;
+          category_id?: null | string;
+          created_at?: null | string;
           daily_goal_minutes?: number;
           id?: string;
           is_active?: boolean | null;
-          updated_at?: string | null;
+          updated_at?: null | string;
           user_id?: string;
-          weekly_goal_minutes?: number | null;
+          weekly_goal_minutes?: null | number;
           ws_id?: string;
         };
       };
       time_tracking_sessions: {
         Insert: {
-          category_id?: string | null;
-          created_at?: string | null;
-          description?: string | null;
-          duration_seconds?: number | null;
-          end_time?: string | null;
+          category_id?: null | string;
+          created_at?: null | string;
+          description?: null | string;
+          duration_seconds?: null | number;
+          end_time?: null | string;
           id?: string;
           is_running?: boolean | null;
-          productivity_score?: number | null;
+          productivity_score?: null | number;
           start_time: string;
-          tags?: string[] | null;
-          task_id?: string | null;
+          tags?: null | string[];
+          task_id?: null | string;
           title: string;
-          updated_at?: string | null;
+          updated_at?: null | string;
           user_id: string;
           was_resumed?: boolean;
           ws_id: string;
@@ -5962,37 +5962,37 @@ export type Database = {
           },
         ];
         Row: {
-          category_id: string | null;
-          created_at: string | null;
-          description: string | null;
-          duration_seconds: number | null;
-          end_time: string | null;
+          category_id: null | string;
+          created_at: null | string;
+          description: null | string;
+          duration_seconds: null | number;
+          end_time: null | string;
           id: string;
           is_running: boolean | null;
-          productivity_score: number | null;
+          productivity_score: null | number;
           start_time: string;
-          tags: string[] | null;
-          task_id: string | null;
+          tags: null | string[];
+          task_id: null | string;
           title: string;
-          updated_at: string | null;
+          updated_at: null | string;
           user_id: string;
           was_resumed: boolean;
           ws_id: string;
         };
         Update: {
-          category_id?: string | null;
-          created_at?: string | null;
-          description?: string | null;
-          duration_seconds?: number | null;
-          end_time?: string | null;
+          category_id?: null | string;
+          created_at?: null | string;
+          description?: null | string;
+          duration_seconds?: null | number;
+          end_time?: null | string;
           id?: string;
           is_running?: boolean | null;
-          productivity_score?: number | null;
+          productivity_score?: null | number;
           start_time?: string;
-          tags?: string[] | null;
-          task_id?: string | null;
+          tags?: null | string[];
+          task_id?: null | string;
           title?: string;
-          updated_at?: string | null;
+          updated_at?: null | string;
           user_id?: string;
           was_resumed?: boolean;
           ws_id?: string;
@@ -6001,7 +6001,7 @@ export type Database = {
       timezones: {
         Insert: {
           abbr: string;
-          created_at?: string | null;
+          created_at?: null | string;
           id?: string;
           isdst: boolean;
           offset: number;
@@ -6012,7 +6012,7 @@ export type Database = {
         Relationships: [];
         Row: {
           abbr: string;
-          created_at: string | null;
+          created_at: null | string;
           id: string;
           isdst: boolean;
           offset: number;
@@ -6022,7 +6022,7 @@ export type Database = {
         };
         Update: {
           abbr?: string;
-          created_at?: string | null;
+          created_at?: null | string;
           id?: string;
           isdst?: boolean;
           offset?: number;
@@ -6033,7 +6033,7 @@ export type Database = {
       };
       transaction_categories: {
         Insert: {
-          created_at?: string | null;
+          created_at?: null | string;
           id?: string;
           is_expense?: boolean | null;
           name: string;
@@ -6056,14 +6056,14 @@ export type Database = {
           },
         ];
         Row: {
-          created_at: string | null;
+          created_at: null | string;
           id: string;
           is_expense: boolean | null;
           name: string;
           ws_id: string;
         };
         Update: {
-          created_at?: string | null;
+          created_at?: null | string;
           id?: string;
           is_expense?: boolean | null;
           name?: string;
@@ -6074,8 +6074,8 @@ export type Database = {
         Insert: {
           content: string;
           created_at?: string;
-          creator_id?: string | null;
-          group_id?: string | null;
+          creator_id?: null | string;
+          group_id?: null | string;
           id?: string;
           require_attention?: boolean;
           user_id: string;
@@ -6148,8 +6148,8 @@ export type Database = {
         Row: {
           content: string;
           created_at: string;
-          creator_id: string | null;
-          group_id: string | null;
+          creator_id: null | string;
+          group_id: null | string;
           id: string;
           require_attention: boolean;
           user_id: string;
@@ -6157,8 +6157,8 @@ export type Database = {
         Update: {
           content?: string;
           created_at?: string;
-          creator_id?: string | null;
-          group_id?: string | null;
+          creator_id?: null | string;
+          group_id?: null | string;
           id?: string;
           require_attention?: boolean;
           user_id?: string;
@@ -6341,9 +6341,9 @@ export type Database = {
       user_group_post_checks: {
         Insert: {
           created_at?: string;
-          email_id?: string | null;
+          email_id?: null | string;
           is_completed: boolean;
-          notes?: string | null;
+          notes?: null | string;
           post_id: string;
           user_id: string;
         };
@@ -6386,29 +6386,29 @@ export type Database = {
         ];
         Row: {
           created_at: string;
-          email_id: string | null;
+          email_id: null | string;
           is_completed: boolean;
-          notes: string | null;
+          notes: null | string;
           post_id: string;
           user_id: string;
         };
         Update: {
           created_at?: string;
-          email_id?: string | null;
+          email_id?: null | string;
           is_completed?: boolean;
-          notes?: string | null;
+          notes?: null | string;
           post_id?: string;
           user_id?: string;
         };
       };
       user_group_posts: {
         Insert: {
-          content?: string | null;
+          content?: null | string;
           created_at?: string;
           group_id: string;
           id?: string;
-          notes?: string | null;
-          title?: string | null;
+          notes?: null | string;
+          title?: null | string;
         };
         Relationships: [
           {
@@ -6434,30 +6434,30 @@ export type Database = {
           },
         ];
         Row: {
-          content: string | null;
+          content: null | string;
           created_at: string;
           group_id: string;
           id: string;
-          notes: string | null;
-          title: string | null;
+          notes: null | string;
+          title: null | string;
         };
         Update: {
-          content?: string | null;
+          content?: null | string;
           created_at?: string;
           group_id?: string;
           id?: string;
-          notes?: string | null;
-          title?: string | null;
+          notes?: null | string;
+          title?: null | string;
         };
       };
       user_indicators: {
         Insert: {
           created_at?: string;
-          creator_id?: string | null;
+          creator_id?: null | string;
           group_id: string;
           indicator_id: string;
           user_id: string;
-          value?: number | null;
+          value?: null | number;
         };
         Relationships: [
           {
@@ -6533,19 +6533,19 @@ export type Database = {
         ];
         Row: {
           created_at: string;
-          creator_id: string | null;
+          creator_id: null | string;
           group_id: string;
           indicator_id: string;
           user_id: string;
-          value: number | null;
+          value: null | number;
         };
         Update: {
           created_at?: string;
-          creator_id?: string | null;
+          creator_id?: null | string;
           group_id?: string;
           indicator_id?: string;
           user_id?: string;
-          value?: number | null;
+          value?: null | number;
         };
       };
       user_linked_promotions: {
@@ -6597,11 +6597,11 @@ export type Database = {
       };
       user_private_details: {
         Insert: {
-          birthday?: string | null;
-          default_workspace_id?: string | null;
-          email?: string | null;
-          full_name?: string | null;
-          new_email?: string | null;
+          birthday?: null | string;
+          default_workspace_id?: null | string;
+          email?: null | string;
+          full_name?: null | string;
+          new_email?: null | string;
           user_id: string;
         };
         Relationships: [
@@ -6649,30 +6649,30 @@ export type Database = {
           },
         ];
         Row: {
-          birthday: string | null;
-          default_workspace_id: string | null;
-          email: string | null;
-          full_name: string | null;
-          new_email: string | null;
+          birthday: null | string;
+          default_workspace_id: null | string;
+          email: null | string;
+          full_name: null | string;
+          new_email: null | string;
           user_id: string;
         };
         Update: {
-          birthday?: string | null;
-          default_workspace_id?: string | null;
-          email?: string | null;
-          full_name?: string | null;
-          new_email?: string | null;
+          birthday?: null | string;
+          default_workspace_id?: null | string;
+          email?: null | string;
+          full_name?: null | string;
+          new_email?: null | string;
           user_id?: string;
         };
       };
       users: {
         Insert: {
-          avatar_url?: string | null;
-          bio?: string | null;
-          created_at?: string | null;
+          avatar_url?: null | string;
+          bio?: null | string;
+          created_at?: null | string;
           deleted?: boolean | null;
-          display_name?: string | null;
-          handle?: string | null;
+          display_name?: null | string;
+          handle?: null | string;
           id?: string;
           services?: Database['public']['Enums']['platform_service'][];
         };
@@ -6686,29 +6686,29 @@ export type Database = {
           },
         ];
         Row: {
-          avatar_url: string | null;
-          bio: string | null;
-          created_at: string | null;
+          avatar_url: null | string;
+          bio: null | string;
+          created_at: null | string;
           deleted: boolean | null;
-          display_name: string | null;
-          handle: string | null;
+          display_name: null | string;
+          handle: null | string;
           id: string;
           services: Database['public']['Enums']['platform_service'][];
         };
         Update: {
-          avatar_url?: string | null;
-          bio?: string | null;
-          created_at?: string | null;
+          avatar_url?: null | string;
+          bio?: null | string;
+          created_at?: null | string;
           deleted?: boolean | null;
-          display_name?: string | null;
-          handle?: string | null;
+          display_name?: null | string;
+          handle?: null | string;
           id?: string;
           services?: Database['public']['Enums']['platform_service'][];
         };
       };
       vital_group_vitals: {
         Insert: {
-          created_at?: string | null;
+          created_at?: null | string;
           group_id: string;
           vital_id: string;
         };
@@ -6729,25 +6729,25 @@ export type Database = {
           },
         ];
         Row: {
-          created_at: string | null;
+          created_at: null | string;
           group_id: string;
           vital_id: string;
         };
         Update: {
-          created_at?: string | null;
+          created_at?: null | string;
           group_id?: string;
           vital_id?: string;
         };
       };
       wallet_transactions: {
         Insert: {
-          amount?: number | null;
-          category_id?: string | null;
-          created_at?: string | null;
-          creator_id?: string | null;
-          description?: string | null;
+          amount?: null | number;
+          category_id?: null | string;
+          created_at?: null | string;
+          creator_id?: null | string;
+          description?: null | string;
           id?: string;
-          invoice_id?: string | null;
+          invoice_id?: null | string;
           report_opt_in?: boolean;
           taken_at?: string;
           wallet_id: string;
@@ -6797,25 +6797,25 @@ export type Database = {
           },
         ];
         Row: {
-          amount: number | null;
-          category_id: string | null;
-          created_at: string | null;
-          creator_id: string | null;
-          description: string | null;
+          amount: null | number;
+          category_id: null | string;
+          created_at: null | string;
+          creator_id: null | string;
+          description: null | string;
           id: string;
-          invoice_id: string | null;
+          invoice_id: null | string;
           report_opt_in: boolean;
           taken_at: string;
           wallet_id: string;
         };
         Update: {
-          amount?: number | null;
-          category_id?: string | null;
-          created_at?: string | null;
-          creator_id?: string | null;
-          description?: string | null;
+          amount?: null | number;
+          category_id?: null | string;
+          created_at?: null | string;
+          creator_id?: null | string;
+          description?: null | string;
           id?: string;
-          invoice_id?: string | null;
+          invoice_id?: null | string;
           report_opt_in?: boolean;
           taken_at?: string;
           wallet_id?: string;
@@ -6913,7 +6913,7 @@ export type Database = {
       workspace_ai_models: {
         Insert: {
           created_at?: string;
-          description?: string | null;
+          description?: null | string;
           id?: string;
           name: string;
           updated_at?: string;
@@ -6938,7 +6938,7 @@ export type Database = {
         ];
         Row: {
           created_at: string;
-          description: string | null;
+          description: null | string;
           id: string;
           name: string;
           updated_at: string;
@@ -6947,7 +6947,7 @@ export type Database = {
         };
         Update: {
           created_at?: string;
-          description?: string | null;
+          description?: null | string;
           id?: string;
           name?: string;
           updated_at?: string;
@@ -6958,13 +6958,13 @@ export type Database = {
       workspace_ai_prompts: {
         Insert: {
           created_at?: string;
-          creator_id?: string | null;
+          creator_id?: null | string;
           id?: string;
           input: string;
           model: string;
-          name?: string | null;
+          name?: null | string;
           output: string;
-          ws_id?: string | null;
+          ws_id?: null | string;
         };
         Relationships: [
           {
@@ -7019,23 +7019,23 @@ export type Database = {
         ];
         Row: {
           created_at: string;
-          creator_id: string | null;
+          creator_id: null | string;
           id: string;
           input: string;
           model: string;
-          name: string | null;
+          name: null | string;
           output: string;
-          ws_id: string | null;
+          ws_id: null | string;
         };
         Update: {
           created_at?: string;
-          creator_id?: string | null;
+          creator_id?: null | string;
           id?: string;
           input?: string;
           model?: string;
-          name?: string | null;
+          name?: null | string;
           output?: string;
-          ws_id?: string | null;
+          ws_id?: null | string;
         };
       };
       workspace_api_keys: {
@@ -7083,13 +7083,13 @@ export type Database = {
       workspace_boards: {
         Insert: {
           archived?: boolean | null;
-          created_at?: string | null;
-          creator_id?: string | null;
+          created_at?: null | string;
+          creator_id?: null | string;
           deleted?: boolean | null;
           id?: string;
-          name?: string | null;
+          name?: null | string;
           tags?: Json | null;
-          template_id?: string | null;
+          template_id?: null | string;
           ws_id: string;
         };
         Relationships: [
@@ -7145,40 +7145,40 @@ export type Database = {
         ];
         Row: {
           archived: boolean | null;
-          created_at: string | null;
-          creator_id: string | null;
+          created_at: null | string;
+          creator_id: null | string;
           deleted: boolean | null;
           id: string;
-          name: string | null;
+          name: null | string;
           tags: Json | null;
-          template_id: string | null;
+          template_id: null | string;
           ws_id: string;
         };
         Update: {
           archived?: boolean | null;
-          created_at?: string | null;
-          creator_id?: string | null;
+          created_at?: null | string;
+          creator_id?: null | string;
           deleted?: boolean | null;
           id?: string;
-          name?: string | null;
+          name?: null | string;
           tags?: Json | null;
-          template_id?: string | null;
+          template_id?: null | string;
           ws_id?: string;
         };
       };
       workspace_calendar_events: {
         Insert: {
-          color?: string | null;
-          created_at?: string | null;
+          color?: null | string;
+          created_at?: null | string;
           description?: string;
           end_at: string;
-          google_event_id?: string | null;
+          google_event_id?: null | string;
           id?: string;
-          location?: string | null;
+          location?: null | string;
           locked?: boolean;
-          priority?: string | null;
+          priority?: null | string;
           start_at: string;
-          task_id?: string | null;
+          task_id?: null | string;
           title?: string;
           ws_id: string;
         };
@@ -7206,32 +7206,32 @@ export type Database = {
           },
         ];
         Row: {
-          color: string | null;
-          created_at: string | null;
+          color: null | string;
+          created_at: null | string;
           description: string;
           end_at: string;
-          google_event_id: string | null;
+          google_event_id: null | string;
           id: string;
-          location: string | null;
+          location: null | string;
           locked: boolean;
-          priority: string | null;
+          priority: null | string;
           start_at: string;
-          task_id: string | null;
+          task_id: null | string;
           title: string;
           ws_id: string;
         };
         Update: {
-          color?: string | null;
-          created_at?: string | null;
+          color?: null | string;
+          created_at?: null | string;
           description?: string;
           end_at?: string;
-          google_event_id?: string | null;
+          google_event_id?: null | string;
           id?: string;
-          location?: string | null;
+          location?: null | string;
           locked?: boolean;
-          priority?: string | null;
+          priority?: null | string;
           start_at?: string;
-          task_id?: string | null;
+          task_id?: null | string;
           title?: string;
           ws_id?: string;
         };
@@ -7274,9 +7274,9 @@ export type Database = {
       };
       workspace_calendar_sync_coordination: {
         Insert: {
-          created_at?: string | null;
+          created_at?: null | string;
           last_upsert?: string;
-          updated_at?: string | null;
+          updated_at?: null | string;
           ws_id: string;
         };
         Relationships: [
@@ -7296,15 +7296,15 @@ export type Database = {
           },
         ];
         Row: {
-          created_at: string | null;
+          created_at: null | string;
           last_upsert: string;
-          updated_at: string | null;
+          updated_at: null | string;
           ws_id: string;
         };
         Update: {
-          created_at?: string | null;
+          created_at?: null | string;
           last_upsert?: string;
-          updated_at?: string | null;
+          updated_at?: null | string;
           ws_id?: string;
         };
       };
@@ -7312,12 +7312,12 @@ export type Database = {
         Insert: {
           created_at?: string;
           deleted_events?: Json | null;
-          error_message?: string | null;
+          error_message?: null | string;
           event_snapshot_before: Json;
-          google_account_email?: string | null;
+          google_account_email?: null | string;
           id?: string;
           status: string;
-          sync_ended_at?: string | null;
+          sync_ended_at?: null | string;
           sync_started_at: string;
           triggered_by: string;
           upserted_events?: Json | null;
@@ -7342,12 +7342,12 @@ export type Database = {
         Row: {
           created_at: string;
           deleted_events: Json | null;
-          error_message: string | null;
+          error_message: null | string;
           event_snapshot_before: Json;
-          google_account_email: string | null;
+          google_account_email: null | string;
           id: string;
           status: string;
-          sync_ended_at: string | null;
+          sync_ended_at: null | string;
           sync_started_at: string;
           triggered_by: string;
           upserted_events: Json | null;
@@ -7356,12 +7356,12 @@ export type Database = {
         Update: {
           created_at?: string;
           deleted_events?: Json | null;
-          error_message?: string | null;
+          error_message?: null | string;
           event_snapshot_before?: Json;
-          google_account_email?: string | null;
+          google_account_email?: null | string;
           id?: string;
           status?: string;
-          sync_ended_at?: string | null;
+          sync_ended_at?: null | string;
           sync_started_at?: string;
           triggered_by?: string;
           upserted_events?: Json | null;
@@ -7417,7 +7417,7 @@ export type Database = {
           is_public?: boolean;
           is_published?: boolean;
           name?: string;
-          youtube_links?: string[] | null;
+          youtube_links?: null | string[];
         };
         Relationships: [
           {
@@ -7437,7 +7437,7 @@ export type Database = {
           is_public: boolean;
           is_published: boolean;
           name: string;
-          youtube_links: string[] | null;
+          youtube_links: null | string[];
         };
         Update: {
           content?: Json | null;
@@ -7448,14 +7448,14 @@ export type Database = {
           is_public?: boolean;
           is_published?: boolean;
           name?: string;
-          youtube_links?: string[] | null;
+          youtube_links?: null | string[];
         };
       };
       workspace_courses: {
         Insert: {
           cert_template?: Database['public']['Enums']['certificate_templates'];
           created_at?: string;
-          description?: string | null;
+          description?: null | string;
           id?: string;
           is_public?: boolean;
           is_published?: boolean;
@@ -7481,7 +7481,7 @@ export type Database = {
         Row: {
           cert_template: Database['public']['Enums']['certificate_templates'];
           created_at: string;
-          description: string | null;
+          description: null | string;
           id: string;
           is_public: boolean;
           is_published: boolean;
@@ -7491,7 +7491,7 @@ export type Database = {
         Update: {
           cert_template?: Database['public']['Enums']['certificate_templates'];
           created_at?: string;
-          description?: string | null;
+          description?: null | string;
           id?: string;
           is_public?: boolean;
           is_published?: boolean;
@@ -7502,12 +7502,12 @@ export type Database = {
       workspace_cron_executions: {
         Insert: {
           created_at?: string;
-          cron_run_id?: number | null;
-          end_time?: string | null;
+          cron_run_id?: null | number;
+          end_time?: null | string;
           id?: string;
           job_id: string;
-          response?: string | null;
-          start_time?: string | null;
+          response?: null | string;
+          start_time?: null | string;
           status: string;
         };
         Relationships: [
@@ -7521,22 +7521,22 @@ export type Database = {
         ];
         Row: {
           created_at: string;
-          cron_run_id: number | null;
-          end_time: string | null;
+          cron_run_id: null | number;
+          end_time: null | string;
           id: string;
           job_id: string;
-          response: string | null;
-          start_time: string | null;
+          response: null | string;
+          start_time: null | string;
           status: string;
         };
         Update: {
           created_at?: string;
-          cron_run_id?: number | null;
-          end_time?: string | null;
+          cron_run_id?: null | number;
+          end_time?: null | string;
           id?: string;
           job_id?: string;
-          response?: string | null;
-          start_time?: string | null;
+          response?: null | string;
+          start_time?: null | string;
           status?: string;
         };
       };
@@ -7544,7 +7544,7 @@ export type Database = {
         Insert: {
           active?: boolean;
           created_at?: string;
-          cron_job_id?: number | null;
+          cron_job_id?: null | number;
           dataset_id: string;
           id?: string;
           name: string;
@@ -7577,7 +7577,7 @@ export type Database = {
         Row: {
           active: boolean;
           created_at: string;
-          cron_job_id: number | null;
+          cron_job_id: null | number;
           dataset_id: string;
           id: string;
           name: string;
@@ -7587,7 +7587,7 @@ export type Database = {
         Update: {
           active?: boolean;
           created_at?: string;
-          cron_job_id?: number | null;
+          cron_job_id?: null | number;
           dataset_id?: string;
           id?: string;
           name?: string;
@@ -7599,7 +7599,7 @@ export type Database = {
         Insert: {
           column_id: string;
           created_at?: string;
-          data?: string | null;
+          data?: null | string;
           dataset_id: string;
           id?: string;
           row_id: string;
@@ -7637,7 +7637,7 @@ export type Database = {
         Row: {
           column_id: string;
           created_at: string;
-          data: string | null;
+          data: null | string;
           dataset_id: string;
           id: string;
           row_id: string;
@@ -7645,7 +7645,7 @@ export type Database = {
         Update: {
           column_id?: string;
           created_at?: string;
-          data?: string | null;
+          data?: null | string;
           dataset_id?: string;
           id?: string;
           row_id?: string;
@@ -7653,10 +7653,10 @@ export type Database = {
       };
       workspace_dataset_columns: {
         Insert: {
-          alias?: string | null;
+          alias?: null | string;
           created_at?: string;
           dataset_id: string;
-          description?: string | null;
+          description?: null | string;
           id?: string;
           name: string;
         };
@@ -7670,18 +7670,18 @@ export type Database = {
           },
         ];
         Row: {
-          alias: string | null;
+          alias: null | string;
           created_at: string;
           dataset_id: string;
-          description: string | null;
+          description: null | string;
           id: string;
           name: string;
         };
         Update: {
-          alias?: string | null;
+          alias?: null | string;
           created_at?: string;
           dataset_id?: string;
-          description?: string | null;
+          description?: null | string;
           id?: string;
           name?: string;
         };
@@ -7715,10 +7715,10 @@ export type Database = {
       workspace_datasets: {
         Insert: {
           created_at?: string;
-          description?: string | null;
+          description?: null | string;
           id?: string;
           name: string;
-          url?: string | null;
+          url?: null | string;
           ws_id: string;
         };
         Relationships: [
@@ -7739,18 +7739,18 @@ export type Database = {
         ];
         Row: {
           created_at: string;
-          description: string | null;
+          description: null | string;
           id: string;
           name: string;
-          url: string | null;
+          url: null | string;
           ws_id: string;
         };
         Update: {
           created_at?: string;
-          description?: string | null;
+          description?: null | string;
           id?: string;
           name?: string;
-          url?: string | null;
+          url?: null | string;
           ws_id?: string;
         };
       };
@@ -7808,9 +7808,9 @@ export type Database = {
           created_at?: string;
           id?: string;
           is_public?: boolean | null;
-          legacy_content?: string | null;
-          name?: string | null;
-          ws_id?: string | null;
+          legacy_content?: null | string;
+          name?: null | string;
+          ws_id?: null | string;
         };
         Relationships: [
           {
@@ -7833,30 +7833,30 @@ export type Database = {
           created_at: string;
           id: string;
           is_public: boolean | null;
-          legacy_content: string | null;
-          name: string | null;
-          ws_id: string | null;
+          legacy_content: null | string;
+          name: null | string;
+          ws_id: null | string;
         };
         Update: {
           content?: Json | null;
           created_at?: string;
           id?: string;
           is_public?: boolean | null;
-          legacy_content?: string | null;
-          name?: string | null;
-          ws_id?: string | null;
+          legacy_content?: null | string;
+          name?: null | string;
+          ws_id?: null | string;
         };
       };
       workspace_education_access_requests: {
         Insert: {
-          admin_notes?: string | null;
+          admin_notes?: null | string;
           created_at?: string;
           creator_id: string;
           feature?: Database['public']['Enums']['feature_flag'];
           id?: string;
           message: string;
-          reviewed_at?: string | null;
-          reviewed_by?: string | null;
+          reviewed_at?: null | string;
+          reviewed_by?: null | string;
           status?: string;
           updated_at?: string;
           workspace_name: string;
@@ -7935,28 +7935,28 @@ export type Database = {
           },
         ];
         Row: {
-          admin_notes: string | null;
+          admin_notes: null | string;
           created_at: string;
           creator_id: string;
           feature: Database['public']['Enums']['feature_flag'];
           id: string;
           message: string;
-          reviewed_at: string | null;
-          reviewed_by: string | null;
+          reviewed_at: null | string;
+          reviewed_by: null | string;
           status: string;
           updated_at: string;
           workspace_name: string;
           ws_id: string;
         };
         Update: {
-          admin_notes?: string | null;
+          admin_notes?: null | string;
           created_at?: string;
           creator_id?: string;
           feature?: Database['public']['Enums']['feature_flag'];
           id?: string;
           message?: string;
-          reviewed_at?: string | null;
-          reviewed_by?: string | null;
+          reviewed_at?: null | string;
+          reviewed_by?: null | string;
           status?: string;
           updated_at?: string;
           workspace_name?: string;
@@ -8015,7 +8015,7 @@ export type Database = {
         Insert: {
           created_at?: string;
           email: string;
-          invited_by?: string | null;
+          invited_by?: null | string;
           role?: string;
           role_title?: string;
           ws_id: string;
@@ -8074,7 +8074,7 @@ export type Database = {
         Row: {
           created_at: string;
           email: string;
-          invited_by: string | null;
+          invited_by: null | string;
           role: string;
           role_title: string;
           ws_id: string;
@@ -8082,7 +8082,7 @@ export type Database = {
         Update: {
           created_at?: string;
           email?: string;
-          invited_by?: string | null;
+          invited_by?: null | string;
           role?: string;
           role_title?: string;
           ws_id?: string;
@@ -8129,9 +8129,9 @@ export type Database = {
       };
       workspace_invites: {
         Insert: {
-          created_at?: string | null;
+          created_at?: null | string;
           role?: string;
-          role_title?: string | null;
+          role_title?: null | string;
           user_id: string;
           ws_id: string;
         };
@@ -8187,26 +8187,26 @@ export type Database = {
           },
         ];
         Row: {
-          created_at: string | null;
+          created_at: null | string;
           role: string;
-          role_title: string | null;
+          role_title: null | string;
           user_id: string;
           ws_id: string;
         };
         Update: {
-          created_at?: string | null;
+          created_at?: null | string;
           role?: string;
-          role_title?: string | null;
+          role_title?: null | string;
           user_id?: string;
           ws_id?: string;
         };
       };
       workspace_members: {
         Insert: {
-          created_at?: string | null;
+          created_at?: null | string;
           role?: string;
           role_title?: string;
-          sort_key?: number | null;
+          sort_key?: null | number;
           user_id?: string;
           ws_id: string;
         };
@@ -8262,33 +8262,33 @@ export type Database = {
           },
         ];
         Row: {
-          created_at: string | null;
+          created_at: null | string;
           role: string;
           role_title: string;
-          sort_key: number | null;
+          sort_key: null | number;
           user_id: string;
           ws_id: string;
         };
         Update: {
-          created_at?: string | null;
+          created_at?: null | string;
           role?: string;
           role_title?: string;
-          sort_key?: number | null;
+          sort_key?: null | number;
           user_id?: string;
           ws_id?: string;
         };
       };
       workspace_products: {
         Insert: {
-          avatar_url?: string | null;
+          avatar_url?: null | string;
           category_id: string;
-          created_at?: string | null;
-          creator_id?: string | null;
-          description?: string | null;
+          created_at?: null | string;
+          creator_id?: null | string;
+          description?: null | string;
           id?: string;
-          manufacturer?: string | null;
-          name?: string | null;
-          usage?: string | null;
+          manufacturer?: null | string;
+          name?: null | string;
+          usage?: null | string;
           ws_id: string;
         };
         Relationships: [
@@ -8336,38 +8336,38 @@ export type Database = {
           },
         ];
         Row: {
-          avatar_url: string | null;
+          avatar_url: null | string;
           category_id: string;
-          created_at: string | null;
-          creator_id: string | null;
-          description: string | null;
+          created_at: null | string;
+          creator_id: null | string;
+          description: null | string;
           id: string;
-          manufacturer: string | null;
-          name: string | null;
-          usage: string | null;
+          manufacturer: null | string;
+          name: null | string;
+          usage: null | string;
           ws_id: string;
         };
         Update: {
-          avatar_url?: string | null;
+          avatar_url?: null | string;
           category_id?: string;
-          created_at?: string | null;
-          creator_id?: string | null;
-          description?: string | null;
+          created_at?: null | string;
+          creator_id?: null | string;
+          description?: null | string;
           id?: string;
-          manufacturer?: string | null;
-          name?: string | null;
-          usage?: string | null;
+          manufacturer?: null | string;
+          name?: null | string;
+          usage?: null | string;
           ws_id?: string;
         };
       };
       workspace_promotions: {
         Insert: {
-          code?: string | null;
+          code?: null | string;
           created_at?: string;
-          creator_id?: string | null;
-          description?: string | null;
+          creator_id?: null | string;
+          description?: null | string;
           id?: string;
-          name?: string | null;
+          name?: null | string;
           use_ratio?: boolean;
           value: number;
           ws_id: string;
@@ -8410,23 +8410,23 @@ export type Database = {
           },
         ];
         Row: {
-          code: string | null;
+          code: null | string;
           created_at: string;
-          creator_id: string | null;
-          description: string | null;
+          creator_id: null | string;
+          description: null | string;
           id: string;
-          name: string | null;
+          name: null | string;
           use_ratio: boolean;
           value: number;
           ws_id: string;
         };
         Update: {
-          code?: string | null;
+          code?: null | string;
           created_at?: string;
-          creator_id?: string | null;
-          description?: string | null;
+          creator_id?: null | string;
+          description?: null | string;
           id?: string;
-          name?: string | null;
+          name?: null | string;
           use_ratio?: boolean;
           value?: number;
           ws_id?: string;
@@ -8484,13 +8484,13 @@ export type Database = {
       workspace_quiz_attempts: {
         Insert: {
           attempt_number: number;
-          completed_at?: string | null;
-          duration_seconds?: number | null;
+          completed_at?: null | string;
+          duration_seconds?: null | number;
           id?: string;
           set_id: string;
           started_at?: string;
           submitted_at?: string;
-          total_score?: number | null;
+          total_score?: null | number;
           user_id: string;
         };
         Relationships: [
@@ -8532,24 +8532,24 @@ export type Database = {
         ];
         Row: {
           attempt_number: number;
-          completed_at: string | null;
-          duration_seconds: number | null;
+          completed_at: null | string;
+          duration_seconds: null | number;
           id: string;
           set_id: string;
           started_at: string;
           submitted_at: string;
-          total_score: number | null;
+          total_score: null | number;
           user_id: string;
         };
         Update: {
           attempt_number?: number;
-          completed_at?: string | null;
-          duration_seconds?: number | null;
+          completed_at?: null | string;
+          duration_seconds?: null | number;
           id?: string;
           set_id?: string;
           started_at?: string;
           submitted_at?: string;
-          total_score?: number | null;
+          total_score?: null | number;
           user_id?: string;
         };
       };
@@ -8557,7 +8557,7 @@ export type Database = {
         Insert: {
           allow_view_old_attempts?: boolean;
           allow_view_results?: boolean;
-          attempt_limit?: number | null;
+          attempt_limit?: null | number;
           available_date?: string;
           created_at?: string;
           due_date?: string;
@@ -8566,8 +8566,8 @@ export type Database = {
           instruction?: Json | null;
           name?: string;
           results_released?: boolean;
-          time_limit_minutes?: number | null;
-          ws_id?: string | null;
+          time_limit_minutes?: null | number;
+          ws_id?: null | string;
         };
         Relationships: [
           {
@@ -8588,7 +8588,7 @@ export type Database = {
         Row: {
           allow_view_old_attempts: boolean;
           allow_view_results: boolean;
-          attempt_limit: number | null;
+          attempt_limit: null | number;
           available_date: string;
           created_at: string;
           due_date: string;
@@ -8597,13 +8597,13 @@ export type Database = {
           instruction: Json | null;
           name: string;
           results_released: boolean;
-          time_limit_minutes: number | null;
-          ws_id: string | null;
+          time_limit_minutes: null | number;
+          ws_id: null | string;
         };
         Update: {
           allow_view_old_attempts?: boolean;
           allow_view_results?: boolean;
-          attempt_limit?: number | null;
+          attempt_limit?: null | number;
           available_date?: string;
           created_at?: string;
           due_date?: string;
@@ -8612,8 +8612,8 @@ export type Database = {
           instruction?: Json | null;
           name?: string;
           results_released?: boolean;
-          time_limit_minutes?: number | null;
-          ws_id?: string | null;
+          time_limit_minutes?: null | number;
+          ws_id?: null | string;
         };
       };
       workspace_quizzes: {
@@ -8799,7 +8799,7 @@ export type Database = {
           created_at?: string;
           id?: string;
           name?: string;
-          value?: string | null;
+          value?: null | string;
           ws_id: string;
         };
         Relationships: [
@@ -8822,14 +8822,14 @@ export type Database = {
           created_at: string;
           id: string;
           name: string;
-          value: string | null;
+          value: null | string;
           ws_id: string;
         };
         Update: {
           created_at?: string;
           id?: string;
           name?: string;
-          value?: string | null;
+          value?: null | string;
           ws_id?: string;
         };
       };
@@ -8837,13 +8837,13 @@ export type Database = {
         Insert: {
           cancel_at_period_end?: boolean | null;
           created_at?: string;
-          current_period_end?: string | null;
-          current_period_start?: string | null;
+          current_period_end?: null | string;
+          current_period_start?: null | string;
           id?: string;
           polar_subscription_id: string;
-          product_id?: string | null;
+          product_id?: null | string;
           status?: Database['public']['Enums']['subscription_status'] | null;
-          updated_at?: string | null;
+          updated_at?: null | string;
           ws_id: string;
         };
         Relationships: [
@@ -8872,61 +8872,61 @@ export type Database = {
         Row: {
           cancel_at_period_end: boolean | null;
           created_at: string;
-          current_period_end: string | null;
-          current_period_start: string | null;
+          current_period_end: null | string;
+          current_period_start: null | string;
           id: string;
           polar_subscription_id: string;
-          product_id: string | null;
+          product_id: null | string;
           status: Database['public']['Enums']['subscription_status'] | null;
-          updated_at: string | null;
+          updated_at: null | string;
           ws_id: string;
         };
         Update: {
           cancel_at_period_end?: boolean | null;
           created_at?: string;
-          current_period_end?: string | null;
-          current_period_start?: string | null;
+          current_period_end?: null | string;
+          current_period_start?: null | string;
           id?: string;
           polar_subscription_id?: string;
-          product_id?: string | null;
+          product_id?: null | string;
           status?: Database['public']['Enums']['subscription_status'] | null;
-          updated_at?: string | null;
+          updated_at?: null | string;
           ws_id?: string;
         };
       };
       workspace_subscription_products: {
         Insert: {
           created_at?: string;
-          description?: string | null;
+          description?: null | string;
           id: string;
-          name?: string | null;
-          price?: number | null;
-          recurring_interval?: string | null;
+          name?: null | string;
+          price?: null | number;
+          recurring_interval?: null | string;
         };
         Relationships: [];
         Row: {
           created_at: string;
-          description: string | null;
+          description: null | string;
           id: string;
-          name: string | null;
-          price: number | null;
-          recurring_interval: string | null;
+          name: null | string;
+          price: null | number;
+          recurring_interval: null | string;
         };
         Update: {
           created_at?: string;
-          description?: string | null;
+          description?: null | string;
           id?: string;
-          name?: string | null;
-          price?: number | null;
-          recurring_interval?: string | null;
+          name?: null | string;
+          price?: null | number;
+          recurring_interval?: null | string;
         };
       };
       workspace_teams: {
         Insert: {
-          created_at?: string | null;
+          created_at?: null | string;
           deleted?: boolean | null;
           id?: string;
-          name?: string | null;
+          name?: null | string;
           ws_id: string;
         };
         Relationships: [
@@ -8946,29 +8946,29 @@ export type Database = {
           },
         ];
         Row: {
-          created_at: string | null;
+          created_at: null | string;
           deleted: boolean | null;
           id: string;
-          name: string | null;
+          name: null | string;
           ws_id: string;
         };
         Update: {
-          created_at?: string | null;
+          created_at?: null | string;
           deleted?: boolean | null;
           id?: string;
-          name?: string | null;
+          name?: null | string;
           ws_id?: string;
         };
       };
       workspace_user_fields: {
         Insert: {
           created_at?: string;
-          default_value?: string | null;
-          description?: string | null;
+          default_value?: null | string;
+          description?: null | string;
           id?: string;
           name: string;
-          notes?: string | null;
-          possible_values?: string[] | null;
+          notes?: null | string;
+          possible_values?: null | string[];
           type: string;
           ws_id: string;
         };
@@ -8997,23 +8997,23 @@ export type Database = {
         ];
         Row: {
           created_at: string;
-          default_value: string | null;
-          description: string | null;
+          default_value: null | string;
+          description: null | string;
           id: string;
           name: string;
-          notes: string | null;
-          possible_values: string[] | null;
+          notes: null | string;
+          possible_values: null | string[];
           type: string;
           ws_id: string;
         };
         Update: {
           created_at?: string;
-          default_value?: string | null;
-          description?: string | null;
+          default_value?: null | string;
+          description?: null | string;
           id?: string;
           name?: string;
-          notes?: string | null;
-          possible_values?: string[] | null;
+          notes?: null | string;
+          possible_values?: null | string[];
           type?: string;
           ws_id?: string;
         };
@@ -9067,7 +9067,7 @@ export type Database = {
       };
       workspace_user_group_tags: {
         Insert: {
-          color?: string | null;
+          color?: null | string;
           created_at?: string;
           id?: string;
           name: string;
@@ -9090,14 +9090,14 @@ export type Database = {
           },
         ];
         Row: {
-          color: string | null;
+          color: null | string;
           created_at: string;
           id: string;
           name: string;
           ws_id: string;
         };
         Update: {
-          color?: string | null;
+          color?: null | string;
           created_at?: string;
           id?: string;
           name?: string;
@@ -9107,13 +9107,13 @@ export type Database = {
       workspace_user_groups: {
         Insert: {
           archived?: boolean;
-          created_at?: string | null;
-          ending_date?: string | null;
+          created_at?: null | string;
+          ending_date?: null | string;
           id?: string;
           name: string;
-          notes?: string | null;
-          sessions?: string[] | null;
-          starting_date?: string | null;
+          notes?: null | string;
+          sessions?: null | string[];
+          starting_date?: null | string;
           ws_id: string;
         };
         Relationships: [
@@ -9134,32 +9134,32 @@ export type Database = {
         ];
         Row: {
           archived: boolean;
-          created_at: string | null;
-          ending_date: string | null;
+          created_at: null | string;
+          ending_date: null | string;
           id: string;
           name: string;
-          notes: string | null;
-          sessions: string[] | null;
-          starting_date: string | null;
+          notes: null | string;
+          sessions: null | string[];
+          starting_date: null | string;
           ws_id: string;
         };
         Update: {
           archived?: boolean;
-          created_at?: string | null;
-          ending_date?: string | null;
+          created_at?: null | string;
+          ending_date?: null | string;
           id?: string;
           name?: string;
-          notes?: string | null;
-          sessions?: string[] | null;
-          starting_date?: string | null;
+          notes?: null | string;
+          sessions?: null | string[];
+          starting_date?: null | string;
           ws_id?: string;
         };
       };
       workspace_user_groups_users: {
         Insert: {
-          created_at?: string | null;
+          created_at?: null | string;
           group_id: string;
-          role?: string | null;
+          role?: null | string;
           user_id: string;
         };
         Relationships: [
@@ -9207,15 +9207,15 @@ export type Database = {
           },
         ];
         Row: {
-          created_at: string | null;
+          created_at: null | string;
           group_id: string;
-          role: string | null;
+          role: null | string;
           user_id: string;
         };
         Update: {
-          created_at?: string | null;
+          created_at?: null | string;
           group_id?: string;
-          role?: string | null;
+          role?: null | string;
           user_id?: string;
         };
       };
@@ -9307,7 +9307,7 @@ export type Database = {
       workspace_user_status_changes: {
         Insert: {
           archived: boolean;
-          archived_until?: string | null;
+          archived_until?: null | string;
           created_at?: string;
           creator_id: string;
           id?: string;
@@ -9374,7 +9374,7 @@ export type Database = {
         ];
         Row: {
           archived: boolean;
-          archived_until: string | null;
+          archived_until: null | string;
           created_at: string;
           creator_id: string;
           id: string;
@@ -9383,7 +9383,7 @@ export type Database = {
         };
         Update: {
           archived?: boolean;
-          archived_until?: string | null;
+          archived_until?: null | string;
           created_at?: string;
           creator_id?: string;
           id?: string;
@@ -9393,26 +9393,26 @@ export type Database = {
       };
       workspace_users: {
         Insert: {
-          address?: string | null;
+          address?: null | string;
           archived?: boolean;
-          archived_until?: string | null;
-          avatar_url?: string | null;
-          balance?: number | null;
-          birthday?: string | null;
-          created_at?: string | null;
-          created_by?: string | null;
-          display_name?: string | null;
-          email?: string | null;
-          ethnicity?: string | null;
-          full_name?: string | null;
-          gender?: string | null;
-          guardian?: string | null;
+          archived_until?: null | string;
+          avatar_url?: null | string;
+          balance?: null | number;
+          birthday?: null | string;
+          created_at?: null | string;
+          created_by?: null | string;
+          display_name?: null | string;
+          email?: null | string;
+          ethnicity?: null | string;
+          full_name?: null | string;
+          gender?: null | string;
+          guardian?: null | string;
           id?: string;
-          national_id?: string | null;
-          note?: string | null;
-          phone?: string | null;
+          national_id?: null | string;
+          note?: null | string;
+          phone?: null | string;
           updated_at?: string;
-          updated_by?: string | null;
+          updated_by?: null | string;
           ws_id: string;
         };
         Relationships: [
@@ -9474,55 +9474,55 @@ export type Database = {
           },
         ];
         Row: {
-          address: string | null;
+          address: null | string;
           archived: boolean;
-          archived_until: string | null;
-          avatar_url: string | null;
-          balance: number | null;
-          birthday: string | null;
-          created_at: string | null;
-          created_by: string | null;
-          display_name: string | null;
-          email: string | null;
-          ethnicity: string | null;
-          full_name: string | null;
-          gender: string | null;
-          guardian: string | null;
+          archived_until: null | string;
+          avatar_url: null | string;
+          balance: null | number;
+          birthday: null | string;
+          created_at: null | string;
+          created_by: null | string;
+          display_name: null | string;
+          email: null | string;
+          ethnicity: null | string;
+          full_name: null | string;
+          gender: null | string;
+          guardian: null | string;
           id: string;
-          national_id: string | null;
-          note: string | null;
-          phone: string | null;
+          national_id: null | string;
+          note: null | string;
+          phone: null | string;
           updated_at: string;
-          updated_by: string | null;
+          updated_by: null | string;
           ws_id: string;
         };
         Update: {
-          address?: string | null;
+          address?: null | string;
           archived?: boolean;
-          archived_until?: string | null;
-          avatar_url?: string | null;
-          balance?: number | null;
-          birthday?: string | null;
-          created_at?: string | null;
-          created_by?: string | null;
-          display_name?: string | null;
-          email?: string | null;
-          ethnicity?: string | null;
-          full_name?: string | null;
-          gender?: string | null;
-          guardian?: string | null;
+          archived_until?: null | string;
+          avatar_url?: null | string;
+          balance?: null | number;
+          birthday?: null | string;
+          created_at?: null | string;
+          created_by?: null | string;
+          display_name?: null | string;
+          email?: null | string;
+          ethnicity?: null | string;
+          full_name?: null | string;
+          gender?: null | string;
+          guardian?: null | string;
           id?: string;
-          national_id?: string | null;
-          note?: string | null;
-          phone?: string | null;
+          national_id?: null | string;
+          note?: null | string;
+          phone?: null | string;
           updated_at?: string;
-          updated_by?: string | null;
+          updated_by?: null | string;
           ws_id?: string;
         };
       };
       workspace_wallet_transfers: {
         Insert: {
-          created_at?: string | null;
+          created_at?: null | string;
           from_transaction_id: string;
           to_transaction_id: string;
         };
@@ -9543,24 +9543,24 @@ export type Database = {
           },
         ];
         Row: {
-          created_at: string | null;
+          created_at: null | string;
           from_transaction_id: string;
           to_transaction_id: string;
         };
         Update: {
-          created_at?: string | null;
+          created_at?: null | string;
           from_transaction_id?: string;
           to_transaction_id?: string;
         };
       };
       workspace_wallets: {
         Insert: {
-          balance?: number | null;
-          created_at?: string | null;
+          balance?: null | number;
+          created_at?: null | string;
           currency?: string;
-          description?: string | null;
+          description?: null | string;
           id?: string;
-          name?: string | null;
+          name?: null | string;
           report_opt_in?: boolean;
           type?: string;
           ws_id: string;
@@ -9596,23 +9596,23 @@ export type Database = {
           },
         ];
         Row: {
-          balance: number | null;
-          created_at: string | null;
+          balance: null | number;
+          created_at: null | string;
           currency: string;
-          description: string | null;
+          description: null | string;
           id: string;
-          name: string | null;
+          name: null | string;
           report_opt_in: boolean;
           type: string;
           ws_id: string;
         };
         Update: {
-          balance?: number | null;
-          created_at?: string | null;
+          balance?: null | number;
+          created_at?: null | string;
           currency?: string;
-          description?: string | null;
+          description?: null | string;
           id?: string;
-          name?: string | null;
+          name?: null | string;
           report_opt_in?: boolean;
           type?: string;
           ws_id?: string;
@@ -9622,10 +9622,10 @@ export type Database = {
         Insert: {
           created_at?: string;
           creator_id: string;
-          description?: string | null;
+          description?: null | string;
           id?: string;
           snapshot?: Json | null;
-          thumbnail_url?: string | null;
+          thumbnail_url?: null | string;
           title: string;
           updated_at?: string;
           ws_id: string;
@@ -9677,10 +9677,10 @@ export type Database = {
         Row: {
           created_at: string;
           creator_id: string;
-          description: string | null;
+          description: null | string;
           id: string;
           snapshot: Json | null;
-          thumbnail_url: string | null;
+          thumbnail_url: null | string;
           title: string;
           updated_at: string;
           ws_id: string;
@@ -9688,10 +9688,10 @@ export type Database = {
         Update: {
           created_at?: string;
           creator_id?: string;
-          description?: string | null;
+          description?: null | string;
           id?: string;
           snapshot?: Json | null;
-          thumbnail_url?: string | null;
+          thumbnail_url?: null | string;
           title?: string;
           updated_at?: string;
           ws_id?: string;
@@ -9699,14 +9699,14 @@ export type Database = {
       };
       workspaces: {
         Insert: {
-          avatar_url?: string | null;
-          created_at?: string | null;
-          creator_id?: string | null;
+          avatar_url?: null | string;
+          created_at?: null | string;
+          creator_id?: null | string;
           deleted?: boolean | null;
-          handle?: string | null;
+          handle?: null | string;
           id?: string;
-          logo_url?: string | null;
-          name?: string | null;
+          logo_url?: null | string;
+          name?: null | string;
         };
         Relationships: [
           {
@@ -9739,40 +9739,40 @@ export type Database = {
           },
         ];
         Row: {
-          avatar_url: string | null;
-          created_at: string | null;
-          creator_id: string | null;
+          avatar_url: null | string;
+          created_at: null | string;
+          creator_id: null | string;
           deleted: boolean | null;
-          handle: string | null;
+          handle: null | string;
           id: string;
-          logo_url: string | null;
-          name: string | null;
+          logo_url: null | string;
+          name: null | string;
         };
         Update: {
-          avatar_url?: string | null;
-          created_at?: string | null;
-          creator_id?: string | null;
+          avatar_url?: null | string;
+          created_at?: null | string;
+          creator_id?: null | string;
           deleted?: boolean | null;
-          handle?: string | null;
+          handle?: null | string;
           id?: string;
-          logo_url?: string | null;
-          name?: string | null;
+          logo_url?: null | string;
+          name?: null | string;
         };
       };
     };
     Views: {
       audit_logs: {
         Insert: {
-          auth_role?: string | null;
-          auth_uid?: string | null;
-          id?: number | null;
+          auth_role?: null | string;
+          auth_uid?: null | string;
+          id?: null | number;
           old_record?: Json | null;
-          old_record_id?: string | null;
-          op?: 'INSERT' | 'UPDATE' | 'DELETE' | 'TRUNCATE' | null;
+          old_record_id?: null | string;
+          op?: 'DELETE' | 'INSERT' | 'TRUNCATE' | 'UPDATE' | null;
           record?: Json | null;
-          record_id?: string | null;
-          table_name?: unknown | null;
-          ts?: string | null;
+          record_id?: null | string;
+          table_name?: null | unknown;
+          ts?: null | string;
           ws_id?: never;
         };
         Relationships: [
@@ -9806,84 +9806,84 @@ export type Database = {
           },
         ];
         Row: {
-          auth_role: string | null;
-          auth_uid: string | null;
-          id: number | null;
+          auth_role: null | string;
+          auth_uid: null | string;
+          id: null | number;
           old_record: Json | null;
-          old_record_id: string | null;
-          op: 'INSERT' | 'UPDATE' | 'DELETE' | 'TRUNCATE' | null;
+          old_record_id: null | string;
+          op: 'DELETE' | 'INSERT' | 'TRUNCATE' | 'UPDATE' | null;
           record: Json | null;
-          record_id: string | null;
-          table_name: unknown | null;
-          ts: string | null;
-          ws_id: string | null;
+          record_id: null | string;
+          table_name: null | unknown;
+          ts: null | string;
+          ws_id: null | string;
         };
         Update: {
-          auth_role?: string | null;
-          auth_uid?: string | null;
-          id?: number | null;
+          auth_role?: null | string;
+          auth_uid?: null | string;
+          id?: null | number;
           old_record?: Json | null;
-          old_record_id?: string | null;
-          op?: 'INSERT' | 'UPDATE' | 'DELETE' | 'TRUNCATE' | null;
+          old_record_id?: null | string;
+          op?: 'DELETE' | 'INSERT' | 'TRUNCATE' | 'UPDATE' | null;
           record?: Json | null;
-          record_id?: string | null;
-          table_name?: unknown | null;
-          ts?: string | null;
+          record_id?: null | string;
+          table_name?: null | unknown;
+          ts?: null | string;
           ws_id?: never;
         };
       };
       calendar_event_participants: {
         Relationships: [];
         Row: {
-          created_at: string | null;
-          display_name: string | null;
-          event_id: string | null;
+          created_at: null | string;
+          display_name: null | string;
+          event_id: null | string;
           going: boolean | null;
-          handle: string | null;
-          participant_id: string | null;
-          type: string | null;
+          handle: null | string;
+          participant_id: null | string;
+          type: null | string;
         };
       };
       distinct_invoice_creators: {
         Relationships: [];
         Row: {
-          display_name: string | null;
-          id: string | null;
+          display_name: null | string;
+          id: null | string;
         };
       };
       link_analytics_device_insights: {
         Relationships: [];
         Row: {
-          browser: string | null;
-          click_count: number | null;
-          device_type: string | null;
-          domain: string | null;
-          first_click_at: string | null;
-          last_click_at: string | null;
-          link_id: string | null;
-          os: string | null;
-          slug: string | null;
-          unique_visitors: number | null;
+          browser: null | string;
+          click_count: null | number;
+          device_type: null | string;
+          domain: null | string;
+          first_click_at: null | string;
+          last_click_at: null | string;
+          link_id: null | string;
+          os: null | string;
+          slug: null | string;
+          unique_visitors: null | number;
         };
       };
       link_analytics_geo_insights: {
         Relationships: [];
         Row: {
-          city: string | null;
-          click_count: number | null;
-          country: string | null;
-          country_region: string | null;
-          domain: string | null;
-          first_click_at: string | null;
-          last_click_at: string | null;
-          latitude: number | null;
-          link_id: string | null;
-          longitude: number | null;
-          postal_code: string | null;
-          slug: string | null;
-          timezone: string | null;
-          unique_visitors: number | null;
-          vercel_region: string | null;
+          city: null | string;
+          click_count: null | number;
+          country: null | string;
+          country_region: null | string;
+          domain: null | string;
+          first_click_at: null | string;
+          last_click_at: null | string;
+          latitude: null | number;
+          link_id: null | string;
+          longitude: null | number;
+          postal_code: null | string;
+          slug: null | string;
+          timezone: null | string;
+          unique_visitors: null | number;
+          vercel_region: null | string;
         };
       };
       link_analytics_summary: {
@@ -9932,40 +9932,40 @@ export type Database = {
           },
         ];
         Row: {
-          creator_id: string | null;
-          domain: string | null;
-          first_click_at: string | null;
-          last_click_at: string | null;
-          link_created_at: string | null;
-          link_id: string | null;
-          original_url: string | null;
-          slug: string | null;
-          top_browser: string | null;
-          top_city: string | null;
-          top_country: string | null;
-          top_device_type: string | null;
-          top_os: string | null;
-          top_referrer_domain: string | null;
-          top_vercel_region: string | null;
-          total_clicks: number | null;
-          unique_browsers: number | null;
-          unique_cities: number | null;
-          unique_countries: number | null;
-          unique_device_types: number | null;
-          unique_operating_systems: number | null;
-          unique_referrers: number | null;
-          unique_visitors: number | null;
-          ws_id: string | null;
+          creator_id: null | string;
+          domain: null | string;
+          first_click_at: null | string;
+          last_click_at: null | string;
+          link_created_at: null | string;
+          link_id: null | string;
+          original_url: null | string;
+          slug: null | string;
+          top_browser: null | string;
+          top_city: null | string;
+          top_country: null | string;
+          top_device_type: null | string;
+          top_os: null | string;
+          top_referrer_domain: null | string;
+          top_vercel_region: null | string;
+          total_clicks: null | number;
+          unique_browsers: null | number;
+          unique_cities: null | number;
+          unique_countries: null | number;
+          unique_device_types: null | number;
+          unique_operating_systems: null | number;
+          unique_referrers: null | number;
+          unique_visitors: null | number;
+          ws_id: null | string;
         };
       };
       meet_together_users: {
         Relationships: [];
         Row: {
-          display_name: string | null;
+          display_name: null | string;
           is_guest: boolean | null;
-          plan_id: string | null;
-          timeblock_count: number | null;
-          user_id: string | null;
+          plan_id: null | string;
+          timeblock_count: null | number;
+          user_id: null | string;
         };
       };
       nova_submissions_with_scores: {
@@ -10014,19 +10014,19 @@ export type Database = {
           },
         ];
         Row: {
-          created_at: string | null;
-          criteria_score: number | null;
-          id: string | null;
-          passed_tests: number | null;
-          problem_id: string | null;
-          prompt: string | null;
-          session_id: string | null;
-          sum_criterion_score: number | null;
-          test_case_score: number | null;
-          total_criteria: number | null;
-          total_score: number | null;
-          total_tests: number | null;
-          user_id: string | null;
+          created_at: null | string;
+          criteria_score: null | number;
+          id: null | string;
+          passed_tests: null | number;
+          problem_id: null | string;
+          prompt: null | string;
+          session_id: null | string;
+          sum_criterion_score: null | number;
+          test_case_score: null | number;
+          total_criteria: null | number;
+          total_score: null | number;
+          total_tests: null | number;
+          user_id: null | string;
         };
       };
       nova_team_challenge_leaderboard: {
@@ -10047,64 +10047,64 @@ export type Database = {
           },
         ];
         Row: {
-          challenge_id: string | null;
-          name: string | null;
+          challenge_id: null | string;
+          name: null | string;
           problem_scores: Json | null;
-          score: number | null;
-          team_id: string | null;
+          score: null | number;
+          team_id: null | string;
         };
       };
       nova_team_leaderboard: {
         Relationships: [];
         Row: {
           challenge_scores: Json | null;
-          name: string | null;
-          score: number | null;
-          team_id: string | null;
+          name: null | string;
+          score: null | number;
+          team_id: null | string;
         };
       };
       nova_user_challenge_leaderboard: {
         Relationships: [];
         Row: {
-          avatar: string | null;
-          challenge_id: string | null;
-          name: string | null;
+          avatar: null | string;
+          challenge_id: null | string;
+          name: null | string;
           problem_scores: Json | null;
-          score: number | null;
-          user_id: string | null;
+          score: null | number;
+          user_id: null | string;
         };
       };
       nova_user_leaderboard: {
         Relationships: [];
         Row: {
-          avatar: string | null;
+          avatar: null | string;
           challenge_scores: Json | null;
-          name: string | null;
-          score: number | null;
-          user_id: string | null;
+          name: null | string;
+          score: null | number;
+          user_id: null | string;
         };
       };
       shortened_links_creator_stats: {
         Relationships: [];
         Row: {
-          avatar_url: string | null;
-          display_name: string | null;
-          domain_count: number | null;
-          email: string | null;
-          first_link_created: string | null;
-          id: string | null;
-          last_link_created: string | null;
-          link_count: number | null;
+          avatar_url: null | string;
+          display_name: null | string;
+          domain_count: null | number;
+          email: null | string;
+          first_link_created: null | string;
+          id: null | string;
+          last_link_created: null | string;
+          link_count: null | number;
         };
       };
       shortened_links_domain_stats: {
         Relationships: [];
         Row: {
-          creator_count: number | null;
-          domain: string | null;
-          first_created: string | null;
-          last_created: string | null;
-          link_count: number | null;
+          creator_count: null | number;
+          domain: null | string;
+          first_created: null | string;
+          last_created: null | string;
+          link_count: null | number;
         };
       };
       time_tracking_session_analytics: {
@@ -10146,46 +10146,46 @@ export type Database = {
           },
         ];
         Row: {
-          category_color: string | null;
-          category_id: string | null;
-          category_name: string | null;
-          created_at: string | null;
-          day_of_week: number | null;
-          description: string | null;
-          duration_seconds: number | null;
-          end_time: string | null;
-          id: string | null;
+          category_color: null | string;
+          category_id: null | string;
+          category_name: null | string;
+          created_at: null | string;
+          day_of_week: null | number;
+          description: null | string;
+          duration_seconds: null | number;
+          end_time: null | string;
+          id: null | string;
           is_running: boolean | null;
-          productivity_score: number | null;
-          session_date: string | null;
-          session_length_category: string | null;
-          session_month: string | null;
-          session_week: string | null;
-          start_hour: number | null;
-          start_time: string | null;
-          tags: string[] | null;
-          task_id: string | null;
-          task_name: string | null;
-          title: string | null;
-          updated_at: string | null;
-          user_id: string | null;
+          productivity_score: null | number;
+          session_date: null | string;
+          session_length_category: null | string;
+          session_month: null | string;
+          session_week: null | string;
+          start_hour: null | number;
+          start_time: null | string;
+          tags: null | string[];
+          task_id: null | string;
+          task_name: null | string;
+          title: null | string;
+          updated_at: null | string;
+          user_id: null | string;
           was_resumed: boolean | null;
-          ws_id: string | null;
+          ws_id: null | string;
         };
       };
       user_groups_with_tags: {
         Insert: {
           archived?: boolean | null;
-          created_at?: string | null;
-          ending_date?: string | null;
-          id?: string | null;
-          name?: string | null;
-          notes?: string | null;
-          sessions?: string[] | null;
-          starting_date?: string | null;
+          created_at?: null | string;
+          ending_date?: null | string;
+          id?: null | string;
+          name?: null | string;
+          notes?: null | string;
+          sessions?: null | string[];
+          starting_date?: null | string;
           tag_count?: never;
           tags?: never;
-          ws_id?: string | null;
+          ws_id?: null | string;
         };
         Relationships: [
           {
@@ -10205,29 +10205,29 @@ export type Database = {
         ];
         Row: {
           archived: boolean | null;
-          created_at: string | null;
-          ending_date: string | null;
-          id: string | null;
-          name: string | null;
-          notes: string | null;
-          sessions: string[] | null;
-          starting_date: string | null;
-          tag_count: number | null;
+          created_at: null | string;
+          ending_date: null | string;
+          id: null | string;
+          name: null | string;
+          notes: null | string;
+          sessions: null | string[];
+          starting_date: null | string;
+          tag_count: null | number;
           tags: Json | null;
-          ws_id: string | null;
+          ws_id: null | string;
         };
         Update: {
           archived?: boolean | null;
-          created_at?: string | null;
-          ending_date?: string | null;
-          id?: string | null;
-          name?: string | null;
-          notes?: string | null;
-          sessions?: string[] | null;
-          starting_date?: string | null;
+          created_at?: null | string;
+          ending_date?: null | string;
+          id?: null | string;
+          name?: null | string;
+          notes?: null | string;
+          sessions?: null | string[];
+          starting_date?: null | string;
           tag_count?: never;
           tags?: never;
-          ws_id?: string | null;
+          ws_id?: null | string;
         };
       };
       workspace_dataset_row_cells: {
@@ -10242,33 +10242,33 @@ export type Database = {
         ];
         Row: {
           cells: Json | null;
-          created_at: string | null;
-          dataset_id: string | null;
-          row_id: string | null;
+          created_at: null | string;
+          dataset_id: null | string;
+          row_id: null | string;
         };
       };
       workspace_link_counts: {
         Relationships: [];
         Row: {
-          id: string | null;
-          link_count: number | null;
-          logo_url: string | null;
-          name: string | null;
+          id: null | string;
+          link_count: null | number;
+          logo_url: null | string;
+          name: null | string;
         };
       };
       workspace_members_and_invites: {
         Relationships: [];
         Row: {
-          avatar_url: string | null;
-          created_at: string | null;
-          display_name: string | null;
-          email: string | null;
-          handle: string | null;
-          id: string | null;
+          avatar_url: null | string;
+          created_at: null | string;
+          display_name: null | string;
+          email: null | string;
+          handle: null | string;
+          id: null | string;
           pending: boolean | null;
-          role: string | null;
-          role_title: string | null;
-          ws_id: string | null;
+          role: null | string;
+          role_title: null | string;
+          ws_id: null | string;
         };
       };
       workspace_user_groups_with_amount: {
@@ -10289,44 +10289,44 @@ export type Database = {
           },
         ];
         Row: {
-          amount: number | null;
+          amount: null | number;
           archived: boolean | null;
-          created_at: string | null;
-          ending_date: string | null;
-          id: string | null;
-          name: string | null;
-          notes: string | null;
-          sessions: string[] | null;
-          starting_date: string | null;
-          ws_id: string | null;
+          created_at: null | string;
+          ending_date: null | string;
+          id: null | string;
+          name: null | string;
+          notes: null | string;
+          sessions: null | string[];
+          starting_date: null | string;
+          ws_id: null | string;
         };
       };
       workspace_users_with_groups: {
         Insert: {
-          address?: string | null;
+          address?: null | string;
           archived?: boolean | null;
-          archived_until?: string | null;
-          avatar_url?: string | null;
-          balance?: number | null;
-          birthday?: string | null;
-          created_at?: string | null;
-          created_by?: string | null;
-          display_name?: string | null;
-          email?: string | null;
-          ethnicity?: string | null;
-          full_name?: string | null;
-          gender?: string | null;
+          archived_until?: null | string;
+          avatar_url?: null | string;
+          balance?: null | number;
+          birthday?: null | string;
+          created_at?: null | string;
+          created_by?: null | string;
+          display_name?: null | string;
+          email?: null | string;
+          ethnicity?: null | string;
+          full_name?: null | string;
+          gender?: null | string;
           group_count?: never;
           groups?: never;
-          guardian?: string | null;
-          id?: string | null;
+          guardian?: null | string;
+          id?: null | string;
           linked_users?: never;
-          national_id?: string | null;
-          note?: string | null;
-          phone?: string | null;
-          updated_at?: string | null;
-          updated_by?: string | null;
-          ws_id?: string | null;
+          national_id?: null | string;
+          note?: null | string;
+          phone?: null | string;
+          updated_at?: null | string;
+          updated_by?: null | string;
+          ws_id?: null | string;
         };
         Relationships: [
           {
@@ -10387,56 +10387,56 @@ export type Database = {
           },
         ];
         Row: {
-          address: string | null;
+          address: null | string;
           archived: boolean | null;
-          archived_until: string | null;
-          avatar_url: string | null;
-          balance: number | null;
-          birthday: string | null;
-          created_at: string | null;
-          created_by: string | null;
-          display_name: string | null;
-          email: string | null;
-          ethnicity: string | null;
-          full_name: string | null;
-          gender: string | null;
-          group_count: number | null;
+          archived_until: null | string;
+          avatar_url: null | string;
+          balance: null | number;
+          birthday: null | string;
+          created_at: null | string;
+          created_by: null | string;
+          display_name: null | string;
+          email: null | string;
+          ethnicity: null | string;
+          full_name: null | string;
+          gender: null | string;
+          group_count: null | number;
           groups: Json | null;
-          guardian: string | null;
-          id: string | null;
+          guardian: null | string;
+          id: null | string;
           linked_users: Json | null;
-          national_id: string | null;
-          note: string | null;
-          phone: string | null;
-          updated_at: string | null;
-          updated_by: string | null;
-          ws_id: string | null;
+          national_id: null | string;
+          note: null | string;
+          phone: null | string;
+          updated_at: null | string;
+          updated_by: null | string;
+          ws_id: null | string;
         };
         Update: {
-          address?: string | null;
+          address?: null | string;
           archived?: boolean | null;
-          archived_until?: string | null;
-          avatar_url?: string | null;
-          balance?: number | null;
-          birthday?: string | null;
-          created_at?: string | null;
-          created_by?: string | null;
-          display_name?: string | null;
-          email?: string | null;
-          ethnicity?: string | null;
-          full_name?: string | null;
-          gender?: string | null;
+          archived_until?: null | string;
+          avatar_url?: null | string;
+          balance?: null | number;
+          birthday?: null | string;
+          created_at?: null | string;
+          created_by?: null | string;
+          display_name?: null | string;
+          email?: null | string;
+          ethnicity?: null | string;
+          full_name?: null | string;
+          gender?: null | string;
           group_count?: never;
           groups?: never;
-          guardian?: string | null;
-          id?: string | null;
+          guardian?: null | string;
+          id?: null | string;
           linked_users?: never;
-          national_id?: string | null;
-          note?: string | null;
-          phone?: string | null;
-          updated_at?: string | null;
-          updated_by?: string | null;
-          ws_id?: string | null;
+          national_id?: null | string;
+          note?: null | string;
+          phone?: null | string;
+          updated_at?: null | string;
+          updated_by?: null | string;
+          ws_id?: null | string;
         };
       };
     };
@@ -10449,10 +10449,10 @@ type DefaultSchema = DatabaseWithoutInternals[Extract<
 >];
 export type Tables<
   DefaultSchemaTableNameOrOptions extends
-    | keyof (DefaultSchema['Tables'] & DefaultSchema['Views'])
     | {
         schema: keyof DatabaseWithoutInternals;
-      },
+      }
+    | keyof (DefaultSchema['Tables'] & DefaultSchema['Views']),
   TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals;
   }
@@ -10479,10 +10479,10 @@ export type Tables<
     : never;
 export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
-    | keyof DefaultSchema['Tables']
     | {
         schema: keyof DatabaseWithoutInternals;
-      },
+      }
+    | keyof DefaultSchema['Tables'],
   TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals;
   }
@@ -10505,10 +10505,10 @@ export type TablesInsert<
     : never;
 export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
-    | keyof DefaultSchema['Tables']
     | {
         schema: keyof DatabaseWithoutInternals;
-      },
+      }
+    | keyof DefaultSchema['Tables'],
   TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals;
   }
@@ -10531,10 +10531,10 @@ export type TablesUpdate<
     : never;
 export type Enums<
   DefaultSchemaEnumNameOrOptions extends
-    | keyof DefaultSchema['Enums']
     | {
         schema: keyof DatabaseWithoutInternals;
-      },
+      }
+    | keyof DefaultSchema['Enums'],
   EnumName extends DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals;
   }
@@ -10549,10 +10549,10 @@ export type Enums<
     : never;
 export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
-    | keyof DefaultSchema['CompositeTypes']
     | {
         schema: keyof DatabaseWithoutInternals;
-      },
+      }
+    | keyof DefaultSchema['CompositeTypes'],
   CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals;
   }
@@ -10569,59 +10569,59 @@ export const Constants = {
   public: {
     Enums: {
       ai_message_type: [
-        'message',
         'file',
-        'summary',
-        'notes',
-        'multi_choice_quiz',
-        'paragraph_quiz',
         'flashcards',
+        'message',
+        'multi_choice_quiz',
+        'notes',
+        'paragraph_quiz',
+        'summary',
       ],
-      calendar_hour_type: ['WORK', 'PERSONAL', 'MEETING'],
-      calendar_hours: ['work_hours', 'personal_hours', 'meeting_hours'],
-      certificate_templates: ['original', 'modern', 'elegant'],
-      chat_role: ['FUNCTION', 'USER', 'SYSTEM', 'ASSISTANT'],
-      dataset_type: ['excel', 'csv', 'html'],
+      calendar_hour_type: ['MEETING', 'PERSONAL', 'WORK'],
+      calendar_hours: ['meeting_hours', 'personal_hours', 'work_hours'],
+      certificate_templates: ['elegant', 'modern', 'original'],
+      chat_role: ['ASSISTANT', 'FUNCTION', 'SYSTEM', 'USER'],
+      dataset_type: ['csv', 'excel', 'html'],
       feature_flag: [
         'ENABLE_AI',
-        'ENABLE_EDUCATION',
         'ENABLE_CHALLENGES',
+        'ENABLE_EDUCATION',
         'ENABLE_QUIZZES',
       ],
-      platform_service: ['TUTURUUU', 'REWISE', 'NOVA', 'UPSKII'],
-      subscription_status: ['trialing', 'active', 'canceled', 'past_due'],
-      task_board_status: ['not_started', 'active', 'done', 'closed'],
-      task_priority: ['low', 'normal', 'high', 'critical'],
+      platform_service: ['NOVA', 'REWISE', 'TUTURUUU', 'UPSKII'],
+      subscription_status: ['active', 'canceled', 'past_due', 'trialing'],
+      task_board_status: ['active', 'closed', 'done', 'not_started'],
+      task_priority: ['critical', 'high', 'low', 'normal'],
       workspace_api_key_scope: [
         'gemini-2.0-flash',
-        'gemini-2.5-flash',
         'gemini-2.0-pro',
+        'gemini-2.5-flash',
         'gemini-2.5-pro',
       ],
       workspace_role_permission: [
-        'view_infrastructure',
-        'manage_workspace_secrets',
-        'manage_external_migrations',
-        'manage_workspace_roles',
-        'manage_workspace_members',
-        'manage_workspace_settings',
-        'manage_workspace_integrations',
-        'manage_workspace_billing',
-        'manage_workspace_security',
-        'manage_workspace_audit_logs',
-        'manage_user_report_templates',
-        'manage_calendar',
-        'manage_projects',
-        'manage_documents',
-        'manage_drive',
-        'manage_users',
-        'export_users_data',
-        'manage_inventory',
-        'manage_finance',
-        'export_finance_data',
         'ai_chat',
         'ai_lab',
+        'export_finance_data',
+        'export_users_data',
+        'manage_calendar',
+        'manage_documents',
+        'manage_drive',
+        'manage_external_migrations',
+        'manage_finance',
+        'manage_inventory',
+        'manage_projects',
+        'manage_user_report_templates',
+        'manage_users',
+        'manage_workspace_audit_logs',
+        'manage_workspace_billing',
+        'manage_workspace_integrations',
+        'manage_workspace_members',
+        'manage_workspace_roles',
+        'manage_workspace_secrets',
+        'manage_workspace_security',
+        'manage_workspace_settings',
         'send_user_group_post_emails',
+        'view_infrastructure',
       ],
     },
   },
