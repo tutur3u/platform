@@ -29,11 +29,13 @@ import {
   Play,
   Plus,
   Search,
+  Trash2,
   Users,
 } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { format } from 'date-fns';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useRef } from 'react';
 
@@ -77,13 +79,21 @@ export function MeetingsContent({
   pageSize,
   search,
 }: MeetingsContentProps) {
+  const router = useRouter();
   const [searchTerm, setSearchTerm] = useState(search);
   const [currentPage, setCurrentPage] = useState(page);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editingMeeting, setEditingMeeting] = useState<Meeting | null>(null);
   const [creating, setCreating] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const [editFormError, setEditFormError] = useState<string | null>(null);
   const nameRef = useRef<HTMLInputElement>(null);
   const timeRef = useRef<HTMLInputElement>(null);
+  const editNameRef = useRef<HTMLInputElement>(null);
+  const editTimeRef = useRef<HTMLInputElement>(null);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['meetings', wsId, currentPage, pageSize, searchTerm],
@@ -178,6 +188,102 @@ export function MeetingsContent({
     }
   };
 
+  const handleEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingMeeting) return;
+
+    setEditFormError(null);
+    setEditing(true);
+    const name = editNameRef.current?.value.trim();
+    let time = editTimeRef.current?.value;
+    if (!name) {
+      setEditFormError('Name is required.');
+      setEditing(false);
+      return;
+    }
+    if (!time) {
+      time = new Date().toISOString();
+    }
+    try {
+      const res = await fetch(
+        `/api/v1/workspaces/${wsId}/meetings/${editingMeeting.id}`,
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, time }),
+        }
+      );
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setEditFormError(data.error || 'Failed to update meeting.');
+        setEditing(false);
+        return;
+      }
+      setEditDialogOpen(false);
+      setEditing(false);
+      setEditFormError(null);
+      setEditingMeeting(null);
+      window.location.reload();
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (err) {
+      setEditFormError('Failed to update meeting.');
+      setEditing(false);
+    }
+  };
+
+  const handleDeleteMeeting = async (meetingId: string) => {
+    if (
+      !window.confirm(
+        'Are you sure you want to delete this meeting? This action cannot be undone.'
+      )
+    ) {
+      return;
+    }
+
+    setDeleting(true);
+    try {
+      const res = await fetch(
+        `/api/v1/workspaces/${wsId}/meetings/${meetingId}`,
+        {
+          method: 'DELETE',
+        }
+      );
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        alert(data.error || 'Failed to delete meeting.');
+        setDeleting(false);
+        return;
+      }
+      window.location.reload();
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (err) {
+      alert('Failed to delete meeting.');
+      setDeleting(false);
+    }
+  };
+
+  const openEditDialog = (meeting: Meeting) => {
+    setEditingMeeting(meeting);
+    setEditDialogOpen(true);
+    // Pre-fill the form after the dialog opens
+    setTimeout(() => {
+      if (editNameRef.current) {
+        editNameRef.current.value = meeting.name;
+      }
+      if (editTimeRef.current) {
+        const meetingTime = new Date(meeting.time);
+        const localTime = new Date(
+          meetingTime.getTime() - meetingTime.getTimezoneOffset() * 60000
+        );
+        editTimeRef.current.value = localTime.toISOString().slice(0, 16);
+      }
+    }, 100);
+  };
+
+  const handleJoinMeeting = (meetingId: string) => {
+    router.push(`/${wsId}/tumeet/meetings/${meetingId}`);
+  };
+
   if (error) {
     return (
       <div className="flex items-center justify-center p-8">
@@ -232,6 +338,49 @@ export function MeetingsContent({
             <DialogFooter>
               <Button type="submit" disabled={creating} className="w-full">
                 {creating ? 'Creating...' : 'Create'}
+              </Button>
+              <DialogClose asChild>
+                <Button type="button" variant="outline" className="w-full">
+                  Cancel
+                </Button>
+              </DialogClose>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Meeting Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Meeting</DialogTitle>
+            <DialogDescription>Update meeting details below.</DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleEdit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-meeting-name">Name</Label>
+              <Input
+                id="edit-meeting-name"
+                ref={editNameRef}
+                required
+                placeholder="Meeting name"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-meeting-time">Time</Label>
+              <Input
+                id="edit-meeting-time"
+                ref={editTimeRef}
+                type="datetime-local"
+                placeholder="Leave blank for now"
+              />
+            </div>
+            {editFormError && (
+              <div className="text-sm text-red-600">{editFormError}</div>
+            )}
+            <DialogFooter>
+              <Button type="submit" disabled={editing} className="w-full">
+                {editing ? 'Updating...' : 'Update'}
               </Button>
               <DialogClose asChild>
                 <Button type="button" variant="outline" className="w-full">
@@ -361,9 +510,7 @@ export function MeetingsContent({
                   <Button
                     size="sm"
                     className="flex-1"
-                    onClick={() =>
-                      window.alert('Joining meeting (not yet implemented)')
-                    }
+                    onClick={() => handleJoinMeeting(meeting.id)}
                   >
                     <Play className="mr-1 h-3 w-3" />
                     Join Meeting
@@ -371,11 +518,18 @@ export function MeetingsContent({
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() =>
-                      window.alert('Edit meeting (not yet implemented)')
-                    }
+                    onClick={() => openEditDialog(meeting)}
                   >
                     Edit
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleDeleteMeeting(meeting.id)}
+                    disabled={deleting}
+                    className="text-red-600 hover:bg-red-50 hover:text-red-700"
+                  >
+                    <Trash2 className="h-3 w-3" />
                   </Button>
                 </div>
               </CardContent>
