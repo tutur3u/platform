@@ -186,7 +186,7 @@ export async function POST(request: Request) {
           { status: 500 }
         );
       }
-      await updateLastUpsert(wsId);
+      await updateLastUpsert(wsId, supabase);
 
       // 9. Prepare to update sync dashboard: Get the upsert data
       const result = upsertData as { inserted: number; updated: number };
