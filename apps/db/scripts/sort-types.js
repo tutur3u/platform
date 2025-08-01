@@ -11,7 +11,10 @@ function sortMembers(node, sourceFile) {
     members = [...node.members];
   } else if (ts.isInterfaceDeclaration(node)) {
     members = [...node.members];
-  } else if (ts.isTypeAliasDeclaration(node) && ts.isTypeLiteralNode(node.type)) {
+  } else if (
+    ts.isTypeAliasDeclaration(node) &&
+    ts.isTypeLiteralNode(node.type)
+  ) {
     members = [...node.type.members];
   } else if (ts.isUnionTypeNode(node)) {
     members = [...node.types];
@@ -35,30 +38,45 @@ function sortMembers(node, sourceFile) {
       let nameB = '';
 
       // For properties, enum members, and string literals, use their specific text/name
-      if (ts.isPropertySignature(a) || ts.isPropertyAssignment(a) || ts.isEnumMember(a)) {
+      if (
+        ts.isPropertySignature(a) ||
+        ts.isPropertyAssignment(a) ||
+        ts.isEnumMember(a)
+      ) {
         nameA = a.name ? a.name.getText(sourceFile) : '';
       } else if (ts.isStringLiteral(a) || ts.isNumericLiteral(a)) {
         nameA = a.text;
-      } else if (ts.isTypeNode(a)) { // For union types, get the text of the type node
+      } else if (ts.isTypeNode(a)) {
+        // For union types, get the text of the type node
         nameA = a.getText(sourceFile);
-      } else { // Fallback for other nodes
+      } else {
+        // Fallback for other nodes
         nameA = a.getText(sourceFile);
       }
 
-      if (ts.isPropertySignature(b) || ts.isPropertyAssignment(b) || ts.isEnumMember(b)) {
+      if (
+        ts.isPropertySignature(b) ||
+        ts.isPropertyAssignment(b) ||
+        ts.isEnumMember(b)
+      ) {
         nameB = b.name ? b.name.getText(sourceFile) : '';
       } else if (ts.isStringLiteral(b) || ts.isNumericLiteral(b)) {
         nameB = b.text;
-      } else if (ts.isTypeNode(b)) { // For union types, get the text of the type node
+      } else if (ts.isTypeNode(b)) {
+        // For union types, get the text of the type node
         nameB = b.getText(sourceFile);
-      } else { // Fallback for other nodes
+      } else {
+        // Fallback for other nodes
         nameB = b.getText(sourceFile);
       }
       return nameA.localeCompare(nameB);
     });
 
     if (ts.isTypeLiteralNode(node)) {
-      return ts.factory.updateTypeLiteralNode(node, ts.factory.createNodeArray(members));
+      return ts.factory.updateTypeLiteralNode(
+        node,
+        ts.factory.createNodeArray(members)
+      );
     } else if (ts.isInterfaceDeclaration(node)) {
       return ts.factory.updateInterfaceDeclaration(
         node,
@@ -68,18 +86,30 @@ function sortMembers(node, sourceFile) {
         node.heritageClauses,
         ts.factory.createNodeArray(members)
       );
-    } else if (ts.isTypeAliasDeclaration(node) && ts.isTypeLiteralNode(node.type)) {
+    } else if (
+      ts.isTypeAliasDeclaration(node) &&
+      ts.isTypeLiteralNode(node.type)
+    ) {
       return ts.factory.updateTypeAliasDeclaration(
         node,
         node.modifiers,
         node.name,
         node.typeParameters,
-        ts.factory.updateTypeLiteralNode(node.type, ts.factory.createNodeArray(members))
+        ts.factory.updateTypeLiteralNode(
+          node.type,
+          ts.factory.createNodeArray(members)
+        )
       );
     } else if (ts.isUnionTypeNode(node)) {
-      return ts.factory.updateUnionTypeNode(node, ts.factory.createNodeArray(members));
+      return ts.factory.updateUnionTypeNode(
+        node,
+        ts.factory.createNodeArray(members)
+      );
     } else if (ts.isArrayLiteralExpression(node)) {
-      return ts.factory.updateArrayLiteralExpression(node, ts.factory.createNodeArray(members));
+      return ts.factory.updateArrayLiteralExpression(
+        node,
+        ts.factory.createNodeArray(members)
+      );
     }
   }
   return node;
@@ -124,7 +154,8 @@ function main() {
         if (
           ts.isTypeLiteralNode(node) ||
           ts.isInterfaceDeclaration(node) ||
-          (ts.isTypeAliasDeclaration(node) && ts.isTypeLiteralNode(node.type)) ||
+          (ts.isTypeAliasDeclaration(node) &&
+            ts.isTypeLiteralNode(node.type)) ||
           ts.isUnionTypeNode(node) ||
           ts.isArrayLiteralExpression(node)
         ) {
