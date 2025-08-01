@@ -214,6 +214,14 @@ describe('POST /api/v1/calendar/auth/active-sync', () => {
     });
   };
 
+  const callApi = async (request: Request) => {
+    // Import the route handler and call it directly
+    const { POST } = await import(
+      '@/app/api/v1/calendar/auth/active-sync/route'
+    );
+    return await POST(request);
+  };
+
   describe('Request validation', () => {
     it('should return 400 when wsId is missing', async () => {
       const request = createMockRequest({
@@ -221,10 +229,7 @@ describe('POST /api/v1/calendar/auth/active-sync', () => {
         endDate: '2024-01-31',
       });
 
-      const { POST } = await import(
-        '@/app/api/v1/calendar/auth/active-sync/route'
-      );
-      const response = await POST(request);
+      const response = await callApi(request);
       const data = await response.json();
 
       expect(response.status).toBe(400);
@@ -237,10 +242,7 @@ describe('POST /api/v1/calendar/auth/active-sync', () => {
         endDate: '2024-01-31',
       });
 
-      const { POST } = await import(
-        '@/app/api/v1/calendar/auth/active-sync/route'
-      );
-      const response = await POST(request);
+      const response = await callApi(request);
       const data = await response.json();
 
       expect(response.status).toBe(400);
@@ -253,10 +255,7 @@ describe('POST /api/v1/calendar/auth/active-sync', () => {
         startDate: '2024-01-01',
       });
 
-      const { POST } = await import(
-        '@/app/api/v1/calendar/auth/active-sync/route'
-      );
-      const response = await POST(request);
+      const response = await callApi(request);
       const data = await response.json();
 
       expect(response.status).toBe(400);
@@ -277,10 +276,7 @@ describe('POST /api/v1/calendar/auth/active-sync', () => {
         endDate: '2024-01-31',
       });
 
-      const { POST } = await import(
-        '@/app/api/v1/calendar/auth/active-sync/route'
-      );
-      const response = await POST(request);
+      const response = await callApi(request);
       const data = await response.json();
 
       expect(response.status).toBe(401);
@@ -315,10 +311,7 @@ describe('POST /api/v1/calendar/auth/active-sync', () => {
           }),
       });
 
-      const { POST } = await import(
-        '@/app/api/v1/calendar/auth/active-sync/route'
-      );
-      const response = await POST(request);
+      const response = await callApi(request);
 
       expect(response.status).toBe(200);
       expect(mockAdminClient.from).toHaveBeenCalledWith(
@@ -348,10 +341,7 @@ describe('POST /api/v1/calendar/auth/active-sync', () => {
         endDate: '2024-01-31',
       });
 
-      const { POST } = await import(
-        '@/app/api/v1/calendar/auth/active-sync/route'
-      );
-      const response = await POST(request);
+      const response = await callApi(request);
       const data = await response.json();
 
       expect(response.status).toBe(500);
@@ -416,10 +406,7 @@ describe('POST /api/v1/calendar/auth/active-sync', () => {
         endDate: '2024-01-31',
       });
 
-      const { POST } = await import(
-        '@/app/api/v1/calendar/auth/active-sync/route'
-      );
-      const response = await POST(request);
+      const response = await callApi(request);
 
       expect(response.status).toBe(200);
       expect(mockClient.from).toHaveBeenCalledWith('workspace_calendar_events');
@@ -451,10 +438,7 @@ describe('POST /api/v1/calendar/auth/active-sync', () => {
         endDate: '2024-01-31',
       });
 
-      const { POST } = await import(
-        '@/app/api/v1/calendar/auth/active-sync/route'
-      );
-      const response = await POST(request);
+      const response = await callApi(request);
       const data = await response.json();
 
       expect(response.status).toBe(500);
@@ -492,10 +476,7 @@ describe('POST /api/v1/calendar/auth/active-sync', () => {
         }
       );
 
-      const { POST } = await import(
-        '@/app/api/v1/calendar/auth/active-sync/route'
-      );
-      const response = await POST(request);
+      const response = await callApi(request);
       const data = await response.json();
 
       expect(response.status).toBe(200);
@@ -529,10 +510,7 @@ describe('POST /api/v1/calendar/auth/active-sync', () => {
         endDate: '2024-01-31',
       });
 
-      const { POST } = await import(
-        '@/app/api/v1/calendar/auth/active-sync/route'
-      );
-      const response = await POST(request);
+      const response = await callApi(request);
       const data = await response.json();
 
       expect(response.status).toBe(500);
@@ -606,10 +584,7 @@ describe('POST /api/v1/calendar/auth/active-sync', () => {
         endDate: '2024-01-31',
       });
 
-      const { POST } = await import(
-        '@/app/api/v1/calendar/auth/active-sync/route'
-      );
-      const response = await POST(request);
+      const response = await callApi(request);
 
       expect(response.status).toBe(200);
       expect(mockClient.from().delete).toHaveBeenCalledWith();
@@ -661,10 +636,7 @@ describe('POST /api/v1/calendar/auth/active-sync', () => {
         endDate: '2024-01-31',
       });
 
-      const { POST } = await import(
-        '@/app/api/v1/calendar/auth/active-sync/route'
-      );
-      const response = await POST(request);
+      const response = await callApi(request);
       const data = await response.json();
 
       expect(response.status).toBe(500);
@@ -715,10 +687,7 @@ describe('POST /api/v1/calendar/auth/active-sync', () => {
         endDate: '2024-01-31',
       });
 
-      const { POST } = await import(
-        '@/app/api/v1/calendar/auth/active-sync/route'
-      );
-      const response = await POST(request);
+      const response = await callApi(request);
 
       expect(response.status).toBe(200);
       expect(mockClient.rpc).toHaveBeenCalledWith(
@@ -793,10 +762,7 @@ describe('POST /api/v1/calendar/auth/active-sync', () => {
         endDate: '2024-01-31',
       });
 
-      const { POST } = await import(
-        '@/app/api/v1/calendar/auth/active-sync/route'
-      );
-      const response = await POST(request);
+      const response = await callApi(request);
 
       expect(response.status).toBe(200);
       expect(mockClient.rpc).toHaveBeenCalledWith(
@@ -845,10 +811,7 @@ describe('POST /api/v1/calendar/auth/active-sync', () => {
         endDate: '2024-01-31',
       });
 
-      const { POST } = await import(
-        '@/app/api/v1/calendar/auth/active-sync/route'
-      );
-      const response = await POST(request);
+      const response = await callApi(request);
       const data = await response.json();
 
       expect(response.status).toBe(500);
@@ -889,10 +852,7 @@ describe('POST /api/v1/calendar/auth/active-sync', () => {
         endDate: '2024-01-31',
       });
 
-      const { POST } = await import(
-        '@/app/api/v1/calendar/auth/active-sync/route'
-      );
-      const response = await POST(request);
+      const response = await callApi(request);
 
       expect(response.status).toBe(200);
       expect(mockAdminClient.from().update).toHaveBeenCalledWith({
@@ -954,10 +914,7 @@ describe('POST /api/v1/calendar/auth/active-sync', () => {
         endDate: '2024-01-31',
       });
 
-      const { POST } = await import(
-        '@/app/api/v1/calendar/auth/active-sync/route'
-      );
-      const response = await POST(request);
+      const response = await callApi(request);
       const data = await response.json();
 
       expect(response.status).toBe(500);
@@ -977,10 +934,7 @@ describe('POST /api/v1/calendar/auth/active-sync', () => {
         endDate: '2024-01-31',
       });
 
-      const { POST } = await import(
-        '@/app/api/v1/calendar/auth/active-sync/route'
-      );
-      const response = await POST(request);
+      const response = await callApi(request);
       const data = await response.json();
 
       expect(response.status).toBe(500);
@@ -998,10 +952,7 @@ describe('POST /api/v1/calendar/auth/active-sync', () => {
         endDate: '2024-01-31',
       });
 
-      const { POST } = await import(
-        '@/app/api/v1/calendar/auth/active-sync/route'
-      );
-      const response = await POST(request);
+      const response = await callApi(request);
       const data = await response.json();
 
       expect(response.status).toBe(500);
@@ -1045,10 +996,7 @@ describe('POST /api/v1/calendar/auth/active-sync', () => {
         endDate: '2024-01-31',
       });
 
-      const { POST } = await import(
-        '@/app/api/v1/calendar/auth/active-sync/route'
-      );
-      const response = await POST(request);
+      const response = await callApi(request);
 
       expect(response.status).toBe(200);
       expect(mockFetch).toHaveBeenCalledWith(
@@ -1097,10 +1045,7 @@ describe('POST /api/v1/calendar/auth/active-sync', () => {
         endDate: '2024-01-31',
       });
 
-      const { POST } = await import(
-        '@/app/api/v1/calendar/auth/active-sync/route'
-      );
-      const response = await POST(request);
+      const response = await callApi(request);
 
       expect(response.status).toBe(200);
       expect(mockFetch).toHaveBeenCalledWith(
