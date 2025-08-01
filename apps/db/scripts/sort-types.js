@@ -21,6 +21,16 @@ function sortMembers(node, sourceFile) {
 
   if (members.length > 1) {
     members.sort((a, b) => {
+      if (ts.isUnionTypeNode(node)) {
+        const aText = a.getText(sourceFile);
+        const bText = b.getText(sourceFile);
+        const aKeys = (aText.match(/:/g) || []).length;
+        const bKeys = (bText.match(/:/g) || []).length;
+        if (aKeys !== bKeys) {
+          return bKeys - aKeys;
+        }
+      }
+
       let nameA = '';
       let nameB = '';
 
@@ -133,8 +143,12 @@ function main() {
 
     console.log('🔄 Sorted object keys');
 
-    fs.writeFileSync(typesFilePath, sortedContent, 'utf8');
-    console.log('💾 Wrote sorted content back to file');
+    if (content !== sortedContent) {
+      fs.writeFileSync(typesFilePath, sortedContent, 'utf8');
+      console.log('💾 Wrote sorted content back to file');
+    } else {
+      console.log('✅ No changes detected, file is already sorted.');
+    }
 
     console.log('✅ Successfully sorted object keys in types file');
   } catch (error) {
