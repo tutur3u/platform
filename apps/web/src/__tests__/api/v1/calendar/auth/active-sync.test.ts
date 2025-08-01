@@ -112,8 +112,8 @@ describe('POST /api/v1/calendar/auth/active-sync', () => {
   let mockAdminClient: MockSupabaseClient;
   let mockClient: MockSupabaseClient;
   let mockNextResponse: MockNextResponse;
-  let mockUpdateLastUpsert: any;
-  let mockFetch: any;
+  let mockUpdateLastUpsert: ReturnType<typeof vi.fn>;
+  let mockFetch: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -192,7 +192,7 @@ describe('POST /api/v1/calendar/auth/active-sync', () => {
   });
 
   const createMockRequest = (
-    body: any,
+    body: Record<string, unknown>,
     headers: Record<string, string> = {}
   ) => {
     return new Request(
