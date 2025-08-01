@@ -16,98 +16,117 @@ export default function PlanUserFilterAccordion({
   const [hoveredUserId, setHoveredUserId] = useState<string | null>(null);
   const [isHoverFiltering, setIsHoverFiltering] = useState(false);
 
-  // Use refs for values that don't need to trigger re-renders
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const originalFilteredUserIdsRef = useRef<string[] | null>(null);
-  const hasStoredOriginalStateRef = useRef(false);
-  const filteredUserIdsRef = useRef<string[]>([]);
+  // Track clicked users separately from hover state
+  const clickedUsersRef = useRef<string[]>([]);
+  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Sync ref with current value using useEffect to avoid render-time assignment
-  useEffect(() => {
-    filteredUserIdsRef.current = filteredUserIds;
-  }, [filteredUserIds]);
-
+  // Cleanup on unmount
   useEffect(() => {
     return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
+      if (hoverTimeoutRef.current) {
+        clearTimeout(hoverTimeoutRef.current);
       }
     };
   }, []);
 
-  const handleMouseEnter = useCallback(
+  const startHoverFilter = useCallback(
     (userId: string) => {
-      // Clear any existing timeout
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-
-      // Set hovered user immediately for visual feedback
-      setHoveredUserId(userId);
-
-      // Debounce the actual filtering to prevent rapid state changes
-      timeoutRef.current = setTimeout(() => {
-        // Only store the original state if we haven't stored it yet
-        if (!hasStoredOriginalStateRef.current) {
-          const currentFilteredIds = filteredUserIdsRef.current;
-          originalFilteredUserIdsRef.current =
-            currentFilteredIds.length === 0 ? null : currentFilteredIds.slice();
-          hasStoredOriginalStateRef.current = true;
-        }
-
-        setFilteredUserIds([userId]);
-        setIsHoverFiltering(true);
-      }, 150);
+      setFilteredUserIds([userId]);
+      setIsHoverFiltering(true);
     },
     [setFilteredUserIds]
   );
 
+  const stopHoverFilter = useCallback(() => {
+    // Restore clicked users, or empty array if none clicked
+    setFilteredUserIds(clickedUsersRef.current);
+    setIsHoverFiltering(false);
+  }, [setFilteredUserIds]);
+
+  const clearHoverTimeout = useCallback(() => {
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+      hoverTimeoutRef.current = null;
+    }
+  }, []);
+
+  const handleMouseEnter = useCallback(
+    (userId: string) => {
+      // Disable hover if any users have been clicked
+      if (clickedUsersRef.current.length > 0) {
+        return;
+      }
+
+      setHoveredUserId(userId);
+      clearHoverTimeout();
+
+      // Start hover filter after a short delay
+      hoverTimeoutRef.current = setTimeout(() => {
+        startHoverFilter(userId);
+      }, 100);
+    },
+    [startHoverFilter, clearHoverTimeout]
+  );
+
   const handleMouseLeave = useCallback(() => {
-    // Clear any existing timeout
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
+    // Disable hover if any users have been clicked
+    if (clickedUsersRef.current.length > 0) {
+      return;
     }
 
-    // Clear hovered user immediately
     setHoveredUserId(null);
+    clearHoverTimeout();
 
-    // Debounce the restoration to prevent flickering
-    timeoutRef.current = setTimeout(() => {
-      // Restore the original filter state
-      setFilteredUserIds(originalFilteredUserIdsRef.current || []);
+    // Stop hover filter after a short delay
+    hoverTimeoutRef.current = setTimeout(() => {
+      stopHoverFilter();
+    }, 100);
+  }, [stopHoverFilter, clearHoverTimeout]);
+
+  const handleClick = useCallback(
+    (userId: string) => {
+      // Clear any pending hover timeouts
+      clearHoverTimeout();
+
+      // Clear hover states immediately
+      setHoveredUserId(null);
       setIsHoverFiltering(false);
 
-      // Reset the flag so we can store original state again on next hover
-      hasStoredOriginalStateRef.current = false;
-    }, 100);
-  }, [setFilteredUserIds]);
+      // Update clicked users
+      const newClickedUsers = clickedUsersRef.current.includes(userId)
+        ? clickedUsersRef.current.filter((id) => id !== userId)
+        : [...clickedUsersRef.current, userId];
+
+      clickedUsersRef.current = newClickedUsers;
+      setFilteredUserIds(newClickedUsers);
+    },
+    [setFilteredUserIds, clearHoverTimeout]
+  );
+
+  const filteredUsers = users.filter((user) => user.id);
 
   return (
     <div className="flex w-full flex-col space-y-4 p-4">
       <div className="space-y-2">
-        {users.length > 0 ? (
-          users
-            .filter((user) => user.id)
-            .map((user) => (
+        {filteredUsers.length > 0 ? (
+          filteredUsers.map((user) => {
+            const userId = user.id ?? '';
+            const isSelected = filteredUserIds?.includes(userId);
+            const isHovered =
+              hoveredUserId === userId &&
+              isHoverFiltering &&
+              clickedUsersRef.current.length === 0;
+
+            return (
               <button
-                key={user.id}
+                key={userId}
                 className={`w-full rounded-lg border p-3 text-left transition-all duration-200 ease-in-out ${
-                  filteredUserIds?.includes(user.id ?? '')
+                  isSelected
                     ? 'border-foreground/30 bg-foreground/20'
                     : 'bg-foreground/5 hover:bg-foreground/10'
-                } ${
-                  hoveredUserId === user.id && isHoverFiltering
-                    ? 'scale-[1.02] ring-2 ring-primary/50'
-                    : ''
-                }`}
-                onClick={() =>
-                  setFilteredUserIds((prev) =>
-                    prev.includes(user.id ?? '')
-                      ? prev.filter((id) => id !== user.id)
-                      : [...prev, user.id ?? '']
-                  )
-                }
-                onMouseEnter={() => handleMouseEnter(user.id ?? '')}
+                } ${isHovered ? 'scale-[1.02] ring-2 ring-primary/50' : ''}`}
+                onClick={() => handleClick(userId)}
+                onMouseEnter={() => handleMouseEnter(userId)}
                 onMouseLeave={handleMouseLeave}
               >
                 <div className="flex items-center justify-between">
@@ -126,7 +145,8 @@ export default function PlanUserFilterAccordion({
                   </div>
                 </div>
               </button>
-            ))
+            );
+          })
         ) : (
           <div className="flex w-full items-center justify-center rounded-lg p-4 text-sm opacity-50">
             {t('no_users_yet')}
