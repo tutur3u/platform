@@ -1,6 +1,3 @@
--- Migration: upsert_calendar_events_and_count
--- Created: 2025-07-24 22:00:28
-
 create or replace function public.upsert_calendar_events_and_count(events jsonb)
 returns jsonb
 language sql
@@ -28,7 +25,7 @@ as $$
       (event->>'end_at')::timestamptz,
       event->>'location',
       event->>'color',
-      event->>'priority',
+      nullif(event->>'priority', '')::int,
       coalesce((event->>'locked')::boolean, true),
       case 
         when event->>'task_id' is not null and event->>'task_id' != '' 
