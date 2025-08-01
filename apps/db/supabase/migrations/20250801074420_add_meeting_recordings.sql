@@ -35,7 +35,7 @@ alter table "public"."recording_transcriptions" enable row level security;
 
 create table "public"."workspace_meetings" (
     "id" uuid not null default gen_random_uuid(),
-    "ws_id" uuid,
+    "ws_id" uuid not null,
     "name" text not null,
     "time" timestamp with time zone not null default now(),
     "created_at" timestamp with time zone not null default now(),
@@ -47,6 +47,8 @@ alter table "public"."workspace_meetings" enable row level security;
 
 CREATE UNIQUE INDEX audio_chunks_pkey ON public.audio_chunks USING btree (id);
 
+CREATE UNIQUE INDEX audio_chunks_session_id_chunk_order_key ON public.audio_chunks USING btree (session_id, chunk_order);
+
 CREATE UNIQUE INDEX recording_sessions_pkey ON public.recording_sessions USING btree (id);
 
 CREATE UNIQUE INDEX recording_transcriptions_pkey ON public.recording_transcriptions USING btree (id);
@@ -56,6 +58,8 @@ CREATE UNIQUE INDEX recording_transcriptions_session_id_key ON public.recording_
 CREATE UNIQUE INDEX workspace_meetings_pkey ON public.workspace_meetings USING btree (id);
 
 alter table "public"."audio_chunks" add constraint "audio_chunks_pkey" PRIMARY KEY using index "audio_chunks_pkey";
+
+alter table "public"."audio_chunks" add constraint "audio_chunks_session_id_chunk_order_key" UNIQUE using index "audio_chunks_session_id_chunk_order_key";
 
 alter table "public"."recording_sessions" add constraint "recording_sessions_pkey" PRIMARY KEY using index "recording_sessions_pkey";
 
