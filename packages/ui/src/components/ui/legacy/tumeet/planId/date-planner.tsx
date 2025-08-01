@@ -10,7 +10,7 @@ import { Tabs, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { timetzToHour } from '@tuturuuu/ui/utils/date-helper';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 export default function DatePlanner({
   timeblocks,
@@ -40,11 +40,22 @@ export default function DatePlanner({
   const startHour = timetzToHour(start);
   const endHour = timetzToHour(end);
 
-  if (!startHour || !endHour) return null;
+  useEffect(() => {
+    setCurrentPage(0);
+  }, [dates]);
 
   // Pagination logic
   const maxDatesPerPage = isMobile ? 4 : 7;
   const totalPages = dates ? Math.ceil(dates.length / maxDatesPerPage) : 0;
+
+  useEffect(() => {
+    if (totalPages > 0 && currentPage >= totalPages) {
+      setCurrentPage(totalPages - 1);
+    }
+  }, [totalPages, currentPage]);
+
+  if (!startHour || !endHour) return null;
+
   const currentDates = dates
     ? dates.slice(
         currentPage * maxDatesPerPage,
