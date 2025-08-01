@@ -1,3 +1,4 @@
+import { getGuestGroup } from '../../../../../../../../../../packages/utils/src/workspace-helper';
 import { getUserColumns } from '../../database/columns';
 import { Filter } from '../../filters';
 import ExternalGroupMembers from './external-group-members';
@@ -70,6 +71,8 @@ export default async function UserGroupDetailsPage({
     ...u,
     href: `/${wsId}/users/database/${u.id}`,
   }));
+
+  const isTrue = getGuestGroup({ wsId });
 
   return (
     <>
@@ -253,6 +256,7 @@ export default async function UserGroupDetailsPage({
           group_count: false,
           created_at: false,
           updated_at: false,
+          attendance_count: isTrue,
 
           // Extra columns
           ...Object.fromEntries(extraFields.map((field) => [field.id, false])),
@@ -290,15 +294,31 @@ async function getUserData(
   }: SearchParams & { retry?: boolean } = {}
 ) {
   const supabase = await createClient();
+  const isGuestGroup = await getGuestGroup({ wsId });
 
-  const queryBuilder = supabase
-    .from('workspace_user_groups_users')
-    .select('...workspace_users!inner(*)', {
-      count: 'exact',
-    })
-    .eq('group_id', groupId);
+  let queryBuilder;
 
-  if (q) queryBuilder.ilike('workspace_users.display_name', `%${q}%`);
+  if (isGuestGroup) {
+    // Use the attendance view for guest groups
+    queryBuilder = supabase
+      .from('group_with_attendance')
+      .select('*', {
+        count: 'exact',
+      })
+      .eq('group_id', groupId);
+
+    if (q) queryBuilder.ilike('full_name', `%${q}%`);
+  } else {
+    // Use original query for non-guest groups
+    queryBuilder = supabase
+      .from('workspace_user_groups_users')
+      .select('...workspace_users!inner(*)', {
+        count: 'exact',
+      })
+      .eq('group_id', groupId);
+
+    if (q) queryBuilder.ilike('workspace_users.display_name', `%${q}%`);
+  }
 
   if (page && pageSize) {
     const parsedPage = parseInt(page);
@@ -320,7 +340,33 @@ async function getUserData(
     });
   }
 
-  return { data, count } as unknown as { data: WorkspaceUser[]; count: number };
+  let mappedData;
+
+  if (isGuestGroup) {
+    mappedData =
+      data
+        ?.map((item) =>
+          'user_id' in item
+            ? {
+                id: item.user_id,
+                full_name: item.full_name,
+                email: item.email,
+                gender: item.gender,
+                phone: item.phone,
+                attendance_count: item.attendance_count,
+              }
+            : null
+        )
+        .filter((item) => item !== null) || [];
+  } else {
+    // Use original data structure for non-guest groups
+    mappedData = data || [];
+  }
+
+  return { data: mappedData, count } as {
+    data: WorkspaceUser[];
+    count: number;
+  };
 }
 
 async function getUserFields(wsId: string) {

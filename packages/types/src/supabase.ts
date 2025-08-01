@@ -626,6 +626,13 @@ export type Database = {
             foreignKeyName: 'calendar_event_participant_groups_group_id_fkey';
             columns: ['group_id'];
             isOneToOne: false;
+            referencedRelation: 'group_with_attendance';
+            referencedColumns: ['group_id'];
+          },
+          {
+            foreignKeyName: 'calendar_event_participant_groups_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
             referencedRelation: 'user_groups_with_tags';
             referencedColumns: ['id'];
           },
@@ -1292,6 +1299,13 @@ export type Database = {
             foreignKeyName: 'external_user_monthly_report_logs_group_id_fkey';
             columns: ['group_id'];
             isOneToOne: false;
+            referencedRelation: 'group_with_attendance';
+            referencedColumns: ['group_id'];
+          },
+          {
+            foreignKeyName: 'external_user_monthly_report_logs_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
             referencedRelation: 'user_groups_with_tags';
             referencedColumns: ['id'];
           },
@@ -1407,6 +1421,13 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: 'workspace_users_with_groups';
             referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'external_user_monthly_reports_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'group_with_attendance';
+            referencedColumns: ['group_id'];
           },
           {
             foreignKeyName: 'external_user_monthly_reports_group_id_fkey';
@@ -1725,6 +1746,13 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: 'workspaces';
             referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'public_finance_invoices_user_group_id_fkey';
+            columns: ['user_group_id'];
+            isOneToOne: false;
+            referencedRelation: 'group_with_attendance';
+            referencedColumns: ['group_id'];
           },
           {
             foreignKeyName: 'public_finance_invoices_user_group_id_fkey';
@@ -2114,6 +2142,13 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: 'workspaces';
             referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'public_healthcare_vitals_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'group_with_attendance';
+            referencedColumns: ['group_id'];
           },
           {
             foreignKeyName: 'public_healthcare_vitals_group_id_fkey';
@@ -5128,6 +5163,13 @@ export type Database = {
             foreignKeyName: 'user_feedbacks_group_id_fkey';
             columns: ['group_id'];
             isOneToOne: false;
+            referencedRelation: 'group_with_attendance';
+            referencedColumns: ['group_id'];
+          },
+          {
+            foreignKeyName: 'user_feedbacks_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
             referencedRelation: 'user_groups_with_tags';
             referencedColumns: ['id'];
           },
@@ -5205,6 +5247,13 @@ export type Database = {
             foreignKeyName: 'user_group_attendance_group_id_fkey';
             columns: ['group_id'];
             isOneToOne: false;
+            referencedRelation: 'group_with_attendance';
+            referencedColumns: ['group_id'];
+          },
+          {
+            foreignKeyName: 'user_group_attendance_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
             referencedRelation: 'user_groups_with_tags';
             referencedColumns: ['id'];
           },
@@ -5273,6 +5322,13 @@ export type Database = {
             foreignKeyName: 'user_group_indicators_group_id_fkey';
             columns: ['group_id'];
             isOneToOne: false;
+            referencedRelation: 'group_with_attendance';
+            referencedColumns: ['group_id'];
+          },
+          {
+            foreignKeyName: 'user_group_indicators_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
             referencedRelation: 'user_groups_with_tags';
             referencedColumns: ['id'];
           },
@@ -5326,6 +5382,13 @@ export type Database = {
           unit_id?: string;
         };
         Relationships: [
+          {
+            foreignKeyName: 'user_group_linked_products_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'group_with_attendance';
+            referencedColumns: ['group_id'];
+          },
           {
             foreignKeyName: 'user_group_linked_products_group_id_fkey';
             columns: ['group_id'];
@@ -5463,6 +5526,13 @@ export type Database = {
             foreignKeyName: 'user_group_posts_group_id_fkey';
             columns: ['group_id'];
             isOneToOne: false;
+            referencedRelation: 'group_with_attendance';
+            referencedColumns: ['group_id'];
+          },
+          {
+            foreignKeyName: 'user_group_posts_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
             referencedRelation: 'user_groups_with_tags';
             referencedColumns: ['id'];
           },
@@ -5535,6 +5605,13 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: 'workspace_users_with_groups';
             referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'user_indicators_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'group_with_attendance';
+            referencedColumns: ['group_id'];
           },
           {
             foreignKeyName: 'user_indicators_group_id_fkey';
@@ -8085,6 +8162,13 @@ export type Database = {
             foreignKeyName: 'public_workspace_user_group_tag_groups_group_id_fkey';
             columns: ['group_id'];
             isOneToOne: false;
+            referencedRelation: 'group_with_attendance';
+            referencedColumns: ['group_id'];
+          },
+          {
+            foreignKeyName: 'public_workspace_user_group_tag_groups_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
             referencedRelation: 'user_groups_with_tags';
             referencedColumns: ['id'];
           },
@@ -8231,6 +8315,13 @@ export type Database = {
           user_id?: string;
         };
         Relationships: [
+          {
+            foreignKeyName: 'workspace_user_roles_users_role_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'group_with_attendance';
+            referencedColumns: ['group_id'];
+          },
           {
             foreignKeyName: 'workspace_user_roles_users_role_id_fkey';
             columns: ['group_id'];
@@ -8914,6 +9005,55 @@ export type Database = {
         };
         Relationships: [];
       };
+      group_with_attendance: {
+        Row: {
+          attendance_count: number | null;
+          email: string | null;
+          full_name: string | null;
+          gender: string | null;
+          group_id: string | null;
+          phone: string | null;
+          user_id: string | null;
+          ws_id: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'workspace_user_roles_users_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'distinct_invoice_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_user_roles_users_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_user_roles_users_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_users_with_groups';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_user_roles_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_user_roles_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       link_analytics_device_insights: {
         Row: {
           browser: string | null;
@@ -9542,6 +9682,10 @@ export type Database = {
       calculate_productivity_score: {
         Args: { duration_seconds: number; category_color: string };
         Returns: number;
+      };
+      check_guest_group: {
+        Args: { ws_id: string };
+        Returns: boolean;
       };
       check_ws_creator: {
         Args: { ws_id: string };
