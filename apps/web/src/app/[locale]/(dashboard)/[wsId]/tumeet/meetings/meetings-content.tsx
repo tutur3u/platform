@@ -11,6 +11,16 @@ import {
   CardTitle,
 } from '@tuturuuu/ui/card';
 import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@tuturuuu/ui/dialog';
+import {
   Calendar,
   Clock,
   FileText,
@@ -22,8 +32,10 @@ import {
   Users,
 } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
+import { Label } from '@tuturuuu/ui/label';
 import { format } from 'date-fns';
 import { useState } from 'react';
+import { useRef } from 'react';
 
 interface Meeting {
   id: string;
@@ -67,6 +79,11 @@ export function MeetingsContent({
 }: MeetingsContentProps) {
   const [searchTerm, setSearchTerm] = useState(search);
   const [currentPage, setCurrentPage] = useState(page);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
+  const nameRef = useRef<HTMLInputElement>(null);
+  const timeRef = useRef<HTMLInputElement>(null);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['meetings', wsId, currentPage, pageSize, searchTerm],
@@ -124,6 +141,43 @@ export function MeetingsContent({
     setCurrentPage(1);
   };
 
+  const handleCreate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setFormError(null);
+    setCreating(true);
+    const name = nameRef.current?.value.trim();
+    let time = timeRef.current?.value;
+    if (!name) {
+      setFormError('Name is required.');
+      setCreating(false);
+      return;
+    }
+    if (!time) {
+      time = new Date().toISOString();
+    }
+    try {
+      const res = await fetch(`/api/v1/workspaces/${wsId}/meetings`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, time }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setFormError(data.error || 'Failed to create meeting.');
+        setCreating(false);
+        return;
+      }
+      setDialogOpen(false);
+      setCreating(false);
+      setFormError(null);
+      window.location.reload();
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (err) {
+      setFormError('Failed to create meeting.');
+      setCreating(false);
+    }
+  };
+
   if (error) {
     return (
       <div className="flex items-center justify-center p-8">
@@ -137,6 +191,58 @@ export function MeetingsContent({
 
   return (
     <div className="space-y-6">
+      {/* Create Meeting Dialog */}
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogTrigger asChild>
+          <Button
+            className="flex items-center gap-2"
+            onClick={() => setDialogOpen(true)}
+          >
+            <Plus className="h-4 w-4" />
+            Create
+          </Button>
+        </DialogTrigger>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>New Meeting</DialogTitle>
+            <DialogDescription>Enter meeting details below.</DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleCreate} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="meeting-name">Name</Label>
+              <Input
+                id="meeting-name"
+                ref={nameRef}
+                required
+                placeholder="Meeting name"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="meeting-time">Time</Label>
+              <Input
+                id="meeting-time"
+                ref={timeRef}
+                type="datetime-local"
+                placeholder="Leave blank for now"
+              />
+            </div>
+            {formError && (
+              <div className="text-sm text-red-600">{formError}</div>
+            )}
+            <DialogFooter>
+              <Button type="submit" disabled={creating} className="w-full">
+                {creating ? 'Creating...' : 'Create'}
+              </Button>
+              <DialogClose asChild>
+                <Button type="button" variant="outline" className="w-full">
+                  Cancel
+                </Button>
+              </DialogClose>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
       {/* Search and Filters */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <form
@@ -252,11 +358,23 @@ export function MeetingsContent({
 
                 {/* Actions */}
                 <div className="flex gap-2 pt-2">
-                  <Button size="sm" className="flex-1">
+                  <Button
+                    size="sm"
+                    className="flex-1"
+                    onClick={() =>
+                      window.alert('Joining meeting (not yet implemented)')
+                    }
+                  >
                     <Play className="mr-1 h-3 w-3" />
                     Join Meeting
                   </Button>
-                  <Button variant="outline" size="sm">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() =>
+                      window.alert('Edit meeting (not yet implemented)')
+                    }
+                  >
                     Edit
                   </Button>
                 </div>

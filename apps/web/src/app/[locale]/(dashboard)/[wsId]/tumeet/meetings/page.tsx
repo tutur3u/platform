@@ -1,8 +1,6 @@
 import { MeetingsContent } from './meetings-content';
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader } from '@tuturuuu/ui/card';
-import { Plus } from '@tuturuuu/ui/icons';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
@@ -57,10 +55,6 @@ export default async function MeetingsPage({
               your meetings more productive.
             </p>
           </div>
-          <Button className="flex items-center gap-2">
-            <Plus className="h-4 w-4" />
-            Create
-          </Button>
         </div>
       </div>
 
