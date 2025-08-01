@@ -93,7 +93,7 @@ export function CalendarHeader({
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8"
+              style={{ height: '32px', width: '32px' }}
               onClick={handlePrev}
               aria-label="Previous period"
             >
@@ -116,7 +116,7 @@ export function CalendarHeader({
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8"
+              style={{ height: '32px', width: '32px' }}
               onClick={handleNext}
               aria-label="Next period"
             >
@@ -131,7 +131,7 @@ export function CalendarHeader({
                   onViewChange(value as 'day' | '4-days' | 'week' | 'month')
                 }
               >
-                <SelectTrigger className="h-8 w-full border-0">
+                <SelectTrigger className="h-10 w-full border-0">
                   <SelectValue placeholder={t('view')} />
                 </SelectTrigger>
                 <SelectContent>

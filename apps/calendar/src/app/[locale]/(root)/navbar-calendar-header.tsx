@@ -62,7 +62,6 @@ export default function NavbarCalendarHeader({
         <Button
           variant="ghost"
           size="icon"
-          className="h-8 w-8"
           // onClick={handlePrev}
           disabled
           aria-label="Previous period"
@@ -73,7 +72,7 @@ export default function NavbarCalendarHeader({
         <Button
           variant="ghost"
           size="sm"
-          className="h-8 text-md"
+          className="text-md"
           // onClick={isToday() || isCurrentMonth() ? undefined : selectToday}
           // disabled={isToday() || isCurrentMonth()}
           disabled
@@ -91,7 +90,6 @@ export default function NavbarCalendarHeader({
         <Button
           variant="ghost"
           size="icon"
-          className="h-8 w-8"
           // onClick={handleNext}
           disabled
           aria-label="Next period"
@@ -107,7 +105,7 @@ export default function NavbarCalendarHeader({
 
       {/* {views.length > 1 && (
         <Select value={view} onValueChange={onViewChange}>
-          <SelectTrigger className="text-md h-8 w-[80px] md:w-[100px]">
+          <SelectTrigger className="text-md h-10 w-[80px] md:w-[100px]">
             <SelectValue placeholder={t('view')} />
           </SelectTrigger>
           <SelectContent>

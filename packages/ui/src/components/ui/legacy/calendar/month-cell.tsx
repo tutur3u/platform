@@ -23,7 +23,7 @@ export function MonthCell({ date, key, hasGrid }: MonthCellProps) {
         className={`${
           isToday ? 'bg-blue-300/30 text-blue-300' : 'text-white'
         } ${
-          hasGrid ? 'my-1 h-10 w-10' : 'h-8 w-8'
+          hasGrid ? 'my-1 h-12 w-12' : 'h-10 w-10'
         } flex items-center justify-center rounded-full`}
       >
         {date?.getDate()}

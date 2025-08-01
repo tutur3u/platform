@@ -25,7 +25,7 @@ export function SummaryCards({
       <Card className="border-0 bg-foreground/10 shadow-sm backdrop-blur-sm">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
           <CardTitle className="font-medium text-sm">Total Syncs</CardTitle>
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-dynamic-blue/10">
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-dynamic-blue/10">
             <Activity className="h-4 w-4 text-dynamic-blue" />
           </div>
         </CardHeader>
@@ -47,7 +47,7 @@ export function SummaryCards({
       <Card className="border-0 bg-foreground/10 shadow-sm backdrop-blur-sm">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
           <CardTitle className="font-medium text-sm">Events Added</CardTitle>
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-dynamic-green/10">
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-dynamic-green/10">
             <Plus className="h-4 w-4 text-dynamic-green" />
           </div>
         </CardHeader>
@@ -62,7 +62,7 @@ export function SummaryCards({
       <Card className="border-0 bg-foreground/10 shadow-sm backdrop-blur-sm">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
           <CardTitle className="font-medium text-sm">Events Updated</CardTitle>
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-dynamic-blue/10">
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-dynamic-blue/10">
             <Edit className="h-4 w-4 text-dynamic-blue" />
           </div>
         </CardHeader>
@@ -77,7 +77,7 @@ export function SummaryCards({
       <Card className="border-0 bg-foreground/10 shadow-sm backdrop-blur-sm">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
           <CardTitle className="font-medium text-sm">Events Deleted</CardTitle>
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-dynamic-red/10">
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-dynamic-red/10">
             <Trash2 className="h-4 w-4 text-dynamic-red" />
           </div>
         </CardHeader>
