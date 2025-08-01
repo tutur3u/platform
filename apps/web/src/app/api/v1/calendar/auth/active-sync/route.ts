@@ -38,7 +38,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // 3. Create an admin client
     const sbAdmin = await createAdminClient();
 
     // 3. Insert a dashboard record
@@ -84,9 +83,8 @@ export async function POST(request: Request) {
 
     // 5. Fetch from Google Calendar
     const baseUrl =
-      process.env.NODE_ENV === 'production'
-        ? 'https://tuturuuu.com'
-        : `http://localhost:${process.env.PORT || 3000}`;
+      process.env.NEXT_PUBLIC_BASE_URL ||
+      `http://localhost:${process.env.PORT || 3000}`;
     const response = await fetch(
       `${baseUrl}/api/v1/calendar/auth/fetch?wsId=${wsId}&startDate=${startDate}&endDate=${endDate}`,
       {
