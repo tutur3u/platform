@@ -41,7 +41,6 @@ interface ActivityHeatmapProps {
     duration: number;
     sessions: number;
   }>;
-  // eslint-disable-next-line no-unused-vars
   formatDuration: (seconds: number) => string;
   settings?: HeatmapSettings;
 }

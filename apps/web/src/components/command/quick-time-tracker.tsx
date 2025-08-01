@@ -28,9 +28,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 
 interface QuickTimeTrackerProps {
   wsId: string;
-  // eslint-disable-next-line no-unused-vars
   setOpen: (open: boolean) => void;
-  // eslint-disable-next-line no-unused-vars
   setIsLoading: (loading: boolean) => void;
 }
 

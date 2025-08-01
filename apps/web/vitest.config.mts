@@ -15,7 +15,6 @@ export default defineConfig({
     environment: 'jsdom',
     env: loadEnv('production', process.cwd(), ''),
   },
-  keepProcessEnv: true,
   resolve: {
     alias: [{ find: '@', replacement: resolve(__dirname, './src') }],
   },

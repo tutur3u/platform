@@ -1,0 +1,97 @@
+---
+title: Generate AI Completion
+---
+
+# POST /api/ai/generate
+
+This public API endpoint allows you to generate text completions using supported AI models (e.g., Gemini). You must provide a valid access key for authentication.
+
+## Endpoint
+
+```
+POST https://tuturuuu.com/api/ai/generate
+```
+
+## Request Body
+
+Send a JSON object with the following fields:
+
+| Field       | Type   | Required | Description                                                             |
+| ----------- | ------ | -------- | ----------------------------------------------------------------------- |
+| `prompt`    | string | Yes      | The prompt text to generate a completion for.                           |
+| `accessKey` | object | Yes      | Your API access key object. Must include `id` and `value` fields.       |
+| `configs`   | object | No       | (Optional) Configuration object for the request. See below for details. |
+
+### `accessKey` object
+
+| Field   | Type   | Required | Description          |
+| ------- | ------ | -------- | -------------------- |
+| `id`    | string | Yes      | Your API access ID.  |
+| `value` | string | Yes      | Your API access key. |
+
+### `configs` object
+
+| Field             | Type    | Required | Default            | Description                                                            |
+| ----------------- | ------- | -------- | ------------------ | ---------------------------------------------------------------------- |
+| `wsId`            | string  | No       | ROOT_WORKSPACE_ID  | Workspace ID.                                                          |
+| `model`           | string  | No       | "gemini-2.0-flash" | The model to use (see Supported Models). Must be allowed for your key. |
+| `systemPrompt`    | string  | No       | ""                 | (Optional) System instructions for the model.                          |
+| `thinkingBudget`  | number  | No       | 0                  | (Optional) Budget for model "thinking" (advanced).                     |
+| `includeThoughts` | boolean | No       | false              | (Optional) Include model "thoughts" in the response (advanced).        |
+
+## Supported Models
+
+- `gemini-2.0-flash`
+- `gemini-2.5-flash`
+- `gemini-2.5-pro`
+
+## Example Request
+
+```json
+{
+  "prompt": "The Swedish buyout firm has sold its remaining 22.4 percent stake, almost eighteen months after taking the company public in Finland.",
+  "accessKey": {
+    "id": "00000000-0000-0000-0000-000000000000",
+    "value": "00000000-0000-0000-0000-000000000000"
+  },
+  "configs": {
+    "model": "gemini-2.5-pro",
+    "systemPrompt": "Analyze the sentiment of the text and return a JSON object with the following format: {\"sentiment\": positive|negative|neutral,\"confidence_scores\":{\"positive\": <float between 0.0 and 1.0>, \"negative\": <float between 0.0 and 1.0>, \"neutral\": <float between 0.0 and 1.0>}, \"explanation\": \"<brief explanation of the sentiment>\"}.\n\nEnsure no extra text outside the JSON."
+  }
+}
+```
+
+## Example Response
+
+```json
+{
+  "input": "The Swedish buyout firm has sold its remaining 22.4 percent stake, almost eighteen months after taking the company public in Finland.",
+  "output": "{\"sentiment\":\"neutral\",\"confidence_scores\":{\"positive\":0.12,\"negative\":0.10,\"neutral\":0.78},\"explanation\":\"The text is factual and does not express a clear positive or negative sentiment.\"}",
+  "usage": {
+    "inputTokens": 45,
+    "outputTokens": 60,
+    "reasoningTokens": 10,
+    "totalTokens": 115
+  },
+  "finishReason": "stop",
+  "cost": {
+    "inputCost": "$0.00005625",
+    "outputCost": "$0.00060000",
+    "reasoningCost": "$0.00010000",
+    "totalCost": "$0.00075625"
+  }
+}
+```
+
+## Errors
+
+- `400 Missing accessKey` — You must provide both `id` and `value` in the accessKey object.
+- `400 Invalid model` — The model is not allowed for your key.
+- `400 Invalid accessKey` — The credentials are invalid.
+- `400 Missing prompt` — The prompt field is required.
+- `400 Missing API key` — Internal error, contact support.
+
+## Notes
+
+- You must have a valid access key with the required model scope.
+- The response includes the original input, the model output, token usage, cost breakdown, and the finish reason.

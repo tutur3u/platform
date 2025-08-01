@@ -40,6 +40,7 @@ interface MultipleChoiceVoteProps {
   ) => Promise<PollOptionWithVotes | null>;
   onDeleteOption: (optionId: string) => Promise<void>;
   className?: string;
+  hideHeader?: boolean;
 }
 
 function arraysAreEqual(a: string[], b: string[]) {
@@ -62,6 +63,7 @@ export default function MultipleChoiceVote({
   onAddOption,
   onDeleteOption,
   className,
+  hideHeader = false,
 }: MultipleChoiceVoteProps) {
   const t = useTranslations('ws-polls');
 
@@ -92,9 +94,25 @@ export default function MultipleChoiceVote({
   // On mount/options change: set selected to previous votes (if any)
   useEffect(() => {
     setSelectedOptionIds(votedOptionIds);
-  }, [votedOptionIds.join(','), optionsState.length]);
+  }, [optionsState.length, votedOptionIds]);
 
-  const totalVotesAll = optionsState.reduce((s, o) => s + o.totalVotes, 0);
+  // Calculate unique voters across all options to avoid double counting
+  const uniqueVoters = useMemo(() => {
+    const userVoters = new Set<string>();
+    const guestVoters = new Set<string>();
+
+    optionsState.forEach((option) => {
+      option.userVotes.forEach((vote) => userVoters.add(vote.user_id));
+      option.guestVotes.forEach((vote) => guestVoters.add(vote.guest_id));
+    });
+
+    return userVoters.size + guestVoters.size;
+  }, [optionsState]);
+
+  // Sort options by vote amount in descending order
+  const sortedOptions = useMemo(() => {
+    return [...optionsState].sort((a, b) => b.totalVotes - a.totalVotes);
+  }, [optionsState]);
 
   // Add option
   const canAdd =
@@ -216,25 +234,47 @@ export default function MultipleChoiceVote({
 
   return (
     <div className={cn('space-y-4', className)}>
-      <h3 className="text-lg font-semibold text-dynamic-purple">{pollName}</h3>
+      {!hideHeader && (
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-lg font-semibold text-dynamic-purple">
+              {pollName}
+            </h3>
+            {uniqueVoters > 0 && (
+              <p className="text-xs text-muted-foreground">
+                {uniqueVoters} {uniqueVoters === 1 ? t('voter') : t('voters')}
+              </p>
+            )}
+          </div>
+        </div>
+      )}
       {!isDisplayMode && (
         <div className="text-sm text-foreground">{t('select_options')}</div>
       )}
       <div className="space-y-2">
-        {optionsState.map((option) => {
+        {sortedOptions.map((option) => {
           const isSelected = selectedOptionIds.includes(option.id);
           return (
             <div
               key={option.id}
+              role="button"
+              tabIndex={0}
               className={cn(
-                'flex items-center justify-between rounded-lg border p-2',
+                'flex w-full cursor-pointer items-center justify-between rounded-lg border p-2',
                 'border-dynamic-purple/50',
                 isSelected &&
                   !isDisplayMode &&
                   'border-dynamic-purple bg-dynamic-purple/10'
               )}
+              onClick={() => !isDisplayMode && handleToggleOption(option.id)}
+              onKeyDown={(e) => {
+                if (!isDisplayMode && (e.key === 'Enter' || e.key === ' ')) {
+                  e.preventDefault();
+                  handleToggleOption(option.id);
+                }
+              }}
             >
-              <div className="flex items-center gap-2">
+              <div className="flex w-full cursor-pointer items-center gap-2">
                 <Checkbox
                   checked={isSelected}
                   disabled={isDisplayMode}
@@ -247,26 +287,25 @@ export default function MultipleChoiceVote({
                 <label
                   htmlFor={`option-${option.id}`}
                   className={cn(
-                    'text-sm font-medium',
+                    'cursor-pointer text-sm font-medium',
                     isSelected && !isDisplayMode && 'text-dynamic-purple'
                   )}
                 >
                   {option.value}
                 </label>
               </div>
-              <div className="flex min-w-[90px] flex-col items-end">
+              <div className="flex min-w-[90px] flex-col items-end justify-between">
                 <span
                   className={cn(
-                    'w-full text-xs text-dynamic-purple',
-                    isCreator ? 'text-center' : 'text-left'
+                    'w-full text-center text-xs text-dynamic-purple'
                   )}
                 >
                   {option.totalVotes} {t('votes')}
                 </span>
                 <Progress
                   value={
-                    totalVotesAll > 0
-                      ? (option.totalVotes / totalVotesAll) * 100
+                    uniqueVoters > 0
+                      ? (option.totalVotes / uniqueVoters) * 100
                       : 0
                   }
                   className="mt-1 h-2 w-20 bg-foreground/30"
@@ -276,7 +315,7 @@ export default function MultipleChoiceVote({
               {isCreator && !isDisplayMode && (
                 <Button
                   variant="ghost"
-                  size="icon"
+                  size="xs"
                   className="ml-2 text-dynamic-red hover:bg-dynamic-red/10"
                   onClick={() => setDeleteDialog(option.id)}
                 >
