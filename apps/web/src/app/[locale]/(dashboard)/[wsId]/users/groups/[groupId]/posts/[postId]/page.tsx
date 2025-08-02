@@ -187,8 +187,8 @@ export default async function HomeworkCheck({ params, searchParams }: Props) {
                 group_name: group.name,
               }}
               disableEmailSending={
-                (isGuestGroup && (user.attendance_count ?? 0) < 2) || // Block for guest if attendance < 2
-                status.sent?.includes(user.id) // Also block if already sent
+                (isGuestGroup && (user.attendance_count ?? 0) < 2) ||
+                status.sent?.includes(user.id)
               }
               hideEmailSending={!hasEmailSendingPermission}
             />
@@ -201,56 +201,36 @@ export default async function HomeworkCheck({ params, searchParams }: Props) {
 
 async function getPostData(postId: string) {
   const supabase = await createClient();
-
   const { data, error } = await supabase
     .from('user_group_posts')
     .select('*')
     .eq('id', postId)
     .maybeSingle();
-
   if (error) throw error;
   if (!data) notFound();
-
   return data;
 }
 
 async function getGroupData(wsId: string, groupId: string) {
   const supabase = await createClient();
-
   const { data, error } = await supabase
     .from('workspace_user_groups')
     .select('*')
     .eq('ws_id', wsId)
     .eq('id', groupId)
     .maybeSingle();
-
   if (error) throw error;
   if (!data) notFound();
-
   return data;
 }
 
 async function getPostStatus(groupId: string, postId: string) {
   const supabase = await createClient();
-
-  // 1. Fetch users with attendance (from the view)
   const { data: users, count } = await supabase
-    .from('group_with_attendance')
+    .from('group_users_with_post_checks')
     .select('*', { count: 'exact' })
-    .eq('group_id', groupId);
-
-  // 2. Fetch post checks separately
-  const { data: checks } = await supabase
-    .from('user_group_post_checks')
-    .select('user_id, post_id, is_completed')
+    .eq('group_id', groupId)
     .eq('post_id', postId);
-
-  // 3. Merge in code
-  const merged =
-    users?.map((user) => ({
-      ...user,
-      post_checks: checks?.filter((c) => c.user_id === user.user_id) || [],
-    })) || [];
 
   const { data: sentEmails } = await supabase
     .from('sent_emails')
@@ -259,13 +239,10 @@ async function getPostStatus(groupId: string, postId: string) {
 
   return {
     sent: sentEmails?.map((email) => email.receiver_id) || [],
-    checked: merged.filter((user) =>
-      user.post_checks.find((check) => check?.is_completed)
-    ).length,
-    failed: merged.filter((user) =>
-      user.post_checks.find((check) => check && !check.is_completed)
-    ).length,
-    tenative: merged.filter((user) => !user.user_id).length,
+    checked: users?.filter((user) => user.is_completed).length || 0,
+    failed:
+      users?.filter((user) => user.post_id && !user.is_completed).length || 0,
+    tenative: users?.filter((user) => !user.post_id).length || 0,
     count,
   };
 }
@@ -280,10 +257,8 @@ async function getUserData(
   }: SearchParams & { retry?: boolean } = {}
 ) {
   const supabase = await createClient();
-
-  // 1. Fetch users with attendance
   const { data: users, error } = await supabase
-    .from('group_with_attendance')
+    .from('group_users_with_post_checks')
     .select('*')
     .eq('group_id', groupId);
 
@@ -292,7 +267,6 @@ async function getUserData(
     return getUserData(wsId, groupId, { q, excludedGroups, retry: false });
   }
 
-  // 2. Optionally filter by search query
   const filteredUsers = q
     ? users?.filter((u) => u.full_name?.toLowerCase().includes(q.toLowerCase()))
     : users;
@@ -300,7 +274,7 @@ async function getUserData(
   return {
     data: filteredUsers?.map((u) => ({
       ...u,
-      id: u.user_id, // normalize for UserCard
+      id: u.user_id,
     })) as unknown as WorkspaceUser[],
     count: filteredUsers?.length || 0,
   };
