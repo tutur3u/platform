@@ -85,7 +85,7 @@ const formSchema = z.object({
     message: 'Max daily attempts must be at least 1.',
   }),
   criteria: z.array(criteriaSchema),
-  duration: z.coerce.number().min(60, {
+  duration: z.number().min(60, {
     message: 'Duration must be at least 60 seconds.',
   }),
   enablePassword: z.boolean().default(false),
@@ -205,6 +205,7 @@ export default function ChallengeForm({
       }
 
       form.clearErrors('whitelistedEmails');
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
       // Email validation failed
       form.setError('whitelistedEmails', {
@@ -885,7 +886,7 @@ export default function ChallengeForm({
                         </div>
 
                         {field.value && (
-                          <div className="mt-4 rounded-md border bg-muted/30 p-3">
+                          <div className="mt-4 rounded-md border border-dynamic-blue/30 bg-dynamic-blue/10 p-3">
                             <DurationDisplay seconds={field.value} />
                           </div>
                         )}
