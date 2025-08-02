@@ -80,6 +80,7 @@ export async function POST(request: Request) {
 
   try {
     body = await request.json();
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (error) {
     return NextResponse.json({ message: 'Invalid JSON' }, { status: 400 });
   }
@@ -130,7 +131,7 @@ export async function POST(request: Request) {
     if (error instanceof ZodError) {
       // Zod validation error
       return NextResponse.json(
-        { message: 'Validation error', errors: error.errors },
+        { message: 'Validation error', errors: error.issues },
         { status: 400 }
       );
     }
