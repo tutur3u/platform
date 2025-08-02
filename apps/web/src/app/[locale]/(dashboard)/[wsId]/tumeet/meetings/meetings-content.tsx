@@ -440,7 +440,7 @@ export function MeetingsContent({
               Create your first meeting to get started with video conferencing
               and AI-powered features.
             </p>
-            <Button>
+            <Button onClick={() => setDialogOpen(true)}>
               <Plus className="mr-2 h-4 w-4" />
               Create First Meeting
             </Button>
