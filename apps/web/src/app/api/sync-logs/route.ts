@@ -117,7 +117,7 @@ export async function GET(request: Request) {
 
     const processedData = syncLogs.map((item) => {
       const workspace = item.workspaces;
-      const user = item.users;
+      const user = item.users || null;
 
       // Calculate duration
       const duration =
@@ -131,7 +131,13 @@ export async function GET(request: Request) {
         timestamp: item.start_time || new Date().toISOString(),
         type: item.type || 'background',
         workspace: workspace,
-        triggeredBy: user || 'System',
+        triggeredBy: user
+          ? {
+              id: user.id,
+              display_name: user.display_name,
+              avatar_url: user.avatar_url,
+            }
+          : 'System',
         status: item.status || 'completed',
         duration: duration,
         events: {
