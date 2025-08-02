@@ -1,7 +1,6 @@
 'use client';
 
-import { Button } from '@tuturuuu/ui/button';
-import { Loader2, Mic, Square } from '@tuturuuu/ui/icons';
+import { Loader2 } from '@tuturuuu/ui/icons';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
@@ -9,16 +8,15 @@ interface AudioRecorderProps {
   wsId: string;
   meetingId: string;
   sessionId: string;
-  onRecordingComplete?: () => void;
+  isRecording: boolean;
 }
 
 export function AudioRecorder({
   wsId,
   meetingId,
   sessionId,
-  onRecordingComplete,
+  isRecording,
 }: AudioRecorderProps) {
-  const [isRecording, setIsRecording] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const [error, setError] = useState<string | null>(null);
@@ -152,36 +150,20 @@ export function AudioRecorder({
           await uploadRecording(completeRecordingBlob);
         }
 
-        // Stop all tracks
-        if (streamRef.current) {
-          streamRef.current.getTracks().forEach((track) => track.stop());
-          streamRef.current = null;
-        }
-
-        setIsRecording(false);
         setIsUploading(false);
         cleanup();
-
-        toast.success('Recording completed successfully');
-        onRecordingComplete?.();
       };
 
       // Handle errors
       mediaRecorder.onerror = (event) => {
         console.error('MediaRecorder error:', event);
         setError('Recording error occurred');
-        setIsRecording(false);
         setIsUploading(false);
         cleanup();
-        if (streamRef.current) {
-          streamRef.current.getTracks().forEach((track) => track.stop());
-          streamRef.current = null;
-        }
       };
 
       // Start recording - collect all data until stopped
       mediaRecorder.start();
-      setIsRecording(true);
 
       // Start timer
       recordingIntervalRef.current = setInterval(() => {
@@ -192,9 +174,8 @@ export function AudioRecorder({
       setError(
         'Failed to start recording. Please check microphone permissions.'
       );
-      setIsRecording(false);
     }
-  }, [uploadRecording, cleanup, onRecordingComplete]);
+  }, [uploadRecording, cleanup]);
 
   // Stop recording
   const stopRecording = useCallback(() => {
@@ -205,6 +186,18 @@ export function AudioRecorder({
       mediaRecorderRef.current.stop();
     }
   }, []);
+
+  // Effect to handle isRecording prop changes
+  useEffect(() => {
+    if (isRecording && mediaRecorderRef.current?.state !== 'recording') {
+      startRecording();
+    } else if (
+      !isRecording &&
+      mediaRecorderRef.current?.state === 'recording'
+    ) {
+      stopRecording();
+    }
+  }, [isRecording, startRecording, stopRecording]);
 
   // Format recording time
   const formatTime = (seconds: number) => {
@@ -222,43 +215,11 @@ export function AudioRecorder({
 
   return (
     <div className="border-dynamic-border flex flex-col items-center gap-4 rounded-lg border bg-muted/20 p-4">
-      <div className="flex items-center gap-4">
-        <Button
-          variant={isRecording ? 'destructive' : 'default'}
-          size="lg"
-          onClick={isRecording ? stopRecording : startRecording}
-          disabled={isUploading}
-          className="flex items-center gap-2"
-        >
-          {isRecording ? (
-            <>
-              <Square className="h-5 w-5" />
-              Stop Recording
-            </>
-          ) : (
-            <>
-              <Mic className="h-5 w-5" />
-              Start Recording
-            </>
-          )}
-        </Button>
-
-        {isUploading && (
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Loader2 className="h-4 w-4 animate-spin" />
-            Uploading...
-          </div>
-        )}
-      </div>
-
-      {isRecording && (
-        <div className="text-center">
-          <div className="font-mono text-2xl font-bold text-dynamic-red">
-            {formatTime(recordingTime)}
-          </div>
-          <div className="text-sm text-muted-foreground">
-            Recording in progress...
-          </div>
+      {/* Recording Status Display */}
+      {isUploading && (
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          Uploading...
         </div>
       )}
 
@@ -268,10 +229,20 @@ export function AudioRecorder({
         </div>
       )}
 
-      <div className="max-w-md text-center text-xs text-muted-foreground">
-        Audio is recorded in chunks and uploaded automatically. Recording will
-        continue until you stop it manually.
-      </div>
+      {isRecording ? (
+        <div className="text-center">
+          <div className="font-mono text-2xl font-bold text-dynamic-red">
+            {formatTime(recordingTime)}
+          </div>
+          <div className="text-sm text-muted-foreground">
+            Recording in progress...
+          </div>
+        </div>
+      ) : (
+        <div className="text-md max-w-md text-center text-muted-foreground">
+          {`Ready to record. Click 'Start Recording' to begin.`}
+        </div>
+      )}
     </div>
   );
 }
