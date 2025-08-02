@@ -57,7 +57,8 @@ export async function POST(req: Request, { params }: Params) {
 
   const data = await req.json();
 
-  const timeblocks = data.timeblocks || [data.timeblock]; // Support both array and single timeblock for backward compatibility
+  const timeblocks =
+    data.timeblocks || (data.timeblock ? [data.timeblock] : []); // Support both array and single timeblock for backward compatibility
   const passwordHash = data.password_hash;
   const userType = passwordHash ? 'guest' : 'user';
 
@@ -83,7 +84,7 @@ export async function POST(req: Request, { params }: Params) {
       (timeblock: Timeblock) => ({
         ...timeblock,
         plan_id: planId,
-        user_id: user?.id,
+        user_id: user.id,
       })
     );
 

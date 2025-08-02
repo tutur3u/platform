@@ -436,11 +436,11 @@ const TimeBlockingProvider = ({
             // Deduplicate timeblocks at the source to prevent duplicates
             const deduplicatedTimeblocks = timeblocks.filter(
               (timeblock, index, self) => {
-                const key = `${timeblock.plan_id}-${timeblock.user_id}-${timeblock.date}-${timeblock.start_time}-${timeblock.end_time}`;
+                const key = `${plan.id}-${timeblock.user_id}-${timeblock.date}-${timeblock.start_time}-${timeblock.end_time}-${timeblock.tentative}`;
                 return (
                   self.findIndex(
                     (tb: Timeblock) =>
-                      `${tb.plan_id}-${tb.user_id}-${tb.date}-${tb.start_time}-${tb.end_time}` ===
+                      `${plan.id}-${tb.user_id}-${tb.date}-${tb.start_time}-${tb.end_time}-${tb.tentative}` ===
                       key
                   ) === index
                 );
@@ -473,8 +473,18 @@ const TimeBlockingProvider = ({
       } finally {
         endEditingInProgressRef.current = false;
       }
-    }, 50); // Small delay to batch rapid calls
+    }, 100); // Increased delay to better prevent rapid calls
   }, [plan.id, editing]);
+
+  // Cleanup timeout on component unmount to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      if (endEditingTimeoutRef.current) {
+        clearTimeout(endEditingTimeoutRef.current);
+        endEditingTimeoutRef.current = null;
+      }
+    };
+  }, []);
 
   // Page leave warning
   useEffect(() => {
