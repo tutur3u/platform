@@ -55,9 +55,9 @@ const useEmail = () => {
         isGuest ? (
           <GuestEmailTemplate
             studentName={user.username}
-            className={post.title}
+            className={post.title ?? ''}
             teacherName={
-              post.created_by?.display_name || post.created_by?.full_name
+              undefined // Remove the non-existent property reference
             }
             avgScore={user.is_completed ? 85 : undefined}
             comments={user.notes}
