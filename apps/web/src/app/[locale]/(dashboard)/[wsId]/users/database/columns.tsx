@@ -210,6 +210,21 @@ export const getUserColumns = (
     ),
   },
   {
+    accessorKey: 'attendance_count',
+    header: ({ column }) => (
+      <DataTableColumnHeader
+        t={t}
+        column={column}
+        title={t(`${namespace}.attendance_count`)}
+      />
+    ),
+    cell: ({ row }) => (
+      <div className="line-clamp-1 w-[100px]">
+        {row.getValue('attendance_count') ?? '-'}
+      </div>
+    ),
+  },
+  {
     accessorKey: 'gender',
     header: ({ column }) => (
       <DataTableColumnHeader
@@ -454,7 +469,7 @@ export const getUserColumns = (
     header: ({ column }) => (
       <DataTableColumnHeader t={t} column={column} title={field.name} />
     ),
-    // eslint-disable-next-line no-unused-vars
+
     cell: ({ row: _ }) => (
       <div className="line-clamp-1 w-32">
         {/* {row.getValue(field.id) || '-'} */}-

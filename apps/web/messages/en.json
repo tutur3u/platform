@@ -48,6 +48,7 @@
     }
   },
   "common": {
+    "requires_attendance": "Requires attendance",
     "success": "Success",
     "alpha": "Alpha",
     "beta": "Beta",
@@ -1043,6 +1044,7 @@
   },
   "user-data-table": {
     "id": "ID",
+    "attendance_count": "Attendance Count",
     "avatar_url": "Avatar",
     "name": "Name",
     "full_name": "Full Name",
@@ -1146,6 +1148,7 @@
     "created_at": "Created At"
   },
   "user-group-data-table": {
+    "is_guest": "Is Guest",
     "id": "ID",
     "name": "Name",
     "attendance_stats": "Attendance Stats",

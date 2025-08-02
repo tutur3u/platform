@@ -1,4 +1,5 @@
 import PostEmailTemplate from '@/app/[locale]/(dashboard)/[wsId]/mail/default-email-template';
+import GuestEmailTemplate from '@/app/[locale]/(dashboard)/[wsId]/mail/guest-email-template';
 import type { UserGroupPost } from '@/app/[locale]/(dashboard)/[wsId]/users/groups/[groupId]/posts';
 import { atom, useAtom } from 'jotai';
 import { useState } from 'react';
@@ -27,11 +28,13 @@ const useEmail = () => {
     groupId,
     postId,
     post,
+    isGuest = false,
     users: rawUsers,
   }: {
     wsId: string;
     groupId: string;
     postId: string;
+    isGuest?: boolean | null;
     post: UserGroupPost;
     users: {
       id: string;
@@ -49,12 +52,24 @@ const useEmail = () => {
     const users = rawUsers.map((user) => ({
       ...user,
       content: ReactDOMServer.renderToString(
-        <PostEmailTemplate
-          post={post}
-          username={user.username}
-          isHomeworkDone={user?.is_completed}
-          notes={user?.notes || undefined}
-        />
+        isGuest ? (
+          <GuestEmailTemplate
+            studentName={user.username}
+            className={post.title ?? ''}
+            teacherName={
+              undefined // Remove the non-existent property reference
+            }
+            avgScore={user.is_completed ? 85 : undefined}
+            comments={user.notes}
+          />
+        ) : (
+          <PostEmailTemplate
+            post={post}
+            username={user.username}
+            isHomeworkDone={user?.is_completed}
+            notes={user?.notes || undefined}
+          />
+        )
       ),
     }));
 
@@ -68,6 +83,7 @@ const useEmail = () => {
         body: JSON.stringify({
           users,
           date: post.created_at,
+          isGuest,
         }),
       }
     );

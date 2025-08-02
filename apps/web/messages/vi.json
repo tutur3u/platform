@@ -48,6 +48,7 @@
     }
   },
   "common": {
+    "requires_attendance": "Yêu cầu điểm danh",
     "success": "Thành công",
     "alpha": "Alpha",
     "beta": "Beta",
@@ -1054,6 +1055,7 @@
   },
   "user-data-table": {
     "id": "Mã số",
+    "attendance_count": "Số lần điểm danh",
     "avatar_url": "Ảnh đại diện",
     "name": "Tên",
     "full_name": "Họ và tên",
@@ -1157,6 +1159,7 @@
     "created_at": "Ngày tạo"
   },
   "user-group-data-table": {
+    "is_guest": "Là khách",
     "id": "Mã số",
     "name": "Tên",
     "attendance_stats": "Thống kê điểm danh",

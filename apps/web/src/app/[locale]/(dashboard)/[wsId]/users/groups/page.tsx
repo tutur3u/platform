@@ -77,9 +77,9 @@ async function getData(
   const supabase = await createClient();
 
   const queryBuilder = supabase
-    .from('workspace_user_groups_with_amount')
+    .from('workspace_user_groups_with_guest')
     .select(
-      'id, ws_id, name, starting_date, ending_date, archived, notes, amount, created_at',
+      'id, ws_id, name, starting_date, ending_date, archived, notes, is_guest,amount, created_at',
       {
         count: 'exact',
       }
