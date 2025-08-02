@@ -43,5 +43,5 @@ async function getData(wsId: string, courseId: string) {
   if (error) throw error;
   if (!data) notFound();
 
-  return data as UserGroup;
+  return data as unknown as UserGroup;
 }
