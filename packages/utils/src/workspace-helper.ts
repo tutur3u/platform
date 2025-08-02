@@ -303,6 +303,7 @@ export async function getGuestGroup({ groupId }: { groupId: string }) {
 
   if (error) {
     console.log(error);
+    return null;
   }
 
   return data;

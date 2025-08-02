@@ -283,7 +283,7 @@ async function getData(wsId: string, groupId: string) {
 }
 
 async function getUserData(
-  isGuest: boolean,
+  isGuest?: boolean,
   wsId: string,
   groupId: string,
   {
