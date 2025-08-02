@@ -286,14 +286,15 @@ export async function verifySecret({
   return secret?.value === value;
 }
 
-export async function getGuestGroup({ groupId }: { groupIdwsId: string }) {
+export async function getGuestGroup({ groupId }: { groupId: string }) {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
   if (!user) {
-    console.log('Unauthenticated ');
+    console.error('Unauthenticated access attempt in getGuestGroup');
+    return null;
   }
 
   const { data, error } = await supabase.rpc('check_guest_group', {
