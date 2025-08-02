@@ -3,6 +3,7 @@
 import AgendaDetails from './agenda-details';
 import PlanLogin from './plan-login';
 import SidebarDisplay from './sidebar-display';
+import StickyBottomIndicator from './sticky-bottom-indicator';
 import UnifiedAvailability from './unified-availability';
 import UtilityButtons from './utility-buttons';
 import type {
@@ -122,14 +123,6 @@ export default function PlanDetailsClient({
               ) : null}
             </p>
 
-            {/* Global dirty state indicator */}
-            {isDirty && (
-              <div className="mb-4 flex items-center gap-2 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:bg-amber-950 dark:text-amber-200">
-                <div className="h-2 w-2 animate-pulse rounded-full bg-amber-500"></div>
-                You have unsaved changes
-              </div>
-            )}
-
             {/* Show Only Best Times Toggle - Back to original centered position */}
             <div className="mb-4 flex flex-col items-center justify-center gap-2">
               <div className="flex items-center justify-center gap-2">
@@ -219,6 +212,9 @@ export default function PlanDetailsClient({
           </div>
         </div>
       </div>
+
+      {/* Discord-style sticky bottom indicator for unsaved changes */}
+      {isDirty && <StickyBottomIndicator />}
 
       <PlanLogin plan={plan} platformUser={platformUser} baseUrl={baseUrl} />
     </>
