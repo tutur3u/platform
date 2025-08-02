@@ -48,6 +48,7 @@
     }
   },
   "common": {
+    "requires_attendance": "Requires attendance",
     "success": "Success",
     "alpha": "Alpha",
     "beta": "Beta",

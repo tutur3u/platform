@@ -48,6 +48,7 @@
     }
   },
   "common": {
+    "requires_attendance": "Yêu cầu điểm danh",
     "success": "Thành công",
     "alpha": "Alpha",
     "beta": "Beta",

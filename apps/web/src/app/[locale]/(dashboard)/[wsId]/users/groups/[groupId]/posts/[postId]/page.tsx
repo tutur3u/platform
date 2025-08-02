@@ -10,6 +10,7 @@ import {
   CircleHelp,
   Clock,
   Send,
+  UserCheck,
   X,
 } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
@@ -166,22 +167,32 @@ export default async function HomeworkCheck({ params, searchParams }: Props) {
       <Separator className="my-4" />
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         {users.map((user) => (
-          <UserCard
-            isGuest={isGuestGroup}
+          <div
             key={`post-${postId}-${user.id}-${status.checked === status.count}`}
-            user={user}
-            wsId={wsId}
-            post={{
-              ...post,
-              group_id: groupId,
-              group_name: group.name,
-            }}
-            disableEmailSending={
-              (isGuestGroup && (user.attendance_count ?? 0) < 2) || // Block for guest if attendance < 2
-              status.sent?.includes(user.id) // Also block if already sent
-            }
-            hideEmailSending={!hasEmailSendingPermission}
-          />
+            className="relative"
+          >
+            {isGuestGroup && (user.attendance_count ?? 0) < 2 && (
+              <div className="absolute -top-2 -right-2 z-10 flex items-center gap-1 rounded-full border border-amber-200 bg-amber-100 px-2 py-1 text-xs font-medium text-amber-800">
+                <UserCheck className="h-3 w-3" />
+                {t('common.requires_attendance', { count: 2 })}
+              </div>
+            )}
+            <UserCard
+              isGuest={isGuestGroup}
+              user={user}
+              wsId={wsId}
+              post={{
+                ...post,
+                group_id: groupId,
+                group_name: group.name,
+              }}
+              disableEmailSending={
+                (isGuestGroup && (user.attendance_count ?? 0) < 2) || // Block for guest if attendance < 2
+                status.sent?.includes(user.id) // Also block if already sent
+              }
+              hideEmailSending={!hasEmailSendingPermission}
+            />
+          </div>
         ))}
       </div>
     </div>
