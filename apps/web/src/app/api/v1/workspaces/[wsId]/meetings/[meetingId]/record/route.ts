@@ -58,7 +58,7 @@ export async function POST(
       const { error: updateError } = await supabase
         .from('recording_sessions')
         .update({
-          status: 'completed',
+          status: 'pending_transcription',
           updated_at: new Date().toISOString(),
         })
         .eq('id', existingSession.id);
