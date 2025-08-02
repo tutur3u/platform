@@ -14,6 +14,8 @@ export default function DayPlanners({
   showBestTimes = false,
   tentativeMode = false,
   onBestTimesStatusByDateAction,
+  stickyHeader = false,
+  hideHeaders = false,
 }: {
   timeblocks: Timeblock[];
   dates: string[];
@@ -24,6 +26,8 @@ export default function DayPlanners({
   showBestTimes?: boolean;
   tentativeMode?: boolean;
   onBestTimesStatusByDateAction?: (status: Record<string, boolean>) => void;
+  stickyHeader?: boolean;
+  hideHeaders?: boolean;
 }) {
   const { editing } = useTimeBlocking();
 
@@ -123,6 +127,8 @@ export default function DayPlanners({
               showBestTimes={showBestTimes}
               tentativeMode={tentativeMode}
               globalMaxAvailable={globalMaxAvailable}
+              stickyHeader={stickyHeader}
+              hideHeaders={hideHeaders}
               onBestTimesStatus={(hasBestTimes) =>
                 handleBestTimesStatus(d, hasBestTimes)
               }

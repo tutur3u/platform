@@ -137,13 +137,6 @@ export default function DatePlanner({
         }
         className="mt-4 flex items-start justify-center gap-2"
       >
-        <TimeColumn
-          id={editable ? 'self' : 'group'}
-          start={startHour}
-          end={endHour}
-          className="flex-initial"
-        />
-
         {dates && (
           <div
             className="flex flex-col items-start justify-start gap-4 overflow-x-auto"
@@ -157,18 +150,36 @@ export default function DatePlanner({
             }
           >
             {/* Responsive fixed-width container for dates section - smaller widths to prevent overflow */}
-            <div className="w-[300px] max-w-full overflow-hidden sm:w-[350px] md:w-[400px] lg:w-[450px] xl:w-[500px]">
-              <DayPlanners
-                timeblocks={timeblocks}
-                dates={currentDates}
-                start={startHour}
-                end={endHour}
-                editable={editable}
-                disabled={editable ? (user ? disabled : true) : disabled}
-                showBestTimes={showBestTimes}
-                tentativeMode={tentativeMode}
-                onBestTimesStatusByDateAction={onBestTimesStatusByDateAction}
-              />
+            <div className="w-[350px] max-w-full overflow-hidden sm:w-[350px] md:w-[400px] lg:w-[450px] xl:w-[500px]">
+              <div className="relative">
+                {/* Scrollable content with sticky header */}
+                <div className="max-h-[50vh] overflow-y-auto">
+                  <div className="flex gap-2">
+                    <TimeColumn
+                      id={editable ? 'self' : 'group'}
+                      start={startHour}
+                      end={endHour}
+                      className="flex-initial"
+                    />
+
+                    <DayPlanners
+                      timeblocks={timeblocks}
+                      dates={currentDates}
+                      start={startHour}
+                      end={endHour}
+                      editable={editable}
+                      disabled={editable ? (user ? disabled : true) : disabled}
+                      showBestTimes={showBestTimes}
+                      tentativeMode={tentativeMode}
+                      onBestTimesStatusByDateAction={
+                        onBestTimesStatusByDateAction
+                      }
+                      hideHeaders={false}
+                      stickyHeader={true}
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
 
             {/* Pagination controls - positioned below the plan */}
