@@ -49,12 +49,14 @@ export default async function HomeworkCheck({ params, searchParams }: Props) {
     groupId,
     await searchParams
   );
+
   const users = rawUsers.map((u) => ({
     ...u,
     href: `/${wsId}/users/database/${u.id}`,
   }));
 
   const hasEmailSendingPermission = true;
+  const isGuestGroup = (await getGuestGroup({ groupId })) ?? false;
 
   return (
     <div>
@@ -163,9 +165,9 @@ export default async function HomeworkCheck({ params, searchParams }: Props) {
       </div>
       <Separator className="my-4" />
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        {users.map(async (user) => (
+        {users.map((user) => (
           <UserCard
-            isGuest={(await getGuestGroup({ wsId })) ?? false}
+            isGuest={isGuestGroup}
             key={`post-${postId}-${user.id}-${status.checked === status.count}`}
             user={user}
             wsId={wsId}
@@ -174,7 +176,10 @@ export default async function HomeworkCheck({ params, searchParams }: Props) {
               group_id: groupId,
               group_name: group.name,
             }}
-            disableEmailSending={status.sent?.includes(user.id)}
+            disableEmailSending={
+              (isGuestGroup && (user.attendance_count ?? 0) < 2) || // Block for guest if attendance < 2
+              status.sent?.includes(user.id) // Also block if already sent
+            }
             hideEmailSending={!hasEmailSendingPermission}
           />
         ))}
@@ -217,33 +222,39 @@ async function getGroupData(wsId: string, groupId: string) {
 async function getPostStatus(groupId: string, postId: string) {
   const supabase = await createClient();
 
+  // 1. Fetch users with attendance (from the view)
   const { data: users, count } = await supabase
-    .from('workspace_user_groups_users')
-    .select(
-      '...workspace_users(id, user_group_post_checks!inner(post_id, is_completed))',
-      {
-        count: 'exact',
-      }
-    )
-    .eq('group_id', groupId)
-    .eq('workspace_users.user_group_post_checks.post_id', postId);
+    .from('group_with_attendance')
+    .select('*', { count: 'exact' })
+    .eq('group_id', groupId);
+
+  // 2. Fetch post checks separately
+  const { data: checks } = await supabase
+    .from('user_group_post_checks')
+    .select('user_id, post_id, is_completed')
+    .eq('post_id', postId);
+
+  // 3. Merge in code
+  const merged =
+    users?.map((user) => ({
+      ...user,
+      post_checks: checks?.filter((c) => c.user_id === user.user_id) || [],
+    })) || [];
 
   const { data: sentEmails } = await supabase
     .from('sent_emails')
-    .select('receiver_id', {
-      count: 'exact',
-    })
+    .select('receiver_id', { count: 'exact' })
     .eq('post_id', postId);
 
   return {
     sent: sentEmails?.map((email) => email.receiver_id) || [],
-    checked: users?.filter((user) =>
-      user?.user_group_post_checks?.find((check) => check?.is_completed)
+    checked: merged.filter((user) =>
+      user.post_checks.find((check) => check?.is_completed)
     ).length,
-    failed: users?.filter((user) =>
-      user?.user_group_post_checks?.find((check) => !check?.is_completed)
+    failed: merged.filter((user) =>
+      user.post_checks.find((check) => check && !check.is_completed)
     ).length,
-    tenative: users?.filter((user) => !user.id).length,
+    tenative: merged.filter((user) => !user.user_id).length,
     count,
   };
 }
@@ -253,42 +264,33 @@ async function getUserData(
   groupId: string,
   {
     q,
-    // page = '1',
-    // pageSize = '10',
     excludedGroups = [],
     retry = true,
   }: SearchParams & { retry?: boolean } = {}
 ) {
   const supabase = await createClient();
 
-  const queryBuilder = supabase
-    .from('workspace_user_groups_users')
-    .select('...workspace_users!inner(*)', {
-      count: 'exact',
-    })
+  // 1. Fetch users with attendance
+  const { data: users, error } = await supabase
+    .from('group_with_attendance')
+    .select('*')
     .eq('group_id', groupId);
-
-  if (q) queryBuilder.ilike('workspace_users.display_name', `%${q}%`);
-
-  // if (page && pageSize) {
-  //   const parsedPage = Number.parseInt(page);
-  //   const parsedSize = Number.parseInt(pageSize);
-  //   const start = (parsedPage - 1) * parsedSize;
-  //   const end = parsedPage * parsedSize;
-  //   queryBuilder.range(start, end).limit(parsedSize);
-  // }
-
-  const { data, error, count } = await queryBuilder;
 
   if (error) {
     if (!retry) throw error;
-    return getUserData(wsId, groupId, {
-      q,
-      // pageSize,
-      excludedGroups,
-      retry: false,
-    });
+    return getUserData(wsId, groupId, { q, excludedGroups, retry: false });
   }
 
-  return { data, count } as unknown as { data: WorkspaceUser[]; count: number };
+  // 2. Optionally filter by search query
+  const filteredUsers = q
+    ? users?.filter((u) => u.full_name?.toLowerCase().includes(q.toLowerCase()))
+    : users;
+
+  return {
+    data: filteredUsers?.map((u) => ({
+      ...u,
+      id: u.user_id, // normalize for UserCard
+    })) as unknown as WorkspaceUser[],
+    count: filteredUsers?.length || 0,
+  };
 }
