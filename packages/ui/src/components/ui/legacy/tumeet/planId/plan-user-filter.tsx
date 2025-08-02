@@ -1,11 +1,12 @@
 'use client';
 
+import type { PlanUser } from '@tuturuuu/types/primitives/MeetTogetherPlan';
 import { useTimeBlocking } from '@tuturuuu/ui/hooks/time-blocking-provider';
 import { ShieldCheck } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
 import { useTranslations } from 'next-intl';
 
-export default function PlanUserFilter({ users }: { users: any[] }) {
+export default function PlanUserFilter({ users }: { users: PlanUser[] }) {
   const t = useTranslations('meet-together-plan-details');
   const { filteredUserIds, setFilteredUserIds } = useTimeBlocking();
 
@@ -24,15 +25,15 @@ export default function PlanUserFilter({ users }: { users: any[] }) {
             <button
               key={user.id}
               className={`rounded-lg border p-4 ${
-                filteredUserIds.includes(user.id)
+                filteredUserIds.includes(user.id || '')
                   ? 'border-foreground/30 bg-foreground/20'
                   : 'bg-foreground/5'
               }`}
               onClick={() =>
                 setFilteredUserIds((prev) =>
-                  prev.includes(user.id)
+                  prev.includes(user.id || '')
                     ? prev.filter((id) => id !== user.id)
-                    : [...prev, user.id]
+                    : [...prev, user.id || '']
                 )
               }
             >

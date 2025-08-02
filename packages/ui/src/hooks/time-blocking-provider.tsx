@@ -99,6 +99,8 @@ const TimeBlockContext = createContext({
   } as EditingParams,
   displayMode: 'account-switcher' as 'login' | 'account-switcher' | undefined,
   isDirty: false,
+  isSaving: false,
+  handleSave: () => {},
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   getPreviewUsers: (_: Timeblock[]) =>
@@ -582,6 +584,20 @@ const TimeBlockingProvider = ({
   // --- Remove the auto-sync useEffect ---
   // useEffect(() => { ... if (editing.enabled) return; syncTimeBlocks(); }, [plan.id, user, selectedTimeBlocks, editing.enabled]);
 
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Handle manual save
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      await syncTimeBlocks();
+    } catch (error) {
+      console.error('Failed to save timeblocks:', error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   return (
     <TimeBlockContext.Provider
       value={{
@@ -593,7 +609,8 @@ const TimeBlockingProvider = ({
         editing,
         displayMode,
         isDirty,
-
+        isSaving,
+        handleSave,
         getPreviewUsers,
         getOpacityForDate,
 

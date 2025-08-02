@@ -36,7 +36,7 @@ export default function SidebarDisplay({
   return (
     <Accordion
       type="multiple"
-      className="order-first col-span-1 w-full md:order-last"
+      className="col-span-1 w-full"
       defaultValue={['item-1']}
     >
       <AccordionItem value="item-1" className="w-full">
