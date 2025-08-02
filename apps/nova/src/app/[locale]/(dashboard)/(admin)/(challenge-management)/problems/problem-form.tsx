@@ -50,7 +50,7 @@ const formSchema = z.object({
   description: z.string().min(10, {
     message: 'Description must be at least 10 characters.',
   }),
-  maxPromptLength: z.coerce
+  maxPromptLength: z
     .number()
     .min(1, {
       message: 'Max prompt length must be at least 1.',

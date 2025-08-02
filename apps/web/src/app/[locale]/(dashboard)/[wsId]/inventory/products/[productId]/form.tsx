@@ -49,9 +49,9 @@ import * as z from 'zod';
 const InventorySchema = z.object({
   unit_id: z.string(),
   warehouse_id: z.string(),
-  amount: z.coerce.number(),
-  min_amount: z.coerce.number(),
-  price: z.coerce.number(),
+  amount: z.number(),
+  min_amount: z.number(),
+  price: z.number(),
 });
 
 const FormSchema = z.object({
