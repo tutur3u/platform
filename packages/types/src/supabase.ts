@@ -43,8 +43,10 @@ export type Database = {
       task_board_status: 'active' | 'closed' | 'done' | 'not_started';
       task_priority: 'critical' | 'high' | 'low' | 'normal';
       workspace_api_key_scope:
+        | 'gemini-2.0-flash-lite'
         | 'gemini-2.0-flash'
         | 'gemini-2.0-pro'
+        | 'gemini-2.5-flash-lite'
         | 'gemini-2.5-flash'
         | 'gemini-2.5-pro';
       workspace_role_permission:
@@ -10803,8 +10805,10 @@ export const Constants = {
       task_priority: ['critical', 'high', 'low', 'normal'],
       workspace_api_key_scope: [
         'gemini-2.0-flash',
+        'gemini-2.0-flash-lite',
         'gemini-2.0-pro',
         'gemini-2.5-flash',
+        'gemini-2.5-flash-lite',
         'gemini-2.5-pro',
       ],
       workspace_role_permission: [

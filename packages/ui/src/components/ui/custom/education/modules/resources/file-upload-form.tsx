@@ -48,10 +48,9 @@ const FolderFormSchema = z.object({
 
 const ObjectFormSchema = z.object({
   files: z.custom<File[]>((value) => {
-    if (value.length === 0) {
+    if (!Array.isArray(value) || value.length === 0) {
       throw new Error('At least one file is required');
     }
-
     return value;
   }),
 });

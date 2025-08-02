@@ -2,7 +2,6 @@
 
 import AgendaDetails from './agenda-details';
 import PlanLogin from './plan-login';
-import PlanUserFilter from './plan-user-filter';
 import SidebarDisplay from './sidebar-display';
 import UnifiedAvailability from './unified-availability';
 import UtilityButtons from './utility-buttons';
@@ -219,12 +218,6 @@ export default function PlanDetailsClient({
             <AgendaDetails plan={plan} platformUser={platformUser} />
           </div>
         </div>
-        {users.length > 0 && (
-          <>
-            <Separator className="mt-8" />
-            <PlanUserFilter users={users} />
-          </>
-        )}
       </div>
 
       <PlanLogin plan={plan} platformUser={platformUser} baseUrl={baseUrl} />

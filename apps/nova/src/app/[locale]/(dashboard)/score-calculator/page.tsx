@@ -29,10 +29,10 @@ import { useEffect } from 'react';
 import * as z from 'zod';
 
 const ScoreSchema = z.object({
-  total_tests: z.coerce.number().int().min(0),
-  passed_tests: z.coerce.number().int().min(0),
-  total_criteria: z.coerce.number().int().min(0),
-  sum_criterion_score: z.coerce.number().min(0),
+  total_tests: z.number().int().min(0),
+  passed_tests: z.number().int().min(0),
+  total_criteria: z.number().int().min(0),
+  sum_criterion_score: z.number().min(0),
 });
 
 export default function ScoreCalculatorPage() {
@@ -51,10 +51,10 @@ export default function ScoreCalculatorPage() {
 
   const formValues = form.watch();
 
-  const totalTests = formValues.total_tests;
-  const passedTests = formValues.passed_tests;
-  const totalCriteria = formValues.total_criteria;
-  const sumCriterionScore = formValues.sum_criterion_score;
+  const totalTests = Number(formValues.total_tests) || 0;
+  const passedTests = Number(formValues.passed_tests) || 0;
+  const totalCriteria = Number(formValues.total_criteria) || 0;
+  const sumCriterionScore = Number(formValues.sum_criterion_score) || 0;
 
   const result = calculateScoreResult(formValues);
 
@@ -114,7 +114,7 @@ export default function ScoreCalculatorPage() {
     if (totalTests !== 0 && passedTests !== 0 && passedTests > totalTests) {
       form.setValue('passed_tests', totalTests);
     }
-  }, [totalTests, passedTests]); // Remove passedTests from dependency to prevent jumps
+  }, [totalTests, passedTests, form]); // Remove passedTests from dependency to prevent jumps
 
   // Add validation to ensure sum of criterion scores doesn't exceed max possible
   useEffect(() => {
@@ -125,7 +125,7 @@ export default function ScoreCalculatorPage() {
     ) {
       form.setValue('sum_criterion_score', totalCriteria * 10);
     }
-  }, [totalCriteria, sumCriterionScore]);
+  }, [totalCriteria, sumCriterionScore, form]);
 
   // Get score color based on percentage
   const getScoreColor = (score: number) => {
