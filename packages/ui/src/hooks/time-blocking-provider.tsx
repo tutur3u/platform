@@ -336,6 +336,10 @@ const TimeBlockingProvider = ({
     'login' | 'account-switcher'
   >();
 
+  // Add debouncing for endEditing to prevent multiple rapid calls
+  const endEditingInProgressRef = useRef(false);
+  const endEditingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   const edit = useCallback(
     (
       {
@@ -399,37 +403,77 @@ const TimeBlockingProvider = ({
     )
       return;
 
-    setSelectedTimeBlocks((prevTimeblocks) => {
-      const dates = [editing.startDate, dayjs(editing.endDate).toDate()].filter(
-        Boolean
-      ) as Date[];
+    // Prevent multiple rapid calls to endEditing
+    if (endEditingInProgressRef.current) {
+      console.log('endEditing already in progress, skipping');
+      return;
+    }
 
-      if (editing.mode === 'add') {
-        const timeblocks = addTimeblocks(
-          prevTimeblocks.data,
-          dates,
-          editing.tentativeMode ?? false
-        );
-        return {
-          planId: plan.id,
-          data: timeblocks.map((tb) => ({ ...tb, plan_id: plan.id })),
-        };
+    // Clear any pending timeout
+    if (endEditingTimeoutRef.current) {
+      clearTimeout(endEditingTimeoutRef.current);
+      endEditingTimeoutRef.current = null;
+    }
+
+    // Debounce the actual processing
+    endEditingTimeoutRef.current = setTimeout(() => {
+      endEditingInProgressRef.current = true;
+
+      try {
+        setSelectedTimeBlocks((prevTimeblocks) => {
+          const dates = [
+            editing.startDate,
+            dayjs(editing.endDate).toDate(),
+          ].filter(Boolean) as Date[];
+
+          if (editing.mode === 'add') {
+            const timeblocks = addTimeblocks(
+              prevTimeblocks.data,
+              dates,
+              editing.tentativeMode ?? false
+            );
+
+            // Deduplicate timeblocks at the source to prevent duplicates
+            const deduplicatedTimeblocks = timeblocks.filter(
+              (timeblock, index, self) => {
+                const key = `${timeblock.plan_id}-${timeblock.user_id}-${timeblock.date}-${timeblock.start_time}-${timeblock.end_time}`;
+                return (
+                  self.findIndex(
+                    (tb: Timeblock) =>
+                      `${tb.plan_id}-${tb.user_id}-${tb.date}-${tb.start_time}-${tb.end_time}` ===
+                      key
+                  ) === index
+                );
+              }
+            );
+
+            return {
+              planId: plan.id,
+              data: deduplicatedTimeblocks.map((tb) => ({
+                ...tb,
+                plan_id: plan.id,
+              })),
+            };
+          }
+
+          if (editing.mode === 'remove') {
+            const timeblocks = removeTimeblocks(prevTimeblocks.data, dates);
+            return {
+              planId: plan.id,
+              data: timeblocks.map((tb) => ({ ...tb, plan_id: plan.id })),
+            };
+          }
+
+          return prevTimeblocks;
+        });
+
+        setEditing({
+          enabled: false,
+        });
+      } finally {
+        endEditingInProgressRef.current = false;
       }
-
-      if (editing.mode === 'remove') {
-        const timeblocks = removeTimeblocks(prevTimeblocks.data, dates);
-        return {
-          planId: plan.id,
-          data: timeblocks.map((tb) => ({ ...tb, plan_id: plan.id })),
-        };
-      }
-
-      return prevTimeblocks;
-    });
-
-    setEditing({
-      enabled: false,
-    });
+    }, 50); // Small delay to batch rapid calls
   }, [plan.id, editing]);
 
   // Page leave warning
