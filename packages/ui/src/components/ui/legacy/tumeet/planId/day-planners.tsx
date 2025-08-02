@@ -14,6 +14,8 @@ export default function DayPlanners({
   showBestTimes = false,
   tentativeMode = false,
   onBestTimesStatusByDateAction,
+  stickyHeader = false,
+  hideHeaders = false,
 }: {
   timeblocks: Timeblock[];
   dates: string[];
@@ -24,6 +26,8 @@ export default function DayPlanners({
   showBestTimes?: boolean;
   tentativeMode?: boolean;
   onBestTimesStatusByDateAction?: (status: Record<string, boolean>) => void;
+  stickyHeader?: boolean;
+  hideHeaders?: boolean;
 }) {
   const { editing } = useTimeBlocking();
 
@@ -104,25 +108,34 @@ export default function DayPlanners({
   return (
     <div
       id="scrollable"
-      className="relative flex flex-1 items-start justify-center gap-2 overflow-x-auto"
+      className="relative flex flex-1 items-start justify-center"
     >
-      {dates.map((d) => (
-        <DayPlanner
-          key={d}
-          date={d}
-          start={start}
-          end={end}
-          editable={editable}
-          disabled={disabled}
-          timeblocks={timeblocks.filter((tb) => tb.date === d)}
-          showBestTimes={showBestTimes}
-          tentativeMode={tentativeMode}
-          globalMaxAvailable={globalMaxAvailable}
-          onBestTimesStatus={(hasBestTimes) =>
-            handleBestTimesStatus(d, hasBestTimes)
-          }
-        />
-      ))}
+      <div className="flex w-full">
+        {dates.map((d) => (
+          <div
+            key={d}
+            className="min-w-0 flex-1"
+            style={{ width: `${100 / dates.length}%` }}
+          >
+            <DayPlanner
+              date={d}
+              start={start}
+              end={end}
+              editable={editable}
+              disabled={disabled}
+              timeblocks={timeblocks.filter((tb) => tb.date === d)}
+              showBestTimes={showBestTimes}
+              tentativeMode={tentativeMode}
+              globalMaxAvailable={globalMaxAvailable}
+              stickyHeader={stickyHeader}
+              hideHeaders={hideHeaders}
+              onBestTimesStatus={(hasBestTimes) =>
+                handleBestTimesStatus(d, hasBestTimes)
+              }
+            />
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

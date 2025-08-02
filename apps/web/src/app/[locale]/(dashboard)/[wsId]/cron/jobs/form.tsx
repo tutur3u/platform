@@ -48,7 +48,7 @@ const FormSchema = z.object({
   schedule: z.string().min(1, 'Schedule is required'),
   active: z.boolean().default(true),
   dataset_id: z.string({
-    required_error: 'Please select a dataset',
+    error: 'Please select a dataset',
   }),
   ws_id: z.string(),
 });
@@ -56,7 +56,6 @@ const FormSchema = z.object({
 interface Props {
   wsId: string;
   data?: WorkspaceCronJob;
-  // eslint-disable-next-line no-unused-vars
   onFinish?: (data: z.infer<typeof FormSchema>) => void;
 }
 
@@ -169,9 +168,10 @@ export function CronJobForm({ wsId, data, onFinish }: Props) {
                   <FormDescription className="flex flex-col gap-1">
                     <span>Common examples:</span>
                     <span className="text-xs text-muted-foreground">
-                      • "0 0 * * *" - At midnight, every day
-                      <br />• "*/15 * * * *" - Every 15 minutes
-                      <br />• "0 9 * * 1-5" - At 9 AM, Monday through Friday
+                      • &quot;0 0 * * *&quot; - At midnight, every day
+                      <br />• &quot;*/15 * * * *&quot; - Every 15 minutes
+                      <br />• &quot;0 9 * * 1-5&quot; - At 9 AM, Monday through
+                      Friday
                     </span>
                     {field.value && (
                       <span className="mt-2 text-sm text-muted-foreground">

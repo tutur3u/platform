@@ -19,7 +19,7 @@ export default function AvailabilityPlanner({
   return (
     <div
       className={`flex flex-col items-center ${className}`}
-      style={{ minWidth: '260px' }}
+      // style={{ minWidth: '260px' }}
     >
       <div className="text-center font-semibold">{t('your_availability')}</div>
 
