@@ -220,7 +220,7 @@ export const getUserColumns = (
     ),
     cell: ({ row }) => (
       <div className="line-clamp-1 w-[100px]">
-        {row.getValue('attendance_count') || '-'}
+        {row.getValue('attendance_count') ?? '-'}
       </div>
     ),
   },
