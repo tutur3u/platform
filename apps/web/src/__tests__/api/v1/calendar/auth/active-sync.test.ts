@@ -10,11 +10,28 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
   createClient: mockCreateClient,
 }));
 
-// Mock SSR package that Supabase uses
-vi.mock('@supabase/ssr', () => ({
-  createBrowserClient: vi.fn(() => ({})),
-  createServerClient: vi.fn(() => ({})),
+// Mock NextResponse
+vi.mock('next/server', () => ({
+  NextResponse: {
+    json: vi.fn((data, options) => ({
+      json: () => data,
+      status: options?.status || 200,
+    })),
+  },
 }));
+
+// Define proper types for mocks
+type MockSupabaseClient = {
+  auth: {
+    getUser: ReturnType<typeof vi.fn>;
+  };
+  from: ReturnType<typeof vi.fn>;
+  rpc: ReturnType<typeof vi.fn>;
+};
+
+type MockNextResponse = {
+  json: ReturnType<typeof vi.fn>;
+};
 
 // Mock environment variables
 vi.mock('process', () => ({
@@ -23,16 +40,6 @@ vi.mock('process', () => ({
     NEXT_PUBLIC_SUPABASE_ANON_KEY: 'test-anon-key',
     SUPABASE_SERVICE_KEY: 'test-service-key',
     SUPABASE_SERVICE_ROLE_KEY: 'test-service-role-key',
-  },
-}));
-
-// Mock NextResponse
-vi.mock('next/server', () => ({
-  NextResponse: {
-    json: vi.fn((data, options) => ({
-      json: () => data,
-      status: options?.status || 200,
-    })),
   },
 }));
 
@@ -92,19 +99,6 @@ Object.defineProperty(global, 'crypto', {
 
 // Mock fetch
 global.fetch = vi.fn();
-
-// Define proper types for mocks
-type MockSupabaseClient = {
-  auth: {
-    getUser: ReturnType<typeof vi.fn>;
-  };
-  from: ReturnType<typeof vi.fn>;
-  rpc: ReturnType<typeof vi.fn>;
-};
-
-type MockNextResponse = {
-  json: ReturnType<typeof vi.fn>;
-};
 
 describe('POST /api/v1/calendar/auth/active-sync', () => {
   let mockAdminClient: MockSupabaseClient;

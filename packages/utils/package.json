@@ -33,10 +33,13 @@
     "vitest": "^3.2.4"
   },
   "exports": {
+    ".": "./index.ts",
     "./timezones": "./src/timezones.json",
     "./*": "./src/*.ts",
     "./common/nextjs": "./src/common/nextjs.tsx",
-    "./permissions": "./src/permissions.tsx"
+    "./permissions": "./src/permissions.tsx",
+    "./constants": "./src/constants.ts",
+    "./calendar-sync-coordination": "./src/calendar-sync-coordination.ts"
   },
   "packageManager": "bun@1.2.19"
 }
