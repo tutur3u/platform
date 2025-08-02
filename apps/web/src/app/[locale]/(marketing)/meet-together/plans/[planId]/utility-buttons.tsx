@@ -7,6 +7,8 @@ import LoggedInAsButton from './logged-in-as-button';
 import ShowQRButton from './show-qr-button';
 import type { MeetTogetherPlan } from '@tuturuuu/types/primitives/MeetTogetherPlan';
 import type { User } from '@tuturuuu/types/primitives/User';
+import { Button } from '@tuturuuu/ui/button';
+import { Check, Edit } from '@tuturuuu/ui/icons';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
@@ -37,8 +39,62 @@ export default function UtilityButtons({
         <ShowQRButton url={url} />
         <EmailButton plan={plan} url={url} />
         <DownloadAsPNG onClick={handlePNG} />
+        <ConfirmButton
+          planId={plan.id}
+          isCofirmPlan={Boolean(plan.is_confirm)}
+        />
       </div>
       <LoggedInAsButton platformUser={platformUser} />
     </div>
+  );
+}
+
+function ConfirmButton({
+  planId,
+  isCofirmPlan,
+}: {
+  planId: string;
+  isCofirmPlan: boolean;
+}) {
+  // const t = useTranslations('meet-together-plan-details');
+  const [isConfirmed, setConfirmed] = useState(isCofirmPlan);
+
+  return (
+    <Button
+      onClick={async () => {
+        const res = await fetch(
+          `/api/meet-together/plans/${planId}/edit-lock`,
+          {
+            method: 'PATCH',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              // enableToEdit: !isConfirmed,
+              isConfirm: !isConfirmed,
+            }),
+          }
+        );
+        if (!res.ok) {
+          console.error('Failed to update plan confirmation status');
+          return;
+        }
+        setConfirmed(!isConfirmed);
+      }}
+      className="w-full md:w-auto"
+    >
+      {!isConfirmed ? (
+        <>
+          <Check className="mr-1 h-5 w-5" />
+          Confirm
+        </>
+      ) : (
+        <>
+          <Edit className="mr-1 h-5 w-5" />
+          Re-Edit
+        </>
+      )}
+      {/* {t('copy_link')} */}
+    </Button>
   );
 }
