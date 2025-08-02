@@ -10,6 +10,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@tuturuuu/ui/card';
+import { DataPagination } from '@tuturuuu/ui/custom/data-pagination';
 import { Input } from '@tuturuuu/ui/input';
 import {
   Select,
@@ -38,6 +39,7 @@ import {
   Search,
   Zap,
 } from 'lucide-react';
+import { useState } from 'react';
 
 interface SyncLogsTableProps {
   syncLogs: SyncLog[];
@@ -60,6 +62,10 @@ export function SyncLogsTable({
   onFilterWorkspaceChange,
   onSearchTermChange,
 }: SyncLogsTableProps) {
+  // Internal pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
   const formatTimestamp = (timestamp: string) => {
     const date = new Date(timestamp);
     const now = new Date();
@@ -124,17 +130,56 @@ export function SyncLogsTable({
         className="border-dynamic-purple/10 bg-dynamic-purple/10 font-medium text-dynamic-purple"
       >
         <Zap className="mr-1 h-3 w-3" />
-        Manual
+        {type.charAt(0).toUpperCase() + type.slice(1)}
+      </Badge>
+    ) : type === 'background' ? (
+      <Badge
+        variant="outline"
+        className="border-dynamic-blue/10 bg-dynamic-blue/10 font-medium text-dynamic-blue"
+      >
+        <Clock className="mr-1 h-3 w-3" />
+        {type.charAt(0).toUpperCase() + type.slice(1)}
       </Badge>
     ) : (
       <Badge
         variant="outline"
-        className="border-foreground/10 bg-foreground/10 font-medium text-foreground"
+        className="border-dynamic-green/10 bg-dynamic-green/10 font-medium text-dynamic-green"
       >
-        <Clock className="mr-1 h-3 w-3" />
-        Auto
+        {type.charAt(0).toUpperCase() + type.slice(1)}
       </Badge>
     );
+  };
+
+  // Calculate pagination values
+  const totalCount = syncLogs.length;
+  const totalPages = Math.ceil(totalCount / pageSize);
+  const startIndex = (currentPage - 1) * pageSize;
+  const endIndex = startIndex + pageSize;
+  const paginatedLogs = syncLogs.slice(startIndex, endIndex);
+
+  // Reset to first page when filters change
+  const handleFilterTypeChange = (value: string) => {
+    setCurrentPage(1);
+    onFilterTypeChange(value);
+  };
+
+  const handleFilterWorkspaceChange = (value: string) => {
+    setCurrentPage(1);
+    onFilterWorkspaceChange(value);
+  };
+
+  const handleSearchTermChange = (value: string) => {
+    setCurrentPage(1);
+    onSearchTermChange(value);
+  };
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const handlePageSizeChange = (newPageSize: number) => {
+    setPageSize(newPageSize);
+    setCurrentPage(1); // Reset to first page when changing page size
   };
 
   return (
@@ -159,7 +204,7 @@ export function SyncLogsTable({
               <Input
                 placeholder="Search by user, workspace, or calendar source..."
                 value={searchTerm}
-                onChange={(e) => onSearchTermChange(e.target.value)}
+                onChange={(e) => handleSearchTermChange(e.target.value)}
                 className="border-foreground/10 bg-foreground/10 pl-10"
               />
             </div>
@@ -167,7 +212,7 @@ export function SyncLogsTable({
           <div className="flex gap-3">
             <Select
               value={filterWorkspace}
-              onValueChange={onFilterWorkspaceChange}
+              onValueChange={handleFilterWorkspaceChange}
             >
               <SelectTrigger className="w-[180px] border-foreground/10 bg-foreground/10">
                 <Building2 className="mr-2 h-4 w-4 text-foreground/50" />
@@ -175,8 +220,11 @@ export function SyncLogsTable({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Workspaces</SelectItem>
-                {workspaces.map((workspace) => (
-                  <SelectItem key={workspace.id} value={workspace.id}>
+                {workspaces.map((workspace, index) => (
+                  <SelectItem
+                    key={`${workspace.id}-${index}`}
+                    value={workspace.id}
+                  >
                     <div className="flex items-center gap-2">
                       <div
                         className={`h-2 w-2 rounded-full ${workspace.color}`}
@@ -187,15 +235,16 @@ export function SyncLogsTable({
                 ))}
               </SelectContent>
             </Select>
-            <Select value={filterType} onValueChange={onFilterTypeChange}>
+            <Select value={filterType} onValueChange={handleFilterTypeChange}>
               <SelectTrigger className="w-[140px] border-foreground/10 bg-foreground/10">
                 <Filter className="mr-2 h-4 w-4 text-foreground/50" />
                 <SelectValue placeholder="All Types" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Types</SelectItem>
-                <SelectItem value="active">Manual Sync</SelectItem>
-                <SelectItem value="background">Auto Sync</SelectItem>
+                <SelectItem value="active">Active Sync</SelectItem>
+                <SelectItem value="background">Background Sync</SelectItem>
+                <SelectItem value="manual">Manual Sync</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -220,7 +269,7 @@ export function SyncLogsTable({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {syncLogs.map((log) => (
+              {paginatedLogs.map((log) => (
                 <TableRow
                   key={log.id}
                   className="transition-colors hover:bg-slate-50/50"
@@ -233,7 +282,9 @@ export function SyncLogsTable({
                       <div
                         className={`h-3 w-3 rounded-full ${log.workspace?.color}`}
                       />
-                      <span className="font-medium">{log.workspace?.name}</span>
+                      <span className="font-medium">
+                        {log.workspace?.name || 'Unknown Workspace'}
+                      </span>
                     </div>
                   </TableCell>
                   <TableCell>{getTypeBadge(log.type)}</TableCell>
@@ -245,7 +296,7 @@ export function SyncLogsTable({
                             src={log.triggeredBy.avatar || '/placeholder.svg'}
                           />
                           <AvatarFallback className="bg-foreground/10 text-xs">
-                            {log.triggeredBy.name
+                            {(log.triggeredBy.display_name || 'U')
                               .split(' ')
                               .map((n) => n[0])
                               .join('')}
@@ -253,10 +304,7 @@ export function SyncLogsTable({
                         </Avatar>
                         <div className="flex min-w-0 flex-col">
                           <span className="truncate text-sm font-medium">
-                            {log.triggeredBy.name}
-                          </span>
-                          <span className="truncate text-xs opacity-70">
-                            {log.triggeredBy.email}
+                            {log.triggeredBy.display_name || 'Unknown User'}
                           </span>
                         </div>
                       </div>
@@ -320,6 +368,23 @@ export function SyncLogsTable({
             <p className="text-foreground/50">
               Try adjusting your search criteria or filters.
             </p>
+          </div>
+        )}
+
+        {/* Pagination */}
+        {syncLogs.length > 0 && totalPages > 1 && (
+          <div className="mt-6">
+            <DataPagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalCount={totalCount}
+              pageSize={pageSize}
+              onPageChange={handlePageChange}
+              onPageSizeChange={handlePageSizeChange}
+              itemName="sync logs"
+              pageSizeOptions={[10, 20, 50, 100]}
+              showPageSizeSelector={totalCount > 10}
+            />
           </div>
         )}
       </CardContent>
