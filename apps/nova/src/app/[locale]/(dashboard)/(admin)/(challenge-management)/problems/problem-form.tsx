@@ -200,7 +200,22 @@ export default function ProblemForm({
                         <FormItem>
                           <FormLabel>Max Prompt Length</FormLabel>
                           <FormControl>
-                            <Input type="number" {...field} />
+                            <Input
+                              type="number"
+                              value={
+                                typeof field.value === 'number' ||
+                                typeof field.value === 'string'
+                                  ? field.value
+                                  : ''
+                              }
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                field.onChange(val === '' ? '' : Number(val));
+                              }}
+                              onBlur={field.onBlur}
+                              name={field.name}
+                              ref={field.ref}
+                            />
                           </FormControl>
                           <FormDescription>
                             Maximum allowed length for the prompt in characters.
