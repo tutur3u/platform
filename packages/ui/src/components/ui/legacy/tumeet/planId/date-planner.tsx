@@ -153,7 +153,7 @@ export default function DatePlanner({
             <div className="w-[350px] max-w-full overflow-hidden sm:w-[350px] md:w-[400px] lg:w-[450px] xl:w-[500px]">
               <div className="relative">
                 {/* Scrollable content with sticky header */}
-                <div className="max-h-[60vh] overflow-y-auto">
+                <div className="max-h-[50vh] overflow-y-auto">
                   <div className="flex gap-2">
                     <TimeColumn
                       id={editable ? 'self' : 'group'}
