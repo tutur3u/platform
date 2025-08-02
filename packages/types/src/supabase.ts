@@ -82,7 +82,7 @@ export type Database = {
       };
       check_guest_group: {
         Args: {
-          ws_id: string;
+          group_id: string;
         };
         Returns: boolean;
       };

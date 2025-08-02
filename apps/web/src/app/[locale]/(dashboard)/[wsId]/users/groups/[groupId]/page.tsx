@@ -50,8 +50,10 @@ export default async function UserGroupDetailsPage({
   const { locale, wsId, groupId } = await params;
 
   const group = await getData(wsId, groupId);
+  const isTrue = await getGuestGroup({ groupId });
 
   const { data: rawUsers, count: usersCount } = await getUserData(
+    isTrue,
     wsId,
     groupId,
     await searchParams
@@ -71,8 +73,6 @@ export default async function UserGroupDetailsPage({
     ...u,
     href: `/${wsId}/users/database/${u.id}`,
   }));
-
-  const isTrue = getGuestGroup({ wsId });
 
   return (
     <>
@@ -283,6 +283,7 @@ async function getData(wsId: string, groupId: string) {
 }
 
 async function getUserData(
+  isTrue: boolean,
   wsId: string,
   groupId: string,
   {
@@ -294,11 +295,10 @@ async function getUserData(
   }: SearchParams & { retry?: boolean } = {}
 ) {
   const supabase = await createClient();
-  const isGuestGroup = await getGuestGroup({ wsId });
 
   let queryBuilder;
 
-  if (isGuestGroup) {
+  if (isTrue) {
     // Use the attendance view for guest groups
     queryBuilder = supabase
       .from('group_with_attendance')
@@ -342,7 +342,7 @@ async function getUserData(
 
   let mappedData;
 
-  if (isGuestGroup) {
+  if (isTrue) {
     mappedData =
       data
         ?.map((item) =>

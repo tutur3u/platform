@@ -286,7 +286,7 @@ export async function verifySecret({
   return secret?.value === value;
 }
 
-export async function getGuestGroup({ wsId }: { wsId: string }) {
+export async function getGuestGroup({ groupId }: { groupIdwsId: string }) {
   const supabase = await createClient();
   const {
     data: { user },
@@ -297,7 +297,7 @@ export async function getGuestGroup({ wsId }: { wsId: string }) {
   }
 
   const { data, error } = await supabase.rpc('check_guest_group', {
-    ws_id: wsId,
+    group_id: groupId,
   });
 
   if (error) {
