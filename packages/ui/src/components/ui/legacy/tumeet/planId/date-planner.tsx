@@ -4,11 +4,13 @@ import DayPlanners from './day-planners';
 import TimeColumn from './time-column';
 import type { Timeblock } from '@tuturuuu/types/primitives/Timeblock';
 import { useTimeBlocking } from '@tuturuuu/ui/hooks/time-blocking-provider';
+import { useIsMobile } from '@tuturuuu/ui/hooks/use-mobile';
+import { ChevronLeft, ChevronRight } from '@tuturuuu/ui/icons';
 import { Tabs, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { timetzToHour } from '@tuturuuu/ui/utils/date-helper';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 export default function DatePlanner({
   timeblocks,
@@ -32,11 +34,45 @@ export default function DatePlanner({
   const t = useTranslations('meet-together-plan-details');
   const { user, editing, endEditing, setPreviewDate } = useTimeBlocking();
   const [tentativeMode, setTentativeMode] = useState(false);
+  const [currentPage, setCurrentPage] = useState(0);
+  const isMobile = useIsMobile();
 
   const startHour = timetzToHour(start);
   const endHour = timetzToHour(end);
 
+  useEffect(() => {
+    setCurrentPage(0);
+  }, [dates]);
+
+  // Pagination logic
+  const maxDatesPerPage = isMobile ? 4 : 7;
+  const totalPages = dates ? Math.ceil(dates.length / maxDatesPerPage) : 0;
+
+  useEffect(() => {
+    if (totalPages > 0 && currentPage >= totalPages) {
+      setCurrentPage(totalPages - 1);
+    }
+  }, [totalPages, currentPage]);
+
   if (!startHour || !endHour) return null;
+
+  const currentDates = dates
+    ? dates.slice(
+        currentPage * maxDatesPerPage,
+        (currentPage + 1) * maxDatesPerPage
+      )
+    : [];
+
+  const handlePreviousPage = () => {
+    setCurrentPage((prev) => Math.max(0, prev - 1));
+  };
+
+  const handleNextPage = () => {
+    setCurrentPage((prev) => Math.min(totalPages - 1, prev + 1));
+  };
+
+  const canGoPrevious = currentPage > 0;
+  const canGoNext = currentPage < totalPages - 1;
 
   return (
     <div className="mt-4 flex flex-col gap-2">
@@ -120,17 +156,55 @@ export default function DatePlanner({
                   }
             }
           >
-            <DayPlanners
-              timeblocks={timeblocks}
-              dates={dates}
-              start={startHour}
-              end={endHour}
-              editable={editable}
-              disabled={editable ? (user ? disabled : true) : disabled}
-              showBestTimes={showBestTimes}
-              tentativeMode={tentativeMode}
-              onBestTimesStatusByDateAction={onBestTimesStatusByDateAction}
-            />
+            {/* Responsive fixed-width container for dates section - smaller widths to prevent overflow */}
+            <div className="w-[300px] max-w-full overflow-hidden sm:w-[350px] md:w-[400px] lg:w-[450px] xl:w-[500px]">
+              <DayPlanners
+                timeblocks={timeblocks}
+                dates={currentDates}
+                start={startHour}
+                end={endHour}
+                editable={editable}
+                disabled={editable ? (user ? disabled : true) : disabled}
+                showBestTimes={showBestTimes}
+                tentativeMode={tentativeMode}
+                onBestTimesStatusByDateAction={onBestTimesStatusByDateAction}
+              />
+            </div>
+
+            {/* Pagination controls - positioned below the plan */}
+            {totalPages > 1 && (
+              <div className="flex w-full items-center justify-center gap-4">
+                <button
+                  onClick={handlePreviousPage}
+                  disabled={!canGoPrevious}
+                  className={cn(
+                    'flex h-8 w-8 items-center justify-center rounded-full border transition-all',
+                    canGoPrevious
+                      ? 'cursor-pointer border-foreground/20 hover:bg-accent/50'
+                      : 'cursor-not-allowed border-foreground/10 text-foreground/30'
+                  )}
+                >
+                  <ChevronLeft size={16} />
+                </button>
+
+                <div className="text-sm text-foreground/60">
+                  {currentPage + 1} of {totalPages}
+                </div>
+
+                <button
+                  onClick={handleNextPage}
+                  disabled={!canGoNext}
+                  className={cn(
+                    'flex h-8 w-8 items-center justify-center rounded-full border transition-all',
+                    canGoNext
+                      ? 'cursor-pointer border-foreground/20 hover:bg-accent/50'
+                      : 'cursor-not-allowed border-foreground/10 text-foreground/30'
+                  )}
+                >
+                  <ChevronRight size={16} />
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>

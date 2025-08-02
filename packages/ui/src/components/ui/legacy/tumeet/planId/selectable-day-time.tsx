@@ -110,7 +110,7 @@ export default function SelectableDayTime({
   };
 
   return (
-    <div className="relative w-14 rounded border border-b-0 border-foreground/50">
+    <div className="relative w-full border border-b-0 border-foreground/20">
       {hourBlocks
         .map((i) => (i + start) * hourSplits)
         // duplicate each item `hourSplits` times

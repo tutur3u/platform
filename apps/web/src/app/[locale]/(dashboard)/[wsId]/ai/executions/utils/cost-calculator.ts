@@ -8,11 +8,27 @@ export const ALLOWED_MODELS = [
     },
   },
   {
+    name: 'gemini-2.0-flash-lite',
+    price: {
+      per1MInputTokens: 0.075,
+      per1MOutputTokens: 0.3,
+      per1MReasoningTokens: 0.3,
+    },
+  },
+  {
     name: 'gemini-2.5-flash',
     price: {
       per1MInputTokens: 0.3,
       per1MOutputTokens: 2.5,
       per1MReasoningTokens: 2.5,
+    },
+  },
+  {
+    name: 'gemini-2.5-flash-lite',
+    price: {
+      per1MInputTokens: 0.1,
+      per1MOutputTokens: 0.4,
+      per1MReasoningTokens: 0.4,
     },
   },
   {
