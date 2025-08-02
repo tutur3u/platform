@@ -32,6 +32,13 @@ export type Database = {
         | 'ENABLE_EDUCATION'
         | 'ENABLE_QUIZZES';
       platform_service: 'NOVA' | 'REWISE' | 'TUTURUUU' | 'UPSKII';
+      recording_status:
+        | 'completed'
+        | 'failed'
+        | 'interrupted'
+        | 'pending_transcription'
+        | 'recording'
+        | 'transcribing';
       subscription_status: 'active' | 'canceled' | 'past_due' | 'trialing';
       task_board_status: 'active' | 'closed' | 'done' | 'not_started';
       task_priority: 'critical' | 'high' | 'low' | 'normal';
@@ -1322,6 +1329,38 @@ export type Database = {
           created_at?: string;
           email?: string;
           enabled?: boolean;
+        };
+      };
+      audio_chunks: {
+        Insert: {
+          chunk_order: number;
+          created_at?: string;
+          id?: string;
+          session_id: string;
+          storage_path: string;
+        };
+        Relationships: [
+          {
+            columns: ['session_id'];
+            foreignKeyName: 'audio_chunks_session_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'recording_sessions';
+          },
+        ];
+        Row: {
+          chunk_order: number;
+          created_at: string;
+          id: string;
+          session_id: string;
+          storage_path: string;
+        };
+        Update: {
+          chunk_order?: number;
+          created_at?: string;
+          id?: string;
+          session_id?: string;
+          storage_path?: string;
         };
       };
       aurora_ml_forecast: {
@@ -5267,6 +5306,98 @@ export type Database = {
           set_id?: string;
         };
       };
+      recording_sessions: {
+        Insert: {
+          created_at?: string;
+          id?: string;
+          meeting_id: string;
+          status?: Database['public']['Enums']['recording_status'];
+          updated_at?: string;
+          user_id: string;
+        };
+        Relationships: [
+          {
+            columns: ['meeting_id'];
+            foreignKeyName: 'recording_sessions_meeting_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'workspace_meetings';
+          },
+          {
+            columns: ['user_id'];
+            foreignKeyName: 'recording_sessions_user_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['user_id'];
+            referencedRelation: 'nova_user_challenge_leaderboard';
+          },
+          {
+            columns: ['user_id'];
+            foreignKeyName: 'recording_sessions_user_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['user_id'];
+            referencedRelation: 'nova_user_leaderboard';
+          },
+          {
+            columns: ['user_id'];
+            foreignKeyName: 'recording_sessions_user_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'shortened_links_creator_stats';
+          },
+          {
+            columns: ['user_id'];
+            foreignKeyName: 'recording_sessions_user_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'users';
+          },
+        ];
+        Row: {
+          created_at: string;
+          id: string;
+          meeting_id: string;
+          status: Database['public']['Enums']['recording_status'];
+          updated_at: string;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          meeting_id?: string;
+          status?: Database['public']['Enums']['recording_status'];
+          updated_at?: string;
+          user_id?: string;
+        };
+      };
+      recording_transcriptions: {
+        Insert: {
+          created_at?: string;
+          id?: string;
+          session_id: string;
+          text: string;
+        };
+        Relationships: [
+          {
+            columns: ['session_id'];
+            foreignKeyName: 'recording_transcriptions_session_id_fkey';
+            isOneToOne: true;
+            referencedColumns: ['id'];
+            referencedRelation: 'recording_sessions';
+          },
+        ];
+        Row: {
+          created_at: string;
+          id: string;
+          session_id: string;
+          text: string;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          session_id?: string;
+          text?: string;
+        };
+      };
       sent_emails: {
         Insert: {
           content: string;
@@ -8203,6 +8334,76 @@ export type Database = {
           ws_id?: string;
         };
       };
+      workspace_meetings: {
+        Insert: {
+          created_at?: string;
+          creator_id: string;
+          id?: string;
+          name: string;
+          time?: string;
+          ws_id: string;
+        };
+        Relationships: [
+          {
+            columns: ['creator_id'];
+            foreignKeyName: 'workspace_meetings_creator_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['user_id'];
+            referencedRelation: 'nova_user_challenge_leaderboard';
+          },
+          {
+            columns: ['creator_id'];
+            foreignKeyName: 'workspace_meetings_creator_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['user_id'];
+            referencedRelation: 'nova_user_leaderboard';
+          },
+          {
+            columns: ['creator_id'];
+            foreignKeyName: 'workspace_meetings_creator_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'shortened_links_creator_stats';
+          },
+          {
+            columns: ['creator_id'];
+            foreignKeyName: 'workspace_meetings_creator_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'users';
+          },
+          {
+            columns: ['ws_id'];
+            foreignKeyName: 'workspace_meetings_ws_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'workspace_link_counts';
+          },
+          {
+            columns: ['ws_id'];
+            foreignKeyName: 'workspace_meetings_ws_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'workspaces';
+          },
+        ];
+        Row: {
+          created_at: string;
+          creator_id: string;
+          id: string;
+          name: string;
+          time: string;
+          ws_id: string;
+        };
+        Update: {
+          created_at?: string;
+          creator_id?: string;
+          id?: string;
+          name?: string;
+          time?: string;
+          ws_id?: string;
+        };
+      };
       workspace_members: {
         Insert: {
           created_at?: null | string;
@@ -10591,6 +10792,14 @@ export const Constants = {
         'ENABLE_QUIZZES',
       ],
       platform_service: ['NOVA', 'REWISE', 'TUTURUUU', 'UPSKII'],
+      recording_status: [
+        'completed',
+        'failed',
+        'interrupted',
+        'pending_transcription',
+        'recording',
+        'transcribing',
+      ],
       subscription_status: ['active', 'canceled', 'past_due', 'trialing'],
       task_board_status: ['active', 'closed', 'done', 'not_started'],
       task_priority: ['critical', 'high', 'low', 'normal'],
