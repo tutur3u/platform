@@ -24,10 +24,10 @@ export const CalendarMatrix = ({ dates }: { dates: Date[] }) => {
 export const CalendarBaseMatrix = ({ dates }: { dates: Date[] }) => {
   return (
     <>
-      {dates.map((_, index) => (
+      {dates.map((date, index) => (
         <CalendarColumn
-          key={`cal-col-${index}`}
-          date={dayjs(dates[index]!).format('YYYY-MM-DD')}
+          key={`cal-col-${dayjs(date).format('YYYY-MM-DD')}`}
+          date={dayjs(date).format('YYYY-MM-DD')}
           last={index === dates.length - 1}
         />
       ))}

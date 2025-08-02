@@ -10,6 +10,7 @@ interface StructureProps {
   isCollapsed: boolean;
   setIsCollapsed: (isCollapsed: boolean) => void;
   hideSizeToggle?: boolean;
+  hideSidebarSizeToggle?: boolean;
   header?: ReactNode;
   mobileHeader?: ReactNode;
   sidebarHeader?: ReactNode;
@@ -25,6 +26,7 @@ export function Structure({
   isCollapsed,
   setIsCollapsed,
   hideSizeToggle = false,
+  hideSidebarSizeToggle = false,
   header,
   mobileHeader,
   sidebarHeader,
@@ -101,16 +103,17 @@ export function Structure({
                   )}
                 >
                   {sidebarHeader}
-                  {isCollapsed || (
-                    <Button
-                      size="icon"
-                      variant="outline"
-                      className="h-auto w-auto flex-none rounded-lg p-2 md:hidden"
-                      onClick={() => setIsCollapsed(!isCollapsed)}
-                    >
-                      <X className="h-5 w-5" />
-                    </Button>
-                  )}
+                  {!hideSidebarSizeToggle &&
+                    (isCollapsed || (
+                      <Button
+                        size="icon"
+                        variant="outline"
+                        className="h-auto w-auto flex-none rounded-lg p-2 md:hidden"
+                        onClick={() => setIsCollapsed(!isCollapsed)}
+                      >
+                        <X className="h-5 w-5" />
+                      </Button>
+                    ))}
                 </div>
               </div>
             </div>
@@ -126,7 +129,7 @@ export function Structure({
               {isCollapsed ? userPopover : actions}
             </div>
 
-            {!hideSizeToggle && (
+            {!hideSizeToggle && !hideSidebarSizeToggle && (
               <Button
                 size="icon"
                 variant="outline"

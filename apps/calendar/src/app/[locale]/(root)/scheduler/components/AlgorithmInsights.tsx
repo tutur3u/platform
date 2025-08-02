@@ -230,7 +230,7 @@ export function AlgorithmInsights({
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {algorithmConsiderations.map((consideration, index) => {
+          {algorithmConsiderations.map((consideration, _index) => {
             const IconComponent = consideration.icon;
             const impactColor =
               consideration.impact === 'high'
@@ -241,7 +241,7 @@ export function AlgorithmInsights({
 
             return (
               <div
-                key={index}
+                key={consideration.title}
                 className="flex items-start gap-3 rounded-lg border p-4"
               >
                 <IconComponent className={`mt-0.5 h-5 w-5 ${impactColor}`} />
@@ -383,7 +383,7 @@ export function AlgorithmInsights({
             <div className="space-y-3">
               {logs.map((log, index) => (
                 <Alert
-                  key={index}
+                  key={`${log.type}-${log.message}-${index}`}
                   variant={log.type === 'error' ? 'destructive' : 'default'}
                   className="text-sm"
                 >

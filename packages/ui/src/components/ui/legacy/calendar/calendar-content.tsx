@@ -14,7 +14,6 @@ import { useCalendar } from '@tuturuuu/ui/hooks/use-calendar';
 import { useCalendarSync } from '@tuturuuu/ui/hooks/use-calendar-sync';
 import type { CalendarView } from '@tuturuuu/ui/hooks/use-view-transition';
 import { useViewTransition } from '@tuturuuu/ui/hooks/use-view-transition';
-import { cn } from '@tuturuuu/utils/format';
 import { useCallback, useEffect, useState } from 'react';
 
 function getMonthGridDates(date: Date, firstDayOfWeek: number): Date[] {
@@ -57,8 +56,10 @@ export const CalendarContent = ({
   onSaveSettings,
   externalState,
   extras,
+  onSidebarToggle,
+  sidebarToggleButton,
 }: {
-  t: any;
+  t: (key: string) => string;
   locale: string;
   disabled?: boolean;
   workspace?: Workspace;
@@ -76,10 +77,12 @@ export const CalendarContent = ({
     availableViews: { value: string; label: string; disabled?: boolean }[];
   };
   extras?: React.ReactNode;
+  onSidebarToggle?: () => void;
+  sidebarToggleButton?: React.ReactNode;
 }) => {
   const { transition } = useViewTransition();
   const { settings } = useCalendar();
-  const { dates, setDates } = useCalendarSync();
+  const { dates, setDates, isLoading, isSyncing } = useCalendarSync();
 
   const [initialized, setInitialized] = useState(false);
   const [date, setDate] = useState(externalState?.date || new Date());
@@ -87,6 +90,7 @@ export const CalendarContent = ({
   const [availableViews, setAvailableViews] = useState<
     { value: string; label: string; disabled?: boolean }[]
   >(externalState?.availableViews || []);
+  const [showLoadingSkeleton, setShowLoadingSkeleton] = useState(true);
 
   // Use the external state handlers when provided
   const handleSetDate = useCallback(
@@ -203,7 +207,14 @@ export const CalendarContent = ({
       handleSetView('week');
       setDates(getWeekdays());
     });
-  }, [date, transition, settings, handleSetView, setDates]);
+  }, [
+    date,
+    transition,
+    handleSetView,
+    setDates,
+    settings?.appearance?.firstDayOfWeek,
+    settings?.appearance?.showWeekends,
+  ]);
 
   const enableMonthView = useCallback(() => {
     let firstDayNumber = 1; // Monday
@@ -215,7 +226,7 @@ export const CalendarContent = ({
     setDate(newDate);
     const gridDates = getMonthGridDates(newDate, firstDayNumber);
     setDates(gridDates);
-  }, [date, settings, setView, setDate, setDates]);
+  }, [date, settings?.appearance?.firstDayOfWeek, setDates]);
 
   // Initialize available views
   useEffect(() => {
@@ -358,7 +369,7 @@ export const CalendarContent = ({
       const gridDates = getMonthGridDates(date, firstDayNumber);
       setDates(gridDates);
     }
-  }, [date, view]);
+  }, [date, view, settings?.appearance?.firstDayOfWeek, setDates]);
 
   // Set initial view based on screen size
   useEffect(() => {
@@ -409,51 +420,210 @@ export const CalendarContent = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [enableDayView, enable4DayView, enableWeekView, enableMonthView]);
 
-  if (!initialized || !view || !dates.length) return null;
+  // Check if data is ready (for synchronized loading)
+  const isDataReady = !isLoading && !isSyncing && dates.length > 0;
+
+  // Hide loading skeleton after a minimum time to ensure users see it
+  useEffect(() => {
+    if (isDataReady) {
+      const timer = setTimeout(() => {
+        setShowLoadingSkeleton(false);
+      }, 500); // Minimum 500ms loading time
+      return () => clearTimeout(timer);
+    }
+  }, [isDataReady]);
+
+  // Show loading skeleton while data is loading or during minimum loading time
+  if (!initialized || !view || !dates.length || showLoadingSkeleton) {
+    return (
+      <div className="flex h-full w-full flex-col">
+        {enableHeader && (
+          <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+            <div className="p-4">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-center gap-2">
+                  {sidebarToggleButton}
+                  <div className="h-8 w-32 animate-pulse rounded bg-muted" />
+                </div>
+                <div className="flex flex-col gap-2 md:flex-row md:items-center">
+                  <div className="flex items-center gap-2">
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                    <div className="flex flex-none items-center justify-center gap-2 md:justify-start">
+                      <div className="h-8 w-8 animate-pulse rounded border bg-muted" />
+                      <div className="h-8 w-16 animate-pulse rounded bg-muted" />
+                      <div className="h-8 w-8 animate-pulse rounded border bg-muted" />
+                    </div>
+                    <div className="h-8 w-24 animate-pulse rounded bg-muted" />
+                  </div>
+                  {extras}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+        <div className="flex flex-1 flex-col overflow-hidden">
+          <div className="border-b bg-background/50">
+            <div className="flex h-8 items-center justify-center">
+              <div className="flex gap-1">
+                {Array.from({ length: 7 }).map((_, i) => (
+                  <div
+                    key={`weekday-skeleton-${i}`}
+                    className="h-6 w-16 animate-pulse rounded bg-muted"
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+          <div className="relative scrollbar-none flex-1 overflow-auto bg-background/50">
+            <div className="flex h-full">
+              <div className="w-16">
+                {Array.from({ length: 24 }).map((_, i) => (
+                  <div key={`time-slot-${i}`} className="h-20" />
+                ))}
+              </div>
+              <div className="flex-1">
+                <div className="grid h-full grid-cols-7">
+                  {Array.from({ length: 7 }).map((_, colIndex) => (
+                    <div key={`calendar-col-${colIndex}`}>
+                      {Array.from({ length: 24 }).map((_, rowIndex) => (
+                        <div
+                          key={`calendar-cell-${colIndex}-${rowIndex}`}
+                          className="h-20"
+                        />
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isDataReady) {
+    return (
+      <div className="flex h-full w-full flex-col">
+        {enableHeader && (
+          <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+            <div className="p-4">
+              <CalendarHeader
+                t={t}
+                locale={locale}
+                availableViews={availableViews}
+                date={date}
+                setDate={handleSetDate}
+                view={view}
+                offset={
+                  view === 'day'
+                    ? 1
+                    : view === '4-days'
+                      ? 4
+                      : view === 'week'
+                        ? 7
+                        : 0
+                }
+                onViewChange={(newView) => {
+                  if (newView === 'day') enableDayView();
+                  else if (newView === '4-days') enable4DayView();
+                  else if (newView === 'week') enableWeekView();
+                  else if (newView === 'month') enableMonthView();
+                }}
+                extras={extras}
+                onSidebarToggle={onSidebarToggle}
+                sidebarToggleButton={sidebarToggleButton}
+              />
+            </div>
+          </div>
+        )}
+        <div className="flex flex-1 flex-col overflow-hidden">
+          {view !== 'month' && (
+            <div className="bg-background/50">
+              <WeekdayBar locale={locale} view={view} dates={dates} />
+            </div>
+          )}
+          <div className="relative scrollbar-none flex-1 overflow-auto bg-background/50">
+            <div className="flex h-full items-center justify-center">
+              <div className="flex flex-col items-center gap-4">
+                <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                <p className="text-sm text-muted-foreground">
+                  {isLoading
+                    ? 'Loading calendar data...'
+                    : 'Syncing calendar...'}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div
-      className={cn(
-        'grid h-full w-full',
-        view === 'month' ? 'grid-rows-[auto_1fr]' : 'grid-rows-[auto_auto_1fr]'
-      )}
-    >
+    <div className="flex h-full w-full flex-col">
       {enableHeader && (
-        <CalendarHeader
-          t={t}
-          locale={locale}
-          availableViews={availableViews}
-          date={date}
-          setDate={handleSetDate}
-          view={view}
-          offset={
-            view === 'day' ? 1 : view === '4-days' ? 4 : view === 'week' ? 7 : 0
-          }
-          onViewChange={(newView) => {
-            if (newView === 'day') enableDayView();
-            else if (newView === '4-days') enable4DayView();
-            else if (newView === 'week') enableWeekView();
-            else if (newView === 'month') enableMonthView();
-          }}
-          extras={extras}
-        />
+        <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+          <div className="p-4">
+            <CalendarHeader
+              t={t}
+              locale={locale}
+              availableViews={availableViews}
+              date={date}
+              setDate={handleSetDate}
+              view={view}
+              offset={
+                view === 'day'
+                  ? 1
+                  : view === '4-days'
+                    ? 4
+                    : view === 'week'
+                      ? 7
+                      : 0
+              }
+              onViewChange={(newView) => {
+                if (newView === 'day') enableDayView();
+                else if (newView === '4-days') enable4DayView();
+                else if (newView === 'week') enableWeekView();
+                else if (newView === 'month') enableMonthView();
+              }}
+              extras={extras}
+              onSidebarToggle={onSidebarToggle}
+              sidebarToggleButton={sidebarToggleButton}
+            />
+          </div>
+        </div>
       )}
 
-      {view !== 'month' && (
-        <WeekdayBar locale={locale} view={view} dates={dates} />
-      )}
-
-      <div className="relative scrollbar-none flex-1 overflow-auto bg-background/50">
-        {view === 'month' && dates?.[0] ? (
-          <MonthCalendar
-            date={dates[0]}
-            workspace={workspace}
-            visibleDates={dates}
-            viewedMonth={date}
-          />
-        ) : (
-          <CalendarViewWithTrail dates={dates} />
+      <div className="flex flex-1 flex-col overflow-hidden">
+        {view !== 'month' && (
+          <div className="bg-background/50">
+            <WeekdayBar locale={locale} view={view} dates={dates} />
+          </div>
         )}
+
+        <div className="relative flex-1 overflow-auto bg-background/50">
+          {/* Add CSS to hide scrollbars */}
+          <style jsx>{`
+            .flex-1::-webkit-scrollbar {
+              display: none;
+            }
+            .flex-1 {
+              -ms-overflow-style: none;
+              scrollbar-width: none;
+            }
+          `}</style>
+          {view === 'month' && dates?.[0] ? (
+            <MonthCalendar
+              date={dates[0]}
+              workspace={workspace}
+              visibleDates={dates}
+              viewedMonth={date}
+            />
+          ) : (
+            <CalendarViewWithTrail dates={dates} />
+          )}
+        </div>
       </div>
 
       {disabled ? null : (

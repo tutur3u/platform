@@ -221,7 +221,7 @@ function SettingsDialogContent({
                       isActive={item.id === activeSection}
                       onClick={() => setActiveSection(item.id)}
                     >
-                      <a href="#" className="group">
+                      <a href="/settings" className="group">
                         <item.icon className="h-5 w-5" />
                         <div className="flex flex-col">
                           <span>{item.name}</span>
@@ -242,7 +242,15 @@ function SettingsDialogContent({
           <div className="w-full md:hidden">
             <Select
               value={activeSection as string}
-              onValueChange={(value) => setActiveSection(value as any)}
+              onValueChange={(value) =>
+                setActiveSection(
+                  value as
+                    | keyof CalendarSettings
+                    | 'hours'
+                    | 'advanced'
+                    | 'googleCalendar'
+                )
+              }
             >
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select a setting" />

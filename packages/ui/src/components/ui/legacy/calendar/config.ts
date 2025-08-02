@@ -5,4 +5,4 @@ export const MAX_LEVEL = 10;
 export const GRID_SNAP = 15;
 export const LEVEL_WIDTH_OFFSET = 8;
 export const MIN_EVENT_HEIGHT = 20 - 4;
-export const MIN_COLUMN_WIDTH = 120;
+export const MIN_COLUMN_WIDTH = 80;

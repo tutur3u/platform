@@ -24,7 +24,7 @@ export const TimeIndicatorText = ({ columnIndex }: { columnIndex: number }) => {
     const interval = setInterval(updateTime, 60000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [tz]);
 
   // Use selected timezone
   const nowTz = tz === 'auto' ? now : now.tz(tz);

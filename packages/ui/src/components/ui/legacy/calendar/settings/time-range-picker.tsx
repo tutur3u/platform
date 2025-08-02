@@ -81,7 +81,7 @@ function normalizeTimeString(time: string): string {
   const parts = time.split(':');
   const h = parts[0] !== undefined ? Number(parts[0]) : 0;
   const m = parts[1] !== undefined ? Number(parts[1]) : 0;
-  if (isNaN(h) || isNaN(m)) return '00:00';
+  if (Number.isNaN(h) || Number.isNaN(m)) return '00:00';
   return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
 }
 
@@ -173,7 +173,12 @@ export function TimeRangePicker({
   // Helper to convert time string to minutes
   const timeToMinutes = (t: string) => {
     const [h, m] = t.split(':').map(Number);
-    if (typeof h !== 'number' || isNaN(h) || typeof m !== 'number' || isNaN(m))
+    if (
+      typeof h !== 'number' ||
+      Number.isNaN(h) ||
+      typeof m !== 'number' ||
+      Number.isNaN(m)
+    )
       return 0;
     return h * 60 + m;
   };
@@ -321,10 +326,10 @@ export function TimeRangePicker({
       // Auto-correct if possible
       if (correctedEnd) {
         updatedBlock.endTime = correctedEnd;
-        toast.error(message + '. Auto-corrected end time.');
+        toast.error(`${message}. Auto-corrected end time.`);
       } else if (correctedStart) {
         updatedBlock.startTime = correctedStart;
-        toast.error(message + '. Auto-corrected start time.');
+        toast.error(`${message}. Auto-corrected start time.`);
       } else {
         toast.error(message);
         return;

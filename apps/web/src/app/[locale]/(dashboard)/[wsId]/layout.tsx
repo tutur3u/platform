@@ -67,6 +67,7 @@ import {
 } from '@tuturuuu/utils/workspace-helper';
 import { getTranslations } from 'next-intl/server';
 import { cookies } from 'next/headers';
+import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { type ReactNode, Suspense } from 'react';
 
@@ -632,6 +633,9 @@ export default async function Layout({ children, params }: LayoutProps) {
       </div>
     );
 
+  const pathname = (await headers()).get('next-url') || '';
+  const isCalendarPage = pathname.includes('/calendar');
+
   return (
     <SidebarProvider initialBehavior={sidebarBehavior}>
       <Structure
@@ -661,6 +665,7 @@ export default async function Layout({ children, params }: LayoutProps) {
           </Suspense>
         }
         disableCreateNewWorkspace={!platformUserRole?.allow_workspace_creation}
+        hideSidebarSizeToggle={isCalendarPage}
       >
         {children}
       </Structure>

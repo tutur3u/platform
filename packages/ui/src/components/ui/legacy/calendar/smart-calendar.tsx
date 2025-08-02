@@ -21,6 +21,8 @@ export const SmartCalendar = ({
   onSaveSettings,
   externalState,
   extras,
+  onSidebarToggle,
+  sidebarToggleButton,
 }: {
   t: any;
   locale: string;
@@ -42,6 +44,8 @@ export const SmartCalendar = ({
     availableViews: { value: string; label: string; disabled?: boolean }[];
   };
   extras?: React.ReactNode;
+  onSidebarToggle?: () => void;
+  sidebarToggleButton?: React.ReactNode;
 }) => {
   return (
     <CalendarProvider
@@ -62,6 +66,8 @@ export const SmartCalendar = ({
         onSaveSettings={onSaveSettings}
         externalState={externalState}
         extras={extras}
+        onSidebarToggle={onSidebarToggle}
+        sidebarToggleButton={sidebarToggleButton}
       />
     </CalendarProvider>
   );

@@ -23,7 +23,7 @@ export function NavLink({
 }: NavLinkProps) {
   const pathname = usePathname();
   const { title, icon, href, children, onClick: onLinkClick } = link;
-  const hasChildren = children && children.length > 0;
+  const hasChildren = Array.isArray(children) && children.length > 0;
 
   // Recursive function to check if any nested child matches the pathname
   const hasActiveChild = (navLinks: NavLinkType[]): boolean => {
@@ -74,8 +74,8 @@ export function NavLink({
     onClick: () => {
       if (onLinkClick) {
         onLinkClick();
-      } else if (hasChildren) {
-        onSubMenuClick(children!, title);
+      } else if (hasChildren && children) {
+        onSubMenuClick(children, title);
       } else if (href) {
         onClick();
       }

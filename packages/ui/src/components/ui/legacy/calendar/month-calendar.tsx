@@ -341,7 +341,7 @@ export const MonthCalendar = ({
       const start = new Date(event.start_at);
       const end = new Date(event.end_at);
       return `${format(start, 'HH:mm')} - ${format(end, 'HH:mm')}`;
-    } catch (e) {
+    } catch (_e) {
       return '';
     }
   };
@@ -409,14 +409,7 @@ export const MonthCalendar = ({
       map[day.toISOString()] = getDominantEventColor(events);
     }
     return map;
-  }, [
-    calendarDays,
-    JSON.stringify(
-      calendarDays.map((day) =>
-        getCurrentEvents(day).map((e) => e.id + e.color)
-      )
-    ),
-  ]);
+  }, [calendarDays, getCurrentEvents]);
 
   // Use the custom popover manager hook
   const {
@@ -430,7 +423,7 @@ export const MonthCalendar = ({
   } = usePopoverManager();
 
   return (
-    <div className="flex-1 overflow-auto rounded-md border bg-background shadow-sm">
+    <div className="scrollbar-none flex-1 overflow-auto bg-background">
       <div className="grid grid-cols-7 divide-x divide-y border-b text-center">
         {weekdayLabels.map((day) => (
           <div
