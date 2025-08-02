@@ -49,7 +49,7 @@ export async function GET(request: Request) {
       .select(
         `
         id, 
-        time, 
+        created_at, 
         start_time, 
         type, 
         ws_id, 
@@ -64,7 +64,7 @@ export async function GET(request: Request) {
       `
       )
       .in('ws_id', workspaceIds)
-      .order('time', { ascending: false });
+      .order('created_at', { ascending: false });
 
     // If regular client fails, try with admin client as fallback
     if (error) {
@@ -79,7 +79,7 @@ export async function GET(request: Request) {
         .select(
           `
           id, 
-          time, 
+          created_at, 
           start_time, 
           type, 
           ws_id, 
@@ -94,7 +94,7 @@ export async function GET(request: Request) {
         `
         )
         .in('ws_id', workspaceIds)
-        .order('time', { ascending: false });
+        .order('created_at', { ascending: false });
 
       syncLogs = adminResult.data;
       error = adminResult.error;
@@ -128,7 +128,8 @@ export async function GET(request: Request) {
 
       return {
         id: item.id,
-        timestamp: item.time || item.start_time || new Date().toISOString(),
+        timestamp:
+          item.created_at || item.start_time || new Date().toISOString(),
         type: item.type || 'background',
         workspace: workspace,
         triggeredBy: user || 'System',
