@@ -1,5 +1,6 @@
 'use client';
 
+import { RecordingStatus, RecordingTranscript } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,
@@ -9,6 +10,7 @@ import {
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
 import {
+  EyeIcon,
   FileText,
   Headphones,
   Pause,
@@ -22,21 +24,25 @@ import { Slider } from '@tuturuuu/ui/slider';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+interface RecordingSession {
+  id: string;
+  status: RecordingStatus;
+  created_at: string;
+  updated_at: string;
+  recording_transcripts?: RecordingTranscript | null;
+}
+
 interface RecordingSessionActionsProps {
   wsId: string;
   meetingId: string;
-  sessionId: string;
-  hasTranscript: boolean;
-  transcriptionText?: string;
+  session: RecordingSession;
   onDelete?: () => void; // Optional callback for parent
 }
 
 export function RecordingSessionActions({
   wsId,
   meetingId,
-  sessionId,
-  hasTranscript,
-  transcriptionText,
+  session,
   onDelete,
 }: RecordingSessionActionsProps) {
   const [transcriptDialogOpen, setTranscriptDialogOpen] = useState(false);
@@ -325,6 +331,10 @@ export function RecordingSessionActions({
     setIsMuted(!isMuted);
   }, [isMuted]);
 
+  const handleTranscribe = () => {
+    console.log('Transcribing...');
+  };
+
   const handleViewTranscript = () => {
     setTranscriptDialogOpen(true);
   };
@@ -335,10 +345,10 @@ export function RecordingSessionActions({
     setAudioRecording(null); // Clear previous recording
 
     try {
-      console.log('Loading recording for session:', sessionId);
+      console.log('Loading recording for session:', session.id);
 
       const response = await fetch(
-        `/api/v1/workspaces/${wsId}/meetings/${meetingId}/recordings/${sessionId}/play`,
+        `/api/v1/workspaces/${wsId}/meetings/${meetingId}/recordings/${session.id}/play`,
         {
           method: 'GET',
         }
@@ -385,7 +395,7 @@ export function RecordingSessionActions({
     setIsDeleting(true);
     try {
       const response = await fetch(
-        `/api/v1/workspaces/${wsId}/meetings/${meetingId}/recordings/${sessionId}`,
+        `/api/v1/workspaces/${wsId}/meetings/${meetingId}/recordings/${session.id}`,
         { method: 'DELETE' }
       );
       if (!response.ok) {
@@ -427,10 +437,15 @@ export function RecordingSessionActions({
   return (
     <>
       <div className="flex gap-2">
-        {hasTranscript && (
-          <Button variant="ghost" size="sm" onClick={handleViewTranscript}>
+        {session.recording_transcripts ? (
+          <Button variant="outline" size="sm" onClick={handleViewTranscript}>
+            <EyeIcon className="mr-1 h-3 w-3" />
+            View Transcript
+          </Button>
+        ) : (
+          <Button variant="default" size="sm" onClick={handleTranscribe}>
             <FileText className="mr-1 h-3 w-3" />
-            View
+            Transcribe
           </Button>
         )}
         <Button
@@ -465,9 +480,9 @@ export function RecordingSessionActions({
             </DialogDescription>
           </DialogHeader>
           <div className="mt-4">
-            {transcriptionText ? (
+            {session.recording_transcripts ? (
               <div className="text-sm leading-relaxed whitespace-pre-wrap">
-                {transcriptionText}
+                {session.recording_transcripts.text}
               </div>
             ) : (
               <p className="text-muted-foreground">

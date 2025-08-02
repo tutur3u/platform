@@ -156,69 +156,57 @@ export function RecordingSessionsOverview({
       </div>
 
       <div className="grid gap-4">
-        {sessions.map((session) => {
-          const hasTranscript = !!session.recording_transcripts;
-          const transcriptionText = hasTranscript
-            ? session.recording_transcripts!.text
-            : undefined;
-
-          return (
-            <Card
-              key={session.id}
-              className="transition-shadow hover:shadow-md"
-            >
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="flex items-center gap-2 text-base">
-                    <Mic className="h-4 w-4" />
-                    Recording Session
-                  </CardTitle>
-                  <Badge className={getStatusColor(session.status)}>
-                    {getStatusText(session.status)}
-                  </Badge>
+        {sessions.map((session) => (
+          <Card key={session.id} className="transition-shadow hover:shadow-md">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <Mic className="h-4 w-4" />
+                  Recording Session
+                </CardTitle>
+                <Badge className={getStatusColor(session.status)}>
+                  {getStatusText(session.status)}
+                </Badge>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-muted-foreground">Started:</span>
+                  <span className="text-xs font-medium">
+                    {formatDistanceToNow(new Date(session.created_at), {
+                      addSuffix: true,
+                    })}
+                  </span>
                 </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-muted-foreground">Started:</span>
-                    <span>
-                      {formatDistanceToNow(new Date(session.created_at), {
-                        addSuffix: true,
-                      })}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Clock className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-muted-foreground">Duration:</span>
-                    <span>{getDuration(session)}</span>
-                  </div>
+                <div className="flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-muted-foreground">Duration:</span>
+                  <span>{getDuration(session)}</span>
                 </div>
+              </div>
 
-                {hasTranscript && (
-                  <div className="flex items-center gap-2 text-sm">
-                    <FileText className="h-4 w-4 text-dynamic-green" />
-                    <span className="font-medium text-dynamic-green">
-                      Transcript available
-                    </span>
-                  </div>
-                )}
-
-                <div className="flex items-center gap-2 border-t pt-2">
-                  <RecordingSessionActions
-                    wsId={wsId}
-                    meetingId={meetingId}
-                    sessionId={session.id}
-                    hasTranscript={hasTranscript}
-                    transcriptionText={transcriptionText}
-                    onDelete={handleSessionDeleted}
-                  />
+              {session.recording_transcripts && (
+                <div className="flex items-center gap-2 text-sm">
+                  <FileText className="h-4 w-4 text-dynamic-green" />
+                  <span className="font-medium text-dynamic-green">
+                    Transcript available
+                  </span>
                 </div>
-              </CardContent>
-            </Card>
-          );
-        })}
+              )}
+
+              <div className="flex items-center gap-2 border-t pt-2">
+                <RecordingSessionActions
+                  wsId={wsId}
+                  meetingId={meetingId}
+                  session={session}
+                  onDelete={handleSessionDeleted}
+                />
+              </div>
+            </CardContent>
+          </Card>
+        ))}
       </div>
     </div>
   );
