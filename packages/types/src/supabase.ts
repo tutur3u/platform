@@ -2718,7 +2718,7 @@ export type Database = {
           creator_id: string | null;
           dates: string[];
           description: string | null;
-          enable_to_edit: boolean;
+          enable_unknown_edit: boolean;
           end_time: string;
           id: string;
           is_confirm: boolean;
@@ -2734,7 +2734,7 @@ export type Database = {
           creator_id?: string | null;
           dates: string[];
           description?: string | null;
-          enable_to_edit?: boolean;
+          enable_unknown_edit?: boolean;
           end_time: string;
           id?: string;
           is_confirm?: boolean;
@@ -2750,7 +2750,7 @@ export type Database = {
           creator_id?: string | null;
           dates?: string[];
           description?: string | null;
-          enable_to_edit?: boolean;
+          enable_unknown_edit?: boolean;
           end_time?: string;
           id?: string;
           is_confirm?: boolean;

@@ -1,5 +1,6 @@
 'use client';
 
+import { User } from '@tuturuuu/types/db';
 import type { Timezone } from '@tuturuuu/types/primitives/Timezone';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -14,6 +15,7 @@ import {
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -30,6 +32,7 @@ import { cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
 import {
   ClipboardList,
+  Edit3Icon,
   MapPin as MapPinIcon,
   Sparkles as SparklesIcon,
 } from 'lucide-react';
@@ -39,6 +42,7 @@ import { useState } from 'react';
 import * as z from 'zod';
 
 interface Props {
+  user: User | null;
   plan: {
     dates: Date[] | undefined;
     startTime: number | undefined;
@@ -59,6 +63,7 @@ const FormSchema = z.object({
   agenda_enabled: z.boolean().optional(), // <-- Added field for agenda toggle
   agenda_content: z.custom<JSONContent>().optional(),
   where_to_meet: z.boolean().optional(), // <-- Added field
+  enable_unknown_edit: z.boolean().optional(), // <-- Added field
 });
 
 type FormData = z.infer<typeof FormSchema>;
@@ -82,9 +87,11 @@ const convertToTimetz = (
   return `${timeStr}${offsetStr}`;
 };
 
-export default function CreatePlanDialog({ plan }: Props) {
+export default function CreatePlanDialog({ plan, user }: Props) {
   const t = useTranslations('meet-together');
   const router = useRouter();
+  const isUserLoggedIn = user?.id;
+
   const [isOpened, setIsOpened] = useState(false);
   const [creating, setCreating] = useState(false);
 
@@ -102,6 +109,7 @@ export default function CreatePlanDialog({ plan }: Props) {
       agenda_enabled: false, // <-- Default value for agenda toggle
       agenda_content: undefined,
       where_to_meet: false, // <-- Default value
+      enable_unknown_edit: false, // <-- Default value (if anonymous create -> always disable)
     },
   });
 
@@ -143,11 +151,14 @@ export default function CreatePlanDialog({ plan }: Props) {
     }
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { agenda_enabled, ...rest } = data;
+    const { agenda_enabled, enable_unknown_edit, ...rest } = data;
 
     const res = await fetch('/api/meet-together/plans', {
       method: 'POST',
-      body: JSON.stringify(rest),
+      body: JSON.stringify({
+        enable_unknown_edit: isUserLoggedIn ? enable_unknown_edit : false,
+        ...rest,
+      }),
     });
 
     if (res.ok) {
@@ -292,6 +303,70 @@ export default function CreatePlanDialog({ plan }: Props) {
                             <SparklesIcon className="h-3 w-3" />
                             <span>Popular feature</span>
                           </div>
+                        </div>
+                      </div>
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Enable Anonymous To Choose */}
+              <FormField
+                control={form.control}
+                name="enable_unknown_edit"
+                disabled={!isUserLoggedIn}
+                render={({ field }) => (
+                  <FormItem>
+                    <div
+                      className={cn(
+                        'cursor-pointer rounded-lg border p-4 transition-all duration-200',
+                        !isUserLoggedIn && 'opacity-70',
+                        field.value
+                          ? 'border-dynamic-blue/30 bg-dynamic-blue/10 ring-1 ring-dynamic-blue/20'
+                          : 'border-border bg-muted/30 hover:border-muted-foreground/20 hover:bg-muted/50'
+                      )}
+                      onClick={() => {
+                        if (isUserLoggedIn) {
+                          field.onChange(!field.value);
+                        }
+                      }}
+                    >
+                      <div className="flex items-start space-x-3">
+                        <FormControl>
+                          <input
+                            disabled={!isUserLoggedIn}
+                            type="checkbox"
+                            id="enable_unknown_edit"
+                            checked={field.value}
+                            onChange={field.onChange}
+                            className="mt-1 h-4 w-4 rounded border-gray-300 text-dynamic-blue focus:ring-dynamic-blue/50"
+                          />
+                        </FormControl>
+                        <div className="flex-1 space-y-2">
+                          <div className="flex items-center gap-2">
+                            <Edit3Icon
+                              className={cn(
+                                'h-4 w-4 transition-colors',
+                                field.value
+                                  ? 'text-dynamic-blue'
+                                  : 'text-dynamic-blue/70'
+                              )}
+                            />
+                            <FormLabel
+                              htmlFor="enable_unknown_edit"
+                              className="mb-0 cursor-pointer font-medium text-foreground"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              Enable Anonymous To Choose
+                            </FormLabel>
+                          </div>
+                          <FormDescription className="text-xs leading-relaxed text-muted-foreground">
+                            Enable anonymous users to suggest and vote on
+                            meeting time and metting location.{' '}
+                            {!isUserLoggedIn &&
+                              'This feature is only available for logged-in users. Please log in to enable this feature and having our CONFIRM feature.'}
+                          </FormDescription>
                         </div>
                       </div>
                     </div>

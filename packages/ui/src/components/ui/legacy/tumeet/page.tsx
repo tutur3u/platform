@@ -137,7 +137,7 @@ export async function MeetTogetherPage({
         <div className="mx-auto w-full max-w-2xl flex-1 lg:mx-0">
           <Card className="border-border/50 bg-accent/50 backdrop-blur-sm">
             <CardContent className="p-6 md:p-8">
-              <Form wsId={wsId} />
+              <Form wsId={wsId} user={user} />
             </CardContent>
           </Card>
         </div>

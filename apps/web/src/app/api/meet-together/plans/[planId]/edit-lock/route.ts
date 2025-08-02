@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server';
 
 export async function PATCH(req: Request, { params }: { params: { planId: string } }) {
   const { planId } = params;
-  const { enableToEdit, isConfirm } = await req.json();
+  const { enableUnknownEdit, isConfirm } = await req.json();
   const sbAdmin = await createAdminClient();
   const supabase = await createClient();
 
@@ -25,7 +25,7 @@ export async function PATCH(req: Request, { params }: { params: { planId: string
   const { error } = await sbAdmin
     .from('meet_together_plans')
     .update({
-      enable_to_edit: typeof enableToEdit === 'boolean' ? enableToEdit : undefined,
+        enable_unknown_edit: typeof enableUnknownEdit === 'boolean' ? enableUnknownEdit : undefined,
       is_confirm: typeof isConfirm === 'boolean' ? isConfirm : undefined,
     })
     .eq('id', planId);

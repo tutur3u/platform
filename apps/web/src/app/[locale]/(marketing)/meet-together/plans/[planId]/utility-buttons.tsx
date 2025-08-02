@@ -8,7 +8,7 @@ import ShowQRButton from './show-qr-button';
 import type { MeetTogetherPlan } from '@tuturuuu/types/primitives/MeetTogetherPlan';
 import type { User } from '@tuturuuu/types/primitives/User';
 import { Button } from '@tuturuuu/ui/button';
-import { Check, Edit } from '@tuturuuu/ui/icons';
+import { Check, Edit, ListCheck, PenOff } from '@tuturuuu/ui/icons';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
@@ -25,6 +25,7 @@ export default function UtilityButtons({
 }: UtilityButtonsProps) {
   const pathname = usePathname();
   const [url, setUrl] = useState('');
+  const isCreator = platformUser?.id === plan.creator_id;
 
   useEffect(() => {
     setUrl(`${window.location.origin}${pathname}`);
@@ -39,10 +40,18 @@ export default function UtilityButtons({
         <ShowQRButton url={url} />
         <EmailButton plan={plan} url={url} />
         <DownloadAsPNG onClick={handlePNG} />
-        <ConfirmButton
-          planId={plan.id}
-          isCofirmPlan={Boolean(plan.is_confirm)}
-        />
+        {isCreator && (
+          <>
+            <ConfirmButton
+              planId={plan.id}
+              isCofirmPlan={Boolean(plan.is_confirm)}
+            />
+            <EnableUnknownEditButton
+              planId={plan.id}
+              isEnableUnknownPlan={Boolean(plan.enable_unknown_edit)}
+            />
+          </>
+        )}
       </div>
       <LoggedInAsButton platformUser={platformUser} />
     </div>
@@ -94,7 +103,54 @@ function ConfirmButton({
           Re-Edit
         </>
       )}
-      {/* {t('copy_link')} */}
+    </Button>
+  );
+}
+function EnableUnknownEditButton({
+  planId,
+  isEnableUnknownPlan,
+}: {
+  planId: string;
+  isEnableUnknownPlan: boolean;
+}) {
+  // const t = useTranslations('meet-together-plan-details');
+  const [isEnableEdited, setEnableEdited] = useState(isEnableUnknownPlan);
+
+  return (
+    <Button
+      onClick={async () => {
+        const res = await fetch(
+          `/api/meet-together/plans/${planId}/edit-lock`,
+          {
+            method: 'PATCH',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              // enableToEdit: !isEnableEdited,
+              enableUnknownEdit: !isEnableEdited,
+            }),
+          }
+        );
+        if (!res.ok) {
+          console.error('Failed to update plan confirmation status');
+          return;
+        }
+        setEnableEdited(!isEnableEdited);
+      }}
+      className="w-full md:w-auto"
+    >
+      {!isEnableEdited ? (
+        <>
+          <ListCheck className="mr-1 h-5 w-5" />
+          Enable Anonymous to Edit
+        </>
+      ) : (
+        <>
+          <PenOff className="mr-1 h-5 w-5" />
+          Disable Anonymous to Edit
+        </>
+      )}
     </Button>
   );
 }

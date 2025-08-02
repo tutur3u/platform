@@ -1,5 +1,6 @@
 'use client';
 
+import { User } from '@tuturuuu/types/db';
 import CreatePlanDialog from './create-plan-dialog';
 import DateSelector from './date-selector';
 import { TimeSelector } from './time-selector';
@@ -10,7 +11,7 @@ import timezones from '@tuturuuu/utils/timezones';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 
-export default function Form({ wsId }: { wsId?: string }) {
+export default function Form({ wsId, user }: { wsId?: string, user: User | null }) {
   const t = useTranslations('meet-together');
 
   const [dates, setDates] = useState<Date[] | undefined>([]);
@@ -79,7 +80,7 @@ export default function Form({ wsId }: { wsId?: string }) {
           <TimezoneSelector value={timezone} onValueChange={setTimezone} />
         </div>
         <div className="flex w-full justify-center lg:justify-start">
-          <CreatePlanDialog plan={plan} />
+          <CreatePlanDialog plan={plan} user={user} />
         </div>
       </div>
     </div>
