@@ -10,6 +10,25 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
   createClient: mockCreateClient,
 }));
 
+// Mock SSR package that Supabase uses
+vi.mock('@supabase/ssr', () => ({
+  createBrowserClient: vi.fn(() => ({})),
+  createServerClient: vi.fn(() => ({})),
+}));
+
+// Mock internal Supabase modules
+vi.mock('@tuturuuu/supabase/next/common', () => ({
+  checkEnvVariables: vi.fn(() => ({
+    url: 'https://test.supabase.co',
+    key: 'test-key',
+  })),
+}));
+
+vi.mock('@tuturuuu/supabase/next/client', () => ({
+  createClient: mockCreateClient,
+  createDynamicClient: vi.fn(),
+}));
+
 // Mock NextResponse
 vi.mock('next/server', () => ({
   NextResponse: {
@@ -40,6 +59,8 @@ vi.mock('process', () => ({
     NEXT_PUBLIC_SUPABASE_ANON_KEY: 'test-anon-key',
     SUPABASE_SERVICE_KEY: 'test-service-key',
     SUPABASE_SERVICE_ROLE_KEY: 'test-service-role-key',
+    NEXT_PUBLIC_BASE_URL: 'https://test.example.com',
+    PORT: '3000',
   },
 }));
 
@@ -100,7 +121,14 @@ Object.defineProperty(global, 'crypto', {
 // Mock fetch
 global.fetch = vi.fn();
 
+// Mock the fetch API that the route uses
+vi.mock('node-fetch', () => ({
+  default: vi.fn(),
+}));
+
 describe('POST /api/v1/calendar/auth/active-sync', () => {
+  // Add timeout to prevent hanging
+  vi.setConfig({ testTimeout: 10000 });
   let mockAdminClient: MockSupabaseClient;
   let mockClient: MockSupabaseClient;
   let mockNextResponse: MockNextResponse;
@@ -208,23 +236,35 @@ describe('POST /api/v1/calendar/auth/active-sync', () => {
     });
   };
 
-  const callApi = async (request: Request) => {
-    // Import the route handler and call it directly
-    const { POST } = await import(
-      '@/app/api/v1/calendar/auth/active-sync/route'
-    );
-    return await POST(request);
+  const callApi = async (request: Request): Promise<Response> => {
+    try {
+      // Import the route handler and call it directly
+      const { POST } = await import(
+        '@/app/api/v1/calendar/auth/active-sync/route'
+      );
+      return await POST(request);
+    } catch (error) {
+      console.error('Error calling API:', error);
+      throw error;
+    }
   };
 
   describe('Request validation', () => {
     it('should return 400 when wsId is missing', async () => {
+      console.log('Starting test: should return 400 when wsId is missing');
+
       const request = createMockRequest({
         startDate: '2024-01-01',
         endDate: '2024-01-31',
       });
 
+      console.log('Created mock request');
+
       const response = await callApi(request);
+      console.log('Got response:', response.status);
+
       const data = await response.json();
+      console.log('Response data:', data);
 
       expect(response.status).toBe(400);
       expect(data.error).toBe('wsId is required');
