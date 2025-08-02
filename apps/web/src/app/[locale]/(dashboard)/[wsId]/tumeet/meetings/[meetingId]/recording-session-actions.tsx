@@ -26,7 +26,7 @@ interface RecordingSessionActionsProps {
   wsId: string;
   meetingId: string;
   sessionId: string;
-  hasTranscription: boolean;
+  hasTranscript: boolean;
   transcriptionText?: string;
   onDelete?: () => void; // Optional callback for parent
 }
@@ -35,7 +35,7 @@ export function RecordingSessionActions({
   wsId,
   meetingId,
   sessionId,
-  hasTranscription,
+  hasTranscript,
   transcriptionText,
   onDelete,
 }: RecordingSessionActionsProps) {
@@ -427,7 +427,7 @@ export function RecordingSessionActions({
   return (
     <>
       <div className="flex gap-2">
-        {hasTranscription && (
+        {hasTranscript && (
           <Button variant="ghost" size="sm" onClick={handleViewTranscript}>
             <FileText className="mr-1 h-3 w-3" />
             View

@@ -5369,17 +5369,20 @@ export type Database = {
           user_id?: string;
         };
       };
-      recording_transcriptions: {
+      recording_transcripts: {
         Insert: {
           created_at?: string;
+          duration_in_seconds?: number;
           id?: string;
+          language?: string;
+          segments?: Json | null;
           session_id: string;
           text: string;
         };
         Relationships: [
           {
             columns: ['session_id'];
-            foreignKeyName: 'recording_transcriptions_session_id_fkey';
+            foreignKeyName: 'recording_transcripts_session_id_fkey';
             isOneToOne: true;
             referencedColumns: ['id'];
             referencedRelation: 'recording_sessions';
@@ -5387,13 +5390,19 @@ export type Database = {
         ];
         Row: {
           created_at: string;
+          duration_in_seconds: number;
           id: string;
+          language: string;
+          segments: Json | null;
           session_id: string;
           text: string;
         };
         Update: {
           created_at?: string;
+          duration_in_seconds?: number;
           id?: string;
+          language?: string;
+          segments?: Json | null;
           session_id?: string;
           text?: string;
         };

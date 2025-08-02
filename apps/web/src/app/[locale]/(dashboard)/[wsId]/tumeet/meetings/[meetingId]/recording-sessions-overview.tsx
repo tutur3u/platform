@@ -2,6 +2,7 @@
 
 import { RecordingSessionActions } from './recording-session-actions';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { RecordingStatus, RecordingTranscript } from '@tuturuuu/types/db';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { Calendar, Clock, FileText, Mic } from '@tuturuuu/ui/icons';
@@ -9,19 +10,10 @@ import { formatDistanceToNow } from 'date-fns';
 
 interface RecordingSession {
   id: string;
-  status:
-    | 'recording'
-    | 'completed'
-    | 'pending_transcription'
-    | 'transcribing'
-    | 'failed'
-    | 'interrupted';
+  status: RecordingStatus;
   created_at: string;
   updated_at: string;
-  recording_transcriptions?: {
-    text: string;
-    created_at: string;
-  } | null;
+  recording_transcripts?: RecordingTranscript | null;
 }
 
 interface RecordingSessionsOverviewProps {
@@ -44,7 +36,7 @@ const fetchRecordingSessions = async (
   return data.sessions || [];
 };
 
-const getStatusColor = (status: RecordingSession['status']) => {
+const getStatusColor = (status: RecordingStatus) => {
   switch (status) {
     case 'recording':
       return 'bg-dynamic-red text-white';
@@ -63,7 +55,7 @@ const getStatusColor = (status: RecordingSession['status']) => {
   }
 };
 
-const getStatusText = (status: RecordingSession['status']) => {
+const getStatusText = (status: RecordingStatus) => {
   switch (status) {
     case 'recording':
       return 'Recording';
@@ -165,9 +157,9 @@ export function RecordingSessionsOverview({
 
       <div className="grid gap-4">
         {sessions.map((session) => {
-          const hasTranscription = !!session.recording_transcriptions;
-          const transcriptionText = hasTranscription
-            ? session.recording_transcriptions!.text
+          const hasTranscript = !!session.recording_transcripts;
+          const transcriptionText = hasTranscript
+            ? session.recording_transcripts!.text
             : undefined;
 
           return (
@@ -204,11 +196,11 @@ export function RecordingSessionsOverview({
                   </div>
                 </div>
 
-                {hasTranscription && (
+                {hasTranscript && (
                   <div className="flex items-center gap-2 text-sm">
                     <FileText className="h-4 w-4 text-dynamic-green" />
                     <span className="font-medium text-dynamic-green">
-                      Transcription available
+                      Transcript available
                     </span>
                   </div>
                 )}
@@ -218,7 +210,7 @@ export function RecordingSessionsOverview({
                     wsId={wsId}
                     meetingId={meetingId}
                     sessionId={session.id}
-                    hasTranscription={hasTranscription}
+                    hasTranscript={hasTranscript}
                     transcriptionText={transcriptionText}
                     onDelete={handleSessionDeleted}
                   />

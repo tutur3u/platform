@@ -107,7 +107,7 @@ export async function GET(
         status,
         created_at,
         updated_at,
-        recording_transcriptions(
+        recording_transcripts(
           text,
           created_at
         )

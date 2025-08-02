@@ -50,7 +50,7 @@ export async function DELETE(
       );
     }
 
-    // Delete the recording session (audio chunks and transcriptions will be deleted automatically due to CASCADE)
+    // Delete the recording session (audio chunks and transcripts will be deleted automatically due to CASCADE)
     const { error } = await supabase
       .from('recording_sessions')
       .delete()

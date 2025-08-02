@@ -23,15 +23,18 @@ create table "public"."recording_sessions" (
 
 alter table "public"."recording_sessions" enable row level security;
 
-create table "public"."recording_transcriptions" (
+create table "public"."recording_transcripts" (
     "id" uuid not null default gen_random_uuid(),
     "session_id" uuid not null,
     "text" text not null,
+    "segments" jsonb,
+    "language" text not null default 'en',
+    "duration_in_seconds" integer not null default 0,
     "created_at" timestamp with time zone not null default now()
 );
 
 
-alter table "public"."recording_transcriptions" enable row level security;
+alter table "public"."recording_transcripts" enable row level security;
 
 create table "public"."workspace_meetings" (
     "id" uuid not null default gen_random_uuid(),
@@ -51,9 +54,9 @@ CREATE UNIQUE INDEX audio_chunks_session_id_chunk_order_key ON public.audio_chun
 
 CREATE UNIQUE INDEX recording_sessions_pkey ON public.recording_sessions USING btree (id);
 
-CREATE UNIQUE INDEX recording_transcriptions_pkey ON public.recording_transcriptions USING btree (id);
+CREATE UNIQUE INDEX recording_transcripts_pkey ON public.recording_transcripts USING btree (id);
 
-CREATE UNIQUE INDEX recording_transcriptions_session_id_key ON public.recording_transcriptions USING btree (session_id);
+CREATE UNIQUE INDEX recording_transcripts_session_id_key ON public.recording_transcripts USING btree (session_id);
 
 CREATE UNIQUE INDEX workspace_meetings_pkey ON public.workspace_meetings USING btree (id);
 
@@ -63,7 +66,7 @@ alter table "public"."audio_chunks" add constraint "audio_chunks_session_id_chun
 
 alter table "public"."recording_sessions" add constraint "recording_sessions_pkey" PRIMARY KEY using index "recording_sessions_pkey";
 
-alter table "public"."recording_transcriptions" add constraint "recording_transcriptions_pkey" PRIMARY KEY using index "recording_transcriptions_pkey";
+alter table "public"."recording_transcripts" add constraint "recording_transcripts_pkey" PRIMARY KEY using index "recording_transcripts_pkey";
 
 alter table "public"."workspace_meetings" add constraint "workspace_meetings_pkey" PRIMARY KEY using index "workspace_meetings_pkey";
 
@@ -79,11 +82,11 @@ alter table "public"."recording_sessions" add constraint "recording_sessions_use
 
 alter table "public"."recording_sessions" validate constraint "recording_sessions_user_id_fkey";
 
-alter table "public"."recording_transcriptions" add constraint "recording_transcriptions_session_id_fkey" FOREIGN KEY (session_id) REFERENCES recording_sessions(id) ON UPDATE CASCADE ON DELETE CASCADE not valid;
+alter table "public"."recording_transcripts" add constraint "recording_transcripts_session_id_fkey" FOREIGN KEY (session_id) REFERENCES recording_sessions(id) ON UPDATE CASCADE ON DELETE CASCADE not valid;
 
-alter table "public"."recording_transcriptions" validate constraint "recording_transcriptions_session_id_fkey";
+alter table "public"."recording_transcripts" validate constraint "recording_transcripts_session_id_fkey";
 
-alter table "public"."recording_transcriptions" add constraint "recording_transcriptions_session_id_key" UNIQUE using index "recording_transcriptions_session_id_key";
+alter table "public"."recording_transcripts" add constraint "recording_transcripts_session_id_key" UNIQUE using index "recording_transcripts_session_id_key";
 
 alter table "public"."workspace_meetings" add constraint "workspace_meetings_creator_id_fkey" FOREIGN KEY (creator_id) REFERENCES users(id) ON UPDATE CASCADE not valid;
 
@@ -190,47 +193,47 @@ grant truncate on table "public"."recording_sessions" to "service_role";
 
 grant update on table "public"."recording_sessions" to "service_role";
 
-grant delete on table "public"."recording_transcriptions" to "anon";
+grant delete on table "public"."recording_transcripts" to "anon";
 
-grant insert on table "public"."recording_transcriptions" to "anon";
+grant insert on table "public"."recording_transcripts" to "anon";
 
-grant references on table "public"."recording_transcriptions" to "anon";
+grant references on table "public"."recording_transcripts" to "anon";
 
-grant select on table "public"."recording_transcriptions" to "anon";
+grant select on table "public"."recording_transcripts" to "anon";
 
-grant trigger on table "public"."recording_transcriptions" to "anon";
+grant trigger on table "public"."recording_transcripts" to "anon";
 
-grant truncate on table "public"."recording_transcriptions" to "anon";
+grant truncate on table "public"."recording_transcripts" to "anon";
 
-grant update on table "public"."recording_transcriptions" to "anon";
+grant update on table "public"."recording_transcripts" to "anon";
 
-grant delete on table "public"."recording_transcriptions" to "authenticated";
+grant delete on table "public"."recording_transcripts" to "authenticated";
 
-grant insert on table "public"."recording_transcriptions" to "authenticated";
+grant insert on table "public"."recording_transcripts" to "authenticated";
 
-grant references on table "public"."recording_transcriptions" to "authenticated";
+grant references on table "public"."recording_transcripts" to "authenticated";
 
-grant select on table "public"."recording_transcriptions" to "authenticated";
+grant select on table "public"."recording_transcripts" to "authenticated";
 
-grant trigger on table "public"."recording_transcriptions" to "authenticated";
+grant trigger on table "public"."recording_transcripts" to "authenticated";
 
-grant truncate on table "public"."recording_transcriptions" to "authenticated";
+grant truncate on table "public"."recording_transcripts" to "authenticated";
 
-grant update on table "public"."recording_transcriptions" to "authenticated";
+grant update on table "public"."recording_transcripts" to "authenticated";
 
-grant delete on table "public"."recording_transcriptions" to "service_role";
+grant delete on table "public"."recording_transcripts" to "service_role";
 
-grant insert on table "public"."recording_transcriptions" to "service_role";
+grant insert on table "public"."recording_transcripts" to "service_role";
 
-grant references on table "public"."recording_transcriptions" to "service_role";
+grant references on table "public"."recording_transcripts" to "service_role";
 
-grant select on table "public"."recording_transcriptions" to "service_role";
+grant select on table "public"."recording_transcripts" to "service_role";
 
-grant trigger on table "public"."recording_transcriptions" to "service_role";
+grant trigger on table "public"."recording_transcripts" to "service_role";
 
-grant truncate on table "public"."recording_transcriptions" to "service_role";
+grant truncate on table "public"."recording_transcripts" to "service_role";
 
-grant update on table "public"."recording_transcriptions" to "service_role";
+grant update on table "public"."recording_transcripts" to "service_role";
 
 grant delete on table "public"."workspace_meetings" to "anon";
 

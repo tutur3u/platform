@@ -149,3 +149,4 @@ export type WorkspaceEducationAccessRequest =
   Tables<'workspace_education_access_requests'>;
 
 export type RecordingStatus = Database['public']['Enums']['recording_status'];
+export type RecordingTranscript = Tables<'recording_transcripts'>;

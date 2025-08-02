@@ -6,7 +6,7 @@ import { z } from 'zod';
 
 const DEFAULT_MODEL_NAME = 'gemini-2.0-flash';
 
-const transcriptionSchema = z.object({
+const transcriptSchema = z.object({
   text: z.string().describe('The full transcript text'),
   segments: z
     .array(
@@ -74,7 +74,7 @@ export function createPOST(
 
       const result = await generateObject({
         model: google(DEFAULT_MODEL_NAME),
-        schema: transcriptionSchema,
+        schema: transcriptSchema,
         system: systemInstruction,
         messages: [
           {
@@ -124,7 +124,7 @@ export function createPOST(
         }
       );
     } catch (error) {
-      console.error('Transcription error:', error);
+      console.error('transcript error:', error);
       return new Response('Internal server error', { status: 500 });
     }
   };

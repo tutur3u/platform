@@ -1,6 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
+import { RecordingStatus } from '@tuturuuu/types/db';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -50,16 +51,10 @@ interface Meeting {
   };
   recording_sessions: Array<{
     id: string;
-    status:
-      | 'recording'
-      | 'interrupted'
-      | 'pending_transcription'
-      | 'transcribing'
-      | 'completed'
-      | 'failed';
+    status: RecordingStatus;
     created_at: string;
     updated_at: string;
-    recording_transcriptions?: {
+    recording_transcripts?: {
       text: string;
       created_at: string;
     };
@@ -494,7 +489,7 @@ export function MeetingsContent({
                           <Mic className="h-3 w-3" />
                           {getStatusBadge(session.status)}
                         </div>
-                        {session.recording_transcriptions && (
+                        {session.recording_transcripts && (
                           <Button variant="ghost" size="sm">
                             <FileText className="mr-1 h-3 w-3" />
                             View Transcript
