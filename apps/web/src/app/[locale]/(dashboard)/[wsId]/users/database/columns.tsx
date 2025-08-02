@@ -215,7 +215,7 @@ export const getUserColumns = (
       <DataTableColumnHeader
         t={t}
         column={column}
-        title={t(`${namespace}.attendance-count`)}
+        title={t(`${namespace}.attendance_count`)}
       />
     ),
     cell: ({ row }) => (

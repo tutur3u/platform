@@ -1055,7 +1055,7 @@
   },
   "user-data-table": {
     "id": "Mã số",
-    "attendance-count": "Số lần điểm danh",
+    "attendance_count": "Số lần điểm danh",
     "avatar_url": "Ảnh đại diện",
     "name": "Tên",
     "full_name": "Họ và tên",
