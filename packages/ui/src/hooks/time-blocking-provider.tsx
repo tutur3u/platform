@@ -521,12 +521,13 @@ const TimeBlockingProvider = ({
   const syncTimeBlocks = useCallback(async () => {
     if (!plan.id || !user?.id) return;
 
-    const addTimeBlock = async (timeblock: Timeblock) => {
-      if (plan.id !== selectedTimeBlocks.planId) return;
+    const addTimeBlocks = async (timeblocks: Timeblock[]) => {
+      if (plan.id !== selectedTimeBlocks.planId || timeblocks.length === 0)
+        return;
       const data = {
         user_id: user?.id,
         password_hash: user?.password_hash,
-        timeblock,
+        timeblocks,
       };
       await fetch(`/api/meet-together/plans/${plan.id}/timeblocks`, {
         method: 'POST',
@@ -558,9 +559,7 @@ const TimeBlockingProvider = ({
       return;
     }
     if (serverTimeblocks.length === 0 && localTimeblocks.length > 0) {
-      await Promise.all(
-        localTimeblocks.map((timeblock) => addTimeBlock(timeblock))
-      );
+      await addTimeBlocks(localTimeblocks);
       const syncedServerTimeblocks = await fetchCurrentTimeBlocks(plan?.id);
       setSelectedTimeBlocks({
         planId: plan.id,
@@ -605,10 +604,7 @@ const TimeBlockingProvider = ({
           timeblock.id ? removeTimeBlock(timeblock) : null
         )
       );
-    if (timeblocksToAdd.length > 0)
-      await Promise.all(
-        timeblocksToAdd.map((timeblock) => addTimeBlock(timeblock))
-      );
+    if (timeblocksToAdd.length > 0) await addTimeBlocks(timeblocksToAdd);
     const syncedServerTimeblocks = await fetchCurrentTimeBlocks(plan?.id);
     setSelectedTimeBlocks({
       planId: plan.id,
