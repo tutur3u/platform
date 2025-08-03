@@ -135,7 +135,7 @@ export default function PreviewDayTime({
         .map((_, i, array) => {
           const result = isTimeBlockSelected(i);
 
-          const isDraft = result.type.includes('draft');
+          // const isDraft = result.type.includes('draft');
           const isSaved = result.type.includes('server');
           const isLocal = result.type.includes('local');
           const isTentative = result.tentative ?? false;
@@ -164,22 +164,11 @@ export default function PreviewDayTime({
               }
             } else {
               if (isSelected) {
-                // Only show tentative differentiation when filtering by specific users
-                if (filteredUserIds.length > 0 && isTentative) {
-                  // Use yellow/orange color for tentative timeblocks when filtering
-                  cellClass = isDraft
-                    ? 'bg-yellow-500/50'
-                    : isSaved
-                      ? 'bg-yellow-500/70'
-                      : 'bg-yellow-500/70';
-                } else {
-                  // Use green color for normal timeblocks or when not filtering
-                  cellClass = isDraft
-                    ? 'bg-green-500/50'
-                    : isSaved
-                      ? 'bg-green-500/70'
-                      : 'bg-green-500/70';
-                }
+                const color =
+                  filteredUserIds.length > 0 && isTentative
+                    ? 'yellow'
+                    : 'green';
+                cellClass = `bg-${color}-500/70`;
               } else {
                 cellClass = 'bg-foreground/10';
               }
