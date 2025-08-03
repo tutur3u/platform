@@ -182,12 +182,7 @@ export default function PlanDetailsClient({
                 'mt-8 grid w-full grid-cols-1 items-start justify-between gap-4 md:grid-cols-3'
               )}
             >
-              <div
-                className={cn(
-                  'md:col-span-2',
-                  !plan.where_to_meet && 'md:col-span-full'
-                )}
-              >
+              <div className={cn('md:col-span-2')}>
                 <UnifiedAvailability
                   plan={plan}
                   timeblocks={timeblocks}
@@ -195,15 +190,13 @@ export default function PlanDetailsClient({
                   onBestTimesStatusByDateAction={setBestTimesStatusByDate}
                 />
               </div>
-              {plan.where_to_meet && (
-                <SidebarDisplay
-                  plan={plan}
-                  polls={polls}
-                  isCreator={isCreator}
-                  platformUser={platformUser}
-                  users={users}
-                />
-              )}
+              <SidebarDisplay
+                plan={plan}
+                polls={polls}
+                isCreator={isCreator}
+                platformUser={platformUser}
+                users={users}
+              />
             </div>
 
             <Separator className="my-8" />
