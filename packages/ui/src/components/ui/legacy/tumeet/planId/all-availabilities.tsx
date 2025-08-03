@@ -11,23 +11,23 @@ import { memo, useMemo } from 'react';
 // Memoized progress bar component
 const ProgressBar = memo(({ totalUserCount }: { totalUserCount: number }) => {
   const progressBars = useMemo(() => {
-    return Array.from({ length: totalUserCount + 1 }).map((_, i) => (
+    return Array.from({ length: (totalUserCount || 1) + 1 }).map((_, i) => (
       <div
         key={i}
         style={{
-          width: `calc(100% / ${totalUserCount})`,
+          width: `calc(100% / ${totalUserCount || 1} )`,
         }}
         className={`h-full ${
-          i < totalUserCount ? 'border-r border-foreground/50' : ''
+          i < (totalUserCount || 1) ? 'border-r border-foreground/50' : ''
         }`}
       >
         <div
           className={`h-full w-full ${cn(
             i === 0 ? 'bg-foreground/10' : 'bg-green-500/70',
-            i === totalUserCount && 'rounded-r-[0.175rem]'
+            i === (totalUserCount || 1) && 'rounded-r-[0.175rem]'
           )}`}
           style={{
-            opacity: i === 0 ? 1 : i / totalUserCount,
+            opacity: i === 0 ? 1 : i / (totalUserCount || 1),
           }}
         />
       </div>

@@ -2,7 +2,7 @@ import DayPlanner from './day-planner';
 import type { Timeblock } from '@tuturuuu/types/primitives/Timeblock';
 import { useTimeBlocking } from '@tuturuuu/ui/hooks/time-blocking-provider';
 import dayjs from 'dayjs';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 
 function DayPlanners({
   timeblocks,
@@ -148,4 +148,4 @@ function DayPlanners({
   );
 }
 
-export default DayPlanners;
+export default memo(DayPlanners);

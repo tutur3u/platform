@@ -10,7 +10,7 @@ import { Tabs, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { timetzToHour } from '@tuturuuu/ui/utils/date-helper';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
-import { useEffect, useMemo, useState } from 'react';
+import { memo, useEffect, useMemo, useState } from 'react';
 
 function DatePlanner({
   timeblocks,
@@ -241,4 +241,4 @@ function DatePlanner({
   );
 }
 
-export default DatePlanner;
+export default memo(DatePlanner);
