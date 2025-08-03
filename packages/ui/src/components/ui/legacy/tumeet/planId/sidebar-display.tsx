@@ -14,24 +14,25 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@tuturuuu/ui/accordion';
+import { useTimeBlocking } from '@tuturuuu/ui/hooks/time-blocking-provider';
 import { useTranslations } from 'next-intl';
 
 export interface SidebarDisplayProps {
   plan: MeetTogetherPlan;
-  isCreator: boolean;
-  platformUser: User | null;
   polls: GetPollsForPlanResult | null;
   users: PlanUser[];
 }
 
 export default function SidebarDisplay({
   plan,
-  isCreator,
-  platformUser,
   polls,
   users,
 }: SidebarDisplayProps) {
   const t = useTranslations('ws-polls');
+  const { user, originalPlatformUser } = useTimeBlocking();
+
+  // Determine if the current user is the creator
+  const isCreator = user?.id === plan.creator_id;
 
   return (
     <Accordion
@@ -47,7 +48,7 @@ export default function SidebarDisplay({
           <PlanDetailsPollContent
             plan={plan}
             isCreator={isCreator}
-            platformUser={platformUser}
+            platformUser={originalPlatformUser}
             polls={polls}
           />
         </AccordionContent>

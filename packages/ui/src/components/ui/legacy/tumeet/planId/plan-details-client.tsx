@@ -28,8 +28,8 @@ import { useCallback, useEffect, useState } from 'react';
 interface PlanDetailsClientProps {
   plan: MeetTogetherPlan;
   polls: GetPollsForPlanResult | null;
-  platformUser: User | null;
-  isCreator: boolean;
+  // platformUser: User | null;
+  // isCreator: boolean;
   users: PlanUser[];
   timeblocks: Timeblock[];
   baseUrl: string;
@@ -37,8 +37,8 @@ interface PlanDetailsClientProps {
 
 export default function PlanDetailsClient({
   plan,
-  platformUser,
-  isCreator,
+  // platformUser,
+  // isCreator,
   users,
   polls,
   timeblocks,
@@ -46,7 +46,8 @@ export default function PlanDetailsClient({
 }: PlanDetailsClientProps) {
   const { resolvedTheme } = useTheme();
   const [showBestTimes, setShowBestTimes] = useState(false);
-  const { filteredUserIds, isDirty, resetLocalTimeblocks } = useTimeBlocking();
+  const { filteredUserIds, isDirty, resetLocalTimeblocks, user } =
+    useTimeBlocking();
 
   // If user filter is active, force best times off
   const isUserFilterActive = filteredUserIds && filteredUserIds.length > 0;
@@ -104,16 +105,12 @@ export default function PlanDetailsClient({
     <>
       <div className="flex w-full max-w-7xl flex-col gap-6 p-4 text-foreground md:px-6 lg:gap-14 lg:px-10">
         <div className="flex w-full flex-col items-center">
-          <UtilityButtons
-            plan={plan}
-            platformUser={platformUser}
-            handlePNG={downloadAsPNG}
-          />
+          <UtilityButtons plan={plan} handlePNG={downloadAsPNG} />
 
           <div id="plan-ref" className="flex w-full flex-col items-center">
             <p className="my-4 flex max-w-xl items-center gap-2 text-center text-2xl leading-tight! font-semibold text-balance md:mb-4 lg:text-3xl">
               {plan.name}{' '}
-              {platformUser?.id === plan.creator_id ? (
+              {user?.id === plan.creator_id ? (
                 <EditPlanDialog
                   plan={plan}
                   onSuccess={() => {
@@ -190,18 +187,12 @@ export default function PlanDetailsClient({
                   onBestTimesStatusByDateAction={setBestTimesStatusByDate}
                 />
               </div>
-              <SidebarDisplay
-                plan={plan}
-                polls={polls}
-                isCreator={isCreator}
-                platformUser={platformUser}
-                users={users}
-              />
+              <SidebarDisplay plan={plan} polls={polls} users={users} />
             </div>
 
             <Separator className="my-8" />
 
-            <AgendaDetails plan={plan} platformUser={platformUser} />
+            <AgendaDetails plan={plan} />
           </div>
         </div>
       </div>
@@ -209,7 +200,7 @@ export default function PlanDetailsClient({
       {/* Discord-style sticky bottom indicator for unsaved changes */}
       {isDirty && <StickyBottomIndicator />}
 
-      <PlanLogin plan={plan} platformUser={platformUser} baseUrl={baseUrl} />
+      <PlanLogin plan={plan} baseUrl={baseUrl} />
     </>
   );
 }

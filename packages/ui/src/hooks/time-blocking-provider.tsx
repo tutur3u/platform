@@ -85,6 +85,7 @@ const findTimeBlocksToAdd = (
 
 const TimeBlockContext = createContext({
   user: null as PlatformUser | GuestUser | null,
+  originalPlatformUser: null as PlatformUser | null,
   planUsers: [] as (PlatformUser | GuestUser)[],
   filteredUserIds: [] as string[],
   previewDate: null as Date | null,
@@ -699,6 +700,7 @@ const TimeBlockingProvider = ({
     <TimeBlockContext.Provider
       value={{
         user,
+        originalPlatformUser: platformUser,
         planUsers,
         filteredUserIds,
         previewDate,

@@ -31,9 +31,9 @@ export default async function MeetTogetherPlanDetailsPage({
   const users: PlanUser[] = await getUsers(planId);
   const polls = await getPollsForPlan(planId);
   const timeblocks = await getTimeBlocks(planId);
-  const isCreator = Boolean(
-    platformUser?.id && plan?.creator_id && platformUser.id === plan.creator_id
-  );
+  // const isCreator = Boolean(
+  //   platformUser?.id && plan?.creator_id && platformUser.id === plan.creator_id
+  // );
 
   return (
     <div className="flex min-h-screen w-full flex-col items-center">
@@ -48,9 +48,8 @@ export default async function MeetTogetherPlanDetailsPage({
           >
             <PlanDetailsClient
               plan={plan}
-              isCreator={isCreator}
+              // isCreator={isCreator}
               polls={polls}
-              platformUser={platformUser}
               users={users}
               timeblocks={timeblocks}
               baseUrl={baseUrl}

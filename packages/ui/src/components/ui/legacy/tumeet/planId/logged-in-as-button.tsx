@@ -5,15 +5,15 @@ import { useTimeBlocking } from '@tuturuuu/ui/hooks/time-blocking-provider';
 import { Separator } from '@tuturuuu/ui/separator';
 import { useTranslations } from 'next-intl';
 
-export default function LoggedInAsButton({
-  platformUser,
-}: {
-  platformUser: PlatformUser | null;
-}) {
+export default function LoggedInAsButton() {
   const t = useTranslations();
-  const { user: guestUser, setDisplayMode } = useTimeBlocking();
+  const {
+    user: guestUser,
+    originalPlatformUser,
+    setDisplayMode,
+  } = useTimeBlocking();
 
-  const user = guestUser ?? platformUser;
+  const user = guestUser ?? originalPlatformUser;
 
   return (
     <div className="w-full rounded border border-foreground/20 bg-foreground/5 p-2 text-center md:w-fit md:min-w-64">
@@ -26,7 +26,7 @@ export default function LoggedInAsButton({
         className={`${user?.id ? '' : 'opacity-50'} line-clamp-1 font-semibold break-all`}
       >
         {user?.display_name ||
-          platformUser?.email ||
+          originalPlatformUser?.email ||
           t('meet-together-plan-details.anonymous')}{' '}
       </div>
 
@@ -35,7 +35,7 @@ export default function LoggedInAsButton({
           type={
             user?.is_guest === true
               ? 'GUEST'
-              : platformUser?.id
+              : originalPlatformUser?.id
                 ? 'PLATFORM'
                 : 'GUEST'
           }

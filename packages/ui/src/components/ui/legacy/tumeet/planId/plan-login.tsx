@@ -41,11 +41,9 @@ const GUEST_CREDENTIALS_KEY_PREFIX = 'meet_together_guest_';
 
 export default function PlanLogin({
   plan,
-  platformUser,
   baseUrl,
 }: {
   plan: MeetTogetherPlan;
-  platformUser: User | null;
   baseUrl: string;
 }) {
   const pathname = usePathname();
@@ -53,7 +51,8 @@ export default function PlanLogin({
 
   const t = useTranslations();
 
-  const { user, displayMode, setUser, setDisplayMode } = useTimeBlocking();
+  const { user, originalPlatformUser, displayMode, setUser, setDisplayMode } =
+    useTimeBlocking();
 
   const [loading, setLoading] = useState(false);
 

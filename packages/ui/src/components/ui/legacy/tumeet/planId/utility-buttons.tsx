@@ -7,22 +7,24 @@ import LoggedInAsButton from './logged-in-as-button';
 import ShowQRButton from './show-qr-button';
 import type { MeetTogetherPlan } from '@tuturuuu/types/primitives/MeetTogetherPlan';
 import type { User } from '@tuturuuu/types/primitives/User';
+import { useTimeBlocking } from '@tuturuuu/ui/hooks/time-blocking-provider';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 interface UtilityButtonsProps {
   plan: MeetTogetherPlan;
-  platformUser: User | null;
+  // platformUser: User | null;
   handlePNG: () => Promise<void>;
 }
 
 export default function UtilityButtons({
   plan,
-  platformUser,
+  // platformUser,
   handlePNG,
 }: UtilityButtonsProps) {
   const pathname = usePathname();
   const [url, setUrl] = useState('');
+  const { user } = useTimeBlocking();
 
   useEffect(() => {
     setUrl(`${window.location.origin}${pathname}`);
@@ -40,7 +42,7 @@ export default function UtilityButtons({
         <EmailButton plan={plan} url={tumeetMeUrl} />
         <DownloadAsPNG onClick={handlePNG} />
       </div>
-      <LoggedInAsButton platformUser={platformUser} />
+      <LoggedInAsButton />
     </div>
   );
 }
