@@ -57,7 +57,6 @@ export function RecordingSessionActions({
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
-  const [, setDuration] = useState(0);
   const [volume, setVolume] = useState(1);
   const [isMuted, setIsMuted] = useState(false);
   const [totalDuration, setTotalDuration] = useState(0);
@@ -158,7 +157,6 @@ export function RecordingSessionActions({
 
         audioBuffersRef.current = [audioBuffer];
         setTotalDuration(audioBuffer.duration);
-        setDuration(audioBuffer.duration);
 
         setIsLoading(false);
         toast.success('Recording loaded successfully');
