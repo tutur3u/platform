@@ -76,11 +76,8 @@ function DatePlanner({
     setCurrentPage((prev) => Math.min(totalPages - 1, prev + 1));
   };
 
-  const canGoPrevious = useMemo(() => currentPage > 0, [currentPage]);
-  const canGoNext = useMemo(
-    () => currentPage < totalPages - 1,
-    [currentPage, totalPages]
-  );
+  const canGoPrevious = currentPage > 0;
+  const canGoNext = currentPage < totalPages - 1;
 
   if (!startHour || !endHour) {
     return (
