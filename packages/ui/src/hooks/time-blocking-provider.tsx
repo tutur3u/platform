@@ -368,6 +368,10 @@ const TimeBlockingProvider = ({
     'login' | 'account-switcher'
   >();
 
+  // Add debouncing for endEditing to prevent multiple rapid calls
+  const endEditingInProgressRef = useRef(false);
+  const endEditingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   const setDisplayModeCallback = useCallback(
     (
       mode?:
@@ -445,38 +449,88 @@ const TimeBlockingProvider = ({
     )
       return;
 
-    setSelectedTimeBlocks((prevTimeblocks) => {
-      const dates = [editing.startDate, dayjs(editing.endDate).toDate()].filter(
-        Boolean
-      ) as Date[];
+    // Prevent multiple rapid calls to endEditing
+    if (endEditingInProgressRef.current) {
+      console.log('endEditing already in progress, skipping');
+      return;
+    }
 
-      if (editing.mode === 'add') {
-        const timeblocks = addTimeblocks(
-          prevTimeblocks.data,
-          dates,
-          editing.tentativeMode ?? false
-        );
-        return {
-          planId: plan.id,
-          data: timeblocks.map((tb) => ({ ...tb, plan_id: plan.id })),
-        };
+    // Clear any pending timeout
+    if (endEditingTimeoutRef.current) {
+      clearTimeout(endEditingTimeoutRef.current);
+      endEditingTimeoutRef.current = null;
+    }
+
+    // Debounce the actual processing
+    endEditingTimeoutRef.current = setTimeout(() => {
+      endEditingInProgressRef.current = true;
+
+      try {
+        setSelectedTimeBlocks((prevTimeblocks) => {
+          const dates = [
+            editing.startDate,
+            dayjs(editing.endDate).toDate(),
+          ].filter(Boolean) as Date[];
+
+          if (editing.mode === 'add') {
+            const timeblocks = addTimeblocks(
+              prevTimeblocks.data,
+              dates,
+              editing.tentativeMode ?? false
+            );
+
+            // Deduplicate timeblocks at the source to prevent duplicates
+            const deduplicatedTimeblocks = timeblocks.filter(
+              (timeblock, index, self) => {
+                const key = `${plan.id}-${timeblock.user_id}-${timeblock.date}-${timeblock.start_time}-${timeblock.end_time}-${timeblock.tentative}`;
+                return (
+                  self.findIndex(
+                    (tb: Timeblock) =>
+                      `${plan.id}-${tb.user_id}-${tb.date}-${tb.start_time}-${tb.end_time}-${tb.tentative}` ===
+                      key
+                  ) === index
+                );
+              }
+            );
+
+            return {
+              planId: plan.id,
+              data: deduplicatedTimeblocks.map((tb) => ({
+                ...tb,
+                plan_id: plan.id,
+              })),
+            };
+          }
+
+          if (editing.mode === 'remove') {
+            const timeblocks = removeTimeblocks(prevTimeblocks.data, dates);
+            return {
+              planId: plan.id,
+              data: timeblocks.map((tb) => ({ ...tb, plan_id: plan.id })),
+            };
+          }
+
+          return prevTimeblocks;
+        });
+
+        setEditing({
+          enabled: false,
+        });
+      } finally {
+        endEditingInProgressRef.current = false;
       }
-
-      if (editing.mode === 'remove') {
-        const timeblocks = removeTimeblocks(prevTimeblocks.data, dates);
-        return {
-          planId: plan.id,
-          data: timeblocks.map((tb) => ({ ...tb, plan_id: plan.id })),
-        };
-      }
-
-      return prevTimeblocks;
-    });
-
-    setEditing({
-      enabled: false,
-    });
+    }, 100); // Increased delay to better prevent rapid calls
   }, [plan.id, editing]);
+
+  // Cleanup timeout on component unmount to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      if (endEditingTimeoutRef.current) {
+        clearTimeout(endEditingTimeoutRef.current);
+        endEditingTimeoutRef.current = null;
+      }
+    };
+  }, []);
 
   // Page leave warning
   useEffect(() => {
@@ -523,12 +577,13 @@ const TimeBlockingProvider = ({
   const syncTimeBlocks = useCallback(async () => {
     if (!plan.id || !user?.id) return;
 
-    const addTimeBlock = async (timeblock: Timeblock) => {
-      if (plan.id !== selectedTimeBlocks.planId) return;
+    const addTimeBlocks = async (timeblocks: Timeblock[]) => {
+      if (plan.id !== selectedTimeBlocks.planId || timeblocks.length === 0)
+        return;
       const data = {
         user_id: user?.id,
         password_hash: user?.password_hash,
-        timeblock,
+        timeblocks,
       };
       await fetch(`/api/meet-together/plans/${plan.id}/timeblocks`, {
         method: 'POST',
@@ -560,9 +615,7 @@ const TimeBlockingProvider = ({
       return;
     }
     if (serverTimeblocks.length === 0 && localTimeblocks.length > 0) {
-      await Promise.all(
-        localTimeblocks.map((timeblock) => addTimeBlock(timeblock))
-      );
+      await addTimeBlocks(localTimeblocks);
       const syncedServerTimeblocks = await fetchCurrentTimeBlocks(plan?.id);
       setSelectedTimeBlocks({
         planId: plan.id,
@@ -607,10 +660,7 @@ const TimeBlockingProvider = ({
           timeblock.id ? removeTimeBlock(timeblock) : null
         )
       );
-    if (timeblocksToAdd.length > 0)
-      await Promise.all(
-        timeblocksToAdd.map((timeblock) => addTimeBlock(timeblock))
-      );
+    if (timeblocksToAdd.length > 0) await addTimeBlocks(timeblocksToAdd);
     const syncedServerTimeblocks = await fetchCurrentTimeBlocks(plan?.id);
     setSelectedTimeBlocks({
       planId: plan.id,
