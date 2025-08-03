@@ -161,9 +161,10 @@ function PreviewDayTime({
         .map((_, i, array) => {
           const result = isTimeBlockSelected(i);
 
-          const isDraft = result.type.includes('draft');
+          // const isDraft = result.type.includes('draft');
           const isSaved = result.type.includes('server');
           const isLocal = result.type.includes('local');
+          const isTentative = result.tentative ?? false;
 
           const currentDate = dayjs(date)
             .hour(Math.floor(i / hourSplits) + start)
@@ -188,13 +189,15 @@ function PreviewDayTime({
                 cellStyle = { opacity: 1 };
               }
             } else {
-              cellClass = isSelected
-                ? isDraft
-                  ? 'bg-green-500/50'
-                  : isSaved
-                    ? 'bg-green-500/70'
-                    : 'bg-green-500/70'
-                : 'bg-foreground/10';
+              if (isSelected) {
+                const color =
+                  filteredUserIds.length > 0 && isTentative
+                    ? 'yellow'
+                    : 'green';
+                cellClass = `bg-${color}-500/70`;
+              } else {
+                cellClass = 'bg-foreground/10';
+              }
               cellStyle = {
                 opacity: isSelected
                   ? opacity === 'infinity'
