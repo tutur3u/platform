@@ -10,7 +10,11 @@
  * - Shows both platform users and guests who voted
  * - Anonymous fallback for users without display names
  */
-import type { PollOptionWithVotes } from '@tuturuuu/types/primitives/Poll';
+import type {
+  GuestVoteWithGuestInfo,
+  PollOptionWithVotes,
+  UserVoteWithUserInfo,
+} from '@tuturuuu/types/primitives/Poll';
 import { Button } from '@tuturuuu/ui/button';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
 import {
@@ -66,21 +70,25 @@ function VoterList({
   isExpanded,
   onToggle,
 }: {
-  userVotes: { user: { display_name: string } }[];
-  guestVotes: { guest: { display_name: string } }[];
+  userVotes: UserVoteWithUserInfo[];
+  guestVotes: GuestVoteWithGuestInfo[];
   isExpanded: boolean;
   onToggle: () => void;
 }) {
   const t = useTranslations('ws-polls');
   const allVoters = [
-    ...userVotes.map((vote) => ({
-      name: vote.user.display_name,
-      type: 'user' as const,
-    })),
-    ...guestVotes.map((vote) => ({
-      name: vote.guest.display_name,
-      type: 'guest' as const,
-    })),
+    ...userVotes
+      .filter((vote) => vote.user) // Filter out votes without user info
+      .map((vote) => ({
+        name: vote.user?.display_name || 'Anonymous',
+        type: 'user' as const,
+      })),
+    ...guestVotes
+      .filter((vote) => vote.guest) // Filter out votes without guest info
+      .map((vote) => ({
+        name: vote.guest?.display_name || 'Anonymous',
+        type: 'guest' as const,
+      })),
   ];
 
   if (allVoters.length === 0) return null;
