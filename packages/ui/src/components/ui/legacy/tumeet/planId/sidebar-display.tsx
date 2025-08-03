@@ -7,7 +7,6 @@ import type {
   PlanUser,
 } from '@tuturuuu/types/primitives/MeetTogetherPlan';
 import type { GetPollsForPlanResult } from '@tuturuuu/types/primitives/Poll';
-import type { User } from '@tuturuuu/types/primitives/User';
 import {
   Accordion,
   AccordionContent,

@@ -6,8 +6,6 @@ import EmailButton from './email-button';
 import LoggedInAsButton from './logged-in-as-button';
 import ShowQRButton from './show-qr-button';
 import type { MeetTogetherPlan } from '@tuturuuu/types/primitives/MeetTogetherPlan';
-import type { User } from '@tuturuuu/types/primitives/User';
-import { useTimeBlocking } from '@tuturuuu/ui/hooks/time-blocking-provider';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
@@ -24,7 +22,6 @@ export default function UtilityButtons({
 }: UtilityButtonsProps) {
   const pathname = usePathname();
   const [url, setUrl] = useState('');
-  const { user } = useTimeBlocking();
 
   useEffect(() => {
     setUrl(`${window.location.origin}${pathname}`);

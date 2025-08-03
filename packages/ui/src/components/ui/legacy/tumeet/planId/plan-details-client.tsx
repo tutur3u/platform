@@ -12,7 +12,6 @@ import type {
 } from '@tuturuuu/types/primitives/MeetTogetherPlan';
 import type { GetPollsForPlanResult } from '@tuturuuu/types/primitives/Poll';
 import type { Timeblock } from '@tuturuuu/types/primitives/Timeblock';
-import type { User } from '@tuturuuu/types/primitives/User';
 import { useTimeBlocking } from '@tuturuuu/ui/hooks/time-blocking-provider';
 import { CircleQuestionMark } from '@tuturuuu/ui/icons';
 import { Label } from '@tuturuuu/ui/label';

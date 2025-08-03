@@ -1,7 +1,6 @@
 'use client';
 
 import type { MeetTogetherPlan } from '@tuturuuu/types/primitives/MeetTogetherPlan';
-import type { User } from '@tuturuuu/types/primitives/User';
 import { Button } from '@tuturuuu/ui/button';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
 import {
