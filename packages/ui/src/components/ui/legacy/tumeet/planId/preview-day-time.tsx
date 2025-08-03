@@ -138,6 +138,7 @@ export default function PreviewDayTime({
           const isDraft = result.type.includes('draft');
           const isSaved = result.type.includes('server');
           const isLocal = result.type.includes('local');
+          const isTentative = result.tentative ?? false;
 
           const currentDate = dayjs(date)
             .hour(Math.floor(i / hourSplits) + start)
@@ -162,13 +163,26 @@ export default function PreviewDayTime({
                 cellStyle = { opacity: 1 };
               }
             } else {
-              cellClass = isSelected
-                ? isDraft
-                  ? 'bg-green-500/50'
-                  : isSaved
-                    ? 'bg-green-500/70'
-                    : 'bg-green-500/70'
-                : 'bg-foreground/10';
+              if (isSelected) {
+                // Only show tentative differentiation when filtering by specific users
+                if (filteredUserIds.length > 0 && isTentative) {
+                  // Use yellow/orange color for tentative timeblocks when filtering
+                  cellClass = isDraft
+                    ? 'bg-yellow-500/50'
+                    : isSaved
+                      ? 'bg-yellow-500/70'
+                      : 'bg-yellow-500/70';
+                } else {
+                  // Use green color for normal timeblocks or when not filtering
+                  cellClass = isDraft
+                    ? 'bg-green-500/50'
+                    : isSaved
+                      ? 'bg-green-500/70'
+                      : 'bg-green-500/70';
+                }
+              } else {
+                cellClass = 'bg-foreground/10';
+              }
               cellStyle = {
                 opacity: isSelected
                   ? opacity === 'infinity'
