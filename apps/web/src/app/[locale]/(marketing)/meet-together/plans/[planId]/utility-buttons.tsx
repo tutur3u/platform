@@ -8,7 +8,7 @@ import ShowQRButton from './show-qr-button';
 import type { MeetTogetherPlan } from '@tuturuuu/types/primitives/MeetTogetherPlan';
 import type { User } from '@tuturuuu/types/primitives/User';
 import { Button } from '@tuturuuu/ui/button';
-import { Check, Edit, ListCheck, PenOff } from '@tuturuuu/ui/icons';
+import { Check, Edit } from '@tuturuuu/ui/icons';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
