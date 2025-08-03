@@ -111,6 +111,7 @@ export async function GET(
       `
       )
       .eq('meeting_id', meetingId)
+      .not('status', 'eq', 'recording')
       .order('created_at', { ascending: false });
 
     // Apply status filter
