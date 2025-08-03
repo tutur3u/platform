@@ -1,6 +1,9 @@
 'use client';
 
-import type { MeetTogetherPlan } from '@tuturuuu/types/primitives/MeetTogetherPlan';
+import type {
+  GuestUser,
+  MeetTogetherPlan,
+} from '@tuturuuu/types/primitives/MeetTogetherPlan';
 import type { Timeblock } from '@tuturuuu/types/primitives/Timeblock';
 import type { User as PlatformUser } from '@tuturuuu/types/primitives/User';
 import {
@@ -10,6 +13,7 @@ import {
 import dayjs from 'dayjs';
 import isBetween from 'dayjs/plugin/isBetween';
 import minMax from 'dayjs/plugin/minMax';
+import { useRouter } from 'next/navigation';
 import {
   type ReactNode,
   type Touch,
@@ -23,13 +27,6 @@ import {
 
 dayjs.extend(isBetween);
 dayjs.extend(minMax);
-
-interface GuestUser {
-  id?: string | null;
-  display_name?: string | null;
-  password_hash?: string;
-  is_guest?: boolean | null;
-}
 
 interface EditingParams {
   enabled: boolean;
@@ -157,14 +154,33 @@ const TimeBlockingProvider = ({
   timeblocks: Timeblock[];
   children: ReactNode;
 }) => {
+  const router = useRouter();
   const [planUsers, setInternalUsers] = useState(users);
   const [filteredUserIds, setFilteredUserIds] = useState<string[]>([]);
+
+  const setFilteredUserIdsCallback = useCallback(
+    (userIds: string[] | ((prev: string[]) => string[])) => {
+      setFilteredUserIds(userIds);
+    },
+    []
+  );
 
   useEffect(() => {
     setInternalUsers(users);
   }, [users]);
 
   const [previewDate, setPreviewDate] = useState<Date | null>(null);
+
+  const setPreviewDateCallback = useCallback((date: Date | null) => {
+    setPreviewDate(date);
+  }, []);
+
+  const setSelectedTimeBlocksCallback = useCallback(
+    (timeblocks: { planId?: string; data: Timeblock[] }) => {
+      setSelectedTimeBlocks(timeblocks);
+    },
+    []
+  );
 
   const getPreviewUsers = useCallback(
     (timeblocks: Timeblock[]) => {
@@ -261,10 +277,10 @@ const TimeBlockingProvider = ({
   const [selectedTimeBlocks, setSelectedTimeBlocks] = useState<{
     planId?: string;
     data: Timeblock[];
-  }>({
+  }>(() => ({
     planId: plan.id,
     data: timeblocks.filter((tb) => tb.user_id === user?.id),
-  });
+  }));
 
   // Add dirty state tracking
   const [isDirty, setIsDirty] = useState(false);
@@ -281,25 +297,38 @@ const TimeBlockingProvider = ({
     );
   }, [timeblocks, user?.id]);
 
-  // Check if current timeblocks differ from initial state
-  useEffect(() => {
+  // Memoize the dirty state checking function
+  const checkDirtyState = useCallback(() => {
     const currentTimeBlocks = selectedTimeBlocks.data;
     const initialTimeBlocks = initialTimeBlocksRef.current;
 
-    const hasChanges =
-      JSON.stringify(
-        [...currentTimeBlocks].sort((a, b) =>
-          `${a.date}${a.start_time}`.localeCompare(`${b.date}${b.start_time}`)
-        )
-      ) !==
-      JSON.stringify(
-        [...initialTimeBlocks].sort((a, b) =>
-          `${a.date}${a.start_time}`.localeCompare(`${b.date}${b.start_time}`)
-        )
-      );
+    const currentSorted = [...currentTimeBlocks].sort((a, b) =>
+      `${a.date}${a.start_time}`.localeCompare(`${b.date}${b.start_time}`)
+    );
+    const initialSorted = [...initialTimeBlocks].sort((a, b) =>
+      `${a.date}${a.start_time}`.localeCompare(`${b.date}${b.start_time}`)
+    );
 
-    setIsDirty(hasChanges);
+    return (
+      currentSorted.length !== initialSorted.length ||
+      currentSorted.some((current, index) => {
+        const initial = initialSorted[index];
+        return (
+          !initial ||
+          current.date !== initial.date ||
+          current.start_time !== initial.start_time ||
+          current.end_time !== initial.end_time ||
+          current.tentative !== initial.tentative
+        );
+      })
+    );
   }, [selectedTimeBlocks.data]);
+
+  // Check if current timeblocks differ from initial state
+  useEffect(() => {
+    const hasChanges = checkDirtyState();
+    setIsDirty(hasChanges);
+  }, [checkDirtyState]);
 
   const markAsDirty = useCallback(() => {
     setIsDirty(true);
@@ -321,20 +350,41 @@ const TimeBlockingProvider = ({
     []
   );
 
-  const setUser = (planId: string, user: PlatformUser | GuestUser | null) => {
-    setSelectedTimeBlocks({
-      planId,
-      data: timeblocks.filter(
-        (tb) =>
-          tb.user_id === user?.id && tb.is_guest === (user?.is_guest ?? false)
-      ),
-    });
-    setInternalUser(user);
-  };
+  const setUser = useCallback(
+    (planId: string, user: PlatformUser | GuestUser | null) => {
+      setSelectedTimeBlocks({
+        planId,
+        data: timeblocks.filter(
+          (tb) =>
+            tb.user_id === user?.id && tb.is_guest === (user?.is_guest ?? false)
+        ),
+      });
+      setInternalUser(user);
+    },
+    [timeblocks]
+  );
 
   const [displayMode, setDisplayMode] = useState<
     'login' | 'account-switcher'
   >();
+
+  // Add debouncing for endEditing to prevent multiple rapid calls
+  const endEditingInProgressRef = useRef(false);
+  const endEditingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const setDisplayModeCallback = useCallback(
+    (
+      mode?:
+        | 'login'
+        | 'account-switcher'
+        | ((
+            prev: 'login' | 'account-switcher' | undefined
+          ) => 'login' | 'account-switcher' | undefined)
+    ) => {
+      setDisplayMode(mode);
+    },
+    []
+  );
 
   const edit = useCallback(
     (
@@ -399,38 +449,88 @@ const TimeBlockingProvider = ({
     )
       return;
 
-    setSelectedTimeBlocks((prevTimeblocks) => {
-      const dates = [editing.startDate, dayjs(editing.endDate).toDate()].filter(
-        Boolean
-      ) as Date[];
+    // Prevent multiple rapid calls to endEditing
+    if (endEditingInProgressRef.current) {
+      console.log('endEditing already in progress, skipping');
+      return;
+    }
 
-      if (editing.mode === 'add') {
-        const timeblocks = addTimeblocks(
-          prevTimeblocks.data,
-          dates,
-          editing.tentativeMode ?? false
-        );
-        return {
-          planId: plan.id,
-          data: timeblocks.map((tb) => ({ ...tb, plan_id: plan.id })),
-        };
+    // Clear any pending timeout
+    if (endEditingTimeoutRef.current) {
+      clearTimeout(endEditingTimeoutRef.current);
+      endEditingTimeoutRef.current = null;
+    }
+
+    // Debounce the actual processing
+    endEditingTimeoutRef.current = setTimeout(() => {
+      endEditingInProgressRef.current = true;
+
+      try {
+        setSelectedTimeBlocks((prevTimeblocks) => {
+          const dates = [
+            editing.startDate,
+            dayjs(editing.endDate).toDate(),
+          ].filter(Boolean) as Date[];
+
+          if (editing.mode === 'add') {
+            const timeblocks = addTimeblocks(
+              prevTimeblocks.data,
+              dates,
+              editing.tentativeMode ?? false
+            );
+
+            // Deduplicate timeblocks at the source to prevent duplicates
+            const deduplicatedTimeblocks = timeblocks.filter(
+              (timeblock, index, self) => {
+                const key = `${plan.id}-${timeblock.user_id}-${timeblock.date}-${timeblock.start_time}-${timeblock.end_time}-${timeblock.tentative}`;
+                return (
+                  self.findIndex(
+                    (tb: Timeblock) =>
+                      `${plan.id}-${tb.user_id}-${tb.date}-${tb.start_time}-${tb.end_time}-${tb.tentative}` ===
+                      key
+                  ) === index
+                );
+              }
+            );
+
+            return {
+              planId: plan.id,
+              data: deduplicatedTimeblocks.map((tb) => ({
+                ...tb,
+                plan_id: plan.id,
+              })),
+            };
+          }
+
+          if (editing.mode === 'remove') {
+            const timeblocks = removeTimeblocks(prevTimeblocks.data, dates);
+            return {
+              planId: plan.id,
+              data: timeblocks.map((tb) => ({ ...tb, plan_id: plan.id })),
+            };
+          }
+
+          return prevTimeblocks;
+        });
+
+        setEditing({
+          enabled: false,
+        });
+      } finally {
+        endEditingInProgressRef.current = false;
       }
-
-      if (editing.mode === 'remove') {
-        const timeblocks = removeTimeblocks(prevTimeblocks.data, dates);
-        return {
-          planId: plan.id,
-          data: timeblocks.map((tb) => ({ ...tb, plan_id: plan.id })),
-        };
-      }
-
-      return prevTimeblocks;
-    });
-
-    setEditing({
-      enabled: false,
-    });
+    }, 100); // Increased delay to better prevent rapid calls
   }, [plan.id, editing]);
+
+  // Cleanup timeout on component unmount to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      if (endEditingTimeoutRef.current) {
+        clearTimeout(endEditingTimeoutRef.current);
+        endEditingTimeoutRef.current = null;
+      }
+    };
+  }, []);
 
   // Page leave warning
   useEffect(() => {
@@ -477,12 +577,13 @@ const TimeBlockingProvider = ({
   const syncTimeBlocks = useCallback(async () => {
     if (!plan.id || !user?.id) return;
 
-    const addTimeBlock = async (timeblock: Timeblock) => {
-      if (plan.id !== selectedTimeBlocks.planId) return;
+    const addTimeBlocks = async (timeblocks: Timeblock[]) => {
+      if (plan.id !== selectedTimeBlocks.planId || timeblocks.length === 0)
+        return;
       const data = {
         user_id: user?.id,
         password_hash: user?.password_hash,
-        timeblock,
+        timeblocks,
       };
       await fetch(`/api/meet-together/plans/${plan.id}/timeblocks`, {
         method: 'POST',
@@ -514,9 +615,7 @@ const TimeBlockingProvider = ({
       return;
     }
     if (serverTimeblocks.length === 0 && localTimeblocks.length > 0) {
-      await Promise.all(
-        localTimeblocks.map((timeblock) => addTimeBlock(timeblock))
-      );
+      await addTimeBlocks(localTimeblocks);
       const syncedServerTimeblocks = await fetchCurrentTimeBlocks(plan?.id);
       setSelectedTimeBlocks({
         planId: plan.id,
@@ -561,10 +660,7 @@ const TimeBlockingProvider = ({
           timeblock.id ? removeTimeBlock(timeblock) : null
         )
       );
-    if (timeblocksToAdd.length > 0)
-      await Promise.all(
-        timeblocksToAdd.map((timeblock) => addTimeBlock(timeblock))
-      );
+    if (timeblocksToAdd.length > 0) await addTimeBlocks(timeblocksToAdd);
     const syncedServerTimeblocks = await fetchCurrentTimeBlocks(plan?.id);
     setSelectedTimeBlocks({
       planId: plan.id,
@@ -591,6 +687,7 @@ const TimeBlockingProvider = ({
     setIsSaving(true);
     try {
       await syncTimeBlocks();
+      router.refresh();
     } catch (error) {
       console.error('Failed to save timeblocks:', error);
     } finally {
@@ -615,12 +712,12 @@ const TimeBlockingProvider = ({
         getOpacityForDate,
 
         setUser,
-        setFilteredUserIds,
-        setPreviewDate,
-        setSelectedTimeBlocks,
+        setFilteredUserIds: setFilteredUserIdsCallback,
+        setPreviewDate: setPreviewDateCallback,
+        setSelectedTimeBlocks: setSelectedTimeBlocksCallback,
         edit,
         endEditing,
-        setDisplayMode,
+        setDisplayMode: setDisplayModeCallback,
         syncTimeBlocks,
         resetLocalTimeblocks,
         markAsDirty,
