@@ -106,23 +106,20 @@ function VoterList({
         </Button>
       </CollapsibleTrigger>
       <CollapsibleContent className="mt-2">
-        <div className="max-h-32 space-y-1 overflow-y-auto pl-4">
-          {allVoters.map((voter, index) => (
-            <div
-              key={index}
-              className="flex items-center gap-2 py-0.5 text-xs text-muted-foreground"
-            >
-              <div className="flex h-2 w-2 flex-shrink-0 rounded-full bg-dynamic-purple/60" />
-              <span className="min-w-0 truncate">
-                {voter.name || t('anonymous')}
-              </span>
-              {voter.type === 'guest' && (
-                <span className="flex-shrink-0 text-xs text-muted-foreground/60">
-                  (Guest)
+        <div className="max-h-32 overflow-y-auto pl-4">
+          <div className="grid grid-cols-2 gap-2">
+            {allVoters.map((voter, index) => (
+              <div
+                key={index}
+                className="flex items-center gap-2 py-0.5 text-xs text-muted-foreground"
+              >
+                <div className="flex h-2 w-2 flex-shrink-0 rounded-full bg-dynamic-purple/60" />
+                <span className="min-w-0 truncate">
+                  {voter.name || 'Anonymous'}
                 </span>
-              )}
-            </div>
-          ))}
+              </div>
+            ))}
+          </div>
         </div>
       </CollapsibleContent>
     </Collapsible>
