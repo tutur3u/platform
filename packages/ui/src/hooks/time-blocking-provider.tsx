@@ -1,6 +1,9 @@
 'use client';
 
-import type { MeetTogetherPlan } from '@tuturuuu/types/primitives/MeetTogetherPlan';
+import type {
+  GuestUser,
+  MeetTogetherPlan,
+} from '@tuturuuu/types/primitives/MeetTogetherPlan';
 import type { Timeblock } from '@tuturuuu/types/primitives/Timeblock';
 import type { User as PlatformUser } from '@tuturuuu/types/primitives/User';
 import {
@@ -23,13 +26,6 @@ import {
 
 dayjs.extend(isBetween);
 dayjs.extend(minMax);
-
-interface GuestUser {
-  id?: string | null;
-  display_name?: string | null;
-  password_hash?: string;
-  is_guest?: boolean | null;
-}
 
 interface EditingParams {
   enabled: boolean;
