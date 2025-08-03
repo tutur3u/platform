@@ -221,22 +221,24 @@ export default function PlanLogin({
               onClick={() => {
                 if (!plan.id) return;
 
-                if (!platformUser) {
+                if (!originalPlatformUser) {
                   router.push(
                     `${baseUrl}/login?nextUrl=${encodeURIComponent(pathname)}`
                   );
                   return;
                 }
 
-                setUser(plan.id, platformUser);
+                setUser(plan.id, originalPlatformUser);
                 setDisplayMode();
               }}
               disabled={
                 !plan.id ||
-                (!!platformUser && (!user?.id || platformUser?.id === user?.id))
+                (!!originalPlatformUser &&
+                  (!user?.id || originalPlatformUser?.id === user?.id))
               }
             >
-              {!!platformUser && (!user?.id || platformUser?.id === user?.id)
+              {!!originalPlatformUser &&
+              (!user?.id || originalPlatformUser?.id === user?.id)
                 ? t('meet-together-plan-details.using_tuturuuu_account')
                 : t('meet-together-plan-details.use_tuturuuu_account')}
             </Button>
