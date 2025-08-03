@@ -46,10 +46,10 @@ export default function UtilityButtons({
               planId={plan.id}
               isCofirmPlan={Boolean(plan.is_confirm)}
             />
-            <EnableUnknownEditButton
+            {/* <EnableUnknownEditButton
               planId={plan.id}
               isEnableUnknownPlan={Boolean(plan.enable_unknown_edit)}
-            />
+            /> */}
           </>
         )}
       </div>
