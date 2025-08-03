@@ -10,6 +10,19 @@ export interface UserVote {
   user_id: string;
   created_at: string;
 }
+
+export interface UserVoteWithUserInfo extends UserVote {
+  user: {
+    display_name: string;
+  };
+}
+
+export interface GuestVoteWithGuestInfo extends GuestVote {
+  guest: {
+    display_name: string;
+  };
+}
+
 export interface GuestVote {
   id: string;
   option_id: string;
@@ -17,14 +30,14 @@ export interface GuestVote {
   created_at: string;
 }
 
-// A poll option with all its votes
+// A poll option with all its votes including display names
 export interface PollOptionWithVotes {
   id: string;
   poll_id: string;
   value: string;
   created_at: string;
-  userVotes: UserVote[];
-  guestVotes: GuestVote[];
+  userVotes: UserVoteWithUserInfo[];
+  guestVotes: GuestVoteWithGuestInfo[];
   totalVotes: number;
 }
 
@@ -42,7 +55,7 @@ export interface PollWithOptionsAndVotes {
 // The full API return type
 export interface GetPollsForPlanResult {
   polls: PollWithOptionsAndVotes[] | null;
-  userVotes: UserVote[]; // Flat array for convenience
-  guestVotes: GuestVote[]; // Flat array for convenience
+  userVotes: UserVoteWithUserInfo[]; // Flat array for convenience
+  guestVotes: GuestVoteWithGuestInfo[]; // Flat array for convenience
   error?: string;
 }
