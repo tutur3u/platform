@@ -10,9 +10,9 @@ import { Tabs, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { timetzToHour } from '@tuturuuu/ui/utils/date-helper';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
-export default function DatePlanner({
+function DatePlanner({
   timeblocks,
   dates,
   start,
@@ -37,16 +37,19 @@ export default function DatePlanner({
   const [currentPage, setCurrentPage] = useState(0);
   const isMobile = useIsMobile();
 
-  const startHour = timetzToHour(start);
-  const endHour = timetzToHour(end);
+  const startHour = useMemo(() => timetzToHour(start), [start]);
+  const endHour = useMemo(() => timetzToHour(end), [end]);
 
   useEffect(() => {
     setCurrentPage(0);
   }, [dates]);
 
   // Pagination logic
-  const maxDatesPerPage = isMobile ? 4 : 7;
-  const totalPages = dates ? Math.ceil(dates.length / maxDatesPerPage) : 0;
+  const maxDatesPerPage = useMemo(() => (isMobile ? 4 : 7), [isMobile]);
+  const totalPages = useMemo(
+    () => (dates ? Math.ceil(dates.length / maxDatesPerPage) : 0),
+    [dates, maxDatesPerPage]
+  );
 
   useEffect(() => {
     if (totalPages > 0 && currentPage >= totalPages) {
@@ -54,14 +57,16 @@ export default function DatePlanner({
     }
   }, [totalPages, currentPage]);
 
-  if (!startHour || !endHour) return null;
-
-  const currentDates = dates
-    ? dates.slice(
-        currentPage * maxDatesPerPage,
-        (currentPage + 1) * maxDatesPerPage
-      )
-    : [];
+  const currentDates = useMemo(
+    () =>
+      dates
+        ? dates.slice(
+            currentPage * maxDatesPerPage,
+            (currentPage + 1) * maxDatesPerPage
+          )
+        : [],
+    [dates, currentPage, maxDatesPerPage]
+  );
 
   const handlePreviousPage = () => {
     setCurrentPage((prev) => Math.max(0, prev - 1));
@@ -71,8 +76,21 @@ export default function DatePlanner({
     setCurrentPage((prev) => Math.min(totalPages - 1, prev + 1));
   };
 
-  const canGoPrevious = currentPage > 0;
-  const canGoNext = currentPage < totalPages - 1;
+  const canGoPrevious = useMemo(() => currentPage > 0, [currentPage]);
+  const canGoNext = useMemo(
+    () => currentPage < totalPages - 1,
+    [currentPage, totalPages]
+  );
+
+  if (!startHour || !endHour) {
+    return (
+      <div className="mt-4 flex flex-col gap-2">
+        <div className="flex items-center justify-center">
+          <div className="h-4 w-32 animate-pulse rounded bg-muted" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="mt-4 flex flex-col gap-2">
@@ -222,3 +240,5 @@ export default function DatePlanner({
     </div>
   );
 }
+
+export default DatePlanner;

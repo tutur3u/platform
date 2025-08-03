@@ -36,7 +36,19 @@ export default function UnifiedAvailability({
 
   const handleToggleMode = () => {
     if (user) {
+      console.log(
+        `[${new Date().toISOString()}] Transitioning from ${isEditing ? 'editing' : 'viewing'} to ${!isEditing ? 'editing' : 'viewing'}`
+      );
+      const startTime = performance.now();
       setIsEditing(!isEditing);
+
+      // Use setTimeout to measure after the state update and re-render
+      setTimeout(() => {
+        const endTime = performance.now();
+        console.log(
+          `[${new Date().toISOString()}] Transition completed in ${(endTime - startTime).toFixed(2)}ms`
+        );
+      }, 0);
     } else {
       setDisplayMode('account-switcher');
     }

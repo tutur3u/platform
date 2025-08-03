@@ -10,6 +10,7 @@ import {
 import dayjs from 'dayjs';
 import isBetween from 'dayjs/plugin/isBetween';
 import minMax from 'dayjs/plugin/minMax';
+import { useRouter } from 'next/navigation';
 import {
   type ReactNode,
   type Touch,
@@ -157,14 +158,33 @@ const TimeBlockingProvider = ({
   timeblocks: Timeblock[];
   children: ReactNode;
 }) => {
+  const router = useRouter();
   const [planUsers, setInternalUsers] = useState(users);
   const [filteredUserIds, setFilteredUserIds] = useState<string[]>([]);
+
+  const setFilteredUserIdsCallback = useCallback(
+    (userIds: string[] | ((prev: string[]) => string[])) => {
+      setFilteredUserIds(userIds);
+    },
+    []
+  );
 
   useEffect(() => {
     setInternalUsers(users);
   }, [users]);
 
   const [previewDate, setPreviewDate] = useState<Date | null>(null);
+
+  const setPreviewDateCallback = useCallback((date: Date | null) => {
+    setPreviewDate(date);
+  }, []);
+
+  const setSelectedTimeBlocksCallback = useCallback(
+    (timeblocks: { planId?: string; data: Timeblock[] }) => {
+      setSelectedTimeBlocks(timeblocks);
+    },
+    []
+  );
 
   const getPreviewUsers = useCallback(
     (timeblocks: Timeblock[]) => {
@@ -261,10 +281,10 @@ const TimeBlockingProvider = ({
   const [selectedTimeBlocks, setSelectedTimeBlocks] = useState<{
     planId?: string;
     data: Timeblock[];
-  }>({
+  }>(() => ({
     planId: plan.id,
     data: timeblocks.filter((tb) => tb.user_id === user?.id),
-  });
+  }));
 
   // Add dirty state tracking
   const [isDirty, setIsDirty] = useState(false);
@@ -281,25 +301,38 @@ const TimeBlockingProvider = ({
     );
   }, [timeblocks, user?.id]);
 
-  // Check if current timeblocks differ from initial state
-  useEffect(() => {
+  // Memoize the dirty state checking function
+  const checkDirtyState = useCallback(() => {
     const currentTimeBlocks = selectedTimeBlocks.data;
     const initialTimeBlocks = initialTimeBlocksRef.current;
 
-    const hasChanges =
-      JSON.stringify(
-        [...currentTimeBlocks].sort((a, b) =>
-          `${a.date}${a.start_time}`.localeCompare(`${b.date}${b.start_time}`)
-        )
-      ) !==
-      JSON.stringify(
-        [...initialTimeBlocks].sort((a, b) =>
-          `${a.date}${a.start_time}`.localeCompare(`${b.date}${b.start_time}`)
-        )
-      );
+    const currentSorted = [...currentTimeBlocks].sort((a, b) =>
+      `${a.date}${a.start_time}`.localeCompare(`${b.date}${b.start_time}`)
+    );
+    const initialSorted = [...initialTimeBlocks].sort((a, b) =>
+      `${a.date}${a.start_time}`.localeCompare(`${b.date}${b.start_time}`)
+    );
 
-    setIsDirty(hasChanges);
+    return (
+      currentSorted.length !== initialSorted.length ||
+      currentSorted.some((current, index) => {
+        const initial = initialSorted[index];
+        return (
+          !initial ||
+          current.date !== initial.date ||
+          current.start_time !== initial.start_time ||
+          current.end_time !== initial.end_time ||
+          current.tentative !== initial.tentative
+        );
+      })
+    );
   }, [selectedTimeBlocks.data]);
+
+  // Check if current timeblocks differ from initial state
+  useEffect(() => {
+    const hasChanges = checkDirtyState();
+    setIsDirty(hasChanges);
+  }, [checkDirtyState]);
 
   const markAsDirty = useCallback(() => {
     setIsDirty(true);
@@ -321,20 +354,37 @@ const TimeBlockingProvider = ({
     []
   );
 
-  const setUser = (planId: string, user: PlatformUser | GuestUser | null) => {
-    setSelectedTimeBlocks({
-      planId,
-      data: timeblocks.filter(
-        (tb) =>
-          tb.user_id === user?.id && tb.is_guest === (user?.is_guest ?? false)
-      ),
-    });
-    setInternalUser(user);
-  };
+  const setUser = useCallback(
+    (planId: string, user: PlatformUser | GuestUser | null) => {
+      setSelectedTimeBlocks({
+        planId,
+        data: timeblocks.filter(
+          (tb) =>
+            tb.user_id === user?.id && tb.is_guest === (user?.is_guest ?? false)
+        ),
+      });
+      setInternalUser(user);
+    },
+    [timeblocks]
+  );
 
   const [displayMode, setDisplayMode] = useState<
     'login' | 'account-switcher'
   >();
+
+  const setDisplayModeCallback = useCallback(
+    (
+      mode?:
+        | 'login'
+        | 'account-switcher'
+        | ((
+            prev: 'login' | 'account-switcher' | undefined
+          ) => 'login' | 'account-switcher' | undefined)
+    ) => {
+      setDisplayMode(mode);
+    },
+    []
+  );
 
   const edit = useCallback(
     (
@@ -591,6 +641,7 @@ const TimeBlockingProvider = ({
     setIsSaving(true);
     try {
       await syncTimeBlocks();
+      router.refresh();
     } catch (error) {
       console.error('Failed to save timeblocks:', error);
     } finally {
@@ -615,12 +666,12 @@ const TimeBlockingProvider = ({
         getOpacityForDate,
 
         setUser,
-        setFilteredUserIds,
-        setPreviewDate,
-        setSelectedTimeBlocks,
+        setFilteredUserIds: setFilteredUserIdsCallback,
+        setPreviewDate: setPreviewDateCallback,
+        setSelectedTimeBlocks: setSelectedTimeBlocksCallback,
         edit,
         endEditing,
-        setDisplayMode,
+        setDisplayMode: setDisplayModeCallback,
         syncTimeBlocks,
         resetLocalTimeblocks,
         markAsDirty,
