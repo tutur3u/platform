@@ -137,7 +137,23 @@ export async function MeetTogetherPage({
         <div className="mx-auto w-full max-w-2xl flex-1 lg:mx-0">
           <Card className="border-border/50 bg-accent/50 backdrop-blur-sm">
             <CardContent className="p-6 md:p-8">
-              <Form wsId={wsId} user={user} />
+              <Form
+                wsId={wsId}
+                user={
+                  user
+                    ? {
+                        id: user.id,
+                        avatar_url: user.user_metadata?.avatar_url ?? null,
+                        bio: user.user_metadata?.bio ?? null,
+                        created_at: user.created_at ?? null,
+                        deleted: user.user_metadata?.deleted ?? null,
+                        display_name: user.user_metadata?.display_name ?? null,
+                        handle: user.user_metadata?.handle ?? null,
+                        services: user.user_metadata?.services ?? [],
+                      }
+                    : null
+                }
+              />
             </CardContent>
           </Card>
         </div>

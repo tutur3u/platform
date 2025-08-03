@@ -202,74 +202,81 @@ function PlanDetailsPollContent({
       });
     }
   };
-
   return (
     <div className="top-16 z-10 self-start rounded-lg border px-2 py-4 md:sticky md:px-4">
-      <DefaultWherePollContent
-        plan={plan}
-        isCreator={isCreator}
-        polls={polls}
-        currentUserId={currentUserId}
-        userType={userType}
-        onAddOption={onAddOption}
-        onVote={onVote}
-        onDeleteOption={onDeleteOption}
-        onDeletePoll={onDeletePoll}
-      />
-      {/* ADDITIONAL POLLS */}
-      {otherPolls.length > 0 && (
-        <div className="mt-8 space-y-6">
-          <h4 className="mb-2 text-base font-semibold text-foreground">
-            {/* {t('other_polls')} */}
-            Other Polls
-          </h4>
-          {otherPolls.map((poll) => (
-            <MultipleChoiceVote
-              key={poll.id}
-              isCreator={isCreator}
-              pollName={poll.name}
-              pollId={poll.id}
-              options={poll.options}
-              currentUserId={currentUserId}
-              isDisplayMode={userType === 'DISPLAY'}
-              onAddOption={onAddOption}
-              onVote={onVote}
-              onDeleteOption={onDeleteOption}
-              onDeletePoll={onDeletePoll}
-              className="border-t pt-4"
-            />
-          ))}
-        </div>
-      )}
-      {isCreator && (
-        <div className="mt-8 space-y-2">
-          <h4 className="mb-2 text-base font-semibold text-foreground">
-            {/* {t('add_new_poll')} */}
-            Add New Poll
-          </h4>
-          <div className="flex gap-2">
-            <Input
-              value={newPollName}
-              onChange={(e) => setNewPollName(e.target.value)}
-              //   placeholder={t('poll_name_placeholder')}
-              placeholder={'Poll Name'}
-              className="w-full border-dynamic-purple/50"
-              disabled={creating}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && newPollName.trim() && !creating)
-                  onAddPoll();
-              }}
-            />
-            <Button
-              onClick={onAddPoll}
-              disabled={!newPollName.trim() || creating}
-              className="border-dynamic-purple/50 text-dynamic-purple"
-              variant="outline"
-            >
-              {t('add')}
-            </Button>
-          </div>
-        </div>
+      {(userType === 'DISPLAY' && (!polls || !polls.polls || polls?.polls?.length === 0)) ? (
+        <p className="text-lg font-semibold text-foreground">
+          {t('cannot_use_anonymous')}
+        </p>
+      ) : (
+        <>
+          <DefaultWherePollContent
+            plan={plan}
+            isCreator={isCreator}
+            polls={polls}
+            currentUserId={currentUserId}
+            userType={userType}
+            onAddOption={onAddOption}
+            onVote={onVote}
+            onDeleteOption={onDeleteOption}
+            onDeletePoll={onDeletePoll}
+          />
+          {/* ADDITIONAL POLLS */}
+          {otherPolls.length > 0 && (
+            <div className="mt-8 space-y-6">
+              <h4 className="mb-2 text-base font-semibold text-foreground">
+                {/* {t('other_polls')} */}
+                Other Polls
+              </h4>
+              {otherPolls.map((poll) => (
+                <MultipleChoiceVote
+                  key={poll.id}
+                  isCreator={isCreator}
+                  pollName={poll.name}
+                  pollId={poll.id}
+                  options={poll.options}
+                  currentUserId={currentUserId}
+                  isDisplayMode={userType === 'DISPLAY'}
+                  onAddOption={onAddOption}
+                  onVote={onVote}
+                  onDeleteOption={onDeleteOption}
+                  onDeletePoll={onDeletePoll}
+                  className="border-t pt-4"
+                />
+              ))}
+            </div>
+          )}
+          {isCreator && (
+            <div className="mt-8 space-y-2">
+              <h4 className="mb-2 text-base font-semibold text-foreground">
+                {/* {t('add_new_poll')} */}
+                Add New Poll
+              </h4>
+              <div className="flex gap-2">
+                <Input
+                  value={newPollName}
+                  onChange={(e) => setNewPollName(e.target.value)}
+                  //   placeholder={t('poll_name_placeholder')}
+                  placeholder={'Poll Name'}
+                  className="w-full border-dynamic-purple/50"
+                  disabled={creating}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && newPollName.trim() && !creating)
+                      onAddPoll();
+                  }}
+                />
+                <Button
+                  onClick={onAddPoll}
+                  disabled={!newPollName.trim() || creating}
+                  className="border-dynamic-purple/50 text-dynamic-purple"
+                  variant="outline"
+                >
+                  {t('add')}
+                </Button>
+              </div>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

@@ -95,7 +95,7 @@ export default function MultipleChoiceVote({
   // On mount/options change: set selected to previous votes (if any)
   useEffect(() => {
     setSelectedOptionIds(votedOptionIds);
-  }, [votedOptionIds.join(','), optionsState.length]);
+  }, [optionsState.length, votedOptionIds]);
 
   const totalVotesAll = optionsState.reduce((s, o) => s + o.totalVotes, 0);
 

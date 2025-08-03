@@ -212,14 +212,12 @@ export default function PlanDetailsClient({
                 onBestTimesStatusByDateAction={setBestTimesStatusByDate}
               />
             </div>
-            {plan.where_to_meet && (
-              <PlanDetailsPolls
-                plan={plan}
-                polls={polls}
-                isCreator={isCreator}
-                platformUser={platformUser}
-              />
-            )}
+            <PlanDetailsPolls
+              plan={plan}
+              polls={polls}
+              isCreator={isCreator}
+              platformUser={platformUser}
+            />
           </div>
 
           <Separator className="my-8" />
