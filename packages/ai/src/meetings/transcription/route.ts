@@ -1,7 +1,7 @@
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { generateObject } from 'ai';
 import { cookies } from 'next/headers';
-import { generateObject } from 'src/core';
 import { z } from 'zod';
 
 const DEFAULT_MODEL_NAME = 'gemini-2.0-flash';
@@ -124,7 +124,7 @@ export function createPOST(
         }
       );
     } catch (error) {
-      console.error('transcript error:', error);
+      console.error('Transcription error:', error);
       return new Response('Internal server error', { status: 500 });
     }
   };

@@ -13,7 +13,7 @@ interface RecordingSession {
   status: RecordingStatus;
   created_at: string;
   updated_at: string;
-  recording_transcripts?: RecordingTranscript | null;
+  transcript?: RecordingTranscript | null;
 }
 
 interface RecordingSessionsOverviewProps {
@@ -187,7 +187,7 @@ export function RecordingSessionsOverview({
                 </div>
               </div>
 
-              {session.recording_transcripts && (
+              {session.transcript && (
                 <div className="flex items-center gap-2 text-sm">
                   <FileText className="h-4 w-4 text-dynamic-green" />
                   <span className="font-medium text-dynamic-green">
