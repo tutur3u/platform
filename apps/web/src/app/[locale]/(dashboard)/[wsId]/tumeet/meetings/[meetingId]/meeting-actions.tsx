@@ -31,6 +31,9 @@ interface RecordingSession {
 }
 
 export function MeetingActions({ wsId, meetingId }: MeetingActionsProps) {
+  const [startRecordingDialogOpen, setStartRecordingDialogOpen] =
+    useState(false);
+  const [stopRecordingDialogOpen, setStopRecordingDialogOpen] = useState(false);
   const [isStartingSession, setIsStartingSession] = useState(false);
   const [isStoppingSession, setIsStoppingSession] = useState(false);
   const [activeSession, setActiveSession] = useState<RecordingSession | null>(
@@ -157,7 +160,7 @@ export function MeetingActions({ wsId, meetingId }: MeetingActionsProps) {
             variant="outline"
             size="lg"
             className="flex items-center gap-2"
-            onClick={handleStartSession}
+            onClick={() => setStartRecordingDialogOpen(true)}
             disabled={isStartingSession}
           >
             <Mic className="h-5 w-5" />
@@ -167,7 +170,7 @@ export function MeetingActions({ wsId, meetingId }: MeetingActionsProps) {
           <Button
             variant="destructive"
             size="lg"
-            onClick={handleStopSession}
+            onClick={() => setStopRecordingDialogOpen(true)}
             disabled={isStoppingSession}
             className="flex items-center gap-2"
           >
@@ -218,6 +221,79 @@ export function MeetingActions({ wsId, meetingId }: MeetingActionsProps) {
           <DialogFooter>
             <Button variant="outline" onClick={() => setShareDialogOpen(false)}>
               Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Start Recording Confirmation Dialog */}
+      <Dialog
+        open={startRecordingDialogOpen}
+        onOpenChange={setStartRecordingDialogOpen}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Start Recording</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to start recording this meeting? All
+              participants will be notified that the recording has started.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setStartRecordingDialogOpen(false)}
+              disabled={isStartingSession}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                setStartRecordingDialogOpen(false);
+                handleStartSession();
+              }}
+              disabled={isStartingSession}
+              className="flex items-center gap-2"
+            >
+              <Mic className="h-4 w-4" />
+              {isStartingSession ? 'Starting...' : 'Start Recording'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Stop Recording Confirmation Dialog */}
+      <Dialog
+        open={stopRecordingDialogOpen}
+        onOpenChange={setStopRecordingDialogOpen}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Stop Recording</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to stop the recording? The recording will be
+              processed and made available for playback.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setStopRecordingDialogOpen(false)}
+              disabled={isStoppingSession}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                setStopRecordingDialogOpen(false);
+                handleStopSession();
+              }}
+              disabled={isStoppingSession}
+              className="flex items-center gap-2"
+            >
+              <Square className="h-4 w-4" />
+              {isStoppingSession ? 'Stopping...' : 'Stop Recording'}
             </Button>
           </DialogFooter>
         </DialogContent>
