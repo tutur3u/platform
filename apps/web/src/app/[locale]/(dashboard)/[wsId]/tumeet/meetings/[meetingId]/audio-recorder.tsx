@@ -21,11 +21,10 @@ export function AudioRecorder({
   const [recordingTime, setRecordingTime] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const audioChunksRef = useRef<Blob[]>([]);
   const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
-  const isUploadingRef = useRef(false);
+  const audioChunksRef = useRef<Blob[]>([]);
 
   // Cleanup function
   const cleanup = useCallback(() => {
@@ -43,21 +42,22 @@ export function AudioRecorder({
       streamRef.current.getTracks().forEach((track) => track.stop());
       streamRef.current = null;
     }
+    if (audioChunksRef.current.length > 0) {
+      audioChunksRef.current = [];
+    }
     setRecordingTime(0);
-    isUploadingRef.current = false;
   }, []);
 
   // Upload complete recording
   const uploadRecording = useCallback(
     async (audioBlob: Blob) => {
       // Prevent concurrent uploads
-      if (isUploadingRef.current) {
+      if (isUploading) {
         console.log('Upload already in progress, skipping...');
-        return false;
+        return;
       }
 
       try {
-        isUploadingRef.current = true;
         setIsUploading(true);
 
         const formData = new FormData();
@@ -79,17 +79,14 @@ export function AudioRecorder({
         }
 
         console.log('Successfully uploaded complete recording');
-        return true;
       } catch (error) {
         console.error('Error uploading recording:', error);
         toast.error('Failed to upload recording');
-        return false;
       } finally {
-        isUploadingRef.current = false;
         setIsUploading(false);
       }
     },
-    [wsId, meetingId, sessionId]
+    [wsId, meetingId, sessionId, isUploading]
   );
 
   // Start recording
@@ -125,7 +122,6 @@ export function AudioRecorder({
 
       mediaRecorderRef.current = mediaRecorder;
       audioChunksRef.current = [];
-      isUploadingRef.current = false;
 
       // Handle data available event - collect chunks but don't upload immediately
       mediaRecorder.ondataavailable = (event) => {
@@ -150,7 +146,6 @@ export function AudioRecorder({
           await uploadRecording(completeRecordingBlob);
         }
 
-        setIsUploading(false);
         cleanup();
       };
 
@@ -158,7 +153,6 @@ export function AudioRecorder({
       mediaRecorder.onerror = (event) => {
         console.error('MediaRecorder error:', event);
         setError('Recording error occurred');
-        setIsUploading(false);
         cleanup();
       };
 
