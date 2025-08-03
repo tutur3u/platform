@@ -3,8 +3,9 @@ import type { Timeblock } from '@tuturuuu/types/primitives/Timeblock';
 import dayjs from 'dayjs';
 import 'dayjs/locale/vi';
 import { useLocale } from 'next-intl';
+import { memo, useMemo } from 'react';
 
-export default function DayPlanner({
+function DayPlanner({
   timeblocks,
   date,
   start,
@@ -32,7 +33,16 @@ export default function DayPlanner({
   onBestTimesStatus?: (hasBestTimes: boolean) => void;
 }) {
   const locale = useLocale();
-  dayjs.locale(locale);
+
+  // Memoize dayjs operations to avoid recreating objects on every render
+  const formattedDate = useMemo(() => {
+    dayjs.locale(locale);
+    const dateObj = dayjs(date).locale(locale);
+    return {
+      date: dateObj.format(locale === 'vi' ? 'DD/MM' : 'MMM D'),
+      day: dateObj.format('ddd'),
+    };
+  }, [date, locale]);
 
   return (
     <div>
@@ -44,14 +54,8 @@ export default function DayPlanner({
               : ''
           }`}
         >
-          <div className="line-clamp-1 text-xs">
-            {dayjs(date)
-              .locale(locale)
-              .format(locale === 'vi' ? 'DD/MM' : 'MMM D')}
-          </div>
-          <div className="font-semibold">
-            {dayjs(date).locale(locale).format('ddd')}
-          </div>
+          <div className="line-clamp-1 text-xs">{formattedDate.date}</div>
+          <div className="font-semibold">{formattedDate.day}</div>
         </div>
       )}
 
@@ -70,3 +74,5 @@ export default function DayPlanner({
     </div>
   );
 }
+
+export default memo(DayPlanner);

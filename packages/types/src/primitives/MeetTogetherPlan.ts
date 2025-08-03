@@ -22,3 +22,10 @@ export interface PlanUser {
   is_guest: boolean | null;
   timeblock_count: number | null;
 }
+
+export interface GuestUser {
+  id?: string | null;
+  display_name?: string | null;
+  password_hash?: string;
+  is_guest?: boolean | null;
+}
