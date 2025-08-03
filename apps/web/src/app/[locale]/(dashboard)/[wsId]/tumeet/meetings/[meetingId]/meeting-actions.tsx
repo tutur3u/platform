@@ -1,6 +1,7 @@
 'use client';
 
 import { AudioRecorder } from './audio-recorder';
+import { useQueryClient } from '@tanstack/react-query';
 import { RecordingStatus } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -31,6 +32,7 @@ interface RecordingSession {
 }
 
 export function MeetingActions({ wsId, meetingId }: MeetingActionsProps) {
+  const queryClient = useQueryClient();
   const [startRecordingDialogOpen, setStartRecordingDialogOpen] =
     useState(false);
   const [stopRecordingDialogOpen, setStopRecordingDialogOpen] = useState(false);
@@ -124,8 +126,10 @@ export function MeetingActions({ wsId, meetingId }: MeetingActionsProps) {
         setActiveSession(null);
         setIsRecording(false);
         toast.success('Recording stopped successfully');
-        // Refresh the page to show the completed recording
-        window.location.reload();
+
+        queryClient.invalidateQueries({
+          queryKey: ['recording-sessions', wsId, meetingId],
+        });
       }
     } catch (error) {
       console.error('Error stopping recording:', error);
