@@ -16,9 +16,9 @@ export default function ReportPreview({
     feedback: string;
   };
   t: any;
-  // eslint-disable-next-line no-unused-vars
+
   parseDynamicText: (text?: string | null) => ReactNode;
-  // eslint-disable-next-line no-unused-vars
+
   getConfig: (id: string) => string | null | undefined;
 }) {
   return (
