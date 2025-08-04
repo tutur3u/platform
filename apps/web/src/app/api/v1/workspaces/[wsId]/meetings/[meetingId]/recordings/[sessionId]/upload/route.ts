@@ -115,20 +115,6 @@ export async function POST(
       );
     }
 
-    // Update the session status
-    const { error: updateError } = await supabase
-      .from('recording_sessions')
-      .update({
-        status: 'pending_transcription',
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', sessionId);
-
-    if (updateError) {
-      console.error('Error updating session status:', updateError);
-      // Don't fail the request, just log the error
-    }
-
     return NextResponse.json({
       success: true,
       recordingId: chunkData.id,

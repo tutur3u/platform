@@ -54,7 +54,6 @@ export async function POST(
     const formData = await request.formData();
     const audioBlob = formData.get('audio') as Blob;
     const chunkOrder = parseInt(formData.get('chunkOrder') as string);
-    const isLastChunk = formData.get('isLastChunk') === 'true';
 
     if (!audioBlob || isNaN(chunkOrder)) {
       return NextResponse.json(
@@ -72,7 +71,7 @@ export async function POST(
     }
 
     console.log(
-      `Processing chunk ${chunkOrder}: ${audioBlob.size} bytes, type: ${audioBlob.type}, last: ${isLastChunk}`
+      `Processing chunk ${chunkOrder}: ${audioBlob.size} bytes, type: ${audioBlob.type}`
     );
 
     // Generate a unique filename for this chunk
@@ -115,22 +114,6 @@ export async function POST(
         { error: 'Failed to save audio chunk metadata' },
         { status: 500 }
       );
-    }
-
-    // If this is the last chunk, update the session status
-    if (isLastChunk) {
-      const { error: updateError } = await supabase
-        .from('recording_sessions')
-        .update({
-          status: 'pending_transcription',
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', sessionId);
-
-      if (updateError) {
-        console.error('Error updating session status:', updateError);
-        // Don't fail the request, just log the error
-      }
     }
 
     return NextResponse.json({

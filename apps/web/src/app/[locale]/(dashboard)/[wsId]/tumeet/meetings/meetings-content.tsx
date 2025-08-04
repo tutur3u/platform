@@ -1,6 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
+import { RecordingStatus } from '@tuturuuu/types/db';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -23,9 +24,7 @@ import {
 import {
   Calendar,
   Clock,
-  FileText,
   Filter,
-  Mic,
   Play,
   Plus,
   Search,
@@ -48,22 +47,12 @@ interface Meeting {
   creator: {
     display_name: string;
   };
-  recording_sessions: Array<{
+  recording_sessions: {
     id: string;
-    status:
-      | 'recording'
-      | 'interrupted'
-      | 'pending_transcription'
-      | 'transcribing'
-      | 'completed'
-      | 'failed';
+    status: RecordingStatus;
     created_at: string;
     updated_at: string;
-    recording_transcriptions?: {
-      text: string;
-      created_at: string;
-    };
-  }>;
+  }[];
 }
 
 interface MeetingsContentProps {
@@ -111,40 +100,6 @@ export function MeetingsContent({
   const meetings: Meeting[] = data?.meetings || [];
   const totalCount = data?.totalCount || 0;
   const totalPages = Math.ceil(totalCount / pageSize);
-
-  const getStatusBadge = (status: string) => {
-    const statusConfig = {
-      recording: {
-        variant: 'default' as const,
-        label: 'Recording',
-      },
-      interrupted: {
-        variant: 'destructive' as const,
-        label: 'Interrupted',
-      },
-      pending_transcription: {
-        variant: 'secondary' as const,
-        label: 'Pending',
-      },
-      transcribing: {
-        variant: 'secondary' as const,
-        label: 'Transcribing',
-      },
-      completed: {
-        variant: 'default' as const,
-        label: 'Completed',
-      },
-      failed: {
-        variant: 'destructive' as const,
-        label: 'Failed',
-      },
-    };
-
-    const config =
-      statusConfig[status as keyof typeof statusConfig] ||
-      statusConfig.recording;
-    return <Badge variant={config.variant}>{config.label}</Badge>;
-  };
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -445,7 +400,7 @@ export function MeetingsContent({
               Create your first meeting to get started with video conferencing
               and AI-powered features.
             </p>
-            <Button>
+            <Button onClick={() => setDialogOpen(true)}>
               <Plus className="mr-2 h-4 w-4" />
               Create First Meeting
             </Button>
@@ -483,30 +438,15 @@ export function MeetingsContent({
 
                 {/* Recording Sessions */}
                 {meeting.recording_sessions.length > 0 && (
-                  <div className="space-y-2">
-                    <h4 className="text-sm font-medium">Recordings</h4>
-                    {meeting.recording_sessions.map((session) => (
-                      <div
-                        key={session.id}
-                        className="flex items-center justify-between rounded bg-muted/50 p-2"
-                      >
-                        <div className="flex items-center gap-2">
-                          <Mic className="h-3 w-3" />
-                          {getStatusBadge(session.status)}
-                        </div>
-                        {session.recording_transcriptions && (
-                          <Button variant="ghost" size="sm">
-                            <FileText className="mr-1 h-3 w-3" />
-                            View Transcript
-                          </Button>
-                        )}
-                      </div>
-                    ))}
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline">
+                      {meeting.recording_sessions.length} recordings
+                    </Badge>
                   </div>
                 )}
 
                 {/* Actions */}
-                <div className="flex gap-2 pt-2">
+                <div className="flex flex-wrap gap-2 pt-2">
                   <Button
                     size="sm"
                     className="flex-1"

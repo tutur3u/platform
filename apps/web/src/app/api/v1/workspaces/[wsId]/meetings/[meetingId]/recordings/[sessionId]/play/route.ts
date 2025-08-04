@@ -103,7 +103,6 @@ export async function GET(
       sessionId,
       sessionStatus: session.status,
       chunks: validChunks,
-      totalChunks: validChunks.length,
       message: 'Audio chunks retrieved successfully',
     });
   } catch (error) {

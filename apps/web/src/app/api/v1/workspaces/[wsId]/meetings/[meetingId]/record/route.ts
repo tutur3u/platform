@@ -58,7 +58,7 @@ export async function POST(
       const { error: updateError } = await supabase
         .from('recording_sessions')
         .update({
-          status: 'completed',
+          status: 'pending_transcription',
           updated_at: new Date().toISOString(),
         })
         .eq('id', existingSession.id);
@@ -104,72 +104,6 @@ export async function POST(
         message: 'Recording started successfully',
       });
     }
-  } catch (error) {
-    console.error('Error in recording API:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
-  }
-}
-
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: Promise<{ wsId: string; meetingId: string }> }
-) {
-  try {
-    const { wsId, meetingId } = await params;
-    const body = await request.json();
-    const { sessionId, status } = body;
-
-    const supabase = await createClient();
-
-    // Get authenticated user
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    // Verify workspace access
-    const { data: memberCheck } = await supabase
-      .from('workspace_members')
-      .select('id:user_id')
-      .eq('ws_id', wsId)
-      .eq('user_id', user.id)
-      .single();
-
-    if (!memberCheck) {
-      return NextResponse.json(
-        { error: 'Workspace access denied' },
-        { status: 403 }
-      );
-    }
-
-    // Update the recording session status
-    const { error: updateError } = await supabase
-      .from('recording_sessions')
-      .update({
-        status,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', sessionId)
-      .eq('meeting_id', meetingId);
-
-    if (updateError) {
-      console.error('Error updating recording session:', updateError);
-      return NextResponse.json(
-        { error: 'Failed to update recording session' },
-        { status: 500 }
-      );
-    }
-
-    return NextResponse.json({
-      success: true,
-      message: `Recording session ${status}`,
-    });
   } catch (error) {
     console.error('Error in recording API:', error);
     return NextResponse.json(

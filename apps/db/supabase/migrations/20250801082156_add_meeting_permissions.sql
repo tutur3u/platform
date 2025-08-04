@@ -29,18 +29,18 @@ with check ((EXISTS ( SELECT 1
 
 
 create policy "Allow workspace members to have full permissions"
-on "public"."recording_transcriptions"
+on "public"."recording_transcripts"
 as permissive
 for all
 to authenticated
 using ((EXISTS ( SELECT 1
    FROM workspace_meetings wm,
     recording_sessions rs
-  WHERE ((rs.meeting_id = wm.id) AND (rs.id = recording_transcriptions.session_id)))))
+  WHERE ((rs.meeting_id = wm.id) AND (rs.id = recording_transcripts.session_id)))))
 with check ((EXISTS ( SELECT 1
    FROM workspace_meetings wm,
     recording_sessions rs
-  WHERE ((rs.meeting_id = wm.id) AND (rs.id = recording_transcriptions.session_id)))));
+  WHERE ((rs.meeting_id = wm.id) AND (rs.id = recording_transcripts.session_id)))));
 
 
 create policy "Allow workspace members to have full permissions"

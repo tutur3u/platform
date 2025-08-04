@@ -53,11 +53,7 @@ export async function GET(
           id,
           status,
           created_at,
-          updated_at,
-          recording_transcriptions(
-            text,
-            created_at
-          )
+          updated_at
         )
       `
       )
