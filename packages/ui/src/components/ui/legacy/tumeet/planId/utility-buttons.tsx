@@ -8,7 +8,7 @@ import ShowQRButton from './show-qr-button';
 import type { MeetTogetherPlan } from '@tuturuuu/types/primitives/MeetTogetherPlan';
 import type { User } from '@tuturuuu/types/primitives/User';
 import { Button } from '@tuturuuu/ui/button';
-import { Check, Edit } from '@tuturuuu/ui/icons';
+import { Check, Edit, Loader2 } from '@tuturuuu/ui/icons';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
@@ -46,7 +46,7 @@ export default function UtilityButtons({
           <>
             <ConfirmButton
               planId={plan.id}
-              isCofirmPlan={Boolean(plan.is_confirm)}
+              isConfirmPlan={Boolean(plan.is_confirm)}
             />
           </>
         )}
@@ -58,17 +58,20 @@ export default function UtilityButtons({
 
 function ConfirmButton({
   planId,
-  isCofirmPlan,
+  isConfirmPlan,
 }: {
   planId: string;
-  isCofirmPlan: boolean;
+  isConfirmPlan: boolean;
 }) {
   // const t = useTranslations('meet-together-plan-details');
-  const [isConfirmed, setConfirmed] = useState(isCofirmPlan);
+  const [isConfirmed, setConfirmed] = useState(isConfirmPlan);
+  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   return (
     <Button
       onClick={async () => {
+        if (isLoading) return;
+        setIsLoading(true);
         const res = await fetch(
           `/api/meet-together/plans/${planId}/edit-lock`,
           {
@@ -87,19 +90,30 @@ function ConfirmButton({
           return;
         }
         setConfirmed(!isConfirmed);
+        setIsLoading(false);
         router.refresh();
       }}
       className="w-full md:w-auto"
+      disabled={isLoading}
     >
-      {!isConfirmed ? (
+      {isLoading ? (
         <>
-          <Check className="mr-1 h-5 w-5" />
-          Confirm
+          <Loader2 className="mr-1 h-5 w-5 animate-spin" />
+          Updating...
         </>
       ) : (
         <>
-          <Edit className="mr-1 h-5 w-5" />
-          Re-Edit
+          {!isConfirmed ? (
+            <>
+              <Check className="mr-1 h-5 w-5" />
+              Confirm
+            </>
+          ) : (
+            <>
+              <Edit className="mr-1 h-5 w-5" />
+              Re-Edit
+            </>
+          )}
         </>
       )}
     </Button>

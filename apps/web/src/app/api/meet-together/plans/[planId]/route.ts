@@ -12,7 +12,7 @@ interface Params {
 }
 
 // Helper function to check if plan is confirmed and deny actions
-async function checkPlanConfirmation(planId: string, sbAdmin: any) {
+async function checkPlanConfirmation(planId: string, sbAdmin) {
   const { data: plan } = await sbAdmin
     .from('meet_together_plans')
     .select('is_confirm')
