@@ -38,7 +38,7 @@
     "@ai-sdk/xai": "2.0.0",
     "@tuturuuu/supabase": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
-    "ai": "5.0.0",
+    "ai": "5.0.2",
     "dayjs": "^1.11.13",
     "next": "^15.4.5",
     "react": "^19.1.1",
