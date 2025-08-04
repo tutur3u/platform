@@ -58,7 +58,7 @@ export function PlanDetailsPollContent({
 
   const user = guestUser ?? platformUser;
   const currentUserId = user?.id ?? null;
-  let userType =
+  let userType: 'GUEST' | 'PLATFORM' | 'DISPLAY' =
     user?.is_guest === true
       ? 'GUEST'
       : platformUser?.id

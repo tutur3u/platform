@@ -3814,6 +3814,7 @@ export type Database = {
           creator_id: null | string;
           dates: string[];
           description: null | string;
+          enable_unknown_edit: boolean;
           end_time: string;
           id: string;
           is_confirm: boolean;
@@ -3829,6 +3830,7 @@ export type Database = {
           creator_id?: null | string;
           dates?: string[];
           description?: null | string;
+          enable_unknown_edit?: boolean;
           end_time?: string;
           id?: string;
           is_confirm?: boolean;
