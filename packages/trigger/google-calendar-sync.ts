@@ -277,6 +277,23 @@ export const storeActiveSyncToken = async (
   }
 };
 
+export const getActiveSyncToken = async (wsId: string) => {
+  const sbAdmin = await createAdminClient({ noCookie: true });
+  const { data: activeSyncToken, error: activeSyncTokenError } = await sbAdmin
+    .from('google_calendar_active_sync_token')
+    .select('*')
+    .eq('ws_id', wsId);
+
+  if (activeSyncTokenError) {
+    console.error(
+      `[${wsId}] Error fetching active sync token:`,
+      activeSyncTokenError.message
+    );
+  }
+
+  return activeSyncToken?.[0]?.sync_token || null;
+};
+
 // Store the sync token in the calendar_sync_states table
 export const storeSyncToken = async (
   ws_id: string,
