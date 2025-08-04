@@ -58,12 +58,16 @@ export function PlanDetailsPollContent({
 
   const user = guestUser ?? platformUser;
   const currentUserId = user?.id ?? null;
-  const userType =
+  let userType =
     user?.is_guest === true
       ? 'GUEST'
       : platformUser?.id
         ? 'PLATFORM'
         : 'DISPLAY';
+
+  if (plan.is_confirm) {
+    userType = 'DISPLAY'; // Guests cannot vote if the plan is confirmed
+  }
 
   const otherPolls = polls?.polls?.slice(1) ?? [];
 
