@@ -174,11 +174,11 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
   };
 
   // Helper to get a Date object for a given hour/minute, timezone-aware
-  const getCellDate = (hour: number, minute: number = 0) => {
+  const getCellDate = useCallback((hour: number, minute: number = 0) => {
     const base = dayjs(`${date}T00:00:00`);
     const dateTz = tz === 'auto' ? base.local() : base.tz(tz);
     return dateTz.hour(hour).minute(minute).second(0).millisecond(0).toDate();
-  };
+  }, [date, tz]);
 
   const handleCreateEvent = (midHour?: boolean) => {
     // Always use timezone-aware date construction
@@ -190,7 +190,7 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
   };
 
   // Improved rounding for Google Calendar parity
-  const roundToNearest15Minutes = (date: Date): Date => {
+  const roundToNearest15Minutes = useCallback((date: Date): Date => {
     const minutes = date.getMinutes();
     const remainder = minutes % 15;
     const roundedMinutes =
@@ -200,7 +200,7 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
     roundedDate.setSeconds(0);
     roundedDate.setMilliseconds(0);
     return roundedDate;
-  };
+  }, []);
 
   // Convert Y coordinate to time (hour and minutes)
   const yToTime = useCallback(

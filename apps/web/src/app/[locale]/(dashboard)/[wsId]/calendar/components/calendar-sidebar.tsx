@@ -13,6 +13,7 @@ import {
   SidebarMenu,
   SidebarMenuItem,
 } from '@tuturuuu/ui/sidebar';
+import { cn } from '@tuturuuu/utils/format';
 
 // Stub: Replace with real data fetching later
 const stubAccounts = [
@@ -49,7 +50,10 @@ export default function CalendarSidebar() {
               stubAccounts.map((acc) => (
                 <SidebarMenuItem key={acc.email}>
                   <div
-                    className={`flex items-center gap-2 rounded-md p-2${acc.active ? ' bg-accent/30 font-semibold' : ''}`}
+                    className={cn(
+                      'flex items-center gap-2 rounded-md p-2',
+                      acc.active && 'bg-accent/30 font-semibold'
+                    )}
                   >
                     <Mail className="h-4 w-4 text-blue-500" />
                     <span className="truncate">{acc.email}</span>
