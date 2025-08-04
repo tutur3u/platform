@@ -9,7 +9,7 @@ import type { MeetTogetherPlan } from '@tuturuuu/types/primitives/MeetTogetherPl
 import type { User } from '@tuturuuu/types/primitives/User';
 import { Button } from '@tuturuuu/ui/button';
 import { Check, Edit } from '@tuturuuu/ui/icons';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 interface UtilityButtonsProps {
@@ -69,7 +69,7 @@ function ConfirmButton({
 }) {
   // const t = useTranslations('meet-together-plan-details');
   const [isConfirmed, setConfirmed] = useState(isCofirmPlan);
-
+  const router = useRouter();
   return (
     <Button
       onClick={async () => {
@@ -91,6 +91,7 @@ function ConfirmButton({
           return;
         }
         setConfirmed(!isConfirmed);
+        router.refresh();
       }}
       className="w-full md:w-auto"
     >

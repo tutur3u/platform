@@ -301,7 +301,7 @@ export function PlanDetailsPollContent({
                         <span className="text-sm text-muted-foreground">
                           {poll.options.length} options
                         </span>
-                        {isCreator && (
+                        {isCreator && !plan.is_confirm && (
                           <div
                             className="inline-flex h-9 w-9 items-center justify-center rounded-md text-dynamic-red hover:bg-dynamic-red/10"
                             onClick={(e) => {
