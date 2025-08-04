@@ -52,6 +52,44 @@ export default function CalendarClientPage({
     staleTime: 30000, // Cache for 30 seconds
   });
 
+  // Fetch AI chat data and permissions
+  const { data: aiChatData } = useQuery({
+    queryKey: ['ai-chat-data', workspace.id],
+    queryFn: async () => {
+      try {
+        // Fetch chat data
+        const chatResponse = await fetch(`/api/v1/workspaces/${workspace.id}/chats`);
+        const chatData = chatResponse.ok ? await chatResponse.json() : { data: [], count: 0 };
+        
+        // Fetch AI configuration (permissions and API keys)
+        const configResponse = await fetch(`/api/v1/workspaces/${workspace.id}/ai-config`);
+        const configData = configResponse.ok ? await configResponse.json() : { 
+          hasKeys: { openAI: false, anthropic: false, google: false }, 
+          hasAiChatAccess: false 
+        };
+
+
+
+        return {
+          chats: chatData.data || [],
+          count: chatData.count || 0,
+          hasKeys: configData.hasKeys || { openAI: false, anthropic: false, google: false },
+          hasAiChatAccess: configData.hasAiChatAccess || false,
+        };
+      } catch (error) {
+        console.error('Failed to fetch AI chat data:', error);
+        return {
+          chats: [],
+          count: 0,
+          hasKeys: { openAI: false, anthropic: false, google: false },
+          hasAiChatAccess: false,
+        };
+      }
+    },
+    enabled: othersSidebarOpen, // Only fetch when sidebar is open
+    staleTime: 30000, // Cache for 30 seconds
+  });
+
   // Sidebar toggle button for header (left sidebar)
   const sidebarToggleButton = (
     <Button
@@ -131,10 +169,10 @@ export default function CalendarClientPage({
             wsId={workspace.id}
             locale={locale}
             tasks={tasksData?.tasks || []}
-            hasKeys={{ openAI: false, anthropic: false, google: false }}
-            chats={[]}
-            count={0}
-            hasAiChatAccess={false}
+            hasKeys={aiChatData?.hasKeys || { openAI: false, anthropic: false, google: false }}
+            chats={aiChatData?.chats || []}
+            count={aiChatData?.count || 0}
+            hasAiChatAccess={aiChatData?.hasAiChatAccess || false}
           />
         )}
       </div>
