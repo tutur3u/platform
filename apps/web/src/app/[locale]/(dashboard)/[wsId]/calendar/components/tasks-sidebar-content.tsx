@@ -101,7 +101,7 @@ export default function TasksSidebarContent({
           className="m-0 flex min-h-0 flex-1 flex-col space-y-4 overflow-y-auto scrollbar-none p-4 pb-2 duration-300 animate-in fade-in-50"
         >
           <div className="mx-auto w-full max-w-lg p-0">
-            <PriorityView allTasks={tasks} />
+            <PriorityView allTasks={tasks} locale={locale} />
           </div>
         </TabsContent>
 
@@ -130,7 +130,7 @@ export default function TasksSidebarContent({
 }
 
 // Add PriorityView component for the new tab
-function PriorityView({ allTasks }: { allTasks: ExtendedWorkspaceTask[] }) {
+function PriorityView({ allTasks, locale }: { allTasks: ExtendedWorkspaceTask[]; locale?: string }) {
   const [search, setSearch] = useState('');
   const [isSearchFocused, setIsSearchFocused] = useState(false);
 
@@ -188,10 +188,27 @@ function PriorityView({ allTasks }: { allTasks: ExtendedWorkspaceTask[] }) {
   );
 
   const handlePriorityChange = async (taskId: string, newPriority: string) => {
-    // TODO: Implement API call to update task priority
-    console.log('Updating task priority:', taskId, newPriority);
-    // This would typically make an API call to update the task
-    // await updateTaskPriority(taskId, newPriority);
+    try {
+      const response = await fetch(`/api/v1/workspaces/${wsId}/tasks/${taskId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          user_defined_priority: newPriority,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update task priority');
+      }
+
+      // Optionally refresh the tasks data or update local state
+      console.log('Task priority updated successfully:', taskId, newPriority);
+    } catch (error) {
+      console.error('Error updating task priority:', error);
+      // You might want to show a toast notification here
+    }
   };
 
   return (
@@ -284,7 +301,7 @@ function PriorityView({ allTasks }: { allTasks: ExtendedWorkspaceTask[] }) {
                                 {task.due_date && (
                                   <div className="mt-1 inline-flex items-center gap-1 rounded bg-red-100 px-2 py-0.5 text-xs text-red-700 dark:bg-red-900/30 dark:text-red-300">
                                     <Calendar className="h-3 w-3" />
-                                    Due {formatDueDate(task.due_date)}
+                                    Due {formatDueDate(task.due_date, locale)}
                                   </div>
                                 )}
                               </div>
@@ -410,7 +427,7 @@ function PriorityView({ allTasks }: { allTasks: ExtendedWorkspaceTask[] }) {
                               {task.total_duration && (
                                 <div className="rounded-md bg-accent/50 px-2 py-1 font-mono text-xs text-muted-foreground transition-colors duration-200 group-hover/task:bg-accent">
                                   {Math.floor(task.total_duration || 0)}h{' '}
-                                  {((task.total_duration || 0) * 60) % 60}m
+                                  {Math.floor(((task.total_duration || 0) % 1) * 60)}m
                                 </div>
                               )}
                             </div>
@@ -429,8 +446,11 @@ function PriorityView({ allTasks }: { allTasks: ExtendedWorkspaceTask[] }) {
   );
 }
 
-function formatDueDate(date: string | Date) {
-  // expects date as string or Date, returns MM/DD or DD/MM as you prefer
+function formatDueDate(date: string | Date, locale?: string) {
   const d = new Date(date);
-  return `${d.getMonth() + 1}/${d.getDate()}`;
+  // Use locale-aware formatting
+  return d.toLocaleDateString(locale || 'en-US', { 
+    month: 'numeric', 
+    day: 'numeric' 
+  });
 }

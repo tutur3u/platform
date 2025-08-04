@@ -95,7 +95,7 @@ export default function CalendarClientPage({
           className="w-full md:w-fit"
         >
           <Plus className="mr-2 h-4 w-4" />
-          Others
+          Tasks & AI
         </Button>
       </div>
     ) : undefined;
