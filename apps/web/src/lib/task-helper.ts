@@ -127,13 +127,121 @@ export async function createTask(
   listId: string,
   task: Partial<Task>
 ) {
+  // Validate required fields
+  if (!task.name || task.name.trim().length === 0) {
+    throw new Error('Task name is required');
+  }
+
+  if (!listId) {
+    throw new Error('List ID is required');
+  }
+
+  // First, check if user is authenticated
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+  if (authError || !user) {
+    console.error('Authentication error:', authError);
+    throw new Error('User not authenticated');
+  }
+
+  // Then, verify that the list exists and user has access to it
+  const { data: listCheck, error: listError } = await supabase
+    .from('task_lists')
+    .select('id, name')
+    .eq('id', listId)
+    .single();
+
+  if (listError) {
+    throw new Error(
+      `List not found or access denied: ${listError.message || 'Unknown error'}`
+    );
+  }
+
+  if (!listCheck) {
+    throw new Error('List not found');
+  }
+
+  // Prepare task data with only the fields that exist in the database
+  const taskData: {
+    name: string;
+    description: string | null;
+    list_id: string;
+    priority: number | null;
+    start_date: string | null;
+    end_date: string | null;
+    archived: boolean;
+    created_at: string;
+    tags?: string[];
+  } = {
+    name: task.name.trim(),
+    description: task.description || null,
+    list_id: listId,
+    priority: task.priority || null,
+    start_date: task.start_date || null,
+    end_date: task.end_date || null,
+    archived: false,
+    created_at: new Date().toISOString(),
+  };
+
+  // Handle tags separately to ensure proper formatting
+  if (task.tags && Array.isArray(task.tags)) {
+    // Filter out empty tags and trim whitespace
+    const filteredTags = task.tags
+      .filter((tag) => tag && typeof tag === 'string' && tag.trim().length > 0)
+      .map((tag) => tag.trim());
+
+    if (filteredTags.length > 0) {
+      taskData.tags = filteredTags;
+    }
+  }
+
+  // Now try the normal insert with the fixed database
   const { data, error } = await supabase
     .from('tasks')
-    .insert({ ...task, name: task.name || '', list_id: listId })
+    .insert(taskData)
     .select()
     .single();
 
-  if (error) throw error;
+  if (error) {
+    // Create a more descriptive error message
+    let errorMessage = 'Failed to create task';
+
+    // Try to extract error information from various possible structures
+    const errorObj = error as {
+      message?: string;
+      details?: string;
+      hint?: string;
+      code?: string;
+      error?: string;
+    };
+
+    if (errorObj?.message) {
+      errorMessage = errorObj.message;
+    } else if (errorObj?.details) {
+      errorMessage = errorObj.details;
+    } else if (errorObj?.hint) {
+      errorMessage = errorObj.hint;
+    } else if (errorObj?.code) {
+      errorMessage = `Database error (${errorObj.code}): ${errorObj.message || 'Unknown database error'}`;
+    } else if (errorObj?.error) {
+      errorMessage = errorObj.error;
+    } else if (typeof errorObj === 'string') {
+      errorMessage = errorObj;
+    } else {
+      // If we can't extract a meaningful message, create one based on the error structure
+      errorMessage = `Database operation failed: ${JSON.stringify(errorObj)}`;
+    }
+
+    // Create a new Error object with the descriptive message
+    const enhancedError = new Error(errorMessage);
+    enhancedError.name = 'TaskCreationError';
+    (enhancedError as { originalError?: unknown }).originalError = error;
+
+    throw enhancedError;
+  }
+
   return data as Task;
 }
 
@@ -149,7 +257,10 @@ export async function updateTask(
     .select()
     .single();
 
-  if (error) throw error;
+  if (error) {
+    throw error;
+  }
+
   return data as Task;
 }
 
@@ -231,7 +342,12 @@ export async function moveTask(
   taskId: string,
   newListId: string
 ) {
+  console.log('🗄️ moveTask function called');
+  console.log('📋 Task ID:', taskId);
+  console.log('🎯 New List ID:', newListId);
+
   // First, get the target list to check its status
+  console.log('🔍 Fetching target list details...');
   const { data: targetList, error: listError } = await supabase
     .from('task_lists')
     .select('status, name')
@@ -239,9 +355,11 @@ export async function moveTask(
     .single();
 
   if (listError) {
-    console.error('❌ Error fetching target list:', listError);
+    console.log('❌ Error fetching target list:', listError);
     throw listError;
   }
+
+  console.log('📊 Target list details:', targetList);
 
   // Determine task completion status based on list status
   // - not_started, active: task is available for work (archived = false)
@@ -249,6 +367,10 @@ export async function moveTask(
   const shouldArchive =
     targetList.status === 'done' || targetList.status === 'closed';
 
+  console.log('📦 Should archive task:', shouldArchive);
+  console.log('📊 Target list status:', targetList.status);
+
+  console.log('🔄 Updating task in database...');
   const { data, error } = await supabase
     .from('tasks')
     .update({
@@ -271,9 +393,12 @@ export async function moveTask(
     .single();
 
   if (error) {
-    console.error('❌ Error moving task in database:', error);
+    console.log('❌ Error updating task:', error);
     throw error;
   }
+
+  console.log('✅ Task updated successfully in database');
+  console.log('📊 Updated task data:', data);
 
   // Transform the nested assignees data
   const transformedTask = {
@@ -282,6 +407,9 @@ export async function moveTask(
       data.assignees as (TaskAssignee & { user: User })[]
     ),
   };
+
+  console.log('🔄 Task data transformed');
+  console.log('📊 Final transformed task:', transformedTask);
 
   return transformedTask as Task;
 }
@@ -350,7 +478,7 @@ export function useUpdateTask(boardId: string) {
       updates: Partial<Task>;
     }) => {
       const supabase = createClient();
-      return updateTask(supabase, taskId, updates);
+      return await updateTask(supabase, taskId, updates);
     },
     onMutate: async ({ taskId, updates }) => {
       // Cancel any outgoing refetches
@@ -391,9 +519,12 @@ export function useUpdateTask(boardId: string) {
         ['tasks', boardId],
         (old: Task[] | undefined) => {
           if (!old) return old;
-          return old.map((task) =>
-            task.id === updatedTask.id ? updatedTask : task
-          );
+          return old.map((task) => {
+            if (task.id === updatedTask.id) {
+              return updatedTask;
+            }
+            return task;
+          });
         }
       );
     },
@@ -549,32 +680,72 @@ export function useMoveTask(boardId: string) {
       taskId: string;
       newListId: string;
     }) => {
+      console.log('🚀 Starting moveTask mutation');
+      console.log('📋 Task ID:', taskId);
+      console.log('🎯 New List ID:', newListId);
+
       const supabase = createClient();
-      return moveTask(supabase, taskId, newListId);
+      const result = await moveTask(supabase, taskId, newListId);
+
+      console.log('✅ moveTask completed successfully');
+      console.log('📊 Result:', result);
+
+      return result;
     },
     onMutate: async ({ taskId, newListId }) => {
+      console.log('🎭 onMutate triggered - optimistic update');
+      console.log('📋 Task ID:', taskId);
+      console.log('🎯 New List ID:', newListId);
+
       // Cancel any outgoing refetches
       await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
 
       // Snapshot the previous value
       const previousTasks = queryClient.getQueryData(['tasks', boardId]);
+      console.log('📸 Previous tasks snapshot saved');
 
-      // Optimistically update the task's list_id
+      // Optimistically update the task's list_id and archived status
       queryClient.setQueryData(
         ['tasks', boardId],
         (old: Task[] | undefined) => {
           if (!old) return old;
-          return old.map((task) =>
-            task.id === taskId ? { ...task, list_id: newListId } : task
-          );
+          return old.map((task) => {
+            if (task.id === taskId) {
+              // Get the target list to determine archived status
+              const targetList = queryClient.getQueryData([
+                'task-lists',
+                boardId,
+              ]) as TaskList[] | undefined;
+              const list = targetList?.find((l) => l.id === newListId);
+              const shouldArchive =
+                list?.status === 'done' || list?.status === 'closed';
+
+              console.log('🔄 Optimistically updating task:', taskId);
+              console.log('📊 Target list:', list);
+              console.log('📦 Should archive:', shouldArchive);
+
+              return {
+                ...task,
+                list_id: newListId,
+                archived: shouldArchive || false,
+              };
+            }
+            return task;
+          });
         }
       );
 
+      console.log('✅ Optimistic update completed');
       return { previousTasks };
     },
-    onError: (err, _variables, context) => {
+    onError: (err, variables, context) => {
+      console.log('❌ onError triggered - rollback optimistic update');
+      console.log('📋 Error details:', err);
+      console.log('📊 Variables:', variables);
+
       // Rollback optimistic update on error
       if (context?.previousTasks) {
+        console.log('🔄 Rolling back to previous state');
         queryClient.setQueryData(['tasks', boardId], context.previousTasks);
       }
 
@@ -585,7 +756,12 @@ export function useMoveTask(boardId: string) {
         variant: 'destructive',
       });
     },
-    onSuccess: (updatedTask, _variables) => {
+    onSuccess: (updatedTask) => {
+      console.log(
+        '✅ onSuccess triggered - updating cache with server response'
+      );
+      console.log('📊 Updated task from server:', updatedTask);
+
       // Update the cache with the server response
       queryClient.setQueryData(
         ['tasks', boardId],
@@ -596,11 +772,10 @@ export function useMoveTask(boardId: string) {
           );
         }
       );
+
+      console.log('✅ Cache updated with server response');
     },
-    onSettled: (_data, _error, _variables) => {
-      // Ensure data consistency across all task-related caches
-      invalidateTaskCaches(queryClient, boardId);
-    },
+    // Removed onSettled to prevent cache invalidation conflicts with optimistic updates
   });
 }
 

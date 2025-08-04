@@ -60,6 +60,7 @@ export default function Form({ wsId }: { wsId?: string }) {
               value={startTime}
               onValueChange={setStartTime}
               disabledTime={endTime}
+              isStartTime={true}
             />
           </div>
           <div className="grid gap-1">
@@ -68,6 +69,7 @@ export default function Form({ wsId }: { wsId?: string }) {
               value={endTime}
               onValueChange={setEndTime}
               disabledTime={startTime}
+              isStartTime={false}
             />
           </div>
         </div>

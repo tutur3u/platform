@@ -110,7 +110,7 @@ export const googleCalendarFullSyncOrchestrator = task({
         try {
           // Trigger individual workspace sync with concurrency key
           const handle = await googleCalendarFullSync.trigger(workspace, {
-            concurrencyKey: workspace.ws_id, // Each workspace gets its own queue
+            concurrencyKey: `google-calendar-full-sync-${workspace.ws_id}`, // Each workspace gets its own queue
           });
 
           results.push({

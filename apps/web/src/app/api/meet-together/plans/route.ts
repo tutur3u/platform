@@ -2,9 +2,10 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import { parseTimeFromTimetz } from '@tuturuuu/utils/time-helper';
 import { NextResponse } from 'next/server';
 
-export async function GET(_: Request) {
+export async function GET() {
   const supabase = await createClient();
 
   const { data, error } = await supabase
@@ -32,13 +33,26 @@ export async function POST(req: Request) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  // Backend validation: ensure end_time is after start_time
+  if (data.start_time && data.end_time) {
+    const startHour = parseTimeFromTimetz(data.start_time);
+    const endHour = parseTimeFromTimetz(data.end_time);
+
+    if (
+      startHour !== undefined &&
+      endHour !== undefined &&
+      endHour <= startHour
+    ) {
+      return NextResponse.json(
+        { message: 'End time must be after start time' },
+        { status: 400 }
+      );
+    }
   }
 
   const { data: plan, error } = await sbAdmin
     .from('meet_together_plans')
-    .insert({ ...data, creator_id: user.id })
+    .insert({ ...data, creator_id: user?.id })
     .select('id, where_to_meet')
     .single();
 
@@ -50,12 +64,10 @@ export async function POST(req: Request) {
     );
   }
 
-  if (plan.where_to_meet && typeof plan.id === 'string') {
+  if (plan.where_to_meet && typeof plan.id === 'string' && user?.id) {
     const { error: pollError } = await sbAdmin.from('polls').insert({
       plan_id: plan.id as string,
-      // allow_anonymous_updates: plan.allow_anonymous_updates
-      // TODO: fix later after knowing user id can be nullable or not
-      creator_id: user.id,
+      creator_id: user?.id,
       name: 'Where to Meet?',
     });
 

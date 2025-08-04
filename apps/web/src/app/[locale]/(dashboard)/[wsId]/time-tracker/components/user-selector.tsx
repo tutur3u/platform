@@ -26,10 +26,8 @@ interface WorkspaceUser {
 interface UserSelectorProps {
   wsId: string;
   selectedUserId: string | null;
-  // eslint-disable-next-line no-unused-vars
   onUserChange: (userId: string | null) => void;
   currentUserId: string;
-  // eslint-disable-next-line no-unused-vars
   apiCall: (url: string, options?: RequestInit) => Promise<any>;
 }
 

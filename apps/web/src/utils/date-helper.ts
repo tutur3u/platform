@@ -107,7 +107,7 @@ export const getDateRange = (
 };
 
 export const getDateRangeUnits = (
-  t: any
+  t: (key: string) => string
 ): {
   label: string;
   value: DateRangeUnit;
@@ -124,7 +124,7 @@ export const getDateRangeUnits = (
 
 export const getDateRangeOptions = (
   unit: DateRangeUnit,
-  t: any
+  t: (key: string) => string
 ): {
   label: string;
   value: DateRangeOption;

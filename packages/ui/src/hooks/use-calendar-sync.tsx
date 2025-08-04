@@ -8,10 +8,7 @@ import type {
   WorkspaceCalendarGoogleToken,
 } from '@tuturuuu/types/db';
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
-import {
-  canProceedWithSync,
-  updateLastUpsert,
-} from '@tuturuuu/utils/calendar-sync-coordination';
+import { canProceedWithSync } from '@tuturuuu/utils/calendar-sync-coordination';
 import dayjs from 'dayjs';
 import {
   createContext,
@@ -395,158 +392,40 @@ export const CalendarSyncProvider = ({
           return;
         }
 
-        const supabase = createClient();
-
-        // Use the exact range from dates array
         const startDate = dayjs(dates[0]).startOf('day');
         const endDate = dayjs(dates[dates.length - 1]).endOf('day');
 
-        // Report get phase starting
-        if (progressCallback) {
-          progressCallback({
-            phase: 'get',
-            percentage: 0,
-            statusMessage: 'Fetching events from database...',
-            changesMade: false,
-          });
-          await new Promise((resolve) => setTimeout(resolve, 500)); // Add small delay
-        }
-
-        // Fetch from database
-        const { data: dbData, error: dbError } = await supabase
-          .from('workspace_calendar_events')
-          .select('*')
-          .eq('ws_id', wsId)
-          .lt('start_at', endDate.add(1, 'day').toISOString()) // Event starts before visible range ends
-          .gt('end_at', startDate.toISOString()) // Event ends after visible range starts
-          .order('start_at', { ascending: true });
-
-        if (dbError) {
-          setError(dbError);
-          return;
-        }
-
-        setData(dbData);
-
-        if (progressCallback) {
-          progressCallback({
-            phase: 'fetch',
-            percentage: 25,
-            statusMessage: 'Fetching events from Google Calendar...',
-            changesMade: false,
-          });
-          await new Promise((resolve) => setTimeout(resolve, 500)); // Add small delay
-        }
-
-        // Fetch from Google Calendar
-        const response = await fetch(
-          `/api/v1/calendar/auth/fetch?wsId=${wsId}&startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`
-        );
-
-        const googleResponse = await response.json();
-
-        if (!response.ok) {
-          const errorMessage =
-            googleResponse.error +
-            '. ' +
-            googleResponse.googleError +
-            ': ' +
-            googleResponse.details?.reason;
-          setError(new Error(errorMessage));
-          return;
-        } else {
-          setError(null);
-        }
-
-        setGoogleData(googleResponse.events);
-
-        if (progressCallback) {
-          progressCallback({
-            phase: 'delete',
-            percentage: 50,
-            statusMessage: 'Deleting events from database...',
-            changesMade: false,
-          });
-          await new Promise((resolve) => setTimeout(resolve, 500)); // Add small delay
-        }
-
-        // Create a set of google_event_id from googleResponse.events
-        const googleEventIds = new Set(
-          googleResponse.events.map(
-            (e: WorkspaceCalendarEvent) => e.google_event_id
-          )
-        );
-
-        // Filter data not in googleEventIds
-        const dataToDelete = dbData?.filter(
-          (e: WorkspaceCalendarEvent) =>
-            e.google_event_id && !googleEventIds.has(e.google_event_id)
-        );
-        // Delete dataToDelete
-        if (dataToDelete) {
-          await supabase
-            .from('workspace_calendar_events')
-            .delete()
-            .in(
-              'id',
-              dataToDelete.map((e) => e.id)
-            );
-        }
-
-        if (progressCallback) {
-          progressCallback({
-            phase: 'upsert',
-            percentage: 75,
-            statusMessage: 'Syncing events to database...',
-            changesMade: false,
-          });
-          await new Promise((resolve) => setTimeout(resolve, 500)); // Add small delay
-        }
-
-        // Prepare events for upsert by matching with existing events
-        const eventsToUpsert = googleResponse.events.map(
-          (event: WorkspaceCalendarEvent) => {
-            // Find existing event with same google_event_id
-            const existingEvent = dbData?.find((e) => {
-              const matches =
-                e.google_event_id === event.google_event_id &&
-                e.google_event_id !== null;
-              return matches;
-            });
-
-            if (existingEvent) {
-              return {
-                ...event,
-                id: existingEvent.id,
-                ws_id: wsId,
-              };
-            }
-
-            return {
-              ...event,
-              id: crypto.randomUUID(),
-              ws_id: wsId,
-            };
+        const activeSyncResponse = await fetch(
+          `/api/v1/calendar/auth/active-sync`,
+          {
+            method: 'POST',
+            credentials: 'include',
+            body: JSON.stringify({
+              wsId,
+              startDate: startDate.toISOString(),
+              endDate: endDate.toISOString(),
+            }),
           }
         );
 
-        // Upsert using id as conflict target since we've properly assigned ids
-        const { error: upsertError } = await supabase
-          .from('workspace_calendar_events')
-          .upsert(eventsToUpsert, {
-            onConflict: 'ws_id,google_event_id',
-            ignoreDuplicates: false,
-          });
-
-        if (upsertError) {
-          setError(upsertError);
+        if (!activeSyncResponse.ok) {
+          const errorData = await activeSyncResponse.json();
+          setError(new Error(errorData.error));
           return;
-        } else {
-          setError(null);
-
-          // Update lastUpsert timestamp after successful upsert
-          await updateLastUpsert(wsId);
         }
+
+        const activeSyncData = await activeSyncResponse.json();
+        const dbData = activeSyncData?.dbData;
+        const googleData = activeSyncData?.googleData;
+
+        if (dbData) {
+          setData(dbData);
+        }
+        if (googleData) {
+          setGoogleData(googleData);
+        }
+
+        setError(null);
 
         // Refresh the cache to trigger queryClient to refetch the data from database
         refresh();

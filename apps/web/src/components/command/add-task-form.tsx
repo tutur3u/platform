@@ -40,9 +40,7 @@ export function AddTaskForm({
   setIsLoading,
 }: {
   wsId: string;
-  // eslint-disable-next-line no-unused-vars
   setOpen: (open: boolean) => void;
-  // eslint-disable-next-line no-unused-vars
   setIsLoading: (loading: boolean) => void;
 }) {
   const router = useRouter();
