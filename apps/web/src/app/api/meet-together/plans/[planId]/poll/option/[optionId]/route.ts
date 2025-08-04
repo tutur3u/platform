@@ -26,6 +26,20 @@ export async function DELETE(
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
+  // Check if plan is confirmed and deny option deletion
+  const { data: plan } = await sbAdmin
+    .from('meet_together_plans')
+    .select('is_confirm')
+    .eq('id', planId)
+    .single();
+
+  if (plan?.is_confirm) {
+    return NextResponse.json(
+      { message: 'Plan is confirmed. Deleting poll options is disabled.' },
+      { status: 403 }
+    );
+  }
+
   // 1. Find poll_id for this option
   const { data: option, error: optionError } = await sbAdmin
     .from('poll_options')

@@ -20,6 +20,28 @@ export async function POST(req: Request) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
+  // Check if plan is confirmed by getting the poll's plan_id
+  const { data: poll } = await sbAdmin
+    .from('polls')
+    .select('plan_id')
+    .eq('id', pollId)
+    .single();
+
+  if (poll?.plan_id) {
+    const { data: plan } = await sbAdmin
+      .from('meet_together_plans')
+      .select('is_confirm')
+      .eq('id', poll.plan_id)
+      .single();
+
+    if (plan?.is_confirm) {
+      return NextResponse.json(
+        { message: 'Plan is confirmed. Adding poll options is disabled.' },
+        { status: 403 }
+      );
+    }
+  }
+
   // Insert new poll option (open to both guests and users)
   const { data: option, error } = await sbAdmin
     .from('poll_options')

@@ -23,8 +23,22 @@ export async function POST(
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
-  // Insert poll
+  // Check if plan is confirmed and deny poll creation
   const sbAdmin = await createAdminClient();
+  const { data: plan } = await sbAdmin
+    .from('meet_together_plans')
+    .select('is_confirm')
+    .eq('id', planId)
+    .single();
+
+  if (plan?.is_confirm) {
+    return NextResponse.json(
+      { message: 'Plan is confirmed. Poll creation is disabled.' },
+      { status: 403 }
+    );
+  }
+
+  // Insert poll
   const { data: poll, error } = await sbAdmin
     .from('polls')
     .insert({
@@ -67,6 +81,20 @@ export async function DELETE(
       return NextResponse.json(
         { message: 'Authentication required' },
         { status: 401 }
+      );
+    }
+
+    // Check if plan is confirmed and deny poll deletion
+    const { data: plan } = await sbAdmin
+      .from('meet_together_plans')
+      .select('is_confirm')
+      .eq('id', planId)
+      .single();
+
+    if (plan?.is_confirm) {
+      return NextResponse.json(
+        { message: 'Plan is confirmed. Poll deletion is disabled.' },
+        { status: 403 }
       );
     }
 

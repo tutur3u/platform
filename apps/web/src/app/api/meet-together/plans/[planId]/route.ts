@@ -11,6 +11,24 @@ interface Params {
   }>;
 }
 
+// Helper function to check if plan is confirmed and deny actions
+async function checkPlanConfirmation(planId: string, sbAdmin: any) {
+  const { data: plan } = await sbAdmin
+    .from('meet_together_plans')
+    .select('is_confirm')
+    .eq('id', planId)
+    .single();
+
+  if (plan?.is_confirm) {
+    return NextResponse.json(
+      { message: 'Plan is confirmed. No modifications allowed.' },
+      { status: 403 }
+    );
+  }
+
+  return null; // Continue with the request
+}
+
 // Helper function to check if a timeblock is valid within the plan's time range
 function isTimeblockValid(
   timeblockDate: string,
@@ -115,6 +133,12 @@ export async function PATCH(req: Request, { params }: Params) {
   }
   const sbAdmin = await createAdminClient();
   const { planId: id } = await params;
+
+  // Check if plan is confirmed and deny modifications
+  const confirmationCheck = await checkPlanConfirmation(id, sbAdmin);
+  if (confirmationCheck) {
+    return confirmationCheck;
+  }
 
   const data = await req.json();
 
@@ -291,6 +315,12 @@ export async function PATCH(req: Request, { params }: Params) {
 export async function DELETE(_: Request, { params }: Params) {
   const sbAdmin = await createAdminClient();
   const { planId: id } = await params;
+
+  // Check if plan is confirmed and deny deletion
+  const confirmationCheck = await checkPlanConfirmation(id, sbAdmin);
+  if (confirmationCheck) {
+    return confirmationCheck;
+  }
 
   const { error } = await sbAdmin
     .from('meet_together_plans')

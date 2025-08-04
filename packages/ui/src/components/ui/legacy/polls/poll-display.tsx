@@ -345,7 +345,7 @@ export function PlanDetailsPollContent({
           </Accordion>
         </div>
       )}
-      {isCreator && (
+      {isCreator && !plan.is_confirm && (
         <div className="mt-8 space-y-2">
           <h4 className="mb-2 text-base font-semibold text-foreground">
             {/* {t('add_new_poll')} */}
