@@ -10,7 +10,7 @@ export async function PATCH(
   { params }: { params: { planId: string } }
 ) {
   const { planId } = params;
-  const { enableUnknownEdit, isConfirm } = await req.json();
+  const { isConfirm } = await req.json();
   const sbAdmin = await createAdminClient();
   const supabase = await createClient();
 
@@ -34,8 +34,6 @@ export async function PATCH(
   const { error } = await sbAdmin
     .from('meet_together_plans')
     .update({
-      enable_unknown_edit:
-        typeof enableUnknownEdit === 'boolean' ? enableUnknownEdit : undefined,
       is_confirm: typeof isConfirm === 'boolean' ? isConfirm : undefined,
     })
     .eq('id', planId);

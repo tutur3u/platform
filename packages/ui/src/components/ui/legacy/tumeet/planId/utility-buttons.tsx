@@ -48,10 +48,6 @@ export default function UtilityButtons({
               planId={plan.id}
               isCofirmPlan={Boolean(plan.is_confirm)}
             />
-            {/* <EnableUnknownEditButton
-              planId={plan.id}
-              isEnableUnknownPlan={Boolean(plan.enable_unknown_edit)}
-            /> */}
           </>
         )}
       </div>
@@ -109,51 +105,3 @@ function ConfirmButton({
     </Button>
   );
 }
-// function EnableUnknownEditButton({
-//   planId,
-//   isEnableUnknownPlan,
-// }: {
-//   planId: string;
-//   isEnableUnknownPlan: boolean;
-// }) {
-//   // const t = useTranslations('meet-together-plan-details');
-//   const [isEnableEdited, setEnableEdited] = useState(isEnableUnknownPlan);
-
-//   return (
-//     <Button
-//       onClick={async () => {
-//         const res = await fetch(
-//           `/api/meet-together/plans/${planId}/edit-lock`,
-//           {
-//             method: 'PATCH',
-//             headers: {
-//               'Content-Type': 'application/json',
-//             },
-//             body: JSON.stringify({
-//               // enableToEdit: !isEnableEdited,
-//               enableUnknownEdit: !isEnableEdited,
-//             }),
-//           }
-//         );
-//         if (!res.ok) {
-//           console.error('Failed to update plan confirmation status');
-//           return;
-//         }
-//         setEnableEdited(!isEnableEdited);
-//       }}
-//       className="w-full md:w-auto"
-//     >
-//       {!isEnableEdited ? (
-//         <>
-//           <ListCheck className="mr-1 h-5 w-5" />
-//           Enable Anonymous to Edit
-//         </>
-//       ) : (
-//         <>
-//           <PenOff className="mr-1 h-5 w-5" />
-//           Disable Anonymous to Edit
-//         </>
-//       )}
-//     </Button>
-//   );
-// }

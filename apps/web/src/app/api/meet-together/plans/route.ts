@@ -50,17 +50,11 @@ export async function POST(req: Request) {
     }
   }
 
-  let isEnableUnknownEdit = false;
-  if (!user || !user?.id) {
-    isEnableUnknownEdit = data.enable_unknown_edit;
-  }
-
   const { data: plan, error } = await sbAdmin
     .from('meet_together_plans')
     .insert({
       ...data,
       creator_id: user?.id,
-      enable_unknown_edit: isEnableUnknownEdit,
       is_confirm: false,
     })
     .select('id, where_to_meet')
