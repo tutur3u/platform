@@ -101,7 +101,7 @@ export default function TasksSidebarContent({
           className="m-0 flex min-h-0 flex-1 flex-col space-y-4 overflow-y-auto scrollbar-none p-4 pb-2 duration-300 animate-in fade-in-50"
         >
           <div className="mx-auto w-full max-w-lg p-0">
-            <PriorityView allTasks={tasks} locale={locale} />
+            <PriorityView allTasks={tasks} locale={locale} wsId={wsId} />
           </div>
         </TabsContent>
 
@@ -130,7 +130,7 @@ export default function TasksSidebarContent({
 }
 
 // Add PriorityView component for the new tab
-function PriorityView({ allTasks, locale }: { allTasks: ExtendedWorkspaceTask[]; locale?: string }) {
+function PriorityView({ allTasks, locale, wsId }: { allTasks: ExtendedWorkspaceTask[]; locale?: string; wsId: string }) {
   const [search, setSearch] = useState('');
   const [isSearchFocused, setIsSearchFocused] = useState(false);
 
