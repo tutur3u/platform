@@ -57,14 +57,115 @@ function filterEventsByDateAndStatus(
 export async function performIncrementalActiveSync(
   wsId: string,
   calendarId: string = 'primary',
-  access_token: string,
-  refresh_token: string,
   startDate: Date,
   endDate: Date
 ) {
+  if (!wsId) {
+    return NextResponse.json(
+      {
+        error: 'Failed to fetch Google Calendar events',
+        statusCode: 400,
+        googleError: 'Missing workspace ID',
+        details: {
+          hasAccessToken: false,
+          hasRefreshToken: false,
+          userId: user.id,
+          reason: 'No workspace ID provided',
+        },
+      },
+      { status: 400 }
+    );
+  }
+
+  const result = await supabase
+    .from('calendar_auth_tokens')
+    .select('access_token, refresh_token')
+    .eq('user_id', user.id)
+    .eq('ws_id', wsId) // Add ws_id to the query
+    .maybeSingle();
+
+  googleTokens = result.data;
+  googleTokensError = result.error;
+
+  if (googleTokensError) {
+    console.error('Database query error:', {
+      error: googleTokensError,
+      message: googleTokensError.message,
+      details: googleTokensError.details,
+      hint: googleTokensError.hint,
+      code: googleTokensError.code,
+      userId: user.id,
+      wsId,
+    });
+
+    // If it's a not found error, handle it gracefully
+    if (googleTokensError.code === 'PGRST116') {
+      return NextResponse.json(
+        {
+          error: 'Failed to fetch Google Calendar events',
+          statusCode: 401,
+          googleError: 'Google Calendar not authenticated',
+          details: {
+            hasAccessToken: false,
+            hasRefreshToken: false,
+            userId: user.id,
+            reason: 'No tokens found in database',
+          },
+        },
+        { status: 401 }
+      );
+    }
+
+    // For other database errors, return 500
+    return NextResponse.json(
+      {
+        error: 'Failed to fetch Google Calendar events',
+        statusCode: 500,
+        googleError: 'Database error',
+        details: {
+          tokenError: googleTokensError.message,
+          hasAccessToken: false,
+          hasRefreshToken: false,
+          userId: user.id,
+          errorCode: googleTokensError.code,
+        },
+      },
+      { status: 500 }
+    );
+  }
+
+  // Type assertion for the tokens
+  const tokens = googleTokens as {
+    access_token: string;
+    refresh_token: string;
+  } | null;
+
+  if (!tokens?.access_token) {
+    console.error('No Google access token found for user:', {
+      userId: user.id,
+      hasAccessToken: !!tokens?.access_token,
+      hasRefreshToken: !!tokens?.refresh_token,
+    });
+
+    return NextResponse.json(
+      {
+        error: 'Failed to fetch Google Calendar events',
+        statusCode: 401,
+        googleError: 'Google Calendar not authenticated',
+        details: {
+          hasAccessToken: false,
+          hasRefreshToken: !!tokens?.refresh_token,
+          userId: user.id,
+          reason: 'Access token is empty',
+        },
+      },
+      { status: 401 }
+    );
+  }
+
   const auth = getGoogleAuthClient({
-    access_token,
-    refresh_token: refresh_token || undefined,
+    access_token: tokens.access_token,
+    refresh_token: tokens.refresh_token || undefined,
   });
   const calendar = google.calendar({ version: 'v3', auth });
 
