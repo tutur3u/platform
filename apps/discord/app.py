@@ -1,39 +1,50 @@
+"""Main Discord bot application."""
+
 import json
-from enum import Enum
 
 import modal
+from auth import DiscordAuth
+from commands import CommandHandler
+from config import DiscordInteractionType, DiscordResponseType
 
+# Create Modal image with all required dependencies
 image = modal.Image.debian_slim(python_version="3.13").pip_install(
-    "fastapi[standard]", "pynacl", "requests"
+    "fastapi[standard]", "pynacl", "requests", "supabase", "nanoid"
 )
 
 app = modal.App("tuturuuu-discord-bot", image=image)
+
+# Add Supabase secret
+supabase_secret = modal.Secret.from_name(
+    "supabase-secret",
+    required_keys=[
+        "SUPABASE_URL",
+        "SUPABASE_SERVICE_ROLE_KEY",
+    ],
+)
+
+# Discord secret
+discord_secret = modal.Secret.from_name(
+    "discord-secret",
+    required_keys=[
+        "DISCORD_BOT_TOKEN",
+        "DISCORD_CLIENT_ID",
+        "DISCORD_PUBLIC_KEY",
+    ],
+)
 
 
 @app.function()
 @modal.concurrent(max_inputs=1000)
 async def fetch_api() -> str:
-    import aiohttp
-
-    url = "https://www.freepublicapis.com/api/random"
-
-    async with aiohttp.ClientSession() as session:
-        try:
-            async with session.get(url) as response:
-                response.raise_for_status()
-                data = await response.json()
-                message = (
-                    f"# {data.get('emoji') or '🤖'} [{data['title']}]({data['source']})"
-                )
-                message += f"\n _{''.join(data['description'].splitlines())}_"
-        except Exception as e:
-            message = f"# 🤖: Oops! {e}"
-
-    return message
+    """Fetch random API data (legacy function for backward compatibility)."""
+    handler = CommandHandler()
+    return await handler._fetch_api_data()
 
 
 @app.local_entrypoint()
 def test_fetch_api():
+    """Test the API wrapper."""
     result = fetch_api.remote()
     if result.startswith("# 🤖: Oops! "):  # type: ignore
         raise Exception(result)
@@ -41,31 +52,26 @@ def test_fetch_api():
         print(result)
 
 
-async def send_to_discord(payload: dict, app_id: str, interaction_token: str):
-    import aiohttp
-
-    interaction_url = f"https://discord.com/api/v10/webhooks/{app_id}/{interaction_token}/messages/@original"
-
-    async with aiohttp.ClientSession() as session:
-        async with session.patch(interaction_url, json=payload) as resp:
-            print("🤖 Discord response: " + await resp.text())
+@app.function()
+@modal.concurrent(max_inputs=1000)
+async def reply(app_id: str, interaction_token: str):
+    """Handle /api command (legacy function for backward compatibility)."""
+    handler = CommandHandler()
+    await handler.handle_api_command(app_id, interaction_token)
 
 
 @app.function()
 @modal.concurrent(max_inputs=1000)
-async def reply(app_id: str, interaction_token: str):
-    message = await fetch_api.local()
-    await send_to_discord({"content": message}, app_id, interaction_token)
+async def reply_shorten_link(
+    app_id: str, interaction_token: str, url: str, custom_slug: str = None
+):
+    """Handle link shortening (legacy function for backward compatibility)."""
+    handler = CommandHandler()
+    options = [{"name": "url", "value": url}]
+    if custom_slug:
+        options.append({"name": "custom_slug", "value": custom_slug})
 
-
-discord_secret = modal.Secret.from_name(
-    "discord-secret",
-    required_keys=[  # included so we get nice error messages if we forgot a key
-        "DISCORD_BOT_TOKEN",
-        "DISCORD_CLIENT_ID",
-        "DISCORD_PUBLIC_KEY",
-    ],
-)
+    await handler.handle_shorten_command(app_id, interaction_token, options)
 
 
 @app.function(secrets=[discord_secret], image=image)
@@ -145,7 +151,7 @@ def test_bot_token():
 
 @app.function(secrets=[discord_secret], image=image)
 def create_slash_command(force: bool = False):
-    """Registers the slash command with Discord. Pass the force flag to re-register."""
+    """Registers the slash commands with Discord. Pass the force flag to re-register."""
     import os
 
     import requests
@@ -172,12 +178,11 @@ def create_slash_command(force: bool = False):
     }
     url = f"https://discord.com/api/v10/applications/{CLIENT_ID}/commands"
 
-    command_description = {
-        "name": "api",
-        "description": "Information about a random free, public API",
-    }
+    # Get command definitions from the handler
+    handler = CommandHandler()
+    commands = handler.get_command_definitions()
 
-    # first, check if the command already exists
+    # first, check if the commands already exist
     print(f"🤖: Checking existing commands at {url}")
     response = requests.get(url, headers=headers)
 
@@ -196,37 +201,46 @@ def create_slash_command(force: bool = False):
         print(f"🤖: Error checking commands: {response.status_code} - {response.text}")
         raise Exception(f"Failed to check existing commands: {e}") from e
 
-    commands = response.json()
-    print(f"🤖: Found {len(commands)} existing commands")
-    command_exists = any(
-        command.get("name") == command_description["name"] for command in commands
-    )
+    existing_commands = response.json()
+    print(f"🤖: Found {len(existing_commands)} existing commands")
 
-    # and only recreate it if the force flag is set
-    if command_exists and not force:
-        print(f"🤖: command {command_description['name']} exists")
-        return
+    # Check which commands exist
+    existing_command_names = {cmd.get("name") for cmd in existing_commands}
 
-    print(f"🤖: Creating command {command_description['name']}")
-    response = requests.post(url, headers=headers, json=command_description)
+    for command in commands:
+        command_name = command["name"]
+        command_exists = command_name in existing_command_names
 
-    if response.status_code == 401:
-        print(f"🤖: 401 Unauthorized when creating command - Response: {response.text}")
-        raise Exception(f"401 Unauthorized when creating command: {response.text}")
+        # and only recreate it if the force flag is set
+        if command_exists and not force:
+            print(f"🤖: command {command_name} exists")
+            continue
 
-    try:
-        response.raise_for_status()
-    except Exception as e:
-        print(f"🤖: Error creating command: {response.status_code} - {response.text}")
-        raise Exception(f"Failed to create slash command: {e}") from e
+        print(f"🤖: Creating command {command_name}")
+        response = requests.post(url, headers=headers, json=command)
 
-    print(f"🤖: command {command_description['name']} created successfully")
+        if response.status_code == 401:
+            print(
+                f"🤖: 401 Unauthorized when creating command - Response: {response.text}"
+            )
+            raise Exception(f"401 Unauthorized when creating command: {response.text}")
+
+        try:
+            response.raise_for_status()
+        except Exception as e:
+            print(
+                f"🤖: Error creating command: {response.status_code} - {response.text}"
+            )
+            raise Exception(f"Failed to create slash command: {e}") from e
+
+        print(f"🤖: command {command_name} created successfully")
 
 
 @app.function(secrets=[discord_secret], min_containers=1)
 @modal.concurrent(max_inputs=1000)
 @modal.asgi_app()
 def web_app():
+    """Main web application for handling Discord interactions."""
     from fastapi import FastAPI, HTTPException, Request
     from fastapi.middleware.cors import CORSMiddleware
 
@@ -243,69 +257,88 @@ def web_app():
 
     @web_app.post("/api")
     async def get_api(request: Request):
+        """Handle Discord interactions."""
         body = await request.body()
 
         # confirm this is a request from Discord
-        authenticate(request.headers, body)
+        DiscordAuth.verify_request(request.headers, body)
 
         print("🤖: parsing request")
         data = json.loads(body.decode())
-        if data.get("type") == DiscordInteractionType.PING.value:
-            print("🤖: acking PING from Discord during auth check")
-            return {"type": DiscordResponseType.PONG.value}
 
-        if data.get("type") == DiscordInteractionType.APPLICATION_COMMAND.value:
+        if data.get("type") == DiscordInteractionType.PING:
+            print("🤖: acking PING from Discord during auth check")
+            return {"type": DiscordResponseType.PONG}
+
+        if data.get("type") == DiscordInteractionType.APPLICATION_COMMAND:
             print("🤖: handling slash command")
             app_id = data["application_id"]
             interaction_token = data["token"]
+            command_name = data["data"]["name"]
 
-            # kick off request asynchronously, will respond when ready
-            reply.spawn(app_id, interaction_token)
+            # Check if the command is from an allowed guild
+            guild_id = data.get("guild_id")
+
+            if guild_id and not CommandHandler().is_guild_authorized(guild_id):
+                print(f"🤖: command from unauthorized guild: {guild_id}")
+                handler = CommandHandler()
+                await handler.discord_client.send_response(
+                    {"content": handler.discord_client.format_unauthorized_message()},
+                    app_id,
+                    interaction_token,
+                )
+                return {
+                    "type": DiscordResponseType.DEFERRED_CHANNEL_MESSAGE_WITH_SOURCE
+                }
+
+            # Handle different commands
+            handler = CommandHandler()
+
+            if command_name == "api":
+                # kick off request asynchronously, will respond when ready
+                reply.spawn(app_id, interaction_token)
+            elif command_name == "shorten":
+                # Handle link shortening
+                options = data["data"].get("options", [])
+                url = None
+                custom_slug = None
+
+                for option in options:
+                    if option["name"] == "url":
+                        url = option["value"]
+                    elif option["name"] == "custom_slug":
+                        custom_slug = option["value"]
+
+                if not url:
+                    await handler.discord_client.send_response(
+                        {
+                            "content": handler.discord_client.format_missing_url_message()
+                        },
+                        app_id,
+                        interaction_token,
+                    )
+                    return {
+                        "type": DiscordResponseType.DEFERRED_CHANNEL_MESSAGE_WITH_SOURCE
+                    }
+
+                # kick off link shortening asynchronously
+                reply_shorten_link.spawn(app_id, interaction_token, url, custom_slug)
+            else:
+                print(f"🤖: unknown command: {command_name}")
+                await handler.discord_client.send_response(
+                    {
+                        "content": handler.discord_client.format_unknown_command_message(
+                            command_name
+                        )
+                    },
+                    app_id,
+                    interaction_token,
+                )
 
             # respond immediately with defer message
-            return {
-                "type": DiscordResponseType.DEFERRED_CHANNEL_MESSAGE_WITH_SOURCE.value
-            }
+            return {"type": DiscordResponseType.DEFERRED_CHANNEL_MESSAGE_WITH_SOURCE}
 
         print(f"🤖: unable to parse request with type {data.get('type')}")
         raise HTTPException(status_code=400, detail="Bad request")
 
     return web_app
-
-
-def authenticate(headers, body):
-    import os
-
-    from fastapi.exceptions import HTTPException
-    from nacl.exceptions import BadSignatureError
-    from nacl.signing import VerifyKey
-
-    print("🤖: authenticating request")
-    # verify the request is from Discord using their public key
-    public_key = os.getenv("DISCORD_PUBLIC_KEY")
-
-    if not public_key:
-        raise HTTPException(status_code=500, detail="DISCORD_PUBLIC_KEY is not set")
-
-    verify_key = VerifyKey(bytes.fromhex(public_key))
-
-    signature = headers.get("X-Signature-Ed25519")
-    timestamp = headers.get("X-Signature-Timestamp")
-
-    message = timestamp.encode() + body
-
-    try:
-        verify_key.verify(message, bytes.fromhex(signature))
-    except BadSignatureError:
-        # either an unauthorized request or Discord's "negative control" check
-        raise HTTPException(status_code=401, detail="Invalid request")
-
-
-class DiscordInteractionType(Enum):
-    PING = 1  # hello from Discord during auth check
-    APPLICATION_COMMAND = 2  # an actual command
-
-
-class DiscordResponseType(Enum):
-    PONG = 1  # hello back during auth check
-    DEFERRED_CHANNEL_MESSAGE_WITH_SOURCE = 5  # we'll send a message later
