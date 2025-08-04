@@ -22,7 +22,7 @@ import {
 } from '@tuturuuu/ui/select';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { DEV_MODE } from '@/constants/common';
 import { isSameDay, isSameMonth } from '@/utils/date-helper';
 import { useCalendarState } from './calendar-state-context';
@@ -65,7 +65,7 @@ export default function CalendarPageClient({
     staleTime: 30000, // Cache for 30 seconds
   });
 
-  const handleNext = () => {
+  const handleNext = useCallback(() => {
     const newDate = new Date(date);
     if (view === 'day') {
       newDate.setDate(newDate.getDate() + 1);
@@ -75,9 +75,9 @@ export default function CalendarPageClient({
       newDate.setMonth(newDate.getMonth() + 1);
     }
     setDate(newDate);
-  };
+  }, [date, view, setDate]);
 
-  const handlePrev = () => {
+  const handlePrev = useCallback(() => {
     const newDate = new Date(date);
     if (view === 'day') {
       newDate.setDate(newDate.getDate() - 1);
@@ -87,7 +87,7 @@ export default function CalendarPageClient({
       newDate.setMonth(newDate.getMonth() - 1);
     }
     setDate(newDate);
-  };
+  }, [date, view, setDate]);
 
   const selectToday = () => {
     setDate(new Date());
@@ -167,6 +167,24 @@ export default function CalendarPageClient({
     setView,
     availableViews,
   };
+
+  // Keyboard navigation support for date navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+        return;
+      }
+      
+      if (e.key === 'ArrowLeft' && e.ctrlKey) {
+        handlePrev();
+      } else if (e.key === 'ArrowRight' && e.ctrlKey) {
+        handleNext();
+      }
+    };
+    
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handlePrev, handleNext]);
 
   return (
     <>

@@ -381,22 +381,26 @@ export function AlgorithmInsights({
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {logs.map((log, index) => (
-                <Alert
-                  key={`${log.type}-${log.message}-${index}`}
-                  variant={log.type === 'error' ? 'destructive' : 'default'}
-                  className="text-sm"
-                >
-                  {log.type === 'warning' && <InfoIcon className="h-4 w-4" />}
-                  {log.type === 'error' && <XCircleIcon className="h-4 w-4" />}
-                  <AlertTitle className="text-sm">
-                    {log.type.charAt(0).toUpperCase() + log.type.slice(1)}
-                  </AlertTitle>
-                  <AlertDescription className="text-xs">
-                    {log.message}
-                  </AlertDescription>
-                </Alert>
-              ))}
+              {logs.map((log, index) => {
+                // Create a stable unique key using content hash
+                const logKey = `${log.type}-${log.message}-${index}`;
+                return (
+                  <Alert
+                    key={logKey}
+                    variant={log.type === 'error' ? 'destructive' : 'default'}
+                    className="text-sm"
+                  >
+                    {log.type === 'warning' && <InfoIcon className="h-4 w-4" />}
+                    {log.type === 'error' && <XCircleIcon className="h-4 w-4" />}
+                    <AlertTitle className="text-sm">
+                      {log.type.charAt(0).toUpperCase() + log.type.slice(1)}
+                    </AlertTitle>
+                    <AlertDescription className="text-xs">
+                      {log.message}
+                    </AlertDescription>
+                  </Alert>
+                );
+              })}
             </div>
           </CardContent>
         </Card>
