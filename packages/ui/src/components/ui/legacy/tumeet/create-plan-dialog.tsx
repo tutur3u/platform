@@ -15,7 +15,6 @@ import {
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -32,7 +31,6 @@ import { cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
 import {
   ClipboardList,
-  Edit3Icon,
   MapPin as MapPinIcon,
   Sparkles as SparklesIcon,
 } from 'lucide-react';
@@ -89,6 +87,9 @@ const convertToTimetz = (
 export default function CreatePlanDialog({ plan, user }: Props) {
   const t = useTranslations('meet-together');
   const router = useRouter();
+
+  // TODO: Use this for future authentication checks
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const isUserLoggedIn = user?.id;
 
   const [isOpened, setIsOpened] = useState(false);
