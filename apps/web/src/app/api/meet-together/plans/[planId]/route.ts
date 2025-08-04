@@ -12,7 +12,8 @@ interface Params {
 }
 
 // Helper function to check if plan is confirmed and deny actions
-async function checkPlanConfirmation(planId: string, sbAdmin) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function checkPlanConfirmation(planId: string, sbAdmin: any) {
   const { data: plan } = await sbAdmin
     .from('meet_together_plans')
     .select('is_confirm')
