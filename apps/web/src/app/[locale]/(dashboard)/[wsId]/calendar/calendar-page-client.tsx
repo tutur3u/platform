@@ -226,9 +226,7 @@ export default function CalendarPageClient({
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={
-                      isToday() || isCurrentMonth() ? undefined : selectToday
-                    }
+                    onClick={selectToday}
                     disabled={isToday() || isCurrentMonth()}
                   >
                     {view === 'day'
@@ -283,8 +281,6 @@ export default function CalendarPageClient({
               enableHeader={false} // Header is now handled by CalendarPageClient
               externalState={externalState}
               extras={undefined} // Extras are now handled by CalendarPageClient
-              onSidebarToggle={() => {}} // This will be handled by SmartCalendar
-              sidebarToggleButton={undefined} // Sidebar toggle is now handled by CalendarPageClient
             />
           </div>
 
