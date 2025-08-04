@@ -1,17 +1,23 @@
 'use client';
 
-import { User } from '@tuturuuu/types/db';
 import CreatePlanDialog from './create-plan-dialog';
 import DateSelector from './date-selector';
 import { TimeSelector } from './time-selector';
 import TimezoneSelector from './timezone-selector';
+import { User } from '@tuturuuu/types/db';
 import type { Timezone } from '@tuturuuu/types/primitives/Timezone';
 import { Separator } from '@tuturuuu/ui/separator';
 import timezones from '@tuturuuu/utils/timezones';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 
-export default function Form({ wsId, user }: { wsId?: string, user: User | null }) {
+export default function Form({
+  wsId,
+  user,
+}: {
+  wsId?: string;
+  user: User | null;
+}) {
   const t = useTranslations('meet-together');
 
   const [dates, setDates] = useState<Date[] | undefined>([]);
