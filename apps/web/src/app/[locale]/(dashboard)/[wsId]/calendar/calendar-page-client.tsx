@@ -24,6 +24,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { DEV_MODE } from '@/constants/common';
+import { isSameDay, isSameMonth } from '@/utils/date-helper';
 import { useCalendarState } from './calendar-state-context';
 import AddEventButton from './components/add-event-button';
 import AddEventModal from './components/add-event-dialog';
@@ -93,16 +94,11 @@ export default function CalendarPageClient({
   };
 
   const isToday = () => {
-    const today = new Date();
-    return date.toDateString() === today.toDateString();
+    return isSameDay(date, new Date());
   };
 
   const isCurrentMonth = () => {
-    const today = new Date();
-    return (
-      date.getMonth() === today.getMonth() &&
-      date.getFullYear() === today.getFullYear()
-    );
+    return isSameMonth(date, new Date());
   };
 
   const onViewChange = (newView: string) => {
@@ -174,27 +170,7 @@ export default function CalendarPageClient({
 
   return (
     <>
-      <div
-        className="flex h-full w-full flex-col"
-        style={{
-          transform: 'scale(0.8)',
-          transformOrigin: 'top left',
-          width: '125%',
-          height: '125%',
-          scrollbarWidth: 'none',
-          msOverflowStyle: 'none',
-        }}
-      >
-        {/* Add CSS to hide scrollbars */}
-        <style jsx>{`
-          div::-webkit-scrollbar {
-            display: none;
-          }
-          * {
-            -ms-overflow-style: none;
-            scrollbar-width: none;
-          }
-        `}</style>
+      <div className="calendar-container flex h-full w-full flex-col">
         {/* Sticky Header */}
         <div className="sticky top-0 z-10 border-b">
           <div className="p-4">
@@ -213,7 +189,7 @@ export default function CalendarPageClient({
                     <Button
                       variant="outline"
                       size="icon"
-                      style={{ height: '32px', width: '32px' }}
+                      className="h-8 w-8"
                       onClick={handlePrev}
                       aria-label="Previous period"
                     >
@@ -222,7 +198,7 @@ export default function CalendarPageClient({
                     <Button
                       variant="outline"
                       size="icon"
-                      style={{ height: '32px', width: '32px' }}
+                      className="h-8 w-8"
                       onClick={handleNext}
                       aria-label="Next period"
                     >

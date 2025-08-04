@@ -42,3 +42,66 @@
 [data-theme='slash-command'] {
   width: 1000vw;
 }
+
+/* ==========================================================================
+   Calendar Component Styles
+   ========================================================================== */
+
+/* Calendar Container - Responsive Scaling System
+ * Provides 0.8 scale effect with responsive design and optimized rendering
+ */
+.calendar-container {
+  /* Core scaling properties */
+  transform: scale(0.8);
+  transform-origin: top left;
+  width: 125%;
+  height: 125%;
+  
+  /* Font rendering optimization for scaling */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  
+  /* Hide scrollbars for clean appearance */
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Webkit scrollbar hiding */
+.calendar-container::-webkit-scrollbar {
+  display: none;
+}
+
+/* Optimize all child elements for scaling */
+.calendar-container * {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Optimize interactive elements for scaling */
+.calendar-container button,
+.calendar-container input,
+.calendar-container select {
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ==========================================================================
+   Responsive Breakpoints
+   ========================================================================== */
+
+/* Mobile devices - Smaller scale for better touch interaction */
+@media (max-width: 768px) {
+  .calendar-container {
+    transform: scale(0.75);
+    width: 133.33%;
+    height: 133.33%;
+  }
+}
+
+/* Desktop devices - Slightly larger scale for better readability */
+@media (min-width: 1024px) {
+  .calendar-container {
+    transform: scale(0.85);
+    width: 117.65%;
+    height: 117.65%;
+  }
+}

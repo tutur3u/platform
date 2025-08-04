@@ -222,3 +222,26 @@ export function minTimetz(timetz1: string, timetz2: string) {
 export function maxTimetz(timetz1: string, timetz2: string) {
   return compareTimetz(timetz1, timetz2) > 0 ? timetz1 : timetz2;
 }
+
+/**
+ * Compares two dates to check if they represent the same day
+ * @param date1 - First date to compare
+ * @param date2 - Second date to compare
+ * @returns true if both dates represent the same day, false otherwise
+ */
+export const isSameDay = (date1: Date, date2: Date): boolean => {
+  return date1.toDateString() === date2.toDateString();
+};
+
+/**
+ * Compares two dates to check if they represent the same month and year
+ * @param date1 - First date to compare
+ * @param date2 - Second date to compare
+ * @returns true if both dates represent the same month and year, false otherwise
+ */
+export const isSameMonth = (date1: Date, date2: Date): boolean => {
+  return (
+    date1.getMonth() === date2.getMonth() &&
+    date1.getFullYear() === date2.getFullYear()
+  );
+};
