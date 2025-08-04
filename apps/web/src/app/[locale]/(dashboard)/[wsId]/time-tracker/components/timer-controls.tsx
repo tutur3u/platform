@@ -79,22 +79,16 @@ interface TaskList {
 interface TimerControlsProps {
   wsId: string;
   currentSession: SessionWithRelations | null;
-  // eslint-disable-next-line no-unused-vars
   setCurrentSession: (session: SessionWithRelations | null) => void;
   elapsedTime: number;
-  // eslint-disable-next-line no-unused-vars
   setElapsedTime: (time: number) => void;
   isRunning: boolean;
-  // eslint-disable-next-line no-unused-vars
   setIsRunning: (running: boolean) => void;
   categories: TimeTrackingCategory[];
   tasks: ExtendedWorkspaceTask[];
   onSessionUpdate: () => void;
-  // eslint-disable-next-line no-unused-vars
   formatTime: (seconds: number) => string;
-  // eslint-disable-next-line no-unused-vars
   formatDuration: (seconds: number) => string;
-  // eslint-disable-next-line no-unused-vars
   apiCall: (url: string, options?: RequestInit) => Promise<any>;
   isDraggingTask?: boolean;
   onGoToTasksTab?: () => void;

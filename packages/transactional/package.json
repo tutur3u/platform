@@ -8,10 +8,10 @@
     "lint": "eslint ."
   },
   "dependencies": {
-    "@react-email/components": "^0.3.2",
-    "@react-email/preview-server": "^4.2.5",
+    "@react-email/components": "^0.4.0",
+    "@react-email/preview-server": "^4.2.7",
     "react": "^19.1.1",
-    "react-email": "^4.2.5"
+    "react-email": "^4.2.7"
   },
   "devDependencies": {
     "@tuturuuu/eslint-config": "workspace:*",

@@ -55,7 +55,6 @@ interface CategoryManagerProps {
   categories: TimeTrackingCategory[];
   onCategoriesUpdate: () => void;
   readOnly?: boolean;
-  // eslint-disable-next-line no-unused-vars
   apiCall: (url: string, options?: RequestInit) => Promise<any>;
 }
 

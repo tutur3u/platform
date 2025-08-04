@@ -1,5 +1,5 @@
-import { getPlan } from './helpers';
 import { siteConfig } from '@/constants/configs';
+import { getPlan } from '@tuturuuu/ui/utils/plan-helpers';
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 
@@ -15,9 +15,6 @@ export const generateMetadata = async ({
 }: Props): Promise<Metadata> => {
   const { locale, planId } = await params;
 
-  const viTitle = 'Họp cùng nhau';
-  const enTitle = 'Meet together';
-
   const enDescription = 'Find the best time slot for everyone, hassle-free.';
   const viDescription =
     'Tìm khung giờ tốt nhất cho mọi người, dễ hơn bao giờ hết.';
@@ -27,7 +24,7 @@ export const generateMetadata = async ({
   const plan = await getPlan(planId);
   const planName = plan.name || untitled;
 
-  const title = `${planName} - ${locale === 'vi' ? viTitle : enTitle}`;
+  const title = `${planName} - Tumeet`;
   const description = locale === 'vi' ? viDescription : enDescription;
 
   return {
@@ -39,7 +36,7 @@ export const generateMetadata = async ({
     openGraph: {
       type: 'website',
       locale,
-      url: siteConfig.url,
+      url: `${siteConfig.url}/meet-together/plans/${planId}`,
       title,
       description,
       siteName: siteConfig.name,
