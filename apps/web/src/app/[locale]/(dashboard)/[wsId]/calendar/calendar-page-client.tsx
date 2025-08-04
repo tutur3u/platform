@@ -23,7 +23,7 @@ import {
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useState, useEffect, useCallback } from 'react';
-import { DEV_MODE } from '@/constants/common';
+import { DEV_MODE, TASKS_LIMIT } from '@/constants/common';
 import { isSameDay, isSameMonth } from '@/utils/date-helper';
 import { useCalendarState } from './calendar-state-context';
 import AddEventButton from './components/add-event-button';
@@ -51,12 +51,12 @@ export default function CalendarPageClient({
   const [othersSidebarOpen, setOthersSidebarOpen] = useState(false);
   const { date, setDate, view, setView, availableViews } = useCalendarState();
 
-  // Fetch tasks data
+  // Fetch tasks data with configurable limit
   const { data: tasksData } = useQuery({
-    queryKey: ['tasks', workspace.id],
+    queryKey: ['tasks', workspace.id, TASKS_LIMIT],
     queryFn: async () => {
       const response = await fetch(
-        `/api/v1/workspaces/${workspace.id}/tasks?limit=100`
+        `/api/v1/workspaces/${workspace.id}/tasks?limit=${TASKS_LIMIT}`
       );
       if (!response.ok) throw new Error('Failed to fetch tasks');
       return response.json();

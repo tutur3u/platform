@@ -45,3 +45,6 @@ export const DRAFT_NEW_POST_URL = (base: string) =>
   `${base}/${DRAFT_NEW_POST_ID}`;
 
 export const HIDE_EXPERIMENTAL_STATUS = false;
+
+// API limits and pagination
+export const TASKS_LIMIT = 200; // Configurable limit for tasks fetching

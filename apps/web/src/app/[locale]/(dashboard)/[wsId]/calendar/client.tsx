@@ -6,7 +6,7 @@ import AutoScheduleComprehensiveDialog from './components/auto-schedule-comprehe
 import TestEventGeneratorButton from './components/test-event-generator-button';
 import CalendarSidebar from './components/calendar-sidebar';
 import TasksSidebarContent from './components/tasks-sidebar-content';
-import { DEV_MODE } from '@/constants/common';
+import { DEV_MODE, TASKS_LIMIT } from '@/constants/common';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type {
   Workspace,
@@ -40,11 +40,11 @@ export default function CalendarClientPage({
   const openAddEventDialog = () => setIsAddEventModalOpen(true);
   const closeAddEventDialog = () => setIsAddEventModalOpen(false);
 
-  // Fetch tasks data
+  // Fetch tasks data with configurable limit
   const { data: tasksData } = useQuery({
-    queryKey: ['tasks', workspace.id],
+    queryKey: ['tasks', workspace.id, TASKS_LIMIT],
     queryFn: async () => {
-      const response = await fetch(`/api/v1/workspaces/${workspace.id}/tasks?limit=100`);
+      const response = await fetch(`/api/v1/workspaces/${workspace.id}/tasks?limit=${TASKS_LIMIT}`);
       if (!response.ok) throw new Error('Failed to fetch tasks');
       return response.json();
     },
