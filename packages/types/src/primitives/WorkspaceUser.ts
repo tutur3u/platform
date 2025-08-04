@@ -11,6 +11,7 @@ export interface WorkspaceUser {
   phone?: string | null;
   birthday?: string | null;
   gender?: string | null;
+  attendance_count?: number;
   ethnicity?: string | null;
   guardian?: string | null;
   national_id?: string | null;
