@@ -177,8 +177,10 @@ export default function CalendarPageClient({
       <div
         className="flex h-full w-full flex-col"
         style={{
-          zoom: '0.8',
+          transform: 'scale(0.8)',
           transformOrigin: 'top left',
+          width: '125%',
+          height: '125%',
           scrollbarWidth: 'none',
           msOverflowStyle: 'none',
         }}
