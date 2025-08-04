@@ -228,7 +228,7 @@ function PriorityView({ allTasks }: { allTasks: ExtendedWorkspaceTask[] }) {
 
       {/* Priority Groups */}
       <div className="space-y-4">
-        {Object.entries(PRIORITY_LABELS).map(([key, label], index) => {
+        {Object.entries(PRIORITY_LABELS).map(([key, label]) => {
           const tasks = filteredGrouped[key] || [];
           const colorClasses =
             PRIORITY_COLORS[key as keyof typeof PRIORITY_COLORS];
@@ -238,7 +238,6 @@ function PriorityView({ allTasks }: { allTasks: ExtendedWorkspaceTask[] }) {
             <div
               key={key}
               className="group duration-300 animate-in slide-in-from-bottom-2"
-              style={{ animationDelay: `${index * 100}ms` }}
             >
               <div className="mb-3 flex items-center gap-2">
                 <span className="text-lg">{icon}</span>
@@ -265,11 +264,10 @@ function PriorityView({ allTasks }: { allTasks: ExtendedWorkspaceTask[] }) {
                     </div>
 
                     <div className="space-y-2">
-                      {tasks.map((task, taskIndex) => (
+                      {tasks.map((task) => (
                         <div
                           key={task.id}
                           className="group/task relative overflow-hidden rounded-lg border border-border/50 bg-background/60 p-3 transition-all duration-200 hover:border-border hover:bg-background/80 hover:shadow-sm"
-                          style={{ animationDelay: `${taskIndex * 50}ms` }}
                         >
                           <div className="absolute inset-0 -z-10 bg-gradient-to-r from-accent/5 to-accent/10 opacity-0 transition-opacity duration-200 group-hover/task:opacity-100" />
                           <div className="flex h-full min-h-[64px] flex-col">
