@@ -93,7 +93,6 @@ export default function CreatePlanDialog({ plan, user }: Props) {
   // @ts-expect-error - TODO: Use this for future authentication checks
   const isUserLoggedIn = user?.id;
 
-
   const [isOpened, setIsOpened] = useState(false);
   const [creating, setCreating] = useState(false);
 
