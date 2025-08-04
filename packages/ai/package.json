@@ -19,7 +19,7 @@
     "@ai-sdk/deepseek": "1.0.0",
     "@ai-sdk/elevenlabs": "1.0.0",
     "@ai-sdk/fal": "1.0.0",
-    "@ai-sdk/fireworks": "1.0.0",
+    "@ai-sdk/fireworks": "1.0.1",
     "@ai-sdk/gladia": "1.0.0",
     "@ai-sdk/google": "2.0.0",
     "@ai-sdk/google-vertex": "3.0.0",
