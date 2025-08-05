@@ -6,7 +6,8 @@ import AutoScheduleComprehensiveDialog from './components/auto-schedule-comprehe
 import CalendarSidebar from './components/calendar-sidebar';
 import TasksSidebarContent from './components/tasks-sidebar-content';
 import TestEventGeneratorButton from './components/test-event-generator-button';
-import { DEV_MODE, TASKS_LIMIT } from '@/constants/common';
+import { useTasksData, useAIChatData } from './hooks';
+import { DEV_MODE } from '@/constants/common';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type {
   Workspace,
@@ -45,55 +46,11 @@ export default function CalendarClientPage({
   const openAddEventDialog = () => setIsAddEventModalOpen(true);
   const closeAddEventDialog = () => setIsAddEventModalOpen(false);
 
-  // Fetch tasks data with configurable limit
-  const { data: tasksData } = useQuery({
-    queryKey: ['tasks', workspace.id, TASKS_LIMIT],
-    queryFn: async () => {
-      const response = await fetch(`/api/v1/workspaces/${workspace.id}/tasks?limit=${TASKS_LIMIT}`);
-      if (!response.ok) throw new Error('Failed to fetch tasks');
-      return response.json();
-    },
-    enabled: othersSidebarOpen, // Only fetch when sidebar is open
-    staleTime: 30000, // Cache for 30 seconds
-  });
+  // Fetch tasks data using custom hook
+  const { data: tasksData } = useTasksData(workspace.id, othersSidebarOpen);
 
-  // Fetch AI chat data and permissions
-  const { data: aiChatData } = useQuery({
-    queryKey: ['ai-chat-data', workspace.id],
-    queryFn: async () => {
-      try {
-        // Fetch chat data
-        const chatResponse = await fetch(`/api/v1/workspaces/${workspace.id}/chats`);
-        const chatData = chatResponse.ok ? await chatResponse.json() : { data: [], count: 0 };
-        
-        // Fetch AI configuration (permissions and API keys)
-        const configResponse = await fetch(`/api/v1/workspaces/${workspace.id}/ai-config`);
-        const configData = configResponse.ok ? await configResponse.json() : { 
-          hasKeys: { openAI: false, anthropic: false, google: false }, 
-          hasAiChatAccess: false 
-        };
-
-
-
-        return {
-          chats: chatData.data || [],
-          count: chatData.count || 0,
-          hasKeys: configData.hasKeys || { openAI: false, anthropic: false, google: false },
-          hasAiChatAccess: configData.hasAiChatAccess || false,
-        };
-      } catch (error) {
-        console.error('Failed to fetch AI chat data:', error);
-        return {
-          chats: [],
-          count: 0,
-          hasKeys: { openAI: false, anthropic: false, google: false },
-          hasAiChatAccess: false,
-        };
-      }
-    },
-    enabled: othersSidebarOpen, // Only fetch when sidebar is open
-    staleTime: 30000, // Cache for 30 seconds
-  });
+  // Fetch AI chat data using custom hook
+  const { data: aiChatData } = useAIChatData(workspace.id, othersSidebarOpen);
 
   // Sidebar toggle button for header (left sidebar)
   const sidebarToggleButton = (
