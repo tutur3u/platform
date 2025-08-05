@@ -1,8 +1,8 @@
 'use client';
 
 import type { MeetTogetherPlan } from '@tuturuuu/types/primitives/MeetTogetherPlan';
-import type { User } from '@tuturuuu/types/primitives/User';
 import { Button } from '@tuturuuu/ui/button';
+import { useTimeBlocking } from '@tuturuuu/ui/hooks/time-blocking-provider';
 import { ClipboardList, Pencil, Plus } from '@tuturuuu/ui/icons';
 import { RichTextEditor } from '@tuturuuu/ui/text-editor/editor';
 import { type JSONContent } from '@tuturuuu/ui/tiptap';
@@ -12,15 +12,12 @@ import { useCallback, useState } from 'react';
 
 interface AgendaDetailsProps {
   plan: MeetTogetherPlan;
-  platformUser: User | null;
 }
 
-export default function AgendaDetails({
-  plan,
-  platformUser,
-}: AgendaDetailsProps) {
+export default function AgendaDetails({ plan }: AgendaDetailsProps) {
   const t = useTranslations('meet-together');
   const router = useRouter();
+  const { user } = useTimeBlocking();
   const [editContent, setEditContent] = useState<JSONContent | null>(
     plan.agenda_content || null
   );
@@ -69,7 +66,7 @@ export default function AgendaDetails({
   }, []);
 
   // Only allow platform users to edit (not guest users)
-  const canEdit = !!platformUser;
+  const canEdit = !!user && !user.is_guest;
 
   return (
     <div className="w-full space-y-8">

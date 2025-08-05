@@ -5,8 +5,8 @@ import DownloadAsPNG from './download-as-png';
 import EmailButton from './email-button';
 import LoggedInAsButton from './logged-in-as-button';
 import ShowQRButton from './show-qr-button';
+import type { User } from '@tuturuuu/types/db';
 import type { MeetTogetherPlan } from '@tuturuuu/types/primitives/MeetTogetherPlan';
-import type { User } from '@tuturuuu/types/primitives/User';
 import { Button } from '@tuturuuu/ui/button';
 import { Check, Edit, Loader2 } from '@tuturuuu/ui/icons';
 import { usePathname, useRouter } from 'next/navigation';
@@ -14,8 +14,8 @@ import { useEffect, useState } from 'react';
 
 interface UtilityButtonsProps {
   plan: MeetTogetherPlan;
-  platformUser: User | null;
   handlePNG: () => Promise<void>;
+  platformUser: User | null;
 }
 
 export default function UtilityButtons({
@@ -51,7 +51,7 @@ export default function UtilityButtons({
           </>
         )}
       </div>
-      <LoggedInAsButton platformUser={platformUser} />
+      <LoggedInAsButton />
     </div>
   );
 }
@@ -63,7 +63,6 @@ function ConfirmButton({
   planId: string;
   isConfirmPlan: boolean;
 }) {
-  // const t = useTranslations('meet-together-plan-details');
   const [isConfirmed, setConfirmed] = useState(isConfirmPlan);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
@@ -80,7 +79,6 @@ function ConfirmButton({
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-              // enableToEdit: !isConfirmed,
               isConfirm: !isConfirmed,
             }),
           }

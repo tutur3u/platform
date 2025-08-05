@@ -92,6 +92,9 @@ export default async function Layout({ children, params }: LayoutProps) {
     value: 'true',
   });
 
+  const workspace = await getWorkspace(wsId);
+  const user = await getCurrentUser();
+
   const navLinks: (NavLink | null)[] = [
     {
       title: t('common.dashboard'),
@@ -228,22 +231,25 @@ export default async function Layout({ children, params }: LayoutProps) {
         {
           title: t('sidebar_tabs.calendar'),
           icon: <Calendar className="h-5 w-5" />,
+          href: `/${wsId}/calendar`,
           disabled: ENABLE_AI_ONLY || withoutPermission('manage_calendar'),
           experimental: 'alpha',
-          children: [
-            {
-              title: t('calendar-tabs.calendar'),
-              href: `/${wsId}/calendar`,
-              icon: <Calendar className="h-4 w-4" />,
-              matchExact: true,
-            },
-            {
-              title: t('calendar-tabs.sync-history'),
-              href: `/${wsId}/calendar/history/sync`,
-              icon: <Activity className="h-4 w-4" />,
-              requireRootWorkspace: true,
-            },
-          ],
+          children: user?.email?.endsWith('@tuturuuu.com')
+            ? [
+                {
+                  title: t('calendar-tabs.calendar'),
+                  href: `/${wsId}/calendar`,
+                  icon: <Calendar className="h-4 w-4" />,
+                  matchExact: true,
+                },
+                {
+                  title: t('calendar-tabs.sync-history'),
+                  href: `/${wsId}/calendar/history/sync`,
+                  icon: <Activity className="h-4 w-4" />,
+                  requireRootWorkspace: true,
+                },
+              ]
+            : undefined,
         },
         {
           title: t('sidebar_tabs.tumeet'),
@@ -584,9 +590,6 @@ export default async function Layout({ children, params }: LayoutProps) {
       ],
     },
   ];
-
-  const workspace = await getWorkspace(wsId);
-  const user = await getCurrentUser();
 
   if (!user?.id) redirect('/login');
 
