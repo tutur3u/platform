@@ -108,6 +108,7 @@ export async function PATCH(req: Request) {
       message: 'Plan updated successfully',
     });
   } catch (error) {
+    console.error(error);
     return NextResponse.json({ message: 'Invalid request' }, { status: 400 });
   }
 }

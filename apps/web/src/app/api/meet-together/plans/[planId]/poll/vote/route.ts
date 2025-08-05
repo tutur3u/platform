@@ -1,4 +1,3 @@
-// /api/meet-together/poll/vote.ts
 import {
   createAdminClient,
   createClient,

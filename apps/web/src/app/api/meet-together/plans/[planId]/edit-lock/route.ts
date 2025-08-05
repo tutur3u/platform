@@ -1,4 +1,3 @@
-// PATCH /api/meet-together/plans/[planId]/edit-lock
 import {
   createAdminClient,
   createClient,
@@ -7,9 +6,9 @@ import { NextResponse } from 'next/server';
 
 export async function PATCH(
   req: Request,
-  { params }: { params: { planId: string } }
+  { params }: { params: Promise<{ planId: string }> }
 ) {
-  const { planId } = params;
+  const { planId } = await params;
   const { isConfirm } = await req.json();
   const sbAdmin = await createAdminClient();
   const supabase = await createClient();

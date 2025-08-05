@@ -8,9 +8,9 @@ import { NextResponse } from 'next/server';
 // POST: create a new poll for the plan
 export async function POST(
   req: Request,
-  { params }: { params: { planId: string } }
+  { params }: { params: Promise<{ planId: string }> }
 ) {
-  const { planId } = params;
+  const { planId } = await params;
   const { name, allow_anonymous_updates = false } = await req.json();
 
   // Auth: Only logged-in users can create polls
