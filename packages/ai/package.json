@@ -12,7 +12,7 @@
     "@ai-sdk/amazon-bedrock": "3.0.0",
     "@ai-sdk/anthropic": "2.0.0",
     "@ai-sdk/azure": "2.0.0",
-    "@ai-sdk/cerebras": "1.0.0",
+    "@ai-sdk/cerebras": "1.0.1",
     "@ai-sdk/cohere": "2.0.0",
     "@ai-sdk/deepgram": "1.0.0",
     "@ai-sdk/deepinfra": "1.0.0",
