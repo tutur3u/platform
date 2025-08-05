@@ -2855,6 +2855,42 @@ export type Database = {
           ws_id?: string;
         };
       };
+      google_calendar_active_sync_token: {
+        Insert: {
+          calendar_id?: string;
+          last_synced_at?: null | string;
+          sync_token?: null | string;
+          ws_id: string;
+        };
+        Relationships: [
+          {
+            columns: ['ws_id'];
+            foreignKeyName: 'google_calendar_active_sync_token_ws_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'workspace_link_counts';
+          },
+          {
+            columns: ['ws_id'];
+            foreignKeyName: 'google_calendar_active_sync_token_ws_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'workspaces';
+          },
+        ];
+        Row: {
+          calendar_id: string;
+          last_synced_at: null | string;
+          sync_token: null | string;
+          ws_id: string;
+        };
+        Update: {
+          calendar_id?: string;
+          last_synced_at?: null | string;
+          sync_token?: null | string;
+          ws_id?: string;
+        };
+      };
       handles: {
         Insert: {
           created_at?: null | string;

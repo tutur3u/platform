@@ -4,20 +4,34 @@ import {
 } from '@tuturuuu/supabase/next/server';
 import { WorkspaceCalendarEvent } from '@tuturuuu/types/db';
 import { updateLastUpsert } from '@tuturuuu/utils/calendar-sync-coordination';
+import { performIncrementalActiveSync } from '@tuturuuu/utils/calendar-sync/incremental-active-sync';
 import { DEV_MODE } from '@tuturuuu/utils/constants';
 import dayjs from 'dayjs';
 import { NextResponse } from 'next/server';
 
 export async function POST(request: Request) {
+  console.log('🔍 [DEBUG] POST /api/v1/calendar/auth/active-sync called');
+
   try {
     // 1. Get the wsId and start/end dates from the request
     const { wsId, startDate, endDate } = await request.json();
 
+    console.log('🔍 [DEBUG] Request body parsed:', {
+      wsId,
+      startDate,
+      endDate,
+      hasWsId: !!wsId,
+      hasStartDate: !!startDate,
+      hasEndDate: !!endDate,
+    });
+
     if (!wsId) {
+      console.log('❌ [DEBUG] Missing wsId in request');
       return NextResponse.json({ error: 'wsId is required' }, { status: 400 });
     }
 
     if (!startDate || !endDate) {
+      console.log('❌ [DEBUG] Missing startDate or endDate in request');
       return NextResponse.json(
         { error: 'startDate and endDate are required' },
         { status: 400 }
@@ -25,22 +39,34 @@ export async function POST(request: Request) {
     }
 
     // 2. Create an admin client and get the user
+    console.log('🔍 [DEBUG] Creating Supabase client...');
     const supabase = await createClient();
+    console.log('✅ [DEBUG] Supabase client created');
 
+    console.log('🔍 [DEBUG] Getting user from auth...');
     const {
       data: { user },
     } = await supabase.auth.getUser();
 
+    console.log('🔍 [DEBUG] Auth result:', {
+      hasUser: !!user,
+      userId: user?.id,
+    });
+
     if (!user) {
+      console.log('❌ [DEBUG] User not authenticated');
       return NextResponse.json(
         { error: 'User not authenticated' },
         { status: 401 }
       );
     }
 
+    console.log('🔍 [DEBUG] Creating admin client...');
     const sbAdmin = await createAdminClient();
+    console.log('✅ [DEBUG] Admin client created');
 
     // 3. Insert a dashboard record
+    console.log('🔍 [DEBUG] Inserting dashboard record...');
     const { data: insertDashboardData, error: insertDashboardError } =
       await sbAdmin
         .from('calendar_sync_dashboard')
@@ -58,84 +84,54 @@ export async function POST(request: Request) {
         .select()
         .single();
 
+    console.log('🔍 [DEBUG] Dashboard insert result:', {
+      hasData: !!insertDashboardData,
+      hasError: !!insertDashboardError,
+      errorMessage: insertDashboardError?.message,
+    });
+
     if (insertDashboardError) {
+      console.log('❌ [DEBUG] Dashboard insert error:', insertDashboardError);
       return NextResponse.json(
         { error: insertDashboardError.message },
         { status: 500 }
       );
     }
 
-    // 4. Get the db data
-    const startDateDayJS = dayjs(startDate).startOf('day');
-    const endDateDayJS = dayjs(endDate).endOf('day');
-
-    const { data: dbData, error: dbError } = await supabase
-      .from('workspace_calendar_events')
-      .select('*')
-      .eq('ws_id', wsId)
-      .lt('start_at', endDateDayJS.add(1, 'day').toISOString())
-      .gt('end_at', startDateDayJS.toISOString())
-      .order('start_at', { ascending: true });
-
-    if (dbError) {
-      return NextResponse.json({ error: dbError.message }, { status: 500 });
-    }
-
-    // 5. Fetch from Google Calendar
-    const baseUrl =
-      process.env.NEXT_PUBLIC_BASE_URL ||
-      `http://localhost:${process.env.PORT || 3000}`;
-    const response = await fetch(
-      `${baseUrl}/api/v1/calendar/auth/fetch?wsId=${wsId}&startDate=${startDate}&endDate=${endDate}`,
-      {
-        headers: {
-          Cookie: request.headers.get('cookie') || '',
-        },
-      }
-    );
-
-    const googleResponse = await response.json();
-
-    if (!response.ok) {
-      return NextResponse.json(
-        {
-          error:
-            googleResponse.error +
-            '. ' +
-            googleResponse.googleError +
-            ': ' +
-            googleResponse.details?.reason,
-        },
-        { status: 500 }
+    // 4. Fetch eventsToUpsert and eventsToDelete from incremental active sync
+    console.log('🔍 [DEBUG] Calling performIncrementalActiveSync...');
+    const { formattedEventsToUpsert, formattedEventsToDelete } =
+      await performIncrementalActiveSync(
+        wsId,
+        user.id,
+        'primary',
+        startDate,
+        endDate
       );
-    }
 
-    // 6. Get events to delete and delete them
-    const googleEventIds = new Set(
-      googleResponse.events.map(
-        (e: WorkspaceCalendarEvent) => e.google_event_id
-      )
-    );
+    console.log('✅ [DEBUG] performIncrementalActiveSync completed:', {
+      eventsToUpsertCount: formattedEventsToUpsert?.length || 0,
+      eventsToDeleteCount: formattedEventsToDelete?.length || 0,
+    });
 
-    // Only delete events that:
-    // 1. Have a google_event_id (were synced from Google)
-    // 2. Are no longer present in the current Google Calendar events
-    const eventsToDelete = dbData?.filter(
-      (e: WorkspaceCalendarEvent) =>
-        e.google_event_id && // Only delete events that were synced from Google
-        !googleEventIds.has(e.google_event_id) // And are no longer in Google Calendar
-    );
-
-    if (eventsToDelete && eventsToDelete.length > 0) {
+    // 5. Delete eventsToDelete
+    if (formattedEventsToDelete && formattedEventsToDelete.length > 0) {
+      console.log('🔍 [DEBUG] Deleting events...');
       const { error: deleteError } = await supabase
         .from('workspace_calendar_events')
         .delete()
         .in(
           'id',
-          eventsToDelete.map((e) => e.id)
+          formattedEventsToDelete.map((e) => e.id)
         );
 
+      console.log('🔍 [DEBUG] Delete result:', {
+        hasError: !!deleteError,
+        errorMessage: deleteError?.message,
+      });
+
       if (deleteError) {
+        console.log('❌ [DEBUG] Delete error:', deleteError);
         return NextResponse.json(
           { error: deleteError.message },
           { status: 500 }
@@ -143,84 +139,75 @@ export async function POST(request: Request) {
       }
     }
 
-    // 7. Get events to upsert and upsert them
-    const eventsToUpsert = googleResponse.events.map(
-      (event: WorkspaceCalendarEvent) => {
-        const existingEvent = dbData?.find((e: WorkspaceCalendarEvent) => {
-          const matches =
-            e.google_event_id === event.google_event_id &&
-            e.google_event_id !== null;
-          return matches;
-        });
-
-        if (existingEvent) {
-          return {
-            ...event,
-            id: existingEvent.id,
-            ws_id: wsId,
-          };
-        }
-
-        return {
-          ...event,
-          id: crypto.randomUUID(),
-          ws_id: wsId,
-        };
-      }
-    );
-
-    // 8. Upsert the events
-    if (eventsToUpsert) {
+    // 6. Upsert eventsToUpsert
+    let upsertResult: { inserted: number; updated: number } = {
+      inserted: 0,
+      updated: 0,
+    };
+    if (formattedEventsToUpsert && formattedEventsToUpsert.length > 0) {
+      console.log('🔍 [DEBUG] Upserting events...');
       const { data: upsertData, error: upsertError } = await supabase.rpc(
         'upsert_calendar_events_and_count',
         {
-          events: eventsToUpsert,
+          events: formattedEventsToUpsert,
         }
       );
 
+      console.log('🔍 [DEBUG] Upsert result:', upsertData);
       if (upsertError) {
+        console.log('❌ [DEBUG] Upsert error:', upsertError);
         return NextResponse.json(
           { error: upsertError.message },
           { status: 500 }
         );
       }
-      await updateLastUpsert(wsId, supabase);
 
-      // 9. Prepare to update sync dashboard: Get the upsert data
-      const result = upsertData as { inserted: number; updated: number };
-
-      // 3. Update the dashboard record with the upsert data
-      if (DEV_MODE && insertDashboardData) {
-        const { error: updateDashboardError } = await sbAdmin
-          .from('calendar_sync_dashboard')
-          .update({
-            inserted_events: result?.inserted || 0,
-            updated_events: result?.updated || 0,
-            deleted_events: eventsToDelete?.length || 0,
-            status: 'completed',
-            end_time: new Date().toISOString(),
-          })
-          .eq('id', insertDashboardData.id);
-
-        if (updateDashboardError) {
-          return NextResponse.json(
-            { error: updateDashboardError.message },
-            { status: 500 }
-          );
-        }
-      }
-      return NextResponse.json({
-        dbData,
-        googleData: googleResponse.events,
-      });
+      upsertResult = upsertData as { inserted: number; updated: number };
     }
 
+    console.log('🔍 [DEBUG] Updating last upsert...');
+    await updateLastUpsert(wsId, supabase);
+    console.log('✅ [DEBUG] Last upsert updated');
+
+    if (DEV_MODE && insertDashboardData) {
+      console.log('🔍 [DEBUG] Updating dashboard record...');
+      const { error: updateDashboardError } = await sbAdmin
+        .from('calendar_sync_dashboard')
+        .update({
+          inserted_events: upsertResult?.inserted || 0,
+          updated_events: upsertResult?.updated || 0,
+          deleted_events: formattedEventsToDelete?.length || 0,
+          status: 'completed',
+          end_time: new Date().toISOString(),
+        })
+        .eq('id', insertDashboardData.id);
+
+      console.log('🔍 [DEBUG] Dashboard update result:', {
+        hasError: !!updateDashboardError,
+        errorMessage: updateDashboardError?.message,
+      });
+
+      if (updateDashboardError) {
+        console.log('❌ [DEBUG] Dashboard update error:', updateDashboardError);
+        return NextResponse.json(
+          { error: updateDashboardError.message },
+          { status: 500 }
+        );
+      }
+    }
+
+    console.log('✅ [DEBUG] Returning success response');
     return NextResponse.json({
-      dbData,
-      googleData: googleResponse.events,
+      success: true,
+      inserted: upsertResult?.inserted || 0,
+      updated: upsertResult?.updated || 0,
+      deleted: formattedEventsToDelete?.length || 0,
     });
   } catch (error) {
-    console.error(error);
+    console.error('❌ [DEBUG] Route error:', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+    });
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
