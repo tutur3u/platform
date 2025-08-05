@@ -29,11 +29,11 @@ export async function PATCH(req: Request) {
     // Check if plan is confirmed and deny where-poll updates
     const { data: plan } = await sbAdmin
       .from('meet_together_plans')
-      .select('is_confirm')
+      .select('is_confirmed')
       .eq('id', planId)
       .single();
 
-    if (plan?.is_confirm) {
+    if (plan?.is_confirmed) {
       return NextResponse.json(
         { message: 'Plan is confirmed. Where-poll updates are disabled.' },
         { status: 403 }

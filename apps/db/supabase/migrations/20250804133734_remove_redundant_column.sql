@@ -1,6 +1,6 @@
 drop view if exists "public"."meet_together_users";
 
-alter table "public"."meet_together_plans" drop column "enable_unknown_edit";
+alter table "public"."meet_together_plans" drop column "allow_anonymous_edit";
 
 create or replace view "public"."meet_together_users" as  SELECT DISTINCT ON (all_users.id, COALESCE(gtbs.plan_id, utbs.plan_id)) all_users.id AS user_id,
     COALESCE(NULLIF(all_users.name, ''::text), upd.email) AS display_name,

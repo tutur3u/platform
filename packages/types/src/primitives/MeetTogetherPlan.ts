@@ -5,8 +5,8 @@ export interface MeetTogetherPlan {
   name?: string;
   description?: string;
   start_time?: string;
-  // enable_unknown_edit?: boolean;
-  is_confirm?: boolean;
+  // allow_anonymous_edit?: boolean;
+  is_confirmed?: boolean;
   where_to_meet?: boolean;
   end_time?: string;
   dates?: string[];

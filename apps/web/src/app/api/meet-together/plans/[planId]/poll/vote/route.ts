@@ -32,11 +32,11 @@ export async function POST(req: Request) {
   if (poll?.plan_id) {
     const { data: plan } = await sbAdmin
       .from('meet_together_plans')
-      .select('is_confirm')
+      .select('is_confirmed')
       .eq('id', poll.plan_id)
       .single();
 
-    if (plan?.is_confirm) {
+    if (plan?.is_confirmed) {
       return NextResponse.json(
         { message: 'Plan is confirmed. Voting is disabled.' },
         { status: 403 }

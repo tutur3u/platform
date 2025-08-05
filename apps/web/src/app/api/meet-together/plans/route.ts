@@ -55,7 +55,7 @@ export async function POST(req: Request) {
     .insert({
       ...data,
       creator_id: user?.id,
-      is_confirm: false,
+      is_confirmed: false,
     })
     .select('id, where_to_meet')
     .single();

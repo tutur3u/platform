@@ -69,11 +69,11 @@ export async function POST(req: Request, { params }: Params) {
   const sbAdmin = await createAdminClient();
   const { data: plan } = await sbAdmin
     .from('meet_together_plans')
-    .select('is_confirm')
+    .select('is_confirmed')
     .eq('id', planId)
     .single();
 
-  if (plan?.is_confirm) {
+  if (plan?.is_confirmed) {
     return NextResponse.json(
       { message: 'Plan is confirmed. Adding availability is disabled.' },
       { status: 403 }

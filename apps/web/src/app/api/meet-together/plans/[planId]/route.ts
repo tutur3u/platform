@@ -16,11 +16,11 @@ interface Params {
 async function checkPlanConfirmation(planId: string, sbAdmin: any) {
   const { data: plan } = await sbAdmin
     .from('meet_together_plans')
-    .select('is_confirm')
+    .select('is_confirmed')
     .eq('id', planId)
     .single();
 
-  if (plan?.is_confirm) {
+  if (plan?.is_confirmed) {
     return NextResponse.json(
       { message: 'Plan is confirmed. No modifications allowed.' },
       { status: 403 }

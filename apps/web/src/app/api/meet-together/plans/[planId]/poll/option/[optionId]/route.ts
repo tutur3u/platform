@@ -29,11 +29,11 @@ export async function DELETE(
   // Check if plan is confirmed and deny option deletion
   const { data: plan } = await sbAdmin
     .from('meet_together_plans')
-    .select('is_confirm')
+    .select('is_confirmed')
     .eq('id', planId)
     .single();
 
-  if (plan?.is_confirm) {
+  if (plan?.is_confirmed) {
     return NextResponse.json(
       { message: 'Plan is confirmed. Deleting poll options is disabled.' },
       { status: 403 }

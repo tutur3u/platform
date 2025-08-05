@@ -65,7 +65,7 @@ export function PlanDetailsPollContent({
         ? 'PLATFORM'
         : 'DISPLAY';
 
-  if (plan.is_confirm) {
+  if (plan.is_confirmed) {
     userType = 'DISPLAY'; // Guests cannot vote if the plan is confirmed
   }
 
@@ -301,7 +301,7 @@ export function PlanDetailsPollContent({
                         <span className="text-sm text-muted-foreground">
                           {poll.options.length} options
                         </span>
-                        {isCreator && !plan.is_confirm && (
+                        {isCreator && !plan.is_confirmed && (
                           <div
                             className="inline-flex h-9 w-9 items-center justify-center rounded-md text-dynamic-red hover:bg-dynamic-red/10"
                             onClick={(e) => {
@@ -345,7 +345,7 @@ export function PlanDetailsPollContent({
           </Accordion>
         </div>
       )}
-      {isCreator && !plan.is_confirm && (
+      {isCreator && !plan.is_confirmed && (
         <div className="mt-8 space-y-2">
           <h4 className="mb-2 text-base font-semibold text-foreground">
             {/* {t('add_new_poll')} */}

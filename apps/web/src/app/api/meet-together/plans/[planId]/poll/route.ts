@@ -27,11 +27,11 @@ export async function POST(
   const sbAdmin = await createAdminClient();
   const { data: plan } = await sbAdmin
     .from('meet_together_plans')
-    .select('is_confirm')
+    .select('is_confirmed')
     .eq('id', planId)
     .single();
 
-  if (plan?.is_confirm) {
+  if (plan?.is_confirmed) {
     return NextResponse.json(
       { message: 'Plan is confirmed. Poll creation is disabled.' },
       { status: 403 }
@@ -87,11 +87,11 @@ export async function DELETE(
     // Check if plan is confirmed and deny poll deletion
     const { data: plan } = await sbAdmin
       .from('meet_together_plans')
-      .select('is_confirm')
+      .select('is_confirmed')
       .eq('id', planId)
       .single();
 
-    if (plan?.is_confirm) {
+    if (plan?.is_confirmed) {
       return NextResponse.json(
         { message: 'Plan is confirmed. Poll deletion is disabled.' },
         { status: 403 }

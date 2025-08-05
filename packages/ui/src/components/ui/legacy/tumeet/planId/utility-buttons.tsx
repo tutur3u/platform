@@ -46,7 +46,7 @@ export default function UtilityButtons({
           <>
             <ConfirmButton
               planId={plan.id}
-              isConfirmPlan={Boolean(plan.is_confirm)}
+              isConfirmPlan={Boolean(plan.is_confirmed)}
             />
           </>
         )}
