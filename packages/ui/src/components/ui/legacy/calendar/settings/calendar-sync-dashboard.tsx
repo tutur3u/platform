@@ -47,10 +47,10 @@ export function CalendarSyncDashboard({ syncLogs }: { syncLogs: SyncLog[] }) {
         filterWorkspace === 'all' || log.workspace?.id === filterWorkspace;
       const matchesSearch =
         searchTerm === '' ||
-        log.triggeredBy?.name
+        log.triggeredBy?.display_name
           ?.toLowerCase()
           .includes(searchTerm.toLowerCase()) ||
-        log.triggeredBy?.email
+        log.triggeredBy?.handle
           ?.toLowerCase()
           .includes(searchTerm.toLowerCase()) ||
         log.workspace?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
