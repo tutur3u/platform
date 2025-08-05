@@ -34,7 +34,7 @@
     "@ai-sdk/react": "2.0.0",
     "@ai-sdk/replicate": "1.0.0",
     "@ai-sdk/revai": "1.0.0",
-    "@ai-sdk/togetherai": "1.0.0",
+    "@ai-sdk/togetherai": "1.0.1",
     "@ai-sdk/xai": "2.0.0",
     "@tuturuuu/supabase": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
