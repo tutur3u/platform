@@ -1,3 +1,4 @@
+import { PORT } from '@/constants/common';
 import {
   createAdminClient,
   createClient,
@@ -82,9 +83,10 @@ export async function POST(request: Request) {
     }
 
     // 5. Fetch from Google Calendar
-    const baseUrl =
-      process.env.NEXT_PUBLIC_BASE_URL ||
-      `http://localhost:${process.env.PORT || 3000}`;
+    const baseUrl = DEV_MODE
+      ? `http://localhost:${PORT}`
+      : 'https://tuturuuu.com';
+
     const response = await fetch(
       `${baseUrl}/api/v1/calendar/auth/fetch?wsId=${wsId}&startDate=${startDate}&endDate=${endDate}`,
       {
@@ -97,6 +99,7 @@ export async function POST(request: Request) {
     const googleResponse = await response.json();
 
     if (!response.ok) {
+      console.error(googleResponse);
       return NextResponse.json(
         {
           error:
@@ -179,6 +182,7 @@ export async function POST(request: Request) {
       );
 
       if (upsertError) {
+        console.error(upsertError);
         return NextResponse.json(
           { error: upsertError.message },
           { status: 500 }
@@ -203,6 +207,7 @@ export async function POST(request: Request) {
           .eq('id', insertDashboardData.id);
 
         if (updateDashboardError) {
+          console.error(updateDashboardError);
           return NextResponse.json(
             { error: updateDashboardError.message },
             { status: 500 }
