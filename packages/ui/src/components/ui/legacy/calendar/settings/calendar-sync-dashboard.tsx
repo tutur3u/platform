@@ -104,9 +104,8 @@ export function CalendarSyncDashboard({ syncLogs }: { syncLogs: SyncLog[] }) {
 
     // Group sync logs by hour for the last 24 hours
     for (let i = 23; i >= 0; i--) {
-      const time = new Date(now.getTime() - i * 60 * 60 * 1000);
-      const hourStart = new Date(time.getTime());
-      const hourEnd = new Date(time.getTime() + 60 * 60 * 1000);
+      const hourStart = new Date(now.getTime() - (i + 1) * 60 * 60 * 1000);
+      const hourEnd = new Date(now.getTime() - i * 60 * 60 * 1000);
 
       const hourLogs = syncLogs.filter((log) => {
         const logTime = new Date(log.timestamp);
@@ -123,7 +122,7 @@ export function CalendarSyncDashboard({ syncLogs }: { syncLogs: SyncLog[] }) {
         : 0;
 
       data.push({
-        time: time.toLocaleTimeString([], {
+        time: hourStart.toLocaleTimeString([], {
           hour: '2-digit',
           minute: '2-digit',
         }),
