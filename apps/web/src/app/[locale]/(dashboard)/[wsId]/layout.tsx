@@ -644,8 +644,10 @@ export default async function Layout({ children, params }: LayoutProps) {
     console.warn('Failed to get headers for pathname detection:', error);
     pathname = '';
   }
-  
-  const isCalendarPage = pathname === `/${wsId}/calendar` || pathname.startsWith(`/${wsId}/calendar/`);
+
+  const isCalendarPage =
+    pathname === `/${wsId}/calendar` ||
+    pathname.startsWith(`/${wsId}/calendar/`);
 
   return (
     <SidebarProvider initialBehavior={sidebarBehavior}>

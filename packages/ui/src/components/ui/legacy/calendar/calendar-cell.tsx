@@ -174,11 +174,14 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
   };
 
   // Helper to get a Date object for a given hour/minute, timezone-aware
-  const getCellDate = useCallback((hour: number, minute: number = 0) => {
-    const base = dayjs(`${date}T00:00:00`);
-    const dateTz = tz === 'auto' ? base.local() : base.tz(tz);
-    return dateTz.hour(hour).minute(minute).second(0).millisecond(0).toDate();
-  }, [date, tz]);
+  const getCellDate = useCallback(
+    (hour: number, minute: number = 0) => {
+      const base = dayjs(`${date}T00:00:00`);
+      const dateTz = tz === 'auto' ? base.local() : base.tz(tz);
+      return dateTz.hour(hour).minute(minute).second(0).millisecond(0).toDate();
+    },
+    [date, tz]
+  );
 
   const handleCreateEvent = (midHour?: boolean) => {
     // Always use timezone-aware date construction

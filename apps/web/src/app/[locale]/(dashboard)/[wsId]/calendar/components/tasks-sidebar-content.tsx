@@ -10,6 +10,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
+import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import {
   Bot,
   Calendar,
@@ -21,7 +22,6 @@ import {
   Timer,
 } from '@tuturuuu/ui/icons';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
-import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { useState } from 'react';
 
 interface TasksSidebarContentProps {
@@ -99,7 +99,7 @@ export default function TasksSidebarContent({
         {/* Tasks Tab Content */}
         <TabsContent
           value="tasks"
-          className="m-0 flex min-h-0 flex-1 flex-col space-y-4 overflow-y-auto scrollbar-none p-4 pb-6 duration-300 animate-in fade-in-50"
+          className="m-0 scrollbar-none flex min-h-0 flex-1 flex-col space-y-4 overflow-y-auto p-4 pb-6 duration-300 animate-in fade-in-50"
         >
           <div className="mx-auto w-full max-w-lg p-0">
             <PriorityView allTasks={tasks} locale={locale} wsId={wsId} />
@@ -110,7 +110,7 @@ export default function TasksSidebarContent({
         {hasAiChatAccess && (
           <TabsContent
             value="ai-chat"
-            className="m-0 min-h-0 flex-1 overflow-y-auto scrollbar-none px-2 pb-6 duration-300 animate-in fade-in-50"
+            className="m-0 scrollbar-none min-h-0 flex-1 overflow-y-auto px-2 pb-6 duration-300 animate-in fade-in-50"
           >
             <div className="relative scrollbar-none h-full min-h-0 overflow-y-auto py-2">
               <Chat
@@ -131,7 +131,15 @@ export default function TasksSidebarContent({
 }
 
 // Add PriorityView component for the new tab
-function PriorityView({ allTasks, locale, wsId }: { allTasks: ExtendedWorkspaceTask[]; locale?: string; wsId: string }) {
+function PriorityView({
+  allTasks,
+  locale,
+  wsId,
+}: {
+  allTasks: ExtendedWorkspaceTask[];
+  locale?: string;
+  wsId: string;
+}) {
   const [search, setSearch] = useState('');
   const [isSearchFocused, setIsSearchFocused] = useState(false);
 
@@ -190,15 +198,18 @@ function PriorityView({ allTasks, locale, wsId }: { allTasks: ExtendedWorkspaceT
 
   const handlePriorityChange = async (taskId: string, newPriority: string) => {
     try {
-      const response = await fetch(`/api/v1/workspaces/${wsId}/tasks/${taskId}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          user_defined_priority: newPriority,
-        }),
-      });
+      const response = await fetch(
+        `/api/v1/workspaces/${wsId}/tasks/${taskId}`,
+        {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            user_defined_priority: newPriority,
+          }),
+        }
+      );
 
       if (!response.ok) {
         throw new Error('Failed to update task priority');
@@ -435,7 +446,10 @@ function PriorityView({ allTasks, locale, wsId }: { allTasks: ExtendedWorkspaceT
                               {task.total_duration && (
                                 <div className="rounded-md bg-accent/50 px-2 py-1 font-mono text-xs text-muted-foreground transition-colors duration-200 group-hover/task:bg-accent">
                                   {Math.floor(task.total_duration || 0)}h{' '}
-                                  {Math.floor(((task.total_duration || 0) % 1) * 60)}m
+                                  {Math.floor(
+                                    ((task.total_duration || 0) % 1) * 60
+                                  )}
+                                  m
                                 </div>
                               )}
                             </div>
@@ -457,8 +471,8 @@ function PriorityView({ allTasks, locale, wsId }: { allTasks: ExtendedWorkspaceT
 function formatDueDate(date: string | Date, locale?: string) {
   const d = new Date(date);
   // Use locale-aware formatting
-  return d.toLocaleDateString(locale || 'en-US', { 
-    month: 'numeric', 
-    day: 'numeric' 
+  return d.toLocaleDateString(locale || 'en-US', {
+    month: 'numeric',
+    day: 'numeric',
   });
 }

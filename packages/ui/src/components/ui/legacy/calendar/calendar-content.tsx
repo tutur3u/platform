@@ -93,8 +93,14 @@ export const CalendarContent = ({
   const [showLoadingSkeleton, setShowLoadingSkeleton] = useState(true);
 
   // Memoize settings values to avoid unnecessary re-renders
-  const firstDayOfWeek = useMemo(() => settings?.appearance?.firstDayOfWeek || 'monday', [settings?.appearance?.firstDayOfWeek]);
-  const showWeekends = useMemo(() => settings?.appearance?.showWeekends !== false, [settings?.appearance?.showWeekends]);
+  const firstDayOfWeek = useMemo(
+    () => settings?.appearance?.firstDayOfWeek || 'monday',
+    [settings?.appearance?.firstDayOfWeek]
+  );
+  const showWeekends = useMemo(
+    () => settings?.appearance?.showWeekends !== false,
+    [settings?.appearance?.showWeekends]
+  );
 
   // Use the external state handlers when provided
   const handleSetDate = useCallback(
@@ -207,14 +213,7 @@ export const CalendarContent = ({
       handleSetView('week');
       setDates(getWeekdays());
     });
-  }, [
-    date,
-    transition,
-    handleSetView,
-    setDates,
-    firstDayOfWeek,
-    showWeekends,
-  ]);
+  }, [date, transition, handleSetView, setDates, firstDayOfWeek, showWeekends]);
 
   const enableMonthView = useCallback(() => {
     let firstDayNumber = 1; // Monday
@@ -365,8 +364,7 @@ export const CalendarContent = ({
     } else if (view === 'month') {
       let firstDayNumber = 1; // Monday
       if (firstDayOfWeek === 'sunday') firstDayNumber = 0;
-      if (firstDayOfWeek === 'saturday')
-        firstDayNumber = 6;
+      if (firstDayOfWeek === 'saturday') firstDayNumber = 6;
       const gridDates = getMonthGridDates(date, firstDayNumber);
       setDates(gridDates);
     }
@@ -435,11 +433,11 @@ export const CalendarContent = ({
   }, [isDataReady]);
 
   // Reusable loading UI component
-  const LoadingUI = ({ 
-    enableHeader, 
-    sidebarToggleButton, 
-    extras, 
-    showHeader = true
+  const LoadingUI = ({
+    enableHeader,
+    sidebarToggleButton,
+    extras,
+    showHeader = true,
   }: {
     enableHeader: boolean;
     sidebarToggleButton?: React.ReactNode;
@@ -508,20 +506,20 @@ export const CalendarContent = ({
   // Show loading skeleton while data is loading or during minimum loading time
   if (!initialized || !view || !dates.length || showLoadingSkeleton) {
     return (
-      <LoadingUI 
-        enableHeader={enableHeader} 
-        sidebarToggleButton={sidebarToggleButton} 
-        extras={extras} 
+      <LoadingUI
+        enableHeader={enableHeader}
+        sidebarToggleButton={sidebarToggleButton}
+        extras={extras}
       />
     );
   }
 
   if (!isDataReady) {
     return (
-      <LoadingUI 
-        enableHeader={enableHeader} 
-        sidebarToggleButton={sidebarToggleButton} 
-        extras={extras} 
+      <LoadingUI
+        enableHeader={enableHeader}
+        sidebarToggleButton={sidebarToggleButton}
+        extras={extras}
       />
     );
   }
@@ -568,7 +566,7 @@ export const CalendarContent = ({
           </div>
         )}
 
-        <div className="scrollbar-none relative flex-1 overflow-auto bg-background/50">
+        <div className="relative scrollbar-none flex-1 overflow-auto bg-background/50">
           <div className="pb-6">
             {view === 'month' && dates?.[0] ? (
               <MonthCalendar

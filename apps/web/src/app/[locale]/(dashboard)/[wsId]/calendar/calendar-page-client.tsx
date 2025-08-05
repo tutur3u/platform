@@ -7,7 +7,7 @@ import AutoScheduleComprehensiveDialog from './components/auto-schedule-comprehe
 import CalendarSidebar from './components/calendar-sidebar';
 import TasksSidebarContent from './components/tasks-sidebar-content';
 import TestEventGeneratorButton from './components/test-event-generator-button';
-import { useTasksData, useAIChatData } from './hooks';
+import { useAIChatData, useTasksData } from './hooks';
 import { DEV_MODE } from '@/constants/common';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type {
@@ -31,7 +31,7 @@ import {
 } from '@tuturuuu/ui/select';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useState, useCallback } from 'react';
+import { useCallback, useState } from 'react';
 
 interface CalendarPageClientProps {
   wsId: string;
@@ -93,23 +93,25 @@ export default function CalendarPageClient({
 
   const isToday = () => {
     const today = new Date();
-    return date.getDate() === today.getDate() && 
-           date.getMonth() === today.getMonth() && 
-           date.getFullYear() === today.getFullYear();
+    return (
+      date.getDate() === today.getDate() &&
+      date.getMonth() === today.getMonth() &&
+      date.getFullYear() === today.getFullYear()
+    );
   };
 
   const isCurrent4DayPeriod = () => {
     if (view !== '4-days') return false;
     const today = new Date();
     const currentDate = new Date(date);
-    
+
     // For 4-day view, check if today is within the 4-day period starting from the current date
     const startDate = new Date(currentDate);
     startDate.setHours(0, 0, 0, 0);
-    
+
     const endDate = new Date(startDate);
     endDate.setDate(startDate.getDate() + 3);
-    
+
     return today >= startDate && today <= endDate;
   };
 
@@ -170,14 +172,14 @@ export default function CalendarPageClient({
   );
 
   return (
-    <div className="calendar-container h-full flex flex-col">
+    <div className="calendar-container flex h-full flex-col">
       {/* Sticky Header - Above Everything */}
       <div className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="p-4">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-2">
               {sidebarToggleButton}
-              <h2 className="font-semibold text-xl tracking-tight">
+              <h2 className="text-xl font-semibold tracking-tight">
                 {date.toLocaleDateString('en-US', {
                   month: 'long',
                   year: 'numeric',
@@ -238,7 +240,7 @@ export default function CalendarPageClient({
                     </Select>
                   </div>
                 )}
-                
+
                 {/* Action Buttons */}
                 {extras}
               </div>
@@ -248,14 +250,14 @@ export default function CalendarPageClient({
       </div>
 
       {/* Main Content Area - Three Column Layout */}
-      <div className="flex-1 flex w-full overflow-hidden pb-6">
+      <div className="flex w-full flex-1 overflow-hidden pb-6">
         {/* Left Sidebar */}
         {calendarSidebarOpen && (
           <div className="w-[261px] border-r bg-background/50">
             <CalendarSidebar />
           </div>
         )}
-        
+
         {/* Center Calendar View */}
         <div className="flex-1">
           <SmartCalendar
@@ -289,7 +291,13 @@ export default function CalendarPageClient({
               wsId={workspace.id}
               locale={locale}
               tasks={tasksData?.tasks || []}
-              hasKeys={aiChatData?.hasKeys || { openAI: false, anthropic: false, google: false }}
+              hasKeys={
+                aiChatData?.hasKeys || {
+                  openAI: false,
+                  anthropic: false,
+                  google: false,
+                }
+              }
               chats={aiChatData?.chats || []}
               count={aiChatData?.count || 0}
               hasAiChatAccess={aiChatData?.hasAiChatAccess || false}
