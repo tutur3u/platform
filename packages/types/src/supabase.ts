@@ -1017,6 +1017,12 @@ export type Database = {
         };
         Returns: undefined;
       };
+      upsert_calendar_events_and_count: {
+        Args: {
+          events: Json;
+        };
+        Returns: Json;
+      };
       validate_and_normalize_board_tags: {
         Args: {
           tags: Json;
@@ -1829,6 +1835,94 @@ export type Database = {
           notes?: string;
           role?: null | string;
           user_id?: string;
+        };
+      };
+      calendar_sync_dashboard: {
+        Insert: {
+          deleted_events?: null | number;
+          end_time?: null | string;
+          id?: string;
+          inserted_events?: null | number;
+          source?: null | string;
+          start_time?: null | string;
+          status?: null | string;
+          triggered_by: string;
+          type?: null | string;
+          updated_at?: string;
+          updated_events?: null | number;
+          ws_id: string;
+        };
+        Relationships: [
+          {
+            columns: ['triggered_by'];
+            foreignKeyName: 'calendar_sync_dashboard_triggered_by_fkey';
+            isOneToOne: false;
+            referencedColumns: ['user_id'];
+            referencedRelation: 'nova_user_challenge_leaderboard';
+          },
+          {
+            columns: ['triggered_by'];
+            foreignKeyName: 'calendar_sync_dashboard_triggered_by_fkey';
+            isOneToOne: false;
+            referencedColumns: ['user_id'];
+            referencedRelation: 'nova_user_leaderboard';
+          },
+          {
+            columns: ['triggered_by'];
+            foreignKeyName: 'calendar_sync_dashboard_triggered_by_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'shortened_links_creator_stats';
+          },
+          {
+            columns: ['triggered_by'];
+            foreignKeyName: 'calendar_sync_dashboard_triggered_by_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'users';
+          },
+          {
+            columns: ['ws_id'];
+            foreignKeyName: 'calendar_sync_dashboard_ws_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'workspace_link_counts';
+          },
+          {
+            columns: ['ws_id'];
+            foreignKeyName: 'calendar_sync_dashboard_ws_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'workspaces';
+          },
+        ];
+        Row: {
+          deleted_events: null | number;
+          end_time: null | string;
+          id: string;
+          inserted_events: null | number;
+          source: null | string;
+          start_time: null | string;
+          status: null | string;
+          triggered_by: string;
+          type: null | string;
+          updated_at: string;
+          updated_events: null | number;
+          ws_id: string;
+        };
+        Update: {
+          deleted_events?: null | number;
+          end_time?: null | string;
+          id?: string;
+          inserted_events?: null | number;
+          source?: null | string;
+          start_time?: null | string;
+          status?: null | string;
+          triggered_by?: string;
+          type?: null | string;
+          updated_at?: string;
+          updated_events?: null | number;
+          ws_id?: string;
         };
       };
       calendar_sync_states: {
