@@ -17,7 +17,7 @@ import {
   Trash2,
   Unlock,
 } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useCalendar } from '../../../../hooks/use-calendar';
 import {
   ContextMenu,
@@ -134,7 +134,7 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
   const statusTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Show temporary status feedback
-  const showStatusFeedback = (status: 'success' | 'error') => {
+  const showStatusFeedback = useCallback((status: 'success' | 'error') => {
     setUpdateStatus(status);
 
     // Clear any existing timeout
@@ -158,12 +158,12 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
         statusTimeoutRef.current = null;
       }
     }, 1500);
-  };
+  }, []);
 
   // Batch visual state updates to reduce renders
-  const updateVisualState = (updates: Partial<typeof visualState>) => {
+  const updateVisualState = useCallback((updates: Partial<typeof visualState>) => {
     setVisualState((prev) => ({ ...prev, ...updates }));
-  };
+  }, []);
 
   // Debounced update function to reduce API calls
   const updateTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -173,7 +173,7 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
   } | null>(null);
 
   // Schedule a throttled update
-  const scheduleUpdate = (updateData: { start_at: string; end_at: string }) => {
+  const scheduleUpdate = useCallback((updateData: { start_at: string; end_at: string }) => {
     // For multi-day events, we need to update the original event
     const eventId = event._originalId || id;
 
@@ -221,7 +221,7 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
         updateTimeoutRef.current = null;
       }, 250); // Throttle to once every 250ms
     }
-  };
+  }, [event._originalId, id, updateEvent, showStatusFeedback, event]);
 
   // Clean up any pending updates
   useEffect(() => {
@@ -380,7 +380,7 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
     endHours,
     overlapCount,
     overlapGroup,
-    endDate.isBefore,
+    endDate,
   ]);
 
   // Event resizing - only enable for non-multi-day events or the start/end segments
@@ -569,9 +569,9 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
     event._originalId,
     startHours,
     locked,
-    endDate.clone, // Schedule the update
+    endDate,
     scheduleUpdate,
-    showStatusFeedback, // Update visual state
+    showStatusFeedback,
     updateVisualState,
   ]);
 
@@ -822,9 +822,9 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
     openModal,
     _isMultiDay,
     event._originalId,
-    locked, // Schedule update
+    locked,
     scheduleUpdate,
-    showStatusFeedback, // Update visual state for immediate feedback
+    showStatusFeedback,
     updateVisualState,
   ]);
 

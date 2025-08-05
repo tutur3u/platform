@@ -98,7 +98,7 @@ export default function TasksSidebarContent({
         {/* Tasks Tab Content */}
         <TabsContent
           value="tasks"
-          className="m-0 flex min-h-0 flex-1 flex-col space-y-4 overflow-y-auto scrollbar-none p-4 pb-2 duration-300 animate-in fade-in-50"
+          className="m-0 flex min-h-0 flex-1 flex-col space-y-4 overflow-y-auto scrollbar-none p-4 pb-6 duration-300 animate-in fade-in-50"
         >
           <div className="mx-auto w-full max-w-lg p-0">
             <PriorityView allTasks={tasks} locale={locale} wsId={wsId} />
@@ -109,7 +109,7 @@ export default function TasksSidebarContent({
         {hasAiChatAccess && (
           <TabsContent
             value="ai-chat"
-            className="m-0 min-h-0 flex-1 overflow-y-auto scrollbar-none px-2 duration-300 animate-in fade-in-50"
+            className="m-0 min-h-0 flex-1 overflow-y-auto scrollbar-none px-2 pb-6 duration-300 animate-in fade-in-50"
           >
             <div className="relative h-full min-h-0 overflow-y-auto scrollbar-none py-2">
               <Chat

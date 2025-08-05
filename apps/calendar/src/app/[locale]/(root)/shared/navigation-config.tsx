@@ -24,7 +24,6 @@ export interface NavCategory {
   items: NavItem[];
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const useNavigation = (
   t: ReturnType<typeof useTranslations>
 ): { categories: NavCategory[] } => {

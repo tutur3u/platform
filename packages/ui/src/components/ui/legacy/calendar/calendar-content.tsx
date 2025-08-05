@@ -434,13 +434,27 @@ export const CalendarContent = ({
     }
   }, [isDataReady]);
 
-  // Show loading skeleton while data is loading or during minimum loading time
-  if (!initialized || !view || !dates.length || showLoadingSkeleton) {
-    return (
-      <div className="flex h-full w-full flex-col">
-        {enableHeader && (
-          <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-            <div className="p-4">
+  // Reusable loading UI component
+  const LoadingUI = ({ 
+    enableHeader, 
+    sidebarToggleButton, 
+    extras, 
+    showSkeleton = true,
+    showHeader = true,
+    children 
+  }: {
+    enableHeader: boolean;
+    sidebarToggleButton?: React.ReactNode;
+    extras?: React.ReactNode;
+    showSkeleton?: boolean;
+    showHeader?: boolean;
+    children?: React.ReactNode;
+  }) => (
+    <div className="flex h-full w-full flex-col">
+      {enableHeader && showHeader && (
+        <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+          <div className="p-4">
+            {showSkeleton ? (
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center gap-2">
                   {sidebarToggleButton}
@@ -459,56 +473,7 @@ export const CalendarContent = ({
                   {extras}
                 </div>
               </div>
-            </div>
-          </div>
-        )}
-        <div className="flex flex-1 flex-col overflow-hidden">
-          <div className="border-b bg-background/50">
-            <div className="flex h-8 items-center justify-center">
-              <div className="flex gap-1">
-                {Array.from({ length: 7 }).map((_, i) => (
-                  <div
-                    key={`weekday-skeleton-${i}`}
-                    className="h-6 w-16 animate-pulse rounded bg-muted"
-                  />
-                ))}
-              </div>
-            </div>
-          </div>
-          <div className="scrollbar-none relative flex-1 overflow-auto bg-background/50">
-            <div className="flex h-full">
-              <div className="w-16">
-                {Array.from({ length: 24 }).map((_, i) => (
-                  <div key={`time-slot-${i}`} className="h-20" />
-                ))}
-              </div>
-              <div className="flex-1">
-                <div className="grid h-full grid-cols-7">
-                  {Array.from({ length: 7 }).map((_, colIndex) => (
-                    <div key={`calendar-col-${colIndex}`}>
-                      {Array.from({ length: 24 }).map((_, rowIndex) => (
-                        <div
-                          key={`calendar-cell-${colIndex}-${rowIndex}`}
-                          className="h-20"
-                        />
-                      ))}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (!isDataReady) {
-    return (
-      <div className="flex h-full w-full flex-col">
-        {enableHeader && (
-          <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-            <div className="p-4">
+            ) : (
               <CalendarHeader
                 t={t}
                 locale={locale}
@@ -535,29 +500,96 @@ export const CalendarContent = ({
                 onSidebarToggle={onSidebarToggle}
                 sidebarToggleButton={sidebarToggleButton}
               />
-            </div>
-          </div>
-        )}
-        <div className="flex flex-1 flex-col overflow-hidden">
-          {view !== 'month' && (
-            <div className="bg-background/50">
-              <WeekdayBar locale={locale} view={view} dates={dates} />
-            </div>
-          )}
-          <div className="scrollbar-none relative flex-1 overflow-auto bg-background/50">
-            <div className="flex h-full items-center justify-center">
-              <div className="flex flex-col items-center gap-4">
-                <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-                <p className="text-muted-foreground text-sm">
-                  {isLoading
-                    ? 'Loading calendar data...'
-                    : 'Syncing calendar...'}
-                </p>
-              </div>
-            </div>
+            )}
           </div>
         </div>
+      )}
+      <div className="flex flex-1 flex-col overflow-hidden">
+        {children || (
+          showSkeleton ? (
+            <>
+              <div className="border-b bg-background/50">
+                <div className="flex h-8 items-center justify-center">
+                  <div className="flex gap-1">
+                                         {Array.from({ length: 7 }).map((_, i) => (
+                       <div
+                         key={`weekday-skeleton-${i}-${Date.now()}`}
+                         className="h-6 w-16 animate-pulse rounded bg-muted"
+                       />
+                     ))}
+                  </div>
+                </div>
+              </div>
+              <div className="scrollbar-none relative flex-1 overflow-auto bg-background/50">
+                <div className="flex h-full">
+                                     <div className="w-16">
+                     {Array.from({ length: 24 }).map((_, i) => (
+                       <div key={`time-slot-${i}-${Date.now()}`} className="h-20" />
+                     ))}
+                   </div>
+                   <div className="flex-1">
+                     <div className="grid h-full grid-cols-7">
+                       {Array.from({ length: 7 }).map((_, colIndex) => (
+                         <div key={`calendar-col-${colIndex}-${Date.now()}`}>
+                           {Array.from({ length: 24 }).map((_, rowIndex) => (
+                             <div
+                               key={`calendar-cell-${colIndex}-${rowIndex}-${Date.now()}`}
+                               className="h-20"
+                             />
+                           ))}
+                         </div>
+                       ))}
+                     </div>
+                   </div>
+                </div>
+              </div>
+            </>
+          ) : (
+            <>
+              {view !== 'month' && (
+                <div className="bg-background/50">
+                  <WeekdayBar locale={locale} view={view} dates={dates} />
+                </div>
+              )}
+              <div className="scrollbar-none relative flex-1 overflow-auto bg-background/50">
+                <div className="flex h-full items-center justify-center">
+                  <div className="flex flex-col items-center gap-4">
+                    <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                    <p className="text-muted-foreground text-sm">
+                      {isLoading
+                        ? 'Loading calendar data...'
+                        : 'Syncing calendar...'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </>
+          )
+        )}
       </div>
+    </div>
+  );
+
+  // Show loading skeleton while data is loading or during minimum loading time
+  if (!initialized || !view || !dates.length || showLoadingSkeleton) {
+    return (
+      <LoadingUI 
+        enableHeader={enableHeader} 
+        sidebarToggleButton={sidebarToggleButton} 
+        extras={extras} 
+        showSkeleton={true}
+      />
+    );
+  }
+
+  if (!isDataReady) {
+    return (
+      <LoadingUI 
+        enableHeader={enableHeader} 
+        sidebarToggleButton={sidebarToggleButton} 
+        extras={extras} 
+        showSkeleton={false}
+      />
     );
   }
 
@@ -603,27 +635,19 @@ export const CalendarContent = ({
           </div>
         )}
 
-        <div className="relative flex-1 overflow-auto bg-background/50">
-          {/* Add CSS to hide scrollbars */}
-          <style jsx>{`
-            .flex-1::-webkit-scrollbar {
-              display: none;
-            }
-            .flex-1 {
-              -ms-overflow-style: none;
-              scrollbar-width: none;
-            }
-          `}</style>
-          {view === 'month' && dates?.[0] ? (
-            <MonthCalendar
-              date={dates[0]}
-              workspace={workspace}
-              visibleDates={dates}
-              viewedMonth={date}
-            />
-          ) : (
-            <CalendarViewWithTrail dates={dates} />
-          )}
+        <div className="scrollbar-hide relative flex-1 overflow-auto bg-background/50">
+          <div className="pb-6">
+            {view === 'month' && dates?.[0] ? (
+              <MonthCalendar
+                date={dates[0]}
+                workspace={workspace}
+                visibleDates={dates}
+                viewedMonth={date}
+              />
+            ) : (
+              <CalendarViewWithTrail dates={dates} />
+            )}
+          </div>
         </div>
       </div>
 

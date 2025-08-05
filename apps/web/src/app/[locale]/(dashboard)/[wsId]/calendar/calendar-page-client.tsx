@@ -304,7 +304,7 @@ export default function CalendarPageClient({
       </div>
 
         {/* Main Content Area - Three Column Layout */}
-        <div className="flex-1 flex w-full overflow-hidden">
+        <div className="flex-1 flex w-full overflow-hidden pb-6">
           {/* Left Sidebar */}
           {calendarSidebarOpen && (
             <div className="w-[261px] border-r bg-background/50">

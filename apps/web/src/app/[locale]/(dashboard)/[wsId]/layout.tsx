@@ -633,8 +633,16 @@ export default async function Layout({ children, params }: LayoutProps) {
       </div>
     );
 
-  const pathname = (await headers()).get('next-url') || '';
-  const isCalendarPage = pathname.includes('/calendar');
+  let pathname = '';
+  try {
+    const headersList = await headers();
+    pathname = headersList.get('next-url') || '';
+  } catch (error) {
+    console.warn('Failed to get headers for pathname detection:', error);
+    pathname = '';
+  }
+  
+  const isCalendarPage = pathname === `/${wsId}/calendar` || pathname.startsWith(`/${wsId}/calendar/`);
 
   return (
     <SidebarProvider initialBehavior={sidebarBehavior}>
