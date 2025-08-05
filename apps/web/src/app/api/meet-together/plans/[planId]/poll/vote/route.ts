@@ -1,4 +1,3 @@
-// /api/meet-together/poll/vote.ts
 import {
   createAdminClient,
   createClient,
@@ -20,6 +19,28 @@ export async function POST(req: Request) {
     userId = user?.id ?? null;
     if (!userId)
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
+
+  // Check if plan is confirmed by getting the poll's plan_id
+  const { data: poll } = await sbAdmin
+    .from('polls')
+    .select('plan_id')
+    .eq('id', pollId)
+    .single();
+
+  if (poll?.plan_id) {
+    const { data: plan } = await sbAdmin
+      .from('meet_together_plans')
+      .select('is_confirmed')
+      .eq('id', poll.plan_id)
+      .single();
+
+    if (plan?.is_confirmed) {
+      return NextResponse.json(
+        { message: 'Plan is confirmed. Voting is disabled.' },
+        { status: 403 }
+      );
+    }
   }
 
   // Remove previous votes for this poll (for this user/guest)

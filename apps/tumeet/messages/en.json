@@ -636,7 +636,13 @@
     "qr_code_description": "Scan this QR code to quickly access the meet together plan details.",
     "save_credentials": "Save credentials for this plan",
     "save_credentials_desc": "Automatically log in when you return to this plan",
-    "logged_in_as": "Logged in as"
+    "logged_in_as": "Logged in as",
+    "remove_user": "Remove user",
+    "remove_user_confirm": "Are you sure you want to remove this user from the plan?",
+    "user_removed": "User removed",
+    "user_removed_desc": "{name} has been removed from the plan.",
+    "error_removing_user": "Error removing user",
+    "error_removing_user_desc": "Failed to remove user from plan."
   },
   "invite": {
     "invited-to": "You have been invited to join",

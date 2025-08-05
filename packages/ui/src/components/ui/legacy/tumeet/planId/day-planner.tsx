@@ -3,8 +3,9 @@ import type { Timeblock } from '@tuturuuu/types/primitives/Timeblock';
 import dayjs from 'dayjs';
 import 'dayjs/locale/vi';
 import { useLocale } from 'next-intl';
+import { memo, useMemo } from 'react';
 
-export default function DayPlanner({
+function DayPlanner({
   timeblocks,
   date,
   start,
@@ -14,6 +15,8 @@ export default function DayPlanner({
   showBestTimes = false,
   tentativeMode = false,
   globalMaxAvailable,
+  stickyHeader = false,
+  hideHeaders = false,
   onBestTimesStatus,
 }: {
   timeblocks: Timeblock[];
@@ -25,23 +28,36 @@ export default function DayPlanner({
   showBestTimes?: boolean;
   tentativeMode?: boolean;
   globalMaxAvailable: number;
+  stickyHeader?: boolean;
+  hideHeaders?: boolean;
   onBestTimesStatus?: (hasBestTimes: boolean) => void;
 }) {
   const locale = useLocale();
-  dayjs.locale(locale);
+
+  // Memoize dayjs operations to avoid recreating objects on every render
+  const formattedDate = useMemo(() => {
+    dayjs.locale(locale);
+    const dateObj = dayjs(date).locale(locale);
+    return {
+      date: dateObj.format(locale === 'vi' ? 'DD/MM' : 'MMM D'),
+      day: dateObj.format('ddd'),
+    };
+  }, [date, locale]);
 
   return (
     <div>
-      <div className="pointer-events-none p-1 select-none">
-        <div className="line-clamp-1 text-xs">
-          {dayjs(date)
-            .locale(locale)
-            .format(locale === 'vi' ? 'DD/MM' : 'MMM D')}
+      {!hideHeaders && (
+        <div
+          className={`pointer-events-none flex flex-col justify-center border border-b-0 border-transparent p-1 select-none ${
+            stickyHeader
+              ? 'sticky top-0 z-10 bg-root-background/70 backdrop-blur-md'
+              : ''
+          }`}
+        >
+          <div className="line-clamp-1 text-xs">{formattedDate.date}</div>
+          <div className="font-semibold">{formattedDate.day}</div>
         </div>
-        <div className="font-semibold">
-          {dayjs(date).locale(locale).format('ddd')}
-        </div>
-      </div>
+      )}
 
       <DayTime
         timeblocks={timeblocks}
@@ -58,3 +74,5 @@ export default function DayPlanner({
     </div>
   );
 }
+
+export default memo(DayPlanner);

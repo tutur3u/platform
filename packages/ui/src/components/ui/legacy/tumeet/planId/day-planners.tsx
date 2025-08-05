@@ -2,9 +2,9 @@ import DayPlanner from './day-planner';
 import type { Timeblock } from '@tuturuuu/types/primitives/Timeblock';
 import { useTimeBlocking } from '@tuturuuu/ui/hooks/time-blocking-provider';
 import dayjs from 'dayjs';
-import { useCallback, useEffect, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 
-export default function DayPlanners({
+function DayPlanners({
   timeblocks,
   dates,
   start,
@@ -14,6 +14,8 @@ export default function DayPlanners({
   showBestTimes = false,
   tentativeMode = false,
   onBestTimesStatusByDateAction,
+  stickyHeader = false,
+  hideHeaders = false,
 }: {
   timeblocks: Timeblock[];
   dates: string[];
@@ -24,6 +26,8 @@ export default function DayPlanners({
   showBestTimes?: boolean;
   tentativeMode?: boolean;
   onBestTimesStatusByDateAction?: (status: Record<string, boolean>) => void;
+  stickyHeader?: boolean;
+  hideHeaders?: boolean;
 }) {
   const { editing } = useTimeBlocking();
 
@@ -72,57 +76,76 @@ export default function DayPlanners({
     };
   }, [editing.enabled]);
 
-  // Compute global max availability across all days
-  const hourSplits = 4;
-  let globalMaxAvailable = 0;
-  dates.forEach((d) => {
-    const dayTimeblocks = timeblocks.filter((tb) => tb.date === d);
-    const hourBlocks = Array.from(Array(Math.floor(end + 1 - start)).keys());
-    const slotAvailableCounts: number[] = hourBlocks
-      .map((i) => (i + start) * hourSplits)
-      .flatMap((i) => Array(hourSplits).fill(i))
-      .map((_, i) => {
-        const currentDate = dayjs(d)
-          .hour(Math.floor(i / hourSplits) + start)
-          .minute((i % hourSplits) * 15)
-          .toDate();
-        const userIds = dayTimeblocks
-          .filter((tb) => {
-            const start = dayjs(`${tb.date} ${tb.start_time}`);
-            const end = dayjs(`${tb.date} ${tb.end_time}`);
-            return dayjs(currentDate).isBetween(start, end, null, '[)');
-          })
-          .map((tb) => tb.user_id)
-          .filter(Boolean);
-        const uniqueUserIds = Array.from(new Set(userIds));
-        return uniqueUserIds.length;
-      });
-    const maxAvailable = Math.max(...slotAvailableCounts);
-    if (maxAvailable > globalMaxAvailable) globalMaxAvailable = maxAvailable;
-  });
+  // Memoize expensive global availability calculations
+  const { globalMaxAvailable, dayTimeblocksMap } = useMemo(() => {
+    const hourSplits = 4;
+    let globalMaxAvailable = 0;
+    const dayTimeblocksMap = new Map<string, Timeblock[]>();
+
+    dates.forEach((d) => {
+      const dayTimeblocks = timeblocks.filter((tb) => tb.date === d);
+      dayTimeblocksMap.set(d, dayTimeblocks);
+
+      const hourBlocks = Array.from(Array(Math.floor(end + 1 - start)).keys());
+      const slotAvailableCounts: number[] = hourBlocks
+        .map((i) => (i + start) * hourSplits)
+        .flatMap((i) => Array(hourSplits).fill(i))
+        .map((_, i) => {
+          const currentDate = dayjs(d)
+            .hour(Math.floor(i / hourSplits) + start)
+            .minute((i % hourSplits) * 15)
+            .toDate();
+          const userIds = dayTimeblocks
+            .filter((tb) => {
+              const start = dayjs(`${tb.date} ${tb.start_time}`);
+              const end = dayjs(`${tb.date} ${tb.end_time}`);
+              return dayjs(currentDate).isBetween(start, end, null, '[)');
+            })
+            .map((tb) => tb.user_id)
+            .filter(Boolean);
+          const uniqueUserIds = Array.from(new Set(userIds));
+          return uniqueUserIds.length;
+        });
+      const maxAvailable = Math.max(...slotAvailableCounts);
+      if (maxAvailable > globalMaxAvailable) globalMaxAvailable = maxAvailable;
+    });
+
+    return { globalMaxAvailable, dayTimeblocksMap };
+  }, [dates, timeblocks, start, end]);
 
   return (
     <div
       id="scrollable"
-      className="relative flex flex-1 items-start justify-center gap-2 overflow-x-auto"
+      className="relative flex flex-1 items-start justify-center"
     >
-      {dates.map((d) => (
-        <DayPlanner
-          key={d}
-          date={d}
-          start={start}
-          end={end}
-          editable={editable}
-          disabled={disabled}
-          timeblocks={timeblocks.filter((tb) => tb.date === d)}
-          showBestTimes={showBestTimes}
-          tentativeMode={tentativeMode}
-          globalMaxAvailable={globalMaxAvailable}
-          onBestTimesStatus={(hasBestTimes) =>
-            handleBestTimesStatus(d, hasBestTimes)
-          }
-        />
-      ))}
+      <div className="flex w-full">
+        {dates.map((d) => (
+          <div
+            key={d}
+            className="min-w-0 flex-1"
+            style={{ width: `${100 / dates.length}%` }}
+          >
+            <DayPlanner
+              date={d}
+              start={start}
+              end={end}
+              editable={editable}
+              disabled={disabled}
+              timeblocks={dayTimeblocksMap.get(d) || []}
+              showBestTimes={showBestTimes}
+              tentativeMode={tentativeMode}
+              globalMaxAvailable={globalMaxAvailable}
+              stickyHeader={stickyHeader}
+              hideHeaders={hideHeaders}
+              onBestTimesStatus={(hasBestTimes) =>
+                handleBestTimesStatus(d, hasBestTimes)
+              }
+            />
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
+
+export default memo(DayPlanners);

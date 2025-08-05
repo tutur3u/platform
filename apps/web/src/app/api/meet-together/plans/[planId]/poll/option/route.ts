@@ -1,4 +1,3 @@
-// /api/meet-together/poll/option.ts
 import {
   createAdminClient,
   createClient,
@@ -18,6 +17,20 @@ export async function POST(req: Request) {
     userId = user?.id ?? null;
     if (!userId)
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
+
+  // Check if plan is confirmed with a single JOIN query
+  const { data: pollWithPlan } = await sbAdmin
+    .from('polls')
+    .select('meet_together_plans!inner(is_confirmed)')
+    .eq('id', pollId)
+    .single();
+
+  if (pollWithPlan?.meet_together_plans?.is_confirmed) {
+    return NextResponse.json(
+      { message: 'Plan is confirmed. Adding poll options is disabled.' },
+      { status: 403 }
+    );
   }
 
   // Insert new poll option (open to both guests and users)
@@ -50,23 +63,62 @@ export async function POST(req: Request) {
     });
   }
 
-  // Fetch votes for the new option
+  // Fetch votes for the new option with user/guest information
   const { data: userVotes = [] } = await sbAdmin
     .from('poll_user_votes')
-    .select('user_id')
+    .select(
+      `
+      id,
+      option_id,
+      user_id,
+      created_at,
+      users!users_poll_votes_user_id_fkey(display_name)
+    `
+    )
     .eq('option_id', option.id);
+
   const { data: guestVotes = [] } = await sbAdmin
     .from('poll_guest_votes')
-    .select('guest_id')
+    .select(
+      `
+      id,
+      option_id,
+      guest_id,
+      created_at,
+      meet_together_guests!guest_poll_votes_guest_id_fkey(name)
+    `
+    )
     .eq('option_id', option.id);
+
   const totalVotes = (userVotes?.length || 0) + (guestVotes?.length || 0);
+
+  // Transform the data to match the expected types
+  const transformedUserVotes = (userVotes ?? []).map((vote) => ({
+    id: vote.id,
+    option_id: vote.option_id,
+    user_id: vote.user_id,
+    created_at: vote.created_at,
+    user: {
+      display_name: vote.users?.display_name || '',
+    },
+  }));
+
+  const transformedGuestVotes = (guestVotes ?? []).map((vote) => ({
+    id: vote.id,
+    option_id: vote.option_id,
+    guest_id: vote.guest_id,
+    created_at: vote.created_at,
+    guest: {
+      display_name: vote.meet_together_guests?.name || '',
+    },
+  }));
 
   return NextResponse.json({
     message: 'Option added and voted',
     option: {
       ...option,
-      userVotes,
-      guestVotes,
+      userVotes: transformedUserVotes,
+      guestVotes: transformedGuestVotes,
       totalVotes,
     },
   });

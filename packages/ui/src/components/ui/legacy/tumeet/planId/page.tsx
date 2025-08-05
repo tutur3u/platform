@@ -1,5 +1,11 @@
 import PlanDetailsClient from './plan-details-client';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import type { PlanUser } from '@tuturuuu/types/primitives/MeetTogetherPlan';
+import type {
+  GuestVoteWithGuestInfo,
+  PollOption,
+  UserVoteWithUserInfo,
+} from '@tuturuuu/types/primitives/Poll';
 import { TimeBlockingProvider } from '@tuturuuu/ui/hooks/time-blocking-provider';
 import { getPlan } from '@tuturuuu/ui/utils/plan-helpers';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
@@ -22,12 +28,12 @@ export default async function MeetTogetherPlanDetailsPage({
 
   const platformUser = await getCurrentUser(true);
   const plan = await getPlan(planId);
-  const users = await getUsers(planId);
+  const users: PlanUser[] = await getUsers(planId);
   const polls = await getPollsForPlan(planId);
   const timeblocks = await getTimeBlocks(planId);
-  const isCreator = Boolean(
-    platformUser?.id && plan?.creator_id && platformUser.id === plan.creator_id
-  );
+  // const isCreator = Boolean(
+  //   platformUser?.id && plan?.creator_id && platformUser.id === plan.creator_id
+  // );
 
   return (
     <div className="flex min-h-screen w-full flex-col items-center">
@@ -42,9 +48,8 @@ export default async function MeetTogetherPlanDetailsPage({
           >
             <PlanDetailsClient
               plan={plan}
-              isCreator={isCreator}
+              // isCreator={isCreator}
               polls={polls}
-              platformUser={platformUser}
               users={users}
               timeblocks={timeblocks}
               baseUrl={baseUrl}
@@ -129,7 +134,7 @@ async function getPollsForPlan(planId: string) {
 
   // 2. Get options for all polls
   const pollIds = polls?.map((p) => p.id) ?? [];
-  let allOptions: any[] = [];
+  let allOptions: PollOption[] = [];
   if (pollIds.length > 0) {
     const { data: options, error: optionsError } = await sbAdmin
       .from('poll_options')
@@ -150,19 +155,23 @@ async function getPollsForPlan(planId: string) {
 
   // 3. Get user and guest votes for all poll options
   const optionIds = allOptions.map((o) => o.id);
-  let userVotes: any[] = [];
-  let guestVotes: any[] = [];
+  let userVotes: UserVoteWithUserInfo[] = [];
+  let guestVotes: GuestVoteWithGuestInfo[] = [];
   if (optionIds.length > 0) {
     // Platform user votes
     const { data: uVotes, error: uVotesError } = await sbAdmin
       .from('poll_user_votes')
-      .select('id, option_id, user_id, created_at')
+      .select(
+        'id, option_id, user_id, created_at, users!users_poll_votes_user_id_fkey(display_name)'
+      )
       .in('option_id', optionIds);
 
     // Guest votes
     const { data: gVotes, error: gVotesError } = await sbAdmin
       .from('poll_guest_votes')
-      .select('id, option_id, guest_id, created_at')
+      .select(
+        'id, option_id, guest_id, created_at, meet_together_guests!guest_poll_votes_guest_id_fkey(name)'
+      )
       .in('option_id', optionIds);
 
     if (uVotesError || gVotesError) {
@@ -174,8 +183,27 @@ async function getPollsForPlan(planId: string) {
         guestVotes: [],
       };
     }
-    userVotes = uVotes ?? [];
-    guestVotes = gVotes ?? [];
+
+    // Transform the data to match the expected types
+    userVotes = (uVotes ?? []).map((vote) => ({
+      id: vote.id,
+      option_id: vote.option_id,
+      user_id: vote.user_id,
+      created_at: vote.created_at,
+      user: {
+        display_name: vote.users?.display_name || '',
+      },
+    }));
+
+    guestVotes = (gVotes ?? []).map((vote) => ({
+      id: vote.id,
+      option_id: vote.option_id,
+      guest_id: vote.guest_id,
+      created_at: vote.created_at,
+      guest: {
+        display_name: vote.meet_together_guests?.name || '',
+      },
+    }));
   }
 
   // 4. Attach options and their votes to polls
