@@ -439,16 +439,12 @@ export const CalendarContent = ({
     enableHeader, 
     sidebarToggleButton, 
     extras, 
-    showSkeleton = true,
-    showHeader = true,
-    children 
+    showHeader = true
   }: {
     enableHeader: boolean;
     sidebarToggleButton?: React.ReactNode;
     extras?: React.ReactNode;
-    showSkeleton?: boolean;
     showHeader?: boolean;
-    children?: React.ReactNode;
   }) => (
     <div className="flex h-full w-full flex-col">
       {enableHeader && showHeader && (
@@ -516,7 +512,6 @@ export const CalendarContent = ({
         enableHeader={enableHeader} 
         sidebarToggleButton={sidebarToggleButton} 
         extras={extras} 
-        showSkeleton={true}
       />
     );
   }
@@ -527,7 +522,6 @@ export const CalendarContent = ({
         enableHeader={enableHeader} 
         sidebarToggleButton={sidebarToggleButton} 
         extras={extras} 
-        showSkeleton={false}
       />
     );
   }
@@ -574,7 +568,7 @@ export const CalendarContent = ({
           </div>
         )}
 
-        <div className="scrollbar-hide relative flex-1 overflow-auto bg-background/50">
+        <div className="scrollbar-none relative flex-1 overflow-auto bg-background/50">
           <div className="pb-6">
             {view === 'month' && dates?.[0] ? (
               <MonthCalendar

@@ -116,12 +116,4 @@
    Utility Classes
    ========================================================================== */
 
-/* Scrollbar hiding utility class */
-.scrollbar-hide {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}
 
-.scrollbar-hide::-webkit-scrollbar {
-  display: none;
-}
