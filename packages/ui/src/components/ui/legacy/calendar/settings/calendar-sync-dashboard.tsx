@@ -9,6 +9,7 @@ import { SummaryCards } from '@tuturuuu/ui/legacy/calendar/settings/summary-card
 import { SyncLogsTable } from '@tuturuuu/ui/legacy/calendar/settings/sync-logs-table';
 import { Calendar, Download, RefreshCw } from 'lucide-react';
 import { useMemo, useState, useCallback } from 'react';
+import { getEventStyles } from '@tuturuuu/utils/color-helper';
 
 const getWorkspaces = async () => {
   const workspaces = await fetch('/api/workspaces');
@@ -140,7 +141,7 @@ export function CalendarSyncDashboard({ syncLogs }: { syncLogs: SyncLog[] }) {
   const timeSeriesData = generateTimeSeriesData();
 
   // Workspace activity data based on actual data
-  const workspaceActivityData = workspaces.map((workspace) => {
+  const workspaceActivityData = workspaces.map((workspace, index) => {
     const workspaceLogs = syncLogs.filter(
       (log) => log.workspace?.id === workspace.id
     );
@@ -150,12 +151,17 @@ export function CalendarSyncDashboard({ syncLogs }: { syncLogs: SyncLog[] }) {
       0
     );
 
+    // Use existing color system for workspace distinction
+    const workspaceColors = ['BLUE', 'GREEN', 'PURPLE', 'YELLOW', 'PINK', 'ORANGE', 'INDIGO', 'CYAN', 'RED', 'GRAY'];
+    const colorKey = workspaceColors[index % workspaceColors.length] || 'BLUE';
+    const { bg } = getEventStyles(colorKey);
+
     return {
       name: workspace.name || 'Unknown Workspace',
       syncs: workspaceLogs.length,
       events: totalEvents,
       success: workspaceLogs.filter((log) => log.status === 'completed').length,
-      color: 'bg-blue-500', // Default color for all workspaces
+      color: bg, // Use existing color system background class
     };
   });
 
