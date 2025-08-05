@@ -10,9 +10,11 @@ import {
   CircleHelp,
   Clock,
   Send,
+  UserCheck,
   X,
 } from '@tuturuuu/ui/icons';
 import { Separator } from '@tuturuuu/ui/separator';
+import { getGuestGroup } from '@tuturuuu/utils/workspace-helper';
 import { format } from 'date-fns';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
@@ -48,12 +50,14 @@ export default async function HomeworkCheck({ params, searchParams }: Props) {
     groupId,
     await searchParams
   );
+
   const users = rawUsers.map((u) => ({
     ...u,
     href: `/${wsId}/users/database/${u.id}`,
   }));
 
   const hasEmailSendingPermission = true;
+  const isGuestGroup = (await getGuestGroup({ groupId })) ?? false;
 
   return (
     <div>
@@ -163,18 +167,32 @@ export default async function HomeworkCheck({ params, searchParams }: Props) {
       <Separator className="my-4" />
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         {users.map((user) => (
-          <UserCard
+          <div
             key={`post-${postId}-${user.id}-${status.checked === status.count}`}
-            user={user}
-            wsId={wsId}
-            post={{
-              ...post,
-              group_id: groupId,
-              group_name: group.name,
-            }}
-            disableEmailSending={status.sent?.includes(user.id)}
-            hideEmailSending={!hasEmailSendingPermission}
-          />
+            className="relative"
+          >
+            {isGuestGroup && (user.attendance_count ?? 0) < 2 && (
+              <div className="absolute -top-2 -right-2 z-10 flex items-center gap-1 rounded-full border border-amber-200 bg-amber-100 px-2 py-1 text-xs font-medium text-amber-800">
+                <UserCheck className="h-3 w-3" />
+                {t('common.requires_attendance', { count: 2 })}
+              </div>
+            )}
+            <UserCard
+              isGuest={isGuestGroup}
+              user={user}
+              wsId={wsId}
+              post={{
+                ...post,
+                group_id: groupId,
+                group_name: group.name,
+              }}
+              disableEmailSending={
+                (isGuestGroup && (user.attendance_count ?? 0) < 2) ||
+                status.sent?.includes(user.id)
+              }
+              hideEmailSending={!hasEmailSendingPermission}
+            />
+          </div>
         ))}
       </div>
     </div>
@@ -183,65 +201,48 @@ export default async function HomeworkCheck({ params, searchParams }: Props) {
 
 async function getPostData(postId: string) {
   const supabase = await createClient();
-
   const { data, error } = await supabase
     .from('user_group_posts')
     .select('*')
     .eq('id', postId)
     .maybeSingle();
-
   if (error) throw error;
   if (!data) notFound();
-
   return data;
 }
 
 async function getGroupData(wsId: string, groupId: string) {
   const supabase = await createClient();
-
   const { data, error } = await supabase
     .from('workspace_user_groups')
     .select('*')
     .eq('ws_id', wsId)
     .eq('id', groupId)
     .maybeSingle();
-
   if (error) throw error;
   if (!data) notFound();
-
   return data;
 }
 
 async function getPostStatus(groupId: string, postId: string) {
   const supabase = await createClient();
-
   const { data: users, count } = await supabase
-    .from('workspace_user_groups_users')
-    .select(
-      '...workspace_users(id, user_group_post_checks!inner(post_id, is_completed))',
-      {
-        count: 'exact',
-      }
-    )
+    .from('group_users_with_post_checks')
+    .select('*', { count: 'exact' })
     .eq('group_id', groupId)
-    .eq('workspace_users.user_group_post_checks.post_id', postId);
+    .eq('post_id', postId);
 
   const { data: sentEmails } = await supabase
     .from('sent_emails')
-    .select('receiver_id', {
-      count: 'exact',
-    })
+    .select('receiver_id', { count: 'exact' })
     .eq('post_id', postId);
 
   return {
     sent: sentEmails?.map((email) => email.receiver_id) || [],
-    checked: users?.filter((user) =>
-      user?.user_group_post_checks?.find((check) => check?.is_completed)
-    ).length,
-    failed: users?.filter((user) =>
-      user?.user_group_post_checks?.find((check) => !check?.is_completed)
-    ).length,
-    tenative: users?.filter((user) => !user.id).length,
+    checked: users?.filter((user) => user.is_completed).length || 0,
+    failed:
+      users?.filter((user) => user.post_id && !user.is_completed).length || 0,
+    tenative: users?.filter((user) => !user.post_id).length || 0,
     count,
   };
 }
@@ -251,42 +252,30 @@ async function getUserData(
   groupId: string,
   {
     q,
-    // page = '1',
-    // pageSize = '10',
     excludedGroups = [],
     retry = true,
   }: SearchParams & { retry?: boolean } = {}
 ) {
   const supabase = await createClient();
-
-  const queryBuilder = supabase
-    .from('workspace_user_groups_users')
-    .select('...workspace_users!inner(*)', {
-      count: 'exact',
-    })
+  const { data: users, error } = await supabase
+    .from('group_users_with_post_checks')
+    .select('*')
     .eq('group_id', groupId);
-
-  if (q) queryBuilder.ilike('workspace_users.display_name', `%${q}%`);
-
-  // if (page && pageSize) {
-  //   const parsedPage = Number.parseInt(page);
-  //   const parsedSize = Number.parseInt(pageSize);
-  //   const start = (parsedPage - 1) * parsedSize;
-  //   const end = parsedPage * parsedSize;
-  //   queryBuilder.range(start, end).limit(parsedSize);
-  // }
-
-  const { data, error, count } = await queryBuilder;
 
   if (error) {
     if (!retry) throw error;
-    return getUserData(wsId, groupId, {
-      q,
-      // pageSize,
-      excludedGroups,
-      retry: false,
-    });
+    return getUserData(wsId, groupId, { q, excludedGroups, retry: false });
   }
 
-  return { data, count } as unknown as { data: WorkspaceUser[]; count: number };
+  const filteredUsers = q
+    ? users?.filter((u) => u.full_name?.toLowerCase().includes(q.toLowerCase()))
+    : users;
+
+  return {
+    data: filteredUsers?.map((u) => ({
+      ...u,
+      id: u.user_id,
+    })) as unknown as WorkspaceUser[],
+    count: filteredUsers?.length || 0,
+  };
 }
