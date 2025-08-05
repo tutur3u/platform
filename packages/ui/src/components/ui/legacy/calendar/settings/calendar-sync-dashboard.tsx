@@ -1,21 +1,14 @@
 'use client';
 
-import type { SyncLog, Workspace } from './types';
+import type { SyncLog } from './types';
 import { useQuery } from '@tanstack/react-query';
+import type { Workspace } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
 import { AnalyticsCharts } from '@tuturuuu/ui/legacy/calendar/settings/analytics-charts';
 import { SummaryCards } from '@tuturuuu/ui/legacy/calendar/settings/summary-cards';
 import { SyncLogsTable } from '@tuturuuu/ui/legacy/calendar/settings/sync-logs-table';
 import { Calendar, Download, RefreshCw } from 'lucide-react';
 import { useMemo, useState } from 'react';
-
-const getSyncLogs = async () => {
-  const syncLogs = await fetch('/api/sync-logs');
-  if (!syncLogs.ok) {
-    throw new Error(`Failed to fetch sync logs: ${syncLogs.status}`);
-  }
-  return syncLogs.json();
-};
 
 const getWorkspaces = async () => {
   const workspaces = await fetch('/api/workspaces');
@@ -25,7 +18,7 @@ const getWorkspaces = async () => {
   return workspaces.json();
 };
 
-export function CalendarSyncDashboard() {
+export function CalendarSyncDashboard({ syncLogs }: { syncLogs: SyncLog[] }) {
   const [filterType, setFilterType] = useState('all');
   const [filterWorkspace, setFilterWorkspace] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
@@ -39,129 +32,11 @@ export function CalendarSyncDashboard() {
 
   // Fallback to mock workspaces if API fails
   const workspaces: Workspace[] = workspacesQuery.data || [
-    { id: 'ws_1', name: 'Marketing Team', color: 'bg-blue-500' },
-    { id: 'ws_2', name: 'Engineering', color: 'bg-green-500' },
-    { id: 'ws_3', name: 'Sales Department', color: 'bg-purple-500' },
-    { id: 'ws_4', name: 'Executive Team', color: 'bg-orange-500' },
+    { id: 'ws_1', name: 'Marketing Team' },
+    { id: 'ws_2', name: 'Engineering' },
+    { id: 'ws_3', name: 'Sales Department' },
+    { id: 'ws_4', name: 'Executive Team' },
   ];
-
-  // Mock data for sync logs with workspace context
-  const syncLogsMock: SyncLog[] = [
-    {
-      id: 'sync_001',
-      timestamp: '2024-01-19T14:30:00Z',
-      type: 'active',
-      workspace: workspaces[0]!,
-      triggeredBy: {
-        id: 'user_1',
-        display_name: 'Sarah Chen',
-        email: 'sarah@company.com',
-        avatar: '/placeholder.svg?height=32&width=32',
-      },
-      status: 'completed',
-      duration: 2340,
-      events: {
-        added: 15,
-        updated: 8,
-        deleted: 2,
-      },
-      calendarSource: 'Google Calendar',
-    },
-    {
-      id: 'sync_002',
-      timestamp: '2024-01-19T14:00:00Z',
-      type: 'background',
-      workspace: workspaces[1]!,
-      triggeredBy: null,
-      status: 'completed',
-      duration: 1890,
-      events: {
-        added: 3,
-        updated: 12,
-        deleted: 0,
-      },
-      calendarSource: 'Outlook Calendar',
-    },
-    {
-      id: 'sync_003',
-      timestamp: '2024-01-19T13:45:00Z',
-      type: 'active',
-      workspace: workspaces[0]!,
-      triggeredBy: {
-        id: 'user_2',
-        display_name: 'Mike Johnson',
-        email: 'mike@company.com',
-        avatar: '/placeholder.svg?height=32&width=32',
-      },
-      status: 'failed',
-      duration: 890,
-      events: {
-        added: 0,
-        updated: 0,
-        deleted: 0,
-      },
-      calendarSource: 'Google Calendar',
-      error: 'Authentication failed',
-    },
-    {
-      id: 'sync_004',
-      timestamp: '2024-01-19T13:30:00Z',
-      type: 'background',
-      workspace: workspaces[2]!,
-      triggeredBy: null,
-      status: 'completed',
-      duration: 3200,
-      events: {
-        added: 22,
-        updated: 15,
-        deleted: 5,
-      },
-      calendarSource: 'Apple Calendar',
-    },
-    {
-      id: 'sync_005',
-      timestamp: '2024-01-19T13:15:00Z',
-      type: 'active',
-      workspace: workspaces[1]!,
-      triggeredBy: {
-        id: 'user_3',
-        display_name: 'Emma Davis',
-        email: 'emma@company.com',
-        avatar: '/placeholder.svg?height=32&width=32',
-      },
-      status: 'running',
-      duration: 1560,
-      events: {
-        added: 7,
-        updated: 4,
-        deleted: 1,
-      },
-      calendarSource: 'Google Calendar',
-    },
-    {
-      id: 'sync_006',
-      timestamp: '2024-01-19T13:00:00Z',
-      type: 'background',
-      workspace: workspaces[3]!,
-      triggeredBy: null,
-      status: 'completed',
-      duration: 2100,
-      events: {
-        added: 9,
-        updated: 18,
-        deleted: 3,
-      },
-      calendarSource: 'Outlook Calendar',
-    },
-  ];
-
-  const syncLogsQuery = useQuery({
-    queryKey: ['syncLogs'],
-    queryFn: () => getSyncLogs(),
-    refetchInterval: 1000 * 60 * 5, // 5 minutes
-  });
-
-  const syncLogs: SyncLog[] = syncLogsQuery.data || syncLogsMock;
 
   const filteredLogs = useMemo(() => {
     return syncLogs.filter((log) => {
@@ -171,16 +46,16 @@ export function CalendarSyncDashboard() {
       const matchesSearch =
         searchTerm === '' ||
         log.triggeredBy?.display_name
-          .toLowerCase()
+          ?.toLowerCase()
           .includes(searchTerm.toLowerCase()) ||
-        log.triggeredBy?.email
-          .toLowerCase()
+        log.triggeredBy?.handle
+          ?.toLowerCase()
           .includes(searchTerm.toLowerCase()) ||
-        log.workspace?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        log.workspace?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         log.calendarSource.toLowerCase().includes(searchTerm.toLowerCase());
       return matchesType && matchesWorkspace && matchesSearch;
     });
-  }, [filterType, filterWorkspace, searchTerm, syncLogs, workspaces]);
+  }, [filterType, filterWorkspace, searchTerm, syncLogs]);
 
   const totalEvents = useMemo(() => {
     return syncLogs.reduce(
@@ -191,7 +66,7 @@ export function CalendarSyncDashboard() {
       }),
       { added: 0, updated: 0, deleted: 0 }
     );
-  }, []);
+  }, [syncLogs]);
 
   const completedSyncs = useMemo(() => {
     return syncLogs.filter((log) => log.status === 'completed').length;
@@ -203,7 +78,7 @@ export function CalendarSyncDashboard() {
 
   const successRate = useMemo(() => {
     return ((completedSyncs / syncLogs.length) * 100).toFixed(1);
-  }, [completedSyncs]);
+  }, [completedSyncs, syncLogs.length]);
 
   // Generate mock time series data for charts
   const generateTimeSeriesData = () => {
@@ -259,7 +134,7 @@ export function CalendarSyncDashboard() {
       syncs: workspaceLogs.length,
       events: totalEvents,
       success: workspaceLogs.filter((log) => log.status === 'completed').length,
-      color: (workspace.color || 'bg-blue-500').replace('bg-', ''),
+      color: 'bg-blue-500',
     };
   });
 
