@@ -183,17 +183,18 @@ export function CalendarSyncDashboard({ syncLogs }: { syncLogs: SyncLog[] }) {
     }));
   }, [syncLogs, getSourceColor]);
 
-  // Event type distribution over time based on actual data
+    // Event type distribution over time based on actual data
   const eventTypeData = useMemo(() => {
     const periods = ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00'];
-    return periods.map((period) => {
-             const periodLogs = syncLogs.filter((log) => {
-         const logTime = new Date(log.timestamp);
-         const hour = logTime.getHours();
-         const periodParts = period.split(':');
-         const periodHour = periodParts[0] ? parseInt(periodParts[0]) : 0;
-         return hour >= periodHour && hour < periodHour + 4;
-       });
+    const periodHours = [0, 4, 8, 12, 16, 20];
+    
+    return periods.map((period, index) => {
+      const periodLogs = syncLogs.filter((log) => {
+        const logTime = new Date(log.timestamp);
+        const hour = logTime.getHours();
+        const periodHour = periodHours[index] ?? 0;
+        return hour >= periodHour && hour < periodHour + 4;
+      });
 
       return {
         period,
