@@ -41,9 +41,10 @@ export async function POST(request: Request) {
 
     const sbAdmin = await createAdminClient();
 
-    // 3. Insert a dashboard record
-    const { data: insertDashboardData, error: insertDashboardError } =
-      await sbAdmin
+    // 3. Insert a dashboard record (only in DEV_MODE)
+    let insertDashboardData = null;
+    if (DEV_MODE) {
+      const { data: dashboardData, error: insertDashboardError } = await sbAdmin
         .from('calendar_sync_dashboard')
         .insert({
           ws_id: wsId,
@@ -59,11 +60,13 @@ export async function POST(request: Request) {
         .select()
         .single();
 
-    if (insertDashboardError) {
-      return NextResponse.json(
-        { error: insertDashboardError.message },
-        { status: 500 }
-      );
+      if (insertDashboardError) {
+        return NextResponse.json(
+          { error: insertDashboardError.message },
+          { status: 500 }
+        );
+      }
+      insertDashboardData = dashboardData;
     }
 
     // 4. Get the db data
