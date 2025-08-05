@@ -30,6 +30,7 @@ type BatchOperation = BatchDeleteOperation | BatchUpdateOperation;
 // Helper function to execute batched operations
 
 async function executeBatchOperations(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   sbAdmin: any,
   operations: BatchOperation[]
 ): Promise<{ success: boolean; error?: string }> {
