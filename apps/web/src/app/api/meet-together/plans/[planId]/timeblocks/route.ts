@@ -65,6 +65,21 @@ export async function POST(req: Request, { params }: Params) {
   if (!timeblocks || timeblocks.length === 0)
     return NextResponse.json({ message: 'Invalid request' }, { status: 400 });
 
+  // Check if plan is confirmed and deny timeblock creation
+  const sbAdmin = await createAdminClient();
+  const { data: plan } = await sbAdmin
+    .from('meet_together_plans')
+    .select('is_confirmed')
+    .eq('id', planId)
+    .single();
+
+  if (plan?.is_confirmed) {
+    return NextResponse.json(
+      { message: 'Plan is confirmed. Adding availability is disabled.' },
+      { status: 403 }
+    );
+  }
+
   // Clean up timeblocks - remove is_guest field and ensure they have required fields
   const cleanedTimeblocks = timeblocks.map((timeblock: Timeblock) => {
     const cleaned = { ...timeblock };

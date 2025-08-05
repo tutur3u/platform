@@ -26,6 +26,20 @@ export async function PATCH(req: Request) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
+    // Check if plan is confirmed and deny where-poll updates
+    const { data: plan } = await sbAdmin
+      .from('meet_together_plans')
+      .select('is_confirmed')
+      .eq('id', planId)
+      .single();
+
+    if (plan?.is_confirmed) {
+      return NextResponse.json(
+        { message: 'Plan is confirmed. Where-poll updates are disabled.' },
+        { status: 403 }
+      );
+    }
+
     // 2. Update where_to_meet field
     const { data: updatedPlan, error: updateError } = await sbAdmin
       .from('meet_together_plans')
@@ -94,6 +108,7 @@ export async function PATCH(req: Request) {
       message: 'Plan updated successfully',
     });
   } catch (error) {
+    console.error(error);
     return NextResponse.json({ message: 'Invalid request' }, { status: 400 });
   }
 }

@@ -20,6 +20,21 @@ export async function DELETE(req: Request, { params }: Params) {
   const passwordHash = data.password_hash;
   const userType = passwordHash ? 'guest' : 'user';
 
+  // Check if plan is confirmed and deny timeblock deletion
+  const sbAdmin = await createAdminClient();
+  const { data: plan } = await sbAdmin
+    .from('meet_together_plans')
+    .select('is_confirmed')
+    .eq('id', planId)
+    .single();
+
+  if (plan?.is_confirmed) {
+    return NextResponse.json(
+      { message: 'Plan is confirmed. Removing availability is disabled.' },
+      { status: 403 }
+    );
+  }
+
   if (userType === 'user') {
     const {
       data: { user },

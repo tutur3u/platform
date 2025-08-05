@@ -2281,7 +2281,8 @@
     "delete_poll_confirm": "Bạn có chắc chắn muốn xóa bình chọn \"{pollName}\"? Hành động này không thể hoàn tác và sẽ xóa tất cả phiếu bầu và tùy chọn.",
     "delete": "Xóa",
     "enable_where_poll_desc": "Bạn có thể bật tính năng bình chọn 'Nơi gặp mặt' cho kế hoạch của mình.",
-    "enable_where_poll": "Bật tính năng bình chọn 'Nơi gặp mặt'"
+    "enable_where_poll": "Bật tính năng bình chọn 'Nơi gặp mặt'",
+    "cannot_use_anonymous": "Vui lòng đăng nhập bằng tài khoản Khách hoặc tài khoản Tuturuuu để sử dụng tính năng này"
   },
   "ai_chat": {
     "welcome_to": "Chào mừng đến với",

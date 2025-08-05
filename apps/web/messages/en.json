@@ -4058,7 +4058,8 @@
     "delete_poll_confirm": "Are you sure you want to delete the poll \"{pollName}\"? This action cannot be undone and will remove all votes and options.",
     "delete": "Delete",
     "enable_where_poll_desc": "You can enable 'Where to meet' voting for your plan.",
-    "enable_where_poll": "Enable 'Where to meet' voting"
+    "enable_where_poll": "Enable 'Where to meet' voting",
+    "cannot_use_anonymous": "Please login as Guest account or Tuturuuu account to use our feature"
   },
   "confidential_mode": "Confidential mode"
 }

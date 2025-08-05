@@ -1,4 +1,3 @@
-// /api/meet-together/poll/option.ts
 import {
   createAdminClient,
   createClient,
@@ -18,6 +17,20 @@ export async function POST(req: Request) {
     userId = user?.id ?? null;
     if (!userId)
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
+
+  // Check if plan is confirmed with a single JOIN query
+  const { data: pollWithPlan } = await sbAdmin
+    .from('polls')
+    .select('meet_together_plans!inner(is_confirmed)')
+    .eq('id', pollId)
+    .single();
+
+  if (pollWithPlan?.meet_together_plans?.is_confirmed) {
+    return NextResponse.json(
+      { message: 'Plan is confirmed. Adding poll options is disabled.' },
+      { status: 403 }
+    );
   }
 
   // Insert new poll option (open to both guests and users)

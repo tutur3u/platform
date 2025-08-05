@@ -51,7 +51,7 @@ export default function UnifiedAvailability({
           size="lg"
           onClick={handleToggleMode}
           className="flex items-center gap-2"
-          disabled={!isEditing && showBestTimes}
+          disabled={!isEditing && (showBestTimes || plan.is_confirmed)}
         >
           {isEditing ? (
             <>

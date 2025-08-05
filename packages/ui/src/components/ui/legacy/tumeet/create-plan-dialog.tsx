@@ -1,5 +1,6 @@
 'use client';
 
+import { User } from '@tuturuuu/types/db';
 import type { Timezone } from '@tuturuuu/types/primitives/Timezone';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -39,6 +40,7 @@ import { useState } from 'react';
 import * as z from 'zod';
 
 interface Props {
+  user: User | null;
   plan: {
     dates: Date[] | undefined;
     startTime: number | undefined;
@@ -82,9 +84,15 @@ const convertToTimetz = (
   return `${timeStr}${offsetStr}`;
 };
 
-export default function CreatePlanDialog({ plan }: Props) {
+export default function CreatePlanDialog({ plan, user }: Props) {
   const t = useTranslations('meet-together');
   const router = useRouter();
+
+  // TODO: Use this for future authentication checks
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  // @ts-expect-error - TODO: Use this for future authentication checks
+  const isUserLoggedIn = user?.id;
+
   const [isOpened, setIsOpened] = useState(false);
   const [creating, setCreating] = useState(false);
 
@@ -147,7 +155,9 @@ export default function CreatePlanDialog({ plan }: Props) {
 
     const res = await fetch('/api/meet-together/plans', {
       method: 'POST',
-      body: JSON.stringify(rest),
+      body: JSON.stringify({
+        ...rest,
+      }),
     });
 
     if (res.ok) {

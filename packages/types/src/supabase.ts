@@ -4017,6 +4017,7 @@ export type Database = {
           description?: null | string;
           end_time: string;
           id?: string;
+          is_confirmed?: boolean;
           is_public?: boolean;
           name?: null | string;
           start_time: string;
@@ -4075,6 +4076,7 @@ export type Database = {
           description: null | string;
           end_time: string;
           id: string;
+          is_confirmed: boolean;
           is_public: boolean;
           name: null | string;
           start_time: string;
@@ -4089,6 +4091,7 @@ export type Database = {
           description?: null | string;
           end_time?: string;
           id?: string;
+          is_confirmed?: boolean;
           is_public?: boolean;
           name?: null | string;
           start_time?: string;
