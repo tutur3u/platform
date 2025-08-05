@@ -29,22 +29,8 @@ export const CalendarViewWithTrail = ({ dates }: { dates: Date[] }) => {
     <div
       ref={calendarViewRef}
       id="calendar-view"
-      className="flex h-full overflow-y-auto scroll-smooth rounded-b-lg text-center dark:text-zinc-800"
-      style={{
-        scrollbarWidth: 'none',
-        msOverflowStyle: 'none',
-      }}
+      className="flex h-full overflow-y-auto scroll-smooth rounded-b-lg text-center dark:text-zinc-200 scrollbar-hide"
     >
-      {/* Add CSS to hide scrollbars */}
-      <style>{`
-        #calendar-view::-webkit-scrollbar {
-          display: none;
-        }
-        #calendar-view {
-          -ms-overflow-style: none;
-          scrollbar-width: none;
-        }
-      `}</style>
       <TimeTrail />
       <CalendarView dates={dates} />
     </div>

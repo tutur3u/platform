@@ -165,14 +165,14 @@ export function TimezoneSettings({ value, onChange }: TimezoneSettingsProps) {
     setActiveIndex(
       flatFilteredTimezones.findIndex((tz) => tz.value === value.timezone)
     );
-  }, [flatFilteredTimezones.findIndex, value.timezone]);
+  }, [flatFilteredTimezones, value.timezone]);
   React.useEffect(() => {
     setActiveSecondaryIndex(
       flatFilteredSecondaryTimezones.findIndex(
         (tz) => tz.value === value.secondaryTimezone
       )
     );
-  }, [flatFilteredSecondaryTimezones.findIndex, value.secondaryTimezone]);
+  }, [flatFilteredSecondaryTimezones, value.secondaryTimezone]);
 
   // Detect user's timezone on mount
   React.useEffect(() => {

@@ -37,9 +37,6 @@ export function CalendarHeader({
 }) {
   const views = availableViews.filter((view) => view?.disabled !== true);
 
-  // Ensure offset is used by referencing it
-  const offsetValue = offset;
-
   const title = dayjs(date)
     .locale(locale)
     .format(locale === 'vi' ? 'MMMM, YYYY' : 'MMMM YYYY')
@@ -52,7 +49,7 @@ export function CalendarHeader({
         newDate.setMonth(newDate.getMonth() + 1);
       } else {
         // offset is used here for non-month views
-        newDate.setDate(newDate.getDate() + offsetValue);
+        newDate.setDate(newDate.getDate() + offset);
       }
       return newDate;
     });
@@ -64,7 +61,7 @@ export function CalendarHeader({
         newDate.setMonth(newDate.getMonth() - 1);
       } else {
         // offset is used here for non-month views
-        newDate.setDate(newDate.getDate() - offsetValue);
+        newDate.setDate(newDate.getDate() - offset);
       }
       return newDate;
     });
