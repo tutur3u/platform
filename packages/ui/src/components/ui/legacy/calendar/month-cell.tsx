@@ -1,33 +1,30 @@
+import dayjs from 'dayjs';
+import { cn } from '@/lib/utils';
+
 interface MonthCellProps {
   date: Date;
-  key: number;
+  /** Unique identifier for list rendering – do **not** call this `key` */
+  cellId: React.Key;
   hasGrid: boolean;
 }
 
-export function MonthCell({ date, key, hasGrid }: MonthCellProps) {
-  const today = new Date();
-
-  // check if date is today
-  const isToday = date?.toDateString() === today.toDateString();
+export function MonthCell({ date, cellId, hasGrid }: MonthCellProps) {
+  const isToday = dayjs(date).isSame(dayjs(), 'day');
+  const isCurrentMonth = dayjs(date).isSame(dayjs(), 'month');
+  const isOtherMonth = !dayjs(date).isSame(dayjs(), 'month');
 
   return (
-    <div
-      key={key}
-      className={`${
-        hasGrid
-          ? 'border-r border-b border-zinc-800 text-xl font-semibold'
-          : 'text-sm'
-      } flex justify-center`}
-    >
-      <span
-        className={`${
-          isToday ? 'bg-blue-300/30 text-blue-300' : 'text-white'
-        } ${
-          hasGrid ? 'my-1 h-12 w-12' : 'h-10 w-10'
-        } flex items-center justify-center rounded-full`}
+    <div key={cellId} className="relative">
+      <div
+        className={cn(
+          'flex h-full w-full cursor-pointer items-center justify-center rounded-lg border border-transparent text-sm font-medium transition-all duration-200 hover:bg-accent hover:text-accent-foreground',
+          isToday && 'bg-primary text-primary-foreground hover:bg-primary/90',
+          isOtherMonth && 'text-muted-foreground',
+          hasGrid && 'border-border'
+        )}
       >
-        {date?.getDate()}
-      </span>
+        {date.getDate()}
+      </div>
     </div>
   );
 }

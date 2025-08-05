@@ -47,4 +47,4 @@ export const DRAFT_NEW_POST_URL = (base: string) =>
 export const HIDE_EXPERIMENTAL_STATUS = false;
 
 // API limits and pagination
-export const TASKS_LIMIT = 200; // Configurable limit for tasks fetching
+export const TASKS_LIMIT = Number(process.env.NEXT_PUBLIC_TASKS_LIMIT ?? 200);

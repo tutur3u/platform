@@ -8,14 +8,11 @@ export async function GET(
 ) {
   try {
     const { wsId } = await params;
-    console.log('Chats API called with wsId:', wsId);
 
     // Check permissions
     const { withoutPermission } = await getPermissions({ wsId });
-    console.log('Permission check result:', { withoutPermission: withoutPermission('ai_chat') });
     
     if (withoutPermission('ai_chat')) {
-      console.log('Access denied for ai_chat permission');
       return NextResponse.json(
         { error: 'Access denied' },
         { status: 403 }
@@ -62,8 +59,6 @@ export async function GET(
         );
       }
 
-      console.log(`Successfully fetched ${chats?.length || 0} chats`);
-      
       return NextResponse.json({
         chats: chats || [],
         count: chats?.length || 0,
