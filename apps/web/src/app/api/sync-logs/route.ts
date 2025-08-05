@@ -1,10 +1,7 @@
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { createClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 
-export async function GET(request: Request) {
+export async function GET() {
   try {
     const supabase = await createClient();
 
@@ -44,7 +41,7 @@ export async function GET(request: Request) {
     console.log('User has access to workspaces:', workspaceIds);
 
     // Try with regular client first - fetch sync logs with proper joins
-    let { data: syncLogs, error } = await supabase
+    const { data: syncLogs, error } = await supabase
       .from('calendar_sync_dashboard')
       .select(
         `
@@ -65,40 +62,6 @@ export async function GET(request: Request) {
       )
       .in('ws_id', workspaceIds)
       .order('updated_at', { ascending: false });
-
-    // If regular client fails, try with admin client as fallback
-    if (error) {
-      console.warn(
-        'Regular client failed, trying admin client:',
-        error.message
-      );
-      const sbAdmin = await createAdminClient();
-
-      const adminResult = await sbAdmin
-        .from('calendar_sync_dashboard')
-        .select(
-          `
-          id, 
-          updated_at, 
-          start_time, 
-          type, 
-          ws_id, 
-          triggered_by, 
-          status, 
-          end_time, 
-          inserted_events, 
-          updated_events, 
-          deleted_events,
-          workspaces!inner(id, name),
-          users!inner(id, display_name, avatar_url)
-        `
-        )
-        .in('ws_id', workspaceIds)
-        .order('updated_at', { ascending: false });
-
-      syncLogs = adminResult.data;
-      error = adminResult.error;
-    }
 
     if (error) {
       console.error('Database error:', error);
