@@ -55,7 +55,12 @@ export default function SidebarDisplay({
       <AccordionItem value="item-2" className="w-full">
         <AccordionTrigger className="pl-3 text-lg">Users</AccordionTrigger>
         <AccordionContent>
-          <PlanUserFilterAccordion users={users} />
+          <PlanUserFilterAccordion
+            users={users}
+            isCreator={isCreator}
+            platformUser={originalPlatformUser}
+            planId={plan.id}
+          />
         </AccordionContent>
       </AccordionItem>
     </Accordion>
