@@ -1,6 +1,6 @@
 'use client';
 
-import type { SyncLog, Workspace } from './types';
+import type { SyncLog } from './types';
 import { useQuery } from '@tanstack/react-query';
 import type { Workspace as DbWorkspace } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
@@ -30,14 +30,9 @@ export function CalendarSyncDashboard({ syncLogs }: { syncLogs: SyncLog[] }) {
     refetchInterval: 1000 * 60 * 5, // 5 minutes
   });
 
-  // Transform database workspaces to local format
-  const workspaces: Workspace[] = useMemo(() => {
-    const dbWorkspaces: DbWorkspace[] = workspacesQuery.data || [];
-    return dbWorkspaces.map((ws) => ({
-      id: ws.id,
-      name: ws.name || 'Unknown Workspace',
-      color: 'bg-blue-500', // Default color
-    }));
+  // Use database workspaces directly
+  const workspaces: DbWorkspace[] = useMemo(() => {
+    return workspacesQuery.data || [];
   }, [workspacesQuery.data]);
 
   const filteredLogs = useMemo(() => {
@@ -156,11 +151,11 @@ export function CalendarSyncDashboard({ syncLogs }: { syncLogs: SyncLog[] }) {
     );
 
     return {
-      name: workspace.name,
+      name: workspace.name || 'Unknown Workspace',
       syncs: workspaceLogs.length,
       events: totalEvents,
       success: workspaceLogs.filter((log) => log.status === 'completed').length,
-      color: workspace.color,
+      color: 'bg-blue-500', // Default color for all workspaces
     };
   });
 
