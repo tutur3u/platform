@@ -14,13 +14,18 @@ interface Params {
 // Helper function to check if plan is confirmed and deny actions
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function checkPlanConfirmation(planId: string, sbAdmin: any) {
-  const { data: plan } = await sbAdmin
+  const { data: plan, error } = await sbAdmin
     .from('meet_together_plans')
     .select('is_confirmed')
     .eq('id', planId)
     .single();
 
-  if (plan?.is_confirmed) {
+  if (error || !plan) {
+    console.error(error);
+    return NextResponse.json({ message: 'Plan not found' }, { status: 404 });
+  }
+
+  if (plan.is_confirmed) {
     return NextResponse.json(
       { message: 'Plan is confirmed. No modifications allowed.' },
       { status: 403 }

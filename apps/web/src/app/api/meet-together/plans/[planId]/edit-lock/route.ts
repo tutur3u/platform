@@ -33,7 +33,7 @@ export async function PATCH(
   const { error } = await sbAdmin
     .from('meet_together_plans')
     .update({
-      is_confirmed: typeof isConfirm === 'boolean' ? isConfirm : undefined,
+      ...(typeof isConfirm === 'boolean' && { is_confirmed: isConfirm }),
     })
     .eq('id', planId);
 
