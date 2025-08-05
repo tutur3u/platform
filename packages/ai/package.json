@@ -21,7 +21,7 @@
     "@ai-sdk/fal": "1.0.0",
     "@ai-sdk/fireworks": "1.0.0",
     "@ai-sdk/gladia": "1.0.0",
-    "@ai-sdk/google": "2.0.0",
+    "@ai-sdk/google": "2.0.1",
     "@ai-sdk/google-vertex": "3.0.0",
     "@ai-sdk/groq": "2.0.0",
     "@ai-sdk/hume": "1.0.0",
