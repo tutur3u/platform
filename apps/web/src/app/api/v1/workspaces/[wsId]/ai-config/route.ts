@@ -1,5 +1,4 @@
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
-import { verifyHasSecrets } from '@tuturuuu/utils/workspace-helper';
+import { getPermissions, verifyHasSecrets } from '@tuturuuu/utils/workspace-helper';
 import { createClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
 
