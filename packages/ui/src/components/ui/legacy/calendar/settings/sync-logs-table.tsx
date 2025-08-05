@@ -1,6 +1,7 @@
 'use client';
 
-import type { SyncLog, Workspace } from './types';
+import type { SyncLog } from './types';
+import type { Workspace } from '@tuturuuu/types/db';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import {
@@ -226,9 +227,7 @@ export function SyncLogsTable({
                     value={workspace.id}
                   >
                     <div className="flex items-center gap-2">
-                      <div
-                        className={`h-2 w-2 rounded-full ${workspace.color}`}
-                      />
+                      <div className="h-2 w-2 rounded-full bg-blue-500" />
                       {workspace.name}
                     </div>
                   </SelectItem>
@@ -279,9 +278,7 @@ export function SyncLogsTable({
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
-                      <div
-                        className={`h-3 w-3 rounded-full ${log.workspace?.color}`}
-                      />
+                      <div className="h-3 w-3 rounded-full bg-blue-500" />
                       <span className="font-medium">
                         {log.workspace?.name || 'Unknown Workspace'}
                       </span>
@@ -293,7 +290,9 @@ export function SyncLogsTable({
                       <div className="flex items-center gap-2">
                         <Avatar className="h-7 w-7">
                           <AvatarImage
-                            src={log.triggeredBy.avatar || '/placeholder.svg'}
+                            src={
+                              log.triggeredBy.avatar_url || '/placeholder.svg'
+                            }
                           />
                           <AvatarFallback className="bg-foreground/10 text-xs">
                             {(log.triggeredBy.display_name || 'U')
