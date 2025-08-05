@@ -76,6 +76,22 @@ export function CalendarHeader({
     view === 'month' &&
     date.getMonth() === new Date().getMonth() &&
     date.getFullYear() === new Date().getFullYear();
+  
+  // Check if current date is in the current 4-day period
+  const isCurrent4DayPeriod = () => {
+    if (view !== '4-days') return false;
+    const today = new Date();
+    const currentDate = new Date(date);
+    
+    // For 4-day view, check if today is within the 4-day period starting from the current date
+    const startDate = new Date(currentDate);
+    startDate.setHours(0, 0, 0, 0);
+    
+    const endDate = new Date(startDate);
+    endDate.setDate(startDate.getDate() + 3);
+    
+    return today >= startDate && today <= endDate;
+  };
 
   return (
     <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -102,8 +118,8 @@ export function CalendarHeader({
             <Button
               variant="ghost"
               size="sm"
-              onClick={isToday() || isCurrentMonth() ? undefined : selectToday}
-              disabled={isToday() || isCurrentMonth()}
+              onClick={isToday() || isCurrentMonth() || isCurrent4DayPeriod() ? undefined : selectToday}
+              disabled={isToday() || isCurrentMonth() || isCurrent4DayPeriod()}
             >
               {view === 'day'
                 ? t('today')
@@ -111,7 +127,9 @@ export function CalendarHeader({
                   ? t('this-week')
                   : view === 'month'
                     ? t('this-month')
-                    : t('current')}
+                    : view === '4-days'
+                      ? t('current')
+                      : t('current')}
             </Button>
             <Button
               variant="ghost"

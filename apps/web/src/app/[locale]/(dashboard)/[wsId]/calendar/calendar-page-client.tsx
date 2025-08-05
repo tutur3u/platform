@@ -22,9 +22,9 @@ import {
 } from '@tuturuuu/ui/select';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { DEV_MODE, TASKS_LIMIT } from '@/constants/common';
-import { isSameDay, isSameMonth } from '@/utils/date-helper';
+
 import { useCalendarState } from './calendar-state-context';
 import AddEventButton from './components/add-event-button';
 import AddEventModal from './components/add-event-dialog';
@@ -101,10 +101,20 @@ export default function CalendarPageClient({
     staleTime: 30000, // Cache for 30 seconds
   });
 
+
+
+
+
+  const openAddEventDialog = () => setIsAddEventModalOpen(true);
+  const closeAddEventDialog = () => setIsAddEventModalOpen(false);
+
+  // Calendar navigation functions
   const handleNext = useCallback(() => {
     const newDate = new Date(date);
     if (view === 'day') {
       newDate.setDate(newDate.getDate() + 1);
+    } else if (view === '4-days') {
+      newDate.setDate(newDate.getDate() + 4);
     } else if (view === 'week') {
       newDate.setDate(newDate.getDate() + 7);
     } else if (view === 'month') {
@@ -117,6 +127,8 @@ export default function CalendarPageClient({
     const newDate = new Date(date);
     if (view === 'day') {
       newDate.setDate(newDate.getDate() - 1);
+    } else if (view === '4-days') {
+      newDate.setDate(newDate.getDate() - 4);
     } else if (view === 'week') {
       newDate.setDate(newDate.getDate() - 7);
     } else if (view === 'month') {
@@ -125,16 +137,28 @@ export default function CalendarPageClient({
     setDate(newDate);
   }, [date, view, setDate]);
 
-  const selectToday = () => {
-    setDate(new Date());
-  };
+  const selectToday = () => setDate(new Date());
 
   const isToday = () => {
-    return isSameDay(date, new Date());
+    const today = new Date();
+    return date.getDate() === today.getDate() && 
+           date.getMonth() === today.getMonth() && 
+           date.getFullYear() === today.getFullYear();
   };
 
-  const isCurrentMonth = () => {
-    return isSameMonth(date, new Date());
+  const isCurrent4DayPeriod = () => {
+    if (view !== '4-days') return false;
+    const today = new Date();
+    const currentDate = new Date(date);
+    
+    // For 4-day view, check if today is within the 4-day period starting from the current date
+    const startDate = new Date(currentDate);
+    startDate.setHours(0, 0, 0, 0);
+    
+    const endDate = new Date(startDate);
+    endDate.setDate(startDate.getDate() + 3);
+    
+    return today >= startDate && today <= endDate;
   };
 
   const onViewChange = (newView: string) => {
@@ -146,9 +170,6 @@ export default function CalendarPageClient({
     label: v.label,
     disabled: v.disabled,
   }));
-
-  const openAddEventDialog = () => setIsAddEventModalOpen(true);
-  const closeAddEventDialog = () => setIsAddEventModalOpen(false);
 
   // Sidebar toggle button for header (left sidebar)
   const sidebarToggleButton = (
@@ -196,74 +217,52 @@ export default function CalendarPageClient({
     </div>
   );
 
-  const externalState = {
-    date,
-    setDate,
-    view,
-    setView,
-    availableViews,
-  };
 
-  // Keyboard navigation support for date navigation
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
-        return;
-      }
-      
-      if (e.key === 'ArrowLeft' && e.ctrlKey) {
-        handlePrev();
-      } else if (e.key === 'ArrowRight' && e.ctrlKey) {
-        handleNext();
-      }
-    };
-    
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handlePrev, handleNext]);
+
+
 
   return (
-    <>
-      <div className="calendar-container flex h-full w-full flex-col">
-        {/* Sticky Header */}
-        <div className="sticky top-0 z-10 border-b">
-          <div className="p-4">
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                              <div className="flex items-center gap-2">
-                  <div className="ml-1">
-                    {sidebarToggleButton}
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <h2 className="font-semibold text-xl tracking-tight ml-1">
-                      {date.toLocaleDateString('en-US', {
-                        month: 'long',
-                        year: 'numeric',
-                      })}
-                    </h2>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={handlePrev}
-                      aria-label="Previous period"
-                    >
-                      <ChevronLeft className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={handleNext}
-                      aria-label="Next period"
-                    >
-                      <ChevronRight className="h-4 w-4" />
-                    </Button>
-                  </div>
+    <div className="calendar-container h-full flex flex-col">
+      {/* Sticky Header - Above Everything */}
+      <div className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="p-4">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-2">
+              <div className="ml-1">
+                {sidebarToggleButton}
+              </div>
+              <div className="flex items-center gap-1">
+                <h2 className="font-semibold text-xl tracking-tight ml-1">
+                  {date.toLocaleDateString('en-US', {
+                    month: 'long',
+                    year: 'numeric',
+                  })}
+                </h2>
+                {/* Navigation Controls */}
+                <div className="flex items-center gap-2 ml-2">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={handlePrev}
+                    aria-label="Previous period"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={handleNext}
+                    aria-label="Next period"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={selectToday}
-                    disabled={isToday() || isCurrentMonth()}
+                    disabled={isToday() || isCurrent4DayPeriod()}
                   >
                     {view === 'day'
                       ? t('today')
@@ -274,35 +273,47 @@ export default function CalendarPageClient({
                           : t('current')}
                   </Button>
                 </div>
-              <div className="flex flex-col gap-2 md:flex-row md:items-center">
-                <div className="flex items-center gap-2">
-                  {views.length > 1 && (
-                    <div className="w-full flex-1 md:w-auto">
-                      <Select value={view} onValueChange={onViewChange}>
-                        <SelectTrigger className="h-8 w-full">
-                          <SelectValue placeholder={t('view')} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {views.map((view) => (
-                            <SelectItem key={view.value} value={view.value}>
-                              {view.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
-                </div>
+              </div>
+            </div>
+            <div className="flex flex-col gap-2 md:flex-row md:items-center">
+              <div className="flex items-center gap-2">
+                {/* View Switcher */}
+                {views.length > 1 && (
+                  <div className="w-full flex-1 md:w-auto">
+                    <Select value={view} onValueChange={onViewChange}>
+                      <SelectTrigger className="h-8 w-full">
+                        <SelectValue placeholder={t('view')} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {views.map((view) => (
+                          <SelectItem key={view.value} value={view.value}>
+                            {view.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+                
+                {/* Action Buttons */}
                 {extras}
               </div>
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Main Content Area */}
-        <div className="flex w-full flex-1 overflow-hidden">
-          {calendarSidebarOpen && <CalendarSidebar />}
-          <div className="w-full flex-1">
+        {/* Main Content Area - Three Column Layout */}
+        <div className="flex-1 flex w-full overflow-hidden">
+          {/* Left Sidebar */}
+          {calendarSidebarOpen && (
+            <div className="w-[261px] border-r bg-background/50">
+              <CalendarSidebar />
+            </div>
+          )}
+          
+          {/* Center Calendar View */}
+          <div className="flex-1">
             <SmartCalendar
               t={t}
               locale={locale}
@@ -314,31 +325,39 @@ export default function CalendarPageClient({
                   ? experimentalGoogleToken
                   : null
               }
-              enableHeader={false} // Header is now handled by CalendarPageClient
-              externalState={externalState}
-              extras={undefined} // Extras are now handled by CalendarPageClient
+              enableHeader={false}
+              extras={extras}
+              sidebarToggleButton={sidebarToggleButton}
+              externalState={{
+                date,
+                setDate,
+                view,
+                setView,
+                availableViews,
+              }}
             />
           </div>
 
-          {/* Right sidebar (tasks and AI chat) - only show when others sidebar is open */}
+          {/* Right Sidebar */}
           {othersSidebarOpen && (
-            <TasksSidebarContent
-              wsId={workspace.id}
-              locale={locale}
-              tasks={tasksData?.tasks || []}
-              hasKeys={aiChatData?.hasKeys || { openAI: false, anthropic: false, google: false }}
-              chats={aiChatData?.chats || []}
-              count={aiChatData?.count || 0}
-              hasAiChatAccess={aiChatData?.hasAiChatAccess || false}
-            />
+            <div className="w-80 border-l bg-background/50">
+              <TasksSidebarContent
+                wsId={workspace.id}
+                locale={locale}
+                tasks={tasksData?.tasks || []}
+                hasKeys={aiChatData?.hasKeys || { openAI: false, anthropic: false, google: false }}
+                chats={aiChatData?.chats || []}
+                count={aiChatData?.count || 0}
+                hasAiChatAccess={aiChatData?.hasAiChatAccess || false}
+              />
+            </div>
           )}
         </div>
-      </div>
       <AddEventModal
         wsId={workspace.id}
         isOpen={isAddEventModalOpen}
         onClose={closeAddEventDialog}
       />
-    </>
+    </div>
   );
 }

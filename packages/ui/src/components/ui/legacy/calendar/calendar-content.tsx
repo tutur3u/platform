@@ -6,7 +6,7 @@ import { useCalendar } from '@tuturuuu/ui/hooks/use-calendar';
 import { useCalendarSync } from '@tuturuuu/ui/hooks/use-calendar-sync';
 import type { CalendarView } from '@tuturuuu/ui/hooks/use-view-transition';
 import { useViewTransition } from '@tuturuuu/ui/hooks/use-view-transition';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { CalendarHeader } from './calendar-header';
 import { CalendarViewWithTrail } from './calendar-view-with-trail';
 import { CreateEventButton } from './create-event-button';
@@ -92,6 +92,10 @@ export const CalendarContent = ({
   >(externalState?.availableViews || []);
   const [showLoadingSkeleton, setShowLoadingSkeleton] = useState(true);
 
+  // Memoize settings values to avoid unnecessary re-renders
+  const firstDayOfWeek = useMemo(() => settings?.appearance?.firstDayOfWeek || 'monday', [settings?.appearance?.firstDayOfWeek]);
+  const showWeekends = useMemo(() => settings?.appearance?.showWeekends !== false, [settings?.appearance?.showWeekends]);
+
   // Use the external state handlers when provided
   const handleSetDate = useCallback(
     (newDate: Date | ((prevDate: Date) => Date)) => {
@@ -127,8 +131,8 @@ export const CalendarContent = ({
   }, [date, transition, handleSetView, setDates]);
 
   const enable4DayView = useCallback(() => {
+    // For 4-day view, show 4 consecutive days starting from the current date
     const dates: Date[] = [];
-
     for (let i = 0; i < 4; i++) {
       const newDate = new Date(date);
       newDate.setHours(0, 0, 0, 0);
@@ -144,10 +148,6 @@ export const CalendarContent = ({
   }, [date, transition, handleSetView, setDates]);
 
   const enableWeekView = useCallback(() => {
-    // Get the first day of week from settings
-    const firstDayOfWeek = settings?.appearance?.firstDayOfWeek || 'monday';
-    const showWeekends = settings?.appearance?.showWeekends !== false;
-
     console.log('Week view settings:', { firstDayOfWeek, showWeekends });
 
     // Convert firstDayOfWeek string to number (0 = Sunday, 1 = Monday, 6 = Saturday)
@@ -212,21 +212,21 @@ export const CalendarContent = ({
     transition,
     handleSetView,
     setDates,
-    settings?.appearance?.firstDayOfWeek,
-    settings?.appearance?.showWeekends,
+    firstDayOfWeek,
+    showWeekends,
   ]);
 
   const enableMonthView = useCallback(() => {
     let firstDayNumber = 1; // Monday
-    if (settings?.appearance?.firstDayOfWeek === 'sunday') firstDayNumber = 0;
-    if (settings?.appearance?.firstDayOfWeek === 'saturday') firstDayNumber = 6;
+    if (firstDayOfWeek === 'sunday') firstDayNumber = 0;
+    if (firstDayOfWeek === 'saturday') firstDayNumber = 6;
     const newDate = new Date(date);
     newDate.setDate(1);
     setView('month');
     setDate(newDate);
     const gridDates = getMonthGridDates(newDate, firstDayNumber);
     setDates(gridDates);
-  }, [date, settings?.appearance?.firstDayOfWeek, setDates]);
+  }, [date, firstDayOfWeek, setDates]);
 
   // Initialize available views
   useEffect(() => {
@@ -336,6 +336,7 @@ export const CalendarContent = ({
       newDate.setHours(0, 0, 0, 0);
       setDates([newDate]);
     } else if (view === '4-days') {
+      // For 4-day view, show 4 consecutive days starting from the current date
       const dates: Date[] = [];
       for (let i = 0; i < 4; i++) {
         const newDate = new Date(date);
@@ -363,13 +364,13 @@ export const CalendarContent = ({
       setDates(weekDates);
     } else if (view === 'month') {
       let firstDayNumber = 1; // Monday
-      if (settings?.appearance?.firstDayOfWeek === 'sunday') firstDayNumber = 0;
-      if (settings?.appearance?.firstDayOfWeek === 'saturday')
+      if (firstDayOfWeek === 'sunday') firstDayNumber = 0;
+      if (firstDayOfWeek === 'saturday')
         firstDayNumber = 6;
       const gridDates = getMonthGridDates(date, firstDayNumber);
       setDates(gridDates);
     }
-  }, [date, view, settings?.appearance?.firstDayOfWeek, setDates]);
+  }, [date, view, firstDayOfWeek, setDates]);
 
   // Set initial view based on screen size
   useEffect(() => {
