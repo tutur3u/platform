@@ -1,5 +1,3 @@
-alter table "public"."workspace_user_groups" add column "is_guest" boolean default false;
-
 create or replace view "public"."workspace_user_groups_with_guest" as  SELECT workspace_user_groups.id,
     workspace_user_groups.ws_id,
     workspace_user_groups.name,

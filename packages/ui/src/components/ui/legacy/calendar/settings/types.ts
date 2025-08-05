@@ -1,22 +1,11 @@
-export interface Workspace {
-  id: string;
-  name: string;
-  color: string;
-}
-
-export interface User {
-  id: string;
-  name: string;
-  email: string;
-  avatar: string;
-}
+import type { User, Workspace } from '@tuturuuu/types/db';
 
 export interface SyncLog {
   id: string;
   timestamp: string;
-  type: 'active' | 'background';
-  workspace: Workspace;
-  triggeredBy: User | null;
+  type: 'active' | 'background' | 'manual';
+  workspace: Partial<Workspace>;
+  triggeredBy: Partial<User> | null;
   status: 'completed' | 'failed' | 'running';
   duration: number;
   events: {
@@ -25,7 +14,7 @@ export interface SyncLog {
     deleted: number;
   };
   calendarSource: string;
-  error?: string;
+  error?: string | null;
 }
 
 export interface TimeSeriesData {
@@ -45,7 +34,7 @@ export interface EventTypeData {
 }
 
 export interface WorkspaceActivityData {
-  name: string;
+  name: string | null;
   syncs: number;
   events: number;
   success: number;
