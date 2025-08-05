@@ -11,6 +11,108 @@ interface Params {
   }>;
 }
 
+// Types for batched operations
+interface BatchDeleteOperation {
+  type: 'delete';
+  tableName: string;
+  id: string;
+}
+
+interface BatchUpdateOperation {
+  type: 'update';
+  tableName: string;
+  id: string;
+  data: { start_time: string; end_time: string };
+}
+
+type BatchOperation = BatchDeleteOperation | BatchUpdateOperation;
+
+// Helper function to execute batched operations
+
+async function executeBatchOperations(
+  sbAdmin: any,
+  operations: BatchOperation[]
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    // Group operations by table name and type
+    const deleteOperations: { [tableName: string]: string[] } = {};
+    const updateOperations: { [tableName: string]: BatchUpdateOperation[] } =
+      {};
+
+    // Categorize operations
+    for (const operation of operations) {
+      if (operation.type === 'delete') {
+        if (!deleteOperations[operation.tableName]) {
+          deleteOperations[operation.tableName] = [];
+        }
+        deleteOperations[operation.tableName]!.push(operation.id);
+      } else {
+        if (!updateOperations[operation.tableName]) {
+          updateOperations[operation.tableName] = [];
+        }
+        updateOperations[operation.tableName]!.push(operation);
+      }
+    }
+
+    // Execute delete operations in batches (these can be truly batched)
+    for (const [tableName, ids] of Object.entries(deleteOperations)) {
+      if (ids && ids.length > 0) {
+        const result = await sbAdmin.from(tableName).delete().in('id', ids);
+
+        if (result.error) {
+          return {
+            success: false,
+            error: `Error deleting from ${tableName}: ${result.error.message || 'Unknown error'}`,
+          };
+        }
+      }
+    }
+
+    // Execute update operations (these need to be individual due to different data)
+    // But we can still optimize by grouping them by table and using Promise.all
+    for (const [tableName, updates] of Object.entries(updateOperations)) {
+      if (updates && updates.length > 0) {
+        // Use Promise.all to execute all updates for this table concurrently
+        const updatePromises = updates.map(async (update) => {
+          const result = await sbAdmin
+            .from(tableName)
+            .update(update.data)
+            .eq('id', update.id);
+
+          if (result.error) {
+            throw new Error(
+              `Error updating ${tableName}: ${result.error.message || 'Unknown error'}`
+            );
+          }
+          return result;
+        });
+
+        try {
+          await Promise.all(updatePromises);
+        } catch (error) {
+          return {
+            success: false,
+            error:
+              error instanceof Error
+                ? error.message
+                : 'Unknown error in batch updates',
+          };
+        }
+      }
+    }
+
+    return { success: true };
+  } catch (error) {
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : 'Unknown error in batch operations',
+    };
+  }
+}
+
 // Helper function to check if plan is confirmed and deny actions
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function checkPlanConfirmation(planId: string, sbAdmin: any) {
@@ -205,6 +307,9 @@ export async function PATCH(req: Request, { params }: Params) {
         ...(guestTimeblocks || []),
       ];
 
+      // Collect batch operations instead of executing them immediately
+      const batchOperations: BatchOperation[] = [];
+
       // Process each timeblock
       for (const timeblock of allTimeblocks) {
         const isValid = isTimeblockValid(
@@ -227,14 +332,11 @@ export async function PATCH(req: Request, { params }: Params) {
               ? 'meet_together_user_timeblocks'
               : 'meet_together_guest_timeblocks';
 
-            console.log(
-              'Deleting timeblock (date not in plan):',
-              timeblock.id,
-              'from table:',
-              tableName
-            );
-
-            await sbAdmin.from(tableName).delete().eq('id', timeblock.id);
+            batchOperations.push({
+              type: 'delete',
+              tableName,
+              id: timeblock.id,
+            });
           } else {
             // Date is still in plan, try to adjust the timeblock times
             const adjustment = adjustTimeblockTimes(
@@ -253,32 +355,15 @@ export async function PATCH(req: Request, { params }: Params) {
                 ? 'meet_together_user_timeblocks'
                 : 'meet_together_guest_timeblocks';
 
-              console.log(
-                'Adjusting timeblock:',
-                timeblock.id,
-                'from table:',
+              batchOperations.push({
+                type: 'update',
                 tableName,
-                'Original times:',
-                timeblock.start_time,
-                '-',
-                timeblock.end_time,
-                'New times:',
-                adjustment.startTime,
-                '-',
-                adjustment.endTime
-              );
-
-              const updateResult = await sbAdmin
-                .from(tableName)
-                .update({
+                id: timeblock.id,
+                data: {
                   start_time: adjustment.startTime,
                   end_time: adjustment.endTime,
-                })
-                .eq('id', timeblock.id)
-                .select('*')
-                .maybeSingle();
-
-              console.log('Update result:', updateResult);
+                },
+              });
             } else {
               // Timeblock cannot be adjusted to fit within new time range, delete it
               const isUserTimeblock = userTimeblocks?.some(
@@ -288,17 +373,36 @@ export async function PATCH(req: Request, { params }: Params) {
                 ? 'meet_together_user_timeblocks'
                 : 'meet_together_guest_timeblocks';
 
-              console.log(
-                'Deleting timeblock (cannot be adjusted):',
-                timeblock.id,
-                'from table:',
-                tableName
-              );
-
-              await sbAdmin.from(tableName).delete().eq('id', timeblock.id);
+              batchOperations.push({
+                type: 'delete',
+                tableName,
+                id: timeblock.id,
+              });
             }
           }
         }
+      }
+
+      // Execute all batch operations at once
+      if (batchOperations.length > 0) {
+        console.log(
+          `Processing ${batchOperations.length} timeblock operations in batch`
+        );
+        const batchResult = await executeBatchOperations(
+          sbAdmin,
+          batchOperations
+        );
+        if (!batchResult.success) {
+          console.error('Batch operation failed:', batchResult.error);
+          return NextResponse.json(
+            {
+              message:
+                batchResult.error || 'Error processing timeblock updates',
+            },
+            { status: 500 }
+          );
+        }
+        console.log('Batch operations completed successfully');
       }
     }
   }
@@ -320,7 +424,32 @@ export async function PATCH(req: Request, { params }: Params) {
 
 export async function DELETE(_: Request, { params }: Params) {
   const sbAdmin = await createAdminClient();
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return NextResponse.json({ message: 'Not authenticated' }, { status: 401 });
+  }
+
   const { planId: id } = await params;
+
+  const { data: plan } = await sbAdmin
+    .from('meet_together_plans')
+    .select('creator_id')
+    .eq('id', id)
+    .single();
+
+  if (!plan) {
+    return NextResponse.json({ message: 'Plan not found' }, { status: 404 });
+  }
+
+  if (plan.creator_id !== user.id) {
+    return NextResponse.json(
+      { message: 'You are not the creator of this plan' },
+      { status: 403 }
+    );
+  }
 
   // Check if plan is confirmed and deny deletion
   const confirmationCheck = await checkPlanConfirmation(id, sbAdmin);

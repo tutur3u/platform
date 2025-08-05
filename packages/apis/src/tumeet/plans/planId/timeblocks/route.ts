@@ -36,9 +36,11 @@ export async function GET(_: Request, { params }: Params) {
   };
 
   if (errors.guest || errors.user) {
-    console.log(errors);
     return NextResponse.json(
-      { message: 'Error fetching meet together timeblocks' },
+      {
+        message: 'Error fetching meet together timeblocks',
+        errors,
+      },
       { status: 500 }
     );
   }

@@ -1,4 +1,3 @@
-// apps/web/src/app/api/meet-together/plans/[planId]/poll/route.ts
 import {
   createAdminClient,
   createClient,
@@ -143,9 +142,8 @@ export async function DELETE(
       .eq('id', pollId);
 
     if (deleteError) {
-      console.error('Error deleting poll:', deleteError);
       return NextResponse.json(
-        { message: 'Error deleting poll' },
+        { message: 'Error deleting poll', error: deleteError },
         { status: 500 }
       );
     }
@@ -162,9 +160,8 @@ export async function DELETE(
       deletedPollId: pollId,
     });
   } catch (error) {
-    console.error('Unexpected error deleting poll:', error);
     return NextResponse.json(
-      { message: 'Internal server error' },
+      { message: 'Internal server error', error },
       { status: 500 }
     );
   }

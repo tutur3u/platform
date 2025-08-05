@@ -61,27 +61,26 @@ export async function POST(req: Request) {
     .single();
 
   if (error) {
-    console.log(error);
     return NextResponse.json(
-      { message: 'Error creating meet together plan' },
+      { message: 'Error creating meet together plan', error },
       { status: 500 }
     );
   }
 
   if (plan.where_to_meet && typeof plan.id === 'string' && user?.id) {
     const { error: pollError } = await sbAdmin.from('polls').insert({
-      plan_id: plan.id as string,
+      plan_id: plan.id,
       creator_id: user?.id,
       name: 'Where to Meet?',
     });
 
     if (pollError) {
       // Optionally: you could choose to roll back the plan here, but most apps just log or show warning.
-      console.log(pollError);
       return NextResponse.json(
         {
           id: plan.id,
-          message: 'Plan created, but failed to create "where" poll',
+          message:
+            'Plan created, but failed to create "where" poll: ' + pollError,
         },
         { status: 200 }
       );
