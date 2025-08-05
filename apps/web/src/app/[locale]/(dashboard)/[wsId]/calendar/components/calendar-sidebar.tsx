@@ -35,13 +35,9 @@ export default function CalendarSidebar() {
           <SidebarMenu>
             {stubAccounts.length === 0 ? (
               <SidebarMenuItem>
-                <Button
-                  className="flex w-full items-center gap-2"
-                  disabled
-                  variant="outline"
-                >
-                  <Plus className="h-4 w-4" /> Add account
-                </Button>
+                <span className="text-muted-foreground">
+                  No accounts connected
+                </span>
               </SidebarMenuItem>
             ) : (
               stubAccounts.map((acc) => (
