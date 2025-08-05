@@ -63,9 +63,9 @@ export async function GET(
         if (workspaceSettings?.ai_settings) {
           const settings = workspaceSettings.ai_settings;
           hasKeys = {
-            openAI: hasKeys.openAI && (settings.openai_enabled ?? true),
-            anthropic: hasKeys.anthropic && (settings.anthropic_enabled ?? true),
-            google: hasKeys.google && (settings.google_enabled ?? true),
+            openAI: hasKeys.openAI && (settings.openai_enabled === true),
+            anthropic: hasKeys.anthropic && (settings.anthropic_enabled === true),
+            google: hasKeys.google && (settings.google_enabled === true),
           };
         }
       }

@@ -21,6 +21,7 @@ import {
   Timer,
 } from '@tuturuuu/ui/icons';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
+import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { useState } from 'react';
 
 interface TasksSidebarContentProps {
@@ -203,11 +204,18 @@ function PriorityView({ allTasks, locale, wsId }: { allTasks: ExtendedWorkspaceT
         throw new Error('Failed to update task priority');
       }
 
-      // Optionally refresh the tasks data or update local state
-      console.log('Task priority updated successfully:', taskId, newPriority);
+      // Show success notification
+      toast({
+        title: 'Priority updated',
+        description: 'Task priority has been updated successfully',
+      });
     } catch (error) {
-      console.error('Error updating task priority:', error);
-      // You might want to show a toast notification here
+      // Show error notification
+      toast({
+        title: 'Update failed',
+        description: 'Failed to update task priority. Please try again.',
+        variant: 'destructive',
+      });
     }
   };
 

@@ -24,7 +24,7 @@ export async function GET(
     const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
     
     if (!supabaseUrl || !supabaseKey) {
-      console.error('Missing Supabase configuration');
+      // console.error('Missing Supabase configuration'); // Debug only
       return NextResponse.json(
         { error: 'Database configuration error' },
         { status: 500 }
@@ -47,12 +47,13 @@ export async function GET(
           pinned,
           is_public
         `)
+        .eq('ws_id', wsId)
         .order('pinned', { ascending: false })
         .order('updated_at', { ascending: false })
         .limit(50); // Limit to recent chats
 
       if (error) {
-        console.error('Error fetching chats:', error);
+        // console.error('Error fetching chats:', error); // Debug only
         return NextResponse.json(
           { error: 'Failed to fetch chats' },
           { status: 500 }
@@ -65,7 +66,7 @@ export async function GET(
       });
 
     } catch (dbError) {
-      console.error('Database error:', dbError);
+      // console.error('Database error:', dbError); // Debug only
       // Fallback to empty data if database is not available
       return NextResponse.json({
         chats: [],
@@ -74,7 +75,7 @@ export async function GET(
     }
 
   } catch (error) {
-    console.error('Error in chats API:', error);
+    // console.error('Error in chats API:', error); // Debug only
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

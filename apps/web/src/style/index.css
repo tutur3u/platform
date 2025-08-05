@@ -47,15 +47,23 @@
    Calendar Component Styles
    ========================================================================== */
 
+/* CSS Custom Properties for Calendar Scaling
+ * Centralized scaling values for consistent responsive behavior
+ */
+:root {
+  --cal-scale: 0.8;
+  --cal-mult: 1.25;
+}
+
 /* Calendar Container - Responsive Scaling System
- * Provides 0.8 scale effect with responsive design and optimized rendering
+ * Provides dynamic scale effect with responsive design and optimized rendering
  */
 .calendar-container {
-  /* Core scaling properties */
-  transform: scale(0.8);
+  /* Core scaling properties using custom properties */
+  transform: scale(var(--cal-scale));
   transform-origin: top left;
-  width: 125%;
-  height: 125%;
+  width: calc(100% * var(--cal-mult));
+  height: calc(100% * var(--cal-mult));
   
   /* Font rendering optimization for scaling */
   -webkit-font-smoothing: antialiased;
@@ -90,19 +98,17 @@
 
 /* Mobile devices - Smaller scale for better touch interaction */
 @media (max-width: 768px) {
-  .calendar-container {
-    transform: scale(0.75);
-    width: 133.33%;
-    height: 133.33%;
+  :root {
+    --cal-scale: 0.75;
+    --cal-mult: 1.3333;
   }
 }
 
 /* Desktop devices - Slightly larger scale for better readability */
 @media (min-width: 1024px) {
-  .calendar-container {
-    transform: scale(0.85);
-    width: 117.65%;
-    height: 117.65%;
+  :root {
+    --cal-scale: 0.85;
+    --cal-mult: 1.1765;
   }
 }
 
