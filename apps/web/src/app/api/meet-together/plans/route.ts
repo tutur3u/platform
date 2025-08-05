@@ -52,7 +52,11 @@ export async function POST(req: Request) {
 
   const { data: plan, error } = await sbAdmin
     .from('meet_together_plans')
-    .insert({ ...data, creator_id: user?.id })
+    .insert({
+      ...data,
+      creator_id: user?.id,
+      is_confirmed: false,
+    })
     .select('id, where_to_meet')
     .single();
 

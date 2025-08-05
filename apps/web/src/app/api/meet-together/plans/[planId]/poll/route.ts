@@ -8,9 +8,9 @@ import { NextResponse } from 'next/server';
 // POST: create a new poll for the plan
 export async function POST(
   req: Request,
-  { params }: { params: { planId: string } }
+  { params }: { params: Promise<{ planId: string }> }
 ) {
-  const { planId } = params;
+  const { planId } = await params;
   const { name, allow_anonymous_updates = false } = await req.json();
 
   // Auth: Only logged-in users can create polls
@@ -23,8 +23,22 @@ export async function POST(
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
-  // Insert poll
+  // Check if plan is confirmed and deny poll creation
   const sbAdmin = await createAdminClient();
+  const { data: plan } = await sbAdmin
+    .from('meet_together_plans')
+    .select('is_confirmed')
+    .eq('id', planId)
+    .single();
+
+  if (plan?.is_confirmed) {
+    return NextResponse.json(
+      { message: 'Plan is confirmed. Poll creation is disabled.' },
+      { status: 403 }
+    );
+  }
+
+  // Insert poll
   const { data: poll, error } = await sbAdmin
     .from('polls')
     .insert({
@@ -67,6 +81,20 @@ export async function DELETE(
       return NextResponse.json(
         { message: 'Authentication required' },
         { status: 401 }
+      );
+    }
+
+    // Check if plan is confirmed and deny poll deletion
+    const { data: plan } = await sbAdmin
+      .from('meet_together_plans')
+      .select('is_confirmed')
+      .eq('id', planId)
+      .single();
+
+    if (plan?.is_confirmed) {
+      return NextResponse.json(
+        { message: 'Plan is confirmed. Poll deletion is disabled.' },
+        { status: 403 }
       );
     }
 

@@ -14,11 +14,7 @@ export default async function PlanPage({ params }: PlanPageProps) {
 
   if (!DEV_MODE) {
     // Tumeet is not production-ready yet, so we redirect to the platform app
-    redirect(
-      DEV_MODE
-        ? `http://localhost:7803/meet-together/plans/${planId}`
-        : `https://tuturuuu.com/meet-together/plans/${planId}`
-    );
+    redirect(`https://tuturuuu.com/meet-together/plans/${planId}`);
   }
 
   return <MeetTogetherPlanDetailsPage params={params} baseUrl={baseUrl} />;

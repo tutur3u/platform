@@ -21,6 +21,7 @@ export async function GET() {
       id,
       role,
       ...workspaces,
+      color: 'bg-blue-500', // Add a default color since the workspaces table doesn't have a color field
     }))
   );
 }
