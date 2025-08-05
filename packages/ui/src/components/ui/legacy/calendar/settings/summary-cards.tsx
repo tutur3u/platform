@@ -1,7 +1,7 @@
 'use client';
 
-import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { Activity, Edit, Plus, Trash2 } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 
 interface SummaryCardsProps {
   totalSyncs: number;
@@ -30,7 +30,7 @@ export function SummaryCards({
           </div>
         </CardHeader>
         <CardContent className="pt-0">
-          <div className="font-bold text-3xl">{totalSyncs}</div>
+          <div className="text-3xl font-bold">{totalSyncs}</div>
           <div className="mt-2 flex items-center gap-4 text-xs">
             <span className="font-medium text-dynamic-green">
               {successRate}% success
@@ -52,7 +52,7 @@ export function SummaryCards({
           </div>
         </CardHeader>
         <CardContent className="pt-0">
-          <div className="font-bold text-3xl text-dynamic-green">
+          <div className="text-3xl font-bold text-dynamic-green">
             {totalEvents.added}
           </div>
           <p className="mt-2 text-xs opacity-70">New calendar events</p>
@@ -67,7 +67,7 @@ export function SummaryCards({
           </div>
         </CardHeader>
         <CardContent className="pt-0">
-          <div className="font-bold text-3xl text-dynamic-blue">
+          <div className="text-3xl font-bold text-dynamic-blue">
             {totalEvents.updated}
           </div>
           <p className="mt-2 text-xs opacity-70">Modified events</p>
@@ -82,7 +82,7 @@ export function SummaryCards({
           </div>
         </CardHeader>
         <CardContent className="pt-0">
-          <div className="font-bold text-3xl text-dynamic-red">
+          <div className="text-3xl font-bold text-dynamic-red">
             {totalEvents.deleted}
           </div>
           <p className="mt-2 text-xs opacity-70">Removed events</p>

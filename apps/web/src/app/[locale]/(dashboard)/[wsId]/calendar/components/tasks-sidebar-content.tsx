@@ -76,7 +76,7 @@ export default function TasksSidebarContent({
                 T
               </span>
             </TabsTrigger>
-            
+
             {hasAiChatAccess && (
               <TabsTrigger
                 value="ai-chat"
@@ -111,7 +111,7 @@ export default function TasksSidebarContent({
             value="ai-chat"
             className="m-0 min-h-0 flex-1 overflow-y-auto scrollbar-none px-2 pb-6 duration-300 animate-in fade-in-50"
           >
-            <div className="relative h-full min-h-0 overflow-y-auto scrollbar-none py-2">
+            <div className="relative scrollbar-none h-full min-h-0 overflow-y-auto py-2">
               <Chat
                 wsId={wsId}
                 hasKeys={hasKeys}

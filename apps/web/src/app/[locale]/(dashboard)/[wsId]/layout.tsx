@@ -1,3 +1,14 @@
+import NavbarActions from '../../navbar-actions';
+import { UserNav } from '../../user-nav';
+import InvitationCard from './invitation-card';
+import { Structure } from './structure';
+import type { NavLink } from '@/components/navigation';
+import {
+  DEV_MODE,
+  SIDEBAR_BEHAVIOR_COOKIE_NAME,
+  SIDEBAR_COLLAPSED_COOKIE_NAME,
+} from '@/constants/common';
+import { SidebarProvider } from '@/context/sidebar-context';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import {
   Activity,
@@ -54,22 +65,11 @@ import {
   getWorkspace,
   verifySecret,
 } from '@tuturuuu/utils/workspace-helper';
-import { cookies } from 'next/headers';
-import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
-import { type ReactNode, Suspense } from 'react';
-import type { NavLink } from '@/components/navigation';
-import {
-  DEV_MODE,
-  SIDEBAR_BEHAVIOR_COOKIE_NAME,
-  SIDEBAR_COLLAPSED_COOKIE_NAME,
-} from '@/constants/common';
-import { SidebarProvider } from '@/context/sidebar-context';
-import NavbarActions from '../../navbar-actions';
-import { UserNav } from '../../user-nav';
-import InvitationCard from './invitation-card';
-import { Structure } from './structure';
+import { cookies } from 'next/headers';
 import { headers } from 'next/headers';
+import { redirect } from 'next/navigation';
+import { type ReactNode, Suspense } from 'react';
 
 interface LayoutProps {
   params: Promise<{

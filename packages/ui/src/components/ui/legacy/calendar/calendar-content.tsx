@@ -1,3 +1,11 @@
+import { CalendarHeader } from './calendar-header';
+import { CalendarViewWithTrail } from './calendar-view-with-trail';
+import { CreateEventButton } from './create-event-button';
+import { EventModal } from './event-modal';
+import { MonthCalendar } from './month-calendar';
+import { SettingsButton } from './settings-button';
+import type { CalendarSettings } from './settings/settings-context';
+import { WeekdayBar } from './weekday-bar';
 import type {
   Workspace,
   WorkspaceCalendarGoogleToken,
@@ -7,14 +15,6 @@ import { useCalendarSync } from '@tuturuuu/ui/hooks/use-calendar-sync';
 import type { CalendarView } from '@tuturuuu/ui/hooks/use-view-transition';
 import { useViewTransition } from '@tuturuuu/ui/hooks/use-view-transition';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { CalendarHeader } from './calendar-header';
-import { CalendarViewWithTrail } from './calendar-view-with-trail';
-import { CreateEventButton } from './create-event-button';
-import { EventModal } from './event-modal';
-import { MonthCalendar } from './month-calendar';
-import type { CalendarSettings } from './settings/settings-context';
-import { SettingsButton } from './settings-button';
-import { WeekdayBar } from './weekday-bar';
 
 function getMonthGridDates(date: Date, firstDayOfWeek: number): Date[] {
   const newDate = new Date(date);
@@ -105,7 +105,7 @@ export const CalendarContent = ({
         setDate(newDate);
       }
     },
-    [externalState]
+    [externalState?.setDate]
   );
 
   const handleSetView = useCallback(
@@ -116,7 +116,7 @@ export const CalendarContent = ({
         setView(newView);
       }
     },
-    [externalState]
+    [externalState?.setView]
   );
 
   // View switching handlers
@@ -454,118 +454,57 @@ export const CalendarContent = ({
       {enableHeader && showHeader && (
         <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
           <div className="p-4">
-            {showSkeleton ? (
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                <div className="flex items-center gap-2">
-                  {sidebarToggleButton}
-                  <div className="h-8 w-32 animate-pulse rounded bg-muted" />
-                </div>
-                <div className="flex flex-col gap-2 md:flex-row md:items-center">
-                  <div className="flex items-center gap-2">
-                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-                    <div className="flex flex-none items-center justify-center gap-2 md:justify-start">
-                      <div className="h-8 w-8 animate-pulse rounded border bg-muted" />
-                      <div className="h-8 w-16 animate-pulse rounded bg-muted" />
-                      <div className="h-8 w-8 animate-pulse rounded border bg-muted" />
-                    </div>
-                    <div className="h-8 w-24 animate-pulse rounded bg-muted" />
-                  </div>
-                  {extras}
-                </div>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center gap-2">
+                {sidebarToggleButton}
+                <div className="h-6 w-32 animate-pulse rounded bg-muted" />
               </div>
-            ) : (
-              <CalendarHeader
-                t={t}
-                locale={locale}
-                availableViews={availableViews}
-                date={date}
-                setDate={handleSetDate}
-                view={view}
-                offset={
-                  view === 'day'
-                    ? 1
-                    : view === '4-days'
-                      ? 4
-                      : view === 'week'
-                        ? 7
-                        : 0
-                }
-                onViewChange={(newView) => {
-                  if (newView === 'day') enableDayView();
-                  else if (newView === '4-days') enable4DayView();
-                  else if (newView === 'week') enableWeekView();
-                  else if (newView === 'month') enableMonthView();
-                }}
-                extras={extras}
-                onSidebarToggle={onSidebarToggle}
-                sidebarToggleButton={sidebarToggleButton}
-              />
-            )}
+              <div className="flex items-center gap-2">
+                <div className="h-8 w-8 animate-pulse rounded bg-muted" />
+                <div className="h-8 w-8 animate-pulse rounded bg-muted" />
+                <div className="h-8 w-20 animate-pulse rounded bg-muted" />
+              </div>
+              {extras}
+            </div>
           </div>
         </div>
       )}
       <div className="flex flex-1 flex-col overflow-hidden">
-        {children || (
-          showSkeleton ? (
-            <>
-              <div className="border-b bg-background/50">
-                <div className="flex h-8 items-center justify-center">
-                  <div className="flex gap-1">
-                                         {Array.from({ length: 7 }).map((_, i) => (
-                       <div
-                         key={`weekday-skeleton-${i}-${Date.now()}`}
-                         className="h-6 w-16 animate-pulse rounded bg-muted"
-                       />
-                     ))}
+        <div className="border-b bg-background/50">
+          <div className="flex h-8 items-center justify-center">
+            <div className="flex gap-1">
+              {Array.from({ length: 7 }).map((_, i) => (
+                <div
+                  key={`weekday-skeleton-${i}`}
+                  className="h-6 w-16 animate-pulse rounded bg-muted"
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+        <div className="relative scrollbar-none flex-1 overflow-auto bg-background/50">
+          <div className="flex h-full">
+            <div className="w-16">
+              {Array.from({ length: 24 }).map((_, i) => (
+                <div key={`time-slot-${i}`} className="h-20" />
+              ))}
+            </div>
+            <div className="flex-1">
+              <div className="grid h-full grid-cols-7">
+                {Array.from({ length: 7 }).map((_, colIndex) => (
+                  <div key={`calendar-col-${colIndex}`}>
+                    {Array.from({ length: 24 }).map((_, rowIndex) => (
+                      <div
+                        key={`calendar-cell-${colIndex}-${rowIndex}`}
+                        className="h-20"
+                      />
+                    ))}
                   </div>
-                </div>
+                ))}
               </div>
-              <div className="scrollbar-none relative flex-1 overflow-auto bg-background/50">
-                <div className="flex h-full">
-                                     <div className="w-16">
-                     {Array.from({ length: 24 }).map((_, i) => (
-                       <div key={`time-slot-${i}-${Date.now()}`} className="h-20" />
-                     ))}
-                   </div>
-                   <div className="flex-1">
-                     <div className="grid h-full grid-cols-7">
-                       {Array.from({ length: 7 }).map((_, colIndex) => (
-                         <div key={`calendar-col-${colIndex}-${Date.now()}`}>
-                           {Array.from({ length: 24 }).map((_, rowIndex) => (
-                             <div
-                               key={`calendar-cell-${colIndex}-${rowIndex}-${Date.now()}`}
-                               className="h-20"
-                             />
-                           ))}
-                         </div>
-                       ))}
-                     </div>
-                   </div>
-                </div>
-              </div>
-            </>
-          ) : (
-            <>
-              {view !== 'month' && (
-                <div className="bg-background/50">
-                  <WeekdayBar locale={locale} view={view} dates={dates} />
-                </div>
-              )}
-              <div className="scrollbar-none relative flex-1 overflow-auto bg-background/50">
-                <div className="flex h-full items-center justify-center">
-                  <div className="flex flex-col items-center gap-4">
-                    <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-                    <p className="text-muted-foreground text-sm">
-                      {isLoading
-                        ? 'Loading calendar data...'
-                        : 'Syncing calendar...'}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </>
-          )
-        )}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

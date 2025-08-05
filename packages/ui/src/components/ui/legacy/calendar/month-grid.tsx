@@ -80,7 +80,7 @@ export function Month({ hasGrid, month, year }: MonthProps) {
       {hasGrid || <div>{months[month]}</div>}
       <div
         className={`${
-          hasGrid ? `border-zinc-800 border-t border-l` : ``
+          hasGrid ? `border-t border-l border-zinc-800` : ``
         } grid grid-cols-7`}
       >
         {getMonthDays().map((date, _index) => (

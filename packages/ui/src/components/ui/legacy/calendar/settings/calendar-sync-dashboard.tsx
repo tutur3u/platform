@@ -1,12 +1,12 @@
 'use client';
 
+import type { SyncLog, Workspace } from './types';
 import { Button } from '@tuturuuu/ui/button';
 import { AnalyticsCharts } from '@tuturuuu/ui/legacy/calendar/settings/analytics-charts';
 import { SummaryCards } from '@tuturuuu/ui/legacy/calendar/settings/summary-cards';
 import { SyncLogsTable } from '@tuturuuu/ui/legacy/calendar/settings/sync-logs-table';
 import { Calendar, Download, RefreshCw } from 'lucide-react';
 import { useMemo, useState } from 'react';
-import type { SyncLog, Workspace } from './types';
 
 // Mock data for workspaces
 const workspaces: Workspace[] = [
@@ -255,7 +255,7 @@ export function CalendarSyncDashboard() {
               <Calendar className="h-5 w-5 text-white" />
             </div>
             <div>
-              <h1 className="font-semibold text-xl">Calendar Sync Dashboard</h1>
+              <h1 className="text-xl font-semibold">Calendar Sync Dashboard</h1>
               <p className="text-sm opacity-70">
                 Monitor workspace calendar synchronization
               </p>

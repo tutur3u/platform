@@ -94,7 +94,7 @@ export function CalendarHeader({
     <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex items-center gap-2">
         {sidebarToggleButton}
-        <h2 className="font-semibold text-xl tracking-tight">{title}</h2>
+        <h2 className="text-xl font-semibold tracking-tight">{title}</h2>
       </div>
       <div className="flex flex-col gap-2 md:flex-row md:items-center">
         <div className="flex items-center gap-2">

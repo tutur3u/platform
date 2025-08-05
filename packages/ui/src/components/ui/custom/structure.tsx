@@ -103,16 +103,17 @@ export function Structure({
                   )}
                 >
                   {sidebarHeader}
-                  {!hideSidebarSizeToggle && (isCollapsed || (
-                    <Button
-                      size="icon"
-                      variant="outline"
-                      className="h-auto w-auto flex-none rounded-lg p-2 md:hidden"
-                      onClick={() => setIsCollapsed(!isCollapsed)}
-                    >
-                      <X className="h-5 w-5" />
-                    </Button>
-                  ))}
+                  {!hideSidebarSizeToggle &&
+                    (isCollapsed || (
+                      <Button
+                        size="icon"
+                        variant="outline"
+                        className="h-auto w-auto flex-none rounded-lg p-2 md:hidden"
+                        onClick={() => setIsCollapsed(!isCollapsed)}
+                      >
+                        <X className="h-5 w-5" />
+                      </Button>
+                    ))}
                 </div>
               </div>
             </div>

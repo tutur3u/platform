@@ -1,5 +1,13 @@
 'use client';
 
+import { useCalendarState } from './calendar-state-context';
+import AddEventButton from './components/add-event-button';
+import AddEventModal from './components/add-event-dialog';
+import AutoScheduleComprehensiveDialog from './components/auto-schedule-comprehensive-dialog';
+import CalendarSidebar from './components/calendar-sidebar';
+import TasksSidebarContent from './components/tasks-sidebar-content';
+import TestEventGeneratorButton from './components/test-event-generator-button';
+import { DEV_MODE, TASKS_LIMIT } from '@/constants/common';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type {
   Workspace,
@@ -23,15 +31,6 @@ import {
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useState, useCallback } from 'react';
-import { DEV_MODE, TASKS_LIMIT } from '@/constants/common';
-
-import { useCalendarState } from './calendar-state-context';
-import AddEventButton from './components/add-event-button';
-import AddEventModal from './components/add-event-dialog';
-import AutoScheduleComprehensiveDialog from './components/auto-schedule-comprehensive-dialog';
-import CalendarSidebar from './components/calendar-sidebar';
-import TasksSidebarContent from './components/tasks-sidebar-content';
-import TestEventGeneratorButton from './components/test-event-generator-button';
 
 interface CalendarPageClientProps {
   wsId: string;
@@ -100,10 +99,6 @@ export default function CalendarPageClient({
     enabled: othersSidebarOpen, // Only fetch when sidebar is open
     staleTime: 30000, // Cache for 30 seconds
   });
-
-
-
-
 
   const openAddEventDialog = () => setIsAddEventModalOpen(true);
   const closeAddEventDialog = () => setIsAddEventModalOpen(false);
@@ -217,10 +212,6 @@ export default function CalendarPageClient({
     </div>
   );
 
-
-
-
-
   return (
     <div className="calendar-container h-full flex flex-col">
       {/* Sticky Header - Above Everything */}
@@ -228,51 +219,47 @@ export default function CalendarPageClient({
         <div className="p-4">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-2">
-              <div className="ml-1">
-                {sidebarToggleButton}
-              </div>
-              <div className="flex items-center gap-1">
-                <h2 className="font-semibold text-xl tracking-tight ml-1">
-                  {date.toLocaleDateString('en-US', {
-                    month: 'long',
-                    year: 'numeric',
-                  })}
-                </h2>
-                {/* Navigation Controls */}
-                <div className="flex items-center gap-2 ml-2">
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={handlePrev}
-                    aria-label="Previous period"
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={handleNext}
-                    aria-label="Next period"
-                  >
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={selectToday}
-                    disabled={isToday() || isCurrent4DayPeriod()}
-                  >
-                    {view === 'day'
-                      ? t('today')
-                      : view === 'week'
-                        ? t('this-week')
-                        : view === 'month'
-                          ? t('this-month')
-                          : t('current')}
-                  </Button>
-                </div>
+              {sidebarToggleButton}
+              <h2 className="font-semibold text-xl tracking-tight">
+                {date.toLocaleDateString('en-US', {
+                  month: 'long',
+                  year: 'numeric',
+                })}
+              </h2>
+              {/* Navigation Controls */}
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={handlePrev}
+                  aria-label="Previous period"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={handleNext}
+                  aria-label="Next period"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={selectToday}
+                  disabled={isToday() || isCurrent4DayPeriod()}
+                >
+                  {view === 'day'
+                    ? t('today')
+                    : view === 'week'
+                      ? t('this-week')
+                      : view === 'month'
+                        ? t('this-month')
+                        : t('current')}
+                </Button>
               </div>
             </div>
             <div className="flex flex-col gap-2 md:flex-row md:items-center">
@@ -303,56 +290,56 @@ export default function CalendarPageClient({
         </div>
       </div>
 
-        {/* Main Content Area - Three Column Layout */}
-        <div className="flex-1 flex w-full overflow-hidden pb-6">
-          {/* Left Sidebar */}
-          {calendarSidebarOpen && (
-            <div className="w-[261px] border-r bg-background/50">
-              <CalendarSidebar />
-            </div>
-          )}
-          
-          {/* Center Calendar View */}
-          <div className="flex-1">
-            <SmartCalendar
-              t={t}
+      {/* Main Content Area - Three Column Layout */}
+      <div className="flex-1 flex w-full overflow-hidden pb-6">
+        {/* Left Sidebar */}
+        {calendarSidebarOpen && (
+          <div className="w-[261px] border-r bg-background/50">
+            <CalendarSidebar />
+          </div>
+        )}
+        
+        {/* Center Calendar View */}
+        <div className="flex-1">
+          <SmartCalendar
+            t={t}
+            locale={locale}
+            workspace={workspace}
+            useQuery={useQuery}
+            useQueryClient={useQueryClient}
+            experimentalGoogleToken={
+              experimentalGoogleToken?.ws_id === workspace.id
+                ? experimentalGoogleToken
+                : null
+            }
+            enableHeader={false}
+            extras={extras}
+            sidebarToggleButton={sidebarToggleButton}
+            externalState={{
+              date,
+              setDate,
+              view,
+              setView,
+              availableViews,
+            }}
+          />
+        </div>
+
+        {/* Right Sidebar */}
+        {othersSidebarOpen && (
+          <div className="w-80 border-l bg-background/50">
+            <TasksSidebarContent
+              wsId={workspace.id}
               locale={locale}
-              workspace={workspace}
-              useQuery={useQuery}
-              useQueryClient={useQueryClient}
-              experimentalGoogleToken={
-                experimentalGoogleToken?.ws_id === workspace.id
-                  ? experimentalGoogleToken
-                  : null
-              }
-              enableHeader={false}
-              extras={extras}
-              sidebarToggleButton={sidebarToggleButton}
-              externalState={{
-                date,
-                setDate,
-                view,
-                setView,
-                availableViews,
-              }}
+              tasks={tasksData?.tasks || []}
+              hasKeys={aiChatData?.hasKeys || { openAI: false, anthropic: false, google: false }}
+              chats={aiChatData?.chats || []}
+              count={aiChatData?.count || 0}
+              hasAiChatAccess={aiChatData?.hasAiChatAccess || false}
             />
           </div>
-
-          {/* Right Sidebar */}
-          {othersSidebarOpen && (
-            <div className="w-80 border-l bg-background/50">
-              <TasksSidebarContent
-                wsId={workspace.id}
-                locale={locale}
-                tasks={tasksData?.tasks || []}
-                hasKeys={aiChatData?.hasKeys || { openAI: false, anthropic: false, google: false }}
-                chats={aiChatData?.chats || []}
-                count={aiChatData?.count || 0}
-                hasAiChatAccess={aiChatData?.hasAiChatAccess || false}
-              />
-            </div>
-          )}
-        </div>
+        )}
+      </div>
       <AddEventModal
         wsId={workspace.id}
         isOpen={isAddEventModalOpen}
