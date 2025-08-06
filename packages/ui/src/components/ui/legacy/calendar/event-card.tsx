@@ -17,6 +17,7 @@ import {
   Trash2,
   Unlock,
 } from 'lucide-react';
+import Image from 'next/image';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useCalendar } from '../../../../hooks/use-calendar';
 import {
@@ -75,6 +76,7 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
   const { updateEvent, hideModal, openModal, deleteEvent, settings } =
     useCalendar();
   const tz = settings?.timezone?.timezone;
+  const timeFormat = settings?.appearance?.timeFormat;
 
   // Local state for immediate UI updates
   const [localEvent, setLocalEvent] = useState<CalendarEvent>(event);
@@ -106,7 +108,7 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
   // const durationMinutes = Math.round(durationMs / (1000 * 60));
 
   // Refs for DOM elements
-  const cardRef = useRef<HTMLDivElement>(null);
+  const cardRef = useRef<HTMLButtonElement>(null);
   const handleRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
 
@@ -314,7 +316,7 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
       const hasOverlaps = overlapCount > 1;
 
       // Width calculation based on overlap count
-      let eventWidth, eventLeft;
+      let eventWidth: number, eventLeft: number;
 
       if (hasOverlaps) {
         // Calculate the position of this event within its overlap group
@@ -851,8 +853,6 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
 
   // Format time for display
   const formatEventTime = (date: Date | dayjs.Dayjs) => {
-    const { settings } = useCalendar();
-    const timeFormat = settings.appearance.timeFormat;
     const d = dayjs.isDayjs(date)
       ? date
       : tz === 'auto'
@@ -913,9 +913,10 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
   return (
     <ContextMenu>
       <ContextMenuTrigger asChild>
-        <div
+        <button
           ref={cardRef}
           id={`event-${id}`}
+          type="button"
           className={cn(
             'pointer-events-auto absolute max-w-none overflow-hidden rounded-l rounded-r-md border-l-2 transition-colors duration-300 select-none',
             'group transition-all hover:ring-1 focus:outline-none',
@@ -941,8 +942,18 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
           }}
           onMouseEnter={() => setIsHovering(true)}
           onMouseLeave={() => setIsHovering(false)}
-          tabIndex={0}
           onClick={(e) => {
+            // Check if the click was on the edit button area
+            const target = e.target as HTMLElement;
+            const isEditButton = target.closest('[data-edit-button="true"]');
+            
+            if (isEditButton) {
+              e.stopPropagation();
+              e.preventDefault();
+              openModal(event._originalId || id);
+              return;
+            }
+
             // Only open modal if we haven't just finished dragging or resizing
             if (!wasDraggedRef.current && !wasResizedRef.current) {
               e.stopPropagation();
@@ -954,7 +965,19 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
             wasDraggedRef.current = false;
             wasResizedRef.current = false;
           }}
-          role="button"
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              // Only open modal if we haven't just finished dragging or resizing
+              if (!wasDraggedRef.current && !wasResizedRef.current) {
+                openModal(event._originalId || id);
+              }
+
+              // Reset state flags
+              wasDraggedRef.current = false;
+              wasResizedRef.current = false;
+            }
+          }}
           aria-label={`Event: ${title || 'Untitled event'}`}
         >
           {/* Continuation indicators for multi-day events */}
@@ -972,6 +995,7 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
 
           {/* Edit button overlay */}
           <div
+            data-edit-button="true"
             className={cn(
               'absolute top-2 right-2 rounded-full p-0.5 opacity-0 shadow-sm',
               'z-10 transition-opacity group-hover:opacity-100', // Higher z-index
@@ -980,11 +1004,6 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
                   isDragging || isResizing || updateStatus !== 'idle',
               } // Hide during interaction or status updates
             )}
-            onClick={(e) => {
-              e.stopPropagation();
-              e.preventDefault();
-              openModal(event._originalId || id);
-            }}
           >
             <Pencil className="h-3 w-3" />
           </div>
@@ -1043,15 +1062,19 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
                 )}
                 {typeof localEvent.google_event_id === 'string' &&
                   localEvent.google_event_id.trim() !== '' && (
-                    <img
-                      src="/media/google-calendar-icon.png"
-                      alt="Google Calendar"
-                      className="mr-1 inline-block h-4 w-4 align-text-bottom"
+                    <div
+                      className="mr-1 inline-block align-text-bottom"
                       title="Synced from Google Calendar"
                       data-testid="google-calendar-logo"
-                      width={18}
-                      height={18}
-                    />
+                    >
+                      <Image
+                        src="/media/google-calendar-icon.png"
+                        alt="Google Calendar"
+                        className="h-4 w-4"
+                        width={18}
+                        height={18}
+                      />
+                    </div>
                   )}
                 <span className="min-w-0 overflow-hidden text-ellipsis">
                   {localEvent.title || 'Untitled event'}
@@ -1094,10 +1117,10 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
                 'absolute inset-x-0 bottom-0 cursor-s-resize hover:bg-primary/20',
                 'h-2 transition-colors'
               )}
-              aria-label="Resize event"
+              title="Resize event"
             />
           )}
-        </div>
+        </button>
       </ContextMenuTrigger>
       <ContextMenuContent className="w-48">
         <ContextMenuItem
