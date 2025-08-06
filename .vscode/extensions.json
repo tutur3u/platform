@@ -1,11 +1,14 @@
 {
   "recommendations": [
-    "biomejs.biome", // Biome
+    // "biomejs.biome", // Biome
+    "esbenp.prettier-vscode", // Prettier - Code formatter
+    "dbaeumer.vscode-eslint", // ESLint
     "vitest.explorer", // Vitest
     "bradlc.vscode-tailwindcss", // Tailwind CSS IntelliSense
     "pflannery.vscode-versionlens", // Version Lens
     "usernamehw.errorlens", // Error Lens
     "YoavBls.pretty-ts-errors", // Pretty TypeScript Errors
+    "aaron-bond.better-comments", // Better Comments
     "PKief.material-icon-theme" // Material Icon Theme
   ]
 }
