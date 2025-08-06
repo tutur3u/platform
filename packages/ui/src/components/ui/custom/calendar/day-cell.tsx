@@ -28,6 +28,7 @@ export const DayCell: React.FC<{
   if (!hasAttendance) {
     return (
       <button
+        type="button"
         onClick={onDateClick ? () => onDateClick(day) : undefined}
         className={cn(
           'flex flex-none justify-center rounded border bg-foreground/5 p-2 font-semibold transition duration-300 hover:cursor-pointer md:rounded-lg dark:bg-foreground/10',
@@ -48,6 +49,7 @@ export const DayCell: React.FC<{
       <Tooltip>
         <TooltipTrigger asChild>
           <button
+            type="button"
             onClick={onDateClick ? () => onDateClick(day) : undefined}
             className={cn(
               'flex flex-none cursor-pointer justify-center rounded border p-2 font-semibold transition duration-300 md:rounded-lg',
@@ -65,7 +67,7 @@ export const DayCell: React.FC<{
         <TooltipContent>
           {getAttendanceGroupNames(day, attendanceData).map(
             (groupName, idx) => (
-              <div key={groupName + idx} className="flex items-center gap-1">
+              <div key={`${groupName}-${day.getTime()}-${idx}`} className="flex items-center gap-1">
                 <span className="text-xs font-semibold">{groupName}</span>
               </div>
             )
