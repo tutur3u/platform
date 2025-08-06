@@ -11,61 +11,24 @@ import { NextResponse } from 'next/server';
 /**
  * Filters events by date range and status using a pipe pattern
  */
-function filterEventsByDateAndStatus(
-  events: calendar_v3.Schema$Event[],
-  startDate: Date,
-  endDate: Date
-) {
-  // Convert string dates to Date objects if needed
-  const startDateObj =
-    startDate instanceof Date ? startDate : new Date(startDate);
-  const endDateObj = endDate instanceof Date ? endDate : new Date(endDate);
-
-  console.log('🔍 [DEBUG] filterEventsByDateAndStatus called with:', {
-    eventsCount: events.length,
-    startDate: startDateObj.toISOString(),
-    endDate: endDateObj.toISOString(),
-  });
-
-  const result = events
-    .filter((event) => {
-      // Filter by date range first
-      const eventStart = event.start?.dateTime
-        ? new Date(event.start.dateTime)
-        : event.start?.date
-          ? new Date(event.start.date)
-          : null;
-
-      const eventEnd = event.end?.dateTime
-        ? new Date(event.end.dateTime)
-        : event.end?.date
-          ? new Date(event.end.date)
-          : null;
-
-      // If event has no start date, exclude it
-      if (!eventStart) return false;
-
-      // Check if event overlaps with the date range
-      const eventEndTime = eventEnd || eventStart;
-      return eventStart <= endDateObj && eventEndTime >= startDateObj;
-    })
-    .reduce(
-      (acc, event) => {
-        // Then filter by status
-        if (event.status === 'cancelled') {
-          acc.eventsToDelete.push(event);
-        } else {
-          acc.eventsToUpsert.push(event);
-        }
-        return acc;
-      },
-      {
-        eventsToUpsert: [] as calendar_v3.Schema$Event[],
-        eventsToDelete: [] as calendar_v3.Schema$Event[],
+function filterEventsByStatus(events: calendar_v3.Schema$Event[]) {
+  const result = events.reduce(
+    (acc, event) => {
+      // Then filter by status
+      if (event.status === 'cancelled') {
+        acc.eventsToDelete.push(event);
+      } else {
+        acc.eventsToUpsert.push(event);
       }
-    );
+      return acc;
+    },
+    {
+      eventsToUpsert: [] as calendar_v3.Schema$Event[],
+      eventsToDelete: [] as calendar_v3.Schema$Event[],
+    }
+  );
 
-  console.log('✅ [DEBUG] filterEventsByDateAndStatus completed:', {
+  console.log('✅ [DEBUG] filterEventsByStatus completed:', {
     originalEventsCount: events.length,
     eventsToUpsertCount: result.eventsToUpsert.length,
     eventsToDeleteCount: result.eventsToDelete.length,
@@ -336,25 +299,33 @@ export async function performIncrementalActiveSync(
 
     if (allEvents.length > 0) {
       console.log('🔍 [DEBUG] Processing events with incrementalActiveSync...');
-      const result = await incrementalActiveSync(
-        wsId,
-        allEvents,
-        startDateObj,
-        endDateObj
-      );
+      try {
+        const result = await incrementalActiveSync(
+          wsId,
+          allEvents,
+          startDateObj,
+          endDateObj
+        );
 
-      console.log('✅ [DEBUG] incrementalActiveSync completed:', {
-        eventsToUpsert: result.formattedEventsToUpsert?.length || 0,
-        eventsToDelete: result.formattedEventsToDelete?.length || 0,
-      });
+        console.log('✅ [DEBUG] incrementalActiveSync completed:', {
+          eventsToUpsert: result.formattedEventsToUpsert?.length || 0,
+          eventsToDelete: result.formattedEventsToDelete?.length || 0,
+        });
 
-      if (nextSyncToken) {
-        console.log('🔍 [DEBUG] Storing next sync token...');
-        await storeActiveSyncToken(wsId, nextSyncToken, new Date());
-        console.log('✅ [DEBUG] Next sync token stored successfully');
+        if (nextSyncToken) {
+          console.log('🔍 [DEBUG] Storing next sync token...');
+          await storeActiveSyncToken(wsId, nextSyncToken, new Date());
+          console.log('✅ [DEBUG] Next sync token stored successfully');
+        }
+
+        return result;
+      } catch (error) {
+        console.error('❌ [DEBUG] Error in incrementalActiveSync:', {
+          error: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined,
+        });
+        throw error;
       }
-
-      return result;
     }
 
     if (nextSyncToken) {
@@ -382,6 +353,8 @@ async function incrementalActiveSync(
   startDate: Date,
   endDate: Date
 ) {
+  const supabase = await createClient();
+
   // Convert string dates to Date objects if needed
   const startDateObj =
     startDate instanceof Date ? startDate : new Date(startDate);
@@ -394,12 +367,8 @@ async function incrementalActiveSync(
     endDate: endDateObj.toISOString(),
   });
 
-  // Use the pipe to filter events by date range first, then by status
-  const { eventsToUpsert, eventsToDelete } = filterEventsByDateAndStatus(
-    eventsToSync,
-    startDateObj,
-    endDateObj
-  );
+  // Use the pipe to filter events by status
+  const { eventsToUpsert, eventsToDelete } = filterEventsByStatus(eventsToSync);
 
   console.log('🔍 [DEBUG] Events filtered:', {
     eventsToUpsertCount: eventsToUpsert.length,
@@ -419,5 +388,53 @@ async function incrementalActiveSync(
     formattedEventsToDeleteCount: formattedEventsToDelete.length,
   });
 
-  return { formattedEventsToUpsert, formattedEventsToDelete };
+  if (formattedEventsToDelete && formattedEventsToDelete.length > 0) {
+    console.log('🔍 [DEBUG] Deleting events...');
+    const { data: deleteData, error: deleteError } = await supabase
+      .from('workspace_calendar_events')
+      .delete()
+      .in(
+        'id',
+        formattedEventsToDelete.map((e) => e.id)
+      );
+
+    console.log('🔍 [DEBUG] Delete result:', {
+      hasError: !!deleteError,
+      errorMessage: deleteError?.message,
+    });
+
+    if (deleteError) {
+      console.log('❌ [DEBUG] Delete error:', deleteError);
+      throw new Error(deleteError.message);
+    }
+  }
+
+  let upsertResult: { inserted: number; updated: number } = {
+    inserted: 0,
+    updated: 0,
+  };
+
+  if (formattedEventsToUpsert && formattedEventsToUpsert.length > 0) {
+    console.log('🔍 [DEBUG] Upserting events...');
+    const { data: upsertData, error: upsertError } = await supabase.rpc(
+      'upsert_calendar_events_and_count',
+      {
+        events: formattedEventsToUpsert,
+      }
+    );
+
+    console.log('🔍 [DEBUG] Upsert result:', upsertData);
+    if (upsertError) {
+      console.log('❌ [DEBUG] Upsert error:', upsertError);
+      throw new Error(upsertError.message);
+    }
+
+    upsertResult = upsertData as { inserted: number; updated: number };
+  }
+
+  return {
+    eventsInserted: upsertResult?.inserted || 0,
+    eventsUpdated: upsertResult?.updated || 0,
+    eventsDeleted: formattedEventsToDelete?.length || 0,
+  };
 }

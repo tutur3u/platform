@@ -100,7 +100,7 @@ export async function POST(request: Request) {
 
     // 4. Fetch eventsToUpsert and eventsToDelete from incremental active sync
     console.log('🔍 [DEBUG] Calling performIncrementalActiveSync...');
-    const { formattedEventsToUpsert, formattedEventsToDelete } =
+    const { eventsInserted, eventsUpdated, eventsDeleted } =
       await performIncrementalActiveSync(
         wsId,
         user.id,
@@ -110,60 +110,10 @@ export async function POST(request: Request) {
       );
 
     console.log('✅ [DEBUG] performIncrementalActiveSync completed:', {
-      eventsToUpsertCount: formattedEventsToUpsert?.length || 0,
-      eventsToDeleteCount: formattedEventsToDelete?.length || 0,
+      eventsInserted,
+      eventsUpdated,
+      eventsDeleted,
     });
-
-    // 5. Delete eventsToDelete
-    if (formattedEventsToDelete && formattedEventsToDelete.length > 0) {
-      console.log('🔍 [DEBUG] Deleting events...');
-      const { error: deleteError } = await supabase
-        .from('workspace_calendar_events')
-        .delete()
-        .in(
-          'id',
-          formattedEventsToDelete.map((e) => e.id)
-        );
-
-      console.log('🔍 [DEBUG] Delete result:', {
-        hasError: !!deleteError,
-        errorMessage: deleteError?.message,
-      });
-
-      if (deleteError) {
-        console.log('❌ [DEBUG] Delete error:', deleteError);
-        return NextResponse.json(
-          { error: deleteError.message },
-          { status: 500 }
-        );
-      }
-    }
-
-    // 6. Upsert eventsToUpsert
-    let upsertResult: { inserted: number; updated: number } = {
-      inserted: 0,
-      updated: 0,
-    };
-    if (formattedEventsToUpsert && formattedEventsToUpsert.length > 0) {
-      console.log('🔍 [DEBUG] Upserting events...');
-      const { data: upsertData, error: upsertError } = await supabase.rpc(
-        'upsert_calendar_events_and_count',
-        {
-          events: formattedEventsToUpsert,
-        }
-      );
-
-      console.log('🔍 [DEBUG] Upsert result:', upsertData);
-      if (upsertError) {
-        console.log('❌ [DEBUG] Upsert error:', upsertError);
-        return NextResponse.json(
-          { error: upsertError.message },
-          { status: 500 }
-        );
-      }
-
-      upsertResult = upsertData as { inserted: number; updated: number };
-    }
 
     console.log('🔍 [DEBUG] Updating last upsert...');
     await updateLastUpsert(wsId, supabase);
@@ -174,9 +124,9 @@ export async function POST(request: Request) {
       const { error: updateDashboardError } = await sbAdmin
         .from('calendar_sync_dashboard')
         .update({
-          inserted_events: upsertResult?.inserted || 0,
-          updated_events: upsertResult?.updated || 0,
-          deleted_events: formattedEventsToDelete?.length || 0,
+          inserted_events: eventsInserted,
+          updated_events: eventsUpdated,
+          deleted_events: eventsDeleted,
           status: 'completed',
           end_time: new Date().toISOString(),
         })
@@ -199,9 +149,9 @@ export async function POST(request: Request) {
     console.log('✅ [DEBUG] Returning success response');
     return NextResponse.json({
       success: true,
-      inserted: upsertResult?.inserted || 0,
-      updated: upsertResult?.updated || 0,
-      deleted: formattedEventsToDelete?.length || 0,
+      inserted: eventsInserted,
+      updated: eventsUpdated,
+      deleted: eventsDeleted,
     });
   } catch (error) {
     console.error('❌ [DEBUG] Route error:', {
