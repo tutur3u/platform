@@ -315,6 +315,7 @@
         "@tuturuuu/ai": "workspace:*",
         "@tuturuuu/apis": "workspace:*",
         "@tuturuuu/auth": "workspace:*",
+        "@tuturuuu/google": "workspace:*",
         "@tuturuuu/payment": "workspace:*",
         "@tuturuuu/supabase": "workspace:*",
         "@tuturuuu/transactional": "workspace:*",
@@ -333,8 +334,6 @@
         "date-fns": "^4.1.0",
         "dayjs": "^1.11.13",
         "framer-motion": "^12.23.12",
-        "google-auth-library": "^10.2.1",
-        "googleapis": "^154.1.0",
         "html2canvas-pro": "^1.5.11",
         "isomorphic-dompurify": "^2.26.0",
         "jotai": "^2.13.0",
@@ -550,6 +549,25 @@
         "vite": "^7.0.6",
       },
     },
+    "packages/google": {
+      "name": "@tuturuuu/google",
+      "version": "0.0.1",
+      "dependencies": {
+        "google-auth-library": "^10.2.1",
+        "googleapis": "^155.0.0",
+      },
+      "devDependencies": {
+        "@tuturuuu/eslint-config": "workspace:*",
+        "@tuturuuu/types": "workspace:*",
+        "@tuturuuu/typescript-config": "workspace:*",
+        "@types/node": "^24.2.0",
+        "@types/react": "^19.1.9",
+        "@vitejs/plugin-react": "^4.7.0",
+        "@vitest/coverage-v8": "^3.2.4",
+        "typescript": "^5.9.2",
+        "vite": "^7.0.6",
+      },
+    },
     "packages/payment": {
       "name": "@tuturuuu/payment",
       "version": "0.1.0",
@@ -608,12 +626,11 @@
       "dependencies": {
         "@supabase/supabase-js": "^2.53.0",
         "@trigger.dev/sdk": "^3.3.17",
+        "@tuturuuu/google": "workspace:*",
         "@tuturuuu/supabase": "workspace:*",
         "@tuturuuu/types": "workspace:*",
         "@tuturuuu/utils": "workspace:*",
         "dayjs": "^1.11.13",
-        "google-auth-library": "^10.2.1",
-        "googleapis": "^154.1.0",
       },
       "devDependencies": {
         "@trigger.dev/build": "^3.3.17",
@@ -1913,6 +1930,8 @@
 
     "@tuturuuu/games": ["@tuturuuu/games@workspace:packages/games"],
 
+    "@tuturuuu/google": ["@tuturuuu/google@workspace:packages/google"],
+
     "@tuturuuu/nova": ["@tuturuuu/nova@workspace:apps/nova"],
 
     "@tuturuuu/payment": ["@tuturuuu/payment@workspace:packages/payment"],
@@ -2819,7 +2838,7 @@
 
     "google-logging-utils": ["google-logging-utils@1.1.1", "", {}, "sha512-rcX58I7nqpu4mbKztFeOAObbomBbHU2oIb/d3tJfF3dizGSApqtSwYJigGCooHdnMyQBIw8BrWyK96w3YXgr6A=="],
 
-    "googleapis": ["googleapis@154.1.0", "", { "dependencies": { "google-auth-library": "^10.1.0", "googleapis-common": "^8.0.0" } }, "sha512-lsgKftflkjR+PNdKDjy5e4zZUQO3BMaNLO0Q91uvr9YCy3aOqtEwkDtfhcBguFtFLsqj+XjdfDu2on6rtHNvYg=="],
+    "googleapis": ["googleapis@155.0.0", "", { "dependencies": { "google-auth-library": "^10.2.0", "googleapis-common": "^8.0.0" } }, "sha512-aGZrkCjd3UNatRDj/8NFumS3OtvkNVUn3PjeNydXGydi8U751V4KTXFAOivXKgNzMhGZXML6xzdybVVVKGkPJw=="],
 
     "googleapis-common": ["googleapis-common@8.0.0", "", { "dependencies": { "extend": "^3.0.2", "gaxios": "^7.0.0-rc.4", "google-auth-library": "^10.1.0", "qs": "^6.7.0", "url-template": "^2.0.8" } }, "sha512-66if47It7y+Sab3HMkwEXx1kCq9qUC9px8ZXoj1CMrmLmUw81GpbnsNlXnlyZyGbGPGcj+tDD9XsZ23m7GLaJQ=="],
 
