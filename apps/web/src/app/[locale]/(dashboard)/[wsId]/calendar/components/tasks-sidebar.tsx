@@ -22,7 +22,7 @@ export default async function TasksSidebar({
   locale,
 }: TasksSidebarProps) {
   const user = await getCurrentUser();
-  
+
   if (!user?.id) {
     return <div>Error: User not found</div>;
   }
@@ -62,6 +62,7 @@ export default async function TasksSidebar({
   return (
     <TasksSidebarContent
       wsId={wsId}
+      assigneeId={user.id}
       tasks={assignedTasks}
       hasKeys={hasKeys}
       chats={chats}

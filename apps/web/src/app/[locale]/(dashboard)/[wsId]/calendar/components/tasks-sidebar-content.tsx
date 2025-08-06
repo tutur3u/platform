@@ -4,6 +4,7 @@ import Chat from '../../chat/chat';
 import type { ExtendedWorkspaceTask } from '../../time-tracker/types';
 import ActionsDropdown from './actions-dropdown';
 import PriorityDropdown from './priority-dropdown';
+import { getAssignedTasks } from './task-fetcher';
 import TimeTracker from './time-tracker';
 import type { AIChat } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
@@ -13,6 +14,7 @@ import {
   Calendar,
   CheckCircle2,
   LayoutDashboard,
+  Loader2,
   PanelLeftClose,
   PanelRightClose,
   Search,
@@ -20,9 +22,11 @@ import {
 } from '@tuturuuu/ui/icons';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { useState } from 'react';
+import { useDebouncedCallback } from 'use-debounce';
 
 interface TasksSidebarContentProps {
   wsId: string;
+  assigneeId: string;
   tasks?: ExtendedWorkspaceTask[]; // Accept tasks as a prop
   hasKeys?: { openAI: boolean; anthropic: boolean; google: boolean };
   chats?: AIChat[];
@@ -33,6 +37,7 @@ interface TasksSidebarContentProps {
 
 export default function TasksSidebarContent({
   wsId,
+  assigneeId,
   tasks = [],
   hasKeys = { openAI: false, anthropic: false, google: false },
   chats = [],
@@ -125,7 +130,7 @@ export default function TasksSidebarContent({
             className="m-0 flex min-h-0 flex-1 flex-col space-y-4 overflow-y-auto p-4 pb-2 duration-300 animate-in fade-in-50"
           >
             <div className="mx-auto w-full max-w-lg p-0">
-              <PriorityView allTasks={tasks} />
+              <PriorityView allTasks={tasks} assigneeId={assigneeId} />
             </div>
           </TabsContent>
 
@@ -155,9 +160,20 @@ export default function TasksSidebarContent({
 }
 
 // Add PriorityView component for the new tab
-function PriorityView({ allTasks }: { allTasks: ExtendedWorkspaceTask[] }) {
+function PriorityView({
+  allTasks,
+  assigneeId,
+}: {
+  allTasks: ExtendedWorkspaceTask[];
+  assigneeId: string;
+}) {
   const [search, setSearch] = useState('');
   const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [searchResults, setSearchResults] = useState<ExtendedWorkspaceTask[]>(
+    []
+  );
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
 
   const PRIORITY_LABELS = {
     low: 'Low priority',
@@ -182,6 +198,33 @@ function PriorityView({ allTasks }: { allTasks: ExtendedWorkspaceTask[] }) {
     critical: '😡',
   };
 
+  // Debounced search function
+  const debouncedSearch = useDebouncedCallback(async (searchQuery: string) => {
+    if (!searchQuery.trim()) {
+      setSearchResults([]);
+      setIsSearching(false);
+      setSearchError(null);
+      return;
+    }
+
+    setIsSearching(true);
+    setSearchError(null);
+
+    try {
+      const results = await getAssignedTasks(assigneeId, searchQuery.trim());
+      setSearchResults(results);
+    } catch (error) {
+      console.error('Error searching tasks:', error);
+      setSearchError('Failed to search tasks');
+      setSearchResults([]);
+    } finally {
+      setIsSearching(false);
+    }
+  }, 500);
+
+  // Combine all tasks with search results (avoiding duplicates)
+  const combinedTasks = search.trim() ? searchResults : allTasks;
+
   // Group tasks by priority
   const grouped: { [key: string]: ExtendedWorkspaceTask[] } = {
     low: [],
@@ -190,7 +233,7 @@ function PriorityView({ allTasks }: { allTasks: ExtendedWorkspaceTask[] }) {
     critical: [],
   };
 
-  allTasks?.forEach((task) => {
+  combinedTasks?.forEach((task) => {
     const priority = task.user_defined_priority || 'normal';
     if (grouped[priority]) {
       grouped[priority].push(task);
@@ -198,19 +241,6 @@ function PriorityView({ allTasks }: { allTasks: ExtendedWorkspaceTask[] }) {
       grouped.normal?.push(task);
     }
   });
-
-  // Filter by search
-  const filteredGrouped = Object.fromEntries(
-    Object.entries(grouped).map(([key, tasks]) => [
-      key,
-      tasks.filter((task) =>
-        search
-          ? task.name?.toLowerCase().includes(search.toLowerCase()) ||
-            task.description?.toLowerCase().includes(search.toLowerCase())
-          : true
-      ),
-    ])
-  );
 
   const handlePriorityChange = async (taskId: string, newPriority: string) => {
     // TODO: Implement API call to update task priority
@@ -257,7 +287,7 @@ function PriorityView({ allTasks }: { allTasks: ExtendedWorkspaceTask[] }) {
   return (
     <div className="space-y-4">
       {/* Enhanced Search */}
-      <div className="relative mb-6" style={{ marginLeft: '-1rem' }}>
+      <div className="relative mb-6">
         <div
           className={`relative overflow-hidden rounded-xl border transition-all duration-300 ${
             isSearchFocused
@@ -266,16 +296,23 @@ function PriorityView({ allTasks }: { allTasks: ExtendedWorkspaceTask[] }) {
           }`}
         >
           <div className="flex items-center">
-            <Search
-              className={`ml-3 h-4 w-4 transition-colors duration-200 ${
-                isSearchFocused ? 'text-blue-500' : 'text-muted-foreground'
-              }`}
-            />
+            {isSearching ? (
+              <Loader2 className="ml-3 h-4 w-4 animate-spin text-blue-500" />
+            ) : (
+              <Search
+                className={`ml-3 h-4 w-4 transition-colors duration-200 ${
+                  isSearchFocused ? 'text-blue-500' : 'text-muted-foreground'
+                }`}
+              />
+            )}
             <input
               className="w-full bg-transparent px-3 py-3 text-sm placeholder-muted-foreground outline-none"
               placeholder="Search tasks..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                debouncedSearch(e.target.value);
+              }}
               onFocus={() => setIsSearchFocused(true)}
               onBlur={() => setIsSearchFocused(false)}
             />
@@ -284,12 +321,17 @@ function PriorityView({ allTasks }: { allTasks: ExtendedWorkspaceTask[] }) {
             <div className="absolute inset-0 -z-10 animate-pulse bg-gradient-to-r from-blue-500/5 to-purple-500/5" />
           )}
         </div>
+        {searchError && (
+          <div className="mt-2 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600 dark:bg-red-900/20 dark:text-red-400">
+            {searchError}
+          </div>
+        )}
       </div>
 
       {/* Priority Groups */}
       <div className="space-y-4">
         {Object.entries(PRIORITY_LABELS).map(([key, label], index) => {
-          const tasks = filteredGrouped[key] || [];
+          const tasks = grouped[key] || [];
           const colorClasses =
             PRIORITY_COLORS[key as keyof typeof PRIORITY_COLORS];
           const icon = PRIORITY_ICONS[key as keyof typeof PRIORITY_ICONS];
