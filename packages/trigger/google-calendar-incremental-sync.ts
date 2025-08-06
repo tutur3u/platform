@@ -7,7 +7,7 @@ import {
   syncWorkspaceBatched,
 } from './google-calendar-sync';
 import { schedules, task } from '@trigger.dev/sdk/v3';
-import { google } from '@tuturuuu/google/core';
+import { google } from '@tuturuuu/google';
 
 async function performIncrementalSyncForWorkspace(
   calendarId = 'primary',

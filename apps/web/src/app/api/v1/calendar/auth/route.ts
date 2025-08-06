@@ -1,4 +1,4 @@
-import { OAuth2Client } from '@tuturuuu/google/core';
+import { OAuth2Client } from '@tuturuuu/google';
 import { type NextRequest, NextResponse } from 'next/server';
 
 export async function GET(request: NextRequest) {

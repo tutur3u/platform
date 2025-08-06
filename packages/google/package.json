@@ -9,19 +9,11 @@
     "lint": "eslint ."
   },
   "exports": {
-    "./core": "./src/core/index.ts"
+    ".": "./src/core/index.ts"
   },
   "dependencies": {
-    "@tuturuuu/supabase": "workspace:*",
-    "clsx": "^2.1.1",
     "googleapis": "^155.0.0",
-    "google-auth-library": "^10.2.1",
-    "next": "^15.4.5",
-    "react": "^19.1.1",
-    "react-dom": "^19.1.1",
-    "tailwind-merge": "^3.3.1",
-    "uuid": "^11.1.0",
-    "zod": "^4.0.15"
+    "google-auth-library": "^10.2.1"
   },
   "devDependencies": {
     "@tuturuuu/eslint-config": "workspace:*",

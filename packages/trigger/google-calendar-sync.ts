@@ -1,4 +1,4 @@
-import { OAuth2Client } from '@tuturuuu/google/core';
+import { OAuth2Client } from '@tuturuuu/google';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { convertGoogleAllDayEvent } from '@tuturuuu/ui/hooks/calendar-utils';
 import { updateLastUpsert } from '@tuturuuu/utils/calendar-sync-coordination';

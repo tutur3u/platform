@@ -6,7 +6,7 @@ import {
   syncWorkspaceBatched,
 } from './google-calendar-sync';
 import { task } from '@trigger.dev/sdk/v3';
-import { google } from '@tuturuuu/google/core';
+import { google } from '@tuturuuu/google';
 import dayjs from 'dayjs';
 
 export async function performFullSyncForWorkspace(

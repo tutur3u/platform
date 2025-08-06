@@ -1,4 +1,4 @@
-import { OAuth2Client } from '@tuturuuu/google/core';
+import { OAuth2Client } from '@tuturuuu/google';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { performFullSyncForWorkspace } from '@tuturuuu/trigger';
 import { NextResponse } from 'next/server';
