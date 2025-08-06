@@ -8,6 +8,7 @@ import type {
   WorkspaceCalendarGoogleToken,
 } from '@tuturuuu/types/db';
 
+
 export const SmartCalendar = ({
   t,
   locale,
@@ -24,10 +25,10 @@ export const SmartCalendar = ({
   onSidebarToggle,
   sidebarToggleButton,
 }: {
-  t: any;
+  t: (key: string, values?: Record<string, unknown>) => string;
   locale: string;
-  useQuery: any;
-  useQueryClient: any;
+  useQuery: unknown;
+  useQueryClient: unknown;
   workspace?: Workspace;
   disabled?: boolean;
   initialSettings?: Partial<CalendarSettings>;
