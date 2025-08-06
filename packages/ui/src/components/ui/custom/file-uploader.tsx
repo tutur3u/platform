@@ -138,7 +138,7 @@ export function FileUploader(props: FileUploaderProps) {
         });
       }
     },
-    [files, maxFileCount, multiple, onUpload, setFiles]
+    [files, maxFileCount, multiple, setFiles]
   );
 
   function onRemove(index: number) {
@@ -227,7 +227,7 @@ export function FileUploader(props: FileUploaderProps) {
           <div className="flex max-h-48 flex-col gap-1 py-4">
             {files?.map((file, index) => (
               <FileCard
-                key={index}
+                key={`${file.rawFile.name}-${index}`}
                 file={file}
                 onRemove={() => onRemove(index)}
               />
@@ -330,13 +330,13 @@ function FilePreview({ file }: { file: StatedFile }) {
     <>
       {isImage && (
         <a href={file.url} target="_blank" rel="noopener noreferrer">
-          <img
-            src={file.url}
-            alt={file.rawFile.name}
-            width={48}
-            height={48}
-            loading="lazy"
-            className="rounded-md object-cover"
+          <div
+            className="size-12 rounded-md bg-cover bg-center bg-no-repeat"
+            style={{
+              backgroundImage: `url(${file.url})`,
+            }}
+            role="img"
+            aria-label={file.rawFile.name}
           />
         </a>
       )}
