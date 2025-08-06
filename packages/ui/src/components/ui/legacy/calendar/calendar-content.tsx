@@ -471,7 +471,7 @@ export const CalendarContent = ({
             <div className="flex gap-1">
               {Array.from({ length: 7 }).map((_, i) => (
                 <div
-                  key={`weekday-skeleton-${i}`}
+                  key={`weekday-skeleton-${['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'][i]}`}
                   className="h-6 w-16 animate-pulse rounded bg-muted"
                 />
               ))}
@@ -482,16 +482,16 @@ export const CalendarContent = ({
           <div className="flex h-full">
             <div className="w-16">
               {Array.from({ length: 24 }).map((_, i) => (
-                <div key={`time-slot-${i}`} className="h-20" />
+                <div key={`time-slot-${String(i).padStart(2, '0')}:00`} className="h-20" />
               ))}
             </div>
             <div className="flex-1">
               <div className="grid h-full grid-cols-7">
                 {Array.from({ length: 7 }).map((_, colIndex) => (
-                  <div key={`calendar-col-${colIndex}`}>
+                  <div key={`calendar-col-${['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'][colIndex]}`}>
                     {Array.from({ length: 24 }).map((_, rowIndex) => (
                       <div
-                        key={`calendar-cell-${colIndex}-${rowIndex}`}
+                        key={`calendar-cell-${['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'][colIndex]}-${String(rowIndex).padStart(2, '0')}:00`}
                         className="h-20"
                       />
                     ))}
