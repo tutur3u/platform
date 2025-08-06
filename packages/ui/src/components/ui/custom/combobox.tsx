@@ -64,7 +64,7 @@ export function Combobox({
     if (selected) return;
     if (useFirstValueAsDefault && options.length > 0)
       onChange?.(options?.[0]?.value ?? '');
-  }, [onChange, selected, options]);
+  }, [onChange, selected, options, useFirstValueAsDefault]);
 
   const selectedLabel =
     mode === 'single'
@@ -83,6 +83,7 @@ export function Combobox({
     <div className={cn('block', className)}>
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
+          {/* biome-ignore lint/a11y/useSemanticElements: Custom combobox implementation */}
           <Button
             type="button"
             variant="outline"
