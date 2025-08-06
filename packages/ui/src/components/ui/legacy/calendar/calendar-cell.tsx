@@ -1,11 +1,14 @@
-import { useCalendar } from '../../../../hooks/use-calendar';
-import { HOUR_HEIGHT } from './config';
-import { getEventStyles } from '@tuturuuu/utils/color-helper';
-import { cn } from '@tuturuuu/utils/format';
+import { useCallback, useEffect, useRef, useState } from 'react';
+
 import { format } from 'date-fns';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
-import { useCallback, useEffect, useRef, useState } from 'react';
+
+import { getEventStyles } from '@tuturuuu/utils/color-helper';
+import { cn } from '@tuturuuu/utils/format';
+
+import { useCalendar } from '../../../../hooks/use-calendar';
+import { HOUR_HEIGHT } from './config';
 
 dayjs.extend(timezone);
 
@@ -486,7 +489,7 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
 
   // Update mouse move/hover logic to show tooltip for every 15-minute cell
   const handleSlotMouseMove = (
-    e: React.MouseEvent<HTMLDivElement, MouseEvent>,
+    e: React.MouseEvent<HTMLElement, MouseEvent>,
     slot: 'hour' | 'half-hour' | number
   ) => {
     if (isDragging) return;
@@ -545,14 +548,14 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
   };
 
   // Handle leaving the cell: reset everything
-  const handleCellMouseLeave = () => {
+  const handleCellMouseLeave = useCallback(() => {
     setIsHovering(false);
     setHoveredSlot(null);
     setShowBothLabels(false);
     setShowTooltip(false);
     setTooltipLocked(false);
     if (hoverTimeout.current) clearTimeout(hoverTimeout.current);
-  };
+  }, []);
 
   const handleSlotFocus = (slot: 'hour' | 'half-hour') => {
     setHoveredSlot(slot);
@@ -691,6 +694,30 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
     };
   }, [setIsDragging]);
 
+  // Handle mouse leave for the entire cell area
+  useEffect(() => {
+    const handleDocumentMouseMove = (e: MouseEvent) => {
+      if (!cellRef.current) return;
+      const cellRect = cellRef.current.getBoundingClientRect();
+      const isInsideCell = 
+        e.clientX >= cellRect.left && 
+        e.clientX <= cellRect.right && 
+        e.clientY >= cellRect.top && 
+        e.clientY <= cellRect.bottom;
+      
+      if (!isInsideCell && isHovering) {
+        handleCellMouseLeave();
+      }
+    };
+
+    if (isHovering) {
+      document.addEventListener('mousemove', handleDocumentMouseMove);
+      return () => {
+        document.removeEventListener('mousemove', handleDocumentMouseMove);
+      };
+    }
+  }, [isHovering, handleCellMouseLeave]);
+
   return (
     <div
       id={id}
@@ -703,11 +730,6 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
       style={{
         height: `${HOUR_HEIGHT}px`,
       }}
-      onContextMenu={(e) => {
-        e.preventDefault();
-      }}
-      onMouseEnter={() => setIsHovering(true)}
-      onMouseLeave={handleCellMouseLeave}
       data-hour={hour}
       data-date={date}
     >
@@ -746,12 +768,16 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
 
       {/* Full cell clickable area (hour) */}
       <button
+        type="button"
         className="absolute inset-0 h-1/2 w-full cursor-pointer focus:outline-none"
         onClick={() => handleCreateEvent()}
-        onMouseEnter={() => handleSlotMouseEnter('hour')}
+        onMouseEnter={() => {
+          setIsHovering(true);
+          handleSlotMouseEnter('hour');
+        }}
         onMouseLeave={handleSlotMouseLeave}
         onMouseMove={(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) =>
-          handleSlotMouseMove(e as any, 'hour')
+          handleSlotMouseMove(e, 'hour')
         }
         onFocus={() => handleSlotFocus('hour')}
         onBlur={handleSlotBlur}
@@ -759,12 +785,16 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
       />
       {/* 15-minute marker */}
       <button
+        type="button"
         className="absolute top-1/4 right-0 left-0 h-1/4 w-full cursor-pointer focus:outline-none"
         style={{ background: 'transparent' }}
-        onMouseEnter={() => handleSlotMouseEnter(15)}
+        onMouseEnter={() => {
+          setIsHovering(true);
+          handleSlotMouseEnter(15);
+        }}
         onMouseLeave={handleSlotMouseLeave}
         onMouseMove={(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) =>
-          handleSlotMouseMove(e as any, 15)
+          handleSlotMouseMove(e, 15)
         }
         aria-describedby={tooltipId}
         tabIndex={-1}
@@ -772,12 +802,16 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
       {/* Half-hour marker */}
       <div className="absolute top-1/2 right-0 left-0 border-t border-dashed border-border/30" />
       <button
+        type="button"
         className="absolute inset-x-0 top-1/2 h-1/2 cursor-pointer focus:outline-none"
         onClick={() => handleCreateEvent(true)}
-        onMouseEnter={() => handleSlotMouseEnter('half-hour')}
+        onMouseEnter={() => {
+          setIsHovering(true);
+          handleSlotMouseEnter('half-hour');
+        }}
         onMouseLeave={handleSlotMouseLeave}
         onMouseMove={(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) =>
-          handleSlotMouseMove(e as any, 'half-hour')
+          handleSlotMouseMove(e, 'half-hour')
         }
         onFocus={() => handleSlotFocus('half-hour')}
         onBlur={handleSlotBlur}
@@ -785,12 +819,16 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
       />
       {/* 45-minute marker */}
       <button
+        type="button"
         className="absolute top-3/4 right-0 left-0 h-1/4 w-full cursor-pointer focus:outline-none"
         style={{ background: 'transparent' }}
-        onMouseEnter={() => handleSlotMouseEnter(45)}
+        onMouseEnter={() => {
+          setIsHovering(true);
+          handleSlotMouseEnter(45);
+        }}
         onMouseLeave={handleSlotMouseLeave}
         onMouseMove={(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) =>
-          handleSlotMouseMove(e as any, 45)
+          handleSlotMouseMove(e, 45)
         }
         aria-describedby={tooltipId}
         tabIndex={-1}
