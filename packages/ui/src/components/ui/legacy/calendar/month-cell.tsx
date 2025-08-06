@@ -1,5 +1,5 @@
 import dayjs from 'dayjs';
-import { cn } from '@/lib/utils';
+import { cn } from '@tuturuuu/utils/format';
 
 interface MonthCellProps {
   date: Date;
@@ -10,7 +10,6 @@ interface MonthCellProps {
 
 export function MonthCell({ date, cellId, hasGrid }: MonthCellProps) {
   const isToday = dayjs(date).isSame(dayjs(), 'day');
-  const isCurrentMonth = dayjs(date).isSame(dayjs(), 'month');
   const isOtherMonth = !dayjs(date).isSame(dayjs(), 'month');
 
   return (
