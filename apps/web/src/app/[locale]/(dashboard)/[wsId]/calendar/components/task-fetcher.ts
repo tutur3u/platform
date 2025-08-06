@@ -26,7 +26,5 @@ export async function getAssignedTasks(
     return [];
   }
 
-  console.log('assignedTasks', assignedTasks);
-
   return assignedTasks;
 }

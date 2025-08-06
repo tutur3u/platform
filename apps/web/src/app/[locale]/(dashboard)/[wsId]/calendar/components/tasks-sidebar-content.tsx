@@ -233,7 +233,7 @@ function PriorityView({
     critical: [],
   };
 
-  combinedTasks?.forEach((task) => {
+  combinedTasks.forEach((task) => {
     const priority = task.user_defined_priority || 'normal';
     if (grouped[priority]) {
       grouped[priority].push(task);
