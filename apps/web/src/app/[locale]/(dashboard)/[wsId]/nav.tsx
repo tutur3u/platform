@@ -45,7 +45,7 @@ export function Nav({
           if (!link) {
             return (
               <div
-                key={`nav-divider-${index + 1}`}
+                key={`nav-divider-${index}`}
                 className={cn(
                   'my-2 ml-4 border-b',
                   isCollapsed ? 'mx-auto w-1/2' : 'w-auto'
@@ -56,7 +56,7 @@ export function Nav({
 
           return (
             <NavLink
-              key={`nav-link-${link.href}-${index + 1}`}
+              key={`nav-link-${link.href || link.title}-${index}`}
               wsId={wsId}
               link={link}
               isCollapsed={isCollapsed}
