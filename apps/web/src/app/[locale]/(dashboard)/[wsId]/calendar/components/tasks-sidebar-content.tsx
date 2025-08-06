@@ -2,23 +2,17 @@
 
 import Chat from '../../chat/chat';
 import type { ExtendedWorkspaceTask } from '../../time-tracker/types';
+import ActionsDropdown from './actions-dropdown';
+import PriorityDropdown from './priority-dropdown';
 import TimeTracker from './time-tracker';
 import type { AIChat } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
 import { Dialog } from '@tuturuuu/ui/dialog';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@tuturuuu/ui/dropdown-menu';
-import {
   Bot,
   Calendar,
   CheckCircle2,
-  Flag,
   LayoutDashboard,
-  MoreHorizontal,
   PanelLeftClose,
   PanelRightClose,
   Search,
@@ -68,7 +62,7 @@ export default function TasksSidebarContent({
 
   return (
     <Dialog>
-      <div className="@container ml-2 flex hidden h-full max-h-[100vh] w-1/3 flex-col rounded-lg border border-border bg-background/60 text-foreground shadow-xl backdrop-blur-md transition-all duration-500 ease-out slide-in-from-right-5 xl:flex">
+      <div className="@container ml-2 flex h-full max-h-[100vh] w-1/3 flex-col rounded-lg border border-border bg-background/60 text-foreground shadow-xl backdrop-blur-md transition-all duration-500 ease-out slide-in-from-right-5 xl:flex">
         {/* Header */}
         <div className="@container flex items-center justify-between rounded-t-lg border-b border-border/50 bg-gradient-to-r from-background/80 to-background/60 px-4 py-3 backdrop-blur-sm">
           <div className="flex w-full items-center justify-between gap-1">
@@ -225,6 +219,41 @@ function PriorityView({ allTasks }: { allTasks: ExtendedWorkspaceTask[] }) {
     // await updateTaskPriority(taskId, newPriority);
   };
 
+  const handleEdit = (taskId: string) => {
+    // TODO: Implement edit functionality
+    console.log('Editing task:', taskId);
+  };
+
+  const handleViewDetails = (taskId: string) => {
+    // TODO: Implement view details functionality
+    console.log('Viewing details for task:', taskId);
+  };
+
+  const handleDueDate = (taskId: string) => {
+    // TODO: Implement due date functionality
+    console.log('Setting due date for task:', taskId);
+  };
+
+  const handleAddTime = (taskId: string) => {
+    // TODO: Implement add time functionality
+    console.log('Adding time to task:', taskId);
+  };
+
+  const handleLogWork = (taskId: string) => {
+    // TODO: Implement log work functionality
+    console.log('Logging work for task:', taskId);
+  };
+
+  const handleMarkDone = (taskId: string) => {
+    // TODO: Implement mark done functionality
+    console.log('Marking task as done:', taskId);
+  };
+
+  const handleDelete = (taskId: string) => {
+    // TODO: Implement delete functionality
+    console.log('Deleting task:', taskId);
+  };
+
   return (
     <div className="space-y-4">
       {/* Enhanced Search */}
@@ -323,115 +352,23 @@ function PriorityView({ allTasks }: { allTasks: ExtendedWorkspaceTask[] }) {
                               </div>
                               {/* Top right icons */}
                               <div className="ml-3 flex items-center gap-2">
-                                {/* Priority Edit Dropdown */}
-                                <DropdownMenu>
-                                  <DropdownMenuTrigger asChild>
-                                    <button
-                                      type="button"
-                                      className="ml-1 rounded p-1 hover:bg-accent/30"
-                                      aria-label="Edit priority"
-                                    >
-                                      <Flag className="h-4 w-4 text-muted-foreground" />
-                                    </button>
-                                  </DropdownMenuTrigger>
-                                  <DropdownMenuContent align="start">
-                                    <DropdownMenuItem
-                                      onClick={() =>
-                                        handlePriorityChange(
-                                          task.id,
-                                          'critical'
-                                        )
-                                      }
-                                    >
-                                      😡 Critical
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                      onClick={() =>
-                                        handlePriorityChange(task.id, 'high')
-                                      }
-                                    >
-                                      😠 High
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                      onClick={() =>
-                                        handlePriorityChange(task.id, 'normal')
-                                      }
-                                    >
-                                      😐 Normal
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                      onClick={() =>
-                                        handlePriorityChange(task.id, 'low')
-                                      }
-                                    >
-                                      😊 Low
-                                    </DropdownMenuItem>
-                                  </DropdownMenuContent>
-                                </DropdownMenu>
-                                {/* More Actions Dropdown */}
-                                <DropdownMenu>
-                                  <DropdownMenuTrigger asChild>
-                                    <button
-                                      type="button"
-                                      className="rounded p-1 hover:bg-accent/30"
-                                      aria-label="More actions"
-                                    >
-                                      <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
-                                    </button>
-                                  </DropdownMenuTrigger>
-                                  <DropdownMenuContent align="end">
-                                    <DropdownMenuItem
-                                      onClick={() => {
-                                        /* handleEdit() */
-                                      }}
-                                    >
-                                      Edit
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                      onClick={() => {
-                                        /* handleViewDetails() */
-                                      }}
-                                    >
-                                      View details
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                      onClick={() => {
-                                        /* handleDueDate() */
-                                      }}
-                                    >
-                                      Due date
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                      onClick={() => {
-                                        /* handleAddTime() */
-                                      }}
-                                    >
-                                      Add time
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                      onClick={() => {
-                                        /* handleLogWork() */
-                                      }}
-                                    >
-                                      Log work
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                      onClick={() => {
-                                        /* handleMarkDone() */
-                                      }}
-                                    >
-                                      Mark done
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                      onClick={() => {
-                                        /* handleDelete() */
-                                      }}
-                                      className="text-red-600"
-                                    >
-                                      Delete
-                                    </DropdownMenuItem>
-                                  </DropdownMenuContent>
-                                </DropdownMenu>
+                                <PriorityDropdown
+                                  taskId={task.id}
+                                  currentPriority={
+                                    task.user_defined_priority as string
+                                  }
+                                  onPriorityChange={handlePriorityChange}
+                                />
+                                <ActionsDropdown
+                                  taskId={task.id}
+                                  onEdit={handleEdit}
+                                  onViewDetails={handleViewDetails}
+                                  onDueDate={handleDueDate}
+                                  onAddTime={handleAddTime}
+                                  onLogWork={handleLogWork}
+                                  onMarkDone={handleMarkDone}
+                                  onDelete={handleDelete}
+                                />
                               </div>
                             </div>
                             {/* Bottom row: Ready left, time right */}

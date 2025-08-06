@@ -1,12 +1,7 @@
 import { getChats } from '../../chat/helper';
-import type { ExtendedWorkspaceTask } from '../../time-tracker/types';
+import { getAssignedTasks } from './task-fetcher';
 import TasksSidebarContent from './tasks-sidebar-content';
-import { createClient } from '@tuturuuu/supabase/next/server';
-import type {
-  WorkspaceTask,
-  WorkspaceTaskBoard,
-  WorkspaceTaskList,
-} from '@tuturuuu/types/db';
+import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import {
   getPermissions,
   verifyHasSecrets,
@@ -15,101 +10,6 @@ import {
 interface TasksSidebarProps {
   wsId: string;
   locale: string;
-}
-
-async function getTaskBoardsWithDetails(
-  wsId: string
-): Promise<Partial<WorkspaceTaskBoard>[]> {
-  const supabase = await createClient();
-
-  const { data: boardsData, error: boardsError } = await supabase
-    .from('workspace_boards')
-    .select('id, name, created_at, ws_id')
-    .eq('ws_id', wsId)
-    .order('name', { ascending: true })
-    .limit(10);
-
-  if (boardsError) {
-    console.error('Error fetching task boards:', boardsError);
-    return [];
-  }
-
-  if (!boardsData) return [];
-
-  const enrichedBoards: Partial<WorkspaceTaskBoard>[] = [];
-
-  for (const board of boardsData as Partial<WorkspaceTaskBoard>[]) {
-    if (!board.id) continue;
-
-    // Cast to EnrichedTaskBoard early
-    const { data: listsData, error: listsError } = await supabase
-      .from('task_lists')
-      .select('id, name, board_id, created_at')
-      .eq('board_id', board.id)
-      .order('created_at', { ascending: true });
-
-    const currentBoardLists: Partial<WorkspaceTaskList>[] = [];
-    if (listsError) {
-      console.error(`Error fetching lists for board ${board.id}:`, listsError);
-      // Board will have an empty lists array by default if not assigned
-    } else if (listsData) {
-      for (const list of listsData as Partial<WorkspaceTaskList>[]) {
-        if (!list.id) continue;
-
-        // Cast to EnrichedTaskList
-        const { data: tasksData, error: tasksError } = await supabase
-          .from('tasks')
-          .select(
-            'id, name, list_id, created_at, priority, end_date, description'
-          ) // Added status back, and description
-          .eq('list_id', list.id)
-          .order('created_at', { ascending: true });
-
-        if (tasksError) {
-          console.error(
-            `Error fetching tasks for list ${list.id}:`,
-            tasksError
-          );
-          currentBoardLists.push({ ...list, tasks: [] });
-        } else {
-          currentBoardLists.push({
-            ...list,
-            tasks: (tasksData as Partial<WorkspaceTask>[]) || [],
-          });
-        }
-      }
-    }
-    enrichedBoards.push({ ...board, lists: currentBoardLists });
-  }
-
-  return enrichedBoards;
-}
-
-// Transform task boards into a flat array of extended tasks
-function transformTaskBoardsToTasks(
-  taskBoards: Partial<WorkspaceTaskBoard>[]
-): ExtendedWorkspaceTask[] {
-  const tasks: ExtendedWorkspaceTask[] = [];
-
-  for (const board of taskBoards) {
-    if (!board.lists) continue;
-
-    for (const list of board.lists) {
-      if (!list.tasks) continue;
-
-      for (const task of list.tasks) {
-        if (!task.id) continue;
-
-        tasks.push({
-          ...task,
-          board_name: board.name,
-          list_name: list.name,
-        } as ExtendedWorkspaceTask);
-      }
-    }
-  }
-
-  return tasks;
 }
 
 const hasKey = (key: string) => {
@@ -121,10 +21,13 @@ export default async function TasksSidebar({
   wsId,
   locale,
 }: TasksSidebarProps) {
-  const taskBoardsWithDetails = await getTaskBoardsWithDetails(wsId);
+  const user = await getCurrentUser();
+  
+  if (!user?.id) {
+    return <div>Error: User not found</div>;
+  }
 
-  // Transform task boards into a flat array of tasks
-  const tasks = transformTaskBoardsToTasks(taskBoardsWithDetails);
+  const assignedTasks = await getAssignedTasks(user.id);
 
   // Check permissions and secrets for AI chat
   const { withoutPermission } = await getPermissions({ wsId });
@@ -159,7 +62,7 @@ export default async function TasksSidebar({
   return (
     <TasksSidebarContent
       wsId={wsId}
-      tasks={tasks}
+      tasks={assignedTasks}
       hasKeys={hasKeys}
       chats={chats}
       count={count}
