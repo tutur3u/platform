@@ -87,21 +87,9 @@ export function HoursSettings({ wsId }: HoursSettingsProps) {
       }
 
       setValue({
-        personalHours: isValidWeekTimeRanges(
-          safeParse(data?.find((h) => h.type === 'PERSONAL')?.data)
-        )
-          ? safeParse(data?.find((h) => h.type === 'PERSONAL')?.data)
-          : defaultWeekTimeRanges,
-        workHours: isValidWeekTimeRanges(
-          safeParse(data?.find((h) => h.type === 'WORK')?.data)
-        )
-          ? safeParse(data?.find((h) => h.type === 'WORK')?.data)
-          : defaultWeekTimeRanges,
-        meetingHours: isValidWeekTimeRanges(
-          safeParse(data?.find((h) => h.type === 'MEETING')?.data)
-        )
-          ? safeParse(data?.find((h) => h.type === 'MEETING')?.data)
-          : defaultWeekTimeRanges,
+        personalHours: safeParse(data?.find((h) => h.type === 'PERSONAL')?.data) ?? defaultWeekTimeRanges,
+        workHours: safeParse(data?.find((h) => h.type === 'WORK')?.data) ?? defaultWeekTimeRanges,
+        meetingHours: safeParse(data?.find((h) => h.type === 'MEETING')?.data) ?? defaultWeekTimeRanges,
       });
     };
 
@@ -242,7 +230,7 @@ export function HoursSettings({ wsId }: HoursSettingsProps) {
         </div>
       </div>
 
-      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'work' | 'meeting' | 'personal')}>
         <div className="mb-4 flex items-center justify-between">
           <TabsList className="grid w-full max-w-md grid-cols-3">
             <TabsTrigger value="work" className="flex items-center gap-1">
@@ -343,7 +331,7 @@ export function HoursSettings({ wsId }: HoursSettingsProps) {
 }
 
 // Type guard for WeekTimeRanges
-function isValidWeekTimeRanges(obj: any): obj is WeekTimeRanges {
+function isValidWeekTimeRanges(obj: unknown): obj is WeekTimeRanges {
   if (!obj || typeof obj !== 'object') return false;
   const days = [
     'monday',
@@ -355,21 +343,30 @@ function isValidWeekTimeRanges(obj: any): obj is WeekTimeRanges {
     'sunday',
   ];
   return days.every(
-    (day) =>
-      obj[day] &&
-      typeof obj[day].enabled === 'boolean' &&
-      Array.isArray(obj[day].timeBlocks)
+    (day) => {
+      const dayObj = (obj as Record<string, unknown>)[day];
+      return (
+        dayObj &&
+        typeof dayObj === 'object' &&
+        dayObj !== null &&
+        'enabled' in dayObj &&
+        typeof (dayObj as { enabled: unknown }).enabled === 'boolean' &&
+        'timeBlocks' in dayObj &&
+        Array.isArray((dayObj as { timeBlocks: unknown }).timeBlocks)
+      );
+    }
   );
 }
 
 // Safe JSON parse helper
-function safeParse(data: any): any {
+function safeParse(data: unknown): WeekTimeRanges | undefined {
   if (typeof data === 'string') {
     try {
-      return JSON.parse(data);
+      const parsed = JSON.parse(data);
+      return isValidWeekTimeRanges(parsed) ? parsed : undefined;
     } catch {
       return undefined;
     }
   }
-  return data;
+  return isValidWeekTimeRanges(data) ? data as WeekTimeRanges : undefined;
 }
