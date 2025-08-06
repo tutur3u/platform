@@ -208,45 +208,62 @@ export const MonthCalendar = ({
     const spans: EventSpan[] = [];
     const processedEvents = new Set<string>();
 
-    weeks.forEach((week: Date[], weekIndex: number) => {
-      week.forEach((day: Date) => {
-        const dayEvents = getCurrentEvents(day);
+    // Process all events across the entire calendar
+    calendarDays.forEach((day: Date) => {
+      const dayEvents = getCurrentEvents(day);
 
-        dayEvents.forEach((event) => {
-          // Skip if already processed or not an all-day event
-          if (processedEvents.has(event.id) || !isAllDayEvent(event)) {
-            return;
+      dayEvents.forEach((event) => {
+        // Skip if already processed or not an all-day event
+        if (processedEvents.has(event.id) || !isAllDayEvent(event)) {
+          return;
+        }
+
+        const eventStart = dayjs(event.start_at);
+        const eventEnd = dayjs(event.end_at);
+
+        // Check if this is a multi-day event
+        const durationDays = eventEnd.diff(eventStart, 'day');
+        if (durationDays <= 1) {
+          return; // Single day event, handle normally
+        }
+
+        // Find all days this event spans across
+        const eventDays: number[] = [];
+        calendarDays.forEach((calendarDay: Date, calendarDayIndex: number) => {
+          const calendarDayStart = dayjs(calendarDay);
+
+          // Check if event overlaps with this day
+          // For all-day events, end date is exclusive (event ends at start of end date)
+          if (
+            calendarDayStart.isSameOrAfter(eventStart, 'day') &&
+            calendarDayStart.isBefore(eventEnd, 'day')
+          ) {
+            eventDays.push(calendarDayIndex);
           }
+        });
 
-          const eventStart = dayjs(event.start_at);
-          const eventEnd = dayjs(event.end_at);
-
-          // Check if this is a multi-day event
-          const durationDays = eventEnd.diff(eventStart, 'day');
-          if (durationDays <= 1) {
-            return; // Single day event, handle normally
-          }
-
-          // Find the span of this event within the current week
-          let startIndex = -1;
-          let endIndex = -1;
-
-          week.forEach((weekDay: Date, weekDayIndex: number) => {
-            const weekDayStart = dayjs(weekDay);
-
-            // Check if event overlaps with this day
-            if (
-              weekDayStart.isSameOrAfter(eventStart, 'day') &&
-              weekDayStart.isBefore(eventEnd, 'day')
-            ) {
-              if (startIndex === -1) {
-                startIndex = weekDayIndex;
-              }
-              endIndex = weekDayIndex;
+        if (eventDays.length > 1) {
+          // Create spans for each week this event appears in
+          const weekGroups = new Map<number, number[]>();
+          
+          eventDays.forEach(dayIndex => {
+            const weekIndex = Math.floor(dayIndex / 7);
+            const weekDayIndex = dayIndex % 7;
+            
+            if (!weekGroups.has(weekIndex)) {
+              weekGroups.set(weekIndex, []);
+            }
+            const weekGroup = weekGroups.get(weekIndex);
+            if (weekGroup) {
+              weekGroup.push(weekDayIndex);
             }
           });
 
-          if (startIndex !== -1 && endIndex !== -1 && endIndex > startIndex) {
+          // Create a span for each week
+          weekGroups.forEach((weekDays, weekIndex) => {
+            const startIndex = Math.min(...weekDays);
+            const endIndex = Math.max(...weekDays);
+            
             spans.push({
               event,
               startIndex,
@@ -254,14 +271,15 @@ export const MonthCalendar = ({
               span: endIndex - startIndex + 1,
               weekIndex,
             });
-            processedEvents.add(event.id);
-          }
-        });
+          });
+          
+          processedEvents.add(event.id);
+        }
       });
     });
 
     return spans;
-  }, [getCurrentEvents]);
+  }, [getCurrentEvents, calendarDays]);
 
   // Get events for a day including placeholders for multi-day events
   const getEventsForDay = (day: Date) => {
