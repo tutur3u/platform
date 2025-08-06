@@ -11,19 +11,20 @@ import { Flag } from '@tuturuuu/ui/icons';
 
 interface PriorityDropdownProps {
   taskId: string;
-  currentPriority: string;
+  currentPriority?: string;
   allPriorities: typeof TASK_PRIORITIES;
   onPriorityChange: (taskId: string, newPriority: string) => void;
 }
 
 export default function PriorityDropdown({
   taskId,
-  currentPriority,
+  currentPriority = 'normal',
   allPriorities,
   onPriorityChange,
 }: PriorityDropdownProps) {
   const textColor =
-    allPriorities?.[currentPriority as keyof typeof allPriorities]?.textColor;
+    allPriorities?.[currentPriority as keyof typeof allPriorities]?.textColor ||
+    'text-muted-foreground';
 
   return (
     <DropdownMenu>
