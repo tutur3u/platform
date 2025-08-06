@@ -80,9 +80,9 @@ export const MonthView: React.FC<{
 
       <div className="relative grid gap-1 text-xs md:gap-2 md:text-base">
         <div className="grid grid-cols-7 gap-1 md:gap-2">
-          {days.map((day, idx) => (
+          {days.map((day) => (
             <div
-              key={`day-${idx}`}
+              key={`weekday-${day}`}
               className="flex flex-none cursor-default justify-center rounded bg-foreground/5 p-2 font-semibold transition duration-300 md:rounded-lg"
             >
               {day}
@@ -92,9 +92,9 @@ export const MonthView: React.FC<{
 
         <div className="grid grid-cols-7 gap-1 md:gap-2">
           <TooltipProvider delayDuration={0}>
-            {daysInMonth.map((day, idx) => (
+            {daysInMonth.map((day) => (
               <DayCell
-                key={`day-${idx}`}
+                key={`date-${day.toISOString()}`}
                 day={day}
                 currentDate={currentDate}
                 today={today}
