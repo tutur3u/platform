@@ -6,10 +6,7 @@ import EmailButton from './email-button';
 import LoggedInAsButton from './logged-in-as-button';
 import ShowQRButton from './show-qr-button';
 import type { MeetTogetherPlan } from '@tuturuuu/types/primitives/MeetTogetherPlan';
-import { Button } from '@tuturuuu/ui/button';
-import { useTimeBlocking } from '@tuturuuu/ui/hooks/time-blocking-provider';
-import { Check, Edit, Loader2 } from '@tuturuuu/ui/icons';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 interface UtilityButtonsProps {
@@ -24,8 +21,8 @@ export default function UtilityButtons({
   const pathname = usePathname();
   const [url, setUrl] = useState('');
 
-  const { user } = useTimeBlocking();
-  const isCreator = !user?.is_guest && user?.id === plan.creator_id;
+  // const { user } = useTimeBlocking();
+  // const isCreator = !user?.is_guest && user?.id === plan.creator_id;
 
   useEffect(() => {
     setUrl(`${window.location.origin}${pathname}`);
@@ -42,78 +39,16 @@ export default function UtilityButtons({
         <ShowQRButton url={url} />
         <EmailButton plan={plan} url={tumeetMeUrl} />
         <DownloadAsPNG onClick={handlePNG} />
-        {isCreator && (
+        {/* {isCreator && (
           <>
             <ConfirmButton
               planId={plan.id}
               isConfirmPlan={Boolean(plan.is_confirmed)}
             />
           </>
-        )}
+        )} */}
       </div>
       <LoggedInAsButton />
     </div>
-  );
-}
-
-function ConfirmButton({
-  planId,
-  isConfirmPlan,
-}: {
-  planId: string;
-  isConfirmPlan: boolean;
-}) {
-  const [isConfirmed, setConfirmed] = useState(isConfirmPlan);
-  const [isLoading, setIsLoading] = useState(false);
-  const router = useRouter();
-  return (
-    <Button
-      onClick={async () => {
-        if (isLoading) return;
-        setIsLoading(true);
-        const res = await fetch(
-          `/api/meet-together/plans/${planId}/edit-lock`,
-          {
-            method: 'PATCH',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              isConfirm: !isConfirmed,
-            }),
-          }
-        );
-        if (!res.ok) {
-          console.error('Failed to update plan confirmation status');
-          return;
-        }
-        setConfirmed(!isConfirmed);
-        setIsLoading(false);
-        router.refresh();
-      }}
-      className="w-full md:w-auto"
-      disabled={isLoading}
-    >
-      {isLoading ? (
-        <>
-          <Loader2 className="mr-1 h-5 w-5 animate-spin" />
-          Updating...
-        </>
-      ) : (
-        <>
-          {!isConfirmed ? (
-            <>
-              <Check className="mr-1 h-5 w-5" />
-              Confirm
-            </>
-          ) : (
-            <>
-              <Edit className="mr-1 h-5 w-5" />
-              Re-Edit
-            </>
-          )}
-        </>
-      )}
-    </Button>
   );
 }
