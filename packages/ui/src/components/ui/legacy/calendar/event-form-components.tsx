@@ -113,12 +113,10 @@ export const EventDescriptionInput = ({
   value,
   onChange,
   disabled = false,
-  mode = 'create', // 'create' | 'edit'
 }: {
   value: string;
   onChange: (value: string) => void;
   disabled?: boolean;
-  mode?: 'create' | 'edit';
 }) => {
   const [height, setHeight] = React.useState(100);
   const textareaRef = React.useRef<HTMLTextAreaElement>(null);
@@ -164,13 +162,15 @@ export const EventDescriptionInput = ({
   };
 
   // Throttle function
-  const throttle = (func: Function, limit: number) => {
+  const throttle = <T extends unknown[]>(func: (...args: T) => void, limit: number) => {
     let inThrottle: boolean;
-    return function (this: any, ...args: any[]) {
+    return function (this: unknown, ...args: T) {
       if (!inThrottle) {
         func.apply(this, args);
         inThrottle = true;
-        setTimeout(() => (inThrottle = false), limit);
+        setTimeout(() => {
+          inThrottle = false;
+        }, limit);
       }
     };
   };
@@ -261,15 +261,15 @@ export const EventDescriptionInput = ({
 
     const handleUp = () => {
       isDraggingRef.current = false;
-      document.removeEventListener('mousemove', handleMove as any);
+      document.removeEventListener('mousemove', handleMove as EventListener);
       document.removeEventListener('mouseup', handleUp);
-      document.removeEventListener('touchmove', handleMove as any);
+      document.removeEventListener('touchmove', handleMove as EventListener);
       document.removeEventListener('touchend', handleUp);
     };
 
-    document.addEventListener('mousemove', handleMove as any);
+    document.addEventListener('mousemove', handleMove as EventListener);
     document.addEventListener('mouseup', handleUp);
-    document.addEventListener('touchmove', handleMove as any);
+    document.addEventListener('touchmove', handleMove as EventListener);
     document.addEventListener('touchend', handleUp);
   };
 
@@ -585,7 +585,11 @@ export const EventToggleSwitch = ({
 export const OverlapWarning = ({
   overlappingEvents,
 }: {
-  overlappingEvents: any[];
+  overlappingEvents: Array<{
+    title?: string;
+    start_at: string;
+    end_at: string;
+  }>;
 }) => {
   if (overlappingEvents.length === 0) return null;
 
@@ -597,9 +601,9 @@ export const OverlapWarning = ({
         This event overlaps with {overlappingEvents.length} other{' '}
         {overlappingEvents.length === 1 ? 'event' : 'events'}.
         <ul className="mt-2 list-inside list-disc">
-          {overlappingEvents.slice(0, 3).map((event, index) => (
-            <li key={index} className="text-xs">
-              {event.title} (
+          {overlappingEvents.slice(0, 3).map((event) => (
+            <li key={`${event.title || 'Untitled'}-${event.start_at}-${event.end_at}`} className="text-xs">
+              {event.title || 'Untitled Event'} (
               {new Date(event.start_at).toLocaleTimeString([], {
                 hour: '2-digit',
                 minute: '2-digit',
