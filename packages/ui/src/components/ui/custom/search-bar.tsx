@@ -23,7 +23,7 @@ const SearchBar = ({ t, defaultValue = '', className, onSearch }: Props) => {
         onSearch(query);
       }
     }, 300),
-    [onSearch] // Re-create the debounced function only if onSearch changes
+    [] // Remove unnecessary onSearch dependency
   );
 
   const searchPlaceholder = t('search.search-placeholder');

@@ -23,6 +23,7 @@ import {
 import { Textarea } from '@tuturuuu/ui/textarea';
 import dayjs from 'dayjs';
 import { useState, useEffect, useRef, useCallback, type MouseEvent as ReactMouseEvent, type FormEvent as ReactFormEvent } from 'react';
+import type { User } from '@supabase/supabase-js';
 
 interface AddEventModalProps {
   isOpen?: boolean;
@@ -61,7 +62,7 @@ export default function AddEventModal({
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const sliderRef = useRef<HTMLDivElement>(null);
   const supabase = createClient();
@@ -381,17 +382,19 @@ export default function AddEventModal({
                   onMouseDown={handleSliderMouseDown}
                   onMouseMove={handleSliderMouseMove}
                   onMouseUp={handleSliderMouseUp}
-                  onTouchStart={(e) => {
-                    if (e.touches[0])
+                  onTouchStart={(e: React.TouchEvent<HTMLDivElement>) => {
+                    if (e.touches[0]) {
                       handleSliderMouseDown({
                         clientX: e.touches[0].clientX,
-                      } as any);
+                      } as ReactMouseEvent<HTMLDivElement>);
+                    }
                   }}
-                  onTouchMove={(e) => {
-                    if (e.touches[0])
+                  onTouchMove={(e: React.TouchEvent<HTMLDivElement>) => {
+                    if (e.touches[0]) {
                       handleSliderMouseMove({
                         clientX: e.touches[0].clientX,
-                      } as any);
+                      } as ReactMouseEvent<HTMLDivElement>);
+                    }
                   }}
                   onTouchEnd={handleSliderMouseUp}
                   onKeyDown={(e) => {
