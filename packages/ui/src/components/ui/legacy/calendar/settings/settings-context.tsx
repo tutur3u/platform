@@ -85,17 +85,20 @@ const loadSettingsFromStorage = (): Partial<CalendarSettings> | null => {
 
 // Type guard for Partial<CalendarSettings>
 function isValidPartialCalendarSettings(
-  obj: any
+  obj: unknown
 ): obj is Partial<CalendarSettings> {
   if (!obj || typeof obj !== 'object') return false;
+  
+  const typedObj = obj as Record<string, unknown>;
+  
   // Only check a few critical keys for safety
-  if ('personalHours' in obj && typeof obj.personalHours !== 'object')
+  if ('personalHours' in typedObj && typeof typedObj.personalHours !== 'object')
     return false;
-  if ('workHours' in obj && typeof obj.workHours !== 'object') return false;
-  if ('meetingHours' in obj && typeof obj.meetingHours !== 'object')
+  if ('workHours' in typedObj && typeof typedObj.workHours !== 'object') return false;
+  if ('meetingHours' in typedObj && typeof typedObj.meetingHours !== 'object')
     return false;
-  if ('appearance' in obj && typeof obj.appearance !== 'object') return false;
-  if ('notifications' in obj && typeof obj.notifications !== 'object')
+  if ('appearance' in typedObj && typeof typedObj.appearance !== 'object') return false;
+  if ('notifications' in typedObj && typeof typedObj.notifications !== 'object')
     return false;
   return true;
 }
