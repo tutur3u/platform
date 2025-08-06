@@ -1,0 +1,3 @@
+alter table "public"."workspaces" add column "personal" boolean not null default false;
+
+

@@ -10277,6 +10277,7 @@ export type Database = {
           id?: string;
           logo_url?: null | string;
           name?: null | string;
+          personal?: boolean;
         };
         Relationships: [
           {
@@ -10317,6 +10318,7 @@ export type Database = {
           id: string;
           logo_url: null | string;
           name: null | string;
+          personal: boolean;
         };
         Update: {
           avatar_url?: null | string;
@@ -10327,6 +10329,7 @@ export type Database = {
           id?: string;
           logo_url?: null | string;
           name?: null | string;
+          personal?: boolean;
         };
       };
     };

@@ -14,9 +14,9 @@ export default async function TasksSidebarServer({
   }
   const supabase = await createAdminClient();
   const { data, error } = await supabase
-    .from('tasks')
-    .select('*')
-    .eq('creator_id', user.id);
+    .from('task_assignees')
+    .select('...tasks(*)')
+    .eq('user_id', user.id);
 
   if (error) {
     console.error('Error fetching tasks:', error);
