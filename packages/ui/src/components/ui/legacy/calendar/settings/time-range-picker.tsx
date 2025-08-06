@@ -554,7 +554,7 @@ export function TimeRangePicker({
               >
                 {safeTimeRanges[key]?.timeBlocks?.map((block, blockIndex) => (
                   <div
-                    key={blockIndex}
+                    key={`${key}-block-${blockIndex}-${block.startTime.replace(':', '')}-${block.endTime.replace(':', '')}`}
                     className="flex items-center gap-2 rounded-md border border-muted bg-muted/10 p-3 shadow-sm transition-colors hover:bg-muted/30"
                   >
                     <div className="grid flex-1 grid-cols-2 gap-2">
