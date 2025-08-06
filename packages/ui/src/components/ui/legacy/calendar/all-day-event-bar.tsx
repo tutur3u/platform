@@ -1,5 +1,3 @@
-import { useCalendar } from '../../../../hooks/use-calendar';
-import { MIN_COLUMN_WIDTH } from './config';
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import { useCalendarSync } from '@tuturuuu/ui/hooks/use-calendar-sync';
 import { getEventStyles } from '@tuturuuu/utils/color-helper';
@@ -11,6 +9,9 @@ import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
 import timezone from 'dayjs/plugin/timezone';
 import { Calendar, ChevronDown, ChevronUp } from 'lucide-react';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
+
+import { useCalendar } from '../../../../hooks/use-calendar';
+import { MIN_COLUMN_WIDTH } from './config';
 
 dayjs.extend(isBetween);
 dayjs.extend(isSameOrAfter);
@@ -63,14 +64,20 @@ const EventContent = ({ event }: { event: CalendarEvent }) => (
   <>
     {typeof event.google_event_id === 'string' &&
       event.google_event_id.trim() !== '' && (
-        <img
-          src="/media/google-calendar-icon.png"
-          alt="Google Calendar"
+        <div
           className="mr-1 inline-block h-[1.25em] w-[1.25em] align-middle opacity-80 dark:opacity-90"
           title="Synced from Google Calendar"
           data-testid="google-calendar-logo"
-          width={18}
-          height={18}
+          style={{
+            backgroundImage: 'url("/media/google-calendar-icon.png")',
+            backgroundSize: 'contain',
+            backgroundRepeat: 'no-repeat',
+            backgroundPosition: 'center',
+            width: '18px',
+            height: '18px',
+          }}
+          role="img"
+          aria-label="Google Calendar"
         />
       )}
     <span className="truncate">{event.title}</span>
@@ -481,7 +488,11 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
             if (!occupiedRows[dayIndex]) {
               occupiedRows[dayIndex] = [];
             }
-            occupiedRows[dayIndex]![row] = true;
+            // We just ensured the array exists above, so we can safely access it
+            const dayRows = occupiedRows[dayIndex];
+            if (dayRows) {
+              dayRows[row] = true;
+            }
           }
           rowFound = true;
         } else {
@@ -598,7 +609,7 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
           clientY: touch.clientY,
           preventDefault: () => {},
           stopPropagation: () => {},
-        } as any,
+        } as unknown as React.MouseEvent<Element, MouseEvent>,
         eventSpan
       );
     }, LONG_PRESS_DURATION);
@@ -700,7 +711,7 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
                 {hiddenCount > 0 && (
                   <button
                     type="button"
-                    className="flex cursor-pointer items-center justify-center rounded-sm px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted/40"
+                    className="cursor-pointer flex items-center justify-center px-2 py-1 rounded-sm text-muted-foreground text-xs font-medium transition-colors hover:bg-muted/40"
                     onClick={() => toggleDateExpansion(dateKey)}
                     style={{
                       position: 'absolute',
@@ -720,7 +731,7 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
                   dateEvents.length > MAX_EVENTS_DISPLAY && (
                     <button
                       type="button"
-                      className="flex cursor-pointer items-center justify-center rounded-sm px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted/40"
+                      className="cursor-pointer flex items-center justify-center px-2 py-1 rounded-sm text-muted-foreground text-xs font-medium transition-colors hover:bg-muted/40"
                       onClick={() => toggleDateExpansion(dateKey)}
                       style={{
                         position: 'absolute',
@@ -795,10 +806,11 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
             dragState.isDragging && dragState.draggedEvent?.id === event.id;
 
           return (
-            <div
+            <button
               key={`spanning-event-${event.id}`}
+              type="button"
               className={cn(
-                'absolute flex items-center rounded-sm border-l-2 px-2 py-1 text-xs font-semibold transition-all duration-200',
+                'absolute border-l-2 flex items-center px-2 py-1 rounded-sm text-xs font-semibold transition-all duration-200',
                 // Cursor changes based on locked state and drag state
                 event.locked
                   ? 'cursor-not-allowed opacity-60'
@@ -821,8 +833,6 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
                 height: '1.35rem',
                 zIndex: isDraggedEvent ? 10 : 5,
               }}
-              role="button"
-              tabIndex={0}
               aria-label={`Event: ${event.title}`}
               onClick={() => {
                 // Only open modal if not dragging and not locked
@@ -859,7 +869,7 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
                   →
                 </span>
               )}
-            </div>
+            </button>
           );
         })}
       </div>
@@ -869,8 +879,7 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
         <div
           ref={dragPreviewRef}
           className={cn(
-            'pointer-events-none fixed z-50 truncate rounded-sm border-l-2 px-2 py-1 text-xs font-semibold shadow-xl',
-            'transform backdrop-blur-sm transition-none',
+            'backdrop-blur-sm border-l-2 fixed pointer-events-none px-2 py-1 rounded-sm shadow-xl text-xs font-semibold transform transition-none truncate z-50',
             getEventStyles(dragState.draggedEvent.color || 'BLUE').bg,
             getEventStyles(dragState.draggedEvent.color || 'BLUE').border,
             getEventStyles(dragState.draggedEvent.color || 'BLUE').text,
