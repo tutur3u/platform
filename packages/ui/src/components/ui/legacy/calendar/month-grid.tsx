@@ -83,8 +83,8 @@ export function Month({ hasGrid, month, year }: MonthProps) {
           hasGrid ? `border-t border-l border-zinc-800` : ``
         } grid grid-cols-7`}
       >
-        {getMonthDays().map((date, _index) => (
-          <MonthCell hasGrid={hasGrid} key={date.getTime()} date={date} />
+        {getMonthDays().map((date) => (
+          <MonthCell hasGrid={hasGrid} key={date.getTime()} date={date} cellId={date.getTime()} />
         ))}
       </div>
     </div>
