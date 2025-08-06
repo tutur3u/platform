@@ -46,6 +46,7 @@
     "@trpc/react-query": "^11.4.4",
     "@trpc/server": "^11.4.4",
     "@tuturuuu/ai": "workspace:*",
+    "@tuturuuu/apis": "workspace:*",
     "@tuturuuu/auth": "workspace:*",
     "@tuturuuu/payment": "workspace:*",
     "@tuturuuu/supabase": "workspace:*",
