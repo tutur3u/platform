@@ -4,6 +4,6 @@
   "license": "MIT",
   "version": "0.0.1",
   "exports": {
-    "./farm": "./src/farm/index.ts"
+    "./core": "./src/core/index.ts"
   }
 }
