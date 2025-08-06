@@ -122,35 +122,49 @@ export default function MonthPicker({
           </Button>
         </div>
 
-        <div
-          className="grid w-full grid-cols-3 gap-2"
-          role="grid"
+        <table
+          className="w-full"
           aria-labelledby="month-picker"
         >
-          {months.map((month) => (
-            <div
-              key={month.toString()}
-              className="relative p-0 text-center text-sm focus-within:relative focus-within:z-20 [&:has([aria-selected])]:bg-slate-100 first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md dark:[&:has([aria-selected])]:bg-slate-800"
-              role="presentation"
-            >
-              <Button
-                variant={
-                  currentMonth.getMonth() === month.getMonth() &&
-                  currentMonth.getFullYear() === month.getFullYear()
-                    ? 'default'
-                    : 'ghost'
-                }
-                className="w-full"
-                disabled={isFuture(month)}
-                onClick={() => updateQuery(format(month, 'yyyy-MM'))}
-              >
-                <time dateTime={format(month, 'yyyy-MM-dd')}>
-                  {month.toLocaleString(lang, { month: 'short' })}
-                </time>
-              </Button>
-            </div>
-          ))}
-        </div>
+          <tbody>
+            {(() => {
+              const rows = [];
+              for (let i = 0; i < months.length; i += 3) {
+                const rowMonths = months.slice(i, i + 3);
+                rows.push(
+                  <tr key={`month-row-${format(rowMonths[0], 'yyyy-MM')}`}>
+                    {rowMonths.map((month) => (
+                      <td key={month.toString()} className="p-1">
+                        <div className="relative p-0 text-center text-sm focus-within:relative focus-within:z-20 [&:has([aria-selected])]:bg-slate-100 first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md dark:[&:has([aria-selected])]:bg-slate-800">
+                          <Button
+                            variant={
+                              currentMonth.getMonth() === month.getMonth() &&
+                              currentMonth.getFullYear() === month.getFullYear()
+                                ? 'default'
+                                : 'ghost'
+                            }
+                            className="w-full"
+                            disabled={isFuture(month)}
+                            onClick={() => updateQuery(format(month, 'yyyy-MM'))}
+                          >
+                            <time dateTime={format(month, 'yyyy-MM-dd')}>
+                              {month.toLocaleString(lang, { month: 'short' })}
+                            </time>
+                          </Button>
+                        </div>
+                      </td>
+                    ))}
+                    {/* Fill empty cells if needed */}
+                    {Array.from({ length: 3 - rowMonths.length }, (_, j) => (
+                      <td key={`empty-${format(rowMonths[0], 'yyyy-MM')}-${j}`} className="p-1" />
+                    ))}
+                  </tr>
+                );
+              }
+              return rows;
+            })()}
+          </tbody>
+        </table>
       </PopoverContent>
     </Popover>
   );
