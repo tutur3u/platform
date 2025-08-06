@@ -17,7 +17,7 @@
     "@tuturuuu/utils": "workspace:*",
     "dayjs": "^1.11.13",
     "google-auth-library": "^10.2.1",
-    "googleapis": "^154.1.0"
+    "googleapis": "^155.0.0"
   },
   "devDependencies": {
     "@trigger.dev/build": "^3.3.17",
