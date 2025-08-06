@@ -698,7 +698,8 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
               >
                 {/* Show/hide expansion button */}
                 {hiddenCount > 0 && (
-                  <div
+                  <button
+                    type="button"
                     className="flex cursor-pointer items-center justify-center rounded-sm px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted/40"
                     onClick={() => toggleDateExpansion(dateKey)}
                     style={{
@@ -711,13 +712,14 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
                   >
                     <ChevronDown className="mr-1 h-3 w-3" />
                     {hiddenCount} more
-                  </div>
+                  </button>
                 )}
 
                 {isExpanded &&
                   !shouldShowAll &&
                   dateEvents.length > MAX_EVENTS_DISPLAY && (
-                    <div
+                    <button
+                      type="button"
                       className="flex cursor-pointer items-center justify-center rounded-sm px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted/40"
                       onClick={() => toggleDateExpansion(dateKey)}
                       style={{
@@ -730,7 +732,7 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
                     >
                       <ChevronUp className="mr-1 h-3 w-3" />
                       Show less
-                    </div>
+                    </button>
                   )}
               </div>
             );
@@ -825,6 +827,14 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
                   openModal(event.id, 'all-day');
                 }
               }}
+              onKeyDown={(e) => {
+                if ((e.key === 'Enter' || e.key === ' ') && !dragState.isDragging && !event.locked) {
+                  e.preventDefault();
+                  openModal(event.id, 'all-day');
+                }
+              }}
+              role="button"
+              tabIndex={0}
               onMouseDown={(e) => handleEventMouseDown(e, eventSpan)}
               onTouchStart={(e) => handleEventTouchStart(e, eventSpan)}
             >
