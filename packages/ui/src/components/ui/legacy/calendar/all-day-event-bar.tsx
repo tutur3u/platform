@@ -821,6 +821,9 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
                 height: '1.35rem',
                 zIndex: isDraggedEvent ? 10 : 5,
               }}
+              role="button"
+              tabIndex={0}
+              aria-label={`Event: ${event.title}`}
               onClick={() => {
                 // Only open modal if not dragging and not locked
                 if (!dragState.isDragging && !event.locked) {
@@ -833,8 +836,6 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
                   openModal(event.id, 'all-day');
                 }
               }}
-              role="button"
-              tabIndex={0}
               onMouseDown={(e) => handleEventMouseDown(e, eventSpan)}
               onTouchStart={(e) => handleEventTouchStart(e, eventSpan)}
             >
