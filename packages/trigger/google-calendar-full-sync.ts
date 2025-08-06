@@ -6,8 +6,8 @@ import {
 } from './google-calendar-sync';
 import type { SyncOrchestratorResult } from './google-calendar-sync';
 import { task } from '@trigger.dev/sdk/v3';
+import { google } from '@tuturuuu/google/src/core';
 import dayjs from 'dayjs';
-import { google } from 'googleapis';
 
 export async function performFullSyncForWorkspace(
   calendarId = 'primary',

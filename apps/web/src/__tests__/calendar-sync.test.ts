@@ -1,5 +1,3 @@
-import { createClient } from '@supabase/supabase-js';
-import { NextRequest } from 'next/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock Supabase
@@ -23,7 +21,7 @@ vi.mock('@supabase/supabase-js', () => ({
 }));
 
 // Mock Google API
-vi.mock('googleapis', () => ({
+vi.mock('@tuturuuu/google/src/core', () => ({
   google: {
     calendar: vi.fn(() => ({
       events: {

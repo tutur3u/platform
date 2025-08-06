@@ -1,0 +1,9 @@
+{
+  "$schema": "https://jsr.io/schema/config-file.v1.json",
+  "name": "@tuturuuu/google",
+  "license": "MIT",
+  "version": "0.0.1",
+  "exports": {
+    "./farm": "./src/farm/index.ts"
+  }
+}
