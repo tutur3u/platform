@@ -332,7 +332,6 @@
         "date-fns": "^4.1.0",
         "dayjs": "^1.11.13",
         "framer-motion": "^12.23.12",
-        "google-auth-library": "^10.2.1",
         "html2canvas-pro": "^1.5.11",
         "isomorphic-dompurify": "^2.26.0",
         "jotai": "^2.13.0",
@@ -533,6 +532,7 @@
       "dependencies": {
         "@tuturuuu/supabase": "workspace:*",
         "clsx": "^2.1.1",
+        "google-auth-library": "^10.2.1",
         "googleapis": "^155.0.0",
         "next": "^15.4.5",
         "react": "^19.1.1",
@@ -616,7 +616,6 @@
         "@tuturuuu/types": "workspace:*",
         "@tuturuuu/utils": "workspace:*",
         "dayjs": "^1.11.13",
-        "google-auth-library": "^10.2.1",
       },
       "devDependencies": {
         "@trigger.dev/build": "^3.3.17",

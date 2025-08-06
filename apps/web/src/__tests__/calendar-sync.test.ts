@@ -21,7 +21,7 @@ vi.mock('@supabase/supabase-js', () => ({
 }));
 
 // Mock Google API
-vi.mock('@tuturuuu/google/src/core', () => ({
+vi.mock('@tuturuuu/google/core', () => ({
   google: {
     calendar: vi.fn(() => ({
       events: {

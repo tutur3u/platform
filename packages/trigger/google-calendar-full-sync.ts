@@ -1,12 +1,12 @@
+import type { SyncOrchestratorResult } from './google-calendar-sync';
 import {
   getGoogleAuthClient,
   getWorkspacesForSync,
   storeSyncToken,
   syncWorkspaceBatched,
 } from './google-calendar-sync';
-import type { SyncOrchestratorResult } from './google-calendar-sync';
 import { task } from '@trigger.dev/sdk/v3';
-import { google } from '@tuturuuu/google/src/core';
+import { google } from '@tuturuuu/google/core';
 import dayjs from 'dayjs';
 
 export async function performFullSyncForWorkspace(

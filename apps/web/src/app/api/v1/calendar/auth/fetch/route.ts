@@ -1,7 +1,6 @@
-import { google } from '@tuturuuu/google/src/core';
+import { OAuth2Client, google } from '@tuturuuu/google/core';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { convertGoogleAllDayEvent } from '@tuturuuu/ui/hooks/calendar-utils';
-import { OAuth2Client } from 'google-auth-library';
 import { NextResponse } from 'next/server';
 
 const getGoogleAuthClient = (tokens: {

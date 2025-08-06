@@ -8,10 +8,14 @@
   "scripts": {
     "lint": "eslint ."
   },
+  "exports": {
+    "./core": "./src/core/index.ts"
+  },
   "dependencies": {
     "@tuturuuu/supabase": "workspace:*",
     "clsx": "^2.1.1",
     "googleapis": "^155.0.0",
+    "google-auth-library": "^10.2.1",
     "next": "^15.4.5",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",

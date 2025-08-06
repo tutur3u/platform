@@ -90,7 +90,7 @@ const mockCalendarEventsList = vi.fn(() =>
   })
 );
 
-vi.mock('@tuturuuu/google/src/core', () => ({
+vi.mock('@tuturuuu/google/core', () => ({
   google: {
     calendar: vi.fn(() => ({
       events: {
