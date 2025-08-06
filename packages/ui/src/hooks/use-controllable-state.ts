@@ -60,7 +60,7 @@ function useUncontrolledState<T>({
       handleChange(value as T);
       prevValueRef.current = value;
     }
-  }, [value, prevValueRef, handleChange]);
+  }, [value, handleChange]);
 
   return uncontrolledState;
 }
