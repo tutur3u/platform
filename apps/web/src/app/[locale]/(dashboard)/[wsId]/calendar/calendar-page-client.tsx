@@ -47,7 +47,7 @@ export default function CalendarPageClient({
         } else {
           await queryClient.invalidateQueries({ 
             queryKey: options.queryKey,
-            refetchType: options.refetchType as any
+            refetchType: options.refetchType as 'all' | 'active' | 'inactive' | 'none'
           });
         }
       },

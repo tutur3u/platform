@@ -14,8 +14,10 @@ export default function Home() {
   const queryClient = useQueryClient();
   
   // Create a wrapper for the t function to match the expected type signature
+  // Type assertion needed due to next-intl's complex type system
   const translationWrapper = useCallback((key: string, values?: Record<string, unknown>) => {
-    return t(key as Parameters<typeof t>[0], values as any);
+    // @ts-expect-error - next-intl uses complex conditional types
+    return t(key, values);
   }, [t]);
   
   // Create a wrapper for useQueryClient that matches the expected interface

@@ -3,6 +3,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { CalendarProvider } from '@tuturuuu/ui/hooks/use-calendar';
 import type React from 'react';
+import { useCallback, useMemo } from 'react';
 
 interface ClientLayoutWrapperProps {
   children: React.ReactNode;
@@ -13,24 +14,27 @@ export default function ClientLayoutWrapper({
 }: ClientLayoutWrapperProps) {
   const queryClient = useQueryClient();
   
-  // Create a wrapper for useQueryClient that matches the expected interface
-  const wrappedUseQueryClient = () => {
-    return {
-      invalidateQueries: async (options: { queryKey: string[]; refetchType?: string } | string[]) => {
-        if (Array.isArray(options)) {
-          await queryClient.invalidateQueries({ queryKey: options });
-        } else {
-          await queryClient.invalidateQueries({ 
-            queryKey: options.queryKey,
-            refetchType: options.refetchType as any
-          });
-        }
-      },
-      setQueryData: (queryKey: string[], data: unknown) => {
-        queryClient.setQueryData(queryKey, data);
+  // Create a memoized wrapper object for useQueryClient that matches the expected interface
+  const wrappedQueryClientObject = useMemo(() => ({
+    invalidateQueries: async (options: { queryKey: string[]; refetchType?: string } | string[]) => {
+      if (Array.isArray(options)) {
+        await queryClient.invalidateQueries({ queryKey: options });
+      } else {
+        await queryClient.invalidateQueries({ 
+          queryKey: options.queryKey,
+          refetchType: options.refetchType as 'all' | 'active' | 'inactive' | 'none'
+        });
       }
-    };
-  };
+    },
+    setQueryData: (queryKey: string[], data: unknown) => {
+      queryClient.setQueryData(queryKey, data);
+    }
+  }), [queryClient]);
+
+  // Create a wrapper function that returns the memoized object
+  const wrappedUseQueryClient = useCallback(() => {
+    return wrappedQueryClientObject;
+  }, [wrappedQueryClientObject]);
 
   return (
     <CalendarProvider useQuery={useQuery} useQueryClient={wrappedUseQueryClient}>
