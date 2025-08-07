@@ -9,6 +9,7 @@ import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
 import { Calendar, ChevronDown, ChevronUp } from 'lucide-react';
+import Image from 'next/image';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 
 import { useCalendar } from '../../../../hooks/use-calendar';
@@ -66,20 +67,13 @@ const EventContent = ({ event }: { event: CalendarEvent }) => (
   <>
     {typeof event.google_event_id === 'string' &&
       event.google_event_id.trim() !== '' && (
-        <div
-          className="mr-1 inline-block h-[1.25em] w-[1.25em] align-middle opacity-80 dark:opacity-90"
-          title="Synced from Google Calendar"
+        <Image
+          src="/media/google-calendar-icon.png"
+          alt="Synced from Google Calendar"
+          width={18}
+          height={18}
+          className="mr-1 inline-block opacity-80 dark:opacity-90"
           data-testid="google-calendar-logo"
-          style={{
-            backgroundImage: 'url("/media/google-calendar-icon.png")',
-            backgroundSize: 'contain',
-            backgroundRepeat: 'no-repeat',
-            backgroundPosition: 'center',
-            width: '18px',
-            height: '18px',
-          }}
-          role="img"
-          aria-label="Google Calendar"
         />
       )}
     <span className="truncate">{event.title}</span>
