@@ -1121,6 +1121,9 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
                 'absolute inset-x-0 bottom-0 cursor-s-resize hover:bg-primary/20',
                 'h-2 transition-colors'
               )}
+              role="button"
+              tabIndex={0}
+              aria-label="Resize event"
               title="Resize event"
             />
           )}
