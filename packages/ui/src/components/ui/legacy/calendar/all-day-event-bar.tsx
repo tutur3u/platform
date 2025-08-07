@@ -604,16 +604,17 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
     // Start long-press timer
     longPressTimer.current = setTimeout(() => {
       dragInitiated.current = true;
-      handleDragStart(
-        {
-          ...e,
-          clientX: touch.clientX,
-          clientY: touch.clientY,
-          preventDefault: () => {},
-          stopPropagation: () => {},
-        } as unknown as React.MouseEvent<Element, MouseEvent>,
-        eventSpan
-      );
+      // Create a synthetic mouse event with only the required properties
+      const syntheticEvent = {
+        clientX: touch.clientX,
+        clientY: touch.clientY,
+        preventDefault: () => {},
+        stopPropagation: () => {},
+        type: 'mousedown',
+        target: e.target,
+        currentTarget: e.currentTarget,
+      } as React.MouseEvent<Element, MouseEvent>;
+      handleDragStart(syntheticEvent, eventSpan);
     }, LONG_PRESS_DURATION);
 
     const onTouchMove = (moveEvent: TouchEvent) => {
