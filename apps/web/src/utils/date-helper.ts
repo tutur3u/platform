@@ -276,9 +276,10 @@ export const isCurrent4DayPeriod = (startDate: Date, view: string): boolean => {
   const periodStart = new Date(currentDate);
   periodStart.setHours(0, 0, 0, 0);
   
-  // Calculate the end date (3 days after start date)
+  // Calculate the end date (3 days after start date) and set to end of 4th day
   const periodEnd = new Date(periodStart);
   periodEnd.setDate(periodStart.getDate() + 3);
+  periodEnd.setHours(23, 59, 59, 999); // End of the 4th day
   
   return today >= periodStart && today <= periodEnd;
 };
