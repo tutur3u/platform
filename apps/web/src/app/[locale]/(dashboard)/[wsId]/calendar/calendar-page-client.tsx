@@ -9,6 +9,7 @@ import TasksSidebarContent from './components/tasks-sidebar-content';
 import TestEventGeneratorButton from './components/test-event-generator-button';
 import { useTasksData, useAIChatData } from './hooks';
 import { DEV_MODE } from '@/constants/common';
+import { isToday, isCurrent4DayPeriod } from '@/utils/date-helper';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type {
   Workspace,
@@ -118,28 +119,6 @@ export default function CalendarPageClient({
 
   const selectToday = () => setDate(new Date());
 
-  const isToday = () => {
-    const today = new Date();
-    return date.getDate() === today.getDate() && 
-           date.getMonth() === today.getMonth() && 
-           date.getFullYear() === today.getFullYear();
-  };
-
-  const isCurrent4DayPeriod = () => {
-    if (view !== '4-days') return false;
-    const today = new Date();
-    const currentDate = new Date(date);
-    
-    // For 4-day view, check if today is within the 4-day period starting from the current date
-    const startDate = new Date(currentDate);
-    startDate.setHours(0, 0, 0, 0);
-    
-    const endDate = new Date(startDate);
-    endDate.setDate(startDate.getDate() + 3);
-    
-    return today >= startDate && today <= endDate;
-  };
-
   const onViewChange = (newView: string) => {
     setView(newView as 'day' | '4-days' | 'week' | 'month');
   };
@@ -234,7 +213,7 @@ export default function CalendarPageClient({
                   variant="outline"
                   size="sm"
                   onClick={selectToday}
-                  disabled={isToday() || isCurrent4DayPeriod()}
+                  disabled={isToday(date) || isCurrent4DayPeriod(date, view)}
                 >
                   {view === 'day'
                     ? t('today')

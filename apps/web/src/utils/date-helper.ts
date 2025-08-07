@@ -245,3 +245,40 @@ export const isSameMonth = (date1: Date, date2: Date): boolean => {
     date1.getFullYear() === date2.getFullYear()
   );
 };
+
+/**
+ * Checks if a given date is today
+ * @param date - Date to check
+ * @returns true if the date is today, false otherwise
+ */
+export const isToday = (date: Date): boolean => {
+  const today = new Date();
+  return (
+    date.getDate() === today.getDate() &&
+    date.getMonth() === today.getMonth() &&
+    date.getFullYear() === today.getFullYear()
+  );
+};
+
+/**
+ * Checks if today is within a 4-day period starting from a given date
+ * @param startDate - The start date of the 4-day period
+ * @param view - The current calendar view
+ * @returns true if today is within the 4-day period and view is '4-days', false otherwise
+ */
+export const isCurrent4DayPeriod = (startDate: Date, view: string): boolean => {
+  if (view !== '4-days') return false;
+  
+  const today = new Date();
+  const currentDate = new Date(startDate);
+  
+  // Set the start date to the beginning of the day
+  const periodStart = new Date(currentDate);
+  periodStart.setHours(0, 0, 0, 0);
+  
+  // Calculate the end date (3 days after start date)
+  const periodEnd = new Date(periodStart);
+  periodEnd.setDate(periodStart.getDate() + 3);
+  
+  return today >= periodStart && today <= periodEnd;
+};
