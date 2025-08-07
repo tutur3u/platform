@@ -7,6 +7,7 @@ import type {
   Workspace,
   WorkspaceCalendarGoogleToken,
 } from '@tuturuuu/types/db';
+import type { UseQueryResult, QueryClient } from '@tanstack/react-query';
 
 export const SmartCalendar = ({
   t,
@@ -26,8 +27,11 @@ export const SmartCalendar = ({
 }: {
   t: (key: string, values?: Record<string, unknown>) => string;
   locale: string;
-  useQuery: any;
-  useQueryClient: any;
+  useQuery: typeof import('@tanstack/react-query').useQuery;
+  useQueryClient: () => {
+    invalidateQueries: (options: { queryKey: string[]; refetchType?: string } | string[]) => Promise<void>;
+    setQueryData: (queryKey: string[], data: unknown) => void;
+  };
   workspace?: Workspace;
   disabled?: boolean;
   initialSettings?: Partial<CalendarSettings>;

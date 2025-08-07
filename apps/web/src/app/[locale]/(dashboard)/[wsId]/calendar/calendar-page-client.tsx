@@ -268,7 +268,7 @@ export default function CalendarPageClient({
             t={translationWrapper}
             locale={locale}
             workspace={workspace}
-            useQuery={useQuery as any} // This type assertion is needed because the original useQuery is not directly used here
+            useQuery={useQuery}
             useQueryClient={wrappedUseQueryClient}
             experimentalGoogleToken={
               experimentalGoogleToken?.ws_id === workspace.id
