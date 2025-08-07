@@ -502,7 +502,7 @@ export function EventModal() {
       const newStartDate = tz === 'auto' ? dayjs(date) : dayjs(date).tz(tz);
       const endDate =
         tz === 'auto'
-          ? dayjs(prev.end_at || '')
+          ? dayjs.utc(prev.end_at || '').local()
           : dayjs(prev.end_at || '').tz(tz);
       const newEvent = { ...prev, start_at: date.toISOString() };
 
@@ -549,7 +549,7 @@ export function EventModal() {
       let newEndDate = tz === 'auto' ? dayjs(date) : dayjs(date).tz(tz);
       const startDate =
         tz === 'auto'
-          ? dayjs(prev.start_at || '')
+          ? dayjs.utc(prev.start_at || '').local()
           : dayjs(prev.start_at || '').tz(tz);
       const newEvent = { ...prev };
 
@@ -586,7 +586,7 @@ export function EventModal() {
   const handleAllDayChange = (checked: boolean) => {
     setEvent((prev) => {
       const startDate =
-        tz === 'auto' ? dayjs(prev.start_at) : dayjs(prev.start_at).tz(tz);
+        tz === 'auto' ? dayjs.utc(prev.start_at).local() : dayjs(prev.start_at).tz(tz);
       // Backup previous times before updating
       const timedBackup = prevTimes.timed;
       const alldayBackup = prevTimes.allday;

@@ -4,6 +4,7 @@ import { getEventStyles } from '@tuturuuu/utils/color-helper';
 import { cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
+import utc from 'dayjs/plugin/utc';
 import {
   AlertTriangle,
   ArrowLeft,
@@ -32,6 +33,7 @@ import {
 } from '../../context-menu';
 import { GRID_SNAP, HOUR_HEIGHT, MAX_HOURS, MIN_EVENT_HEIGHT } from './config';
 
+dayjs.extend(utc);
 dayjs.extend(timezone);
 
 // Utility function to round time to nearest 15-minute interval
@@ -84,10 +86,12 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
   // Parse dates properly using selected time zone
   const startDate =
     tz === 'auto'
-      ? dayjs(localEvent.start_at)
+      ? dayjs.utc(localEvent.start_at).local() // Convert from UTC to local timezone
       : dayjs(localEvent.start_at).tz(tz);
   const endDate =
-    tz === 'auto' ? dayjs(localEvent.end_at) : dayjs(localEvent.end_at).tz(tz);
+    tz === 'auto' 
+      ? dayjs.utc(localEvent.end_at).local() // Convert from UTC to local timezone
+      : dayjs(localEvent.end_at).tz(tz);
 
   // Calculate hours with decimal minutes for positioning
   const startHours = Math.min(
@@ -856,7 +860,7 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
     const d = dayjs.isDayjs(date)
       ? date
       : tz === 'auto'
-        ? dayjs(date)
+        ? dayjs.utc(date).local() // Convert from UTC to local timezone
         : dayjs(date).tz(tz);
     return d.format(timeFormat === '24h' ? 'HH:mm' : 'h:mm a');
   };

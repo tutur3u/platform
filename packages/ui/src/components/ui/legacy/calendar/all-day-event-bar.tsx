@@ -7,12 +7,14 @@ import isBetween from 'dayjs/plugin/isBetween';
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
 import timezone from 'dayjs/plugin/timezone';
+import utc from 'dayjs/plugin/utc';
 import { Calendar, ChevronDown, ChevronUp } from 'lucide-react';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 
 import { useCalendar } from '../../../../hooks/use-calendar';
 import { MIN_COLUMN_WIDTH } from './config';
 
+dayjs.extend(utc);
 dayjs.extend(isBetween);
 dayjs.extend(isSameOrAfter);
 dayjs.extend(isSameOrBefore);
@@ -320,9 +322,9 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
     // Process each all-day event
     allDayEvents.forEach((event) => {
       const eventStart =
-        tz === 'auto' ? dayjs(event.start_at) : dayjs(event.start_at).tz(tz);
+        tz === 'auto' ? dayjs.utc(event.start_at).local() : dayjs(event.start_at).tz(tz);
       const eventEnd =
-        tz === 'auto' ? dayjs(event.end_at) : dayjs(event.end_at).tz(tz);
+        tz === 'auto' ? dayjs.utc(event.end_at).local() : dayjs(event.end_at).tz(tz);
 
       // Find the start and end indices within our visible dates
       let startIndex = -1;
