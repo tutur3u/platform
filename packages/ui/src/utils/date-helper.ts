@@ -90,7 +90,7 @@ export function parseTimezoneOffset(timeString: string): string {
   const offset = parseFloat(offsetPart);
 
   // Handle NaN case
-  if (isNaN(offset)) {
+  if (Number.isNaN(offset)) {
     return '';
   }
 
