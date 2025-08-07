@@ -420,6 +420,7 @@ export function TimezoneSettings({ value, onChange }: TimezoneSettingsProps) {
                 <CommandEmpty>No timezone found.</CommandEmpty>
                 <div 
                   className="h-[300px] overflow-y-auto"
+                  // Custom scroll handling required - Command component interferes with natural scrolling in popover context
                   onWheel={(e) => {
                     e.stopPropagation();
                     const target = e.currentTarget;
@@ -498,6 +499,7 @@ export function TimezoneSettings({ value, onChange }: TimezoneSettingsProps) {
                   <CommandEmpty>No timezone found.</CommandEmpty>
                   <div 
                     className="h-[300px] overflow-y-auto"
+                    // Custom scroll handling required - Command component interferes with natural scrolling in popover context
                     onWheel={(e) => {
                       e.stopPropagation();
                       const target = e.currentTarget;
