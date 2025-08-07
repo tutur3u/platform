@@ -135,7 +135,7 @@ export const EventDescriptionInput = ({
   // Set initial expanded state based on showToggle
   const [isExpanded, setIsExpanded] = React.useState(() => !showToggle);
 
-  // Set default state for expanded/collapsed based on mode and word count
+  // Set default state for expanded/collapsed based on word count
   React.useEffect(() => {
     if (showToggle) {
       setIsExpanded(false); // Always start clamped if > 60 words
