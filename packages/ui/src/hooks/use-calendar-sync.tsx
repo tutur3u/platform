@@ -371,7 +371,7 @@ export const CalendarSyncProvider = ({
 
     // Invalidate all calendar-related queries to ensure updates are reflected
     queryClient.invalidateQueries({
-      queryKey: ['databaseCalendarEvents', wsId, getCacheKey(dates)],
+      queryKey: ['databaseCalendarEvents', wsId, cacheKey],
     });
     
     // Also invalidate the general calendarEvents query used by other parts of the system
@@ -381,7 +381,7 @@ export const CalendarSyncProvider = ({
     
     // Invalidate Google Calendar events as well
     queryClient.invalidateQueries({
-      queryKey: ['googleCalendarEvents', wsId, getCacheKey(dates)],
+      queryKey: ['googleCalendarEvents', wsId, cacheKey],
     });
   }, [queryClient, wsId, dates, getCacheKey]);
 

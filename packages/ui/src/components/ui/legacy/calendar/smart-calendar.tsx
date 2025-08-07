@@ -8,7 +8,6 @@ import type {
   WorkspaceCalendarGoogleToken,
 } from '@tuturuuu/types/db';
 
-
 export const SmartCalendar = ({
   t,
   locale,
@@ -27,8 +26,8 @@ export const SmartCalendar = ({
 }: {
   t: (key: string, values?: Record<string, unknown>) => string;
   locale: string;
-  useQuery: unknown;
-  useQueryClient: unknown;
+  useQuery: any;
+  useQueryClient: any;
   workspace?: Workspace;
   disabled?: boolean;
   initialSettings?: Partial<CalendarSettings>;

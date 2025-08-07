@@ -40,26 +40,32 @@ interface CalendarPageClientProps {
   experimentalGoogleToken?: WorkspaceCalendarGoogleToken | null;
 }
 
-// Type definitions for the expected useQuery and useQueryClient signatures
-type CalendarUseQuery = (options: { 
-  queryKey: string[]; 
-  queryFn: () => Promise<unknown>; 
-  enabled?: boolean; 
-  refetchInterval?: number; 
-  staleTime?: number 
-}) => { data?: { events?: unknown[] } };
-
-type CalendarUseQueryClient = () => { 
-  invalidateQueries: (options: { queryKey: string[]; refetchType?: string } | string[]) => Promise<void>; 
-  setQueryData: (queryKey: string[], data: unknown) => void 
-};
-
 export default function CalendarPageClient({
   locale,
   workspace,
   experimentalGoogleToken,
 }: CalendarPageClientProps) {
   const t = useTranslations('calendar');
+  const queryClient = useQueryClient();
+  
+  // Create a wrapper for useQueryClient that matches the expected interface
+  const wrappedUseQueryClient = useCallback(() => {
+    return {
+      invalidateQueries: async (options: { queryKey: string[]; refetchType?: string } | string[]) => {
+        if (Array.isArray(options)) {
+          await queryClient.invalidateQueries({ queryKey: options });
+        } else {
+          await queryClient.invalidateQueries({ 
+            queryKey: options.queryKey,
+            refetchType: options.refetchType as any
+          });
+        }
+      },
+      setQueryData: (queryKey: string[], data: unknown) => {
+        queryClient.setQueryData(queryKey, data);
+      }
+    };
+  }, [queryClient]);
   
   // Create a wrapper function to match the expected type signature
   const translationWrapper = useCallback((key: string) => {
@@ -283,8 +289,8 @@ export default function CalendarPageClient({
             t={translationWrapper}
             locale={locale}
             workspace={workspace}
-            useQuery={useQuery as CalendarUseQuery}
-            useQueryClient={useQueryClient as CalendarUseQueryClient}
+            useQuery={useQuery as any} // This type assertion is needed because the original useQuery is not directly used here
+            useQueryClient={wrappedUseQueryClient}
             experimentalGoogleToken={
               experimentalGoogleToken?.ws_id === workspace.id
                 ? experimentalGoogleToken

@@ -6,11 +6,36 @@ import { Button } from '@tuturuuu/ui/button';
 import { SmartCalendar } from '@tuturuuu/ui/legacy/calendar/smart-calendar';
 import { useLocale, useTranslations } from 'next-intl';
 import Link from 'next/link';
+import { useCallback } from 'react';
 
 export default function Home() {
   const t = useTranslations('calendar');
   const locale = useLocale();
-  // const { date, setDate, view, setView, availableViews } = useCalendarContext();
+  const queryClient = useQueryClient();
+  
+  // Create a wrapper for the t function to match the expected type signature
+  const translationWrapper = useCallback((key: string, values?: Record<string, unknown>) => {
+    return t(key as Parameters<typeof t>[0], values as any);
+  }, [t]);
+  
+  // Create a wrapper for useQueryClient that matches the expected interface
+  const wrappedUseQueryClient = useCallback(() => {
+    return {
+      invalidateQueries: async (options: { queryKey: string[]; refetchType?: string } | string[]) => {
+        if (Array.isArray(options)) {
+          await queryClient.invalidateQueries({ queryKey: options });
+        } else {
+          await queryClient.invalidateQueries({ 
+            queryKey: options.queryKey,
+            refetchType: options.refetchType as any
+          });
+        }
+      },
+      setQueryData: (queryKey: string[], data: unknown) => {
+        queryClient.setQueryData(queryKey, data);
+      }
+    };
+  }, [queryClient]);
 
   return (
     <div className="relative flex h-screen flex-col overflow-y-auto p-4 pt-16 md:p-8 md:pt-20 md:pb-4 lg:p-16 lg:pt-20 lg:pb-4">
@@ -20,10 +45,10 @@ export default function Home() {
         </Link>
       )}
       <SmartCalendar
-        t={t}
+        t={translationWrapper}
         locale={locale}
-        useQuery={useQuery}
-        useQueryClient={useQueryClient}
+        useQuery={useQuery as any}
+        useQueryClient={wrappedUseQueryClient}
         enableHeader={false}
         disabled
       />
