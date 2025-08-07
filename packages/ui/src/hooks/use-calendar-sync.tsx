@@ -235,6 +235,7 @@ export const CalendarSyncProvider = ({
       const cachedData = calendarCache[cacheKey];
 
       // If we have cached data and it's not stale, return it immediately
+      // BUT if we're forcing a refresh, always fetch fresh data
       if (
         cachedData?.dbEvents &&
         cachedData.dbEvents.length > 0 &&
@@ -265,14 +266,16 @@ export const CalendarSyncProvider = ({
         return null;
       }
 
-      // Update cache with new data and reset isForced flag
+      // Update cache with new data
       updateCache(cacheKey, {
         dbEvents: fetchedData,
         dbLastUpdated: Date.now(),
       });
 
-      // Reset the ref immediately (synchronous)
-      isForcedRef.current = false;
+      // Reset the forced refresh flag only after we've successfully fetched fresh data
+      if (isForcedRef.current) {
+        isForcedRef.current = false;
+      }
 
       setData(fetchedData);
       return fetchedData;
@@ -352,8 +355,33 @@ export const CalendarSyncProvider = ({
 
     isForcedRef.current = true;
 
+    // Clear the cache for the current date range to ensure fresh data is fetched
+    setCalendarCache((prev) => {
+      const newCache = { ...prev };
+      if (newCache[cacheKey]) {
+        // Clear the cache for this specific date range
+        newCache[cacheKey] = {
+          ...newCache[cacheKey],
+          dbEvents: [],
+          dbLastUpdated: 0,
+        };
+      }
+      return newCache;
+    });
+
+    // Invalidate all calendar-related queries to ensure updates are reflected
     queryClient.invalidateQueries({
       queryKey: ['databaseCalendarEvents', wsId, getCacheKey(dates)],
+    });
+    
+    // Also invalidate the general calendarEvents query used by other parts of the system
+    queryClient.invalidateQueries({
+      queryKey: ['calendarEvents', wsId],
+    });
+    
+    // Invalidate Google Calendar events as well
+    queryClient.invalidateQueries({
+      queryKey: ['googleCalendarEvents', wsId, getCacheKey(dates)],
     });
   }, [queryClient, wsId, dates, getCacheKey]);
 

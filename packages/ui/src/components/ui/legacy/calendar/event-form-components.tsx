@@ -586,6 +586,7 @@ export const OverlapWarning = ({
   overlappingEvents,
 }: {
   overlappingEvents: Array<{
+    id?: string;
     title?: string;
     start_at: string;
     end_at: string;
@@ -601,8 +602,8 @@ export const OverlapWarning = ({
         This event overlaps with {overlappingEvents.length} other{' '}
         {overlappingEvents.length === 1 ? 'event' : 'events'}.
         <ul className="mt-2 list-inside list-disc">
-          {overlappingEvents.slice(0, 3).map((event) => (
-            <li key={`${event.title || 'Untitled'}-${event.start_at}-${event.end_at}`} className="text-xs">
+          {overlappingEvents.slice(0, 3).map((event, index) => (
+            <li key={event.id || `overlap-${index}-${event.start_at}-${event.end_at}`} className="text-xs">
               {event.title || 'Untitled Event'} (
               {new Date(event.start_at).toLocaleTimeString([], {
                 hour: '2-digit',
