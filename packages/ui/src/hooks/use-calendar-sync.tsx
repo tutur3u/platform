@@ -117,7 +117,7 @@ export const CalendarSyncProvider = ({
     isLoading: boolean;
   };
   useQueryClient: () => {
-    invalidateQueries: (options: { queryKey: string[]; exact?: boolean }) => void;
+    invalidateQueries: (options: { queryKey: string[]; exact?: boolean }) => Promise<void>;
   };
 }) => {
   const [data, setData] = useState<WorkspaceCalendarEvent[] | null>(null);
@@ -582,20 +582,22 @@ export const CalendarSyncProvider = ({
 
   // Add a ref to track if we've processed the initial data
   const hasProcessedInitialData = useRef(false);
+  const lastProcessedData = useRef<WorkspaceCalendarEvent[] | null>(null);
 
   // Effect to process initial data
   useEffect(() => {
+    // Reset processed flag if data has actually changed
+    if (fetchedData !== lastProcessedData.current) {
+      hasProcessedInitialData.current = false;
+      lastProcessedData.current = fetchedData;
+    }
+    
     if (fetchedData && !hasProcessedInitialData.current) {
       hasProcessedInitialData.current = true;
       // Force a re-render by updating the data state
       setData(fetchedData);
     }
   }, [fetchedData]);
-
-  // Effect to reset the processed flag when dates change
-  useEffect(() => {
-    hasProcessedInitialData.current = false;
-  }, []);
 
   const syncToGoogle = async () => {};
 
