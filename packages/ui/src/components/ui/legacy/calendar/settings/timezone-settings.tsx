@@ -281,17 +281,26 @@ export function TimezoneSettings({ value, onChange }: TimezoneSettingsProps) {
     }
   };
 
-  // Filter timezones based on search
-  const filteredPrimaryTimezones = React.useMemo(() => {
-    if (!primarySearch) return timezones;
+  // Reusable function to filter timezones
+  const filterTimezones = React.useCallback((
+    search: string,
+    baseTimezones: TimezoneOption[],
+    excludeValue?: string
+  ): TimezoneOption[] => {
+    // Filter out excluded value if provided
+    const filtered = excludeValue 
+      ? baseTimezones.filter(tz => tz.value !== excludeValue)
+      : baseTimezones;
     
-    const search = primarySearch.toLowerCase();
-    const searchResults = timezones.filter(
+    if (!search) return filtered;
+    
+    const searchLower = search.toLowerCase();
+    const searchResults = filtered.filter(
       (tz) =>
-        tz.label.toLowerCase().includes(search) ||
-        tz.value.toLowerCase().includes(search) ||
-        tz.region.toLowerCase().includes(search) ||
-        tz.offset.toLowerCase().includes(search)
+        tz.label.toLowerCase().includes(searchLower) ||
+        tz.value.toLowerCase().includes(searchLower) ||
+        tz.region.toLowerCase().includes(searchLower) ||
+        tz.offset.toLowerCase().includes(searchLower)
     );
     
     // If searching, also include any timezone that matches from the full list
@@ -299,9 +308,10 @@ export function TimezoneSettings({ value, onChange }: TimezoneSettingsProps) {
       const allTimezones = Intl.supportedValuesOf('timeZone');
       const additionalMatches = allTimezones
         .filter(tz => {
+          if (excludeValue && tz === excludeValue) return false;
           const tzLower = tz.toLowerCase();
           const cityName = tz.split('/').pop()?.replace(/_/g, ' ').toLowerCase() || '';
-          return tzLower.includes(search) || cityName.includes(search);
+          return tzLower.includes(searchLower) || cityName.includes(searchLower);
         })
         .filter(tz => !searchResults.some(existing => existing.value === tz))
         .slice(0, 20) // Limit additional results
@@ -338,67 +348,18 @@ export function TimezoneSettings({ value, onChange }: TimezoneSettingsProps) {
     }
     
     return searchResults;
-  }, [primarySearch]);
+  }, []);
 
-  const filteredSecondaryTimezones = React.useMemo(() => {
-    if (!secondarySearch) return timezones.filter(tz => tz.value !== value.timezone);
-    
-    const search = secondarySearch.toLowerCase();
-    const searchResults = timezones.filter(
-      (tz) =>
-        tz.value !== value.timezone &&
-        (tz.label.toLowerCase().includes(search) ||
-         tz.value.toLowerCase().includes(search) ||
-         tz.region.toLowerCase().includes(search) ||
-         tz.offset.toLowerCase().includes(search))
-    );
-    
-    // If searching, also include any timezone that matches from the full list
-    if (search.length > 2) {
-      const allTimezones = Intl.supportedValuesOf('timeZone');
-      const additionalMatches = allTimezones
-        .filter(tz => {
-          if (tz === value.timezone) return false;
-          const tzLower = tz.toLowerCase();
-          const cityName = tz.split('/').pop()?.replace(/_/g, ' ').toLowerCase() || '';
-          return tzLower.includes(search) || cityName.includes(search);
-        })
-        .filter(tz => !searchResults.some(existing => existing.value === tz))
-        .slice(0, 20) // Limit additional results
-        .map(tz => {
-          const parts = tz.split('/');
-          const region = parts[0] || 'Other';
-          const cityName = parts[parts.length - 1]?.replace(/_/g, ' ') || tz;
-          
-          try {
-            const date = new Date();
-            const formatter = new Intl.DateTimeFormat('en-US', {
-              timeZone: tz,
-              timeZoneName: 'long',
-            });
-            const timeZoneName = formatter.formatToParts(date).find(
-              (part) => part.type === 'timeZoneName'
-            )?.value || '';
-            
-            const { offset } = getTimezoneInfo(tz);
-            
-            return {
-              value: tz,
-              label: `${cityName} (${timeZoneName})`,
-              region,
-              offset,
-            };
-          } catch {
-            return null;
-          }
-        })
-        .filter(Boolean) as TimezoneOption[];
-      
-      return [...searchResults, ...additionalMatches];
-    }
-    
-    return searchResults;
-  }, [secondarySearch, value.timezone]);
+  // Filter timezones based on search
+  const filteredPrimaryTimezones = React.useMemo(
+    () => filterTimezones(primarySearch, timezones),
+    [filterTimezones, primarySearch]
+  );
+
+  const filteredSecondaryTimezones = React.useMemo(
+    () => filterTimezones(secondarySearch, timezones, value.timezone),
+    [filterTimezones, secondarySearch, value.timezone]
+  );
 
   // Group timezones by region for better organization
   const groupedPrimaryTimezones = React.useMemo(() => {
