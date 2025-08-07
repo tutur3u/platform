@@ -79,7 +79,7 @@ export function NavLink({
     onClick: () => {
       if (onLinkClick) {
         onLinkClick();
-      } else if (hasChildren && children) {
+      } else if (hasChildren) {
         onSubMenuClick(children, title);
       } else if (href) {
         onClick();
