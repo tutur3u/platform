@@ -138,7 +138,7 @@ export default function MonthPicker({
                 rows.push(
                   <tr key={`month-row-${rowIndex}`}>
                     {rowMonths.map((month) => (
-                      <td key={month.toString()} className="p-1">
+                      <td key={format(month, 'yyyy-MM')} className="p-1">
                         <div className="relative p-0 text-center text-sm focus-within:relative focus-within:z-20 [&:has([aria-selected])]:bg-slate-100 first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md dark:[&:has([aria-selected])]:bg-slate-800">
                           <Button
                             variant={
