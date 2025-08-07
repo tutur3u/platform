@@ -7,7 +7,6 @@ import type {
   Workspace,
   WorkspaceCalendarGoogleToken,
 } from '@tuturuuu/types/db';
-import type { UseQueryResult, QueryClient } from '@tanstack/react-query';
 
 export const SmartCalendar = ({
   t,
