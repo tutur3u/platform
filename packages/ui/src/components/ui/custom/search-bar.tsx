@@ -3,7 +3,7 @@
 import { Input } from '../input';
 import { cn } from '@tuturuuu/utils/format';
 import { debounce } from 'lodash';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 interface Props {
   t: any;
@@ -16,14 +16,17 @@ interface Props {
 // Assuming the rest of your imports and Props interface are unchanged
 
 const SearchBar = ({ t, defaultValue = '', className, onSearch }: Props) => {
-  // Memoize the updateQuery function to ensure debounce works correctly
+  // Use ref to avoid stale closure while preserving debounce behavior
+  const onSearchRef = useRef(onSearch);
+  onSearchRef.current = onSearch;
+
   const updateQuery = useCallback(
     debounce((query: string) => {
-      if (onSearch) {
-        onSearch(query);
+      if (onSearchRef.current) {
+        onSearchRef.current(query);
       }
     }, 300),
-    [] // Remove unnecessary onSearch dependency
+    []
   );
 
   const searchPlaceholder = t('search.search-placeholder');
