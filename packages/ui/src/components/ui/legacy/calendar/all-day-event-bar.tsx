@@ -485,10 +485,8 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
               occupiedRows[dayIndex] = [];
             }
             // We just ensured the array exists above, so we can safely access it
-            const dayRows = occupiedRows[dayIndex];
-            if (dayRows) {
-              dayRows[row] = true;
-            }
+            const dayRows = occupiedRows[dayIndex]!;
+            dayRows[row] = true;
           }
           rowFound = true;
         } else {

@@ -9,30 +9,19 @@ import TasksSidebarContent from './components/tasks-sidebar-content';
 import TestEventGeneratorButton from './components/test-event-generator-button';
 import { useTasksData, useAIChatData } from './hooks';
 import { DEV_MODE } from '@/constants/common';
-import { isToday, isCurrent4DayPeriod } from '@/utils/date-helper';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type {
   Workspace,
   WorkspaceCalendarGoogleToken,
 } from '@tuturuuu/types/db';
-import { Button } from '@tuturuuu/ui/button';
-import {
-  PanelLeftClose,
-  PanelRightClose,
-  Plus,
-  Sparkles,
-} from '@tuturuuu/ui/icons';
 import { SmartCalendar } from '@tuturuuu/ui/legacy/calendar/smart-calendar';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@tuturuuu/ui/select';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { Button } from '@tuturuuu/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@tuturuuu/ui/select';
+import { PanelLeftClose, PanelRightClose, Plus, Sparkles, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useState, useCallback } from 'react';
+import { useCallback, useState } from 'react';
+import { addDays, addMonths, subDays, subMonths } from 'date-fns';
+import { isToday, isCurrent4DayPeriod } from '@/utils/date-helper';
 
 interface CalendarPageClientProps {
   wsId: string;
@@ -70,7 +59,6 @@ export default function CalendarPageClient({
   
   // Create a wrapper function to match the expected type signature
   const translationWrapper = useCallback((key: string) => {
-    // Use type assertion to handle the next-intl type system
     return t(key as Parameters<typeof t>[0]);
   }, [t]);
 
@@ -88,31 +76,35 @@ export default function CalendarPageClient({
   const openAddEventDialog = () => setIsAddEventModalOpen(true);
   const closeAddEventDialog = () => setIsAddEventModalOpen(false);
 
-  // Calendar navigation functions
+  // Calendar navigation functions using date-fns
   const handleNext = useCallback(() => {
-    const newDate = new Date(date);
+    let newDate: Date;
     if (view === 'day') {
-      newDate.setDate(newDate.getDate() + 1);
+      newDate = addDays(date, 1);
     } else if (view === '4-days') {
-      newDate.setDate(newDate.getDate() + 4);
+      newDate = addDays(date, 4);
     } else if (view === 'week') {
-      newDate.setDate(newDate.getDate() + 7);
+      newDate = addDays(date, 7);
     } else if (view === 'month') {
-      newDate.setMonth(newDate.getMonth() + 1);
+      newDate = addMonths(date, 1);
+    } else {
+      newDate = date;
     }
     setDate(newDate);
   }, [date, view, setDate]);
 
   const handlePrev = useCallback(() => {
-    const newDate = new Date(date);
+    let newDate: Date;
     if (view === 'day') {
-      newDate.setDate(newDate.getDate() - 1);
+      newDate = subDays(date, 1);
     } else if (view === '4-days') {
-      newDate.setDate(newDate.getDate() - 4);
+      newDate = subDays(date, 4);
     } else if (view === 'week') {
-      newDate.setDate(newDate.getDate() - 7);
+      newDate = subDays(date, 7);
     } else if (view === 'month') {
-      newDate.setMonth(newDate.getMonth() - 1);
+      newDate = subMonths(date, 1);
+    } else {
+      newDate = date;
     }
     setDate(newDate);
   }, [date, view, setDate]);
