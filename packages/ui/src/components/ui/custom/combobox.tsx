@@ -61,10 +61,16 @@ export function Combobox({
   }, [open]);
 
   React.useEffect(() => {
-    if (selected) return;
-    if (useFirstValueAsDefault && options.length > 0)
-      onChange?.(options?.[0]?.value ?? '');
-  }, [onChange, selected, options, useFirstValueAsDefault]);
+    if (
+      (mode === 'single' && selected) ||
+      (mode === 'multiple' && Array.isArray(selected) && selected.length > 0)
+    ) {
+      return;
+    }
+    if (useFirstValueAsDefault && options.length > 0) {
+      onChange?.(options[0]?.value ?? '');
+    }
+  }, [onChange, selected, options, useFirstValueAsDefault, mode]);
 
   const selectedLabel =
     mode === 'single'
