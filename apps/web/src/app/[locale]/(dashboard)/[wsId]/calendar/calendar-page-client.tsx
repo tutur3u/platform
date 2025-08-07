@@ -40,12 +40,33 @@ interface CalendarPageClientProps {
   experimentalGoogleToken?: WorkspaceCalendarGoogleToken | null;
 }
 
+// Type definitions for the expected useQuery and useQueryClient signatures
+type CalendarUseQuery = (options: { 
+  queryKey: string[]; 
+  queryFn: () => Promise<unknown>; 
+  enabled?: boolean; 
+  refetchInterval?: number; 
+  staleTime?: number 
+}) => { data?: { events?: unknown[] } };
+
+type CalendarUseQueryClient = () => { 
+  invalidateQueries: (options: { queryKey: string[]; refetchType?: string } | string[]) => Promise<void>; 
+  setQueryData: (queryKey: string[], data: unknown) => void 
+};
+
 export default function CalendarPageClient({
   locale,
   workspace,
   experimentalGoogleToken,
 }: CalendarPageClientProps) {
   const t = useTranslations('calendar');
+  
+  // Create a wrapper function to match the expected type signature
+  const translationWrapper = useCallback((key: string) => {
+    // Use type assertion to handle the next-intl type system
+    return t(key as Parameters<typeof t>[0]);
+  }, [t]);
+
   const [isAddEventModalOpen, setIsAddEventModalOpen] = useState(false);
   const [calendarSidebarOpen, setCalendarSidebarOpen] = useState(false);
   const [othersSidebarOpen, setOthersSidebarOpen] = useState(false);
@@ -259,11 +280,11 @@ export default function CalendarPageClient({
         {/* Center Calendar View */}
         <div className="flex-1">
           <SmartCalendar
-            t={t}
+            t={translationWrapper}
             locale={locale}
             workspace={workspace}
-            useQuery={useQuery}
-            useQueryClient={useQueryClient}
+            useQuery={useQuery as CalendarUseQuery}
+            useQueryClient={useQueryClient as CalendarUseQueryClient}
             experimentalGoogleToken={
               experimentalGoogleToken?.ws_id === workspace.id
                 ? experimentalGoogleToken
