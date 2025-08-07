@@ -131,8 +131,11 @@ export default function MonthPicker({
               const rows = [];
               for (let i = 0; i < months.length; i += 3) {
                 const rowMonths = months.slice(i, i + 3);
+                if (rowMonths.length === 0) continue; // Skip empty rows
+                const firstMonth = rowMonths[0];
+                if (!firstMonth) continue; // Skip if first month is undefined
                 rows.push(
-                  <tr key={`month-row-${format(rowMonths[0], 'yyyy-MM')}`}>
+                  <tr key={`month-row-${format(firstMonth, 'yyyy-MM')}`}>
                     {rowMonths.map((month) => (
                       <td key={month.toString()} className="p-1">
                         <div className="relative p-0 text-center text-sm focus-within:relative focus-within:z-20 [&:has([aria-selected])]:bg-slate-100 first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md dark:[&:has([aria-selected])]:bg-slate-800">
@@ -156,7 +159,7 @@ export default function MonthPicker({
                     ))}
                     {/* Fill empty cells if needed */}
                     {Array.from({ length: 3 - rowMonths.length }, (_, j) => (
-                      <td key={`empty-${format(rowMonths[0], 'yyyy-MM')}-${j}`} className="p-1" />
+                      <td key={`empty-${format(firstMonth, 'yyyy-MM')}-${j}`} className="p-1" />
                     ))}
                   </tr>
                 );
