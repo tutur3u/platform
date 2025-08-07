@@ -180,12 +180,6 @@ export function TimezoneSettings({ value, onChange }: TimezoneSettingsProps) {
     }
   }, []);
 
-  // Detect user's timezone on mount - but keep it as "auto"
-  React.useEffect(() => {
-    // We don't need to change the timezone value, just detect it for display purposes
-    // The timezone will remain as "auto" and we'll show the detected timezone in the label
-  }, []);
-
   const handlePrimaryTimezoneChange = (timezone: string) => {
     // If the new primary timezone matches the secondary, clear the secondary
     if (timezone === value.secondaryTimezone) {
