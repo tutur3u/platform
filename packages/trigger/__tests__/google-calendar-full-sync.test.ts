@@ -390,7 +390,7 @@ describe('performFullSyncForWorkspace', () => {
         })
       );
 
-      // Verify the time range is approximately 28 days
+      // Verify the time range is approximately 270 days
       const calls = mockCalendarEventsList.mock.calls as any[];
       expect(calls.length).toBeGreaterThan(0);
       const callArgs = calls[0]?.[0];
@@ -400,7 +400,7 @@ describe('performFullSyncForWorkspace', () => {
         const timeMax = dayjs(callArgs.timeMax);
         const dayDifference = timeMax.diff(timeMin, 'day');
 
-        expect(dayDifference).toBe(28);
+        expect(dayDifference).toBe(270);
       }
     });
   });
@@ -489,9 +489,9 @@ describe('performFullSyncForWorkspace', () => {
       );
 
       expect(events).toHaveLength(3);
-      expect(events[0].status).toBe('confirmed');
-      expect(events[1].status).toBe('cancelled');
-      expect(events[2].status).toBe('tentative');
+      expect(events[0]?.status).toBe('confirmed');
+      expect(events[1]?.status).toBe('cancelled');
+      expect(events[2]?.status).toBe('tentative');
     });
   });
 });
