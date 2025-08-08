@@ -586,7 +586,7 @@ export const CalendarSyncProvider = ({
   const hasProcessedInitialData = useRef(false);
   const lastProcessedData = useRef<WorkspaceCalendarEvent[] | null>(null);
 
-  // Effect to process initial data
+  // Effect to initialize/reprocess data when fetchedData changes
   useEffect(() => {
     // Reset processed flag if data has actually changed
     if (fetchedData !== lastProcessedData.current) {
