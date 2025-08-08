@@ -61,8 +61,10 @@ export default function CalendarPageClient({
   }, [memoizedQueryClientApi]);
   
   // Create a wrapper function to match the expected type signature
+  // Type assertion needed due to next-intl's complex type system
   const translationWrapper = useCallback((key: string) => {
-    return t(key as Parameters<typeof t>[0]);
+    // @ts-expect-error - next-intl uses complex conditional types
+    return t(key);
   }, [t]);
 
   const [isAddEventModalOpen, setIsAddEventModalOpen] = useState(false);
