@@ -13,9 +13,9 @@
   },
   "dependencies": {
     "@supabase/ssr": "^0.6.1",
-    "@supabase/supabase-js": "^2.53.0",
+    "@supabase/supabase-js": "^2.54.0",
     "@tuturuuu/types": "workspace:*",
-    "next": "^15.4.5",
+    "next": "^15.4.6",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "zod": "^4.0.15"
