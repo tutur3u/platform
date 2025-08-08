@@ -179,10 +179,12 @@ export const CalendarSyncProvider = ({
   }, []);
 
   // Enhanced cache staleness check - shorter staleness for current week
+  const CACHE_STALE_TIME_CURRENT_WEEK = 30 * 1000; // 30 seconds
+  const CACHE_STALE_TIME_OTHER = 5 * 60 * 1000; // 5 minutes
+
   const isCacheStaleEnhanced = useCallback((lastUpdated: number, dateRange: Date[]) => {
     const isCurrentWeek = includesCurrentWeek(dateRange);
-    // 30 seconds for current week, 5 minutes for other weeks
-    const staleTime = isCurrentWeek ? 30 * 1000 : 5 * 60 * 1000; // 30 seconds
+    const staleTime = isCurrentWeek ? CACHE_STALE_TIME_CURRENT_WEEK : CACHE_STALE_TIME_OTHER;
     const isStale = Date.now() - lastUpdated >= staleTime;
 
     if (isCurrentWeek && isStale) {
