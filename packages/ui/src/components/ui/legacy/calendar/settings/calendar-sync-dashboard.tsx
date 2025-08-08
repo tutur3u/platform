@@ -7,9 +7,9 @@ import { Button } from '@tuturuuu/ui/button';
 import { AnalyticsCharts } from '@tuturuuu/ui/legacy/calendar/settings/analytics-charts';
 import { SummaryCards } from '@tuturuuu/ui/legacy/calendar/settings/summary-cards';
 import { SyncLogsTable } from '@tuturuuu/ui/legacy/calendar/settings/sync-logs-table';
-import { Calendar, Download, RefreshCw } from 'lucide-react';
-import { useMemo, useState, useCallback } from 'react';
 import { getEventStyles } from '@tuturuuu/utils/color-helper';
+import { Calendar, Download, RefreshCw } from 'lucide-react';
+import { useCallback, useMemo, useState } from 'react';
 
 const getWorkspaces = async () => {
   const workspaces = await fetch('/api/workspaces');
@@ -85,7 +85,7 @@ export function CalendarSyncDashboard({ syncLogs }: { syncLogs: SyncLog[] }) {
       'Google Calendar': '#4285f4',
       'Outlook Calendar': '#0078d4',
       'Apple Calendar': '#007aff',
-      'Unknown': '#6b7280',
+      Unknown: '#6b7280',
     };
     return colors[source] || '#6b7280';
   }, []);
@@ -112,14 +112,25 @@ export function CalendarSyncDashboard({ syncLogs }: { syncLogs: SyncLog[] }) {
         return logTime >= hourStart && logTime < hourEnd;
       });
 
-      const successCount = hourLogs.filter((log) => log.status === 'completed').length;
-      const failedCount = hourLogs.filter((log) => log.status === 'failed').length;
-      const totalEvents = hourLogs.reduce((sum, log) => 
-        sum + (log.events?.added || 0) + (log.events?.updated || 0) + (log.events?.deleted || 0), 0
+      const successCount = hourLogs.filter(
+        (log) => log.status === 'completed'
+      ).length;
+      const failedCount = hourLogs.filter(
+        (log) => log.status === 'failed'
+      ).length;
+      const totalEvents = hourLogs.reduce(
+        (sum, log) =>
+          sum +
+          (log.events?.added || 0) +
+          (log.events?.updated || 0) +
+          (log.events?.deleted || 0),
+        0
       );
-      const avgDuration = hourLogs.length > 0 
-        ? hourLogs.reduce((sum, log) => sum + (log.duration || 0), 0) / hourLogs.length 
-        : 0;
+      const avgDuration =
+        hourLogs.length > 0
+          ? hourLogs.reduce((sum, log) => sum + (log.duration || 0), 0) /
+            hourLogs.length
+          : 0;
 
       data.push({
         time: hourStart.toLocaleTimeString([], {
@@ -146,12 +157,26 @@ export function CalendarSyncDashboard({ syncLogs }: { syncLogs: SyncLog[] }) {
     );
     const totalEvents = workspaceLogs.reduce(
       (sum, log) =>
-        sum + (log.events?.added || 0) + (log.events?.updated || 0) + (log.events?.deleted || 0),
+        sum +
+        (log.events?.added || 0) +
+        (log.events?.updated || 0) +
+        (log.events?.deleted || 0),
       0
     );
 
     // Use existing color system for workspace distinction
-    const workspaceColors = ['BLUE', 'GREEN', 'PURPLE', 'YELLOW', 'PINK', 'ORANGE', 'INDIGO', 'CYAN', 'RED', 'GRAY'];
+    const workspaceColors = [
+      'BLUE',
+      'GREEN',
+      'PURPLE',
+      'YELLOW',
+      'PINK',
+      'ORANGE',
+      'INDIGO',
+      'CYAN',
+      'RED',
+      'GRAY',
+    ];
     const colorKey = workspaceColors[index % workspaceColors.length] || 'BLUE';
     const { bg } = getEventStyles(colorKey);
 
@@ -167,7 +192,7 @@ export function CalendarSyncDashboard({ syncLogs }: { syncLogs: SyncLog[] }) {
   // Calendar source distribution based on actual data
   const calendarSourceData = useMemo(() => {
     const sourceCounts: Record<string, number> = {};
-    
+
     syncLogs.forEach((log) => {
       const source = log.calendarSource || 'Unknown';
       if (source) {
@@ -183,11 +208,11 @@ export function CalendarSyncDashboard({ syncLogs }: { syncLogs: SyncLog[] }) {
     }));
   }, [syncLogs, getSourceColor]);
 
-    // Event type distribution over time based on actual data
+  // Event type distribution over time based on actual data
   const eventTypeData = useMemo(() => {
     const periods = ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00'];
     const periodHours = [0, 4, 8, 12, 16, 20];
-    
+
     return periods.map((period, index) => {
       const periodLogs = syncLogs.filter((log) => {
         const logTime = new Date(log.timestamp);
@@ -198,9 +223,18 @@ export function CalendarSyncDashboard({ syncLogs }: { syncLogs: SyncLog[] }) {
 
       return {
         period,
-        added: periodLogs.reduce((sum, log) => sum + (log.events?.added || 0), 0),
-        updated: periodLogs.reduce((sum, log) => sum + (log.events?.updated || 0), 0),
-        deleted: periodLogs.reduce((sum, log) => sum + (log.events?.deleted || 0), 0),
+        added: periodLogs.reduce(
+          (sum, log) => sum + (log.events?.added || 0),
+          0
+        ),
+        updated: periodLogs.reduce(
+          (sum, log) => sum + (log.events?.updated || 0),
+          0
+        ),
+        deleted: periodLogs.reduce(
+          (sum, log) => sum + (log.events?.deleted || 0),
+          0
+        ),
       };
     });
   }, [syncLogs]);

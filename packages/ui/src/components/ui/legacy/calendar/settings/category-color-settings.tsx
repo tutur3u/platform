@@ -223,7 +223,10 @@ export function CategoryColorsSettings({
         </div>
       </div>
 
-             <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'categories' | 'suggestions')}>
+      <Tabs
+        value={activeTab}
+        onValueChange={(v) => setActiveTab(v as 'categories' | 'suggestions')}
+      >
         <div className="mb-4 flex items-center justify-between">
           <TabsList>
             <TabsTrigger value="categories" className="px-4">
@@ -349,7 +352,7 @@ export function CategoryColorsSettings({
                           <div className="flex flex-1 items-center justify-between">
                             <button
                               type="button"
-                              className="cursor-pointer truncate font-medium text-left"
+                              className="cursor-pointer truncate text-left font-medium"
                               onClick={() => setEditingCategory(index)}
                               onKeyDown={(e) => {
                                 if (e.key === 'Enter' || e.key === ' ') {
@@ -442,7 +445,7 @@ export function CategoryColorsSettings({
 
         <TabsContent value="suggestions" className="mt-0">
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
-                         {CATEGORY_SUGGESTIONS.map((suggestion) => {
+            {CATEGORY_SUGGESTIONS.map((suggestion) => {
               // Check if this category name or color already exists
               const exists = value.categories.some(
                 (cat) =>

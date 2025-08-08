@@ -162,7 +162,10 @@ export const EventDescriptionInput = ({
   };
 
   // Throttle function
-  const throttle = <T extends unknown[]>(func: (...args: T) => void, limit: number) => {
+  const throttle = <T extends unknown[]>(
+    func: (...args: T) => void,
+    limit: number
+  ) => {
     let inThrottle: boolean;
     return function (this: unknown, ...args: T) {
       if (!inThrottle) {
@@ -603,7 +606,12 @@ export const OverlapWarning = ({
         {overlappingEvents.length === 1 ? 'event' : 'events'}.
         <ul className="mt-2 list-inside list-disc">
           {overlappingEvents.slice(0, 3).map((event, index) => (
-            <li key={event.id || `overlap-${index}-${event.start_at}-${event.end_at}`} className="text-xs">
+            <li
+              key={
+                event.id || `overlap-${index}-${event.start_at}-${event.end_at}`
+              }
+              className="text-xs"
+            >
               {event.title || 'Untitled Event'} (
               {new Date(event.start_at).toLocaleTimeString([], {
                 hour: '2-digit',

@@ -136,8 +136,19 @@ export const CalendarProvider = ({
   experimentalGoogleToken,
 }: {
   ws?: Workspace;
-  useQuery: (options: { queryKey: string[]; queryFn: () => Promise<unknown>; enabled?: boolean; refetchInterval?: number; staleTime?: number }) => { data?: { events?: CalendarEvent[] } };
-  useQueryClient: () => { invalidateQueries: (options: { queryKey: string[]; refetchType?: string } | string[]) => Promise<void>; setQueryData: (queryKey: string[], data: unknown) => void };
+  useQuery: (options: {
+    queryKey: string[];
+    queryFn: () => Promise<unknown>;
+    enabled?: boolean;
+    refetchInterval?: number;
+    staleTime?: number;
+  }) => { data?: { events?: CalendarEvent[] } };
+  useQueryClient: () => {
+    invalidateQueries: (
+      options: { queryKey: string[]; refetchType?: string } | string[]
+    ) => Promise<void>;
+    setQueryData: (queryKey: string[], data: unknown) => void;
+  };
   children: ReactNode;
   initialSettings?: Partial<CalendarSettings>;
   experimentalGoogleToken?: WorkspaceCalendarGoogleToken | null;
@@ -637,7 +648,8 @@ export const CalendarProvider = ({
       const cleanedUpdates: Partial<CalendarEvent> = {};
       for (const field of allowedFields) {
         if (eventUpdates[field] !== undefined) {
-          (cleanedUpdates as Record<string, unknown>)[field] = eventUpdates[field];
+          (cleanedUpdates as Record<string, unknown>)[field] =
+            eventUpdates[field];
         }
       }
 
@@ -880,7 +892,10 @@ export const CalendarProvider = ({
       );
 
       // Initialize batch operations - we'll perform these in a more optimized way
-      const eventsToUpdate: Array<{ id: string; data: Partial<CalendarEvent> }> = [];
+      const eventsToUpdate: Array<{
+        id: string;
+        data: Partial<CalendarEvent>;
+      }> = [];
       const eventsToInsert: Array<{
         title: string;
         description: string;

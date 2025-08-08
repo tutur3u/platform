@@ -67,7 +67,10 @@ export const DayCell: React.FC<{
         <TooltipContent>
           {getAttendanceGroupNames(day, attendanceData).map(
             (groupName, idx) => (
-              <div key={`${groupName}-${day.getTime()}-${idx}`} className="flex items-center gap-1">
+              <div
+                key={`${groupName}-${day.getTime()}-${idx}`}
+                className="flex items-center gap-1"
+              >
                 <span className="text-xs font-semibold">{groupName}</span>
               </div>
             )

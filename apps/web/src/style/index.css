@@ -64,11 +64,11 @@
   transform-origin: top left;
   width: calc(100% * var(--cal-mult));
   height: calc(100% * var(--cal-mult));
-  
+
   /* Font rendering optimization for scaling */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  
+
   /* Hide scrollbars for clean appearance */
   -ms-overflow-style: none;
   scrollbar-width: none;
@@ -115,5 +115,3 @@
 /* ==========================================================================
    Utility Classes
    ========================================================================== */
-
-

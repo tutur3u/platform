@@ -1,11 +1,11 @@
 import { CalendarActiveSyncDebugger } from './active-sync';
 import CalendarPageClient from './calendar-page-client';
 import { CalendarStateProvider } from './calendar-state-context';
+import { CalendarSyncWrapper } from './calendar-sync-wrapper';
 import { DEV_MODE } from '@/constants/common';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { redirect } from 'next/navigation';
-import { CalendarSyncWrapper } from './calendar-sync-wrapper';
 
 interface PageProps {
   params: Promise<{

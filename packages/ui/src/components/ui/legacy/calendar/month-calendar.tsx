@@ -245,11 +245,11 @@ export const MonthCalendar = ({
         if (eventDays.length > 1) {
           // Create spans for each week this event appears in
           const weekGroups = new Map<number, number[]>();
-          
-          eventDays.forEach(dayIndex => {
+
+          eventDays.forEach((dayIndex) => {
             const weekIndex = Math.floor(dayIndex / 7);
             const weekDayIndex = dayIndex % 7;
-            
+
             if (!weekGroups.has(weekIndex)) {
               weekGroups.set(weekIndex, []);
             }
@@ -263,7 +263,7 @@ export const MonthCalendar = ({
           weekGroups.forEach((weekDays, weekIndex) => {
             const startIndex = Math.min(...weekDays);
             const endIndex = Math.max(...weekDays);
-            
+
             spans.push({
               event,
               startIndex,
@@ -272,7 +272,7 @@ export const MonthCalendar = ({
               weekIndex,
             });
           });
-          
+
           processedEvents.add(event.id);
         }
       });
@@ -365,7 +365,9 @@ export const MonthCalendar = ({
   };
 
   // Get color styles for an event
-  const getEventStyles = (event: CalendarEvent): { bg: string; text: string } => {
+  const getEventStyles = (
+    event: CalendarEvent
+  ): { bg: string; text: string } => {
     const colorMap: Record<string, { bg: string; text: string }> = {
       blue: {
         bg: 'bg-blue-100/60 dark:bg-blue-900/30',
@@ -474,7 +476,6 @@ export const MonthCalendar = ({
               const isWeekend = day.getDay() === 0 || day.getDay() === 6;
               const isHidden = isWeekend && !settings.appearance.showWeekends;
 
-
               return (
                 <div
                   key={day.toString()}
@@ -546,7 +547,7 @@ export const MonthCalendar = ({
                               <button
                                 type="button"
                                 className={cn(
-                                  'w-full text-left cursor-pointer items-center gap-1 truncate rounded px-1.5 py-1 text-xs font-medium',
+                                  'w-full cursor-pointer items-center gap-1 truncate rounded px-1.5 py-1 text-left text-xs font-medium',
                                   bg,
                                   text,
                                   !isCurrentMonth && 'opacity-60'
@@ -643,7 +644,7 @@ export const MonthCalendar = ({
                                     key={event.id}
                                     type="button"
                                     className={cn(
-                                      'w-full text-left cursor-pointer items-center gap-1 truncate rounded px-1.5 py-1 text-xs font-medium',
+                                      'w-full cursor-pointer items-center gap-1 truncate rounded px-1.5 py-1 text-left text-xs font-medium',
                                       bg,
                                       text,
                                       !isCurrentMonth && 'opacity-60'
