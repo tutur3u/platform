@@ -20,10 +20,9 @@
     "@trigger.dev/sdk": "^3.3.17",
     "@tuturuuu/supabase": "workspace:*",
     "@tuturuuu/types": "workspace:*",
+    "@tuturuuu/google": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
-    "dayjs": "^1.11.13",
-    "google-auth-library": "^10.2.0",
-    "googleapis": "^154.1.0"
+    "dayjs": "^1.11.13"
   },
   "devDependencies": {
     "@trigger.dev/build": "^3.3.17",

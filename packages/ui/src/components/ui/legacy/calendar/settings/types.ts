@@ -8,7 +8,7 @@ export interface User {
   id: string;
   display_name: string;
   email: string;
-  avatar: string;
+  avatar: string | null;
 }
 
 export interface SyncLog {
@@ -25,7 +25,7 @@ export interface SyncLog {
     deleted: number;
   };
   calendarSource: string;
-  error?: string;
+  error?: string | null;
 }
 
 export interface TimeSeriesData {
@@ -45,7 +45,7 @@ export interface EventTypeData {
 }
 
 export interface WorkspaceActivityData {
-  name: string;
+  name: string | null;
   syncs: number;
   events: number;
   success: number;

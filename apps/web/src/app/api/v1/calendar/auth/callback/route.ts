@@ -1,6 +1,6 @@
+import { OAuth2Client } from '@tuturuuu/google';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { performFullSyncForWorkspace } from '@tuturuuu/trigger';
-import { OAuth2Client } from 'google-auth-library';
 import { NextResponse } from 'next/server';
 
 export async function GET(request: Request) {

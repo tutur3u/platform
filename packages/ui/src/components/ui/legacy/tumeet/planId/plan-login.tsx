@@ -1,7 +1,6 @@
 'use client';
 
 import type { MeetTogetherPlan } from '@tuturuuu/types/primitives/MeetTogetherPlan';
-import type { User } from '@tuturuuu/types/primitives/User';
 import { Button } from '@tuturuuu/ui/button';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
 import {
@@ -41,11 +40,9 @@ const GUEST_CREDENTIALS_KEY_PREFIX = 'meet_together_guest_';
 
 export default function PlanLogin({
   plan,
-  platformUser,
   baseUrl,
 }: {
   plan: MeetTogetherPlan;
-  platformUser: User | null;
   baseUrl: string;
 }) {
   const pathname = usePathname();
@@ -53,7 +50,8 @@ export default function PlanLogin({
 
   const t = useTranslations();
 
-  const { user, displayMode, setUser, setDisplayMode } = useTimeBlocking();
+  const { user, originalPlatformUser, displayMode, setUser, setDisplayMode } =
+    useTimeBlocking();
 
   const [loading, setLoading] = useState(false);
 
@@ -222,22 +220,24 @@ export default function PlanLogin({
               onClick={() => {
                 if (!plan.id) return;
 
-                if (!platformUser) {
+                if (!originalPlatformUser) {
                   router.push(
                     `${baseUrl}/login?nextUrl=${encodeURIComponent(pathname)}`
                   );
                   return;
                 }
 
-                setUser(plan.id, platformUser);
+                setUser(plan.id, originalPlatformUser);
                 setDisplayMode();
               }}
               disabled={
                 !plan.id ||
-                (!!platformUser && (!user?.id || platformUser?.id === user?.id))
+                (!!originalPlatformUser &&
+                  (!user?.id || originalPlatformUser?.id === user?.id))
               }
             >
-              {!!platformUser && (!user?.id || platformUser?.id === user?.id)
+              {!!originalPlatformUser &&
+              (!user?.id || originalPlatformUser?.id === user?.id)
                 ? t('meet-together-plan-details.using_tuturuuu_account')
                 : t('meet-together-plan-details.use_tuturuuu_account')}
             </Button>

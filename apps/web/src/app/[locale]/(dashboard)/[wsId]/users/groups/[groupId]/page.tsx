@@ -1,3 +1,4 @@
+import { getGuestGroup } from '../../../../../../../../../../packages/utils/src/workspace-helper';
 import { getUserColumns } from '../../database/columns';
 import { Filter } from '../../filters';
 import ExternalGroupMembers from './external-group-members';
@@ -49,11 +50,13 @@ export default async function UserGroupDetailsPage({
   const { locale, wsId, groupId } = await params;
 
   const group = await getData(wsId, groupId);
+  const isGuest = await getGuestGroup({ groupId });
 
   const { data: rawUsers, count: usersCount } = await getUserData(
     wsId,
     groupId,
-    await searchParams
+    await searchParams,
+    !!isGuest // ✅ isGuest now passed last
   );
 
   const { data: extraFields } = await getUserFields(wsId);
@@ -158,13 +161,11 @@ export default async function UserGroupDetailsPage({
       />
       <Separator className="my-4" />
       <div className="grid w-full grid-cols-1 gap-4 lg:grid-cols-2">
-        {/* <div className="border-border bg-foreground/5 flex flex-col justify-between gap-4 rounded-lg border p-4 opacity-50 md:flex-row md:items-start"> */}
         {excludedUserGroups.length ? (
           <div className="flex flex-col rounded-lg border border-border bg-foreground/5 p-4">
             <div className="mb-2 text-xl font-semibold">
               {t('ws-roles.members')}
             </div>
-
             <ExternalGroupMembers
               wsId={wsId}
               totalUsers={usersCount}
@@ -213,11 +214,6 @@ export default async function UserGroupDetailsPage({
             </div>
           </div>
         ) : null}
-        {/* <div className="border-border bg-foreground/5 flex flex-col rounded-lg border p-4">
-          <div className="text-xl font-semibold">
-            {t('user-group-data-table.special_users')}
-          </div>
-        </div> */}
       </div>
       <Separator className="my-4" />
       <CustomDataTable
@@ -253,8 +249,7 @@ export default async function UserGroupDetailsPage({
           group_count: false,
           created_at: false,
           updated_at: false,
-
-          // Extra columns
+          attendance_count: isGuest,
           ...Object.fromEntries(extraFields.map((field) => [field.id, false])),
         }}
       />
@@ -264,7 +259,6 @@ export default async function UserGroupDetailsPage({
 
 async function getData(wsId: string, groupId: string) {
   const supabase = await createClient();
-
   const { data, error } = await supabase
     .from('workspace_user_groups')
     .select('*')
@@ -274,7 +268,6 @@ async function getData(wsId: string, groupId: string) {
 
   if (error) throw error;
   if (!data) notFound();
-
   return data as UserGroup;
 }
 
@@ -287,18 +280,25 @@ async function getUserData(
     pageSize = '10',
     excludedGroups = [],
     retry = true,
-  }: SearchParams & { retry?: boolean } = {}
+  }: SearchParams & { retry?: boolean } = {},
+  isGuest?: boolean // ✅ Optional parameter last
 ) {
   const supabase = await createClient();
+  let queryBuilder;
 
-  const queryBuilder = supabase
-    .from('workspace_user_groups_users')
-    .select('...workspace_users!inner(*)', {
-      count: 'exact',
-    })
-    .eq('group_id', groupId);
-
-  if (q) queryBuilder.ilike('workspace_users.display_name', `%${q}%`);
+  if (isGuest) {
+    queryBuilder = supabase
+      .from('group_with_attendance')
+      .select('*', { count: 'exact' })
+      .eq('group_id', groupId);
+    if (q) queryBuilder.ilike('full_name', `%${q}%`);
+  } else {
+    queryBuilder = supabase
+      .from('workspace_user_groups_users')
+      .select('...workspace_users!inner(*)', { count: 'exact' })
+      .eq('group_id', groupId);
+    if (q) queryBuilder.ilike('workspace_users.display_name', `%${q}%`);
+  }
 
   if (page && pageSize) {
     const parsedPage = parseInt(page);
@@ -312,88 +312,89 @@ async function getUserData(
 
   if (error) {
     if (!retry) throw error;
-    return getUserData(wsId, groupId, {
-      q,
-      pageSize,
-      excludedGroups,
-      retry: false,
-    });
+    return getUserData(
+      wsId,
+      groupId,
+      { q, pageSize, excludedGroups, retry: false },
+      isGuest
+    );
   }
 
-  return { data, count } as unknown as { data: WorkspaceUser[]; count: number };
+  let mappedData;
+  if (isGuest) {
+    mappedData =
+      data
+        ?.map((item) =>
+          'user_id' in item
+            ? {
+                id: item.user_id,
+                full_name: item.full_name,
+                email: item.email,
+                gender: item.gender,
+                phone: item.phone,
+                attendance_count: item.attendance_count,
+              }
+            : null
+        )
+        .filter((item) => item !== null) || [];
+  } else {
+    mappedData = data || [];
+  }
+
+  return { data: mappedData, count } as {
+    data: WorkspaceUser[];
+    count: number;
+  };
 }
 
 async function getUserFields(wsId: string) {
   const supabase = await createClient();
-
-  const queryBuilder = supabase
+  const { data, error, count } = await supabase
     .from('workspace_user_fields')
-    .select('*', {
-      count: 'exact',
-    })
+    .select('*', { count: 'exact' })
     .eq('ws_id', wsId)
     .order('created_at', { ascending: false });
 
-  const { data, error, count } = await queryBuilder;
   if (error) throw error;
-
   return { data, count } as { data: WorkspaceUserField[]; count: number };
 }
 
 async function getGroupPosts(groupId: string) {
   const supabase = await createClient();
-
-  const queryBuilder = supabase
+  const { data, error, count } = await supabase
     .from('user_group_posts')
-    .select('*', {
-      count: 'exact',
-    })
+    .select('*', { count: 'exact' })
     .eq('group_id', groupId)
     .order('created_at', { ascending: false });
 
-  const { data, error, count } = await queryBuilder;
   if (error) throw error;
-
   return { data, count };
 }
 
 async function getLinkedProducts(groupId: string) {
   const supabase = await createClient();
-
-  const queryBuilder = supabase
+  const { data, error, count } = await supabase
     .from('user_group_linked_products')
-    .select('...workspace_products(id, name, description)', {
-      count: 'exact',
-    })
+    .select('...workspace_products(id, name, description)', { count: 'exact' })
     .eq('group_id', groupId)
     .order('created_at', { ascending: false });
 
-  const { data, error, count } = await queryBuilder;
   if (error) throw error;
-
   return { data, count };
 }
 
 async function getExcludedUserGroups(wsId: string, groupId: string) {
   const supabase = await createClient();
-
-  const queryBuilder = supabase
+  const { data, error, count } = await supabase
     .rpc(
       'get_possible_excluded_groups',
-      {
-        _ws_id: wsId,
-        included_groups: [groupId],
-      },
-      {
-        count: 'exact',
-      }
+      { _ws_id: wsId, included_groups: [groupId] },
+      { count: 'exact' }
     )
     .select('id, name, amount')
     .order('amount', { ascending: false })
     .order('name');
 
-  const { data, error, count } = await queryBuilder;
   if (error) throw error;
-
   return { data, count } as { data: UserGroup[]; count: number };
 }

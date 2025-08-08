@@ -1,6 +1,7 @@
 'use client';
 
-import type { SyncLog, Workspace } from './types';
+import type { SyncLog } from './types';
+import type { Workspace } from '@tuturuuu/types/db';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import {
@@ -226,9 +227,7 @@ export function SyncLogsTable({
                     value={workspace.id}
                   >
                     <div className="flex items-center gap-2">
-                      <div
-                        className={`h-2 w-2 rounded-full ${workspace.color}`}
-                      />
+                      <div className="h-2 w-2 rounded-full bg-blue-500" />
                       {workspace.name}
                     </div>
                   </SelectItem>
