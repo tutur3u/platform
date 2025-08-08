@@ -6,7 +6,9 @@ import { Button } from '@tuturuuu/ui/button';
 import { SmartCalendar } from '@tuturuuu/ui/legacy/calendar/smart-calendar';
 import { useLocale, useTranslations } from 'next-intl';
 import Link from 'next/link';
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
+
+type RefetchType = 'active' | 'all' | 'inactive';
 
 export default function Home() {
   const t = useTranslations('calendar');
@@ -20,24 +22,26 @@ export default function Home() {
     return t(key, values);
   }, [t]);
   
-  // Create a wrapper for useQueryClient that matches the expected interface
-  const wrappedUseQueryClient = useCallback(() => {
-    return {
-      invalidateQueries: async (options: { queryKey: string[]; refetchType?: string } | string[]) => {
-        if (Array.isArray(options)) {
-          await queryClient.invalidateQueries({ queryKey: options });
-        } else {
-          await queryClient.invalidateQueries({ 
-            queryKey: options.queryKey,
-            refetchType: options.refetchType as any
-          });
-        }
-      },
-      setQueryData: (queryKey: string[], data: unknown) => {
-        queryClient.setQueryData(queryKey, data);
+  // Create a stable, memoized client-like API and return it from a stable callback
+  const memoizedQueryClientApi = useMemo(() => ({
+    invalidateQueries: async (
+      options: { queryKey: string[]; refetchType?: string } | string[]
+    ) => {
+      if (Array.isArray(options)) {
+        await queryClient.invalidateQueries({ queryKey: options });
+      } else {
+        await queryClient.invalidateQueries({
+          queryKey: options.queryKey,
+          refetchType: options.refetchType as RefetchType | undefined,
+        });
       }
-    };
-  }, [queryClient]);
+    },
+    setQueryData: (queryKey: string[], data: unknown) => {
+      queryClient.setQueryData(queryKey, data);
+    },
+  }), [queryClient]);
+
+  const wrappedUseQueryClient = useCallback(() => memoizedQueryClientApi, [memoizedQueryClientApi]);
 
   return (
     <div className="relative flex h-screen flex-col overflow-y-auto p-4 pt-16 md:p-8 md:pt-20 md:pb-4 lg:p-16 lg:pt-20 lg:pb-4">
@@ -49,7 +53,7 @@ export default function Home() {
       <SmartCalendar
         t={translationWrapper}
         locale={locale}
-        useQuery={useQuery as any}
+        useQuery={useQuery}
         useQueryClient={wrappedUseQueryClient}
         enableHeader={false}
         disabled
