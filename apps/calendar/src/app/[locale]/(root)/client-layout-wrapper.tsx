@@ -9,6 +9,9 @@ interface ClientLayoutWrapperProps {
   children: React.ReactNode;
 }
 
+// Define proper types for refetchType
+type RefetchType = 'all' | 'active' | 'inactive' | 'none';
+
 export default function ClientLayoutWrapper({
   children,
 }: ClientLayoutWrapperProps) {
@@ -22,7 +25,7 @@ export default function ClientLayoutWrapper({
       } else {
         await queryClient.invalidateQueries({ 
           queryKey: options.queryKey,
-          refetchType: options.refetchType as 'all' | 'active' | 'inactive' | 'none'
+          refetchType: options.refetchType as RefetchType | undefined
         });
       }
     },

@@ -19,7 +19,7 @@ import { Button } from '@tuturuuu/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@tuturuuu/ui/select';
 import { PanelLeftClose, PanelRightClose, Plus, Sparkles, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useCallback, useState } from 'react';
+import { useCallback, useState, useMemo } from 'react';
 import { addDays, addMonths, subDays, subMonths } from 'date-fns';
 import { isToday, isCurrent4DayPeriod } from '@/utils/date-helper';
 
@@ -38,24 +38,27 @@ export default function CalendarPageClient({
   const t = useTranslations('calendar');
   const queryClient = useQueryClient();
   
-  // Create a wrapper for useQueryClient that matches the expected interface
-  const wrappedUseQueryClient = useCallback(() => {
-    return {
-      invalidateQueries: async (options: { queryKey: string[]; refetchType?: string } | string[]) => {
-        if (Array.isArray(options)) {
-          await queryClient.invalidateQueries({ queryKey: options });
-        } else {
-          await queryClient.invalidateQueries({ 
-            queryKey: options.queryKey,
-            refetchType: options.refetchType as 'all' | 'active' | 'inactive' | 'none'
-          });
-        }
-      },
-      setQueryData: (queryKey: string[], data: unknown) => {
-        queryClient.setQueryData(queryKey, data);
+  // Create a memoized wrapper object for useQueryClient that matches the expected interface
+  const memoizedQueryClientApi = useMemo(() => ({
+    invalidateQueries: async (options: { queryKey: string[]; refetchType?: string } | string[]) => {
+      if (Array.isArray(options)) {
+        await queryClient.invalidateQueries({ queryKey: options });
+      } else {
+        await queryClient.invalidateQueries({ 
+          queryKey: options.queryKey,
+          refetchType: options.refetchType as 'all' | 'active' | 'inactive' | 'none' | undefined
+        });
       }
-    };
-  }, [queryClient]);
+    },
+    setQueryData: (queryKey: string[], data: unknown) => {
+      queryClient.setQueryData(queryKey, data);
+    }
+  }), [queryClient]);
+
+  // Create a wrapper function that returns the memoized object
+  const wrappedUseQueryClient = useCallback(() => {
+    return memoizedQueryClientApi;
+  }, [memoizedQueryClientApi]);
   
   // Create a wrapper function to match the expected type signature
   const translationWrapper = useCallback((key: string) => {
