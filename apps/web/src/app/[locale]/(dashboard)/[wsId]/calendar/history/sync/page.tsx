@@ -82,6 +82,7 @@ async function getSyncLogs(): Promise<SyncLog[]> {
       const workspace = {
         id: item.workspaces.id,
         name: item.workspaces.name || 'Unknown Workspace',
+        color: 'bg-blue-500', // Add default color since workspaces table doesn't have a color field
       };
 
       const user = item.users || null;
@@ -101,8 +102,8 @@ async function getSyncLogs(): Promise<SyncLog[]> {
         triggeredBy: user
           ? {
               id: user.id,
-              display_name: user.display_name,
-              avatar_url: user.avatar_url,
+              display_name: user.display_name || '',
+              avatar: user.avatar_url,
             }
           : null,
         status: item.status as SyncLog['status'],

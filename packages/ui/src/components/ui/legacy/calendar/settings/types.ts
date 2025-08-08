@@ -7,7 +7,6 @@ export interface Workspace {
 export interface User {
   id: string;
   display_name: string;
-  email: string;
   avatar: string | null;
 }
 
