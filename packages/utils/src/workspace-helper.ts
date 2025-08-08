@@ -61,7 +61,14 @@ const logWorkspaceError = (
   console.error(`[WorkspaceHelper] ${context}:`, logData);
 };
 
-export async function getWorkspace(id: string, requireUserRole = false) {
+export async function getWorkspace(
+  id: string,
+  {
+    requireUserRole = false,
+  }: {
+    requireUserRole?: boolean;
+  } = {}
+) {
   const supabase = await createClient();
 
   const {
@@ -74,8 +81,10 @@ export async function getWorkspace(id: string, requireUserRole = false) {
     .from('workspaces')
     .select(
       'id, name, avatar_url, logo_url, created_at, workspace_members(role)'
-    )
-    .eq('id', id);
+    );
+
+  if (id.toUpperCase() === 'PERSONAL') queryBuilder.eq('personal', true);
+  else queryBuilder.eq('id', id);
 
   if (requireUserRole) queryBuilder.eq('workspace_members.user_id', user.id);
   const { data, error } = await queryBuilder.single();
@@ -110,17 +119,14 @@ export async function getWorkspace(id: string, requireUserRole = false) {
   };
 }
 
-export async function getWorkspaces(noRedirect?: boolean) {
+export async function getWorkspaces() {
   const supabase = await createClient();
 
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) {
-    if (noRedirect) return null;
-    redirect('/login');
-  }
+  if (!user) return null;
 
   const { data, error } = await supabase
     .from('workspaces')

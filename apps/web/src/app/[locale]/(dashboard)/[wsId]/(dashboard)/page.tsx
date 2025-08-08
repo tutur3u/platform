@@ -38,10 +38,9 @@ export default async function WorkspaceHomePage({
   searchParams,
 }: Props) {
   const t = await getTranslations();
-  const { wsId } = await params;
+  const { wsId: id } = await params;
 
-  const workspace = await getWorkspace(wsId);
-
+  const workspace = await getWorkspace(id);
   const forecast = await getForecast();
   const mlMetrics = await getMLMetrics();
   const statsMetrics = await getStatsMetrics();
@@ -52,16 +51,14 @@ export default async function WorkspaceHomePage({
     return <LoadingStatisticCard />;
   }
 
-  // const { data: dailyData } = await getDailyData(wsId);
-  // const { data: monthlyData } = await getMonthlyData(wsId);
-  // const { data: hourlyData } = await getHourlyData(wsId);
-
   const ENABLE_AI_ONLY = await verifySecret({
     forceAdmin: true,
-    wsId,
+    wsId: workspace.id,
     name: 'ENABLE_AI_ONLY',
     value: 'true',
   });
+
+  const wsId = workspace?.id;
 
   return (
     <>
