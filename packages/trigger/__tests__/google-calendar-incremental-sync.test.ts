@@ -1,6 +1,6 @@
 // Mocks must come next, before any imports that use them!
 import dayjs from 'dayjs';
-import utc from 'dayjs/plugin/utc';
+import utc from 'dayjs/plugin/utc.js';
 import {
   afterEach,
   beforeAll,
@@ -124,7 +124,7 @@ let googleCalendarIncrementalSync: any;
 let googleCalendarIncrementalSyncOrchestrator: any;
 
 beforeAll(async () => {
-  const mod = await import('../google-calendar-incremental-sync');
+  const mod = await import('../google-calendar-incremental-sync.js');
   googleCalendarIncrementalSync = mod.googleCalendarIncrementalSync;
   googleCalendarIncrementalSyncOrchestrator =
     mod.googleCalendarIncrementalSyncOrchestrator;
@@ -204,7 +204,7 @@ describe('Google Calendar Incremental Sync', () => {
 
   describe('Sync Token Handling', () => {
     it('should handle existing sync token correctly', async () => {
-      const { getSyncToken } = await import('../google-calendar-sync');
+      const { getSyncToken } = await import('../google-calendar-sync.js');
 
       const result = await getSyncToken('test-workspace-id');
       expect(result).toBe('existing-sync-token-123');
@@ -212,7 +212,7 @@ describe('Google Calendar Incremental Sync', () => {
     });
 
     it('should store sync token correctly', async () => {
-      const { storeSyncToken } = await import('../google-calendar-sync');
+      const { storeSyncToken } = await import('../google-calendar-sync.js');
       const testDate = new Date('2024-01-15T10:00:00Z');
 
       await storeSyncToken('test-workspace-id', 'new-sync-token', testDate);
@@ -355,7 +355,9 @@ describe('Google Calendar Incremental Sync', () => {
 
   describe('Integration with syncWorkspaceBatched', () => {
     it('should call syncWorkspaceBatched when events exist', async () => {
-      const { syncWorkspaceBatched } = await import('../google-calendar-sync');
+      const { syncWorkspaceBatched } = await import(
+        '../google-calendar-sync.js'
+      );
 
       // This would be tested in the actual task run
       expect(syncWorkspaceBatched).toBeDefined();
@@ -370,7 +372,9 @@ describe('Google Calendar Incremental Sync', () => {
         } as MockCalendarResponse['data'],
       });
 
-      const { syncWorkspaceBatched } = await import('../google-calendar-sync');
+      const { syncWorkspaceBatched } = await import(
+        '../google-calendar-sync.js'
+      );
 
       // This would be tested in the actual task run
       expect(syncWorkspaceBatched).toBeDefined();
@@ -378,7 +382,9 @@ describe('Google Calendar Incremental Sync', () => {
 
     it('should handle batched sync errors gracefully', async () => {
       // Mock error in syncWorkspaceBatched
-      const { syncWorkspaceBatched } = await import('../google-calendar-sync');
+      const { syncWorkspaceBatched } = await import(
+        '../google-calendar-sync.js'
+      );
       (syncWorkspaceBatched as any).mockRejectedValue(
         new Error('Batched sync error')
       );
@@ -402,7 +408,7 @@ describe('Google Calendar Incremental Sync', () => {
     });
 
     it('should handle sync token parameter correctly', async () => {
-      const { getSyncToken } = await import('../google-calendar-sync');
+      const { getSyncToken } = await import('../google-calendar-sync.js');
 
       // Test that existing sync token is retrieved
       const syncToken = await getSyncToken('test-workspace-id');
@@ -411,7 +417,7 @@ describe('Google Calendar Incremental Sync', () => {
 
     it('should handle missing sync token parameter', async () => {
       // Mock no existing sync token
-      const { getSyncToken } = await import('../google-calendar-sync');
+      const { getSyncToken } = await import('../google-calendar-sync.js');
       (getSyncToken as any).mockResolvedValue(null);
 
       const syncToken = await getSyncToken('test-workspace-id');
@@ -478,9 +484,9 @@ describe('Google Calendar Incremental Sync', () => {
       const events = response.data.items;
 
       expect(events).toHaveLength(3);
-      expect(events[0].status).toBe('confirmed');
-      expect(events[1].status).toBe('cancelled');
-      expect(events[2].status).toBe('tentative');
+      expect(events[0]?.status).toBe('confirmed');
+      expect(events[1]?.status).toBe('cancelled');
+      expect(events[2]?.status).toBe('tentative');
     });
   });
 });

@@ -721,6 +721,7 @@
       "version": "0.0.1",
       "dependencies": {
         "@tuturuuu/supabase": "workspace:*",
+        "@tuturuuu/trigger": "workspace:*",
         "clsx": "^2.1.1",
         "next": "^15.4.5",
         "react": "^19.1.1",

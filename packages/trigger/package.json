@@ -4,6 +4,12 @@
   "private": true,
   "type": "module",
   "main": "./index.ts",
+  "exports": {
+    ".": "./index.ts",
+    "./google-calendar-sync": "./google-calendar-sync.ts",
+    "./google-calendar-full-sync": "./google-calendar-full-sync.ts",
+    "./google-calendar-incremental-sync": "./google-calendar-incremental-sync.ts"
+  },
   "scripts": {
     "lint": "eslint .",
     "trigger:dev": "bunx trigger.dev@latest dev",

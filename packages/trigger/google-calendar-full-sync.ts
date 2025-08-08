@@ -1,12 +1,12 @@
+import { task } from '@trigger.dev/sdk/v3';
+import type { SyncOrchestratorResult } from '@tuturuuu/trigger/google-calendar-sync';
 import {
   getGoogleAuthClient,
   getWorkspacesForSync,
   storeActiveSyncToken,
   storeSyncToken,
   syncWorkspaceBatched,
-} from './google-calendar-sync';
-import type { SyncOrchestratorResult } from './google-calendar-sync';
-import { task } from '@trigger.dev/sdk/v3';
+} from '@tuturuuu/trigger/google-calendar-sync';
 import dayjs from 'dayjs';
 import { google } from 'googleapis';
 
