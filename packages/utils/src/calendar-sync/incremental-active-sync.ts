@@ -14,7 +14,7 @@ import { NextResponse } from 'next/server';
 function filterEventsByStatus(events: calendar_v3.Schema$Event[]) {
   const result = events.reduce(
     (acc, event) => {
-      // Then filter by status
+      // Filter by status
       if (event.status === 'cancelled') {
         acc.eventsToDelete.push(event);
       } else {
