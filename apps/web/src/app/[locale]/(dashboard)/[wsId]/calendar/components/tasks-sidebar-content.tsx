@@ -37,13 +37,20 @@ interface TasksSidebarContentProps {
 export default function TasksSidebarContent({
   wsId,
   tasks = [],
-  hasKeys = { openAI: false, anthropic: false, google: false },
+  hasKeys,
   chats = [],
   count = 0,
   locale = 'en',
-  hasAiChatAccess = true,
+  hasAiChatAccess = false,
 }: TasksSidebarContentProps) {
   const [activeTab, setActiveTab] = useState('tasks');
+
+  // Use provided data or fallback to safe defaults if not provided
+  // These fallbacks ensure the component works even if data fetching fails
+  const effectiveHasKeys = hasKeys || { openAI: false, anthropic: false, google: false };
+  const effectiveChats = chats || [];
+  const effectiveCount = count ?? 0;
+  const effectiveHasAiChatAccess = hasAiChatAccess || false;
 
   return (
     <div className="ml-2 h-full w-80 flex-col rounded-lg border border-border bg-background/60 text-foreground shadow-xl backdrop-blur-md transition-all duration-500 ease-out slide-in-from-right-5">
@@ -78,7 +85,7 @@ export default function TasksSidebarContent({
               </span>
             </TabsTrigger>
 
-            {hasAiChatAccess && (
+            {effectiveHasAiChatAccess && (
               <TabsTrigger
                 value="ai-chat"
                 className="group @container relative overflow-hidden rounded-lg border border-transparent transition-all duration-300 hover:border-border/50 hover:bg-accent/60 data-[state=active]:border-border/50 data-[state=active]:bg-background data-[state=active]:shadow-md"
@@ -107,7 +114,7 @@ export default function TasksSidebarContent({
         </TabsContent>
 
         {/* AI Chat Tab Content */}
-        {hasAiChatAccess && (
+        {effectiveHasAiChatAccess && (
           <TabsContent
             value="ai-chat"
             className="m-0 min-h-0 flex-1 overflow-y-auto scrollbar-none px-2 pb-6 duration-300 animate-in fade-in-50"
@@ -115,9 +122,9 @@ export default function TasksSidebarContent({
             <div className="relative scrollbar-none h-full min-h-0 overflow-y-auto py-2">
               <Chat
                 wsId={wsId}
-                hasKeys={hasKeys}
-                chats={chats}
-                count={count}
+                hasKeys={effectiveHasKeys}
+                chats={effectiveChats}
+                count={effectiveCount}
                 locale={locale}
                 disableScrollToBottom
                 disableScrollToTop
