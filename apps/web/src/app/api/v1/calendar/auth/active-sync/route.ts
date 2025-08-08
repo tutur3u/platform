@@ -2,11 +2,9 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
-import { WorkspaceCalendarEvent } from '@tuturuuu/types/db';
 import { updateLastUpsert } from '@tuturuuu/utils/calendar-sync-coordination';
 import { performIncrementalActiveSync } from '@tuturuuu/utils/calendar-sync/incremental-active-sync';
 import { DEV_MODE } from '@tuturuuu/utils/constants';
-import dayjs from 'dayjs';
 import { NextResponse } from 'next/server';
 
 export async function POST(request: Request) {
