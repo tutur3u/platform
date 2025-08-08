@@ -30,6 +30,7 @@ interface MailProps {
   userPopover: ReactNode;
   children: ReactNode;
   disableCreateNewWorkspace: boolean;
+  hideSidebarSizeToggle?: boolean;
 }
 
 export function Structure({
@@ -41,6 +42,7 @@ export function Structure({
   userPopover,
   children,
   disableCreateNewWorkspace,
+  hideSidebarSizeToggle = false,
 }: MailProps) {
   const t = useTranslations();
   const pathname = usePathname();
@@ -412,6 +414,7 @@ export function Structure({
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
       hideSizeToggle={behavior === 'hover'}
+      hideSidebarSizeToggle={hideSidebarSizeToggle}
     >
       {children}
     </BaseStructure>

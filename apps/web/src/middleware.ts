@@ -129,11 +129,11 @@ const getExistingLocale = (
 } => {
   // Get raw locale from pathname and cookie
   const rawLocaleFromPathname = req.nextUrl.pathname.split('/')[1] || '';
-  const rawRocaleFromCookie = req.cookies.get(LOCALE_COOKIE_NAME)?.value || '';
+  const rawLocaleFromCookie = req.cookies.get(LOCALE_COOKIE_NAME)?.value || '';
 
   // Get supported locale from pathname and cookie
   const localeFromPathname = getSupportedLocale(rawLocaleFromPathname);
-  const localeFromCookie = getSupportedLocale(rawRocaleFromCookie);
+  const localeFromCookie = getSupportedLocale(rawLocaleFromCookie);
 
   const locale = localeFromPathname || localeFromCookie;
 
@@ -211,11 +211,14 @@ const handleLocale = ({
     ? `/${locale}${req.nextUrl.pathname}`
     : req.nextUrl.pathname.replace(pathname, locale);
 
-  NextResponse.rewrite(req.nextUrl, res);
+  NextResponse.rewrite(req.nextUrl, {
+    headers: res.headers,
+    status: res.status,
+  });
 
   const nextIntlMiddleware = createIntlMiddleware({
     locales: supportedLocales,
-    defaultLocale: locale as Locale,
+    defaultLocale,
     localeDetection: false,
   });
 

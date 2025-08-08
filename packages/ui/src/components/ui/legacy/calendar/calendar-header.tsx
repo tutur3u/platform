@@ -8,7 +8,7 @@ import {
   SelectValue,
 } from '@tuturuuu/ui/select';
 import dayjs from 'dayjs';
-import { CalendarIcon, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 export function CalendarHeader({
   t,
@@ -20,8 +20,9 @@ export function CalendarHeader({
   availableViews,
   onViewChange,
   extras,
+  sidebarToggleButton,
 }: {
-  t: any;
+  t: (key: string) => string;
   locale: string;
   date: Date;
   setDate: React.Dispatch<React.SetStateAction<Date>>;
@@ -31,6 +32,8 @@ export function CalendarHeader({
   // eslint-disable-next-line no-unused-vars
   onViewChange: (view: 'day' | '4-days' | 'week' | 'month') => void;
   extras?: React.ReactNode;
+  onSidebarToggle?: () => void;
+  sidebarToggleButton?: React.ReactNode;
 }) {
   const views = availableViews.filter((view) => view?.disabled !== true);
 
@@ -45,6 +48,7 @@ export function CalendarHeader({
       if (view === 'month') {
         newDate.setMonth(newDate.getMonth() + 1);
       } else {
+        // offset is used here for non-month views
         newDate.setDate(newDate.getDate() + offset);
       }
       return newDate;
@@ -56,6 +60,7 @@ export function CalendarHeader({
       if (view === 'month') {
         newDate.setMonth(newDate.getMonth() - 1);
       } else {
+        // offset is used here for non-month views
         newDate.setDate(newDate.getDate() - offset);
       }
       return newDate;
@@ -68,11 +73,27 @@ export function CalendarHeader({
     view === 'month' &&
     date.getMonth() === new Date().getMonth() &&
     date.getFullYear() === new Date().getFullYear();
+  
+  // Check if current date is in the current 4-day period
+  const isCurrent4DayPeriod = () => {
+    if (view !== '4-days') return false;
+    const today = new Date();
+    const currentDate = new Date(date);
+    
+    // For 4-day view, check if today is within the 4-day period starting from the current date
+    const startDate = new Date(currentDate);
+    startDate.setHours(0, 0, 0, 0);
+    
+    const endDate = new Date(startDate);
+    endDate.setDate(startDate.getDate() + 3);
+    
+    return today >= startDate && today <= endDate;
+  };
 
   return (
-    <div className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex items-center gap-2">
-        <CalendarIcon className="h-5 w-5 text-muted-foreground" />
+        {sidebarToggleButton}
         <h2 className="text-xl font-semibold tracking-tight">{title}</h2>
       </div>
       <div className="flex flex-col gap-2 md:flex-row md:items-center">
@@ -83,19 +104,19 @@ export function CalendarHeader({
           )}
           <div className="flex flex-none items-center justify-center gap-2 md:justify-start">
             <Button
-              variant="outline"
+              variant="ghost"
               size="icon"
-              className="h-8 w-8"
+              style={{ height: '32px', width: '32px' }}
               onClick={handlePrev}
               aria-label="Previous period"
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
             <Button
-              variant="outline"
+              variant="ghost"
               size="sm"
-              onClick={isToday() || isCurrentMonth() ? undefined : selectToday}
-              disabled={isToday() || isCurrentMonth()}
+              onClick={isToday() || isCurrentMonth() || isCurrent4DayPeriod() ? undefined : selectToday}
+              disabled={isToday() || isCurrentMonth() || isCurrent4DayPeriod()}
             >
               {view === 'day'
                 ? t('today')
@@ -103,12 +124,14 @@ export function CalendarHeader({
                   ? t('this-week')
                   : view === 'month'
                     ? t('this-month')
-                    : t('current')}
+                    : view === '4-days'
+                      ? t('current')
+                      : t('current')}
             </Button>
             <Button
-              variant="outline"
+              variant="ghost"
               size="icon"
-              className="h-8 w-8"
+              style={{ height: '32px', width: '32px' }}
               onClick={handleNext}
               aria-label="Next period"
             >
@@ -123,7 +146,7 @@ export function CalendarHeader({
                   onViewChange(value as 'day' | '4-days' | 'week' | 'month')
                 }
               >
-                <SelectTrigger className="h-8 w-full">
+                <SelectTrigger className="h-10 w-full border-0">
                   <SelectValue placeholder={t('view')} />
                 </SelectTrigger>
                 <SelectContent>

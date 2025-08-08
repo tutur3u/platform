@@ -368,8 +368,8 @@ export function AnalyticsCharts({
                           paddingAngle={5}
                           dataKey="value"
                         >
-                          {calendarSourceData.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={entry.color} />
+                          {calendarSourceData.map((entry) => (
+                            <Cell key={`cell-${entry.name}`} fill={entry.color} />
                           ))}
                         </Pie>
                         <ChartTooltip content={<ChartTooltipContent />} />
@@ -385,9 +385,9 @@ export function AnalyticsCharts({
                   <CardTitle className="text-lg">Source Performance</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {calendarSourceData.map((source, index) => (
+                  {calendarSourceData.map((source) => (
                     <div
-                      key={index}
+                      key={source.name}
                       className="flex items-center justify-between rounded-lg bg-foreground/10 p-3"
                     >
                       <div className="flex items-center gap-3">

@@ -230,33 +230,32 @@ export function AlgorithmInsights({
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {algorithmConsiderations.map((consideration, index) => {
-            const IconComponent = consideration.icon;
+          {algorithmConsiderations.map(({ icon: IconComponent, title, impact, description }) => {
             const impactColor =
-              consideration.impact === 'high'
+              impact === 'high'
                 ? 'text-dynamic-green'
-                : consideration.impact === 'medium'
+                : impact === 'medium'
                   ? 'text-dynamic-orange'
                   : 'text-dynamic-blue';
 
             return (
               <div
-                key={index}
+                key={title}
                 className="flex items-start gap-3 rounded-lg border p-4"
               >
                 <IconComponent className={`mt-0.5 h-5 w-5 ${impactColor}`} />
                 <div className="flex-1 space-y-1">
                   <div className="flex items-center gap-2">
-                    <h4 className="font-medium">{consideration.title}</h4>
+                    <h4 className="font-medium">{title}</h4>
                     <Badge
                       variant="outline"
                       className={`text-xs ${impactColor}`}
                     >
-                      {consideration.impact} impact
+                      {impact} impact
                     </Badge>
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    {consideration.description}
+                    {description}
                   </p>
                 </div>
               </div>
@@ -381,22 +380,31 @@ export function AlgorithmInsights({
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {logs.map((log, index) => (
-                <Alert
-                  key={index}
-                  variant={log.type === 'error' ? 'destructive' : 'default'}
-                  className="text-sm"
-                >
-                  {log.type === 'warning' && <InfoIcon className="h-4 w-4" />}
-                  {log.type === 'error' && <XCircleIcon className="h-4 w-4" />}
-                  <AlertTitle className="text-sm">
-                    {log.type.charAt(0).toUpperCase() + log.type.slice(1)}
-                  </AlertTitle>
-                  <AlertDescription className="text-xs">
-                    {log.message}
-                  </AlertDescription>
-                </Alert>
-              ))}
+              {logs.map((log, index) => {
+                // Create a stable unique key using timestamp and content hash
+                const timestamp = Date.now() + index;
+                const contentHash = `${log.type}-${log.message}`.split('').reduce((hash, char) => {
+                  return ((hash << 5) - hash + char.charCodeAt(0)) & 0xffffffff;
+                }, 0);
+                const logKey = `${timestamp}-${contentHash}`;
+                
+                return (
+                  <Alert
+                    key={logKey}
+                    variant={log.type === 'error' ? 'destructive' : 'default'}
+                    className="text-sm"
+                  >
+                    {log.type === 'warning' && <InfoIcon className="h-4 w-4" />}
+                    {log.type === 'error' && <XCircleIcon className="h-4 w-4" />}
+                    <AlertTitle className="text-sm">
+                      {log.type.charAt(0).toUpperCase() + log.type.slice(1)}
+                    </AlertTitle>
+                    <AlertDescription className="text-xs">
+                      {log.message}
+                    </AlertDescription>
+                  </Alert>
+                );
+              })}
             </div>
           </CardContent>
         </Card>

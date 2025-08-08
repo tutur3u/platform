@@ -23,17 +23,13 @@ export const CalendarViewWithTrail = ({ dates }: { dates: Date[] }) => {
       calendarViewRef.current.scrollTop = scrollY - 100;
       setInitialized(true);
     }
-  }, [dates, initialized, tz]);
+  }, [initialized, tz]);
 
   return (
     <div
       ref={calendarViewRef}
       id="calendar-view"
-      className="flex h-full overflow-y-auto scroll-smooth rounded-b-lg border-b border-l border-border text-center dark:border-zinc-800"
-      style={{
-        scrollbarWidth: 'thin',
-        scrollbarColor: 'rgba(0,0,0,0.2) transparent',
-      }}
+                  className="flex h-full overflow-y-auto scroll-smooth rounded-b-lg text-center dark:text-zinc-200 scrollbar-none"
     >
       <TimeTrail />
       <CalendarView dates={dates} />

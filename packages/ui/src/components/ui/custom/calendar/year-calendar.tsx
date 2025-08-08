@@ -47,8 +47,8 @@ export const YearCalendar: React.FC<YearCalendarProps> = ({
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
-        {months.map((month, idx) => (
-          <div key={idx} className="rounded-lg border p-2">
+        {months.map((month) => (
+          <div key={`${month.getFullYear()}-${month.getMonth()}`} className="rounded-lg border p-2">
             <Calendar
               locale={locale}
               initialDate={month}

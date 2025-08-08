@@ -21,11 +21,16 @@ export const SmartCalendar = ({
   onSaveSettings,
   externalState,
   extras,
+  onSidebarToggle,
+  sidebarToggleButton,
 }: {
-  t: any;
+  t: (key: string, values?: Record<string, unknown>) => string;
   locale: string;
-  useQuery: any;
-  useQueryClient: any;
+  useQuery: typeof import('@tanstack/react-query').useQuery;
+  useQueryClient: () => {
+    invalidateQueries: (options: { queryKey: string[]; refetchType?: string } | string[]) => Promise<void>;
+    setQueryData: (queryKey: string[], data: unknown) => void;
+  };
   workspace?: Workspace;
   disabled?: boolean;
   initialSettings?: Partial<CalendarSettings>;
@@ -42,6 +47,8 @@ export const SmartCalendar = ({
     availableViews: { value: string; label: string; disabled?: boolean }[];
   };
   extras?: React.ReactNode;
+  onSidebarToggle?: () => void;
+  sidebarToggleButton?: React.ReactNode;
 }) => {
   return (
     <CalendarProvider
@@ -62,6 +69,8 @@ export const SmartCalendar = ({
         onSaveSettings={onSaveSettings}
         externalState={externalState}
         extras={extras}
+        onSidebarToggle={onSidebarToggle}
+        sidebarToggleButton={sidebarToggleButton}
       />
     </CalendarProvider>
   );

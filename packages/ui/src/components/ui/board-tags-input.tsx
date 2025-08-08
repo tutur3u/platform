@@ -1,11 +1,11 @@
 'use client';
 
+import { cn } from '@tuturuuu/utils/format';
+import { X } from 'lucide-react';
+import { type KeyboardEvent, useRef, useState } from 'react';
 import { Badge } from './badge';
 import { Button } from './button';
 import { Input } from './input';
-import { cn } from '@tuturuuu/utils/format';
-import { X } from 'lucide-react';
-import React, { type KeyboardEvent, useRef, useState } from 'react';
 
 interface TagsInputProps {
   value: string[];
@@ -81,13 +81,16 @@ export function TagsInput({
   };
 
   return (
-    <div
+    <button
+      type="button"
       className={cn(
-        'flex min-h-10 w-full flex-wrap items-center gap-1 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2',
+        'flex min-h-10 w-full flex-wrap items-center gap-1 rounded-md border border-input bg-background px-3 py-2 text-left text-sm ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2',
         disabled && 'cursor-not-allowed opacity-50',
         className
       )}
       onClick={() => inputRef.current?.focus()}
+      disabled={disabled}
+      aria-label="Tags input container"
     >
       {value.map((tag, index) => (
         <Badge
@@ -128,7 +131,7 @@ export function TagsInput({
           )}
         />
       )}
-    </div>
+    </button>
   );
 }
 

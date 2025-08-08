@@ -53,6 +53,7 @@ export function Combobox({
 }: ComboboxProps) {
   const [open, setOpen] = React.useState(false);
   const [query, setQuery] = React.useState<string>('');
+  const listboxId = React.useId();
 
   React.useEffect(() => {
     if (!open) {
@@ -61,10 +62,16 @@ export function Combobox({
   }, [open]);
 
   React.useEffect(() => {
-    if (selected) return;
-    if (useFirstValueAsDefault && options.length > 0)
-      onChange?.(options?.[0]?.value ?? '');
-  }, [onChange, selected, options]);
+    if (
+      (mode === 'single' && selected) ||
+      (mode === 'multiple' && Array.isArray(selected) && selected.length > 0)
+    ) {
+      return;
+    }
+    if (useFirstValueAsDefault && options.length > 0) {
+      onChange?.(options[0]?.value ?? '');
+    }
+  }, [onChange, selected, options, useFirstValueAsDefault, mode]);
 
   const selectedLabel =
     mode === 'single'
@@ -83,11 +90,15 @@ export function Combobox({
     <div className={cn('block', className)}>
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
+          {/* biome-ignore lint/a11y/useSemanticElements: Custom combobox implementation using Command component structure */}
           <Button
             type="button"
             variant="outline"
             role="combobox"
             aria-expanded={open}
+            aria-haspopup="listbox"
+            aria-controls={listboxId}
+            aria-autocomplete="list"
             className={cn(
               'w-full justify-between',
               !selectedLabel && 'text-muted-foreground'
@@ -140,12 +151,20 @@ export function Combobox({
                 </>
               )}
             </CommandEmpty>
-            <CommandList>
+            {/* biome-ignore lint/a11y/useSemanticElements: Custom combobox implementation using Command component structure */}
+            <CommandList id={listboxId} role="listbox" aria-label="Options">
               <CommandGroup>
                 {options.map((option) => (
+                  /* biome-ignore lint/a11y/useSemanticElements: Custom combobox option implementation */
                   <CommandItem
                     key={option.value}
                     value={option.label}
+                    role="option"
+                    aria-selected={
+                      mode === 'multiple' && Array.isArray(selected)
+                        ? selected.includes(option.value)
+                        : selected === option.value
+                    }
                     onSelect={() => {
                       if (onChange) {
                         if (mode === 'multiple' && Array.isArray(selected)) {

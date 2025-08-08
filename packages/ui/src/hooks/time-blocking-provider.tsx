@@ -121,8 +121,8 @@ const TimeBlockContext = createContext({
   edit: (
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     _: { mode: 'add' | 'remove'; date: Date; tentativeMode?: boolean },
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any
-    __?: any
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    __?: { touches?: Touch[] }
   ) => {},
   endEditing: () => {},
   setDisplayMode: (
@@ -289,7 +289,7 @@ const TimeBlockingProvider = ({
 
   useEffect(() => {
     setIsDirty(false);
-  }, [plan.dates, plan.start_time, plan.end_time]);
+  }, []);
 
   // Initialize initial timeblocks for comparison
   useEffect(() => {
@@ -394,8 +394,7 @@ const TimeBlockingProvider = ({
         date,
         tentativeMode,
       }: { mode: 'add' | 'remove'; date: Date; tentativeMode?: boolean },
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      event?: any
+      event?: { touches?: Touch[] }
     ) => {
       const touch = event?.touches?.[0] as Touch | undefined;
 

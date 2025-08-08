@@ -124,7 +124,7 @@ interface PendingEventUpdate extends Partial<CalendarEvent> {
   _timestamp: number;
   _eventId: string;
   _resolve?: (value: CalendarEvent) => void;
-  _reject?: (reason: any) => void;
+  _reject?: (reason: unknown) => void;
 }
 
 export const CalendarProvider = ({
@@ -136,8 +136,8 @@ export const CalendarProvider = ({
   experimentalGoogleToken,
 }: {
   ws?: Workspace;
-  useQuery: any;
-  useQueryClient: any;
+  useQuery: (options: { queryKey: string[]; queryFn: () => Promise<unknown>; enabled?: boolean; refetchInterval?: number; staleTime?: number }) => { data?: { events?: CalendarEvent[] } };
+  useQueryClient: () => { invalidateQueries: (options: { queryKey: string[]; refetchType?: string } | string[]) => Promise<void>; setQueryData: (queryKey: string[], data: unknown) => void };
   children: ReactNode;
   initialSettings?: Partial<CalendarSettings>;
   experimentalGoogleToken?: WorkspaceCalendarGoogleToken | null;
@@ -553,7 +553,7 @@ export const CalendarProvider = ({
         const supabase = createClient();
 
         // Clean up the update data to ensure no undefined values and exclude system fields
-        const cleanUpdateData: any = {
+        const cleanUpdateData: Partial<CalendarEvent> = {
           ...(updateData.title !== undefined && { title: updateData.title }),
           ...(updateData.description !== undefined && {
             description: updateData.description,
@@ -637,7 +637,7 @@ export const CalendarProvider = ({
       const cleanedUpdates: Partial<CalendarEvent> = {};
       for (const field of allowedFields) {
         if (eventUpdates[field] !== undefined) {
-          (cleanedUpdates as any)[field] = eventUpdates[field];
+          (cleanedUpdates as Record<string, unknown>)[field] = eventUpdates[field];
         }
       }
 
@@ -816,7 +816,7 @@ export const CalendarProvider = ({
         throw err;
       }
     },
-    [ws, refresh, pendingNewEvent]
+    [ws, refresh, pendingNewEvent, events, experimentalGoogleToken]
   );
 
   // Automatically fetch Google Calendar events
@@ -833,7 +833,7 @@ export const CalendarProvider = ({
 
   // Query to fetch Google Calendar events every 1 hour
   const { data: googleData } = useQuery({
-    queryKey: ['googleCalendarEvents', ws?.id],
+    queryKey: ['googleCalendarEvents', ws?.id ?? ''],
     queryFn: fetchGoogleCalendarEvents,
     enabled: !!ws?.id && !!experimentalGoogleToken?.id,
     refetchInterval: 1000 * 60 * 60, // Fetch every 1 hour
@@ -880,8 +880,20 @@ export const CalendarProvider = ({
       );
 
       // Initialize batch operations - we'll perform these in a more optimized way
-      const eventsToUpdate: Array<{ id: string; data: any }> = [];
-      const eventsToInsert: Array<any> = [];
+      const eventsToUpdate: Array<{ id: string; data: Partial<CalendarEvent> }> = [];
+      const eventsToInsert: Array<{
+        title: string;
+        description: string;
+        start_at: string;
+        end_at: string;
+        color: string;
+        location: string;
+        ws_id: string;
+        google_event_id?: string;
+        locked: boolean;
+        priority: string;
+        created_at: string;
+      }> = [];
       let changesMade = false;
 
       // Report initial progress
@@ -993,19 +1005,22 @@ export const CalendarProvider = ({
 
           // No duplicates found, add to insert batch
           changesMade = true;
-          eventsToInsert.push({
-            title: gEvent.title,
-            description: gEvent.description || '',
-            start_at: gEvent.start_at,
-            end_at: gEvent.end_at,
-            color: gEvent.color || 'BLUE',
-            location: gEvent.location || '',
-            ws_id: ws?.id ?? '',
-            google_event_id: gEvent.google_event_id,
-            locked: gEvent.locked || false,
-            priority: gEvent.priority || 'medium',
-            created_at: new Date().toISOString(),
-          });
+          const workspaceId = ws?.id;
+          if (workspaceId) {
+            eventsToInsert.push({
+              title: gEvent.title || '',
+              description: gEvent.description || '',
+              start_at: gEvent.start_at,
+              end_at: gEvent.end_at,
+              color: gEvent.color || 'BLUE',
+              location: gEvent.location || '',
+              ws_id: workspaceId as string,
+              google_event_id: gEvent.google_event_id,
+              locked: gEvent.locked || false,
+              priority: gEvent.priority || 'medium',
+              created_at: new Date().toISOString(),
+            });
+          }
         }
       }
 
@@ -1144,10 +1159,10 @@ export const CalendarProvider = ({
 
       // Only refresh local events if changes were made
       if (changesMade) {
-        queryClient.invalidateQueries(['calendarEvents', ws?.id]);
+        queryClient.invalidateQueries(['calendarEvents', ws?.id ?? '']);
       }
     },
-    [googleEvents, events, ws?.id, queryClient]
+    [googleEvents, events, ws?.id, queryClient, experimentalGoogleToken]
   );
 
   // Modal management

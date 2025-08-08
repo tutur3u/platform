@@ -63,8 +63,9 @@ export const CalendarActiveSyncDebugger = () => {
   return (
     <>
       <div className="flex items-center gap-2">
-        <label className="flex cursor-pointer items-center gap-2">
+        <label htmlFor="debugger-switch" className="flex cursor-pointer items-center gap-2">
           <Switch
+            id="debugger-switch"
             checked={isDebuggingOpen}
             onCheckedChange={setIsDebuggingOpen}
           />

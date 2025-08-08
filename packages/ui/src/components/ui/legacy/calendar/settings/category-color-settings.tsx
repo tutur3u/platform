@@ -223,7 +223,7 @@ export function CategoryColorsSettings({
         </div>
       </div>
 
-      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
+             <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'categories' | 'suggestions')}>
         <div className="mb-4 flex items-center justify-between">
           <TabsList>
             <TabsTrigger value="categories" className="px-4">
@@ -300,13 +300,21 @@ export function CategoryColorsSettings({
                   <CardContent className="p-3">
                     <div className="mb-2 flex items-center justify-between">
                       <div className="flex flex-1 items-center gap-3">
-                        <div
+                        <button
+                          type="button"
                           className={cn(
                             'h-6 w-6 flex-none cursor-move rounded-full border',
                             colorMap[category.color].cbg
                           )}
                           key={`color-circle-${category.color}`}
                           onClick={() => setEditingCategory(index)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault();
+                              setEditingCategory(index);
+                            }
+                          }}
+                          aria-label={`Edit ${category.name} category`}
                         />
 
                         {editingCategory === index ? (
@@ -339,12 +347,20 @@ export function CategoryColorsSettings({
                           </div>
                         ) : (
                           <div className="flex flex-1 items-center justify-between">
-                            <div
-                              className="cursor-pointer truncate font-medium"
+                            <button
+                              type="button"
+                              className="cursor-pointer truncate font-medium text-left"
                               onClick={() => setEditingCategory(index)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' || e.key === ' ') {
+                                  e.preventDefault();
+                                  setEditingCategory(index);
+                                }
+                              }}
+                              aria-label={`Edit ${category.name} category`}
                             >
                               {category.name}
-                            </div>
+                            </button>
                             <Button
                               variant="ghost"
                               size="sm"
@@ -426,7 +442,7 @@ export function CategoryColorsSettings({
 
         <TabsContent value="suggestions" className="mt-0">
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
-            {CATEGORY_SUGGESTIONS.map((suggestion, index) => {
+                         {CATEGORY_SUGGESTIONS.map((suggestion) => {
               // Check if this category name or color already exists
               const exists = value.categories.some(
                 (cat) =>
@@ -438,7 +454,7 @@ export function CategoryColorsSettings({
 
               return (
                 <Card
-                  key={index}
+                  key={`suggestion-${suggestion.name}-${suggestion.color}`}
                   className={cn(
                     'overflow-hidden transition-all',
                     exists

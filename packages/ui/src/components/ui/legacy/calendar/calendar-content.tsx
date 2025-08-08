@@ -14,8 +14,7 @@ import { useCalendar } from '@tuturuuu/ui/hooks/use-calendar';
 import { useCalendarSync } from '@tuturuuu/ui/hooks/use-calendar-sync';
 import type { CalendarView } from '@tuturuuu/ui/hooks/use-view-transition';
 import { useViewTransition } from '@tuturuuu/ui/hooks/use-view-transition';
-import { cn } from '@tuturuuu/utils/format';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 function getMonthGridDates(date: Date, firstDayOfWeek: number): Date[] {
   const newDate = new Date(date);
@@ -57,8 +56,10 @@ export const CalendarContent = ({
   onSaveSettings,
   externalState,
   extras,
+  onSidebarToggle,
+  sidebarToggleButton,
 }: {
-  t: any;
+  t: (key: string) => string;
   locale: string;
   disabled?: boolean;
   workspace?: Workspace;
@@ -76,10 +77,12 @@ export const CalendarContent = ({
     availableViews: { value: string; label: string; disabled?: boolean }[];
   };
   extras?: React.ReactNode;
+  onSidebarToggle?: () => void;
+  sidebarToggleButton?: React.ReactNode;
 }) => {
   const { transition } = useViewTransition();
   const { settings } = useCalendar();
-  const { dates, setDates } = useCalendarSync();
+  const { dates, setDates, isLoading, isSyncing } = useCalendarSync();
 
   const [initialized, setInitialized] = useState(false);
   const [date, setDate] = useState(externalState?.date || new Date());
@@ -87,6 +90,11 @@ export const CalendarContent = ({
   const [availableViews, setAvailableViews] = useState<
     { value: string; label: string; disabled?: boolean }[]
   >(externalState?.availableViews || []);
+  const [showLoadingSkeleton, setShowLoadingSkeleton] = useState(true);
+
+  // Memoize settings values to avoid unnecessary re-renders
+  const firstDayOfWeek = useMemo(() => settings?.appearance?.firstDayOfWeek || 'monday', [settings?.appearance?.firstDayOfWeek]);
+  const showWeekends = useMemo(() => settings?.appearance?.showWeekends !== false, [settings?.appearance?.showWeekends]);
 
   // Use the external state handlers when provided
   const handleSetDate = useCallback(
@@ -97,7 +105,7 @@ export const CalendarContent = ({
         setDate(newDate);
       }
     },
-    [externalState]
+    [externalState?.setDate]
   );
 
   const handleSetView = useCallback(
@@ -108,7 +116,7 @@ export const CalendarContent = ({
         setView(newView);
       }
     },
-    [externalState]
+    [externalState?.setView]
   );
 
   // View switching handlers
@@ -123,8 +131,8 @@ export const CalendarContent = ({
   }, [date, transition, handleSetView, setDates]);
 
   const enable4DayView = useCallback(() => {
+    // For 4-day view, show 4 consecutive days starting from the current date
     const dates: Date[] = [];
-
     for (let i = 0; i < 4; i++) {
       const newDate = new Date(date);
       newDate.setHours(0, 0, 0, 0);
@@ -140,10 +148,6 @@ export const CalendarContent = ({
   }, [date, transition, handleSetView, setDates]);
 
   const enableWeekView = useCallback(() => {
-    // Get the first day of week from settings
-    const firstDayOfWeek = settings?.appearance?.firstDayOfWeek || 'monday';
-    const showWeekends = settings?.appearance?.showWeekends !== false;
-
     console.log('Week view settings:', { firstDayOfWeek, showWeekends });
 
     // Convert firstDayOfWeek string to number (0 = Sunday, 1 = Monday, 6 = Saturday)
@@ -203,19 +207,26 @@ export const CalendarContent = ({
       handleSetView('week');
       setDates(getWeekdays());
     });
-  }, [date, transition, settings, handleSetView, setDates]);
+  }, [
+    date,
+    transition,
+    handleSetView,
+    setDates,
+    firstDayOfWeek,
+    showWeekends,
+  ]);
 
   const enableMonthView = useCallback(() => {
     let firstDayNumber = 1; // Monday
-    if (settings?.appearance?.firstDayOfWeek === 'sunday') firstDayNumber = 0;
-    if (settings?.appearance?.firstDayOfWeek === 'saturday') firstDayNumber = 6;
+    if (firstDayOfWeek === 'sunday') firstDayNumber = 0;
+    if (firstDayOfWeek === 'saturday') firstDayNumber = 6;
     const newDate = new Date(date);
     newDate.setDate(1);
     setView('month');
     setDate(newDate);
     const gridDates = getMonthGridDates(newDate, firstDayNumber);
     setDates(gridDates);
-  }, [date, settings, setView, setDate, setDates]);
+  }, [date, firstDayOfWeek, setDates]);
 
   // Initialize available views
   useEffect(() => {
@@ -325,6 +336,7 @@ export const CalendarContent = ({
       newDate.setHours(0, 0, 0, 0);
       setDates([newDate]);
     } else if (view === '4-days') {
+      // For 4-day view, show 4 consecutive days starting from the current date
       const dates: Date[] = [];
       for (let i = 0; i < 4; i++) {
         const newDate = new Date(date);
@@ -352,13 +364,13 @@ export const CalendarContent = ({
       setDates(weekDates);
     } else if (view === 'month') {
       let firstDayNumber = 1; // Monday
-      if (settings?.appearance?.firstDayOfWeek === 'sunday') firstDayNumber = 0;
-      if (settings?.appearance?.firstDayOfWeek === 'saturday')
+      if (firstDayOfWeek === 'sunday') firstDayNumber = 0;
+      if (firstDayOfWeek === 'saturday')
         firstDayNumber = 6;
       const gridDates = getMonthGridDates(date, firstDayNumber);
       setDates(gridDates);
     }
-  }, [date, view]);
+  }, [date, view, firstDayOfWeek, setDates]);
 
   // Set initial view based on screen size
   useEffect(() => {
@@ -409,51 +421,167 @@ export const CalendarContent = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [enableDayView, enable4DayView, enableWeekView, enableMonthView]);
 
-  if (!initialized || !view || !dates.length) return null;
+  // Check if data is ready (for synchronized loading)
+  const isDataReady = !isLoading && !isSyncing && dates.length > 0;
+
+  // Hide loading skeleton after a minimum time to ensure users see it
+  useEffect(() => {
+    if (isDataReady) {
+      const timer = setTimeout(() => {
+        setShowLoadingSkeleton(false);
+      }, 500); // Minimum 500ms loading time
+      return () => clearTimeout(timer);
+    }
+  }, [isDataReady]);
+
+  // Reusable loading UI component
+  const LoadingUI = ({ 
+    enableHeader, 
+    sidebarToggleButton, 
+    extras, 
+    showHeader = true
+  }: {
+    enableHeader: boolean;
+    sidebarToggleButton?: React.ReactNode;
+    extras?: React.ReactNode;
+    showHeader?: boolean;
+  }) => (
+    <div className="flex h-full w-full flex-col">
+      {enableHeader && showHeader && (
+        <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+          <div className="p-4">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center gap-2">
+                {sidebarToggleButton}
+                <div className="h-6 w-32 animate-pulse rounded bg-muted" />
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="h-8 w-8 animate-pulse rounded bg-muted" />
+                <div className="h-8 w-8 animate-pulse rounded bg-muted" />
+                <div className="h-8 w-20 animate-pulse rounded bg-muted" />
+              </div>
+              {extras}
+            </div>
+          </div>
+        </div>
+      )}
+      <div className="flex flex-1 flex-col overflow-hidden">
+        <div className="border-b bg-background/50">
+          <div className="flex h-8 items-center justify-center">
+            <div className="flex gap-1">
+              {Array.from({ length: 7 }).map((_, i) => (
+                <div
+                  key={`weekday-skeleton-${['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'][i]}`}
+                  className="h-6 w-16 animate-pulse rounded bg-muted"
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+        <div className="relative scrollbar-none flex-1 overflow-auto bg-background/50">
+          <div className="flex h-full">
+            <div className="w-16">
+              {Array.from({ length: 24 }).map((_, i) => (
+                <div key={`time-slot-${String(i).padStart(2, '0')}:00`} className="h-20" />
+              ))}
+            </div>
+            <div className="flex-1">
+              <div className="grid h-full grid-cols-7">
+                {Array.from({ length: 7 }).map((_, colIndex) => (
+                  <div key={`calendar-col-${['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'][colIndex]}`}>
+                    {Array.from({ length: 24 }).map((_, rowIndex) => (
+                      <div
+                        key={`calendar-cell-${['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'][colIndex]}-${String(rowIndex).padStart(2, '0')}:00`}
+                        className="h-20"
+                      />
+                    ))}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  // Show loading skeleton while data is loading or during minimum loading time
+  if (!initialized || !view || !dates.length || showLoadingSkeleton) {
+    return (
+      <LoadingUI 
+        enableHeader={enableHeader} 
+        sidebarToggleButton={sidebarToggleButton} 
+        extras={extras} 
+      />
+    );
+  }
+
+  if (!isDataReady) {
+    return (
+      <LoadingUI 
+        enableHeader={enableHeader} 
+        sidebarToggleButton={sidebarToggleButton} 
+        extras={extras} 
+      />
+    );
+  }
 
   return (
-    <div
-      className={cn(
-        'grid h-full w-full',
-        view === 'month' ? 'grid-rows-[auto_1fr]' : 'grid-rows-[auto_auto_1fr]'
-      )}
-    >
+    <div className="flex h-full w-full flex-col">
       {enableHeader && (
-        <CalendarHeader
-          t={t}
-          locale={locale}
-          availableViews={availableViews}
-          date={date}
-          setDate={handleSetDate}
-          view={view}
-          offset={
-            view === 'day' ? 1 : view === '4-days' ? 4 : view === 'week' ? 7 : 0
-          }
-          onViewChange={(newView) => {
-            if (newView === 'day') enableDayView();
-            else if (newView === '4-days') enable4DayView();
-            else if (newView === 'week') enableWeekView();
-            else if (newView === 'month') enableMonthView();
-          }}
-          extras={extras}
-        />
+        <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+          <div className="p-4">
+            <CalendarHeader
+              t={t}
+              locale={locale}
+              availableViews={availableViews}
+              date={date}
+              setDate={handleSetDate}
+              view={view}
+              offset={
+                view === 'day'
+                  ? 1
+                  : view === '4-days'
+                    ? 4
+                    : view === 'week'
+                      ? 7
+                      : 0
+              }
+              onViewChange={(newView) => {
+                if (newView === 'day') enableDayView();
+                else if (newView === '4-days') enable4DayView();
+                else if (newView === 'week') enableWeekView();
+                else if (newView === 'month') enableMonthView();
+              }}
+              extras={extras}
+              onSidebarToggle={onSidebarToggle}
+              sidebarToggleButton={sidebarToggleButton}
+            />
+          </div>
+        </div>
       )}
 
-      {view !== 'month' && (
-        <WeekdayBar locale={locale} view={view} dates={dates} />
-      )}
-
-      <div className="relative scrollbar-none flex-1 overflow-auto bg-background/50">
-        {view === 'month' && dates?.[0] ? (
-          <MonthCalendar
-            date={dates[0]}
-            workspace={workspace}
-            visibleDates={dates}
-            viewedMonth={date}
-          />
-        ) : (
-          <CalendarViewWithTrail dates={dates} />
+      <div className="flex flex-1 flex-col overflow-hidden">
+        {view !== 'month' && (
+          <div className="bg-background/50">
+            <WeekdayBar locale={locale} view={view} dates={dates} />
+          </div>
         )}
+
+        <div className="scrollbar-none relative flex-1 overflow-auto bg-background/50">
+          <div className="pb-6">
+            {view === 'month' && dates?.[0] ? (
+              <MonthCalendar
+                date={dates[0]}
+                workspace={workspace}
+                visibleDates={dates}
+                viewedMonth={date}
+              />
+            ) : (
+              <CalendarViewWithTrail dates={dates} />
+            )}
+          </div>
+        </div>
       </div>
 
       {disabled ? null : (

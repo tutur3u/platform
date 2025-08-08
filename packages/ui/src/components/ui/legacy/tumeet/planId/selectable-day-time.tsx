@@ -180,7 +180,7 @@ export default function SelectableDayTime({
                   : isSelectable
                     ? (e) => {
                         if (editing.enabled) return;
-                        edit(editData, e);
+                        edit(editData, { touches: Array.from(e.touches) });
                       }
                     : (e) => {
                         e.preventDefault();
@@ -193,7 +193,7 @@ export default function SelectableDayTime({
                   : isSelectable
                     ? (e) => {
                         if (!editing.enabled) return;
-                        edit(editData, e);
+                        edit(editData, { touches: Array.from(e.touches) });
                       }
                     : undefined
               }

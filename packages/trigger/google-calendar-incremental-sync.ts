@@ -1,13 +1,14 @@
-import type { SyncOrchestratorResult } from './google-calendar-sync';
+import type { SyncOrchestratorResult } from './google-calendar-sync.js';
 import {
   getGoogleAuthClient,
   getSyncToken,
   getWorkspacesForSync,
   storeSyncToken,
   syncWorkspaceBatched,
-} from './google-calendar-sync';
+} from './google-calendar-sync.js';
 import { schedules, task } from '@trigger.dev/sdk/v3';
-import { google } from '@tuturuuu/google';
+import { google } from 'googleapis';
+import type { calendar_v3 } from 'googleapis';
 
 async function performIncrementalSyncForWorkspace(
   calendarId = 'primary',
@@ -23,8 +24,7 @@ async function performIncrementalSyncForWorkspace(
 
   try {
     const syncToken = await getSyncToken(ws_id);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let allEvents: any[] = [];
+    let allEvents: calendar_v3.Schema$Event[] = [];
     let pageToken: string | undefined;
     let nextSyncToken: string | undefined;
     do {

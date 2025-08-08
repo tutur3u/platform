@@ -1,5 +1,6 @@
 import { Separator } from '../separator';
 import type { ReactNode } from 'react';
+import Image from 'next/image';
 
 export default function ReportPreview({
   t,
@@ -15,12 +16,14 @@ export default function ReportPreview({
     score: string;
     feedback: string;
   };
-  t: any;
+  t: (key: string) => string;
 
   parseDynamicText: (text?: string | null) => ReactNode;
 
   getConfig: (id: string) => string | null | undefined;
 }) {
+  const brandLogoUrl = getConfig('BRAND_LOGO_URL');
+  
   return (
     <div className="overflow-x-auto xl:flex-none">
       <div
@@ -29,10 +32,13 @@ export default function ReportPreview({
       >
         <div className="h-full rounded-lg border p-4 text-foreground md:p-12">
           <div className="flex flex-wrap items-center justify-between gap-8">
-            {getConfig('BRAND_LOGO_URL') && (
-              <img
-                src={getConfig('BRAND_LOGO_URL')!}
+            {brandLogoUrl && (
+              <Image
+                src={brandLogoUrl}
                 alt="logo"
+                width={200}
+                height={100}
+                className="h-auto w-auto"
                 // onLoad={() => setIsLogoLoaded(true)}
               />
             )}

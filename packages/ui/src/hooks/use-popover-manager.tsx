@@ -18,8 +18,8 @@ export function usePopoverManager() {
   const handleClose = useCallback(
     (event: Event) => {
       if (openPopoverIdx === null) return;
-      const popoverEl = popoverContentRefs.current[openPopoverIdx!];
-      if (popoverHovered[openPopoverIdx!]) return;
+      const popoverEl = popoverContentRefs.current[openPopoverIdx];
+      if (popoverHovered[openPopoverIdx]) return;
       if (!popoverEl) {
         setOpenPopoverIdx(null);
         return;

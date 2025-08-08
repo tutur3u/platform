@@ -4,7 +4,11 @@ import { Button } from '@tuturuuu/ui/button';
 import { ChevronLeft, ChevronRight } from '@tuturuuu/ui/icons';
 import { useTranslations } from 'next-intl';
 
-export default function NavbarCalendarHeader({}: { locale: string }) {
+export default function NavbarCalendarHeader({
+  locale: _locale,
+}: {
+  locale: string;
+}) {
   const t = useTranslations('calendar');
   // const { date, setDate, view, setView, availableViews } = useCalendarContext();
 
@@ -58,7 +62,6 @@ export default function NavbarCalendarHeader({}: { locale: string }) {
         <Button
           variant="ghost"
           size="icon"
-          className="h-8 w-8"
           // onClick={handlePrev}
           disabled
           aria-label="Previous period"
@@ -87,7 +90,6 @@ export default function NavbarCalendarHeader({}: { locale: string }) {
         <Button
           variant="ghost"
           size="icon"
-          className="h-8 w-8"
           // onClick={handleNext}
           disabled
           aria-label="Next period"
@@ -103,7 +105,7 @@ export default function NavbarCalendarHeader({}: { locale: string }) {
 
       {/* {views.length > 1 && (
         <Select value={view} onValueChange={onViewChange}>
-          <SelectTrigger className="text-md h-8 w-[80px] md:w-[100px]">
+          <SelectTrigger className="text-md h-10 w-[80px] md:w-[100px]">
             <SelectValue placeholder={t('view')} />
           </SelectTrigger>
           <SelectContent>

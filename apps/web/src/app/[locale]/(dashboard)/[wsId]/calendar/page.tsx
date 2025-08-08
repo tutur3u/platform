@@ -1,13 +1,11 @@
 import { CalendarActiveSyncDebugger } from './active-sync';
-import CalendarClientPage from './client';
-// import TasksSidebar from './components/tasks-sidebar';
-import TaskSidebarServer from './components/tasks-sidebar-server';
+import CalendarPageClient from './calendar-page-client';
+import { CalendarStateProvider } from './calendar-state-context';
 import { DEV_MODE } from '@/constants/common';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { CalendarSyncProvider } from '@tuturuuu/ui/hooks/use-calendar-sync';
 import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { redirect } from 'next/navigation';
+import { CalendarSyncWrapper } from './calendar-sync-wrapper';
 
 interface PageProps {
   params: Promise<{
@@ -17,7 +15,7 @@ interface PageProps {
 }
 
 export default async function CalendarPage({ params }: PageProps) {
-  const { wsId } = await params;
+  const { wsId, locale } = await params;
   const workspace = await getWorkspace(wsId);
 
   const { withoutPermission } = await getPermissions({
@@ -36,21 +34,16 @@ export default async function CalendarPage({ params }: PageProps) {
   if (!workspace?.id) return null;
 
   return (
-    <CalendarSyncProvider
-      wsId={workspace.id}
-      experimentalGoogleToken={googleToken}
-      useQuery={useQuery}
-      useQueryClient={useQueryClient}
-    >
-      {DEV_MODE && <CalendarActiveSyncDebugger />}
-      <div className="flex h-[calc(100%-2rem-4px)]">
-        <CalendarClientPage
-          experimentalGoogleToken={googleToken}
+    <CalendarSyncWrapper wsId={workspace.id} googleToken={googleToken}>
+      <CalendarStateProvider>
+        {DEV_MODE && <CalendarActiveSyncDebugger />}
+        <CalendarPageClient
+          wsId={wsId}
+          locale={locale}
           workspace={workspace}
+          experimentalGoogleToken={googleToken}
         />
-        {/* <TasksSidebar wsId={wsId} locale={locale} /> */}
-        <TaskSidebarServer wsId={wsId} />
-      </div>
-    </CalendarSyncProvider>
+      </CalendarStateProvider>
+    </CalendarSyncWrapper>
   );
 }

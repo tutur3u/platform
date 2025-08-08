@@ -1,21 +1,10 @@
-import { useCalendar } from '../../../../hooks/use-calendar';
-import {
-  ContextMenu,
-  ContextMenuContent,
-  ContextMenuItem,
-  ContextMenuSeparator,
-  ContextMenuSub,
-  ContextMenuSubContent,
-  ContextMenuSubTrigger,
-  ContextMenuTrigger,
-} from '../../context-menu';
-import { GRID_SNAP, HOUR_HEIGHT, MAX_HOURS, MIN_EVENT_HEIGHT } from './config';
 import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import { getEventStyles } from '@tuturuuu/utils/color-helper';
 import { cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
+import utc from 'dayjs/plugin/utc';
 import {
   AlertTriangle,
   ArrowLeft,
@@ -29,8 +18,22 @@ import {
   Trash2,
   Unlock,
 } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import Image from 'next/image';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCalendar } from '../../../../hooks/use-calendar';
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuSub,
+  ContextMenuSubContent,
+  ContextMenuSubTrigger,
+  ContextMenuTrigger,
+} from '../../context-menu';
+import { GRID_SNAP, HOUR_HEIGHT, MAX_HOURS, MIN_EVENT_HEIGHT } from './config';
 
+dayjs.extend(utc);
 dayjs.extend(timezone);
 
 // Utility function to round time to nearest 15-minute interval
@@ -75,6 +78,7 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
   const { updateEvent, hideModal, openModal, deleteEvent, settings } =
     useCalendar();
   const tz = settings?.timezone?.timezone;
+  const timeFormat = settings?.appearance?.timeFormat;
 
   // Local state for immediate UI updates
   const [localEvent, setLocalEvent] = useState<CalendarEvent>(event);
@@ -82,10 +86,12 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
   // Parse dates properly using selected time zone
   const startDate =
     tz === 'auto'
-      ? dayjs(localEvent.start_at)
+      ? dayjs.utc(localEvent.start_at).local() // Convert from UTC to local timezone
       : dayjs(localEvent.start_at).tz(tz);
   const endDate =
-    tz === 'auto' ? dayjs(localEvent.end_at) : dayjs(localEvent.end_at).tz(tz);
+    tz === 'auto' 
+      ? dayjs.utc(localEvent.end_at).local() // Convert from UTC to local timezone
+      : dayjs(localEvent.end_at).tz(tz);
 
   // Calculate hours with decimal minutes for positioning
   const startHours = Math.min(
@@ -106,7 +112,7 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
   // const durationMinutes = Math.round(durationMs / (1000 * 60));
 
   // Refs for DOM elements
-  const cardRef = useRef<HTMLDivElement>(null);
+  const cardRef = useRef<HTMLButtonElement>(null);
   const handleRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
 
@@ -134,7 +140,7 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
   const statusTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Show temporary status feedback
-  const showStatusFeedback = (status: 'success' | 'error') => {
+  const showStatusFeedback = useCallback((status: 'success' | 'error') => {
     setUpdateStatus(status);
 
     // Clear any existing timeout
@@ -158,12 +164,12 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
         statusTimeoutRef.current = null;
       }
     }, 1500);
-  };
+  }, []);
 
   // Batch visual state updates to reduce renders
-  const updateVisualState = (updates: Partial<typeof visualState>) => {
+  const updateVisualState = useCallback((updates: Partial<typeof visualState>) => {
     setVisualState((prev) => ({ ...prev, ...updates }));
-  };
+  }, []);
 
   // Debounced update function to reduce API calls
   const updateTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -173,7 +179,7 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
   } | null>(null);
 
   // Schedule a throttled update
-  const scheduleUpdate = (updateData: { start_at: string; end_at: string }) => {
+  const scheduleUpdate = useCallback((updateData: { start_at: string; end_at: string }) => {
     // For multi-day events, we need to update the original event
     const eventId = event._originalId || id;
 
@@ -221,7 +227,7 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
         updateTimeoutRef.current = null;
       }, 250); // Throttle to once every 250ms
     }
-  };
+  }, [event._originalId, id, updateEvent, showStatusFeedback, event]);
 
   // Clean up any pending updates
   useEffect(() => {
@@ -314,7 +320,7 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
       const hasOverlaps = overlapCount > 1;
 
       // Width calculation based on overlap count
-      let eventWidth, eventLeft;
+      let eventWidth: number, eventLeft: number;
 
       if (hasOverlaps) {
         // Calculate the position of this event within its overlap group
@@ -373,7 +379,6 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
     id,
     startDate,
     duration,
-    level,
     dates,
     _isMultiDay,
     _dayPosition,
@@ -381,6 +386,7 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
     endHours,
     overlapCount,
     overlapGroup,
+    endDate,
   ]);
 
   // Event resizing - only enable for non-multi-day events or the start/end segments
@@ -569,6 +575,10 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
     event._originalId,
     startHours,
     locked,
+    endDate,
+    scheduleUpdate,
+    showStatusFeedback,
+    updateVisualState,
   ]);
 
   // Event dragging - only enable for non-multi-day events
@@ -819,6 +829,9 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
     _isMultiDay,
     event._originalId,
     locked,
+    scheduleUpdate,
+    showStatusFeedback,
+    updateVisualState,
   ]);
 
   // Color styles based on event color
@@ -844,12 +857,10 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
 
   // Format time for display
   const formatEventTime = (date: Date | dayjs.Dayjs) => {
-    const { settings } = useCalendar();
-    const timeFormat = settings.appearance.timeFormat;
     const d = dayjs.isDayjs(date)
       ? date
       : tz === 'auto'
-        ? dayjs(date)
+        ? dayjs.utc(date).local() // Convert from UTC to local timezone
         : dayjs(date).tz(tz);
     return d.format(timeFormat === '24h' ? 'HH:mm' : 'h:mm a');
   };
@@ -906,9 +917,10 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
   return (
     <ContextMenu>
       <ContextMenuTrigger asChild>
-        <div
+        <button
           ref={cardRef}
           id={`event-${id}`}
+          type="button"
           className={cn(
             'pointer-events-auto absolute max-w-none overflow-hidden rounded-l rounded-r-md border-l-2 transition-colors duration-300 select-none',
             'group transition-all hover:ring-1 focus:outline-none',
@@ -934,8 +946,18 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
           }}
           onMouseEnter={() => setIsHovering(true)}
           onMouseLeave={() => setIsHovering(false)}
-          tabIndex={0}
           onClick={(e) => {
+            // Check if the click was on the edit button area
+            const target = e.target as HTMLElement;
+            const isEditButton = target.closest('[data-edit-button="true"]');
+            
+            if (isEditButton) {
+              e.stopPropagation();
+              e.preventDefault();
+              openModal(event._originalId || id);
+              return;
+            }
+
             // Only open modal if we haven't just finished dragging or resizing
             if (!wasDraggedRef.current && !wasResizedRef.current) {
               e.stopPropagation();
@@ -947,7 +969,19 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
             wasDraggedRef.current = false;
             wasResizedRef.current = false;
           }}
-          role="button"
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              // Only open modal if we haven't just finished dragging or resizing
+              if (!wasDraggedRef.current && !wasResizedRef.current) {
+                openModal(event._originalId || id);
+              }
+
+              // Reset state flags
+              wasDraggedRef.current = false;
+              wasResizedRef.current = false;
+            }
+          }}
           aria-label={`Event: ${title || 'Untitled event'}`}
         >
           {/* Continuation indicators for multi-day events */}
@@ -965,6 +999,7 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
 
           {/* Edit button overlay */}
           <div
+            data-edit-button="true"
             className={cn(
               'absolute top-2 right-2 rounded-full p-0.5 opacity-0 shadow-sm',
               'z-10 transition-opacity group-hover:opacity-100', // Higher z-index
@@ -973,11 +1008,6 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
                   isDragging || isResizing || updateStatus !== 'idle',
               } // Hide during interaction or status updates
             )}
-            onClick={(e) => {
-              e.stopPropagation();
-              e.preventDefault();
-              openModal(event._originalId || id);
-            }}
           >
             <Pencil className="h-3 w-3" />
           </div>
@@ -1036,15 +1066,19 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
                 )}
                 {typeof localEvent.google_event_id === 'string' &&
                   localEvent.google_event_id.trim() !== '' && (
-                    <img
-                      src="/media/google-calendar-icon.png"
-                      alt="Google Calendar"
-                      className="mr-1 inline-block h-4 w-4 align-text-bottom"
+                    <div
+                      className="mr-1 inline-block align-text-bottom"
                       title="Synced from Google Calendar"
                       data-testid="google-calendar-logo"
-                      width={18}
-                      height={18}
-                    />
+                    >
+                      <Image
+                        src="/media/google-calendar-icon.png"
+                        alt="Google Calendar"
+                        className="h-4 w-4"
+                        width={18}
+                        height={18}
+                      />
+                    </div>
                   )}
                 <span className="min-w-0 overflow-hidden text-ellipsis">
                   {localEvent.title || 'Untitled event'}
@@ -1087,10 +1121,13 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
                 'absolute inset-x-0 bottom-0 cursor-s-resize hover:bg-primary/20',
                 'h-2 transition-colors'
               )}
+              role="button"
+              tabIndex={0}
               aria-label="Resize event"
+              title="Resize event"
             />
           )}
-        </div>
+        </button>
       </ContextMenuTrigger>
       <ContextMenuContent className="w-48">
         <ContextMenuItem

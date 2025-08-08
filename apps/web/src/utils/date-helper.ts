@@ -222,3 +222,59 @@ export function minTimetz(timetz1: string, timetz2: string) {
 export function maxTimetz(timetz1: string, timetz2: string) {
   return compareTimetz(timetz1, timetz2) > 0 ? timetz1 : timetz2;
 }
+
+/**
+ * Compares two dates to check if they represent the same day
+ * @param date1 - First date to compare
+ * @param date2 - Second date to compare
+ * @returns true if both dates represent the same day, false otherwise
+ */
+export const isSameDay = (date1: Date, date2: Date): boolean => {
+  return date1.toDateString() === date2.toDateString();
+};
+
+/**
+ * Compares two dates to check if they represent the same month and year
+ * @param date1 - First date to compare
+ * @param date2 - Second date to compare
+ * @returns true if both dates represent the same month and year, false otherwise
+ */
+export const isSameMonth = (date1: Date, date2: Date): boolean => {
+  return (
+    date1.getMonth() === date2.getMonth() &&
+    date1.getFullYear() === date2.getFullYear()
+  );
+};
+
+/**
+ * Checks if a given date is today
+ * @param date - Date to check
+ * @returns true if the date is today, false otherwise
+ */
+export const isToday = (date: Date): boolean => {
+  return isSameDay(date, new Date());
+};
+
+/**
+ * Checks if today is within a 4-day period starting from a given date
+ * @param startDate - The start date of the 4-day period
+ * @param view - The current calendar view
+ * @returns true if today is within the 4-day period and view is '4-days', false otherwise
+ */
+export const isCurrent4DayPeriod = (startDate: Date, view: string): boolean => {
+  if (view !== '4-days') return false;
+  
+  const today = new Date();
+  const currentDate = new Date(startDate);
+  
+  // Set the start date to the beginning of the day
+  const periodStart = new Date(currentDate);
+  periodStart.setHours(0, 0, 0, 0);
+  
+  // Calculate the end date (3 days after start date) and set to end of 4th day
+  const periodEnd = new Date(periodStart);
+  periodEnd.setDate(periodStart.getDate() + 3);
+  periodEnd.setHours(23, 59, 59, 999); // End of the 4th day
+  
+  return today >= periodStart && today <= periodEnd;
+};

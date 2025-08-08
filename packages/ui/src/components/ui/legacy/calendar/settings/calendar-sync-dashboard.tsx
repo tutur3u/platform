@@ -2,13 +2,14 @@
 
 import type { SyncLog } from './types';
 import { useQuery } from '@tanstack/react-query';
-import type { Workspace } from '@tuturuuu/types/db';
+import type { Workspace as DbWorkspace } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
 import { AnalyticsCharts } from '@tuturuuu/ui/legacy/calendar/settings/analytics-charts';
 import { SummaryCards } from '@tuturuuu/ui/legacy/calendar/settings/summary-cards';
 import { SyncLogsTable } from '@tuturuuu/ui/legacy/calendar/settings/sync-logs-table';
 import { Calendar, Download, RefreshCw } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useCallback } from 'react';
+import { getEventStyles } from '@tuturuuu/utils/color-helper';
 
 const getWorkspaces = async () => {
   const workspaces = await fetch('/api/workspaces');
@@ -30,13 +31,10 @@ export function CalendarSyncDashboard({ syncLogs }: { syncLogs: SyncLog[] }) {
     refetchInterval: 1000 * 60 * 5, // 5 minutes
   });
 
-  // Fallback to mock workspaces if API fails
-  const workspaces: Workspace[] = workspacesQuery.data || [
-    { id: 'ws_1', name: 'Marketing Team' },
-    { id: 'ws_2', name: 'Engineering' },
-    { id: 'ws_3', name: 'Sales Department' },
-    { id: 'ws_4', name: 'Executive Team' },
-  ];
+  // Use database workspaces directly
+  const workspaces: DbWorkspace[] = useMemo(() => {
+    return workspacesQuery.data || [];
+  }, [workspacesQuery.data]);
 
   const filteredLogs = useMemo(() => {
     return syncLogs.filter((log) => {
@@ -60,9 +58,9 @@ export function CalendarSyncDashboard({ syncLogs }: { syncLogs: SyncLog[] }) {
   const totalEvents = useMemo(() => {
     return syncLogs.reduce(
       (acc, log) => ({
-        added: acc.added + log.events.added,
-        updated: acc.updated + log.events.updated,
-        deleted: acc.deleted + log.events.deleted,
+        added: acc.added + (log.events?.added || 0),
+        updated: acc.updated + (log.events?.updated || 0),
+        deleted: acc.deleted + (log.events?.deleted || 0),
       }),
       { added: 0, updated: 0, deleted: 0 }
     );
@@ -77,10 +75,22 @@ export function CalendarSyncDashboard({ syncLogs }: { syncLogs: SyncLog[] }) {
   }, [syncLogs]);
 
   const successRate = useMemo(() => {
+    if (syncLogs.length === 0) return '0.0';
     return ((completedSyncs / syncLogs.length) * 100).toFixed(1);
   }, [completedSyncs, syncLogs.length]);
 
-  // Generate mock time series data for charts
+  // Helper function to get color for calendar sources
+  const getSourceColor = useCallback((source: string) => {
+    const colors: Record<string, string> = {
+      'Google Calendar': '#4285f4',
+      'Outlook Calendar': '#0078d4',
+      'Apple Calendar': '#007aff',
+      'Unknown': '#6b7280',
+    };
+    return colors[source] || '#6b7280';
+  }, []);
+
+  // Generate time series data for charts based on actual sync logs
   const generateTimeSeriesData = () => {
     const data: {
       time: string;
@@ -92,24 +102,35 @@ export function CalendarSyncDashboard({ syncLogs }: { syncLogs: SyncLog[] }) {
     }[] = [];
     const now = new Date();
 
+    // Group sync logs by hour for the last 24 hours
     for (let i = 23; i >= 0; i--) {
-      const time = new Date(now.getTime() - i * 60 * 60 * 1000);
-      const hour = time.getHours();
+      const hourStart = new Date(now.getTime() - (i + 1) * 60 * 60 * 1000);
+      const hourEnd = new Date(now.getTime() - i * 60 * 60 * 1000);
 
-      // Simulate realistic sync patterns (more activity during business hours)
-      const baseActivity = hour >= 9 && hour <= 17 ? 3 : 1;
-      const variance = Math.random() * 2;
+      const hourLogs = syncLogs.filter((log) => {
+        const logTime = new Date(log.timestamp);
+        return logTime >= hourStart && logTime < hourEnd;
+      });
+
+      const successCount = hourLogs.filter((log) => log.status === 'completed').length;
+      const failedCount = hourLogs.filter((log) => log.status === 'failed').length;
+      const totalEvents = hourLogs.reduce((sum, log) => 
+        sum + (log.events?.added || 0) + (log.events?.updated || 0) + (log.events?.deleted || 0), 0
+      );
+      const avgDuration = hourLogs.length > 0 
+        ? hourLogs.reduce((sum, log) => sum + (log.duration || 0), 0) / hourLogs.length 
+        : 0;
 
       data.push({
-        time: time.toLocaleTimeString([], {
+        time: hourStart.toLocaleTimeString([], {
           hour: '2-digit',
           minute: '2-digit',
         }),
-        syncs: Math.floor(baseActivity + variance),
-        success: Math.floor((baseActivity + variance) * 0.85),
-        failed: Math.floor((baseActivity + variance) * 0.15),
-        events: Math.floor((baseActivity + variance) * 12),
-        duration: 1500 + Math.random() * 1000,
+        syncs: hourLogs.length,
+        success: successCount,
+        failed: failedCount,
+        events: totalEvents,
+        duration: avgDuration,
       });
     }
 
@@ -118,42 +139,71 @@ export function CalendarSyncDashboard({ syncLogs }: { syncLogs: SyncLog[] }) {
 
   const timeSeriesData = generateTimeSeriesData();
 
-  // Workspace activity data
-  const workspaceActivityData = workspaces.map((workspace) => {
+  // Workspace activity data based on actual data
+  const workspaceActivityData = workspaces.map((workspace, index) => {
     const workspaceLogs = syncLogs.filter(
       (log) => log.workspace?.id === workspace.id
     );
     const totalEvents = workspaceLogs.reduce(
       (sum, log) =>
-        sum + log.events.added + log.events.updated + log.events.deleted,
+        sum + (log.events?.added || 0) + (log.events?.updated || 0) + (log.events?.deleted || 0),
       0
     );
 
+    // Use existing color system for workspace distinction
+    const workspaceColors = ['BLUE', 'GREEN', 'PURPLE', 'YELLOW', 'PINK', 'ORANGE', 'INDIGO', 'CYAN', 'RED', 'GRAY'];
+    const colorKey = workspaceColors[index % workspaceColors.length] || 'BLUE';
+    const { bg } = getEventStyles(colorKey);
+
     return {
-      name: workspace.name,
+      name: workspace.name || 'Unknown Workspace',
       syncs: workspaceLogs.length,
       events: totalEvents,
       success: workspaceLogs.filter((log) => log.status === 'completed').length,
-      color: 'bg-blue-500',
+      color: bg, // Use existing color system background class
     };
   });
 
-  // Calendar source distribution
-  const calendarSourceData = [
-    { name: 'Google Calendar', value: 45, color: '#4285f4' },
-    { name: 'Outlook Calendar', value: 35, color: '#0078d4' },
-    { name: 'Apple Calendar', value: 20, color: '#007aff' },
-  ];
+  // Calendar source distribution based on actual data
+  const calendarSourceData = useMemo(() => {
+    const sourceCounts: Record<string, number> = {};
+    
+    syncLogs.forEach((log) => {
+      const source = log.calendarSource || 'Unknown';
+      if (source) {
+        sourceCounts[source] = (sourceCounts[source] || 0) + 1;
+      }
+    });
 
-  // Event type distribution over time
-  const eventTypeData = [
-    { period: '00:00', added: 12, updated: 8, deleted: 3 },
-    { period: '04:00', added: 5, updated: 3, deleted: 1 },
-    { period: '08:00', added: 25, updated: 15, deleted: 4 },
-    { period: '12:00', added: 35, updated: 22, deleted: 6 },
-    { period: '16:00', added: 28, updated: 18, deleted: 5 },
-    { period: '20:00', added: 15, updated: 10, deleted: 2 },
-  ];
+    const total = syncLogs.length;
+    return Object.entries(sourceCounts).map(([name, count]) => ({
+      name: name || 'Unknown',
+      value: total > 0 ? Math.round((count / total) * 100) : 0,
+      color: getSourceColor(name || 'Unknown'),
+    }));
+  }, [syncLogs, getSourceColor]);
+
+    // Event type distribution over time based on actual data
+  const eventTypeData = useMemo(() => {
+    const periods = ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00'];
+    const periodHours = [0, 4, 8, 12, 16, 20];
+    
+    return periods.map((period, index) => {
+      const periodLogs = syncLogs.filter((log) => {
+        const logTime = new Date(log.timestamp);
+        const hour = logTime.getHours();
+        const periodHour = periodHours[index] ?? 0;
+        return hour >= periodHour && hour < periodHour + 4;
+      });
+
+      return {
+        period,
+        added: periodLogs.reduce((sum, log) => sum + (log.events?.added || 0), 0),
+        updated: periodLogs.reduce((sum, log) => sum + (log.events?.updated || 0), 0),
+        deleted: periodLogs.reduce((sum, log) => sum + (log.events?.deleted || 0), 0),
+      };
+    });
+  }, [syncLogs]);
 
   return (
     <div className="flex min-h-screen flex-col gap-4">

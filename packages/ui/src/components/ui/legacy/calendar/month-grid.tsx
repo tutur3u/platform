@@ -65,23 +65,12 @@ export function Month({ hasGrid, month, year }: MonthProps) {
     const firstMonday = getFirstMonday();
     const lastDayOfLastWeek = getLastDayOfLastWeek();
     const days: Date[] = [];
-    for (
-      let i = firstMonday;
-      i <= lastDayOfLastWeek;
-      i.setDate(i.getDate() + 1)
-    ) {
-      days.push(new Date(i));
+    const currentDate = new Date(firstMonday);
+    while (currentDate <= lastDayOfLastWeek) {
+      days.push(new Date(currentDate));
+      currentDate.setDate(currentDate.getDate() + 1);
     }
     return days;
-  };
-
-  // get the difference between the first monday and the last day of last week
-  const getMonthDaysLength = () => {
-    const firstMonday = getFirstMonday();
-    const lastDayOfLastWeek = getLastDayOfLastWeek();
-    return (
-      (lastDayOfLastWeek.getTime() - firstMonday.getTime()) / (1000 * 3600 * 24)
-    );
   };
 
   return (
@@ -92,12 +81,8 @@ export function Month({ hasGrid, month, year }: MonthProps) {
           hasGrid ? `border-t border-l border-zinc-800` : ``
         } grid grid-cols-7`}
       >
-        {Array.from({ length: getMonthDaysLength() + 1 }).map((_, index) => (
-          <MonthCell
-            hasGrid={hasGrid}
-            key={index}
-            date={getMonthDays()[index]!}
-          />
+        {getMonthDays().map((date) => (
+          <MonthCell hasGrid={hasGrid} key={date.getTime()} date={date} />
         ))}
       </div>
     </div>

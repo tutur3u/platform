@@ -47,9 +47,7 @@ const FormSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   schedule: z.string().min(1, 'Schedule is required'),
   active: z.boolean().default(true),
-  dataset_id: z.string({
-    error: 'Please select a dataset',
-  }),
+  dataset_id: z.string().min(1, 'Please select a dataset'),
   ws_id: z.string(),
 });
 

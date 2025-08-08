@@ -15,7 +15,7 @@ import { Switch } from '../switch';
 import { DateInput } from './date-input';
 import { cn } from '@tuturuuu/utils/format';
 import { Check, ChevronDown, ChevronUp } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 interface ComparedDateRangePickerProps {
   /** Click handler for applying the updates from DateRangePicker. */
@@ -51,8 +51,12 @@ const getDateAdjustedForTimezone = (dateInput: Date | string): Date => {
     const parts = dateInput.split('-').map((part) => parseInt(part, 10));
     // Create a new Date object using the local timezone
     // Note: Month is 0-indexed, so subtract 1 from the month part
-    const date = new Date(parts[0]!, parts[1]! - 1, parts[2]);
-    return date;
+    if (parts.length >= 3 && parts[0] && parts[1] && parts[2]) {
+      const date = new Date(parts[0], parts[1] - 1, parts[2]);
+      return date;
+    }
+    // Fallback to current date if parsing fails
+    return new Date();
   } else {
     // If dateInput is already a Date object, return it directly
     return dateInput;
@@ -137,7 +141,7 @@ export const ComparedDateRangePicker = ({
     };
   }, []);
 
-  const getPresetRange = (presetName: string): DateRange => {
+  const getPresetRange = useCallback((presetName: string): DateRange => {
     const preset = PRESETS.find(({ name }) => name === presetName);
     if (!preset) throw new Error(`Unknown date range preset: ${presetName}`);
     const from = new Date();
@@ -196,7 +200,7 @@ export const ComparedDateRangePicker = ({
     }
 
     return { from, to };
-  };
+  }, []);
 
   const setPreset = (preset: string): void => {
     const range = getPresetRange(preset);
@@ -220,7 +224,7 @@ export const ComparedDateRangePicker = ({
     }
   };
 
-  const checkPreset = (): void => {
+  const checkPreset = useCallback(() => {
     for (const preset of PRESETS) {
       const presetRange = getPresetRange(preset.name);
 
@@ -246,7 +250,7 @@ export const ComparedDateRangePicker = ({
     }
 
     setSelectedPreset(undefined);
-  };
+  }, [range, getPresetRange]);
 
   const resetValues = (): void => {
     setRange({
@@ -283,7 +287,7 @@ export const ComparedDateRangePicker = ({
 
   useEffect(() => {
     checkPreset();
-  }, [range]);
+  }, [checkPreset]);
 
   const PresetButton = ({
     preset,
@@ -324,7 +328,7 @@ export const ComparedDateRangePicker = ({
       openedRangeRef.current = range;
       openedRangeCompareRef.current = rangeCompare;
     }
-  }, [isOpen]);
+  }, [isOpen, range, rangeCompare]);
 
   return (
     <Popover
@@ -459,7 +463,7 @@ export const ComparedDateRangePicker = ({
                       <DateInput
                         value={rangeCompare?.to}
                         onChange={(date) => {
-                          if (rangeCompare && rangeCompare.from) {
+                          if (rangeCompare?.from) {
                             const compareFromDate =
                               date < rangeCompare.from
                                 ? date
@@ -499,8 +503,9 @@ export const ComparedDateRangePicker = ({
                 <Calendar
                   mode="range"
                   onSelect={(value: { from?: Date; to?: Date } | undefined) => {
-                    if (value?.from != null) {
-                      setRange({ from: value.from, to: value?.to });
+                    const from = value?.from;
+                    if (from != null) {
+                      setRange({ from, to: value?.to });
                     }
                   }}
                   selected={range}

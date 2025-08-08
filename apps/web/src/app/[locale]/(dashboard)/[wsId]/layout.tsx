@@ -67,6 +67,7 @@ import {
 } from '@tuturuuu/utils/workspace-helper';
 import { getTranslations } from 'next-intl/server';
 import { cookies } from 'next/headers';
+import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { type ReactNode, Suspense } from 'react';
 
@@ -635,6 +636,17 @@ export default async function Layout({ children, params }: LayoutProps) {
       </div>
     );
 
+  let pathname = '';
+  try {
+    const headersList = await headers();
+    pathname = headersList.get('next-url') || '';
+  } catch (error) {
+    console.warn('Failed to get headers for pathname detection:', error);
+    pathname = '';
+  }
+  
+  const isCalendarPage = pathname === `/${wsId}/calendar` || pathname.startsWith(`/${wsId}/calendar/`);
+
   return (
     <SidebarProvider initialBehavior={sidebarBehavior}>
       <Structure
@@ -664,6 +676,7 @@ export default async function Layout({ children, params }: LayoutProps) {
           </Suspense>
         }
         disableCreateNewWorkspace={!platformUserRole?.allow_workspace_creation}
+        hideSidebarSizeToggle={isCalendarPage}
       >
         {children}
       </Structure>

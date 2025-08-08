@@ -4,8 +4,6 @@ import Chat from '../../chat/chat';
 import type { ExtendedWorkspaceTask } from '../../time-tracker/types';
 import TimeTracker from './time-tracker';
 import type { AIChat } from '@tuturuuu/types/db';
-import { Button } from '@tuturuuu/ui/button';
-import { Dialog } from '@tuturuuu/ui/dialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,12 +17,11 @@ import {
   Flag,
   LayoutDashboard,
   MoreHorizontal,
-  PanelLeftClose,
-  PanelRightClose,
   Search,
   Timer,
 } from '@tuturuuu/ui/icons';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
+import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { useState } from 'react';
 
 interface TasksSidebarContentProps {
@@ -40,75 +37,55 @@ interface TasksSidebarContentProps {
 export default function TasksSidebarContent({
   wsId,
   tasks = [],
-  hasKeys = { openAI: false, anthropic: false, google: false },
+  hasKeys,
   chats = [],
   count = 0,
   locale = 'en',
-  hasAiChatAccess = true,
+  hasAiChatAccess = false,
 }: TasksSidebarContentProps) {
-  const [isCollapsed, setIsCollapsed] = useState(true);
   const [activeTab, setActiveTab] = useState('tasks');
 
-  if (isCollapsed) {
-    return (
-      <div className="ml-2 hidden h-full flex-col items-center rounded-lg border border-border bg-background/60 p-2 shadow-lg backdrop-blur-md transition-all duration-300 ease-in-out hover:bg-background/70 xl:flex">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => setIsCollapsed(false)}
-          aria-label="Expand sidebar"
-          className="group relative overflow-hidden rounded-lg transition-all duration-200 hover:scale-105 hover:bg-accent/60"
-        >
-          <PanelLeftClose className="h-5 w-5 text-foreground transition-transform duration-200 group-hover:rotate-12" />
-          <div className="absolute inset-0 -z-10 bg-gradient-to-r from-blue-500/20 to-purple-500/20 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
-        </Button>
-      </div>
-    );
-  }
+  // Use provided data or fallback to safe defaults if not provided
+  // These fallbacks ensure the component works even if data fetching fails
+  const effectiveHasKeys = hasKeys || { openAI: false, anthropic: false, google: false };
+  const effectiveChats = chats || [];
+  const effectiveCount = count ?? 0;
+  const effectiveHasAiChatAccess = hasAiChatAccess || false;
 
   return (
-    <Dialog>
-      <div className="@container ml-2 flex hidden h-full max-h-[100vh] w-1/3 flex-col rounded-lg border border-border bg-background/60 text-foreground shadow-xl backdrop-blur-md transition-all duration-500 ease-out slide-in-from-right-5 xl:flex">
-        {/* Header */}
-        <div className="@container flex items-center justify-between rounded-t-lg border-b border-border/50 bg-gradient-to-r from-background/80 to-background/60 px-4 py-3 backdrop-blur-sm">
-          <div className="flex w-full items-center justify-between gap-1">
-            <div className="transition-all duration-300 hover:scale-105">
-              <TimeTracker wsId={wsId} tasks={tasks} />
-            </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setIsCollapsed(true)}
-              aria-label="Collapse sidebar"
-              className="group relative overflow-hidden rounded-lg transition-all duration-200 hover:scale-105 hover:bg-accent/60"
-            >
-              <PanelRightClose className="h-5 w-5 text-foreground transition-transform duration-200 group-hover:-rotate-12" />
-              <div className="absolute inset-0 -z-10 bg-gradient-to-r from-red-500/20 to-orange-500/20 opacity-0 transition-opacity duration-200 group-hover:opacity-100" />
-            </Button>
+    <div className="ml-2 h-full w-80 flex-col rounded-lg border border-border bg-background/60 text-foreground shadow-xl backdrop-blur-md transition-all duration-500 ease-out slide-in-from-right-5">
+      {/* Header */}
+      <div className="flex items-center justify-between rounded-t-lg border-b border-border/50 bg-gradient-to-r from-background/80 to-background/60 px-4 py-3 backdrop-blur-sm">
+        <div className="flex w-full items-center justify-between gap-1">
+          <div className="transition-all duration-300 hover:scale-105">
+            <TimeTracker wsId={wsId} tasks={tasks} />
           </div>
         </div>
+      </div>
 
-        {/* Tabs Navigation */}
-        <Tabs
-          value={activeTab}
-          onValueChange={setActiveTab}
-          className="flex min-h-0 flex-1 flex-col gap-0"
-        >
-          <div className="border-b border-border/50 bg-muted/10 p-2">
-            <TabsList className="grid h-auto w-full grid-cols-2 gap-2 bg-transparent p-0">
-              <TabsTrigger
-                value="tasks"
-                className="group @container relative overflow-hidden rounded-lg border border-transparent transition-all duration-300 hover:border-border/50 hover:bg-accent/60 data-[state=active]:border-border/50 data-[state=active]:bg-background data-[state=active]:shadow-md"
-              >
-                <div className="absolute inset-0 -z-10 bg-gradient-to-r from-blue-500/10 to-cyan-500/10 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-                <LayoutDashboard className="h-4 w-4 transition-transform duration-200 group-hover:scale-110" />
-                <span className="hidden transition-all duration-200 @[80px]:inline">
-                  Tasks
-                </span>
-                <span className="transition-all duration-200 @[80px]:hidden">
-                  T
-                </span>
-              </TabsTrigger>
+      {/* Tabs Navigation */}
+      <Tabs
+        value={activeTab}
+        onValueChange={setActiveTab}
+        className="flex min-h-0 flex-1 flex-col gap-0"
+      >
+        <div className="border-b border-border/50 bg-muted/10 p-2">
+          <TabsList className="grid h-auto w-full grid-cols-2 gap-2 bg-transparent p-0">
+            <TabsTrigger
+              value="tasks"
+              className="group @container relative overflow-hidden rounded-lg border border-transparent transition-all duration-300 hover:border-border/50 hover:bg-accent/60 data-[state=active]:border-border/50 data-[state=active]:bg-background data-[state=active]:shadow-md"
+            >
+              <div className="absolute inset-0 -z-10 bg-gradient-to-r from-blue-500/10 to-cyan-500/10 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+              <LayoutDashboard className="h-4 w-4 transition-transform duration-200 group-hover:scale-110" />
+              <span className="hidden transition-all duration-200 @[80px]:inline">
+                Tasks
+              </span>
+              <span className="transition-all duration-200 @[80px]:hidden">
+                T
+              </span>
+            </TabsTrigger>
+
+            {effectiveHasAiChatAccess && (
               <TabsTrigger
                 value="ai-chat"
                 className="group @container relative overflow-hidden rounded-lg border border-transparent transition-all duration-300 hover:border-border/50 hover:bg-accent/60 data-[state=active]:border-border/50 data-[state=active]:bg-background data-[state=active]:shadow-md"
@@ -122,46 +99,46 @@ export default function TasksSidebarContent({
                   AI
                 </span>
               </TabsTrigger>
-            </TabsList>
-          </div>
+            )}
+          </TabsList>
+        </div>
 
-          {/* Tasks Tab Content */}
+        {/* Tasks Tab Content */}
+        <TabsContent
+          value="tasks"
+          className="m-0 flex min-h-0 flex-1 flex-col space-y-4 overflow-y-auto scrollbar-none p-4 pb-6 duration-300 animate-in fade-in-50"
+        >
+          <div className="mx-auto w-full max-w-lg p-0">
+            <PriorityView allTasks={tasks} locale={locale} wsId={wsId} />
+          </div>
+        </TabsContent>
+
+        {/* AI Chat Tab Content */}
+        {effectiveHasAiChatAccess && (
           <TabsContent
-            value="tasks"
-            className="m-0 flex min-h-0 flex-1 flex-col space-y-4 overflow-y-auto p-4 pb-2 duration-300 animate-in fade-in-50"
+            value="ai-chat"
+            className="m-0 min-h-0 flex-1 overflow-y-auto scrollbar-none px-2 pb-6 duration-300 animate-in fade-in-50"
           >
-            <div className="mx-auto w-full max-w-lg p-0">
-              <PriorityView allTasks={tasks} />
+            <div className="relative scrollbar-none h-full min-h-0 overflow-y-auto py-2">
+              <Chat
+                wsId={wsId}
+                hasKeys={effectiveHasKeys}
+                chats={effectiveChats}
+                count={effectiveCount}
+                locale={locale}
+                disableScrollToBottom
+                disableScrollToTop
+              />
             </div>
           </TabsContent>
-
-          {/* AI Chat Tab Content */}
-          {hasAiChatAccess && (
-            <TabsContent
-              value="ai-chat"
-              className="m-0 min-h-0 flex-1 overflow-y-auto px-2 duration-300 animate-in fade-in-50"
-            >
-              <div className="relative h-full min-h-0 overflow-y-auto py-2">
-                <Chat
-                  wsId={wsId}
-                  hasKeys={hasKeys}
-                  chats={chats}
-                  count={count}
-                  locale={locale}
-                  disableScrollToBottom
-                  disableScrollToTop
-                />
-              </div>
-            </TabsContent>
-          )}
-        </Tabs>
-      </div>
-    </Dialog>
+        )}
+      </Tabs>
+    </div>
   );
 }
 
 // Add PriorityView component for the new tab
-function PriorityView({ allTasks }: { allTasks: ExtendedWorkspaceTask[] }) {
+function PriorityView({ allTasks, locale, wsId }: { allTasks: ExtendedWorkspaceTask[]; locale?: string; wsId: string }) {
   const [search, setSearch] = useState('');
   const [isSearchFocused, setIsSearchFocused] = useState(false);
 
@@ -219,10 +196,34 @@ function PriorityView({ allTasks }: { allTasks: ExtendedWorkspaceTask[] }) {
   );
 
   const handlePriorityChange = async (taskId: string, newPriority: string) => {
-    // TODO: Implement API call to update task priority
-    console.log('Updating task priority:', taskId, newPriority);
-    // This would typically make an API call to update the task
-    // await updateTaskPriority(taskId, newPriority);
+    try {
+      const response = await fetch(`/api/v1/workspaces/${wsId}/tasks/${taskId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          user_defined_priority: newPriority,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update task priority');
+      }
+
+      // Show success notification
+      toast({
+        title: 'Priority updated',
+        description: 'Task priority has been updated successfully',
+      });
+    } catch (error) {
+      // Show error notification
+      toast({
+        title: 'Update failed',
+        description: 'Failed to update task priority. Please try again.',
+        variant: 'destructive',
+      });
+    }
   };
 
   return (
@@ -259,7 +260,7 @@ function PriorityView({ allTasks }: { allTasks: ExtendedWorkspaceTask[] }) {
 
       {/* Priority Groups */}
       <div className="space-y-4">
-        {Object.entries(PRIORITY_LABELS).map(([key, label], index) => {
+        {Object.entries(PRIORITY_LABELS).map(([key, label]) => {
           const tasks = filteredGrouped[key] || [];
           const colorClasses =
             PRIORITY_COLORS[key as keyof typeof PRIORITY_COLORS];
@@ -269,7 +270,6 @@ function PriorityView({ allTasks }: { allTasks: ExtendedWorkspaceTask[] }) {
             <div
               key={key}
               className="group duration-300 animate-in slide-in-from-bottom-2"
-              style={{ animationDelay: `${index * 100}ms` }}
             >
               <div className="mb-3 flex items-center gap-2">
                 <span className="text-lg">{icon}</span>
@@ -296,11 +296,10 @@ function PriorityView({ allTasks }: { allTasks: ExtendedWorkspaceTask[] }) {
                     </div>
 
                     <div className="space-y-2">
-                      {tasks.map((task, taskIndex) => (
+                      {tasks.map((task) => (
                         <div
                           key={task.id}
                           className="group/task relative overflow-hidden rounded-lg border border-border/50 bg-background/60 p-3 transition-all duration-200 hover:border-border hover:bg-background/80 hover:shadow-sm"
-                          style={{ animationDelay: `${taskIndex * 50}ms` }}
                         >
                           <div className="absolute inset-0 -z-10 bg-gradient-to-r from-accent/5 to-accent/10 opacity-0 transition-opacity duration-200 group-hover/task:opacity-100" />
                           <div className="flex h-full min-h-[64px] flex-col">
@@ -317,7 +316,7 @@ function PriorityView({ allTasks }: { allTasks: ExtendedWorkspaceTask[] }) {
                                 {task.due_date && (
                                   <div className="mt-1 inline-flex items-center gap-1 rounded bg-red-100 px-2 py-0.5 text-xs text-red-700 dark:bg-red-900/30 dark:text-red-300">
                                     <Calendar className="h-3 w-3" />
-                                    Due {formatDueDate(task.due_date)}
+                                    Due {formatDueDate(task.due_date, locale)}
                                   </div>
                                 )}
                               </div>
@@ -443,7 +442,7 @@ function PriorityView({ allTasks }: { allTasks: ExtendedWorkspaceTask[] }) {
                               {task.total_duration && (
                                 <div className="rounded-md bg-accent/50 px-2 py-1 font-mono text-xs text-muted-foreground transition-colors duration-200 group-hover/task:bg-accent">
                                   {Math.floor(task.total_duration || 0)}h{' '}
-                                  {((task.total_duration || 0) * 60) % 60}m
+                                  {Math.floor(((task.total_duration || 0) % 1) * 60)}m
                                 </div>
                               )}
                             </div>
@@ -462,8 +461,11 @@ function PriorityView({ allTasks }: { allTasks: ExtendedWorkspaceTask[] }) {
   );
 }
 
-function formatDueDate(date: string | Date) {
-  // expects date as string or Date, returns MM/DD or DD/MM as you prefer
+function formatDueDate(date: string | Date, locale?: string) {
   const d = new Date(date);
-  return `${d.getMonth() + 1}/${d.getDate()}`;
+  // Use locale-aware formatting
+  return d.toLocaleDateString(locale || 'en-US', { 
+    month: 'numeric', 
+    day: 'numeric' 
+  });
 }
