@@ -98,19 +98,50 @@ export async function POST(request: Request) {
 
     // 4. Fetch eventsToUpsert and eventsToDelete from incremental active sync
     console.log('🔍 [DEBUG] Calling performIncrementalActiveSync...');
-    const { eventsInserted, eventsUpdated, eventsDeleted } =
-      await performIncrementalActiveSync(
-        wsId,
-        user.id,
-        'primary',
-        startDate,
-        endDate
+
+    const incrementalActiveSyncResult = await performIncrementalActiveSync(
+      wsId,
+      user.id,
+      'primary',
+      startDate,
+      endDate
+    );
+
+    // Check if the result is a NextResponse (error case) or a success object
+    if (incrementalActiveSyncResult instanceof NextResponse) {
+      console.log(
+        '❌ [DEBUG] performIncrementalActiveSync returned error response'
       );
+      return incrementalActiveSyncResult;
+    }
+
+    // Check if the result has an error property (another error case)
+    if (
+      incrementalActiveSyncResult &&
+      typeof incrementalActiveSyncResult === 'object' &&
+      'error' in incrementalActiveSyncResult
+    ) {
+      console.log(
+        '❌ [DEBUG] performIncrementalActiveSync error:',
+        incrementalActiveSyncResult.error
+      );
+      return NextResponse.json(
+        { error: incrementalActiveSyncResult.error },
+        { status: 500 }
+      );
+    }
+
+    // Type assertion for the success case
+    const syncResult = incrementalActiveSyncResult as {
+      eventsInserted: number;
+      eventsUpdated: number;
+      eventsDeleted: number;
+    };
 
     console.log('✅ [DEBUG] performIncrementalActiveSync completed:', {
-      eventsInserted,
-      eventsUpdated,
-      eventsDeleted,
+      eventsInserted: syncResult.eventsInserted,
+      eventsUpdated: syncResult.eventsUpdated,
+      eventsDeleted: syncResult.eventsDeleted,
     });
 
     console.log('🔍 [DEBUG] Updating last upsert...');
@@ -122,9 +153,9 @@ export async function POST(request: Request) {
       const { error: updateDashboardError } = await sbAdmin
         .from('calendar_sync_dashboard')
         .update({
-          inserted_events: eventsInserted,
-          updated_events: eventsUpdated,
-          deleted_events: eventsDeleted,
+          inserted_events: syncResult.eventsInserted,
+          updated_events: syncResult.eventsUpdated,
+          deleted_events: syncResult.eventsDeleted,
           status: 'completed',
           end_time: new Date().toISOString(),
         })
@@ -147,9 +178,9 @@ export async function POST(request: Request) {
     console.log('✅ [DEBUG] Returning success response');
     return NextResponse.json({
       success: true,
-      inserted: eventsInserted,
-      updated: eventsUpdated,
-      deleted: eventsDeleted,
+      inserted: syncResult.eventsInserted,
+      updated: syncResult.eventsUpdated,
+      deleted: syncResult.eventsDeleted,
     });
   } catch (error) {
     console.error('❌ [DEBUG] Route error:', {

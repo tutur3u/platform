@@ -342,7 +342,11 @@ export async function performIncrementalActiveSync(
     }
 
     console.log('✅ [DEBUG] No events to process, returning empty result');
-    return { formattedEventsToUpsert: [], formattedEventsToDelete: [] };
+    return {
+      eventsInserted: 0,
+      eventsUpdated: 0,
+      eventsDeleted: 0,
+    };
   } catch (error) {
     console.error('❌ [DEBUG] Error in performIncrementalActiveSync:', {
       error: error instanceof Error ? error.message : 'Unknown error',
