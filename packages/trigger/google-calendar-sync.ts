@@ -74,7 +74,7 @@ export const formatEventForDb = (
     location: event.location || '',
     color: getColorFromGoogleColorId(event.colorId ?? undefined),
     ws_id: ws_id,
-    locked: true,
+    locked: false,
   };
 };
 
