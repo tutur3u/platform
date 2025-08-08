@@ -1,8 +1,8 @@
-import { OAuth2Client } from '@tuturuuu/google';
+import { OAuth2Client } from 'google-auth-library';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { convertGoogleAllDayEvent } from '@tuturuuu/ui/hooks/calendar-utils';
 import { updateLastUpsert } from '@tuturuuu/utils/calendar-sync-coordination';
-import type { calendar_v3 } from 'googleapis/build/src/apis/calendar';
+import type { calendar_v3 } from 'googleapis';
 
 // Batch processing configuration
 const BATCH_SIZE = 100; // Process 100 events at a time for upserts
@@ -19,7 +19,7 @@ type SyncResult = {
 
 export type SyncOrchestratorResult = {
   ws_id: string;
-  handle?: any;
+  handle?: unknown;
   error?: string;
   status: string;
 };
