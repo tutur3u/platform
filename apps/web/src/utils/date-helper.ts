@@ -252,12 +252,7 @@ export const isSameMonth = (date1: Date, date2: Date): boolean => {
  * @returns true if the date is today, false otherwise
  */
 export const isToday = (date: Date): boolean => {
-  const today = new Date();
-  return (
-    date.getDate() === today.getDate() &&
-    date.getMonth() === today.getMonth() &&
-    date.getFullYear() === today.getFullYear()
-  );
+  return isSameDay(date, new Date());
 };
 
 /**

@@ -65,12 +65,10 @@ export function Month({ hasGrid, month, year }: MonthProps) {
     const firstMonday = getFirstMonday();
     const lastDayOfLastWeek = getLastDayOfLastWeek();
     const days: Date[] = [];
-    for (
-      let i = firstMonday;
-      i <= lastDayOfLastWeek;
-      i.setDate(i.getDate() + 1)
-    ) {
-      days.push(new Date(i));
+    const currentDate = new Date(firstMonday);
+    while (currentDate <= lastDayOfLastWeek) {
+      days.push(new Date(currentDate));
+      currentDate.setDate(currentDate.getDate() + 1);
     }
     return days;
   };

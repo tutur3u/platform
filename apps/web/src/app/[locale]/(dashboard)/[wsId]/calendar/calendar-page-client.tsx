@@ -62,9 +62,9 @@ export default function CalendarPageClient({
   
   // Create a wrapper function to match the expected type signature
   // Type assertion needed due to next-intl's complex type system
-  const translationWrapper = useCallback((key: string) => {
+  const translationWrapper = useCallback((key: string, values?: Record<string, unknown>) => {
     // @ts-expect-error - next-intl uses complex conditional types
-    return t(key);
+    return t(key, values);
   }, [t]);
 
   const [isAddEventModalOpen, setIsAddEventModalOpen] = useState(false);
