@@ -27,6 +27,7 @@ vi.mock('../google-calendar-sync', async () => {
     ...actual,
     getGoogleAuthClient: vi.fn(() => ({
       setCredentials: vi.fn(),
+      request: vi.fn(() => Promise.resolve({ data: {} })),
     })),
     syncWorkspaceBatched: vi.fn((payload) =>
       Promise.resolve({
@@ -72,7 +73,7 @@ const mockCalendarEventsList = vi.fn(() =>
   })
 );
 
-vi.mock('@tuturuuu/google', () => ({
+vi.mock('googleapis', () => ({
   google: {
     calendar: vi.fn(() => ({
       events: {
