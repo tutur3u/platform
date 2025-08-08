@@ -219,13 +219,13 @@ export async function performIncrementalActiveSync(
       pageCount++;
       console.log(`🔍 [DEBUG] Fetching page ${pageCount}...`);
 
-      const requestParams: any = {
+      const requestParams = {
         calendarId,
         showDeleted: true,
         singleEvents: true,
-        pageToken,
+        pageToken: pageToken ?? undefined,
         maxResults: 2500,
-      };
+      } as calendar_v3.Params$Resource$Events$List;
 
       if (useDateRangeFallback) {
         // Use date range parameters when no sync token exists
@@ -237,7 +237,7 @@ export async function performIncrementalActiveSync(
         });
       } else {
         // Use sync token for incremental sync
-        requestParams.syncToken = syncToken;
+        requestParams.syncToken = syncToken ?? undefined;
         console.log('🔍 [DEBUG] Using sync token for incremental sync');
       }
 
@@ -258,9 +258,15 @@ export async function performIncrementalActiveSync(
         allEvents = allEvents.concat(events);
         nextSyncToken = res.data.nextSyncToken ?? nextSyncToken;
         pageToken = res.data.nextPageToken ?? undefined;
-      } catch (apiError: any) {
+      } catch (apiError: unknown) {
         // Handle sync token expiration or invalid sync token
-        if (apiError.code === 410 && !useDateRangeFallback) {
+        if (
+          apiError &&
+          typeof apiError === 'object' &&
+          'code' in apiError &&
+          apiError.code === 410 &&
+          !useDateRangeFallback
+        ) {
           console.log(
             '🔍 [DEBUG] Sync token expired or invalid (410 error), falling back to date range...'
           );
@@ -308,8 +314,9 @@ export async function performIncrementalActiveSync(
         );
 
         console.log('✅ [DEBUG] incrementalActiveSync completed:', {
-          eventsToUpsert: result.formattedEventsToUpsert?.length || 0,
-          eventsToDelete: result.formattedEventsToDelete?.length || 0,
+          eventsInserted: result.eventsInserted,
+          eventsUpdated: result.eventsUpdated,
+          eventsDeleted: result.eventsDeleted,
         });
 
         if (nextSyncToken) {
@@ -390,22 +397,26 @@ async function incrementalActiveSync(
 
   if (formattedEventsToDelete && formattedEventsToDelete.length > 0) {
     console.log('🔍 [DEBUG] Deleting events...');
-    const { data: deleteData, error: deleteError } = await supabase
-      .from('workspace_calendar_events')
-      .delete()
-      .in(
-        'id',
-        formattedEventsToDelete.map((e) => e.id)
-      );
+    const validEventIds = formattedEventsToDelete
+      .map((e) => e.google_event_id)
+      .filter((id): id is string => id !== null && id !== undefined);
 
-    console.log('🔍 [DEBUG] Delete result:', {
-      hasError: !!deleteError,
-      errorMessage: deleteError?.message,
-    });
+    if (validEventIds.length > 0) {
+      const { error: deleteError } = await supabase
+        .from('workspace_calendar_events')
+        .delete()
+        .in('google_event_id', validEventIds)
+        .eq('ws_id', wsId);
 
-    if (deleteError) {
-      console.log('❌ [DEBUG] Delete error:', deleteError);
-      throw new Error(deleteError.message);
+      console.log('🔍 [DEBUG] Delete result:', {
+        hasError: !!deleteError,
+        errorMessage: deleteError?.message,
+      });
+
+      if (deleteError) {
+        console.log('❌ [DEBUG] Delete error:', deleteError);
+        throw new Error(deleteError.message);
+      }
     }
   }
 
