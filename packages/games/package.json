@@ -16,13 +16,13 @@
     "react-dom": "^19.1.1",
     "tailwind-merge": "^3.3.1",
     "uuid": "^11.1.0",
-    "zod": "^4.0.15"
+    "zod": "^4.0.16"
   },
   "devDependencies": {
     "@tuturuuu/eslint-config": "workspace:*",
     "@tuturuuu/types": "workspace:*",
     "@tuturuuu/typescript-config": "workspace:*",
-    "@types/node": "^24.2.0",
+    "@types/node": "^24.2.1",
     "@types/react": "^19.1.9",
     "@vitejs/plugin-react": "^5.0.0",
     "@vitest/coverage-v8": "^3.2.4",
