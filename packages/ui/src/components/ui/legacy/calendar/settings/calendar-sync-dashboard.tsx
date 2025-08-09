@@ -48,7 +48,7 @@ export function CalendarSyncDashboard({ syncLogs }: { syncLogs: SyncLog[] }) {
         log.triggeredBy?.display_name
           ?.toLowerCase()
           .includes(searchTerm.toLowerCase()) ||
-        log.triggeredBy?.handle
+        log.triggeredBy?.display_name
           ?.toLowerCase()
           .includes(searchTerm.toLowerCase()) ||
         log.workspace?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||

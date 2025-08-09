@@ -9,16 +9,8 @@ import 'dayjs/locale/ja';
 import 'dayjs/locale/ko';
 import 'dayjs/locale/vi';
 import 'dayjs/locale/zh';
-import utc from 'dayjs/plugin/utc';
-import {
-  afterEach,
-  beforeAll,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  vi,
-} from 'vitest';
+import utc from 'dayjs/plugin/utc.js';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Set required env vars for Supabase at the VERY TOP
 process.env.NEXT_PUBLIC_SUPABASE_URL = 'http://localhost:54321';

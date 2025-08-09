@@ -1,13 +1,10 @@
-import type { SyncLog } from '../../../../../../../../../../packages/ui/src/components/ui/legacy/calendar/settings/types';
-import { createClient } from '@tuturuuu/supabase/next/server';
-import { CalendarSyncDashboard } from '@tuturuuu/ui/calendar-settings';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
+import { NextResponse } from 'next/server';
 
-export default async function CalendarSyncDashboardPage() {
-  const syncLogs = await getSyncLogs();
-  return <CalendarSyncDashboard syncLogs={syncLogs} />;
-}
-
-async function getSyncLogs(): Promise<SyncLog[]> {
+export async function GET(request: Request) {
   try {
     const supabase = await createClient();
 
@@ -18,7 +15,7 @@ async function getSyncLogs(): Promise<SyncLog[]> {
 
     if (authError || !user) {
       console.error('Authentication error:', authError);
-      return [];
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
     console.log('User authenticated:', user.id);
@@ -32,19 +29,22 @@ async function getSyncLogs(): Promise<SyncLog[]> {
 
     if (membershipError) {
       console.error('Error checking workspace memberships:', membershipError);
-      return [];
+      return NextResponse.json(
+        { message: 'Error checking workspace access' },
+        { status: 500 }
+      );
     }
 
     if (!workspaceMemberships || workspaceMemberships.length === 0) {
       console.log('User has no workspace memberships');
-      return [];
+      return NextResponse.json([]);
     }
 
     const workspaceIds = workspaceMemberships.map((w) => w.ws_id);
     console.log('User has access to workspaces:', workspaceIds);
 
     // Try with regular client first - fetch sync logs with proper joins
-    const { data: syncLogs, error } = await supabase
+    let { data: syncLogs, error } = await supabase
       .from('calendar_sync_dashboard')
       .select(
         `
@@ -66,25 +66,57 @@ async function getSyncLogs(): Promise<SyncLog[]> {
       .in('ws_id', workspaceIds)
       .order('updated_at', { ascending: false });
 
+    // If regular client fails, try with admin client as fallback
+    if (error) {
+      console.warn(
+        'Regular client failed, trying admin client:',
+        error.message
+      );
+      const sbAdmin = await createAdminClient();
+
+      const adminResult = await sbAdmin
+        .from('calendar_sync_dashboard')
+        .select(
+          `
+          id, 
+          updated_at, 
+          start_time, 
+          type, 
+          ws_id, 
+          triggered_by, 
+          status, 
+          end_time, 
+          inserted_events, 
+          updated_events, 
+          deleted_events,
+          workspaces!inner(id, name),
+          users!inner(id, display_name, avatar_url)
+        `
+        )
+        .in('ws_id', workspaceIds)
+        .order('updated_at', { ascending: false });
+
+      syncLogs = adminResult.data;
+      error = adminResult.error;
+    }
+
     if (error) {
       console.error('Database error:', error);
-      return [];
+      return NextResponse.json(
+        { message: 'Error fetching sync logs', details: error.message },
+        { status: 500 }
+      );
     }
 
     if (!syncLogs) {
       console.log('No sync logs found');
-      return [];
+      return NextResponse.json([]);
     }
 
     console.log('Found sync logs:', syncLogs.length);
 
     const processedData = syncLogs.map((item) => {
-      const workspace = {
-        id: item.workspaces.id,
-        name: item.workspaces.name || 'Unknown Workspace',
-        color: 'bg-blue-500', // Add default color since workspaces table doesn't have a color field
-      };
-
+      const workspace = item.workspaces;
       const user = item.users || null;
 
       // Calculate duration
@@ -97,16 +129,16 @@ async function getSyncLogs(): Promise<SyncLog[]> {
       return {
         id: item.id,
         timestamp: item.start_time || new Date().toISOString(),
-        type: item.type as SyncLog['type'],
+        type: item.type || 'background',
         workspace: workspace,
         triggeredBy: user
           ? {
               id: user.id,
-              display_name: user.display_name || '',
-              avatar: user.avatar_url,
+              display_name: user.display_name,
+              avatar_url: user.avatar_url,
             }
-          : null,
-        status: item.status as SyncLog['status'],
+          : 'System',
+        status: item.status || 'completed',
         duration: duration,
         events: {
           added: item.inserted_events || 0,
@@ -118,9 +150,15 @@ async function getSyncLogs(): Promise<SyncLog[]> {
       };
     });
 
-    return processedData satisfies SyncLog[];
+    return NextResponse.json(processedData);
   } catch (error) {
     console.error('Unexpected error in sync-logs API:', error);
-    return [];
+    return NextResponse.json(
+      {
+        message: 'Internal server error',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      },
+      { status: 500 }
+    );
   }
 }

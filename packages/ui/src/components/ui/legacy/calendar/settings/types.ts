@@ -1,11 +1,21 @@
-import type { User, Workspace } from '@tuturuuu/types/db';
+export interface Workspace {
+  id: string;
+  name: string;
+  color: string;
+}
+
+export interface User {
+  id: string;
+  display_name: string;
+  avatar: string | null;
+}
 
 export interface SyncLog {
   id: string;
   timestamp: string;
   type: 'active' | 'background' | 'manual';
-  workspace: Partial<Workspace>;
-  triggeredBy: Partial<User> | null;
+  workspace: Workspace;
+  triggeredBy: User | null;
   status: 'completed' | 'failed' | 'running';
   duration: number;
   events: {
