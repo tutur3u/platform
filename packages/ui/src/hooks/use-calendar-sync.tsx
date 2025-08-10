@@ -25,13 +25,12 @@ const CalendarSyncContext = createContext<{
   googleData: WorkspaceCalendarEvent[] | null;
   error: Error | null;
   dates: Date[];
-  // eslint-disable-next-line no-unused-vars
+
   setDates: (dates: Date[]) => void;
   currentView: 'day' | '4-day' | 'week' | 'month';
-  // eslint-disable-next-line no-unused-vars
+
   setCurrentView: (view: 'day' | '4-day' | 'week' | 'month') => void;
   syncToTuturuuu: (
-    // eslint-disable-next-line no-unused-vars
     progressCallback?: (progress: {
       phase: 'get' | 'fetch' | 'delete' | 'upsert' | 'complete';
       percentage: number;
@@ -139,7 +138,7 @@ export const CalendarSyncProvider = ({
   };
 
   // Helper to check if a date range includes today (current week issue)
-  const includesCurrentWeek = (dateRange: Date[]) => {
+  const includesCurrentWeek = useCallback((dateRange: Date[]) => {
     if (!dateRange || dateRange.length === 0) return false;
     const today = new Date();
     const startOfToday = new Date(
@@ -164,7 +163,7 @@ export const CalendarSyncProvider = ({
     const rangeEnd = new Date(lastDate);
 
     return rangeStart <= endOfToday && rangeEnd >= startOfToday;
-  };
+  }, []);
 
   // Enhanced cache staleness check - shorter staleness for current week
   const isCacheStaleEnhanced = (lastUpdated: number, dateRange: Date[]) => {
@@ -333,10 +332,21 @@ export const CalendarSyncProvider = ({
     return areEqual;
   };
 
+  // Invalidate and refetch events
+  const refresh = useCallback(() => {
+    const cacheKey = getCacheKey(dates);
+    if (!cacheKey) return null;
+
+    isForcedRef.current = true;
+
+    queryClient.invalidateQueries({
+      queryKey: ['databaseCalendarEvents', wsId, cacheKey],
+    });
+  }, [queryClient, wsId, dates]);
+
   // Sync Google events of current view to Tuturuuu database
   const syncToTuturuuu = useCallback(
     async (
-      // eslint-disable-next-line no-unused-vars
       progressCallback?: (progress: {
         phase: 'get' | 'fetch' | 'delete' | 'upsert' | 'complete';
         percentage: number;
@@ -407,7 +417,7 @@ export const CalendarSyncProvider = ({
         setIsSyncing(false);
       }
     },
-    [wsId, dates, queryClient, isActiveSyncOn]
+    [wsId, dates, isActiveSyncOn, refresh]
   );
 
   // Sync to Tuturuuu database when google data changes for current view
@@ -428,7 +438,7 @@ export const CalendarSyncProvider = ({
       // Update refs with current values
       prevGoogleDataRef.current = currentGoogleDataStr;
     }
-  }, [fetchedGoogleData, syncToTuturuuu]);
+  }, [fetchedGoogleData, syncToTuturuuu, wsId, experimentalGoogleToken?.ws_id]);
 
   // Trigger sync when isActiveSyncOn becomes true
   useEffect(() => {
@@ -577,6 +587,7 @@ export const CalendarSyncProvider = ({
           }
         } catch (err) {
           // Failed to delete duplicate events
+          console.error(err);
         }
       }
 
@@ -595,18 +606,6 @@ export const CalendarSyncProvider = ({
     // If we're still loading, return empty array
     return [];
   }, [fetchedData, removeDuplicateEvents]);
-
-  // Invalidate and refetch events
-  const refresh = useCallback(() => {
-    const cacheKey = getCacheKey(dates);
-    if (!cacheKey) return null;
-
-    isForcedRef.current = true;
-
-    queryClient.invalidateQueries({
-      queryKey: ['databaseCalendarEvents', wsId, getCacheKey(dates)],
-    });
-  }, [queryClient, wsId, dates]);
 
   const eventsWithoutAllDays = useMemo(() => {
     // Process events immediately when they change
