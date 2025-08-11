@@ -39,6 +39,14 @@ process.env.GOOGLE_CLIENT_ID = 'dummy-client-id';
 process.env.GOOGLE_CLIENT_SECRET = 'dummy-client-secret';
 process.env.GOOGLE_REDIRECT_URI = 'http://localhost:3000/auth/callback';
 
+// Mock global fetch to avoid real network calls in tests
+global.fetch = vi.fn(() =>
+  Promise.resolve({
+    ok: true,
+    json: () => Promise.resolve({}),
+  })
+) as unknown as typeof fetch;
+
 // Mock the google-calendar-sync module
 vi.mock('../google-calendar-sync', async () => {
   const actual = await vi.importActual('../google-calendar-sync');
