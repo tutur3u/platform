@@ -290,6 +290,7 @@ export default function CalendarPageClient({
           <div className="w-80 border-l bg-background/50">
             <TasksSidebarContent
               wsId={workspace.id}
+              assigneeId={workspace.owner_id || workspace.id}
               locale={locale}
               tasks={tasksData?.tasks || []}
               hasKeys={aiChatData?.hasKeys || { openAI: false, anthropic: false, google: false }}
