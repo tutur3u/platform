@@ -16,7 +16,7 @@ export default function ReportPreview({
     score: string;
     feedback: string;
   };
-  t: (key: string) => string;
+  t: (key: any, values?: Record<string, unknown>) => string;
 
   parseDynamicText: (text?: string | null) => ReactNode;
 
