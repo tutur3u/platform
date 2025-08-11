@@ -1,6 +1,8 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { type NextRequest, NextResponse } from 'next/server';
 
+const MAX_CHUNK_SIZE = 50 * 1024 * 1024; // 50MB
+
 export async function POST(
   request: NextRequest,
   {
@@ -70,6 +72,24 @@ export async function POST(
       );
     }
 
+    if (audioBlob.size > MAX_CHUNK_SIZE) {
+      return NextResponse.json(
+        { error: 'Audio chunk exceeds maximum size limit' },
+        { status: 400 }
+      );
+    }
+
+    // Validate content type
+    const allowedTypes = ['audio/webm', 'audio/mp4', 'audio/mpeg', 'audio/ogg'];
+    const contentType = audioBlob.type || 'audio/webm';
+
+    if (!allowedTypes.includes(contentType)) {
+      return NextResponse.json(
+        { error: 'Invalid audio format' },
+        { status: 400 }
+      );
+    }
+
     console.log(
       `Processing chunk ${chunkOrder}: ${audioBlob.size} bytes, type: ${audioBlob.type}`
     );
@@ -83,7 +103,7 @@ export async function POST(
     const { error: uploadError } = await supabase.storage
       .from('workspaces')
       .upload(storagePath, audioBlob, {
-        contentType: audioBlob.type || 'audio/webm',
+        contentType: contentType,
         cacheControl: '3600',
       });
 

@@ -37,6 +37,21 @@ export async function PUT(
       );
     }
 
+    // Verify the recording session exists
+    const { data: session } = await supabase
+      .from('recording_sessions')
+      .select('id')
+      .eq('id', sessionId)
+      .eq('meeting_id', meetingId)
+      .single();
+
+    if (!session) {
+      return NextResponse.json(
+        { error: 'Recording session not found' },
+        { status: 404 }
+      );
+    }
+
     // Update the recording session status
     const { error: updateError } = await supabase
       .from('recording_sessions')
@@ -121,6 +136,26 @@ export async function PATCH(
 
     // First, save the transcript if provided
     if (transcript) {
+      if (!transcript.text || typeof transcript.text !== 'string') {
+        return NextResponse.json(
+          { error: 'Invalid transcript: text is required' },
+          { status: 400 }
+        );
+      }
+
+      if (
+        typeof transcript.durationInSeconds !== 'number' ||
+        transcript.durationInSeconds < 0
+      ) {
+        return NextResponse.json(
+          {
+            error:
+              'Invalid transcript: durationInSeconds must be a positive number',
+          },
+          { status: 400 }
+        );
+      }
+
       const { error: transcriptError } = await supabase
         .from('recording_transcripts')
         .upsert({
@@ -142,6 +177,21 @@ export async function PATCH(
 
     // Update the recording session status if provided
     if (status) {
+      // Verify the recording session exists
+      const { data: session } = await supabase
+        .from('recording_sessions')
+        .select('id')
+        .eq('id', sessionId)
+        .eq('meeting_id', meetingId)
+        .single();
+
+      if (!session) {
+        return NextResponse.json(
+          { error: 'Recording session not found' },
+          { status: 404 }
+        );
+      }
+
       const { error: updateError } = await supabase
         .from('recording_sessions')
         .update({

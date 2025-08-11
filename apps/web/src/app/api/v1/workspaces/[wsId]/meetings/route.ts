@@ -36,9 +36,23 @@ export async function GET(
     const url = new URL(request.url);
     const page = parseInt(url.searchParams.get('page') || '1');
     const pageSize = parseInt(url.searchParams.get('pageSize') || '10');
-    const search = url.searchParams.get('search') || '';
+
+    if (isNaN(page) || page < 1) {
+      return NextResponse.json(
+        { error: 'Invalid page parameter' },
+        { status: 400 }
+      );
+    }
+
+    if (isNaN(pageSize) || pageSize < 1 || pageSize > 100) {
+      return NextResponse.json(
+        { error: 'Invalid pageSize parameter (must be between 1 and 100)' },
+        { status: 400 }
+      );
+    }
 
     const offset = (page - 1) * pageSize;
+    const search = url.searchParams.get('search') || '';
 
     // Build the query
     let query = supabase
@@ -55,7 +69,8 @@ export async function GET(
           created_at,
           updated_at
         )
-      `
+      `,
+        { count: 'exact' }
       )
       .eq('ws_id', wsId)
       .order('time', { ascending: false });
@@ -65,14 +80,11 @@ export async function GET(
       query = query.ilike('name', `%${search.trim()}%`);
     }
 
-    // Get total count for pagination
-    const { count } = await query;
-
-    // Get paginated results
-    const { data: meetings, error } = await query.range(
-      offset,
-      offset + pageSize - 1
-    );
+    const {
+      data: meetings,
+      error,
+      count,
+    } = await query.range(offset, offset + pageSize - 1);
 
     if (error) {
       console.error('Error fetching meetings:', error);

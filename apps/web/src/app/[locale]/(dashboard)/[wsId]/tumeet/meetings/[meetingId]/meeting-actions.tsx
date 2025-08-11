@@ -21,7 +21,6 @@ import { useCallback, useEffect, useState } from 'react';
 interface MeetingActionsProps {
   wsId: string;
   meetingId: string;
-  meetingName: string;
 }
 
 interface RecordingSession {

@@ -52,12 +52,42 @@ export async function PUT(
       return NextResponse.json({ error: 'Name is required' }, { status: 400 });
     }
 
+    // Validate name length and content
+    const trimmedName = name.trim();
+    if (trimmedName.length === 0) {
+      return NextResponse.json(
+        { error: 'Name cannot be empty' },
+        { status: 400 }
+      );
+    }
+    if (trimmedName.length > 255) {
+      return NextResponse.json(
+        { error: 'Name is too long (max 255 characters)' },
+        { status: 400 }
+      );
+    }
+
+    // Validate time if provided
+    let validatedTime = time;
+    if (time) {
+      const parsedTime = new Date(time);
+      if (isNaN(parsedTime.getTime())) {
+        return NextResponse.json(
+          { error: 'Invalid time format' },
+          { status: 400 }
+        );
+      }
+      validatedTime = parsedTime.toISOString();
+    } else {
+      validatedTime = new Date().toISOString();
+    }
+
     // Update the meeting
     const { data: meeting, error } = await supabase
       .from('workspace_meetings')
       .update({
         name,
-        time: time || new Date().toISOString(),
+        time: validatedTime,
       })
       .eq('id', meetingId)
       .eq('ws_id', wsId)

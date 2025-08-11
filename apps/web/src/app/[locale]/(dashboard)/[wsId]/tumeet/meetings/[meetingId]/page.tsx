@@ -13,7 +13,7 @@ import { ArrowLeft, Calendar, Clock, Users } from '@tuturuuu/ui/icons';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { format } from 'date-fns';
 import Link from 'next/link';
-import { redirect } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 
 interface MeetingDetailPageProps {
   params: Promise<{
@@ -60,7 +60,7 @@ export default async function MeetingDetailPage({
     .single();
 
   if (error || !meeting) {
-    redirect(`/${wsId}/tumeet/meetings`);
+    notFound();
   }
 
   return (
@@ -146,11 +146,7 @@ export default async function MeetingDetailPage({
 
       {/* Actions */}
       <div className="mt-8">
-        <MeetingActions
-          wsId={wsId}
-          meetingId={meetingId}
-          meetingName={meeting.name}
-        />
+        <MeetingActions wsId={wsId} meetingId={meetingId} />
       </div>
     </div>
   );

@@ -54,6 +54,8 @@ export function AudioPlayer({
   const audioContextRef = useRef<AudioContext | null>(null);
   const audioBuffersRef = useRef<AudioBuffer[]>([]);
   const sourceNodeRef = useRef<AudioBufferSourceNode | null>(null);
+  const gainNodeRef = useRef<GainNode | null>(null);
+
   const startTimeRef = useRef<number>(0);
   const animationFrameRef = useRef<number | null>(null);
   const previousChunksDurationRef = useRef<number>(0);
@@ -69,6 +71,8 @@ export function AudioPlayer({
   // Initialize audio context and load recording
   useEffect(() => {
     if (!audioRecording) return;
+
+    let isCancelled = false;
 
     const initializeAudio = async () => {
       try {
@@ -159,9 +163,12 @@ export function AudioPlayer({
       }
     };
 
-    initializeAudio();
+    if (!isCancelled) {
+      initializeAudio();
+    }
 
     return () => {
+      isCancelled = true;
       if (audioContextRef.current) {
         audioContextRef.current.close();
       }
@@ -222,10 +229,12 @@ export function AudioPlayer({
 
         if (audioBuffer) {
           source.buffer = audioBuffer;
-          const gainNode = audioContextRef.current.createGain();
-          gainNode.gain.value = isMuted ? 0 : volume;
-          source.connect(gainNode);
-          gainNode.connect(audioContextRef.current.destination);
+
+          gainNodeRef.current = audioContextRef.current.createGain();
+          gainNodeRef.current.gain.value = isMuted ? 0 : volume;
+
+          source.connect(gainNodeRef.current);
+          gainNodeRef.current.connect(audioContextRef.current.destination);
 
           startTimeRef.current = audioContextRef.current.currentTime - playTime;
           sourceNodeRef.current = source;
@@ -264,6 +273,12 @@ export function AudioPlayer({
       play();
     }
   }, [isPlaying, play, pause]);
+
+  useEffect(() => {
+    if (gainNodeRef.current && audioContextRef.current) {
+      gainNodeRef.current.gain.value = isMuted ? 0 : volume;
+    }
+  }, [volume, isMuted]);
 
   // Seek to specific time
   const seek = useCallback(
@@ -420,7 +435,15 @@ export function AudioPlayer({
                   value={[currentTime]}
                   max={totalDuration}
                   step={0.1}
-                  onValueChange={(value) => seek(value[0] ?? 0)}
+                  onValueChange={(value) => {
+                    if (
+                      value &&
+                      value.length > 0 &&
+                      typeof value[0] === 'number'
+                    ) {
+                      seek(value[0]);
+                    }
+                  }}
                   className="w-full"
                 />
               </div>
