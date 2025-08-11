@@ -6,23 +6,23 @@ import EmailButton from './email-button';
 import LoggedInAsButton from './logged-in-as-button';
 import ShowQRButton from './show-qr-button';
 import type { MeetTogetherPlan } from '@tuturuuu/types/primitives/MeetTogetherPlan';
-import type { User } from '@tuturuuu/types/primitives/User';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 interface UtilityButtonsProps {
   plan: MeetTogetherPlan;
-  platformUser: User | null;
   handlePNG: () => Promise<void>;
 }
 
 export default function UtilityButtons({
   plan,
-  platformUser,
   handlePNG,
 }: UtilityButtonsProps) {
   const pathname = usePathname();
   const [url, setUrl] = useState('');
+
+  // const { user } = useTimeBlocking();
+  // const isCreator = !user?.is_guest && user?.id === plan.creator_id;
 
   useEffect(() => {
     setUrl(`${window.location.origin}${pathname}`);
@@ -39,8 +39,16 @@ export default function UtilityButtons({
         <ShowQRButton url={url} />
         <EmailButton plan={plan} url={tumeetMeUrl} />
         <DownloadAsPNG onClick={handlePNG} />
+        {/* {isCreator && (
+          <>
+            <ConfirmButton
+              planId={plan.id}
+              isConfirmPlan={Boolean(plan.is_confirmed)}
+            />
+          </>
+        )} */}
       </div>
-      <LoggedInAsButton platformUser={platformUser} />
+      <LoggedInAsButton />
     </div>
   );
 }

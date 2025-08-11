@@ -10,9 +10,9 @@ import {
 } from '@tuturuuu/ui/tooltip';
 import { timetzToTime } from '@tuturuuu/ui/utils/date-helper';
 import dayjs from 'dayjs';
-import { useEffect } from 'react';
+import { memo, useEffect, useMemo } from 'react';
 
-export default function PreviewDayTime({
+function PreviewDayTime({
   timeblocks: serverTimeblocks,
   date,
   start,
@@ -39,46 +39,72 @@ export default function PreviewDayTime({
     getOpacityForDate,
   } = useTimeBlocking();
 
-  const timeblocks =
-    filteredUserIds.length > 0
-      ? serverTimeblocks.filter(
-          (tb) => tb.user_id && filteredUserIds.includes(tb.user_id)
-        )
-      : serverTimeblocks;
+  // Memoize expensive calculations
+  const { timeblocks, bestBlockIndices, hourBlocks, hourSplits } =
+    useMemo(() => {
+      const filteredTimeblocks =
+        filteredUserIds.length > 0
+          ? serverTimeblocks.filter(
+              (tb) => tb.user_id && filteredUserIds.includes(tb.user_id)
+            )
+          : serverTimeblocks;
 
-  const hourBlocks = Array.from(Array(Math.floor(end + 1 - start)).keys());
-  const hourSplits = 4;
+      const hourBlocks = Array.from(Array(Math.floor(end + 1 - start)).keys());
+      const hourSplits = 4;
 
-  // Compute available user count for each slot
-  const slotAvailableCounts: number[] = hourBlocks
-    .map((i) => (i + start) * hourSplits)
-    .flatMap((i) => Array(hourSplits).fill(i))
-    .map((_, i) => {
-      const currentDate = dayjs(date)
-        .hour(Math.floor(i / hourSplits) + start)
-        .minute((i % hourSplits) * 15)
-        .toDate();
-      const userIds = timeblocks
-        .filter((tb) => {
-          const start = dayjs(`${tb.date} ${tb.start_time}`);
-          const end = dayjs(`${tb.date} ${tb.end_time}`);
-          return dayjs(currentDate).isBetween(start, end, null, '[)');
-        })
-        .map((tb) => tb.user_id)
-        .filter(Boolean);
-      const uniqueUserIds = Array.from(new Set(userIds));
-      return uniqueUserIds.length;
-    });
+      // Compute available user count for each slot
+      const counts: number[] = hourBlocks
+        .map((i) => (i + start) * hourSplits)
+        .flatMap((i) => Array(hourSplits).fill(i))
+        .map((_, i) => {
+          const currentDate = dayjs(date)
+            .hour(Math.floor(i / hourSplits) + start)
+            .minute((i % hourSplits) * 15)
+            .toDate();
+          const userIds = filteredTimeblocks
+            .filter((tb) => {
+              const start = dayjs(`${tb.date} ${tb.start_time}`);
+              const end = dayjs(`${tb.date} ${tb.end_time}`);
+              return dayjs(currentDate).isBetween(start, end, null, '[)');
+            })
+            .map((tb) => tb.user_id)
+            .filter(Boolean);
+          const uniqueUserIds = Array.from(new Set(userIds));
+          return uniqueUserIds.length;
+        });
 
-  // Find all blocks with the global max available
-  const bestBlockIndices: Set<number> = new Set();
-  if (showBestTimes && globalMaxAvailable >= 2) {
-    slotAvailableCounts.forEach((count, i) => {
-      if (count === globalMaxAvailable) {
-        bestBlockIndices.add(i);
+      // Find all blocks with the global max available
+      const bestIndices: Set<number> = new Set();
+      if (showBestTimes && globalMaxAvailable >= 2) {
+        counts.forEach((count, i) => {
+          if (count === globalMaxAvailable) {
+            bestIndices.add(i);
+          }
+        });
       }
-    });
-  }
+
+      return {
+        timeblocks: filteredTimeblocks,
+        slotAvailableCounts: counts,
+        bestBlockIndices: bestIndices,
+        hourBlocks,
+        hourSplits,
+      };
+    }, [
+      serverTimeblocks,
+      filteredUserIds,
+      date,
+      start,
+      end,
+      showBestTimes,
+      globalMaxAvailable,
+    ]);
+
+  // Memoize preview users to prevent infinite re-renders
+  const previewUsers = useMemo(() => {
+    if (!previewDate) return { available: [], tentative: [], unavailable: [] };
+    return getPreviewUsers(timeblocks);
+  }, [previewDate, getPreviewUsers, timeblocks]);
 
   // Notify parent about best times status
   useEffect(() => {
@@ -135,9 +161,10 @@ export default function PreviewDayTime({
         .map((_, i, array) => {
           const result = isTimeBlockSelected(i);
 
-          const isDraft = result.type.includes('draft');
+          // const isDraft = result.type.includes('draft');
           const isSaved = result.type.includes('server');
           const isLocal = result.type.includes('local');
+          const isTentative = result.tentative ?? false;
 
           const currentDate = dayjs(date)
             .hour(Math.floor(i / hourSplits) + start)
@@ -162,13 +189,15 @@ export default function PreviewDayTime({
                 cellStyle = { opacity: 1 };
               }
             } else {
-              cellClass = isSelected
-                ? isDraft
-                  ? 'bg-green-500/50'
-                  : isSaved
-                    ? 'bg-green-500/70'
-                    : 'bg-green-500/70'
-                : 'bg-foreground/10';
+              if (isSelected) {
+                const color =
+                  filteredUserIds.length > 0 && isTentative
+                    ? 'yellow'
+                    : 'green';
+                cellClass = `bg-${color}-500/70`;
+              } else {
+                cellClass = 'bg-foreground/10';
+              }
               cellStyle = {
                 opacity: isSelected
                   ? opacity === 'infinity'
@@ -226,7 +255,7 @@ export default function PreviewDayTime({
                     </div>
                     <Separator className="my-1" />
                     <div className={`font-semibold text-dynamic-green`}>
-                      {getPreviewUsers(timeblocks).available.map((user) => (
+                      {previewUsers.available.map((user) => (
                         <div
                           key={user.id}
                           className="flex items-center justify-center gap-1"
@@ -237,7 +266,7 @@ export default function PreviewDayTime({
                       ))}
                     </div>
                     <div className={`font-semibold text-dynamic-yellow`}>
-                      {getPreviewUsers(timeblocks).tentative.map((user) => (
+                      {previewUsers.tentative.map((user) => (
                         <div
                           key={user.id}
                           className="flex items-center justify-center gap-1"
@@ -248,7 +277,7 @@ export default function PreviewDayTime({
                       ))}
                     </div>
                     <div className={`font-semibold text-dynamic-red`}>
-                      {getPreviewUsers(timeblocks).unavailable.map((user) => (
+                      {previewUsers.unavailable.map((user) => (
                         <div
                           key={user.id}
                           className="flex items-center justify-center gap-1"
@@ -267,3 +296,5 @@ export default function PreviewDayTime({
     </div>
   );
 }
+
+export default memo(PreviewDayTime);

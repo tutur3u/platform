@@ -1,21 +1,33 @@
 'use client';
 
 import type { PlanUser } from '@tuturuuu/types/primitives/MeetTogetherPlan';
+import type { User } from '@tuturuuu/types/primitives/User';
+import { Button } from '@tuturuuu/ui/button';
 import { useTimeBlocking } from '@tuturuuu/ui/hooks/time-blocking-provider';
-import { ShieldCheck } from '@tuturuuu/ui/icons';
+import { useToast } from '@tuturuuu/ui/hooks/use-toast';
+import { ShieldCheck, Trash2 } from '@tuturuuu/ui/icons';
 import { useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 export default function PlanUserFilterAccordion({
   users,
+  isCreator = false,
+  platformUser,
+  planId,
 }: {
   users: PlanUser[];
+  isCreator?: boolean;
+  platformUser?: User | null;
+  planId?: string;
 }) {
   const t = useTranslations('meet-together-plan-details');
   const { filteredUserIds, setFilteredUserIds } = useTimeBlocking();
   const [hoveredUserId, setHoveredUserId] = useState<string | null>(null);
   const [isHoverFiltering, setIsHoverFiltering] = useState(false);
-
+  const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
+  const { toast } = useToast();
+  const router = useRouter();
   // Track clicked users separately from hover state
   const clickedUsersRef = useRef<string[]>([]);
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -103,6 +115,39 @@ export default function PlanUserFilterAccordion({
     [setFilteredUserIds, clearHoverTimeout]
   );
 
+  const handleDeleteUser = useCallback(
+    async (userId: string) => {
+      if (!isCreator || !planId || !platformUser) return;
+
+      setDeletingUserId(userId);
+      try {
+        const response = await fetch(
+          `/api/meet-together/plans/${planId}/users/${userId}`,
+          {
+            method: 'DELETE',
+          }
+        );
+
+        if (response.ok) {
+          // Find the user to get their name for the toast message
+          const userToDelete = users.find((user) => user.id === userId);
+          const userName = userToDelete?.display_name || 'User';
+
+          toast({
+            title: t('user_removed'),
+            description: t('user_removed_desc', { name: userName }),
+          });
+          router.refresh();
+        }
+      } catch (error) {
+        // Silent fail - user will see changes on refresh
+      } finally {
+        setDeletingUserId(null);
+      }
+    },
+    [isCreator, planId, platformUser, toast, t, users, router]
+  );
+
   const filteredUsers = users.filter((user) => user.id);
 
   return (
@@ -140,8 +185,35 @@ export default function PlanUserFilterAccordion({
                       <ShieldCheck size={14} className="opacity-60" />
                     )}
                   </div>
-                  <div className="text-sm font-medium text-foreground/70">
-                    {user.timeblock_count} {t('timeblocks')}
+                  <div className="flex items-center gap-2">
+                    <div className="text-sm font-medium text-foreground/70">
+                      {user.timeblock_count} {t('timeblocks')}
+                    </div>
+                    {(() => {
+                      const shouldShowButton =
+                        isCreator &&
+                        platformUser &&
+                        user.id &&
+                        user.id !== platformUser.id;
+                      return shouldShowButton ? (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 w-6 p-0 text-destructive hover:bg-destructive/10"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteUser(user.id!);
+                          }}
+                          disabled={deletingUserId === user.id}
+                        >
+                          {deletingUserId === user.id ? (
+                            <div className="h-3 w-3 animate-spin rounded-full border border-current border-t-transparent" />
+                          ) : (
+                            <Trash2 size={12} />
+                          )}
+                        </Button>
+                      ) : null;
+                    })()}
                   </div>
                 </div>
               </button>

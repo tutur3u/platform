@@ -48,6 +48,7 @@
     }
   },
   "common": {
+    "requires_attendance": "Yêu cầu điểm danh",
     "success": "Thành công",
     "alpha": "Alpha",
     "beta": "Beta",
@@ -635,7 +636,13 @@
     "qr_code_description": "Quét mã QR này để truy cập nhanh vào thông tin chi tiết về kế hoạch gặp mặt.",
     "save_credentials": "Lưu thông tin đăng nhập cho kế hoạch này",
     "save_credentials_desc": "Tự động đăng nhập khi bạn quay lại kế hoạch này",
-    "logged_in_as": "Đăng nhập như"
+    "logged_in_as": "Đăng nhập như",
+    "remove_user": "Xóa người dùng",
+    "remove_user_confirm": "Bạn có chắc chắn muốn xóa người dùng này khỏi kế hoạch?",
+    "user_removed": "Đã xóa người dùng",
+    "user_removed_desc": "{name} đã được xóa khỏi kế hoạch.",
+    "error_removing_user": "Lỗi khi xóa người dùng",
+    "error_removing_user_desc": "Không thể xóa người dùng khỏi kế hoạch."
   },
   "invite": {
     "invited-to": "Bạn được mời vào",
@@ -1054,6 +1061,7 @@
   },
   "user-data-table": {
     "id": "Mã số",
+    "attendance_count": "Số lần điểm danh",
     "avatar_url": "Ảnh đại diện",
     "name": "Tên",
     "full_name": "Họ và tên",
@@ -1157,6 +1165,7 @@
     "created_at": "Ngày tạo"
   },
   "user-group-data-table": {
+    "is_guest": "Là khách",
     "id": "Mã số",
     "name": "Tên",
     "attendance_stats": "Thống kê điểm danh",
@@ -2272,7 +2281,8 @@
     "delete_poll_confirm": "Bạn có chắc chắn muốn xóa bình chọn \"{pollName}\"? Hành động này không thể hoàn tác và sẽ xóa tất cả phiếu bầu và tùy chọn.",
     "delete": "Xóa",
     "enable_where_poll_desc": "Bạn có thể bật tính năng bình chọn 'Nơi gặp mặt' cho kế hoạch của mình.",
-    "enable_where_poll": "Bật tính năng bình chọn 'Nơi gặp mặt'"
+    "enable_where_poll": "Bật tính năng bình chọn 'Nơi gặp mặt'",
+    "cannot_use_anonymous": "Vui lòng đăng nhập bằng tài khoản Khách hoặc tài khoản Tuturuuu để sử dụng tính năng này"
   },
   "ai_chat": {
     "welcome_to": "Chào mừng đến với",
