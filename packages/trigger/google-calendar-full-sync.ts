@@ -25,9 +25,9 @@ export async function performFullSyncForWorkspace(
   const calendar = google.calendar({ version: 'v3', auth });
 
   const now = dayjs();
-  // Expand date range to include past events and future events
-  const timeMin = now.subtract(90, 'day'); // 90 days in the past
-  const timeMax = now.add(180, 'day'); // 180 days in the future
+  // Narrow date range to last 14 days and next 14 days for reasonable sync window
+  const timeMin = now.subtract(14, 'day');
+  const timeMax = now.add(14, 'day');
 
   console.log(`[${ws_id}] Fetching events with date range:`, {
     timeMin: timeMin.toISOString(),
