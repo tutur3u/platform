@@ -1,8 +1,11 @@
 'use client';
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import type {
+  WorkspaceCalendarEvent,
+  WorkspaceCalendarGoogleToken,
+} from '@tuturuuu/types/db';
 import { CalendarSyncProvider } from '@tuturuuu/ui/hooks/use-calendar-sync';
-import type { WorkspaceCalendarEvent, WorkspaceCalendarGoogleToken } from '@tuturuuu/types/db';
 
 interface CalendarSyncWrapperProps {
   wsId: string;

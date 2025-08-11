@@ -586,7 +586,9 @@ export function EventModal() {
   const handleAllDayChange = (checked: boolean) => {
     setEvent((prev) => {
       const startDate =
-        tz === 'auto' ? dayjs.utc(prev.start_at).local() : dayjs(prev.start_at).tz(tz);
+        tz === 'auto'
+          ? dayjs.utc(prev.start_at).local()
+          : dayjs(prev.start_at).tz(tz);
       // Backup previous times before updating
       const timedBackup = prevTimes.timed;
       const alldayBackup = prevTimes.allday;

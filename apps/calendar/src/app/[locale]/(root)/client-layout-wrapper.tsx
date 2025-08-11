@@ -16,23 +16,28 @@ export default function ClientLayoutWrapper({
   children,
 }: ClientLayoutWrapperProps) {
   const queryClient = useQueryClient();
-  
+
   // Create a memoized wrapper object for useQueryClient that matches the expected interface
-  const wrappedQueryClientObject = useMemo(() => ({
-    invalidateQueries: async (options: { queryKey: string[]; refetchType?: string } | string[]) => {
-      if (Array.isArray(options)) {
-        await queryClient.invalidateQueries({ queryKey: options });
-      } else {
-        await queryClient.invalidateQueries({ 
-          queryKey: options.queryKey,
-          refetchType: options.refetchType as RefetchType | undefined
-        });
-      }
-    },
-    setQueryData: (queryKey: string[], data: unknown) => {
-      queryClient.setQueryData(queryKey, data);
-    }
-  }), [queryClient]);
+  const wrappedQueryClientObject = useMemo(
+    () => ({
+      invalidateQueries: async (
+        options: { queryKey: string[]; refetchType?: string } | string[]
+      ) => {
+        if (Array.isArray(options)) {
+          await queryClient.invalidateQueries({ queryKey: options });
+        } else {
+          await queryClient.invalidateQueries({
+            queryKey: options.queryKey,
+            refetchType: options.refetchType as RefetchType | undefined,
+          });
+        }
+      },
+      setQueryData: (queryKey: string[], data: unknown) => {
+        queryClient.setQueryData(queryKey, data);
+      },
+    }),
+    [queryClient]
+  );
 
   // Create a wrapper function that returns the memoized object
   const wrappedUseQueryClient = useCallback(() => {
@@ -40,7 +45,10 @@ export default function ClientLayoutWrapper({
   }, [wrappedQueryClientObject]);
 
   return (
-    <CalendarProvider useQuery={useQuery} useQueryClient={wrappedUseQueryClient}>
+    <CalendarProvider
+      useQuery={useQuery}
+      useQueryClient={wrappedUseQueryClient}
+    >
       {children}
     </CalendarProvider>
   );

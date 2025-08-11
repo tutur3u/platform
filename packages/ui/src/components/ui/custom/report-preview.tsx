@@ -1,6 +1,6 @@
 import { Separator } from '../separator';
-import type { ReactNode } from 'react';
 import Image from 'next/image';
+import type { ReactNode } from 'react';
 
 export default function ReportPreview({
   t,
@@ -23,7 +23,7 @@ export default function ReportPreview({
   getConfig: (id: string) => string | null | undefined;
 }) {
   const brandLogoUrl = getConfig('BRAND_LOGO_URL');
-  
+
   return (
     <div className="overflow-x-auto xl:flex-none">
       <div

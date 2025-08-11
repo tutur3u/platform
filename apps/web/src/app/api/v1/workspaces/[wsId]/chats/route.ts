@@ -1,5 +1,5 @@
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { createClient } from '@supabase/supabase-js';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(
@@ -11,18 +11,15 @@ export async function GET(
 
     // Check permissions
     const { withoutPermission } = await getPermissions({ wsId });
-    
+
     if (withoutPermission('ai_chat')) {
-      return NextResponse.json(
-        { error: 'Access denied' },
-        { status: 403 }
-      );
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 
     // Initialize Supabase client
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    
+
     if (!supabaseUrl || !supabaseKey) {
       // console.error('Missing Supabase configuration'); // Debug only
       return NextResponse.json(
@@ -37,7 +34,8 @@ export async function GET(
       // Fetch AI chats for the workspace
       const { data: chats, error } = await supabase
         .from('ai_chats')
-        .select(`
+        .select(
+          `
           id,
           title,
           created_at,
@@ -46,7 +44,8 @@ export async function GET(
           summary,
           pinned,
           is_public
-        `)
+        `
+        )
         .eq('ws_id', wsId)
         .order('pinned', { ascending: false })
         .order('updated_at', { ascending: false })
@@ -64,7 +63,6 @@ export async function GET(
         chats: chats || [],
         count: chats?.length || 0,
       });
-
     } catch (dbError) {
       // console.error('Database error:', dbError); // Debug only
       // Fallback to empty data if database is not available
@@ -73,7 +71,6 @@ export async function GET(
         count: 0,
       });
     }
-
   } catch (error) {
     // console.error('Error in chats API:', error); // Debug only
     return NextResponse.json(
@@ -81,4 +78,4 @@ export async function GET(
       { status: 500 }
     );
   }
-} 
+}

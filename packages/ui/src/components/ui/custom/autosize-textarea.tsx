@@ -17,7 +17,7 @@ const calculateHeight = (
   const offsetBorder = 2;
   textArea.style.height = `${minHeight + offsetBorder}px`;
   const scrollHeight = textArea.scrollHeight;
-  
+
   if (scrollHeight > maxHeight) {
     textArea.style.height = `${maxHeight}px`;
   } else {
@@ -96,7 +96,8 @@ export const AutosizeTextarea = React.forwardRef<
 
     // Trigger auto-size when value changes
     React.useEffect(() => {
-      const currentValue = value as string || props?.defaultValue as string || '';
+      const currentValue =
+        (value as string) || (props?.defaultValue as string) || '';
       if (currentValue !== contentRef.current && textAreaRef.current) {
         contentRef.current = currentValue;
         calculateHeight(textAreaRef.current, minHeight, maxHeight);

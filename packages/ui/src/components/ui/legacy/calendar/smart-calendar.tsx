@@ -28,7 +28,9 @@ export const SmartCalendar = ({
   locale: string;
   useQuery: typeof import('@tanstack/react-query').useQuery;
   useQueryClient: () => {
-    invalidateQueries: (options: { queryKey: string[]; refetchType?: string } | string[]) => Promise<void>;
+    invalidateQueries: (
+      options: { queryKey: string[]; refetchType?: string } | string[]
+    ) => Promise<void>;
     setQueryData: (queryKey: string[], data: unknown) => void;
   };
   workspace?: Workspace;

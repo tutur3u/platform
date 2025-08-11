@@ -1,4 +1,4 @@
-import type { User, Workspace as DbWorkspace } from '@tuturuuu/types/db';
+import type { Workspace as DbWorkspace, User } from '@tuturuuu/types/db';
 
 // Local Workspace interface for the calendar settings
 export interface Workspace {

@@ -1,3 +1,5 @@
+import { useCalendar } from '../../../../hooks/use-calendar';
+import { MIN_COLUMN_WIDTH } from './config';
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import { useCalendarSync } from '@tuturuuu/ui/hooks/use-calendar-sync';
 import { getEventStyles } from '@tuturuuu/utils/color-helper';
@@ -11,9 +13,6 @@ import utc from 'dayjs/plugin/utc';
 import { Calendar, ChevronDown, ChevronUp } from 'lucide-react';
 import Image from 'next/image';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
-
-import { useCalendar } from '../../../../hooks/use-calendar';
-import { MIN_COLUMN_WIDTH } from './config';
 
 dayjs.extend(utc);
 dayjs.extend(isBetween);
@@ -316,9 +315,13 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
     // Process each all-day event
     allDayEvents.forEach((event) => {
       const eventStart =
-        tz === 'auto' ? dayjs.utc(event.start_at).local() : dayjs(event.start_at).tz(tz);
+        tz === 'auto'
+          ? dayjs.utc(event.start_at).local()
+          : dayjs(event.start_at).tz(tz);
       const eventEnd =
-        tz === 'auto' ? dayjs.utc(event.end_at).local() : dayjs(event.end_at).tz(tz);
+        tz === 'auto'
+          ? dayjs.utc(event.end_at).local()
+          : dayjs(event.end_at).tz(tz);
 
       // Find the start and end indices within our visible dates
       let startIndex = -1;
@@ -708,7 +711,7 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
                 {hiddenCount > 0 && (
                   <button
                     type="button"
-                    className="cursor-pointer flex items-center justify-center px-2 py-1 rounded-sm text-muted-foreground text-xs font-medium transition-colors hover:bg-muted/40"
+                    className="flex cursor-pointer items-center justify-center rounded-sm px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted/40"
                     onClick={() => toggleDateExpansion(dateKey)}
                     style={{
                       position: 'absolute',
@@ -728,7 +731,7 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
                   dateEvents.length > MAX_EVENTS_DISPLAY && (
                     <button
                       type="button"
-                      className="cursor-pointer flex items-center justify-center px-2 py-1 rounded-sm text-muted-foreground text-xs font-medium transition-colors hover:bg-muted/40"
+                      className="flex cursor-pointer items-center justify-center rounded-sm px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted/40"
                       onClick={() => toggleDateExpansion(dateKey)}
                       style={{
                         position: 'absolute',
@@ -807,7 +810,7 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
               key={`spanning-event-${event.id}`}
               type="button"
               className={cn(
-                'absolute border-l-2 flex items-center px-2 py-1 rounded-sm text-xs font-semibold transition-all duration-200',
+                'absolute flex items-center rounded-sm border-l-2 px-2 py-1 text-xs font-semibold transition-all duration-200',
                 // Cursor changes based on locked state and drag state
                 event.locked
                   ? 'cursor-not-allowed opacity-60'
@@ -838,7 +841,11 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
                 }
               }}
               onKeyDown={(e) => {
-                if ((e.key === 'Enter' || e.key === ' ') && !dragState.isDragging && !event.locked) {
+                if (
+                  (e.key === 'Enter' || e.key === ' ') &&
+                  !dragState.isDragging &&
+                  !event.locked
+                ) {
                   e.preventDefault();
                   openModal(event.id, 'all-day');
                 }
@@ -876,7 +883,7 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
         <div
           ref={dragPreviewRef}
           className={cn(
-            'backdrop-blur-sm border-l-2 fixed pointer-events-none px-2 py-1 rounded-sm shadow-xl text-xs font-semibold transform transition-none truncate z-50',
+            'pointer-events-none fixed z-50 transform truncate rounded-sm border-l-2 px-2 py-1 text-xs font-semibold shadow-xl backdrop-blur-sm transition-none',
             getEventStyles(dragState.draggedEvent.color || 'BLUE').bg,
             getEventStyles(dragState.draggedEvent.color || 'BLUE').border,
             getEventStyles(dragState.draggedEvent.color || 'BLUE').text,

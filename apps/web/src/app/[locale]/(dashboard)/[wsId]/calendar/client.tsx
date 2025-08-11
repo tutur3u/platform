@@ -6,7 +6,7 @@ import AutoScheduleComprehensiveDialog from './components/auto-schedule-comprehe
 import CalendarSidebar from './components/calendar-sidebar';
 import TasksSidebarContent from './components/tasks-sidebar-content';
 import TestEventGeneratorButton from './components/test-event-generator-button';
-import { useTasksData, useAIChatData } from './hooks';
+import { useAIChatData, useTasksData } from './hooks';
 import { DEV_MODE } from '@/constants/common';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type {
@@ -131,7 +131,13 @@ export default function CalendarClientPage({
             wsId={workspace.id}
             locale={locale}
             tasks={tasksData?.tasks || []}
-            hasKeys={aiChatData?.hasKeys || { openAI: false, anthropic: false, google: false }}
+            hasKeys={
+              aiChatData?.hasKeys || {
+                openAI: false,
+                anthropic: false,
+                google: false,
+              }
+            }
             chats={aiChatData?.chats || []}
             count={aiChatData?.count || 0}
             hasAiChatAccess={aiChatData?.hasAiChatAccess || false}
