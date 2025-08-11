@@ -55,6 +55,8 @@ vi.mock('../google-calendar-sync', async () => {
     getGoogleAuthClient: vi.fn(() => ({
       setCredentials: vi.fn(),
     })),
+    // Keep real formatEventForDb mapping to match expectations (locked: true)
+    formatEventForDb: actual.formatEventForDb,
     syncWorkspaceBatched: vi.fn((payload) =>
       Promise.resolve({
         ws_id: payload.ws_id,
