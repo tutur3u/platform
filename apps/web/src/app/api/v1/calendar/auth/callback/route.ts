@@ -1,4 +1,4 @@
-import { OAuth2Client } from '@tuturuuu/google';
+import { google } from 'googleapis';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { performFullSyncForWorkspace } from '@tuturuuu/trigger';
 import { NextResponse } from 'next/server';
@@ -27,11 +27,11 @@ export async function GET(request: Request) {
   }
 
   console.log('🔍 [DEBUG] Creating OAuth2Client...');
-  const auth = new OAuth2Client({
-    clientId: process.env.GOOGLE_CLIENT_ID,
-    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    redirectUri: process.env.GOOGLE_REDIRECT_URI,
-  });
+  const auth = new google.auth.OAuth2(
+    process.env.GOOGLE_CLIENT_ID,
+    process.env.GOOGLE_CLIENT_SECRET,
+    process.env.GOOGLE_REDIRECT_URI,
+  );
 
   try {
     console.log('🔍 [DEBUG] Exchanging authorization code for tokens...');

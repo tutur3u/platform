@@ -1,8 +1,7 @@
-import { OAuth2Client } from '@tuturuuu/google';
+import { google, calendar_v3 } from 'googleapis';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { convertGoogleAllDayEvent } from '@tuturuuu/ui/hooks/calendar-utils';
 import { updateLastUpsert } from '@tuturuuu/utils/calendar-sync-coordination';
-import { calendar_v3 } from 'googleapis';
 
 // Batch processing configuration
 const BATCH_SIZE = 100; // Process 100 events at a time for upserts
@@ -28,11 +27,11 @@ export const getGoogleAuthClient = (tokens: {
   access_token: string;
   refresh_token?: string;
 }) => {
-  const oauth2Client = new OAuth2Client({
-    clientId: process.env.GOOGLE_CLIENT_ID,
-    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    redirectUri: process.env.GOOGLE_REDIRECT_URI,
-  });
+  const oauth2Client = new google.auth.OAuth2(
+    process.env.GOOGLE_CLIENT_ID,
+    process.env.GOOGLE_CLIENT_SECRET,
+    process.env.GOOGLE_REDIRECT_URI,
+  );
 
   oauth2Client.setCredentials(tokens);
   return oauth2Client;
