@@ -350,111 +350,17 @@ export default function AddEventDialog({
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="max-h-[90vh] overflow-y-auto rounded-xl border border-zinc-200 bg-white p-6 shadow-lg sm:max-w-lg dark:border-zinc-800 dark:bg-zinc-900">
         <DialogHeader>
-          <div className="flex items-center justify-between">
+          <div className="space-y-2">
             <div className="flex items-center gap-2">
               <PlusIcon className="h-5 w-5 text-blue-500" />
               <DialogTitle className="text-lg font-semibold">
                 Create Task
               </DialogTitle>
             </div>
-            {/* Compact Horizontal Priority Slider */}
-            <div className="flex w-56 flex-col items-center">
-              {/* Slider container */}
-              <div
-                className="relative flex w-full flex-col items-center"
-                style={{ height: 48 }}
-              >
-                {/* Track & Thumb (all in one draggable area) */}
-                <div
-                  ref={sliderRef}
-                  role="slider"
-                  aria-label="Priority level"
-                  aria-valuemin={0}
-                  aria-valuemax={3}
-                  aria-valuenow={getCurrentPriorityIndex()}
-                  aria-valuetext={
-                    prioritySliderOptions[getCurrentPriorityIndex()]?.label ||
-                    'Normal'
-                  }
-                  tabIndex={0}
-                  className="absolute top-3 right-0 left-0 z-30 h-7 cursor-pointer rounded select-none focus:ring-2 focus:ring-blue-300 focus:ring-offset-2 focus:outline-none"
-                  style={{ height: 32 }}
-                  onMouseDown={handleSliderMouseDown}
-                  onMouseMove={handleSliderMouseMove}
-                  onMouseUp={handleSliderMouseUp}
-                  onTouchStart={(e) => {
-                    if (e.touches[0])
-                      handleSliderMouseDown({
-                        clientX: e.touches[0].clientX,
-                      } as React.MouseEvent);
-                  }}
-                  onTouchMove={(e) => {
-                    if (e.touches[0])
-                      handleSliderMouseMove({
-                        clientX: e.touches[0].clientX,
-                      } as React.MouseEvent);
-                  }}
-                  onTouchEnd={handleSliderMouseUp}
-                  onKeyDown={(e) => {
-                    const currentIndex = getCurrentPriorityIndex();
-                    if (
-                      currentIndex > 0 &&
-                      prioritySliderOptions[currentIndex - 1]?.value
-                    ) {
-                      updateFormData(
-                        'priority',
-                        prioritySliderOptions[currentIndex - 1]?.value ??
-                          'normal'
-                      );
-                    } else if (
-                      e.key === 'ArrowRight' &&
-                      currentIndex < prioritySliderOptions.length - 1 &&
-                      prioritySliderOptions[currentIndex + 1]?.value
-                    ) {
-                      updateFormData(
-                        'priority',
-                        prioritySliderOptions[currentIndex + 1]?.value ??
-                          'normal'
-                      );
-                    }
-                  }}
-                >
-                  {/* Track */}
-                  <div className="absolute top-3 right-0 left-0 z-10 h-2 rounded-full bg-gradient-to-r from-red-500 via-orange-400 to-green-500 opacity-60" />
-                  {/* Thumb: selected icon in a styled circle */}
-                  <div
-                    style={{ left: `calc(${getSliderPosition()}% - 14px)` }}
-                    className="absolute top-1 z-20 flex flex-col items-center"
-                  >
-                    <div className="flex h-6 w-6 items-center justify-center rounded-full border-4 border-white bg-blue-500 shadow-lg ring-2 ring-blue-400">
-                      <span className="text-lg text-white drop-shadow-sm">
-                        {prioritySliderOptions[getCurrentPriorityIndex()]
-                          ?.icon ?? '❓'}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-                {/* Priority icons/labels row below track */}
-                <div className="absolute top-11 right-0 left-0 flex items-center justify-between px-1">
-                  {prioritySliderOptions.map((opt, idx) => (
-                    <div
-                      key={opt?.value ?? idx}
-                      className="flex w-10 flex-col items-center"
-                    >
-                      <span
-                        className={`transition-all ${formData.priority === opt?.value ? 'text-lg font-bold' : 'text-base opacity-40'}`}
-                      >
-                        {opt?.icon ?? '❓'}
-                      </span>
-                      <span
-                        className={`mt-0.5 text-xs transition-all ${formData.priority === opt?.value ? `${opt?.color ?? 'bg-zinc-400'} rounded px-1 font-bold text-white` : 'font-normal text-zinc-400 dark:text-zinc-500'}`}
-                      >
-                        {opt?.label ?? 'Unknown'}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
+
+            <div className="flex w-fit items-center gap-2 rounded-md bg-blue-50 p-2 text-xs text-blue-800 dark:bg-blue-950 dark:text-blue-200">
+              <span>📧</span>
+              <span>For {user?.email || 'your account'}</span>
             </div>
           </div>
         </DialogHeader>
@@ -496,6 +402,103 @@ export default function AddEventDialog({
                 rows={2}
                 className="h-16 rounded-lg border-zinc-200 text-sm transition-all focus:ring-2 focus:ring-blue-300 dark:border-zinc-700"
               />
+            </div>
+          </div>
+
+          {/* Compact Horizontal Priority Slider */}
+          <div className="space-y-3 rounded-xl border border-zinc-100 bg-white p-4 shadow-md transition-shadow hover:shadow-lg dark:border-zinc-800 dark:bg-zinc-900">
+            <Label className="text-xs font-semibold text-zinc-700 dark:text-zinc-200">
+              Priority
+            </Label>
+            {/* Slider container */}
+            <div className="space-y-4">
+              {/* Track & Thumb (all in one draggable area) */}
+              <div
+                ref={sliderRef}
+                role="slider"
+                aria-label="Priority level"
+                aria-valuemin={0}
+                aria-valuemax={3}
+                aria-valuenow={getCurrentPriorityIndex()}
+                aria-valuetext={
+                  prioritySliderOptions[getCurrentPriorityIndex()]?.label ||
+                  'Normal'
+                }
+                tabIndex={0}
+                className="relative h-8 cursor-pointer rounded select-none focus:ring-2 focus:ring-blue-300 focus:ring-offset-2 focus:outline-none"
+                onMouseDown={handleSliderMouseDown}
+                onMouseMove={handleSliderMouseMove}
+                onMouseUp={handleSliderMouseUp}
+                onTouchStart={(e) => {
+                  if (e.touches[0])
+                    handleSliderMouseDown({
+                      clientX: e.touches[0].clientX,
+                    } as React.MouseEvent);
+                }}
+                onTouchMove={(e) => {
+                  if (e.touches[0])
+                    handleSliderMouseMove({
+                      clientX: e.touches[0].clientX,
+                    } as React.MouseEvent);
+                }}
+                onTouchEnd={handleSliderMouseUp}
+                onKeyDown={(e) => {
+                  const currentIndex = getCurrentPriorityIndex();
+                  if (
+                    currentIndex > 0 &&
+                    prioritySliderOptions[currentIndex - 1]?.value
+                  ) {
+                    updateFormData(
+                      'priority',
+                      prioritySliderOptions[currentIndex - 1]?.value ?? 'normal'
+                    );
+                  } else if (
+                    e.key === 'ArrowRight' &&
+                    currentIndex < prioritySliderOptions.length - 1 &&
+                    prioritySliderOptions[currentIndex + 1]?.value
+                  ) {
+                    updateFormData(
+                      'priority',
+                      prioritySliderOptions[currentIndex + 1]?.value ?? 'normal'
+                    );
+                  }
+                }}
+              >
+                {/* Track */}
+                <div className="absolute top-3 right-0 left-0 z-10 h-2 rounded-full bg-gradient-to-r from-red-500 via-orange-400 to-green-500 opacity-60" />
+                {/* Thumb: selected icon in a styled circle */}
+                <div
+                  style={{ left: `calc(${getSliderPosition()}% - 14px)` }}
+                  className="absolute top-1 z-20 flex flex-col items-center"
+                >
+                  <div className="flex h-6 w-6 items-center justify-center rounded-full border-4 border-white bg-blue-500 shadow-lg ring-2 ring-blue-400">
+                    <span className="text-lg text-white drop-shadow-sm">
+                      {prioritySliderOptions[getCurrentPriorityIndex()]?.icon ??
+                        '❓'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              {/* Priority icons/labels row below track */}
+              <div className="flex items-center justify-between px-1">
+                {prioritySliderOptions.map((opt, idx) => (
+                  <div
+                    key={opt?.value ?? idx}
+                    className="flex w-10 flex-col items-center"
+                  >
+                    <span
+                      className={`transition-all ${formData.priority === opt?.value ? 'text-lg font-bold' : 'text-base opacity-40'}`}
+                    >
+                      {opt?.icon ?? '❓'}
+                    </span>
+                    <span
+                      className={`mt-0.5 text-xs transition-all ${formData.priority === opt?.value ? `${opt?.color ?? 'bg-zinc-400'} rounded px-1 font-bold text-white` : 'font-normal text-zinc-400 dark:text-zinc-500'}`}
+                    >
+                      {opt?.label ?? 'Unknown'}
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
 
@@ -727,11 +730,6 @@ export default function AddEventDialog({
                   )}
                 </div>
               </div>
-            </div>
-
-            <div className="mt-1 flex items-center gap-2 rounded-md bg-blue-50 p-2 text-xs text-blue-800 dark:bg-blue-950 dark:text-blue-200">
-              <span>📧</span>
-              <span>For {user?.email || 'your account'}</span>
             </div>
           </div>
 
