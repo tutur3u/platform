@@ -1,7 +1,7 @@
 'use client';
 
 import AddEventButton from './components/add-event-button';
-import AddEventModal from './components/add-event-dialog';
+import AddEventDialog from './components/add-event-dialog';
 import AutoScheduleComprehensiveDialog from './components/auto-schedule-comprehensive-dialog';
 import TestEventGeneratorButton from './components/test-event-generator-button';
 import { DEV_MODE } from '@/constants/common';
@@ -26,15 +26,12 @@ export default function CalendarClientPage({
 }) {
   const t = useTranslations('calendar');
   const locale = useLocale();
-  const [isAddEventModalOpen, setIsAddEventModalOpen] = useState(false);
-
-  const openAddEventDialog = () => setIsAddEventModalOpen(true);
-  const closeAddEventDialog = () => setIsAddEventModalOpen(false);
+  const [isAddEventDialogOpen, setIsAddEventDialogOpen] = useState(false);
 
   const extras =
     workspace.id === ROOT_WORKSPACE_ID ? (
       <div className="grid w-full items-center gap-2 md:flex md:w-auto">
-        <AddEventButton onOpenDialog={openAddEventDialog} />
+        <AddEventButton onOpenDialog={() => setIsAddEventDialogOpen(true)} />
         {DEV_MODE && <TestEventGeneratorButton wsId={workspace.id} />}
         <AutoScheduleComprehensiveDialog wsId={workspace.id}>
           <Button
@@ -64,10 +61,10 @@ export default function CalendarClientPage({
         }
         extras={extras}
       />
-      <AddEventModal
+      <AddEventDialog
         wsId={workspace.id}
-        isOpen={isAddEventModalOpen}
-        onClose={closeAddEventDialog}
+        isOpen={isAddEventDialogOpen}
+        onClose={() => setIsAddEventDialogOpen(false)}
       />
     </>
   );

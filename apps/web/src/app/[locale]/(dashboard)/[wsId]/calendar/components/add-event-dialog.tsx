@@ -25,7 +25,7 @@ import { Textarea } from '@tuturuuu/ui/textarea';
 import dayjs from 'dayjs';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 
-interface AddEventModalProps {
+interface AddEventDialogProps {
   isOpen?: boolean;
   onClose?: () => void;
   wsId?: string;
@@ -42,11 +42,11 @@ const hoursToMinutes = (hours: number) => {
   return Math.round(hours * 60);
 };
 
-export default function AddEventModal({
+export default function AddEventDialog({
   isOpen,
   onClose,
   wsId,
-}: AddEventModalProps) {
+}: AddEventDialogProps) {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
