@@ -1,18 +1,21 @@
-import type { User, Workspace as DbWorkspace } from '@tuturuuu/types/db';
-
-// Local Workspace interface for the calendar settings
 export interface Workspace {
   id: string;
   name: string;
   color: string;
 }
 
+export interface User {
+  id: string;
+  display_name: string;
+  avatar: string | null;
+}
+
 export interface SyncLog {
   id: string;
   timestamp: string;
   type: 'active' | 'background' | 'manual';
-  workspace: Partial<DbWorkspace>;
-  triggeredBy: Partial<User> | null;
+  workspace: Workspace;
+  triggeredBy: User | null;
   status: 'completed' | 'failed' | 'running';
   duration: number;
   events: {

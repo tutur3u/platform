@@ -278,7 +278,9 @@ export function SyncLogsTable({
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
-                      <div className="h-3 w-3 rounded-full bg-blue-500" />
+                      <div
+                        className={`h-3 w-3 rounded-full ${log.workspace?.color}`}
+                      />
                       <span className="font-medium">
                         {log.workspace?.name || 'Unknown Workspace'}
                       </span>
@@ -290,9 +292,7 @@ export function SyncLogsTable({
                       <div className="flex items-center gap-2">
                         <Avatar className="h-7 w-7">
                           <AvatarImage
-                            src={
-                              log.triggeredBy.avatar_url || '/placeholder.svg'
-                            }
+                            src={log.triggeredBy.avatar || '/placeholder.svg'}
                           />
                           <AvatarFallback className="bg-foreground/10 text-xs">
                             {(log.triggeredBy.display_name || 'U')
