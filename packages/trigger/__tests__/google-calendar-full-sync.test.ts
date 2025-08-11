@@ -1,5 +1,36 @@
 import { vi } from 'vitest';
 
+// Shared mock for calendar.events.list with default two events
+const mockCalendarEventsList = vi.fn(() =>
+  Promise.resolve({
+    data: {
+      items: [
+        {
+          id: 'event1',
+          summary: 'Test Event 1',
+          description: 'Test Description 1',
+          start: { dateTime: '2024-01-15T10:00:00Z' },
+          end: { dateTime: '2024-01-15T11:00:00Z' },
+          location: 'Test Location 1',
+          colorId: '1',
+          status: 'confirmed',
+        },
+        {
+          id: 'event2',
+          summary: 'Test Event 2',
+          description: 'Test Description 2',
+          start: { dateTime: '2024-01-15T14:00:00Z' },
+          end: { dateTime: '2024-01-15T15:00:00Z' },
+          location: 'Test Location 2',
+          colorId: '2',
+          status: 'confirmed',
+        },
+      ],
+      nextSyncToken: 'test-sync-token-123',
+    },
+  })
+);
+
 vi.mock('googleapis', () => ({
   google: {
     auth: {
@@ -10,9 +41,7 @@ vi.mock('googleapis', () => ({
     },
     calendar: vi.fn().mockReturnValue({
       events: {
-        list: vi.fn().mockResolvedValue({
-          data: { items: [], nextSyncToken: 'sync-token', nextPageToken: undefined },
-        }),
+        list: mockCalendarEventsList,
       },
     }),
   },
@@ -70,46 +99,7 @@ vi.mock('../google-calendar-sync', async () => {
   };
 });
 
-// Mock googleapis
-const mockCalendarEventsList = vi.fn(() =>
-  Promise.resolve({
-    data: {
-      items: [
-        {
-          id: 'event1',
-          summary: 'Test Event 1',
-          description: 'Test Description 1',
-          start: { dateTime: '2024-01-15T10:00:00Z' },
-          end: { dateTime: '2024-01-15T11:00:00Z' },
-          location: 'Test Location 1',
-          colorId: '1',
-          status: 'confirmed',
-        },
-        {
-          id: 'event2',
-          summary: 'Test Event 2',
-          description: 'Test Description 2',
-          start: { dateTime: '2024-01-15T14:00:00Z' },
-          end: { dateTime: '2024-01-15T15:00:00Z' },
-          location: 'Test Location 2',
-          colorId: '2',
-          status: 'confirmed',
-        },
-      ],
-      nextSyncToken: 'test-sync-token-123',
-    },
-  })
-);
-
-vi.mock('@tuturuuu/google', () => ({
-  google: {
-    calendar: vi.fn(() => ({
-      events: {
-        list: mockCalendarEventsList,
-      },
-    })),
-  },
-}));
+// Note: remove legacy @tuturuuu/google mock; code uses googleapis
 
 dayjs.extend(utc);
 
