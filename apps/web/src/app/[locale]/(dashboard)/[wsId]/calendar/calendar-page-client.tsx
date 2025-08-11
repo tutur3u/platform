@@ -7,21 +7,34 @@ import AutoScheduleComprehensiveDialog from './components/auto-schedule-comprehe
 import CalendarSidebar from './components/calendar-sidebar';
 import TasksSidebarContent from './components/tasks-sidebar-content';
 import TestEventGeneratorButton from './components/test-event-generator-button';
-import { useTasksData, useAIChatData } from './hooks';
+import { useAIChatData, useTasksData } from './hooks';
 import { DEV_MODE } from '@/constants/common';
+import { isCurrent4DayPeriod, isToday } from '@/utils/date-helper';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type {
   Workspace,
   WorkspaceCalendarGoogleToken,
 } from '@tuturuuu/types/db';
-import { SmartCalendar } from '@tuturuuu/ui/legacy/calendar/smart-calendar';
 import { Button } from '@tuturuuu/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@tuturuuu/ui/select';
-import { PanelLeftClose, PanelRightClose, Plus, Sparkles, ChevronLeft, ChevronRight } from 'lucide-react';
-import { useTranslations } from 'next-intl';
-import { useCallback, useState, useMemo } from 'react';
+import { SmartCalendar } from '@tuturuuu/ui/legacy/calendar/smart-calendar';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@tuturuuu/ui/select';
 import { addDays, addMonths, subDays, subMonths } from 'date-fns';
-import { isToday, isCurrent4DayPeriod } from '@/utils/date-helper';
+import {
+  ChevronLeft,
+  ChevronRight,
+  PanelLeftClose,
+  PanelRightClose,
+  Plus,
+  Sparkles,
+} from 'lucide-react';
+import { useTranslations } from 'next-intl';
+import { useCallback, useMemo, useState } from 'react';
 
 interface CalendarPageClientProps {
   wsId: string;
@@ -37,35 +50,48 @@ export default function CalendarPageClient({
 }: CalendarPageClientProps) {
   const t = useTranslations('calendar');
   const queryClient = useQueryClient();
-  
+
   // Create a memoized wrapper object for useQueryClient that matches the expected interface
-  const memoizedQueryClientApi = useMemo(() => ({
-    invalidateQueries: async (options: { queryKey: string[]; refetchType?: string } | string[]) => {
-      if (Array.isArray(options)) {
-        await queryClient.invalidateQueries({ queryKey: options });
-      } else {
-        await queryClient.invalidateQueries({ 
-          queryKey: options.queryKey,
-          refetchType: options.refetchType as 'all' | 'active' | 'inactive' | 'none' | undefined
-        });
-      }
-    },
-    setQueryData: (queryKey: string[], data: unknown) => {
-      queryClient.setQueryData(queryKey, data);
-    }
-  }), [queryClient]);
+  const memoizedQueryClientApi = useMemo(
+    () => ({
+      invalidateQueries: async (
+        options: { queryKey: string[]; refetchType?: string } | string[]
+      ) => {
+        if (Array.isArray(options)) {
+          await queryClient.invalidateQueries({ queryKey: options });
+        } else {
+          await queryClient.invalidateQueries({
+            queryKey: options.queryKey,
+            refetchType: options.refetchType as
+              | 'all'
+              | 'active'
+              | 'inactive'
+              | 'none'
+              | undefined,
+          });
+        }
+      },
+      setQueryData: (queryKey: string[], data: unknown) => {
+        queryClient.setQueryData(queryKey, data);
+      },
+    }),
+    [queryClient]
+  );
 
   // Create a wrapper function that returns the memoized object
   const wrappedUseQueryClient = useCallback(() => {
     return memoizedQueryClientApi;
   }, [memoizedQueryClientApi]);
-  
+
   // Create a wrapper function to match the expected type signature
   // Type assertion needed due to next-intl's complex type system
-  const translationWrapper = useCallback((key: string, values?: Record<string, unknown>) => {
-    // @ts-expect-error - next-intl uses complex conditional types
-    return t(key, values);
-  }, [t]);
+  const translationWrapper = useCallback(
+    (key: string, values?: Record<string, unknown>) => {
+      // @ts-expect-error - next-intl uses complex conditional types
+      return t(key, values);
+    },
+    [t]
+  );
 
   const [isAddEventModalOpen, setIsAddEventModalOpen] = useState(false);
   const [calendarSidebarOpen, setCalendarSidebarOpen] = useState(false);
@@ -173,14 +199,14 @@ export default function CalendarPageClient({
   );
 
   return (
-    <div className="calendar-container h-full flex flex-col">
+    <div className="calendar-container flex h-full flex-col">
       {/* Sticky Header - Above Everything */}
       <div className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="p-4">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-2">
               {sidebarToggleButton}
-              <h2 className="font-semibold text-xl tracking-tight">
+              <h2 className="text-xl font-semibold tracking-tight">
                 {date.toLocaleDateString('en-US', {
                   month: 'long',
                   year: 'numeric',
@@ -241,7 +267,7 @@ export default function CalendarPageClient({
                     </Select>
                   </div>
                 )}
-                
+
                 {/* Action Buttons */}
                 {extras}
               </div>
@@ -251,14 +277,14 @@ export default function CalendarPageClient({
       </div>
 
       {/* Main Content Area - Three Column Layout */}
-      <div className="flex-1 flex w-full overflow-hidden pb-6">
+      <div className="flex w-full flex-1 overflow-hidden pb-6">
         {/* Left Sidebar */}
         {calendarSidebarOpen && (
           <div className="w-[261px] border-r bg-background/50">
             <CalendarSidebar />
           </div>
         )}
-        
+
         {/* Center Calendar View */}
         <div className="flex-1">
           <SmartCalendar
@@ -292,7 +318,13 @@ export default function CalendarPageClient({
               wsId={workspace.id}
               locale={locale}
               tasks={tasksData?.tasks || []}
-              hasKeys={aiChatData?.hasKeys || { openAI: false, anthropic: false, google: false }}
+              hasKeys={
+                aiChatData?.hasKeys || {
+                  openAI: false,
+                  anthropic: false,
+                  google: false,
+                }
+              }
               chats={aiChatData?.chats || []}
               count={aiChatData?.count || 0}
               hasAiChatAccess={aiChatData?.hasAiChatAccess || false}

@@ -1,11 +1,18 @@
 'use client';
 
 import { Button } from '@tuturuuu/ui/button';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@tuturuuu/ui/command';
+import { Check, ChevronDown, Search } from '@tuturuuu/ui/icons';
 import { Label } from '@tuturuuu/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { Switch } from '@tuturuuu/ui/switch';
-import { Check, ChevronDown, Search } from '@tuturuuu/ui/icons';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@tuturuuu/ui/command';
 import * as React from 'react';
 
 export type TimezoneData = {
@@ -38,10 +45,10 @@ function getTimezoneInfo(timeZone: string): { offset: string; region: string } {
     const hours = String(Math.floor(absOffset / 60)).padStart(2, '0');
     const minutes = String(absOffset % 60).padStart(2, '0');
     const offset = `${sign}${hours}:${minutes}`;
-    
+
     const parts = timeZone.split('/');
     const region = parts[0] || 'Other';
-    
+
     return { offset, region };
   } catch {
     return { offset: '+00:00', region: 'Other' };
@@ -78,7 +85,12 @@ const COMMON_TIMEZONES = [
 const generateTimezones = (): TimezoneOption[] => {
   const timezones = Intl.supportedValuesOf('timeZone');
   const options: TimezoneOption[] = [
-    { value: 'auto', label: 'Auto-detect (System)', region: 'System', offset: '' },
+    {
+      value: 'auto',
+      label: 'Auto-detect (System)',
+      region: 'System',
+      offset: '',
+    },
   ];
 
   // Add common timezones first
@@ -86,19 +98,20 @@ const generateTimezones = (): TimezoneOption[] => {
     if (timezones.includes(tz)) {
       const parts = tz.split('/');
       const cityName = parts[parts.length - 1]?.replace(/_/g, ' ') || tz;
-      
+
       try {
         const date = new Date();
         const formatter = new Intl.DateTimeFormat('en-US', {
           timeZone: tz,
           timeZoneName: 'long',
         });
-        const timeZoneName = formatter.formatToParts(date).find(
-          (part) => part.type === 'timeZoneName'
-        )?.value || '';
-        
+        const timeZoneName =
+          formatter
+            .formatToParts(date)
+            .find((part) => part.type === 'timeZoneName')?.value || '';
+
         const { offset } = getTimezoneInfo(tz);
-        
+
         options.push({
           value: tz,
           label: `${cityName} (${timeZoneName})`,
@@ -112,28 +125,31 @@ const generateTimezones = (): TimezoneOption[] => {
   });
 
   // Add other timezones grouped by region (but limit to avoid overwhelming)
-  const otherTimezones = timezones.filter(tz => !COMMON_TIMEZONES.includes(tz as typeof COMMON_TIMEZONES[number]));
-  
+  const otherTimezones = timezones.filter(
+    (tz) => !COMMON_TIMEZONES.includes(tz as (typeof COMMON_TIMEZONES)[number])
+  );
+
   // Only add a subset of other timezones to avoid overwhelming the user
   const limitedOtherTimezones = otherTimezones.slice(0, 100); // Limit to 100 additional timezones
-  
+
   limitedOtherTimezones.forEach((tz) => {
     const parts = tz.split('/');
     const region = parts[0] || 'Other';
     const cityName = parts[parts.length - 1]?.replace(/_/g, ' ') || tz;
-    
+
     try {
       const date = new Date();
       const formatter = new Intl.DateTimeFormat('en-US', {
         timeZone: tz,
         timeZoneName: 'long',
       });
-      const timeZoneName = formatter.formatToParts(date).find(
-        (part) => part.type === 'timeZoneName'
-      )?.value || '';
-      
+      const timeZoneName =
+        formatter
+          .formatToParts(date)
+          .find((part) => part.type === 'timeZoneName')?.value || '';
+
       const { offset } = getTimezoneInfo(tz);
-      
+
       options.push({
         value: tz,
         label: `${cityName} (${timeZoneName})`,
@@ -146,12 +162,24 @@ const generateTimezones = (): TimezoneOption[] => {
   });
 
   // Sort by region priority, then by offset, then by city name
-  const regionPriority = ['System', 'Common', 'America', 'Europe', 'Asia', 'Australia', 'Pacific', 'Africa', 'Antarctica', 'Arctic', 'Other'];
-  
+  const regionPriority = [
+    'System',
+    'Common',
+    'America',
+    'Europe',
+    'Asia',
+    'Australia',
+    'Pacific',
+    'Africa',
+    'Antarctica',
+    'Arctic',
+    'Other',
+  ];
+
   return options.sort((a, b) => {
     const aPriority = regionPriority.indexOf(a.region);
     const bPriority = regionPriority.indexOf(b.region);
-    
+
     if (aPriority !== bPriority) return aPriority - bPriority;
     if (a.offset !== b.offset) return a.offset.localeCompare(b.offset);
     return a.label.localeCompare(b.label);
@@ -222,18 +250,22 @@ export function TimezoneSettings({ value, onChange }: TimezoneSettingsProps) {
         try {
           const { offset } = getTimezoneInfo(detectedTz);
           const parts = detectedTz.split('/');
-          const cityName = parts[parts.length - 1]?.replace(/_/g, ' ') || detectedTz;
-          
+          const cityName =
+            parts[parts.length - 1]?.replace(/_/g, ' ') || detectedTz;
+
           const date = new Date();
           const formatter = new Intl.DateTimeFormat('en-US', {
             timeZone: detectedTz,
             timeZoneName: 'long',
           });
-          const timeZoneName = formatter.formatToParts(date).find(
-            (part) => part.type === 'timeZoneName'
-          )?.value || '';
-          
-          const label = timeZoneName ? `${cityName} (${timeZoneName})` : cityName;
+          const timeZoneName =
+            formatter
+              .formatToParts(date)
+              .find((part) => part.type === 'timeZoneName')?.value || '';
+
+          const label = timeZoneName
+            ? `${cityName} (${timeZoneName})`
+            : cityName;
           const offsetDisplay = offset ? ` ${offset}` : '';
           return `${label}${offsetDisplay} (Auto-detected)`;
         } catch {
@@ -242,7 +274,7 @@ export function TimezoneSettings({ value, onChange }: TimezoneSettingsProps) {
       }
       return 'Auto-detect (System)';
     }
-    
+
     const tz = timezones.find((t) => t.value === timezone);
     if (tz) {
       // Check if this is the auto-detected timezone
@@ -252,7 +284,7 @@ export function TimezoneSettings({ value, onChange }: TimezoneSettingsProps) {
       const offsetDisplay = tz.offset ? ` ${tz.offset}` : '';
       return `${tz.label}${offsetDisplay}${autoIndicator}`;
     }
-    
+
     // If not found in our list, try to get info directly
     try {
       const { offset } = getTimezoneInfo(timezone);
@@ -260,20 +292,21 @@ export function TimezoneSettings({ value, onChange }: TimezoneSettingsProps) {
       const isAutoDetected = detectedTz && timezone === detectedTz;
       const autoIndicator = isAutoDetected ? ' (Auto-detected)' : '';
       const offsetDisplay = offset ? ` ${offset}` : '';
-      
+
       // Try to get a readable name
       const parts = timezone.split('/');
       const cityName = parts[parts.length - 1]?.replace(/_/g, ' ') || timezone;
-      
+
       const date = new Date();
       const formatter = new Intl.DateTimeFormat('en-US', {
         timeZone: timezone,
         timeZoneName: 'long',
       });
-      const timeZoneName = formatter.formatToParts(date).find(
-        (part) => part.type === 'timeZoneName'
-      )?.value || '';
-      
+      const timeZoneName =
+        formatter
+          .formatToParts(date)
+          .find((part) => part.type === 'timeZoneName')?.value || '';
+
       const label = timeZoneName ? `${cityName} (${timeZoneName})` : cityName;
       return `${label}${offsetDisplay}${autoIndicator}`;
     } catch {
@@ -282,73 +315,82 @@ export function TimezoneSettings({ value, onChange }: TimezoneSettingsProps) {
   };
 
   // Reusable function to filter timezones
-  const filterTimezones = React.useCallback((
-    search: string,
-    baseTimezones: TimezoneOption[],
-    excludeValue?: string
-  ): TimezoneOption[] => {
-    // Filter out excluded value if provided
-    const filtered = excludeValue 
-      ? baseTimezones.filter(tz => tz.value !== excludeValue)
-      : baseTimezones;
-    
-    if (!search) return filtered;
-    
-    const searchLower = search.toLowerCase();
-    const searchResults = filtered.filter(
-      (tz) =>
-        tz.label.toLowerCase().includes(searchLower) ||
-        tz.value.toLowerCase().includes(searchLower) ||
-        tz.region.toLowerCase().includes(searchLower) ||
-        tz.offset.toLowerCase().includes(searchLower)
-    );
-    
-    // If searching, also include any timezone that matches from the full list
-    if (search.length > 2) {
-      const allTimezones = Intl.supportedValuesOf('timeZone');
-      const additionalMatches = allTimezones
-        .filter(tz => {
-          if (excludeValue && tz === excludeValue) return false;
-          const tzLower = tz.toLowerCase();
-          const cityName = tz.split('/').pop()?.replace(/_/g, ' ').toLowerCase() || '';
-          return tzLower.includes(searchLower) || cityName.includes(searchLower);
-        })
-        .filter(tz => !searchResults.some(existing => existing.value === tz))
-        .slice(0, 20) // Limit additional results
-        .map(tz => {
-          const parts = tz.split('/');
-          const region = parts[0] || 'Other';
-          const cityName = parts[parts.length - 1]?.replace(/_/g, ' ') || tz;
-          
-          try {
-            const date = new Date();
-            const formatter = new Intl.DateTimeFormat('en-US', {
-              timeZone: tz,
-              timeZoneName: 'long',
-            });
-            const timeZoneName = formatter.formatToParts(date).find(
-              (part) => part.type === 'timeZoneName'
-            )?.value || '';
-            
-            const { offset } = getTimezoneInfo(tz);
-            
-            return {
-              value: tz,
-              label: `${cityName} (${timeZoneName})`,
-              region,
-              offset,
-            };
-          } catch {
-            return null;
-          }
-        })
-        .filter(Boolean) as TimezoneOption[];
-      
-      return [...searchResults, ...additionalMatches];
-    }
-    
-    return searchResults;
-  }, []);
+  const filterTimezones = React.useCallback(
+    (
+      search: string,
+      baseTimezones: TimezoneOption[],
+      excludeValue?: string
+    ): TimezoneOption[] => {
+      // Filter out excluded value if provided
+      const filtered = excludeValue
+        ? baseTimezones.filter((tz) => tz.value !== excludeValue)
+        : baseTimezones;
+
+      if (!search) return filtered;
+
+      const searchLower = search.toLowerCase();
+      const searchResults = filtered.filter(
+        (tz) =>
+          tz.label.toLowerCase().includes(searchLower) ||
+          tz.value.toLowerCase().includes(searchLower) ||
+          tz.region.toLowerCase().includes(searchLower) ||
+          tz.offset.toLowerCase().includes(searchLower)
+      );
+
+      // If searching, also include any timezone that matches from the full list
+      if (search.length > 2) {
+        const allTimezones = Intl.supportedValuesOf('timeZone');
+        const additionalMatches = allTimezones
+          .filter((tz) => {
+            if (excludeValue && tz === excludeValue) return false;
+            const tzLower = tz.toLowerCase();
+            const cityName =
+              tz.split('/').pop()?.replace(/_/g, ' ').toLowerCase() || '';
+            return (
+              tzLower.includes(searchLower) || cityName.includes(searchLower)
+            );
+          })
+          .filter(
+            (tz) => !searchResults.some((existing) => existing.value === tz)
+          )
+          .slice(0, 20) // Limit additional results
+          .map((tz) => {
+            const parts = tz.split('/');
+            const region = parts[0] || 'Other';
+            const cityName = parts[parts.length - 1]?.replace(/_/g, ' ') || tz;
+
+            try {
+              const date = new Date();
+              const formatter = new Intl.DateTimeFormat('en-US', {
+                timeZone: tz,
+                timeZoneName: 'long',
+              });
+              const timeZoneName =
+                formatter
+                  .formatToParts(date)
+                  .find((part) => part.type === 'timeZoneName')?.value || '';
+
+              const { offset } = getTimezoneInfo(tz);
+
+              return {
+                value: tz,
+                label: `${cityName} (${timeZoneName})`,
+                region,
+                offset,
+              };
+            } catch {
+              return null;
+            }
+          })
+          .filter(Boolean) as TimezoneOption[];
+
+        return [...searchResults, ...additionalMatches];
+      }
+
+      return searchResults;
+    },
+    []
+  );
 
   // Filter timezones based on search
   const filteredPrimaryTimezones = React.useMemo(
@@ -364,7 +406,7 @@ export function TimezoneSettings({ value, onChange }: TimezoneSettingsProps) {
   // Group timezones by region for better organization
   const groupedPrimaryTimezones = React.useMemo(() => {
     const groups: Record<string, TimezoneOption[]> = {};
-    filteredPrimaryTimezones.filter(Boolean).forEach(tz => {
+    filteredPrimaryTimezones.filter(Boolean).forEach((tz) => {
       if (!groups[tz.region]) {
         groups[tz.region] = [];
       }
@@ -378,7 +420,7 @@ export function TimezoneSettings({ value, onChange }: TimezoneSettingsProps) {
 
   const groupedSecondaryTimezones = React.useMemo(() => {
     const groups: Record<string, TimezoneOption[]> = {};
-    filteredSecondaryTimezones.filter(Boolean).forEach(tz => {
+    filteredSecondaryTimezones.filter(Boolean).forEach((tz) => {
       if (!groups[tz.region]) {
         groups[tz.region] = [];
       }
@@ -418,7 +460,7 @@ export function TimezoneSettings({ value, onChange }: TimezoneSettingsProps) {
               </div>
               <CommandList>
                 <CommandEmpty>No timezone found.</CommandEmpty>
-                <div 
+                <div
                   className="h-[300px] overflow-y-auto"
                   // Custom scroll handling required - Command component interferes with natural scrolling in popover context
                   onWheel={(e) => {
@@ -427,31 +469,38 @@ export function TimezoneSettings({ value, onChange }: TimezoneSettingsProps) {
                     target.scrollTop += e.deltaY;
                   }}
                 >
-                  {Object.entries(groupedPrimaryTimezones).map(([region, tzList]) => (
-                    <CommandGroup key={region} heading={region}>
-                      {tzList.map((tz) => (
-                        <CommandItem
-                          key={tz.value}
-                          value={tz.value}
-                          onSelect={() => handlePrimaryTimezoneChange(tz.value)}
-                          className="flex items-center justify-between"
-                        >
-                          <div className="flex items-center">
-                            <span className="mr-2 text-xs text-muted-foreground w-16">
-                              {tz.offset}
-                            </span>
-                            <span>{tz.label}</span>
-                            {getDetectedTimezone() && tz.value === getDetectedTimezone() && (
-                              <span className="ml-2 text-xs text-blue-400">(Auto-detected)</span>
+                  {Object.entries(groupedPrimaryTimezones).map(
+                    ([region, tzList]) => (
+                      <CommandGroup key={region} heading={region}>
+                        {tzList.map((tz) => (
+                          <CommandItem
+                            key={tz.value}
+                            value={tz.value}
+                            onSelect={() =>
+                              handlePrimaryTimezoneChange(tz.value)
+                            }
+                            className="flex items-center justify-between"
+                          >
+                            <div className="flex items-center">
+                              <span className="mr-2 w-16 text-xs text-muted-foreground">
+                                {tz.offset}
+                              </span>
+                              <span>{tz.label}</span>
+                              {getDetectedTimezone() &&
+                                tz.value === getDetectedTimezone() && (
+                                  <span className="ml-2 text-xs text-blue-400">
+                                    (Auto-detected)
+                                  </span>
+                                )}
+                            </div>
+                            {tz.value === value.timezone && (
+                              <Check className="ml-2 h-4 w-4" />
                             )}
-                          </div>
-                          {tz.value === value.timezone && (
-                            <Check className="ml-2 h-4 w-4" />
-                          )}
-                        </CommandItem>
-                      ))}
-                    </CommandGroup>
-                  ))}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    )
+                  )}
                 </div>
               </CommandList>
             </Command>
@@ -497,7 +546,7 @@ export function TimezoneSettings({ value, onChange }: TimezoneSettingsProps) {
                 </div>
                 <CommandList>
                   <CommandEmpty>No timezone found.</CommandEmpty>
-                  <div 
+                  <div
                     className="h-[300px] overflow-y-auto"
                     // Custom scroll handling required - Command component interferes with natural scrolling in popover context
                     onWheel={(e) => {
@@ -506,31 +555,38 @@ export function TimezoneSettings({ value, onChange }: TimezoneSettingsProps) {
                       target.scrollTop += e.deltaY;
                     }}
                   >
-                    {Object.entries(groupedSecondaryTimezones).map(([region, tzList]) => (
-                      <CommandGroup key={region} heading={region}>
-                        {tzList.map((tz) => (
-                          <CommandItem
-                            key={tz.value}
-                            value={tz.value}
-                            onSelect={() => handleSecondaryTimezoneChange(tz.value)}
-                            className="flex items-center justify-between"
-                          >
-                            <div className="flex items-center">
-                              <span className="mr-2 text-xs text-muted-foreground w-16">
-                                {tz.offset}
-                              </span>
-                              <span>{tz.label}</span>
-                              {getDetectedTimezone() && tz.value === getDetectedTimezone() && (
-                                <span className="ml-2 text-xs text-blue-400">(Auto-detected)</span>
+                    {Object.entries(groupedSecondaryTimezones).map(
+                      ([region, tzList]) => (
+                        <CommandGroup key={region} heading={region}>
+                          {tzList.map((tz) => (
+                            <CommandItem
+                              key={tz.value}
+                              value={tz.value}
+                              onSelect={() =>
+                                handleSecondaryTimezoneChange(tz.value)
+                              }
+                              className="flex items-center justify-between"
+                            >
+                              <div className="flex items-center">
+                                <span className="mr-2 w-16 text-xs text-muted-foreground">
+                                  {tz.offset}
+                                </span>
+                                <span>{tz.label}</span>
+                                {getDetectedTimezone() &&
+                                  tz.value === getDetectedTimezone() && (
+                                    <span className="ml-2 text-xs text-blue-400">
+                                      (Auto-detected)
+                                    </span>
+                                  )}
+                              </div>
+                              {tz.value === value.secondaryTimezone && (
+                                <Check className="ml-2 h-4 w-4" />
                               )}
-                            </div>
-                            {tz.value === value.secondaryTimezone && (
-                              <Check className="ml-2 h-4 w-4" />
-                            )}
-                          </CommandItem>
-                        ))}
-                      </CommandGroup>
-                    ))}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      )
+                    )}
                   </div>
                 </CommandList>
               </Command>

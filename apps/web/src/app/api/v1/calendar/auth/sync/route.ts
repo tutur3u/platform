@@ -1,8 +1,8 @@
 import type { CalendarEvent as BaseCalendarEvent } from '@tuturuuu/ai/calendar/events';
-import { google } from 'googleapis';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { isAllDayEvent } from '@tuturuuu/ui/hooks/calendar-utils';
 import dayjs from 'dayjs';
+import { google } from 'googleapis';
 import { NextResponse } from 'next/server';
 
 interface CalendarEvent extends BaseCalendarEvent {

@@ -1,6 +1,6 @@
-import { google } from 'googleapis';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { performFullSyncForWorkspace } from '@tuturuuu/trigger';
+import { google } from 'googleapis';
 import { NextResponse } from 'next/server';
 
 export async function GET(request: Request) {
@@ -30,7 +30,7 @@ export async function GET(request: Request) {
   const auth = new google.auth.OAuth2(
     process.env.GOOGLE_CLIENT_ID,
     process.env.GOOGLE_CLIENT_SECRET,
-    process.env.GOOGLE_REDIRECT_URI,
+    process.env.GOOGLE_REDIRECT_URI
   );
 
   try {

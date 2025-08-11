@@ -369,7 +369,10 @@ export function AnalyticsCharts({
                           dataKey="value"
                         >
                           {calendarSourceData.map((entry) => (
-                            <Cell key={`cell-${entry.name}`} fill={entry.color} />
+                            <Cell
+                              key={`cell-${entry.name}`}
+                              fill={entry.color}
+                            />
                           ))}
                         </Pie>
                         <ChartTooltip content={<ChartTooltipContent />} />

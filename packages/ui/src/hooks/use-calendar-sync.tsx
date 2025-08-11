@@ -117,7 +117,10 @@ export const CalendarSyncProvider = ({
     isLoading: boolean;
   };
   useQueryClient: () => {
-    invalidateQueries: (options: { queryKey: string[]; exact?: boolean }) => Promise<void>;
+    invalidateQueries: (options: {
+      queryKey: string[];
+      exact?: boolean;
+    }) => Promise<void>;
   };
 }) => {
   const [data, setData] = useState<WorkspaceCalendarEvent[] | null>(null);
@@ -182,17 +185,22 @@ export const CalendarSyncProvider = ({
   const CACHE_STALE_TIME_CURRENT_WEEK = 30 * 1000; // 30 seconds
   const CACHE_STALE_TIME_OTHER = 5 * 60 * 1000; // 5 minutes
 
-  const isCacheStaleEnhanced = useCallback((lastUpdated: number, dateRange: Date[]) => {
-    const isCurrentWeek = includesCurrentWeek(dateRange);
-    const staleTime = isCurrentWeek ? CACHE_STALE_TIME_CURRENT_WEEK : CACHE_STALE_TIME_OTHER;
-    const isStale = Date.now() - lastUpdated >= staleTime;
+  const isCacheStaleEnhanced = useCallback(
+    (lastUpdated: number, dateRange: Date[]) => {
+      const isCurrentWeek = includesCurrentWeek(dateRange);
+      const staleTime = isCurrentWeek
+        ? CACHE_STALE_TIME_CURRENT_WEEK
+        : CACHE_STALE_TIME_OTHER;
+      const isStale = Date.now() - lastUpdated >= staleTime;
 
-    if (isCurrentWeek && isStale) {
-      // Current week cache is stale, forcing fresh fetch
-    }
+      if (isCurrentWeek && isStale) {
+        // Current week cache is stale, forcing fresh fetch
+      }
 
-    return isStale;
-  }, [includesCurrentWeek]);
+      return isStale;
+    },
+    [includesCurrentWeek]
+  );
 
   // Helper to update cache safely
   const updateCache = useCallback((cacheKey: string, update: CacheUpdate) => {
@@ -375,12 +383,12 @@ export const CalendarSyncProvider = ({
     queryClient.invalidateQueries({
       queryKey: ['databaseCalendarEvents', wsId, cacheKey],
     });
-    
+
     // Also invalidate the general calendarEvents query used by other parts of the system
     queryClient.invalidateQueries({
       queryKey: ['calendarEvents', wsId],
     });
-    
+
     // Invalidate Google Calendar events as well
     queryClient.invalidateQueries({
       queryKey: ['googleCalendarEvents', wsId, cacheKey],
@@ -593,7 +601,7 @@ export const CalendarSyncProvider = ({
       hasProcessedInitialData.current = false;
       lastProcessedData.current = fetchedData;
     }
-    
+
     if (fetchedData && !hasProcessedInitialData.current) {
       hasProcessedInitialData.current = true;
       // Force a re-render by updating the data state

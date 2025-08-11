@@ -122,10 +122,7 @@ export default function MonthPicker({
           </Button>
         </div>
 
-        <table
-          className="w-full"
-          aria-labelledby="month-picker"
-        >
+        <table className="w-full" aria-labelledby="month-picker">
           <tbody>
             {(() => {
               const rows = [];
@@ -149,7 +146,9 @@ export default function MonthPicker({
                             }
                             className="w-full"
                             disabled={isFuture(month)}
-                            onClick={() => updateQuery(format(month, 'yyyy-MM'))}
+                            onClick={() =>
+                              updateQuery(format(month, 'yyyy-MM'))
+                            }
                           >
                             <time dateTime={format(month, 'yyyy-MM-dd')}>
                               {month.toLocaleString(lang, { month: 'short' })}
@@ -160,7 +159,10 @@ export default function MonthPicker({
                     ))}
                     {/* Fill empty cells if needed */}
                     {Array.from({ length: 3 - rowMonths.length }, (_, j) => (
-                      <td key={`empty-cell-${rowIndex}-position-${j + rowMonths.length}`} className="p-1" />
+                      <td
+                        key={`empty-cell-${rowIndex}-position-${j + rowMonths.length}`}
+                        className="p-1"
+                      />
                     ))}
                   </tr>
                 );

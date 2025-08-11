@@ -1,3 +1,15 @@
+import { useCalendar } from '../../../../hooks/use-calendar';
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuSub,
+  ContextMenuSubContent,
+  ContextMenuSubTrigger,
+  ContextMenuTrigger,
+} from '../../context-menu';
+import { GRID_SNAP, HOUR_HEIGHT, MAX_HOURS, MIN_EVENT_HEIGHT } from './config';
 import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import { getEventStyles } from '@tuturuuu/utils/color-helper';
@@ -20,18 +32,6 @@ import {
 } from 'lucide-react';
 import Image from 'next/image';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useCalendar } from '../../../../hooks/use-calendar';
-import {
-  ContextMenu,
-  ContextMenuContent,
-  ContextMenuItem,
-  ContextMenuSeparator,
-  ContextMenuSub,
-  ContextMenuSubContent,
-  ContextMenuSubTrigger,
-  ContextMenuTrigger,
-} from '../../context-menu';
-import { GRID_SNAP, HOUR_HEIGHT, MAX_HOURS, MIN_EVENT_HEIGHT } from './config';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -89,7 +89,7 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
       ? dayjs.utc(localEvent.start_at).local() // Convert from UTC to local timezone
       : dayjs(localEvent.start_at).tz(tz);
   const endDate =
-    tz === 'auto' 
+    tz === 'auto'
       ? dayjs.utc(localEvent.end_at).local() // Convert from UTC to local timezone
       : dayjs(localEvent.end_at).tz(tz);
 
@@ -167,9 +167,12 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
   }, []);
 
   // Batch visual state updates to reduce renders
-  const updateVisualState = useCallback((updates: Partial<typeof visualState>) => {
-    setVisualState((prev) => ({ ...prev, ...updates }));
-  }, []);
+  const updateVisualState = useCallback(
+    (updates: Partial<typeof visualState>) => {
+      setVisualState((prev) => ({ ...prev, ...updates }));
+    },
+    []
+  );
 
   // Debounced update function to reduce API calls
   const updateTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -179,55 +182,58 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
   } | null>(null);
 
   // Schedule a throttled update
-  const scheduleUpdate = useCallback((updateData: { start_at: string; end_at: string }) => {
-    // For multi-day events, we need to update the original event
-    const eventId = event._originalId || id;
+  const scheduleUpdate = useCallback(
+    (updateData: { start_at: string; end_at: string }) => {
+      // For multi-day events, we need to update the original event
+      const eventId = event._originalId || id;
 
-    // Store the latest update data
-    pendingUpdateRef.current = updateData;
-    syncPendingRef.current = true;
+      // Store the latest update data
+      pendingUpdateRef.current = updateData;
+      syncPendingRef.current = true;
 
-    // Immediately update local event data for UI rendering
-    setLocalEvent((prev) => ({
-      ...prev,
-      ...updateData,
-    }));
+      // Immediately update local event data for UI rendering
+      setLocalEvent((prev) => ({
+        ...prev,
+        ...updateData,
+      }));
 
-    // Show syncing state immediately
-    setIsSyncing(true);
-    setUpdateStatus('syncing');
+      // Show syncing state immediately
+      setIsSyncing(true);
+      setUpdateStatus('syncing');
 
-    // Only start a new timer if there isn't one already
-    if (!updateTimeoutRef.current) {
-      updateTimeoutRef.current = setTimeout(() => {
-        if (pendingUpdateRef.current) {
-          updateEvent(eventId, pendingUpdateRef.current)
-            .then(() => {
-              showStatusFeedback('success');
-            })
-            .catch((error) => {
-              console.error('Failed to update event:', error);
-              showStatusFeedback('error');
+      // Only start a new timer if there isn't one already
+      if (!updateTimeoutRef.current) {
+        updateTimeoutRef.current = setTimeout(() => {
+          if (pendingUpdateRef.current) {
+            updateEvent(eventId, pendingUpdateRef.current)
+              .then(() => {
+                showStatusFeedback('success');
+              })
+              .catch((error) => {
+                console.error('Failed to update event:', error);
+                showStatusFeedback('error');
 
-              // Revert to original data on error
-              setLocalEvent(event);
-            })
-            .finally(() => {
-              syncPendingRef.current = false;
-              setTimeout(() => {
-                if (!syncPendingRef.current) {
-                  setIsSyncing(false);
-                }
-              }, 300);
-            });
+                // Revert to original data on error
+                setLocalEvent(event);
+              })
+              .finally(() => {
+                syncPendingRef.current = false;
+                setTimeout(() => {
+                  if (!syncPendingRef.current) {
+                    setIsSyncing(false);
+                  }
+                }, 300);
+              });
 
-          pendingUpdateRef.current = null;
-        }
+            pendingUpdateRef.current = null;
+          }
 
-        updateTimeoutRef.current = null;
-      }, 250); // Throttle to once every 250ms
-    }
-  }, [event._originalId, id, updateEvent, showStatusFeedback, event]);
+          updateTimeoutRef.current = null;
+        }, 250); // Throttle to once every 250ms
+      }
+    },
+    [event._originalId, id, updateEvent, showStatusFeedback, event]
+  );
 
   // Clean up any pending updates
   useEffect(() => {
@@ -950,7 +956,7 @@ export function EventCard({ dates, event, level = 0 }: EventCardProps) {
             // Check if the click was on the edit button area
             const target = e.target as HTMLElement;
             const isEditButton = target.closest('[data-edit-button="true"]');
-            
+
             if (isEditButton) {
               e.stopPropagation();
               e.preventDefault();

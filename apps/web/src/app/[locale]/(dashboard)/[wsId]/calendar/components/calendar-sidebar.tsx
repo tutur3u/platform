@@ -20,7 +20,7 @@ const stubAccounts = [
 
 export default function CalendarSidebar() {
   return (
-    <aside className="slide-in-from-left-5 mr-2 flex h-full w-[261px] flex-col rounded-lg border border-border bg-background/60 text-foreground shadow-xl backdrop-blur-md transition-all duration-500 ease-out xl:flex">
+    <aside className="mr-2 flex h-full w-[261px] flex-col rounded-lg border border-border bg-background/60 text-foreground shadow-xl backdrop-blur-md transition-all duration-500 ease-out slide-in-from-left-5 xl:flex">
       {/* Header */}
       <SidebarHeader className="flex items-center justify-between border-b border-border/50 bg-gradient-to-r from-background/80 to-background/60 px-4 py-3">
         <span className="flex items-center gap-2 text-lg font-semibold">

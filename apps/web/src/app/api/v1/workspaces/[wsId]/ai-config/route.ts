@@ -1,5 +1,8 @@
-import { getPermissions, verifyHasSecrets } from '@tuturuuu/utils/workspace-helper';
 import { createClient } from '@supabase/supabase-js';
+import {
+  getPermissions,
+  verifyHasSecrets,
+} from '@tuturuuu/utils/workspace-helper';
 import { NextRequest, NextResponse } from 'next/server';
 
 const hasKey = (key: string) => {
@@ -17,8 +20,10 @@ export async function GET(
 
     // Check permissions
     const { withoutPermission } = await getPermissions({ wsId });
-    console.log('Permission check result:', { withoutPermission: withoutPermission('ai_chat') });
-    
+    console.log('Permission check result:', {
+      withoutPermission: withoutPermission('ai_chat'),
+    });
+
     let hasAiChatAccess = false;
 
     try {
@@ -48,10 +53,10 @@ export async function GET(
     try {
       const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
       const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-      
+
       if (supabaseUrl && supabaseKey) {
         const supabase = createClient(supabaseUrl, supabaseKey);
-        
+
         // Check if workspace has specific AI settings
         const { data: workspaceSettings } = await supabase
           .from('workspaces')
@@ -62,14 +67,17 @@ export async function GET(
         if (workspaceSettings?.ai_settings) {
           const settings = workspaceSettings.ai_settings;
           hasKeys = {
-            openAI: hasKeys.openAI && (settings.openai_enabled === true),
-            anthropic: hasKeys.anthropic && (settings.anthropic_enabled === true),
-            google: hasKeys.google && (settings.google_enabled === true),
+            openAI: hasKeys.openAI && settings.openai_enabled === true,
+            anthropic: hasKeys.anthropic && settings.anthropic_enabled === true,
+            google: hasKeys.google && settings.google_enabled === true,
           };
         }
       }
     } catch (dbError) {
-      console.log('Could not fetch workspace AI settings, using defaults:', dbError);
+      console.log(
+        'Could not fetch workspace AI settings, using defaults:',
+        dbError
+      );
       // Continue with default settings
     }
 
@@ -80,7 +88,6 @@ export async function GET(
       hasKeys,
       hasAiChatAccess,
     });
-
   } catch (error) {
     console.error('Error in AI config API:', error);
     return NextResponse.json(
@@ -88,4 +95,4 @@ export async function GET(
       { status: 500 }
     );
   }
-} 
+}

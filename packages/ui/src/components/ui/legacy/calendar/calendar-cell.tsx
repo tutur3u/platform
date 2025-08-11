@@ -1,14 +1,11 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-
+import { useCalendar } from '../../../../hooks/use-calendar';
+import { HOUR_HEIGHT } from './config';
+import { getEventStyles } from '@tuturuuu/utils/color-helper';
+import { cn } from '@tuturuuu/utils/format';
 import { format } from 'date-fns';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
-
-import { getEventStyles } from '@tuturuuu/utils/color-helper';
-import { cn } from '@tuturuuu/utils/format';
-
-import { useCalendar } from '../../../../hooks/use-calendar';
-import { HOUR_HEIGHT } from './config';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 dayjs.extend(timezone);
 
@@ -177,11 +174,14 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
   };
 
   // Helper to get a Date object for a given hour/minute, timezone-aware
-  const getCellDate = useCallback((hour: number, minute: number = 0) => {
-    const base = dayjs(`${date}T00:00:00`);
-    const dateTz = tz === 'auto' ? base.local() : base.tz(tz);
-    return dateTz.hour(hour).minute(minute).second(0).millisecond(0).toDate();
-  }, [date, tz]);
+  const getCellDate = useCallback(
+    (hour: number, minute: number = 0) => {
+      const base = dayjs(`${date}T00:00:00`);
+      const dateTz = tz === 'auto' ? base.local() : base.tz(tz);
+      return dateTz.hour(hour).minute(minute).second(0).millisecond(0).toDate();
+    },
+    [date, tz]
+  );
 
   const handleCreateEvent = (midHour?: boolean) => {
     // Always use timezone-aware date construction
@@ -699,12 +699,12 @@ export const CalendarCell = ({ date, hour }: CalendarCellProps) => {
     const handleDocumentMouseMove = (e: MouseEvent) => {
       if (!cellRef.current) return;
       const cellRect = cellRef.current.getBoundingClientRect();
-      const isInsideCell = 
-        e.clientX >= cellRect.left && 
-        e.clientX <= cellRect.right && 
-        e.clientY >= cellRect.top && 
+      const isInsideCell =
+        e.clientX >= cellRect.left &&
+        e.clientX <= cellRect.right &&
+        e.clientY >= cellRect.top &&
         e.clientY <= cellRect.bottom;
-      
+
       if (!isInsideCell && isHovering) {
         handleCellMouseLeave();
       }

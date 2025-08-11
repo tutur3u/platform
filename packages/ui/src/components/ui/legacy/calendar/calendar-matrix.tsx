@@ -51,9 +51,13 @@ export const CalendarEventMatrix = ({ dates }: { dates: Date[] }) => {
   const processedEvents = allEvents.flatMap((event) => {
     // Parse dates with proper timezone handling
     const startDay =
-      tz === 'auto' ? dayjs.utc(event.start_at).local() : dayjs(event.start_at).tz(tz);
+      tz === 'auto'
+        ? dayjs.utc(event.start_at).local()
+        : dayjs(event.start_at).tz(tz);
     const endDay =
-      tz === 'auto' ? dayjs.utc(event.end_at).local() : dayjs(event.end_at).tz(tz);
+      tz === 'auto'
+        ? dayjs.utc(event.end_at).local()
+        : dayjs(event.end_at).tz(tz);
 
     // Ensure end time is after start time
     if (endDay.isBefore(startDay)) {
@@ -118,7 +122,9 @@ export const CalendarEventMatrix = ({ dates }: { dates: Date[] }) => {
   // Filter events to only include those visible in the current date range
   const visibleEvents = processedEvents.filter((event) => {
     const eventStart =
-      tz === 'auto' ? dayjs.utc(event.start_at).local() : dayjs(event.start_at).tz(tz);
+      tz === 'auto'
+        ? dayjs.utc(event.start_at).local()
+        : dayjs(event.start_at).tz(tz);
     const eventStartDay = eventStart.startOf('day');
 
     // Check if the event falls within any of the visible dates

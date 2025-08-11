@@ -87,9 +87,15 @@ export function HoursSettings({ wsId }: HoursSettingsProps) {
       }
 
       setValue({
-        personalHours: safeParse(data?.find((h) => h.type === 'PERSONAL')?.data) ?? defaultWeekTimeRanges,
-        workHours: safeParse(data?.find((h) => h.type === 'WORK')?.data) ?? defaultWeekTimeRanges,
-        meetingHours: safeParse(data?.find((h) => h.type === 'MEETING')?.data) ?? defaultWeekTimeRanges,
+        personalHours:
+          safeParse(data?.find((h) => h.type === 'PERSONAL')?.data) ??
+          defaultWeekTimeRanges,
+        workHours:
+          safeParse(data?.find((h) => h.type === 'WORK')?.data) ??
+          defaultWeekTimeRanges,
+        meetingHours:
+          safeParse(data?.find((h) => h.type === 'MEETING')?.data) ??
+          defaultWeekTimeRanges,
       });
     };
 
@@ -230,7 +236,12 @@ export function HoursSettings({ wsId }: HoursSettingsProps) {
         </div>
       </div>
 
-      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'work' | 'meeting' | 'personal')}>
+      <Tabs
+        value={activeTab}
+        onValueChange={(v) =>
+          setActiveTab(v as 'work' | 'meeting' | 'personal')
+        }
+      >
         <div className="mb-4 flex items-center justify-between">
           <TabsList className="grid w-full max-w-md grid-cols-3">
             <TabsTrigger value="work" className="flex items-center gap-1">
@@ -342,20 +353,18 @@ function isValidWeekTimeRanges(obj: unknown): obj is WeekTimeRanges {
     'saturday',
     'sunday',
   ];
-  return days.every(
-    (day) => {
-      const dayObj = (obj as Record<string, unknown>)[day];
-      return (
-        dayObj &&
-        typeof dayObj === 'object' &&
-        dayObj !== null &&
-        'enabled' in dayObj &&
-        typeof (dayObj as { enabled: unknown }).enabled === 'boolean' &&
-        'timeBlocks' in dayObj &&
-        Array.isArray((dayObj as { timeBlocks: unknown }).timeBlocks)
-      );
-    }
-  );
+  return days.every((day) => {
+    const dayObj = (obj as Record<string, unknown>)[day];
+    return (
+      dayObj &&
+      typeof dayObj === 'object' &&
+      dayObj !== null &&
+      'enabled' in dayObj &&
+      typeof (dayObj as { enabled: unknown }).enabled === 'boolean' &&
+      'timeBlocks' in dayObj &&
+      Array.isArray((dayObj as { timeBlocks: unknown }).timeBlocks)
+    );
+  });
 }
 
 // Safe JSON parse helper
@@ -368,5 +377,5 @@ function safeParse(data: unknown): WeekTimeRanges | undefined {
       return undefined;
     }
   }
-  return isValidWeekTimeRanges(data) ? data as WeekTimeRanges : undefined;
+  return isValidWeekTimeRanges(data) ? (data as WeekTimeRanges) : undefined;
 }
