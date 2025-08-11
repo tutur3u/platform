@@ -190,6 +190,7 @@ export async function MeetTogetherPage({
               totalCount={totalCount}
               currentPage={page}
               pageSize={pageSize}
+              user={user}
             />
           ) : (
             <Card className="border-border/50 bg-gradient-to-br from-dynamic-blue/5 to-dynamic-purple/5">

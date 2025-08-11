@@ -1,5 +1,5 @@
 import type { CalendarEvent as BaseCalendarEvent } from '@tuturuuu/ai/calendar/events';
-import { OAuth2Client, google } from '@tuturuuu/google';
+import { google } from 'googleapis';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { isAllDayEvent } from '@tuturuuu/ui/hooks/calendar-utils';
 import dayjs from 'dayjs';

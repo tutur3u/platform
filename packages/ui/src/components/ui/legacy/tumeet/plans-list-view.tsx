@@ -19,11 +19,13 @@ export function PlansListView({
   plans,
   locale,
   t,
+  user,
 }: {
   plans: MeetTogetherPlanWithParticipants[];
   locale: string;
   // biome-ignore lint/suspicious/noExplicitAny: <translations are not typed>
   t: any;
+  user?: { id: string } | null;
 }) {
   if (plans.length === 0) {
     return (
@@ -68,7 +70,9 @@ export function PlansListView({
                 )}
               </div>
               <div>
-                <EditPlanDialog plan={plan} />
+                {user?.id === plan.creator_id ? (
+                  <EditPlanDialog plan={plan} />
+                ) : null}
               </div>
             </div>
 
