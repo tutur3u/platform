@@ -1,4 +1,5 @@
 import { createClient } from '@tuturuuu/supabase/next/client';
+import { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import { Button } from '@tuturuuu/ui/button';
 import { Calendar } from '@tuturuuu/ui/calendar';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
@@ -22,7 +23,7 @@ import {
 } from '@tuturuuu/ui/select';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import dayjs from 'dayjs';
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 interface AddEventModalProps {
   isOpen?: boolean;
@@ -46,7 +47,7 @@ export default function AddEventModal({
   onClose,
   wsId,
 }: AddEventModalProps) {
-  const [formData, setFormData] = React.useState({
+  const [formData, setFormData] = useState({
     name: '',
     description: '',
     total_duration: 1,
@@ -59,16 +60,16 @@ export default function AddEventModal({
     priority: 'normal',
   });
 
-  const [errors, setErrors] = React.useState<Record<string, string>>({});
-  const [isLoading, setIsLoading] = React.useState(false);
-  const [user, setUser] = React.useState<any>(null);
-  const [isDragging, setIsDragging] = React.useState(false);
-  const sliderRef = React.useRef<HTMLDivElement>(null);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isLoading, setIsLoading] = useState(false);
+  const [user, setUser] = useState<SupabaseUser | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const sliderRef = useRef<HTMLDivElement>(null);
   const supabase = createClient();
   const [startDateOpen, setStartDateOpen] = useState(false);
   const [endDateOpen, setEndDateOpen] = useState(false);
 
-  React.useEffect(() => {
+  useEffect(() => {
     const getUser = async () => {
       const {
         data: { user },
@@ -134,7 +135,7 @@ export default function AddEventModal({
     return Object.keys(newErrors).length === 0;
   };
 
-  const updateFormData = React.useCallback(
+  const updateFormData = useCallback(
     (field: string, value: string | number | boolean) => {
       setFormData((prev) => ({ ...prev, [field]: value }));
       if (errors[field]) {
@@ -171,7 +172,7 @@ export default function AddEventModal({
     },
   ];
 
-  const getPriorityFromPosition = React.useCallback((clientX: number) => {
+  const getPriorityFromPosition = useCallback((clientX: number) => {
     if (!sliderRef.current) return 'normal';
 
     const rect = sliderRef.current.getBoundingClientRect();
@@ -210,7 +211,7 @@ export default function AddEventModal({
     setIsDragging(false);
   };
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (isDragging) {
       const handleGlobalMouseMove = (e: MouseEvent) => {
         const newPriority = getPriorityFromPosition(e.clientX);
@@ -385,13 +386,13 @@ export default function AddEventModal({
                     if (e.touches[0])
                       handleSliderMouseDown({
                         clientX: e.touches[0].clientX,
-                      } as any);
+                      } as React.MouseEvent);
                   }}
                   onTouchMove={(e) => {
                     if (e.touches[0])
                       handleSliderMouseMove({
                         clientX: e.touches[0].clientX,
-                      } as any);
+                      } as React.MouseEvent);
                   }}
                   onTouchEnd={handleSliderMouseUp}
                   onKeyDown={(e) => {
