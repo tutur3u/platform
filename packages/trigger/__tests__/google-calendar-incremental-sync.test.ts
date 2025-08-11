@@ -1,3 +1,22 @@
+import { vi } from 'vitest';
+
+vi.mock('googleapis', () => ({
+  google: {
+    auth: {
+      OAuth2: vi.fn().mockImplementation(() => ({
+        setCredentials: vi.fn(),
+        request: vi.fn(),
+      })),
+    },
+    calendar: vi.fn().mockReturnValue({
+      events: {
+        list: vi.fn().mockResolvedValue({
+          data: { items: [], nextSyncToken: 'sync-token', nextPageToken: undefined },
+        }),
+      },
+    }),
+  },
+}));
 // Mocks must come next, before any imports that use them!
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
