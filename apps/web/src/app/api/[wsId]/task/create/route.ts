@@ -113,6 +113,17 @@ export async function POST(
       );
     }
 
+    const { error: assignError } = await supabase
+      .from('task_assignees')
+      .insert({
+        task_id: dbTask.id,
+        user_id: user.id,
+      });
+
+    if (assignError) {
+      console.error('Error assigning task to creator:', assignError);
+    }
+
     // 5. Convert task to chunkable format
     const taskToSplit: Task = {
       id: dbTask.id,

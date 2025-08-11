@@ -5,6 +5,8 @@ export interface MeetTogetherPlan {
   name?: string;
   description?: string;
   start_time?: string;
+  // allow_anonymous_edit?: boolean;
+  is_confirmed?: boolean;
   where_to_meet?: boolean;
   end_time?: string;
   dates?: string[];
@@ -21,4 +23,11 @@ export interface PlanUser {
   display_name: string | null;
   is_guest: boolean | null;
   timeblock_count: number | null;
+}
+
+export interface GuestUser {
+  id?: string | null;
+  display_name?: string | null;
+  password_hash?: string;
+  is_guest?: boolean | null;
 }

@@ -1,0 +1,30 @@
+{
+  "name": "@tuturuuu/google",
+  "license": "MIT",
+  "version": "0.0.1",
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "lint": "eslint ."
+  },
+  "exports": {
+    ".": "./src/core/index.ts"
+  },
+  "dependencies": {
+    "googleapis": "^155.0.1",
+    "google-auth-library": "^10.2.1"
+  },
+  "devDependencies": {
+    "@tuturuuu/eslint-config": "workspace:*",
+    "@tuturuuu/types": "workspace:*",
+    "@tuturuuu/typescript-config": "workspace:*",
+    "@types/node": "^24.2.1",
+    "@types/react": "^19.1.9",
+    "@vitejs/plugin-react": "^5.0.0",
+    "@vitest/coverage-v8": "^3.2.4",
+    "typescript": "^5.9.2",
+    "vite": "^7.1.1"
+  },
+  "packageManager": "bun@1.2.19"
+}

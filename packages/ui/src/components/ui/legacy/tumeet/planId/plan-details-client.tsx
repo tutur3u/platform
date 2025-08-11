@@ -3,6 +3,7 @@
 import AgendaDetails from './agenda-details';
 import PlanLogin from './plan-login';
 import SidebarDisplay from './sidebar-display';
+import StickyBottomIndicator from './sticky-bottom-indicator';
 import UnifiedAvailability from './unified-availability';
 import UtilityButtons from './utility-buttons';
 import type {
@@ -11,7 +12,6 @@ import type {
 } from '@tuturuuu/types/primitives/MeetTogetherPlan';
 import type { GetPollsForPlanResult } from '@tuturuuu/types/primitives/Poll';
 import type { Timeblock } from '@tuturuuu/types/primitives/Timeblock';
-import type { User } from '@tuturuuu/types/primitives/User';
 import { useTimeBlocking } from '@tuturuuu/ui/hooks/time-blocking-provider';
 import { CircleQuestionMark } from '@tuturuuu/ui/icons';
 import { Label } from '@tuturuuu/ui/label';
@@ -27,8 +27,8 @@ import { useCallback, useEffect, useState } from 'react';
 interface PlanDetailsClientProps {
   plan: MeetTogetherPlan;
   polls: GetPollsForPlanResult | null;
-  platformUser: User | null;
-  isCreator: boolean;
+  // platformUser: User | null;
+  // isCreator: boolean;
   users: PlanUser[];
   timeblocks: Timeblock[];
   baseUrl: string;
@@ -36,8 +36,8 @@ interface PlanDetailsClientProps {
 
 export default function PlanDetailsClient({
   plan,
-  platformUser,
-  isCreator,
+  // platformUser,
+  // isCreator,
   users,
   polls,
   timeblocks,
@@ -45,7 +45,8 @@ export default function PlanDetailsClient({
 }: PlanDetailsClientProps) {
   const { resolvedTheme } = useTheme();
   const [showBestTimes, setShowBestTimes] = useState(false);
-  const { filteredUserIds, isDirty, resetLocalTimeblocks } = useTimeBlocking();
+  const { filteredUserIds, isDirty, resetLocalTimeblocks, user } =
+    useTimeBlocking();
 
   // If user filter is active, force best times off
   const isUserFilterActive = filteredUserIds && filteredUserIds.length > 0;
@@ -103,16 +104,12 @@ export default function PlanDetailsClient({
     <>
       <div className="flex w-full max-w-7xl flex-col gap-6 p-4 text-foreground md:px-6 lg:gap-14 lg:px-10">
         <div className="flex w-full flex-col items-center">
-          <UtilityButtons
-            plan={plan}
-            platformUser={platformUser}
-            handlePNG={downloadAsPNG}
-          />
+          <UtilityButtons plan={plan} handlePNG={downloadAsPNG} />
 
           <div id="plan-ref" className="flex w-full flex-col items-center">
             <p className="my-4 flex max-w-xl items-center gap-2 text-center text-2xl leading-tight! font-semibold text-balance md:mb-4 lg:text-3xl">
               {plan.name}{' '}
-              {platformUser?.id === plan.creator_id ? (
+              {user?.id === plan.creator_id ? (
                 <EditPlanDialog
                   plan={plan}
                   onSuccess={() => {
@@ -121,14 +118,6 @@ export default function PlanDetailsClient({
                 />
               ) : null}
             </p>
-
-            {/* Global dirty state indicator */}
-            {isDirty && (
-              <div className="mb-4 flex items-center gap-2 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:bg-amber-950 dark:text-amber-200">
-                <div className="h-2 w-2 animate-pulse rounded-full bg-amber-500"></div>
-                You have unsaved changes
-              </div>
-            )}
 
             {/* Show Only Best Times Toggle - Back to original centered position */}
             <div className="mb-4 flex flex-col items-center justify-center gap-2">
@@ -189,12 +178,7 @@ export default function PlanDetailsClient({
                 'mt-8 grid w-full grid-cols-1 items-start justify-between gap-4 md:grid-cols-3'
               )}
             >
-              <div
-                className={cn(
-                  'md:col-span-2',
-                  !plan.where_to_meet && 'md:col-span-full'
-                )}
-              >
+              <div className={cn('md:col-span-2')}>
                 <UnifiedAvailability
                   plan={plan}
                   timeblocks={timeblocks}
@@ -202,25 +186,20 @@ export default function PlanDetailsClient({
                   onBestTimesStatusByDateAction={setBestTimesStatusByDate}
                 />
               </div>
-              {plan.where_to_meet && (
-                <SidebarDisplay
-                  plan={plan}
-                  polls={polls}
-                  isCreator={isCreator}
-                  platformUser={platformUser}
-                  users={users}
-                />
-              )}
+              <SidebarDisplay plan={plan} polls={polls} users={users} />
             </div>
 
             <Separator className="my-8" />
 
-            <AgendaDetails plan={plan} platformUser={platformUser} />
+            <AgendaDetails plan={plan} />
           </div>
         </div>
       </div>
 
-      <PlanLogin plan={plan} platformUser={platformUser} baseUrl={baseUrl} />
+      {/* Discord-style sticky bottom indicator for unsaved changes */}
+      {isDirty && <StickyBottomIndicator />}
+
+      <PlanLogin plan={plan} baseUrl={baseUrl} />
     </>
   );
 }

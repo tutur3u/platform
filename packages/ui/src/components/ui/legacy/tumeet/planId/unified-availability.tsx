@@ -6,7 +6,7 @@ import type { MeetTogetherPlan } from '@tuturuuu/types/primitives/MeetTogetherPl
 import type { Timeblock } from '@tuturuuu/types/primitives/Timeblock';
 import { Button } from '@tuturuuu/ui/button';
 import { useTimeBlocking } from '@tuturuuu/ui/hooks/time-blocking-provider';
-import { Calendar, Users } from '@tuturuuu/ui/icons';
+import { Calendar, Save, Users } from '@tuturuuu/ui/icons';
 import { useEffect, useState } from 'react';
 
 interface UnifiedAvailabilityProps {
@@ -22,6 +22,7 @@ export default function UnifiedAvailability({
   showBestTimes = false,
   onBestTimesStatusByDateAction,
 }: UnifiedAvailabilityProps) {
+  const { isDirty, handleSave, isSaving } = useTimeBlocking();
   const [isEditing, setIsEditing] = useState(false);
   const { user, setDisplayMode } = useTimeBlocking();
 
@@ -50,7 +51,7 @@ export default function UnifiedAvailability({
           size="lg"
           onClick={handleToggleMode}
           className="flex items-center gap-2"
-          disabled={!isEditing && showBestTimes}
+          disabled={!isEditing && (showBestTimes || plan.is_confirmed)}
         >
           {isEditing ? (
             <>
@@ -64,6 +65,17 @@ export default function UnifiedAvailability({
             </>
           )}
         </Button>
+        {isEditing && (
+          <Button
+            variant="default"
+            size="lg"
+            onClick={handleSave}
+            disabled={!isDirty || isSaving}
+          >
+            <Save size={16} />
+            {isSaving ? 'Saving...' : 'Save Changes'}
+          </Button>
+        )}
       </div>
 
       {isEditing ? (

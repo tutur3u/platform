@@ -1,0 +1,1 @@
+alter table "public"."meet_together_plans" add column "is_confirmed" boolean not null default false;

@@ -10,9 +10,9 @@ import { Tabs, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { timetzToHour } from '@tuturuuu/ui/utils/date-helper';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
-import { useEffect, useState } from 'react';
+import { memo, useEffect, useMemo, useState } from 'react';
 
-export default function DatePlanner({
+function DatePlanner({
   timeblocks,
   dates,
   start,
@@ -37,16 +37,19 @@ export default function DatePlanner({
   const [currentPage, setCurrentPage] = useState(0);
   const isMobile = useIsMobile();
 
-  const startHour = timetzToHour(start);
-  const endHour = timetzToHour(end);
+  const startHour = useMemo(() => timetzToHour(start), [start]);
+  const endHour = useMemo(() => timetzToHour(end), [end]);
 
   useEffect(() => {
     setCurrentPage(0);
   }, [dates]);
 
   // Pagination logic
-  const maxDatesPerPage = isMobile ? 4 : 7;
-  const totalPages = dates ? Math.ceil(dates.length / maxDatesPerPage) : 0;
+  const maxDatesPerPage = useMemo(() => (isMobile ? 4 : 7), [isMobile]);
+  const totalPages = useMemo(
+    () => (dates ? Math.ceil(dates.length / maxDatesPerPage) : 0),
+    [dates, maxDatesPerPage]
+  );
 
   useEffect(() => {
     if (totalPages > 0 && currentPage >= totalPages) {
@@ -54,14 +57,16 @@ export default function DatePlanner({
     }
   }, [totalPages, currentPage]);
 
-  if (!startHour || !endHour) return null;
-
-  const currentDates = dates
-    ? dates.slice(
-        currentPage * maxDatesPerPage,
-        (currentPage + 1) * maxDatesPerPage
-      )
-    : [];
+  const currentDates = useMemo(
+    () =>
+      dates
+        ? dates.slice(
+            currentPage * maxDatesPerPage,
+            (currentPage + 1) * maxDatesPerPage
+          )
+        : [],
+    [dates, currentPage, maxDatesPerPage]
+  );
 
   const handlePreviousPage = () => {
     setCurrentPage((prev) => Math.max(0, prev - 1));
@@ -73,6 +78,16 @@ export default function DatePlanner({
 
   const canGoPrevious = currentPage > 0;
   const canGoNext = currentPage < totalPages - 1;
+
+  if (!startHour || !endHour) {
+    return (
+      <div className="mt-4 flex flex-col gap-2">
+        <div className="flex items-center justify-center">
+          <div className="h-4 w-32 animate-pulse rounded bg-muted" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="mt-4 flex flex-col gap-2">
@@ -137,13 +152,6 @@ export default function DatePlanner({
         }
         className="mt-4 flex items-start justify-center gap-2"
       >
-        <TimeColumn
-          id={editable ? 'self' : 'group'}
-          start={startHour}
-          end={endHour}
-          className="flex-initial"
-        />
-
         {dates && (
           <div
             className="flex flex-col items-start justify-start gap-4 overflow-x-auto"
@@ -157,18 +165,36 @@ export default function DatePlanner({
             }
           >
             {/* Responsive fixed-width container for dates section - smaller widths to prevent overflow */}
-            <div className="w-[300px] max-w-full overflow-hidden sm:w-[350px] md:w-[400px] lg:w-[450px] xl:w-[500px]">
-              <DayPlanners
-                timeblocks={timeblocks}
-                dates={currentDates}
-                start={startHour}
-                end={endHour}
-                editable={editable}
-                disabled={editable ? (user ? disabled : true) : disabled}
-                showBestTimes={showBestTimes}
-                tentativeMode={tentativeMode}
-                onBestTimesStatusByDateAction={onBestTimesStatusByDateAction}
-              />
+            <div className="w-[350px] max-w-full overflow-hidden sm:w-[350px] md:w-[400px] lg:w-[450px] xl:w-[500px]">
+              <div className="relative">
+                {/* Scrollable content with sticky header */}
+                <div className="max-h-[50vh] overflow-y-auto">
+                  <div className="flex gap-2">
+                    <TimeColumn
+                      id={editable ? 'self' : 'group'}
+                      start={startHour}
+                      end={endHour}
+                      className="flex-initial"
+                    />
+
+                    <DayPlanners
+                      timeblocks={timeblocks}
+                      dates={currentDates}
+                      start={startHour}
+                      end={endHour}
+                      editable={editable}
+                      disabled={editable ? (user ? disabled : true) : disabled}
+                      showBestTimes={showBestTimes}
+                      tentativeMode={tentativeMode}
+                      onBestTimesStatusByDateAction={
+                        onBestTimesStatusByDateAction
+                      }
+                      hideHeaders={false}
+                      stickyHeader={true}
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
 
             {/* Pagination controls - positioned below the plan */}
@@ -211,3 +237,5 @@ export default function DatePlanner({
     </div>
   );
 }
+
+export default memo(DatePlanner);

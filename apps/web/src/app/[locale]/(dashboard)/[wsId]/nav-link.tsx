@@ -51,12 +51,17 @@ export function NavLink({
 
   const content = (
     <>
-      <div className="flex items-center gap-2">
-        {icon}
-        <span className={cn('truncate', isCollapsed && 'hidden')}>{title}</span>
+      <div key="nav-content" className="flex items-center gap-2">
+        {icon && <span key="nav-icon">{icon}</span>}
+        <span
+          key="nav-title"
+          className={cn('truncate', isCollapsed && 'hidden')}
+        >
+          {title}
+        </span>
       </div>
       {hasChildren && !isCollapsed && (
-        <ChevronRight className="ml-auto h-4 w-4" />
+        <ChevronRight key="nav-chevron" className="ml-auto h-4 w-4" />
       )}
     </>
   );
