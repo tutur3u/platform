@@ -281,7 +281,7 @@ export async function performIncrementalActiveSync(
             type UntypedClient = { from: (relation: string) => UntypedFrom };
             const sbAdminUntyped = sbAdmin as unknown as UntypedClient;
             await sbAdminUntyped
-              .from('google_calendar_active_sync_token')
+              .from('calendar_sync_states')
               .delete()
               .eq('ws_id', wsId);
             console.log('✅ [DEBUG] Invalid sync token cleared from database');
