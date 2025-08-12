@@ -34,8 +34,8 @@ export function CalendarSyncWrapper({
   // can handle those parameters correctly
   const adaptedUseQuery = useQuery as unknown as ExpectedUseQuery;
   const adaptedUseQueryClient = () => ({
-    invalidateQueries: async (options: { queryKey: string[]; exact?: boolean }) => {
-      await queryClient.invalidateQueries(options);
+    invalidateQueries: (options: { queryKey: string[]; exact?: boolean }) => {
+      return queryClient.invalidateQueries(options);
     },
   });
 
