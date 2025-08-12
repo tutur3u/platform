@@ -17,7 +17,10 @@ export const runtime = 'edge';
 export const maxDuration = 60;
 export const preferredRegion = 'sin1';
 
-const vertexModel = vertex(DEFAULT_MODEL_NAME);
+const vertexModel = vertex(DEFAULT_MODEL_NAME, {
+  // Fallback to a sane default if env var is not provided
+  location: process.env.GOOGLE_VERTEX_LOCATION ?? 'us-central1',
+});
 
 export async function POST(req: Request) {
   const sbAdmin = await createAdminClient();

@@ -8,7 +8,9 @@ export const runtime = 'edge';
 export const maxDuration = 60;
 export const preferredRegion = 'sin1';
 
-const vertexModel = vertex(DEFAULT_MODEL_NAME);
+const vertexModel = vertex(DEFAULT_MODEL_NAME, {
+  location: process.env.GOOGLE_VERTEX_LOCATION ?? 'us-central1',
+});
 
 export async function PATCH(req: Request) {
   const { id } = (await req.json()) as {

@@ -78,6 +78,12 @@
     "apps/*",
     "packages/*"
   ],
+  "overrides": {
+    "@ai-sdk/provider-utils": "3.0.1"
+  },
+  "resolutions": {
+    "@ai-sdk/provider-utils": "3.0.1"
+  },
   "trustedDependencies": [
     "@tailwindcss/oxide",
     "@vercel/speed-insights",
