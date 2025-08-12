@@ -1,5 +1,6 @@
 import type { CalendarEvent as BaseCalendarEvent } from '@tuturuuu/ai/calendar/events';
 import { google } from 'googleapis';
+import type { calendar_v3 } from 'googleapis';
 import { OAuth2Client } from 'google-auth-library';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { isAllDayEvent } from '@tuturuuu/ui/hooks/calendar-utils';
@@ -85,7 +86,7 @@ export async function POST(request: Request) {
     // Check if this is an all-day event to format it correctly for Google Calendar
     const isEventAllDay = isAllDayEvent(event);
 
-    const googleEvent: any = {
+    const googleEvent: calendar_v3.Schema$Event = {
       summary: event.title || 'Untitled Event',
       description: event.description || '',
       location: event.location || '',
@@ -144,9 +145,18 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json({ googleEventId: googleEventId }, { status: 200 });
-  } catch (error: any) {
-    console.error('Failed to sync with Google Calendar (POST):', error);
-    if (error.response?.data?.error === 'invalid_grant') {
+  } catch (error: unknown) {
+    type GoogleApiError = {
+      response?: { status?: number; data?: { error?: string | { message?: string } } };
+      message?: string;
+    };
+    const err = error as GoogleApiError;
+    console.error('Failed to sync with Google Calendar (POST):', err);
+    if (
+      typeof err.response?.data?.error === 'string'
+        ? err.response?.data?.error === 'invalid_grant'
+        : (err.response?.data?.error as { message?: string })?.message === 'invalid_grant'
+    ) {
       return NextResponse.json(
         {
           error: 'Google token invalid, please re-authenticate.',
@@ -216,7 +226,7 @@ export async function PUT(request: Request) {
     const calendar = google.calendar({ version: 'v3', auth });
 
     // Prepare the updated Google Event data
-    const googleEventUpdate: any = {}; // Use 'any' for flexibility or define a specific type
+    const googleEventUpdate: Partial<calendar_v3.Schema$Event> = {};
     if (eventUpdates.title !== undefined)
       googleEventUpdate.summary = eventUpdates.title || 'Untitled Event';
     if (eventUpdates.description !== undefined)
@@ -291,12 +301,21 @@ export async function PUT(request: Request) {
       { googleEventId: response.data.id },
       { status: 200 }
     );
-  } catch (error: any) {
+  } catch (error: unknown) {
+    type GoogleApiError = {
+      response?: { status?: number; data?: { error?: string | { message?: string } } };
+      message?: string;
+    };
+    const err = error as GoogleApiError;
     console.error(
       `Failed to update Google Calendar event ${googleCalendarEventId}:`,
-      error
+      err
     );
-    if (error.response?.data?.error === 'invalid_grant') {
+    if (
+      typeof err.response?.data?.error === 'string'
+        ? err.response?.data?.error === 'invalid_grant'
+        : (err.response?.data?.error as { message?: string })?.message === 'invalid_grant'
+    ) {
       return NextResponse.json(
         {
           error: 'Google token invalid, please re-authenticate.',
@@ -305,7 +324,7 @@ export async function PUT(request: Request) {
         { status: 401 }
       );
     }
-    if (error.response?.status === 404 || error.response?.status === 410) {
+    if (err.response?.status === 404 || err.response?.status === 410) {
       // Event not found or gone - maybe it was deleted directly on Google Calendar
       console.warn(
         `Google Calendar event ${googleCalendarEventId} not found for update. Might have been deleted.`
@@ -376,12 +395,17 @@ export async function DELETE(request: Request) {
       { message: 'Event deleted successfully from Google Calendar' },
       { status: 200 }
     );
-  } catch (error: any) {
+  } catch (error: unknown) {
+    type GoogleApiError = {
+      response?: { status?: number; data?: { error?: string | { message?: string } } };
+      message?: string;
+    };
+    const err = error as GoogleApiError;
     console.error(
       `Failed to delete Google Calendar event ${googleCalendarEventId}:`,
-      error
+      err
     );
-    if (error.response?.status === 404 || error.response?.status === 410) {
+    if (err.response?.status === 404 || err.response?.status === 410) {
       // Event already gone, consider it a success in terms of local state
       console.warn(
         `Google Calendar event ${googleCalendarEventId} not found for deletion. Assuming already deleted.`
@@ -394,7 +418,11 @@ export async function DELETE(request: Request) {
         { status: 200 }
       ); // Return success as the goal is achieved
     }
-    if (error.response?.data?.error === 'invalid_grant') {
+    if (
+      typeof err.response?.data?.error === 'string'
+        ? err.response?.data?.error === 'invalid_grant'
+        : (err.response?.data?.error as { message?: string })?.message === 'invalid_grant'
+    ) {
       return NextResponse.json(
         {
           error: 'Google token invalid, please re-authenticate.',
