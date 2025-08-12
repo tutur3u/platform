@@ -23,7 +23,7 @@ import {
 import { SmartCalendar } from '@tuturuuu/ui/legacy/calendar/smart-calendar';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { useLocale, useTranslations } from 'next-intl';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 export default function CalendarClientPage({
   experimentalGoogleToken,
@@ -100,6 +100,34 @@ export default function CalendarClientPage({
       </div>
     ) : undefined;
 
+  // Adapt TanStack's QueryClient to SmartCalendar's expected API
+  const tanstackQueryClient = useQueryClient();
+  const memoizedQueryClientAdapter = useMemo(
+    () => ({
+      invalidateQueries: (
+        options: string[] | { queryKey: string[]; refetchType?: string }
+      ) => {
+        if (Array.isArray(options)) {
+          return tanstackQueryClient.invalidateQueries({ queryKey: options });
+        }
+        const { queryKey, refetchType } = options;
+        return tanstackQueryClient.invalidateQueries({
+          queryKey,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          refetchType: refetchType as any,
+        });
+      },
+      setQueryData: (queryKey: string[], data: unknown) => {
+        tanstackQueryClient.setQueryData(queryKey, data);
+      },
+    }),
+    [tanstackQueryClient]
+  );
+  const wrappedUseQueryClient = useCallback(
+    () => memoizedQueryClientAdapter,
+    [memoizedQueryClientAdapter]
+  );
+
   return (
     <>
       <div className="flex h-full">
@@ -117,7 +145,7 @@ export default function CalendarClientPage({
             locale={locale}
             workspace={workspace}
             useQuery={useQuery}
-            useQueryClient={useQueryClient}
+            useQueryClient={wrappedUseQueryClient}
             experimentalGoogleToken={
               experimentalGoogleToken?.ws_id === workspace.id
                 ? experimentalGoogleToken
