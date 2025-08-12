@@ -112,7 +112,6 @@ export default function CalendarClientPage({
             t={(key: string, values?: Record<string, unknown>) => {
               // next-intl uses conditional types; adapt to generic string keys
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              // @ts-expect-error – allow passing dynamic string keys to translator
               return t(key as any, values as any);
             }}
             locale={locale}
