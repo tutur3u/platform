@@ -4,6 +4,7 @@
     "": {
       "name": "tutur3u",
       "dependencies": {
+        "google-auth-library": "^10.2.1",
         "react-scan": "^0.4.3",
       },
       "devDependencies": {
