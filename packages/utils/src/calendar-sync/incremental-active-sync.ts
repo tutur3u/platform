@@ -275,7 +275,12 @@ export async function performIncrementalActiveSync(
           // Clear the sync token from database since it's invalid
           try {
             const sbAdmin = await createClient();
-            await (sbAdmin as unknown as any)
+            type UntypedFrom = {
+              delete: () => { eq: (column: string, value: unknown) => Promise<unknown> };
+            };
+            type UntypedClient = { from: (relation: string) => UntypedFrom };
+            const sbAdminUntyped = sbAdmin as unknown as UntypedClient;
+            await sbAdminUntyped
               .from('google_calendar_active_sync_token')
               .delete()
               .eq('ws_id', wsId);
