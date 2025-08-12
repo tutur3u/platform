@@ -1,4 +1,5 @@
-import { google, calendar_v3 } from 'googleapis';
+import { google } from 'googleapis';
+import type { calendar_v3 } from 'googleapis';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { convertGoogleAllDayEvent } from '@tuturuuu/ui/hooks/calendar-utils';
 import { updateLastUpsert } from '@tuturuuu/utils/calendar-sync-coordination';
@@ -310,7 +311,15 @@ export const storeActiveSyncToken = async (
 ) => {
   const sbAdmin = await createAdminClient({ noCookie: true });
   const calendar_id = 'primary';
-  const { error } = await sbAdmin
+  type UntypedFrom = {
+    upsert: (
+      values: unknown,
+      options?: { onConflict?: string }
+    ) => Promise<{ error?: unknown } | unknown>;
+  };
+  type UntypedClient = { from: (relation: string) => UntypedFrom };
+  const untyped = sbAdmin as unknown as UntypedClient;
+  const { error } = (await untyped
     .from('google_calendar_active_sync_token')
     .upsert(
       {
@@ -322,7 +331,7 @@ export const storeActiveSyncToken = async (
       {
         onConflict: 'ws_id,calendar_id',
       }
-    );
+    )) as { error?: unknown };
 
   if (error) {
     console.error(
@@ -335,7 +344,12 @@ export const storeActiveSyncToken = async (
 
 export const getActiveSyncToken = async (wsId: string) => {
   const sbAdmin = await createAdminClient({ noCookie: true });
-  const { data: activeSyncToken, error: activeSyncTokenError } = await sbAdmin
+  type UntypedFromSel = {
+    select: (cols: string) => { eq: (column: string, value: unknown) => Promise<{ data?: any[]; error?: any }> };
+  };
+  type UntypedClientSel = { from: (relation: string) => UntypedFromSel };
+  const untyped = sbAdmin as unknown as UntypedClientSel;
+  const { data: activeSyncToken, error: activeSyncTokenError } = await untyped
     .from('google_calendar_active_sync_token')
     .select('*')
     .eq('ws_id', wsId);
