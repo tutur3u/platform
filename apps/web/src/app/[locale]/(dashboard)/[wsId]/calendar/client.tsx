@@ -3,6 +3,8 @@
 import AddEventButton from './components/add-event-button';
 import AddEventModal from './components/add-event-dialog';
 import AutoScheduleComprehensiveDialog from './components/auto-schedule-comprehensive-dialog';
+import CreateScheduledEventButton from './components/create-scheduled-event-button';
+import PendingInvitations from './components/pending-invitations';
 import TestEventGeneratorButton from './components/test-event-generator-button';
 import { DEV_MODE } from '@/constants/common';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -35,6 +37,7 @@ export default function CalendarClientPage({
     workspace.id === ROOT_WORKSPACE_ID ? (
       <div className="grid w-full items-center gap-2 md:flex md:w-auto">
         <AddEventButton onOpenDialog={openAddEventDialog} />
+        <CreateScheduledEventButton wsId={workspace.id} />
         {DEV_MODE && <TestEventGeneratorButton wsId={workspace.id} />}
         <AutoScheduleComprehensiveDialog wsId={workspace.id}>
           <Button

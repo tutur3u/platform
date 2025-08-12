@@ -40,12 +40,14 @@ export default async function CalendarPage({ params }: PageProps) {
       useQueryClient={useQueryClient}
     >
       {DEV_MODE && <CalendarActiveSyncDebugger />}
-      <div className="flex h-[calc(100%-2rem-4px)]">
+      <div className="flex h-[calc(100%-2rem-4px)] gap-4">
         <CalendarClientPage
           experimentalGoogleToken={googleToken}
           workspace={workspace}
         />
-        <TasksSidebar wsId={wsId} locale={locale} />
+        <div className="flex w-80 flex-col gap-4">
+          <TasksSidebar wsId={wsId} locale={locale} />
+        </div>
       </div>
     </CalendarSyncProvider>
   );
