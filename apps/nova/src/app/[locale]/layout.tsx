@@ -2,7 +2,7 @@ import { Providers } from './providers';
 import { siteConfig } from '@/constants/configs';
 import { type Locale, routing, supportedLocales } from '@/i18n/routing';
 import '@tuturuuu/ui/globals.css';
-import { Toaster } from '@tuturuuu/ui/toaster';
+import { Toaster } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
 import { Analytics as VercelAnalytics } from '@vercel/analytics/react';
 import { SpeedInsights as VercelInsights } from '@vercel/speed-insights/next';
