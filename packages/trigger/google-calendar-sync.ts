@@ -311,16 +311,8 @@ export const storeActiveSyncToken = async (
 ) => {
   const sbAdmin = await createAdminClient({ noCookie: true });
   const calendar_id = 'primary';
-  type UntypedFrom = {
-    upsert: (
-      values: unknown,
-      options?: { onConflict?: string }
-    ) => Promise<{ error?: unknown } | unknown>;
-  };
-  type UntypedClient = { from: (relation: string) => UntypedFrom };
-  const untyped = sbAdmin as unknown as UntypedClient;
-  const { error } = (await untyped
-    .from('google_calendar_active_sync_token')
+  const { error } = await sbAdmin
+    .from('calendar_sync_states')
     .upsert(
       {
         ws_id,
@@ -331,7 +323,7 @@ export const storeActiveSyncToken = async (
       {
         onConflict: 'ws_id,calendar_id',
       }
-    )) as { error?: unknown };
+    );
 
   if (error) {
     console.error(
@@ -344,13 +336,8 @@ export const storeActiveSyncToken = async (
 
 export const getActiveSyncToken = async (wsId: string) => {
   const sbAdmin = await createAdminClient({ noCookie: true });
-  type UntypedFromSel = {
-    select: (cols: string) => { eq: (column: string, value: unknown) => Promise<{ data?: any[]; error?: any }> };
-  };
-  type UntypedClientSel = { from: (relation: string) => UntypedFromSel };
-  const untyped = sbAdmin as unknown as UntypedClientSel;
-  const { data: activeSyncToken, error: activeSyncTokenError } = await untyped
-    .from('google_calendar_active_sync_token')
+  const { data: activeSyncToken, error: activeSyncTokenError } = await sbAdmin
+    .from('calendar_sync_states')
     .select('*')
     .eq('ws_id', wsId);
 
