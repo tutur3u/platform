@@ -105,33 +105,44 @@ export default function CreateScheduledEventDialog({
   const loadWorkspaceMembers = useCallback(async () => {
     setMembersLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('workspace_members')
+      const { data: membersData } = await supabase
+        .from('workspace_members_and_invites')
         .select(
           `
-          user_id,
-          users(display_name, avatar_url),
-          user_private_details(email)
+          id,
+          display_name,
+          avatar_url,
+          email,
+          pending
         `
         )
-        .eq('ws_id', wsId);
+        .eq('ws_id', wsId)
+        .eq('pending', false);
 
-      if (error) throw error;
+      if (!membersData || membersData.length === 0) {
+        console.log('No workspace members found');
+        setWorkspaceMembers([]);
+        return;
+      }
 
-      // Transform the data to match our interface
-      const transformedData: WorkspaceMember[] = (data || []).map(
-        (member: any) => ({
-          user_id: member.user_id,
-          display_name: member.users?.display_name || null,
-          avatar_url: member.users?.avatar_url || null,
-          email: member.user_private_details?.email || null,
-        })
-      );
+      const transformedData: WorkspaceMember[] = membersData
+        .filter(
+          (member): member is typeof member & { id: string } =>
+            member.id !== null
+        )
+        .map((member) => ({
+          user_id: member.id,
+          display_name: member.display_name || null,
+          avatar_url: member.avatar_url || null,
+          email: member.email || null,
+        }));
 
       setWorkspaceMembers(transformedData);
     } catch (error) {
-      console.error('Error loading workspace members:', error);
-      toast.error('Failed to load workspace members');
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error occurred';
+      toast.error(`Failed to load workspace members: ${errorMessage}`);
+      setWorkspaceMembers([]);
     } finally {
       setMembersLoading(false);
     }
