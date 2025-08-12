@@ -5,7 +5,8 @@ import {
   getGoogleAuthClient,
   storeActiveSyncToken,
 } from '@tuturuuu/trigger/google-calendar-sync';
-import { calendar_v3, google } from 'googleapis';
+import { google } from 'googleapis';
+import type { calendar_v3 } from 'googleapis';
 import { NextResponse } from 'next/server';
 
 /**
@@ -198,8 +199,7 @@ export async function performIncrementalActiveSync(
       syncToken,
     });
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let allEvents: any[] = [];
+    let allEvents: calendar_v3.Schema$Event[] = [];
     let pageToken: string | undefined;
     let nextSyncToken: string | undefined;
     let pageCount = 0;
@@ -275,7 +275,7 @@ export async function performIncrementalActiveSync(
           // Clear the sync token from database since it's invalid
           try {
             const sbAdmin = await createClient();
-            await sbAdmin
+            await (sbAdmin as unknown as any)
               .from('google_calendar_active_sync_token')
               .delete()
               .eq('ws_id', wsId);
@@ -289,7 +289,6 @@ export async function performIncrementalActiveSync(
 
           // Retry the same page with date range parameters
           pageCount--;
-          continue;
         } else {
           // Re-throw other errors
           throw apiError;
