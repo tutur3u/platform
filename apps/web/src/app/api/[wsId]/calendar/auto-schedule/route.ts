@@ -4,6 +4,7 @@ import {
   scheduleWithFlexibleEvents,
 } from '@tuturuuu/ai/scheduling/algorithm';
 import { defaultActiveHours } from '@tuturuuu/ai/scheduling/default';
+import type { TaskPriority } from '@tuturuuu/ai/scheduling/types';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type dayjs from 'dayjs';
@@ -24,9 +25,6 @@ export interface Event {
   locked?: boolean;
   category?: 'work' | 'personal' | 'meeting';
 }
-
-export type TaskPriority = 'critical' | 'high' | 'normal' | 'low';
-
 export interface Task {
   id: string;
   name: string;
