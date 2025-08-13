@@ -6,15 +6,15 @@ import {
 } from '@tanstack/react-query';
 import type { SupabaseClient } from '@tuturuuu/supabase/next/client';
 import { createClient } from '@tuturuuu/supabase/next/client';
+import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
+import type { Task, TaskAssignee } from '@tuturuuu/types/primitives/Task';
 import type {
-  Task,
-  TaskAssignee,
   TaskBoard,
   TaskBoardStatus,
   TaskBoardStatusTemplate,
-  TaskList,
 } from '@tuturuuu/types/primitives/TaskBoard';
+import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import type { User } from '@tuturuuu/types/primitives/User';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 
@@ -168,7 +168,7 @@ export async function createTask(
     name: string;
     description: string | null;
     list_id: string;
-    priority: number | null;
+    priority: TaskPriority | null;
     start_date: string | null;
     end_date: string | null;
     archived: boolean;
@@ -1124,4 +1124,22 @@ export function useBoardTaskTags(boardId: string) {
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
+}
+
+export function priorityCompare(
+  priorityA: TaskPriority | null,
+  priorityB: TaskPriority | null
+) {
+  const priorityOrder = {
+    critical: 4,
+    high: 3,
+    normal: 2,
+    low: 1,
+  };
+
+  if (!priorityA || !priorityB) return 0;
+  if (!priorityA) return -priorityOrder[priorityB];
+  if (!priorityB) return priorityOrder[priorityA];
+
+  return priorityOrder[priorityA] - priorityOrder[priorityB];
 }

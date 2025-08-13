@@ -20,8 +20,10 @@ import {
   getFilteredAndSortedSidebarTasks,
   useTaskCounts,
 } from './utils';
+import { priorityCompare } from '@/lib/task-helper';
 import { useQuery } from '@tanstack/react-query';
 import type { TimeTrackingCategory } from '@tuturuuu/types/db';
+import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import { Alert, AlertDescription } from '@tuturuuu/ui/alert';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -71,6 +73,21 @@ interface TimeTrackerContentProps {
   wsId: string;
   initialData: TimeTrackerData;
 }
+
+const getPriorityBadge = (priority: TaskPriority | null | undefined) => {
+  switch (priority) {
+    case 'critical':
+      return { text: 'Urgent', color: 'bg-red-500' };
+    case 'high':
+      return { text: 'High', color: 'bg-orange-500' };
+    case 'normal':
+      return { text: 'Medium', color: 'bg-yellow-500' };
+    case 'low':
+      return { text: 'Low', color: 'bg-green-500' };
+    default:
+      return { text: 'No Priority', color: 'bg-gray-500' };
+  }
+};
 
 export default function TimeTrackerContent({
   wsId,
@@ -300,7 +317,7 @@ export default function TimeTrackerContent({
       // 1. First priority: Urgent tasks (priority 1) assigned to current user
       const myUrgentTasks = response.tasks.filter(
         (task: ExtendedWorkspaceTask) => {
-          const isUrgent = task.priority === 1; // Priority 1 = Urgent
+          const isUrgent = task.priority === 'critical'; // Priority 1 = Urgent
           const isNotCompleted = !task.completed;
           const isAssignedToMe = task.is_assigned_to_current_user;
           return isUrgent && isNotCompleted && isAssignedToMe;
@@ -310,7 +327,7 @@ export default function TimeTrackerContent({
       // 2. Second priority: Urgent unassigned tasks (user can assign themselves)
       const urgentUnassigned = response.tasks.filter(
         (task: ExtendedWorkspaceTask) => {
-          const isUrgent = task.priority === 1; // Priority 1 = Urgent
+          const isUrgent = task.priority === 'critical'; // Priority 1 = Urgent
           const isNotCompleted = !task.completed;
           const isUnassigned = !task.assignees || task.assignees.length === 0;
           return isUrgent && isNotCompleted && isUnassigned;
@@ -320,7 +337,7 @@ export default function TimeTrackerContent({
       // 3. Third priority: Other tasks assigned to current user (High → Medium → Low)
       const myOtherTasks = response.tasks.filter(
         (task: ExtendedWorkspaceTask) => {
-          const isNotUrgent = !task.priority || task.priority > 1; // Priority 2,3,4 = High, Medium, Low
+          const isNotUrgent = !task.priority || task.priority !== 'critical';
           const isNotCompleted = !task.completed;
           const isAssignedToMe = task.is_assigned_to_current_user;
           return isNotUrgent && isNotCompleted && isAssignedToMe;
@@ -331,15 +348,15 @@ export default function TimeTrackerContent({
       prioritizedTasks = [
         ...myUrgentTasks.sort(
           (a: ExtendedWorkspaceTask, b: ExtendedWorkspaceTask) =>
-            (a.priority || 99) - (b.priority || 99)
+            priorityCompare(a.priority ?? null, b.priority ?? null)
         ),
         ...urgentUnassigned.sort(
           (a: ExtendedWorkspaceTask, b: ExtendedWorkspaceTask) =>
-            (a.priority || 99) - (b.priority || 99)
+            priorityCompare(a.priority ?? null, b.priority ?? null)
         ),
         ...myOtherTasks.sort(
           (a: ExtendedWorkspaceTask, b: ExtendedWorkspaceTask) =>
-            (a.priority || 99) - (b.priority || 99)
+            priorityCompare(a.priority ?? null, b.priority ?? null)
         ),
       ];
 
@@ -1085,24 +1102,24 @@ export default function TimeTrackerContent({
                           <span
                             className={cn(
                               'inline-flex items-center rounded-full px-1.5 py-0.5 text-xs font-medium',
-                              nextTaskPreview.priority === 1
+                              nextTaskPreview.priority === 'critical'
                                 ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300'
-                                : nextTaskPreview.priority === 2
+                                : nextTaskPreview.priority === 'high'
                                   ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300'
-                                  : nextTaskPreview.priority === 3
+                                  : nextTaskPreview.priority === 'normal'
                                     ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300'
-                                    : nextTaskPreview.priority === 4
+                                    : nextTaskPreview.priority === 'low'
                                       ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'
                                       : 'bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-300'
                             )}
                           >
-                            {nextTaskPreview.priority === 1
+                            {nextTaskPreview.priority === 'critical'
                               ? 'Urgent'
-                              : nextTaskPreview.priority === 2
+                              : nextTaskPreview.priority === 'high'
                                 ? 'High'
-                                : nextTaskPreview.priority === 3
+                                : nextTaskPreview.priority === 'normal'
                                   ? 'Medium'
-                                  : nextTaskPreview.priority === 4
+                                  : nextTaskPreview.priority === 'low'
                                     ? 'Low'
                                     : 'No Priority'}
                           </span>
@@ -2547,23 +2564,6 @@ export default function TimeTrackerContent({
                 </div>
               ) : (
                 availableTasks.map((task) => {
-                  const getPriorityBadge = (
-                    priority: number | null | undefined
-                  ) => {
-                    switch (priority) {
-                      case 1:
-                        return { text: 'Urgent', color: 'bg-red-500' };
-                      case 2:
-                        return { text: 'High', color: 'bg-orange-500' };
-                      case 3:
-                        return { text: 'Medium', color: 'bg-yellow-500' };
-                      case 4:
-                        return { text: 'Low', color: 'bg-green-500' };
-                      default:
-                        return { text: 'No Priority', color: 'bg-gray-500' };
-                    }
-                  };
-
                   const priorityBadge = getPriorityBadge(task.priority);
                   const isUnassigned =
                     !task || !task.assignees || task.assignees.length === 0;

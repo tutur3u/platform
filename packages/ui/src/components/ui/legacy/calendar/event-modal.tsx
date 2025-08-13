@@ -1,10 +1,5 @@
 'use client';
 
-import {
-  createAllDayEvent,
-  isAllDayEvent,
-} from '../../../../hooks/calendar-utils';
-import { useCalendar } from '../../../../hooks/use-calendar';
 import { Alert, AlertDescription, AlertTitle } from '../../alert';
 import { AutosizeTextarea } from '../../custom/autosize-textarea';
 import {
@@ -14,7 +9,6 @@ import {
   EventDateTimePicker,
   EventDescriptionInput,
   EventLocationInput,
-  EventPriorityPicker,
   EventTitleInput,
   EventToggleSwitch,
   OverlapWarning,
@@ -23,10 +17,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { calendarEventsSchema } from '@tuturuuu/ai/calendar/events';
 import { useObject } from '@tuturuuu/ai/object/core';
 import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
-import type {
-  CalendarEvent,
-  EventPriority,
-} from '@tuturuuu/types/primitives/calendar-event';
+import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import {
   Accordion,
   AccordionContent,
@@ -51,6 +42,11 @@ import {
   FormLabel,
   FormMessage,
 } from '@tuturuuu/ui/form';
+import {
+  createAllDayEvent,
+  isAllDayEvent,
+} from '@tuturuuu/ui/hooks/calendar-utils';
+import { useCalendar } from '@tuturuuu/ui/hooks/use-calendar';
 import { useForm } from '@tuturuuu/ui/hooks/use-form';
 import { useToast } from '@tuturuuu/ui/hooks/use-toast';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
@@ -96,8 +92,6 @@ const AIFormSchema = z.object({
     .string()
     .default(() => Intl.DateTimeFormat().resolvedOptions().timeZone),
   smart_scheduling: z.boolean().default(true),
-  priority: z.string().default('medium'),
-  // priority: z.enum(['low', 'medium', 'high']).default('medium'),
 });
 
 export function EventModal() {
@@ -126,7 +120,6 @@ export function EventModal() {
     end_at: new Date(Date.now() + 60 * 60 * 1000).toISOString(), // Default to 1 hour
     color: 'BLUE',
     location: '',
-    priority: 'medium',
     locked: false,
   });
 
@@ -171,7 +164,6 @@ export function EventModal() {
       prompt: '',
       timezone: userTimezone,
       smart_scheduling: true,
-      priority: 'medium',
     },
   });
 
@@ -235,7 +227,7 @@ export function EventModal() {
 
       setActiveTab('preview');
     }
-  }, [object, isLoading, aiForm.getValues, checkForOverlaps]);
+  }, [object, isLoading, aiForm, checkForOverlaps]);
 
   // Reset form when modal opens/closes or active event changes
   useEffect(() => {
@@ -249,7 +241,6 @@ export function EventModal() {
         end_at: activeEvent.end_at,
         color: activeEvent.color || 'BLUE',
         location: activeEvent.location || '',
-        priority: activeEvent.priority || 'medium',
         locked: activeEvent.locked || false,
         ws_id: activeEvent.ws_id,
         google_event_id: activeEvent.google_event_id,
@@ -282,7 +273,6 @@ export function EventModal() {
         end_at: oneHourLater.toISOString(),
         color: 'BLUE' as SupportedColor,
         location: '',
-        priority: 'medium' as EventPriority,
         locked: false,
       };
 
@@ -296,7 +286,7 @@ export function EventModal() {
 
     // Clear any error messages
     setDateError(null);
-  }, [activeEvent, checkForOverlaps, aiForm.reset]);
+  }, [activeEvent, checkForOverlaps, aiForm]);
 
   // Handle manual event save
   const handleManualSave = async () => {
@@ -322,7 +312,6 @@ export function EventModal() {
         end_at: event.end_at,
         color: event.color || 'BLUE',
         location: event.location || '',
-        priority: event.priority || 'medium',
         locked: event.locked || false,
       };
 
@@ -427,7 +416,6 @@ export function EventModal() {
             end_at: eventData.end_at || '',
             color: eventData.color || 'BLUE',
             location: eventData.location || '',
-            priority: eventData.priority || 'medium',
             locked: eventData.locked || false,
           };
 
@@ -1033,13 +1021,6 @@ export function EventModal() {
 
                     {/* Location and Description */}
                     <div className="space-y-4">
-                      <EventPriorityPicker
-                        value={event.priority || 'medium'}
-                        onChange={(value) =>
-                          setEvent({ ...event, priority: value })
-                        }
-                        disabled={event.locked}
-                      />
                       <EventLocationInput
                         value={event.location || ''}
                         onChange={(value) =>

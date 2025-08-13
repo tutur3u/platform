@@ -66,9 +66,12 @@ export function BoardSummary({ board }: Props) {
   ).length;
 
   const priorityTasks = {
-    p1: tasks.filter((task) => !task.archived && task.priority === 1).length,
-    p2: tasks.filter((task) => !task.archived && task.priority === 2).length,
-    p3: tasks.filter((task) => !task.archived && task.priority === 3).length,
+    p1: tasks.filter((task) => !task.archived && task.priority === 'critical')
+      .length,
+    p2: tasks.filter((task) => !task.archived && task.priority === 'high')
+      .length,
+    p3: tasks.filter((task) => !task.archived && task.priority === 'normal')
+      .length,
   };
 
   const nextDueTask = tasks

@@ -88,7 +88,7 @@ export async function POST(
       calendar_hours,
       start_date: start_date || null,
       end_date: end_date || null,
-      user_defined_priority: priority || 'normal',
+      priority: priority || 'normal',
       tags: tags || [],
     };
 
@@ -136,9 +136,8 @@ export async function POST(
       minDuration: dbTask.min_split_duration_minutes
         ? dbTask.min_split_duration_minutes / 60
         : 0.5,
-      priority: dbTask.user_defined_priority || 'normal',
+      priority: dbTask.priority || 'normal',
       category: 'work',
-      events: [],
     };
 
     const taskChunks = prepareTaskChunks([taskToSplit]);
@@ -154,7 +153,7 @@ export async function POST(
         ws_id: wsId,
         task_id: event.taskId,
         title: event.name,
-        priority: dbTask.user_defined_priority || 'normal',
+        priority: dbTask.priority || 'normal',
         start_at: event.range.start.toISOString(),
         end_at: event.range.end.toISOString(),
         locked: false,

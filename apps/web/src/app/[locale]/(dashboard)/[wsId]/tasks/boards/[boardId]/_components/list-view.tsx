@@ -2,10 +2,12 @@
 
 import { TaskEditDialog } from './task-edit-dialog';
 import { getTagColorStyling } from '@/lib/tag-utils';
-import { getTasks } from '@/lib/task-helper';
+import { getTasks, priorityCompare } from '@/lib/task-helper';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
-import type { Task, TaskList } from '@tuturuuu/types/primitives/TaskBoard';
+import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
+import type { Task } from '@tuturuuu/types/primitives/Task';
+import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import type { Json } from '@tuturuuu/types/supabase';
 import {
   AlertDialog,
@@ -115,7 +117,7 @@ type SortOrder = 'asc' | 'desc';
 
 interface TableFilters {
   search: string;
-  priorities: Set<number>;
+  priorities: Set<TaskPriority>;
   statuses: Set<string>;
   assignees: Set<string>;
   dateFilter: 'all' | 'overdue' | 'today' | 'this_week' | 'no_date';
@@ -141,7 +143,7 @@ interface Member {
 
 interface TaskBulkUpdate {
   id: string;
-  priority?: number | null;
+  priority?: TaskPriority | null;
   archived?: boolean;
   tags?: string[];
   [key: string]: Json | string[] | number | boolean | null | undefined;
@@ -149,19 +151,21 @@ interface TaskBulkUpdate {
 
 // Priority labels constant - defined once outside component for performance
 const priorityLabels = {
-  0: 'No Priority',
-  1: 'Urgent',
-  2: 'High',
-  3: 'Medium',
-  4: 'Low',
+  critical: 'Urgent',
+  high: 'High',
+  normal: 'Medium',
+  low: 'Low',
+  null: 'No Priority',
 };
 
 const priorityColors = {
-  0: 'border-gray-300 bg-gray-50 text-gray-700 dark:bg-gray-800 dark:text-gray-300',
-  1: 'border-pink-600 bg-pink-50 text-pink-700 dark:bg-pink-950 dark:text-pink-300',
-  2: 'border-red-500 bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300',
-  3: 'border-yellow-500 bg-yellow-50 text-yellow-700 dark:bg-yellow-950 dark:text-yellow-300',
-  4: 'border-green-500 bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300',
+  critical:
+    'border-pink-600 bg-pink-50 text-pink-700 dark:bg-pink-950 dark:text-pink-300',
+  high: 'border-red-500 bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300',
+  normal:
+    'border-yellow-500 bg-yellow-50 text-yellow-700 dark:bg-yellow-950 dark:text-yellow-300',
+  low: 'border-green-500 bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300',
+  null: 'border-gray-300 bg-gray-50 text-gray-700 dark:bg-gray-800 dark:text-gray-300',
 };
 
 const SKELETON_KEYS: string[] = ['a', 'b', 'c', 'd', 'e'];
@@ -247,10 +251,7 @@ export function ListView({
       const updates: TaskBulkUpdate[] = taskIds.map((id) => {
         const updateObj: TaskBulkUpdate = { id };
         if (bulkEditData.priority !== 'keep') {
-          updateObj.priority =
-            bulkEditData.priority === '0'
-              ? null
-              : parseInt(bulkEditData.priority);
+          updateObj.priority = bulkEditData.priority as TaskPriority | null;
         }
         if (bulkEditData.status !== 'keep') {
           updateObj.archived = bulkEditData.status === 'completed';
@@ -400,16 +401,15 @@ export function ListView({
 
   // Get unique values for filters
   const filterOptions = useMemo(() => {
-    const priorities = new Set<number>();
+    const priorities = new Set<TaskPriority>();
     const statuses = new Set<string>();
     const assignees = new Set<{ id: string; name: string; email: string }>();
 
     // Always include all possible priorities (0 = No Priority, 1 = Urgent, 2 = High, 3 = Medium, 4 = Low)
-    priorities.add(0);
-    priorities.add(1);
-    priorities.add(2);
-    priorities.add(3);
-    priorities.add(4);
+    priorities.add('critical');
+    priorities.add('high');
+    priorities.add('normal');
+    priorities.add('low');
 
     // Always include all possible statuses
     statuses.add('active');
@@ -478,8 +478,7 @@ export function ListView({
 
       // Priority filter
       if (filters.priorities.size > 0) {
-        const taskPriority = task.priority ?? 0; // Treat null/undefined as 0 (No Priority)
-        if (!filters.priorities.has(taskPriority)) {
+        if (!task.priority || !filters.priorities.has(task.priority)) {
           return false;
         }
       }
@@ -560,9 +559,9 @@ export function ListView({
           comparison = a.name.localeCompare(b.name);
           break;
         case 'priority': {
-          const aPriority = a.priority ?? 999;
-          const bPriority = b.priority ?? 999;
-          comparison = aPriority - bPriority;
+          const aPriority = a.priority ?? null;
+          const bPriority = b.priority ?? null;
+          comparison = priorityCompare(aPriority, bPriority);
           break;
         }
         case 'start_date': {
@@ -760,7 +759,7 @@ export function ListView({
     );
   }
 
-  function renderPriority(priority: number) {
+  function renderPriority(priority: TaskPriority | null) {
     return (
       <Badge
         variant="outline"
@@ -1636,7 +1635,7 @@ export function ListView({
                     )}
                     {columnVisibility.priority && (
                       <TableCell>
-                        {renderPriority(task.priority ?? 0)}
+                        {renderPriority(task.priority ?? null)}
                       </TableCell>
                     )}
                     {columnVisibility.start_date && (

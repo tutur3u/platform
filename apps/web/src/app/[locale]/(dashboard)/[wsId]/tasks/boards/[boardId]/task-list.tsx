@@ -4,11 +4,14 @@ import { statusIcons } from './status-section';
 import { TaskCard } from './task';
 import { TaskForm } from './task-form';
 import { DEV_MODE } from '@/constants/common';
+import { priorityCompare } from '@/lib/task-helper';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useQuery } from '@tanstack/react-query';
+import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
-import type { Task, TaskList } from '@tuturuuu/types/primitives/TaskBoard';
+import type { Task } from '@tuturuuu/types/primitives/Task';
+import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
@@ -72,7 +75,7 @@ type WorkspaceMember = Pick<
 
 interface TaskListFilters {
   search: string;
-  priorities: Set<number>;
+  priorities: Set<TaskPriority>;
   assignees: Set<string>;
   tags: Set<string>;
   overdue: boolean;
@@ -262,9 +265,9 @@ export const BoardColumn = React.memo(function BoardColumn({
             comparison = a.name.localeCompare(b.name);
             break;
           case 'priority': {
-            const aPriority = a.priority ?? 999;
-            const bPriority = b.priority ?? 999;
-            comparison = aPriority - bPriority;
+            const aPriority = a.priority ?? null;
+            const bPriority = b.priority ?? null;
+            comparison = priorityCompare(aPriority, bPriority);
             break;
           }
           case 'due_date': {
@@ -288,9 +291,9 @@ export const BoardColumn = React.memo(function BoardColumn({
             break;
           }
           case 'priority_desc': {
-            const aPriority = a.priority ?? 999;
-            const bPriority = b.priority ?? 999;
-            comparison = bPriority - aPriority;
+            const aPriority = a.priority ?? null;
+            const bPriority = b.priority ?? null;
+            comparison = priorityCompare(bPriority, aPriority);
             break;
           }
         }
@@ -302,7 +305,7 @@ export const BoardColumn = React.memo(function BoardColumn({
       filtered.sort((a, b) => {
         // If both have priority, sort by priority (1 comes first)
         if (a.priority != null && b.priority != null) {
-          const priorityDiff = a.priority - b.priority;
+          const priorityDiff = priorityCompare(a.priority, b.priority);
           // If priorities are the same, sort by due date
           if (priorityDiff === 0) {
             // Tasks with due dates come before tasks without due dates
@@ -668,8 +671,10 @@ export const BoardColumn = React.memo(function BoardColumn({
                   <div className="space-y-2">
                     <FilterLabel>Priority</FilterLabel>
                     <div className="flex flex-wrap gap-1">
-                      {[1, 2, 3, 4].map((priority) => {
-                        const isSelected = filters.priorities.has(priority);
+                      {['critical', 'high', 'normal', 'low'].map((priority) => {
+                        const isSelected = filters.priorities.has(
+                          priority as TaskPriority
+                        );
                         const taskCount = tasks.filter(
                           (task) => task.priority === priority
                         ).length;
@@ -682,9 +687,9 @@ export const BoardColumn = React.memo(function BoardColumn({
                             onClick={() => {
                               const newPriorities = new Set(filters.priorities);
                               if (isSelected) {
-                                newPriorities.delete(priority);
+                                newPriorities.delete(priority as TaskPriority);
                               } else {
-                                newPriorities.add(priority);
+                                newPriorities.add(priority as TaskPriority);
                               }
                               setFilters((prev) => ({
                                 ...prev,
@@ -694,19 +699,19 @@ export const BoardColumn = React.memo(function BoardColumn({
                           >
                             <Flag
                               className={cn('mr-1 h-2 w-2', {
-                                'text-dynamic-red/80': priority === 1,
-                                'text-dynamic-orange/80': priority === 2,
-                                'text-dynamic-yellow/80': priority === 3,
-                                'text-dynamic-green/80': priority === 4,
+                                'text-dynamic-red/80': priority === 'critical',
+                                'text-dynamic-orange/80': priority === 'high',
+                                'text-dynamic-yellow/80': priority === 'normal',
+                                'text-dynamic-green/80': priority === 'low',
                               })}
                             />
-                            {priority === 1
+                            {priority === 'critical'
                               ? 'Urgent'
-                              : priority === 2
+                              : priority === 'high'
                                 ? 'High'
-                                : priority === 3
+                                : priority === 'normal'
                                   ? 'Medium'
-                                  : 'Low'}{' '}
+                                  : 'Low'}
                             ({taskCount})
                           </Button>
                         );

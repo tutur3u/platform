@@ -1,11 +1,12 @@
 import { getTaskCompletionDate } from '../utils/taskHelpers';
+import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import { useMemo } from 'react';
 
 interface Task {
   id: string;
   name: string;
   description?: string;
-  priority?: number | null;
+  priority?: TaskPriority | null;
   created_at?: string;
   updated_at?: string;
   end_date?: string | null;

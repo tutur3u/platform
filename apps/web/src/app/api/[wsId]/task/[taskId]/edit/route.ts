@@ -1,5 +1,5 @@
-import { TaskPriority } from '@tuturuuu/ai/scheduling/types';
 import { createClient } from '@tuturuuu/supabase/next/server';
+import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import { getCurrentSupabaseUser } from '@tuturuuu/utils/user-helper';
 import { NextResponse } from 'next/server';
 
@@ -75,7 +75,7 @@ export async function PATCH(
     // 5. Update task priority
     const { data: updatedTask, error: updateError } = await supabase
       .from('tasks')
-      .update({ user_defined_priority: validatedPriority })
+      .update({ priority: validatedPriority })
       .eq('id', taskId)
       .select()
       .single();

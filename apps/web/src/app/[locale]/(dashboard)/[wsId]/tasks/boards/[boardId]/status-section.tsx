@@ -3,11 +3,9 @@
 import { EnhancedTaskList } from './enhanced-task-list';
 import { TaskListForm } from './task-list-form';
 import { useDroppable } from '@dnd-kit/core';
-import type {
-  Task,
-  TaskBoardStatus,
-  TaskList,
-} from '@tuturuuu/types/primitives/TaskBoard';
+import type { Task } from '@tuturuuu/types/primitives/Task';
+import type { TaskBoardStatus } from '@tuturuuu/types/primitives/TaskBoard';
+import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {

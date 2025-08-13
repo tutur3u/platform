@@ -1,7 +1,5 @@
 import type { SupportedColor } from './SupportedColors';
 
-export type EventPriority = 'low' | 'medium' | 'high';
-
 export interface CalendarEvent {
   id: string;
   title?: string;
@@ -13,7 +11,6 @@ export interface CalendarEvent {
   local?: boolean;
   location?: string;
   scheduling_note?: string;
-  priority?: EventPriority;
   locked?: boolean;
   google_event_id?: string;
 

@@ -1,0 +1,1 @@
+alter table "public"."workspace_calendar_events" drop column "priority";

@@ -242,7 +242,7 @@ export function EnhancedBoardsView({ data, count }: EnhancedBoardsViewProps) {
       case 'urgent':
         return tasks.filter(
           (task) =>
-            task.priority === 1 &&
+            task.priority === 'critical' &&
             !task.archived &&
             task.listStatus !== 'done' &&
             task.listStatus !== 'closed'

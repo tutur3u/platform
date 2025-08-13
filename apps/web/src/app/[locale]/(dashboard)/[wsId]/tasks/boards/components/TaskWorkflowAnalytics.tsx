@@ -1,5 +1,6 @@
 'use client';
 
+import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import { Card } from '@tuturuuu/ui/card';
 import { Clock } from '@tuturuuu/ui/icons';
 import { cn } from '@tuturuuu/utils/format';
@@ -9,7 +10,7 @@ interface Task {
   id: string;
   name: string;
   description?: string;
-  priority?: number | null;
+  priority?: TaskPriority | null;
   created_at?: string;
   updated_at?: string;
   end_date?: string | null;
@@ -101,10 +102,10 @@ export function TaskWorkflowAnalytics({
 
     // Priority distribution effectiveness
     const highPriorityCompleted = completedTasks.filter(
-      (task) => task.priority === 1 || task.priority === 2
+      (task) => task.priority === 'critical' || task.priority === 'high'
     ).length;
     const totalHighPriority = filteredTasks.filter(
-      (task) => task.priority === 1 || task.priority === 2
+      (task) => task.priority === 'critical' || task.priority === 'high'
     ).length;
     const priorityEfficiency =
       totalHighPriority > 0

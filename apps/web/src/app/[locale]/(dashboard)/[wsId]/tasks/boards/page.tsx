@@ -1,11 +1,9 @@
 import { EnhancedBoardsView } from './enhanced-boards-view';
 import { TaskBoardForm } from './form';
 import { createClient } from '@tuturuuu/supabase/next/server';
-import type {
-  Task,
-  TaskBoard,
-  TaskList,
-} from '@tuturuuu/types/primitives/TaskBoard';
+import type { Task } from '@tuturuuu/types/primitives/Task';
+import type { TaskBoard } from '@tuturuuu/types/primitives/TaskBoard';
+import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { Button } from '@tuturuuu/ui/button';
 import { Plus } from '@tuturuuu/ui/icons';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
@@ -87,7 +85,7 @@ export default async function WorkspaceProjectsPage({
           (list: TaskList & { tasks?: Task[] }) => list.id === task.list_id
         );
         return (
-          task.priority === 1 &&
+          task.priority === 'critical' &&
           !task.archived &&
           taskList?.status !== 'done' &&
           taskList?.status !== 'closed'
@@ -99,7 +97,7 @@ export default async function WorkspaceProjectsPage({
           (list: TaskList & { tasks?: Task[] }) => list.id === task.list_id
         );
         return (
-          task.priority === 2 &&
+          task.priority === 'high' &&
           !task.archived &&
           taskList?.status !== 'done' &&
           taskList?.status !== 'closed'
@@ -111,7 +109,7 @@ export default async function WorkspaceProjectsPage({
           (list: TaskList & { tasks?: Task[] }) => list.id === task.list_id
         );
         return (
-          task.priority === 3 &&
+          task.priority === 'normal' &&
           !task.archived &&
           taskList?.status !== 'done' &&
           taskList?.status !== 'closed'

@@ -1,6 +1,7 @@
 'use client';
 
-import type { Event, Task, TaskPriority } from '@tuturuuu/ai/scheduling/types';
+import type { Event, Task } from '@tuturuuu/ai/scheduling/types';
+import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import { Badge } from '@tuturuuu/ui/badge';
 import {
   Card,
@@ -77,6 +78,10 @@ const getPriorityIcon = (priority: TaskPriority) => {
   }
 };
 
+const isPastDeadline = (event: Event) => {
+  return event.range.end.isBefore(dayjs());
+};
+
 export function ScheduleDisplay({ events, tasks }: ScheduleDisplayProps) {
   const groupedEvents = useMemo(() => {
     return events.reduce(
@@ -106,7 +111,7 @@ export function ScheduleDisplay({ events, tasks }: ScheduleDisplayProps) {
         .map((e) => e.taskId)
     ).size;
 
-    const overdueEvents = events.filter((e) => e.isPastDeadline).length;
+    const overdueEvents = events.filter((e) => isPastDeadline(e)).length;
     const lockedEvents = events.filter((e) => e.locked).length;
 
     // Priority statistics
@@ -168,7 +173,7 @@ export function ScheduleDisplay({ events, tasks }: ScheduleDisplayProps) {
   }
 
   // Overdue summary alert
-  const overdueEventsList = events.filter((e) => e.isPastDeadline);
+  const overdueEventsList = events.filter((e) => isPastDeadline(e));
 
   return (
     <div className="space-y-8">
@@ -374,7 +379,7 @@ export function ScheduleDisplay({ events, tasks }: ScheduleDisplayProps) {
                               className={`group relative rounded-lg border-2 p-4 transition-all duration-200 hover:shadow-lg ${
                                 event.locked
                                   ? 'border-purple-200 bg-gradient-to-r from-purple-50 to-pink-50 dark:border-purple-800 dark:from-purple-950/20 dark:to-pink-950/20'
-                                  : event.isPastDeadline
+                                  : isPastDeadline(event)
                                     ? 'border-red-200 bg-gradient-to-r from-red-50 to-rose-50 dark:border-red-800 dark:from-red-950/20 dark:to-rose-950/20'
                                     : 'border-gray-200 bg-white hover:border-blue-200 hover:bg-gradient-to-r hover:from-blue-50/50 hover:to-purple-50/50 dark:border-gray-700 dark:bg-gray-900 dark:hover:border-blue-700 dark:hover:from-blue-950/20 dark:hover:to-purple-950/20'
                               }`}
@@ -438,7 +443,7 @@ export function ScheduleDisplay({ events, tasks }: ScheduleDisplayProps) {
                                       </Tooltip>
                                     )}
 
-                                    {event.isPastDeadline && (
+                                    {isPastDeadline(event) && (
                                       <Tooltip>
                                         <TooltipTrigger>
                                           <Badge
