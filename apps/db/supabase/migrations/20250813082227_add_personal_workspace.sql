@@ -9,6 +9,8 @@ create or replace function public.is_personal_workspace(p_ws_id uuid)
 returns boolean
 language sql
 stable
+security definer
+set search_path = public
 as $function$
   select coalesce(
     (select personal from public.workspaces where id = p_ws_id),
@@ -24,6 +26,8 @@ create or replace function public.is_workspace_owner(p_ws_id uuid, p_user_id uui
 returns boolean
 language sql
 stable
+security definer
+set search_path = public
 as $function$
   select exists (
     select 1
@@ -41,6 +45,8 @@ create or replace function public.get_workspace_member_count(p_ws_id uuid)
 returns integer
 language sql
 stable
+security definer
+set search_path = public
 as $function$
   select coalesce(
     (
@@ -117,3 +123,5 @@ to authenticated
 with check ((((is_personal_workspace(ws_id) = false) OR is_workspace_owner(ws_id, auth.uid())) AND (is_member_invited(auth.uid(), ws_id) OR (is_org_member(auth.uid(), ws_id) AND ((get_user_role(auth.uid(), ws_id) = 'ADMIN'::text) OR (get_user_role(auth.uid(), ws_id) = 'OWNER'::text))) OR (EXISTS ( SELECT 1
    FROM workspace_email_invites wei
   WHERE (lower(wei.email) = lower(auth.email())))))));
+
+set check_function_bodies = on;
