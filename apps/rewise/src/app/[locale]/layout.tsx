@@ -3,7 +3,7 @@ import { siteConfig } from '@/constants/configs';
 import { supportedLocales } from '@/i18n/routing';
 import { TailwindIndicator } from '@tuturuuu/ui/custom/tailwind-indicator';
 import '@tuturuuu/ui/globals.css';
-import { Toaster } from '@tuturuuu/ui/toaster';
+import { Toaster } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
 import { Analytics as VercelAnalytics } from '@vercel/analytics/react';
 import { SpeedInsights as VercelInsights } from '@vercel/speed-insights/next';

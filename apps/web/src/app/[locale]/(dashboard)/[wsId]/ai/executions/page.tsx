@@ -9,6 +9,7 @@ import { Separator } from '@tuturuuu/ui/separator';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { getTranslations } from 'next-intl/server';
+import { redirect } from 'next/navigation';
 
 interface SearchParams {
   q?: string;
@@ -35,12 +36,8 @@ export default async function WorkspaceAIExecutionsPage({
     wsId,
   });
 
-  if (
-    wsId !== ROOT_WORKSPACE_ID ||
-    withoutPermission('manage_workspace_roles')
-  ) {
-    return <div>You are not allowed to access this page</div>;
-  }
+  if (wsId !== ROOT_WORKSPACE_ID || withoutPermission('manage_workspace_roles'))
+    redirect(`/${wsId}`);
 
   // Fetch data in parallel for better performance
   const [executionData, analyticsData, allTimeStats] = await Promise.all([

@@ -12,19 +12,19 @@
     ".": "./src/core/index.ts"
   },
   "dependencies": {
-    "googleapis": "^155.0.0",
+    "googleapis": "^155.0.1",
     "google-auth-library": "^10.2.1"
   },
   "devDependencies": {
     "@tuturuuu/eslint-config": "workspace:*",
     "@tuturuuu/types": "workspace:*",
     "@tuturuuu/typescript-config": "workspace:*",
-    "@types/node": "^24.2.0",
-    "@types/react": "^19.1.9",
-    "@vitejs/plugin-react": "^4.7.0",
+    "@types/node": "^24.2.1",
+    "@types/react": "^19.1.10",
+    "@vitejs/plugin-react": "^5.0.0",
     "@vitest/coverage-v8": "^3.2.4",
     "typescript": "^5.9.2",
-    "vite": "^7.0.6"
+    "vite": "^7.1.2"
   },
   "packageManager": "bun@1.2.19"
 }

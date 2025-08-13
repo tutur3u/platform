@@ -1,5 +1,6 @@
 'use client';
 
+import { TaskPriority } from '@tuturuuu/ai/scheduling/types';
 import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
@@ -13,8 +14,6 @@ import {
 import { Switch } from '@tuturuuu/ui/switch';
 import { PlusIcon, Trash2 } from 'lucide-react';
 import { useState } from 'react';
-
-export type TaskPriority = 'low' | 'medium' | 'high';
 
 export type TaskType = {
   id: string;
@@ -39,7 +38,7 @@ export const defaultTaskSettings: TaskSettingsData = {
       name: 'Quick Task',
       defaultDuration: 30,
       defaultDeadlineOffset: 1,
-      defaultPriority: 'medium',
+      defaultPriority: 'normal',
     },
     {
       id: '2',
@@ -53,7 +52,7 @@ export const defaultTaskSettings: TaskSettingsData = {
       name: 'Research',
       defaultDuration: 60,
       defaultDeadlineOffset: 3,
-      defaultPriority: 'medium',
+      defaultPriority: 'normal',
     },
   ],
   autoScheduleTasks: true,
@@ -118,7 +117,7 @@ export function TaskSettings({ value, onChange }: TaskSettingsProps) {
       name: 'New Task Type',
       defaultDuration: 60,
       defaultDeadlineOffset: 1,
-      defaultPriority: 'medium',
+      defaultPriority: 'normal',
     };
 
     onChange({
@@ -315,8 +314,9 @@ export function TaskSettings({ value, onChange }: TaskSettingsProps) {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="low">Low</SelectItem>
-                      <SelectItem value="medium">Medium</SelectItem>
+                      <SelectItem value="normal">Normal</SelectItem>
                       <SelectItem value="high">High</SelectItem>
+                      <SelectItem value="critical">Critical</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

@@ -113,6 +113,17 @@ export async function POST(
       );
     }
 
+    const { error: assignError } = await supabase
+      .from('task_assignees')
+      .insert({
+        task_id: dbTask.id,
+        user_id: user.id,
+      });
+
+    if (assignError) {
+      console.error('Error assigning task to creator:', assignError);
+    }
+
     // 5. Convert task to chunkable format
     const taskToSplit: Task = {
       id: dbTask.id,
@@ -130,12 +141,14 @@ export async function POST(
       events: [],
     };
 
-    const events = prepareTaskChunks([taskToSplit]);
-    // console.log('Prepared task chunks:', events);
+    const taskChunks = prepareTaskChunks([taskToSplit]);
+    console.log('Prepared task chunks:', taskChunks);
+
     const { events: newScheduledEvents } = scheduleTasks(
-      events,
+      taskChunks,
       defaultActiveHours
     );
+
     if (newScheduledEvents.length > 0) {
       const insertData = newScheduledEvents.map((event) => ({
         ws_id: wsId,

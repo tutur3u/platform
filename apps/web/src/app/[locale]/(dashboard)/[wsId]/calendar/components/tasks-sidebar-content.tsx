@@ -2,33 +2,23 @@
 
 import Chat from '../../chat/chat';
 import type { ExtendedWorkspaceTask } from '../../time-tracker/types';
+import PriorityView from './priority-view';
 import TimeTracker from './time-tracker';
 import type { AIChat } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
 import { Dialog } from '@tuturuuu/ui/dialog';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@tuturuuu/ui/dropdown-menu';
-import {
   Bot,
-  Calendar,
-  CheckCircle2,
-  Flag,
   LayoutDashboard,
-  MoreHorizontal,
   PanelLeftClose,
   PanelRightClose,
-  Search,
-  Timer,
 } from '@tuturuuu/ui/icons';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { useState } from 'react';
 
 interface TasksSidebarContentProps {
   wsId: string;
+  assigneeId: string;
   tasks?: ExtendedWorkspaceTask[]; // Accept tasks as a prop
   hasKeys?: { openAI: boolean; anthropic: boolean; google: boolean };
   chats?: AIChat[];
@@ -39,6 +29,7 @@ interface TasksSidebarContentProps {
 
 export default function TasksSidebarContent({
   wsId,
+  assigneeId,
   tasks = [],
   hasKeys = { openAI: false, anthropic: false, google: false },
   chats = [],
@@ -68,7 +59,7 @@ export default function TasksSidebarContent({
 
   return (
     <Dialog>
-      <div className="@container ml-2 flex hidden h-full max-h-[100vh] w-1/3 flex-col rounded-lg border border-border bg-background/60 text-foreground shadow-xl backdrop-blur-md transition-all duration-500 ease-out slide-in-from-right-5 xl:flex">
+      <div className="@container ml-2 flex h-full max-h-[100vh] w-1/3 flex-col rounded-lg border border-border bg-background/60 text-foreground shadow-xl backdrop-blur-md transition-all duration-500 ease-out slide-in-from-right-5 xl:flex">
         {/* Header */}
         <div className="@container flex items-center justify-between rounded-t-lg border-b border-border/50 bg-gradient-to-r from-background/80 to-background/60 px-4 py-3 backdrop-blur-sm">
           <div className="flex w-full items-center justify-between gap-1">
@@ -131,7 +122,11 @@ export default function TasksSidebarContent({
             className="m-0 flex min-h-0 flex-1 flex-col space-y-4 overflow-y-auto p-4 pb-2 duration-300 animate-in fade-in-50"
           >
             <div className="mx-auto w-full max-w-lg p-0">
-              <PriorityView allTasks={tasks} />
+              <PriorityView
+                wsId={wsId}
+                allTasks={tasks}
+                assigneeId={assigneeId}
+              />
             </div>
           </TabsContent>
 
@@ -158,312 +153,4 @@ export default function TasksSidebarContent({
       </div>
     </Dialog>
   );
-}
-
-// Add PriorityView component for the new tab
-function PriorityView({ allTasks }: { allTasks: ExtendedWorkspaceTask[] }) {
-  const [search, setSearch] = useState('');
-  const [isSearchFocused, setIsSearchFocused] = useState(false);
-
-  const PRIORITY_LABELS = {
-    low: 'Low priority',
-    normal: 'Normal priority',
-    high: 'High priority',
-    critical: 'Critical',
-  };
-
-  const PRIORITY_COLORS = {
-    low: 'from-green-500/20 to-green-600/20 border-green-200 dark:border-green-800',
-    normal:
-      'from-blue-500/20 to-blue-600/20 border-blue-200 dark:border-blue-800',
-    high: 'from-orange-500/20 to-orange-600/20 border-orange-200 dark:border-orange-800',
-    critical:
-      'from-red-500/20 to-red-600/20 border-red-200 dark:border-red-800',
-  };
-
-  const PRIORITY_ICONS = {
-    low: '😊',
-    normal: '😐',
-    high: '😠',
-    critical: '😡',
-  };
-
-  // Group tasks by priority
-  const grouped: { [key: string]: ExtendedWorkspaceTask[] } = {
-    low: [],
-    normal: [],
-    high: [],
-    critical: [],
-  };
-
-  allTasks?.forEach((task) => {
-    const priority = task.user_defined_priority || 'normal';
-    if (grouped[priority]) {
-      grouped[priority].push(task);
-    } else {
-      grouped.normal?.push(task);
-    }
-  });
-
-  // Filter by search
-  const filteredGrouped = Object.fromEntries(
-    Object.entries(grouped).map(([key, tasks]) => [
-      key,
-      tasks.filter((task) =>
-        search
-          ? task.name?.toLowerCase().includes(search.toLowerCase()) ||
-            task.description?.toLowerCase().includes(search.toLowerCase())
-          : true
-      ),
-    ])
-  );
-
-  const handlePriorityChange = async (taskId: string, newPriority: string) => {
-    // TODO: Implement API call to update task priority
-    console.log('Updating task priority:', taskId, newPriority);
-    // This would typically make an API call to update the task
-    // await updateTaskPriority(taskId, newPriority);
-  };
-
-  return (
-    <div className="space-y-4">
-      {/* Enhanced Search */}
-      <div className="relative mb-6" style={{ marginLeft: '-1rem' }}>
-        <div
-          className={`relative overflow-hidden rounded-xl border transition-all duration-300 ${
-            isSearchFocused
-              ? 'border-blue-400 bg-background shadow-lg ring-2 ring-blue-400/20'
-              : 'border-border bg-background/50 hover:bg-background/80'
-          }`}
-        >
-          <div className="flex items-center">
-            <Search
-              className={`ml-3 h-4 w-4 transition-colors duration-200 ${
-                isSearchFocused ? 'text-blue-500' : 'text-muted-foreground'
-              }`}
-            />
-            <input
-              className="w-full bg-transparent px-3 py-3 text-sm placeholder-muted-foreground outline-none"
-              placeholder="Search tasks..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              onFocus={() => setIsSearchFocused(true)}
-              onBlur={() => setIsSearchFocused(false)}
-            />
-          </div>
-          {isSearchFocused && (
-            <div className="absolute inset-0 -z-10 animate-pulse bg-gradient-to-r from-blue-500/5 to-purple-500/5" />
-          )}
-        </div>
-      </div>
-
-      {/* Priority Groups */}
-      <div className="space-y-4">
-        {Object.entries(PRIORITY_LABELS).map(([key, label], index) => {
-          const tasks = filteredGrouped[key] || [];
-          const colorClasses =
-            PRIORITY_COLORS[key as keyof typeof PRIORITY_COLORS];
-          const icon = PRIORITY_ICONS[key as keyof typeof PRIORITY_ICONS];
-
-          return (
-            <div
-              key={key}
-              className="group duration-300 animate-in slide-in-from-bottom-2"
-              style={{ animationDelay: `${index * 100}ms` }}
-            >
-              <div className="mb-3 flex items-center gap-2">
-                <span className="text-lg">{icon}</span>
-                <h3 className="font-semibold text-foreground">{label}</h3>
-                <span className="rounded-full bg-muted px-2 py-1 text-xs text-muted-foreground transition-colors duration-200 group-hover:bg-accent">
-                  {tasks.length}
-                </span>
-              </div>
-
-              {tasks.length === 0 ? (
-                <div className="rounded-lg border border-dashed border-border/50 p-6 text-center transition-all duration-200 hover:border-border">
-                  <div className="text-sm text-muted-foreground">
-                    No tasks found
-                  </div>
-                </div>
-              ) : (
-                <div
-                  className={`overflow-hidden rounded-xl border bg-gradient-to-br ${colorClasses} shadow-sm transition-all duration-300 hover:shadow-md`}
-                >
-                  <div className="bg-background/80 p-4 backdrop-blur-sm">
-                    <div className="mb-3 flex items-center justify-between">
-                      <div className="font-semibold">Tasks</div>
-                      <Timer className="h-4 w-4 text-muted-foreground" />
-                    </div>
-
-                    <div className="space-y-2">
-                      {tasks.map((task, taskIndex) => (
-                        <div
-                          key={task.id}
-                          className="group/task relative overflow-hidden rounded-lg border border-border/50 bg-background/60 p-3 transition-all duration-200 hover:border-border hover:bg-background/80 hover:shadow-sm"
-                          style={{ animationDelay: `${taskIndex * 50}ms` }}
-                        >
-                          <div className="absolute inset-0 -z-10 bg-gradient-to-r from-accent/5 to-accent/10 opacity-0 transition-opacity duration-200 group-hover/task:opacity-100" />
-                          <div className="flex h-full min-h-[64px] flex-col">
-                            <div className="flex w-full items-start justify-between">
-                              <div className="min-w-0 flex-1">
-                                <div className="truncate font-medium text-foreground transition-colors duration-200 group-hover/task:text-blue-600">
-                                  {task.name || (
-                                    <span className="text-muted-foreground italic">
-                                      Untitled task
-                                    </span>
-                                  )}
-                                </div>
-                                {/* Due date (if present) */}
-                                {task.due_date && (
-                                  <div className="mt-1 inline-flex items-center gap-1 rounded bg-red-100 px-2 py-0.5 text-xs text-red-700 dark:bg-red-900/30 dark:text-red-300">
-                                    <Calendar className="h-3 w-3" />
-                                    Due {formatDueDate(task.due_date)}
-                                  </div>
-                                )}
-                              </div>
-                              {/* Top right icons */}
-                              <div className="ml-3 flex items-center gap-2">
-                                {/* Priority Edit Dropdown */}
-                                <DropdownMenu>
-                                  <DropdownMenuTrigger asChild>
-                                    <button
-                                      type="button"
-                                      className="ml-1 rounded p-1 hover:bg-accent/30"
-                                      aria-label="Edit priority"
-                                    >
-                                      <Flag className="h-4 w-4 text-muted-foreground" />
-                                    </button>
-                                  </DropdownMenuTrigger>
-                                  <DropdownMenuContent align="start">
-                                    <DropdownMenuItem
-                                      onClick={() =>
-                                        handlePriorityChange(
-                                          task.id,
-                                          'critical'
-                                        )
-                                      }
-                                    >
-                                      😡 Critical
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                      onClick={() =>
-                                        handlePriorityChange(task.id, 'high')
-                                      }
-                                    >
-                                      😠 High
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                      onClick={() =>
-                                        handlePriorityChange(task.id, 'normal')
-                                      }
-                                    >
-                                      😐 Normal
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                      onClick={() =>
-                                        handlePriorityChange(task.id, 'low')
-                                      }
-                                    >
-                                      😊 Low
-                                    </DropdownMenuItem>
-                                  </DropdownMenuContent>
-                                </DropdownMenu>
-                                {/* More Actions Dropdown */}
-                                <DropdownMenu>
-                                  <DropdownMenuTrigger asChild>
-                                    <button
-                                      type="button"
-                                      className="rounded p-1 hover:bg-accent/30"
-                                      aria-label="More actions"
-                                    >
-                                      <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
-                                    </button>
-                                  </DropdownMenuTrigger>
-                                  <DropdownMenuContent align="end">
-                                    <DropdownMenuItem
-                                      onClick={() => {
-                                        /* handleEdit() */
-                                      }}
-                                    >
-                                      Edit
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                      onClick={() => {
-                                        /* handleViewDetails() */
-                                      }}
-                                    >
-                                      View details
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                      onClick={() => {
-                                        /* handleDueDate() */
-                                      }}
-                                    >
-                                      Due date
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                      onClick={() => {
-                                        /* handleAddTime() */
-                                      }}
-                                    >
-                                      Add time
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                      onClick={() => {
-                                        /* handleLogWork() */
-                                      }}
-                                    >
-                                      Log work
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                      onClick={() => {
-                                        /* handleMarkDone() */
-                                      }}
-                                    >
-                                      Mark done
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                      onClick={() => {
-                                        /* handleDelete() */
-                                      }}
-                                      className="text-red-600"
-                                    >
-                                      Delete
-                                    </DropdownMenuItem>
-                                  </DropdownMenuContent>
-                                </DropdownMenu>
-                              </div>
-                            </div>
-                            {/* Bottom row: Ready left, time right */}
-                            <div className="mt-2 flex items-center justify-between">
-                              <div className="inline-flex items-center gap-1 rounded-md bg-green-100 px-2 py-1 text-xs text-green-700 dark:bg-green-900/30 dark:text-green-400">
-                                <CheckCircle2 className="h-3 w-3" />
-                                Ready
-                              </div>
-                              {task.total_duration && (
-                                <div className="rounded-md bg-accent/50 px-2 py-1 font-mono text-xs text-muted-foreground transition-colors duration-200 group-hover/task:bg-accent">
-                                  {Math.floor(task.total_duration || 0)}h{' '}
-                                  {((task.total_duration || 0) * 60) % 60}m
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-function formatDueDate(date: string | Date) {
-  // expects date as string or Date, returns MM/DD or DD/MM as you prefer
-  const d = new Date(date);
-  return `${d.getMonth() + 1}/${d.getDate()}`;
 }

@@ -51,8 +51,10 @@ import {
   CalendarClock,
   CalendarDays,
   Clock,
+  ListTodo,
   Paintbrush,
   Palette,
+  Sparkles,
 } from 'lucide-react';
 import * as React from 'react';
 
@@ -88,18 +90,18 @@ const settingsSections: SettingsSection[] = [
     icon: CalendarDays,
     description: 'Connect your Google Calendar to your calendar',
   },
-  // {
-  //   id: 'smartScheduling',
-  //   name: 'Smart Scheduling',
-  //   icon: Sparkles,
-  //   description: 'Configure AI-powered scheduling preferences',
-  // },
-  // {
-  //   id: 'taskSettings',
-  //   name: 'Task Settings',
-  //   icon: ListTodo,
-  //   description: 'Manage task types and scheduling behavior',
-  // },
+  {
+    id: 'smartScheduling',
+    name: 'Smart Scheduling',
+    icon: Sparkles,
+    description: 'Configure AI-powered scheduling preferences',
+  },
+  {
+    id: 'taskSettings',
+    name: 'Task Settings',
+    icon: ListTodo,
+    description: 'Manage task types and scheduling behavior',
+  },
   {
     id: 'appearance',
     name: 'Appearance',
