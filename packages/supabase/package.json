@@ -35,5 +35,5 @@
     "./next/common": "./src/next/common.ts",
     "./next/client": "./src/next/client.ts"
   },
-  "packageManager": "bun@1.2.19"
+  "packageManager": "bun@1.2.20"
 }

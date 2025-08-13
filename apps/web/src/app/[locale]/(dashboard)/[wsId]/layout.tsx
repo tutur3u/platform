@@ -1,6 +1,7 @@
 import NavbarActions from '../../navbar-actions';
 import { UserNav } from '../../user-nav';
 import InvitationCard from './invitation-card';
+import PersonalWorkspacePrompt from './personal-workspace-prompt';
 import { Structure } from './structure';
 import type { NavLink } from '@/components/navigation';
 import {
@@ -81,18 +82,19 @@ export default async function Layout({ children, params }: LayoutProps) {
   const t = await getTranslations();
   const { wsId } = await params;
 
+  const workspace = await getWorkspace(wsId);
+
   const { withoutPermission } = await getPermissions({
-    wsId,
+    wsId: workspace.id,
   });
 
   const ENABLE_AI_ONLY = await verifySecret({
     forceAdmin: true,
-    wsId,
+    wsId: workspace.id,
     name: 'ENABLE_AI_ONLY',
     value: 'true',
   });
 
-  const workspace = await getWorkspace(wsId);
   const user = await getCurrentUser();
 
   const navLinks: (NavLink | null)[] = [
@@ -114,7 +116,7 @@ export default async function Layout({ children, params }: LayoutProps) {
             ENABLE_AI_ONLY ||
             !(await verifySecret({
               forceAdmin: true,
-              wsId,
+              wsId: workspace.id,
               name: 'ENABLE_TASKS',
               value: 'true',
             })) ||
@@ -129,7 +131,7 @@ export default async function Layout({ children, params }: LayoutProps) {
             ENABLE_AI_ONLY ||
             !(await verifySecret({
               forceAdmin: true,
-              wsId,
+              wsId: workspace.id,
               name: 'ENABLE_CHAT',
               value: 'true',
             })) ||
@@ -151,7 +153,7 @@ export default async function Layout({ children, params }: LayoutProps) {
           disabled:
             !(await verifySecret({
               forceAdmin: true,
-              wsId,
+              wsId: workspace.id,
               name: 'ENABLE_AI',
               value: 'true',
             })) || withoutPermission('ai_lab'),
@@ -164,7 +166,7 @@ export default async function Layout({ children, params }: LayoutProps) {
           disabled:
             !(await verifySecret({
               forceAdmin: true,
-              wsId,
+              wsId: workspace.id,
               name: 'ENABLE_AI',
               value: 'true',
             })) || withoutPermission('ai_lab'),
@@ -177,7 +179,7 @@ export default async function Layout({ children, params }: LayoutProps) {
           disabled:
             !(await verifySecret({
               forceAdmin: true,
-              wsId,
+              wsId: workspace.id,
               name: 'ENABLE_AI',
               value: 'true',
             })) || withoutPermission('ai_lab'),
@@ -190,7 +192,7 @@ export default async function Layout({ children, params }: LayoutProps) {
           disabled:
             !(await verifySecret({
               forceAdmin: true,
-              wsId,
+              wsId: workspace.id,
               name: 'ENABLE_AI',
               value: 'true',
             })) || withoutPermission('ai_lab'),
@@ -203,7 +205,7 @@ export default async function Layout({ children, params }: LayoutProps) {
           disabled:
             !(await verifySecret({
               forceAdmin: true,
-              wsId,
+              wsId: workspace.id,
               name: 'ENABLE_AI',
               value: 'true',
             })) || withoutPermission('ai_lab'),
@@ -216,7 +218,7 @@ export default async function Layout({ children, params }: LayoutProps) {
           disabled:
             !(await verifySecret({
               forceAdmin: true,
-              wsId,
+              wsId: workspace.id,
               name: 'ENABLE_AI',
               value: 'true',
             })) || withoutPermission('ai_lab'),
@@ -322,7 +324,7 @@ export default async function Layout({ children, params }: LayoutProps) {
             (ENABLE_AI_ONLY ||
               !(await verifySecret({
                 forceAdmin: true,
-                wsId,
+                wsId: workspace.id,
                 name: 'ENABLE_EMAIL_SENDING',
                 value: 'true',
               })) ||
@@ -338,7 +340,7 @@ export default async function Layout({ children, params }: LayoutProps) {
             (ENABLE_AI_ONLY ||
               !(await verifySecret({
                 forceAdmin: true,
-                wsId,
+                wsId: workspace.id,
                 name: 'ENABLE_EMAIL_SENDING',
                 value: 'true',
               })) ||
@@ -352,7 +354,7 @@ export default async function Layout({ children, params }: LayoutProps) {
           disabled:
             !(await verifySecret({
               forceAdmin: true,
-              wsId,
+              wsId: workspace.id,
               name: 'ENABLE_DRIVE',
               value: 'true',
             })) || withoutPermission('manage_drive'),
@@ -366,7 +368,7 @@ export default async function Layout({ children, params }: LayoutProps) {
             ENABLE_AI_ONLY ||
             !(await verifySecret({
               forceAdmin: true,
-              wsId,
+              wsId: workspace.id,
               name: 'ENABLE_DOCS',
               value: 'true',
             })) ||
@@ -381,7 +383,7 @@ export default async function Layout({ children, params }: LayoutProps) {
             ENABLE_AI_ONLY ||
             !(await verifySecret({
               forceAdmin: true,
-              wsId,
+              wsId: workspace.id,
               name: 'ENABLE_SLIDES',
               value: 'true',
             })),
@@ -395,7 +397,7 @@ export default async function Layout({ children, params }: LayoutProps) {
             ENABLE_AI_ONLY ||
             !(await verifySecret({
               forceAdmin: true,
-              wsId,
+              wsId: workspace.id,
               name: 'ENABLE_EDUCATION',
               value: 'true',
             })) ||
@@ -410,7 +412,7 @@ export default async function Layout({ children, params }: LayoutProps) {
             ENABLE_AI_ONLY ||
             !(await verifySecret({
               forceAdmin: true,
-              wsId,
+              wsId: workspace.id,
               name: 'ENABLE_WHITEBOARDS',
               value: 'true',
             })) ||
@@ -437,7 +439,7 @@ export default async function Layout({ children, params }: LayoutProps) {
             wsId !== ROOT_WORKSPACE_ID &&
             !(await verifySecret({
               forceAdmin: true,
-              wsId,
+              wsId: workspace.id,
               name: 'ENABLE_LINK_SHORTENER',
               value: 'true',
             })),
@@ -457,7 +459,7 @@ export default async function Layout({ children, params }: LayoutProps) {
             ENABLE_AI_ONLY ||
             !(await verifySecret({
               forceAdmin: true,
-              wsId,
+              wsId: workspace.id,
               name: 'ENABLE_USERS',
               value: 'true',
             })) ||
@@ -472,7 +474,7 @@ export default async function Layout({ children, params }: LayoutProps) {
             ENABLE_AI_ONLY ||
             !(await verifySecret({
               forceAdmin: true,
-              wsId,
+              wsId: workspace.id,
               name: 'ENABLE_FINANCE',
               value: 'true',
             })) ||
@@ -486,7 +488,7 @@ export default async function Layout({ children, params }: LayoutProps) {
             ENABLE_AI_ONLY ||
             !(await verifySecret({
               forceAdmin: true,
-              wsId,
+              wsId: workspace.id,
               name: 'ENABLE_INVENTORY',
               value: 'true',
             })) ||
@@ -515,20 +517,25 @@ export default async function Layout({ children, params }: LayoutProps) {
           href: `/${wsId}/settings`,
           icon: <Bolt className="h-5 w-5" />,
         },
-        {
-          title: t('workspace-settings-layout.members'),
-          href: `/${wsId}/members`,
-          icon: <Users className="h-5 w-5" />,
-          disabled:
-            ENABLE_AI_ONLY || withoutPermission('manage_workspace_members'),
-        },
-        {
-          title: t('workspace-settings-layout.workspace_roles'),
-          href: `/${wsId}/roles`,
-          icon: <UserLock className="h-5 w-5" />,
-          disabled:
-            ENABLE_AI_ONLY || withoutPermission('manage_workspace_roles'),
-        },
+        ...(wsId !== 'personal'
+          ? [
+              {
+                title: t('workspace-settings-layout.members'),
+                href: `/${wsId}/members`,
+                icon: <Users className="h-5 w-5" />,
+                disabled:
+                  ENABLE_AI_ONLY ||
+                  withoutPermission('manage_workspace_members'),
+              },
+              {
+                title: t('workspace-settings-layout.workspace_roles'),
+                href: `/${wsId}/roles`,
+                icon: <UserLock className="h-5 w-5" />,
+                disabled:
+                  ENABLE_AI_ONLY || withoutPermission('manage_workspace_roles'),
+              },
+            ]
+          : []),
         {
           title: t('workspace-settings-layout.reports'),
           href: `/${wsId}/settings/reports`,
@@ -557,7 +564,6 @@ export default async function Layout({ children, params }: LayoutProps) {
           disabled: withoutPermission('manage_workspace_secrets'),
           requireRootMember: true,
         },
-
         {
           title: t('workspace-settings-layout.infrastructure'),
           href: `/${wsId}/infrastructure`,
@@ -587,7 +593,7 @@ export default async function Layout({ children, params }: LayoutProps) {
           disabled: withoutPermission('manage_workspace_audit_logs'),
           requireRootWorkspace: true,
         },
-      ],
+      ].filter(Boolean) as NavLink[],
     },
   ];
 
@@ -635,8 +641,60 @@ export default async function Layout({ children, params }: LayoutProps) {
       </div>
     );
 
+  // Personal workspace prompt data
+  const { data: existingPersonal } = await supabase
+    .from('workspaces')
+    .select('id')
+    .eq('personal', true)
+    .eq('creator_id', user.id)
+    .maybeSingle();
+
+  let eligibleWorkspaces: { id: string; name: string | null }[] | undefined;
+
+  if (!existingPersonal) {
+    const { data: candidates } = await supabase
+      .from('workspaces')
+      .select('id, name, creator_id, workspace_members(count)')
+      .eq('creator_id', user.id);
+    eligibleWorkspaces = (candidates || []).filter((ws) => {
+      const memberCount = ws.workspace_members?.[0]?.count ?? 0;
+      return memberCount === 1;
+    });
+  }
+
+  const SHOW_PERSONAL_WORKSPACE_PROMPT =
+    !existingPersonal &&
+    (user.email?.endsWith('@tuturuuu.com') ||
+      user.email?.endsWith('@xwf.tuturuuu.com'));
+
+  if (SHOW_PERSONAL_WORKSPACE_PROMPT && eligibleWorkspaces?.length === 0)
+    return (
+      <PersonalWorkspacePrompt
+        eligibleWorkspaces={eligibleWorkspaces || []}
+        title={t('common.personal_account')}
+        description={t('common.set_up_personal_workspace')}
+        nameRule={t('common.personal_workspace_naming_rule')}
+        createLabel={t('common.create_workspace')}
+        markLabel={t('common.mark_as_personal')}
+        selectPlaceholder={t('common.select_workspace')}
+      />
+    );
+
   return (
     <SidebarProvider initialBehavior={sidebarBehavior}>
+      {SHOW_PERSONAL_WORKSPACE_PROMPT && (
+        <div className="px-2 pt-2 md:px-4 md:pt-3">
+          <PersonalWorkspacePrompt
+            eligibleWorkspaces={eligibleWorkspaces || []}
+            title={t('common.personal_account')}
+            description={t('common.set_up_personal_workspace')}
+            nameRule={t('common.personal_workspace_naming_rule')}
+            createLabel={t('common.create_workspace')}
+            markLabel={t('common.mark_as_personal')}
+            selectPlaceholder={t('common.select_workspace')}
+          />
+        </div>
+      )}
       <Structure
         wsId={wsId}
         user={user}
