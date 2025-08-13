@@ -1,6 +1,7 @@
 import NavbarActions from '../../navbar-actions';
 import { UserNav } from '../../user-nav';
 import InvitationCard from './invitation-card';
+import PersonalWorkspacePrompt from './personal-workspace-prompt';
 import { Structure } from './structure';
 import type { NavLink } from '@/components/navigation';
 import {
@@ -636,8 +637,41 @@ export default async function Layout({ children, params }: LayoutProps) {
       </div>
     );
 
+  // Personal workspace prompt data
+  const { data: existingPersonal } = await supabase
+    .from('workspaces')
+    .select('id')
+    .eq('personal', true)
+    .eq('creator_id', user.id)
+    .maybeSingle();
+
+  let eligibleWorkspaces: { id: string; name: string | null }[] | undefined;
+  if (!existingPersonal) {
+    const { data: candidates } = await supabase
+      .from('workspaces')
+      .select('id, name, creator_id, workspace_members(count)')
+      .eq('creator_id', user.id);
+    eligibleWorkspaces = (candidates || []).filter((ws) => {
+      const memberCount = ws.workspace_members?.[0]?.count ?? 0;
+      return memberCount === 1;
+    });
+  }
+
   return (
     <SidebarProvider initialBehavior={sidebarBehavior}>
+      {!existingPersonal && (
+        <div className="px-2 pt-2 md:px-4 md:pt-3">
+          <PersonalWorkspacePrompt
+            eligibleWorkspaces={eligibleWorkspaces || []}
+            title={t('common.personal_account')}
+            description={t('common.set_up_personal_workspace')}
+            nameRule={t('common.personal_workspace_naming_rule' as never)}
+            createLabel={t('common.create_workspace')}
+            markLabel={t('common.mark_as_personal')}
+            selectPlaceholder={t('common.select_workspace')}
+          />
+        </div>
+      )}
       <Structure
         wsId={wsId}
         user={user}
