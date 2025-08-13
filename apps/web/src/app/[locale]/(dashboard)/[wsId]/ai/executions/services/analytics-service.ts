@@ -80,7 +80,7 @@ export class AIExecutionAnalyticsService {
       params.p_exchange_rate = options.exchangeRate;
 
     const { data, error } = await client.rpc(
-      'get_ai_execution_summary',
+      'get_ai_execution_summary_v2',
       params as {
         p_ws_id: string;
         p_start_date?: string;
@@ -118,7 +118,7 @@ export class AIExecutionAnalyticsService {
     if (options?.pricing) params.p_pricing = options.pricing;
 
     const { data, error } = await client.rpc(
-      'get_ai_execution_daily_stats',
+      'get_ai_execution_daily_stats_v2',
       params as {
         p_ws_id: string;
         p_start_date?: string;
@@ -155,7 +155,7 @@ export class AIExecutionAnalyticsService {
     if (options?.pricing) params.p_pricing = options.pricing;
 
     const { data, error } = await client.rpc(
-      'get_ai_execution_model_stats',
+      'get_ai_execution_model_stats_v2',
       params as {
         p_ws_id: string;
         p_start_date?: string;
@@ -190,7 +190,7 @@ export class AIExecutionAnalyticsService {
       params.p_exchange_rate = options.exchangeRate;
 
     const { data, error } = await client.rpc(
-      'get_ai_execution_monthly_cost',
+      'get_ai_execution_monthly_cost_v2',
       params as {
         p_ws_id: string;
         p_year?: number;
@@ -290,9 +290,9 @@ export class AIExecutionAnalyticsService {
     const client = await this.getClient();
 
     const [summary, dailyStats, modelStats] = await Promise.all([
-      // Call database functions directly with NULL dates for all-time data
+      // Call v2 database functions directly with NULL dates for all-time data
       client
-        .rpc('get_ai_execution_summary', {
+        .rpc('get_ai_execution_summary_v2', {
           p_ws_id: wsId,
           p_start_date: undefined,
           p_end_date: undefined,
@@ -305,7 +305,7 @@ export class AIExecutionAnalyticsService {
           return data?.[0] || null;
         }),
       client
-        .rpc('get_ai_execution_daily_stats', {
+        .rpc('get_ai_execution_daily_stats_v2', {
           p_ws_id: wsId,
           p_start_date: undefined,
           p_end_date: undefined,
@@ -318,7 +318,7 @@ export class AIExecutionAnalyticsService {
           return data || [];
         }),
       client
-        .rpc('get_ai_execution_model_stats', {
+        .rpc('get_ai_execution_model_stats_v2', {
           p_ws_id: wsId,
           p_start_date: undefined,
           p_end_date: undefined,

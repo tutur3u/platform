@@ -164,19 +164,13 @@ export type Database = {
             };
         Returns: string;
       };
-      get_ai_execution_daily_stats: {
-        Args:
-          | {
-              p_end_date?: string;
-              p_pricing?: Json;
-              p_start_date?: string;
-              p_ws_id: string;
-            }
-          | {
-              p_end_date?: string;
-              p_start_date?: string;
-              p_ws_id: string;
-            };
+      get_ai_execution_daily_stats_v2: {
+        Args: {
+          p_end_date?: string;
+          p_pricing?: Json;
+          p_start_date?: string;
+          p_ws_id: string;
+        };
         Returns: {
           date: string;
           executions: number;
@@ -187,19 +181,13 @@ export type Database = {
           total_tokens: number;
         }[];
       };
-      get_ai_execution_model_stats: {
-        Args:
-          | {
-              p_end_date?: string;
-              p_pricing?: Json;
-              p_start_date?: string;
-              p_ws_id: string;
-            }
-          | {
-              p_end_date?: string;
-              p_start_date?: string;
-              p_ws_id: string;
-            };
+      get_ai_execution_model_stats_v2: {
+        Args: {
+          p_end_date?: string;
+          p_pricing?: Json;
+          p_start_date?: string;
+          p_ws_id: string;
+        };
         Returns: {
           avg_cost_per_execution: number;
           avg_tokens_per_execution: number;
@@ -210,20 +198,14 @@ export type Database = {
           total_tokens: number;
         }[];
       };
-      get_ai_execution_monthly_cost: {
-        Args:
-          | {
-              p_exchange_rate?: number;
-              p_month?: number;
-              p_pricing?: Json;
-              p_ws_id: string;
-              p_year?: number;
-            }
-          | {
-              p_month?: number;
-              p_ws_id: string;
-              p_year?: number;
-            };
+      get_ai_execution_monthly_cost_v2: {
+        Args: {
+          p_exchange_rate?: number;
+          p_month?: number;
+          p_pricing?: Json;
+          p_ws_id: string;
+          p_year?: number;
+        };
         Returns: {
           avg_daily_cost: number;
           executions: number;
@@ -231,20 +213,14 @@ export type Database = {
           total_cost_vnd: number;
         }[];
       };
-      get_ai_execution_summary: {
-        Args:
-          | {
-              p_end_date?: string;
-              p_exchange_rate?: number;
-              p_pricing?: Json;
-              p_start_date?: string;
-              p_ws_id: string;
-            }
-          | {
-              p_end_date?: string;
-              p_start_date?: string;
-              p_ws_id: string;
-            };
+      get_ai_execution_summary_v2: {
+        Args: {
+          p_end_date?: string;
+          p_exchange_rate?: number;
+          p_pricing?: Json;
+          p_start_date?: string;
+          p_ws_id: string;
+        };
         Returns: {
           avg_cost_per_execution: number;
           avg_tokens_per_execution: number;
