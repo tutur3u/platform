@@ -46,3 +46,15 @@ next-env.d.ts
 
 # Trigger.dev
 .trigger
+
+# Python
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+*.pyw
+*.pyz
+*.pywz
+*.pyzw
+*.pyzwz
+.venv

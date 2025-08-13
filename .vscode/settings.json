@@ -54,6 +54,5 @@
   "IDX.aI.enableCodebaseIndexing": true,
   "i18n-ally.sourceLanguage": "en",
   "typescript.experimental.useTsgo": false,
-  "cSpell.words": ["Tuturuuu", "tuturuuu"],
-  "vitest.disableWorkspaceWarning": true
+  "cSpell.words": ["Tuturuuu", "tuturuuu"]
 }

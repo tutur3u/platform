@@ -103,6 +103,12 @@ export type Database = {
         };
         Returns: number;
       };
+      can_create_workspace: {
+        Args: {
+          p_user_id: string;
+        };
+        Returns: boolean;
+      };
       check_guest_group: {
         Args: {
           group_id: string;
@@ -638,6 +644,12 @@ export type Database = {
         };
         Returns: number;
       };
+      get_workspace_member_count: {
+        Args: {
+          p_ws_id: string;
+        };
+        Returns: number;
+      };
       get_workspace_products_count: {
         Args: {
           ws_id: string;
@@ -832,6 +844,12 @@ export type Database = {
         };
         Returns: boolean;
       };
+      is_personal_workspace: {
+        Args: {
+          p_ws_id: string;
+        };
+        Returns: boolean;
+      };
       is_project_member: {
         Args: {
           _project_id: string;
@@ -861,6 +879,13 @@ export type Database = {
       is_user_whitelisted: {
         Args: {
           user_id_param: string;
+        };
+        Returns: boolean;
+      };
+      is_workspace_owner: {
+        Args: {
+          p_user_id: string;
+          p_ws_id: string;
         };
         Returns: boolean;
       };
@@ -10521,6 +10546,7 @@ export type Database = {
           id?: string;
           logo_url?: null | string;
           name?: null | string;
+          personal?: boolean;
         };
         Relationships: [
           {
@@ -10561,6 +10587,7 @@ export type Database = {
           id: string;
           logo_url: null | string;
           name: null | string;
+          personal: boolean;
         };
         Update: {
           avatar_url?: null | string;
@@ -10571,6 +10598,7 @@ export type Database = {
           id?: string;
           logo_url?: null | string;
           name?: null | string;
+          personal?: boolean;
         };
       };
     };
