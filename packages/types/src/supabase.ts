@@ -82,12 +82,32 @@ export type Database = {
         };
         Returns: Json;
       };
+      atomic_sync_token_operation: {
+        Args: {
+          p_calendar_id?: string;
+          p_operation?: string;
+          p_sync_token?: string;
+          p_ws_id: string;
+        };
+        Returns: {
+          last_synced_at: string;
+          message: string;
+          success: boolean;
+          sync_token: string;
+        }[];
+      };
       calculate_productivity_score: {
         Args: {
           category_color: string;
           duration_seconds: number;
         };
         Returns: number;
+      };
+      can_create_workspace: {
+        Args: {
+          p_user_id: string;
+        };
+        Returns: boolean;
       };
       check_guest_group: {
         Args: {
