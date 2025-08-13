@@ -122,7 +122,11 @@ export default function TasksSidebarContent({
             className="m-0 flex min-h-0 flex-1 flex-col space-y-4 overflow-y-auto p-4 pb-2 duration-300 animate-in fade-in-50"
           >
             <div className="mx-auto w-full max-w-lg p-0">
-              <PriorityView allTasks={tasks} assigneeId={assigneeId} />
+              <PriorityView
+                wsId={wsId}
+                allTasks={tasks}
+                assigneeId={assigneeId}
+              />
             </div>
           </TabsContent>
 

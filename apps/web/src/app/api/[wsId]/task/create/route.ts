@@ -141,12 +141,14 @@ export async function POST(
       events: [],
     };
 
-    const events = prepareTaskChunks([taskToSplit]);
-    // console.log('Prepared task chunks:', events);
+    const taskChunks = prepareTaskChunks([taskToSplit]);
+    console.log('Prepared task chunks:', taskChunks);
+
     const { events: newScheduledEvents } = scheduleTasks(
-      events,
+      taskChunks,
       defaultActiveHours
     );
+
     if (newScheduledEvents.length > 0) {
       const insertData = newScheduledEvents.map((event) => ({
         ws_id: wsId,

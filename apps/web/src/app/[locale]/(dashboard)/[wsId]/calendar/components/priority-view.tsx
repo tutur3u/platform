@@ -11,7 +11,9 @@ import {
   Search,
   Timer,
 } from '@tuturuuu/ui/icons';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { toast } from 'sonner';
 import { useDebouncedCallback } from 'use-debounce';
 
 export const TASK_PRIORITIES = {
@@ -47,12 +49,15 @@ export const TASK_PRIORITIES = {
 export type TaskPriority = keyof typeof TASK_PRIORITIES;
 
 export default function PriorityView({
+  wsId,
   allTasks,
   assigneeId,
 }: {
+  wsId: string;
   allTasks: ExtendedWorkspaceTask[];
   assigneeId: string;
 }) {
+  const router = useRouter();
   const [search, setSearch] = useState('');
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [searchResults, setSearchResults] = useState<ExtendedWorkspaceTask[]>(
@@ -108,8 +113,19 @@ export default function PriorityView({
   const handlePriorityChange = async (taskId: string, newPriority: string) => {
     // TODO: Implement API call to update task priority
     console.log('Updating task priority:', taskId, newPriority);
-    // This would typically make an API call to update the task
-    // await updateTaskPriority(taskId, newPriority);
+
+    const response = await fetch(`/api/${wsId}/task/${taskId}/edit`, {
+      method: 'PATCH',
+      body: JSON.stringify({ priority: newPriority }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to update task priority');
+    }
+
+    toast.success('Task priority updated');
+
+    router.refresh();
   };
 
   const handleEdit = (taskId: string) => {

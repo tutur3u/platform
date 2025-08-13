@@ -80,14 +80,20 @@ export default async function HomeworkCheck({ params, searchParams }: Props) {
           </>
         }
         description={
-          <div className="flex flex-col gap-2">
-            <h2 className="w-fit rounded border border-dynamic-blue/15 bg-dynamic-blue/15 px-2 text-xl font-semibold text-dynamic-blue uppercase">
-              {post?.title?.trim() || t('common.unknown')}
-            </h2>
-            <p className="text-sm opacity-70">
-              {post?.content?.trim() || t('common.empty')}
-            </p>
-          </div>
+          post?.title || post?.content ? (
+            <div className="flex flex-col gap-2">
+              {post?.title && (
+                <h2 className="w-fit rounded border border-dynamic-blue/15 bg-dynamic-blue/15 px-2 text-xl font-semibold text-dynamic-blue uppercase">
+                  {post?.title?.trim() || t('common.unknown')}
+                </h2>
+              )}
+              {post?.content?.trim() && (
+                <p className="text-sm opacity-70">
+                  {post?.content?.trim() || t('common.empty')}
+                </p>
+              )}
+            </div>
+          ) : undefined
         }
         secondaryTriggerTitle={`${t('ws_post_details.check_all')}`}
         secondaryTriggerIcon={<CheckCheck className="mr-1 h-5 w-5" />}
@@ -226,23 +232,34 @@ async function getGroupData(wsId: string, groupId: string) {
 
 async function getPostStatus(groupId: string, postId: string) {
   const supabase = await createClient();
+
   const { data: users, count } = await supabase
-    .from('group_users_with_post_checks')
-    .select('*', { count: 'exact' })
+    .from('workspace_user_groups_users')
+    .select(
+      '...workspace_users(id, user_group_post_checks!inner(post_id, is_completed))',
+      {
+        count: 'exact',
+      }
+    )
     .eq('group_id', groupId)
-    .eq('post_id', postId);
+    .eq('workspace_users.user_group_post_checks.post_id', postId);
 
   const { data: sentEmails } = await supabase
     .from('sent_emails')
-    .select('receiver_id', { count: 'exact' })
+    .select('receiver_id', {
+      count: 'exact',
+    })
     .eq('post_id', postId);
 
   return {
     sent: sentEmails?.map((email) => email.receiver_id) || [],
-    checked: users?.filter((user) => user.is_completed).length || 0,
-    failed:
-      users?.filter((user) => user.post_id && !user.is_completed).length || 0,
-    tenative: users?.filter((user) => !user.post_id).length || 0,
+    checked: users?.filter((user) =>
+      user?.user_group_post_checks?.find((check) => check?.is_completed)
+    ).length,
+    failed: users?.filter((user) =>
+      user?.user_group_post_checks?.find((check) => !check?.is_completed)
+    ).length,
+    tenative: users?.filter((user) => !user.id).length,
     count,
   };
 }
@@ -252,30 +269,42 @@ async function getUserData(
   groupId: string,
   {
     q,
+    // page = '1',
+    // pageSize = '10',
     excludedGroups = [],
     retry = true,
   }: SearchParams & { retry?: boolean } = {}
 ) {
   const supabase = await createClient();
-  const { data: users, error } = await supabase
-    .from('group_users_with_post_checks')
-    .select('*')
+
+  const queryBuilder = supabase
+    .from('workspace_user_groups_users')
+    .select('...workspace_users!inner(*)', {
+      count: 'exact',
+    })
     .eq('group_id', groupId);
+
+  if (q) queryBuilder.ilike('workspace_users.display_name', `%${q}%`);
+
+  // if (page && pageSize) {
+  //   const parsedPage = Number.parseInt(page);
+  //   const parsedSize = Number.parseInt(pageSize);
+  //   const start = (parsedPage - 1) * parsedSize;
+  //   const end = parsedPage * parsedSize;
+  //   queryBuilder.range(start, end).limit(parsedSize);
+  // }
+
+  const { data, error, count } = await queryBuilder;
 
   if (error) {
     if (!retry) throw error;
-    return getUserData(wsId, groupId, { q, excludedGroups, retry: false });
+    return getUserData(wsId, groupId, {
+      q,
+      // pageSize,
+      excludedGroups,
+      retry: false,
+    });
   }
 
-  const filteredUsers = q
-    ? users?.filter((u) => u.full_name?.toLowerCase().includes(q.toLowerCase()))
-    : users;
-
-  return {
-    data: filteredUsers?.map((u) => ({
-      ...u,
-      id: u.user_id,
-    })) as unknown as WorkspaceUser[],
-    count: filteredUsers?.length || 0,
-  };
+  return { data, count } as unknown as { data: WorkspaceUser[]; count: number };
 }

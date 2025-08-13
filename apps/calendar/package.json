@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@formatjs/intl-localematcher": "^0.6.1",
-    "@tanstack/react-query": "^5.84.2",
+    "@tanstack/react-query": "^5.85.0",
     "@tuturuuu/ai": "workspace:*",
     "@tuturuuu/auth": "workspace:*",
     "@tuturuuu/supabase": "workspace:*",
@@ -33,7 +33,7 @@
     "@tuturuuu/typescript-config": "workspace:*",
     "@types/negotiator": "^0.6.4",
     "@types/node": "^24.2.1",
-    "@types/react": "^19.1.9",
+    "@types/react": "^19.1.10",
     "@types/react-dom": "^19.1.7",
     "postcss": "^8.5.6",
     "typescript": "^5.9.2"
