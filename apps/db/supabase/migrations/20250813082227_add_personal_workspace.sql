@@ -101,10 +101,10 @@ for update
 to authenticated
 using (((id <> '00000000-0000-0000-0000-000000000000'::uuid) AND ((get_user_role(auth.uid(), id) = 'OWNER'::text) OR (get_user_role(auth.uid(), id) = 'ADMIN'::text)) AND ((personal = false) OR (is_workspace_owner(id, auth.uid()) AND (get_workspace_member_count(id) = 1) AND (( SELECT count(*) AS count
    FROM workspaces wss
-  WHERE (wss.personal = true)) < 1)))))
+  WHERE (wss.personal = true) AND (wss.creator_id = auth.uid())) < 1)))))
 with check (((id <> '00000000-0000-0000-0000-000000000000'::uuid) AND ((get_user_role(auth.uid(), id) = 'OWNER'::text) OR (get_user_role(auth.uid(), id) = 'ADMIN'::text)) AND ((personal = false) OR (is_workspace_owner(id, auth.uid()) AND (get_workspace_member_count(id) = 1) AND (( SELECT count(*) AS count
    FROM workspaces wss
-  WHERE (wss.personal = true)) < 1)))));
+  WHERE (wss.personal = true) AND (wss.creator_id = auth.uid())) < 1)))));
 
 -- Update workspace_members INSERT policy to enforce personal workspace constraints
 drop policy if exists "Enable insert for invited members or workspace admins" on "public"."workspace_members";
