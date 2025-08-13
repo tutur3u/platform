@@ -62,23 +62,26 @@ export default async function WorkspaceHomePage({
 
   return (
     <>
-      <FeatureSummary
-        pluralTitle={t('ws-home.home')}
-        description={
-          <>
-            {t('ws-home.description_p1')}{' '}
-            <span className="font-semibold text-foreground underline">
-              {workspace.name || t('common.untitled')}
-            </span>{' '}
-            {t('ws-home.description_p2')}
-          </>
-        }
-      />
+      {id !== 'personal' && (
+        <>
+          <FeatureSummary
+            pluralTitle={t('ws-home.home')}
+            description={
+              <>
+                {t('ws-home.description_p1')}{' '}
+                <span className="font-semibold text-foreground underline">
+                  {workspace.name || t('common.untitled')}
+                </span>{' '}
+                {t('ws-home.description_p2')}
+              </>
+            }
+          />
+          <Separator className="my-4" />
+        </>
+      )}
 
       {ENABLE_AI_ONLY || (
         <>
-          {' '}
-          <Separator className="my-4" />
           <FinanceStatistics wsId={wsId} searchParams={searchParams} />
           <InventoryCategoryStatistics wsId={wsId} />
           <div className="grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">

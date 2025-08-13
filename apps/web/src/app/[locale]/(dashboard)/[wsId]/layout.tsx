@@ -517,20 +517,25 @@ export default async function Layout({ children, params }: LayoutProps) {
           href: `/${wsId}/settings`,
           icon: <Bolt className="h-5 w-5" />,
         },
-        {
-          title: t('workspace-settings-layout.members'),
-          href: `/${wsId}/members`,
-          icon: <Users className="h-5 w-5" />,
-          disabled:
-            ENABLE_AI_ONLY || withoutPermission('manage_workspace_members'),
-        },
-        {
-          title: t('workspace-settings-layout.workspace_roles'),
-          href: `/${wsId}/roles`,
-          icon: <UserLock className="h-5 w-5" />,
-          disabled:
-            ENABLE_AI_ONLY || withoutPermission('manage_workspace_roles'),
-        },
+        ...(wsId !== 'personal'
+          ? [
+              {
+                title: t('workspace-settings-layout.members'),
+                href: `/${wsId}/members`,
+                icon: <Users className="h-5 w-5" />,
+                disabled:
+                  ENABLE_AI_ONLY ||
+                  withoutPermission('manage_workspace_members'),
+              },
+              {
+                title: t('workspace-settings-layout.workspace_roles'),
+                href: `/${wsId}/roles`,
+                icon: <UserLock className="h-5 w-5" />,
+                disabled:
+                  ENABLE_AI_ONLY || withoutPermission('manage_workspace_roles'),
+              },
+            ]
+          : []),
         {
           title: t('workspace-settings-layout.reports'),
           href: `/${wsId}/settings/reports`,
@@ -559,7 +564,6 @@ export default async function Layout({ children, params }: LayoutProps) {
           disabled: withoutPermission('manage_workspace_secrets'),
           requireRootMember: true,
         },
-
         {
           title: t('workspace-settings-layout.infrastructure'),
           href: `/${wsId}/infrastructure`,
@@ -589,7 +593,7 @@ export default async function Layout({ children, params }: LayoutProps) {
           disabled: withoutPermission('manage_workspace_audit_logs'),
           requireRootWorkspace: true,
         },
-      ],
+      ].filter(Boolean) as NavLink[],
     },
   ];
 
