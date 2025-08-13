@@ -1,5 +1,7 @@
 alter table "public"."workspaces" add column "personal" boolean not null default false;
 
+create unique index one_personal_workspace_per_creator on public.workspaces (creator_id) where personal = true;
+
 -- Helper function: check if a given workspace is personal
 set check_function_bodies = off;
 
