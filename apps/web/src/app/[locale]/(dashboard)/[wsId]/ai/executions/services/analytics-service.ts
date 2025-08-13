@@ -39,6 +39,20 @@ export interface AIExecutionMonthlyCost {
   avg_daily_cost: number;
 }
 
+type AIPricing = Record<
+  string,
+  {
+    per1MInputTokens: number;
+    per1MOutputTokens: number;
+    per1MReasoningTokens: number;
+  }
+>;
+
+type PricingOptions = {
+  pricing?: AIPricing;
+  exchangeRate?: number;
+};
+
 export class AIExecutionAnalyticsService {
   private static async getClient() {
     return await createAdminClient();
@@ -47,7 +61,8 @@ export class AIExecutionAnalyticsService {
   static async getSummary(
     wsId: string,
     startDate?: Date,
-    endDate?: Date
+    endDate?: Date,
+    options?: PricingOptions
   ): Promise<AIExecutionSummary | null> {
     const client = await this.getClient();
 
@@ -55,11 +70,25 @@ export class AIExecutionAnalyticsService {
       return null;
     }
 
-    const { data, error } = await client.rpc('get_ai_execution_summary', {
+    const params: Record<string, unknown> = {
       p_ws_id: wsId,
       p_start_date: startDate.toISOString(),
       p_end_date: endDate.toISOString(),
-    });
+    };
+    if (options?.pricing) params.p_pricing = options.pricing;
+    if (options?.exchangeRate != null)
+      params.p_exchange_rate = options.exchangeRate;
+
+    const { data, error } = await client.rpc(
+      'get_ai_execution_summary',
+      params as {
+        p_ws_id: string;
+        p_start_date?: string;
+        p_end_date?: string;
+        p_pricing?: AIPricing;
+        p_exchange_rate?: number;
+      }
+    );
 
     if (error) {
       console.error('Error fetching AI execution summary:', error);
@@ -72,7 +101,8 @@ export class AIExecutionAnalyticsService {
   static async getDailyStats(
     wsId: string,
     startDate?: Date,
-    endDate?: Date
+    endDate?: Date,
+    options?: PricingOptions
   ): Promise<AIExecutionDailyStats[]> {
     const client = await this.getClient();
 
@@ -80,11 +110,22 @@ export class AIExecutionAnalyticsService {
       return [];
     }
 
-    const { data, error } = await client.rpc('get_ai_execution_daily_stats', {
+    const params: Record<string, unknown> = {
       p_ws_id: wsId,
       p_start_date: startDate.toISOString(),
       p_end_date: endDate.toISOString(),
-    });
+    };
+    if (options?.pricing) params.p_pricing = options.pricing;
+
+    const { data, error } = await client.rpc(
+      'get_ai_execution_daily_stats',
+      params as {
+        p_ws_id: string;
+        p_start_date?: string;
+        p_end_date?: string;
+        p_pricing?: AIPricing;
+      }
+    );
 
     if (error) {
       console.error('Error fetching AI execution daily stats:', error);
@@ -97,7 +138,8 @@ export class AIExecutionAnalyticsService {
   static async getModelStats(
     wsId: string,
     startDate?: Date,
-    endDate?: Date
+    endDate?: Date,
+    options?: PricingOptions
   ): Promise<AIExecutionModelStats[]> {
     const client = await this.getClient();
 
@@ -105,11 +147,22 @@ export class AIExecutionAnalyticsService {
       return [];
     }
 
-    const { data, error } = await client.rpc('get_ai_execution_model_stats', {
+    const params: Record<string, unknown> = {
       p_ws_id: wsId,
       p_start_date: startDate.toISOString(),
       p_end_date: endDate.toISOString(),
-    });
+    };
+    if (options?.pricing) params.p_pricing = options.pricing;
+
+    const { data, error } = await client.rpc(
+      'get_ai_execution_model_stats',
+      params as {
+        p_ws_id: string;
+        p_start_date?: string;
+        p_end_date?: string;
+        p_pricing?: AIPricing;
+      }
+    );
 
     if (error) {
       console.error('Error fetching AI execution model stats:', error);
@@ -122,15 +175,30 @@ export class AIExecutionAnalyticsService {
   static async getMonthlyCost(
     wsId: string,
     year?: number,
-    month?: number
+    month?: number,
+    options?: PricingOptions
   ): Promise<AIExecutionMonthlyCost | null> {
     const client = await this.getClient();
 
-    const { data, error } = await client.rpc('get_ai_execution_monthly_cost', {
+    const params: Record<string, unknown> = {
       p_ws_id: wsId,
       p_year: year || new Date().getFullYear(),
       p_month: month || new Date().getMonth() + 1,
-    });
+    };
+    if (options?.pricing) params.p_pricing = options.pricing;
+    if (options?.exchangeRate != null)
+      params.p_exchange_rate = options.exchangeRate;
+
+    const { data, error } = await client.rpc(
+      'get_ai_execution_monthly_cost',
+      params as {
+        p_ws_id: string;
+        p_year?: number;
+        p_month?: number;
+        p_pricing?: AIPricing;
+        p_exchange_rate?: number;
+      }
+    );
 
     if (error) {
       console.error('Error fetching AI execution monthly cost:', error);
