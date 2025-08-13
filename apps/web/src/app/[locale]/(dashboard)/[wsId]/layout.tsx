@@ -657,6 +657,19 @@ export default async function Layout({ children, params }: LayoutProps) {
     });
   }
 
+  if (!existingPersonal && eligibleWorkspaces?.length === 0)
+    return (
+      <PersonalWorkspacePrompt
+        eligibleWorkspaces={eligibleWorkspaces || []}
+        title={t('common.personal_account')}
+        description={t('common.set_up_personal_workspace')}
+        nameRule={t('common.personal_workspace_naming_rule' as never)}
+        createLabel={t('common.create_workspace')}
+        markLabel={t('common.mark_as_personal')}
+        selectPlaceholder={t('common.select_workspace')}
+      />
+    );
+
   return (
     <SidebarProvider initialBehavior={sidebarBehavior}>
       {!existingPersonal && (
