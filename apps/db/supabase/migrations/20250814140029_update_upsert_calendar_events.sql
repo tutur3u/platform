@@ -33,7 +33,7 @@ as $$
         when event ? 'locked' 
           and lower(event->>'locked') in ('true','false','t','f','1','0') 
         then (event->>'locked')::boolean 
-        else false 
+        else true
       end,
       case 
         when event->>'task_id' is not null and event->>'task_id' != '' 
@@ -57,7 +57,7 @@ as $$
       location = excluded.location,
       color = excluded.color,
       priority = excluded.priority,
-      locked = coalesce(workspace_calendar_events.locked, false) or coalesce(excluded.locked, false),
+      locked = excluded.locked,
       task_id = excluded.task_id
     returning xmax
   )
