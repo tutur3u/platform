@@ -1,9 +1,11 @@
+import { convertScheduledEventToCalendarEvent } from '../../../../hooks/scheduled-events-utils';
 import { useCalendar } from '../../../../hooks/use-calendar';
 import { CalendarColumn } from './calendar-column';
 import { DAY_HEIGHT, MAX_LEVEL } from './config';
 import { EventCard } from './event-card';
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import { useCalendarSync } from '@tuturuuu/ui/hooks/use-calendar-sync';
+import { useCurrentUser } from '@tuturuuu/ui/hooks/use-current-user';
 import dayjs from 'dayjs';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
 import timezone from 'dayjs/plugin/timezone';
@@ -39,14 +41,32 @@ export const CalendarEventMatrix = ({ dates }: { dates: Date[] }) => {
   const params = useParams();
   const wsId = params?.wsId as string;
   const { settings } = useCalendar();
-  const { eventsWithoutAllDays } = useCalendarSync();
+  const { eventsWithoutAllDays, scheduledEvents } = useCalendarSync();
+  const { userId: currentUserId } = useCurrentUser();
   const tz = settings?.timezone?.timezone;
 
   // Get all events
   const allEvents = eventsWithoutAllDays;
 
+  // Convert scheduled events to calendar events
+  const scheduledCalendarEvents: CalendarEvent[] = [];
+  if (currentUserId && scheduledEvents) {
+    scheduledEvents.forEach((scheduledEvent) => {
+      const calendarEvent = convertScheduledEventToCalendarEvent(
+        scheduledEvent,
+        currentUserId
+      );
+      if (calendarEvent) {
+        scheduledCalendarEvents.push(calendarEvent);
+      }
+    });
+  }
+
+  // Combine regular events with scheduled events
+  const combinedEvents = [...allEvents, ...scheduledCalendarEvents];
+
   // Process events to handle multi-day events
-  const processedEvents = allEvents.flatMap((event) => {
+  const processedEvents = combinedEvents.flatMap((event) => {
     // Parse dates with proper timezone handling
     const startDay =
       tz === 'auto' ? dayjs(event.start_at) : dayjs(event.start_at).tz(tz);
@@ -291,6 +311,8 @@ export const CalendarEventMatrix = ({ dates }: { dates: Date[] }) => {
             event={event}
             dates={dates}
             level={event._level}
+            scheduledEvents={scheduledEvents || []}
+            currentUserId={currentUserId || ''}
           />
         ))}
       </div>

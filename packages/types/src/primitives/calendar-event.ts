@@ -26,4 +26,19 @@ export interface CalendarEvent {
   _level?: number;
   _overlapCount?: number;
   _overlapGroup?: string[];
+
+  // Properties for scheduled events
+  _isScheduledEvent?: boolean;
+  _scheduledEventId?: string;
+  _attendeeStatus?: 'pending' | 'accepted' | 'declined' | 'tentative';
+  _isPending?: boolean;
+  _isTentative?: boolean;
+  _isCreator?: boolean;
+  _attendeeCount?: {
+    total: number;
+    accepted: number;
+    declined: number;
+    pending: number;
+    tentative: number;
+  };
 }

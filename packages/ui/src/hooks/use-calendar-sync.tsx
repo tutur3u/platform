@@ -1,12 +1,14 @@
 'use client';
 
 import { isAllDayEvent } from './calendar-utils';
+import { convertScheduledEventToCalendarEvent } from './scheduled-events-utils';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type {
   Workspace,
   WorkspaceCalendarEvent,
   WorkspaceCalendarGoogleToken,
 } from '@tuturuuu/types/db';
+import type { WorkspaceScheduledEventWithAttendees } from '@tuturuuu/types/primitives/RSVP';
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import { canProceedWithSync } from '@tuturuuu/utils/calendar-sync-coordination';
 import dayjs from 'dayjs';
@@ -47,6 +49,11 @@ const CalendarSyncContext = createContext<{
   // Show data from database to Tuturuuu
   eventsWithoutAllDays: CalendarEvent[];
   allDayEvents: CalendarEvent[];
+
+  // Scheduled events
+  scheduledEvents: WorkspaceScheduledEventWithAttendees[];
+  refreshScheduledEvents: () => Promise<void>;
+
   refresh: () => void;
 
   syncToGoogle: () => Promise<void>;
@@ -71,6 +78,11 @@ const CalendarSyncContext = createContext<{
   // Show data from database to Tuturuuu
   eventsWithoutAllDays: [],
   allDayEvents: [],
+
+  // Scheduled events
+  scheduledEvents: [],
+  refreshScheduledEvents: async () => {},
+
   refresh: () => {},
 
   // Sync to Google
@@ -124,6 +136,11 @@ export const CalendarSyncProvider = ({
   const [isActiveSyncOn, setIsActiveSyncOn] = useState(true);
   const [calendarCache, setCalendarCache] = useState<CalendarCache>({});
   const [isSyncing, setIsSyncing] = useState(false);
+
+  // Scheduled events state
+  const [scheduledEvents, setScheduledEvents] = useState<
+    WorkspaceScheduledEventWithAttendees[]
+  >([]);
   const prevGoogleDataRef = useRef<string>('');
   const prevDatesRef = useRef<string>('');
   const isForcedRef = useRef<boolean>(false);
@@ -267,6 +284,67 @@ export const CalendarSyncProvider = ({
     refetchInterval: 30000,
   });
 
+  // Fetch scheduled events
+  const { data: fetchedScheduledEvents, isLoading: isScheduledEventsLoading } =
+    useQuery({
+      queryKey: ['scheduledEvents', wsId],
+      enabled: !!wsId,
+      queryFn: async () => {
+        try {
+          const supabase = createClient();
+          const { data: events, error } = await supabase
+            .from('workspace_scheduled_events')
+            .select(
+              `
+            *,
+            creator:users!creator_id(id, display_name, avatar_url),
+            attendees:event_attendees(
+              id,
+              user_id,
+              status,
+              response_at,
+              user:users(id, display_name, avatar_url)
+            )
+          `
+            )
+            .eq('ws_id', wsId)
+            .order('start_at', { ascending: true });
+
+          if (error) {
+            console.error('Error fetching scheduled events:', error);
+            return [];
+          }
+
+          // Calculate attendee counts for each event
+          const eventsWithCounts = (events || []).map((event) => ({
+            ...event,
+            attendee_count: {
+              total: event.attendees?.length || 0,
+              accepted:
+                event.attendees?.filter((a) => a.status === 'accepted')
+                  .length || 0,
+              declined:
+                event.attendees?.filter((a) => a.status === 'declined')
+                  .length || 0,
+              pending:
+                event.attendees?.filter((a) => a.status === 'pending').length ||
+                0,
+              tentative:
+                event.attendees?.filter((a) => a.status === 'tentative')
+                  .length || 0,
+            },
+          }));
+
+          setScheduledEvents(eventsWithCounts);
+          return eventsWithCounts;
+        } catch (err) {
+          console.error('Error fetching scheduled events:', err);
+          return [];
+        }
+      },
+      refetchInterval: 30000,
+    });
+
   // Fetch google events with caching
   const { data: fetchedGoogleData, isLoading: isGoogleLoading } = useQuery({
     queryKey: ['googleCalendarEvents', wsId, getCacheKey(dates)],
@@ -343,6 +421,13 @@ export const CalendarSyncProvider = ({
       queryKey: ['databaseCalendarEvents', wsId, cacheKey],
     });
   }, [queryClient, wsId, dates]);
+
+  // Refresh scheduled events
+  const refreshScheduledEvents = useCallback(async () => {
+    queryClient.invalidateQueries({
+      queryKey: ['scheduledEvents', wsId],
+    });
+  }, [queryClient, wsId]);
 
   // Sync Google events of current view to Tuturuuu database
   const syncToTuturuuu = useCallback(
@@ -662,10 +747,15 @@ export const CalendarSyncProvider = ({
     // Show data from database to Tuturuuu
     eventsWithoutAllDays,
     allDayEvents,
+
+    // Scheduled events
+    scheduledEvents,
+    refreshScheduledEvents,
+
     refresh,
 
     // Loading states
-    isLoading: isDatabaseLoading || isGoogleLoading,
+    isLoading: isDatabaseLoading || isGoogleLoading || isScheduledEventsLoading,
     isSyncing,
   };
 

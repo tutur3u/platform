@@ -4,7 +4,6 @@ import AddEventButton from './components/add-event-button';
 import AddEventDialog from './components/add-event-dialog';
 import AutoScheduleComprehensiveDialog from './components/auto-schedule-comprehensive-dialog';
 import CreateScheduledEventButton from './components/create-scheduled-event-button';
-import PendingInvitations from './components/pending-invitations';
 import TestEventGeneratorButton from './components/test-event-generator-button';
 import { DEV_MODE } from '@/constants/common';
 import { useQuery, useQueryClient } from '@tanstack/react-query';

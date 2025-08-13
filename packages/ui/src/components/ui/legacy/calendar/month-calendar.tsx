@@ -1,13 +1,18 @@
 'use client';
 
 import { isAllDayEvent } from '../../../../hooks/calendar-utils';
+import { convertScheduledEventToCalendarEvent } from '../../../../hooks/scheduled-events-utils';
 import { useCalendar } from '../../../../hooks/use-calendar';
+import { useCalendarSync } from '../../../../hooks/use-calendar-sync';
 import { usePopoverManager } from '../../../../hooks/use-popover-manager';
 import { Popover, PopoverContent, PopoverTrigger } from '../../popover';
 import { getColorHighlight } from './color-highlights';
+import { ScheduledEventQuickActions } from './scheduled-event-quick-actions';
+import { createClient } from '@tuturuuu/supabase/next/client';
 import type { Workspace } from '@tuturuuu/types/db';
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import { Button } from '@tuturuuu/ui/button';
+import { useCurrentUser } from '@tuturuuu/ui/hooks/use-current-user';
 import {
   HoverCard,
   HoverCardContent,
@@ -99,6 +104,8 @@ export const MonthCalendar = ({
 }: MonthCalendarProps) => {
   const { getCurrentEvents, addEmptyEvent, openModal, settings } =
     useCalendar();
+  const { scheduledEvents } = useCalendarSync();
+  const { userId: currentUserId } = useCurrentUser();
   const [currDate, setCurrDate] = useState(date);
   const [hoveredDay, setHoveredDay] = useState<Date | null>(null);
   const tz = settings?.timezone?.timezone;
@@ -306,6 +313,37 @@ export const MonthCalendar = ({
       }
     });
 
+    // Add scheduled events for this day
+    const dayStart = dayjs(day).startOf('day');
+    const dayEnd = dayjs(day).endOf('day');
+
+    scheduledEvents.forEach((scheduledEvent) => {
+      const eventStart = dayjs(scheduledEvent.start_at);
+      const eventEnd = dayjs(scheduledEvent.end_at);
+
+      // Check if event overlaps with this day
+      if (
+        (eventStart.isBefore(dayEnd) || eventStart.isSame(dayEnd)) &&
+        (eventEnd.isAfter(dayStart) || eventEnd.isSame(dayStart))
+      ) {
+        // Convert scheduled event to calendar event
+        if (currentUserId) {
+          const calendarEvent = convertScheduledEventToCalendarEvent(
+            scheduledEvent,
+            currentUserId
+          );
+          if (calendarEvent) {
+            // Scheduled events get highest priority (above all-day events)
+            const eventPriority = EVENT_DISPLAY_PRIORITY.ALL_DAY - 0.5;
+            result.push({
+              ...calendarEvent,
+              _eventPriority: eventPriority,
+            });
+          }
+        }
+      }
+    });
+
     // Sort by priority (1 = highest priority, 3 = lowest priority)
     // Then by start time for events with the same priority
     result.sort((a, b) => {
@@ -334,6 +372,36 @@ export const MonthCalendar = ({
         ? dayjs(day).hour(9).minute(0).second(0).millisecond(0).toDate()
         : dayjs(day).tz(tz).hour(9).minute(0).second(0).millisecond(0).toDate();
     addEmptyEvent(eventDate);
+  };
+
+  // Handle scheduled event status updates
+  const handleScheduledEventStatusUpdate = async (
+    eventId: string,
+    status: 'accepted' | 'declined' | 'tentative'
+  ) => {
+    if (!currentUserId) return;
+
+    try {
+      const supabase = createClient();
+      const { error } = await supabase
+        .from('event_attendees')
+        .update({
+          status,
+          response_at: new Date().toISOString(),
+        })
+        .eq('event_id', eventId)
+        .eq('user_id', currentUserId);
+
+      if (error) {
+        console.error('Error updating attendee status:', error);
+        return;
+      }
+
+      // Refresh the scheduled events
+      // This will trigger a re-render of the calendar
+    } catch (error) {
+      console.error('Error updating attendee status:', error);
+    }
   };
 
   const formatEventTime = (event: any) => {
@@ -532,6 +600,14 @@ export const MonthCalendar = ({
                         }
 
                         const { bg, text } = getEventStyles(event);
+                        const isScheduledEvent = event._isScheduledEvent;
+
+                        // Find the corresponding scheduled event data
+                        const scheduledEvent =
+                          isScheduledEvent &&
+                          scheduledEvents.find(
+                            (se) => se.id === event._scheduledEventId
+                          );
 
                         return (
                           <HoverCard
@@ -545,11 +621,25 @@ export const MonthCalendar = ({
                                   'cursor-pointer items-center gap-1 truncate rounded px-1.5 py-1 text-xs font-medium',
                                   bg,
                                   text,
-                                  !isCurrentMonth && 'opacity-60'
+                                  !isCurrentMonth && 'opacity-60',
+                                  isScheduledEvent &&
+                                    'border-l-2 border-l-blue-500'
                                 )}
                                 onClick={() => openModal(event.id)}
                               >
                                 {event.title || 'Untitled event'}
+                                {isScheduledEvent && scheduledEvent && (
+                                  <ScheduledEventQuickActions
+                                    event={event}
+                                    scheduledEvent={scheduledEvent}
+                                    userId={currentUserId || ''}
+                                    onStatusUpdate={
+                                      handleScheduledEventStatusUpdate
+                                    }
+                                    className="ml-1"
+                                    compact={true}
+                                  />
+                                )}
                               </div>
                             </HoverCardTrigger>
                             <HoverCardContent
@@ -570,6 +660,18 @@ export const MonthCalendar = ({
                                   <Clock className="mr-1 h-3 w-3" />
                                   <span>{formatEventTime(event)}</span>
                                 </div>
+                                {isScheduledEvent && scheduledEvent && (
+                                  <div className="border-t pt-2">
+                                    <ScheduledEventQuickActions
+                                      event={event}
+                                      scheduledEvent={scheduledEvent}
+                                      userId={currentUserId || ''}
+                                      onStatusUpdate={
+                                        handleScheduledEventStatusUpdate
+                                      }
+                                    />
+                                  </div>
+                                )}
                               </div>
                             </HoverCardContent>
                           </HoverCard>
