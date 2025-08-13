@@ -29,7 +29,7 @@ export async function POST() {
   const { data, error } = await supabase
     .from('workspaces')
     .insert({
-      name: user.email || 'Personal Workspace',
+      name: 'PERSONAL',
       personal: true,
     })
     .select('id')
@@ -95,6 +95,7 @@ export async function PATCH(req: Request) {
     .eq('personal', true)
     .eq('creator_id', user.id)
     .maybeSingle();
+
   if (existingPersonal)
     return NextResponse.json(
       { message: 'Already has personal workspace' },
