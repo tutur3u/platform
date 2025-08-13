@@ -1,3 +1,4 @@
+import { calendar_v3, google } from '@tuturuuu/google';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import {
   formatEventForDb,
@@ -5,7 +6,6 @@ import {
   getGoogleAuthClient,
   storeActiveSyncToken,
 } from '@tuturuuu/trigger/google-calendar-sync';
-import { calendar_v3, google } from 'googleapis';
 import { NextResponse } from 'next/server';
 
 /**

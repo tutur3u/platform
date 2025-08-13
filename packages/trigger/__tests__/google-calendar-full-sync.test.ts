@@ -42,7 +42,7 @@ vi.mock('../google-calendar-sync', async () => {
   };
 });
 
-// Mock googleapis
+// Mock @tuturuuu/google
 const mockCalendarEventsList = vi.fn(() =>
   Promise.resolve({
     data: {
@@ -73,7 +73,7 @@ const mockCalendarEventsList = vi.fn(() =>
   })
 );
 
-vi.mock('googleapis', () => ({
+vi.mock('@tuturuuu/google', () => ({
   google: {
     calendar: vi.fn(() => ({
       events: {

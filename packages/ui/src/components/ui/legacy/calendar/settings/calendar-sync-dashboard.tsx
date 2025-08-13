@@ -48,9 +48,6 @@ export function CalendarSyncDashboard({ syncLogs }: { syncLogs: SyncLog[] }) {
         log.triggeredBy?.display_name
           ?.toLowerCase()
           .includes(searchTerm.toLowerCase()) ||
-        log.triggeredBy?.display_name
-          ?.toLowerCase()
-          .includes(searchTerm.toLowerCase()) ||
         log.workspace?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         log.calendarSource.toLowerCase().includes(searchTerm.toLowerCase());
       return matchesType && matchesWorkspace && matchesSearch;

@@ -59,7 +59,7 @@ type MockCalendarResponse = {
   };
 };
 
-// Mock googleapis
+// Mock @tuturuuu/google
 const mockCalendarEventsList = vi.fn(() =>
   Promise.resolve({
     data: {
