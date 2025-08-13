@@ -5,6 +5,7 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 import type { WorkspaceSecret } from '@tuturuuu/types/primitives/WorkspaceSecret';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
+import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { getTranslations } from 'next-intl/server';
 
 interface Props {
@@ -22,7 +23,10 @@ export default async function WorkspaceSecretsPage({
   params,
   searchParams,
 }: Props) {
-  const { wsId } = await params;
+  const { wsId: id } = await params;
+  const workspace = await getWorkspace(id);
+  const wsId = workspace?.id;
+
   const { data: secrets, count } = await getSecrets(wsId, await searchParams);
   const t = await getTranslations();
 
