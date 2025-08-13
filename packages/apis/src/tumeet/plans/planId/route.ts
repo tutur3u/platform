@@ -243,6 +243,24 @@ export async function PATCH(req: Request, { params }: Params) {
   const sbAdmin = await createAdminClient();
   const { planId: id } = await params;
 
+  // Check if user is the creator of the plan
+  const { data: plan } = await sbAdmin
+    .from('meet_together_plans')
+    .select('creator_id')
+    .eq('id', id)
+    .single();
+
+  if (!plan) {
+    return NextResponse.json({ message: 'Plan not found' }, { status: 404 });
+  }
+
+  if (plan.creator_id !== user.id) {
+    return NextResponse.json(
+      { message: 'You are not the creator of this plan' },
+      { status: 403 }
+    );
+  }
+
   // Check if plan is confirmed and deny modifications
   const confirmationCheck = await checkPlanConfirmation(id, sbAdmin);
   if (confirmationCheck) {

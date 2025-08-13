@@ -1,7 +1,6 @@
 import { CalendarActiveSyncDebugger } from './active-sync';
 import CalendarClientPage from './client';
-// import TasksSidebar from './components/tasks-sidebar';
-import TaskSidebarServer from './components/tasks-sidebar-server';
+import TasksSidebar from './components/tasks-sidebar';
 import { DEV_MODE } from '@/constants/common';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/server';
@@ -17,12 +16,10 @@ interface PageProps {
 }
 
 export default async function CalendarPage({ params }: PageProps) {
-  const { wsId } = await params;
+  const { wsId, locale } = await params;
   const workspace = await getWorkspace(wsId);
 
-  const { withoutPermission } = await getPermissions({
-    wsId,
-  });
+  const { withoutPermission } = await getPermissions({ wsId });
 
   const supabase = await createClient();
 
@@ -48,8 +45,7 @@ export default async function CalendarPage({ params }: PageProps) {
           experimentalGoogleToken={googleToken}
           workspace={workspace}
         />
-        {/* <TasksSidebar wsId={wsId} locale={locale} /> */}
-        <TaskSidebarServer wsId={wsId} />
+        <TasksSidebar wsId={wsId} locale={locale} />
       </div>
     </CalendarSyncProvider>
   );

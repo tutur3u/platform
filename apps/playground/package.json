@@ -30,15 +30,15 @@
     "@tuturuuu/ui": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
     "dayjs": "^1.11.13",
-    "next": "^15.4.5",
+    "next": "^15.4.6",
     "react": "^19.1.1",
     "react-dom": "^19.1.1"
   },
   "devDependencies": {
     "@tuturuuu/eslint-config": "workspace:*",
     "@tuturuuu/typescript-config": "workspace:*",
-    "@types/node": "^24.2.0",
-    "@types/react": "^19.1.9",
+    "@types/node": "^24.2.1",
+    "@types/react": "^19.1.10",
     "@types/react-dom": "^19.1.7",
     "postcss": "^8.5.6",
     "typescript": "^5.9.2"

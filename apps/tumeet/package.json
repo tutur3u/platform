@@ -24,7 +24,7 @@
     "ui:diff": "bunx shadcn-ui@latest diff"
   },
   "dependencies": {
-    "@tanstack/react-query": "^5.84.1",
+    "@tanstack/react-query": "^5.85.0",
     "@tuturuuu/ai": "workspace:*",
     "@tuturuuu/apis": "workspace:*",
     "@tuturuuu/supabase": "workspace:*",
@@ -34,18 +34,18 @@
     "@vercel/analytics": "^1.5.0",
     "dayjs": "^1.11.13",
     "nanoid": "^5.1.5",
-    "next": "^15.4.5",
+    "next": "^15.4.6",
     "next-intl": "^4.3.4",
     "qrcode.react": "^4.2.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
-    "zod": "^4.0.15"
+    "zod": "^4.0.17"
   },
   "devDependencies": {
     "@tuturuuu/eslint-config": "workspace:*",
     "@tuturuuu/typescript-config": "workspace:*",
-    "@types/node": "^24.2.0",
-    "@types/react": "^19.1.9",
+    "@types/node": "^24.2.1",
+    "@types/react": "^19.1.10",
     "@types/react-dom": "^19.1.7",
     "postcss": "^8.5.6",
     "typescript": "^5.9.2"
