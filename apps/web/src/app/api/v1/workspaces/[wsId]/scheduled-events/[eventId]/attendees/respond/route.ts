@@ -30,7 +30,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
     }
 
     const body = await req.json();
-    const { status, notes } = body;
+    const { status } = body;
 
     // Validate status
     const validStatuses = ['pending', 'accepted', 'declined', 'tentative'];
@@ -76,7 +76,6 @@ export async function PUT(req: NextRequest, { params }: Params) {
       .from('event_attendees')
       .update({
         status,
-        notes: notes || null,
         response_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       })

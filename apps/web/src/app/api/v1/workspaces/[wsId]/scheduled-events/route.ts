@@ -3,6 +3,24 @@ import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextRequest, NextResponse } from 'next/server';
 
+// type EventAttendeeWithUser = {
+//   id: string;
+//   user_id: string | null;
+//   status: Database['public']['Enums']['event_attendee_status'] | null;
+//   response_at: string | null;
+//   user: {
+//     id: string;
+//     display_name: string | null;
+//     avatar_url: string | null;
+//   } | null;
+// };
+
+// type WorkspaceScheduledEventWithAttendees =
+//   Database['public']['Tables']['workspace_scheduled_events']['Row'] & {
+//     attendees?: EventAttendeeWithUser[];
+//     creator: Database['public']['Tables']['users']['Row'];
+//   };
+
 interface Params {
   params: Promise<{
     wsId: string;
@@ -40,8 +58,7 @@ export async function GET(req: NextRequest, { params }: Params) {
           user_id,
           status,
           response_at,
-          notes,
-          user:users(id, display_name, avatar_url, email)
+          user:users(id, display_name, avatar_url)
         )
       `
       )

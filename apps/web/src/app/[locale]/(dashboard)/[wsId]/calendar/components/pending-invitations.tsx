@@ -5,7 +5,7 @@ import type {
   EventAttendeeStatus,
   EventAttendeeWithUser,
   WorkspaceScheduledEventWithAttendees,
-} from '@tuturuuu/types/db';
+} from '@tuturuuu/types/primitives/RSVP';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';

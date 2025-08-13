@@ -3,23 +3,16 @@
 import CreateScheduledEventDialog from './create-scheduled-event-dialog';
 import { Button } from '@tuturuuu/ui/button';
 import { Users } from '@tuturuuu/ui/icons';
-import { useCallback, useState } from 'react';
+import { useState } from 'react';
 
 interface CreateScheduledEventButtonProps {
   wsId: string;
-  onEventCreated?: () => void;
 }
 
 export default function CreateScheduledEventButton({
   wsId,
-  onEventCreated,
 }: CreateScheduledEventButtonProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-
-  const handleEventCreated = useCallback(() => {
-    setIsDialogOpen(false);
-    onEventCreated?.();
-  }, [onEventCreated]);
 
   return (
     <>

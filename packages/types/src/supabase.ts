@@ -26,6 +26,8 @@ export type Database = {
       certificate_templates: 'elegant' | 'modern' | 'original';
       chat_role: 'ASSISTANT' | 'FUNCTION' | 'SYSTEM' | 'USER';
       dataset_type: 'csv' | 'excel' | 'html';
+      event_attendee_status: 'accepted' | 'declined' | 'pending' | 'tentative';
+      event_status: 'active' | 'cancelled' | 'completed' | 'draft';
       feature_flag:
         | 'ENABLE_AI'
         | 'ENABLE_CHALLENGES'
@@ -2417,6 +2419,132 @@ export type Database = {
         Update: {
           code?: string;
           name?: string;
+        };
+      };
+      event_attendees: {
+        Insert: {
+          created_at?: string;
+          event_id: string;
+          id?: string;
+          response_at?: null | string;
+          status?: Database['public']['Enums']['event_attendee_status'] | null;
+          updated_at?: null | string;
+          user_id?: null | string;
+        };
+        Relationships: [
+          {
+            columns: ['event_id'];
+            foreignKeyName: 'event_attendees_event_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'workspace_scheduled_events';
+          },
+          {
+            columns: ['user_id'];
+            foreignKeyName: 'event_attendees_user_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['user_id'];
+            referencedRelation: 'nova_user_challenge_leaderboard';
+          },
+          {
+            columns: ['user_id'];
+            foreignKeyName: 'event_attendees_user_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['user_id'];
+            referencedRelation: 'nova_user_leaderboard';
+          },
+          {
+            columns: ['user_id'];
+            foreignKeyName: 'event_attendees_user_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'shortened_links_creator_stats';
+          },
+          {
+            columns: ['user_id'];
+            foreignKeyName: 'event_attendees_user_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'users';
+          },
+        ];
+        Row: {
+          created_at: string;
+          event_id: string;
+          id: string;
+          response_at: null | string;
+          status: Database['public']['Enums']['event_attendee_status'] | null;
+          updated_at: null | string;
+          user_id: null | string;
+        };
+        Update: {
+          created_at?: string;
+          event_id?: string;
+          id?: string;
+          response_at?: null | string;
+          status?: Database['public']['Enums']['event_attendee_status'] | null;
+          updated_at?: null | string;
+          user_id?: null | string;
+        };
+      };
+      event_invitations: {
+        Insert: {
+          created_at?: string;
+          event_id?: null | string;
+          id?: string;
+          invitation_token?: null | string;
+          invitee_id?: null | string;
+        };
+        Relationships: [
+          {
+            columns: ['event_id'];
+            foreignKeyName: 'event_invitations_event_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'workspace_scheduled_events';
+          },
+          {
+            columns: ['invitee_id'];
+            foreignKeyName: 'event_invitations_invitee_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['user_id'];
+            referencedRelation: 'nova_user_challenge_leaderboard';
+          },
+          {
+            columns: ['invitee_id'];
+            foreignKeyName: 'event_invitations_invitee_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['user_id'];
+            referencedRelation: 'nova_user_leaderboard';
+          },
+          {
+            columns: ['invitee_id'];
+            foreignKeyName: 'event_invitations_invitee_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'shortened_links_creator_stats';
+          },
+          {
+            columns: ['invitee_id'];
+            foreignKeyName: 'event_invitations_invitee_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'users';
+          },
+        ];
+        Row: {
+          created_at: string;
+          event_id: null | string;
+          id: string;
+          invitation_token: null | string;
+          invitee_id: null | string;
+        };
+        Update: {
+          created_at?: string;
+          event_id?: null | string;
+          id?: string;
+          invitation_token?: null | string;
+          invitee_id?: null | string;
         };
       };
       external_user_monthly_report_logs: {
@@ -9487,6 +9615,107 @@ export type Database = {
           ws_id?: string;
         };
       };
+      workspace_scheduled_events: {
+        Insert: {
+          color?: null | string;
+          created_at?: string;
+          creator_id?: null | string;
+          description?: null | string;
+          end_at?: null | string;
+          id?: string;
+          is_all_day?: boolean | null;
+          location?: null | string;
+          requires_confirmation?: boolean | null;
+          start_at?: null | string;
+          status?: Database['public']['Enums']['event_status'] | null;
+          title: string;
+          updated_at?: null | string;
+          ws_id?: null | string;
+        };
+        Relationships: [
+          {
+            columns: ['color'];
+            foreignKeyName: 'workspace_scheduled_events_color_fkey';
+            isOneToOne: false;
+            referencedColumns: ['value'];
+            referencedRelation: 'calendar_event_colors';
+          },
+          {
+            columns: ['creator_id'];
+            foreignKeyName: 'workspace_scheduled_events_creator_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['user_id'];
+            referencedRelation: 'nova_user_challenge_leaderboard';
+          },
+          {
+            columns: ['creator_id'];
+            foreignKeyName: 'workspace_scheduled_events_creator_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['user_id'];
+            referencedRelation: 'nova_user_leaderboard';
+          },
+          {
+            columns: ['creator_id'];
+            foreignKeyName: 'workspace_scheduled_events_creator_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'shortened_links_creator_stats';
+          },
+          {
+            columns: ['creator_id'];
+            foreignKeyName: 'workspace_scheduled_events_creator_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'users';
+          },
+          {
+            columns: ['ws_id'];
+            foreignKeyName: 'workspace_scheduled_events_ws_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'workspace_link_counts';
+          },
+          {
+            columns: ['ws_id'];
+            foreignKeyName: 'workspace_scheduled_events_ws_id_fkey';
+            isOneToOne: false;
+            referencedColumns: ['id'];
+            referencedRelation: 'workspaces';
+          },
+        ];
+        Row: {
+          color: null | string;
+          created_at: string;
+          creator_id: null | string;
+          description: null | string;
+          end_at: null | string;
+          id: string;
+          is_all_day: boolean | null;
+          location: null | string;
+          requires_confirmation: boolean | null;
+          start_at: null | string;
+          status: Database['public']['Enums']['event_status'] | null;
+          title: string;
+          updated_at: null | string;
+          ws_id: null | string;
+        };
+        Update: {
+          color?: null | string;
+          created_at?: string;
+          creator_id?: null | string;
+          description?: null | string;
+          end_at?: null | string;
+          id?: string;
+          is_all_day?: boolean | null;
+          location?: null | string;
+          requires_confirmation?: boolean | null;
+          start_at?: null | string;
+          status?: Database['public']['Enums']['event_status'] | null;
+          title?: string;
+          updated_at?: null | string;
+          ws_id?: null | string;
+        };
+      };
       workspace_secrets: {
         Insert: {
           created_at?: string;
@@ -11589,6 +11818,8 @@ export const Constants = {
       certificate_templates: ['elegant', 'modern', 'original'],
       chat_role: ['ASSISTANT', 'FUNCTION', 'SYSTEM', 'USER'],
       dataset_type: ['csv', 'excel', 'html'],
+      event_attendee_status: ['accepted', 'declined', 'pending', 'tentative'],
+      event_status: ['active', 'cancelled', 'completed', 'draft'],
       feature_flag: [
         'ENABLE_AI',
         'ENABLE_CHALLENGES',

@@ -1,7 +1,7 @@
 'use client';
 
 import { createClient } from '@tuturuuu/supabase/next/client';
-import type { EventStatus } from '@tuturuuu/types/db';
+import type { EventStatus } from '@tuturuuu/types/primitives/RSVP';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Calendar } from '@tuturuuu/ui/calendar';
@@ -60,13 +60,15 @@ interface EventFormData {
 }
 
 const EVENT_COLORS = [
+  { value: 'red', label: 'Red', color: 'bg-red-500' },
   { value: 'blue', label: 'Blue', color: 'bg-blue-500' },
   { value: 'green', label: 'Green', color: 'bg-green-500' },
-  { value: 'red', label: 'Red', color: 'bg-red-500' },
   { value: 'yellow', label: 'Yellow', color: 'bg-yellow-500' },
+  { value: 'orange', label: 'Orange', color: 'bg-orange-500' },
   { value: 'purple', label: 'Purple', color: 'bg-purple-500' },
   { value: 'pink', label: 'Pink', color: 'bg-pink-500' },
-  { value: 'orange', label: 'Orange', color: 'bg-orange-500' },
+  { value: 'indigo', label: 'Indigo', color: 'bg-indigo-500' },
+  { value: 'cyan', label: 'Cyan', color: 'bg-cyan-500' },
   { value: 'gray', label: 'Gray', color: 'bg-gray-500' },
 ];
 
@@ -93,7 +95,7 @@ export default function CreateScheduledEventDialog({
     location: '',
     is_all_day: false,
     requires_confirmation: true,
-    color: 'blue',
+    color: 'red',
     status: 'active',
     selected_attendees: [],
   });
@@ -222,7 +224,7 @@ export default function CreateScheduledEventDialog({
             start_at,
             end_at,
             location: formData.location,
-            color: formData.color,
+            color: formData.color.toUpperCase(),
             is_all_day: formData.is_all_day,
             requires_confirmation: formData.requires_confirmation,
             status: formData.status,
@@ -232,7 +234,8 @@ export default function CreateScheduledEventDialog({
       );
 
       if (!response.ok) {
-        throw new Error('Failed to create event');
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to create event');
       }
 
       toast.success(
@@ -250,7 +253,7 @@ export default function CreateScheduledEventDialog({
         location: '',
         is_all_day: false,
         requires_confirmation: true,
-        color: 'blue',
+        color: 'red',
         status: 'active',
         selected_attendees: [],
       });

@@ -4,7 +4,7 @@ import type {
   EventAttendeeStatus,
   EventAttendeeWithUser,
   WorkspaceScheduledEventWithAttendees,
-} from '@tuturuuu/types/db';
+} from '@tuturuuu/types/primitives/RSVP';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -23,9 +23,7 @@ import {
   Users,
   X,
 } from '@tuturuuu/ui/icons';
-import { Label } from '@tuturuuu/ui/label';
 import { toast } from '@tuturuuu/ui/sonner';
-import { Textarea } from '@tuturuuu/ui/textarea';
 import { cn } from '@tuturuuu/utils/format';
 import { format } from 'date-fns';
 import { useCallback, useState } from 'react';
@@ -67,7 +65,6 @@ export default function EventInvitationCard({
   onStatusUpdate,
 }: EventInvitationCardProps) {
   const [isLoading, setIsLoading] = useState(false);
-  const [notes, setNotes] = useState(attendee.notes || '');
   const [currentStatus, setCurrentStatus] = useState(attendee.status);
 
   const handleStatusUpdate = async (newStatus: EventAttendeeStatus) => {
@@ -83,7 +80,6 @@ export default function EventInvitationCard({
           },
           body: JSON.stringify({
             status: newStatus,
-            notes: notes.trim() || null,
           }),
         }
       );
@@ -179,19 +175,6 @@ export default function EventInvitationCard({
               </span>
             </div>
           )}
-        </div>
-
-        {/* Response Notes */}
-        <div className="space-y-2">
-          <Label htmlFor="notes">Add a note (optional)</Label>
-          <Textarea
-            id="notes"
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            placeholder="Add any comments or notes about your attendance..."
-            rows={3}
-            disabled={isLoading}
-          />
         </div>
 
         {/* Response History */}

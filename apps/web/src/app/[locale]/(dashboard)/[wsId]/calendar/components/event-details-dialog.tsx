@@ -4,7 +4,7 @@ import type {
   EventAttendeeStatus,
   EventAttendeeWithUser,
   WorkspaceScheduledEventWithAttendees,
-} from '@tuturuuu/types/db';
+} from '@tuturuuu/types/primitives/RSVP';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
@@ -71,7 +71,6 @@ export default function EventDetailsDialog({
   onClose,
   eventId,
   wsId,
-  onEventUpdate,
   onEventDelete,
 }: EventDetailsDialogProps) {
   const [event, setEvent] =
@@ -142,23 +141,10 @@ export default function EventDetailsDialog({
     }
   }, [eventId, wsId, onEventDelete, onClose, event]);
 
+  // TODO: Implement resend invitations functionality
   const handleResendInvitations = useCallback(async () => {
-    try {
-      const response = await fetch(
-        `/api/v1/workspaces/${wsId}/scheduled-events/${eventId}/resend-invitations`,
-        { method: 'POST' }
-      );
-
-      if (!response.ok) {
-        throw new Error('Failed to resend invitations');
-      }
-
-      toast.success('Invitations resent successfully');
-    } catch (error) {
-      console.error('Error resending invitations:', error);
-      toast.error('Failed to resend invitations. Please try again.');
-    }
-  }, [eventId, wsId]);
+    toast.info('Resend invitations feature coming soon');
+  }, []);
 
   const formatEventTime = useCallback(
     (event: WorkspaceScheduledEventWithAttendees) => {
@@ -420,30 +406,21 @@ function AttendeesList({ attendees }: { attendees: EventAttendeeWithUser[] }) {
                   <div className="font-medium">
                     {attendee.user?.display_name || 'Unknown User'}
                   </div>
-                  {/* Email field removed as it's not available in the User type */}
                 </div>
               </div>
 
-              <div className="flex items-center space-x-3">
-                {attendee.notes && (
-                  <div className="max-w-32 truncate text-xs text-muted-foreground">
-                    "{attendee.notes}"
-                  </div>
-                )}
+              <Badge
+                className={cn('border', STATUS_CONFIG[attendee.status].color)}
+              >
+                <StatusIcon className="mr-1 h-3 w-3" />
+                {STATUS_CONFIG[attendee.status].label}
+              </Badge>
 
-                <Badge
-                  className={cn('border', STATUS_CONFIG[attendee.status].color)}
-                >
-                  <StatusIcon className="mr-1 h-3 w-3" />
-                  {STATUS_CONFIG[attendee.status].label}
-                </Badge>
-
-                {attendee.response_at && (
-                  <div className="text-xs text-muted-foreground">
-                    {format(new Date(attendee.response_at), 'MMM d, p')}
-                  </div>
-                )}
-              </div>
+              {attendee.response_at && (
+                <div className="text-xs text-muted-foreground">
+                  {format(new Date(attendee.response_at), 'MMM d, p')}
+                </div>
+              )}
             </div>
           );
         })}

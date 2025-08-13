@@ -3,6 +3,14 @@ import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextRequest, NextResponse } from 'next/server';
 
+type EventAttendeeCount = {
+  total: number;
+  accepted: number;
+  declined: number;
+  pending: number;
+  tentative: number;
+};
+
 interface Params {
   params: Promise<{
     wsId: string;
@@ -37,7 +45,6 @@ export async function GET(req: NextRequest, { params }: Params) {
         user_id,
         status,
         response_at,
-        notes,
         created_at,
         updated_at,
         event:workspace_scheduled_events(
@@ -109,8 +116,13 @@ export async function GET(req: NextRequest, { params }: Params) {
             };
           }
 
-          acc[attendee.event_id].total++;
-          acc[attendee.event_id][attendee.status]++;
+          const eventCounts = acc[attendee.event_id];
+          if (eventCounts) {
+            eventCounts.total++;
+            if (attendee.status) {
+              eventCounts[attendee.status]++;
+            }
+          }
 
           return acc;
         },
@@ -135,7 +147,6 @@ export async function GET(req: NextRequest, { params }: Params) {
         user_id: invitation.user_id,
         status: invitation.status,
         response_at: invitation.response_at,
-        notes: invitation.notes,
         created_at: invitation.created_at,
         updated_at: invitation.updated_at,
       },
