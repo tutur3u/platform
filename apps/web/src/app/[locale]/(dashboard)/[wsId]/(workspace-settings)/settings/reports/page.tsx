@@ -5,7 +5,7 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 import type { WorkspaceConfig } from '@tuturuuu/types/primitives/WorkspaceConfig';
 import ReportPreview from '@tuturuuu/ui/custom/report-preview';
 import { Separator } from '@tuturuuu/ui/separator';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
+import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { getLocale, getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
 import type { ReactNode } from 'react';
@@ -25,7 +25,11 @@ export default async function WorkspaceReportsSettingsPage({
   params,
   searchParams,
 }: Props) {
-  const { wsId } = await params;
+  const { wsId: id } = await params;
+
+  const workspace = await getWorkspace(id);
+  const wsId = workspace?.id;
+
   const { withoutPermission } = await getPermissions({
     wsId,
     redirectTo: `/${wsId}/settings`,
@@ -41,6 +45,7 @@ export default async function WorkspaceReportsSettingsPage({
   const configs = data.map((config) => ({
     ...config,
     ws_id: wsId,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     name: config?.id ? t(`ws-reports.${config.id.toLowerCase()}` as any) : '',
   }));
 

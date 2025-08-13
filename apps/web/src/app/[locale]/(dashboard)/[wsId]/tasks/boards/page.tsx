@@ -8,7 +8,7 @@ import type {
 } from '@tuturuuu/types/primitives/TaskBoard';
 import { Button } from '@tuturuuu/ui/button';
 import { Plus } from '@tuturuuu/ui/icons';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
+import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
 
@@ -27,7 +27,10 @@ export default async function WorkspaceProjectsPage({
   params,
   searchParams,
 }: Props) {
-  const { wsId } = await params;
+  const { wsId: id } = await params;
+  const workspace = await getWorkspace(id);
+  const wsId = workspace?.id;
+
   const { withoutPermission } = await getPermissions({
     wsId,
   });

@@ -44,7 +44,7 @@ import {
 } from '@tuturuuu/ui/select';
 import { cn } from '@tuturuuu/utils/format';
 import { getInitials } from '@tuturuuu/utils/name-helper';
-import { CheckIcon, ChevronDown, PlusCircle } from 'lucide-react';
+import { CheckIcon, ChevronDown, Crown, PlusCircle } from 'lucide-react';
 import { useParams, usePathname, useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { z } from 'zod';
@@ -156,16 +156,22 @@ export function WorkspaceSelect({
       id: 'workspaces',
       label: t('common.workspaces'),
       teams: nonPersonalWorkspaces.map(
-        (workspace: { id: string; name: string | null }) => ({
+        (workspace: {
+          id: string;
+          name: string | null;
+          created_by_me?: boolean;
+        }) => ({
           label: workspace.name || 'Untitled',
           value: workspace.id,
+          // Signal creator-owned workspaces for UI
+          isCreator: workspace?.created_by_me === true,
         })
       ),
     },
   ].filter(Boolean) as {
     id: string;
     label: string;
-    teams: { label: string; value: string | undefined }[];
+    teams: { label: string; value: string | undefined; isCreator?: boolean }[];
   }[];
 
   const onValueChange = (wsId: string) => {
@@ -248,9 +254,14 @@ export function WorkspaceSelect({
                 {groups.map((group) => (
                   <CommandGroup key={group.label} heading={group.label}>
                     {group.teams.map(
-                      (team: { label: string; value: string | undefined }) => (
+                      (team: {
+                        label: string;
+                        value: string | undefined;
+                        isCreator?: boolean;
+                      }) => (
                         <CommandItem
                           key={team.value}
+                          value={`${team.label} ${team.value || ''}`}
                           onSelect={() => {
                             if (!team?.value || team?.value === wsId) return;
                             onValueChange(team.value);
@@ -270,6 +281,9 @@ export function WorkspaceSelect({
                             </AvatarFallback>
                           </Avatar>
                           <span className="line-clamp-1">{team.label}</span>
+                          {team.isCreator ? (
+                            <Crown className="ml-2 h-4 w-4 shrink-0 opacity-70" />
+                          ) : null}
                           <CheckIcon
                             className={cn(
                               'ml-auto h-4 w-4',
@@ -506,7 +520,7 @@ async function fetchWorkspaces() {
   const { data: workspaces, error } = await supabase
     .from('workspaces')
     .select(
-      'id, name, personal, avatar_url, logo_url, created_at, workspace_members!inner(role)'
+      'id, name, personal, avatar_url, logo_url, created_at, creator_id, workspace_members!inner(role)'
     )
     .eq('workspace_members.user_id', user.id);
 
@@ -542,7 +556,14 @@ async function fetchWorkspaces() {
     undefined;
 
   // For personal workspaces, override the name shown with the user's display name or email
-  return (workspaces || []).map((ws) =>
-    ws?.personal ? { ...ws, name: displayLabel || ws.name || 'Personal' } : ws
-  );
+  return (workspaces || []).map((ws) => {
+    const base = ws?.personal
+      ? { ...ws, name: displayLabel || ws.name || 'Personal' }
+      : ws;
+    return {
+      ...base,
+      // Mark if current user is the creator for downstream UI
+      created_by_me: base?.creator_id === user.id,
+    };
+  });
 }

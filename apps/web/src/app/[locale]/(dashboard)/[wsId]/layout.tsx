@@ -516,6 +516,7 @@ export default async function Layout({ children, params }: LayoutProps) {
           title: t('workspace-settings-layout.workspace'),
           href: `/${wsId}/settings`,
           icon: <Bolt className="h-5 w-5" />,
+          matchExact: true,
         },
         ...(wsId !== 'personal'
           ? [
