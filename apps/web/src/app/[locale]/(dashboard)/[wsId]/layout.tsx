@@ -646,6 +646,7 @@ export default async function Layout({ children, params }: LayoutProps) {
     .maybeSingle();
 
   let eligibleWorkspaces: { id: string; name: string | null }[] | undefined;
+
   if (!existingPersonal) {
     const { data: candidates } = await supabase
       .from('workspaces')
@@ -657,7 +658,12 @@ export default async function Layout({ children, params }: LayoutProps) {
     });
   }
 
-  if (!existingPersonal && eligibleWorkspaces?.length === 0)
+  const SHOW_PERSONAL_WORKSPACE_PROMPT =
+    !existingPersonal &&
+    (user.email?.endsWith('@tuturuuu.com') ||
+      user.email?.endsWith('@xwf.tuturuuu.com'));
+
+  if (SHOW_PERSONAL_WORKSPACE_PROMPT && eligibleWorkspaces?.length === 0)
     return (
       <PersonalWorkspacePrompt
         eligibleWorkspaces={eligibleWorkspaces || []}
@@ -672,7 +678,7 @@ export default async function Layout({ children, params }: LayoutProps) {
 
   return (
     <SidebarProvider initialBehavior={sidebarBehavior}>
-      {!existingPersonal && (
+      {SHOW_PERSONAL_WORKSPACE_PROMPT && (
         <div className="px-2 pt-2 md:px-4 md:pt-3">
           <PersonalWorkspacePrompt
             eligibleWorkspaces={eligibleWorkspaces || []}
