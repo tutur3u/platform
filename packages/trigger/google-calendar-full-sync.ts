@@ -4,7 +4,6 @@ import type { SyncOrchestratorResult } from '@tuturuuu/trigger/google-calendar-s
 import {
   getGoogleAuthClient,
   getWorkspacesForSync,
-  storeActiveSyncToken,
   storeSyncToken,
   syncWorkspaceBatched,
 } from '@tuturuuu/trigger/google-calendar-sync';
@@ -83,7 +82,6 @@ export async function performFullSyncForWorkspace(
     if (syncToken) {
       console.log(`[${ws_id}] Storing sync tokens...`);
       await storeSyncToken(ws_id, syncToken, new Date());
-      await storeActiveSyncToken(ws_id, syncToken, new Date());
       console.log(`[${ws_id}] Sync tokens stored successfully`);
     } else {
       console.log(`[${ws_id}] No sync token received from Google Calendar API`);

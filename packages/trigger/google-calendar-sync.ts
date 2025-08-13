@@ -302,54 +302,6 @@ export const syncWorkspaceBatched = async (payload: {
   return syncGoogleCalendarEventsForWorkspaceBatched(ws_id, events);
 };
 
-// Store the sync token in the google_calendar_active_sync_token table for active syncs
-export const storeActiveSyncToken = async (
-  ws_id: string,
-  syncToken: string,
-  lastSyncedAt: Date
-) => {
-  const sbAdmin = await createAdminClient({ noCookie: true });
-  const calendar_id = 'primary';
-  const { error } = await sbAdmin
-    .from('google_calendar_active_sync_token')
-    .upsert(
-      {
-        ws_id,
-        calendar_id,
-        sync_token: syncToken,
-        last_synced_at: lastSyncedAt.toISOString(),
-      },
-      {
-        onConflict: 'ws_id,calendar_id',
-      }
-    );
-
-  if (error) {
-    console.error(
-      `[${ws_id}] Error storing sync token for active sync calendar ${calendar_id}`,
-      error
-    );
-    throw error;
-  }
-};
-
-export const getActiveSyncToken = async (wsId: string) => {
-  const sbAdmin = await createAdminClient({ noCookie: true });
-  const { data: activeSyncToken, error: activeSyncTokenError } = await sbAdmin
-    .from('google_calendar_active_sync_token')
-    .select('*')
-    .eq('ws_id', wsId);
-
-  if (activeSyncTokenError) {
-    console.error(
-      `[${wsId}] Error fetching active sync token:`,
-      activeSyncTokenError.message
-    );
-  }
-
-  return activeSyncToken?.[0]?.sync_token || null;
-};
-
 // Store the sync token in the calendar_sync_states table
 export const storeSyncToken = async (
   ws_id: string,

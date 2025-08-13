@@ -2,9 +2,9 @@ import { calendar_v3, google } from '@tuturuuu/google';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import {
   formatEventForDb,
-  getActiveSyncToken,
   getGoogleAuthClient,
-  storeActiveSyncToken,
+  getSyncToken,
+  storeSyncToken,
 } from '@tuturuuu/trigger/google-calendar-sync';
 import { NextResponse } from 'next/server';
 
@@ -192,7 +192,7 @@ export async function performIncrementalActiveSync(
 
   try {
     console.log('🔍 [DEBUG] Getting active sync token...');
-    const syncToken = await getActiveSyncToken(wsId);
+    const syncToken = await getSyncToken(wsId);
     console.log('🔍 [DEBUG] Sync token result:', {
       hasSyncToken: !!syncToken,
       syncToken,
@@ -321,7 +321,7 @@ export async function performIncrementalActiveSync(
 
         if (nextSyncToken) {
           console.log('🔍 [DEBUG] Storing next sync token...');
-          await storeActiveSyncToken(wsId, nextSyncToken, new Date());
+          await storeSyncToken(wsId, nextSyncToken, new Date());
           console.log('✅ [DEBUG] Next sync token stored successfully');
         }
 
@@ -337,7 +337,7 @@ export async function performIncrementalActiveSync(
 
     if (nextSyncToken) {
       console.log('🔍 [DEBUG] No events but storing next sync token...');
-      await storeActiveSyncToken(wsId, nextSyncToken, new Date());
+      await storeSyncToken(wsId, nextSyncToken, new Date());
       console.log('✅ [DEBUG] Next sync token stored successfully');
     }
 

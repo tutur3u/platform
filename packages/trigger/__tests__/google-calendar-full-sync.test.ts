@@ -38,7 +38,6 @@ vi.mock('../google-calendar-sync', async () => {
       })
     ),
     storeSyncToken: vi.fn(() => Promise.resolve()),
-    storeActiveSyncToken: vi.fn(() => Promise.resolve()),
   };
 });
 
