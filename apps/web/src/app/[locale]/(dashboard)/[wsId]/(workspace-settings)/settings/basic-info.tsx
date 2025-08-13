@@ -8,9 +8,10 @@ import { useTranslations } from 'next-intl';
 interface Props {
   workspace?: Workspace | null;
   allowEdit?: boolean;
+  isPersonal?: boolean;
 }
 
-export default function BasicInfo({ workspace, allowEdit }: Props) {
+export default function BasicInfo({ workspace, allowEdit, isPersonal }: Props) {
   const t = useTranslations('ws-settings');
 
   if (!workspace) return null;
@@ -23,12 +24,13 @@ export default function BasicInfo({ workspace, allowEdit }: Props) {
       </div>
 
       <div className="grid gap-4">
-        <NameInput
-          wsId={workspace.id}
-          defaultValue={workspace.name}
-          disabled={!workspace || !allowEdit}
-        />
-
+        {isPersonal || (
+          <NameInput
+            wsId={workspace.id}
+            defaultValue={workspace.name}
+            disabled={!workspace || !allowEdit}
+          />
+        )}
         <WorkspaceIDCopy wsId={workspace.id} />
       </div>
     </div>

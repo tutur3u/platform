@@ -31,5 +31,5 @@
     "@types/react-dom": "^19.1.7",
     "typescript": "^5.9.2"
   },
-  "packageManager": "bun@1.2.19"
+  "packageManager": "bun@1.2.20"
 }
