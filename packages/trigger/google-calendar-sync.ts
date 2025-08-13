@@ -309,44 +309,64 @@ export const storeSyncToken = async (
   lastSyncedAt: Date
 ) => {
   const sbAdmin = await createAdminClient({ noCookie: true });
-  const calendar_id = 'primary';
-  const { error } = await sbAdmin.from('calendar_sync_states').upsert(
-    {
-      ws_id,
-      calendar_id,
-      sync_token: syncToken,
-      last_synced_at: lastSyncedAt.toISOString(),
-    },
-    {
-      onConflict: 'ws_id,calendar_id',
-    }
-  );
+
+  const { data, error } = await sbAdmin.rpc('atomic_sync_token_operation', {
+    p_ws_id: ws_id,
+    p_calendar_id: 'primary',
+    p_operation: 'update',
+    p_sync_token: syncToken,
+  });
 
   if (error) {
     console.error(
-      `[${ws_id}] Error storing sync token for calendar ${calendar_id}`,
+      `[${ws_id}] Error storing sync token for active sync calendar primary`,
       error
     );
     throw error;
+  }
+
+  const result = data?.[0];
+  if (!result?.success) {
+    throw new Error(result?.message || 'Failed to store sync token');
   }
 };
 
-export const getSyncToken = async (ws_id: string) => {
+export const getSyncToken = async (ws_id: string): Promise<string | null> => {
   const sbAdmin = await createAdminClient({ noCookie: true });
-  const calendar_id = 'primary';
-  const { data: syncToken, error } = await sbAdmin
-    .from('calendar_sync_states')
-    .select('sync_token')
-    .eq('ws_id', ws_id)
-    .eq('calendar_id', calendar_id);
+  const { data, error } = await sbAdmin.rpc('atomic_sync_token_operation', {
+    p_ws_id: ws_id,
+    p_calendar_id: 'primary',
+    p_operation: 'get',
+  });
 
   if (error) {
     console.error(
-      `[${ws_id}] Error fetching sync token for calendar ${calendar_id}`,
-      error
+      `[${ws_id}] Error fetching active sync token:`,
+      error.message
     );
+    return null;
+  }
+
+  const result = data?.[0];
+  return result?.success ? result.sync_token : null;
+};
+
+export const clearSyncToken = async (ws_id: string) => {
+  const sbAdmin = await createAdminClient({ noCookie: true });
+
+  const { data, error } = await sbAdmin.rpc('atomic_sync_token_operation', {
+    p_ws_id: ws_id,
+    p_calendar_id: 'primary',
+    p_operation: 'clear',
+  });
+
+  if (error) {
+    console.error(`[${ws_id}] Error clearing sync token:`, error.message);
     throw error;
   }
 
-  return syncToken?.[0]?.sync_token || null;
+  const result = data?.[0];
+  if (!result?.success) {
+    throw new Error(result?.message || 'Failed to clear sync token');
+  }
 };

@@ -82,6 +82,20 @@ export type Database = {
         };
         Returns: Json;
       };
+      atomic_sync_token_operation: {
+        Args: {
+          p_calendar_id?: string;
+          p_operation?: string;
+          p_sync_token?: string;
+          p_ws_id: string;
+        };
+        Returns: {
+          last_synced_at: string;
+          message: string;
+          success: boolean;
+          sync_token: string;
+        }[];
+      };
       calculate_productivity_score: {
         Args: {
           category_color: string;
@@ -3050,42 +3064,6 @@ export type Database = {
           user_group_id?: null | string;
           valid_until?: null | string;
           wallet_id?: string;
-          ws_id?: string;
-        };
-      };
-      google_calendar_active_sync_token: {
-        Insert: {
-          calendar_id?: string;
-          last_synced_at?: null | string;
-          sync_token?: null | string;
-          ws_id: string;
-        };
-        Relationships: [
-          {
-            columns: ['ws_id'];
-            foreignKeyName: 'google_calendar_active_sync_token_ws_id_fkey';
-            isOneToOne: false;
-            referencedColumns: ['id'];
-            referencedRelation: 'workspace_link_counts';
-          },
-          {
-            columns: ['ws_id'];
-            foreignKeyName: 'google_calendar_active_sync_token_ws_id_fkey';
-            isOneToOne: false;
-            referencedColumns: ['id'];
-            referencedRelation: 'workspaces';
-          },
-        ];
-        Row: {
-          calendar_id: string;
-          last_synced_at: null | string;
-          sync_token: null | string;
-          ws_id: string;
-        };
-        Update: {
-          calendar_id?: string;
-          last_synced_at?: null | string;
-          sync_token?: null | string;
           ws_id?: string;
         };
       };

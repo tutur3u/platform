@@ -1,6 +1,7 @@
 import { calendar_v3, google } from '@tuturuuu/google';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import {
+  clearSyncToken,
   formatEventForDb,
   getGoogleAuthClient,
   getSyncToken,
@@ -274,11 +275,7 @@ export async function performIncrementalActiveSync(
 
           // Clear the sync token from database since it's invalid
           try {
-            const sbAdmin = await createClient();
-            await sbAdmin
-              .from('google_calendar_active_sync_token')
-              .delete()
-              .eq('ws_id', wsId);
+            await clearSyncToken(wsId);
             console.log('✅ [DEBUG] Invalid sync token cleared from database');
           } catch (clearError) {
             console.error(
