@@ -120,8 +120,8 @@ export function Structure({
               );
               return {
                 currentLinks: childLink.children,
-                history: [links],
-                titleHistory: [link.title, childLink.title],
+                history: [links, link.children], // [main_nav, productivity_panel]
+                titleHistory: [link.title, childLink.title], // ["Productivity", "Calendar"]
                 direction: 'forward' as const,
               };
             }
@@ -206,8 +206,8 @@ export function Structure({
                 // Switch to calendar navbar when on calendar routes
                 return {
                   currentLinks: childLink.children,
-                  history: [links],
-                  titleHistory: [link.title, childLink.title],
+                  history: [links, link.children], // [main_nav, productivity_panel]
+                  titleHistory: [link.title, childLink.title], // ["Productivity", "Calendar"]
                   direction: 'forward',
                 };
               }
@@ -311,13 +311,29 @@ export function Structure({
 
   const handleNavBack = () => {
     setNavState((prevState) => {
-      const previousLinks = prevState.history[prevState.history.length - 1];
-      return {
-        currentLinks: previousLinks || links,
-        history: prevState.history.slice(0, -1),
-        titleHistory: prevState.titleHistory.slice(0, -1),
-        direction: 'backward',
-      };
+      // If we're in a nested submenu (like calendar), go back to the parent (productivity)
+      if (prevState.titleHistory.length > 1) {
+        // We're in a nested submenu, go back to the parent
+        const parentTitle =
+          prevState.titleHistory[prevState.titleHistory.length - 2]; // Get the parent title
+        const parentLinks = prevState.history[prevState.history.length - 1]; // Get the parent links
+
+        return {
+          currentLinks: parentLinks || links,
+          history: prevState.history.slice(0, -1),
+          titleHistory: prevState.titleHistory.slice(0, -1),
+          direction: 'backward',
+        };
+      } else {
+        // We're in a direct submenu, go back to main navigation
+        const previousLinks = prevState.history[prevState.history.length - 1];
+        return {
+          currentLinks: previousLinks || links,
+          history: prevState.history.slice(0, -1),
+          titleHistory: prevState.titleHistory.slice(0, -1),
+          direction: 'backward',
+        };
+      }
     });
   };
 
