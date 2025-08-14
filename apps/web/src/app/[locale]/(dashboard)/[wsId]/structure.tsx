@@ -1,11 +1,14 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import { CalendarSidebarContent } from './calendar/components/calendar-sidebar-content';
-import { MiniCalendar } from './calendar/components/mini-calendar';
-import { Nav } from './nav';
-import type { NavLink } from '@/components/navigation';
-import { PROD_MODE, SIDEBAR_COLLAPSED_COOKIE_NAME } from '@/constants/common';
-import { useSidebar } from '@/context/sidebar-context';
+
+const MiniCalendar = dynamic(
+  () =>
+    import('./calendar/components/mini-calendar').then((m) => m.MiniCalendar),
+  { ssr: false }
+);
+
 import { useQuery } from '@tanstack/react-query';
 import type { Workspace } from '@tuturuuu/types/db';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
@@ -16,10 +19,10 @@ import { ArrowLeft, TriangleAlert } from '@tuturuuu/ui/icons';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { cn } from '@tuturuuu/utils/format';
 import { setCookie } from 'cookies-next';
-import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import {
   type ReactNode,
   Suspense,
@@ -27,6 +30,10 @@ import {
   useEffect,
   useState,
 } from 'react';
+import type { NavLink } from '@/components/navigation';
+import { PROD_MODE, SIDEBAR_COLLAPSED_COOKIE_NAME } from '@/constants/common';
+import { useSidebar } from '@/context/sidebar-context';
+import { Nav } from './nav';
 
 interface MailProps {
   wsId: string;
@@ -64,8 +71,8 @@ export function Structure({
     }
   }, [behavior]);
 
-  // Check if we're currently in the calendar app
-  const isInCalendarApp = pathname.includes('/calendar');
+  // Check if we're currently in the calendar app, scoped to the workspace
+  const isCalendarRoute = pathname.includes(`/${wsId}/calendar`);
 
   // Recursive function to check if any nested child matches the pathname
   const hasActiveChild = useCallback(
@@ -90,49 +97,60 @@ export function Structure({
     [pathname]
   );
 
+  // Helper: find the calendar entry anywhere under the top-level groups
+  const findCalendarEntry = useCallback(
+    (
+      allLinks: (NavLink | null)[],
+      wsId: string
+    ): {
+      parentChildren: (NavLink | null)[];
+      parentTitle: string;
+      node: NavLink;
+    } | null => {
+      for (const parent of allLinks) {
+        if (!parent?.children?.length) continue;
+        for (const child of parent.children) {
+          const matchesHref =
+            child?.href?.includes(`/${wsId}/calendar`) ||
+            child?.aliases?.some((alias) =>
+              alias.includes(`/${wsId}/calendar`)
+            );
+          if (matchesHref) {
+            return {
+              parentChildren: parent.children,
+              parentTitle: parent.title,
+              node: child as NavLink,
+            };
+          }
+        }
+      }
+      return null;
+    },
+    []
+  );
+
   const [navState, setNavState] = useState<{
     currentLinks: (NavLink | null)[];
     history: (NavLink | null)[][];
     titleHistory: (string | null)[];
     direction: 'forward' | 'backward';
   }>(() => {
-    console.log('Initial navState setup:', {
-      isInCalendarApp,
-      links: links.map((l) => l?.title),
-    });
-
     // Auto-switch to calendar navbar when on calendar routes
-    if (isInCalendarApp) {
-      console.log(
-        'Initial state: In calendar app, looking for calendar link...'
-      );
-
-      // Search through all links and their nested children for the calendar
-      for (const link of links) {
-        if (link?.children && link.children.length > 0) {
-          for (const childLink of link.children) {
-            if (
-              childLink?.title === t('sidebar_tabs.calendar') &&
-              childLink.children
-            ) {
-              console.log(
-                'Initial state: Found calendar link in children, setting calendar navbar'
-              );
-              return {
-                currentLinks: childLink.children,
-                history: [links, link.children], // [main_nav, productivity_panel]
-                titleHistory: [link.title, childLink.title], // ["Productivity", "Calendar"]
-                direction: 'forward' as const,
-              };
-            }
-          }
-        }
+    if (isCalendarRoute) {
+      const found = findCalendarEntry(links, wsId);
+      if (found?.node?.children) {
+        return {
+          currentLinks: found.node.children as (NavLink | null)[],
+          history: [links, found.parentChildren], // [main_nav, parent_panel]
+          titleHistory: [found.parentTitle, found.node.title],
+          direction: 'forward' as const,
+        };
       }
     }
 
     // Otherwise, check for other active submenus
     for (const link of links) {
-      if (link?.children && link.children.length > 0) {
+      if (link?.children?.length) {
         const isActive = hasActiveChild(link.children);
         if (isActive) {
           return {
@@ -144,12 +162,11 @@ export function Structure({
         }
       }
     }
-    // Flatten links with a single child
+
+    // Default: show main navigation (flattened links with single children)
     const flattenedLinks = links
       .flatMap((link) =>
-        link?.children && link.children.length === 1
-          ? [link.children[0] as NavLink]
-          : [link]
+        link?.children?.length === 1 ? [link.children[0] as NavLink] : [link]
       )
       .filter(Boolean) as (NavLink | null)[];
     return {
@@ -161,65 +178,41 @@ export function Structure({
   });
 
   useEffect(() => {
-    console.log('Navigation effect triggered:', {
-      pathname,
-      isInCalendarApp,
-      prevState: navState,
-    });
-
     setNavState((prevState) => {
       // Priority 1: If we're in calendar app, always show calendar navbar
-      if (isInCalendarApp) {
-        console.log('In calendar app, checking for calendar link...');
-        console.log(
-          'Available links:',
-          links.map((l) => ({ title: l?.title, hasChildren: !!l?.children }))
-        );
-        console.log(
-          'Looking for calendar with title:',
-          t('sidebar_tabs.calendar')
-        );
-
-        // Search through all links and their nested children for the calendar
-        for (const link of links) {
-          console.log('Checking top-level link:', {
-            title: link?.title,
-            hasChildren: !!link?.children,
-          });
-
-          // Check if this top-level link has children
-          if (link?.children && link.children.length > 0) {
-            // Search through the children for calendar
-            for (const childLink of link.children) {
-              console.log('Checking child link:', {
-                title: childLink?.title,
-                hasChildren: !!childLink?.children,
-              });
-
-              if (
-                childLink?.title === t('sidebar_tabs.calendar') &&
-                childLink.children
-              ) {
-                console.log(
-                  'Found calendar link in children, switching to calendar navbar'
-                );
-                // Switch to calendar navbar when on calendar routes
-                return {
-                  currentLinks: childLink.children,
-                  history: [links, link.children], // [main_nav, productivity_panel]
-                  titleHistory: [link.title, childLink.title], // ["Productivity", "Calendar"]
-                  direction: 'forward',
-                };
-              }
-            }
+      if (isCalendarRoute) {
+        const found = findCalendarEntry(links, wsId);
+        if (found?.node?.children) {
+          // Check if we're already in calendar navigation to avoid unnecessary state changes
+          const isAlreadyInCalendar =
+            prevState.titleHistory.includes('Calendar');
+          if (!isAlreadyInCalendar) {
+            return {
+              currentLinks: found.node.children as (NavLink | null)[],
+              history: [links, found.parentChildren], // [main_nav, parent_panel]
+              titleHistory: [found.parentTitle, found.node.title],
+              direction: 'forward',
+            };
           }
+          // We're already in calendar, check if we need to go deeper
+          const activeChild = found.node.children.find(
+            (child) => child.href && pathname.startsWith(child.href)
+          );
+          if (activeChild?.children && activeChild.children.length > 0) {
+            return {
+              currentLinks: activeChild.children as (NavLink | null)[],
+              history: [...prevState.history, prevState.currentLinks],
+              titleHistory: [...prevState.titleHistory, activeChild.title],
+              direction: 'forward',
+            };
+          }
+          return prevState;
         }
-        console.log('No calendar link found in any nested children!');
       }
 
       // Priority 2: Find if any other submenu should be active for the current path.
       for (const link of links) {
-        if (link?.children && link.children.length > 0) {
+        if (link?.children?.length) {
           const isActive = hasActiveChild(link.children);
 
           if (isActive) {
@@ -229,7 +222,7 @@ export function Structure({
               link.title
             ) {
               return {
-                currentLinks: link.children,
+                currentLinks: link.children as (NavLink | null)[],
                 history: [links],
                 titleHistory: [link.title],
                 direction: 'forward',
@@ -242,13 +235,9 @@ export function Structure({
               (child) => child.href && pathname.startsWith(child.href)
             );
 
-            if (
-              activeChild &&
-              activeChild.children &&
-              activeChild.children.length > 0
-            ) {
+            if (activeChild?.children && activeChild.children.length > 0) {
               return {
-                currentLinks: activeChild.children,
+                currentLinks: activeChild.children as (NavLink | null)[],
                 history: [...prevState.history, prevState.currentLinks],
                 titleHistory: [...prevState.titleHistory, activeChild.title],
                 direction: 'forward',
@@ -267,7 +256,7 @@ export function Structure({
         // Flatten links with a single child
         const flattenedLinks = links
           .flatMap((link) =>
-            link?.children && link.children.length === 1
+            link?.children?.length === 1
               ? [link.children[0] as NavLink]
               : [link]
           )
@@ -283,7 +272,14 @@ export function Structure({
       // We are at the top level and no submenu is active, do nothing.
       return prevState;
     });
-  }, [pathname, links, hasActiveChild]);
+  }, [
+    pathname,
+    links,
+    hasActiveChild,
+    isCalendarRoute,
+    wsId,
+    findCalendarEntry,
+  ]);
 
   const handleToggle = () => {
     const newCollapsed = !isCollapsed;
@@ -311,22 +307,10 @@ export function Structure({
 
   const handleNavBack = () => {
     setNavState((prevState) => {
-      // If we're in a nested submenu (like calendar), go back to the parent (productivity)
-      if (prevState.titleHistory.length > 1) {
-        // We're in a nested submenu, go back to the parent
-        const parentTitle =
-          prevState.titleHistory[prevState.titleHistory.length - 2]; // Get the parent title
-        const parentLinks = prevState.history[prevState.history.length - 1]; // Get the parent links
-
-        return {
-          currentLinks: parentLinks || links,
-          history: prevState.history.slice(0, -1),
-          titleHistory: prevState.titleHistory.slice(0, -1),
-          direction: 'backward',
-        };
-      } else {
-        // We're in a direct submenu, go back to main navigation
+      // If we have history, go back one level
+      if (prevState.history.length > 0) {
         const previousLinks = prevState.history[prevState.history.length - 1];
+
         return {
           currentLinks: previousLinks || links,
           history: prevState.history.slice(0, -1),
@@ -334,6 +318,9 @@ export function Structure({
           direction: 'backward',
         };
       }
+
+      // If no history, we're at the main level, do nothing
+      return prevState;
     });
   };
 
@@ -432,7 +419,7 @@ export function Structure({
   const personalNote = !isCollapsed &&
     (wsId === 'personal' || workspace?.personal) && (
       <div className="p-2 pt-0">
-        <div className="rounded-lg border border-foreground/10 bg-foreground/5 p-2 text-xs text-muted-foreground">
+        <div className="rounded-lg border border-foreground/10 bg-foreground/5 p-2 text-muted-foreground text-xs">
           <div className="flex items-start gap-2">
             <TriangleAlert className="mt-0.5 h-4 w-4 flex-none" />
             <p className="leading-relaxed">
@@ -450,8 +437,8 @@ export function Structure({
         className={cn(
           'absolute flex h-full w-full flex-col transition-transform duration-300 ease-in-out',
           navState.direction === 'forward'
-            ? 'animate-in slide-in-from-right'
-            : 'animate-in slide-in-from-left'
+            ? 'slide-in-from-right animate-in'
+            : 'slide-in-from-left animate-in'
         )}
       >
         {navState.history.length === 0 ? (
@@ -487,7 +474,7 @@ export function Structure({
             />
             {!isCollapsed && currentTitle && (
               <div className="p-2 pt-0">
-                <h2 className="line-clamp-1 px-2 text-sm font-semibold tracking-wide text-muted-foreground uppercase">
+                <h2 className="line-clamp-1 px-2 font-semibold text-muted-foreground text-sm uppercase tracking-wide">
                   {currentTitle}
                 </h2>
               </div>
@@ -495,10 +482,10 @@ export function Structure({
             {!isCollapsed && <div className="mx-4 my-1 border-b" />}
             {personalNote}
 
-            {/* Show mini calendar only in calendar navbar */}
+            {/* Show mini calendar ONLY in calendar navigation panel, not in other panels */}
             {!isCollapsed &&
-              isInCalendarApp &&
-              currentTitle === t('sidebar_tabs.calendar') && (
+              isCalendarRoute &&
+              navState.titleHistory.includes('Calendar') && (
                 <div className="p-2">
                   <MiniCalendar />
                 </div>
@@ -557,7 +544,7 @@ export function Structure({
         </Link>
       </div>
       <div className="mx-2 h-4 w-px flex-none rotate-30 bg-foreground/20" />
-      <div className="flex items-center gap-2 text-lg font-semibold break-all">
+      <div className="flex items-center gap-2 break-all font-semibold text-lg">
         {currentLink?.icon && (
           <div className="flex-none">{currentLink.icon}</div>
         )}
