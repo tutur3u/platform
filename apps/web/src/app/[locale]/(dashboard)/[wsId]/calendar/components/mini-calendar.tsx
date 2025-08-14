@@ -3,6 +3,7 @@
 import { Button } from '@tuturuuu/ui/button';
 import { ChevronLeft, ChevronRight } from '@tuturuuu/ui/icons';
 import { cn } from '@tuturuuu/utils/format';
+import { useLocale } from 'next-intl';
 import { useState } from 'react';
 
 interface MiniCalendarProps {
@@ -10,32 +11,21 @@ interface MiniCalendarProps {
 }
 
 export function MiniCalendar({ className }: MiniCalendarProps) {
+  const locale = useLocale();
   const [currentDate, setCurrentDate] = useState(new Date());
 
-  const monthNames = [
-    'January',
-    'February',
-    'March',
-    'April',
-    'May',
-    'June',
-    'July',
-    'August',
-    'September',
-    'October',
-    'November',
-    'December',
-  ];
+  const monthNames = Array.from({ length: 12 }, (_, i) =>
+    new Date(0, i).toLocaleString(locale, { month: 'long' })
+  );
 
-  const dayAbbrevs = [
-    { key: 'sun', label: 'S' },
-    { key: 'mon', label: 'M' },
-    { key: 'tue', label: 'T' },
-    { key: 'wed', label: 'W' },
-    { key: 'thu', label: 'T' },
-    { key: 'fri', label: 'F' },
-    { key: 'sat', label: 'S' },
-  ];
+  const dayAbbrevs = Array.from({ length: 7 }, (_, i) => {
+    // Assumes week starts on Sunday. Adjust if necessary for your locales.
+    const day = new Date(2000, 0, 2 + i);
+    return {
+      key: day.toLocaleString(locale, { weekday: 'short' }),
+      label: day.toLocaleString(locale, { weekday: 'narrow' }),
+    };
+  });
 
   const goToPreviousMonth = () => {
     setCurrentDate(

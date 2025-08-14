@@ -385,13 +385,7 @@ export function Structure({
               <div className="scrollbar-none flex-1 overflow-y-auto">
                 {/* Special handling for Calendar navigation */}
                 {/* Check if we're on any calendar route */}
-                {(currentTitle === 'Calendar' ||
-                  (navState.history.length > 0 &&
-                    navState.titleHistory.some(
-                      (title) => title === 'Calendar'
-                    )) ||
-                  pathname.includes('/calendar')) &&
-                !isCollapsed ? (
+                {pathname.includes('/calendar') && !isCollapsed ? (
                   <CalendarSidebarContent
                     wsId={wsId}
                     isCollapsed={isCollapsed}

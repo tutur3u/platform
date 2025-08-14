@@ -259,7 +259,7 @@ export default async function Layout({ children, params }: LayoutProps) {
               tempDisabled: true,
             },
             {
-              title: 'Time Tracker',
+              title: t('calendar-tabs.time-tracker'),
               href: `/${wsId}/calendar/time-tracker`,
               icon: <Clock className="h-4 w-4" />,
               tempDisabled: true,
@@ -270,7 +270,7 @@ export default async function Layout({ children, params }: LayoutProps) {
               icon: <Activity className="h-4 w-4" />,
             },
             {
-              title: 'Settings',
+              title: t('calendar-tabs.settings'),
               href: `/${wsId}/calendar/settings`,
               icon: <Settings className="h-4 w-4" />,
               tempDisabled: true,

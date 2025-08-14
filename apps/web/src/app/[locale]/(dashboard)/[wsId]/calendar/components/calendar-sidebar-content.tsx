@@ -48,7 +48,7 @@ export function CalendarSidebarContent({
       tempDisabled: true, // Coming soon
     },
     {
-      title: 'Time Tracker',
+      title: t('calendar-tabs.time-tracker'),
       href: `/${wsId}/calendar/time-tracker`,
       icon: <Clock className="h-5 w-5" />,
       tempDisabled: true, // Coming soon
@@ -59,7 +59,7 @@ export function CalendarSidebarContent({
       icon: <Activity className="h-5 w-5" />,
     },
     {
-      title: 'Settings',
+      title: t('calendar-tabs.settings'),
       href: `/${wsId}/calendar/settings`,
       icon: <Settings className="h-5 w-5" />,
       tempDisabled: true, // Coming soon
