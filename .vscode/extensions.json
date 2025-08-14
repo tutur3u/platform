@@ -1,8 +1,6 @@
 {
   "recommendations": [
-    // "biomejs.biome", // Biome
-    "esbenp.prettier-vscode", // Prettier - Code formatter
-    "dbaeumer.vscode-eslint", // ESLint
+    "biomejs.biome", // Biome
     "vitest.explorer", // Vitest
     "bradlc.vscode-tailwindcss", // Tailwind CSS IntelliSense
     "pflannery.vscode-versionlens", // Version Lens
