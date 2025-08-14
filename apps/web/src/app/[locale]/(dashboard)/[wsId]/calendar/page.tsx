@@ -49,7 +49,7 @@ export default async function CalendarPage({ params }: PageProps) {
         />
         <div className="flex w-80 flex-col gap-4">
           <TasksSidebar wsId={wsId} locale={locale} />
-          {DEV_MODE && <TestScheduledEvents />}
+          {/* {DEV_MODE && <TestScheduledEvents />} */}
         </div>
       </div>
     </CalendarSyncProvider>

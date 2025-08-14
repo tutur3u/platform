@@ -1,6 +1,7 @@
 'use client';
 
 import CreateScheduledEventDialog from './create-scheduled-event-dialog';
+import { useCalendarSync } from '@tuturuuu/ui/hooks/use-calendar-sync';
 import { Button } from '@tuturuuu/ui/button';
 import { Users } from '@tuturuuu/ui/icons';
 import { useState } from 'react';
@@ -13,6 +14,12 @@ export default function CreateScheduledEventButton({
   wsId,
 }: CreateScheduledEventButtonProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const { refreshScheduledEvents } = useCalendarSync();
+
+  const handleDialogClose = () => {
+    setIsDialogOpen(false);
+    refreshScheduledEvents();
+  };
 
   return (
     <>
@@ -27,7 +34,7 @@ export default function CreateScheduledEventButton({
 
       <CreateScheduledEventDialog
         isOpen={isDialogOpen}
-        onClose={() => setIsDialogOpen(false)}
+        onClose={handleDialogClose}
         wsId={wsId}
       />
     </>

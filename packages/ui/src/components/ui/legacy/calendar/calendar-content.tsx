@@ -10,6 +10,7 @@ import type {
   Workspace,
   WorkspaceCalendarGoogleToken,
 } from '@tuturuuu/types/db';
+import type { WorkspaceScheduledEventWithAttendees } from '@tuturuuu/types/primitives/RSVP';
 import { useCalendar } from '@tuturuuu/ui/hooks/use-calendar';
 import { useCalendarSync } from '@tuturuuu/ui/hooks/use-calendar-sync';
 import type { CalendarView } from '@tuturuuu/ui/hooks/use-view-transition';
@@ -57,6 +58,7 @@ export const CalendarContent = ({
   onSaveSettings,
   externalState,
   extras,
+  onOpenEventDetails,
 }: {
   t: any;
   locale: string;
@@ -76,6 +78,7 @@ export const CalendarContent = ({
     availableViews: { value: string; label: string; disabled?: boolean }[];
   };
   extras?: React.ReactNode;
+  onOpenEventDetails?: (eventId: string, scheduledEvent?: WorkspaceScheduledEventWithAttendees) => void;
 }) => {
   const { transition } = useViewTransition();
   const { settings } = useCalendar();
@@ -450,9 +453,10 @@ export const CalendarContent = ({
             workspace={workspace}
             visibleDates={dates}
             viewedMonth={date}
+            onOpenEventDetails={onOpenEventDetails}
           />
         ) : (
-          <CalendarViewWithTrail dates={dates} />
+          <CalendarViewWithTrail dates={dates} onOpenEventDetails={onOpenEventDetails} />
         )}
       </div>
 

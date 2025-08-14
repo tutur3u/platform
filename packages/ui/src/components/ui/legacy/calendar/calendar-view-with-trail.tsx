@@ -2,13 +2,14 @@ import { useCalendar } from '../../../../hooks/use-calendar';
 import { CalendarView } from './calendar-view';
 import { HOUR_HEIGHT } from './config';
 import { TimeTrail } from './time-trail';
+import type { WorkspaceScheduledEventWithAttendees } from '@tuturuuu/types/primitives/RSVP';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import { useEffect, useRef, useState } from 'react';
 
 dayjs.extend(timezone);
 
-export const CalendarViewWithTrail = ({ dates }: { dates: Date[] }) => {
+export const CalendarViewWithTrail = ({ dates, onOpenEventDetails }: { dates: Date[]; onOpenEventDetails?: (eventId: string, scheduledEvent?: WorkspaceScheduledEventWithAttendees) => void }) => {
   const [initialized, setInitialized] = useState(false);
   const calendarViewRef = useRef<HTMLDivElement>(null);
   const { settings } = useCalendar();
@@ -36,7 +37,7 @@ export const CalendarViewWithTrail = ({ dates }: { dates: Date[] }) => {
       }}
     >
       <TimeTrail />
-      <CalendarView dates={dates} />
+      <CalendarView dates={dates} onOpenEventDetails={onOpenEventDetails} />
     </div>
   );
 };

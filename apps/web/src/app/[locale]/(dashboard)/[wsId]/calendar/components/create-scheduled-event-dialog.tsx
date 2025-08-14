@@ -27,9 +27,27 @@ import {
 } from '@tuturuuu/ui/select';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Textarea } from '@tuturuuu/ui/textarea';
+import { useCurrentUser } from '@tuturuuu/ui/hooks/use-current-user';
+import { TimeSelector } from '@tuturuuu/ui/legacy/tumeet/time-selector';
 import { cn } from '@tuturuuu/utils/format';
 import { format } from 'date-fns';
 import { useCallback, useEffect, useState } from 'react';
+import dayjs from 'dayjs';
+import timezone from 'dayjs/plugin/timezone';
+import utc from 'dayjs/plugin/utc';
+
+// Extend dayjs with timezone support
+dayjs.extend(utc);
+dayjs.extend(timezone);
+
+// Helper function to get user's timezone
+const getUserTimezone = (): string => {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone;
+  } catch {
+    return 'UTC'; // Fallback if timezone detection fails
+  }
+};
 
 interface CreateScheduledEventDialogProps {
   isOpen: boolean;
@@ -48,9 +66,9 @@ interface EventFormData {
   title: string;
   description: string;
   start_date: Date | undefined;
-  start_time: string;
+  start_time: number | undefined;
   end_date: Date | undefined;
-  end_time: string;
+  end_time: number | undefined;
   location: string;
   is_all_day: boolean;
   requires_confirmation: boolean;
@@ -72,6 +90,36 @@ const EVENT_COLORS = [
   { value: 'gray', label: 'Gray', color: 'bg-gray-500' },
 ];
 
+// Helper functions to convert between hour numbers and time strings
+const hourToTimeString = (hour: number | undefined): string => {
+  if (!hour) return '09:00';
+  // Convert hour (1-24) to HH:MM format
+  const adjustedHour = hour === 24 ? 0 : hour;
+  return `${String(adjustedHour).padStart(2, '0')}:00`;
+};
+
+// Helper function to create datetime in user's timezone and convert to UTC
+const createDateTimeInTimezone = (
+  date: Date,
+  timeString: string,
+  userTimezone: string
+): string => {
+  const dateStr = format(date, 'yyyy-MM-dd');
+  const datetimeStr = `${dateStr}T${timeString}:00`;
+  
+  // Create the datetime in the user's timezone
+  const datetimeInTz = dayjs.tz(datetimeStr, userTimezone);
+  
+  // Convert to UTC and return as ISO string
+  return datetimeInTz.utc().toISOString();
+};
+
+// const timeStringToHour = (timeString: string): number => {
+//   const [hour] = timeString.split(':').map(Number);
+//   // Convert 0-23 hour to 1-24 format for TimeSelector
+//   return hour === 0 ? 24 : (hour || 1);
+// };
+
 export default function CreateScheduledEventDialog({
   isOpen,
   onClose,
@@ -89,9 +137,9 @@ export default function CreateScheduledEventDialog({
     title: '',
     description: '',
     start_date: undefined,
-    start_time: '09:00',
+    start_time: 9, // 9 AM
     end_date: undefined,
-    end_time: '10:00',
+    end_time: 10, // 10 AM
     location: '',
     is_all_day: false,
     requires_confirmation: true,
@@ -101,6 +149,7 @@ export default function CreateScheduledEventDialog({
   });
 
   const supabase = createClient();
+  const { userId, isLoading: userLoading } = useCurrentUser();
 
   // Load workspace members when dialog opens
 
@@ -149,32 +198,51 @@ export default function CreateScheduledEventDialog({
       setMembersLoading(false);
     }
   }, [wsId, supabase]);
+  
   useEffect(() => {
     if (isOpen) {
       loadWorkspaceMembers();
     }
   }, [isOpen, loadWorkspaceMembers]);
 
-  const handleInputChange = useCallback(
-    (
-      field: keyof EventFormData,
-      value: string | boolean | Date | undefined
-    ) => {
-      setFormData((prev) => ({ ...prev, [field]: value }));
-    },
-    [setFormData]
-  );
-
-  const toggleAttendee = useCallback(
-    (userId: string) => {
+  // Auto-include current user when user data is available and dialog opens
+  useEffect(() => {
+    if (isOpen && userId && !userLoading) {
       setFormData((prev) => ({
         ...prev,
         selected_attendees: prev.selected_attendees.includes(userId)
-          ? prev.selected_attendees.filter((id) => id !== userId)
+          ? prev.selected_attendees
           : [...prev.selected_attendees, userId],
       }));
+    }
+  }, [isOpen, userId, userLoading]);
+
+  const handleInputChange = useCallback(
+    (
+      field: keyof EventFormData,
+      value: string | boolean | Date | number | undefined
+    ) => {
+      setFormData((prev) => ({ ...prev, [field]: value }));
     },
-    [setFormData]
+    []
+  );
+
+  const toggleAttendee = useCallback(
+    (memberId: string) => {
+      // Prevent current user from being deselected
+      if (memberId === userId) {
+        toast.info('As the event creator, you are automatically included in the event.');
+        return;
+      }
+      
+      setFormData((prev) => ({
+        ...prev,
+        selected_attendees: prev.selected_attendees.includes(memberId)
+          ? prev.selected_attendees.filter((id) => id !== memberId)
+          : [...prev.selected_attendees, memberId],
+      }));
+    },
+    [userId]
   );
 
   const handleSubmit = useCallback(async () => {
@@ -188,27 +256,42 @@ export default function CreateScheduledEventDialog({
       return;
     }
 
+    // The creator is automatically included, so we don't need to validate for empty attendee list
+    // since the creator will always be in the list
     if (formData.selected_attendees.length === 0) {
-      toast.error('Please select at least one attendee');
+      toast.error('No attendees selected. This should not happen as you are automatically included.');
       return;
     }
 
     setIsLoading(true);
 
     try {
-      const start_at = formData.is_all_day
-        ? format(formData.start_date, 'yyyy-MM-dd') + 'T00:00:00Z'
-        : format(formData.start_date, 'yyyy-MM-dd') +
-          'T' +
-          formData.start_time +
-          ':00Z';
+      // Get user's timezone
+      const userTimezone = getUserTimezone();
 
-      const end_at = formData.is_all_day
-        ? format(formData.end_date, 'yyyy-MM-dd') + 'T23:59:59Z'
-        : format(formData.end_date, 'yyyy-MM-dd') +
-          'T' +
-          formData.end_time +
-          ':00Z';
+      let start_at: string;
+      let end_at: string;
+
+      if (formData.is_all_day) {
+        // For all-day events, use start of day in user's timezone
+        const startOfDay = dayjs.tz(formData.start_date, userTimezone).startOf('day');
+        const endOfDay = dayjs.tz(formData.end_date, userTimezone).endOf('day');
+        
+        start_at = startOfDay.utc().toISOString();
+        end_at = endOfDay.utc().toISOString();
+      } else {
+        // For timed events, create datetime in user's timezone then convert to UTC
+        start_at = createDateTimeInTimezone(
+          formData.start_date,
+          hourToTimeString(formData.start_time),
+          userTimezone
+        );
+        end_at = createDateTimeInTimezone(
+          formData.end_date,
+          hourToTimeString(formData.end_time),
+          userTimezone
+        );
+      }
 
       // Create the event
       const response = await fetch(
@@ -247,15 +330,15 @@ export default function CreateScheduledEventDialog({
         title: '',
         description: '',
         start_date: undefined,
-        start_time: '09:00',
+        start_time: 9, // 9 AM
         end_date: undefined,
-        end_time: '10:00',
+        end_time: 10, // 10 AM
         location: '',
         is_all_day: false,
         requires_confirmation: true,
         color: 'red',
         status: 'active',
-        selected_attendees: [],
+        selected_attendees: userId ? [userId] : [],
       });
 
       onClose();
@@ -265,7 +348,7 @@ export default function CreateScheduledEventDialog({
     } finally {
       setIsLoading(false);
     }
-  }, [wsId, formData, onClose]);
+  }, [wsId, formData, onClose, userId]);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -354,12 +437,13 @@ export default function CreateScheduledEventDialog({
               {!formData.is_all_day && (
                 <div>
                   <Label>Start Time *</Label>
-                  <Input
-                    type="time"
+                  <TimeSelector
                     value={formData.start_time}
-                    onChange={(e) =>
-                      handleInputChange('start_time', e.target.value)
+                    onValueChange={(value) =>
+                      handleInputChange('start_time', value)
                     }
+                    disabledTime={formData.end_time}
+                    isStartTime={true}
                   />
                 </div>
               )}
@@ -403,12 +487,13 @@ export default function CreateScheduledEventDialog({
               {!formData.is_all_day && (
                 <div>
                   <Label>End Time *</Label>
-                  <Input
-                    type="time"
+                  <TimeSelector
                     value={formData.end_time}
-                    onChange={(e) =>
-                      handleInputChange('end_time', e.target.value)
+                    onValueChange={(value) =>
+                      handleInputChange('end_time', value)
                     }
+                    disabledTime={formData.start_time}
+                    isStartTime={false}
                   />
                 </div>
               )}
@@ -495,30 +580,43 @@ export default function CreateScheduledEventDialog({
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {workspaceMembers.map((member) => (
-                    <div
-                      key={member.user_id}
-                      className="flex cursor-pointer items-center space-x-3 rounded-md p-2 hover:bg-muted"
-                      onClick={() => toggleAttendee(member.user_id)}
-                    >
-                      <Checkbox
-                        checked={formData.selected_attendees.includes(
-                          member.user_id
+                  {workspaceMembers.map((member) => {
+                    const isCurrentUser = member.user_id === userId;
+                    const isChecked = formData.selected_attendees.includes(member.user_id);
+                    
+                    return (
+                      <div
+                        key={member.user_id}
+                        className={cn(
+                          "flex items-center space-x-3 rounded-md p-2",
+                          !isCurrentUser && "cursor-pointer hover:bg-muted",
+                          isCurrentUser && "bg-muted/50"
                         )}
-                        onChange={() => toggleAttendee(member.user_id)}
-                      />
-                      <div className="flex-1">
-                        <div className="font-medium">
-                          {member.display_name || 'Unknown User'}
-                        </div>
-                        {member.email && (
-                          <div className="text-sm text-muted-foreground">
-                            {member.email}
+                        onClick={() => !isCurrentUser && toggleAttendee(member.user_id)}
+                      >
+                        <Checkbox
+                          checked={isChecked}
+                          disabled={isCurrentUser}
+                          onChange={() => !isCurrentUser && toggleAttendee(member.user_id)}
+                        />
+                        <div className="flex-1">
+                          <div className={cn(
+                            "font-medium",
+                            isCurrentUser && "text-primary"
+                          )}>
+                            {member.display_name || 'Unknown User'}
+                            {isCurrentUser && ' (You - Event Creator)'}
                           </div>
-                        )}
+                          {member.email && (
+                            <div className="text-sm text-muted-foreground">
+                              {member.email}
+                              {isCurrentUser && ' • Automatically included'}
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </ScrollArea>

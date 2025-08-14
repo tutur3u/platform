@@ -152,6 +152,9 @@ export async function POST(req: NextRequest, { params }: Params) {
       );
     }
 
+    // Ensure the creator is always included in the attendee list
+    const finalAttendeeIds = Array.from(new Set([...attendee_ids, user.id]));
+
     // Create the event
     const { data: event, error: eventError } = await supabase
       .from('workspace_scheduled_events')
@@ -180,10 +183,10 @@ export async function POST(req: NextRequest, { params }: Params) {
     }
 
     // Create attendee records
-    const attendeeRecords = attendee_ids.map((userId: string) => ({
+    const attendeeRecords = finalAttendeeIds.map((userId: string) => ({
       event_id: event.id,
       user_id: userId,
-      status: 'pending',
+      status: (userId === user.id ? 'accepted' : 'pending') as 'accepted' | 'pending', // Creator is automatically accepted
     }));
 
     const { error: attendeeError } = await supabase
