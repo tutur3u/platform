@@ -1,5 +1,8 @@
 'use client';
 
+import { NavLink } from '../../nav-link';
+import { MiniCalendar } from './mini-calendar';
+import type { NavLink as NavLinkType } from '@/components/navigation';
 import {
   BarChart3,
   Calendar,
@@ -8,9 +11,6 @@ import {
   Settings,
 } from '@tuturuuu/ui/icons';
 import { useTranslations } from 'next-intl';
-import type { NavLink as NavLinkType } from '@/components/navigation';
-import { NavLink } from '../../nav-link';
-import { MiniCalendar } from './mini-calendar';
 
 interface CalendarSidebarContentProps {
   wsId: string;
