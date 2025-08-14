@@ -5,10 +5,10 @@ import { NextResponse } from 'next/server';
 
 export async function PATCH(
   req: Request,
-  { params }: { params: Promise<{ wsId: string; taskId: string }> }
+  { params }: { params: Promise<{ taskId: string }> }
 ) {
   try {
-    const { wsId, taskId } = await params;
+    const { taskId } = await params;
     const supabase = await createClient();
     const user = await getCurrentSupabaseUser();
 
@@ -86,18 +86,6 @@ export async function PATCH(
         { error: 'Failed to update task' },
         { status: 500 }
       );
-    }
-
-    // 6. Update priority in related calendar events
-    const { error: calendarUpdateError } = await supabase
-      .from('workspace_calendar_events')
-      .update({ priority: validatedPriority })
-      .eq('ws_id', wsId)
-      .eq('task_id', taskId);
-
-    if (calendarUpdateError) {
-      console.error('Error updating calendar events:', calendarUpdateError);
-      // Log the error but don't fail the request since the main task update succeeded
     }
 
     return NextResponse.json(updatedTask, { status: 200 });
