@@ -53,7 +53,8 @@
     "ui:add": "bun --filter ui ui:add",
     "ui:diff": "bun --filter ui ui:diff",
     "bat:update-all": "./scripts/package-update.bat",
-    "sh:update-all": "./scripts/package-update.sh"
+    "sh:update-all": "./scripts/package-update.sh",
+    "update-all": "bun ./scripts/package-update.js"
   },
   "dependencies": {
     "react-scan": "^0.4.3"
