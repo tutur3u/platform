@@ -1,8 +1,6 @@
-import type {
-  Task,
-  TaskBoard,
-  TaskList,
-} from '@tuturuuu/types/primitives/TaskBoard';
+import type { Task } from '@tuturuuu/types/primitives/Task';
+import type { TaskBoard } from '@tuturuuu/types/primitives/TaskBoard';
+import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 
 export type { Task, TaskBoard, TaskList };
 

@@ -379,7 +379,6 @@ export const CalendarProvider = ({
           end_at: endDate.toISOString(),
           color: eventColor as SupportedColor,
           location: event.location || '',
-          priority: event.priority || 'medium',
           ws_id: ws?.id ?? '',
           locked: false,
         })
@@ -566,9 +565,6 @@ export const CalendarProvider = ({
           ...(updateData.location !== undefined && {
             location: updateData.location,
           }),
-          ...(updateData.priority !== undefined && {
-            priority: updateData.priority,
-          }),
           ...(updateData.locked !== undefined && { locked: updateData.locked }),
         };
 
@@ -630,7 +626,6 @@ export const CalendarProvider = ({
         'end_at',
         'color',
         'location',
-        'priority',
         'locked',
       ];
 
@@ -800,23 +795,19 @@ export const CalendarProvider = ({
         // Event has no Google Calendar ID, skipping delete sync
       }
 
-      try {
-        const supabase = createClient();
-        const { error } = await supabase
-          .from('workspace_calendar_events')
-          .delete()
-          .eq('id', eventId);
+      const supabase = createClient();
+      const { error } = await supabase
+        .from('workspace_calendar_events')
+        .delete()
+        .eq('id', eventId);
 
-        if (error) throw error;
+      if (error) throw error;
 
-        // Refresh the query cache after deleting an event
-        refresh();
-        setActiveEventId(null);
-      } catch (err) {
-        throw err;
-      }
+      // Refresh the query cache after deleting an event
+      refresh();
+      setActiveEventId(null);
     },
-    [ws, refresh, pendingNewEvent]
+    [ws, refresh, pendingNewEvent, events, experimentalGoogleToken]
   );
 
   // Automatically fetch Google Calendar events
@@ -945,8 +936,7 @@ export const CalendarProvider = ({
             localEvent.start_at !== gEvent.start_at ||
             localEvent.end_at !== gEvent.end_at ||
             localEvent.color !== gEvent.color ||
-            localEvent.location !== (gEvent.location || '') ||
-            localEvent.priority !== (gEvent.priority || 'medium');
+            localEvent.location !== (gEvent.location || '');
 
           // Only update if there are actual changes
           if (hasChanges) {
@@ -960,7 +950,6 @@ export const CalendarProvider = ({
                 end_at: gEvent.end_at,
                 color: gEvent.color || 'BLUE',
                 location: gEvent.location || '',
-                priority: gEvent.priority || 'medium',
               },
             });
           }
@@ -1003,7 +992,6 @@ export const CalendarProvider = ({
             ws_id: ws?.id ?? '',
             google_event_id: gEvent.google_event_id,
             locked: gEvent.locked || false,
-            priority: gEvent.priority || 'medium',
             created_at: new Date().toISOString(),
           });
         }

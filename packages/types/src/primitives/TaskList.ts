@@ -1,9 +1,16 @@
-import type { Task } from './Task';
+import type { SupportedColor } from './SupportedColors';
+import type { TaskBoardStatus } from './TaskBoard';
 
 export interface TaskList {
   id: string;
   name: string;
-  tasks: Task[];
+  archived: boolean;
+  deleted: boolean;
+  created_at: string;
   board_id: string;
-  created_at?: string;
+  creator_id: string;
+  status: TaskBoardStatus;
+  color: SupportedColor;
+  position: number;
+  href?: string;
 }

@@ -6,8 +6,10 @@ import { moveTask, useDeleteTask, useUpdateTask } from '@/lib/task-helper';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { createClient } from '@tuturuuu/supabase/next/client';
+import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
-import type { Task, TaskList } from '@tuturuuu/types/primitives/TaskBoard';
+import type { Task } from '@tuturuuu/types/primitives/Task';
+import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card } from '@tuturuuu/ui/card';
@@ -75,6 +77,13 @@ interface Props {
 
 // Lightweight drag overlay version
 export function LightweightTaskCard({ task }: { task: Task }) {
+  const labels = {
+    critical: 'Urgent',
+    high: 'High',
+    normal: 'Medium',
+    low: 'Low',
+  };
+
   return (
     <Card className="pointer-events-none w-full max-w-[350px] scale-105 border-2 border-primary/20 bg-background opacity-95 shadow-xl ring-2 ring-primary/20 select-none">
       <div className="flex flex-col gap-2 p-4">
@@ -82,7 +91,7 @@ export function LightweightTaskCard({ task }: { task: Task }) {
         <div className="flex items-center gap-2">
           {task.priority && (
             <Badge variant="secondary" className="text-xs">
-              {['', 'Urgent', 'High', 'Medium', 'Low'][task.priority]}
+              {labels[task.priority as keyof typeof labels]}
             </Badge>
           )}
           {task.tags && task.tags.length > 0 && (
@@ -235,7 +244,7 @@ export const TaskCard = React.memo(function TaskCard({
     );
   }
 
-  async function handlePriorityChange(priority: number) {
+  async function handlePriorityChange(priority: TaskPriority) {
     setIsLoading(true);
     updateTaskMutation.mutate(
       { taskId: task.id, updates: { priority } },
@@ -335,31 +344,34 @@ export const TaskCard = React.memo(function TaskCard({
   const getPriorityBorderColor = () => {
     if (!task.priority) return '';
     switch (task.priority) {
-      case 1:
+      case 'critical':
         return 'border-dynamic-red/70';
-      case 2:
+      case 'high':
         return 'border-dynamic-orange/70';
-      case 3:
+      case 'normal':
         return 'border-dynamic-yellow/70';
-      default:
+      case 'low':
         return 'border-dynamic-blue/70';
+      default:
+        return 'border-dynamic-gray/70';
     }
   };
 
   const getPriorityIndicator = () => {
     if (!task.priority) return null;
     const colors = {
-      1: 'bg-dynamic-red/10 border-dynamic-red/30 text-dynamic-red',
-      2: 'bg-dynamic-orange/10 border-dynamic-orange/30 text-dynamic-orange',
-      3: 'bg-dynamic-yellow/10 border-dynamic-yellow/30 text-dynamic-yellow',
-      4: 'bg-dynamic-blue/10 border-dynamic-blue/30 text-dynamic-blue',
+      critical: 'bg-dynamic-red/10 border-dynamic-red/30 text-dynamic-red',
+      high: 'bg-dynamic-orange/10 border-dynamic-orange/30 text-dynamic-orange',
+      normal:
+        'bg-dynamic-yellow/10 border-dynamic-yellow/30 text-dynamic-yellow',
+      low: 'bg-dynamic-blue/10 border-dynamic-blue/30 text-dynamic-blue',
     };
 
     const labels = {
-      1: 'Urgent',
-      2: 'High',
-      3: 'Medium',
-      4: 'Low',
+      critical: 'Urgent',
+      high: 'High',
+      normal: 'Medium',
+      low: 'Low',
     };
 
     return (
@@ -717,7 +729,7 @@ export const TaskCard = React.memo(function TaskCard({
                   {/* Priority Actions */}
                   <DropdownMenuItem
                     onClick={() => {
-                      handlePriorityChange(1);
+                      handlePriorityChange('critical');
                       setMenuOpen(false);
                     }}
                     className="cursor-pointer"
@@ -727,7 +739,7 @@ export const TaskCard = React.memo(function TaskCard({
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() => {
-                      handlePriorityChange(2);
+                      handlePriorityChange('high');
                       setMenuOpen(false);
                     }}
                     className="cursor-pointer"
@@ -737,7 +749,7 @@ export const TaskCard = React.memo(function TaskCard({
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() => {
-                      handlePriorityChange(3);
+                      handlePriorityChange('normal');
                       setMenuOpen(false);
                     }}
                     className="cursor-pointer"
@@ -747,7 +759,7 @@ export const TaskCard = React.memo(function TaskCard({
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() => {
-                      handlePriorityChange(4);
+                      handlePriorityChange('low');
                       setMenuOpen(false);
                     }}
                     className="cursor-pointer"
@@ -886,7 +898,7 @@ export const TaskCard = React.memo(function TaskCard({
       </div>
 
       {/* Footer - Enhanced priority indicator */}
-      {!task.archived && task.priority === 1 && (
+      {!task.archived && task.priority === 'critical' && (
         <div className="mt-3 flex items-center justify-center border-t border-dynamic-red/20 pt-2">
           <div className="flex items-center gap-1 text-dynamic-red/80">
             <Sparkles className="h-3 w-3 animate-pulse" />

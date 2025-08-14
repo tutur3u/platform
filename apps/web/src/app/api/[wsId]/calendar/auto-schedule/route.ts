@@ -4,7 +4,7 @@ import {
   scheduleWithFlexibleEvents,
 } from '@tuturuuu/ai/scheduling/algorithm';
 import { defaultActiveHours } from '@tuturuuu/ai/scheduling/default';
-import type { TaskPriority } from '@tuturuuu/ai/scheduling/types';
+import type { Event } from '@tuturuuu/ai/scheduling/types';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type dayjs from 'dayjs';
@@ -13,29 +13,6 @@ import { type NextRequest, NextResponse } from 'next/server';
 export interface DateRange {
   start: dayjs.Dayjs;
   end: dayjs.Dayjs;
-}
-export interface Event {
-  id: string;
-  name: string;
-  range: DateRange;
-  isPastDeadline?: boolean;
-  taskId: string;
-  partNumber?: number;
-  totalParts?: number;
-  locked?: boolean;
-  category?: 'work' | 'personal' | 'meeting';
-}
-export interface Task {
-  id: string;
-  name: string;
-  duration: number;
-  minDuration: number;
-  maxDuration: number;
-  category: 'work' | 'personal' | 'meeting';
-  priority: TaskPriority;
-  events: Event[];
-  deadline?: dayjs.Dayjs;
-  allowSplit?: boolean;
 }
 
 export interface ActiveHours {
@@ -65,7 +42,7 @@ export async function POST(
     return NextResponse.json({ error: 'Invalid secret key' }, { status: 401 });
   }
 
-  const supabase = createAdminClient();
+  const sbAdmin = await createAdminClient();
   const requestId = Math.random().toString(36).substring(7);
 
   try {
@@ -94,13 +71,12 @@ export async function POST(
 
     // Fetch flexible events
     try {
-      const { data: flexibleEventsData, error: flexibleEventsError } = await (
-        await supabase
-      )
-        .from('workspace_calendar_events')
-        .select('*')
-        // .eq('locked', false)
-        .eq('ws_id', wsId);
+      const { data: flexibleEventsData, error: flexibleEventsError } =
+        await sbAdmin
+          .from('workspace_calendar_events')
+          .select('*')
+          .eq('locked', false)
+          .eq('ws_id', wsId);
 
       if (flexibleEventsError) {
         console.error(
@@ -112,7 +88,6 @@ export async function POST(
         );
       }
 
-      const newTasks: Task[] = [];
       const dayjs = (await import('dayjs')).default;
       const newFlexibleEvents: Event[] = (flexibleEventsData || []).map(
         (event) => ({
@@ -123,9 +98,7 @@ export async function POST(
             end: dayjs(event.end_at),
           },
           locked: event.locked,
-          priority: event.priority,
           taskId: event.task_id ?? '',
-          category: 'work',
         })
       );
 
@@ -147,10 +120,8 @@ export async function POST(
             if (event.locked) {
               lockedEvents.push(event);
             } else {
-              // If a flexible event has no task or its task is not in our list,
-              // promote it to a low-priority task to be re-scheduled.
-              const taskExists = newTasks.some((t) => t.id === event.taskId);
-              if (!event.taskId || !taskExists) {
+              // If a flexible event has no task, promote it to a low-priority task to be re-scheduled.
+              if (!event.taskId) {
                 tasksToProcess.push(promoteEventToTask(event));
               }
             }
@@ -164,7 +135,6 @@ export async function POST(
             message: `Optimizing ${tasksToProcess.length} items...`,
           });
           const scheduleResult = scheduleWithFlexibleEvents(
-            newTasks,
             newFlexibleEvents,
             lockedEvents,
             activeHours
@@ -193,7 +163,7 @@ export async function POST(
           }));
 
           if (eventsToUpsert.length > 0) {
-            const { error } = await (await supabase)
+            const { error } = await sbAdmin
               .from('workspace_calendar_events')
               .upsert(eventsToUpsert);
 
@@ -217,7 +187,7 @@ export async function POST(
               locked: false,
             }));
 
-            const { error: insertError } = await (await supabase)
+            const { error: insertError } = await sbAdmin
               .from('workspace_calendar_events')
               .insert(insertData);
 

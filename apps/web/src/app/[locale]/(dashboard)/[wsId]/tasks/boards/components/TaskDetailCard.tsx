@@ -1,5 +1,6 @@
 'use client';
 
+import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import { Badge } from '@tuturuuu/ui/badge';
 import {
   Activity,
@@ -22,7 +23,7 @@ interface TaskDetailCardProps {
     listName?: string;
     createdDate?: Date;
     end_date?: string;
-    priority?: number;
+    priority?: TaskPriority;
     assignee_name?: string;
   } | null;
   clickCardPosition: { x: number; y: number };
@@ -186,21 +187,21 @@ export function TaskDetailCard({
                   <div className="pl-4">
                     <Badge
                       variant={
-                        clickedTask.priority === 1
+                        clickedTask.priority === 'critical'
                           ? 'destructive'
-                          : clickedTask.priority === 2
+                          : clickedTask.priority === 'high'
                             ? 'default'
-                            : clickedTask.priority === 3
+                            : clickedTask.priority === 'normal'
                               ? 'secondary'
                               : 'outline'
                       }
                       className="text-xs"
                     >
-                      {clickedTask.priority === 1
+                      {clickedTask.priority === 'critical'
                         ? '🔥 Urgent'
-                        : clickedTask.priority === 2
+                        : clickedTask.priority === 'high'
                           ? '⚡ High'
-                          : clickedTask.priority === 3
+                          : clickedTask.priority === 'normal'
                             ? '📋 Medium'
                             : '📝 Low'}
                     </Badge>

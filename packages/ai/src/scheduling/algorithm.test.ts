@@ -42,35 +42,11 @@ describe('Scheduling Algorithm', () => {
         id: 'task-1',
         name: 'Complete project',
         duration: 120, // 2 hours in minutes
-        events: [],
       };
 
       expect(task.id).toBe('task-1');
       expect(task.name).toBe('Complete project');
       expect(task.duration).toBe(120);
-      expect(Array.isArray(task.events)).toBe(true);
-    });
-
-    it('should create tasks with events', () => {
-      const task = {
-        id: 'task-2',
-        name: 'Review code',
-        duration: 60,
-        events: [
-          {
-            id: 'event-1',
-            name: 'Code review session',
-            range: {
-              start: dayjs('2024-01-01T14:00:00'),
-              end: dayjs('2024-01-01T15:00:00'),
-            },
-            category: 'work',
-          },
-        ],
-      };
-
-      expect(task.events).toHaveLength(1);
-      expect(task.events[0]?.name).toBe('Code review session');
     });
   });
 
@@ -147,8 +123,6 @@ describe('Scheduling Algorithm', () => {
       expect(task?.id).toBe('task-1');
       expect(task?.name).toBe('Task 1');
       expect(task?.duration).toBe(1);
-      expect(Array.isArray(task?.events)).toBe(true);
-      expect(task?.events).toHaveLength(0);
     });
 
     it('should have valid task properties types', () => {
@@ -157,7 +131,6 @@ describe('Scheduling Algorithm', () => {
       expect(typeof task?.id).toBe('string');
       expect(typeof task?.name).toBe('string');
       expect(typeof task?.duration).toBe('number');
-      expect(Array.isArray(task?.events)).toBe(true);
     });
 
     it('should have positive duration', () => {
@@ -185,8 +158,8 @@ describe('Scheduling Algorithm', () => {
           duration: 2,
           minDuration: 1,
           maxDuration: 2,
+          priority: 'normal' as const,
           category: 'work' as const,
-          events: [],
           allowSplit: false,
         },
       ];
@@ -204,8 +177,8 @@ describe('Scheduling Algorithm', () => {
           duration: 10, // longer than any available slot
           minDuration: 1,
           maxDuration: 10,
+          priority: 'normal' as const,
           category: 'work' as const,
-          events: [],
           allowSplit: false,
         },
       ];
@@ -222,8 +195,8 @@ describe('Scheduling Algorithm', () => {
           duration: 6,
           minDuration: 1,
           maxDuration: 2,
+          priority: 'normal' as const,
           category: 'work' as const,
-          events: [],
           allowSplit: true,
         },
       ];

@@ -1,1 +1,5 @@
-export type Priority = 1 | 2 | 3 | 4 | 5 | null | undefined;
+export const TaskPriorities = ['critical', 'high', 'normal', 'low'] as const;
+export type TaskPriority = (typeof TaskPriorities)[number];
+
+export const isTaskPriority = (v: unknown): v is TaskPriority =>
+  typeof v === 'string' && (TaskPriorities as readonly string[]).includes(v);

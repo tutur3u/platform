@@ -1,6 +1,6 @@
 'use client';
 
-import { TaskPriority } from '@tuturuuu/ai/scheduling/types';
+import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';

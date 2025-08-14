@@ -4,7 +4,9 @@ import { TaskTagInput } from './task-tag-input';
 import { invalidateTaskCaches, useUpdateTask } from '@/lib/task-helper';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
-import type { Task, TaskList } from '@tuturuuu/types/primitives/TaskBoard';
+import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
+import type { Task } from '@tuturuuu/types/primitives/Task';
+import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { Button } from '@tuturuuu/ui/button';
 import { Calendar } from '@tuturuuu/ui/calendar';
 import {
@@ -57,8 +59,8 @@ export function TaskEditDialog({
   const [isLoading, setIsLoading] = useState(false);
   const [name, setName] = useState(task.name);
   const [description, setDescription] = useState(task.description || '');
-  const [priority, setPriority] = useState<string>(
-    task.priority?.toString() || '0'
+  const [priority, setPriority] = useState<TaskPriority | null>(
+    task.priority || null
   );
   const [startDate, setStartDate] = useState<Date | undefined>(
     task.start_date ? new Date(task.start_date) : undefined
@@ -101,7 +103,7 @@ export function TaskEditDialog({
     if (task) {
       setName(task.name);
       setDescription(task.description || '');
-      setPriority(task.priority?.toString() || '0');
+      setPriority(task.priority || null);
       setStartDate(task.start_date ? new Date(task.start_date) : undefined);
       setEndDate(task.end_date ? new Date(task.end_date) : undefined);
       setTags(task.tags || []);
@@ -118,7 +120,7 @@ export function TaskEditDialog({
     const taskUpdates: Partial<Task> = {
       name: name.trim(),
       description: description.trim() || undefined,
-      priority: priority === '0' ? undefined : parseInt(priority),
+      priority: priority,
       start_date: startDate?.toISOString(),
       end_date: endDate?.toISOString(),
       list_id: selectedListId,
@@ -171,12 +173,14 @@ export function TaskEditDialog({
 
   const getPriorityColor = (p: string) => {
     switch (p) {
-      case '1':
+      case 'critical':
         return 'border-red-500 bg-red-50 text-red-700 hover:bg-red-100 dark:bg-red-950 dark:text-red-300';
-      case '2':
+      case 'high':
         return 'border-yellow-500 bg-yellow-50 text-yellow-700 hover:bg-yellow-100 dark:bg-yellow-950 dark:text-yellow-300';
-      case '3':
+      case 'normal':
         return 'border-green-500 bg-green-50 text-green-700 hover:bg-green-100 dark:bg-green-950 dark:text-green-300';
+      case 'low':
+        return 'border-gray-300 bg-gray-50 text-gray-700 hover:bg-gray-100 dark:bg-gray-800 dark:text-gray-300';
       default:
         return 'border-gray-300 bg-gray-50 text-gray-700 hover:bg-gray-100 dark:bg-gray-800 dark:text-gray-300';
     }
@@ -213,11 +217,10 @@ export function TaskEditDialog({
               aria-label="Task priority selection"
             >
               {[
-                { value: '0', label: 'None', icon: null },
-                { value: '1', label: 'Low', icon: Flag },
-                { value: '2', label: 'Medium', icon: Flag },
-                { value: '3', label: 'High', icon: Flag },
-                { value: '4', label: 'Urgent', icon: Flag },
+                { value: 'critical', label: 'Urgent', icon: Flag },
+                { value: 'high', label: 'High', icon: Flag },
+                { value: 'normal', label: 'Medium', icon: Flag },
+                { value: 'low', label: 'Low', icon: Flag },
               ].map(({ value, label, icon: Icon }) => (
                 <Button
                   key={value}
@@ -228,7 +231,7 @@ export function TaskEditDialog({
                     'h-8 px-3 text-xs transition-all duration-200',
                     priority === value && getPriorityColor(value)
                   )}
-                  onClick={() => setPriority(value)}
+                  onClick={() => setPriority(value as TaskPriority)}
                   role="radio"
                   aria-checked={priority === value}
                   aria-label={`Priority: ${label}`}
