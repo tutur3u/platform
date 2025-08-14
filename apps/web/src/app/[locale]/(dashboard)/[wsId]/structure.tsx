@@ -1,6 +1,7 @@
 'use client';
 
 import { CalendarSidebarContent } from './calendar/components/calendar-sidebar-content';
+import { MiniCalendar } from './calendar/components/mini-calendar';
 import { Nav } from './nav';
 import type { NavLink } from '@/components/navigation';
 import { PROD_MODE, SIDEBAR_COLLAPSED_COOKIE_NAME } from '@/constants/common';
@@ -63,6 +64,9 @@ export function Structure({
     }
   }, [behavior]);
 
+  // Check if we're currently in the calendar app
+  const isInCalendarApp = pathname.includes('/calendar');
+
   // Recursive function to check if any nested child matches the pathname
   const hasActiveChild = useCallback(
     (navLinks: NavLink[]): boolean => {
@@ -92,6 +96,41 @@ export function Structure({
     titleHistory: (string | null)[];
     direction: 'forward' | 'backward';
   }>(() => {
+    console.log('Initial navState setup:', {
+      isInCalendarApp,
+      links: links.map((l) => l?.title),
+    });
+
+    // Auto-switch to calendar navbar when on calendar routes
+    if (isInCalendarApp) {
+      console.log(
+        'Initial state: In calendar app, looking for calendar link...'
+      );
+
+      // Search through all links and their nested children for the calendar
+      for (const link of links) {
+        if (link?.children && link.children.length > 0) {
+          for (const childLink of link.children) {
+            if (
+              childLink?.title === t('sidebar_tabs.calendar') &&
+              childLink.children
+            ) {
+              console.log(
+                'Initial state: Found calendar link in children, setting calendar navbar'
+              );
+              return {
+                currentLinks: childLink.children,
+                history: [links],
+                titleHistory: [link.title, childLink.title],
+                direction: 'forward' as const,
+              };
+            }
+          }
+        }
+      }
+    }
+
+    // Otherwise, check for other active submenus
     for (const link of links) {
       if (link?.children && link.children.length > 0) {
         const isActive = hasActiveChild(link.children);
@@ -122,8 +161,63 @@ export function Structure({
   });
 
   useEffect(() => {
+    console.log('Navigation effect triggered:', {
+      pathname,
+      isInCalendarApp,
+      prevState: navState,
+    });
+
     setNavState((prevState) => {
-      // Find if any submenu should be active for the current path.
+      // Priority 1: If we're in calendar app, always show calendar navbar
+      if (isInCalendarApp) {
+        console.log('In calendar app, checking for calendar link...');
+        console.log(
+          'Available links:',
+          links.map((l) => ({ title: l?.title, hasChildren: !!l?.children }))
+        );
+        console.log(
+          'Looking for calendar with title:',
+          t('sidebar_tabs.calendar')
+        );
+
+        // Search through all links and their nested children for the calendar
+        for (const link of links) {
+          console.log('Checking top-level link:', {
+            title: link?.title,
+            hasChildren: !!link?.children,
+          });
+
+          // Check if this top-level link has children
+          if (link?.children && link.children.length > 0) {
+            // Search through the children for calendar
+            for (const childLink of link.children) {
+              console.log('Checking child link:', {
+                title: childLink?.title,
+                hasChildren: !!childLink?.children,
+              });
+
+              if (
+                childLink?.title === t('sidebar_tabs.calendar') &&
+                childLink.children
+              ) {
+                console.log(
+                  'Found calendar link in children, switching to calendar navbar'
+                );
+                // Switch to calendar navbar when on calendar routes
+                return {
+                  currentLinks: childLink.children,
+                  history: [links],
+                  titleHistory: [link.title, childLink.title],
+                  direction: 'forward',
+                };
+              }
+            }
+          }
+        }
+        console.log('No calendar link found in any nested children!');
+      }
+
+      // Priority 2: Find if any other submenu should be active for the current path.
       for (const link of links) {
         if (link?.children && link.children.length > 0) {
           const isActive = hasActiveChild(link.children);
@@ -347,6 +441,9 @@ export function Structure({
         {navState.history.length === 0 ? (
           <>
             {personalNote}
+
+            {/* Mini calendar is ONLY shown in calendar navbar, not in main productivity panel */}
+
             <Nav
               key={`${user?.id}-root`}
               wsId={wsId}
@@ -381,6 +478,15 @@ export function Structure({
             )}
             {!isCollapsed && <div className="mx-4 my-1 border-b" />}
             {personalNote}
+
+            {/* Show mini calendar only in calendar navbar */}
+            {!isCollapsed &&
+              isInCalendarApp &&
+              currentTitle === t('sidebar_tabs.calendar') && (
+                <div className="p-2">
+                  <MiniCalendar />
+                </div>
+              )}
             {filteredCurrentLinks.length > 0 && (
               <div className="scrollbar-none flex-1 overflow-y-auto">
                 {/* Special handling for Calendar navigation - only show when deep in calendar features */}
