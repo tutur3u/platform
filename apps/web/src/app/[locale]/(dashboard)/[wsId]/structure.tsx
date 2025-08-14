@@ -381,38 +381,38 @@ export function Structure({
             )}
             {!isCollapsed && <div className="mx-4 my-1 border-b" />}
             {personalNote}
-                                    {filteredCurrentLinks.length > 0 && (
-                          <div className="scrollbar-none flex-1 overflow-y-auto">
-                            {/* Special handling for Calendar navigation - only show when deep in calendar */}
-                            {pathname.includes('/calendar') && 
-                             pathname !== `/${wsId}/calendar` && 
-                             !isCollapsed ? (
-                              <CalendarSidebarContent
-                                wsId={wsId}
-                                isCollapsed={isCollapsed}
-                                onSubMenuClick={handleNavChange}
-                                onClick={() => {
-                                  if (window.innerWidth < 768) {
-                                    setIsCollapsed(true);
-                                  }
-                                }}
-                              />
-                            ) : (
-                              <Nav
-                                key={`${user?.id}-nav`}
-                                wsId={wsId}
-                                isCollapsed={isCollapsed}
-                                links={filteredCurrentLinks}
-                                onSubMenuClick={handleNavChange}
-                                onClick={() => {
-                                  if (window.innerWidth < 768) {
-                                    setIsCollapsed(true);
-                                  }
-                                }}
-                              />
-                            )}
-                          </div>
-                        )}
+            {filteredCurrentLinks.length > 0 && (
+              <div className="scrollbar-none flex-1 overflow-y-auto">
+                {/* Special handling for Calendar navigation - only show when deep in calendar */}
+                {pathname.includes('/calendar') &&
+                pathname !== `/${wsId}/calendar` &&
+                !isCollapsed ? (
+                  <CalendarSidebarContent
+                    wsId={wsId}
+                    isCollapsed={isCollapsed}
+                    onSubMenuClick={handleNavChange}
+                    onClick={() => {
+                      if (window.innerWidth < 768) {
+                        setIsCollapsed(true);
+                      }
+                    }}
+                  />
+                ) : (
+                  <Nav
+                    key={`${user?.id}-nav`}
+                    wsId={wsId}
+                    isCollapsed={isCollapsed}
+                    links={filteredCurrentLinks}
+                    onSubMenuClick={handleNavChange}
+                    onClick={() => {
+                      if (window.innerWidth < 768) {
+                        setIsCollapsed(true);
+                      }
+                    }}
+                  />
+                )}
+              </div>
+            )}
           </>
         )}
       </div>
