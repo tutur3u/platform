@@ -84,6 +84,9 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
   const { settings } = useCalendarSettings();
   const showWeekends = settings.appearance.showWeekends;
   const tz = settings?.timezone?.timezone;
+  const secondaryTz = settings?.timezone?.secondaryTimezone;
+  const showSecondary =
+    settings?.timezone?.showSecondaryTimezone && secondaryTz;
   const [expandedDates, setExpandedDates] = useState<string[]>([]);
 
   // Drag and drop state
@@ -642,9 +645,19 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
 
   return (
     <div className="flex">
-      {/* Label column */}
-      <div className="flex w-16 items-center justify-center border-b border-l bg-muted/30 p-2 font-medium">
-        <Calendar className="h-4 w-4 text-muted-foreground" />
+      {/* Time column headers - matching the main calendar layout */}
+      <div className="flex">
+        {/* Secondary timezone header (shows on left when enabled) */}
+        {showSecondary && (
+          <div className="flex w-16 items-center justify-center border-b border-l bg-muted/20 p-2 font-medium">
+            <div className="h-4 w-4" /> {/* Spacer to maintain alignment */}
+          </div>
+        )}
+
+        {/* Primary timezone header with calendar icon */}
+        <div className="flex w-16 items-center justify-center border-b border-l bg-muted/30 p-2 font-medium">
+          <Calendar className="h-4 w-4 text-muted-foreground" />
+        </div>
       </div>
 
       {/* All-day event columns with relative positioning for spanning events */}
