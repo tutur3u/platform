@@ -21,6 +21,9 @@ export const WeekdayBar = ({
   const { settings } = useCalendar();
   const showWeekends = settings.appearance.showWeekends;
   const tz = settings?.timezone?.timezone;
+  const secondaryTz = settings?.timezone?.secondaryTimezone;
+  const showSecondary =
+    settings?.timezone?.showSecondaryTimezone && secondaryTz;
 
   // Filter out weekend days if showWeekends is false
   const visibleDates = showWeekends
@@ -31,13 +34,70 @@ export const WeekdayBar = ({
         return day !== 0 && day !== 6; // 0 = Sunday, 6 = Saturday
       });
 
+  // Get timezone abbreviations
+  const getPrimaryTimezoneAbbr = () => {
+    if (tz === 'auto') {
+      return (
+        Intl.DateTimeFormat('en-US', {
+          timeZoneName: 'short',
+          timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        })
+          .formatToParts(new Date())
+          .find((part) => part.type === 'timeZoneName')?.value || 'Local'
+      );
+    }
+    return (
+      Intl.DateTimeFormat('en-US', {
+        timeZoneName: 'short',
+        timeZone: tz,
+      })
+        .formatToParts(new Date())
+        .find((part) => part.type === 'timeZoneName')?.value || tz
+    );
+  };
+
+  const getSecondaryTimezoneAbbr = () => {
+    if (!secondaryTz) return '';
+    return (
+      Intl.DateTimeFormat('en-US', {
+        timeZoneName: 'short',
+        timeZone: secondaryTz,
+      })
+        .formatToParts(new Date())
+        .find((part) => part.type === 'timeZoneName')?.value || secondaryTz
+    );
+  };
+
+  const primaryTzAbbr = getPrimaryTimezoneAbbr();
+  const secondaryTzAbbr = getSecondaryTimezoneAbbr();
+
   return (
     <div className="flex flex-col bg-background/50">
       {/* Weekday header bar */}
       <div className="flex">
-        {/* Time column header */}
-        <div className="flex w-16 items-center justify-center rounded-tl-lg border border-r-0 bg-muted/30 p-2 font-medium">
-          <Clock className="h-4 w-4 text-muted-foreground" />
+        {/* Time column headers */}
+        <div className="flex">
+          {/* Secondary timezone header (shows on left when enabled) */}
+          {showSecondary && (
+            <div className="flex w-16 flex-col items-center justify-center rounded-tl-lg border border-r-0 bg-muted/20 p-1 font-medium">
+              <div className="text-[10px] font-medium text-muted-foreground/70">
+                {secondaryTzAbbr}
+              </div>
+            </div>
+          )}
+
+          {/* Primary timezone header with clock icon */}
+          <div
+            className={cn(
+              'flex w-16 flex-col items-center justify-center border border-r-0 bg-muted/30 p-1 font-medium',
+              !showSecondary && 'rounded-tl-lg'
+            )}
+          >
+            <Clock className="mb-0.5 h-3 w-3 text-muted-foreground" />
+            <div className="text-[10px] font-medium text-muted-foreground">
+              {primaryTzAbbr}
+            </div>
+          </div>
         </div>
 
         {/* Weekday columns */}
