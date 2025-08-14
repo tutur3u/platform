@@ -1,5 +1,5 @@
-import type { SyncOrchestratorResult } from './google-calendar-sync';
 import {
+  SyncOrchestratorResult,
   getGoogleAuthClient,
   getSyncToken,
   getWorkspacesForSync,
