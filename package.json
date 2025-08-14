@@ -52,7 +52,8 @@
     "sb:typegen": "cd apps/db && bun sb:typegen",
     "ui:add": "bun --filter ui ui:add",
     "ui:diff": "bun --filter ui ui:diff",
-    "update-all": "bun update && (cd apps && for dir in */; do echo \"Updating apps/$dir...\" && cd \"$dir\" && bun update && cd ..; done) && (cd packages && for dir in */; do echo \"Updating packages/$dir...\" && cd \"$dir\" && bun update && cd .. && bun i; done)"
+    "bat:update-all": "./scripts/package-update.bat",
+    "sh:update-all": "./scripts/package-update.sh"
   },
   "dependencies": {
     "react-scan": "^0.4.3"
