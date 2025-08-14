@@ -3,6 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "main": "./index.ts",
+  "exports": {
+    ".": "./index.ts",
+    "./google-calendar-sync": "./google-calendar-sync.ts",
+    "./google-calendar-full-sync": "./google-calendar-full-sync.ts",
+    "./google-calendar-incremental-sync": "./google-calendar-incremental-sync.ts"
+  },
   "scripts": {
     "lint": "eslint .",
     "trigger:dev": "bunx trigger.dev@latest dev",
@@ -22,5 +28,5 @@
     "@tuturuuu/eslint-config": "workspace:*",
     "@tuturuuu/typescript-config": "workspace:*"
   },
-  "packageManager": "bun@1.2.19"
+  "packageManager": "bun@1.2.20"
 }

@@ -1,6 +1,7 @@
 import PostsClient from './client';
 import type { PostEmail } from './types';
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 
 interface SearchParams {
   page?: string;
@@ -17,7 +18,10 @@ export default async function PostsPage({
   params: Promise<{ wsId: string; locale: string }>;
   searchParams: Promise<SearchParams>;
 }) {
-  const { wsId, locale } = await params;
+  const { wsId: id, locale } = await params;
+  const workspace = await getWorkspace(id);
+  const wsId = workspace?.id;
+
   const searchParamsData = await searchParams;
 
   const postsData = await getPostsData(wsId, searchParamsData);

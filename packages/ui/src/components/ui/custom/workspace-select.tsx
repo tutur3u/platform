@@ -1,6 +1,7 @@
 'use client';
 
 import { createClient } from '@tuturuuu/supabase/next/client';
+import type { Workspace } from '@tuturuuu/types/db';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -43,7 +44,7 @@ import {
 } from '@tuturuuu/ui/select';
 import { cn } from '@tuturuuu/utils/format';
 import { getInitials } from '@tuturuuu/utils/name-helper';
-import { CheckIcon, ChevronDown, PlusCircle } from 'lucide-react';
+import { CheckIcon, ChevronDown, Crown, PlusCircle } from 'lucide-react';
 import { useParams, usePathname, useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { z } from 'zod';
@@ -61,8 +62,10 @@ export function WorkspaceSelect({
   disableCreateNewWorkspace,
 }: {
   // biome-ignore lint/suspicious/noExplicitAny: <No need to type this>
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   t: any;
   // biome-ignore lint/suspicious/noExplicitAny: <No need to type this>
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   localUseQuery: any;
   hideLeading?: boolean;
   customRedirectSuffix?: string;
@@ -80,7 +83,7 @@ export function WorkspaceSelect({
     enabled: !!wsId,
   });
 
-  const workspaces = workspacesQuery.data;
+  const workspaces = (workspacesQuery?.data || []) as Workspace[];
 
   const form = useForm({
     resolver: zodResolver(FormSchema),
@@ -112,9 +115,8 @@ export function WorkspaceSelect({
 
       const { id } = await res.json();
 
-      customRedirectSuffix
-        ? router.push(`/${id}/${customRedirectSuffix}`)
-        : router.push(`/${id}`);
+      if (customRedirectSuffix) router.push(`/${id}/${customRedirectSuffix}`);
+      else router.push(`/${id}`);
       router.refresh();
 
       setShowNewWorkspaceDialog(false);
@@ -129,28 +131,48 @@ export function WorkspaceSelect({
     }
   }
 
+  const personalWorkspace = workspaces?.find(
+    // biome-ignore lint/suspicious/noExplicitAny: dynamic shape from DB
+    (ws) => ws?.personal === true
+  );
+  const nonPersonalWorkspaces =
+    workspaces?.filter(
+      // biome-ignore lint/suspicious/noExplicitAny: dynamic shape from DB
+      (ws) => !ws?.personal
+    ) || [];
+
   const groups = [
-    // {
-    //   id: 'personal',
-    //   label: t('common.personal_account'),
-    //   teams: [
-    //     {
-    //       label:
-    //         user?.display_name || user?.handle || user?.email || 'Personal',
-    //       value: user?.id,
-    //     },
-    //   ],
-    // },
+    personalWorkspace && {
+      id: 'personal',
+      label: t('common.personal_account'),
+      teams: [
+        {
+          label: personalWorkspace.name || 'Personal',
+          value: 'personal',
+        },
+      ],
+    },
     {
       id: 'workspaces',
       label: t('common.workspaces'),
-      teams:
-        workspaces?.map((workspace: { id: string; name: string }) => ({
+      teams: nonPersonalWorkspaces.map(
+        (workspace: {
+          id: string;
+          name: string | null;
+          created_by_me?: boolean;
+        }) => ({
           label: workspace.name || 'Untitled',
           value: workspace.id,
-        })) || [],
+          // Signal creator-owned workspaces for UI
+          isCreator: workspace?.created_by_me === true,
+        })
+      ),
     },
-  ];
+  ].filter(Boolean) as {
+    id: string;
+    label: string;
+    teams: { label: string; value: string | undefined; isCreator?: boolean }[];
+  }[];
 
   const onValueChange = (wsId: string) => {
     let newPathname = pathname?.replace(/^\/[^/]+/, `/${wsId}`);
@@ -165,7 +187,10 @@ export function WorkspaceSelect({
     }
   };
 
-  const workspace = workspaces?.find((ws: { id: string }) => ws.id === wsId);
+  const workspace =
+    wsId === 'personal'
+      ? personalWorkspace
+      : workspaces?.find((ws: { id: string }) => ws.id === wsId);
   if (!wsId) return <div />;
 
   return (
@@ -229,18 +254,21 @@ export function WorkspaceSelect({
                 {groups.map((group) => (
                   <CommandGroup key={group.label} heading={group.label}>
                     {group.teams.map(
-                      (team: { label: string; value: string | undefined }) => (
+                      (team: {
+                        label: string;
+                        value: string | undefined;
+                        isCreator?: boolean;
+                      }) => (
                         <CommandItem
                           key={team.value}
+                          value={`${team.label} ${team.value || ''}`}
                           onSelect={() => {
                             if (!team?.value || team?.value === wsId) return;
                             onValueChange(team.value);
                             setOpen(false);
                           }}
-                          className={`text-sm ${
-                            group.id === 'personal' ? 'opacity-50' : ''
-                          }`}
-                          disabled={!team || group.id === 'personal'}
+                          className="text-sm"
+                          disabled={!team}
                         >
                           <Avatar className="mr-2 h-5 w-5">
                             <AvatarImage
@@ -253,16 +281,15 @@ export function WorkspaceSelect({
                             </AvatarFallback>
                           </Avatar>
                           <span className="line-clamp-1">{team.label}</span>
-                          {group.id !== 'personal' && (
-                            <CheckIcon
-                              className={cn(
-                                'ml-auto h-4 w-4',
-                                wsId === team.value
-                                  ? 'opacity-100'
-                                  : 'opacity-0'
-                              )}
-                            />
-                          )}
+                          {team.isCreator ? (
+                            <Crown className="ml-2 h-4 w-4 shrink-0 opacity-70" />
+                          ) : null}
+                          <CheckIcon
+                            className={cn(
+                              'ml-auto h-4 w-4',
+                              wsId === team.value ? 'opacity-100' : 'opacity-0'
+                            )}
+                          />
                         </CommandItem>
                       )
                     )}
@@ -493,10 +520,50 @@ async function fetchWorkspaces() {
   const { data: workspaces, error } = await supabase
     .from('workspaces')
     .select(
-      'id, name, avatar_url, logo_url, created_at, workspace_members!inner(role)'
+      'id, name, personal, avatar_url, logo_url, created_at, creator_id, workspace_members!inner(role)'
     )
     .eq('workspace_members.user_id', user.id);
 
   if (error) return [];
-  return workspaces;
+
+  // Resolve the display label for personal workspaces using the current user's profile
+  const [publicProfileRes, privateDetailsRes] = await Promise.all([
+    supabase
+      .from('users')
+      .select('display_name, handle')
+      .eq('id', user.id)
+      .maybeSingle(),
+    supabase
+      .from('user_private_details')
+      .select('email')
+      .eq('user_id', user.id)
+      .maybeSingle(),
+  ]);
+
+  const publicProfile = publicProfileRes?.data as
+    | { display_name: string | null; handle: string | null }
+    | null
+    | undefined;
+  const privateDetails = privateDetailsRes?.data as
+    | { email: string | null }
+    | null
+    | undefined;
+
+  const displayLabel: string | undefined =
+    publicProfile?.display_name ||
+    publicProfile?.handle ||
+    privateDetails?.email ||
+    undefined;
+
+  // For personal workspaces, override the name shown with the user's display name or email
+  return (workspaces || []).map((ws) => {
+    const base = ws?.personal
+      ? { ...ws, name: displayLabel || ws.name || 'Personal' }
+      : ws;
+    return {
+      ...base,
+      // Mark if current user is the creator for downstream UI
+      created_by_me: base?.creator_id === user.id,
+    };
+  });
 }

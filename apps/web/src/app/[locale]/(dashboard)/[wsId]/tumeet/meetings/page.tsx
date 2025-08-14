@@ -2,6 +2,7 @@ import { MeetingsContent } from './meetings-content';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { Card, CardContent, CardHeader } from '@tuturuuu/ui/card';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
+import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
 
@@ -20,7 +21,10 @@ export default async function MeetingsPage({
   params,
   searchParams,
 }: MeetingsPageProps) {
-  const { wsId } = await params;
+  const { wsId: id } = await params;
+  const workspace = await getWorkspace(id);
+  const wsId = workspace?.id;
+
   const user = await getCurrentUser();
 
   if (!user?.id) redirect('/login');

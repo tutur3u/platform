@@ -1,13 +1,13 @@
+import { schedules, task } from '@trigger.dev/sdk/v3';
+import { google } from '@tuturuuu/google';
 import {
-  SyncOrchestratorResult,
+  type SyncOrchestratorResult,
   getGoogleAuthClient,
   getSyncToken,
   getWorkspacesForSync,
   storeSyncToken,
   syncWorkspaceBatched,
-} from './google-calendar-sync';
-import { schedules, task } from '@trigger.dev/sdk/v3';
-import { google } from '@tuturuuu/google';
+} from '@tuturuuu/trigger/google-calendar-sync';
 
 async function performIncrementalSyncForWorkspace(
   calendarId = 'primary',

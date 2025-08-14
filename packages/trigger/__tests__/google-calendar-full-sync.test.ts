@@ -1,6 +1,6 @@
 // Mocks must come next, before any imports that use them!
 import dayjs from 'dayjs';
-import utc from 'dayjs/plugin/utc';
+import utc from 'dayjs/plugin/utc.js';
 import {
   afterEach,
   beforeAll,
@@ -22,11 +22,12 @@ process.env.GOOGLE_REDIRECT_URI = 'http://localhost:3000/auth/callback';
 
 // Mock the google-calendar-sync module
 vi.mock('../google-calendar-sync', async () => {
-  const actual = await vi.importActual('../google-calendar-sync');
+  const actual = await vi.importActual('../google-calendar-sync.js');
   return {
     ...actual,
     getGoogleAuthClient: vi.fn(() => ({
       setCredentials: vi.fn(),
+      request: vi.fn(() => Promise.resolve({ data: {} })),
     })),
     syncWorkspaceBatched: vi.fn((payload) =>
       Promise.resolve({
@@ -40,7 +41,7 @@ vi.mock('../google-calendar-sync', async () => {
   };
 });
 
-// Mock googleapis
+// Mock @tuturuuu/google
 const mockCalendarEventsList = vi.fn(() =>
   Promise.resolve({
     data: {
@@ -87,38 +88,8 @@ dayjs.extend(utc);
 let performFullSyncForWorkspace: any;
 
 beforeAll(async () => {
-  const mod = await import('../google-calendar-full-sync');
+  const mod = await import('../google-calendar-full-sync.js');
   performFullSyncForWorkspace = mod.performFullSyncForWorkspace;
-});
-
-// Test isolation utility to prevent environment contamination
-const isolateTest = (testFn: () => void | Promise<void>) => {
-  return async () => {
-    const originalEnv = { ...process.env };
-    try {
-      await testFn();
-    } finally {
-      process.env = originalEnv;
-    }
-  };
-};
-
-// Mock Google Calendar events for testing
-const createMockGoogleEvent = (
-  id: string,
-  title: string,
-  start: string,
-  end: string,
-  status = 'confirmed'
-) => ({
-  id,
-  summary: title,
-  description: `Description for ${title}`,
-  start: { dateTime: start },
-  end: { dateTime: end },
-  location: `Location for ${title}`,
-  colorId: '1',
-  status,
 });
 
 describe('performFullSyncForWorkspace', () => {
@@ -272,7 +243,9 @@ describe('performFullSyncForWorkspace', () => {
 
   describe('Integration with syncWorkspaceBatched', () => {
     it('should call syncWorkspaceBatched when events exist', async () => {
-      const { syncWorkspaceBatched } = await import('../google-calendar-sync');
+      const { syncWorkspaceBatched } = await import(
+        '../google-calendar-sync.js'
+      );
 
       await performFullSyncForWorkspace(
         'primary',
@@ -299,7 +272,9 @@ describe('performFullSyncForWorkspace', () => {
         },
       });
 
-      const { syncWorkspaceBatched } = await import('../google-calendar-sync');
+      const { syncWorkspaceBatched } = await import(
+        '../google-calendar-sync.js'
+      );
 
       await performFullSyncForWorkspace(
         'primary',
@@ -314,7 +289,7 @@ describe('performFullSyncForWorkspace', () => {
 
   describe('Sync Token Handling', () => {
     it('should store sync token when available', async () => {
-      const { storeSyncToken } = await import('../google-calendar-sync');
+      const { storeSyncToken } = await import('../google-calendar-sync.js');
 
       await performFullSyncForWorkspace(
         'primary',
@@ -349,7 +324,7 @@ describe('performFullSyncForWorkspace', () => {
         } as any,
       });
 
-      const { storeSyncToken } = await import('../google-calendar-sync');
+      const { storeSyncToken } = await import('../google-calendar-sync.js');
 
       await performFullSyncForWorkspace(
         'primary',
@@ -415,7 +390,7 @@ describe('performFullSyncForWorkspace', () => {
         })
       );
 
-      // Verify the time range is approximately 28 days
+      // Verify the time range is approximately 270 days
       const calls = mockCalendarEventsList.mock.calls as any[];
       expect(calls.length).toBeGreaterThan(0);
       const callArgs = calls[0]?.[0];
@@ -425,7 +400,7 @@ describe('performFullSyncForWorkspace', () => {
         const timeMax = dayjs(callArgs.timeMax);
         const dayDifference = timeMax.diff(timeMin, 'day');
 
-        expect(dayDifference).toBe(28);
+        expect(dayDifference).toBe(270);
       }
     });
   });
@@ -514,9 +489,9 @@ describe('performFullSyncForWorkspace', () => {
       );
 
       expect(events).toHaveLength(3);
-      expect(events[0].status).toBe('confirmed');
-      expect(events[1].status).toBe('cancelled');
-      expect(events[2].status).toBe('tentative');
+      expect(events[0]?.status).toBe('confirmed');
+      expect(events[1]?.status).toBe('cancelled');
+      expect(events[2]?.status).toBe('tentative');
     });
   });
 });

@@ -23,14 +23,16 @@ interface Props {
 }
 
 export default async function WorkspaceSettingsPage({ params }: Props) {
-  const { wsId } = await params;
+  const t = await getTranslations();
+  const { wsId: id } = await params;
+
+  const ws = await getWorkspace(id);
+  const wsId = ws?.id;
 
   const { containsPermission } = await getPermissions({
     wsId,
   });
 
-  const t = await getTranslations();
-  const ws = await getWorkspace(wsId);
   const secrets = await getSecrets({ wsId });
   const disableInvite = await verifyHasSecrets(wsId, ['DISABLE_INVITE']);
 
@@ -59,6 +61,7 @@ export default async function WorkspaceSettingsPage({ params }: Props) {
         pluralTitle={t('common.settings')}
         description={t('ws-settings.description')}
         action={
+          id !== 'personal' &&
           containsPermission('manage_workspace_members') ? (
             <Link href={`/${wsId}/members`}>
               <Button className="cursor-pointer">
@@ -77,8 +80,14 @@ export default async function WorkspaceSettingsPage({ params }: Props) {
 
       <div className="grid gap-4 lg:grid-cols-2">
         <BasicInfo
-          workspace={ws}
-          allowEdit={!isRootWorkspace && ws?.role !== 'MEMBER'}
+          workspace={{
+            ...ws,
+            name: id === 'personal' ? 'Personal Workspace' : ws?.name,
+          }}
+          allowEdit={
+            id !== 'personal' && !isRootWorkspace && ws?.role !== 'MEMBER'
+          }
+          isPersonal={id === 'personal'}
         />
 
         {enableAvatar && (
@@ -95,7 +104,7 @@ export default async function WorkspaceSettingsPage({ params }: Props) {
           />
         )}
 
-        {enableSecurity && <Security workspace={ws} />}
+        {id !== 'personal' && enableSecurity && <Security workspace={ws} />}
       </div>
     </>
   );
