@@ -268,6 +268,8 @@ export default async function Layout({ children, params }: LayoutProps) {
               title: t('calendar-tabs.sync-history'),
               href: `/${wsId}/calendar/history/sync`,
               icon: <Activity className="h-4 w-4" />,
+              requireRootWorkspace: true,
+              requireRootMember: true,
             },
             {
               title: t('calendar-tabs.settings'),
@@ -721,7 +723,7 @@ export default async function Layout({ children, params }: LayoutProps) {
         </div>
       )}
       <Structure
-        wsId={wsId}
+        wsId={workspace.id}
         user={user}
         workspace={workspace}
         defaultCollapsed={defaultCollapsed}
