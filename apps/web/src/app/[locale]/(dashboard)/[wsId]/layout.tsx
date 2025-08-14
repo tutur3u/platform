@@ -15,12 +15,14 @@ import {
   Activity,
   Archive,
   Banknote,
+  BarChart3,
   Blocks,
   Bolt,
   BookKey,
   Box,
   BriefcaseBusiness,
   Calendar,
+  CalendarDays,
   Cctv,
   ChartArea,
   CircleCheck,
@@ -46,6 +48,7 @@ import {
   ScanSearch,
   ScrollText,
   Send,
+  Settings,
   ShieldUser,
   Sparkles,
   SquareUserRound,
@@ -236,22 +239,43 @@ export default async function Layout({ children, params }: LayoutProps) {
           href: `/${wsId}/calendar`,
           disabled: ENABLE_AI_ONLY || withoutPermission('manage_calendar'),
           experimental: 'alpha',
-          children: user?.email?.endsWith('@tuturuuu.com')
-            ? [
-                {
-                  title: t('calendar-tabs.calendar'),
-                  href: `/${wsId}/calendar`,
-                  icon: <Calendar className="h-4 w-4" />,
-                  matchExact: true,
-                },
-                {
-                  title: t('calendar-tabs.sync-history'),
-                  href: `/${wsId}/calendar/history/sync`,
-                  icon: <Activity className="h-4 w-4" />,
-                  requireRootWorkspace: true,
-                },
-              ]
-            : undefined,
+          children: [
+            {
+              title: t('calendar-tabs.calendar'),
+              href: `/${wsId}/calendar`,
+              icon: <Calendar className="h-4 w-4" />,
+              matchExact: true,
+            },
+            {
+              title: t('calendar-tabs.overview'),
+              href: `/${wsId}/calendar/overview`,
+              icon: <BarChart3 className="h-4 w-4" />,
+              tempDisabled: true,
+            },
+            {
+              title: t('calendar-tabs.events'),
+              href: `/${wsId}/calendar/events`,
+              icon: <CalendarDays className="h-4 w-4" />,
+              tempDisabled: true,
+            },
+            {
+              title: 'Time Tracker',
+              href: `/${wsId}/calendar/time-tracker`,
+              icon: <Clock className="h-4 w-4" />,
+              tempDisabled: true,
+            },
+            {
+              title: t('calendar-tabs.sync-history'),
+              href: `/${wsId}/calendar/history/sync`,
+              icon: <Activity className="h-4 w-4" />,
+            },
+            {
+              title: 'Settings',
+              href: `/${wsId}/calendar/settings`,
+              icon: <Settings className="h-4 w-4" />,
+              tempDisabled: true,
+            },
+          ],
         },
         {
           title: t('sidebar_tabs.tumeet'),

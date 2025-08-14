@@ -1,12 +1,10 @@
 import { CalendarActiveSyncDebugger } from './active-sync';
 import CalendarClientPage from './client';
-import TasksSidebar from './components/tasks-sidebar';
 import { DEV_MODE } from '@/constants/common';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { CalendarSyncProvider } from '@tuturuuu/ui/hooks/use-calendar-sync';
-import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
-import { redirect } from 'next/navigation';
+import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 
 interface PageProps {
   params: Promise<{
@@ -16,11 +14,9 @@ interface PageProps {
 }
 
 export default async function CalendarPage({ params }: PageProps) {
-  const { wsId: id, locale } = await params;
+  const { wsId: id } = await params;
   const workspace = await getWorkspace(id);
   const wsId = workspace?.id;
-
-  const { withoutPermission } = await getPermissions({ wsId });
 
   const supabase = await createClient();
 
@@ -30,7 +26,6 @@ export default async function CalendarPage({ params }: PageProps) {
     .eq('ws_id', wsId)
     .maybeSingle();
 
-  if (withoutPermission('manage_calendar')) redirect(`/${wsId}`);
   if (!workspace?.id) return null;
 
   return (
@@ -41,13 +36,10 @@ export default async function CalendarPage({ params }: PageProps) {
       useQueryClient={useQueryClient}
     >
       {DEV_MODE && <CalendarActiveSyncDebugger />}
-      <div className="flex h-[calc(100%-2rem-4px)]">
-        <CalendarClientPage
-          experimentalGoogleToken={googleToken}
-          workspace={workspace}
-        />
-        <TasksSidebar wsId={wsId} locale={locale} />
-      </div>
+      <CalendarClientPage
+        experimentalGoogleToken={googleToken}
+        workspace={workspace}
+      />
     </CalendarSyncProvider>
   );
 }

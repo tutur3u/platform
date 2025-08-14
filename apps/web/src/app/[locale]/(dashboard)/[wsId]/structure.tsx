@@ -1,5 +1,6 @@
 'use client';
 
+import { CalendarSidebarContent } from './calendar/components/calendar-sidebar-content';
 import { Nav } from './nav';
 import type { NavLink } from '@/components/navigation';
 import { PROD_MODE, SIDEBAR_COLLAPSED_COOKIE_NAME } from '@/constants/common';
@@ -382,18 +383,39 @@ export function Structure({
             {personalNote}
             {filteredCurrentLinks.length > 0 && (
               <div className="scrollbar-none flex-1 overflow-y-auto">
-                <Nav
-                  key={`${user?.id}-nav`}
-                  wsId={wsId}
-                  isCollapsed={isCollapsed}
-                  links={filteredCurrentLinks}
-                  onSubMenuClick={handleNavChange}
-                  onClick={() => {
-                    if (window.innerWidth < 768) {
-                      setIsCollapsed(true);
-                    }
-                  }}
-                />
+                {/* Special handling for Calendar navigation */}
+                {/* Check if we're on any calendar route */}
+                {(currentTitle === 'Calendar' ||
+                  (navState.history.length > 0 &&
+                    navState.titleHistory.some(
+                      (title) => title === 'Calendar'
+                    )) ||
+                  pathname.includes('/calendar')) &&
+                !isCollapsed ? (
+                  <CalendarSidebarContent
+                    wsId={wsId}
+                    isCollapsed={isCollapsed}
+                    onSubMenuClick={handleNavChange}
+                    onClick={() => {
+                      if (window.innerWidth < 768) {
+                        setIsCollapsed(true);
+                      }
+                    }}
+                  />
+                ) : (
+                  <Nav
+                    key={`${user?.id}-nav`}
+                    wsId={wsId}
+                    isCollapsed={isCollapsed}
+                    links={filteredCurrentLinks}
+                    onSubMenuClick={handleNavChange}
+                    onClick={() => {
+                      if (window.innerWidth < 768) {
+                        setIsCollapsed(true);
+                      }
+                    }}
+                  />
+                )}
               </div>
             )}
           </>
