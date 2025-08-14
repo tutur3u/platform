@@ -1,7 +1,7 @@
 import { schedules, task } from '@trigger.dev/sdk/v3';
 import { google } from '@tuturuuu/google';
-import type { SyncOrchestratorResult } from '@tuturuuu/trigger/google-calendar-sync';
 import {
+  type SyncOrchestratorResult,
   getGoogleAuthClient,
   getSyncToken,
   getWorkspacesForSync,

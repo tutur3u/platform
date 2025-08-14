@@ -1,3 +1,4 @@
+import { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import type dayjs from 'dayjs';
 
 export interface DateRange {
@@ -9,30 +10,20 @@ export interface Event {
   id: string;
   name: string;
   range: DateRange;
-  isPastDeadline?: boolean;
   taskId: string;
   partNumber?: number;
   totalParts?: number;
-  priority?: 'critical' | 'high' | 'normal' | 'low';
   locked?: boolean;
-  category?: 'work' | 'personal' | 'meeting';
 }
-
-export type TaskPriority = 'critical' | 'high' | 'normal' | 'low';
-
 export interface Task {
-  user_defined_priority?: string;
   id: string;
   name: string;
-  locked?: boolean;
   duration: number;
   minDuration: number;
   maxDuration: number;
   category: 'work' | 'personal' | 'meeting';
-  priority: TaskPriority | string;
-  events: Event[];
+  priority: TaskPriority;
   deadline?: dayjs.Dayjs;
-  taskId?: string;
   allowSplit?: boolean;
 }
 

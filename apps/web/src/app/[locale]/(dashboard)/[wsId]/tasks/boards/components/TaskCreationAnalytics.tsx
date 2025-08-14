@@ -1,5 +1,6 @@
 'use client';
 
+import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import { Card } from '@tuturuuu/ui/card';
 import { AlertTriangle } from '@tuturuuu/ui/icons';
 import { cn } from '@tuturuuu/utils/format';
@@ -9,7 +10,7 @@ interface Task {
   id: string;
   name: string;
   description?: string;
-  priority?: number | null;
+  priority?: TaskPriority | null;
   created_at?: string;
   updated_at?: string;
   end_date?: string | null;
@@ -59,10 +60,11 @@ export function TaskCreationAnalytics({
 
     // Task distribution by priority
     const priorityDistribution = {
-      urgent: filteredTasks.filter((task) => task.priority === 1).length,
-      high: filteredTasks.filter((task) => task.priority === 2).length,
-      medium: filteredTasks.filter((task) => task.priority === 3).length,
-      low: filteredTasks.filter((task) => task.priority === 4).length,
+      urgent: filteredTasks.filter((task) => task.priority === 'critical')
+        .length,
+      high: filteredTasks.filter((task) => task.priority === 'high').length,
+      medium: filteredTasks.filter((task) => task.priority === 'normal').length,
+      low: filteredTasks.filter((task) => task.priority === 'low').length,
       unset: filteredTasks.filter(
         (task) => !task.priority || task.priority === null
       ).length,

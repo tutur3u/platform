@@ -1,6 +1,7 @@
 'use client';
 
 import { calculateOverdueDays } from '../utils/taskHelpers';
+import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import type { TaskBoardStatus } from '@tuturuuu/types/primitives/TaskBoard';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
@@ -26,7 +27,7 @@ interface TaskItem {
   id: string;
   name: string;
   description?: string;
-  priority?: number | null;
+  priority?: TaskPriority | null;
   end_date?: string | null;
   boardId: string;
   boardName: string;
@@ -132,7 +133,7 @@ export function TaskGroup({
                     </div>
 
                     <div className="flex flex-shrink-0 items-center gap-2">
-                      {task.priority === 1 && (
+                      {task.priority === 'critical' && (
                         <Badge
                           variant="destructive"
                           className="text-xs whitespace-nowrap"
@@ -140,7 +141,7 @@ export function TaskGroup({
                           🔥 Urgent
                         </Badge>
                       )}
-                      {task.priority === 2 && (
+                      {task.priority === 'high' && (
                         <Badge
                           variant="secondary"
                           className="text-xs whitespace-nowrap"
@@ -148,7 +149,7 @@ export function TaskGroup({
                           ⚡ High
                         </Badge>
                       )}
-                      {task.priority === 3 && (
+                      {task.priority === 'normal' && (
                         <Badge
                           variant="outline"
                           className="text-xs whitespace-nowrap"
@@ -156,7 +157,7 @@ export function TaskGroup({
                           📋 Medium
                         </Badge>
                       )}
-                      {task.priority === 4 && (
+                      {task.priority === 'low' && (
                         <Badge
                           variant="outline"
                           className="text-xs whitespace-nowrap"

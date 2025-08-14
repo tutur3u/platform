@@ -6145,13 +6145,10 @@ export type Database = {
           max_split_duration_minutes?: null | number;
           min_split_duration_minutes?: null | number;
           name: string;
-          priority?: null | number;
+          priority?: Database['public']['Enums']['task_priority'] | null;
           start_date?: null | string;
           tags?: null | string[];
           total_duration?: null | number;
-          user_defined_priority?:
-            | Database['public']['Enums']['task_priority']
-            | null;
         };
         Relationships: [
           {
@@ -6205,13 +6202,10 @@ export type Database = {
           max_split_duration_minutes: null | number;
           min_split_duration_minutes: null | number;
           name: string;
-          priority: null | number;
+          priority: Database['public']['Enums']['task_priority'] | null;
           start_date: null | string;
           tags: null | string[];
           total_duration: null | number;
-          user_defined_priority:
-            | Database['public']['Enums']['task_priority']
-            | null;
         };
         Update: {
           archived?: boolean | null;
@@ -6228,13 +6222,10 @@ export type Database = {
           max_split_duration_minutes?: null | number;
           min_split_duration_minutes?: null | number;
           name?: string;
-          priority?: null | number;
+          priority?: Database['public']['Enums']['task_priority'] | null;
           start_date?: null | string;
           tags?: null | string[];
           total_duration?: null | number;
-          user_defined_priority?:
-            | Database['public']['Enums']['task_priority']
-            | null;
         };
       };
       team_members: {
@@ -7844,7 +7835,6 @@ export type Database = {
           id?: string;
           location?: null | string;
           locked?: boolean;
-          priority?: null | string;
           start_at: string;
           task_id?: null | string;
           title?: string;
@@ -7882,7 +7872,6 @@ export type Database = {
           id: string;
           location: null | string;
           locked: boolean;
-          priority: null | string;
           start_at: string;
           task_id: null | string;
           title: string;
@@ -7897,7 +7886,6 @@ export type Database = {
           id?: string;
           location?: null | string;
           locked?: boolean;
-          priority?: null | string;
           start_at?: string;
           task_id?: null | string;
           title?: string;

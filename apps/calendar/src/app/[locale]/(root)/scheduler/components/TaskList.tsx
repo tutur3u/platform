@@ -1,6 +1,7 @@
 'use client';
 
-import type { Event, Task, TaskPriority } from '@tuturuuu/ai/scheduling/types';
+import type { Event, Task } from '@tuturuuu/ai/scheduling/types';
+import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {

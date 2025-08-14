@@ -38,19 +38,12 @@ import {
 } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@tuturuuu/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { TooltipProvider } from '@tuturuuu/ui/tooltip';
 import dayjs from 'dayjs';
 import { useState } from 'react';
 
-function SchedulerPage() {
+export default function SchedulerPage() {
   const [tasks, setTasks] = useState<Task[]>(defaultTasks);
   const [events, setEvents] = useState<Event[]>([]);
   const [logs, setLogs] = useState<Log[]>([]);
@@ -85,7 +78,6 @@ function SchedulerPage() {
     const newTask: Task = {
       ...taskData,
       id: `task-${Date.now()}`,
-      events: [],
     };
     setTasks([...tasks, newTask]);
   };
@@ -517,9 +509,6 @@ function LockedEventForm({
   const [date, setDate] = useState(dayjs().format('YYYY-MM-DD'));
   const [startTime, setStartTime] = useState('09:00');
   const [endTime, setEndTime] = useState('10:00');
-  const [category, setCategory] = useState<'work' | 'personal' | 'meeting'>(
-    'work'
-  );
   const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -538,10 +527,8 @@ function LockedEventForm({
     onAdd({
       name,
       range: { start, end },
-      isPastDeadline: false,
       partNumber: undefined,
       totalParts: undefined,
-      category,
     });
   };
 
@@ -572,26 +559,6 @@ function LockedEventForm({
             className="border-gray-200 focus:border-blue-500 dark:border-gray-700 dark:focus:border-blue-400"
             required
           />
-        </div>
-        <div className="space-y-2">
-          <Label className="text-sm font-semibold tracking-wide text-muted-foreground uppercase">
-            Category
-          </Label>
-          <Select
-            value={category}
-            onValueChange={(v) =>
-              setCategory(v as 'work' | 'personal' | 'meeting')
-            }
-          >
-            <SelectTrigger className="border-gray-200 focus:border-blue-500 dark:border-gray-700 dark:focus:border-blue-400">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="work">💼 Work</SelectItem>
-              <SelectItem value="personal">🏠 Personal</SelectItem>
-              <SelectItem value="meeting">👥 Meeting</SelectItem>
-            </SelectContent>
-          </Select>
         </div>
       </div>
 
@@ -647,5 +614,3 @@ function LockedEventForm({
     </form>
   );
 }
-
-export default SchedulerPage;

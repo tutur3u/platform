@@ -1,4 +1,5 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
+import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import { type NextRequest, NextResponse } from 'next/server';
 
 // Type interfaces for better type safety
@@ -34,7 +35,7 @@ interface TaskData {
   id: string;
   name: string;
   description: string | null;
-  priority: number | null;
+  priority: TaskPriority | null;
   completed: boolean | null;
   start_date: string | null;
   end_date: string | null;

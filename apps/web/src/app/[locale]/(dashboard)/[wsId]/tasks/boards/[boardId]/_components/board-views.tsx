@@ -7,11 +7,9 @@ import { BoardSummary } from './board-summary';
 import { ListView } from './list-view';
 import type { ViewType } from './types';
 import { useQueryClient } from '@tanstack/react-query';
-import type {
-  Task,
-  TaskBoard,
-  TaskList,
-} from '@tuturuuu/types/primitives/TaskBoard';
+import type { Task } from '@tuturuuu/types/primitives/Task';
+import type { TaskBoard } from '@tuturuuu/types/primitives/TaskBoard';
+import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { useMemo, useState } from 'react';
 
 interface Props {

@@ -1,7 +1,9 @@
 'use client';
 
 import { Task, prioritizeTasks } from '../../utils/task-prioritization';
+import { priorityCompare } from '@/lib/task-helper';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import { Button } from '@tuturuuu/ui/button';
 import { CommandGroup } from '@tuturuuu/ui/command';
 import {
@@ -196,9 +198,9 @@ export function QuickTimeTracker({
         return 1;
 
       // Then by priority (lower number = higher priority)
-      const aPriority = a.priority || 99;
-      const bPriority = b.priority || 99;
-      return aPriority - bPriority;
+      const aPriority = a.priority ?? null;
+      const bPriority = b.priority ?? null;
+      return priorityCompare(aPriority, bPriority);
     });
   }, [allTasksData, selectedBoardId, taskSearchQuery]);
 
@@ -627,30 +629,30 @@ export function QuickTimeTracker({
     }
   };
 
-  const getPriorityLabel = (priority: number | null | undefined) => {
+  const getPriorityLabel = (priority: TaskPriority | null | undefined) => {
     switch (priority) {
-      case 1:
+      case 'critical':
         return 'Urgent';
-      case 2:
+      case 'high':
         return 'High';
-      case 3:
+      case 'normal':
         return 'Medium';
-      case 4:
+      case 'low':
         return 'Low';
       default:
         return 'No Priority';
     }
   };
 
-  const getPriorityColor = (priority: number | null | undefined) => {
+  const getPriorityColor = (priority: TaskPriority | null | undefined) => {
     switch (priority) {
-      case 1:
+      case 'critical':
         return 'text-red-600 bg-red-100 dark:text-red-400 dark:bg-red-900/30';
-      case 2:
+      case 'high':
         return 'text-orange-600 bg-orange-100 dark:text-orange-400 dark:bg-orange-900/30';
-      case 3:
+      case 'normal':
         return 'text-yellow-600 bg-yellow-100 dark:text-yellow-400 dark:bg-yellow-900/30';
-      case 4:
+      case 'low':
         return 'text-green-600 bg-green-100 dark:text-green-400 dark:bg-green-900/30';
       default:
         return 'text-gray-600 bg-gray-100 dark:text-gray-400 dark:bg-gray-900/30';
