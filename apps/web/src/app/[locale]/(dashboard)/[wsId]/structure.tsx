@@ -1,11 +1,13 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import { CalendarSidebarContent } from './calendar/components/calendar-sidebar-content';
 
-const MiniCalendar = dynamic(
+// Code-split CalendarSidebarContent so it only loads on calendar routes
+const CalendarSidebarContent = dynamic(
   () =>
-    import('./calendar/components/mini-calendar').then((m) => m.MiniCalendar),
+    import('./calendar/components/calendar-sidebar-content').then(
+      (m) => m.CalendarSidebarContent
+    ),
   { ssr: false }
 );
 
@@ -72,7 +74,7 @@ export function Structure({
   }, [behavior]);
 
   // Check if we're currently in the calendar app, scoped to the workspace
-  const isCalendarRoute = pathname.includes(`/${wsId}/calendar`);
+  const isCalendarRoute = pathname.startsWith(`/${wsId}/calendar`);
 
   // Recursive function to check if any nested child matches the pathname
   const hasActiveChild = useCallback(
@@ -444,9 +446,6 @@ export function Structure({
         {navState.history.length === 0 ? (
           <>
             {personalNote}
-
-            {/* Mini calendar is ONLY shown in calendar navbar, not in main productivity panel */}
-
             <Nav
               key={`${user?.id}-root`}
               wsId={wsId}
@@ -482,20 +481,10 @@ export function Structure({
             {!isCollapsed && <div className="mx-4 my-1 border-b" />}
             {personalNote}
 
-            {/* Show mini calendar ONLY in calendar navigation panel, not in other panels */}
-            {!isCollapsed &&
-              isCalendarRoute &&
-              navState.titleHistory.includes('Calendar') && (
-                <div className="p-2">
-                  <MiniCalendar />
-                </div>
-              )}
             {filteredCurrentLinks.length > 0 && (
               <div className="scrollbar-none flex-1 overflow-y-auto">
-                {/* Special handling for Calendar navigation - only show when deep in calendar features */}
-                {pathname.includes('/calendar/') &&
-                pathname !== `/${wsId}/calendar` &&
-                !isCollapsed ? (
+                {/* Show calendar sidebar only when we're in calendar submenu, otherwise show regular navigation */}
+                {navState.titleHistory.includes('Calendar') ? (
                   <CalendarSidebarContent
                     wsId={wsId}
                     isCollapsed={isCollapsed}

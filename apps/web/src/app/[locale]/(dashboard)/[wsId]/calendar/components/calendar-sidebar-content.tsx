@@ -1,10 +1,6 @@
 'use client';
 
-import { NavLink } from '../../nav-link';
-import { MiniCalendar } from './mini-calendar';
-import type { NavLink as NavLinkType } from '@/components/navigation';
 import {
-  Activity,
   BarChart3,
   Calendar,
   CalendarDays,
@@ -12,6 +8,9 @@ import {
   Settings,
 } from '@tuturuuu/ui/icons';
 import { useTranslations } from 'next-intl';
+import type { NavLink as NavLinkType } from '@/components/navigation';
+import { NavLink } from '../../nav-link';
+import { MiniCalendar } from './mini-calendar';
 
 interface CalendarSidebarContentProps {
   wsId: string;
@@ -53,11 +52,12 @@ export function CalendarSidebarContent({
       icon: <Clock className="h-5 w-5" />,
       tempDisabled: true, // Coming soon
     },
-    {
-      title: t('calendar-tabs.sync-history'),
-      href: `/${wsId}/calendar/history/sync`,
-      icon: <Activity className="h-5 w-5" />,
-    },
+    // Sync History button hidden - requires special permissions
+    // {
+    //   title: t('calendar-tabs.sync-history'),
+    //   href: `/${wsId}/calendar/history/sync`,
+    //   icon: <Activity className="h-5 w-5" />,
+    // },
     {
       title: t('calendar-tabs.settings'),
       href: `/${wsId}/calendar/settings`,
