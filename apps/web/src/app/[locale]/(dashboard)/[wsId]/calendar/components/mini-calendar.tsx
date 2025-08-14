@@ -51,7 +51,7 @@ export function MiniCalendar({ className }: MiniCalendarProps) {
 
     // Add empty cells for days before the first day of the month
     for (let i = 0; i < startingDayOfWeek; i++) {
-      const prevMonth = new Date(year, month - 1, 0);
+      const prevMonth = new Date(year, month, 0); // Last day of previous month
       const prevMonthDay = prevMonth.getDate() - startingDayOfWeek + i + 1;
       days.push({
         day: prevMonthDay,
