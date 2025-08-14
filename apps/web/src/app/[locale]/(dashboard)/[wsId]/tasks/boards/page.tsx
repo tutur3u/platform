@@ -1,14 +1,12 @@
 import { EnhancedBoardsView } from './enhanced-boards-view';
 import { TaskBoardForm } from './form';
 import { createClient } from '@tuturuuu/supabase/next/server';
-import type {
-  Task,
-  TaskBoard,
-  TaskList,
-} from '@tuturuuu/types/primitives/TaskBoard';
+import type { Task } from '@tuturuuu/types/primitives/Task';
+import type { TaskBoard } from '@tuturuuu/types/primitives/TaskBoard';
+import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { Button } from '@tuturuuu/ui/button';
 import { Plus } from '@tuturuuu/ui/icons';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
+import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
 
@@ -27,7 +25,10 @@ export default async function WorkspaceProjectsPage({
   params,
   searchParams,
 }: Props) {
-  const { wsId } = await params;
+  const { wsId: id } = await params;
+  const workspace = await getWorkspace(id);
+  const wsId = workspace?.id;
+
   const { withoutPermission } = await getPermissions({
     wsId,
   });
@@ -87,7 +88,7 @@ export default async function WorkspaceProjectsPage({
           (list: TaskList & { tasks?: Task[] }) => list.id === task.list_id
         );
         return (
-          task.priority === 1 &&
+          task.priority === 'critical' &&
           !task.archived &&
           taskList?.status !== 'done' &&
           taskList?.status !== 'closed'
@@ -99,7 +100,7 @@ export default async function WorkspaceProjectsPage({
           (list: TaskList & { tasks?: Task[] }) => list.id === task.list_id
         );
         return (
-          task.priority === 2 &&
+          task.priority === 'high' &&
           !task.archived &&
           taskList?.status !== 'done' &&
           taskList?.status !== 'closed'
@@ -111,7 +112,7 @@ export default async function WorkspaceProjectsPage({
           (list: TaskList & { tasks?: Task[] }) => list.id === task.list_id
         );
         return (
-          task.priority === 3 &&
+          task.priority === 'normal' &&
           !task.archived &&
           taskList?.status !== 'done' &&
           taskList?.status !== 'closed'

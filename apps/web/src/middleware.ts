@@ -76,7 +76,10 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
         const defaultWorkspace = await getUserDefaultWorkspace();
 
         if (defaultWorkspace) {
-          const redirectUrl = new URL(`/${defaultWorkspace.id}`, req.nextUrl);
+          const target = defaultWorkspace.personal
+            ? 'personal'
+            : defaultWorkspace.id;
+          const redirectUrl = new URL(`/${target}`, req.nextUrl);
           return NextResponse.redirect(redirectUrl);
         }
       }

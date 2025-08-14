@@ -2,7 +2,8 @@ import { TaskTagInput } from './_components/task-tag-input';
 import { useDeleteTask, useUpdateTask } from '@/lib/task-helper';
 import { useQuery } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
-import type { Task } from '@tuturuuu/types/primitives/TaskBoard';
+import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
+import type { Task } from '@tuturuuu/types/primitives/Task';
 import { Button } from '@tuturuuu/ui/button';
 import { Calendar } from '@tuturuuu/ui/calendar';
 import {
@@ -112,7 +113,7 @@ export function TaskActions({ taskId, boardId, onUpdate }: Props) {
   const [newDescription, setNewDescription] = useState('');
   const [newStartDate, setNewStartDate] = useState<Date | undefined>(undefined);
   const [newEndDate, setNewEndDate] = useState<Date | undefined>(undefined);
-  const [newPriority, setNewPriority] = useState<string>('0');
+  const [newPriority, setNewPriority] = useState<TaskPriority | null>(null);
   const [newTags, setNewTags] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
@@ -132,7 +133,7 @@ export function TaskActions({ taskId, boardId, onUpdate }: Props) {
       setNewDescription(task.description || '');
       setNewStartDate(task.start_date ? new Date(task.start_date) : undefined);
       setNewEndDate(task.end_date ? new Date(task.end_date) : undefined);
-      setNewPriority(task.priority?.toString() || '0');
+      setNewPriority(task.priority || null);
       setNewTags(task.tags || []);
     }
   }, [task]);
@@ -146,8 +147,7 @@ export function TaskActions({ taskId, boardId, onUpdate }: Props) {
       (newStartDate?.toISOString() || null) !== task.start_date;
     const hasEndDateChange =
       (newEndDate?.toISOString() || null) !== task.end_date;
-    const hasPriorityChange =
-      newPriority !== (task.priority?.toString() || '0');
+    const hasPriorityChange = newPriority !== task.priority;
     const hasTagsChange =
       JSON.stringify(newTags) !== JSON.stringify(task.tags || []);
 
@@ -207,7 +207,7 @@ export function TaskActions({ taskId, boardId, onUpdate }: Props) {
           description: newDescription === '' ? undefined : newDescription,
           start_date: newStartDate?.toISOString() ?? undefined,
           end_date: newEndDate?.toISOString() ?? undefined,
-          priority: newPriority === '0' ? undefined : parseInt(newPriority),
+          priority: newPriority,
           tags: (() => {
             const filteredTags = newTags.filter(
               (tag) => tag && tag.trim() !== ''
@@ -247,7 +247,7 @@ export function TaskActions({ taskId, boardId, onUpdate }: Props) {
     setNewDescription(task.description || '');
     setNewStartDate(task.start_date ? new Date(task.start_date) : undefined);
     setNewEndDate(task.end_date ? new Date(task.end_date) : undefined);
-    setNewPriority(task.priority?.toString() || '0');
+    setNewPriority(task.priority || null);
     setNewTags(task.tags || []);
   }
 
@@ -406,27 +406,27 @@ export function TaskActions({ taskId, boardId, onUpdate }: Props) {
               >
                 {[
                   {
-                    value: '0',
+                    value: 'none',
                     label: 'None',
                     color: 'bg-gray-100 text-gray-700',
                   },
                   {
-                    value: '1',
+                    value: 'low',
                     label: 'Low',
                     color: 'bg-green-100 text-green-700',
                   },
                   {
-                    value: '2',
+                    value: 'normal',
                     label: 'Medium',
                     color: 'bg-yellow-100 text-yellow-700',
                   },
                   {
-                    value: '3',
+                    value: 'high',
                     label: 'High',
                     color: 'bg-orange-100 text-orange-700',
                   },
                   {
-                    value: '4',
+                    value: 'critical',
                     label: 'Urgent',
                     color: 'bg-red-100 text-red-700',
                   },
@@ -436,7 +436,7 @@ export function TaskActions({ taskId, boardId, onUpdate }: Props) {
                     type="button"
                     variant={newPriority === value ? 'default' : 'outline'}
                     size="sm"
-                    onClick={() => setNewPriority(value)}
+                    onClick={() => setNewPriority(value as TaskPriority)}
                     className={cn(
                       'h-8 px-3 text-xs',
                       newPriority === value && color

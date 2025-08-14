@@ -2,6 +2,7 @@ import { TaskTagInput } from './_components/task-tag-input';
 import { createTask } from '@/lib/task-helper';
 import { useQuery } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/client';
+import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import { Button } from '@tuturuuu/ui/button';
 import { Calendar } from '@tuturuuu/ui/calendar';
 import {
@@ -44,7 +45,7 @@ export function TaskForm({ listId, onTaskCreated }: Props) {
   // Form state
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [priority, setPriority] = useState<string>('0');
+  const [priority, setPriority] = useState<TaskPriority | null>(null);
   const [startDate, setStartDate] = useState<Date | undefined>();
   const [endDate, setEndDate] = useState<Date | undefined>();
   const [selectedAssignees, setSelectedAssignees] = useState<string[]>([]);
@@ -68,7 +69,7 @@ export function TaskForm({ listId, onTaskCreated }: Props) {
   const handleReset = () => {
     setName('');
     setDescription('');
-    setPriority('0');
+    setPriority(null);
     setStartDate(undefined);
     setEndDate(undefined);
     setSelectedAssignees([]);
@@ -89,14 +90,14 @@ export function TaskForm({ listId, onTaskCreated }: Props) {
       const taskData: {
         name: string;
         description?: string;
-        priority?: number;
+        priority?: TaskPriority;
         start_date?: string;
         end_date?: string;
         tags?: string[];
       } = {
         name: name.trim(),
         description: description.trim() || undefined,
-        priority: priority === '0' ? undefined : parseInt(priority),
+        priority: priority ?? undefined,
         start_date: startDate?.toISOString(),
         end_date: endDate?.toISOString(),
       };
@@ -170,12 +171,14 @@ export function TaskForm({ listId, onTaskCreated }: Props) {
 
   const getPriorityColor = (p: string) => {
     switch (p) {
-      case '1':
+      case 'critical':
         return 'border-red-500 bg-red-50 text-red-700 hover:bg-red-100 dark:bg-red-950 dark:text-red-300';
-      case '2':
+      case 'high':
         return 'border-yellow-500 bg-yellow-50 text-yellow-700 hover:bg-yellow-100 dark:bg-yellow-950 dark:text-yellow-300';
-      case '3':
+      case 'normal':
         return 'border-green-500 bg-green-50 text-green-700 hover:bg-green-100 dark:bg-green-950 dark:text-green-300';
+      case 'low':
+        return 'border-gray-300 bg-gray-50 text-gray-700 hover:bg-gray-100 dark:bg-gray-800 dark:text-gray-300';
       default:
         return 'border-gray-300 bg-gray-50 text-gray-700 hover:bg-gray-100 dark:bg-gray-800 dark:text-gray-300';
     }
@@ -242,11 +245,10 @@ export function TaskForm({ listId, onTaskCreated }: Props) {
             <Label className="text-xs font-medium">Priority</Label>
             <div className="flex flex-wrap gap-2">
               {[
-                { value: '0', label: 'None', icon: null },
-                { value: '1', label: 'Urgent', icon: Flag },
-                { value: '2', label: 'High', icon: Flag },
-                { value: '3', label: 'Medium', icon: Flag },
-                { value: '4', label: 'Low', icon: Flag },
+                { value: 'critical', label: 'Urgent', icon: Flag },
+                { value: 'high', label: 'High', icon: Flag },
+                { value: 'normal', label: 'Medium', icon: Flag },
+                { value: 'low', label: 'Low', icon: Flag },
               ].map(({ value, label, icon: Icon }) => (
                 <Button
                   key={value}
@@ -257,7 +259,7 @@ export function TaskForm({ listId, onTaskCreated }: Props) {
                     'h-8 px-3 text-xs transition-all duration-200',
                     priority === value && getPriorityColor(value)
                   )}
-                  onClick={() => setPriority(value)}
+                  onClick={() => setPriority(value as TaskPriority)}
                 >
                   {Icon && <Icon className="mr-1 h-3 w-3" />}
                   {label}

@@ -14,7 +14,6 @@ export const templateScenarios: TemplateScenario[] = [
         maxDuration: 1,
         category: 'meeting',
         priority: 'high',
-        events: [],
         allowSplit: false,
       },
       {
@@ -25,7 +24,6 @@ export const templateScenarios: TemplateScenario[] = [
         maxDuration: 3,
         category: 'work',
         priority: 'normal',
-        events: [],
         allowSplit: false,
       },
       {
@@ -36,7 +34,6 @@ export const templateScenarios: TemplateScenario[] = [
         maxDuration: 2,
         category: 'work',
         priority: 'low',
-        events: [],
         allowSplit: false,
       },
     ],
@@ -53,7 +50,6 @@ export const templateScenarios: TemplateScenario[] = [
         maxDuration: 2,
         category: 'work',
         priority: 'high',
-        events: [],
         allowSplit: true,
       },
       {
@@ -64,7 +60,6 @@ export const templateScenarios: TemplateScenario[] = [
         maxDuration: 1.5,
         category: 'personal',
         priority: 'normal',
-        events: [],
         allowSplit: true,
       },
       {
@@ -75,7 +70,6 @@ export const templateScenarios: TemplateScenario[] = [
         maxDuration: 1,
         category: 'work',
         priority: 'high',
-        events: [],
         allowSplit: true,
       },
     ],
@@ -92,7 +86,6 @@ export const templateScenarios: TemplateScenario[] = [
         maxDuration: 1.5,
         category: 'meeting',
         priority: 'high',
-        events: [],
       },
       {
         id: 'mixed-2',
@@ -102,7 +95,6 @@ export const templateScenarios: TemplateScenario[] = [
         maxDuration: 2,
         category: 'personal',
         priority: 'normal',
-        events: [],
       },
       {
         id: 'mixed-3',
@@ -112,7 +104,6 @@ export const templateScenarios: TemplateScenario[] = [
         maxDuration: 2,
         category: 'work',
         priority: 'high',
-        events: [],
       },
       {
         id: 'mixed-4',
@@ -122,7 +113,6 @@ export const templateScenarios: TemplateScenario[] = [
         maxDuration: 1,
         category: 'meeting',
         priority: 'critical',
-        events: [],
       },
       {
         id: 'mixed-5',
@@ -132,7 +122,6 @@ export const templateScenarios: TemplateScenario[] = [
         maxDuration: 2,
         category: 'personal',
         priority: 'low',
-        events: [],
       },
     ],
   },
@@ -149,7 +138,6 @@ export const templateScenarios: TemplateScenario[] = [
         category: 'work',
         priority: 'critical',
         deadline: dayjs().add(4, 'hour'),
-        events: [],
       },
       {
         id: 'deadline-2',
@@ -160,7 +148,6 @@ export const templateScenarios: TemplateScenario[] = [
         category: 'work',
         priority: 'high',
         deadline: dayjs().add(1, 'day'),
-        events: [],
       },
       {
         id: 'deadline-3',
@@ -171,7 +158,6 @@ export const templateScenarios: TemplateScenario[] = [
         category: 'work',
         priority: 'normal',
         deadline: dayjs().add(2, 'day'),
-        events: [],
       },
       {
         id: 'deadline-4',
@@ -181,7 +167,6 @@ export const templateScenarios: TemplateScenario[] = [
         maxDuration: 1.5,
         category: 'personal',
         priority: 'low',
-        events: [],
       },
     ],
   },
@@ -197,7 +182,6 @@ export const templateScenarios: TemplateScenario[] = [
         maxDuration: 3,
         category: 'work',
         priority: 'critical',
-        events: [],
       },
       {
         id: 'over-2',
@@ -207,7 +191,6 @@ export const templateScenarios: TemplateScenario[] = [
         maxDuration: 2.5,
         category: 'work',
         priority: 'high',
-        events: [],
       },
       {
         id: 'over-3',
@@ -217,7 +200,6 @@ export const templateScenarios: TemplateScenario[] = [
         maxDuration: 3,
         category: 'meeting',
         priority: 'normal',
-        events: [],
       },
       {
         id: 'over-4',
@@ -227,7 +209,6 @@ export const templateScenarios: TemplateScenario[] = [
         maxDuration: 2,
         category: 'personal',
         priority: 'low',
-        events: [],
       },
       {
         id: 'over-5',
@@ -237,7 +218,6 @@ export const templateScenarios: TemplateScenario[] = [
         maxDuration: 2,
         category: 'work',
         priority: 'high',
-        events: [],
       },
     ],
   },
@@ -255,7 +235,6 @@ export const templateScenarios: TemplateScenario[] = [
         category: 'work',
         priority: 'critical',
         deadline: dayjs().add(6, 'hour'),
-        events: [],
       },
       {
         id: 'priority-2',
@@ -266,7 +245,6 @@ export const templateScenarios: TemplateScenario[] = [
         category: 'work',
         priority: 'high',
         deadline: dayjs().add(1, 'day'),
-        events: [],
       },
       {
         id: 'priority-3',
@@ -276,7 +254,6 @@ export const templateScenarios: TemplateScenario[] = [
         maxDuration: 2,
         category: 'work',
         priority: 'normal',
-        events: [],
       },
       {
         id: 'priority-4',
@@ -286,7 +263,6 @@ export const templateScenarios: TemplateScenario[] = [
         maxDuration: 1,
         category: 'work',
         priority: 'low',
-        events: [],
       },
       {
         id: 'priority-5',
@@ -296,7 +272,6 @@ export const templateScenarios: TemplateScenario[] = [
         maxDuration: 1.5,
         category: 'meeting',
         priority: 'high',
-        events: [],
       },
     ],
   },
@@ -313,7 +288,6 @@ export const templateScenarios: TemplateScenario[] = [
         category: 'work',
         priority: 'critical',
         deadline: dayjs().add(2, 'hour'),
-        events: [],
       },
       {
         id: 'emergency-2',
@@ -324,7 +298,6 @@ export const templateScenarios: TemplateScenario[] = [
         category: 'work',
         priority: 'critical',
         deadline: dayjs().add(4, 'hour'),
-        events: [],
       },
       {
         id: 'emergency-3',
@@ -335,7 +308,6 @@ export const templateScenarios: TemplateScenario[] = [
         category: 'meeting',
         priority: 'critical',
         deadline: dayjs().add(1, 'hour'),
-        events: [],
       },
       {
         id: 'emergency-4',
@@ -345,7 +317,6 @@ export const templateScenarios: TemplateScenario[] = [
         maxDuration: 1.5,
         category: 'work',
         priority: 'normal',
-        events: [],
       },
     ],
   },
@@ -361,7 +332,6 @@ export const templateScenarios: TemplateScenario[] = [
         maxDuration: 1,
         category: 'meeting',
         priority: 'high',
-        events: [],
       },
       {
         id: 'lifestyle-2',
@@ -371,7 +341,6 @@ export const templateScenarios: TemplateScenario[] = [
         maxDuration: 1.5,
         category: 'personal',
         priority: 'normal',
-        events: [],
       },
       {
         id: 'lifestyle-3',
@@ -381,7 +350,6 @@ export const templateScenarios: TemplateScenario[] = [
         maxDuration: 2,
         category: 'work',
         priority: 'high',
-        events: [],
       },
       {
         id: 'lifestyle-4',
@@ -391,7 +359,6 @@ export const templateScenarios: TemplateScenario[] = [
         maxDuration: 1,
         category: 'personal',
         priority: 'low',
-        events: [],
       },
       {
         id: 'lifestyle-5',
@@ -401,7 +368,6 @@ export const templateScenarios: TemplateScenario[] = [
         maxDuration: 0.5,
         category: 'meeting',
         priority: 'normal',
-        events: [],
       },
     ],
   },
@@ -417,7 +383,6 @@ export const templateScenarios: TemplateScenario[] = [
         maxDuration: 3,
         category: 'work',
         priority: 'normal',
-        events: [],
       },
       {
         id: 'flex-2',
@@ -427,7 +392,6 @@ export const templateScenarios: TemplateScenario[] = [
         maxDuration: 2,
         category: 'personal',
         priority: 'low',
-        events: [],
       },
       {
         id: 'flex-3',
@@ -437,7 +401,6 @@ export const templateScenarios: TemplateScenario[] = [
         maxDuration: 4,
         category: 'work',
         priority: 'normal',
-        events: [],
       },
     ],
   },
@@ -454,7 +417,6 @@ export const templateScenarios: TemplateScenario[] = [
         category: 'work',
         priority: 'high',
         deadline: dayjs().add(1, 'day'),
-        events: [],
       },
       {
         id: 'study-2',
@@ -465,7 +427,6 @@ export const templateScenarios: TemplateScenario[] = [
         category: 'work',
         priority: 'high',
         deadline: dayjs().add(3, 'day'),
-        events: [],
       },
       {
         id: 'study-3',
@@ -476,7 +437,6 @@ export const templateScenarios: TemplateScenario[] = [
         category: 'meeting',
         priority: 'normal',
         deadline: dayjs().add(2, 'day'),
-        events: [],
       },
       {
         id: 'study-4',
@@ -487,7 +447,6 @@ export const templateScenarios: TemplateScenario[] = [
         category: 'work',
         priority: 'critical',
         deadline: dayjs().add(4, 'day'),
-        events: [],
       },
       {
         id: 'study-5',
@@ -497,7 +456,6 @@ export const templateScenarios: TemplateScenario[] = [
         maxDuration: 1.5,
         category: 'personal',
         priority: 'low',
-        events: [],
       },
     ],
   },
@@ -515,7 +473,6 @@ export const templateScenarios: TemplateScenario[] = [
         category: 'work',
         priority: 'high',
         deadline: dayjs().add(2, 'day'),
-        events: [],
       },
       {
         id: 'freelance-2',
@@ -526,7 +483,6 @@ export const templateScenarios: TemplateScenario[] = [
         category: 'work',
         priority: 'normal',
         deadline: dayjs().add(5, 'day'),
-        events: [],
       },
       {
         id: 'freelance-3',
@@ -537,7 +493,6 @@ export const templateScenarios: TemplateScenario[] = [
         category: 'work',
         priority: 'critical',
         deadline: dayjs().add(6, 'hour'),
-        events: [],
       },
       {
         id: 'freelance-4',
@@ -547,7 +502,6 @@ export const templateScenarios: TemplateScenario[] = [
         maxDuration: 1.5,
         category: 'work',
         priority: 'low',
-        events: [],
       },
       {
         id: 'freelance-5',
@@ -557,7 +511,6 @@ export const templateScenarios: TemplateScenario[] = [
         maxDuration: 1,
         category: 'meeting',
         priority: 'high',
-        events: [],
       },
     ],
   },
@@ -573,7 +526,6 @@ export const templateScenarios: TemplateScenario[] = [
         maxDuration: 2,
         category: 'personal',
         priority: 'normal',
-        events: [],
       },
       {
         id: 'health-2',
@@ -583,7 +535,6 @@ export const templateScenarios: TemplateScenario[] = [
         maxDuration: 2,
         category: 'personal',
         priority: 'normal',
-        events: [],
       },
       {
         id: 'health-3',
@@ -593,7 +544,6 @@ export const templateScenarios: TemplateScenario[] = [
         maxDuration: 1,
         category: 'personal',
         priority: 'low',
-        events: [],
       },
       {
         id: 'health-4',
@@ -603,7 +553,6 @@ export const templateScenarios: TemplateScenario[] = [
         maxDuration: 2,
         category: 'work',
         priority: 'high',
-        events: [],
       },
       {
         id: 'health-5',
@@ -614,7 +563,6 @@ export const templateScenarios: TemplateScenario[] = [
         category: 'personal',
         priority: 'high',
         deadline: dayjs().add(1, 'day').hour(14),
-        events: [],
       },
     ],
   },
@@ -630,7 +578,6 @@ export const templateScenarios: TemplateScenario[] = [
         maxDuration: 0.5,
         category: 'meeting',
         priority: 'high',
-        events: [],
       },
       {
         id: 'meeting-2',
@@ -640,7 +587,6 @@ export const templateScenarios: TemplateScenario[] = [
         maxDuration: 2.5,
         category: 'meeting',
         priority: 'high',
-        events: [],
       },
       {
         id: 'meeting-3',
@@ -651,7 +597,6 @@ export const templateScenarios: TemplateScenario[] = [
         category: 'meeting',
         priority: 'critical',
         deadline: dayjs().add(1, 'day').hour(15),
-        events: [],
       },
       {
         id: 'meeting-4',
@@ -661,7 +606,6 @@ export const templateScenarios: TemplateScenario[] = [
         maxDuration: 1.5,
         category: 'meeting',
         priority: 'normal',
-        events: [],
       },
       {
         id: 'meeting-5',
@@ -671,7 +615,6 @@ export const templateScenarios: TemplateScenario[] = [
         maxDuration: 1,
         category: 'meeting',
         priority: 'normal',
-        events: [],
       },
       {
         id: 'meeting-6',
@@ -681,7 +624,6 @@ export const templateScenarios: TemplateScenario[] = [
         maxDuration: 2,
         category: 'work',
         priority: 'high',
-        events: [],
       },
     ],
   },
@@ -697,7 +639,6 @@ export const templateScenarios: TemplateScenario[] = [
         maxDuration: 2,
         category: 'work',
         priority: 'high',
-        events: [],
       },
       {
         id: 'creative-2',
@@ -707,7 +648,6 @@ export const templateScenarios: TemplateScenario[] = [
         maxDuration: 3,
         category: 'work',
         priority: 'high',
-        events: [],
       },
       {
         id: 'creative-3',
@@ -717,7 +657,6 @@ export const templateScenarios: TemplateScenario[] = [
         maxDuration: 1,
         category: 'personal',
         priority: 'low',
-        events: [],
       },
       {
         id: 'creative-4',
@@ -727,7 +666,6 @@ export const templateScenarios: TemplateScenario[] = [
         maxDuration: 1,
         category: 'meeting',
         priority: 'normal',
-        events: [],
       },
       {
         id: 'creative-5',
@@ -738,7 +676,6 @@ export const templateScenarios: TemplateScenario[] = [
         category: 'work',
         priority: 'critical',
         deadline: dayjs().add(2, 'day'),
-        events: [],
       },
     ],
   },
@@ -754,7 +691,6 @@ export const templateScenarios: TemplateScenario[] = [
         maxDuration: 2.5,
         category: 'work',
         priority: 'high',
-        events: [],
       },
       {
         id: 'remote-2',
@@ -764,7 +700,6 @@ export const templateScenarios: TemplateScenario[] = [
         maxDuration: 1,
         category: 'personal',
         priority: 'low',
-        events: [],
       },
       {
         id: 'remote-3',
@@ -775,7 +710,6 @@ export const templateScenarios: TemplateScenario[] = [
         category: 'meeting',
         priority: 'high',
         deadline: dayjs().add(1, 'day').hour(10),
-        events: [],
       },
       {
         id: 'remote-4',
@@ -785,7 +719,6 @@ export const templateScenarios: TemplateScenario[] = [
         maxDuration: 1.5,
         category: 'personal',
         priority: 'normal',
-        events: [],
       },
       {
         id: 'remote-5',
@@ -795,7 +728,6 @@ export const templateScenarios: TemplateScenario[] = [
         maxDuration: 1,
         category: 'work',
         priority: 'normal',
-        events: [],
       },
     ],
   },
@@ -811,7 +743,6 @@ export const templateScenarios: TemplateScenario[] = [
         maxDuration: 4,
         category: 'work',
         priority: 'critical',
-        events: [],
       },
       {
         id: 'startup-2',
@@ -822,7 +753,6 @@ export const templateScenarios: TemplateScenario[] = [
         category: 'work',
         priority: 'critical',
         deadline: dayjs().add(1, 'day'),
-        events: [],
       },
       {
         id: 'startup-3',
@@ -832,7 +762,6 @@ export const templateScenarios: TemplateScenario[] = [
         maxDuration: 1,
         category: 'meeting',
         priority: 'high',
-        events: [],
       },
       {
         id: 'startup-4',
@@ -842,7 +771,6 @@ export const templateScenarios: TemplateScenario[] = [
         maxDuration: 2,
         category: 'work',
         priority: 'normal',
-        events: [],
       },
       {
         id: 'startup-5',
@@ -853,7 +781,6 @@ export const templateScenarios: TemplateScenario[] = [
         category: 'meeting',
         priority: 'high',
         deadline: dayjs().add(2, 'day').hour(18),
-        events: [],
       },
     ],
   },
@@ -869,7 +796,6 @@ export const templateScenarios: TemplateScenario[] = [
         maxDuration: 1.5,
         category: 'personal',
         priority: 'normal',
-        events: [],
       },
       {
         id: 'learning-2',
@@ -879,7 +805,6 @@ export const templateScenarios: TemplateScenario[] = [
         maxDuration: 2,
         category: 'personal',
         priority: 'normal',
-        events: [],
       },
       {
         id: 'learning-3',
@@ -889,7 +814,6 @@ export const templateScenarios: TemplateScenario[] = [
         maxDuration: 1,
         category: 'personal',
         priority: 'low',
-        events: [],
       },
       {
         id: 'learning-4',
@@ -899,7 +823,6 @@ export const templateScenarios: TemplateScenario[] = [
         maxDuration: 2,
         category: 'work',
         priority: 'high',
-        events: [],
       },
       {
         id: 'learning-5',
@@ -910,7 +833,6 @@ export const templateScenarios: TemplateScenario[] = [
         category: 'meeting',
         priority: 'high',
         deadline: dayjs().add(3, 'day').hour(16),
-        events: [],
       },
     ],
   },
@@ -926,7 +848,6 @@ export const templateScenarios: TemplateScenario[] = [
         maxDuration: 2,
         category: 'work',
         priority: 'high',
-        events: [],
       },
       {
         id: 'parent-2',
@@ -937,7 +858,6 @@ export const templateScenarios: TemplateScenario[] = [
         category: 'personal',
         priority: 'critical',
         deadline: dayjs().add(1, 'day').hour(15).minute(30),
-        events: [],
       },
       {
         id: 'parent-3',
@@ -947,7 +867,6 @@ export const templateScenarios: TemplateScenario[] = [
         maxDuration: 1.5,
         category: 'work',
         priority: 'normal',
-        events: [],
       },
       {
         id: 'parent-4',
@@ -957,7 +876,6 @@ export const templateScenarios: TemplateScenario[] = [
         maxDuration: 2,
         category: 'personal',
         priority: 'normal',
-        events: [],
       },
       {
         id: 'parent-5',
@@ -968,7 +886,6 @@ export const templateScenarios: TemplateScenario[] = [
         category: 'meeting',
         priority: 'high',
         deadline: dayjs().add(1, 'day').hour(11),
-        events: [],
       },
     ],
   },

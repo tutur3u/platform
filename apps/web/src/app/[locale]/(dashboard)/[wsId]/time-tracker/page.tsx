@@ -13,7 +13,9 @@ interface Props {
 }
 
 export default async function TimeTrackerPage({ params }: Props) {
-  const { wsId } = await params;
+  const { wsId: id } = await params;
+  const workspace = await getWorkspace(id);
+  const wsId = workspace?.id;
 
   try {
     const workspace = await getWorkspace(wsId);

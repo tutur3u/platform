@@ -6,8 +6,8 @@ import type {
   Log,
   ScheduleResult,
   Task,
-  TaskPriority,
 } from './types';
+import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import dayjs from 'dayjs';
 import minMax from 'dayjs/plugin/minMax';
 import { v4 as uuidv4 } from 'uuid';
@@ -47,7 +47,6 @@ function ensureMinimumDuration(hours: number): number {
 }
 
 export const scheduleWithFlexibleEvents = (
-  newTasks: Task[],
   flexibleEvents: Event[],
   lockedEvents: Event[],
   activeHours: ActiveHours
@@ -82,13 +81,8 @@ export const scheduleWithFlexibleEvents = (
   console.log(
     `[Scheduler] Promoted ${promotedTasks.length} flexible events to tasks.`
   );
-  const allTasksToProcess = [...newTasks, ...promotedTasks];
 
-  const result = scheduleTasks(
-    allTasksToProcess,
-    activeHours,
-    futureLockedEvents
-  );
+  const result = scheduleTasks(promotedTasks, activeHours, futureLockedEvents);
 
   return result;
 };
@@ -101,7 +95,7 @@ export const prepareTaskChunks = (tasks: Task[]): Task[] => {
       !task.maxDuration ||
       task.maxDuration <= 0
     ) {
-      chunks.push({ ...task, taskId: task.id });
+      chunks.push(task);
       continue;
     }
     let remainingDuration = task.duration;
@@ -117,10 +111,9 @@ export const prepareTaskChunks = (tasks: Task[]): Task[] => {
             : task.name,
         duration: partDuration,
         minDuration: partDuration,
-        priority: task.priority || 'normal',
+        priority: task.priority,
         maxDuration: partDuration,
         allowSplit: false,
-        taskId: task.id,
       });
       remainingDuration -= partDuration;
       partNumber++;
@@ -193,11 +186,9 @@ export const promoteEventToTask = (event: Event): Task | null => {
     minDuration: duration,
     maxDuration: duration,
     allowSplit: false,
-    locked: event.locked ?? false,
-    category: event.category ?? 'work',
-    priority: event.priority ?? 'normal',
+    category: 'work',
+    priority: 'normal',
     deadline: end,
-    events: [],
   };
 };
 
@@ -220,7 +211,6 @@ export const scheduleTasks = (
       maxDuration: hoursToQuarterHours(task.maxDuration),
       remaining: hoursToQuarterHours(task.duration),
       nextPart: 1,
-      locked: task.locked || false,
       scheduledParts: 0,
       priorityScore: calculatePriorityScore(task),
     }));
@@ -323,7 +313,6 @@ export const scheduleTasks = (
                   id: `${task.id}`,
                   name: task.name,
                   range: { start: partStart, end: partEnd },
-                  isPastDeadline: false,
                   locked: task.locked || false,
                   taskId: task.id,
                 };
@@ -331,7 +320,6 @@ export const scheduleTasks = (
                   (task.deadline && partEnd.isAfter(task.deadline)) ||
                   scheduledAfterDeadline
                 ) {
-                  newEvent.isPastDeadline = true;
                   logs.push({
                     type: 'warning',
                     message: `Task "${task.name}" is scheduled past its deadline of ${task.deadline}.`,
@@ -427,18 +415,6 @@ export const scheduleTasks = (
           const partStart = roundToQuarterHour(slot.start, false);
           const partEnd = partStart.add(partDuration, 'hour');
           const totalParts = Math.ceil(task.duration / task.maxDuration);
-          // const newEvent: Event = {
-          //   id: `${task.id}-part-${task.nextPart}`,
-          //   name:
-          //     totalParts > 1
-          //       ? `${task.name} (Part ${task.nextPart}/${totalParts})`
-          //       : task.name,
-          //   range: { start: partStart, end: partEnd },
-          //   isPastDeadline: false,
-          //   taskId: task.id,
-          //   partNumber: totalParts > 1 ? task.nextPart : undefined,
-          //   totalParts: totalParts > 1 ? totalParts : undefined,
-          // };
 
           const newEvent: Event = {
             id: uuidv4(),
@@ -447,7 +423,6 @@ export const scheduleTasks = (
                 ? `${task.name} (Part ${task.nextPart}/${totalParts})`
                 : task.name,
             range: { start: partStart, end: partEnd },
-            isPastDeadline: false,
             taskId: task.id,
             partNumber: totalParts > 1 ? task.nextPart : undefined,
             totalParts: totalParts > 1 ? totalParts : undefined,
@@ -456,7 +431,6 @@ export const scheduleTasks = (
             (task.deadline && partEnd.isAfter(task.deadline)) ||
             scheduledAfterDeadline
           ) {
-            newEvent.isPastDeadline = true;
             logs.push({
               type: 'warning',
               message: `Part ${task.nextPart} of task "${task.name}" is scheduled past its deadline of ${task.deadline}.`,

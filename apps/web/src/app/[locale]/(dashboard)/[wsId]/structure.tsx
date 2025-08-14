@@ -10,7 +10,7 @@ import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { LogoTitle } from '@tuturuuu/ui/custom/logo-title';
 import { Structure as BaseStructure } from '@tuturuuu/ui/custom/structure';
 import { WorkspaceSelect } from '@tuturuuu/ui/custom/workspace-select';
-import { ArrowLeft } from '@tuturuuu/ui/icons';
+import { ArrowLeft, TriangleAlert } from '@tuturuuu/ui/icons';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { cn } from '@tuturuuu/utils/format';
 import { setCookie } from 'cookies-next';
@@ -18,7 +18,13 @@ import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { type ReactNode, Suspense, useEffect, useState } from 'react';
+import {
+  type ReactNode,
+  Suspense,
+  useCallback,
+  useEffect,
+  useState,
+} from 'react';
 
 interface MailProps {
   wsId: string;
@@ -34,6 +40,7 @@ interface MailProps {
 
 export function Structure({
   wsId,
+  workspace,
   defaultCollapsed = false,
   user,
   links,
@@ -56,24 +63,27 @@ export function Structure({
   }, [behavior]);
 
   // Recursive function to check if any nested child matches the pathname
-  const hasActiveChild = (navLinks: NavLink[]): boolean => {
-    return navLinks.some((child) => {
-      const childMatches =
-        child?.href &&
-        (pathname.startsWith(child.href) ||
-          child.aliases?.some((alias) => pathname.startsWith(alias)));
+  const hasActiveChild = useCallback(
+    (navLinks: NavLink[]): boolean => {
+      return navLinks.some((child) => {
+        const childMatches =
+          child?.href &&
+          (pathname.startsWith(child.href) ||
+            child.aliases?.some((alias) => pathname.startsWith(alias)));
 
-      if (childMatches) {
-        return true;
-      }
+        if (childMatches) {
+          return true;
+        }
 
-      if (child.children) {
-        return hasActiveChild(child.children);
-      }
+        if (child.children) {
+          return hasActiveChild(child.children);
+        }
 
-      return false;
-    });
-  };
+        return false;
+      });
+    },
+    [pathname]
+  );
 
   const [navState, setNavState] = useState<{
     currentLinks: (NavLink | null)[];
@@ -178,7 +188,7 @@ export function Structure({
       // We are at the top level and no submenu is active, do nothing.
       return prevState;
     });
-  }, [pathname, links]);
+  }, [pathname, links, hasActiveChild]);
 
   const handleToggle = () => {
     const newCollapsed = !isCollapsed;
@@ -308,6 +318,20 @@ export function Structure({
     </>
   );
 
+  const personalNote = !isCollapsed &&
+    (wsId === 'personal' || workspace?.personal) && (
+      <div className="p-2 pt-0">
+        <div className="rounded-lg border border-foreground/10 bg-foreground/5 p-2 text-xs text-muted-foreground">
+          <div className="flex items-start gap-2">
+            <TriangleAlert className="mt-0.5 h-4 w-4 flex-none" />
+            <p className="leading-relaxed">
+              {t('common.personal_workspace_experimental_note')}
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+
   const sidebarContent = (
     <div className="relative h-full overflow-hidden">
       <div
@@ -320,18 +344,21 @@ export function Structure({
         )}
       >
         {navState.history.length === 0 ? (
-          <Nav
-            key={`${user?.id}-root`}
-            wsId={wsId}
-            isCollapsed={isCollapsed}
-            links={filteredCurrentLinks}
-            onSubMenuClick={handleNavChange}
-            onClick={() => {
-              if (window.innerWidth < 768) {
-                setIsCollapsed(true);
-              }
-            }}
-          />
+          <>
+            {personalNote}
+            <Nav
+              key={`${user?.id}-root`}
+              wsId={wsId}
+              isCollapsed={isCollapsed}
+              links={filteredCurrentLinks}
+              onSubMenuClick={handleNavChange}
+              onClick={() => {
+                if (window.innerWidth < 768) {
+                  setIsCollapsed(true);
+                }
+              }}
+            />
+          </>
         ) : (
           <>
             <Nav
@@ -352,6 +379,7 @@ export function Structure({
               </div>
             )}
             {!isCollapsed && <div className="mx-4 my-1 border-b" />}
+            {personalNote}
             {filteredCurrentLinks.length > 0 && (
               <div className="scrollbar-none flex-1 overflow-y-auto">
                 <Nav

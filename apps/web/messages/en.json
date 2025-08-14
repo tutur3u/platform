@@ -168,6 +168,7 @@
     "mark_as_personal": "Mark as Personal",
     "select_workspace": "Select workspace",
     "personal_workspace_naming_rule": "Your personal workspace name always matches your account display name. If your display name is empty or not set, your account email will be shown instead.",
+    "personal_workspace_experimental_note": "Personal workspaces are experimental and currently only available for eligible Tuturuuu internal accounts.",
     "workspaces": "Workspaces",
     "create_new_workspace": "Create New Workspace",
     "create_workspace": "Create Workspace",

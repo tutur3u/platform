@@ -1,4 +1,8 @@
-import { getPermissions, getSecrets } from '@tuturuuu/utils/workspace-helper';
+import {
+  getPermissions,
+  getSecrets,
+  getWorkspace,
+} from '@tuturuuu/utils/workspace-helper';
 import { redirect } from 'next/navigation';
 import type React from 'react';
 
@@ -10,7 +14,9 @@ interface LayoutProps {
 }
 
 export default async function Layout({ children, params }: LayoutProps) {
-  const { wsId } = await params;
+  const { wsId: id } = await params;
+  const workspace = await getWorkspace(id);
+  const wsId = workspace?.id;
 
   const secrets = await getSecrets({
     wsId,

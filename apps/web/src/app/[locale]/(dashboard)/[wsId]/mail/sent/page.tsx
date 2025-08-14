@@ -6,6 +6,7 @@ import {
 } from '@tuturuuu/supabase/next/server';
 import type { InternalEmail } from '@tuturuuu/types/db';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
+import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { cookies } from 'next/headers';
 
 interface SearchParams {
@@ -23,7 +24,10 @@ interface Props {
 }
 
 export default async function MailPage({ params, searchParams }: Props) {
-  const { wsId } = await params;
+  const { wsId: id } = await params;
+  const workspace = await getWorkspace(id);
+  const wsId = workspace?.id;
+
   const searchParamsData = searchParams ? await searchParams : {};
 
   const layoutCookie = (await cookies()).get(

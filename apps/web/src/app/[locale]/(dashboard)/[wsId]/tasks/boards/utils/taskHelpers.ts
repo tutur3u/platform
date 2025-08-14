@@ -1,12 +1,13 @@
 /**
  * Utility functions for task management and calculations
  */
+import { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 
 interface Task {
   id: string;
   name: string;
   description?: string;
-  priority?: number | null;
+  priority?: TaskPriority | null;
   created_at?: string;
   updated_at?: string;
   end_date?: string | null;

@@ -17,8 +17,9 @@ interface PageProps {
 }
 
 export default async function CalendarPage({ params }: PageProps) {
-  const { wsId, locale } = await params;
-  const workspace = await getWorkspace(wsId);
+  const { wsId: id, locale } = await params;
+  const workspace = await getWorkspace(id);
+  const wsId = workspace?.id;
 
   const { withoutPermission } = await getPermissions({ wsId });
 

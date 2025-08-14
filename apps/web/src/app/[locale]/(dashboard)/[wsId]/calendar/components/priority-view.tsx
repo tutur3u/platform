@@ -46,8 +46,6 @@ export const TASK_PRIORITIES = {
   },
 } as const;
 
-export type TaskPriority = keyof typeof TASK_PRIORITIES;
-
 export default function PriorityView({
   wsId,
   allTasks,
@@ -102,7 +100,7 @@ export default function PriorityView({
   };
 
   combinedTasks.forEach((task) => {
-    const priority = task.user_defined_priority || 'normal';
+    const priority = task.priority || 'normal';
     if (grouped[priority]) {
       grouped[priority].push(task);
     } else {
@@ -269,9 +267,7 @@ export default function PriorityView({
                               <div className="ml-3 flex items-center gap-2">
                                 <PriorityDropdown
                                   taskId={task.id}
-                                  currentPriority={
-                                    task.user_defined_priority || 'normal'
-                                  }
+                                  currentPriority={task.priority || 'normal'}
                                   allPriorities={TASK_PRIORITIES}
                                   onPriorityChange={handlePriorityChange}
                                 />
