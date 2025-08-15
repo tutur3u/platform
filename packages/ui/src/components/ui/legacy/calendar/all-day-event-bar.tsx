@@ -1,5 +1,3 @@
-import { useCalendar } from '../../../../hooks/use-calendar';
-import { MIN_COLUMN_WIDTH } from './config';
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import { useCalendarSync } from '@tuturuuu/ui/hooks/use-calendar-sync';
 import { getEventStyles } from '@tuturuuu/utils/color-helper';
@@ -9,8 +7,11 @@ import isBetween from 'dayjs/plugin/isBetween';
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
 import timezone from 'dayjs/plugin/timezone';
-import { Calendar, ChevronDown, ChevronUp } from 'lucide-react';
+import { ChevronDown, ChevronUp } from 'lucide-react';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
+import { useCalendar } from '../../../../hooks/use-calendar';
+import { MIN_COLUMN_WIDTH } from './config';
+import { TimeColumnHeaders } from './time-column-headers';
 
 dayjs.extend(isBetween);
 dayjs.extend(isSameOrAfter);
@@ -82,6 +83,9 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
   const { allDayEvents } = useCalendarSync();
   const showWeekends = settings.appearance.showWeekends;
   const tz = settings?.timezone?.timezone;
+  const secondaryTz = settings?.timezone?.secondaryTimezone;
+  const showSecondary =
+    settings?.timezone?.showSecondaryTimezone && secondaryTz;
   const [expandedDates, setExpandedDates] = useState<string[]>([]);
 
   // Drag and drop state
@@ -640,10 +644,8 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
 
   return (
     <div className="flex">
-      {/* Label column */}
-      <div className="flex w-16 items-center justify-center border-b border-l bg-muted/30 p-2 font-medium">
-        <Calendar className="h-4 w-4 text-muted-foreground" />
-      </div>
+      {/* Time column headers - matching the main calendar layout */}
+      <TimeColumnHeaders showSecondary={showSecondary} variant="all-day" />
 
       {/* All-day event columns with relative positioning for spanning events */}
       <div
@@ -699,7 +701,7 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
                 {/* Show/hide expansion button */}
                 {hiddenCount > 0 && (
                   <div
-                    className="flex cursor-pointer items-center justify-center rounded-sm px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted/40"
+                    className="flex cursor-pointer items-center justify-center rounded-sm px-2 py-1 font-medium text-muted-foreground text-xs transition-colors hover:bg-muted/40"
                     onClick={() => toggleDateExpansion(dateKey)}
                     style={{
                       position: 'absolute',
@@ -718,7 +720,7 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
                   !shouldShowAll &&
                   dateEvents.length > MAX_EVENTS_DISPLAY && (
                     <div
-                      className="flex cursor-pointer items-center justify-center rounded-sm px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted/40"
+                      className="flex cursor-pointer items-center justify-center rounded-sm px-2 py-1 font-medium text-muted-foreground text-xs transition-colors hover:bg-muted/40"
                       onClick={() => toggleDateExpansion(dateKey)}
                       style={{
                         position: 'absolute',
@@ -796,7 +798,7 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
             <div
               key={`spanning-event-${event.id}`}
               className={cn(
-                'absolute flex items-center rounded-sm border-l-2 px-2 py-1 text-xs font-semibold transition-all duration-200',
+                'absolute flex items-center rounded-sm border-l-2 px-2 py-1 font-semibold text-xs transition-all duration-200',
                 // Cursor changes based on locked state and drag state
                 event.locked
                   ? 'cursor-not-allowed opacity-60'
@@ -858,7 +860,7 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
         <div
           ref={dragPreviewRef}
           className={cn(
-            'pointer-events-none fixed z-50 truncate rounded-sm border-l-2 px-2 py-1 text-xs font-semibold shadow-xl',
+            'pointer-events-none fixed z-50 truncate rounded-sm border-l-2 px-2 py-1 font-semibold text-xs shadow-xl',
             'transform backdrop-blur-sm transition-none',
             getEventStyles(dragState.draggedEvent.color || 'BLUE').bg,
             getEventStyles(dragState.draggedEvent.color || 'BLUE').border,

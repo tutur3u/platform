@@ -1,35 +1,46 @@
-import { useCalendar } from '../../../../hooks/use-calendar';
-import { DAY_HEIGHT, HOUR_HEIGHT } from './config';
 import { cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
+import { useCalendar } from '../../../../hooks/use-calendar';
+import { DAY_HEIGHT, HOUR_HEIGHT } from './config';
 
 dayjs.extend(timezone);
 
-export const TimeTrail = () => {
-  // Get settings from context
-  const { settings } = useCalendar();
-  const tz = settings?.timezone?.timezone;
-
-  // Only show hours (not every half hour)
+// Reusable component for time column
+const TimeColumn = ({
+  timezone: tz,
+  timeFormat,
+  className,
+  style,
+}: {
+  timezone: string | undefined;
+  timeFormat: '24h' | '12h' | undefined;
+  className?: string;
+  style?: React.CSSProperties;
+}) => {
   const hours = Array.from(Array(24).keys());
 
-  // Format time for display - only show hour
+  // Simplified formatTime function
   const formatTime = (hour: number) => {
     let date = dayjs();
-    date =
-      tz === 'auto'
-        ? date.hour(hour).minute(0).second(0).millisecond(0)
-        : date.tz(tz).hour(hour).minute(0).second(0).millisecond(0);
-    const timeFormat =
-      settings?.appearance?.timeFormat === '24h' ? 'HH:mm' : 'h a';
-    return date.format(timeFormat);
+
+    if (tz && tz !== 'auto') {
+      date = date.tz(tz);
+    }
+
+    date = date.hour(hour).minute(0).second(0).millisecond(0);
+
+    const format = timeFormat === '24h' ? 'HH:mm' : 'h a';
+    return date.format(format);
   };
 
   return (
     <div
-      className="relative w-16 border-r border-border dark:border-zinc-800"
-      style={{ height: DAY_HEIGHT }}
+      className={cn(
+        'relative w-16 border-border border-r dark:border-zinc-800',
+        className
+      )}
+      style={style}
     >
       {hours.map((hour) => (
         <div
@@ -39,7 +50,7 @@ export const TimeTrail = () => {
         >
           <span
             className={cn(
-              'text-sm font-medium text-muted-foreground',
+              'font-medium text-muted-foreground text-sm',
               hour === 0 && 'hidden'
             )}
           >
@@ -48,5 +59,20 @@ export const TimeTrail = () => {
         </div>
       ))}
     </div>
+  );
+};
+
+export const TimeTrail = () => {
+  // Get settings from context
+  const { settings } = useCalendar();
+  const tz = settings?.timezone?.timezone;
+  const timeFormat = settings?.appearance?.timeFormat;
+
+  return (
+    <TimeColumn
+      timezone={tz}
+      timeFormat={timeFormat}
+      style={{ height: DAY_HEIGHT }}
+    />
   );
 };
