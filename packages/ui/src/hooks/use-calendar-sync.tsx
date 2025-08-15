@@ -319,21 +319,14 @@ export const CalendarSyncProvider = ({
             .filter((event) => event.ws_id !== null) // Filter out events with null ws_id
             .map((event) => ({
               ...event,
-              attendee_count: {
-                total: event.attendees?.length || 0,
-                accepted:
-                  event.attendees?.filter((a) => a.status === 'accepted')
-                    .length || 0,
-                declined:
-                  event.attendees?.filter((a) => a.status === 'declined')
-                    .length || 0,
-                pending:
-                  event.attendees?.filter((a) => a.status === 'pending').length ||
-                  0,
-                tentative:
-                  event.attendees?.filter((a) => a.status === 'tentative')
-                    .length || 0,
-              },
+              attendee_count: event.attendees?.reduce(
+                (counts, attendee) => {
+                  counts.total++;
+                  counts[attendee.status as keyof typeof counts]++;
+                  return counts;
+                },
+                { total: 0, accepted: 0, declined: 0, pending: 0, tentative: 0 }
+              ) || { total: 0, accepted: 0, declined: 0, pending: 0, tentative: 0 },
             }));
 
           setScheduledEvents(eventsWithCounts as WorkspaceScheduledEventWithAttendees[]);

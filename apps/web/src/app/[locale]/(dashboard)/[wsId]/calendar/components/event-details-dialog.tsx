@@ -188,6 +188,7 @@ export default function EnhancedEventDetailsDialog({
   onEventUpdate,
 }: EventDetailsDialogProps) {
   const [isDeleting, setIsDeleting] = useState(false)
+  const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false)
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
@@ -255,7 +256,7 @@ export default function EnhancedEventDetailsDialog({
         end_time: timeStringToHour(end.time || "10:00"),
         location: event.location || "",
         is_all_day: event.is_all_day || false,
-        requires_confirmation: event.requires_confirmation || true,
+        requires_confirmation: event.requires_confirmation ?? true,
         color: (event.color?.toLowerCase() || "red") as string,
         status: (event.status || "active") as EventStatus,
         selected_attendees: event.attendees?.map(a => a.user_id).filter(Boolean) || [],
@@ -378,6 +379,7 @@ export default function EnhancedEventDetailsDialog({
         color: editFormData.color.toUpperCase(),
         is_all_day: editFormData.is_all_day,
         status: editFormData.status,
+        requires_confirmation: editFormData.requires_confirmation,
       }
 
       const response = await fetch(`/api/v1/workspaces/${wsId}/scheduled-events/${event.id}`, {
@@ -415,29 +417,35 @@ export default function EnhancedEventDetailsDialog({
 
           if (!addResponse.ok) {
             console.error("Failed to add attendees")
+            toast.error("Failed to add attendees")
           }
         }
 
         // Remove attendees
-        for (const userId of attendeesToRemove) {
-          await fetch(`/api/v1/workspaces/${wsId}/scheduled-events/${event.id}/attendees/${userId}`, {
-            method: "DELETE",
-          })
+        if (attendeesToRemove.length > 0) {
+          const results = await Promise.allSettled(
+            attendeesToRemove.map((uid) =>
+              fetch(`/api/v1/workspaces/${wsId}/scheduled-events/${event.id}/attendees/${uid}`, { method: "DELETE" })
+            )
+          );
+          const failures = results.filter(r => r.status === 'rejected' || (r.status === 'fulfilled' && !r.value.ok));
+          if (failures.length) {
+            toast.error("Failed to remove some attendees");
+          }
         }
       }
 
       toast.success("Event updated successfully!")
       setIsEditing(false)
       onEventUpdate?.(event.id)
-      
-      // Refresh the event data
+      await refreshScheduledEvents()
     } catch (error) {
       console.error("Error updating event:", error)
       toast.error("Failed to update event. Please try again.")
     } finally {
       setIsSaving(false)
     }
-  }, [wsId, event, editFormData, onEventUpdate])
+  }, [wsId, event, editFormData, onEventUpdate, refreshScheduledEvents])
 
   const handleCancelEdit = useCallback(() => {
     setIsEditing(false)
@@ -495,30 +503,29 @@ export default function EnhancedEventDetailsDialog({
   )
 
   const handleDeleteEvent = useCallback(async () => {
-    if (!event || !confirm("Are you sure you want to delete this event? This action cannot be undone.")) {
-      return
+    if (!event) {
+      return;
     }
-
-    setIsDeleting(true)
+    setIsDeleting(true);
     try {
       const response = await fetch(`/api/v1/workspaces/${wsId}/scheduled-events/${event.id}`, {
         method: "DELETE",
-      })
-
+      });
       if (!response.ok) {
-        throw new Error("Failed to delete event")
+        throw new Error("Failed to delete event");
       }
-
-      toast.success("Event deleted successfully")
-      onEventDelete?.(event.id)
-      onClose()
+      toast.success("Event deleted successfully");
+      onEventDelete?.(event.id);
+      onClose();
+      await refreshScheduledEvents();
     } catch (error) {
-      console.error("Error deleting event:", error)
-      toast.error("Failed to delete event. Please try again.")
+      console.error("Error deleting event:", error);
+      toast.error("Failed to delete event. Please try again.");
     } finally {
-      setIsDeleting(false)
+      setIsDeleting(false);
+      setShowDeleteConfirmation(false);
     }
-  }, [wsId, onEventDelete, onClose, event])
+  }, [wsId, onEventDelete, onClose, event, refreshScheduledEvents]);
 
   const handleResendInvitations = useCallback(async () => {
     toast.info("Resend invitations feature coming soon")
@@ -588,16 +595,17 @@ export default function EnhancedEventDetailsDialog({
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
-        <div className="flex flex-col h-full">
-          {/* Header Section */}
-          <DialogHeader className="space-y-6 pb-6">
-            <div className="space-y-4">
-              <DialogTitle className="text-2xl font-bold leading-tight pr-8">{event.title}</DialogTitle>
+    <>
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
+          <div className="flex flex-col h-full">
+            {/* Header Section */}
+            <DialogHeader className="space-y-6 pb-6">
+              <div className="space-y-4">
+                <DialogTitle className="text-2xl font-bold leading-tight pr-8">{event.title}</DialogTitle>
 
-              {/* Event Time & Location */}
-              <div className="space-y-3">
+                {/* Event Time & Location */}
+                <div className="space-y-3">
                 <div className="flex items-start space-x-3">
                   <CalendarIcon className="h-5 w-5 text-muted-foreground mt-0.5 flex-shrink-0" />
                   <div>
@@ -717,7 +725,7 @@ export default function EnhancedEventDetailsDialog({
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={handleDeleteEvent}
+                      onClick={() => setShowDeleteConfirmation(true)}
                       disabled={isDeleting}
                       className="text-red-600 hover:text-red-700 hover:bg-red-50 bg-transparent"
                     >
@@ -785,6 +793,7 @@ export default function EnhancedEventDetailsDialog({
 
               {/* Visual Progress Bar */}
               <div className="space-y-3">
+                {stats.total > 0 && (
                 <div className="flex h-2 rounded-full overflow-hidden bg-muted">
                   {stats.accepted > 0 && (
                     <div className="bg-emerald-500" style={{ width: `${(stats.accepted / stats.total) * 100}%` }} />
@@ -796,6 +805,7 @@ export default function EnhancedEventDetailsDialog({
                     <div className="bg-red-500" style={{ width: `${(stats.declined / stats.total) * 100}%` }} />
                   )}
                 </div>
+                )}
 
                 <div className="grid grid-cols-4 gap-2 text-sm">
                   <div className="flex items-center space-x-2">
@@ -867,7 +877,30 @@ export default function EnhancedEventDetailsDialog({
 
         </div>
       </DialogContent>
-    </Dialog>
+      </Dialog>
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={showDeleteConfirmation} onOpenChange={setShowDeleteConfirmation}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Delete Event</DialogTitle>
+          </DialogHeader>
+          <div className="py-2">Are you sure you want to delete this event? This action cannot be undone.</div>
+          <div className="flex justify-end gap-2 mt-6">
+            <Button variant="outline" onClick={() => setShowDeleteConfirmation(false)} autoFocus>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteEvent}
+              disabled={isDeleting}
+              aria-label="Delete event"
+            >
+              {isDeleting ? "Deleting..." : "Delete"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   )
 }
 
@@ -965,7 +998,8 @@ function EnhancedAttendeesList({
         <div className="py-8 text-center text-muted-foreground">
           <p>No attendees in this category</p>
         </div>
-      ) :       <ScrollArea className="h-64">
+      ) :  (  
+      <ScrollArea className="h-64">
         <div className="space-y-2">
           {displayAttendees.map((attendee) => (
             <div
@@ -998,7 +1032,7 @@ function EnhancedAttendeesList({
           ))}
         </div>
       </ScrollArea>
-      }
+      )}
     </div>
   )
 }

@@ -114,12 +114,6 @@ const createDateTimeInTimezone = (
   return datetimeInTz.utc().toISOString();
 };
 
-// const timeStringToHour = (timeString: string): number => {
-//   const [hour] = timeString.split(':').map(Number);
-//   // Convert 0-23 hour to 1-24 format for TimeSelector
-//   return hour === 0 ? 24 : (hour || 1);
-// };
-
 export default function CreateScheduledEventDialog({
   isOpen,
   onClose,
@@ -291,6 +285,13 @@ export default function CreateScheduledEventDialog({
           hourToTimeString(formData.end_time),
           userTimezone
         );
+
+        // Validate start/end ordering
+        if (new Date(start_at).getTime() >= new Date(end_at).getTime()) {
+          toast.error('End time must be after start time');
+          setIsLoading(false);
+          return;
+        }
       }
 
       // Create the event
@@ -597,7 +598,6 @@ export default function CreateScheduledEventDialog({
                         <Checkbox
                           checked={isChecked}
                           disabled={isCurrentUser}
-                          onChange={() => !isCurrentUser && toggleAttendee(member.user_id)}
                         />
                         <div className="flex-1">
                           <div className={cn(

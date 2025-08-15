@@ -8,22 +8,30 @@ export function useCurrentUser() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const getUser = async () => {
+    let isMounted = true;
+    const supabase = createClient();
+
+    const init = async () => {
       try {
-        const supabase = createClient();
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-        setUserId(user?.id || null);
+        const { data: { user } } = await supabase.auth.getUser();
+        if (isMounted) setUserId(user?.id || null);
       } catch (error) {
         console.error('Error getting current user:', error);
-        setUserId(null);
+        if (isMounted) setUserId(null);
       } finally {
-        setIsLoading(false);
+        if (isMounted) setIsLoading(false);
       }
     };
 
-    getUser();
+    const { data: subscription } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (isMounted) setUserId(session?.user?.id ?? null);
+    });
+
+    void init();
+    return () => {
+      isMounted = false;
+      subscription?.subscription?.unsubscribe();
+    };
   }, []);
 
   return { userId, isLoading };

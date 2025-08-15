@@ -1,7 +1,7 @@
-import { User } from '../db';
-import { Workspace } from '../db';
+import type { User, Workspace } from '../db';
+import type { EventAttendeeCount } from '@tuturuuu/utils/event-attendees.utils';
 
-// Event scheduling types (temporary manual definitions until database schema is created)
+// Event scheduling types
 export type EventAttendeeStatus =
   | 'pending'
   | 'accepted'
@@ -41,13 +41,7 @@ export type EventAttendee = {
 export type WorkspaceScheduledEventWithAttendees = WorkspaceScheduledEvent & {
   attendees?: EventAttendeeWithUser[];
   creator?: User;
-  attendee_count?: {
-    total: number;
-    accepted: number;
-    declined: number;
-    pending: number;
-    tentative: number;
-  };
+  attendee_count: EventAttendeeCount;
 };
 
 export type EventAttendeeWithUser = EventAttendee & {

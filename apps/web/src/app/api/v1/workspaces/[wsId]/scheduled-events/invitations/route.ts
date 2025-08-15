@@ -1,15 +1,9 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { calculateAttendeeCounts } from '@tuturuuu/utils/event-attendees.utils';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextRequest, NextResponse } from 'next/server';
 
-type EventAttendeeCount = {
-  total: number;
-  accepted: number;
-  declined: number;
-  pending: number;
-  tentative: number;
-};
 
 interface Params {
   params: Promise<{
@@ -80,7 +74,7 @@ export async function GET(req: NextRequest, { params }: Params) {
 
     // Filter out records where event is null (in case event was deleted)
     const validInvitations =
-      attendeeRecords?.filter((record) => record.event) || [];
+      attendeeRecords?.filter((record) => record.event && typeof record.event === 'object') || [];
 
     // For each event, get attendee counts
     const eventIds = validInvitations.map((inv) => inv.event.id);
@@ -107,13 +101,7 @@ export async function GET(req: NextRequest, { params }: Params) {
       allAttendees?.reduce(
         (acc, attendee) => {
           if (!acc[attendee.event_id]) {
-            acc[attendee.event_id] = {
-              total: 0,
-              accepted: 0,
-              declined: 0,
-              pending: 0,
-              tentative: 0,
-            };
+            acc[attendee.event_id] = calculateAttendeeCounts([]);
           }
 
           const eventCounts = acc[attendee.event_id];
@@ -126,7 +114,7 @@ export async function GET(req: NextRequest, { params }: Params) {
 
           return acc;
         },
-        {} as Record<string, EventAttendeeCount>
+        {} as Record<string, ReturnType<typeof calculateAttendeeCounts>>
       ) || {};
 
     // Transform the data to match the expected format

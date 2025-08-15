@@ -62,21 +62,17 @@ export const useScheduledEvents = ({
       // Calculate attendee counts for each event
       const eventsWithCounts = (data || []).map((event) => ({
         ...event,
-        attendee_count: {
-          total: event.attendees?.length || 0,
-          accepted:
-            event.attendees?.filter((a) => a.status === 'accepted').length || 0,
-          declined:
-            event.attendees?.filter((a) => a.status === 'declined').length || 0,
-          pending:
-            event.attendees?.filter((a) => a.status === 'pending').length || 0,
-          tentative:
-            event.attendees?.filter((a) => a.status === 'tentative').length ||
-            0,
-        },
+        attendee_count: event.attendees?.reduce(
+          (counts, attendee) => {
+            counts.total++;
+            counts[attendee.status as keyof typeof counts]++;
+            return counts;
+          },
+          { total: 0, accepted: 0, declined: 0, pending: 0, tentative: 0 }
+        ) || { total: 0, accepted: 0, declined: 0, pending: 0, tentative: 0 },
       }));
 
-      setEvents(eventsWithCounts);
+      setEvents(eventsWithCounts as WorkspaceScheduledEventWithAttendees[]);
     } catch (err) {
       setError(
         err instanceof Error ? err : new Error('Failed to fetch events')
@@ -113,7 +109,7 @@ export const useScheduledEvents = ({
         );
       }
     },
-    [eventId, userId, fetchEvents]
+    [userId, fetchEvents]
   );
 
   useEffect(() => {

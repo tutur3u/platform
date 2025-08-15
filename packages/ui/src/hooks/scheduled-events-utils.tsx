@@ -40,7 +40,7 @@ export const convertScheduledEventToCalendarEvent = (
     ws_id: scheduledEvent.ws_id,
     _isScheduledEvent: true,
     _scheduledEventId: scheduledEvent.id,
-    _attendeeStatus: userAttendee?.status || 'pending',
+    _attendeeStatus: userAttendee?.status || (scheduledEvent.creator_id === userId ? 'accepted' : 'pending'),
     _isPending: isPending,
     _isTentative: isTentative,
     _isCreator: scheduledEvent.creator_id === userId,

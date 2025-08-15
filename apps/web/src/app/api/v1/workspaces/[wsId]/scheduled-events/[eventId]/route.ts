@@ -1,26 +1,7 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { Database } from '@tuturuuu/types/supabase';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextRequest, NextResponse } from 'next/server';
-
-type EventAttendeeWithUser = {
-  id: string;
-  user_id: string | null;
-  status: Database['public']['Enums']['event_attendee_status'] | null;
-  response_at: string | null;
-  user: {
-    id: string;
-    display_name: string | null;
-    avatar_url: string | null;
-  } | null;
-};
-
-// type WorkspaceScheduledEventWithAttendees =
-//   Database['public']['Tables']['workspace_scheduled_events']['Row'] & {
-//     attendees?: EventAttendeeWithUser[];
-//     creator: Database['public']['Tables']['users']['Row'];
-//   };
 
 interface Params {
   params: Promise<{
@@ -76,35 +57,26 @@ export async function GET(req: NextRequest, { params }: Params) {
     // Check if user has access to this event (creator or attendee)
     const isCreator = event.creator_id === user.id;
     const isAttendee = event.attendees?.some(
-      (a: EventAttendeeWithUser) => a.user_id === user.id
+      (a) => a.user_id === user.id
     );
 
     if (!isCreator && !isAttendee) {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 
-    // Calculate attendee counts
+    const counts = event.attendees?.reduce(
+      (acc, attendee) => {
+        acc.total++;
+        if (attendee.status) {
+          acc[attendee.status as keyof typeof acc]++;
+        }
+        return acc;
+      },
+      { total: 0, accepted: 0, declined: 0, pending: 0, tentative: 0 }
+    ) || { total: 0, accepted: 0, declined: 0, pending: 0, tentative: 0 };
     const eventWithCounts = {
       ...event,
-      attendee_count: {
-        total: event.attendees?.length || 0,
-        accepted:
-          event.attendees?.filter(
-            (a: EventAttendeeWithUser) => a.status === 'accepted'
-          ).length || 0,
-        declined:
-          event.attendees?.filter(
-            (a: EventAttendeeWithUser) => a.status === 'declined'
-          ).length || 0,
-        pending:
-          event.attendees?.filter(
-            (a: EventAttendeeWithUser) => a.status === 'pending'
-          ).length || 0,
-        tentative:
-          event.attendees?.filter(
-            (a: EventAttendeeWithUser) => a.status === 'tentative'
-          ).length || 0,
-      },
+      attendee_count: counts,
     };
 
     return NextResponse.json(eventWithCounts);
@@ -166,6 +138,30 @@ export async function PUT(req: NextRequest, { params }: Params) {
       is_all_day,
       status,
     } = body;
+
+
+    // Validate required fields
+    if (!title || !start_at || !end_at) {
+      return NextResponse.json(
+        { error: 'Missing required fields: title, start_at, end_at' },
+        { status: 400 }
+      );
+    }
+    // Validate date consistency
+    if (new Date(end_at) < new Date(start_at)) {
+      return NextResponse.json(
+        { error: 'End date must be after start date' },
+        { status: 400 }
+      );
+    }
+    // Validate status if provided
+    const validStatuses = ['active', 'cancelled', 'completed', 'draft'];
+    if (status && !validStatuses.includes(status)) {
+      return NextResponse.json(
+        { error: 'Invalid status value' },
+        { status: 400 }
+      );
+    }
 
     // Update the event
     const { data: updatedEvent, error: updateError } = await supabase

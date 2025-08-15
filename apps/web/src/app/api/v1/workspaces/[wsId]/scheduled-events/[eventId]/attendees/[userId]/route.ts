@@ -16,7 +16,7 @@ export async function DELETE(req: NextRequest, { params }: Params) {
   try {
     const { wsId, eventId, userId } = await params;
     const supabase = await createClient();
-    const user = await getCurrentUser();
+    const user = await getCurrentUser(true);
 
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -45,6 +45,13 @@ export async function DELETE(req: NextRequest, { params }: Params) {
     if (existingEvent.creator_id !== user.id) {
       return NextResponse.json(
         { error: 'Only event creators can manage attendees' },
+        { status: 403 }
+      );
+    }
+
+    if (existingEvent.creator_id === userId) {
+      return NextResponse.json(
+        { error: 'Event creator cannot be removed from their own event' },
         { status: 403 }
       );
     }

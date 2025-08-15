@@ -19,6 +19,7 @@ import { SmartCalendar } from '@tuturuuu/ui/legacy/calendar/smart-calendar';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { toast } from '@tuturuuu/ui/sonner';
 
 export default function CalendarClientPage({
   experimentalGoogleToken,
@@ -62,6 +63,7 @@ export default function CalendarClientPage({
       const event = await response.json();
       setEventDetailsDialog({ isOpen: true, event, isLoading: false });
     } catch (error) {
+      toast.error('Error fetching event details:');
       console.error('Error fetching event details:', error);
       setEventDetailsDialog({ isOpen: false, event: null, isLoading: false });
       // Optionally show a toast error message here

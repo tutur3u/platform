@@ -15,7 +15,7 @@ export async function POST(req: NextRequest, { params }: Params) {
   try {
     const { wsId, eventId } = await params;
     const supabase = await createClient();
-    const user = await getCurrentUser();
+    const user = await getCurrentUser(true);
 
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -49,11 +49,16 @@ export async function POST(req: NextRequest, { params }: Params) {
     }
 
     const body = await req.json();
-    const { user_ids } = body;
-
-    if (!Array.isArray(user_ids) || user_ids.length === 0) {
+    const { user_ids } = body ?? {};
+    if (!Array.isArray(user_ids)) {
+      return NextResponse.json({ error: 'user_ids must be an array' }, { status: 400 });
+    }
+    // Keep only string ids, dedupe, and exclude the creator
+    const uniqueIds = [...new Set(user_ids.filter((id: unknown) => typeof id === 'string'))] as string[];
+    const filteredIds = uniqueIds.filter((id) => id !== user.id);
+    if (filteredIds.length === 0) {
       return NextResponse.json(
-        { error: 'user_ids must be a non-empty array' },
+        { error: 'user_ids must contain at least one non-creator user id' },
         { status: 400 }
       );
     }
@@ -68,18 +73,17 @@ export async function POST(req: NextRequest, { params }: Params) {
 
     const { data: addedAttendees, error: addError } = await supabase
       .from('event_attendees')
-      .insert(attendeesToAdd)
+      .upsert(attendeesToAdd, { onConflict: 'event_id,user_id', ignoreDuplicates: true })
       .select();
 
-    if (addError) {
-      console.error('Error adding attendees:', addError);
-      return NextResponse.json(
-        { error: 'Failed to add attendees' },
-        { status: 500 }
-      );
-    }
+      if (addError) {
+        console.error('Error adding attendees:', addError);
+        const msg = (addError as any)?.code === '23505' ? 'Some attendees are already added' : 'Failed to add attendees';
+        const status = (addError as any)?.code === '23505' ? 409 : 500;
+        return NextResponse.json({ error: msg }, { status });
+      }
 
-    return NextResponse.json(addedAttendees);
+    return NextResponse.json(addedAttendees, { status: 201 });
   } catch (error) {
     console.error('Error in attendees POST:', error);
     return NextResponse.json(

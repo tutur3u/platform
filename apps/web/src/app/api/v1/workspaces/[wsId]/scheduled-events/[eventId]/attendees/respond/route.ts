@@ -55,7 +55,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
     if (attendeeError || !attendee) {
       return NextResponse.json(
         { error: 'You are not invited to this event' },
-        { status: 404 }
+        { status: 403 }
       );
     }
 

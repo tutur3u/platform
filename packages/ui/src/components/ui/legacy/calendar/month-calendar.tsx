@@ -1,6 +1,6 @@
 'use client';
 
-import { isAllDayEvent } from '../../../../hooks/calendar-utils';
+import { isAllDayEvent } from '@tuturuuu/ui/hooks/calendar-utils';
 import { convertScheduledEventToCalendarEvent } from '../../../../hooks/scheduled-events-utils';
 import { useCalendar } from '../../../../hooks/use-calendar';
 import { useCalendarSync } from '../../../../hooks/use-calendar-sync';
@@ -35,6 +35,7 @@ import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import timezone from 'dayjs/plugin/timezone';
 import { Check, Clock, HelpCircle, Plus, Users, X } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
+import { toast } from '@tuturuuu/ui/sonner';
 
 dayjs.extend(timezone);
 dayjs.extend(isSameOrAfter);
@@ -396,6 +397,7 @@ export const MonthCalendar = ({
         .eq('user_id', currentUserId);
 
       if (error) {
+        toast.error('Error updating attendee status:');
         console.error('Error updating attendee status:', error);
         return;
       }
@@ -403,6 +405,7 @@ export const MonthCalendar = ({
       // Refresh the scheduled events
       await refreshScheduledEvents();
     } catch (error) {
+      toast.error('Error updating attendee status:');
       console.error('Error updating attendee status:', error);
     }
   };

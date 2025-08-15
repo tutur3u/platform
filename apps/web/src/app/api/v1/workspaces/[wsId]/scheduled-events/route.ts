@@ -3,24 +3,6 @@ import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextRequest, NextResponse } from 'next/server';
 
-// type EventAttendeeWithUser = {
-//   id: string;
-//   user_id: string | null;
-//   status: Database['public']['Enums']['event_attendee_status'] | null;
-//   response_at: string | null;
-//   user: {
-//     id: string;
-//     display_name: string | null;
-//     avatar_url: string | null;
-//   } | null;
-// };
-
-// type WorkspaceScheduledEventWithAttendees =
-//   Database['public']['Tables']['workspace_scheduled_events']['Row'] & {
-//     attendees?: EventAttendeeWithUser[];
-//     creator: Database['public']['Tables']['users']['Row'];
-//   };
-
 interface Params {
   params: Promise<{
     wsId: string;
@@ -32,7 +14,7 @@ export async function GET(req: NextRequest, { params }: Params) {
   try {
     const { wsId } = await params;
     const supabase = await createClient();
-    const user = await getCurrentUser();
+    const user = await getCurrentUser(true);
 
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -63,7 +45,7 @@ export async function GET(req: NextRequest, { params }: Params) {
       `
       )
       .eq('ws_id', wsId)
-      .or(`creator_id.eq.${user.id},attendees.user_id.eq.${user.id}`)
+      .or(`creator_id.eq.${user.id},event_attendees.user_id.eq.${user.id}`)
       .order('start_at', { ascending: true });
 
     if (error) {
@@ -107,7 +89,7 @@ export async function POST(req: NextRequest, { params }: Params) {
   try {
     const { wsId } = await params;
     const supabase = await createClient();
-    const user = await getCurrentUser();
+    const user = await getCurrentUser(true);
 
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -140,7 +122,7 @@ export async function POST(req: NextRequest, { params }: Params) {
       !title ||
       !start_at ||
       !end_at ||
-      !attendee_ids ||
+      !Array.isArray(attendee_ids) ||
       attendee_ids.length === 0
     ) {
       return NextResponse.json(
@@ -148,6 +130,14 @@ export async function POST(req: NextRequest, { params }: Params) {
           error:
             'Missing required fields: title, start_at, end_at, attendee_ids',
         },
+        { status: 400 }
+      );
+    }
+
+      
+    if (new Date(start_at).getTime() >= new Date(end_at).getTime()) {
+      return NextResponse.json(
+        { error: 'start_at must be before end_at' },
         { status: 400 }
       );
     }

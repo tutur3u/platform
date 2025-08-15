@@ -53,12 +53,16 @@ export const CalendarEventMatrix = ({ dates, onOpenEventDetails }: { dates: Date
   const scheduledCalendarEvents: CalendarEvent[] = [];
   if (currentUserId && scheduledEvents) {
     scheduledEvents.forEach((scheduledEvent) => {
-      const calendarEvent = convertScheduledEventToCalendarEvent(
-        scheduledEvent,
-        currentUserId
-      );
-      if (calendarEvent) {
-        scheduledCalendarEvents.push(calendarEvent);
+      try {
+        const calendarEvent = convertScheduledEventToCalendarEvent(
+          scheduledEvent,
+          currentUserId
+        );
+        if (calendarEvent) {
+          scheduledCalendarEvents.push(calendarEvent);
+        }
+      } catch (error) {
+        console.error('Error converting scheduled event:', error, scheduledEvent);
       }
     });
   }
