@@ -1,5 +1,5 @@
-import { Calendar, Clock } from 'lucide-react';
 import { cn } from '@tuturuuu/utils/format';
+import { Calendar, Clock } from 'lucide-react';
 
 interface TimeColumnHeadersProps {
   showSecondary: boolean;
@@ -15,7 +15,7 @@ export const TimeColumnHeaders = ({
   variant = 'weekday',
 }: TimeColumnHeadersProps) => {
   const isWeekday = variant === 'weekday';
-  
+
   return (
     <div className="flex">
       {/* Secondary timezone header (shows on left when enabled) */}
@@ -27,7 +27,7 @@ export const TimeColumnHeaders = ({
             : "border-b border-l p-2 font-medium"
         )}>
           {isWeekday ? (
-            <div className="text-[10px] font-medium text-muted-foreground/70">
+            <div className="font-medium text-[10px] text-muted-foreground/70">
               {secondaryTzAbbr}
             </div>
           ) : (
@@ -46,7 +46,7 @@ export const TimeColumnHeaders = ({
         {isWeekday ? (
           <>
             <Clock className="mb-0.5 h-3 w-3 text-muted-foreground" />
-            <div className="text-[10px] font-medium text-muted-foreground">
+            <div className="font-medium text-[10px] text-muted-foreground">
               {primaryTzAbbr}
             </div>
           </>
@@ -56,4 +56,4 @@ export const TimeColumnHeaders = ({
       </div>
     </div>
   );
-}; 
+};

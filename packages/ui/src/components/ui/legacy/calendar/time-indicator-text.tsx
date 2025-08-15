@@ -28,6 +28,8 @@ const getTimeDetails = (
 export const TimeIndicatorText = ({ columnIndex }: { columnIndex: number }) => {
   const { settings } = useCalendar();
   const tz = settings?.timezone?.timezone;
+  const secondaryTz = settings?.timezone?.secondaryTimezone;
+  const showSecondary = settings?.timezone?.showSecondaryTimezone && secondaryTz;
   const [now, setNow] = useState(tz === 'auto' ? dayjs() : dayjs().tz(tz));
 
   // Update the time every minute
@@ -57,8 +59,7 @@ export const TimeIndicatorText = ({ columnIndex }: { columnIndex: number }) => {
   if (columnIndex > 0) return null;
 
   // Calculate positioning based on whether secondary timezone is shown
-  // This could be enhanced in the future to support dual timezone layout
-  const leftOffset = TIME_INDICATOR_OFFSETS.SINGLE_TIMEZONE;
+  const leftOffset = showSecondary ? TIME_INDICATOR_OFFSETS.DUAL_TIMEZONE : TIME_INDICATOR_OFFSETS.SINGLE_TIMEZONE;
 
   return (
     <div

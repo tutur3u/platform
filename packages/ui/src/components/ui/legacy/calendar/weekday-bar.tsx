@@ -1,10 +1,12 @@
 import { cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
+import { useMemo } from 'react';
 import { useCalendarSettings } from './settings/settings-context';
 import { AllDayEventBar } from './all-day-event-bar';
-import { DayTitle } from './day-title';
 import { MIN_COLUMN_WIDTH } from './config';
+import { DayTitle } from './day-title';
+import { TimeColumnHeaders } from './time-column-headers';
 
 dayjs.extend(timezone);
 
@@ -22,7 +24,7 @@ export const WeekdayBar = ({
   const tz = settings?.timezone?.timezone;
   const secondaryTz = settings?.timezone?.secondaryTimezone;
   const showSecondary =
-    settings?.timezone?.showSecondaryTimezone && secondaryTz;
+    Boolean(settings?.timezone?.showSecondaryTimezone && secondaryTz);
 
   // Filter out weekend days if showWeekends is false
   const visibleDates = showWeekends
@@ -33,14 +35,14 @@ export const WeekdayBar = ({
         return day !== 0 && day !== 6; // 0 = Sunday, 6 = Saturday
       });
 
-  // Get timezone abbreviations with error handling
-  const getTimezoneAbbr = (timezone?: string) => {
-    if (!timezone) return '';
+  // Get timezone abbreviations with error handling and memoization
+  const primaryTzAbbr = useMemo(() => {
+    if (!tz) return '';
 
-    let tzToUse = timezone;
-    let fallback = timezone;
+    let tzToUse = tz;
+    let fallback = tz;
 
-    if (timezone === 'auto') {
+    if (tz === 'auto') {
       try {
         tzToUse = Intl.DateTimeFormat().resolvedOptions().timeZone;
         fallback = 'Local';
@@ -63,15 +65,38 @@ export const WeekdayBar = ({
       console.error(`Failed to get abbreviation for timezone: ${tzToUse}`, e);
       return fallback;
     }
-  };
+  }, [tz]);
 
-  const primaryTzAbbr = getTimezoneAbbr(tz);
-  const secondaryTzAbbr = getTimezoneAbbr(secondaryTz);
+  const secondaryTzAbbr = useMemo(() => {
+    if (!secondaryTz) return '';
+
+    try {
+      return (
+        Intl.DateTimeFormat('en-US', {
+          timeZoneName: 'short',
+          timeZone: secondaryTz,
+        })
+          .formatToParts(new Date())
+          .find((part) => part.type === 'timeZoneName')?.value || secondaryTz
+      );
+    } catch (e) {
+      console.error(`Failed to get abbreviation for timezone: ${secondaryTz}`, e);
+      return secondaryTz;
+    }
+  }, [secondaryTz]);
 
   return (
     <div className="flex flex-col bg-background/50">
       {/* Weekday header bar */}
       <div className="flex">
+        {/* Time column headers */}
+        <TimeColumnHeaders
+          showSecondary={showSecondary}
+          secondaryTzAbbr={secondaryTzAbbr}
+          primaryTzAbbr={primaryTzAbbr}
+          variant="weekday"
+        />
+
         {/* Weekday columns */}
         <div
           className={cn('grid flex-1 rounded-tr-lg border-t border-r')}
