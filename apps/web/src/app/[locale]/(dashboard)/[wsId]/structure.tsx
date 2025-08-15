@@ -15,6 +15,7 @@ import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { cn } from '@tuturuuu/utils/format';
 import { setCookie } from 'cookies-next';
 import { useTranslations } from 'next-intl';
+import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -25,6 +26,15 @@ import {
   useEffect,
   useState,
 } from 'react';
+
+// Code-split CalendarSidebarContent so it only loads on calendar routes
+const CalendarSidebarContent = dynamic(
+  () =>
+    import('./calendar/components/calendar-sidebar-content').then(
+      (m) => m.CalendarSidebarContent
+    ),
+  { ssr: false }
+);
 
 interface MailProps {
   wsId: string;
@@ -62,6 +72,9 @@ export function Structure({
     }
   }, [behavior]);
 
+  // Check if we're currently in the calendar app, scoped to the workspace
+  const isCalendarRoute = pathname.startsWith(`/${wsId}/calendar`);
+
   // Recursive function to check if any nested child matches the pathname
   const hasActiveChild = useCallback(
     (navLinks: NavLink[]): boolean => {
@@ -85,14 +98,60 @@ export function Structure({
     [pathname]
   );
 
+  // Helper: find the calendar entry anywhere under the top-level groups
+  const findCalendarEntry = useCallback(
+    (
+      allLinks: (NavLink | null)[],
+      wsId: string
+    ): {
+      parentChildren: (NavLink | null)[];
+      parentTitle: string;
+      node: NavLink;
+    } | null => {
+      for (const parent of allLinks) {
+        if (!parent?.children?.length) continue;
+        for (const child of parent.children) {
+          const matchesHref =
+            child?.href?.includes(`/${wsId}/calendar`) ||
+            child?.aliases?.some((alias) =>
+              alias.includes(`/${wsId}/calendar`)
+            );
+          if (matchesHref) {
+            return {
+              parentChildren: parent.children,
+              parentTitle: parent.title,
+              node: child as NavLink,
+            };
+          }
+        }
+      }
+      return null;
+    },
+    []
+  );
+
   const [navState, setNavState] = useState<{
     currentLinks: (NavLink | null)[];
     history: (NavLink | null)[][];
     titleHistory: (string | null)[];
     direction: 'forward' | 'backward';
   }>(() => {
+    // Auto-switch to calendar navbar when on calendar routes
+    if (isCalendarRoute) {
+      const found = findCalendarEntry(links, wsId);
+      if (found?.node?.children) {
+        return {
+          currentLinks: found.node.children as (NavLink | null)[],
+          history: [links, found.parentChildren], // [main_nav, parent_panel]
+          titleHistory: [found.parentTitle, found.node.title],
+          direction: 'forward' as const,
+        };
+      }
+    }
+
+    // Otherwise, check for other active submenus
     for (const link of links) {
-      if (link?.children && link.children.length > 0) {
+      if (link?.children?.length) {
         const isActive = hasActiveChild(link.children);
         if (isActive) {
           return {
@@ -104,12 +163,11 @@ export function Structure({
         }
       }
     }
-    // Flatten links with a single child
+
+    // Default: show main navigation (flattened links with single children)
     const flattenedLinks = links
       .flatMap((link) =>
-        link?.children && link.children.length === 1
-          ? [link.children[0] as NavLink]
-          : [link]
+        link?.children?.length === 1 ? [link.children[0] as NavLink] : [link]
       )
       .filter(Boolean) as (NavLink | null)[];
     return {
@@ -122,9 +180,40 @@ export function Structure({
 
   useEffect(() => {
     setNavState((prevState) => {
-      // Find if any submenu should be active for the current path.
+      // Priority 1: If we're in calendar app, always show calendar navbar
+      if (isCalendarRoute) {
+        const found = findCalendarEntry(links, wsId);
+        if (found?.node?.children) {
+          // Check if we're already in calendar navigation to avoid unnecessary state changes
+          const isAlreadyInCalendar =
+            prevState.titleHistory.includes('Calendar');
+          if (!isAlreadyInCalendar) {
+            return {
+              currentLinks: found.node.children as (NavLink | null)[],
+              history: [links, found.parentChildren], // [main_nav, parent_panel]
+              titleHistory: [found.parentTitle, found.node.title],
+              direction: 'forward',
+            };
+          }
+          // We're already in calendar, check if we need to go deeper
+          const activeChild = found.node.children.find(
+            (child) => child.href && pathname.startsWith(child.href)
+          );
+          if (activeChild?.children && activeChild.children.length > 0) {
+            return {
+              currentLinks: activeChild.children as (NavLink | null)[],
+              history: [...prevState.history, prevState.currentLinks],
+              titleHistory: [...prevState.titleHistory, activeChild.title],
+              direction: 'forward',
+            };
+          }
+          return prevState;
+        }
+      }
+
+      // Priority 2: Find if any other submenu should be active for the current path.
       for (const link of links) {
-        if (link?.children && link.children.length > 0) {
+        if (link?.children?.length) {
           const isActive = hasActiveChild(link.children);
 
           if (isActive) {
@@ -134,7 +223,7 @@ export function Structure({
               link.title
             ) {
               return {
-                currentLinks: link.children,
+                currentLinks: link.children as (NavLink | null)[],
                 history: [links],
                 titleHistory: [link.title],
                 direction: 'forward',
@@ -147,13 +236,9 @@ export function Structure({
               (child) => child.href && pathname.startsWith(child.href)
             );
 
-            if (
-              activeChild &&
-              activeChild.children &&
-              activeChild.children.length > 0
-            ) {
+            if (activeChild?.children && activeChild.children.length > 0) {
               return {
-                currentLinks: activeChild.children,
+                currentLinks: activeChild.children as (NavLink | null)[],
                 history: [...prevState.history, prevState.currentLinks],
                 titleHistory: [...prevState.titleHistory, activeChild.title],
                 direction: 'forward',
@@ -172,7 +257,7 @@ export function Structure({
         // Flatten links with a single child
         const flattenedLinks = links
           .flatMap((link) =>
-            link?.children && link.children.length === 1
+            link?.children?.length === 1
               ? [link.children[0] as NavLink]
               : [link]
           )
@@ -188,7 +273,14 @@ export function Structure({
       // We are at the top level and no submenu is active, do nothing.
       return prevState;
     });
-  }, [pathname, links, hasActiveChild]);
+  }, [
+    pathname,
+    links,
+    hasActiveChild,
+    isCalendarRoute,
+    wsId,
+    findCalendarEntry,
+  ]);
 
   const handleToggle = () => {
     const newCollapsed = !isCollapsed;
@@ -216,13 +308,20 @@ export function Structure({
 
   const handleNavBack = () => {
     setNavState((prevState) => {
-      const previousLinks = prevState.history[prevState.history.length - 1];
-      return {
-        currentLinks: previousLinks || links,
-        history: prevState.history.slice(0, -1),
-        titleHistory: prevState.titleHistory.slice(0, -1),
-        direction: 'backward',
-      };
+      // If we have history, go back one level
+      if (prevState.history.length > 0) {
+        const previousLinks = prevState.history[prevState.history.length - 1];
+
+        return {
+          currentLinks: previousLinks || links,
+          history: prevState.history.slice(0, -1),
+          titleHistory: prevState.titleHistory.slice(0, -1),
+          direction: 'backward',
+        };
+      }
+
+      // If no history, we're at the main level, do nothing
+      return prevState;
     });
   };
 
@@ -380,20 +479,35 @@ export function Structure({
             )}
             {!isCollapsed && <div className="mx-4 my-1 border-b" />}
             {personalNote}
+
             {filteredCurrentLinks.length > 0 && (
               <div className="scrollbar-none flex-1 overflow-y-auto">
-                <Nav
-                  key={`${user?.id}-nav`}
-                  wsId={wsId}
-                  isCollapsed={isCollapsed}
-                  links={filteredCurrentLinks}
-                  onSubMenuClick={handleNavChange}
-                  onClick={() => {
-                    if (window.innerWidth < 768) {
-                      setIsCollapsed(true);
-                    }
-                  }}
-                />
+                {/* Show calendar sidebar only when we're in calendar submenu, otherwise show regular navigation */}
+                {navState.titleHistory.includes('Calendar') ? (
+                  <CalendarSidebarContent
+                    wsId={wsId}
+                    isCollapsed={isCollapsed}
+                    onSubMenuClick={handleNavChange}
+                    onClick={() => {
+                      if (window.innerWidth < 768) {
+                        setIsCollapsed(true);
+                      }
+                    }}
+                  />
+                ) : (
+                  <Nav
+                    key={`${user?.id}-nav`}
+                    wsId={wsId}
+                    isCollapsed={isCollapsed}
+                    links={filteredCurrentLinks}
+                    onSubMenuClick={handleNavChange}
+                    onClick={() => {
+                      if (window.innerWidth < 768) {
+                        setIsCollapsed(true);
+                      }
+                    }}
+                  />
+                )}
               </div>
             )}
           </>

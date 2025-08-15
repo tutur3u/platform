@@ -1005,6 +1005,8 @@
     "calendar": "Lịch",
     "overview": "Tổng quan",
     "events": "Sự kiện",
+    "time-tracker": "Theo dõi thời gian",
+    "settings": "Cài đặt",
     "sync-dashboard": "Bảng điều khiển đồng bộ",
     "sync-history": "Đồng bộ hóa lịch sử"
   },
