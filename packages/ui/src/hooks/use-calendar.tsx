@@ -8,10 +8,7 @@ import type {
 } from '@tuturuuu/types/db';
 import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
-import {
-  type CalendarSettings,
-  defaultCalendarSettings,
-} from '@tuturuuu/ui/legacy/calendar/settings/settings-context';
+
 import dayjs from 'dayjs';
 import moment from 'moment';
 import 'moment/locale/vi';
@@ -83,8 +80,6 @@ const CalendarContext = createContext<{
     }) => void
   ) => Promise<boolean>;
 
-  settings: CalendarSettings;
-  updateSettings: (settings: Partial<CalendarSettings>) => void;
   isDragging: boolean;
   setIsDragging: (v: boolean) => void;
 }>({
@@ -112,8 +107,6 @@ const CalendarContext = createContext<{
   // Google Calendar API
   syncGoogleCalendarNow: () => Promise.resolve(false),
 
-  settings: defaultCalendarSettings,
-  updateSettings: () => undefined,
   isDragging: false,
   setIsDragging: () => undefined,
 });
@@ -132,14 +125,12 @@ export const CalendarProvider = ({
   useQuery,
   useQueryClient,
   children,
-  initialSettings,
   experimentalGoogleToken,
 }: {
   ws?: Workspace;
   useQuery: any;
   useQueryClient: any;
   children: ReactNode;
-  initialSettings?: Partial<CalendarSettings>;
   experimentalGoogleToken?: WorkspaceCalendarGoogleToken | null;
 }) => {
   const queryClient = useQueryClient();
@@ -153,59 +144,6 @@ export const CalendarProvider = ({
   // Queue for processing updates in order
   const updateQueueRef = useRef<PendingEventUpdate[]>([]);
   const isProcessingQueueRef = useRef<boolean>(false);
-
-  // Load settings from localStorage if available
-  const loadSettingsFromStorage = useCallback(() => {
-    // Check if we're in a browser environment
-    if (typeof window === 'undefined' || typeof localStorage === 'undefined') {
-      return null;
-    }
-
-    try {
-      const storedSettings = localStorage.getItem('calendarSettings');
-      if (storedSettings) {
-        return JSON.parse(storedSettings) as CalendarSettings;
-      }
-    } catch (_) {
-      // Failed to load calendar settings from localStorage
-    }
-    return null;
-  }, []);
-
-  // Calendar settings state
-  const [settings, setSettings] = useState<CalendarSettings>(() => {
-    const storedSettings = loadSettingsFromStorage();
-    return {
-      ...defaultCalendarSettings,
-      ...(storedSettings || {}),
-      ...initialSettings,
-    };
-  });
-
-  // Save settings to localStorage when they change
-  useEffect(() => {
-    // Check if we're in a browser environment
-    if (typeof window === 'undefined' || typeof localStorage === 'undefined') {
-      return;
-    }
-
-    try {
-      localStorage.setItem('calendarSettings', JSON.stringify(settings));
-    } catch (_) {
-      // Failed to save calendar settings to localStorage
-    }
-  }, [settings]);
-
-  // Update settings function
-  const updateSettings = useCallback(
-    (newSettings: Partial<CalendarSettings>) => {
-      setSettings((prev) => ({
-        ...prev,
-        ...newSettings,
-      }));
-    },
-    []
-  );
 
   const { events, refresh } = useCalendarSync();
 
@@ -408,14 +346,13 @@ export const CalendarProvider = ({
       // The workaround is necessary because dayjs timezone handling for all-day events can be inconsistent
       // across different browsers and timezone configurations
       const selectedDate = dayjs(date);
-      const tz = settings?.timezone?.timezone;
 
       let start_at: string;
       let end_at: string;
 
       if (isAllDay) {
         // Use the new createAllDayEvent helper for proper timezone handling
-        const allDayTimes = createAllDayEvent(selectedDate.toDate(), tz, 1);
+        const allDayTimes = createAllDayEvent(selectedDate.toDate(), undefined, 1);
         start_at = allDayTimes.start_at;
         end_at = allDayTimes.end_at;
       } else {
@@ -423,17 +360,16 @@ export const CalendarProvider = ({
         const startTime = roundToNearest15Minutes(selectedDate.toDate());
         const endTime = new Date(startTime);
 
-        // Use default task duration from settings if available
-        const defaultDuration = settings.taskSettings.defaultTaskDuration || 60;
+        // Use default task duration of 60 minutes
+        const defaultDuration = 60;
         endTime.setMinutes(endTime.getMinutes() + defaultDuration);
 
         start_at = startTime.toISOString();
         end_at = endTime.toISOString();
       }
 
-      // Use default color from settings
-      const defaultColor =
-        settings.categoryColors.categories[0]?.color || 'BLUE';
+      // Use default color
+      const defaultColor = 'BLUE';
 
       // Create a new event with default values
       const newEvent: CalendarEvent = {
@@ -456,12 +392,7 @@ export const CalendarProvider = ({
       // Return the pending event object
       return newEvent as CalendarEvent;
     },
-    [
-      ws?.id,
-      settings.taskSettings,
-      settings.categoryColors,
-      settings?.timezone?.timezone,
-    ]
+    [ws?.id]
   );
 
   const addEmptyEventWithDuration = useCallback(
@@ -470,9 +401,8 @@ export const CalendarProvider = ({
       const roundedStartDate = roundToNearest15Minutes(startDate);
       const roundedEndDate = roundToNearest15Minutes(endDate);
 
-      // Use default color from settings
-      const defaultColor =
-        settings.categoryColors.categories[0]?.color || 'BLUE';
+      // Use default color
+      const defaultColor = 'BLUE';
 
       // Create a new event with default values
       const newEvent: CalendarEvent = {
@@ -495,7 +425,7 @@ export const CalendarProvider = ({
       // Return the pending event object
       return newEvent as CalendarEvent;
     },
-    [ws?.id, settings.categoryColors]
+    [ws?.id]
   );
 
   // Process the update queue
@@ -1404,10 +1334,6 @@ export const CalendarProvider = ({
 
     // Google Calendar API
     syncGoogleCalendarNow,
-
-    // Settings API
-    settings,
-    updateSettings,
 
     isDragging,
     setIsDragging,

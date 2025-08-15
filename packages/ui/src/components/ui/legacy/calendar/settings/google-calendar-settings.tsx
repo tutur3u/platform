@@ -1,6 +1,6 @@
 'use client';
 
-import { useCalendar } from '../../../../../hooks/use-calendar';
+import { useCalendar } from '@tuturuuu/ui/hooks/use-calendar';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { WorkspaceCalendarGoogleToken } from '@tuturuuu/types/db';
 import { Alert, AlertDescription } from '@tuturuuu/ui/alert';

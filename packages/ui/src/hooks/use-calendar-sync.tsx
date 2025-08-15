@@ -605,7 +605,7 @@ export const CalendarSyncProvider = ({
     }
     // If we're still loading, return empty array
     return [];
-  }, [fetchedData, removeDuplicateEvents]);
+  }, [fetchedData]);
 
   const eventsWithoutAllDays = useMemo(() => {
     // Process events immediately when they change
