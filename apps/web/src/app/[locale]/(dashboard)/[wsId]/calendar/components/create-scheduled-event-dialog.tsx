@@ -13,9 +13,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
+import { useCurrentUser } from '@tuturuuu/ui/hooks/use-current-user';
 import { CalendarIcon, MapPin, Users } from '@tuturuuu/ui/icons';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
+import { TimeSelector } from '@tuturuuu/ui/legacy/tumeet/time-selector';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import {
@@ -27,14 +29,12 @@ import {
 } from '@tuturuuu/ui/select';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Textarea } from '@tuturuuu/ui/textarea';
-import { useCurrentUser } from '@tuturuuu/ui/hooks/use-current-user';
-import { TimeSelector } from '@tuturuuu/ui/legacy/tumeet/time-selector';
 import { cn } from '@tuturuuu/utils/format';
 import { format } from 'date-fns';
-import { useCallback, useEffect, useState } from 'react';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
+import { useCallback, useEffect, useState } from 'react';
 
 // Extend dayjs with timezone support
 dayjs.extend(utc);
@@ -106,10 +106,10 @@ const createDateTimeInTimezone = (
 ): string => {
   const dateStr = format(date, 'yyyy-MM-dd');
   const datetimeStr = `${dateStr}T${timeString}:00`;
-  
+
   // Create the datetime in the user's timezone
   const datetimeInTz = dayjs.tz(datetimeStr, userTimezone);
-  
+
   // Convert to UTC and return as ISO string
   return datetimeInTz.utc().toISOString();
 };
@@ -192,7 +192,7 @@ export default function CreateScheduledEventDialog({
       setMembersLoading(false);
     }
   }, [wsId, supabase]);
-  
+
   useEffect(() => {
     if (isOpen) {
       loadWorkspaceMembers();
@@ -225,10 +225,12 @@ export default function CreateScheduledEventDialog({
     (memberId: string) => {
       // Prevent current user from being deselected
       if (memberId === userId) {
-        toast.info('As the event creator, you are automatically included in the event.');
+        toast.info(
+          'As the event creator, you are automatically included in the event.'
+        );
         return;
       }
-      
+
       setFormData((prev) => ({
         ...prev,
         selected_attendees: prev.selected_attendees.includes(memberId)
@@ -253,7 +255,9 @@ export default function CreateScheduledEventDialog({
     // The creator is automatically included, so we don't need to validate for empty attendee list
     // since the creator will always be in the list
     if (formData.selected_attendees.length === 0) {
-      toast.error('No attendees selected. This should not happen as you are automatically included.');
+      toast.error(
+        'No attendees selected. This should not happen as you are automatically included.'
+      );
       return;
     }
 
@@ -268,9 +272,11 @@ export default function CreateScheduledEventDialog({
 
       if (formData.is_all_day) {
         // For all-day events, use start of day in user's timezone
-        const startOfDay = dayjs.tz(formData.start_date, userTimezone).startOf('day');
+        const startOfDay = dayjs
+          .tz(formData.start_date, userTimezone)
+          .startOf('day');
         const endOfDay = dayjs.tz(formData.end_date, userTimezone).endOf('day');
-        
+
         start_at = startOfDay.utc().toISOString();
         end_at = endOfDay.utc().toISOString();
       } else {
@@ -583,27 +589,33 @@ export default function CreateScheduledEventDialog({
                 <div className="space-y-2">
                   {workspaceMembers.map((member) => {
                     const isCurrentUser = member.user_id === userId;
-                    const isChecked = formData.selected_attendees.includes(member.user_id);
-                    
+                    const isChecked = formData.selected_attendees.includes(
+                      member.user_id
+                    );
+
                     return (
                       <div
                         key={member.user_id}
                         className={cn(
-                          "flex items-center space-x-3 rounded-md p-2",
-                          !isCurrentUser && "cursor-pointer hover:bg-muted",
-                          isCurrentUser && "bg-muted/50"
+                          'flex items-center space-x-3 rounded-md p-2',
+                          !isCurrentUser && 'cursor-pointer hover:bg-muted',
+                          isCurrentUser && 'bg-muted/50'
                         )}
-                        onClick={() => !isCurrentUser && toggleAttendee(member.user_id)}
+                        onClick={() =>
+                          !isCurrentUser && toggleAttendee(member.user_id)
+                        }
                       >
                         <Checkbox
                           checked={isChecked}
                           disabled={isCurrentUser}
                         />
                         <div className="flex-1">
-                          <div className={cn(
-                            "font-medium",
-                            isCurrentUser && "text-primary"
-                          )}>
+                          <div
+                            className={cn(
+                              'font-medium',
+                              isCurrentUser && 'text-primary'
+                            )}
+                          >
                             {member.display_name || 'Unknown User'}
                             {isCurrentUser && ' (You - Event Creator)'}
                           </div>

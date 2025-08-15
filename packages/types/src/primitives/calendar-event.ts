@@ -1,5 +1,5 @@
-import type { SupportedColor } from './SupportedColors';
 import type { EventAttendeeStatus } from './RSVP';
+import type { SupportedColor } from './SupportedColors';
 
 export interface CalendarEvent {
   id: string;
@@ -32,5 +32,7 @@ export interface CalendarEvent {
   _isPending?: boolean;
   _isTentative?: boolean;
   _isCreator?: boolean;
-  _attendeeCount?: Readonly<{ total: number } & Record<EventAttendeeStatus, number>>;
+  _attendeeCount?: Readonly<
+    { total: number } & Record<EventAttendeeStatus, number>
+  >;
 }

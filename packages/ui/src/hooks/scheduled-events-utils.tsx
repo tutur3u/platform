@@ -1,7 +1,7 @@
 import type { WorkspaceScheduledEventWithAttendees } from '@tuturuuu/types/primitives/RSVP';
 import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
-import { parseISO, isBefore } from 'date-fns';
+import { isBefore, parseISO } from 'date-fns';
 
 export const convertScheduledEventToCalendarEvent = (
   scheduledEvent: WorkspaceScheduledEventWithAttendees,
@@ -19,7 +19,7 @@ export const convertScheduledEventToCalendarEvent = (
   if (userAttendee && userAttendee.status === 'declined') {
     const eventStartTime = parseISO(scheduledEvent.start_at);
     const now = new Date();
-    
+
     // If the event has already started, hide it
     if (isBefore(eventStartTime, now)) {
       return null;
@@ -40,7 +40,9 @@ export const convertScheduledEventToCalendarEvent = (
     ws_id: scheduledEvent.ws_id,
     _isScheduledEvent: true,
     _scheduledEventId: scheduledEvent.id,
-    _attendeeStatus: userAttendee?.status || (scheduledEvent.creator_id === userId ? 'accepted' : 'pending'),
+    _attendeeStatus:
+      userAttendee?.status ||
+      (scheduledEvent.creator_id === userId ? 'accepted' : 'pending'),
     _isPending: isPending,
     _isTentative: isTentative,
     _isCreator: scheduledEvent.creator_id === userId,
@@ -64,7 +66,7 @@ export const shouldDisplayScheduledEvent = (
     if (userAttendee.status === 'declined') {
       const eventStartTime = parseISO(event.start_at);
       const now = new Date();
-      
+
       // If the event has already started, hide it
       return !isBefore(eventStartTime, now);
     }

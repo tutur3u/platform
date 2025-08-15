@@ -51,10 +51,15 @@ export async function POST(req: NextRequest, { params }: Params) {
     const body = await req.json();
     const { user_ids } = body ?? {};
     if (!Array.isArray(user_ids)) {
-      return NextResponse.json({ error: 'user_ids must be an array' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'user_ids must be an array' },
+        { status: 400 }
+      );
     }
     // Keep only string ids, dedupe, and exclude the creator
-    const uniqueIds = [...new Set(user_ids.filter((id: unknown) => typeof id === 'string'))] as string[];
+    const uniqueIds = [
+      ...new Set(user_ids.filter((id: unknown) => typeof id === 'string')),
+    ] as string[];
     const filteredIds = uniqueIds.filter((id) => id !== user.id);
     if (filteredIds.length === 0) {
       return NextResponse.json(
@@ -73,15 +78,22 @@ export async function POST(req: NextRequest, { params }: Params) {
 
     const { data: addedAttendees, error: addError } = await supabase
       .from('event_attendees')
-      .upsert(attendeesToAdd, { onConflict: 'event_id,user_id', ignoreDuplicates: true })
+      .upsert(attendeesToAdd, {
+        onConflict: 'event_id,user_id',
+        ignoreDuplicates: true,
+      })
       .select();
 
-      if (addError) {
-        console.error('Error adding attendees:', addError);
-        const msg = (addError as { code?: string })?.code === '23505' ? 'Some attendees are already added' : 'Failed to add attendees';
-        const status = (addError as { code?: string })?.code === '23505' ? 409 : 500;
-        return NextResponse.json({ error: msg }, { status });
-      }
+    if (addError) {
+      console.error('Error adding attendees:', addError);
+      const msg =
+        (addError as { code?: string })?.code === '23505'
+          ? 'Some attendees are already added'
+          : 'Failed to add attendees';
+      const status =
+        (addError as { code?: string })?.code === '23505' ? 409 : 500;
+      return NextResponse.json({ error: msg }, { status });
+    }
 
     return NextResponse.json(addedAttendees, { status: 201 });
   } catch (error) {
