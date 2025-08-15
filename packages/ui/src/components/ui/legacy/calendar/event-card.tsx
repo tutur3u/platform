@@ -14,6 +14,7 @@ import { ScheduledEventQuickActions } from './scheduled-event-quick-actions';
 import type { EventAttendeeWithUser, WorkspaceScheduledEventWithAttendees } from '@tuturuuu/types/primitives/RSVP';
 import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
+import { useCalendarSync } from '../../../../hooks/use-calendar-sync';
 import {
   HoverCard,
   HoverCardContent,
@@ -98,6 +99,7 @@ export function EventCard({
 
   const { updateEvent, hideModal, openModal, deleteEvent, settings } =
     useCalendar();
+  const { refreshScheduledEvents } = useCalendarSync();
   const tz = settings?.timezone?.timezone;
 
   // Local state for immediate UI updates
@@ -1191,12 +1193,11 @@ export function EventCard({
                     return scheduledEvent ? (
                       <div className="px-2 py-1">
                         <ScheduledEventQuickActions
-                          event={event}
                           scheduledEvent={scheduledEvent}
                           userId={currentUserId}
                           onStatusUpdate={async () => {
                             // Refresh the calendar data
-                            window.location.reload();
+                            await refreshScheduledEvents();
                           }}
                           className="w-full"
                           compact={false}
@@ -1443,12 +1444,11 @@ export function EventCard({
                 
                 <div className="border-t pt-2">
                   <ScheduledEventQuickActions
-                    event={event}
                     scheduledEvent={scheduledEvent}
                     userId={currentUserId}
                     onStatusUpdate={async () => {
                       // Refresh the calendar data
-                      window.location.reload();
+                      await refreshScheduledEvents();
                     }}
                   />
                 </div>

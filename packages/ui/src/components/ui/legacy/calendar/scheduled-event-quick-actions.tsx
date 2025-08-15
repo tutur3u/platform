@@ -1,14 +1,12 @@
 'use client';
 
 import type { WorkspaceScheduledEventWithAttendees } from '@tuturuuu/types/primitives/RSVP';
-import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import { Button } from '@tuturuuu/ui/button';
 import { Check, Clock, HelpCircle, X } from '@tuturuuu/ui/icons';
 import { cn } from '@tuturuuu/utils/format';
 import { useState } from 'react';
 
-interface ScheduledEventQuickActionsProps {
-  event: CalendarEvent;
+interface ScheduledEventQuickActionsProps { 
   scheduledEvent: WorkspaceScheduledEventWithAttendees;
   userId: string;
   onStatusUpdate: (
@@ -20,7 +18,6 @@ interface ScheduledEventQuickActionsProps {
 }
 
 export const ScheduledEventQuickActions = ({
-  event,
   scheduledEvent,
   userId,
   onStatusUpdate,
@@ -28,7 +25,6 @@ export const ScheduledEventQuickActions = ({
   compact = false,
 }: ScheduledEventQuickActionsProps) => {
   const [isUpdating, setIsUpdating] = useState(false);
-  const isCreator = scheduledEvent.creator_id === userId;
   const userAttendee = scheduledEvent.attendees?.find(
     (a) => a.user_id === userId
   );
@@ -47,10 +43,6 @@ export const ScheduledEventQuickActions = ({
     }
   };
 
-  // Don't show actions for creators
-  if (isCreator) {
-    return null;
-  }
 
   // Don't show actions if user is not an attendee
   if (!userAttendee) {

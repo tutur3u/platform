@@ -107,7 +107,7 @@ export const MonthCalendar = ({
 }: MonthCalendarProps) => {
   const { getCurrentEvents, addEmptyEvent, openModal, settings } =
     useCalendar();
-  const { scheduledEvents } = useCalendarSync();
+  const { scheduledEvents, refreshScheduledEvents } = useCalendarSync();
   const { userId: currentUserId } = useCurrentUser();
   const [currDate, setCurrDate] = useState(date);
   const [hoveredDay, setHoveredDay] = useState<Date | null>(null);
@@ -401,7 +401,7 @@ export const MonthCalendar = ({
       }
 
       // Refresh the scheduled events
-      // This will trigger a re-render of the calendar
+      await refreshScheduledEvents();
     } catch (error) {
       console.error('Error updating attendee status:', error);
     }
@@ -429,6 +429,7 @@ export const MonthCalendar = ({
       const end = new Date(event.end_at);
       return `${format(start, 'HH:mm')} - ${format(end, 'HH:mm')}`;
     } catch (e) {
+      console.error(e);
       return '';
     }
   };
@@ -637,7 +638,7 @@ export const MonthCalendar = ({
                             <HoverCardTrigger asChild>
                               <div
                                 className={cn(
-                                  'cursor-pointer items-center gap-1 truncate rounded px-1.5 py-1 text-xs font-medium',
+                                  'cursor-pointer items-center gap-1 truncate rounded px-1.5 py-1 text-xs font-medium flex flex-row',
                                   bg,
                                   text,
                                   !isCurrentMonth && 'opacity-60',
@@ -649,7 +650,6 @@ export const MonthCalendar = ({
                                 {event.title || 'Untitled event'}
                                 {isScheduledEvent && scheduledEvent && (
                                   <ScheduledEventQuickActions
-                                    event={event}
                                     scheduledEvent={scheduledEvent}
                                     userId={currentUserId || ''}
                                     onStatusUpdate={
@@ -758,7 +758,6 @@ export const MonthCalendar = ({
                                 {isScheduledEvent && scheduledEvent && (
                                   <div className="border-t pt-2">
                                     <ScheduledEventQuickActions
-                                      event={event}
                                       scheduledEvent={scheduledEvent}
                                       userId={currentUserId || ''}
                                       onStatusUpdate={

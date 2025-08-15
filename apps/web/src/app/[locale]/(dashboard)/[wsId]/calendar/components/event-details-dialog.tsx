@@ -54,6 +54,7 @@ import { Separator } from "@tuturuuu/ui/separator"
 import { toast } from "@tuturuuu/ui/sonner"
 import { Textarea } from "@tuturuuu/ui/textarea"
 import { useCurrentUser } from "@tuturuuu/ui/hooks/use-current-user"
+import { useCalendarSync } from "@tuturuuu/ui/hooks/use-calendar-sync"
 import { TimeSelector } from "@tuturuuu/ui/legacy/tumeet/time-selector"
 import { cn } from "@tuturuuu/utils/format"
 import { format } from "date-fns"
@@ -196,6 +197,7 @@ export default function EnhancedEventDetailsDialog({
   const [startDateOpen, setStartDateOpen] = useState(false)
   const [endDateOpen, setEndDateOpen] = useState(false)
   const { userId: currentUserId, isLoading: userLoading } = useCurrentUser()
+  const { refreshScheduledEvents } = useCalendarSync()
 
   // Form data for editing
   const [editFormData, setEditFormData] = useState<EventFormData>({
@@ -481,7 +483,7 @@ export default function EnhancedEventDetailsDialog({
         toast.success(`Marked as ${STATUS_CONFIG[status].label.toLowerCase()}`)
 
         // Refresh the event data
-        window.location.reload()
+        await refreshScheduledEvents()
       } catch (error) {
         console.error("Error updating attendance status:", error)
         toast.error("Failed to update attendance status. Please try again.")
@@ -489,7 +491,7 @@ export default function EnhancedEventDetailsDialog({
         setIsUpdatingStatus(false)
       }
     },
-    [wsId, event, currentUserId, isUpdatingStatus],
+    [wsId, event, currentUserId, isUpdatingStatus, refreshScheduledEvents],
   )
 
   const handleDeleteEvent = useCallback(async () => {

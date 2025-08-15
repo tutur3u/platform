@@ -1,7 +1,6 @@
 'use client';
 
 import { isAllDayEvent } from './calendar-utils';
-import { convertScheduledEventToCalendarEvent } from './scheduled-events-utils';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type {
   Workspace,
@@ -285,7 +284,7 @@ export const CalendarSyncProvider = ({
   });
 
   // Fetch scheduled events
-  const { data: fetchedScheduledEvents, isLoading: isScheduledEventsLoading } =
+  const { isLoading: isScheduledEventsLoading } =
     useQuery({
       queryKey: ['scheduledEvents', wsId],
       enabled: !!wsId,
@@ -315,28 +314,30 @@ export const CalendarSyncProvider = ({
             return [];
           }
 
-          // Calculate attendee counts for each event
-          const eventsWithCounts = (events || []).map((event) => ({
-            ...event,
-            attendee_count: {
-              total: event.attendees?.length || 0,
-              accepted:
-                event.attendees?.filter((a) => a.status === 'accepted')
-                  .length || 0,
-              declined:
-                event.attendees?.filter((a) => a.status === 'declined')
-                  .length || 0,
-              pending:
-                event.attendees?.filter((a) => a.status === 'pending').length ||
-                0,
-              tentative:
-                event.attendees?.filter((a) => a.status === 'tentative')
-                  .length || 0,
-            },
-          }));
+          // Calculate attendee counts for each event and filter out null ws_id
+          const eventsWithCounts = (events)
+            .filter((event) => event.ws_id !== null) // Filter out events with null ws_id
+            .map((event) => ({
+              ...event,
+              attendee_count: {
+                total: event.attendees?.length || 0,
+                accepted:
+                  event.attendees?.filter((a) => a.status === 'accepted')
+                    .length || 0,
+                declined:
+                  event.attendees?.filter((a) => a.status === 'declined')
+                    .length || 0,
+                pending:
+                  event.attendees?.filter((a) => a.status === 'pending').length ||
+                  0,
+                tentative:
+                  event.attendees?.filter((a) => a.status === 'tentative')
+                    .length || 0,
+              },
+            }));
 
-          setScheduledEvents(eventsWithCounts);
-          return eventsWithCounts;
+          setScheduledEvents(eventsWithCounts as WorkspaceScheduledEventWithAttendees[]);
+          return eventsWithCounts as WorkspaceScheduledEventWithAttendees[];
         } catch (err) {
           console.error('Error fetching scheduled events:', err);
           return [];

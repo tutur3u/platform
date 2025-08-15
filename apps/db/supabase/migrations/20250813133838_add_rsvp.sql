@@ -234,12 +234,20 @@ to public
 using ((user_id = auth.uid()));
 
 
-create policy "Users can view their own attendance"
+create policy "Users can view attendees of workspace events"
 on "public"."event_attendees"
 as permissive
 for select
 to public
-using ((user_id = auth.uid()));
+using (
+  EXISTS (
+    SELECT 1
+    FROM workspace_scheduled_events wse
+    JOIN workspace_members wm ON wm.ws_id = wse.ws_id
+    WHERE wse.id = event_attendees.event_id
+      AND wm.user_id = auth.uid()
+  )
+);
 
 
 create policy "Event creators can manage invitations"
