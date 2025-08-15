@@ -2,10 +2,11 @@ import { cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import { useCalendar } from '../../../../hooks/use-calendar';
+import { useMemo } from 'react';
 import { AllDayEventBar } from './all-day-event-bar';
+import { MIN_COLUMN_WIDTH } from './config';
 import { DayTitle } from './day-title';
 import { TimeColumnHeaders } from './time-column-headers';
-import { MIN_COLUMN_WIDTH } from './config';
 
 dayjs.extend(timezone);
 
@@ -34,14 +35,14 @@ export const WeekdayBar = ({
         return day !== 0 && day !== 6; // 0 = Sunday, 6 = Saturday
       });
 
-  // Get timezone abbreviations with error handling
-  const getTimezoneAbbr = (timezone?: string) => {
-    if (!timezone) return '';
+  // Get timezone abbreviations with error handling and memoization
+  const primaryTzAbbr = useMemo(() => {
+    if (!tz) return '';
 
-    let tzToUse = timezone;
-    let fallback = timezone;
+    let tzToUse = tz;
+    let fallback = tz;
 
-    if (timezone === 'auto') {
+    if (tz === 'auto') {
       try {
         tzToUse = Intl.DateTimeFormat().resolvedOptions().timeZone;
         fallback = 'Local';
@@ -64,10 +65,25 @@ export const WeekdayBar = ({
       console.error(`Failed to get abbreviation for timezone: ${tzToUse}`, e);
       return fallback;
     }
-  };
+  }, [tz]);
 
-  const primaryTzAbbr = getTimezoneAbbr(tz);
-  const secondaryTzAbbr = getTimezoneAbbr(secondaryTz);
+  const secondaryTzAbbr = useMemo(() => {
+    if (!secondaryTz) return '';
+
+    try {
+      return (
+        Intl.DateTimeFormat('en-US', {
+          timeZoneName: 'short',
+          timeZone: secondaryTz,
+        })
+          .formatToParts(new Date())
+          .find((part) => part.type === 'timeZoneName')?.value || secondaryTz
+      );
+    } catch (e) {
+      console.error(`Failed to get abbreviation for timezone: ${secondaryTz}`, e);
+      return secondaryTz;
+    }
+  }, [secondaryTz]);
 
   return (
     <div className="flex flex-col bg-background/50">
