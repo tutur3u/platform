@@ -1,6 +1,7 @@
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import { useCalendar } from '../../../../hooks/use-calendar';
 import { useCalendarSync } from '../../../../hooks/use-calendar-sync';
+import { useCalendarSettings } from './settings/settings-context';
 import { getEventStyles } from '@tuturuuu/utils/color-helper';
 import { cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
@@ -81,10 +82,13 @@ const EventContent = ({ event }: { event: CalendarEvent }) => (
 export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
   const { openModal, updateEvent } = useCalendar();
   const { allDayEvents } = useCalendarSync();
-  const showWeekends = true; // Default to showing weekends
-  const tz = 'auto'; // Default to auto timezone
-  const secondaryTz = undefined; // Default to no secondary timezone
-  const showSecondary = false; // Default to not showing secondary
+  const { settings } = useCalendarSettings();
+  const showWeekends = settings.appearance.showWeekends;
+  const tz = settings?.timezone?.timezone;
+  const secondaryTz = settings?.timezone?.secondaryTimezone;
+  const showSecondary = Boolean(
+    settings?.timezone?.showSecondaryTimezone && secondaryTz
+  );
   const [expandedDates, setExpandedDates] = useState<string[]>([]);
 
   // Drag and drop state

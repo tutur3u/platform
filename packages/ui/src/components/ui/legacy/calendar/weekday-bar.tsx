@@ -23,8 +23,9 @@ export const WeekdayBar = ({
   const showWeekends = settings.appearance.showWeekends;
   const tz = settings?.timezone?.timezone;
   const secondaryTz = settings?.timezone?.secondaryTimezone;
-  const showSecondary =
-    Boolean(settings?.timezone?.showSecondaryTimezone && secondaryTz);
+  const showSecondary = Boolean(
+    settings?.timezone?.showSecondaryTimezone && secondaryTz
+  );
 
   // Filter out weekend days if showWeekends is false
   const visibleDates = showWeekends
@@ -80,7 +81,10 @@ export const WeekdayBar = ({
           .find((part) => part.type === 'timeZoneName')?.value || secondaryTz
       );
     } catch (e) {
-      console.error(`Failed to get abbreviation for timezone: ${secondaryTz}`, e);
+      console.error(
+        `Failed to get abbreviation for timezone: ${secondaryTz}`,
+        e
+      );
       return secondaryTz;
     }
   }, [secondaryTz]);
