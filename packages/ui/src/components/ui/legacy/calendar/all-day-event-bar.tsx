@@ -10,8 +10,9 @@ import isBetween from 'dayjs/plugin/isBetween';
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
 import timezone from 'dayjs/plugin/timezone';
-import { Calendar, ChevronDown, ChevronUp } from 'lucide-react';
+import { ChevronDown, ChevronUp } from 'lucide-react';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
+import { TimeColumnHeaders } from './time-column-headers';
 
 dayjs.extend(isBetween);
 dayjs.extend(isSameOrAfter);
@@ -646,19 +647,10 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
   return (
     <div className="flex">
       {/* Time column headers - matching the main calendar layout */}
-      <div className="flex">
-        {/* Secondary timezone header (shows on left when enabled) */}
-        {showSecondary && (
-          <div className="flex w-16 items-center justify-center border-b border-l bg-muted/20 p-2 font-medium">
-            <div className="h-4 w-4" /> {/* Spacer to maintain alignment */}
-          </div>
-        )}
-
-        {/* Primary timezone header with calendar icon */}
-        <div className="flex w-16 items-center justify-center border-b border-l bg-muted/30 p-2 font-medium">
-          <Calendar className="h-4 w-4 text-muted-foreground" />
-        </div>
-      </div>
+      <TimeColumnHeaders
+        showSecondary={showSecondary}
+        variant="all-day"
+      />
 
       {/* All-day event columns with relative positioning for spanning events */}
       <div
