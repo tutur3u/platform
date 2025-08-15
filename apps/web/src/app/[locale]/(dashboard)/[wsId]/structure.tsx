@@ -1,16 +1,9 @@
 'use client';
 
-import dynamic from 'next/dynamic';
-
-// Code-split CalendarSidebarContent so it only loads on calendar routes
-const CalendarSidebarContent = dynamic(
-  () =>
-    import('./calendar/components/calendar-sidebar-content').then(
-      (m) => m.CalendarSidebarContent
-    ),
-  { ssr: false }
-);
-
+import { Nav } from './nav';
+import type { NavLink } from '@/components/navigation';
+import { PROD_MODE, SIDEBAR_COLLAPSED_COOKIE_NAME } from '@/constants/common';
+import { useSidebar } from '@/context/sidebar-context';
 import { useQuery } from '@tanstack/react-query';
 import type { Workspace } from '@tuturuuu/types/db';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
@@ -21,10 +14,11 @@ import { ArrowLeft, TriangleAlert } from '@tuturuuu/ui/icons';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { cn } from '@tuturuuu/utils/format';
 import { setCookie } from 'cookies-next';
+import { useTranslations } from 'next-intl';
+import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useTranslations } from 'next-intl';
 import {
   type ReactNode,
   Suspense,
@@ -32,10 +26,15 @@ import {
   useEffect,
   useState,
 } from 'react';
-import type { NavLink } from '@/components/navigation';
-import { PROD_MODE, SIDEBAR_COLLAPSED_COOKIE_NAME } from '@/constants/common';
-import { useSidebar } from '@/context/sidebar-context';
-import { Nav } from './nav';
+
+// Code-split CalendarSidebarContent so it only loads on calendar routes
+const CalendarSidebarContent = dynamic(
+  () =>
+    import('./calendar/components/calendar-sidebar-content').then(
+      (m) => m.CalendarSidebarContent
+    ),
+  { ssr: false }
+);
 
 interface MailProps {
   wsId: string;
@@ -421,7 +420,7 @@ export function Structure({
   const personalNote = !isCollapsed &&
     (wsId === 'personal' || workspace?.personal) && (
       <div className="p-2 pt-0">
-        <div className="rounded-lg border border-foreground/10 bg-foreground/5 p-2 text-muted-foreground text-xs">
+        <div className="rounded-lg border border-foreground/10 bg-foreground/5 p-2 text-xs text-muted-foreground">
           <div className="flex items-start gap-2">
             <TriangleAlert className="mt-0.5 h-4 w-4 flex-none" />
             <p className="leading-relaxed">
@@ -439,8 +438,8 @@ export function Structure({
         className={cn(
           'absolute flex h-full w-full flex-col transition-transform duration-300 ease-in-out',
           navState.direction === 'forward'
-            ? 'slide-in-from-right animate-in'
-            : 'slide-in-from-left animate-in'
+            ? 'animate-in slide-in-from-right'
+            : 'animate-in slide-in-from-left'
         )}
       >
         {navState.history.length === 0 ? (
@@ -473,7 +472,7 @@ export function Structure({
             />
             {!isCollapsed && currentTitle && (
               <div className="p-2 pt-0">
-                <h2 className="line-clamp-1 px-2 font-semibold text-muted-foreground text-sm uppercase tracking-wide">
+                <h2 className="line-clamp-1 px-2 text-sm font-semibold tracking-wide text-muted-foreground uppercase">
                   {currentTitle}
                 </h2>
               </div>
@@ -533,7 +532,7 @@ export function Structure({
         </Link>
       </div>
       <div className="mx-2 h-4 w-px flex-none rotate-30 bg-foreground/20" />
-      <div className="flex items-center gap-2 break-all font-semibold text-lg">
+      <div className="flex items-center gap-2 text-lg font-semibold break-all">
         {currentLink?.icon && (
           <div className="flex-none">{currentLink.icon}</div>
         )}
