@@ -1,8 +1,8 @@
 'use client';
 
 import CreateScheduledEventDialog from './create-scheduled-event-dialog';
-import { useCalendarSync } from '@tuturuuu/ui/hooks/use-calendar-sync';
 import { Button } from '@tuturuuu/ui/button';
+import { useCalendarSync } from '@tuturuuu/ui/hooks/use-calendar-sync';
 import { Users } from '@tuturuuu/ui/icons';
 import { useState } from 'react';
 

@@ -3,8 +3,8 @@ import { useCalendar } from '../../../../hooks/use-calendar';
 import { CalendarColumn } from './calendar-column';
 import { DAY_HEIGHT, MAX_LEVEL } from './config';
 import { EventCard } from './event-card';
-import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import type { WorkspaceScheduledEventWithAttendees } from '@tuturuuu/types/primitives/RSVP';
+import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import { useCalendarSync } from '@tuturuuu/ui/hooks/use-calendar-sync';
 import { useCurrentUser } from '@tuturuuu/ui/hooks/use-current-user';
 import dayjs from 'dayjs';
@@ -15,11 +15,23 @@ import { useParams } from 'next/navigation';
 dayjs.extend(timezone);
 dayjs.extend(isSameOrBefore);
 
-export const CalendarMatrix = ({ dates, onOpenEventDetails }: { dates: Date[]; onOpenEventDetails?: (eventId: string, scheduledEvent?: WorkspaceScheduledEventWithAttendees) => void }) => {
+export const CalendarMatrix = ({
+  dates,
+  onOpenEventDetails,
+}: {
+  dates: Date[];
+  onOpenEventDetails?: (
+    eventId: string,
+    scheduledEvent?: WorkspaceScheduledEventWithAttendees
+  ) => void;
+}) => {
   return (
     <>
       <CalendarBaseMatrix dates={dates} />
-      <CalendarEventMatrix dates={dates} onOpenEventDetails={onOpenEventDetails} />
+      <CalendarEventMatrix
+        dates={dates}
+        onOpenEventDetails={onOpenEventDetails}
+      />
     </>
   );
 };
@@ -38,7 +50,16 @@ export const CalendarBaseMatrix = ({ dates }: { dates: Date[] }) => {
   );
 };
 
-export const CalendarEventMatrix = ({ dates, onOpenEventDetails }: { dates: Date[]; onOpenEventDetails?: (eventId: string, scheduledEvent?: WorkspaceScheduledEventWithAttendees) => void }) => {
+export const CalendarEventMatrix = ({
+  dates,
+  onOpenEventDetails,
+}: {
+  dates: Date[];
+  onOpenEventDetails?: (
+    eventId: string,
+    scheduledEvent?: WorkspaceScheduledEventWithAttendees
+  ) => void;
+}) => {
   const params = useParams();
   const wsId = params?.wsId as string;
   const { settings } = useCalendar();
@@ -62,7 +83,11 @@ export const CalendarEventMatrix = ({ dates, onOpenEventDetails }: { dates: Date
           scheduledCalendarEvents.push(calendarEvent);
         }
       } catch (error) {
-        console.error('Error converting scheduled event:', error, scheduledEvent);
+        console.error(
+          'Error converting scheduled event:',
+          error,
+          scheduledEvent
+        );
       }
     });
   }

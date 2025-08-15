@@ -16,10 +16,10 @@ import type { WorkspaceScheduledEventWithAttendees } from '@tuturuuu/types/primi
 import { Button } from '@tuturuuu/ui/button';
 import { Sparkles } from '@tuturuuu/ui/icons';
 import { SmartCalendar } from '@tuturuuu/ui/legacy/calendar/smart-calendar';
+import { toast } from '@tuturuuu/ui/sonner';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
-import { toast } from '@tuturuuu/ui/sonner';
 
 export default function CalendarClientPage({
   experimentalGoogleToken,
@@ -41,25 +41,32 @@ export default function CalendarClientPage({
     isLoading: false,
   });
 
-  const fetchEventDetails = async (eventId: string, scheduledEvent?: WorkspaceScheduledEventWithAttendees) => {
+  const fetchEventDetails = async (
+    eventId: string,
+    scheduledEvent?: WorkspaceScheduledEventWithAttendees
+  ) => {
     // If we already have the event data, use it directly
     if (scheduledEvent) {
-      setEventDetailsDialog({ isOpen: true, event: scheduledEvent, isLoading: false });
+      setEventDetailsDialog({
+        isOpen: true,
+        event: scheduledEvent,
+        isLoading: false,
+      });
       return;
     }
-    
+
     // Otherwise, fetch the event data
     setEventDetailsDialog({ isOpen: true, event: null, isLoading: true });
-    
+
     try {
       const response = await fetch(
         `/api/v1/workspaces/${workspace.id}/scheduled-events/${eventId}`
       );
-      
+
       if (!response.ok) {
         throw new Error('Failed to fetch event details');
       }
-      
+
       const event = await response.json();
       setEventDetailsDialog({ isOpen: true, event, isLoading: false });
     } catch (error) {
@@ -113,7 +120,13 @@ export default function CalendarClientPage({
       {(eventDetailsDialog.event || eventDetailsDialog.isLoading) && (
         <EventDetailsDialog
           isOpen={eventDetailsDialog.isOpen}
-          onClose={() => setEventDetailsDialog({ isOpen: false, event: null, isLoading: false })}
+          onClose={() =>
+            setEventDetailsDialog({
+              isOpen: false,
+              event: null,
+              isLoading: false,
+            })
+          }
           event={eventDetailsDialog.event}
           isLoading={eventDetailsDialog.isLoading}
           wsId={workspace.id}

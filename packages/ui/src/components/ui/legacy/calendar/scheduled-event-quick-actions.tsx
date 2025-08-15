@@ -6,7 +6,7 @@ import { Check, Clock, HelpCircle, X } from '@tuturuuu/ui/icons';
 import { cn } from '@tuturuuu/utils/format';
 import { useState } from 'react';
 
-interface ScheduledEventQuickActionsProps { 
+interface ScheduledEventQuickActionsProps {
   scheduledEvent: WorkspaceScheduledEventWithAttendees;
   userId: string;
   onStatusUpdate: (
@@ -42,7 +42,6 @@ export const ScheduledEventQuickActions = ({
       setIsUpdating(false);
     }
   };
-
 
   // Don't show actions if user is not an attendee
   if (!userAttendee) {

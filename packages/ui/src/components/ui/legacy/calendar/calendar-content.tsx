@@ -78,7 +78,10 @@ export const CalendarContent = ({
     availableViews: { value: string; label: string; disabled?: boolean }[];
   };
   extras?: React.ReactNode;
-  onOpenEventDetails?: (eventId: string, scheduledEvent?: WorkspaceScheduledEventWithAttendees) => void;
+  onOpenEventDetails?: (
+    eventId: string,
+    scheduledEvent?: WorkspaceScheduledEventWithAttendees
+  ) => void;
 }) => {
   const { transition } = useViewTransition();
   const { settings } = useCalendar();
@@ -456,7 +459,10 @@ export const CalendarContent = ({
             onOpenEventDetails={onOpenEventDetails}
           />
         ) : (
-          <CalendarViewWithTrail dates={dates} onOpenEventDetails={onOpenEventDetails} />
+          <CalendarViewWithTrail
+            dates={dates}
+            onOpenEventDetails={onOpenEventDetails}
+          />
         )}
       </div>
 

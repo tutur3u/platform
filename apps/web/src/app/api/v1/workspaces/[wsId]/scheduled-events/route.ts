@@ -134,7 +134,6 @@ export async function POST(req: NextRequest, { params }: Params) {
       );
     }
 
-      
     if (new Date(start_at).getTime() >= new Date(end_at).getTime()) {
       return NextResponse.json(
         { error: 'start_at must be before end_at' },
@@ -176,7 +175,9 @@ export async function POST(req: NextRequest, { params }: Params) {
     const attendeeRecords = finalAttendeeIds.map((userId: string) => ({
       event_id: event.id,
       user_id: userId,
-      status: (userId === user.id ? 'accepted' : 'pending') as 'accepted' | 'pending', // Creator is automatically accepted
+      status: (userId === user.id ? 'accepted' : 'pending') as
+        | 'accepted'
+        | 'pending', // Creator is automatically accepted
     }));
 
     const { error: attendeeError } = await supabase

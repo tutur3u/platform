@@ -284,17 +284,16 @@ export const CalendarSyncProvider = ({
   });
 
   // Fetch scheduled events
-  const { isLoading: isScheduledEventsLoading } =
-    useQuery({
-      queryKey: ['scheduledEvents', wsId],
-      enabled: !!wsId,
-      queryFn: async () => {
-        try {
-          const supabase = createClient();
-          const { data: events, error } = await supabase
-            .from('workspace_scheduled_events')
-            .select(
-              `
+  const { isLoading: isScheduledEventsLoading } = useQuery({
+    queryKey: ['scheduledEvents', wsId],
+    enabled: !!wsId,
+    queryFn: async () => {
+      try {
+        const supabase = createClient();
+        const { data: events, error } = await supabase
+          .from('workspace_scheduled_events')
+          .select(
+            `
             *,
             creator:users!creator_id(id, display_name, avatar_url),
             attendees:event_attendees(
@@ -305,39 +304,47 @@ export const CalendarSyncProvider = ({
               user:users(id, display_name, avatar_url)
             )
           `
-            )
-            .eq('ws_id', wsId)
-            .order('start_at', { ascending: true });
+          )
+          .eq('ws_id', wsId)
+          .order('start_at', { ascending: true });
 
-          if (error) {
-            console.error('Error fetching scheduled events:', error);
-            return [];
-          }
-
-          // Calculate attendee counts for each event and filter out null ws_id
-          const eventsWithCounts = (events)
-            .filter((event) => event.ws_id !== null) // Filter out events with null ws_id
-            .map((event) => ({
-              ...event,
-              attendee_count: event.attendees?.reduce(
-                (counts, attendee) => {
-                  counts.total++;
-                  counts[attendee.status as keyof typeof counts]++;
-                  return counts;
-                },
-                { total: 0, accepted: 0, declined: 0, pending: 0, tentative: 0 }
-              ) || { total: 0, accepted: 0, declined: 0, pending: 0, tentative: 0 },
-            }));
-
-          setScheduledEvents(eventsWithCounts as WorkspaceScheduledEventWithAttendees[]);
-          return eventsWithCounts as WorkspaceScheduledEventWithAttendees[];
-        } catch (err) {
-          console.error('Error fetching scheduled events:', err);
+        if (error) {
+          console.error('Error fetching scheduled events:', error);
           return [];
         }
-      },
-      refetchInterval: 30000,
-    });
+
+        // Calculate attendee counts for each event and filter out null ws_id
+        const eventsWithCounts = events
+          .filter((event) => event.ws_id !== null) // Filter out events with null ws_id
+          .map((event) => ({
+            ...event,
+            attendee_count: event.attendees?.reduce(
+              (counts, attendee) => {
+                counts.total++;
+                counts[attendee.status as keyof typeof counts]++;
+                return counts;
+              },
+              { total: 0, accepted: 0, declined: 0, pending: 0, tentative: 0 }
+            ) || {
+              total: 0,
+              accepted: 0,
+              declined: 0,
+              pending: 0,
+              tentative: 0,
+            },
+          }));
+
+        setScheduledEvents(
+          eventsWithCounts as WorkspaceScheduledEventWithAttendees[]
+        );
+        return eventsWithCounts as WorkspaceScheduledEventWithAttendees[];
+      } catch (err) {
+        console.error('Error fetching scheduled events:', err);
+        return [];
+      }
+    },
+    refetchInterval: 30000,
+  });
 
   // Fetch google events with caching
   const { data: fetchedGoogleData, isLoading: isGoogleLoading } = useQuery({

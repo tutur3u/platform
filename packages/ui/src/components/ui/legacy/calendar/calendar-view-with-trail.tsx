@@ -9,7 +9,16 @@ import { useEffect, useRef, useState } from 'react';
 
 dayjs.extend(timezone);
 
-export const CalendarViewWithTrail = ({ dates, onOpenEventDetails }: { dates: Date[]; onOpenEventDetails?: (eventId: string, scheduledEvent?: WorkspaceScheduledEventWithAttendees) => void }) => {
+export const CalendarViewWithTrail = ({
+  dates,
+  onOpenEventDetails,
+}: {
+  dates: Date[];
+  onOpenEventDetails?: (
+    eventId: string,
+    scheduledEvent?: WorkspaceScheduledEventWithAttendees
+  ) => void;
+}) => {
   const [initialized, setInitialized] = useState(false);
   const calendarViewRef = useRef<HTMLDivElement>(null);
   const { settings } = useCalendar();

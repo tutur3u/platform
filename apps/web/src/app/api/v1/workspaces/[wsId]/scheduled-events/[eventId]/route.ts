@@ -56,9 +56,7 @@ export async function GET(req: NextRequest, { params }: Params) {
 
     // Check if user has access to this event (creator or attendee)
     const isCreator = event.creator_id === user.id;
-    const isAttendee = event.attendees?.some(
-      (a) => a.user_id === user.id
-    );
+    const isAttendee = event.attendees?.some((a) => a.user_id === user.id);
 
     if (!isCreator && !isAttendee) {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 });
@@ -138,7 +136,6 @@ export async function PUT(req: NextRequest, { params }: Params) {
       is_all_day,
       status,
     } = body;
-
 
     // Validate required fields
     if (!title || !start_at || !end_at) {

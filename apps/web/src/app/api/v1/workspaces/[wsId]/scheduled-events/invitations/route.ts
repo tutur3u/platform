@@ -4,7 +4,6 @@ import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextRequest, NextResponse } from 'next/server';
 
-
 interface Params {
   params: Promise<{
     wsId: string;
@@ -74,7 +73,9 @@ export async function GET(req: NextRequest, { params }: Params) {
 
     // Filter out records where event is null (in case event was deleted)
     const validInvitations =
-      attendeeRecords?.filter((record) => record.event && typeof record.event === 'object') || [];
+      attendeeRecords?.filter(
+        (record) => record.event && typeof record.event === 'object'
+      ) || [];
 
     // For each event, get attendee counts
     const eventIds = validInvitations.map((inv) => inv.event.id);

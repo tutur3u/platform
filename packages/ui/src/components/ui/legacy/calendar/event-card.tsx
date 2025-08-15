@@ -1,4 +1,5 @@
 import { useCalendar } from '../../../../hooks/use-calendar';
+import { useCalendarSync } from '../../../../hooks/use-calendar-sync';
 import {
   ContextMenu,
   ContextMenuContent,
@@ -11,10 +12,12 @@ import {
 } from '../../context-menu';
 import { GRID_SNAP, HOUR_HEIGHT, MAX_HOURS, MIN_EVENT_HEIGHT } from './config';
 import { ScheduledEventQuickActions } from './scheduled-event-quick-actions';
-import type { EventAttendeeWithUser, WorkspaceScheduledEventWithAttendees } from '@tuturuuu/types/primitives/RSVP';
+import type {
+  EventAttendeeWithUser,
+  WorkspaceScheduledEventWithAttendees,
+} from '@tuturuuu/types/primitives/RSVP';
 import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
-import { useCalendarSync } from '../../../../hooks/use-calendar-sync';
 import {
   HoverCard,
   HoverCardContent,
@@ -65,7 +68,10 @@ interface EventCardProps {
   level?: number; // Level for stacking events
   scheduledEvents?: WorkspaceScheduledEventWithAttendees[];
   currentUserId?: string;
-  onOpenEventDetails?: (eventId: string, scheduledEvent?: WorkspaceScheduledEventWithAttendees) => void;
+  onOpenEventDetails?: (
+    eventId: string,
+    scheduledEvent?: WorkspaceScheduledEventWithAttendees
+  ) => void;
 }
 
 export function EventCard({
@@ -952,14 +958,14 @@ export function EventCard({
   // Conditional click handler for events
   const handleEventClick = (e: React.MouseEvent) => {
     const isScheduledEvent = event._isScheduledEvent;
-    
+
     if (isScheduledEvent && onOpenEventDetails && event._scheduledEventId) {
       // For scheduled events, try to find the full event data and pass it
       e.stopPropagation();
       const scheduledEvent = scheduledEvents?.find(
         (se) => se.id === event._scheduledEventId
       );
-      
+
       // Pass the eventId and potentially the scheduledEvent object
       onOpenEventDetails(event._scheduledEventId, scheduledEvent);
     } else {
@@ -1047,8 +1053,6 @@ export function EventCard({
                   <Pencil className="h-3 w-3" />
                 </div>
               )}
-
-
 
               {/* Status indicators */}
               {updateStatus === 'syncing' && (
@@ -1176,7 +1180,10 @@ export function EventCard({
                       const scheduledEvent = scheduledEvents?.find(
                         (se) => se.id === event._scheduledEventId
                       );
-                      onOpenEventDetails(event._scheduledEventId, scheduledEvent);
+                      onOpenEventDetails(
+                        event._scheduledEventId,
+                        scheduledEvent
+                      );
                     }
                   }}
                   className="flex items-center gap-2"
@@ -1366,82 +1373,109 @@ export function EventCard({
                     {formatEventTime(startDate)} - {formatEventTime(endDate)}
                   </span>
                 </div>
-                
+
                 {/* Participant Information */}
                 {scheduledEvent.attendee_count && (
-                  <div className="border-t pt-2 space-y-2">
+                  <div className="space-y-2 border-t pt-2">
                     <div className="flex items-center text-sm font-medium">
                       <Users className="mr-1 h-3 w-3" />
                       <span>
-                        {scheduledEvent.attendee_count.total} participant{scheduledEvent.attendee_count.total !== 1 ? 's' : ''}
+                        {scheduledEvent.attendee_count.total} participant
+                        {scheduledEvent.attendee_count.total !== 1 ? 's' : ''}
                       </span>
                     </div>
-                    
+
                     {/* Status breakdown */}
                     <div className="flex gap-2 text-xs">
                       {scheduledEvent.attendee_count.accepted > 0 && (
                         <div className="flex items-center text-green-600">
                           <Check className="mr-1 h-3 w-3" />
-                          <span>{scheduledEvent.attendee_count.accepted} accepted</span>
+                          <span>
+                            {scheduledEvent.attendee_count.accepted} accepted
+                          </span>
                         </div>
                       )}
                       {scheduledEvent.attendee_count.pending > 0 && (
                         <div className="flex items-center text-yellow-600">
                           <Clock className="mr-1 h-3 w-3" />
-                          <span>{scheduledEvent.attendee_count.pending} pending</span>
+                          <span>
+                            {scheduledEvent.attendee_count.pending} pending
+                          </span>
                         </div>
                       )}
                       {scheduledEvent.attendee_count.tentative > 0 && (
                         <div className="flex items-center text-blue-600">
                           <HelpCircle className="mr-1 h-3 w-3" />
-                          <span>{scheduledEvent.attendee_count.tentative} maybe</span>
+                          <span>
+                            {scheduledEvent.attendee_count.tentative} maybe
+                          </span>
                         </div>
                       )}
                       {scheduledEvent.attendee_count.declined > 0 && (
                         <div className="flex items-center text-red-600">
                           <X className="mr-1 h-3 w-3" />
-                          <span>{scheduledEvent.attendee_count.declined} declined</span>
+                          <span>
+                            {scheduledEvent.attendee_count.declined} declined
+                          </span>
                         </div>
                       )}
                     </div>
-                    
+
                     {/* Participant names */}
-                    {scheduledEvent.attendees && scheduledEvent.attendees.length > 0 && (
-                      <div className="space-y-1">
-                        <div className="text-xs font-medium text-muted-foreground">Participants:</div>
-                        <div className="max-h-20 overflow-y-auto space-y-0.5">
-                          {scheduledEvent.attendees
-                            .filter((attendee: EventAttendeeWithUser) => attendee.status !== 'declined')
-                            .slice(0, 8)
-                            .map((attendee: EventAttendeeWithUser) => (
-                              <div key={attendee.id} className="flex items-center justify-between text-xs">
-                                <span className="flex-1 truncate">
-                                  {attendee.user?.display_name || 'Unknown User'}
-                                </span>
-                                <div className="flex-shrink-0 ml-2">
-                                  {attendee.status === 'accepted' && (
-                                    <Check className="h-3 w-3 text-green-600" />
-                                  )}
-                                  {attendee.status === 'pending' && (
-                                    <Clock className="h-3 w-3 text-yellow-600" />
-                                  )}
-                                  {attendee.status === 'tentative' && (
-                                    <HelpCircle className="h-3 w-3 text-blue-600" />
-                                  )}
+                    {scheduledEvent.attendees &&
+                      scheduledEvent.attendees.length > 0 && (
+                        <div className="space-y-1">
+                          <div className="text-xs font-medium text-muted-foreground">
+                            Participants:
+                          </div>
+                          <div className="max-h-20 space-y-0.5 overflow-y-auto">
+                            {scheduledEvent.attendees
+                              .filter(
+                                (attendee: EventAttendeeWithUser) =>
+                                  attendee.status !== 'declined'
+                              )
+                              .slice(0, 8)
+                              .map((attendee: EventAttendeeWithUser) => (
+                                <div
+                                  key={attendee.id}
+                                  className="flex items-center justify-between text-xs"
+                                >
+                                  <span className="flex-1 truncate">
+                                    {attendee.user?.display_name ||
+                                      'Unknown User'}
+                                  </span>
+                                  <div className="ml-2 flex-shrink-0">
+                                    {attendee.status === 'accepted' && (
+                                      <Check className="h-3 w-3 text-green-600" />
+                                    )}
+                                    {attendee.status === 'pending' && (
+                                      <Clock className="h-3 w-3 text-yellow-600" />
+                                    )}
+                                    {attendee.status === 'tentative' && (
+                                      <HelpCircle className="h-3 w-3 text-blue-600" />
+                                    )}
+                                  </div>
                                 </div>
+                              ))}
+                            {scheduledEvent.attendees.filter(
+                              (a: EventAttendeeWithUser) =>
+                                a.status !== 'declined'
+                            ).length > 8 && (
+                              <div className="text-xs text-muted-foreground italic">
+                                +
+                                {scheduledEvent.attendees.filter(
+                                  (a: EventAttendeeWithUser) =>
+                                    a.status !== 'declined'
+                                ).length - 8}{' '}
+                                more...
                               </div>
-                            ))}
-                          {scheduledEvent.attendees.filter((a: EventAttendeeWithUser) => a.status !== 'declined').length > 8 && (
-                            <div className="text-xs text-muted-foreground italic">
-                              +{scheduledEvent.attendees.filter((a: EventAttendeeWithUser) => a.status !== 'declined').length - 8} more...
-                            </div>
-                          )}
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      )}
                   </div>
                 )}
-                
+
                 <div className="border-t pt-2">
                   <ScheduledEventQuickActions
                     scheduledEvent={scheduledEvent}

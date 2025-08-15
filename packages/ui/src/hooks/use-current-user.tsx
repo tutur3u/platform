@@ -13,7 +13,9 @@ export function useCurrentUser() {
 
     const init = async () => {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
         if (isMounted) setUserId(user?.id || null);
       } catch (error) {
         console.error('Error getting current user:', error);
@@ -23,9 +25,11 @@ export function useCurrentUser() {
       }
     };
 
-    const { data: subscription } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (isMounted) setUserId(session?.user?.id ?? null);
-    });
+    const { data: subscription } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        if (isMounted) setUserId(session?.user?.id ?? null);
+      }
+    );
 
     void init();
     return () => {
