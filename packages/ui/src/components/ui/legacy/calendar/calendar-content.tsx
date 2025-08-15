@@ -4,12 +4,12 @@ import { CreateEventButton } from './create-event-button';
 import { EventModal } from './event-modal';
 import { MonthCalendar } from './month-calendar';
 import { SettingsButton } from './settings-button';
+import { useCalendarSettings } from './settings/settings-context';
 import { WeekdayBar } from './weekday-bar';
 import type {
   Workspace,
   WorkspaceCalendarGoogleToken,
 } from '@tuturuuu/types/db';
-import { useCalendarSettings } from './settings/settings-context';
 import { useCalendarSync } from '@tuturuuu/ui/hooks/use-calendar-sync';
 import type { CalendarView } from '@tuturuuu/ui/hooks/use-view-transition';
 import { useViewTransition } from '@tuturuuu/ui/hooks/use-view-transition';
