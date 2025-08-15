@@ -67,7 +67,7 @@ export async function POST(req: NextRequest, { params }: Params) {
     const attendeesToAdd = user_ids.map((userId: string) => ({
       event_id: eventId,
       user_id: userId,
-      status: 'pending',
+      status: 'pending' as const,
       created_at: new Date().toISOString(),
     }));
 
