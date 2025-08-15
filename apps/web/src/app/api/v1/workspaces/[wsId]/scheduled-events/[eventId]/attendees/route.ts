@@ -78,8 +78,8 @@ export async function POST(req: NextRequest, { params }: Params) {
 
       if (addError) {
         console.error('Error adding attendees:', addError);
-        const msg = (addError as any)?.code === '23505' ? 'Some attendees are already added' : 'Failed to add attendees';
-        const status = (addError as any)?.code === '23505' ? 409 : 500;
+        const msg = (addError as { code?: string })?.code === '23505' ? 'Some attendees are already added' : 'Failed to add attendees';
+        const status = (addError as { code?: string })?.code === '23505' ? 409 : 500;
         return NextResponse.json({ error: msg }, { status });
       }
 

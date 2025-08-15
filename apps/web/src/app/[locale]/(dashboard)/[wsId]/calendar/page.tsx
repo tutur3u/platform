@@ -1,7 +1,6 @@
 import { CalendarActiveSyncDebugger } from './active-sync';
 import CalendarClientPage from './client';
 import TasksSidebar from './components/tasks-sidebar';
-import { TestScheduledEvents } from './test-scheduled-events';
 import { DEV_MODE } from '@/constants/common';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@tuturuuu/supabase/next/server';
@@ -49,7 +48,6 @@ export default async function CalendarPage({ params }: PageProps) {
         />
         <div className="flex w-80 flex-col gap-4">
           <TasksSidebar wsId={wsId} locale={locale} />
-          {/* {DEV_MODE && <TestScheduledEvents />} */}
         </div>
       </div>
     </CalendarSyncProvider>
