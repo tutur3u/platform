@@ -8,7 +8,6 @@ import type {
 } from '@tuturuuu/types/db';
 import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
-
 import dayjs from 'dayjs';
 import moment from 'moment';
 import 'moment/locale/vi';
@@ -352,7 +351,11 @@ export const CalendarProvider = ({
 
       if (isAllDay) {
         // Use the new createAllDayEvent helper for proper timezone handling
-        const allDayTimes = createAllDayEvent(selectedDate.toDate(), undefined, 1);
+        const allDayTimes = createAllDayEvent(
+          selectedDate.toDate(),
+          undefined,
+          1
+        );
         start_at = allDayTimes.start_at;
         end_at = allDayTimes.end_at;
       } else {

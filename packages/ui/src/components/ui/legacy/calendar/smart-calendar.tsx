@@ -1,12 +1,15 @@
 'use client';
 
-import { CalendarProvider } from '@tuturuuu/ui/hooks/use-calendar';
 import { CalendarContent } from './calendar-content';
+import {
+  CalendarSettings,
+  CalendarSettingsProvider,
+} from './settings/settings-context';
 import type {
   Workspace,
   WorkspaceCalendarGoogleToken,
 } from '@tuturuuu/types/db';
-import { CalendarSettings, CalendarSettingsProvider } from './settings/settings-context';
+import { CalendarProvider } from '@tuturuuu/ui/hooks/use-calendar';
 
 export const SmartCalendar = ({
   t,
@@ -50,9 +53,7 @@ export const SmartCalendar = ({
       useQueryClient={useQueryClient}
       experimentalGoogleToken={experimentalGoogleToken}
     >
-      <CalendarSettingsProvider
-        onSave={handleSaveSettings}
-      >
+      <CalendarSettingsProvider onSave={handleSaveSettings}>
         <CalendarContent
           t={t}
           locale={locale}
