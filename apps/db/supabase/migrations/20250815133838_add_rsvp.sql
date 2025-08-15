@@ -1,6 +1,6 @@
 create type "public"."event_attendee_status" as enum ('pending', 'accepted', 'declined', 'tentative');
 
-create type "public"."event_status" as enum ('active', 'cancelled', 'completed', 'draft');
+create type "public"."event_status" as enum ('active', 'cancelled', 'completed', 'draft', 'confirmed');
 
 create table "public"."event_attendees" (
     "id" uuid not null default gen_random_uuid(),

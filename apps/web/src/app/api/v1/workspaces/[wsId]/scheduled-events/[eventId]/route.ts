@@ -106,10 +106,10 @@ export async function PUT(req: NextRequest, { params }: Params) {
       );
     }
 
-    // Check if user is the creator of the event
+    // Check if user is the creator of the event and if event can be modified
     const { data: existingEvent, error: checkError } = await supabase
       .from('workspace_scheduled_events')
-      .select('creator_id')
+      .select('creator_id, status')
       .eq('id', eventId)
       .eq('ws_id', wsId)
       .single();
@@ -122,6 +122,14 @@ export async function PUT(req: NextRequest, { params }: Params) {
       return NextResponse.json(
         { error: 'Only event creators can edit events' },
         { status: 403 }
+      );
+    }
+
+    // Prevent modifications of confirmed events
+    if (existingEvent.status === 'confirmed') {
+      return NextResponse.json(
+        { error: 'Cannot modify a confirmed event. Please unconfirm the event first to make changes.' },
+        { status: 400 }
       );
     }
 
@@ -152,7 +160,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
       );
     }
     // Validate status if provided
-    const validStatuses = ['active', 'cancelled', 'completed', 'draft'];
+    const validStatuses = ['active', 'cancelled', 'completed', 'draft', 'confirmed'];
     if (status && !validStatuses.includes(status)) {
       return NextResponse.json(
         { error: 'Invalid status value' },
@@ -215,10 +223,10 @@ export async function DELETE(req: NextRequest, { params }: Params) {
       );
     }
 
-    // Check if user is the creator of the event
+    // Check if user is the creator of the event and if event can be deleted
     const { data: existingEvent, error: checkError } = await supabase
       .from('workspace_scheduled_events')
-      .select('creator_id')
+      .select('creator_id, status')
       .eq('id', eventId)
       .eq('ws_id', wsId)
       .single();
@@ -231,6 +239,14 @@ export async function DELETE(req: NextRequest, { params }: Params) {
       return NextResponse.json(
         { error: 'Only event creators can delete events' },
         { status: 403 }
+      );
+    }
+
+    // Prevent deletion of confirmed events
+    if (existingEvent.status === 'confirmed') {
+      return NextResponse.json(
+        { error: 'Cannot delete a confirmed event. Please unconfirm the event first to delete it.' },
+        { status: 400 }
       );
     }
 

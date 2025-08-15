@@ -27,7 +27,12 @@ export type Database = {
       chat_role: 'ASSISTANT' | 'FUNCTION' | 'SYSTEM' | 'USER';
       dataset_type: 'csv' | 'excel' | 'html';
       event_attendee_status: 'accepted' | 'declined' | 'pending' | 'tentative';
-      event_status: 'active' | 'cancelled' | 'completed' | 'draft';
+      event_status:
+        | 'active'
+        | 'cancelled'
+        | 'completed'
+        | 'confirmed'
+        | 'draft';
       feature_flag:
         | 'ENABLE_AI'
         | 'ENABLE_CHALLENGES'
@@ -11869,7 +11874,7 @@ export const Constants = {
       chat_role: ['ASSISTANT', 'FUNCTION', 'SYSTEM', 'USER'],
       dataset_type: ['csv', 'excel', 'html'],
       event_attendee_status: ['accepted', 'declined', 'pending', 'tentative'],
-      event_status: ['active', 'cancelled', 'completed', 'draft'],
+      event_status: ['active', 'cancelled', 'completed', 'confirmed', 'draft'],
       feature_flag: [
         'ENABLE_AI',
         'ENABLE_CHALLENGES',

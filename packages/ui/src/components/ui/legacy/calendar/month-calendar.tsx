@@ -830,7 +830,7 @@ export const MonthCalendar = ({
                                     </div>
                                   )}
 
-                                {isScheduledEvent && scheduledEvent && (
+                                {isScheduledEvent && scheduledEvent && scheduledEvent.status !== 'confirmed' && (
                                   <div className="border-t pt-2">
                                     <ScheduledEventQuickActions
                                       scheduledEvent={scheduledEvent}
