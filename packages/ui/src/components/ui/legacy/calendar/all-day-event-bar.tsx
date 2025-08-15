@@ -84,8 +84,9 @@ export const AllDayEventBar = ({ dates }: { dates: Date[] }) => {
   const showWeekends = settings.appearance.showWeekends;
   const tz = settings?.timezone?.timezone;
   const secondaryTz = settings?.timezone?.secondaryTimezone;
-  const showSecondary =
-    settings?.timezone?.showSecondaryTimezone && secondaryTz;
+  const showSecondary = Boolean(
+    settings?.timezone?.showSecondaryTimezone && secondaryTz
+  );
   const [expandedDates, setExpandedDates] = useState<string[]>([]);
 
   // Drag and drop state

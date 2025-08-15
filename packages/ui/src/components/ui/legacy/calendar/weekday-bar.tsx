@@ -1,8 +1,8 @@
 import { cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
-import { useCalendar } from '../../../../hooks/use-calendar';
 import { useMemo } from 'react';
+import { useCalendar } from '../../../../hooks/use-calendar';
 import { AllDayEventBar } from './all-day-event-bar';
 import { MIN_COLUMN_WIDTH } from './config';
 import { DayTitle } from './day-title';
@@ -16,15 +16,16 @@ export const WeekdayBar = ({
   locale,
 }: {
   dates: Date[];
-  view: string;
+  view: 'day' | '4-days' | 'week' | 'month';
   locale: string;
 }) => {
   const { settings } = useCalendar();
   const showWeekends = settings.appearance.showWeekends;
   const tz = settings?.timezone?.timezone;
   const secondaryTz = settings?.timezone?.secondaryTimezone;
-  const showSecondary =
-    settings?.timezone?.showSecondaryTimezone && secondaryTz;
+  const showSecondary = Boolean(
+    settings?.timezone?.showSecondaryTimezone && secondaryTz
+  );
 
   // Filter out weekend days if showWeekends is false
   const visibleDates = showWeekends
@@ -80,7 +81,10 @@ export const WeekdayBar = ({
           .find((part) => part.type === 'timeZoneName')?.value || secondaryTz
       );
     } catch (e) {
-      console.error(`Failed to get abbreviation for timezone: ${secondaryTz}`, e);
+      console.error(
+        `Failed to get abbreviation for timezone: ${secondaryTz}`,
+        e
+      );
       return secondaryTz;
     }
   }, [secondaryTz]);
